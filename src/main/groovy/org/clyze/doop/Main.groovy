@@ -82,13 +82,13 @@ class Main {
                     File propsBaseDir = f.getAbsoluteFile().getParentFile()
                     Properties props = FileOps.loadProperties(f)
 
-                    changeLogLevel(cli['l'] ?: props.getProperty("level"))
+                    changeLogLevel(cli['L'] ?: props.getProperty("level"))
 
                     userTimeout = cli['t'] ?: props.getProperty("timeout")
 
                     analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
                 } else {
-                    changeLogLevel(cli['l'])
+                    changeLogLevel(cli['L'])
 
                     userTimeout = cli['t']
 
@@ -107,10 +107,14 @@ class Main {
                 executorService.submit(new Runnable() {
                     @Override
                     void run() {
-                        if (!analysis.options.X_START_AFTER_FACTS.value)
-                            logger.info "Starting ${analysis.name} analysis on ${analysis.inputFiles[0]} - id: $analysis.id"
+                        if (!analysis.options.X_START_AFTER_FACTS.value) {
+                            logger.info "Starting ${analysis.name} analysis"
+                            logger.info "Id       : $analysis.id"
+                            logger.info "Inputs   : ${analysis.inputFiles.join(', ')}"
+                            logger.info "Libraries: ${analysis.libraryFiles.join(', ')}"
+                        }
                         else
-                            logger.info "Starting ${analysis.name} analysis on user imported-facts at${analysis.options.X_START_AFTER_FACTS.value} - id: $analysis.id"
+                            logger.info "Starting ${analysis.name} analysis on user-provided facts at ${analysis.options.X_START_AFTER_FACTS.value} - id: $analysis.id"
                         logger.debug analysis
                         analysis.options.BLOX_OPTS.value = bloxOptions
                         analysis.run()

@@ -263,3 +263,19 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?return) :-
    Method_ReturnType(?method, ?retType),
    SubtypeOf(?type, ?retType),
    isImmutableHContext(?hctx), isImmutableContext(?ctx).
+
+.decl SingletonDynamicHeapObject(?type:Type, ?value:Value)
+      
+SingletonDynamicHeapObject(?type, ?value) :-
+  DynamicHeapAllocation(?representation, ?heap),
+  !NotSingletonDynamicHeapAllocation(?representation),
+  Value_byDynamicHeap(?heap, ?value),
+  Value_Type(?value, ?type).
+
+VarPointsTo(?hctx, ?value, ?ctxFrom, ?base) :-
+  DynamicCallGraphEdge(_, ?toMethod, ?invocation, ?dctxFrom, _),
+  DynamicContextToContext(?ctxFrom, ?dctxFrom),
+  ResolveInvocation(?type, ?invocation, ?toMethod),
+  SingletonDynamicHeapObject(?type, ?value),
+  MethodInvocation_Base(?invocation, ?base),
+  ImmutableHContextFromContext(?ctxFrom, ?hctx).

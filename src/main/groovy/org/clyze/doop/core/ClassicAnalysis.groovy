@@ -32,9 +32,10 @@ class ClassicAnalysis extends DoopAnalysis {
                               File outDir,
                               File cacheDir,
                               List<File> inputFiles,
+                              List<File> libraryFiles,
                               List<File> platformLibs,
                               Map<String, String> commandsEnvironment) {
-        super(id, name, options, ctx, outDir, cacheDir, inputFiles, platformLibs, commandsEnvironment)
+        super(id, name, options, ctx, outDir, cacheDir, inputFiles, libraryFiles, platformLibs, commandsEnvironment)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
     }
@@ -110,8 +111,8 @@ class ClassicAnalysis extends DoopAnalysis {
                     .addBlockFile("tamiflex-post-import.logic")
         }
 
-        if (options.MAIN_CLASS.value)
-            lbBuilder.addBlock("""MainClass(x) <- ClassType(x), Type:Id(x:"${options.MAIN_CLASS.value}").""")
+//        if (options.MAIN_CLASS.value)
+//            lbBuilder.addBlock("""MainClass(x) <- ClassType(x), Type:Id(x:"${options.MAIN_CLASS.value}").""")
 
         lbBuilder
                 .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")

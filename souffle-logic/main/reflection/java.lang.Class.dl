@@ -44,7 +44,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :-
  * Class.forName invocations with string constant parameters
  */
 // TODO Do we need this flag at all?
-// NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
+// NOTE that this won't fire when we are in distinguish-no-string-constants
 // mode. The constant will never flow to the ?param.
 .decl ForwardReflectiveAssignClassConstant(?ctx:Context, ?invocation:MethodInvocation, ?type:Type)
 .decl ForwardReflectiveAssignClassConstantString(?ctx:Context, ?invocation:MethodInvocation, ?type:Type, ?constantHeap:Value)
@@ -215,7 +215,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ReflectiveAllocation(?invocation, _, ?arrayValue),
   ImmutableHContextFromContext(?ctx, ?hctx).
 
-// NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
+// NOTE that this won't fire when we are in distinguish-no-string-constants
 // mode. The constant will never flow to ?param.
 .decl ForwardReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)
 .decl ForwardReflectiveAssignMethodConstantString(?ctx:Context, ?to:Var, ?signature:Method, ?constantHeap:Value)
@@ -383,7 +383,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ReifiedClass(?type, ?classValue),
   ReflectiveAllocation(?invocation, _, ?arrayValue).
 
-// NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
+// NOTE that this won't fire when we are in distinguish-no-string-constants
 // mode. The constant will never flow to ?param.
 .decl ForwardReflectiveAssignFieldConstant(?ctx:Context, ?to:Var, ?signature:Field)
 .decl ForwardReflectiveAssignFieldConstantString(?ctx:Context, ?to:Var, ?signature:Field, ?constantHeap:Value)
@@ -402,8 +402,6 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
 
 // If it is a local and precise string, consider it a high-confidence inference
 .decl ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx:Context, ?to:Var, ?signature:Field)
-
-.output HighConfidenceAssign
 
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) :-
   ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
@@ -482,6 +480,35 @@ ReflectiveBaseVar(?invocation, ?to) :-
   OptClassToConstructor(?constructor, ?class),
   Method_DeclaringType(?constructor, ?type).
 
+
+/*************************************************************
+ * java.lang.Class.getPrimitiveClass
+ *
+ *   static native java.lang.Class getPrimitiveClass(String name)
+ *************************************************************/
+
+// REVIEW: this should be compatible with reflection-only string constants.
+
+VarPointsTo(?hctx, ?intClass, ?ctx, ?to),
+VarPointsTo(?hctx, ?floatClass, ?ctx, ?to),
+VarPointsTo(?hctx, ?doubleClass, ?ctx, ?to),
+VarPointsTo(?hctx, ?byteClass, ?ctx, ?to),
+VarPointsTo(?hctx, ?booleanClass, ?ctx, ?to),
+VarPointsTo(?hctx, ?charClass, ?ctx, ?to),
+VarPointsTo(?hctx, ?longClass, ?ctx, ?to),
+VarPointsTo(?hctx, ?shortClass, ?ctx, ?to),
+VarPointsTo(?hctx, ?voidClass, ?ctx, ?to) :-
+  java_lang_Class_getPrimitiveClass(?invocation, ?to, ?param),
+  VarPointsTo(?hctx, _, ?ctx, ?param),
+  ReifiedClass("java.lang.Integer", ?intClass),
+  ReifiedClass("java.lang.Float", ?floatClass),
+  ReifiedClass("java.lang.Double", ?doubleClass),
+  ReifiedClass("java.lang.Byte", ?byteClass),
+  ReifiedClass("java.lang.Boolean", ?booleanClass),
+  ReifiedClass("java.lang.Character", ?charClass),
+  ReifiedClass("java.lang.Long", ?longClass),
+  ReifiedClass("java.lang.Short", ?shortClass),
+  ReifiedClass("java.lang.Void", ?voidClass).
 
 /*************************************************************
  * java.lang.Class.getClassLoader

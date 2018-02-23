@@ -14,7 +14,14 @@ This stage must be executed before any basic analysis but *AFTER* Heap Allocatio
 
 .decl _HeapAllocationInformation(?lineNumber:number, ?method:Method, ?type:Type, ?heap:HeapAllocation)
 
-      
+.decl NotSingletonDynamicHeapAllocation(?param4:symbol)
+
+NotSingletonDynamicHeapAllocation(?param4) :-
+  _DynamicNormalHeapAllocation(_, _, ?param3, ?param4),
+  _DynamicNormalHeapAllocation(_, _, ?param3, ?param44),
+  ?param4 != ?param44.
+
+    
 // 0) try to map by representation
 .decl _MatchedHeapAllocation0(?representation:symbol, ?heap:HeapAllocation)
 
@@ -245,4 +252,5 @@ DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
    isDynamicContext(?ctxFrom),
    isDynamicContext(?ctxTo),
    isMethod(?toMethod).
+
 

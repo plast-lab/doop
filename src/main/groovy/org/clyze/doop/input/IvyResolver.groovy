@@ -29,7 +29,7 @@ class IvyResolver implements InputResolver {
     }
 
     @Override
-    void resolve(String input, InputResolutionContext ctx) {
+    void resolve(String input, InputResolutionContext ctx, boolean isLib) {
         try {
             //Create temp ivy.xml file
             File ivyfile = File.createTempFile('ivy', '.xml')
@@ -55,12 +55,34 @@ class IvyResolver implements InputResolver {
                                             setArtifactFilter(FilterHelper.getArtifactTypeFilter(ARTIFACT_TYPES))
             ResolveReport report = ivy.resolve(ivyfile.toURI().toURL(), resolveOptions)
 
-            List<File> files = report.getAllArtifactsReports().collect { ArtifactDownloadReport rpt ->
+            /*
+             * The resolution of the input has side-effects, as it causes the addition of new library dependencies 
+             * to the existing context.
+             * TODO: Verify correctness in all cases of -i, -l variations.
+             */
+            File resolvedInput
+            List<File> resolvedInputDependencies = []
+
+            report.getAllArtifactsReports().eachWithIndex { ArtifactDownloadReport rpt, int index ->
                 //Don't copy the files, just return them
-                rpt.getLocalFile()
+                File f = rpt.getLocalFile()
+                if (index == 0) {                    
+                    resolvedInput = f
+                }
+                else {                                        
+                    resolvedInputDependencies.add(f)
+                }                
             }
 
-            ctx.set(input, files)
+            if (isLib) {
+                List<File> libs = [resolvedInput] + resolvedInputDependencies                
+                ctx.set(input, libs, true)
+            }
+            else {                
+                ctx.set(input, resolvedInput, false)
+                ctx.add(input, true) //add the same input as library dependency too
+                ctx.set(input, resolvedInputDependencies, true)
+            }
 
         } catch (e) {
             throw new RuntimeException("Not a valid Ivy input: $input", e)

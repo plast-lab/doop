@@ -1,3 +1,58 @@
+// If no reflection support has been set, then a few rules are enabled
+// to handle expressions 'X.class' and 'Class.forName("X")' (the first
+// is compiled to the latter behind the scenes). These rules are
+// usually effective when string constants are distinguished.
+#ifndef REFLECTION
+.decl ReifiedClass(?type:symbol, ?value:Value)
+
+// Taken from reflection/rules.dl.
+ReifiedClass(?type, ?classHeap) :-
+  isReferenceType(?type),
+  ClassHeap_InstanceType(?classHeap, ?type),
+  isValue(?classHeap).
+
+// Taken from reflection/declarations.dl.
+.decl java_lang_Class_forName(?invocation:MethodInvocation, ?inmethod:Method)
+
+// Taken from reflection/rules.dl.
+java_lang_Class_forName(?invocation, ?inmethod) :-
+  ( ?sig = "<java.lang.Class: java.lang.Class forName(java.lang.String)>",
+    isMethod(?sig) ;
+    ?sig = "<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>",
+    isMethod(?sig) ),
+  StaticMethodInvocation(?invocation, ?sig, ?inmethod).
+
+.decl ReflectiveAssignClassConstant(?ctx:Context, ?invocation:MethodInvocation, ?type:Type)
+
+// Similar to java.lang.Class.dl but simplified.
+ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
+  java_lang_Class_forName(?invocation, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  ActualParam(0, ?invocation, ?param),
+  VarPointsTo(_, ?string, ?ctx, ?param),
+  // The following three lines are taken from string-constants.dl.
+  isStringConstant(?string),
+  isReferenceType(?type),
+  ord(?type) = ord(?string).
+
+// Taken from reflection/rules.dl.
+/**
+ * Not every virtual method invocation has a return value, so we need
+ * to initialize classes separate from the VarPointsTo rule.
+ */
+InitializedClass(?type) :-
+  ReflectiveAssignClassConstant(_, _, ?type).
+
+// Taken from reflection/rules.dl.
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+  ImmutableHContextFromContext(?ctx, ?hctx),
+  ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
+  ReifiedClass(?type, ?value),
+  AssignReturnValue(?invocation, ?return).
+
+#endif // REFLECTION
+
+
 /* Models the dynamic proxies of Java.
 
    There are two ways to create a dynamic proxy instance_
@@ -40,7 +95,7 @@ ProxyClassOfInterface(?iface, ?class) :-
 
 java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, ?handler, ?interfaces) :-
    StaticMethodInvocation_SimpleName(?invo, "newProxyInstance"),
-   MethodInvocation_Method(?invo, "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"),
+   MethodInvocation_Method(?invo, NEW_PROXY_INSTANCE),
    ActualParam(1, ?invo, ?interfaces),
    ActualParam(2, ?invo, ?handler),
    AssignReturnValue(?invo, ?ret).
@@ -164,7 +219,7 @@ ProxyObject_Interface(?value, ?iface)
    ProxyClassInstance(?iface, ?invo, ?value).
 
 
-// And the clincher_ if a method gets invoked on a proxy object, simulate
+// And the clincher: if a method gets invoked on a proxy object, simulate
 // a call to the proxy object handler's "invoke" method, with the right
 // arguments passed in.
 .decl CallToMethodOfProxyObject(?value:Value, ?ctx:Context, ?invo:MethodInvocation)
@@ -175,6 +230,15 @@ CallToMethodOfProxyObject(?value, ?ctx, ?invo) :-
    VarPointsTo(_, ?value, ?ctx, ?base),
    ProxyObject_Invocation(?value, _).
 
+// Since dynamic proxies are subclasses of java.lang.reflect.Proxy, their
+// constructor calls super.<init>(handlerObj).
+ReachableContext(?calleeCtx, ?init),
+VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?h) :-
+   ImmutableContextFromHContext(?hctxHandler, ?calleeCtx),
+   ?init = "<java.lang.reflect.Proxy: void <init>(java.lang.reflect.InvocationHandler)>",
+   FormalParam(0, ?init, ?h),
+   ProxyObject_Handler(?handlerObj, ?proxy),
+   ProxyObject_HandlerHctx(?hctxHandler, ?proxy).
 
 //// REVIEW
 // #ifdef REFLECTION_CONTEXT_SENSITIVITY
@@ -195,6 +259,8 @@ VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this)
    MethodLookup(?invokeMethName, ?invokeMethDescriptor, ?handlerType, ?handlerInvokeMeth),
    ThisVar(?handlerInvokeMeth, ?this).
 
+#ifdef REFLECTION
+
 //// TODO From spec_ if method has same name/signature as Object's
 //// hashCode(), equals(), or toString(), then the reified Method
 //// always comes from Object.
@@ -206,7 +272,7 @@ VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg),
 ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) :-
    ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
    CallToMethodOfProxyObject(?proxyValue, ?callerCtx, ?invo),
-   FormalParam(0, ?handlerInvokeMeth,?proxyArg),
+   FormalParam(0, ?handlerInvokeMeth, ?proxyArg),
    FormalParam(1, ?handlerInvokeMeth, ?methArg),
    FormalParam(2, ?handlerInvokeMeth, ?argsArg),
    ImmutableHContextFromContext(?calleeCtx, ?hctx),
@@ -214,9 +280,6 @@ ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) :-
    ReifiedMethod(?methSig, ?methValue),
    ProxyObject_Invocation(?proxyValue, ?invocation),
    ArgArrayOfProxyMethod(?methSig, ?invocation, ?argsArrValue).
-
-ReachableContext(?calleeCtx, ?callee) :-
-   ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
 .decl ArgArrayAndActualArg(?argsArrValue:Value, ?methSig:Method, ?actual:Var)
 
@@ -240,6 +303,11 @@ ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx, ?arrValue) :-
    isImmutableHContext(?hctx).
 // REVIEW_ contexts.
 
+#endif // REFLECTION
+
+ReachableContext(?calleeCtx, ?callee) :-
+   ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
+
 // Handle return values_ connect the return value of handler.invoke()
 // to the return value of the wrapped method. The exceptions mandated
 // by the spec are handled elsewhere (in exceptions.logic); here only
@@ -253,3 +321,46 @@ ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
    ReturnVar(?handlerReturnVar, ?handlerInvokeMeth),
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?handlerReturnVar),
    AssignReturnValue(?invo, ?ret).
+
+#define DYNAMIC_PROXY_EXPORT
+#ifdef DYNAMIC_PROXY_EXPORT
+
+.output ProxyClassOfInterface
+.output ProxyClass
+.output java_lang_reflect_Proxy_newProxyInstance
+.output ArrayContentsPointToInterface
+.output java_lang_reflect_Proxy_getProxyClass
+.output ProxyClassInstance
+.output MethodOfInterface
+.output ArgArrayOfProxyMethod
+.output PrimitiveType_Boxed
+.output PrimitiveFormalOfInterface
+.output BoxAllocationOfPrimitiveFormal
+.output ProxyObject_Invocation
+.output ProxyObject_Handler
+.output ProxyObject_HandlerHctx
+.output ProxyObject_Interface
+.output CallToMethodOfProxyObject
+.output ProxyCallGraphEdge
+.output ProxyInvokeResult
+#ifdef REFLECTION
+.output ProxyCallArgArray
+.output ArgArrayAndActualArg
+#endif // REFLECTION
+
+.decl ReachableInvocationHandler(?meth:Method)
+.output ReachableInvocationHandler
+
+ReachableInvocationHandler(?m) :-
+  SubtypeOf(?customInvocationHandlerType, "java.lang.reflect.InvocationHandler"),
+  Method_DeclaringType(?m, ?customInvocationHandlerType),
+  Reachable(?m).
+
+.decl ProxiedMethod(?meth:Method)
+.output ProxiedMethod
+
+ProxiedMethod(?meth) :-
+  ProxyCallGraphEdge(_, ?i, _, _),
+  VirtualMethodInvocation(?i, ?meth, _).
+
+#endif // DYNAMIC_PROXY_EXPORT

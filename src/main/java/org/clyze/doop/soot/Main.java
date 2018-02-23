@@ -6,19 +6,13 @@ import org.clyze.doop.soot.android.AndroidSupport;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import org.clyze.utils.AARUtils;
 import org.objectweb.asm.ClassReader;
-import soot.PackManager;
-import soot.Scene;
-import soot.SootClass;
-import soot.SourceLocator;
+import soot.*;
 import soot.SourceLocator.FoundFile;
 import soot.options.Options;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -74,6 +68,10 @@ public class Main {
                         sootParameters._android = true;
                         sootParameters._androidJars = args[i];
                         break;
+                    case "-i":
+                        i = shift(args, i);
+                        sootParameters._inputs.add(args[i]);
+                        break;
                     case "-l":
                         i = shift(args, i);
                         sootParameters._libraries.add(args[i]);
@@ -95,7 +93,7 @@ public class Main {
                             System.err.println("Dependency folder " + folderName + " is not a directory");
                             throw new DoopErrorCodeException(0);
                         }
-                        for (File file : f.listFiles()) {
+                        for (File file : Objects.requireNonNull(f.listFiles())) {
                             if (file.isFile() && file.getName().endsWith(".jar")) {
                                 sootParameters._libraries.add(file.getCanonicalPath());
                             }
@@ -125,6 +123,14 @@ public class Main {
                         break;
                     case "--uniqueFacts":
                         sootParameters._uniqueFacts = true;
+                        break;
+                    case "--fact-gen-cores":
+                        i = shift(args, i);
+                        try {
+                            sootParameters._cores = new Integer(args[i]);
+                        } catch (NumberFormatException nfe) {
+                            System.out.println("Invalid cores argument: " + args[i]);
+                        }
                         break;
                     case "--R-out-dir":
                         i = shift(args, i);
@@ -169,8 +175,6 @@ public class Main {
                         if (args[i].charAt(0) == '-') {
                             System.err.println("error: unrecognized option: " + args[i]);
                             throw new DoopErrorCodeException(0);
-                        } else {
-                            sootParameters._inputs.add(args[i]);
                         }
                         break;
                 }
@@ -223,34 +227,35 @@ public class Main {
 
         PropertyProvider propertyProvider = new PropertyProvider();
         Set<SootClass> classes = new HashSet<>();
-        Set<String> classesInApplicationJar = new HashSet<>();
+        Set<String> classesInApplicationJars = new HashSet<>();
+        Map<String, Set<String>> classToArtifactMap = new HashMap<>();
 
-        String input0 = sootParameters._inputs.get(0);
         AndroidSupport android = null;
 
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
         if (sootParameters._android) {
+            if (sootParameters._inputs.size() > 1)
+                System.out.println("Warning -- Android mode -- Only " + sootParameters._inputs.get(0) + " will be considered as application file. The rest of the input files will be ignored");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
-            android = new AndroidSupport(rOutDir, input0, sootParameters, extraSensitiveControls);
-            android.processInputs(propertyProvider, classesInApplicationJar, sootParameters._androidJars, tmpDirs);
+            android = new AndroidSupport(rOutDir, sootParameters._inputs.get(0), sootParameters, extraSensitiveControls);
+            android.processInputs(propertyProvider, classesInApplicationJars, classToArtifactMap, sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
-            populateClassesInAppJar(input0, classesInApplicationJar, propertyProvider);
+            populateClassesInAppJar(sootParameters._inputs, sootParameters._libraries, classesInApplicationJars, classToArtifactMap, propertyProvider);
         }
 
         Scene scene = Scene.v();
         scene.setSootClassPath("");
         for (String input : sootParameters._inputs) {
-            if (input.endsWith(".jar")) {
-                System.out.println("Adding archive: " + input);
-            }
-            else {
-                System.out.println("Adding file: " + input);
-            }
+            String inputFormat = input.endsWith(".jar")? "archive" : "file";
+            System.out.println("Adding " + inputFormat + ": "  + input);
+
             scene.extendSootClassPath(input);
+            if (sootParameters._android)
+                break;
         }
 
         for (String lib : AARUtils.toJars(sootParameters._libraries, false, tmpDirs)) {
@@ -274,46 +279,24 @@ public class Main {
             if (android == null) {
                 System.err.println("Internal error when adding Android classes.");
             } else {
-                android.addClasses(classesInApplicationJar, classes, scene);
+                android.addClasses(classesInApplicationJars, classes, scene);
             }
         } else {
-            addClasses(classesInApplicationJar, classes, scene);
+            addClasses(classesInApplicationJars, classes, scene);
+            addBasicClasses(scene);
 
-            System.out.println("Classes in application jar: " + classesInApplicationJar.size());
-
-            /*
-             * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
-             * to 1 (HIERARCHY) before calling produceFacts(). The following line is necessary to avoid
-             * a runtime exception when running soot with java 1.8, however it leads to different
-             * input fact generation thus leading to different analysis results
-             */
-            scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
-            /*
-             * For simulating the FileSystem class, we need the implementation
-             * of the FileSystem, but the classes are not loaded automatically
-             * due to the indirection via native code.
-             */
-            addCommonDynamicClass(scene, "java.io.UnixFileSystem");
-            addCommonDynamicClass(scene, "java.io.WinNTFileSystem");
-            addCommonDynamicClass(scene, "java.io.Win32FileSystem");
-
-            /* java.net.URL loads handlers dynamically */
-            addCommonDynamicClass(scene, "sun.net.www.protocol.file.Handler");
-            addCommonDynamicClass(scene, "sun.net.www.protocol.ftp.Handler");
-            addCommonDynamicClass(scene, "sun.net.www.protocol.http.Handler");
-            addCommonDynamicClass(scene, "sun.net.www.protocol.https.Handler");
-            addCommonDynamicClass(scene, "sun.net.www.protocol.jar.Handler");
+            System.out.println("Classes in input (application) jar(s): " + classesInApplicationJars.size());
         }
 
         scene.loadNecessaryClasses();
 
         /*
-        * This part should definitely appear after the call to
-        * `Scene.loadNecessaryClasses()', since the latter may alter
-        * the set of application classes by explicitly specifying
-        * that some classes are library code (ignoring any previous
-        * call to `setApplicationClass()').
-        */
+         * This part should definitely appear after the call to
+         * `Scene.loadNecessaryClasses()', since the latter may alter
+         * the set of application classes by explicitly specifying
+         * that some classes are library code (ignoring any previous
+         * call to `setApplicationClass()').
+         */
 
         classes.stream().filter((klass) -> isApplicationClass(sootParameters, klass)).forEachOrdered(SootClass::setApplicationClass);
 
@@ -321,8 +304,8 @@ public class Main {
             classes = new HashSet<>(scene.getClasses());
         }
 
-        System.out.println("Total classes in Scene: " + classes.size());
         try {
+            System.out.println("Total classes in Scene: " + classes.size());
             PackManager.v().retrieveAllSceneClassesBodies();
             System.out.println("Retrieved all bodies");
         }
@@ -331,21 +314,10 @@ public class Main {
         }
         Database db = new Database(new File(sootParameters._outputDir), sootParameters._uniqueFacts);
         FactWriter writer = new FactWriter(db);
-        ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, sootParameters._generateJimple);
-        Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple);
+        ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
+        Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple, sootParameters._cores);
 
-        classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
-
-        // Read all stored properties files
-        for (Map.Entry<String, Properties> entry : propertyProvider.getProperties().entrySet()) {
-            String path = entry.getKey();
-            Properties properties = entry.getValue();
-
-            for (String propertyName : properties.stringPropertyNames()) {
-                String propertyValue = properties.getProperty(propertyName);
-                writer.writeProperty(path, propertyName, propertyValue);
-            }
-        }
+        writePreliminaryFacts(classes, propertyProvider, classToArtifactMap, writer);
 
         db.flush();
 
@@ -363,11 +335,22 @@ public class Main {
             }
         }
         if (!sootParameters._noFacts) {
-
             scene.getOrMakeFastHierarchy();
             // avoids a concurrent modification exception, since we may
             // later be asking soot to add phantom classes to the scene's hierarchy
             driver.doInParallel(classes);
+            if (sootParameters._generateJimple) {
+                Set<SootClass> jimpleClasses = new HashSet<>(classes);
+                List<String> allClassNames = new ArrayList<>();
+                for (String artifact : classToArtifactMap.keySet()) {
+//                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
+                        allClassNames.addAll(classToArtifactMap.get(artifact));
+                }
+                forceResolveClasses(allClassNames, jimpleClasses, scene);
+                System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
+                driver.writeInParallel(jimpleClasses);
+            }
+            driver.shutdown();
         }
 
         db.close();
@@ -376,62 +359,159 @@ public class Main {
         for (String tmpDir : tmpDirs) {
             FileUtils.deleteQuietly(new File(tmpDir));
         }
-
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {
-        if( SourceLocator.v().getClassSource(className) != null) {
+        if (SourceLocator.v().getClassSource(className) != null) {
             scene.addBasicClass(className);
         }
+    }
+
+    private static void populateClassToArtifactMap(Map<String, Set<String>> classToArtifactMap, String libraryFilename, String className) {
+        Set<String> artifactClasses;
+        if (!classToArtifactMap.containsKey(libraryFilename)) {
+            artifactClasses = new HashSet<>();
+            artifactClasses.add(className);
+            classToArtifactMap.put(libraryFilename, artifactClasses);
+        }
+        else {
+            artifactClasses = classToArtifactMap.get(libraryFilename);
+            artifactClasses.add(className);
+        }
+    }
+
+    public static void addClasses(Collection<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
+        for (String className : classesToLoad) {
+            SootClass c = scene.loadClass(className, SootClass.BODIES);
+            loadedClasses.add(c);
+        }
+    }
+
+    private static void forceResolveClasses(Collection<String> classesToResolve, Collection<SootClass> resolvedClasses, Scene scene) {
+        for (String className : classesToResolve) {
+            scene.forceResolve(className, SootClass.BODIES);
+            SootClass c = scene.loadClass(className, SootClass.BODIES);
+            resolvedClasses.add(c);
+        }
+    }
+
+    private static void addBasicClasses(Scene scene) {
+        /*
+         * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
+         * to 1 (HIERARCHY) before calling produceFacts(). The following line is necessary to avoid
+         * a runtime exception when running soot with java 1.8, however it leads to different
+         * input fact generation thus leading to different analysis results
+         */
+        scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", SootClass.HIERARCHY);
+        scene.addBasicClass("javax.crypto.extObjectInputStream");
+
+        /*
+         * For simulating the FileSystem class, we need the implementation
+         * of the FileSystem, but the classes are not loaded automatically
+         * due to the indirection via native code.
+         */
+        addCommonDynamicClass(scene, "java.io.UnixFileSystem");
+        addCommonDynamicClass(scene, "java.io.WinNTFileSystem");
+        addCommonDynamicClass(scene, "java.io.Win32FileSystem");
+
+        /* java.net.URL loads handlers dynamically */
+        addCommonDynamicClass(scene, "sun.net.www.protocol.file.Handler");
+        addCommonDynamicClass(scene, "sun.net.www.protocol.ftp.Handler");
+        addCommonDynamicClass(scene, "sun.net.www.protocol.http.Handler");
+        addCommonDynamicClass(scene, "sun.net.www.protocol.https.Handler");
+        addCommonDynamicClass(scene, "sun.net.www.protocol.jar.Handler");
+    }
+
+    private static void writePreliminaryFacts(Set<SootClass> classes, PropertyProvider propertyProvider, Map<String, Set<String>> classToArtifactMap, FactWriter writer) {
+        classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
+
+        // Read all stored properties files
+        for (Map.Entry<String, Properties> entry : propertyProvider.getProperties().entrySet()) {
+            String path = entry.getKey();
+            Properties properties = entry.getValue();
+
+            for (String propertyName : properties.stringPropertyNames()) {
+                String propertyValue = properties.getProperty(propertyName);
+                writer.writeProperty(path, propertyName, propertyValue);
+            }
+        }
+
+        System.out.println("Class-to-Artifact map size: " + classToArtifactMap.size());
+        for (String artifact : classToArtifactMap.keySet())
+            for (String className : classToArtifactMap.get(artifact))
+                writer.writeClassArtifact(artifact, className);
     }
 
     /**
      * Helper method to read classes and property files from JAR/AAR files.
      *
-     * @param jarFileName              the name of the JAR to read
-     * @param classesInApplicationJAR  the set to populate
+     * @param inputFilenames             the list of all input jar file names
+     * @param classesInApplicationJar  the set to populate
      * @param propertyProvider         the provider to use for .properties files
-     * @param androidMode              if set, process classes.jar in .aar files
      *
      * @return the name of the JAR file that was processed; this is
      * either the original first parameter, or the locally saved
      * classes.jar found in the .aar file (if such a file was given)
      *
      */
-    public static String populateClassesInAppJar(String jarFileName,
-                                                 Set<String> classesInApplicationJar,
-                                                 PropertyProvider propertyProvider) throws Exception {
-        JarEntry entry;
+    public static void populateClassesInAppJar(List<String> inputFilenames,
+                                               List<String> libraryFilenames,
+                                               Set<String> classesInApplicationJar,
+                                               Map<String, Set<String>> classToArtifactMap,
+                                               PropertyProvider propertyProvider) throws Exception {
 
-        System.out.println("Processing application JAR: " + jarFileName);
-        try (JarInputStream jin = new JarInputStream(new FileInputStream(jarFileName));
-             JarFile jarFile = new JarFile(jarFileName)) {
+        for (String inputFilename : inputFilenames) {
 
-            /* List all JAR entries */
-            while ((entry = jin.getNextJarEntry()) != null) {
-                /* Skip directories */
-                if (entry.isDirectory())
-                    continue;
+            JarEntry entry;
 
-                String entryName = entry.getName();
-                if (entryName.endsWith(".class")) {
-                    ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                    classesInApplicationJar.add(reader.getClassName().replace("/", "."));
-                } else if (entryName.endsWith(".properties")) {
-                    propertyProvider.addProperties((new FoundFile(jarFileName, entryName)));
-                } else {
-                    /* Skip non-class files and non-property files */
-                    continue;
+            try (JarInputStream jin = new JarInputStream(new FileInputStream(inputFilename));
+                 JarFile jarFile = new JarFile(inputFilename))
+            {
+                System.out.println("Processing application JAR: " + inputFilename);
+
+                /* List all JAR entries */
+                while ((entry = jin.getNextJarEntry()) != null) {
+                    /* Skip directories */
+                    if (entry.isDirectory())
+                        continue;
+
+                    String entryName = entry.getName();
+                    if (entryName.endsWith(".class")) {
+                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
+                        String className = reader.getClassName().replace("/", ".");
+                        classesInApplicationJar.add(className);
+                        populateClassToArtifactMap(classToArtifactMap, inputFilename.substring(inputFilename.lastIndexOf('/') + 1, inputFilename.length()), className);
+                    } else if (entryName.endsWith(".properties")) {
+                        propertyProvider.addProperties((new FoundFile(inputFilename, entryName)));
+                    } /* Skip non-class files and non-property files */
                 }
             }
-            return jarFileName;
         }
-    }
 
-    public static void addClasses(Set<String> classesInApplicationJar, Set<SootClass> classes, Scene scene) {
-        for (String className : classesInApplicationJar) {
-            SootClass c = scene.loadClass(className, SootClass.BODIES);
-            classes.add(c);
+        for (String libraryFilename : libraryFilenames) {
+            JarEntry entry;
+
+            try (JarInputStream jin = new JarInputStream(new FileInputStream(libraryFilename));
+                 JarFile jarFile = new JarFile(libraryFilename)) {
+
+                System.out.println("Processing library JAR: " + libraryFilename);
+
+                /* List all JAR entries */
+                while ((entry = jin.getNextJarEntry()) != null) {
+                    /* Skip directories */
+                    if (entry.isDirectory())
+                        continue;
+
+                    String entryName = entry.getName();
+                    if (entryName.endsWith(".class")) {
+                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
+                        String className = reader.getClassName().replace("/", ".");
+                        populateClassToArtifactMap(classToArtifactMap, libraryFilename.substring(libraryFilename.lastIndexOf('/') + 1, libraryFilename.length()), className);
+                    } else if (entryName.endsWith(".properties")) {
+                        propertyProvider.addProperties((new FoundFile(libraryFilename, entryName)));
+                    } /* Skip non-class files and non-property files */
+                }
+            }
         }
     }
 }

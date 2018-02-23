@@ -17,7 +17,9 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
     static final String LOGLEVEL         = 'Set the log level: debug, info or error (default: info).'
     static final String ANALYSIS         = 'The name of the analysis.'
-    static final String INPUTS           = 'The input files to analyze. Separate multiple files with a space. ' +
+    static final String INPUTS           = 'The input (application) files to analyze. Separate multiple files with a space. ' +
+                                           'If the argument is a directory, all its *.jar files will be included.'
+    static final String LIBRARIES        = 'The library files to use for dependency resolution. Separate multiple files with a space. ' +
                                            'If the argument is a directory, all its *.jar files will be included.'
     static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
                                            'option can be mixed with any other and is processed first.'
@@ -45,12 +47,12 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
             option.cli
         }
 
-        List<String> inputs = []
         //Get the inputFiles of the analysis (short option: i)
-        if (!options.X_START_AFTER_FACTS.value)
-            inputs = cli.is
+        //Get the libraryFiles of the analysis (short option: l)
+        List<String> inputs = (!options.X_START_AFTER_FACTS.value && cli.is) ? cli.is : []
+        List<String> libraries = (!options.X_START_AFTER_FACTS.value && cli.ls) ? cli.ls : []
 
-        return newAnalysis(FAMILY, id, name, options, inputs)
+        return newAnalysis(FAMILY, id, name, options, inputs, libraries)
     }
 
     /**
@@ -63,6 +65,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
         //Get the inputFiles of the analysis. If there are no inputFiles in the CLI, we get them from the properties.
         List<String> inputs
+        List<String> libraries
         if (!cli.is) {
             inputs = props.getProperty("inputFiles").split().collect { String s -> s.trim() }
             // The inputFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
@@ -80,13 +83,30 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         else
             inputs = cli.is
 
+        if (!cli.ls) {
+            libraries = props.getProperty("libraryFiles").split().collect { String s -> s.trim() }
+            // The inputFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
+            libraries = libraries.collect { String lib ->
+                try {
+                    // If it is not a valid URL an exception is thrown
+                    URL url = new URL(lib)
+                    return lib
+                }
+                catch (e) {}
+                File f = new File(lib)
+                return f.isAbsolute() ? lib : new File(propsBaseDir, lib).getCanonicalFile().getAbsolutePath()
+            }
+        }
+        else
+            libraries = cli.ls
+
         //Get the optional id of the analysis
         String id = cli.id ?: props.getProperty("id")
 
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithPropertiesAndCLI(props, cli) { AnalysisOption option ->
             option.cli
         }
-        return newAnalysis(FAMILY, id, name, options, inputs)
+        return newAnalysis(FAMILY, id, name, options, inputs, libraries)
     }
 
     /**
@@ -110,7 +130,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
         cli.with {
             h(longOpt: 'help', 'Display help and exit.')
-            l(longOpt: 'level', LOGLEVEL, args:1, argName: 'LOG_LEVEL')
+            L(longOpt: 'Level', LOGLEVEL, args:1, argName: 'LOG_LEVEL')
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
             t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'TIMEOUT')
             X(longOpt: 'X', 'Display information about non-standard options and exit.')
@@ -176,6 +196,12 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                     #$INPUTS
                     #
                     inputFiles =
+
+#
+                    #libraryFiles (file(s))
+                    #$LIBRARIES
+                    #
+                    libraryFiles =
 
                     #
                     #level (string)
@@ -257,7 +283,13 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                 o.setArgs(Option.UNLIMITED_VALUES)
                 o.setArgName(option.argName)
                 return o
-            } else if (option.id == "DYNAMIC") {
+            } else if (option.id == "LIBRARIES") {
+                Option o = new Option('l', option.name, true, option.description)
+                o.setArgs(Option.UNLIMITED_VALUES)
+                o.setArgName(option.argName)
+                return o
+            }
+            else if (option.id == "DYNAMIC") {
                 Option o = new Option('d', option.name, true, option.description)
                 o.setArgs(Option.UNLIMITED_VALUES)
                 o.setArgName(option.argName)

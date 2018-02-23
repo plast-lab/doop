@@ -207,6 +207,19 @@ NewMetricMacro(35.0, _t42, "reachable 'forName' (INS)", Stats:Simple:forName(_))
 NewMetricMacro(36.0, _t43, "reachable 'Class.newInstance' (INS)", Stats:Simple:Class:newInstance(_)).
 NewMetricMacro(37.0, _t44, "reachable 'Constructor.newInstance' (INS)", Stats:Simple:Constructor:newInstance(_)).
 
+// String coloring metrics
+#ifdef GROUP_REFLECTION_STRINGS
+// Number of colors
+NewMetricMacro(37.1, _t441, "string colors", StringRepresentativeForColor[_]=_).
+#endif
+ 
+ // reflection string constant var points-to
+Stats:Simple:Reflection:StringVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+   VarPointsTo(?hctx, ?value, ?ctx, ?var),
+   Value:Type[?value] = "java.lang.String".
+
+NewMetricMacro(37.2, _t442, "string var points-to", Stats:Simple:Reflection:StringVarPointsTo(_,_,_,_)).
+
 #endif
 
 /***************************************************/

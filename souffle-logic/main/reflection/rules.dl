@@ -156,6 +156,11 @@ java_lang_Class_getDeclaredConstructors(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>"),
   ReflectiveKnownArrayMacro(?invocation, ?arrayType, "java.lang.reflect.Constructor[]").
 
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat(cat(cat("<reflective ", ?invocation), "/new "), ?arrayType), ">")),
+java_lang_Class_getDeclaredConstructors(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors0(boolean)>"),
+  ReflectiveKnownArrayMacro(?invocation, ?arrayType, "java.lang.reflect.Constructor[]").
+
 java_lang_Class_getDeclaredConstructor(?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor getDeclaredConstructor(java.lang.Class[])>").
 
@@ -193,6 +198,13 @@ java_lang_Class_getClassLoader(?invocation, ?to, ?from) :-
   // Use a single dummy value for any ClassLoader
   ?type = "java.lang.ClassLoader",
   isReferenceType(?type).
+
+java_lang_Class_getPrimitiveClass(?invocation, ?to, ?name) :-
+  ?sig = "<java.lang.Class: java.lang.Class getPrimitiveClass(java.lang.String)>",
+  isMethod(?sig),
+  StaticMethodInvocation(?invocation, ?sig, _),
+  AssignReturnValue(?invocation, ?to),
+  ActualParam(0, ?invocation, ?name).
 
 CreateReflectiveAllocationMacro(?invocation, ?type, "<reflective dummy URL resource>"),
 java_lang_ClassLoader_getResource(?invocation, ?to, ?from) :-
@@ -258,7 +270,7 @@ java_lang_reflect_Method_invoke(?invocation, ?method) :-
 // abstraction for a given type.
 
 // Many of these already have a meta-object representing them in the input.
-// This appears explicitly in the program source, e.g., "Foo.Class".
+// This appears explicitly in the program source, e.g., "Foo.class".
 ReifiedClass(?type, ?classHeap) :-
   isReferenceType(?type),
   ClassHeap_InstanceType(?classHeap, ?type),
@@ -659,6 +671,16 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   Field_Type(?signature, ?fieldtype),
   SupertypeOf(?fieldtype, ?valuetype).
 #endif
+#if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
+StaticFieldPointsTo(?hctx, ?value, ?signature) :-
+  ReflectiveStoreStaticField(?signature, ?ctx, ?from),
+  TaintedVarPointsTo(?value, ?ctx, ?from),
+  Value_Type(?value, ?valuetype),
+  Field_Type(?signature, ?fieldtype),
+  SupertypeOf(?fieldtype, ?valuetype),
+  isImmutableHContext(?hctx).
+#endif
+
 /*************************************************************
  * Reflective load of an instance field
  *************************************************************/
@@ -711,6 +733,17 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   Field_Type(?signature, ?fieldtype),
   SupertypeOf(?fieldtype, ?valuetype).
 #endif
+#if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+  ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  TaintedVarPointsTo(?value, ?ctx, ?from),
+  !Value_Null(?basevalue),
+  Value_Type(?value, ?valuetype),
+  Field_Type(?signature, ?fieldtype),
+  SupertypeOf(?fieldtype, ?valuetype),
+  isImmutableHContext(?hctx).
+#endif
+ 
 /*************************************************************
  * END forward reflection logic
  *************************************************************/
@@ -753,9 +786,9 @@ ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
 // REVIEW (for the far future)_ no context sensitivity from just backwards inference.
 // Would require storing contexts with special objects.
 ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
+  BackwardHighConfidenceReflectiveAssignClassConstant(?invocation, ?type),
   Instruction_Method(?invocation, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  BackwardHighConfidenceReflectiveAssignClassConstant(?invocation, ?type).
+  ReachableContext(?ctx, ?inmethod).
 
 // Same for methods
 ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) :-
@@ -1536,8 +1569,3 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 /*************************************************************
  * END invention of objects
  *************************************************************/
-
-#ifdef REFLECTION_DYNAMIC_PROXIES
-#include "dynamic-proxies.dl"
-#endif
-

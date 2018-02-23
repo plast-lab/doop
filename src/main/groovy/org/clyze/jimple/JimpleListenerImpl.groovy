@@ -1,17 +1,25 @@
 package org.clyze.jimple
 
+import com.google.gson.GsonBuilder
+import groovy.transform.CompileStatic
+import org.antlr.v4.runtime.ANTLRFileStream
+import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ErrorNode
+import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
+import org.apache.commons.io.FileUtils
+import org.apache.commons.io.FilenameUtils
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.doop.*
 
 import static org.clyze.jimple.JimpleParser.*
 
+@CompileStatic
 class JimpleListenerImpl extends JimpleBaseListener {
 
 	String filename
-	List<Map> pending
+	List<Variable> pending
 	Map varTypes = [:]
 	Map heapCounters
 	Class klass
@@ -33,7 +41,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def startCol = id.symbol.charPositionInLine + 1
 		def qualifiedName = ctx.IDENTIFIER(0).text
 		def position = new Position(line, line, startCol, startCol + qualifiedName.length())
-		def (packageName, className) = Parser.getClassInfo(qualifiedName)
+		def packageName = getPackageName(qualifiedName)
+		def className = getClassName(qualifiedName)
 		inInterface = hasToken(ctx, "interface")
 
 		klass = new Class(
@@ -108,8 +117,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		method.outerPosition = new Position(line, endline, 0, 0)
 		metadata.methods << method
 
-		heapCounters = [:]
-		methodInvoCounters = [:]
+		heapCounters = [:].withDefault { 0 }
+		methodInvoCounters = [:].withDefault { 0 }
 
 		addTypeUsage(ctx.IDENTIFIER(0))
 		paramTypes.each { addTypeUsage it }
@@ -192,7 +201,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def line = typeId.symbol.line
 		def type = typeId.text
 		def lastToken = getLastToken(ctx)
-		int startCol, endCol
+		int startCol = 0, endCol = 0
 		TerminalNode newToken
 		boolean isArray = false
 
@@ -207,13 +216,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		} else if ((newToken = findToken(ctx, "newmultiarray"))) {
 			def lastIsEmpty = lastToken.text == "[]"
 			def dimensions = ctx.value().size() + (lastIsEmpty ? 1 : 0)
-			type = type + (1..dimensions).collect { "[]" }.join()
+			type = type + (1..dimensions).collect { "[]" }.join("")
 			startCol = newToken.symbol.charPositionInLine + 1
 			endCol = lastToken.symbol.charPositionInLine + (lastIsEmpty ? 3 : 2)
 			isArray = true
 		}
 
-		def c = heapCounters[type] ?: 0
+		def c = heapCounters[type] as int
 		heapCounters[type] = c + 1
 
 		metadata.heapAllocations << new HeapAllocation(
@@ -227,11 +236,14 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	void exitInvokeStmt(InvokeStmtContext ctx) {
-		if (hasToken(ctx, "=")) {
-			addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
-			addVarUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
-		} else
-			addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_READ)
+		if (ctx.IDENTIFIER(0)) {
+			if (hasToken(ctx, "=")) {
+				addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+				if (ctx.IDENTIFIER(1))
+					addVarUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
+			} else
+				addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_READ)
+		}
 
 		def methodClassId = ctx.methodSig().IDENTIFIER(0)
 		def methodClass = methodClassId.text
@@ -241,12 +253,12 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def startCol = methodClassId.symbol.charPositionInLine
 		def endCol = getLastToken(ctx.methodSig()).symbol.charPositionInLine + 2
 
-		String gDoopId
+		String gDoopId = null
 		if (ctx.dynamicMethodSig())
 			gDoopId = dynamicInvokeMiddlePart(ctx)
 
 		if (!gDoopId) {
-			def c = methodInvoCounters["$methodClass|$methodName"] ?: 0
+			def c = methodInvoCounters["$methodClass|$methodName"] as int
 			methodInvoCounters["$methodClass|$methodName"] = c + 1
 			gDoopId = "${method.doopId}/${methodClass}.$methodName/$c"
 		}
@@ -266,24 +278,24 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	String dynamicInvokeMiddlePart(InvokeStmtContext ctx) {
 		def bootName = "${ctx.methodSig().IDENTIFIER(0).text}.${ctx.methodSig().IDENTIFIER(2).text}"
 
-		def bootArgs = values[ctx.bootValueList().valueList()]
+		def bootArgs = values[ctx.bootValueList().valueList()] as List
 		if (!bootArgs)
 			println("Warning: invokedynamic with null bootArgs in $filename")
 		else if (bootArgs.size() > 1) {
-			def v = bootArgs[1].methodSig()
+			def v = (bootArgs[1] as ValueContext).methodSig()
 			if (v) {
 				def declClass = v.IDENTIFIER(0).text
 				def mName = v.IDENTIFIER(2).text
 				def invoId = DynamicMethodInvocation.genId(declClass, mName)
 				if (bootName == "java.lang.invoke.LambdaMetafactory.metafactory" ||
 					bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
-					def c = methodInvoCounters[invoId] ?: 0
+					def c = methodInvoCounters[invoId] as int
 					methodInvoCounters[invoId] = c + 1
 					return "${method.doopId}/${invoId}/$c"
 				} else
 					println("Warning: unsupported invokedynamic, unknown boot method: $bootName in $filename")
 			} else
-				println("Warning: unsupported invokedynamic, unknown boot argument 2: ${bootArgs[1].text} in $filename")
+				println("Warning: unsupported invokedynamic, unknown boot argument 2: $bootArgs in $filename")
 		} else
 			println("Warning: unsupported invokedynamic, unknown boot arguments of arity ${bootArgs.size()} in $filename")
 		return null
@@ -296,7 +308,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	void exitValueList(ValueListContext ctx) {
-		values[ctx] = ((values[ctx.valueList()] ?: []) << ctx.value())
+		def list = (values[ctx.valueList()] ?: []) as List
+		values[ctx] = (list << ctx.value())
 
 		if (ctx.value().IDENTIFIER())
 			addVarUsage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
@@ -331,7 +344,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		)
 
 		if (varTypes[v.doopId])
-			v.type = varTypes[v.doopId]
+			v.setType(varTypes[v.doopId] as String)
 		else
 			pending.push(v)
 		return v
@@ -359,7 +372,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def startCol = ctx.IDENTIFIER(0).symbol.charPositionInLine
 		def endCol = getLastToken(ctx).symbol.charPositionInLine + 1
 
-		def u = new Usage(
+		new Usage(
 				new Position(line, line, startCol, endCol),
 				filename,
 				"<$klassStr: $type $name>", //doopId
@@ -389,22 +402,82 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		return gatherIdentifiers(ctx.identifierList()) + [ctx.IDENTIFIER()]
 	}
 
-	TerminalNode findToken(ParserRuleContext ctx, String token) {
+	static TerminalNode findToken(ParserRuleContext ctx, String token) {
 		for (def i = 0; i < ctx.getChildCount(); i++)
 			if (ctx.getChild(i) instanceof TerminalNode && (ctx.getChild(i) as TerminalNode).text == token)
 				return ctx.getChild(i) as TerminalNode
 		return null
 	}
 
-	boolean hasToken(ParserRuleContext ctx, String token) {
-		findToken(ctx, token) != null
-	}
+	static boolean hasToken(ParserRuleContext ctx, String token) { findToken(ctx, token) != null }
 
-	TerminalNode getLastToken(ParserRuleContext ctx) {
-		TerminalNode last
+	static TerminalNode getLastToken(ParserRuleContext ctx) {
+		TerminalNode last = null
 		for (def i = 0; i < ctx.getChildCount(); i++)
 			if (ctx.getChild(i) instanceof TerminalNode)
-				last = ctx.getChild(i)
+				last = ctx.getChild(i) as TerminalNode
 		return last
+	}
+
+	static String getPackageName(String qualifiedName) {
+		def i = qualifiedName.lastIndexOf(".")
+		i >= 0 ? qualifiedName[0..(i - 1)] : ''
+	}
+
+	static String getClassName(String qualifiedName) {
+		def i = qualifiedName.lastIndexOf(".")
+		i >= 0 ? qualifiedName[(i + 1)..-1] : qualifiedName
+	}
+
+	static String parseJimple2JSON(String filename, String outPath) {
+		def metadata = parseJimple(filename, outPath)
+
+		def json = [:]
+		//json.put("Class", metadata.classes)
+		//json.put("Field", metadata.fields)
+		//json.put("Method", metadata.methods)
+		//json.put("Variable", metadata.variables)
+		//json.put("MethodInvocation", metadata.invocations)
+		//json.put("HeapAllocation", metadata.heapAllocations)
+		//json.put("Usage", metadata.usages)
+		new GsonBuilder().disableHtmlEscaping().create().toJson(json)
+	}
+
+	static BasicMetadata parseJimple(String filename, String outPath) {
+		// XYZ/abc.def.Foo.jimple
+		def origFile = new File(filename)
+		// XYZ
+		def dir
+		if (outPath == null) {
+			dir = (origFile.parentFile as String) ?: "."
+		} else {
+			dir = outPath
+		}
+		def extension = FilenameUtils.getExtension(FilenameUtils.getName(filename))
+		// abc.def.Foo
+		def qualifiedName = FilenameUtils.removeExtension(FilenameUtils.getName(filename))
+		def packageName = getPackageName(qualifiedName)
+		def className = getClassName(qualifiedName)
+
+		// abc/def
+		packageName = packageName.replaceAll("\\.", "/")
+		// XYZ/abc/def
+		def path = new File(dir, packageName)
+		path.mkdirs()
+		// XYZ/abc/def/Foo.jimple
+		def sourceFile = new File(path, "${className}.$extension")
+		if (origFile.canonicalPath != sourceFile.canonicalPath)
+			FileUtils.copyFile(origFile, sourceFile)
+		// abc/def/Foo.jimple
+		def sourceFileName = "${packageName}/${className}.${extension}" as String
+
+		def parser = new JimpleParser(
+				new CommonTokenStream(
+						new JimpleLexer(
+								new ANTLRFileStream(sourceFile as String))))
+		def listener = new JimpleListenerImpl(sourceFileName)
+		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
+
+		return listener.metadata
 	}
 }

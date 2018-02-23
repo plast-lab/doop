@@ -13,8 +13,8 @@ class FileResolver implements InputResolver {
     }
 
     @Override
-    void resolve(String input, InputResolutionContext ctx) {
+    void resolve(String input, InputResolutionContext ctx, boolean isLib) {
         def file = FileOps.findFileOrThrow(input, "Not a file input: $input")
-        ctx.set(input, file)
+        ctx.set(input, file, isLib)
     }
 }

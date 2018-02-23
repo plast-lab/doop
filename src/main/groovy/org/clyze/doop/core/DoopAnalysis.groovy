@@ -72,7 +72,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     /**
      * Interface with the underlying workspace
      */
-	LBBuilder lbBuilder
+    LBBuilder lbBuilder
 
     /**
      * Total time for the soot invocation
@@ -95,16 +95,23 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                            File outDir,
                            File cacheDir,
                            List<File> inputFiles,
+                           List<File> libraryFiles,
                            List<File> platformLibs,
                            Map<String, String> commandsEnvironment) {
-        super(DoopAnalysisFamily.instance, id, name, options, outDir, inputFiles)
+        super(DoopAnalysisFamily.instance, id, name, options, outDir, inputFiles, libraryFiles)
         this.ctx = ctx
         this.cacheDir = cacheDir
         this.platformLibs = platformLibs
 
         logger      = LogFactory.getLog(getClass())
 
-        factsDir    = new File(outDir, "facts")
+        if (options.X_STOP_AT_FACTS.value) {
+            factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
+        }
+        else {
+            factsDir = new File(outDir, "facts")
+
+        }
         database    = new File(outDir, "database")
         averroesDir = new File(outDir, "averroes")
 
@@ -130,7 +137,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             FileOps.copyDirContents(cacheDir, factsDir)
         }
         else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
-            logger.info "Using user-provided facts from $factsDir"
+            String importedFactsDir = options.X_START_AFTER_FACTS.value
+            logger.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
             FileOps.copyDirContents(cacheDir, factsDir)
         }
         else {
@@ -148,23 +156,31 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
             touch(new File(factsDir, "ApplicationClass.facts"))
             touch(new File(factsDir, "Properties.facts"))
-
-            def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
-            def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+            touch(new File(factsDir, "Dacapo.facts"))
+            touch(new File(factsDir, "MainClass.facts"))
 
             if (options.DACAPO.value) {
+                def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+                def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
             }
             else if (options.DACAPO_BACH.value) {
+                def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+                def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+                
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
             }
-            else {
-                touch(new File(factsDir, "Dacapo.facts"))
+            if (options.MAIN_CLASS.value) {
+                new File(factsDir, "MainClass.facts").withWriter { w ->
+                    w << "${options.MAIN_CLASS.value}"
+                }
             }
+
             if (options.TAMIFLEX.value) {
                 File origTamFile = new File(options.TAMIFLEX.value.toString())
 
@@ -208,13 +224,15 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         assert platform == "android" || platform == "java"
 
+        def inputArgs = inputFiles.collect(){File f -> ["-i", f.toString()]}.flatten() as Collection<String>
+
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
             inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            def deps = inputFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+            def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
             depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
 
@@ -222,14 +240,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         switch(platform) {
             case "java":
-                params = ["--full"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+                params = ["--full"] + inputArgs + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
                 break
             case "android":
                 // This uses all platformLibs.
                 // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
                 // This uses just platformLibs[0], assumed to be android.jar.
-                params = ["--full"] + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
-        break
+                params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+                break
             default:
                 throw new RuntimeException("Unsupported platform")
         }
@@ -262,6 +280,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--uniqueFacts"]
         }
 
+        if (options.FACTGEN_CORES.value) {
+            params += ["--fact-gen-cores", options.FACTGEN_CORES.value.toString()]
+        }
+
         if (options.X_R_OUT_DIR.value) {
             params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
         }
@@ -270,7 +292,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
-        params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
+        params = params + ["-d", factsDir.toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -437,7 +459,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     protected void runHeapDL(String filename) {
         try {
-            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.HEAPDL.value ? true : false)
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.HEAPDL_NOSTRINGS.value ? false : true)
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
             logger.info("Generated " + n + " addditional facts from memory dump")
         } catch (Exception e) {

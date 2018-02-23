@@ -67,4 +67,19 @@ ImplicitReachable(?m) :-
 ImplicitReachable("<java.lang.ref.Finalizer: void runFinalizer()>").
 */
 
-#endif
+// Make test entry points implicitly reachable by discovering their
+// annotations. This can also discover the entry points of
+// XCorpus.
+#ifdef DISCOVER_TESTS
+
+#include "../addons/testing/test-discovery.dl"
+
+ImplicitReachable(?m) :- TestNGAnnotatedMethod(?m).
+ImplicitReachable(?m) :- JUnitAnnotatedMethod(?m).
+ImplicitReachable(?m) :- JUnitGenerator(?m).
+ImplicitReachable(?m) :- JUnitTestCaseMethod(?m).
+ImplicitReachable(?m) :- EvoSuiteEntryPoint(?m).
+
+#endif // DISCOVER_TESTS
+
+#endif // EXCLUDE_IMPLICITLY_REACHABLE_CODE

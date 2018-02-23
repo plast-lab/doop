@@ -19,6 +19,7 @@ public enum PredicateFile
     LAYOUT_CONTROL("LayoutControl"),
     SENSITIVE_LAYOUT_CONTROL("SensitiveLayoutControl"),
     FIELD_INITIAL_VALUE("FieldInitialValue"),
+    CLASS_ANNOTATION("Class-Annotation"),
     CLASS_TYPE("ClassType"),
     CLASS_MODIFIER("ClassModifier"),
     ARRAY_TYPE("ArrayType"),
@@ -28,8 +29,10 @@ public enum PredicateFile
     BOOTSTRAP_PARAMETER("BootstrapParam"),
     DIRECT_SUPER_IFACE("DirectSuperinterface"),
     DIRECT_SUPER_CLASS("DirectSuperclass"),
+    FIELD_ANNOTATION("Field-Annotation"),
     FIELD_MODIFIER("Field-Modifier"),
     FORMAL_PARAM("FormalParam"),
+    PARAM_ANNOTATION("Param-Annotation"),
     METHOD_DECL_EXCEPTION("Method-DeclaresException"),
     METHOD_MODIFIER("Method-Modifier"),
     NATIVE_RETURN_VAR("NativeReturnVar"),
@@ -92,7 +95,8 @@ public enum PredicateFile
     ASSIGN_PHANTOM_INVOKE("AssignPhantomInvoke"),
     PHANTOM_INVOKE("PhantomInvoke"),
     BREAKPOINT_STMT("BreakpointStmt"),
-    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction");
+    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
+    CLASS_ARTIFACT("Class-Artifact");
 
     private final String name;
 

@@ -32,7 +32,9 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
     Method_DeclaringType(?method, ?type),
     ! Method_Modifier("abstract", ?method).
 
-// Relations used to find overridden methods with covariant return types.
+#ifndef FEATHERWEIGHT_ANALYSIS
+
+// Logic that finds overridden methods with covariant return types.
 .decl MethodOverridesOther(?meth1:Method, ?meth2:Method)
 .decl MethodDoesntOverrideOther(?meth1:Method, ?meth2:Method)
 .decl MethodMightOverrideOther(?meth1:Method, ?meth2:Method)
@@ -41,9 +43,13 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
 MethodMightOverrideOther(?meth1, ?meth2) :-
    Method_SimpleName(?meth1, ?sameName),
    Method_SimpleName(?meth2, ?sameName),
+   ?sameName != "<clinit>",
+   ?sameName != "<init>",
+   !Type_void(?type1),
+   !Type_void(?type2),
    Method_DeclaringType(?meth1, ?type1),
    Method_DeclaringType(?meth2, ?type2),
-   SubtypeOf(?type1, ?type2).
+   SubtypeOfDifferent(?type1, ?type2).
 
 // Limited to methods that have the same name, in subtypes. Method
 // ?meth1 *could* override ?meth2, but has different arg types.
@@ -83,13 +89,15 @@ MethodImplemented(?name, ?descriptor, ?type, ?comethod) :-
     SubtypeOf(?type2, ?type1),
     Method_Descriptor(?method, ?descriptor).
 
+#endif // FEATHERWEIGHT_ANALYSIS
+
 ResolveInvocation(?type, ?invocation, ?tomethod) :-
     VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
     VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
     VirtualMethodInvocation_Base(?invocation, ?base),
     Var_Type(?base, ?basetype),
-    SubtypeOf(?type, ?basetype),
-    MethodLookup(?simplename, ?descriptor, ?type, ?tomethod).
+    MethodLookup(?simplename, ?descriptor, ?type, ?tomethod),
+    SubtypeOf(?type, ?basetype).
 
 OverridableMethod(?type, ?method) :-
     MethodLookup(_, _, ?type, ?method),

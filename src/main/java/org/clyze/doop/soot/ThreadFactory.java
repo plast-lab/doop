@@ -8,16 +8,18 @@ public class ThreadFactory {
     FactWriter _factWriter;
 
     private boolean _ssa;
-    private boolean _generateJimple;
 
-    ThreadFactory(FactWriter factWriter, boolean ssa, boolean generateJimple) {
+    ThreadFactory(FactWriter factWriter, boolean ssa) {
         _factWriter = factWriter;
         _ssa = ssa;
-        _generateJimple = generateJimple;
     }
 
-    Runnable newRunnable(Set<SootClass> sootClasses) {
-        return new FactGenerator(_factWriter, _ssa, sootClasses, _generateJimple);
+    Runnable newFactGenRunnable(Set<SootClass> sootClasses) {
+        return new FactGenerator(_factWriter, _ssa, sootClasses);
+    }
+
+    Runnable newJimpleGenRunnable(Set<SootClass> sootClasses) {
+        return new JimpleGenerator(sootClasses);
     }
 
     public FactWriter get_factWriter() {

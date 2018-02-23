@@ -13,13 +13,13 @@ class DirectoryResolver implements InputResolver {
     }
 
     @Override
-    void resolve(String input, InputResolutionContext ctx) {
+    void resolve(String input, InputResolutionContext ctx, boolean isLib) {
         def dir = FileOps.findDirOrThrow(input, "Not a directory input: $input")
         def filter = FileOps.extensionFilter("jar")
 
         List<File> filesInDir = []
         dir.listFiles(filter).each { File file -> filesInDir.add(file) }
 
-        ctx.set(input, filesInDir.sort{ it.toString() });
+        ctx.set(input, filesInDir.sort{ it.toString() }, isLib)
     }
 }

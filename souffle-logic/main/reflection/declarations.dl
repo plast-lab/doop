@@ -47,6 +47,8 @@
 
 .decl java_lang_Class_getDeclaredField(?to:Var, ?param:Var, ?from:Var)
 
+.decl java_lang_Class_getPrimitiveClass(?invocation:MethodInvocation, ?to:Var, ?name:Var)
+
 .decl java_lang_Class_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)
 
 .decl java_lang_reflect_Array_newInstance(?invocation:MethodInvocation, ?to:Var, ?param:Var)

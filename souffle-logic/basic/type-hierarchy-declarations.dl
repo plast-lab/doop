@@ -5,3 +5,5 @@
 .decl Unsubclassable(?type:Type)
 
 .decl Subclassable(?type:Type)
+
+.decl SubtypeOfDifferent(?subtype:Type, ?type:Type)

@@ -1,0 +1,9 @@
+// This macro enables the output of statistics unless server mode is
+// enabled (output is then controlled by export.dl).
+#ifdef X_SERVER_LOGIC
+#define OUTPUT_STATS(x)
+#else
+// An output statement like ".output A" is just a shorthand for
+// ".output AB(IO="file",filename="A.csv",delimiter="\t")".
+#define OUTPUT_STATS(x) .output x
+#endif // X_SERVER_LOGIC

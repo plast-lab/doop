@@ -18,16 +18,14 @@ class FactGenerator implements Runnable {
 
     private FactWriter _writer;
     private boolean _ssa;
-    private boolean _generateJimple;
     private Set<SootClass> _sootClasses;
     private final int maxRetries = 10;
 
-    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses, boolean generateJimple)
+    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses)
     {
         this._writer = writer;
         this._ssa = ssa;
         this._sootClasses = sootClasses;
-        this._generateJimple = generateJimple;
     }
 
     @Override
@@ -72,7 +70,7 @@ class FactGenerator implements Runnable {
                             // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
                             //     Thread key = i.next();
                             //     System.err.println("Thread " + key.getName());
-                            //     StackTraceElement[] trace = liveThreads.get(key);
+                            //     StackTraceElement[] trace = liveThreads.getLibrary(key);
                             //     for (int j = 0; j < trace.length; j++) {
                             //         System.err.println("\tat " + trace[j]);
                             //     }
@@ -80,13 +78,6 @@ class FactGenerator implements Runnable {
 
                             System.err.println("Error while processing method: " + m);
                             throw exc;
-                        }
-                    }
-
-                    if (_generateJimple) {
-                        PackManager.v().writeClass(_sootClass);
-                        for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
-                            m.releaseActiveBody();
                         }
                     }
                 } catch (Exception exc) {
@@ -152,19 +143,29 @@ class FactGenerator implements Runnable {
     public static boolean phantomBased(SootMethod m) {
         /* Check for phantom classes */
 
-        if (m.isPhantom())
+        if (m.isPhantom()) {
+            System.out.println("Method " + m.getSignature() + " is phantom.");
             return true;
+        }
 
         for(SootClass clazz: m.getExceptions())
-            if (clazz.isPhantom())
+            if (clazz.isPhantom()) {
+                System.out.println("Class " + clazz.getName() + " is phantom.");
                 return true;
+            }
 
         for(int i = 0 ; i < m.getParameterCount(); i++)
-            if(phantomBased(m.getParameterType(i)))
+            if(phantomBased(m.getParameterType(i))) {
+                System.out.println("Parameter type " + m.getParameterType(i) + " of " + m.getSignature() + " is phantom.");
                 return true;
+            }
 
-        return phantomBased(m.getReturnType());
+        if (phantomBased(m.getReturnType())) {
+            System.out.println("Return type " + m.getReturnType() + " of " + m.getSignature() + " is phantom.");
+            return true;
+        }
 
+        return false;
     }
 
     void generate(SootMethod m, Session session)
@@ -237,16 +238,18 @@ class FactGenerator implements Runnable {
             }
 
             Body b = m.getActiveBody();
-            if (b != null) {
-                if (_ssa) {
-                    b = Shimple.v().newBody(b);
-                    m.setActiveBody(b);
+            try {
+                if (b != null) {
+                    if (_ssa) {
+                        b = Shimple.v().newBody(b);
+                        m.setActiveBody(b);
+                    }
+                    DoopRenamer.transform(b);
+                    generate(m, b, session);
                 }
-                DoopRenamer.transform(b);
-                generate(m, b, session);
-                if (!_generateJimple) {
-                    m.releaseActiveBody();
-                }
+            } catch (RuntimeException ex) {
+                System.err.println("Fact generation failed for method " + m.getSignature() + ":");
+                ex.printStackTrace();
             }
         }
     }

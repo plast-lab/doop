@@ -5,25 +5,20 @@
  * every allocation is distinguished or a context-sensitive heap
  * abstraction is used. In many cases, this precision is not actually
  * useful for a points-to analysis, so handling them in a less precise
- * way is beneficial.
+ * way is beneficial. This handling started from string constants and
+ * is now expanded to cover (in many diverse ways) merging of all
+ * library objects, exception objects, string buffers and builders,
+ * and more.
  *************************************************************/
-
-/**
- * Join with AssignHeapAllocation for performance.
- */
-.decl HeapAllocation_Special(?heap:HeapAllocation)
-
-HeapAllocation_Special(?heap) :-
-  HeapAllocation_ContextInsensitive(?heap).
-
-HeapAllocation_Special(?heap) :-
-  HeapAllocation_Merge(?heap, _).
-
 
 /**
  * Objects that should use a context-insensitive heap abstraction.
  */
 .decl HeapAllocation_ContextInsensitive(?heap:HeapAllocation)
+
+// Merged objects are currently always context-insensitive 
+HeapAllocation_ContextInsensitive(?heap) :-
+  HeapAllocation_Merge(?heap, _).
 
 /**
  * Objects that should be merged to some heap abstraction
@@ -43,7 +38,7 @@ HeapAllocation_Special(?heap) :-
  */
 AssignNormalHeapAllocation(?heap, ?var, ?inmethod) :-
   AssignHeapAllocation(?heap, ?var, ?inmethod),
-  !HeapAllocation_Special(?heap).
+  !HeapAllocation_ContextInsensitive(?heap).
 
 AssignContextInsensitiveHeapAllocation(?mergeHeap, ?var, ?inmethod) :-
   AssignHeapAllocation(?heap, ?var, ?inmethod),
@@ -77,7 +72,6 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
   ?heapRepr = "<<string-constant>>",
   HeapRepresentative(?heapRepr, ?heap).
 
-
 .decl HeapIsMergedStringFactory(?heap:HeapAllocation)
 
 HeapIsMergedStringFactory(?heap) :-
@@ -109,16 +103,13 @@ HeapAllocation_Merge(?heap, ?mergeHeap) :-
   ord(?mergeHeap) = ?minHeapReprOrd,
   MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap).
 #endif
+
 /*************************************************************
  * String constants
  *************************************************************/
-
-.decl ReflectionStringConstant(?heap:HeapAllocation)
-.decl ReflectionSubstringObject(?heap:HeapAllocation)
-
+ 
 #ifndef DISTINGUISH_ALL_STRING_CONSTANTS
 #ifndef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
-#define DISTINGUISH_NO_STRING_CONSTANTS
 #ifndef NO_MERGES
 HeapRepresentative(?constant, ?heap) :-
   isStringConstant(?heap),
@@ -127,17 +118,22 @@ HeapRepresentative(?constant, ?heap) :-
   !HeapAllocation_Keep(?heap).
 #endif
 #endif
-#endif // DISTINGUISH_NO_STRING_CONSTANTS mode
+#endif // distinguish-no-string-constants mode
+
+.decl ReflectionStringConstant(?heap:HeapAllocation)
+.decl ReflectionSubstringObject(?heap:HeapAllocation)
 
 #ifdef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
 .output ReflectionStringConstant
 
+// This includes substrings, i.e., both exact and inexact matches!
 ReflectionStringConstant(?heap) :-
   PreClassNameMatchingStringConstant(?heap);
   PreMethodNameMatchingStringConstant(?heap);
   PreFieldNameMatchingStringConstant(?heap).
 
+// This is only for incomplete (i.e., substring) matches
 ReflectionSubstringObject(?heap) :-
   PreClassNameMatchingStringConstantInexact_Type(_,?heap);
   PreMethodNameMatchingStringConstantInexact_Signature(_,?heap);
@@ -149,6 +145,7 @@ HeapRepresentative("<<string-constant>>", ?heap) :-
   !ReflectionStringConstant(?heap),
   !HeapAllocation_Keep(?heap).
 #endif
+
 #ifdef GROUP_REFLECTION_STRINGS
 
 // ///// Naive Merging strategy: all strings that map to same reflection object
@@ -284,7 +281,6 @@ HeapRepresentative(?mergeHeap, ?heap) :-
 // original string re: reflection. This may introduce some imprecision
 // (depending on the merging strategy), but it's expected to be small,
 // compared to the cost of tracking full strings all over the code.
-
 ClassNameMatchingStringConstant_Type(?type, ?heapRepr) :-
   HeapAllocation_Merge(?heap, ?heapRepr),
   PreClassNameMatchingStringConstant_Type(?type, ?heap).
@@ -339,13 +335,17 @@ PreClassNameMatchingStringConstant_Type(?type, ?string),
 PreClassNameMatchingStringConstantExact_Type(?type, ?string) :-
   isStringConstant(?string),
   isReferenceType(?type),
-  ord(?type) = ord(?string),
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
   ApplicationClass(?type),
      // library classes are known and in known packages. Makes no sense
      // to access them via .getClass
 #endif
-  NonTrivialStringConstant(?string).
+  // #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+  // #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
+  //   NonTrivialStringConstant(?string),
+  // #endif
+  // #endif
+  ord(?type) = ord(?string).
 
 .decl PreMethodNameMatchingStringConstant(?heap:HeapAllocation)
 .decl PreMethodNameMatchingStringConstant_Signature(?sig:Method, ?heap:HeapAllocation)
@@ -377,11 +377,11 @@ PreFieldNameMatchingStringConstantExact_Signature(?sig, ?string) :-
   isStringConstant(?string),
   // Field_DeclaringType(?sig, ?declaringClass),
   // ApplicationClass(?declaringClass);
-#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
-#ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
-  NonTrivialStringConstant(?string),
-#endif
-#endif
+  // #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+  // #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
+  //   NonTrivialStringConstant(?string),
+  // #endif
+  // #endif
   Field_SimpleName(?sig, ?string).
 
 #ifdef REFLECTION_SUBSTRING_ANALYSIS
@@ -391,11 +391,10 @@ PreClassNameMatchingStringConstant(?string),
 PreClassNameMatchingStringConstant_Type(?type, ?string),
 PreClassNameMatchingStringConstantInexact_Type(?type, ?string) :-
   isHeapAllocation(?string),
-  ClassNameSuffix(?string, ?type),
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
   ApplicationClass(?type),
 #endif
-  NonTrivialStringConstant(?string).
+  ClassNameSuffix(?string, ?type).
 
 PreMethodNameMatchingStringConstant(?string),
 PreMethodNameMatchingStringConstant_Signature(?sig, ?string),

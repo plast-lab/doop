@@ -11,6 +11,9 @@ HeapRepresentative(?heapRepr, ?heap) ->
     HeapAllocation(?heapRepr),
     HeapAllocation(?heap).
 
+NonMergedReflectiveStringConstant(?heap) ->
+    HeapAllocation(?heap).
+
 /**
  * Objects that should not be allocated as normal.
  */
@@ -39,6 +42,8 @@ HeapAllocation:Merge[?heap] = ?mergeHeap ->
 // The ones that absolutely have to be kept distinct
 HeapAllocation:Keep(?heap) -> HeapAllocation(?heap).
 
+HeapAllocation:ContextInsensitive(?heap) <-
+   NonMergedReflectiveStringConstant(?heap).
 /**
  * This is the handling for objects that are explicitly allocated in
  * the program text. There will also be other objects: pseudo objects
@@ -179,12 +184,15 @@ HeapRepresentative(?constant, ?heap) <-
 //   methods (and similar for fields), not with any member.
 //  -we lose precision because we may merge strings that match different class
 //   names.
+
 MethodOfClassMatchesString(?heap, ?type) <-
   PreMethodNameMatchingStringConstant:Signature(?sig, ?heap),
+  !NonMergedReflectiveStringConstant(?heap),
   Method:DeclaringType[?sig] = ?type.
   
 FieldOfClassMatchesString(?heap, ?type) <- 
   PreFieldNameMatchingStringConstant:Signature(?sig, ?heap),
+  !NonMergedReflectiveStringConstant(?heap),
   Field:DeclaringType[?sig] = ?type.
 
 // Important to not forget NullType: it derives from everything!
@@ -251,7 +259,7 @@ HeapRepresentative(?mergeHeap, ?heap) <-
 ClassNameMatchingStringConstant:Type(?type, ?heapRepr) <-
   HeapAllocation:Merge[?heap] = ?heapRepr,
   PreClassNameMatchingStringConstant:Type(?type, ?heap).
-   
+
 MethodNameMatchingStringConstant:Signature(?sig, ?heapRepr) <-
   HeapAllocation:Merge[?heap] = ?heapRepr,
   PreMethodNameMatchingStringConstant:Signature(?sig, ?heap).

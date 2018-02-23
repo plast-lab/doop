@@ -18,8 +18,7 @@ _Valid_Type(?type) :-
 .output Server_Class_ReachesField
 
 Server_Class_Subtype(?class, ?subClass) :-
-  SubtypeOf(?subClass, ?class),
-  ?subClass != ?class,
+  SubtypeOfDifferent(?subClass, ?class),
   _Valid_Type(?class),
   _Valid_Type(?subClass).
 
@@ -83,8 +82,7 @@ Server_Class_ReachesField(?class, ?fld) :-
 Server_Field_ShadowedBy(?fld, ?shadowFld) :-
   Field_DeclaringType(?fld, ?class),
   Field_SimpleName(?fld, ?name),
-  SubtypeOf(?subClass, ?class),
-  ?subClass != ?class,
+  SubtypeOfDifferent(?subClass, ?class),
   _Valid_Type(?class),
   _Valid_Type(?subClass),
   Field_DeclaringType(?shadowFld, ?subClass),
@@ -211,8 +209,7 @@ Server_Method_Subtype(?method, ?subMethod) :-
   Method_Descriptor(?method, ?desc),
   ?name != "<clinit>",
   ?name != "<init>",
-  SubtypeOf(?subType, ?type),
-  ?subType != ?type,
+  SubtypeOfDifferent(?subType, ?type),
   _Valid_Type(?type),
   _Valid_Type(?subType),
   Method_DeclaringType(?subMethod, ?subType),
@@ -226,8 +223,7 @@ Server_Method_Subtype(?method, ?subMethod) :-
   Method_Descriptor(?method, ?desc),
   ?name != "<clinit>",
   ?name != "<init>",
-  SubtypeOf(?subType, ?type),
-  ?subType != ?type,
+  SubtypeOfDifferent(?subType, ?type),
   _Valid_Type(?type),
   _Valid_Type(?subType),
   MethodImplemented(?name, _, ?subType, ?subMethod),

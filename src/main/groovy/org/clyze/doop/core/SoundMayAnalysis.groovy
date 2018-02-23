@@ -17,9 +17,10 @@ class SoundMayAnalysis extends ClassicAnalysis {
                                File outDir,
                                File cacheDir,
                                List<File> inputFiles,
+                               List<File> libraryFiles,
                                List<File> platformLibs,
                                Map<String, String> commandsEnvironment) {
-        super(id, name, options, ctx, outDir, cacheDir, inputFiles, platformLibs, commandsEnvironment)
+        super(id, name, options, ctx, outDir, cacheDir, inputFiles, libraryFiles, platformLibs, commandsEnvironment)
     }
 
     @Override

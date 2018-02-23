@@ -1,48 +1,50 @@
+#include "statistics-output.dl"
+
 /****************************************************************
  * Heaps and Values
  ***************************************************************/
 
 .decl Stats_ReflectiveHeap(?heap:HeapAllocation)
-.output Stats_ReflectiveHeap
+OUTPUT_STATS(Stats_ReflectiveHeap)
 
 .decl Stats_ApplicationHeap(?heap:HeapAllocation)
-.output Stats_ApplicationHeap
+OUTPUT_STATS(Stats_ApplicationHeap)
 
 //.decl Stats_ReachableValue(?value:Value)
-//.output Stats_ReachableValue
+//OUTPUT_STATS(Stats_ReachableValue)
 //
 //.decl Stats_ReachableValueWithContext(?hctx:HContext, ?value:Value)
-//.output Stats_ReachableValueWithContext
+//OUTPUT_STATS(Stats_ReachableValueWithContext)
 //
 //.decl Stats_InsensValuesOnMethodBoundaries(?value:Value, ?var:Var),
-//.output Stats_InsensValuesOnMethodBoundaries
+//OUTPUT_STATS(Stats_InsensValuesOnMethodBoundaries)
 //
 //.decl Stats_ValuesOnMethodBoundaries(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
-//.output Stats_ValuesOnMethodBoundaries
+//OUTPUT_STATS(Stats_ValuesOnMethodBoundaries)
 //
 //.decl Stats_ThrowablesInMethod(?valuetype:Type, ?method:Method)
-//.output Stats_ThrowablesInMethod
+//OUTPUT_STATS(Stats_ThrowablesInMethod)
 //
 //.decl Stats_InsensThrowableValuesOnMethodBoundaries(?value:Value, ?var:Var)
-//.output Stats_InsensThrowableValuesOnMethodBoundaries
+//OUTPUT_STATS(Stats_InsensThrowableValuesOnMethodBoundaries)
 //
 //.decl Stats_ThrowableValuesOnMethodBoundaries(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
-//.output Stats_ThrowableValuesOnMethodBoundaries
+//OUTPUT_STATS(Stats_ThrowableValuesOnMethodBoundaries)
 //
 //.decl Stats_InsensAppThrowableValuesOnMethodBoundaries(?value:Value, ?var:Var)
-//.output Stats_InsensAppThrowableValuesOnMethodBoundaries
+//OUTPUT_STATS(Stats_InsensAppThrowableValuesOnMethodBoundaries)
 //
 //.decl Stats_AppThrowableValuesOnMethodBoundaries(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
-//.output Stats_AppThrowableValuesOnMethodBoundaries
+//OUTPUT_STATS(Stats_AppThrowableValuesOnMethodBoundaries)
 //
 //.decl Stats_ThrowablesInAppMethod(?valuetype:Type, ?method:Method)
-//.output Stats_ThrowablesInAppMethod
+//OUTPUT_STATS(Stats_ThrowablesInAppMethod)
 //
 //.decl Stats_InsensAppMethThrowableValuesOnMethodBoundaries(?value:Value, ?var:Var)
-//.output Stats_InsensAppMethThrowableValuesOnMethodBoundaries
+//OUTPUT_STATS(Stats_InsensAppMethThrowableValuesOnMethodBoundaries)
 //
 //.decl Stats_AppMethThrowableValuesOnMethodBoundaries(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
-//.output Stats_AppMethThrowableValuesOnMethodBoundaries
+//OUTPUT_STATS(Stats_AppMethThrowableValuesOnMethodBoundaries)
 
 /****************************************************************
  * Vars
@@ -50,39 +52,39 @@
 
 // Count how many objects, a var points to (context-sensitive)
 .decl Stats_VarCount(?ctx:Context, ?var:Var, ?n:number)
-.output Stats_VarCount
+OUTPUT_STATS(Stats_VarCount)
 
 .decl Stats_InsensValueVarPointsTo(?value:Value, ?ctx:Context, ?var:Var)
-.output Stats_InsensValueVarPointsTo
+OUTPUT_STATS(Stats_InsensValueVarPointsTo)
 
 // Count how many objects, a var points to (value context-insensitive)
 .decl Stats_InsensValueVarCount(?ctx:Context, ?var:Var, ?n:number)
-.output Stats_InsensValueVarCount
+OUTPUT_STATS(Stats_InsensValueVarCount)
 
 .decl Stats_InsensBaseVarPointsTo(?hctx:HContext, ?value:Value, ?var:Var)
-.output Stats_InsensBaseVarPointsTo
+OUTPUT_STATS(Stats_InsensBaseVarPointsTo)
 
 // Count how many objects, a var points to (base context-insensitive)
 .decl Stats_InsensBaseVarCount(?var:Var, ?n:number)
-.output Stats_InsensBaseVarCount
+OUTPUT_STATS(Stats_InsensBaseVarCount)
 
 // Count how many objects, a var points to (value+base context-insensitive)
 .decl Stats_InsensVarCount(?var:Var, ?n:number)
-.output Stats_InsensVarCount
+OUTPUT_STATS(Stats_InsensVarCount)
 
 // NOTE: The same applies for Stats_InsensValueVarCount
 .decl Stats_Vars(?n:number)
-.output Stats_Vars
+OUTPUT_STATS(Stats_Vars)
 
 // NOTE: The same applies for Stats_InsensBaseVarCount
 .decl Stats_InsensVars(?n:number)
-.output Stats_InsensVars
+OUTPUT_STATS(Stats_InsensVars)
 
 //.decl Stats_InsensVarPointsToNonThrowable(?value:Value, ?var:Var)
-//.output Stats_InsensVarPointsToNonThrowable
+//OUTPUT_STATS(Stats_InsensVarPointsToNonThrowable)
 //
 //.decl Stats_VarPointsToNonThrowable(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
-// .outputStats_VarPointsToNonThrowable
+//OUTPUT_STATS(Stats_VarPointsToNonThrowable)
 
 /****************************************************************
  * Arrays
@@ -90,33 +92,33 @@
 
 // Count how many objects, an array points to (context-sensitive)
 .decl Stats_ArrayCount(?basehctx:HContext, ?basevalue:Value, ?n:number)
-.output Stats_ArrayCount
+OUTPUT_STATS(Stats_ArrayCount)
 
 .decl Stats_InsensValueArrayIndexPointsTo(?value:Value, ?basehctx:HContext, ?basevalue:Value)
-.output Stats_InsensValueArrayIndexPointsTo
+OUTPUT_STATS(Stats_InsensValueArrayIndexPointsTo)
 
 // Count how many objects, an array points to (value context-insensitive)
 .decl Stats_InsensValueArrayCount(?basehctx:HContext, ?basevalue:Value, ?n:number)
-.output Stats_InsensValueArrayCount
+OUTPUT_STATS(Stats_InsensValueArrayCount)
 
 .decl Stats_InsensBaseValueArrayIndexPointsTo(?hctx:HContext, ?value:Value, ?basevalue:Value)
-.output Stats_InsensBaseValueArrayIndexPointsTo
+OUTPUT_STATS(Stats_InsensBaseValueArrayIndexPointsTo)
 
 // Count how many objects, an array points to (basevalue context-insensitive)
 .decl Stats_InsensBaseValueArrayCount(?basevalue:Value, ?n:number)
-.output Stats_InsensBaseValueArrayCount
+OUTPUT_STATS(Stats_InsensBaseValueArrayCount)
 
 // Count how many objects, an array points to (value+basevalue context-insensitive)
 .decl Stats_InsensArrayCount(?basevalue:Value, ?n:number)
-.output Stats_InsensArrayCount
+OUTPUT_STATS(Stats_InsensArrayCount)
 
 // NOTE: The same applies for Stats_InsensValueArrayCount
 .decl Stats_Arrays(?n:number)
-.output Stats_Arrays
+OUTPUT_STATS(Stats_Arrays)
 
 // NOTE: The same applies for Stats_InsensBaseValueArrayCount
 .decl Stats_InsensArrays(?n:number)
-.output Stats_InsensArrays
+OUTPUT_STATS(Stats_InsensArrays)
 
 /****************************************************************
  * Fields
@@ -124,51 +126,51 @@
 
 // Count how many objects, a field points to (context-sensitive)
 .decl Stats_FieldCount(?sig:Field, ?basehctx:HContext, ?basevalue:Value, ?n:number)
-.output Stats_FieldCount
+OUTPUT_STATS(Stats_FieldCount)
 
 .decl Stats_InsensValueInstanceFieldPointsTo(?value:Value, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
-.output Stats_InsensValueInstanceFieldPointsTo
+OUTPUT_STATS(Stats_InsensValueInstanceFieldPointsTo)
 
 // Count how many objects, a field points to (value context-insensitive)
 .decl Stats_InsensValueFieldCount(?sig:Field, ?basehctx:HContext, ?basevalue:Value, ?n:number)
-.output Stats_InsensValueFieldCount
+OUTPUT_STATS(Stats_InsensValueFieldCount)
 
 .decl Stats_InsensBaseValueInstanceFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field, ?basevalue:Value)
-.output Stats_InsensBaseValueInstanceFieldPointsTo
+OUTPUT_STATS(Stats_InsensBaseValueInstanceFieldPointsTo)
 
 // Count how many objects, a field points to (basevalue context-insensitive)
 .decl Stats_InsensBaseValueFieldCount(?sig:Field, ?basevalue:Value, ?n:number)
-.output Stats_InsensBaseValueFieldCount
+OUTPUT_STATS(Stats_InsensBaseValueFieldCount)
 
 // Count how many objects, a field points to (value+basevalue context-insensitive)
 .decl Stats_InsensFieldCount(?sig:Field, ?basevalue:Value, ?n:number)
-.output Stats_InsensFieldCount
+OUTPUT_STATS(Stats_InsensFieldCount)
 
 // NOTE: The same applies for Stats_InsensValueFieldCount
 .decl Stats_Fields(?n:number)
-.output Stats_Fields
+OUTPUT_STATS(Stats_Fields)
 
 // NOTE: The same applies for Stats_InsensBaseFieldCount
 .decl Stats_InsensFields(?n:number)
-.output Stats_InsensFields
+OUTPUT_STATS(Stats_InsensFields)
 
 //.decl Stats_InsensInstanceFieldPointsToNonThrowable(?value:Value, ?sig:Field, ?basevalue:Value)
-//.output Stats_InsensInstanceFieldPointsToNonThrowable
+//OUTPUT_STATS(Stats_InsensInstanceFieldPointsToNonThrowable)
 //
 //.decl Stats_InstanceFieldPointsToNonThrowable(?hctx:HContext, ?value:Value, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
-//.output Stats_InstanceFieldPointsToNonThrowable
+//OUTPUT_STATS(Stats_InstanceFieldPointsToNonThrowable)
 //
 //.decl Stats_InsensInstanceFieldPointsToNonThrowable2(?value:Value, ?sig:Field, ?basevalue:Value)
-//.output Stats_InsensInstanceFieldPointsToNonThrowable2
+//OUTPUT_STATS(Stats_InsensInstanceFieldPointsToNonThrowable2)
 //
 //.decl Stats_InstanceFieldPointsToNonThrowable2(?hctx:HContext, ?value:Value, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
-//.output Stats_InstanceFieldPointsToNonThrowable2
+//OUTPUT_STATS(Stats_InstanceFieldPointsToNonThrowable2)
 //
 //.decl Stats_InsensInstanceFieldPointsToNonThrowable3(?value:Value, ?sig:Field, ?basevalue:Value)
-//.output Stats_InsensInstanceFieldPointsToNonThrowable3
+//OUTPUT_STATS(Stats_InsensInstanceFieldPointsToNonThrowable3)
 //
 //.decl Stats_InstanceFieldPointsToNonThrowable3(?hctx:HContext, ?value:Value, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
-//.output Stats_InstanceFieldPointsToNonThrowable3
+//OUTPUT_STATS(Stats_InstanceFieldPointsToNonThrowable3)
 
 /***************************************************
  * Methods
@@ -176,122 +178,122 @@
 
 // Count how many contexts, a reachable method appears with
 .decl Stats_MethodContextCount(?method:Method, ?n:number)
-.output Stats_MethodContextCount
+OUTPUT_STATS(Stats_MethodContextCount)
 
 .decl Stats_Methods(?n:number)
-.output Stats_Methods
+OUTPUT_STATS(Stats_Methods)
 
 //// Count how many local vars, a reachable method has
 //.decl Stats_InsensVarInReachableMethod(?var:Var, ?method:Method)
-//.output Stats_InsensVarInReachableMethod
+//OUTPUT_STATS(Stats_InsensVarInReachableMethod)
 //
 //.decl Stats_VarInReachableMethod(?var:Var, ?ctx:Context, ?method:Method)
-//.output Stats_VarInReachableMethod
+//OUTPUT_STATS(Stats_VarInReachableMethod)
 //
 //.decl Stats_MethodVarCount(?ctx:Context, ?method:Method, ?n:number)
-//.output Stats_MethodVarCount
+//OUTPUT_STATS(Stats_MethodVarCount)
 //
 //.decl Stats_InsensMethodVarCount(?method:Method, ?n:number)
-//.output Stats_InsensMethodVarCount
+//OUTPUT_STATS(Stats_InsensMethodVarCount)
 //
 //.decl Stats_MethodsWithVars(?n:number)
-//.output Stats_MethodsWithVars
+//OUTPUT_STATS(Stats_MethodsWithVars)
 //
 //.decl Stats_InsensMethodsWithVars(?n:number)
-//.output Stats_InsensMethodsWithVars
+//OUTPUT_STATS(Stats_InsensMethodsWithVars)
 //
 //.decl Stats_ReachableNativeMethod(?method:Method)
-//.output Stats_ReachableNativeMethod
+//OUTPUT_STATS(Stats_ReachableNativeMethod)
 
 /****************************************************************
  * Dominance
  ***************************************************************/
 
 //.decl Stats_Dominance_VarPointsTo_Var(?var:Var, ?count:number)
-//.output Stats_Dominance_VarPointsTo_Var
+//OUTPUT_STATS(Stats_Dominance_VarPointsTo_Var)
 //
 //.decl Stats_Dominance_VarPointsTo_AllocationSite(?alloc:Value, ?count:number)
-//.output Stats_Dominance_VarPointsTo_AllocationSite
+//OUTPUT_STATS(Stats_Dominance_VarPointsTo_AllocationSite)
 //
 //.decl Stats_Dominance_VarPointsTo_Object(?hctx:HContext, ?value:Value, ?count:number)
-//.output Stats_Dominance_VarPointsTo_Object
+//OUTPUT_STATS(Stats_Dominance_VarPointsTo_Object)
 //
 //// Intermediate predicate
 //.decl Dominance_VarPointsTo_Method_Var(?method:Method, ?var:Var, ?count:number)
 //
 //.decl Stats_Dominance_VarPointsTo_Method(?method:Method ?count:number)
-//.output Stats_Dominance_VarPointsTo_Method
+//OUTPUT_STATS(Stats_Dominance_VarPointsTo_Method)
 //
 //.decl Stats_Dominance_InstanceFieldPointsTo_Signature(?sig:Field, ?count:number)
-//.output Stats_Dominance_InstanceFieldPointsTo_Signature
+//OUTPUT_STATS(Stats_Dominance_InstanceFieldPointsTo_Signature)
 //
 //.decl Stats_Dominance_InstanceFieldPointsTo_BaseAllocationSite(?alloc:Value, ?count:number)
-//.output Stats_Dominance_InstanceFieldPointsTo_BaseAllocationSite
+//OUTPUT_STATS(Stats_Dominance_InstanceFieldPointsTo_BaseAllocationSite)
 //
 //.decl Stats_Dominance_InstanceFieldPointsTo_BaseObject(?hctx:HContext, ?value:Value, ?count:number)
-//.output Stats_Dominance_InstanceFieldPointsTo_BaseObject
+//OUTPUT_STATS(Stats_Dominance_InstanceFieldPointsTo_BaseObject)
 //
 //.decl Stats_Dominance_InstanceFieldPointsTo_IdAllocationSite(?alloc:Value, ?count:number)
-//.output Stats_Dominance_InstanceFieldPointsTo_IdAllocationSite
+//OUTPUT_STATS(Stats_Dominance_InstanceFieldPointsTo_IdAllocationSite)
 //
 //.decl Stats_Dominance_InstanceFieldPointsTo_IdObject(?hctx:HContext, ?value:Value, ?count:number)
-//.output Stats_Dominance_InstanceFieldPointsTo_IdObject
+//OUTPUT_STATS(Stats_Dominance_InstanceFieldPointsTo_IdObject)
 
 /***************************************************
  * Call graph edges
  ***************************************************/
 
 //.decl Stats_InsensCallGraphEdgesFromSize(?from:MethodInvocation, ?size:number)
-//.output Stats_InsensCallGraphEdgesFromSize
+//OUTPUT_STATS(Stats_InsensCallGraphEdgesFromSize)
 //
 //.decl Stats_InsensCallGraphEdgesToSize(?to:Method, ?size:number)
-//.output Stats_InsensCallGraphEdgesToSize
+//OUTPUT_STATS(Stats_InsensCallGraphEdgesToSize)
 
 /***************************************************
  * Exceptions
  ***************************************************/
 
 .decl Stats_InsensValueThrowPointsTo(?value:Value, ?ctx:Context, ?method:Method)
-.output Stats_InsensValueThrowPointsTo
+OUTPUT_STATS(Stats_InsensValueThrowPointsTo)
 
 //.decl Stats_InsensValueThrowPointsToSize(?ctx:Context, ?method:Method, ?size:number)
-//.output Stats_InsensValueThrowPointsToSize
+//OUTPUT_STATS(Stats_InsensValueThrowPointsToSize)
 
 .decl Stats_InsensThrowPointsTo(?value:Value, ?method:Method)
-.output Stats_InsensThrowPointsTo
+OUTPUT_STATS(Stats_InsensThrowPointsTo)
 
 //.decl Stats_InsensThrowPointsToSize(?method:Method, ?size:number)
-//.output Stats_InsensThrowPointsToSize
+//OUTPUT_STATS(Stats_InsensThrowPointsToSize)
 
 //.decl Stats_ReachableExceptionHandler(?handler:ExceptionHandler)
-//.output Stats_ReachableExceptionHandler
+//OUTPUT_STATS(Stats_ReachableExceptionHandler)
 //
 //.decl Stats_ReachableThrow(?ref:Throw_Insn)
-//.output Stats_ReachableThrow
+//OUTPUT_STATS(Stats_ReachableThrow)
 
 //// Count how many objects, a method may throw (context-sensitive)
 //.decl Stats_ThrowsPerMethodCount(?ctx:Context, ?method:Method, ?n:number)
-//.output Stats_ThrowsPerMethodCount
+//OUTPUT_STATS(Stats_ThrowsPerMethodCount)
 //
 //// Count how many objects, a method may throw (value context-insensitive)
 //.decl Stats_InsensValueThrowsPerMethodCount(?ctx:Context, ?method:Method, ?n:number)
-//.output Stats_InsensValueThrowsPerMethodCount
+//OUTPUT_STATS(Stats_InsensValueThrowsPerMethodCount)
 //
 //.decl Stats_InsensMethodThrowPointsTo(?hctx:HContext, ?value:Value, ?method:Method)
-//.output Stats_InsensMethodThrowPointsTo
+//OUTPUT_STATS(Stats_InsensMethodThrowPointsTo)
 //
 //// Count how many objects, a method may throw (method context-insensitive)
 //.decl Stats_InsensMethodThrowsPerMethodCount(?method:Method, ?n:number)
-//.output Stats_InsensMethodThrowsPerMethodCount
+//OUTPUT_STATS(Stats_InsensMethodThrowsPerMethodCount)
 //
 //// Count how many objects, a method may throw (value+method context-insensitive)
 //.decl Stats_InsensThrowsPerMethodCount(?method:Method, ?n:number)
-//.output Stats_InsensThrowsPerMethodCount
+//OUTPUT_STATS(Stats_InsensThrowsPerMethodCount)
 //
 //// NOTE: The same applies for Stats_InsensValueThrowsPerMethodCount
 //.decl Stats_ThrowMethods(?n:number)
-//.output Stats_ThrowMethods
+//OUTPUT_STATS(Stats_ThrowMethods)
 //
 //// NOTE: The same applies for Stats_InsensMethodThrowsPerMethodCount
 //.decl Stats_InsensThrowMethods(?n:number)
-//.output Stats_InsensThrowMethods
+//OUTPUT_STATS(Stats_InsensThrowMethods)

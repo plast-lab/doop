@@ -1,138 +1,135 @@
-// An output statement like ".output A" is just a shorthand for
-// ".output AB(IO="file",filename="A.csv",delimiter="\t")".
-
 /***************************************************
  * Variables
  ***************************************************/
 
 .decl Stats_Simple_InsensVarPointsTo(?value:Value, ?var:Var)
-.output Stats_Simple_InsensVarPointsTo
+OUTPUT_STATS(Stats_Simple_InsensVarPointsTo)
 
 .decl Stats_Simple_AssignedVariable(?var:Var)
-.output Stats_Simple_AssignedVariable
+OUTPUT_STATS(Stats_Simple_AssignedVariable)
 
 .decl Stats_Simple_Application_InsensVarPointsTo(?value:Value, ?var:Var)
-.output Stats_Simple_Application_InsensVarPointsTo
+OUTPUT_STATS(Stats_Simple_Application_InsensVarPointsTo)
 
 .decl Stats_Simple_Application_VarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
-.output Stats_Simple_Application_VarPointsTo
+OUTPUT_STATS(Stats_Simple_Application_VarPointsTo)
 
 .decl Stats_Simple_InsensReachableVar(?var:Var)
-.output Stats_Simple_InsensReachableVar
+OUTPUT_STATS(Stats_Simple_InsensReachableVar)
 
 .decl Stats_Simple_ReachableVar(?ctx:Context, ?var:Var)
-.output Stats_Simple_ReachableVar
+OUTPUT_STATS(Stats_Simple_ReachableVar)
 
 /***************************************************
  * Arrays
  ***************************************************/
 
 .decl Stats_Simple_InsensArrayIndexPointsTo(?value:Value, ?basevalue:Value)
-.output Stats_Simple_InsensArrayIndexPointsTo
+OUTPUT_STATS(Stats_Simple_InsensArrayIndexPointsTo)
 
 .decl Stats_Simple_Application_InsensArrayIndexPointsTo(?value:Value, ?basevalue:Value)
-.output Stats_Simple_Application_InsensArrayIndexPointsTo
+OUTPUT_STATS(Stats_Simple_Application_InsensArrayIndexPointsTo)
 
 .decl Stats_Simple_Application_ArrayIndexPointsTo(?hctx:HContext, ?value:Value, ?baseHCtx:HContext, ?basevalue:Value)
-.output Stats_Simple_Application_ArrayIndexPointsTo
+OUTPUT_STATS(Stats_Simple_Application_ArrayIndexPointsTo)
 
 /***************************************************
  * Fields
  ***************************************************/
 
 .decl Stats_Simple_InsensInstanceFieldPointsTo(?value:Value, ?sig:Field, ?basevalue:Value)
-.output Stats_Simple_InsensInstanceFieldPointsTo
+OUTPUT_STATS(Stats_Simple_InsensInstanceFieldPointsTo)
 
 .decl Stats_Simple_InsensStaticFieldPointsTo(?value:Value, ?sig:Field)
-.output Stats_Simple_InsensStaticFieldPointsTo
+OUTPUT_STATS(Stats_Simple_InsensStaticFieldPointsTo)
 
 .decl Stats_Simple_Application_InsensInstanceFieldPointsTo(?value:Value, ?sig:Field, ?basevalue:Value)
-.output Stats_Simple_Application_InsensInstanceFieldPointsTo
+OUTPUT_STATS(Stats_Simple_Application_InsensInstanceFieldPointsTo)
 
 .decl Stats_Simple_Application_InstanceFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field, ?baseHCtx:HContext, ?basevalue:Value)
-.output Stats_Simple_Application_InstanceFieldPointsTo
+OUTPUT_STATS(Stats_Simple_Application_InstanceFieldPointsTo)
 
 /***************************************************
  * Call graph edges
  ***************************************************/
 
 .decl Stats_Simple_InsensCallGraphEdge(?from:MethodInvocation, ?to:Method)
-.output Stats_Simple_InsensCallGraphEdge
+OUTPUT_STATS(Stats_Simple_InsensCallGraphEdge)
 
 .decl Stats_Simple_VirtualCallGraphEdge(?from:MethodInvocation, ?to:Method)
-.output Stats_Simple_VirtualCallGraphEdge
+OUTPUT_STATS(Stats_Simple_VirtualCallGraphEdge)
 
 /***************************************************
  * Application methods
  ***************************************************/
 
 .decl Stats_Simple_InsensReachableApplicationMethod(?method:Method)
-.output Stats_Simple_InsensReachableApplicationMethod
+OUTPUT_STATS(Stats_Simple_InsensReachableApplicationMethod)
 
 .decl Stats_Simple_ReachableApplicationMethod(?ctx:Context, ?method:Method)
-.output Stats_Simple_ReachableApplicationMethod
+OUTPUT_STATS(Stats_Simple_ReachableApplicationMethod)
 
 .decl Stats_Simple_ApplicationConcreteMethod(?method:Method)
-.output Stats_Simple_ApplicationConcreteMethod
+OUTPUT_STATS(Stats_Simple_ApplicationConcreteMethod)
 
 .decl Stats_Simple_NonReachableApplicationConcreteMethod(?method:Method)
-.output Stats_Simple_NonReachableApplicationConcreteMethod
+OUTPUT_STATS(Stats_Simple_NonReachableApplicationConcreteMethod)
 
 /***************************************************
  * Virtual method invocations
  ***************************************************/
 
 .decl Stats_Simple_ReachableVirtualMethodInvocation(?invocation:MethodInvocation)
-.output Stats_Simple_ReachableVirtualMethodInvocation
+OUTPUT_STATS(Stats_Simple_ReachableVirtualMethodInvocation)
 
 .decl Stats_Simple_Application_ReachableVirtualMethodInvocation(?invocation:MethodInvocation)
-.output Stats_Simple_Application_ReachableVirtualMethodInvocation
+OUTPUT_STATS(Stats_Simple_Application_ReachableVirtualMethodInvocation)
 
 // Intermediate predicate
 .decl Stats_Simple_VirtualTargets(?invocation:MethodInvocation, ?c:number)
 
 .decl Stats_Simple_PolymorphicCallSite(?invocation:MethodInvocation)
-.output Stats_Simple_PolymorphicCallSite
+OUTPUT_STATS(Stats_Simple_PolymorphicCallSite)
 
 .decl Stats_Simple_NullVirtualMethodInvocation(?invocation:MethodInvocation)
-.output Stats_Simple_NullVirtualMethodInvocation
+OUTPUT_STATS(Stats_Simple_NullVirtualMethodInvocation)
 
 .decl Stats_Simple_EmptyVirtualMethodInvocation(?invocation:MethodInvocation)
-.output Stats_Simple_EmptyVirtualMethodInvocation
+OUTPUT_STATS(Stats_Simple_EmptyVirtualMethodInvocation)
 
 .decl Stats_Simple_Application_VirtualMethodInvocation(?invocation:MethodInvocation)
-.output Stats_Simple_Application_VirtualMethodInvocation
+OUTPUT_STATS(Stats_Simple_Application_VirtualMethodInvocation)
 
 .decl Stats_Simple_Application_PolymorphicCallSite(?invocation:MethodInvocation)
-.output Stats_Simple_Application_PolymorphicCallSite
+OUTPUT_STATS(Stats_Simple_Application_PolymorphicCallSite)
 
 .decl Stats_Simple_Application_NullVirtualMethodInvocation(?invocation:MethodInvocation)
-.output Stats_Simple_Application_NullVirtualMethodInvocation
+OUTPUT_STATS(Stats_Simple_Application_NullVirtualMethodInvocation)
 
 .decl Stats_Simple_Application_EmptyVirtualMethodInvocation(?invocation:MethodInvocation)
-.output Stats_Simple_Application_EmptyVirtualMethodInvocation
+OUTPUT_STATS(Stats_Simple_Application_EmptyVirtualMethodInvocation)
 
 /***************************************************
  * Casts
  ***************************************************/
 
 .decl Stats_Simple_ReachableCast(?inmethod:Method, ?type:Type, ?to:Var, ?from:Var)
-.output Stats_Simple_ReachableCast
+OUTPUT_STATS(Stats_Simple_ReachableCast)
 
 .decl Stats_Simple_PotentiallyFailingCast(?type:Type, ?from:Var, ?to:Var)
-.output Stats_Simple_PotentiallyFailingCast
+OUTPUT_STATS(Stats_Simple_PotentiallyFailingCast)
 
 .decl Stats_Simple_Application_Cast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method)
-.output Stats_Simple_Application_Cast
+OUTPUT_STATS(Stats_Simple_Application_Cast)
 
 .decl Stats_Simple_Application_ReachableCast(?inmethod:Method, ?type:Type, ?to:Var, ?from:Var)
-.output Stats_Simple_Application_ReachableCast
+OUTPUT_STATS(Stats_Simple_Application_ReachableCast)
 
 .decl Stats_Simple_Application_ReachableMethod(?method:Method)
-.output Stats_Simple_Application_ReachableMethod
+OUTPUT_STATS(Stats_Simple_Application_ReachableMethod)
 
 .decl Stats_Simple_Application_PotentiallyFailingCast(?type:Type, ?from:Var, ?to:Var)
-.output Stats_Simple_Application_PotentiallyFailingCast
+OUTPUT_STATS(Stats_Simple_Application_PotentiallyFailingCast)
 
 /***************************************************
  * Reflection
@@ -140,31 +137,31 @@
 
 #ifdef REFLECTION
 .decl Stats_Simple_Reflection_InsensArrayIndexPointsTo(?value:Value, ?basevalue:Value)
-.output Stats_Simple_Reflection_InsensArrayIndexPointsTo
+OUTPUT_STATS(Stats_Simple_Reflection_InsensArrayIndexPointsTo)
 
 .decl Stats_Simple_Reflection_ArrayIndexPointsTo(?hctx:HContext, ?value:Value, ?baseHCtx:HContext, ?basevalue:Value)
-.output Stats_Simple_Reflection_ArrayIndexPointsTo
+OUTPUT_STATS(Stats_Simple_Reflection_ArrayIndexPointsTo)
 
 .decl Stats_Simple_Reflection_InsensVarPointsTo(?value:Value, ?var:Var)
-.output Stats_Simple_Reflection_InsensVarPointsTo
+OUTPUT_STATS(Stats_Simple_Reflection_InsensVarPointsTo)
 
 .decl Stats_Simple_Reflection_VarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
-.output Stats_Simple_Reflection_VarPointsTo
+OUTPUT_STATS(Stats_Simple_Reflection_VarPointsTo)
 
 .decl Stats_Simple_Reflection_InsensInstanceFieldPointsTo(?value:Value, ?sig:Field, ?basevalue:Value)
-.output Stats_Simple_Reflection_InsensInstanceFieldPointsTo
+OUTPUT_STATS(Stats_Simple_Reflection_InsensInstanceFieldPointsTo)
 
 .decl Stats_Simple_Reflection_InstanceFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field, ?baseHCtx:HContext, ?basevalue:Value)
-.output Stats_Simple_Reflection_InstanceFieldPointsTo
+OUTPUT_STATS(Stats_Simple_Reflection_InstanceFieldPointsTo)
 
 .decl Stats_Simple_forName(?invocation:MethodInvocation)
-.output Stats_Simple_forName
+OUTPUT_STATS(Stats_Simple_forName)
 
 .decl Stats_Simple_Class_newInstance(?invocation:MethodInvocation)
-.output Stats_Simple_Class_newInstance
+OUTPUT_STATS(Stats_Simple_Class_newInstance)
 
 .decl Stats_Simple_Constructor_newInstance(?invocation:MethodInvocation)
-.output Stats_Simple_Constructor_newInstance
+OUTPUT_STATS(Stats_Simple_Constructor_newInstance)
 #endif
 
 /***************************************************
@@ -173,19 +170,19 @@
 
 #ifdef INFORMATION_FLOW
 .decl Stats_Simple_InsensTaintedVarPointsTo(?value:Value, ?var:Var)
-.output Stats_Simple_InsensTaintedVarPointsTo
+OUTPUT_STATS(Stats_Simple_InsensTaintedVarPointsTo)
 
 .decl Stats_Simple_Application_InsensTaintedVarPointsTo(?value:Value, ?var:Var)
-.output Stats_Simple_Application_InsensTaintedVarPointsTo
+OUTPUT_STATS(Stats_Simple_Application_InsensTaintedVarPointsTo)
 
 .decl Stats_Simple_Application_TaintedVarPointsTo(?value:Value, ?ctx:Context, ?var:Var)
-.output Stats_Simple_Application_TaintedVarPointsTo
+OUTPUT_STATS(Stats_Simple_Application_TaintedVarPointsTo)
 
 .decl Stats_Simple_LeakingTaintedInformation(?invocation:MethodInvocation, ?objStr:symbol)
-.output Stats_Simple_LeakingTaintedInformation
+OUTPUT_STATS(Stats_Simple_LeakingTaintedInformation)
 
 .decl Stats_Simple_OriginalTaintedValue(?id:symbol)
-.output Stats_Simple_OriginalTaintedValue
+OUTPUT_STATS(Stats_Simple_OriginalTaintedValue)
 #endif
 
 /***************************************************
@@ -194,7 +191,7 @@
 
 #ifdef OPEN_PROGRAMS
 //.decl Stats_Simple_ReachableFromEntryPoint(?method:Method)
-//.output Stats_Simple_ReachableFromEntryPoint
+//OUTPUT_STATS(Stats_Simple_ReachableFromEntryPoint)
 #endif
 
 /***************************************************
@@ -203,27 +200,27 @@
 
 #ifdef HEAPDL
 .decl NotLibraryHeapAllocation(?heap:HeapAllocation)
-.output NotLibraryHeapAllocation
+OUTPUT_STATS(NotLibraryHeapAllocation)
 
 .decl Stats_Simple_InsensDynamicInstanceFieldPointsTo(?fld:Field, ?heap:HeapAllocation, ?baseHeap:HeapAllocation)
-.output Stats_Simple_InsensDynamicInstanceFieldPointsTo
+OUTPUT_STATS(Stats_Simple_InsensDynamicInstanceFieldPointsTo)
 
 .decl Stats_Simple_Application_InsensDynamicInstanceFieldPointsTo(?baseHeap:HeapAllocation, ?fld:Field, ?heap:HeapAllocation)
-.output Stats_Simple_Application_InsensDynamicInstanceFieldPointsTo
+OUTPUT_STATS(Stats_Simple_Application_InsensDynamicInstanceFieldPointsTo)
 
 .decl Stats_Simple_InsensDynamicStaticFieldPointsTo(?fld:Field, ?heap:HeapAllocation)
-.output Stats_Simple_InsensDynamicStaticFieldPointsTo
+OUTPUT_STATS(Stats_Simple_InsensDynamicStaticFieldPointsTo)
 
 .decl Stats_Simple_Application_InsensDynamicStaticFieldPointsTo(?fld:Field, ?heap:HeapAllocation)
-.output Stats_Simple_Application_InsensDynamicStaticFieldPointsTo
+OUTPUT_STATS(Stats_Simple_Application_InsensDynamicStaticFieldPointsTo)
 
 .decl Stats_Simple_InsensDynamicArrayIndexPointsTo(?heap:HeapAllocation, ?baseHeap:HeapAllocation)
-.output Stats_Simple_InsensDynamicArrayIndexPointsTo
+OUTPUT_STATS(Stats_Simple_InsensDynamicArrayIndexPointsTo)
 
 .decl Stats_Simple_Application_DynamicReachableMethod(?method:Method)
-.output Stats_Simple_Application_DynamicReachableMethod
-.output DynamicReachableMethod
+OUTPUT_STATS(Stats_Simple_Application_DynamicReachableMethod)
+OUTPUT_STATS(DynamicReachableMethod)
 
 .decl Stats_Simple_InsensDynamicCallGraphEdge(?fromMeth:Method, ?invocation:MethodInvocation, ?toMeth:Method)
-.output Stats_Simple_InsensDynamicCallGraphEdge
+OUTPUT_STATS(Stats_Simple_InsensDynamicCallGraphEdge)
 #endif

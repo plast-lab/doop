@@ -22,9 +22,11 @@ class DefaultInputResolutionContext implements InputResolutionContext {
     boolean transitive = true
 
     List<String> inputs = new LinkedList<>()
+    List<String> libraries = new LinkedList<>()
 
     //The set of resolved inputFiles
     protected final Map<String, ResolvedInput> resolvedInputs = new LinkedHashMap<>()
+    protected final Map<String, ResolvedInput> resolvedLibraries = new LinkedHashMap<>()
 
     //the input resolver
     protected final ChainResolver resolver
@@ -38,48 +40,58 @@ class DefaultInputResolutionContext implements InputResolutionContext {
     }
 
     @Override
-    void add(String input) {
-        inputs.add(input)
+    void add(String input, boolean isLib) {
+        isLib? libraries.add(input) : inputs.add(input)
     }
 
     @Override
-    void add(List<String> inputs) {
-        this.inputs.addAll(inputs)
+    void add(List<String> inputs, boolean isLib) {
+        isLib? this.libraries.addAll(inputs) : this.inputs.addAll(inputs)
     }
 
     @Override
-    void set(String input, File file) {
-        resolvedInputs.put(input, new ResolvedInput(input, file))
+    void set(String input, File file, boolean isLib) {
+        isLib? resolvedLibraries.put(input, new ResolvedInput(input, file)): resolvedInputs.put(input, new ResolvedInput(input, file))
     }
 
     @Override
-    void set(String input, List<File> files) {
-        resolvedInputs.put(input, new ResolvedInput(input, files))
+    void set(String input, List<File> files, boolean isLib) {
+        isLib? resolvedLibraries.put(input, new ResolvedInput(input, files)) :resolvedInputs.put(input, new ResolvedInput(input, files))
     }
 
     @Override
-    Set<File> get(String input) {
-        ResolvedInput resolvedInput = resolvedInputs.get(input)
+    Set<File> get(String input, boolean isLib) {
+        ResolvedInput resolvedInput
+        resolvedInput = isLib?  resolvedLibraries.get(input) :  resolvedInputs.get(input)
         return resolvedInput ? resolvedInput.files() : Collections.emptySet()
     }
 
     @Override
     void resolve() {
         inputs.each { input ->
+            logger.debug "Resolving input $input"
             ResolvedInput resolvedInput = resolvedInputs.get(input)
             if (!resolvedInput)
-                resolver.resolve(input, this)
+                resolver.resolve(input, this, false)
+        }
+
+        libraries.each { input ->
+            logger.debug "Resolving library $input"
+            ResolvedInput resolvedInput = resolvedLibraries.get(input)
+            if (!resolvedInput)
+                resolver.resolve(input, this, true)
         }
     }
 
+
     @Override
-    List<File> getAll() {
+    List<File> getAllInputs() {
         def allFiles = new LinkedList<File>()
         inputs.each { input ->
-            logger.debug "Getting $input"
+            logger.debug "Getting input $input"
             ResolvedInput resolvedInput = resolvedInputs.get(input)
             if (resolvedInput) {
-                logger.debug "The $input is resolved -> ${resolvedInput.files()}"
+                logger.debug "Input $input is resolved -> ${resolvedInput.files()}"
                 allFiles.addAll(resolvedInput.files())
             }
             else {
@@ -91,12 +103,45 @@ class DefaultInputResolutionContext implements InputResolutionContext {
     }
 
     @Override
+    List<File> getAllLibraries() {
+        def allLibraryFiles = new LinkedList<File>()
+        libraries.each { library ->
+            logger.debug "Getting library $library"
+            ResolvedInput resolvedLibrary = resolvedLibraries.get(library)
+            if (resolvedLibrary) {
+                logger.debug "Library $library is resolved -> ${resolvedLibrary.files()}"
+                allLibraryFiles.addAll(resolvedLibrary.files())
+            }
+            else {
+                throw new RuntimeException("Unresolved library: $library")
+            }
+        }
+
+        return allLibraryFiles
+    }
+
+    @Override
+    List<File> getAll() {
+        List<File> all = new LinkedList<>()
+        all.addAll(getAllInputs())
+        all.addAll(getAllLibraries())
+
+        return all
+    }
+
+    @Override
     List<String> inputs() {
         return inputs
     }
 
     @Override
+    List<String> libraries() {
+        return libraries
+    }
+
+
+    @Override
     String toString() {
-        return "Inputs: ${inputs()}"
+        return "Inputs: ${inputs()} Libraries: ${libraries()}"
     }
 }

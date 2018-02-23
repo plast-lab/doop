@@ -27,6 +27,34 @@
 #include "java.lang.reflect.Field.logic"
 #include "java.lang.reflect.Method.logic"
 
+
+/*************
+* Initial assumptions regarding merging string constants
+*/
+
+LocalStringConstantPossiblyUsedInGetField(?inmethod) <-
+  _OptVarToMethod[?from] = ?inmethod,
+  (java:lang:Class:getField(_, _, ?from) ;
+  java:lang:Class:getDeclaredField(_, _, ?from)).
+
+NonMergedReflectiveStringConstant(?heap) <-
+  LocalStringConstantPossiblyUsedInGetField(?inmethod),
+  PreFieldNameMatchingStringConstant(?heap),
+  AssignHeapAllocation(?heap, _, ?inmethod).
+
+NonMergedReflectiveStringConstant(?heap) <-
+  PreClassNameMatchingStringConstant(?heap).
+
+LocalStringConstantPossiblyUsedInGetMethod(?inmethod) <-
+   (java:lang:Class:getMethod(_, _, ?from) ;
+  java:lang:Class:getDeclaredMethod(_, _, ?from)),
+  _OptVarToMethod[?from] = ?inmethod.
+
+NonMergedReflectiveStringConstant(?heap) <-
+  LocalStringConstantPossiblyUsedInGetMethod(?inmethod),
+  PreMethodNameMatchingStringConstant(?heap),
+  AssignHeapAllocation(?heap, _, ?inmethod).
+
 /*************************************************************
  * Give an arbitrary containing type for every reflection object,
  * so that analyses that need it (e.g., type-sens) are covered.
@@ -1201,7 +1229,8 @@ SpecialMissingForNameValueFlowsToGetField(?forNameInvocation, ?type, ?constantHe
   OptSpecialMissingForNameValue(?forNameInvocation, ?specialvalue),
   VarPointsTo(_, ?constant, ?ctx, ?param),
   Value:Heap[?constant] = ?constantHeap,
-  FairlyInformativeFieldName(?constantHeap),
+  // TODO: Do we need the condition below?
+  //  FairlyInformativeFieldName(?constantHeap),
   TypeMatchingFieldName(?type, ?constantHeap),
   _OptVarToMethod[?from] = ?inMethod.
 

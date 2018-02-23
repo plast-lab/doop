@@ -70,9 +70,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
     protected void linkResult(Analysis analysis) {
         if (analysis.options.X_STOP_AT_FACTS.value) {
-            def facts = new File(analysis.options.X_STOP_AT_FACTS.value as String)
-            logger.info "Making facts available at $facts"
-            analysis.executor.execute(['ln', '-s', '-f', analysis.factsDir as String, facts as String])
+            logger.info "Making facts available at ${analysis.options.X_STOP_AT_FACTS.value}"
             return
         }
 

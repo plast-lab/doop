@@ -5,9 +5,12 @@ import org.clyze.doop.soot.Main;
 import org.clyze.doop.soot.PropertyProvider;
 import org.clyze.doop.soot.SootParameters;
 import org.clyze.utils.AARUtils;
+import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.coffi.Util;
+import soot.dexpler.DexFileProvider;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
@@ -17,22 +20,23 @@ import java.util.*;
 
 import static org.clyze.doop.soot.android.AndroidManifest.getAndroidManifest;
 import static soot.DexClassProvider.classesOfDex;
+import static soot.dexpler.DexFileProvider.*;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
 public class AndroidSupport {
 
-    String rOutDir;
-    String appInput;
-    SootParameters sootParameters;
-    SootMethod dummyMain;
+    private String rOutDir;
+    private String appInput;
+    private SootParameters sootParameters;
+    private SootMethod dummyMain;
 
-    Set<String> appServices = new HashSet<>();
-    Set<String> appActivities = new HashSet<>();
-    Set<String> appContentProviders = new HashSet<>();
-    Set<String> appBroadcastReceivers = new HashSet<>();
-    Set<String> appCallbackMethods = new HashSet<>();
-    Set<PossibleLayoutControl> appUserControls = new HashSet<>();
-    String extraSensitiveControls;
+    private Set<String> appServices = new HashSet<>();
+    private Set<String> appActivities = new HashSet<>();
+    private Set<String> appContentProviders = new HashSet<>();
+    private Set<String> appBroadcastReceivers = new HashSet<>();
+    private Set<String> appCallbackMethods = new HashSet<>();
+    private Set<PossibleLayoutControl> appUserControls = new HashSet<>();
+    private String extraSensitiveControls;
 
     public AndroidSupport(String rOutDir, String appInput, SootParameters sootParameters, String extraSensitiveControls) {
         this.rOutDir = rOutDir;
@@ -45,11 +49,11 @@ public class AndroidSupport {
         return dummyMain;
     }
 
-    public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, String androidJars, Set<String> tmpDirs) throws Exception {
+    public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, Map<String, Set<String>> classToArtifactMap, String androidJars, Set<String> tmpDirs) throws Exception {
         if (sootParameters.getRunFlowdroid()) {
             SetupApplication app = new SetupApplication(androidJars, appInput);
             app.getConfig().setCallbackAnalyzer(Fast);
-            String filename = Main.class.getClassLoader().getResource("SourcesAndSinks.txt").getFile();
+            String filename = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
             try {
                 app.calculateSourcesSinksEntrypoints(filename);
             } catch (Exception ex) {
@@ -112,7 +116,8 @@ public class AndroidSupport {
             sootParameters.setInputs(AARUtils.toJars(sootParameters.getInputs(), false, tmpDirs));
             sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs));
 
-            Main.populateClassesInAppJar(sootParameters.getInputs().get(0), classesInApplicationJar, propertyProvider);
+            sootParameters.getInputs().subList(1, sootParameters.getInputs().size()).clear();
+            Main.populateClassesInAppJar(sootParameters.getInputs(), sootParameters.getLibraries(), classesInApplicationJar, classToArtifactMap, propertyProvider);
         }
     }
 
@@ -131,12 +136,17 @@ public class AndroidSupport {
             File apk = new File(appInput);
             System.out.println("Android mode, APK = " + appInput);
             try {
-                Set<String> dexClasses = classesOfDex(apk);
-                for (String className : dexClasses) {
-                    SootClass c = scene.loadClass(className, SootClass.BODIES);
-                    classes.add(c);
+                List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
+                Set allDexClasses = new HashSet<>();
+                for (DexContainer dexContainer : listContainers) {
+                    allDexClasses.addAll(dexContainer.getBase().getClasses());
+                    for (Object dexBackedClassDef : allDexClasses) {
+                        String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor(((DexBackedClassDef) dexBackedClassDef).getType()).getEscapedName();
+                        SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
+                        classes.add(c);
+                    }
                 }
-                System.out.println("Classes found in apk: " + dexClasses.size());
+                System.out.println("Classes found in apk: " + allDexClasses.size());
             } catch (IOException ex) {
                 System.err.println("Could not read dex classes in " + apk);
                 ex.printStackTrace();

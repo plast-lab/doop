@@ -140,6 +140,13 @@ SubtypeOf(?t, ?t) :-
     isType(?t).
 
 
+// SubtypeOf minus the identity
+
+SubtypeOfDifferent(?s, ?t) :-
+    SubtypeOf(?s, ?t),
+    ?s != ?t.
+
+
 // Extra logic for determining whether it is possible to subclass a type (based on Oracle Souffle)
 
 Unsubclassable("java.lang.ClassLoader").

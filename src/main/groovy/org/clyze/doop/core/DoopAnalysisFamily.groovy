@@ -73,6 +73,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI: true
 			),
 			new AnalysisOption<String>(
+					id: "LIBRARIES",
+					name: "libraryFiles",
+					argName: "LIBRARIES",
+					value: null,
+					isMandatory: false,
+					webUI: true
+			),
+			new AnalysisOption<String>(
 					id: "USER_SUPPLIED_ID",
 					name: "id",
 					argName: "ID",
@@ -169,21 +177,26 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "DACAPO",
 					name: "dacapo",
 					description: "Load additional logic for DaCapo (2006) benchmarks properties.",
-					value: false,
-					webUI: true
+					value: false
 			),
 			new BooleanAnalysisOption(
 					id: "DACAPO_BACH",
 					name: "dacapo-bach",
 					description: "Load additional logic for DaCapo (Bach) benchmarks properties.",
-					value: false,
-					webUI: true
+					value: false
 			),
 			new BooleanAnalysisOption(
 					id: "ONLY_APPLICATION_CLASSES_FACT_GEN",
 					name: "only-application-classes-fact-gen",
 					value: false,
 					forCacheID: true
+			),
+			new IntegerAnalysisOption(
+					id: "FACT_GEN_CORES",
+					name: "fact-gen-cores",
+					description: "Number of cores to use for parallel fact generation.",
+					argName: "NUMBER",
+					value: null
 			),
 			new AnalysisOption<String>(
 					id: "APP_REGEX",
@@ -373,6 +386,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DISABLE_METHOD_HANDLES",
 					name: "disable-method-handles",
+					description: "Disable handling of 'invokedynamic' and method handles.",
 					value: false,
 					webUI: false,
 					forPreprocessor: true,
@@ -402,6 +416,22 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					webUI: true,
 					isAdvanced: true
+			),
+			new BooleanAnalysisOption(
+					id: "DISCOVER_TESTS",
+					name: "discover-tests",
+					description: "Discover testing code (e.g. marked with JUnit annotations).",
+					value: false,
+					webUI: true,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "DISCOVER_MAIN_METHODS",
+					name: "discover-main-methods",
+					description: "Discover main() methods.",
+					value: false,
+					webUI: true,
+					forPreprocessor: true
 			),
 			/* End preprocessor normal flags */
 			/* Start Souffle related options */
@@ -524,7 +554,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xstats-none",
 					description: "Do not load logic for collecting statistics.",
 					value: false,
-					nonStandard: true
+					nonStandard: true,
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_AROUND",

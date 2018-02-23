@@ -2,7 +2,6 @@ package org.clyze.doop.core
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
-import heapdl.core.MemoryAnalyser
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.utils.CheckSum
@@ -10,6 +9,7 @@ import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
 
 import java.nio.file.Files
+import java.nio.file.FileAlreadyExistsException
 import java.nio.file.StandardCopyOption
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
@@ -47,9 +47,10 @@ class SouffleAnalysis extends DoopAnalysis {
                               File outDir,
                               File cacheDir,
                               List<File> inputFiles,
+                              List<File> libraryFiles,
                               List<File> platformLibs,
                               Map<String, String> commandsEnvironment) {
-        super(id, name, options, ctx, outDir, cacheDir, inputFiles, platformLibs, commandsEnvironment)
+        super(id, name, options, ctx, outDir, cacheDir, inputFiles, libraryFiles, platformLibs, commandsEnvironment)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
     }
@@ -57,7 +58,14 @@ class SouffleAnalysis extends DoopAnalysis {
     @Override
     void run() {
         generateFacts()
+
         if (options.X_STOP_AT_FACTS.value) return
+
+        // Souffle has no persistent database.
+        if (options.X_STOP_AT_INIT.value) {
+            logger.info "Option ${options.X_STOP_AT_INIT.name} is equivalent to ${options.X_STOP_AT_INIT.name} for Souffle-based analyses."
+            return
+        }
 
         analysis = new File(outDir, "${name}.dl")
         deleteQuietly(analysis)
@@ -66,8 +74,7 @@ class SouffleAnalysis extends DoopAnalysis {
         initDatabase()
         basicAnalysis()
         mainAnalysis()
-        if (!options.X_SERVER_LOGIC.value)
-            produceStats()
+        produceStats()
 
         compileAnalysis()
         executeAnalysis(options.SOUFFLE_JOBS.value as Integer)
@@ -175,7 +182,9 @@ class SouffleAnalysis extends DoopAnalysis {
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl", macros)
         }
 
-        if (!options.MAIN_CLASS && !options.TAMIFLEX && !options.HEAPDL && !options.ANDROID && !options.DACAPO && !options.DACAPO_BACH) {
+        if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
+            !options.HEAPDL.value && !options.ANDROID.value &&
+            !options.DACAPO.value && !options.DACAPO_BACH.value) {
             if (options.OPEN_PROGRAMS.value)
                 cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", macros, commonMacros)
             else
@@ -194,10 +203,10 @@ class SouffleAnalysis extends DoopAnalysis {
         if (options.SANITY.value)
             cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/sanity.dl")
 
-        if (options.MAIN_CLASS.value) {
-            def analysisFile = FileOps.findFileOrThrow("$analysis", "Missing $analysis")
-            analysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
-        }
+//        if (options.MAIN_CLASS.value) {
+//            def analysisFile = FileOps.findFileOrThrow("$analysis", "Missing $analysis")
+//            analysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
+//        }
 
         if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
             cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
@@ -214,7 +223,8 @@ class SouffleAnalysis extends DoopAnalysis {
         def analysisChecksum = CheckSum.checksum(stringToHash, DoopAnalysisFactory.HASH_ALGO)
         souffleAnalysesCache = new File("${Doop.souffleAnalysesCache}")
         souffleAnalysesCache.mkdirs()
-        souffleAnalysisCacheFile = new File("${Doop.souffleAnalysesCache}/${analysisChecksum}")
+        def souffleAnalysisCacheFileName = "${Doop.souffleAnalysesCache}/${analysisChecksum}"
+        souffleAnalysisCacheFile = new File(souffleAnalysisCacheFileName)
 
         if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value) {
             def compilationCommand = ['souffle', '-c', '-o', "${outDir}/${name}" as String, analysis as String]
@@ -240,14 +250,20 @@ class SouffleAnalysis extends DoopAnalysis {
                     else logger.info line
                 }
             }
-            // Keep execute permission
-            Files.copy(new File("${outDir}/${name}").toPath(), souffleAnalysisCacheFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+            try {
+                // Keep execute permission
+                Files.copy(new File("${outDir}/${name}").toPath(), souffleAnalysisCacheFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+            } catch (FileAlreadyExistsException ex) {
+                // If a cached file is already there, don't overwrite
+                // it (it might be used by another analysis), just reuse it.
+                logger.info "Copy failed, someone else has already created ${souffleAnalysisCacheFile.toPath()}"
+            }
 
             logger.info "Analysis compilation time (sec): $compilationTime"
             logger.info "Caching analysis executable in $souffleAnalysesCache"
         }
         else {
-            logger.info "Using cached analysis executable ${souffleAnalysesCache}"
+            logger.info "Using cached analysis executable ${souffleAnalysisCacheFileName}"
         }
     }
 
@@ -300,15 +316,5 @@ class SouffleAnalysis extends DoopAnalysis {
         def file = new File(this.outDir, "database/${query}.csv")
         if (!file.exists()) throw new FileNotFoundException(file.canonicalPath)
         file.eachLine { outputLineProcessor.call(it.replaceAll("\t", ", ")) }
-    }
-
-    protected void runHeapDL(String filename) {
-        try {
-            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.HEAPDL_NOSTRINGS.value ? false : true)
-            int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
-            logger.info("Generated " + n + " addditional facts from memory dump")
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }

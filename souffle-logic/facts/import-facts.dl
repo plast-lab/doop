@@ -1,3 +1,10 @@
+// MainClass
+.decl _MainClass(?class:symbol)
+.input _MainClass(IO="file", filename="MainClass.facts", delimiter="\t")
+
+MainClass(?class) :-
+  _MainClass(?class).
+
 // NormalHeap
 
 .decl _NormalHeap(?id:symbol, ?type:symbol)
@@ -832,5 +839,16 @@ isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.
 
 // Annotations
 // Method
-
+.input Class_Annotation(IO="file", filename="Class-Annotation.facts", delimiter="\t")
+// Method
 .input Method_Annotation(IO="file", filename="Method-Annotation.facts", delimiter="\t")
+// Field
+.input Field_Annotation(IO="file", filename="Field-Annotation.facts", delimiter="\t")
+// Param
+.input Param_Annotation(IO="file", filename="Param-Annotation.facts", delimiter="\t")
+
+isAnnotation(?annotation) :-
+    Class_Annotation(?class, ?annotation);
+    Method_Annotation(?meth, ?annotation);
+    Field_Annotation(?field, ?annotation);
+    Param_Annotation(?meth, ?i, ?annotation).

@@ -175,8 +175,42 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   NotSpecialObject(?value),
   !Value_Null(?basevalue).
+.plan 1:(2,1,3)
+#else
+.decl NoInformationOnSignature(?signature: Field)
+.output NoInformationOnSignature
+        
+NoInformationOnSignature(?signature) :-
+ isField(?signature), 
+ !DynamicInstanceFieldPointsTo(?signature, _, _, _, _).
+
+.decl ConstructorVar(?var:Var)
+      
+ConstructorVar(?var) :-
+  Var_DeclaringMethod(?var, ?meth),
+  ApplicationMethod(?meth),
+  ClassConstructor(?meth, _).
+
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  ConstructorVar(?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  NoInformationOnSignature(?signature),
+  Value_byDynamicHeap(_, ?value),
+  NotSpecialObject(?value),
+  !Value_Null(?basevalue).
+.plan 1:(3,2,1,4,5,6)
+#endif
+        
+        
+#if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  TaintedVarPointsTo(?value, ?ctx, ?from),
+  isImmutableHContext(?hctx), 
+  !Value_Null(?basevalue).
   .plan 1:(2,1,3)
-#endif      
+#endif        
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
   StoreInstanceField(?from, ?base, ?signature, _),
@@ -201,6 +235,13 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   ReachableStoreStaticFieldFrom(?from),
   StoreStaticField(?from, ?signature, _),
   VarPointsTo(?hctx, ?value, _, ?from).
+#endif
+#if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
+StaticFieldPointsTo(?hctx, ?value, ?signature) :-
+  ReachableStoreStaticFieldFrom(?from),
+  StoreStaticField(?from, ?signature, _),
+  TaintedVarPointsTo(?value, _, ?from),
+  isImmutableHContext(?hctx).
 #endif
 
 .decl ReachableStoreStaticFieldFrom(?from:Var)
@@ -288,9 +329,17 @@ ReachableLoadArrayIndexBase(?base) :-
  * Store array index
  */
 
+#ifndef FEATHERWEIGHT_ANALYSIS
 OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value) :-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from).
+#endif
+#if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
+OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value) :-
+  StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
+  TaintedVarPointsTo(?value, ?ctx, ?from),
+  isImmutableHContext(?hctx).
+#endif
 
 ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) :-
   OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value),
@@ -300,13 +349,11 @@ ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) :-
   Value_Type(?basevalue, ?basevaluetype),
   ComponentType(?basevaluetype, ?componenttype),
   SupertypeOf(?componenttype, ?valuetype).
-
-#ifndef FEATHERWEIGHT_ANALYSIS
+ 
 StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) :-
   ReachableStoreArrayIndexBase(?base),
   OptStoreArrayIndex(?from, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
-#endif
 
 .decl ReachableStoreArrayIndexBase(?base:Var)
 
