@@ -18,9 +18,10 @@ public class JimpleGenerator implements Runnable {
     public void run() {
         for (SootClass sootClass : _sootClasses) {
             PackManager.v().writeClass(sootClass);
-            for (SootMethod m : new ArrayList<>(sootClass.getMethods())) {
-                m.releaseActiveBody();
-            }
+//  anantoni: Not releasing active bodies should be safer
+//            for (SootMethod m : new ArrayList<>(sootClass.getMethods())) {
+//                m.releaseActiveBody();
+//            }
         }
     }
 }
