@@ -355,6 +355,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     default:
                         throw new RuntimeException("Invalid android version: $version")
                 }
+                if (libFlavor == "robolectric") {
+                    String roboJRE = "java_8"
+                    println "Using ${roboJRE} with Robolectric"
+                    def files = getArtifactsForPlatform(roboJRE, options.PLATFORMS_LIB.value.toString())
+                    files.each { platformArtifactPaths.add(it.canonicalPath) }
+                }
                 break
             default:
                 throw new RuntimeException("Invalid platform: $platform")
