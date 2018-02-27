@@ -298,7 +298,7 @@ class SouffleAnalysis extends DoopAnalysis {
         def statsPath = "${Doop.souffleAddonsPath}/statistics"
         cpp.includeAtEnd("$analysis", "${statsPath}/statistics-simple.dl", macros)
 
-        if (options.X_STATS_FULL.value) {
+        if (options.X_STATS_FULL.value || options.X_STATS_DEFAULT.value) {
             cpp.includeAtEnd("$analysis", "${statsPath}/statistics.dl", macros)
         }
 

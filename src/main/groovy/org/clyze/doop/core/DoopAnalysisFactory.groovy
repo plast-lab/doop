@@ -520,6 +520,19 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             }
         }
 
+        // If server mode is enabled, don't produce statistics.
+        if (options.X_SERVER_LOGIC.value) {
+            options.X_STATS_FULL.value = false
+            options.X_STATS_DEFAULT.value = false
+            options.X_STATS_NONE.value = true
+        }
+
+        // If no stats option is given, select default stats.
+        if (!options.X_STATS_FULL.value && !options.X_STATS_DEFAULT.value &&
+            !options.X_STATS_NONE.value && !options.X_STATS_AROUND.value) {
+            options.X_STATS_DEFAULT.value = true
+        }
+
         if (options.REFLECTION_DYNAMIC_PROXIES.value) {
             if (!options.REFLECTION.value) {
                 String message = "\nWARNING: Dynamic proxy support without standard reflection support, using custom 'opt-reflective' reflection rules."

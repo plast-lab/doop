@@ -547,12 +547,21 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xstats-full",
 					description: "Load additional logic for collecting statistics.",
 					value: false,
-					nonStandard: true
+					nonStandard: true,
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_NONE",
 					name: "Xstats-none",
 					description: "Do not load logic for collecting statistics.",
+					value: false,
+					nonStandard: true,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "X_STATS_DEFAULT",
+					name: "Xstats-default",
+					description: "Load default logic for collecting statistics.",
 					value: false,
 					nonStandard: true,
 					forPreprocessor: true
