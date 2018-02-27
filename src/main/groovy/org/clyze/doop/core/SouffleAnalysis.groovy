@@ -286,7 +286,10 @@ class SouffleAnalysis extends DoopAnalysis {
         if (options.X_STATS_NONE.value) return
 
         if (options.X_STATS_AROUND.value) {
+            cpp.includeAtEnd("$analysis", options.X_STATS_AROUND.value as String)
+            return
         }
+
         // Special case of X_STATS_AROUND (detected automatically)
         def specialStats = new File("${Doop.souffleAnalysesPath}/${name}/statistics.dl")
         if (specialStats.exists()) {

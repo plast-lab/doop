@@ -572,7 +572,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "FILE",
 					isFile: true,
 					description: "Load custom logic for collecting statistics.",
-					value: false,
+					value: null,
 					nonStandard: true
 			),
 			new AnalysisOption<String>(
