@@ -487,28 +487,22 @@ ReflectiveBaseVar(?invocation, ?to) :-
  *   static native java.lang.Class getPrimitiveClass(String name)
  *************************************************************/
 
-// REVIEW: this should be compatible with reflection-only string constants.
+#define PrimitiveClassForParam(className, primitiveName) \
+VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :- \
+  java_lang_Class_getPrimitiveClass(?invocation, ?to, ?param), \
+  VarPointsTo(?hctx, ?heap, ?ctx, ?param), \
+  (?heap = "<<string-constant>>" ; ?heap = primitiveName), \
+  ReifiedClass(className, ?classValue)
 
-VarPointsTo(?hctx, ?intClass, ?ctx, ?to),
-VarPointsTo(?hctx, ?floatClass, ?ctx, ?to),
-VarPointsTo(?hctx, ?doubleClass, ?ctx, ?to),
-VarPointsTo(?hctx, ?byteClass, ?ctx, ?to),
-VarPointsTo(?hctx, ?booleanClass, ?ctx, ?to),
-VarPointsTo(?hctx, ?charClass, ?ctx, ?to),
-VarPointsTo(?hctx, ?longClass, ?ctx, ?to),
-VarPointsTo(?hctx, ?shortClass, ?ctx, ?to),
-VarPointsTo(?hctx, ?voidClass, ?ctx, ?to) :-
-  java_lang_Class_getPrimitiveClass(?invocation, ?to, ?param),
-  VarPointsTo(?hctx, _, ?ctx, ?param),
-  ReifiedClass("java.lang.Integer", ?intClass),
-  ReifiedClass("java.lang.Float", ?floatClass),
-  ReifiedClass("java.lang.Double", ?doubleClass),
-  ReifiedClass("java.lang.Byte", ?byteClass),
-  ReifiedClass("java.lang.Boolean", ?booleanClass),
-  ReifiedClass("java.lang.Character", ?charClass),
-  ReifiedClass("java.lang.Long", ?longClass),
-  ReifiedClass("java.lang.Short", ?shortClass),
-  ReifiedClass("java.lang.Void", ?voidClass).
+PrimitiveClassForParam("java.lang.Integer", "int").
+PrimitiveClassForParam("java.lang.Float", "float").
+PrimitiveClassForParam("java.lang.Double", "double").
+PrimitiveClassForParam("java.lang.Byte", "byte").
+PrimitiveClassForParam("java.lang.Boolean", "boolean").
+PrimitiveClassForParam("java.lang.Character", "char").
+PrimitiveClassForParam("java.lang.Long", "long").
+PrimitiveClassForParam("java.lang.Short", "short").
+PrimitiveClassForParam("java.lang.Void", "void").
 
 /*************************************************************
  * java.lang.Class.getClassLoader
