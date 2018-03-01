@@ -155,16 +155,37 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
  * Load instance fields
  */
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-#ifndef FEATHERWEIGHT_ANALYSIS
-   .plan 1:(2,1)
-#endif      
-
 LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
   LoadInstanceField(?base, ?sig, ?to, _),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+
+#ifndef FEATHERWEIGHT_ANALYSIS
+//// Much slower in Souffle, for large analyses
+// VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+//   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+//   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+//    .plan 1:(2,1)
+
+.decl HeapInterproceduralAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
+HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
+  LoadHeapInstanceField(?ctxTo, ?to, ?signature, ?basehctx, ?basevalue),
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctxFrom, ?from),
+  !Value_Null(?basevalue).
+  .plan 1:(2,1)
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  HeapInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  NotSpecialObject(?value).
+  .plan 1:(2,1,3)
+  
+#else
+// FEATHERWEIGHT_ANALYSIS
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+#endif
 
 /**
  * Store instance fields
@@ -369,12 +390,22 @@ OptStoreArrayIndex(?from, ?base) :-
  * Assignments for method invocations
  */
 
-OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
+// This logic replaces (optimizes) general-purpose inter-procedural
+// assignments for args and returns. It should be unnecessary, but
+// Souffle appreciates smaller deltas, since plans cannot change
+// per-rule-evaluation, only per-rule-structure.
+
+.decl OptArgAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
+.decl OptReturnAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
+.decl OptArgVarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
+.decl OptRetVarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
+
+OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
   ActualParam(?index, ?invocation, ?actual),
   FormalParam(?index, ?method, ?formal).
 
-OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
+OptReturnAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
 #ifdef INFORMATION_FLOW
   !SanitizationMethod(?method),
@@ -382,14 +413,37 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
   AssignReturnValue(?invocation, ?local),
   ReturnVar(?return, ?method).
 
+OptArgVarPointsTo(?hctx, ?value, ?actualCtx, ?actual) :-
+  ActualParam(_, _, ?actual),
+  VarPointsTo(?hctx, ?value, ?actualCtx, ?actual).
+
+OptRetVarPointsTo(?hctx, ?value, ?returnCtx, ?return) :-
+  ReturnVar(?return, _),
+  VarPointsTo(?hctx, ?value, ?returnCtx, ?return).
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from).
+  .plan 1:(2,1)
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  OptRetVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  OptReturnAssign(?toCtx, ?to, ?fromCtx, ?from).
+  .plan 1:(2,1)
+
+
+/**
+ * Catch-all Assignments. Use sparingly!
+ */
+
+// No longer using general-purpose inter-procedural assignments for lots
+// of different flows. Souffle cannot optimize well. Best to break up
+// key cases (like arg-return flow, above) into separate, well-optimized rules.
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from).
-  .plan 1:(2,1)
-// TODO check: .plan 1:(2,1) can make the above rule very slow when
-// VarPointsTo deltas become really big, even if it shouldn't (i.e.,
-// the VarPointsTo deltas are smaller than the OptInterproceduralAssign
-// relation).
+//  .plan 1:(2,1)
+//// no plan for now. These kinds of inter-proc assignments should be very few!
 
 
 /**
