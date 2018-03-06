@@ -431,6 +431,7 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
 OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee) :-
   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
+  .plan 1:(2,1)
 
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
