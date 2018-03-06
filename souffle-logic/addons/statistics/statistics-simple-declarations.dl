@@ -126,7 +126,7 @@ OUTPUT_STATS(Stats_Simple_Application_Cast)
 OUTPUT_STATS(Stats_Simple_Application_ReachableCast)
 
 .decl Stats_Simple_Application_ReachableMethod(?method:Method)
-OUTPUT_STATS(Stats_Simple_Application_ReachableMethod)
+OUTPUT_STATS_DEFAULT(Stats_Simple_Application_ReachableMethod)
 
 .decl Stats_Simple_Application_PotentiallyFailingCast(?type:Type, ?from:Var, ?to:Var)
 OUTPUT_STATS(Stats_Simple_Application_PotentiallyFailingCast)

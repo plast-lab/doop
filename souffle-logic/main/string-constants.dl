@@ -1083,3 +1083,20 @@ FieldIsStatic(?sig) :-
 //  Modifier:Id(?final:"final"),
 //  Field:Modifier(?final, ?sig).
 */
+
+
+/*************************************************************
+ * Primitive types
+ *
+ * Needed for precise handling of Class.getPrimitiveClass().
+ *************************************************************/
+
+ReflectionStringConstant("int").
+ReflectionStringConstant("float").
+ReflectionStringConstant("double").
+ReflectionStringConstant("byte").
+ReflectionStringConstant("boolean").
+ReflectionStringConstant("char").
+ReflectionStringConstant("long").
+ReflectionStringConstant("short").
+ReflectionStringConstant("void").

@@ -355,6 +355,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     default:
                         throw new RuntimeException("Invalid android version: $version")
                 }
+                if (libFlavor == "robolectric") {
+                    String roboJRE = "java_8"
+                    println "Using ${roboJRE} with Robolectric"
+                    def files = getArtifactsForPlatform(roboJRE, options.PLATFORMS_LIB.value.toString())
+                    files.each { platformArtifactPaths.add(it.canonicalPath) }
+                }
                 break
             default:
                 throw new RuntimeException("Invalid platform: $platform")
@@ -512,6 +518,19 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             if (options.CACHE.value) {
                 logger.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
             }
+        }
+
+        // If server mode is enabled, don't produce statistics.
+        if (options.X_SERVER_LOGIC.value) {
+            options.X_STATS_FULL.value = false
+            options.X_STATS_DEFAULT.value = false
+            options.X_STATS_NONE.value = true
+        }
+
+        // If no stats option is given, select default stats.
+        if (!options.X_STATS_FULL.value && !options.X_STATS_DEFAULT.value &&
+            !options.X_STATS_NONE.value && !options.X_STATS_AROUND.value) {
+            options.X_STATS_DEFAULT.value = true
         }
 
         if (options.REFLECTION_DYNAMIC_PROXIES.value) {
