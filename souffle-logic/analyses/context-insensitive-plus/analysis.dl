@@ -2,74 +2,98 @@
 // methods that have their params flow to their return value get a
 // 1-call treatment.
 
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
 #include "../../main/in-out-flow.dl"
 
-.type Context = MethodInvocation
+.type UniqueContext
+.type Context = MethodInvocation | UniqueContext
 .type HContext
 
-.decl MergeBasis(?ctx:Context, ?hctx:HContext, ?invo:MethodInvocation, ?value:Value)
-.decl MergeStaticBasis(?ctx:Context, ?invo:MethodInvocation)
+.decl UContext(?ctx:UniqueContext)
+.decl UHContext(?hctx:HContext)
 
-.decl CachedMerge(?invo:MethodInvocation, ?value:Value, ?ctx:Context)
-.decl CachedMergeStatic(?invo:MethodInvocation, ?ctx:Context)
+#define UNIQUE_CONTEXT  "<<unique-context>>"
+#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
 
-// For this analysis we only need one or two of the parameters that
-// may influence the new context
-.decl MyMergeBasis(?value:Value, ?valuetype:Type, ?invo:MethodInvocation)
+UContext(UNIQUE_CONTEXT).
+UHContext(UNIQUE_HCONTEXT).
 
-MyMergeBasis(?value, ?valuetype, ?invo) :-
-  MergeBasis(_, _, ?invo, ?value),
-  Value_Type(?value, ?valuetype).
-// Effort to optimize. Probably not worth it.
+.comp ContextInsensitivePlusConfiguration : AbstractConfiguration {
 
 .decl _InOutFlowMethod(?method:Method)
 
 _InOutFlowMethod(?method) :-
   InOutFlowMethod(_, ?method).
   
-isContext(?invo) :-
-  CachedMerge(_, _, ?invo).
+//isContext(?invo) :-
+//  ContextResponse(_, _, _, _, ?invo).
 
-CachedMerge(?invo, ?value, ?invo) :-
-  MyMergeBasis(?value, ?valuetype, ?invo),
-  ResolveInvocation(?valuetype, ?invo, ?tomethod),
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?invo) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+  Value_Type(?value, ?valuetype),
+  basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
   _InOutFlowMethod(?tomethod).
 
-CachedMerge(?invo, ?value, ?calleeCtx) :-
-  MyMergeBasis(?value, ?valuetype, ?invo),
-  ResolveInvocation(?valuetype, ?invo, ?tomethod),
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+  Value_Type(?value, ?valuetype),
+  basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
   !_InOutFlowMethod(?tomethod),
-  MergeMacro(?notused, ?notused, ?notused, ?notused, ?calleeCtx).
+  UContext(?calleeCtx).
 
-isContext(?invo) :-
-  CachedMerge(_, _, ?invo).
-
-CachedMerge(?invo, ?value, ?invo) :-
-  MyMergeBasis(?value, _, ?invo),
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?invo) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   isSpecialMethodInvocation_Insn(?invo),
   MethodInvocation_Method(?invo, ?tomethod),
   _InOutFlowMethod(?tomethod).
 
-CachedMerge(?invo, ?value, ?calleeCtx) :-
-  MyMergeBasis(?value, _, ?invo),
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   isSpecialMethodInvocation_Insn(?invo),
   MethodInvocation_Method(?invo, ?tomethod),
   !_InOutFlowMethod(?tomethod),
-  MergeMacro(?notused, ?notused, ?notused, ?notused, ?calleeCtx).
+  UContext(?calleeCtx).
 
-isContext(?invo) :-
-  CachedMergeStatic(_, ?invo).
+//isContext(?invo) :-
+//  StaticContextResponse(_, _, ?invo).
 
-CachedMergeStatic(?invo, ?invo) :-
-  MergeStaticBasis(_, ?invo),
+StaticContextResponse(?callerCtx, ?invo, ?invo) :-
+  StaticContextRequest(?callerCtx, ?invo),
   MethodInvocation_Method(?invo, ?tomethod),
   _InOutFlowMethod(?tomethod).
 
-CachedMergeStatic(?invo, ?calleeCtx) :-
-  MergeStaticBasis(_, ?invo),
+StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+  StaticContextRequest(?callerCtx, ?invo),
   MethodInvocation_Method(?invo, ?tomethod),
   !_InOutFlowMethod(?tomethod),
-  MergeStaticMacro(?notused, ?notused, ?calleeCtx).
+  UContext(?calleeCtx).
+
+RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+  RecordContextRequest(?ctx, ?value, ?var),      
+  UHContext(?hctx).
+
+// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+// have the same logic as plain Merge for this analysis.
+ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+  ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+  UContext(?newCtx).
+
+StartupContextResponse(?hctx, ?value, ?calleeCtx) :-
+  StartupContextRequest(?hctx, ?value),
+  UContext(?calleeCtx).
+
+FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?calleeCtx) :-
+  FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+  UContext(?calleeCtx).
+
+InitContextResponse(?s, ?ctx) :-
+  UContext(?ctx),                   
+  InitContextRequest(?s).
+
+InitHContextResponse(?s, ?hctx) :-
+  UHContext(?hctx),
+  InitHContextRequest(?s).
 
 #ifdef HEAPDL
  DynamicContextToContext(?ctx, ?dctx) :-
@@ -80,3 +104,4 @@ DynamicContextToHContext(?hctx, ?dctx) :-
    isDynamicContext(?dctx),
    isImmutableHContext(?hctx).
 #endif
+}

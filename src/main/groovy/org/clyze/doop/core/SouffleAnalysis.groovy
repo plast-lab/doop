@@ -27,7 +27,7 @@ class SouffleAnalysis extends DoopAnalysis {
     /**
      * The cache dir for the analysis executable
      */
-    File souffleAnalysesCache
+    File analysesCachePerName
 
     /**
      * Total time for Souffle compilation phase
@@ -100,10 +100,8 @@ class SouffleAnalysis extends DoopAnalysis {
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/to-flow-sensitive.dl")
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/post-process.dl", commonMacros)
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/mock-heap.dl", commonMacros)
-        cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/export.dl")
 
         if (options.HEAPDL.value || options.IMPORT_DYNAMIC_FACTS.value) {
-
             cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/import-dynamic-facts.dl", commonMacros)
         }
 
@@ -111,7 +109,6 @@ class SouffleAnalysis extends DoopAnalysis {
             def tamiflexPath = "${Doop.souffleAddonsPath}/tamiflex"
             cpp.includeAtEnd("$analysis", "${tamiflexPath}/fact-declarations.dl")
             cpp.includeAtEnd("$analysis", "${tamiflexPath}/import.dl")
-            cpp.includeAtEnd("$analysis", "${tamiflexPath}/post-import.dl")
         }
     }
 
@@ -153,13 +150,9 @@ class SouffleAnalysis extends DoopAnalysis {
         }
         else {
             if (isContextSensitive) {
-                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl",
-                        "${mainPath}/context-sensitivity-declarations.dl")
-                cpp.includeAtEnd("$analysis", "${mainPath}/prologue.dl", commonMacros)
-                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl",
-                        commonMacros, "${mainPath}/main-delta.dl")
-                cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl",
-                        commonMacros, macros, "${mainPath}/context-sensitivity.dl")
+                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl")
+                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl", commonMacros, macros)
+                cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros, macros)
             } else {
                 cpp.includeAtEnd("$analysis", "${analysisPath}/declarations.dl")
                 cpp.includeAtEndIfExists("$analysis", "${mainPath}/prologue.dl", commonMacros)
@@ -167,11 +160,6 @@ class SouffleAnalysis extends DoopAnalysis {
                 cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl")
                 cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl")
             }
-
-        }
-
-        if (options.REFLECTION.value) {
-            cpp.includeAtEnd("$analysis", "${mainPath}/reflection/delta.dl")
         }
 
         if (options.INFORMATION_FLOW.value) {
@@ -183,30 +171,17 @@ class SouffleAnalysis extends DoopAnalysis {
         }
 
         if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
-            !options.HEAPDL.value && !options.ANDROID.value &&
-            !options.DACAPO.value && !options.DACAPO_BACH.value) {
+                !options.HEAPDL.value && !options.ANDROID.value &&
+                !options.DACAPO.value && !options.DACAPO_BACH.value)
+        {
             if (options.OPEN_PROGRAMS.value)
                 cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", macros, commonMacros)
             else
                 cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-concrete-types.dl", macros, commonMacros)
         }
 
-        if (options.DACAPO.value || options.DACAPO_BACH.value)
-            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/dacapo/rules.dl", commonMacros)
-
-        if (options.TAMIFLEX.value) {
-            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/tamiflex/declarations.dl")
-            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/tamiflex/delta.dl")
-            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/tamiflex/rules.dl", commonMacros)
-        }
-
         if (options.SANITY.value)
             cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/sanity.dl")
-
-//        if (options.MAIN_CLASS.value) {
-//            def analysisFile = FileOps.findFileOrThrow("$analysis", "Missing $analysis")
-//            analysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
-//        }
 
         if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
             cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
@@ -221,10 +196,9 @@ class SouffleAnalysis extends DoopAnalysis {
         def analysisFileChecksum = CheckSum.checksum(analysis, DoopAnalysisFactory.HASH_ALGO)
         def stringToHash = analysisFileChecksum + options.SOUFFLE_PROFILE.value.toString()
         def analysisChecksum = CheckSum.checksum(stringToHash, DoopAnalysisFactory.HASH_ALGO)
-        souffleAnalysesCache = new File("${Doop.souffleAnalysesCache}")
-        souffleAnalysesCache.mkdirs()
-        def souffleAnalysisCacheFileName = "${Doop.souffleAnalysesCache}/${analysisChecksum}"
-        souffleAnalysisCacheFile = new File(souffleAnalysisCacheFileName)
+        analysesCachePerName = new File("${Doop.souffleAnalysesCache}/${name}")
+        analysesCachePerName.mkdirs()
+        souffleAnalysisCacheFile = new File("${Doop.souffleAnalysesCache}/${name}/${analysisChecksum}")
 
         if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value) {
             def compilationCommand = ['souffle', '-c', '-o', "${outDir}/${name}" as String, analysis as String]
@@ -260,10 +234,10 @@ class SouffleAnalysis extends DoopAnalysis {
             }
 
             logger.info "Analysis compilation time (sec): $compilationTime"
-            logger.info "Caching analysis executable in $souffleAnalysesCache"
+            logger.info "Caching analysis executable ${analysisChecksum} in $analysesCachePerName"
         }
         else {
-            logger.info "Using cached analysis executable ${souffleAnalysisCacheFileName}"
+            logger.info "Using cached analysis executable ${analysisChecksum} from ${analysesCachePerName}"
         }
     }
 

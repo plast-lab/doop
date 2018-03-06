@@ -1,3 +1,5 @@
+.comp Basic {
+
 #include "basic-declarations.dl"
 
 #include "finalization.dl"
@@ -25,3 +27,7 @@ MainMethodDeclaration(?method) :-
    Method_Modifier("static", ?method).
 
 #endif // DISCOVER_MAIN_METHODS
+
+}
+
+.init basic = Basic

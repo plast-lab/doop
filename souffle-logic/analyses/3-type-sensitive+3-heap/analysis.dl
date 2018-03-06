@@ -1,8 +1,59 @@
 // Context-sensitive pointer analysis with context of 3 types and a
 // context-sensitive heap abstraction.
 
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
 // In this analysis, the real context and the real heap context is a triplet of
 // Types. The type is not always a class type, because of arrays currently being
 // a non-class subtype of Object.
 .type Context  = [ type1:Type, type2:Type, type3:Type ]
 .type HContext = [ type1:Type, type2:Type, type3:Type ]
+
+.comp ThreeTypeSensitivePlusThreeHeapConfiguration : AbstractConfiguration {
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ?hctx = [?hctxType1, ?hctxType2, ?hctxType3],
+    Value_DeclaringType(?value, ?type),
+    ?calleeCtx = [?hctxType2, ?hctxType3, ?type],
+    ?hctxType1 = ?hctxType1.
+
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?calleeCtx = ?callerCtx.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),      
+    ?ctx = [?ctxType1, ?ctxType2, ?ctxType3],
+    ?hctx = [?ctxType1, ?ctxType2, ?ctxType3].
+
+  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+    ?hctx = [?hctxType1, ?hctxType2, ?hctxType3],
+    Value_DeclaringType(?value, ?type),
+    ?newCtx = [?hctxType2, ?hctxType3, ?type],
+    ?hctxType1 = ?hctxType1.
+
+  StartupContextResponse(?hctx, ?value, ?newCtx) :-
+    StartupContextRequest(?hctx, ?value),
+    ?hctx = [?hctxType1, ?hctxType2, ?hctxType3],
+    Value_DeclaringType(?value, ?type),
+    ?newCtx = [?hctxType2, ?hctxType3, ?type],
+    ?hctxType1 = ?hctxType1.
+
+  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+    ?callerCtx = [?callerCtxType1, ?callerCtxType2, ?callerCtxType3],
+    Value_DeclaringType(?value, ?type),  
+    ?newCtx = [?callerCtxType2, ?callerCtxType3, ?type],
+    ?callerCtxType1 = ?callerCtxType1.
+
+  InitContextResponse(?value, ?ctx) :-
+    InitContextRequest(?value),
+    ?ctx = [?value, ?value, "java.lang.String"].
+
+  InitHContextResponse(?value, ?hctx) :-
+    InitHContextRequest(?value),
+    ?hctx = [?value, ?value, ?value].
+}

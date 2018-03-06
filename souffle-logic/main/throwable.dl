@@ -1,0 +1,64 @@
+/*************************************************************
+ * Throwable
+ *************************************************************/
+
+/*
+ // (Yannis) This is the original, precise and straightforward treatment
+ // of throwables. They were allocated context insensitively. This still
+ // produced huge ThrowPointsTo sets and caused slowdowns.
+ */
+#ifdef SEPARATE_EXCEPTION_OBJECTS
+HeapAllocation_ContextInsensitive(?heap) :-
+  HeapAllocation_Type(?heap, ?type),
+  ExceptionType(?type).
+#else
+
+// The optimized treatment represents every exception (i.e., throwable)
+// object by a unique representative of the same type. All exception
+// objects of the same type are therefore merged. This means that points-to
+// results for throwables are not accurate! Only the type will be right.
+
+//.decl ExceptionTypeToHeap2(?heap:HeapAllocation, ?type:Type)
+//
+//ExceptionTypeToHeap2(?heap, ?heaptype) :-
+//  HeapAllocation_Type(?heap, ?heaptype),
+//  basic.SubtypeOf(?heaptype, "java.lang.Throwable"),
+//  ExceptionHandler_Type(_, ?handlertype),
+//  basic.SubtypeOf(?heaptype, ?handlertype).
+
+.decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)
+
+ExceptionTypeToHeap(?heap, ?heaptype) :-
+  AssignHeapAllocation(?heap, _, _),
+  HeapAllocation_Type(?heap, ?heaptype),
+  ExceptionType(?heaptype).
+
+.decl ExceptionHeapTypeRepresentativeOrdinal(?type:Type, ?reprHeapOrd:number)
+
+ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
+  ExceptionTypeToHeap(_, ?type),
+  ?representativeHeapOrd = min ord(?heap) : ExceptionTypeToHeap(?heap, ?type).
+
+#ifndef NO_MERGES
+HeapRepresentative(?representativeHeap, ?heap) :-
+  ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd),
+  ExceptionTypeToHeap(?heap, ?heaptype),
+  ord(?representativeHeap) = ?representativeHeapOrd,
+  isHeapAllocation(?representativeHeap).
+#endif
+#endif // SEPARATE_EXCEPTION_OBJECTS
+/*
+// An intermediate option is to only merge exception objects of the
+// same type that are thrown in the same method.
+SameTypeAndMethod(?heap1, ?heap2) <-
+  HeapAllocation:Type[?heap1] = ?heaptype,
+  Type:Id(?throw:"java.lang.Throwable"),
+  basic.SubtypeOf(?heaptype, ?throw),
+  HeapAllocation:Type[?heap2] = ?heaptype,
+  AssignHeapAllocation(?heap1,_,?inmethod),
+  AssignHeapAllocation(?heap2,_,?inmethod).
+
+// Similarly quadratic but efficient.
+HeapRepresentative(?representativeHeap, ?heap) <-
+  agg<<?representativeHeap = min(?otherHeap)>>(SameTypeAndMethod(?otherHeap,?heap)).
+*/

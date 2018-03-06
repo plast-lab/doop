@@ -1,35 +1,83 @@
 // Context-sensitive pointer analysis with context of 2 object and a
 // context-sensitive heap abstraction.
 
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+ 
 // In this analysis, the real context is a pair of Values and the real
 // heap context a single Value.
 .type Context  = [ value1:Value, value2:Value ]
 .type HContext = [ value:Value ]
 
+.comp TwoObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
+                    
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ?hctx = [?hctxValue],
+    ?calleeCtx = [?hctxValue, ?value].
+
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?calleeCtx = ?callerCtx.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),      
+    ?ctx = [?ctxValue1, ?ctxValue2],
+    ?hctx = [?ctxValue2],
+    ?ctxValue1 = ?ctxValue1.
+
+  // For this analysis the context of a method call corresponds to the
+  // invocation site of the method.
+
+  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+    ?hctx = [?hctxValue],
+    ?newCtx = [?hctxValue, ?value].
+
+  StartupContextResponse(?hctx, ?value, ?newCtx) :-
+    StartupContextRequest(?hctx, ?value),
+    ?hctx = [?hctxValue],
+    ?newCtx = [?hctxValue, ?value].
+
+  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+    ?callerCtx = [?callerCtxValue1, ?callerCtxValue2],
+    ?newCtx = [?callerCtxValue2, ?value],
+    ?callerCtxValue1 = ?callerCtxValue1.
+
+  InitContextResponse(?value, ?ctx) :-
+    InitContextRequest(?value),
+    ?ctx = [?value, ?value].
+
+  InitHContextResponse(?value, ?hctx) :-
+     InitHContextRequest(?value),
+     ?hctx = [?value].
+
 #ifdef HEAPDL
-DynamicContextToContext([?value1, ?value2], ?dynCtx) :-
-   DynamicContextHeap1(?heap1, ?dynCtx),
-   Value_byDynamicHeap(?heap1, ?value1),
-   DynamicContextHeap2(?heap2, ?dynCtx),
-   Value_byDynamicHeap(?heap2, ?value2).
+  DynamicContextToContext([?value1, ?value2], ?dynCtx) :-
+    DynamicContextHeap1(?heap1, ?dynCtx),
+    Value_byDynamicHeap(?heap1, ?value1),
+    DynamicContextHeap2(?heap2, ?dynCtx),
+    Value_byDynamicHeap(?heap2, ?value2).
 
-DynamicContextToContext([?value, ?any], ?dynCtx) :-
-   DynamicContextHeap1(?heap1, ?dynCtx),
-   Value_byDynamicHeap(?heap1, ?value),
-   !DynamicContextHeap2(_, ?dynCtx),
-   isContext([?value, ?any]).
+  DynamicContextToContext([?value, ?any], ?dynCtx) :-
+    DynamicContextHeap1(?heap1, ?dynCtx),
+    Value_byDynamicHeap(?heap1, ?value),
+    !DynamicContextHeap2(_, ?dynCtx),
+    isContext([?value, ?any]).
 
-DynamicContextToContext(?ctx, ?dynCtx) :-
-   isDynamicContext(?dynCtx),
-   !DynamicContextHeap1(_, ?dynCtx),
-   isImmutableContext(?ctx).
+  DynamicContextToContext(?ctx, ?dynCtx) :-
+    isDynamicContext(?dynCtx),
+    !DynamicContextHeap1(_, ?dynCtx),
+    isImmutableContext(?ctx).
 
-DynamicContextToHContext([?value], ?dynCtx) :-
-   Value_byDynamicHeap(?heap1, ?value), 
-   DynamicContextHeap1(?heap1, ?dynCtx).
+  DynamicContextToHContext([?value], ?dynCtx) :-
+    Value_byDynamicHeap(?heap1, ?value), 
+    DynamicContextHeap1(?heap1, ?dynCtx).
 
-DynamicContextToHContext(?hctx, ?dynCtx) :-
-   isDynamicContext(?dynCtx),
-   !DynamicContextHeap1(_, ?dynCtx),
-   isImmutableHContext(?hctx).
+  DynamicContextToHContext(?hctx, ?dynCtx) :-
+    isDynamicContext(?dynCtx),
+    !DynamicContextHeap1(_, ?dynCtx),
+    isImmutableHContext(?hctx).
 #endif
+}

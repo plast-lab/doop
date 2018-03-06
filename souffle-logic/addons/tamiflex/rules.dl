@@ -1,3 +1,55 @@
+LoadArrayIndex(?array, ?value, ?inmethod) :-
+  ?sig = "<java.lang.reflect.Array: java.lang.Object get(java.lang.Object,int)>",
+  isMethod(?sig),
+  StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+  ActualParam(0, ?invocation, ?array),
+  AssignReturnValue(?invocation, ?value).
+
+StoreArrayIndex(?value, ?array, ?inmethod) :-
+  ?sig = "<java.lang.reflect.Array: void set(java.lang.Object,int,java.lang.Object)>",
+  isMethod(?sig),
+  StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+  ActualParam(0, ?invocation, ?array),
+  ActualParam(2, ?invocation, ?value).
+
+LoadInstanceField(?base, ?fld, ?to, ?inmethod) :-
+  ?sig = "<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>",
+  isMethod(?sig),
+  VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+  Tamiflex_ReflectionMap(?fld, ?invocation),
+  isField(?fld),
+  ! Field_Modifier("static", ?fld),
+  ActualParam(0, ?invocation, ?base),
+  AssignReturnValue(?invocation, ?to).
+
+LoadStaticField(?fld, ?to, ?inmethod) :-
+  ?sig = "<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>",
+  isMethod(?sig),
+  VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+  Tamiflex_ReflectionMap(?fld, ?invocation),
+  isField(?fld),
+  Field_Modifier("static", ?fld),
+  AssignReturnValue(?invocation, ?to).
+
+StoreInstanceField(?from, ?base, ?fld, ?inmethod) :-
+  ?sig = "<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>",
+  isMethod(?sig),
+  VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+  Tamiflex_ReflectionMap(?fld, ?invocation),
+  isField(?fld),
+  ! Field_Modifier("static", ?fld),
+  ActualParam(0, ?invocation, ?base),
+  ActualParam(1, ?invocation, ?from).
+
+StoreStaticField(?from, ?fld, ?inmethod) :-
+  ?sig = "<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>",
+  isMethod(?sig),
+  VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+  Tamiflex_ReflectionMap(?fld, ?invocation),
+  isField(?fld),
+  Field_Modifier("static", ?fld),
+  ActualParam(1, ?invocation, ?from).
+
 Value_DeclaringType(?value, ?type) :-
   (Tamiflex_Class_NewInstance(?invocation, ?value) ;
    Tamiflex_Constructor_NewInstance(?invocation, _, ?value) ;
@@ -220,7 +272,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) :-
   ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
   Var_Type(?formal, ?type),
   Value_Type(?value, ?valuetype),
-  SupertypeOf(?type, ?valuetype).
+  basic.SupertypeOf(?type, ?valuetype).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   (Tamiflex_ReifiedField(_, ?value, ?invocation) ;

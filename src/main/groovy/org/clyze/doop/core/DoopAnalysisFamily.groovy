@@ -177,13 +177,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "DACAPO",
 					name: "dacapo",
 					description: "Load additional logic for DaCapo (2006) benchmarks properties.",
-					value: false
+                    value: false,
+					forPreprocessor: true                    
 			),
 			new BooleanAnalysisOption(
 					id: "DACAPO_BACH",
 					name: "dacapo-bach",
 					description: "Load additional logic for DaCapo (Bach) benchmarks properties.",
-					value: false
+                    value: false,
+					forPreprocessor: true                    
 			),
 			new BooleanAnalysisOption(
 					id: "ONLY_APPLICATION_CLASSES_FACT_GEN",
@@ -236,6 +238,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "cfg",
 					value: true,
 					cli: false
+			),
+			new AnalysisOption<String>(
+					id: "CONFIGURATION",
+					name: "configuration",
+					description: "Analysis Configuration",
+					value: "ContextInsensitiveConfiguration",
+                    cli: false,
+					forCacheID: true,
+					forPreprocessor: true
 			),
 			/* End Main options */
 			/* Start preprocessor normal flags */

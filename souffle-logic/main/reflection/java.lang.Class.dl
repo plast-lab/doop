@@ -228,7 +228,7 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
   VarPointsTo(_, ?constantHeap, ?ctx, ?param),
   Value_isHeap(?constantHeap),
   MethodNameMatchingStringConstant_Signature(?signature, ?constantHeap),
-  SupertypeOf(?superClass, ?type),
+  basic.SupertypeOf(?superClass, ?type),
   Method_DeclaringType(?signature, ?superClass),
   Method_Modifier("public", ?signature).
 
@@ -367,7 +367,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 //VERSION-A
 ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
   FillArray_PublicFields(?hctx, ?arrayValue, ?type),
-  SupertypeOf(?superClass, ?type),
+  basic.SupertypeOf(?superClass, ?type),
   Field_DeclaringType[?fld] = ?superClass,
   Field_Modifier("public", ?fld),
   ReifiedField[?fld] = ?value,
@@ -396,7 +396,7 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
   VarPointsTo(_, ?constantHeap, ?ctx, ?param),
   Value_isHeap(?constantHeap),
   FieldNameMatchingStringConstant_Signature(?signature, ?constantHeap),
-  SupertypeOf(?superClass, ?type),
+  basic.SupertypeOf(?superClass, ?type),
   Field_DeclaringType(?signature, ?superClass),
   Field_Modifier("public", ?signature).
 

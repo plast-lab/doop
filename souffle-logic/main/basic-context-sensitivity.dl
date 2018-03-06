@@ -1,0 +1,48 @@
+.comp BasicContextSensitivity<Configuration> : AbstractContextSensitivity<Configuration> {
+
+// The main analysis is merely looking up the previously created
+// context objects.
+
+isContext(?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value), 
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
+  Value_Type(?value, ?valuetype),
+  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
+  ThisVar(?tomethod, ?this),
+  SiteShouldNotBeRefined(?invocation).
+
+isContext(?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
+  MethodInvocation_Method(?invocation, ?tomethod),
+  ThisVar(?tomethod, ?this),
+  isSpecialMethodInvocation_Insn(?invocation),
+  SiteShouldNotBeRefined(?invocation).
+
+configuration.StaticContextRequest(?callerCtx, ?invocation) :-
+  ReachableContext(?callerCtx, ?inmethod),
+  StaticMethodInvocation(?invocation, _, ?inmethod).
+
+isContext(?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
+  configuration.StaticContextRequest(?callerCtx, ?invocation),
+  configuration.StaticContextResponse(?callerCtx, ?invocation, ?calleeCtx),
+  MethodInvocation_Method(?invocation, ?tomethod).
+
+isContext(?newCtx),
+CallGraphEdge(?callerCtx, ?fakeinvo, ?newCtx, ?register) :-
+  FakeInvocation_RegisterFinalize(?heapValue, ?fakeinvo),
+  basic.AllocatedObjectSupportsFinalize(?heapValue, ?inmethod),
+  (!(HeapAllocation_Merge(?heapValue, _));
+   HeapAllocation_Merge(?heapValue, ?heapValue)),  // the object retains its identity
+  ReachableContext(?callerCtx, ?inmethod),
+  ?register = "<java.lang.ref.Finalizer: void register(java.lang.Object)>",
+  isMethod(?register),
+  FormalParam(0, ?register, ?formal),
+  configuration.FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?heapValue),  
+  configuration.FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?heapValue, ?newCtx).
+  //ObjectShouldNotBeRefined(?heapValue).
+
+}

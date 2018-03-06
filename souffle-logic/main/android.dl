@@ -32,6 +32,8 @@
 //     with what arguments?)
 **/
 
+.comp Android { 
+
 AndroidAppComponent(?type) :-
   Activity(?type);
   Service(?type);
@@ -48,7 +50,7 @@ RegisterBroadCastReceiverVar(?var) :-
    ActualParam(0, ?invocation, ?var),
    ApplicationVar(?var),
    Var_Type(?var, ?type),
-   SupertypeOf("android.content.BroadcastReceiver", ?type).
+   basic.SupertypeOf("android.content.BroadcastReceiver", ?type).
 
 .decl ExtraAndroidAppComponent(?type:Type)
 
@@ -69,7 +71,7 @@ ReifiedComponent(?type, cat("<android component object ", cat(?type, ">"))) :-
 // Create a new heap object per control object declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
 MockValueConsMacro(cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">")))), ?type),
-ReifiedLayoutControl(?type, ?id, cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">"))))) :-
+ReifivedLayoutControl(?type, ?id, cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">"))))) :-
   LayoutControl(?id, ?type, _),
   isType(?type).
 
@@ -103,7 +105,7 @@ AndroidApplicationClass(?class) :-
 
 
 AndroidViewType(?type) :-
-  SubtypeOf(?type, ?supertype),
+  basic.SubtypeOf(?type, ?supertype),
   (?supertype = "android.view.View",
    isType(?supertype);
    ?supertype = "android.view.ViewGroup",
@@ -117,7 +119,7 @@ AndroidLibraryListenerType(?type) :-
 
 ListenerType(?type) :-
   AndroidLibraryListenerType(?listenerType),
-  SubtypeOf(?type, ?listenerType).
+  basic.SubtypeOf(?type, ?listenerType).
 
 AndroidApplicationListenerClass(?class) :-
   AndroidApplicationClass(?class),
@@ -134,7 +136,7 @@ MethodDeclaredOrInherited(?meth, ?class) :-
   Method_Descriptor(?meth, ?descriptor),
   Method_SimpleName(?meth, ?simplename),
   DirectSuperclass(?class, ?superClass),
-  MethodLookup(?simplename, ?descriptor, ?class, ?meth).
+  basic.MethodLookup(?simplename, ?descriptor, ?class, ?meth).
 
 PublicMethodOfComponent(?meth) :-
   (AndroidAppComponent(?type); ExtraAndroidAppComponent(?type)),
@@ -148,12 +150,12 @@ ProtectedMethodOfComponent(?meth) :-
 
 AppMethodOverridesAndroidLibraryMethod(?meth) :-
   AndroidApplicationClass(?type),
-  SupertypeOf(?libraryType, ?type),
+  basic.SupertypeOf(?libraryType, ?type),
   AndroidLibraryType(?libraryType),
   // Using MethodLookup for ?meth with the descriptor of the
   // overridden method takes care of covariant return types.
-  MethodLookup(?simplename, ?descriptor, ?type, ?meth),
-  MethodLookup(?simplename, ?descriptor, ?libraryType, _).
+  basic.MethodLookup(?simplename, ?descriptor, ?type, ?meth),
+  basic.MethodLookup(?simplename, ?descriptor, ?libraryType, _).
 
 // The protected method overrides one in a library type, hence it's
 // callable from the library.
@@ -285,7 +287,7 @@ ReachableContext(?ctx, ?meth) :-
 //Both the overriden methods and the non overriden are kept, not sure 
 //if the latter are needed.
 WebClientType(?type):-
-    SubtypeOf(?type, ?supertype),
+    basic.SubtypeOf(?type, ?supertype),
     (?supertype = "android.webkit.WebViewClient",
     isType(?supertype);
     ?supertype = "android.webkit.WebChromeClient",
@@ -302,7 +304,7 @@ WebClientType(?type) :-
 ForcedReachableFromJavascriptContext(?ctx, ?meth),
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
-    MethodLookup(_,_,?class,?meth),
+    basic.MethodLookup(_,_,?class,?meth),
     ( Method_Modifier("protected", ?meth);
     Method_Modifier("public", ?meth)),
     ReachableApplicationObjectOfType(_, _, ?class),
@@ -372,7 +374,7 @@ FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) :-
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
   ImmutableHContextFromContext(?ctx, ?hctx),
-  SubtypeOf(?type, ?formalType),
+  basic.SubtypeOf(?type, ?formalType),
   ReifiedAndroidObjectValue(?value, ?type).
   .plan 1:(2,1,3,4)
 
@@ -381,7 +383,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 // listeners that flow into library code.
 ApplicationObjectFlowingToLibraryStaticType(?hctx, ?value, ?possibleType) :-
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
-  SupertypeOf(?possibleType, ?ofType).
+  basic.SupertypeOf(?possibleType, ?ofType).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
@@ -477,7 +479,7 @@ ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?baseva
 ActivityVarInType(?var, ?ctx, ?type) :-
    Var_DeclaringMethod(?var, ?method),
    Var_Type(?var, ?vartype),
-   SupertypeOf("android.app.Activity", ?vartype),
+   basic.SupertypeOf("android.app.Activity", ?vartype),
    ReachableContext(?ctx, ?method),
    Method_DeclaringType(?method, ?type).
 
@@ -541,3 +543,4 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
    // TODO: requires proper method resolution
    ThisVar(?method, ?this),
    ImmutableContextFromContext(?callerCtx, ?ctx).
+}

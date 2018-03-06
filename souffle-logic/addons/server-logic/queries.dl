@@ -227,7 +227,7 @@ Server_Method_Subtype(?method, ?subMethod) :-
   _Valid_Type(?type),
   _Valid_Type(?subType),
   MethodImplemented(?name, _, ?subType, ?subMethod),
-  MethodLookup(?name, ?desc, ?subType, ?subMethod).
+  basic.MethodLookup(?name, ?desc, ?subType, ?subMethod).
 
 
 // All the methods reachable from a method (transitive call-graph)

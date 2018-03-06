@@ -68,6 +68,32 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
              "android_26" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
                              "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"]
             ]
+    static final availableConfigurations = [
+            "context-insensitive" : "ContextInsensitiveConfiguration",
+            "context-insensitive-plus" : "ContextInsensitivePlusConfiguration",
+            "context-insensitive-plusplus" : "ContextInsensitivePlusPlusConfiguration",
+            "1-call-site-sensitive" : "OneCallSiteSensitiveConfiguration",
+            "1-call-site-sensitive+heap" : "OneCallSiteSensitivePlusHeapConfiguration",
+            "1-type-sensitive" : "OneTypeSensitiveConfiguration",
+            "1-type-sensitive+heap" : "OneTypeSensitivePlusHeapConfiguration",
+            "1-object-sensitive" : "OneObjectSensitiveConfiguration",
+            "1-object-sensitive+heap" : "OneObjectSensitivePlusHeapConfiguration",
+            "2-call-site-sensitive" : "TwoCallSiteSensitiveConfiguration",
+            "2-call-site-sensitive+heap" : "TwoCallSiteSensitivePlusHeapConfiguration",
+            "2-call-site-sensitive+2-heap" : "TwoCallSiteSensitivePlusTwoHeapConfiguration",
+            "2-type-sensitive" : "TwoTypeSensitiveConfiguration",
+            "2-type-sensitive+heap" : "TwoTypeSensitivePlusHeapConfiguration",
+            "2-object-sensitive" : "TwoObjectSensitiveConfiguration",
+            "2-object-sensitive+heap" : "TwoObjectSensitivePlusHeapConfiguration",
+            "2-object-sensitive+2-heap" : "TwoObjectSensitivePlusTwoHeapConfiguration",
+            "3-object-sensitive+3-heap" : "ThreeObjectSensitivePlusThreeHeapConfiguration",
+            "2-type-object-sensitive+heap" : "TwoObjectSensitivePlusHeapConfiguration",
+            "2-type-object-sensitive+2-heap" : "TwoObjectSensitivePlusTwoHeapConfiguration",
+            "3-type-sensitive+2-heap" : "ThreeTypeSensitivePlusTwoHeapConfiguration",
+            "3-type-sensitive+3-heap" : "ThreeTypeSensitivePlusThreeHeapConfiguration",
+            "selective-2-object-sensitive+heap" : "SelectiveTwoObjectSensitivePlusHeapConfiguration",
+            "partitioned-2-object-sensitive_heap" : "PartitionedTwoObjectSensitivePlusHeapConfiguration",
+    ]
 
     /**
      * A helper class that acts as an intermediate holder of the analysis variables.
@@ -97,6 +123,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         }
     }
 
+    private static getConfiguration(String analysisName) {
+        return availableConfigurations.get(analysisName)
+    }
+
     /**
      * Creates a new analysis, verifying the correctness of its id, name, options and inputFiles using
      * the supplied input resolution mechanism.
@@ -106,6 +136,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      * - if it is invalid, an exception will be thrown.
      */
     DoopAnalysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
+        options.CONFIGURATION.value = getConfiguration(name)
 
         def vars = processOptions(name, options, context)
 

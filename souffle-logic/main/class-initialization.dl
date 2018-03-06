@@ -2,7 +2,7 @@
  * TODO: this is not efficient
  */
 ClassInitializer(?type, ?method) :-
-   MethodImplemented("<clinit>", "void()", ?type, ?method).
+   basic.MethodImplemented("<clinit>", "void()", ?type, ?method).
 
 /**
  * JVM Specification:
@@ -44,7 +44,7 @@ InitializedClass(?superinterface) :-
  * Class of main method declaration
  */
 InitializedClass(?class) :-
-   MainMethodDeclaration(?method),
+   basic.MainMethodDeclaration(?method),
    Method_DeclaringType(?method, ?class).
 
 /**

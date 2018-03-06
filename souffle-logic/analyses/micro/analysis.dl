@@ -148,7 +148,7 @@ VarPointsTo(?heap, ?this) :-
   HeapAllocation_Type(?heap, ?heaptype),
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
-  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod),
+  basic.MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod),
   ThisVar(?toMethod, ?this).
 
 /**
@@ -164,7 +164,7 @@ CallGraphEdge(?invocation, ?toMethod) :-
   HeapAllocation_Type(?heap, ?heaptype),
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
-  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod).
+  basic.MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod).
 
 Reachable(?tomethod),
 CallGraphEdge(?invocation, ?tomethod) :-

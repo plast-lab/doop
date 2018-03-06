@@ -25,7 +25,7 @@
   MergeStaticBasis(callerCtx, invocation)
 
 #define CachedMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
-  CachedMerge(invocation, value, calleeCtx)
+  CachedMerge(invocation, calleeCtx)
 
 #define CachedMergeStaticMacro(callerCtx, invocation, calleeCtx) \
   CachedMergeStatic(invocation, calleeCtx)

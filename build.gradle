@@ -43,6 +43,17 @@ repositories {
     mavenCentral()
 
     maven {
+        name "soot-snapshot"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
+    }
+
+    maven {
+        name "soot-release"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
+    }
+
+
+    maven {
         url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
     }
 
@@ -67,7 +78,7 @@ dependencies {
 
     compile "org.clyze:clue-common:3.0.+",
             "org.clyze:deepdoop:0.9.+",
-            "org.codehaus.groovy:groovy-all:2.4.7",             // Groovy
+            "org.codehaus.groovy:groovy-all:2.4.13",             // Groovy
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
@@ -76,8 +87,6 @@ dependencies {
             "org.ow2.asm:asm-debug-all:5.1",                    // Java Bytecode library
             "org.smali:dexlib2:2.2b4",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
-            // Soot is a compile time dependency
-            "ext:AXMLPrinter:2.0",
             "com.github.plast-lab:HeapDL:$heapDLVersion"
 
 

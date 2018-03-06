@@ -90,6 +90,9 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
         def lastAnalysis = "${Doop.doopHome}/last-analysis"
         logger.info "Making database available at $lastAnalysis"
         analysis.executor.execute(['ln', '-s', '-f', '-n', analysis.database as String, lastAnalysis as String])
+
+        if (analysis.options.SOUFFLE_PROFILE.value)
+            logger.info "Souffle analysis profile available at ${analysis.outDir}/profile.txt"
     }
 
     protected boolean filterOutLBWarn(String line) {

@@ -256,7 +256,7 @@ VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this)
    ?invoke = "<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>",
    Method_SimpleName(?invoke, ?invokeMethName),
    Method_Descriptor(?invoke, ?invokeMethDescriptor),
-   MethodLookup(?invokeMethName, ?invokeMethDescriptor, ?handlerType, ?handlerInvokeMeth),
+   basic.MethodLookup(?invokeMethName, ?invokeMethDescriptor, ?handlerType, ?handlerInvokeMeth),
    ThisVar(?handlerInvokeMeth, ?this).
 
 #ifdef REFLECTION
@@ -352,7 +352,7 @@ ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
 .output ReachableInvocationHandler
 
 ReachableInvocationHandler(?m) :-
-  SubtypeOf(?customInvocationHandlerType, "java.lang.reflect.InvocationHandler"),
+  basic.SubtypeOf(?customInvocationHandlerType, "java.lang.reflect.InvocationHandler"),
   Method_DeclaringType(?m, ?customInvocationHandlerType),
   Reachable(?m).
 

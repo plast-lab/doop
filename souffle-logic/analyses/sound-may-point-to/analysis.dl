@@ -431,7 +431,7 @@
     HeapAllocation_Type(?heap, ?heaptype),
     VirtualMethodInvocation_SimpleName(?invo, ?simplename),
     VirtualMethodInvocation_Descriptor(?invo, ?descriptor),
-    MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMeth),
+    basic.MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMeth),
     ThisVar(?toMeth, ?this),
     MaxMayContextDepth(?maxCtxDepth),
     MayContextDepth(?ctx, ?ctxDepth),

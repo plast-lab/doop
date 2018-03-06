@@ -9,17 +9,8 @@
 // For this analysis the context of a method call corresponds to the
 // invocation site of the method and the most significant element of the
 // calling context for the caller method.
-#define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
-  callerCtx = [invocation1, invocation2], \
-  calleeCtx = [invocation2, invocation]
-
-#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
-  callerCtx = [invocation1, invocation2], \
-  calleeCtx = [invocation2, invocation]
-
 // Just keep the same context as the
-// caller. *Not* creating a new one, but pretending to, nonetheless,
-// so the engine doesn't barf.
+// caller.
 #define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
    newCtx = callerCtx
    
