@@ -17,6 +17,15 @@ RunningThread(?hctx, ?value) :-
  * 1.5 and JRE 1.6 Thread.start() is defined in Java and there is native method
  * start0.
  */
+configuration.ThreadStartContextRequest(?callerCtx, ?hctx, ?value) :-
+#if defined(JRE13) || defined(JRE14)
+  ?start = "<java.lang.Thread: void start()>",
+#else
+  ?start = "<java.lang.Thread: void start0()>",
+#endif
+  ThisVar(?start, ?startThis),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis).
+
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?run),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?runThis),
@@ -31,8 +40,7 @@ RunningThread(?hctx, ?value)
     VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis),
     Value_Type(?value, ?valuetype),
     basic.MethodLookup("run", "void()", ?valuetype, ?run),
-    ThisVar(?run, ?runThis),
-    ?callerCtx = ?callerCtx, // Just to ignore "only used once" message (depends on the macro)
+    ThisVar(?run, ?runThis), 
     configuration.ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
     configuration.ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?calleeCtx).
 
