@@ -19,13 +19,15 @@ RunningThread(?hctx, ?value) :-
  */
 configuration.ThreadStartContextRequest(?callerCtx, ?hctx, ?value) :-
 #if defined(JRE13) || defined(JRE14)
-  ?start = "<java.lang.Thread: void start()>",
+    ?start = "<java.lang.Thread: void start()>",
 #else
-  ?start = "<java.lang.Thread: void start0()>",
+    ?start = "<java.lang.Thread: void start0()>",
 #endif
-  ThisVar(?start, ?startThis),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis).
-
+    ThisVar(?start, ?startThis),
+    VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis),
+    Value_Type(?value, ?valuetype),
+    basic.MethodLookup("run", "void()", ?valuetype, _).
+ 
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?run),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?runThis),
@@ -80,6 +82,7 @@ ReachableContext(?calleeCtx, ?signature),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
     ?signature = "<java.lang.ThreadGroup: void <init>()>",
     ThisVar(?signature, ?this),
+    SystemThreadGroup(?hctx, ?value),
     configuration.StartupContextRequest(?hctx, ?value),
     configuration.StartupContextResponse(?hctx, ?value, ?calleeCtx).
 
@@ -94,15 +97,16 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
  * TODO: set the "main" argument.
  */
 
-configuration.StartupContextRequest(?groupHCtx, ?group) :-
-    SystemThreadGroup(?groupHCtx, ?group).
-                                    
+configuration.StartupContextRequest(?hctx, ?value) :-
+    MainThreadGroup(?hctx, ?value).
+
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
 VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
     ?signature = "<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>",
     ThisVar(?signature, ?this),
+    MainThreadGroup(?hctx, ?value),
     FormalParam(0, ?signature, ?groupParam),
     SystemThreadGroup(?groupHCtx, ?group),
     CompatibleHContextsMacro(?hctx, ?groupHCtx),
@@ -119,9 +123,9 @@ VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
  * TODO: set the "main" argument.
  */
 
-configuration.StartupContextRequest(?groupHCtx, ?group) :-
-   MainThreadGroup(?groupHCtx, ?group).
-               
+configuration.StartupContextRequest(?hctx, ?value) :-
+    MainThread(?hctx, ?value).
+
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
