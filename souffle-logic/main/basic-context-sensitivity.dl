@@ -42,7 +42,7 @@ CallGraphEdge(?callerCtx, ?fakeinvo, ?newCtx, ?register) :-
   isMethod(?register),
   FormalParam(0, ?register, ?formal),
   configuration.FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?heapValue),  
-  configuration.FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?heapValue, ?newCtx).
-  //ObjectShouldNotBeRefined(?heapValue).
+  configuration.FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?heapValue, ?newCtx),
+  ObjectShouldNotBeRefined(?heapValue).
 
 }
