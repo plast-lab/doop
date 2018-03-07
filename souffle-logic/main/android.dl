@@ -32,15 +32,12 @@
 //     with what arguments?)
 **/
 
-.comp Android { 
-
 AndroidAppComponent(?type) :-
   Activity(?type);
   Service(?type);
   BroadcastReceiver(?type);
   ContentProvider(?type);
   AndroidApplication(?type).
-
 
 .decl RegisterBroadCastReceiverVar(?var:Var)
 
@@ -71,7 +68,7 @@ ReifiedComponent(?type, cat("<android component object ", cat(?type, ">"))) :-
 // Create a new heap object per control object declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
 MockValueConsMacro(cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">")))), ?type),
-ReifivedLayoutControl(?type, ?id, cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">"))))) :-
+ReifiedLayoutControl(?type, ?id, cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">"))))) :-
   LayoutControl(?id, ?type, _),
   isType(?type).
 
@@ -458,7 +455,8 @@ MultiDimensionalArrayTemp(cat(cat(?invocation, ":"), ?type), ?invocation, ?type,
 UninitialisedArray(?hctx, ?value, ?invocation, ?type),
 VarPointsTo(?hctx, ?value, ?ctx, ?from) :-
   MultiDimensionalArrayTemp(?value, ?invocation, ?type, ?ctx, ?from),
-  RecordMacro(?ctx, ?value, ?hctx).
+  configuration.RecordContextRequest(?ctx, ?value, ?from),
+  configuration.RecordContextResponse(?ctx, ?value, ?from, ?hctx).
 
 NotSpecialObject(cat(cat(?invocation, ":"), ?arrayType)),
 NotEmptyArrayValue(cat(cat(?invocation, ":"), ?arrayType)),
@@ -543,4 +541,3 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
    // TODO: requires proper method resolution
    ThisVar(?method, ?this),
    ImmutableContextFromContext(?callerCtx, ?ctx).
-}

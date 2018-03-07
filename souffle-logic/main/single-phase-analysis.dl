@@ -1,10 +1,5 @@
 #include "main.dl"
 #include "basic-context-sensitivity.dl"
 
-#ifdef Android
-.init mainAnalysis = Android
-.output mainAnalysis.VarPointsTo
-#else
 .init mainAnalysis = BasicContextSensitivity<CONFIGURATION>
-#endif
 
