@@ -68,7 +68,7 @@ FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) :-
   MockObject(?basevalue, ?class).
 
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) :-
-  isImmutableHContext(?hctx), //TODO: hctx
+  mainAnalysis.isImmutableHContext(?hctx), //TODO: hctx
   FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype),
   MockObjectForType(?value, ?fieldtype).
 #endif
@@ -133,7 +133,7 @@ MockForFormal(?value, ?formal, ?type, ?method) :-
 
 // bind mock objects to formals
 MockObjectContext(?hctx, ?value, ?class),
-VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
+mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   ContextForEntryPoint(?ctx, ?method),
   HContextForEntryPoint(?hctx, ?method),
   MockForFormal(?value, ?formal, ?class, ?method).
@@ -146,7 +146,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 
 HContextForEntryPoint(?hctx, ?method),
 MockObjectContext(?hctx, ?value, ?class),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) :-
+mainAnalysis.VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) :-
 #ifdef OPEN_PROGRAMS_IMMUTABLE_HCTX
   ImmutableHContextFromContext(?calleeCtx, ?hctx),
 #else
@@ -167,7 +167,7 @@ ContextForEntryPoint(?calleeCtx, ?method) :-
   Method_DeclaringType(?method, ?class),
   MockObjectForType(?value, ?class),
 #ifndef MergeOpenProgramEntryPointMacro
-  isImmutableHContext(?immutablehctx),
+  mainAnalysis.isImmutableHContext(?immutablehctx),
 #endif
 #ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
   mainAnalysis.isImmutableContext(?calleeCtx),
@@ -185,7 +185,7 @@ ContextForEntryPoint(?calleeCtx, ?method) :-
 // Consider a recency abstraction for context in static methods
 HContextForEntryPoint(?hctx, ?method),
 ContextForEntryPoint(?calleeCtx, ?method) :-
-  isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableHContext(?hctx),
   mainAnalysis.isImmutableContext(?calleeCtx),
   Method_Modifier("static", ?method),
   !Method_Modifier("abstract", ?method),

@@ -9,6 +9,10 @@
 .type Context  = [ value1:Value, value2:Value ]
 .type HContext = [ value:Value ]
 
+
+// For this analysis the context of a method call corresponds to the
+// identity of the receiver object and the receiver object of the caller.
+// Again, this may trigger creation of a new object.
 .comp TwoObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
                     
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-

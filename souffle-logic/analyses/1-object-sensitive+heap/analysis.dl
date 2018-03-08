@@ -1,6 +1,11 @@
 // Context-sensitive pointer analysis with context of 1 object and a
 // context-sensitive heap abstraction.
 
+// For this analysis, every heap context recorded on allocation
+// corresponds to the calling context of the allocator method.
+// Subtle point: this may need to be created because even though it
+// exists as a Context it may not exist as an HContext.
+
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
 
