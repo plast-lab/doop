@@ -10,7 +10,6 @@
  * library objects, exception objects, string buffers and builders,
  * and more.
  *************************************************************/
-#include "throwable.dl"
 
 /**
  * Objects that should use a context-insensitive heap abstraction.
@@ -385,6 +384,267 @@ PreFieldNameMatchingStringConstantExact_Signature(?sig, ?string) :-
   // #endif
   Field_SimpleName(?sig, ?string).
 
+#ifdef REFLECTION_SUBSTRING_ANALYSIS
+// Creating class/field/method names via string concatenation makes more
+// sense for application classes/fields/methods.
+PreClassNameMatchingStringConstant(?string),
+PreClassNameMatchingStringConstant_Type(?type, ?string),
+PreClassNameMatchingStringConstantInexact_Type(?type, ?string) :-
+  isHeapAllocation(?string),
+#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+  ApplicationClass(?type),
+#endif
+  ClassNameSuffix(?string, ?type).
+
+PreMethodNameMatchingStringConstant(?string),
+PreMethodNameMatchingStringConstant_Signature(?sig, ?string),
+PreMethodNameMatchingStringConstantInexact_Signature(?sig, ?string) :-
+#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+  ApplicationClass(?type),
+  Method_DeclaringType(?sig, ?type),
+#endif
+  (MethodNameSuffix(?string, ?sig);
+   MethodNamePrefix(?string, ?sig)),
+  isHeapAllocation(?string),
+  ?string != "<init>",
+  ?string != "<clinit>". // common, yet not methods callable via reflection
+
+PreFieldNameMatchingStringConstant(?string),
+PreFieldNameMatchingStringConstant_Signature(?sig, ?string),
+PreFieldNameMatchingStringConstantInexact_Signature(?sig, ?string) :-
+#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+  ApplicationClass(?declaringClass),
+  Field_DeclaringType(?sig, ?declaringClass),
+#endif
+  (FieldNameSuffix(?string, ?sig);
+   FieldNamePrefix(?string, ?sig)),
+  isHeapAllocation(?string).
+
+.decl ClassIterationTrick(?length:number)
+
+ClassIterationTrick(?length) :-
+  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
+  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
+  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
+  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
+  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
+  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
+  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+
+.decl MemberPrefixIterationTrick(?length:number)
+
+MemberPrefixIterationTrick(?length) :-
+#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
+  ?length = 3; ?length = 4; ?length = 5; ?length = 6;
+#endif
+  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
+  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
+  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
+  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
+  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
+  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
+  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+
+.decl MemberSuffixIterationTrick(?length:number)
+
+MemberSuffixIterationTrick(?length) :-
+#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
+  ?length = 5; ?length = 6;
+#endif
+  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
+  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
+  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
+  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
+  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
+  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
+  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+
+.decl string_upper(s1:symbol, s2:symbol)
+
+string_upper("a", "A"). string_upper("b", "B"). string_upper("c", "C"). string_upper("d", "D").
+string_upper("e", "E"). string_upper("f", "F"). string_upper("g", "G"). string_upper("h", "H").
+string_upper("i", "I"). string_upper("j", "J"). string_upper("k", "K"). string_upper("l", "L").
+string_upper("m", "M"). string_upper("n", "N"). string_upper("o", "O"). string_upper("p", "P").
+string_upper("q", "Q"). string_upper("r", "R"). string_upper("s", "S"). string_upper("t", "T").
+string_upper("u", "U"). string_upper("v", "V"). string_upper("w", "W"). string_upper("x", "X").
+string_upper("y", "Y"). string_upper("z", "Z").
+string_upper("A", "A"). string_upper("B", "B"). string_upper("C", "C"). string_upper("D", "D").
+string_upper("E", "E"). string_upper("F", "F"). string_upper("G", "G"). string_upper("H", "H").
+string_upper("I", "I"). string_upper("J", "J"). string_upper("K", "K"). string_upper("L", "L").
+string_upper("M", "M"). string_upper("N", "N"). string_upper("O", "O"). string_upper("P", "P").
+string_upper("Q", "Q"). string_upper("R", "R"). string_upper("S", "S"). string_upper("T", "T").
+string_upper("U", "U"). string_upper("V", "V"). string_upper("W", "W"). string_upper("X", "X").
+string_upper("Y", "Y"). string_upper("Z", "Z").
+string_upper("0", "0"). string_upper("1", "1"). string_upper("2", "2"). string_upper("3", "3").
+string_upper("4", "4"). string_upper("5", "5"). string_upper("6", "6"). string_upper("7", "7").
+string_upper("8", "8"). string_upper("9", "9").
+
+// Exploit camel-case convention
+
+#define StringChangesCaseAfterPosition(pos, str) \
+  ((substr(str, pos, 1) = char, \
+  substr(str, pos + 1, 1) = nextChar, \
+  ((string_upper(char, Uchar), Uchar = char, string_upper(nextChar, UnextChar), UnextChar != nextChar); \
+   (string_upper(char, Uchar), Uchar != char, string_upper(nextChar, UnextChar), UnextChar = nextChar))); \
+  (substr(str, pos + 1, 1) = nextChar, \
+   (nextChar = "_"; \
+    nextChar = "."; \
+    nextChar = "$")); \
+  (substr(str, pos, 1) = char, \
+   (char = "_"; \
+    char = "."; \
+    char = "$")))
+
+#define StringChangesCaseBeforePosition(pos, str) \
+  ((substr(str, pos, 1) = char, \
+  substr(str, pos - 1, 1) = prevChar, \
+  ((string_upper(char, Uchar), Uchar = char, string_upper(prevChar, UprevChar), UprevChar != prevChar); \
+   (string_upper(char, Uchar), Uchar != char, string_upper(prevChar, UprevChar), UprevChar = prevChar))); \
+  (substr(str, pos - 1, 1) = prevChar, \
+   (prevChar = "_"; \
+    prevChar = "."; \
+    prevChar = "$")); \
+  (substr(str, pos, 1) = char, \
+   (char = "_"; \
+    char = "."; \
+    char = "$")))
+
+.decl ClassNameSuffix(?suffix:symbol, ?classname:ReferenceType)
+.decl MethodNameSuffix(?suffix:symbol, ?sig:Method)
+.decl MethodNamePrefix(?prefix:symbol, ?sig:Method)
+.decl FieldNameSuffix(?suffix:symbol, ?sig:Field)
+.decl FieldNamePrefix(?prefix:symbol, ?sig:Field)
+
+// Precompute proper suffixes. Crucial for efficiency.
+ClassNameSuffix(substr(?className, strlen(?className) - ?length, ?length), ?className) :-
+  isReferenceType(?className),
+  ClassIterationTrick(?length),
+  strlen(?className) > ?length,
+  StringChangesCaseBeforePosition(strlen(?className) - ?length, ?className).
+
+MethodNameSuffix(substr(?methodName, strlen(?methodName) - ?length, ?length), ?sig) :-
+  Method_SimpleName(?sig, ?methodName),
+  MemberSuffixIterationTrick(?length),
+  strlen(?methodName) > ?length,
+  StringChangesCaseBeforePosition(strlen(?methodName) - ?length, ?methodName).
+
+MethodNamePrefix(substr(?methodName, 0, ?length), ?sig) :-
+  Method_SimpleName(?sig, ?methodName),
+  MemberPrefixIterationTrick(?length),
+  strlen(?methodName) > ?length,
+  StringChangesCaseAfterPosition(?length - 1, ?methodName).
+
+FieldNameSuffix(substr(?fieldName, strlen(?fieldName) - ?length, ?length), ?sig) :-
+  Field_SimpleName(?sig, ?fieldName),
+  MemberSuffixIterationTrick(?length),
+  strlen(?fieldName) > ?length,
+  StringChangesCaseBeforePosition(strlen(?fieldName) - ?length, ?fieldName).
+
+FieldNamePrefix(substr(?fieldName, 0, ?length), ?sig) :-
+  Field_SimpleName(?sig, ?fieldName),
+  MemberPrefixIterationTrick(?length),
+  strlen(?fieldName) > ?length,
+  StringChangesCaseAfterPosition(?length - 1, ?fieldName).
+
+//// Too costly!
+//ClassNameSuffix(?type, ?suffix) <-
+//  ReferenceType(?type),
+//  Type:Id(?type:?className),
+//  string:length[?className] = ?classNameLength,
+//  ?pos = ?classNameLength / 2 + 1,
+//  ?suffixLength = ?classNameLength - ?pos,
+//  string:substring[?className, ?pos, ?suffixLength] = ?suffix.
+//
+//PreClassNameMatchingStringConstant(?heap),
+//PreClassNameMatchingStringConstant:Type(?type, ?heap)
+//  <-
+//  NonTrivialStringConstant(?heap),
+//  HeapAllocation:Id[?heap] = ?string,
+//  ClassNameSuffix(?type, ?suffix),
+//  string:substring[?suffix, _, string:length[?string]] = ?string.
+//
+//PreMethodNameMatchingStringConstant(?heap),
+//PreMethodNameMatchingStringConstant:Signature(?sig, ?heap)
+//  <-
+//  NonTrivialStringConstant(?heap),
+//  HeapAllocation:Id[?heap] = ?string,
+//  Method:SimpleName[?sig] = ?methodName,
+//  (string:substring[?methodName, _, _] = ?string ; ?methodName = ?string).
+
+/*************************************************************
+ * Analysis of reflection strings flowing through String Factories
+ *************************************************************/
+
+StringFactoryVar(?var) :-
+  StringFactoryType(?type),
+  Var_Type(?var, ?type).
+
+StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var) :-
+  StringFactoryVar(?var),
+  VarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var).
+
+.decl VarAssignedToStringFactoryVar(?param:Var, ?base:Var)
+
+VarAssignedToStringFactoryVar(?param, ?base) :-
+  VirtualMethodInvocation_SimpleName(?invocation, "append"),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  StringFactoryVar(?base),
+  ActualParam(0, ?invocation, ?param).
+
+.decl VarAssignedFromStringFactoryVar(?ret:Var, ?base:Var)
+
+VarAssignedFromStringFactoryVar(?ret, ?base) :-
+  VirtualMethodInvocation_SimpleName(?invocation, "toString"),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  StringFactoryVar(?base),
+  AssignReturnValue(?invocation, ?ret).
+
+// There can be many variations of the code below: less precision
+// (merge reflection strings), less coverage (require that string
+// in/out operations on Builders/Buffers are in the same method).  The
+// current approach (precise) seems to work ok.
+.decl VarFlowsIntoStringFactory(?factoryHctx:HContext, ?factoryValue:Value, ?ctx:Context, ?var:Var)
+
+VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var) :-
+  VarOfReflectionInterest(?ctx, ?var),
+  VarAssignedToStringFactoryVar(?var, ?factoryVar),
+  StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
+  .plan 1:(3,2,1)
+
+.decl VarFlowsFromStringFactory(?ctx:Context, ?var:Var, ?factoryHctx:HContext, ?factoryValue:Value)
+
+VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue) :-
+  VarAssignedFromStringFactoryVar(?var, ?factoryVar),
+  StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
+
+.decl VarOfReflectionInterest(?ctx:Context, ?var:Var)
+.decl ReflectionStringConstantVarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
+
+VarOfReflectionInterest(?ctx, ?var),
+ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
+  ReflectionStringConstant(?value),
+#else
+  ReflectionSubstringObject(?value),
+#endif
+  VarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+.decl ReflectionStringConstantFlowsIntoStringFactory(?hctx:HContext, ?value:Value, ?factoryHctx:HContext, ?factoryValue:Value)
+
+ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue) :-
+  VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var),
+  ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue),
+  VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue).
+
+#endif // REFLECTION_SUBSTRING_ANALYSIS
+
+
 /*************************************************************
  * Class constants
  *************************************************************/
@@ -646,6 +906,9 @@ StringFactoryHeap(?heap) :-
   HeapAllocation_Type(?heap, ?heaptype),
   StringFactoryType(?heaptype).
 
+.decl StringFactoryVar(?var:Var)
+.decl StringFactoryVarPointsTo(?factoryHctx:HContext, ?factoryValue:Value, ?ctx:Context, ?var:Var)
+
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
 #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
 #ifdef DISTINGUISH_STRING_BUFFERS_PER_PACKAGE
@@ -700,6 +963,71 @@ HeapRepresentative("<<string-builder>>", ?heap) :-
 #endif
 #endif
 #endif
+
+/*************************************************************
+ * Throwable
+ *************************************************************/
+
+/*
+ // (Yannis) This is the original, precise and straightforward treatment
+ // of throwables. They were allocated context insensitively. This still
+ // produced huge ThrowPointsTo sets and caused slowdowns.
+ */
+#ifdef SEPARATE_EXCEPTION_OBJECTS
+HeapAllocation_ContextInsensitive(?heap) :-
+  HeapAllocation_Type(?heap, ?type),
+  ExceptionType(?type).
+#else
+
+// The optimized treatment represents every exception (i.e., throwable)
+// object by a unique representative of the same type. All exception
+// objects of the same type are therefore merged. This means that points-to
+// results for throwables are not accurate! Only the type will be right.
+
+//.decl ExceptionTypeToHeap2(?heap:HeapAllocation, ?type:Type)
+//
+//ExceptionTypeToHeap2(?heap, ?heaptype) :-
+//  HeapAllocation_Type(?heap, ?heaptype),
+//  basic.SubtypeOf(?heaptype, "java.lang.Throwable"),
+//  ExceptionHandler_Type(_, ?handlertype),
+//  basic.SubtypeOf(?heaptype, ?handlertype).
+
+.decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)
+
+ExceptionTypeToHeap(?heap, ?heaptype) :-
+  AssignHeapAllocation(?heap, _, _),
+  HeapAllocation_Type(?heap, ?heaptype),
+  ExceptionType(?heaptype).
+
+.decl ExceptionHeapTypeRepresentativeOrdinal(?type:Type, ?reprHeapOrd:number)
+
+ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
+  ExceptionTypeToHeap(_, ?type),
+  ?representativeHeapOrd = min ord(?heap) : ExceptionTypeToHeap(?heap, ?type).
+
+#ifndef NO_MERGES
+HeapRepresentative(?representativeHeap, ?heap) :-
+  ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd),
+  ExceptionTypeToHeap(?heap, ?heaptype),
+  ord(?representativeHeap) = ?representativeHeapOrd,
+  isHeapAllocation(?representativeHeap).
+#endif
+#endif // SEPARATE_EXCEPTION_OBJECTS
+/*
+// An intermediate option is to only merge exception objects of the
+// same type that are thrown in the same method.
+SameTypeAndMethod(?heap1, ?heap2) <-
+  HeapAllocation:Type[?heap1] = ?heaptype,
+  Type:Id(?throw:"java.lang.Throwable"),
+  basic.SubtypeOf(?heaptype, ?throw),
+  HeapAllocation:Type[?heap2] = ?heaptype,
+  AssignHeapAllocation(?heap1,_,?inmethod),
+  AssignHeapAllocation(?heap2,_,?inmethod).
+
+// Similarly quadratic but efficient.
+HeapRepresentative(?representativeHeap, ?heap) <-
+  agg<<?representativeHeap = min(?otherHeap)>>(SameTypeAndMethod(?otherHeap,?heap)).
+*/
 
 /*************************************************************
  * Primitive arrays
