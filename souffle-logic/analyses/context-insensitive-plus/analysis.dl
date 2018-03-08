@@ -26,9 +26,6 @@ UHContext(UNIQUE_HCONTEXT).
 _InOutFlowMethod(?method) :-
   InOutFlowMethod(_, ?method).
   
-//isContext(?invo) :-
-//  ContextResponse(_, _, _, _, ?invo).
-
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?invo) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   Value_Type(?value, ?valuetype),
@@ -54,9 +51,6 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   MethodInvocation_Method(?invo, ?tomethod),
   !_InOutFlowMethod(?tomethod),
   UContext(?calleeCtx).
-
-//isContext(?invo) :-
-//  StaticContextResponse(_, _, ?invo).
 
 StaticContextResponse(?callerCtx, ?invo, ?invo) :-
   StaticContextRequest(?callerCtx, ?invo),
