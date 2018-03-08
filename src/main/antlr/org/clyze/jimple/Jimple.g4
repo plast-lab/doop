@@ -7,8 +7,9 @@ package org.clyze.jimple;
 program
 	: klass ;
 
+// First IDENTIFIER added to support the 'annotation' keyword
 klass
-	: modifier* ('class'|'interface') IDENTIFIER ('extends' IDENTIFIER)? ('implements' identifierList)? '{' (field|method)* '}' ;
+	: (modifier | IDENTIFIER)* ('class'|'interface') IDENTIFIER ('extends' IDENTIFIER)? ('implements' identifierList)? '{' (field|method)* '}' ;
 
 modifier
 	: 'public'
@@ -22,7 +23,6 @@ modifier
 	| 'volatile'
 	| 'native'
 	| 'enum'
-	| 'annotation'
 	| 'strictfp'
 	;
 
@@ -189,8 +189,14 @@ fragment
 IDENTIFIER_SUF
 	: '#_' [0-9]+ ;
 
+fragment
+PACKAGE_PART
+	: '.' IDENTIFIER_BASE
+	| '.' '\'' IDENTIFIER_BASE '\''
+	;
+
 IDENTIFIER
-	: IDENTIFIER_BASE ('.' IDENTIFIER_BASE)* IDENTIFIER_SUF? '[]'*
+	: IDENTIFIER_BASE PACKAGE_PART* IDENTIFIER_SUF? '[]'*
 	| '<' IDENTIFIER_BASE '>'
 	| '\'' IDENTIFIER_BASE '\''
 	;

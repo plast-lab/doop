@@ -276,3 +276,31 @@ SimulateNativeAllocation(
   "<sun.misc.Perf: java.nio.ByteBuffer createLong(java.lang.String,int,int,long)>/new java.nio.DirectByteBuffer/0",
   "<java.nio.DirectByteBuffer: void <init>()>").
 
+#ifdef SIMULATE_NATIVE_RETURNS
+// Crude heuristic: assume that every native method that returns a
+// class type, returns an object allocated in that method.
+
+.decl ReachableNativeMethodInvocation(?invo:MethodInvocation, ?nativeMethod:Method)
+.output ReachableNativeMethodInvocation
+
+ReachableNativeMethodInvocation(?invo, ?nativeMethod) :-
+   MethodInvocation_Method(?invo, ?nativeMethod),
+   Method_Modifier("native", ?nativeMethod),
+   Reachable(?nativeMethod).
+
+.decl NativeMethodReturningValue(?m:Method, ?t:Type, ?return:Var, ?v:Value)
+.output NativeMethodReturningValue
+
+#define NativeReturnValId(t, m) cat(t, cat(" value allocated in ", m))
+
+NativeMethodReturningValue(?m, ?t, ?return, NativeReturnValId(?t, ?m)),
+MockValueConsMacro(NativeReturnValId(?t, ?m), ?t),
+VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return) :-
+  ReachableNativeMethodInvocation(_, ?m),
+  NativeReturnVar(?return, ?m),
+  Var_Type(?return, ?t),
+  isReferenceType(?t),
+  isImmutableHContext(?hctx),
+  isImmutableContext(?ctx).
+
+#endif // SIMULATE_NATIVE_RETURNS

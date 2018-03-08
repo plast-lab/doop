@@ -167,6 +167,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					forCacheID: true
 			),
+			new BooleanAnalysisOption(
+					id: "SIMULATE_NATIVE_RETURNS",
+					name: "simulate-native-returns",
+					value: false,
+					forPreprocessor: true
+			),
 			new AnalysisOption<Boolean>(
 					id: "UNIQUE_FACTS",
 					name: "unique-facts",
