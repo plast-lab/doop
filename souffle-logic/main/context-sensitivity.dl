@@ -53,15 +53,6 @@ VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
   configuration.RecordContextRequest(?ctx, ?heapValue, ?var),
   configuration.RecordContextResponse(?ctx, ?heapValue, ?var, ?newHCtx).
 
-#ifdef RecordRefinedMacro
-isHContext(?newHCtx),
-VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
-  AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  ObjectShouldBeRefined(?heapValue),
-  RecordRefinedMacro(?ctx, ?heapValue, ?newHCtx).
-#endif
-
 VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
   Reachable(?inmethod),  // optimization purposes
   AssignContextInsensitiveHeapAllocation(?heapValue, ?var, ?inmethod),
@@ -448,44 +439,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   SiteShouldNotBeRefined(?invocation).
   .plan 1:(2,1,3,4,5,6)
 
-
-#ifdef MergeRefinedMacro
-#ifndef CachedMergeRefinedMacro
-// Default behavior
-/**
- * This logic applies to refinement-based (or "adaptive") analyses. The
- * analysis is first run with the filter predicate (SiteToRefine) empty,
- * performing a low-precision but cheap computation. Then the external logic
- * runs delta rules to populate the filter predicate and re-runs the analysis.
- * (Note that the #ifdef just checks if the analysis has defined the
- * appropriate macro. This is not an input flag.)
- */
-VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  OptVirtualMethodInvocationBase(?invocation, ?base),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-  ThisVar(?tomethod, ?this),
-  SiteShouldBeRefined(?invocation),
-  MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx).
-
-#else /* there is optimized behavior available */
-
-configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value) :-
-  OptVirtualMethodInvocationBase(?invocation, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
-
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
-  CachedMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-  ThisVar(?tomethod, ?this),
-  SiteShouldBeRefined(?invocation).
-  .plan 1:(2,1,3,4,5,6)
-#endif /* #ifndef CachedMergeRefinedMacro */
-#endif /* #ifdef MergeRefinedMacro */
-
 /**
  * Special method invocations
  */
@@ -509,35 +462,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   isSpecialMethodInvocation_Insn(?invocation),
   SiteShouldNotBeRefined(?invocation).
   //.plan 1:(2,1,3,4,5,6)
-
-#ifdef MergeRefinedMacro
-#ifndef CachedMergeRefinedMacro
-// Default behavior
-VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation_Method(?invocation, ?tomethod),
-  isSpecialMethodInvocation_Insn(?invocation),
-  ThisVar(?tomethod, ?this),
-  SiteShouldBeRefined(?invocation),
-  MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?newCtx).
-
-#else /* there is advanced behavior available */
-
-configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value) :-
-  OptSpecialMethodInvocationBase(?invocation, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
-
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
-  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  MethodInvocation_Method(?invocation, ?tomethod),
-  isSpecialMethodInvocation_Insn(?invocation),
-  ThisVar(?tomethod, ?this),
-  SiteShouldBeRefined(?invocation).
-#endif /* #ifndef CachedMergeRefinedMacro */
-#endif /* #ifdef MergeRefinedMacro
-
 
 /**
  * Reachable

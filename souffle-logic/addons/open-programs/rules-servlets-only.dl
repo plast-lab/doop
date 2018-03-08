@@ -13,7 +13,7 @@ ServletEntryMethodName("doPost").
 
 AllConcreteImplementations(?class, ?staticType) :-
   isClassType(?class),
-  SubtypeOf(?class, ?staticType),
+  basic.SubtypeOf(?class, ?staticType),
   !ClassModifier("abstract", ?class).
 
 AllConcreteImplementations(?class, ?class) :-
@@ -75,7 +75,7 @@ MockObject(cat(cat("<Mock receiver ", ?class), " >"), ?class) :-
 .decl ValueForReceiverInContext(?ctx:Context, ?receiver:Var, ?value:Value)
 
 ValueForReceiverInContext(?ctx, ?receiver, ?value) :-
-  ReachableContext(?ctx, ?method),
+  mainAnalysis.ReachableContext(?ctx, ?method),
   ThisVar(?method, ?receiver),
   Method_DeclaringType(?method, ?class),
   MockObject(?value, ?class).

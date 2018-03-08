@@ -18,11 +18,11 @@ PossibleEntryPoint(?method) :-
 
 PrefixAbove(?classAbove, substr(?classAbove, 0, ?lastDotPos+1), ?lastDotPos+1) :-
   ClassHasPossibleEntryPoint(?classAbove),
-  LastDot(?classAbove, ?lastDotPos).
+  mainAnalysis.LastDot(?classAbove, ?lastDotPos).
 
 PrefixBelow(?classBelow, substr(?classBelow, 0, ?lastDotPos)) :-
   ClassHasPossibleEntryPoint(?classBelow),
-  LastDot(?classBelow, ?lastDotPos).
+  mainAnalysis.LastDot(?classBelow, ?lastDotPos).
 
 .decl ClassIsAboveOtherInNamingHierarchy(?classAbove:ReferenceType, ?classBelow:ReferenceType)
 

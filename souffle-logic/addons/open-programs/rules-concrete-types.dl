@@ -5,7 +5,7 @@
 
 AllConcreteImplementations(?class, ?staticType) :-
   isClassType(?class),
-  SubtypeOf(?class, ?staticType),
+  basic.SubtypeOf(?class, ?staticType),
   !ClassModifier("abstract", ?class).
 
 AllConcreteImplementations(?class, ?class) :-
@@ -87,7 +87,7 @@ MockObjectForComponentType(?value, ?arrayType) :-
   ComponentType(?arrayType, ?componentType),
   MockObjectForType(?value, ?componentType).
 
-ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) :-
+mainAnalysis.ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) :-
   MockObjectContext(?hctx, ?arrayValue, ?arrayType),
   isArrayType(?arrayType),
   MockObjectForComponentType(?componentValue, ?arrayType).
@@ -170,7 +170,7 @@ ContextForEntryPoint(?calleeCtx, ?method) :-
   isImmutableHContext(?immutablehctx),
 #endif
 #ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
-  isImmutableContext(?calleeCtx),
+  mainAnalysis.isImmutableContext(?calleeCtx),
 #endif
 #ifndef OPEN_PROGRAMS_IMMUTABLE_CTX
 #ifdef MergeOpenProgramEntryPointMacro
@@ -186,7 +186,7 @@ ContextForEntryPoint(?calleeCtx, ?method) :-
 HContextForEntryPoint(?hctx, ?method),
 ContextForEntryPoint(?calleeCtx, ?method) :-
   isImmutableHContext(?hctx),
-  isImmutableContext(?calleeCtx),
+  mainAnalysis.isImmutableContext(?calleeCtx),
   Method_Modifier("static", ?method),
   !Method_Modifier("abstract", ?method),
   EntryPoint(?method).
@@ -235,8 +235,8 @@ Value_DeclaringType(cat(?class, "::: (Mock)"), ?class) :-
 #endif
   ObjToMock(?class).
 
-// Similar for ReachableContext. If not in open program mode, add extra conditions.
-ReachableContext(?ctx, ?method) :-
+// Similar for mainAnalysis.ReachableContext. If not in open program mode, add extra conditions.
+mainAnalysis.ReachableContext(?ctx, ?method) :-
 #ifndef OPEN_PROGRAMS
   // If we are not in open-program mode, only trigger logic if no main method exists
   !MainMethodDeclaration(_),
@@ -250,5 +250,5 @@ ReachableContext(?ctx, ?method) :-
 // "Arbitrary" methods might be made reachable. Initialize the corresponding
 // classes as well.
 InitializedClass(?class) :-
-  ReachableContext(_, ?method),
+  mainAnalysis.ReachableContext(_, ?method),
   Method_DeclaringType(?method, ?class).
