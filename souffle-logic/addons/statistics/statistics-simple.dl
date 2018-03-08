@@ -282,13 +282,13 @@ NewMetricMacro("37.0", "reachable 'Constructor.newInstance' (INS)", Stats_Simple
 
 #ifdef INFORMATION_FLOW
 Stats_Simple_InsensTaintedVarPointsTo(?value, ?var) :-
-  mainAnalysis.TaintedVarPointsTo(?value, _, ?var).
+  TaintedVarPointsTo(?value, _, ?var).
 
 Stats_Simple_Application_InsensTaintedVarPointsTo(?value, ?var),
 Stats_Simple_Application_TaintedVarPointsTo(?value, ?ctx, ?var) :-
   ApplicationMethod(?meth),
   Var_DeclaringMethod(?var, ?meth),
-  mainAnalysis.TaintedVarPointsTo(?value, ?ctx, ?var).
+  TaintedVarPointsTo(?value, ?ctx, ?var).
 
 Stats_Simple_LeakingTaintedInformation(?invocation, ?objStr) :-
   LeakingTaintedInformation(_, _, _, ?invocation, ?objStr).
