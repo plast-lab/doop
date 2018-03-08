@@ -220,17 +220,26 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
 .decl ForwardReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)
 .decl ForwardReflectiveAssignMethodConstantString(?ctx:Context, ?to:Var, ?signature:Method, ?constantHeap:Value)
 
-ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature),
-ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap) :-
+.decl OptGetMethodFromClass(?to:Var, ?ctx:Context, ?param:Var, ?type:Type)
+OptGetMethodFromClass(?to, ?ctx, ?param, ?type) :-
   java_lang_Class_getMethod(?to, ?param, ?from),
   VarPointsTo(_, ?reifiedClass, ?ctx, ?from),
-  ReifiedClass(?type, ?reifiedClass),
-  VarPointsTo(_, ?constantHeap, ?ctx, ?param),
-  Value_isHeap(?constantHeap),
-  MethodNameMatchingStringConstant_Signature(?signature, ?constantHeap),
+  ReifiedClass(?type, ?reifiedClass).
+
+.decl OptTypeContainsPublicMethod(?type:Type, ?signature:Method)
+OptTypeContainsPublicMethod(?type, ?signature) :-
   SupertypeOf(?superClass, ?type),
   Method_DeclaringType(?signature, ?superClass),
   Method_Modifier("public", ?signature).
+
+ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature),
+ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap) :-
+  OptGetMethodFromClass(?to, ?ctx, ?param, ?type),
+  VarPointsTo(_, ?constantHeap, ?ctx, ?param),
+  Value_isHeap(?constantHeap),
+  MethodNameMatchingStringConstant_Signature(?signature, ?constantHeap),
+  OptTypeContainsPublicMethod(?type, ?signature).
+ .plan 1:(2,1,3,4,5)
 
 // If it is a local and precise string, consider it a high-confidence inference
 .decl ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)

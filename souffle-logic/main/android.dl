@@ -532,6 +532,7 @@ AsynchTaskExecute(?param, ?base) :-
 ReachableContext(?ctx, ?method),
 OptInterproceduralAssign(?ctx, ?formal, ?callerCtx, ?actual),
 VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
+   ImmutableContextFromContext(?callerCtx, ?ctx),
    AsynchTaskExecute(?actual, ?base),
    VarPointsTo(?hctx, ?basevalue, ?callerCtx, ?base),
    Value_Type(?baseValue, ?type),
@@ -539,5 +540,4 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
    Method_SimpleName(?method, "doInBackground"),
    FormalParam(0, ?method, ?formal),
    // TODO: requires proper method resolution
-   ThisVar(?method, ?this),
-   ImmutableContextFromContext(?callerCtx, ?ctx).
+   ThisVar(?method, ?this).
