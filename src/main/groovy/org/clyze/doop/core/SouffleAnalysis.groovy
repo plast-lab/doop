@@ -126,7 +126,6 @@ class SouffleAnalysis extends DoopAnalysis {
     @Override
     protected void mainAnalysis() {
         def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-        def macros       = "${Doop.souffleAnalysesPath}/${name}/macros.dl"
         def mainPath     = "${Doop.souffleLogicPath}/main"
         def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
 
@@ -151,8 +150,8 @@ class SouffleAnalysis extends DoopAnalysis {
         else {
             if (isContextSensitive) {
                 cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl")
-                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl", commonMacros, macros)
-                cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros, macros)
+                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl", commonMacros)
+                cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros)
             } else {
                 cpp.includeAtEnd("$analysis", "${analysisPath}/declarations.dl")
                 cpp.includeAtEndIfExists("$analysis", "${mainPath}/prologue.dl", commonMacros)
@@ -165,9 +164,9 @@ class SouffleAnalysis extends DoopAnalysis {
         if (options.INFORMATION_FLOW.value) {
             def infoFlowPath = "${Doop.souffleAddonsPath}/information-flow"
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/declarations.dl")
-            cpp.includeAtEnd("$analysis", "${infoFlowPath}/delta.dl", macros)
-            cpp.includeAtEnd("$analysis", "${infoFlowPath}/rules.dl", macros)
-            cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl", macros)
+            cpp.includeAtEnd("$analysis", "${infoFlowPath}/delta.dl")
+            cpp.includeAtEnd("$analysis", "${infoFlowPath}/rules.dl")
+            cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
         }
 
         if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
@@ -175,9 +174,9 @@ class SouffleAnalysis extends DoopAnalysis {
                 !options.DACAPO.value && !options.DACAPO_BACH.value)
         {
             if (options.OPEN_PROGRAMS.value)
-                cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", macros, commonMacros)
+                cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", commonMacros)
             else
-                cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-concrete-types.dl", macros, commonMacros)
+                cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-concrete-types.dl", commonMacros)
         }
 
         if (options.SANITY.value)
