@@ -228,7 +228,7 @@ OptGetMethodFromClass(?to, ?ctx, ?param, ?type) :-
 
 .decl OptTypeContainsPublicMethod(?type:Type, ?signature:Method)
 OptTypeContainsPublicMethod(?type, ?signature) :-
-  SupertypeOf(?superClass, ?type),
+  basic.SupertypeOf(?superClass, ?type),
   Method_DeclaringType(?signature, ?superClass),
   Method_Modifier("public", ?signature).
 
