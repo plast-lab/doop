@@ -270,7 +270,6 @@ class SouffleAnalysis extends DoopAnalysis {
             return
         }
 
-        def macros    = "${Doop.souffleAnalysesPath}/${name}/macros.dl"
         def statsPath = "${Doop.souffleAddonsPath}/statistics"
         cpp.includeAtEnd("$analysis", "${statsPath}/statistics-simple.dl")
 
