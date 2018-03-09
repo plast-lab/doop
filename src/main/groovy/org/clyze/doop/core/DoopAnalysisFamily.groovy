@@ -130,7 +130,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "SEPARATE_EXCEPTION_OBJECTS",
-					name: "disable-inferTypeStructure-exceptions",
+					name: "disable-merge-exceptions",
 					value: false,
 					forPreprocessor: true
 			),
@@ -312,7 +312,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "COARSE_GRAINED_ALLOCATION",
 					name: "coarse-grained-allocation-sites",
-					description: "Aggressively inferTypeStructure allocation sites for all regular object types, in lib and app alike.",
+					description: "Aggressively merge allocation sites for all regular object types, in lib and app alike.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true,
@@ -320,7 +320,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "NO_MERGE_LIBRARY_OBJECTS",
-					name: "no-inferTypeStructure-library-objects",
+					name: "no-merge-library-objects",
 					description: "Disable the default policy of merging library (non-collection) objects of the same type per-method.",
 					value: false,
 					webUI: true,
