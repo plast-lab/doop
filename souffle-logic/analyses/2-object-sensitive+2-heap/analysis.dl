@@ -13,7 +13,10 @@
 .type HContext = [ value1:Value, value2:Value ]
 
 .comp TwoObjectSensitivePlusTwoHeapConfiguration : AbstractConfiguration {
-                    
+
+  // For this analysis the context of a method call corresponds to the
+  // identity of the receiver object and the receiver object of the caller.
+  // Again, this may trigger creation of a new object.
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
     ?hctx = [?hctxValue1, ?hctxValue2],
@@ -24,13 +27,13 @@
     StaticContextRequest(?callerCtx, ?invo),
     ?calleeCtx = ?callerCtx.
 
+  // For this analysis, every heap context recorded on allocation
+  // corresponds to the most significant element of the calling
+  // context of the allocator method.
   RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
     RecordContextRequest(?ctx, ?value, ?var),      
     ?ctx = [?ctxValue1, ?ctxValue2],
     ?hctx = [?ctxValue1, ?ctxValue2].
-
-  // For this analysis the context of a method call corresponds to the
-  // invocation site of the method.
 
   ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
     ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
@@ -44,6 +47,11 @@
     ?newCtx = [?hctxValue2, ?value],
     ?hctxValue1 = ?hctxValue2.
 
+  // This is exactly equivalent to the regular merge logic, but written
+  // differently. At finalization, we create a new hctx, based on the
+  // callerCtx, and then use this new hctx as we would in regular Merge.
+  // The macro below does this, without referring to the new hctx (i.e.,
+  // using knowledge of how it is created).
   FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
     FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
     ?callerCtx = [?callerCtxValue1, ?callerCtxValue2],

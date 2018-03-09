@@ -13,8 +13,9 @@
 
 .comp TwoCallSiteSensitivePlusTwoHeapConfiguration : AbstractConfiguration {
       
-  // This analysis treats arrays specially (deeper context).
-  // Only used for arrays. Maps each context to a *potential* hcontext.
+  // For this analysis the context of a method call corresponds to the
+  // invocation site of the method and the most significant element of the
+  // calling context for the caller method.
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),

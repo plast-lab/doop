@@ -1,4 +1,0 @@
-// Each rule that uses merge and/or record macros should add
-// the created contexts into the respective relations, since
-// the product of the macro goes to the body of a rule.
-

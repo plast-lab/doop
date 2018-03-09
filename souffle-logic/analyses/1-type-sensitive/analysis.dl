@@ -1,4 +1,7 @@
 // Context-sensitive pointer analysis with context of 1 type.
+// For this analysis the context of a method call corresponds to the
+// declaring class of the receiver object. Again, this may trigger creation of
+// a new object.
 
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"

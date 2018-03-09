@@ -11,15 +11,14 @@
 .type HContext = [ type:Type ]
 
 .comp OneTypeSensitivePlusHeapConfiguration : AbstractConfiguration {
-      
-  // This analysis treats arrays specially (deeper context).
-  // Only used for arrays. Maps each context to a *potential* hcontext.
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
     Value_DeclaringType(?value, ?type), 
     ?calleeCtx = [?type].
 
+  // For this analysis, static calls just keep the same context as the
+  // caller.
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),
     ?calleeCtx = ?callerCtx.
@@ -28,9 +27,6 @@
     RecordContextRequest(?ctx, ?value, ?var),      
     ?ctx = [?type],
     ?hctx = [?type].
-
-  // For this analysis the context of a method call corresponds to the
-  // invocation site of the method.
 
   ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
     ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
