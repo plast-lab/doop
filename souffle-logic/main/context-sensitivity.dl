@@ -208,7 +208,9 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   LoadStaticField(?sig, ?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   CompatibleContextAndHContextMacro(?ctx, ?hctx).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1)
+#endif
 
 /**
  * Store static fields

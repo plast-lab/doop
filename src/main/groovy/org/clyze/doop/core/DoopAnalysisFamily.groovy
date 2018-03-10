@@ -638,6 +638,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					nonStandard: true,
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "X_CONTEXT_REMOVER",
+					name: "Xcontext-remover",
+					description: "Run the context remover for reduced memory use (only available in context-insensitive analysis).",
+					value: false,
+					nonStandard: true,
+					forPreprocessor: true
+			),
 			new AnalysisOption<String>(
 					id: "X_START_AFTER_FACTS",
 					name: "Xstart-after-facts",

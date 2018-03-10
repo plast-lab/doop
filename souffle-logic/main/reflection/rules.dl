@@ -996,7 +996,9 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx),
   AssignReturnValue(?invocation, ?return).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5)
+#endif
 
 // Special object just to designate the unknown values returned by
 // Class.newInstance. At every newInstance to which an unknown object
@@ -1274,7 +1276,9 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx),
   AssignReturnValue(?invocation, ?return).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5)
+#endif
 
 // Make a "get" call over a special field (which knows its getField origin)
 // return a special object that also remembers the original getField call.

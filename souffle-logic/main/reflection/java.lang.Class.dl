@@ -103,7 +103,9 @@ VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   #ifdef INFORMATION_FLOW
   .plan 2:(6,5,4,3,2,1)
   #endif
+  #ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5,6)
+  #endif
 
 // REVIEW: Note how unsound this rule is: it returns a string only
 // if the string exists in the input. 
@@ -146,8 +148,9 @@ FromGetSuperClassType(?callerCtx, ?hctx, ?type, ?to) :-
   java_lang_Class_getSuperclass(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?type, ?classValue).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,4,1)
-
+#endif
 
 VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) :-
   FromGetSuperClassType(?callerCtx, ?hctx, ?type, ?to),
