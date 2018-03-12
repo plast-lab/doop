@@ -9,7 +9,6 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   Value_Type(?value, ?valuetype),
   basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-  ThisVar(?tomethod, ?this),
   SiteShouldNotBeRefined(?invocation).
 
 isContext(?calleeCtx),
@@ -17,7 +16,6 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   MethodInvocation_Method(?invocation, ?tomethod),
-  ThisVar(?tomethod, ?this),
   isSpecialMethodInvocation_Insn(?invocation),
   SiteShouldNotBeRefined(?invocation).
 
