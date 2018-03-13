@@ -199,6 +199,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					forCacheID: true
 			),
+			new BooleanAnalysisOption(
+					id: "WALA_FACT_GEN",
+					name: "wala-fact-gen",
+					value: false,
+					forCacheID: true
+			),
 			new IntegerAnalysisOption(
 					id: "FACT_GEN_CORES",
 					name: "fact-gen-cores",

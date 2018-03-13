@@ -1,30 +1,33 @@
-package org.clyze.doop.soot;
+package org.clyze.doop.wala;
 
-import org.clyze.persistent.model.doop.DynamicMethodInvocation;
+import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IField;
+import com.ibm.wala.classLoader.IMethod;
+import org.clyze.doop.soot.Session;
 import soot.*;
 import soot.jimple.*;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Representation {
-    private Map<SootMethod, String> _methodRepr = new ConcurrentHashMap<>();
-    private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
-    private Map<SootMethodRef, String> _methodRefSigRepr = new ConcurrentHashMap<>();
+public class WalaRepresentation {
+    private Map<IMethod, String> _methodRepr = new ConcurrentHashMap<>();
+    private Map<IMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
+    private Map<IMethod, String> _methodRefSigRepr = new ConcurrentHashMap<>();
     private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
-    private static Representation _repr;
-    private Representation() {}
+    private static WalaRepresentation _repr;
+    private WalaRepresentation() {}
 
-    public static Representation getRepresentation() {
+    public static WalaRepresentation getRepresentation() {
         if (_repr == null)
-            _repr = new Representation();
+            _repr = new WalaRepresentation();
         return _repr;
     }
 
-    public String classConstant(SootClass c) {
-        return "<class " + c.getName() + ">";
+    String classConstant(IClass c) {
+        return "<class " + c.getName().getClassName().toString() + ">";
     }
 
     String classConstant(String className) {
@@ -35,7 +38,7 @@ public class Representation {
         return "<class " + t + ">";
     }
 
-    public String signature(SootMethod m) {
+    public String signature(IMethod m) {
         String result = _methodSigRepr.get(m);
 
         if(result == null)
@@ -47,29 +50,29 @@ public class Representation {
         return result;
     }
 
-    String signature(SootField f) {
-        return f.getSignature();
+    String signature(IField f) {
+        return f.getReference().getSignature();
     }
 
-    String simpleName(SootMethod m) {
-        return m.getName();
+    String simpleName(IMethod m) {
+        return m.getSignature();
     }
 
-    String simpleName(SootField m) {
-        return m.getName();
+    String simpleName(IField m) {
+        return m.getReference().getSignature();
     }
 
-    String descriptor(SootMethod m)
+    String descriptor(IMethod m)
     {
         StringBuilder builder = new StringBuilder();
 
         builder.append(m.getReturnType().toString());
         builder.append("(");
-        for(int i = 0; i < m.getParameterCount(); i++)
+        for(int i = 0; i < m.getNumberOfParameters(); i++)
         {
             builder.append(m.getParameterType(i));
 
-            if(i != m.getParameterCount() - 1)
+            if(i != m.getNumberOfParameters() - 1)
             {
                 builder.append(",");
             }
@@ -79,33 +82,33 @@ public class Representation {
         return builder.toString();
     }
 
-    String thisVar(SootMethod m)
+    String thisVar(IMethod m)
     {
         return getMethodSignature(m) + "/@this";
     }
 
-    String nativeReturnVar(SootMethod m)
+    String nativeReturnVar(IMethod m)
     {
         return getMethodSignature(m) + "/@native-return";
     }
 
-    String param(SootMethod m, int i)
+    String param(IMethod m, int i)
     {
         return getMethodSignature(m) + "/@parameter" + i;
     }
 
-    String local(SootMethod m, Local l)
+    String local(IMethod m, Local l)
     {
         return getMethodSignature(m) + "/" + l.getName();
     }
 
-    String newLocalIntermediate(SootMethod m, Local l, Session session)
+    String newLocalIntermediate(IMethod m, Local l, Session session)
     {
         String s = local(m, l);
         return s + "/intermediate/" +  session.nextNumber(s);
     }
 
-    String handler(SootMethod m, Trap trap, Session session)
+    String handler(IMethod m, Trap trap, Session session)
     {
         String result = _trapRepr.get(trap);
 
@@ -120,13 +123,13 @@ public class Representation {
         return result;
     }
 
-    String throwLocal(SootMethod m, Local l, Session session)
+    String throwLocal(IMethod m, Local l, Session session)
     {
         String name = "throw " + l.getName();
         return getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
     }
 
-    private String getMethodSignature(SootMethod m)
+    private String getMethodSignature(IMethod m)
     {
         return m.getSignature();
     }
@@ -161,7 +164,7 @@ public class Representation {
         return kind;
     }
 
-    String unsupported(SootMethod inMethod, Stmt stmt, int index)
+    String unsupported(IMethod inMethod, Stmt stmt, int index)
     {
         return getMethodSignature(inMethod) +
             "/unsupported " + getKind(stmt) +
@@ -172,20 +175,20 @@ public class Representation {
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(SootMethod inMethod, Stmt stmt, Session session, int index)
+    String instruction(IMethod inMethod, Stmt stmt, Session session, int index)
     {
         return getMethodSignature(inMethod) + "/" + getKind(stmt) + "/instruction" + index;
     }
 
-    String invoke(SootMethod inMethod, InvokeExpr expr, Session session)
+    String invoke(IMethod inMethod, InvokeExpr expr, Session session)
     {
-        SootMethod exprMethod = expr.getMethod();
-        String defaultMid = exprMethod.getDeclaringClass() + "." + exprMethod.getName();
-        String midPart = (expr instanceof DynamicInvokeExpr)?
-            dynamicInvokeMiddlePart((DynamicInvokeExpr)expr, defaultMid) : defaultMid;
-
-        return getMethodSignature(inMethod) +
-               "/" + midPart + "/" + session.nextNumber(midPart);
+//        IMethod exprMethod = expr.getMethod();
+//        String defaultMid = exprMethod.getDeclaringClass() + "." + exprMethod.getName();
+//        String midPart = (expr instanceof DynamicInvokeExpr)?
+//            dynamicInvokeMiddlePart((DynamicInvokeExpr)expr, defaultMid) : defaultMid;
+//
+        return getMethodSignature(inMethod);
+//              + "/" + midPart + "/" + session.nextNumber(midPart);
     }
 
     // Create a middle part for invokedynamic ids. It currently
@@ -197,32 +200,32 @@ public class Representation {
         final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
         final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
 
-        SootMethodRef bootMethRef = expr.getBootstrapMethodRef();
-        if (bootMethRef != null) {
-            String bootMethName = bootMethRef.resolve().toString();
-            int bootArity = expr.getBootstrapArgCount();
-            if (bootArity > 1) {
-                Value val1 = expr.getBootstrapArg(1);
-                if ((val1 instanceof MethodHandle) &&
-                    ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
-                     (bootMethName.equals(ALT_L_METAFACTORY)))) {
-                    SootMethodRef smr = ((MethodHandle)val1).getMethodRef();
-                    return DynamicMethodInvocation.genId(smr.declaringClass().toString(),
-                            smr.name());
-                }
-                else
-                    System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
-            }
-            else
-                System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");
-        }
-        else
-            System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
+        //IMethodRef bootMethRef = expr.getBootstrapMethodRef();
+//        if (bootMethRef != null) {
+//            String bootMethName = bootMethRef.resolve().toString();
+//            int bootArity = expr.getBootstrapArgCount();
+//            if (bootArity > 1) {
+//                Value val1 = expr.getBootstrapArg(1);
+//                if ((val1 instanceof MethodHandle) &&
+//                    ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
+//                     (bootMethName.equals(ALT_L_METAFACTORY)))) {
+//                    IMethodRef smr = ((MethodHandle)val1).getMethodRef();
+//                    return DynamicMethodInvocation.genId(smr.declaringClass().toString(),
+//                            smr.name());
+//                }
+//                else
+//                    System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
+//            }
+//            else
+//                System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");
+//        }
+//        else
+//            System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
         return defaultResult;
     }
 
 
-    String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
+    String heapAlloc(IMethod inMethod, AnyNewExpr expr, Session session)
     {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
         {
@@ -242,12 +245,12 @@ public class Representation {
     }
 
 
-    String heapMultiArrayAlloc(SootMethod inMethod, NewMultiArrayExpr expr, ArrayType type, Session session)
+    String heapMultiArrayAlloc(IMethod inMethod, NewMultiArrayExpr expr, ArrayType type, Session session)
     {
         return heapAlloc(inMethod, type, session);
     }
 
-    private String heapAlloc(SootMethod inMethod, Type type, Session session)
+    private String heapAlloc(IMethod inMethod, Type type, Session session)
     {
         String s = type.toString();
         return getMethodSignature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);

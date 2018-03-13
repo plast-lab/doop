@@ -1,32 +1,30 @@
-package org.clyze.doop.soot;
+package org.clyze.doop.wala;
 
-import soot.SootClass;
+import com.ibm.wala.classLoader.IClass;
 import soot.SootMethod;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class Driver {
-    private ThreadFactory _factory;
-    private boolean _generateJimple;
+public class WalaDriver {
+    private WalaThreadFactory _factory;
 
     private ExecutorService _executor;
     private int _classCounter;
-    private Set<SootClass> _tmpClassGroup;
+    private Set<IClass> _tmpClassGroup;
     private int _totalClasses;
     private int _classSplit = 80;
 
-    Driver(ThreadFactory factory, int totalClasses, boolean generateJimple,
-           Integer cores) {
+    WalaDriver(WalaThreadFactory factory, int totalClasses, Integer cores) {
         _factory = factory;
         _classCounter = 0;
         _tmpClassGroup = new HashSet<>();
         _totalClasses = totalClasses;
-        _generateJimple = generateJimple;
         int _cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
 
         System.out.println("Fact generation cores: " + _cores);
@@ -38,12 +36,13 @@ public class Driver {
         }
     }
 
-    void doInParallel(Set<SootClass> classesToProcess) {
-        classesToProcess.forEach(this::generate);
-
+    void doInParallel(Iterator<IClass> classesToProcess) {
+       while (classesToProcess.hasNext()) {
+            generate(classesToProcess.next());
+        }
     }
 
-    void writeInParallel(Set<SootClass> classesToProcess) {
+    void writeInParallel(Set<IClass> classesToProcess) {
         classesToProcess.forEach(this::write);
 
     }
@@ -57,14 +56,14 @@ public class Driver {
         }
     }
 
-    void doAndroidInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
-        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses);
-        factGenerator.generate(dummyMain, new Session());
-        writer.writeAndroidEntryPoint(dummyMain);
+    void doAndroidInSequentialOrder(SootMethod dummyMain, Set<IClass> iClasses, WalaFactWriter writer, boolean ssa) {
+        WalaFactGenerator factGenerator = new WalaFactGenerator(writer, iClasses);
+        //factGenerator.generate(dummyMain, new Session());
+        //writer.writeAndroidEntryPoint(dummyMain);
         factGenerator.run();
     }
 
-    private void generate(SootClass curClass) {
+    private void generate(IClass curClass) {
         _classCounter++;
         _tmpClassGroup.add(curClass);
 
@@ -75,15 +74,15 @@ public class Driver {
         }
     }
 
-    private void write(SootClass curClass) {
-        _classCounter++;
-        _tmpClassGroup.add(curClass);
-
-        if ((_classCounter % _classSplit == 0) || (_classCounter == _totalClasses)) {
-            Runnable runnable = _factory.newJimpleGenRunnable(_tmpClassGroup);
-            _executor.execute(runnable);
-            _tmpClassGroup = new HashSet<>();
-        }
+    private void write(IClass curClass) {
+//        _classCounter++;
+//        _tmpClassGroup.add(curClass);
+//
+//        if ((_classCounter % _classSplit == 0) || (_classCounter == _totalClasses)) {
+//            Runnable runnable = _factory.newJimpleGenRunnable(_tmpClassGroup);
+//            _executor.execute(runnable);
+//            _tmpClassGroup = new HashSet<>();
+//        }
     }
 
 }
