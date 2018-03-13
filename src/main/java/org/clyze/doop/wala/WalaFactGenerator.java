@@ -3,16 +3,24 @@ package org.clyze.doop.wala;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
+import com.ibm.wala.ipa.callgraph.AnalysisOptions;
+import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
+import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
+import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.TypeReference;
 import org.clyze.doop.soot.Session;
 import soot.*;
+import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.ReturnStmt;
 import soot.jimple.ThrowStmt;
 
 import java.util.Set;
+
+import static com.ibm.wala.ssa.SSACFG.*;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -26,12 +34,17 @@ class WalaFactGenerator implements Runnable {
     private boolean _ssa;
     private Set<IClass> _iClasses;
     private final int maxRetries = 10;
+    private AnalysisOptions options;
+    private IAnalysisCacheView cache;
 
     WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses)
     {
         this._writer = writer;
 
         this._iClasses = iClasses;
+        options = new AnalysisOptions();
+        options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes());
+        cache = new AnalysisCacheImpl();
     }
 
     @Override
@@ -67,21 +80,10 @@ class WalaFactGenerator implements Runnable {
                 success = true;
                 try {
                     for (IMethod m : iClass.getAllMethods()) {
-                        Session session = new Session();
                         try {
-                            generate(m, session);
+                            generate(m);
                         }
                         catch (Exception exc) {
-                            // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
-                            // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
-                            //     Thread key = i.next();
-                            //     System.err.println("Thread " + key.getName());
-                            //     StackTraceElement[] trace = liveThreads.getLibrary(key);
-                            //     for (int j = 0; j < trace.length; j++) {
-                            //         System.err.println("\tat " + trace[j]);
-                            //     }
-                            // }
-
                             System.err.println("Error while processing method: " + m);
                             throw exc;
                         }
@@ -107,27 +109,23 @@ class WalaFactGenerator implements Runnable {
         _writer.writeField(f);
         _writer.writeFieldInitialValue(f);
 
-        //int modifiers = f.getModifiers();
-//        if(Modifier.isAbstract(modifiers))
-//            _writer.writeFieldModifier(f, "abstract");
-//        if(Modifier.isFinal(modifiers))
-//            _writer.writeFieldModifier(f, "final");
-//        if(Modifier.isNative(modifiers))
-//            _writer.writeFieldModifier(f, "native");
-//        if(Modifier.isPrivate(modifiers))
-//            _writer.writeFieldModifier(f, "private");
-//        if(Modifier.isProtected(modifiers))
-//            _writer.writeFieldModifier(f, "protected");
-//        if(Modifier.isPublic(modifiers))
-//            _writer.writeFieldModifier(f, "public");
-//        if(Modifier.isStatic(modifiers))
-//            _writer.writeFieldModifier(f, "static");
+
+        if(f.isFinal())
+            _writer.writeFieldModifier(f, "final");
+        if(f.isPrivate())
+            _writer.writeFieldModifier(f, "private");
+        if(f.isProtected())
+            _writer.writeFieldModifier(f, "protected");
+        if(f.isPublic())
+            _writer.writeFieldModifier(f, "public");
+        if(f.isStatic())
+            _writer.writeFieldModifier(f, "static");
 //        if(Modifier.isSynchronized(modifiers))
 //            _writer.writeFieldModifier(f, "synchronized");
 //        if(Modifier.isTransient(modifiers))
 //            _writer.writeFieldModifier(f, "transient");
-//        if(Modifier.isVolatile(modifiers))
-//            _writer.writeFieldModifier(f, "volatile");
+        if(f.isVolatile())
+            _writer.writeFieldModifier(f, "volatile");
         // TODO interface?
         // TODO strictfp?
         // TODO annotation?
@@ -147,6 +145,7 @@ class WalaFactGenerator implements Runnable {
     }
 
     public static boolean phantomBased(IMethod m) {
+
         /* Check for phantom classes */
 
 //        if (m.isPhantom()) {
@@ -174,7 +173,7 @@ class WalaFactGenerator implements Runnable {
         return false;
     }
 
-    void generate(IMethod m, Session session)
+    void generate(IMethod m)
     {
         if (phantomBased(m)) {
             //m.setPhantom(true);
@@ -182,35 +181,36 @@ class WalaFactGenerator implements Runnable {
         }
 
         _writer.writeMethod(m);
-
-        //int modifiers = m.getModifiers();
-
-//        if(Modifier.isAbstract(modifiers))
-//            _writer.writeMethodModifier(m, "abstract");
-//        if(Modifier.isFinal(modifiers))
-//            _writer.writeMethodModifier(m, "final");
-//        if(Modifier.isNative(modifiers))
-//            _writer.writeMethodModifier(m, "native");
-//        if(Modifier.isPrivate(modifiers))
-//            _writer.writeMethodModifier(m, "private");
-//        if(Modifier.isProtected(modifiers))
-//            _writer.writeMethodModifier(m, "protected");
-//        if(Modifier.isPublic(modifiers))
-//            _writer.writeMethodModifier(m, "public");
-//        if(Modifier.isStatic(modifiers))
-//            _writer.writeMethodModifier(m, "static");
-//        if(Modifier.isSynchronized(modifiers))
-//            _writer.writeMethodModifier(m, "synchronized");
-//        // TODO would be nice to have isVarArgs in Soot
+        if(m.isAbstract())
+            _writer.writeMethodModifier(m, "abstract");
+        if(m.isFinal())
+            _writer.writeMethodModifier(m, "final");
+        if(m.isNative())
+            _writer.writeMethodModifier(m, "native");
+        if(m.isPrivate())
+            _writer.writeMethodModifier(m, "private");
+        if(m.isProtected())
+            _writer.writeMethodModifier(m, "protected");
+        if(m.isPublic())
+            _writer.writeMethodModifier(m, "public");
+        if(m.isStatic())
+            _writer.writeMethodModifier(m, "static");
+        if(m.isSynchronized())
+            _writer.writeMethodModifier(m, "synchronized");
+        // TODO would be nice to have isVarArgs in Soot
 //        if(Modifier.isTransient(modifiers))
 //            _writer.writeMethodModifier(m, "varargs");
-//        // TODO would be nice to have isBridge in Soot
-//        if(Modifier.isVolatile(modifiers))
-//            _writer.writeMethodModifier(m, "bridge");
-//        // TODO interface?
-//        // TODO strictfp?
-//        // TODO annotation?
-//        // TODO enum?
+        // TODO would be nice to have isBridge in Soot
+        if(m.isSynchronized())
+            _writer.writeMethodModifier(m, "volatile");
+        if(m.isSynthetic())
+            _writer.writeMethodModifier(m, "synthetic");
+        if(m.isBridge())
+            _writer.writeMethodModifier(m, "bridge");
+        // TODO interface?
+        // TODO strictfp?
+        // TODO annotation?
+        // TODO enum?
 
         if(!m.isStatic())
         {
@@ -238,36 +238,29 @@ class WalaFactGenerator implements Runnable {
 
         if(!(m.isAbstract() || m.isNative()))
         {
-//            if(!m.get)
-//            {
-//                // This instruction is the bottleneck of
-//                // soot-fact-generation.
-//                // synchronized(Scene.v()) {
-//                System.out.println("You should never see this anymore");
-//                m.retrieveActiveBody();
-//                // } // synchronizing so broadly = giving up on Soot's races
-//            }
-//
-//            Body b = m.getActiveBody();
-//            try {
-//                if (b != null) {
-//                    if (_ssa) {
-//                        b = Shimple.v().newBody(b);
-//                        m.setActiveBody(b);
-//                    }
-//                    DoopRenamer.transform(b);
-//                    generate(m, b, session);
-//                }
-//            } catch (RuntimeException ex) {
-//                System.err.println("Fact generation failed for method " + m.getSignature() + ":");
-//                ex.printStackTrace();
-//            }
+            IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
+            generate(m, ir);
         }
     }
 
-    private void generate(IMethod m, Body b, Session session)
+    private void generate(IMethod m, IR ir)
     {
 
+          SSAInstruction[] instructions = ir.getInstructions();
+          SSACFG cfg = ir.getControlFlowGraph();
+          for (int i = 0; i <=cfg.getMaxNumber(); i++) {
+              SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+              int start = basicBlock.getFirstInstructionIndex();
+              int end = basicBlock.getLastInstructionIndex();
+
+              for (int j = start; j <= end; j++) {
+                  if (instructions[j] != null) {
+                      if (instructions[j] instanceof SSAReturnInstruction) {
+                          generate(m, ir, (SSAReturnInstruction) instructions[j]);
+                      }
+                  }
+              }
+          }
 //        for(Local l : b.getLocals())
 //        {
 //            _writer.writeLocal(m, l);
@@ -400,7 +393,7 @@ class WalaFactGenerator implements Runnable {
     /**
      * Assignment statement
      */
-    public void generate(SootMethod inMethod, AssignStmt stmt, Session session)
+    public void generate(IMethod inMethod, AssignStmt stmt, Session session)
     {
         Value left = stmt.getLeftOp();
 
@@ -414,7 +407,7 @@ class WalaFactGenerator implements Runnable {
         }
     }
 
-    private void generateLeftLocal(SootMethod inMethod, AssignStmt stmt, Session session)
+    private void generateLeftLocal(IMethod inMethod, AssignStmt stmt, Session session)
     {
 //        Local left = (Local) stmt.getLeftOp();
 //        Value right = stmt.getRightOp();
@@ -538,7 +531,7 @@ class WalaFactGenerator implements Runnable {
 //        }
     }
 
-    private void generateLeftNonLocal(SootMethod inMethod, AssignStmt stmt, Session session)
+    private void generateLeftNonLocal(IMethod inMethod, AssignStmt stmt, Session session)
     {
 //        Value left = stmt.getLeftOp();
 //        Value right = stmt.getRightOp();
@@ -614,7 +607,7 @@ class WalaFactGenerator implements Runnable {
 //        }
     }
 
-    private void generate(SootMethod inMethod, IdentityStmt stmt, Session session)
+    private void generate(IMethod inMethod, IdentityStmt stmt, Session session)
     {
 //        Value left = stmt.getLeftOp();
 //        Value right = stmt.getRightOp();
@@ -647,8 +640,10 @@ class WalaFactGenerator implements Runnable {
     /**
      * Return statement
      */
-    private void generate(SootMethod inMethod, ReturnStmt stmt, Session session)
+    private void generate(IMethod m, IR ir, SSAReturnInstruction instruction)
     {
+         _writer.writeReturn(m, ir, instruction);
+
 //        Value v = stmt.getOp();
 //
 //        if(v instanceof Local)
@@ -683,7 +678,7 @@ class WalaFactGenerator implements Runnable {
 //        }
     }
 
-    private void generate(SootMethod inMethod, ThrowStmt stmt, Session session)
+    private void generate(IMethod inMethod, ThrowStmt stmt, Session session)
     {
 //        Value v = stmt.getOp();
 //

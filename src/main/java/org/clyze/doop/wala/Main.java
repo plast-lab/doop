@@ -81,11 +81,8 @@ public class Main {
             }
             // Set up options which govern analysis choices.  In particular, we will use all Pi nodes when
             // building the IR.
-            AnalysisOptions options = new AnalysisOptions();
-            options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes());
 
             // Create an object which caches IRs and related information, reconstructing them lazily on demand.
-            IAnalysisCacheView cache = new AnalysisCacheImpl();
             Iterator<IClass> classes = cha.iterator();      //IMethod m ;
 
             Database db = new Database(new File(walaParameters._outputDir), false);
@@ -95,24 +92,6 @@ public class Main {
 
             System.out.println("Number of classes: " + cha.getNumberOfClasses());
             driver.doInParallel(classes);
-//            while(classes.hasNext())
-//            {
-//                myClass = classes.next();
-//                Collection<IMethod> classMethods = myClass.getDeclaredMethods();
-//                for(IMethod m : classMethods)
-//                {
-//                    // Build the IR and cache it.
-//                    if(m.isNative())
-//                        continue;
-//                    IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
-//
-//                    if (ir == null) {
-//                        //Assertions.UNREACHABLE("Null IR for " + m);
-//                        continue;
-//                    }
-//
-//                }
-//            }
         }
 
     }

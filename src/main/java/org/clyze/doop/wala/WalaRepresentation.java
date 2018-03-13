@@ -3,6 +3,8 @@ package org.clyze.doop.wala;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.ssa.SSAReturnInstruction;
 import org.clyze.doop.soot.Session;
 import soot.*;
 import soot.jimple.*;
@@ -97,15 +99,15 @@ public class WalaRepresentation {
         return getMethodSignature(m) + "/@parameter" + i;
     }
 
-    String local(IMethod m, Local l)
+    String local(IMethod m, String local)
     {
-        return getMethodSignature(m) + "/" + l.getName();
+        return getMethodSignature(m) + "/" + local;
     }
 
     String newLocalIntermediate(IMethod m, Local l, Session session)
     {
-        String s = local(m, l);
-        return s + "/intermediate/" +  session.nextNumber(s);
+        //String s = local(m, l);
+        return "/intermediate/";
     }
 
     String handler(IMethod m, Trap trap, Session session)
@@ -134,50 +136,50 @@ public class WalaRepresentation {
         return m.getSignature();
     }
 
-    private String getKind(Stmt stmt)
+    private String getKind(SSAInstruction instruction)
     {
         String kind = "unknown";
-        if(stmt instanceof AssignStmt)
+        if(instruction instanceof AssignStmt)
             kind = "assign";
-        else if(stmt instanceof DefinitionStmt)
+        else if(instruction instanceof DefinitionStmt)
             kind = "definition";
-        else if(stmt instanceof EnterMonitorStmt)
+        else if(instruction instanceof EnterMonitorStmt)
             kind = "enter-monitor";
-        else if(stmt instanceof ExitMonitorStmt)
+        else if(instruction instanceof ExitMonitorStmt)
             kind = "exit-monitor";
-        else if(stmt instanceof GotoStmt)
+        else if(instruction instanceof GotoStmt)
             kind = "goto";
-        else if(stmt instanceof IdentityStmt)
+        else if(instruction instanceof IdentityStmt)
             kind = "assign";
-        else if(stmt instanceof IfStmt)
+        else if(instruction instanceof IfStmt)
             kind = "if";
-        else if(stmt instanceof InvokeStmt)
+        else if(instruction instanceof InvokeStmt)
             kind = "invoke";
-        else if(stmt instanceof RetStmt)
+        else if(instruction instanceof RetStmt)
             kind = "ret";
-        else if(stmt instanceof ReturnVoidStmt)
+        else if(instruction instanceof SSAReturnInstruction && ((SSAReturnInstruction) instruction).returnsVoid())
             kind = "return-void";
-        else if(stmt instanceof ReturnStmt)
+        else if(instruction instanceof SSAReturnInstruction)
             kind = "return";
-        else if(stmt instanceof ThrowStmt)
+        else if(instruction instanceof ThrowStmt)
             kind = "throw";
         return kind;
     }
 
-    String unsupported(IMethod inMethod, Stmt stmt, int index)
+    String unsupported(IMethod inMethod, SSAInstruction instruction, int index)
     {
         return getMethodSignature(inMethod) +
-            "/unsupported " + getKind(stmt) +
-            "/" +  stmt.toString() +
+            "/unsupported " + getKind(instruction) +
+            "/" +  instruction.toString() +
             "/instruction" + index;
     }
 
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(IMethod inMethod, Stmt stmt, Session session, int index)
+    String instruction(IMethod inMethod, SSAInstruction instruction, int index)
     {
-        return getMethodSignature(inMethod) + "/" + getKind(stmt) + "/instruction" + index;
+        return getMethodSignature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
 
     String invoke(IMethod inMethod, InvokeExpr expr, Session session)
