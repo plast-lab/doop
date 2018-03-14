@@ -233,8 +233,9 @@ class SouffleAnalysis extends DoopAnalysis {
                 }
             }
             try {
+                StandardCopyOption opt = options.X_CONTEXT_REMOVER.value ? StandardCopyOption.REPLACE_EXISTING : StandardCopyOption.COPY_ATTRIBUTES
                 // Keep execute permission
-                Files.copy(new File("${outDir}/${name}").toPath(), souffleAnalysisCacheFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+                Files.copy(new File("${outDir}/${name}").toPath(), souffleAnalysisCacheFile.toPath(), opt)
             } catch (FileAlreadyExistsException ex) {
                 // If a cached file is already there, don't overwrite
                 // it (it might be used by another analysis), just reuse it.
