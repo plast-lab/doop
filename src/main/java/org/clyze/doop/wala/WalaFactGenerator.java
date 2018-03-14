@@ -81,6 +81,34 @@ class WalaFactGenerator {
 
         }
     }
+    public String fixTypeString(String original)
+    {
+        String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
+        if(ret.contains("Primordial"))
+        {
+            ret = ret.substring(ret.indexOf(",") + 1);
+            if(ret.equals("Z"))
+                return "boolean";
+            else if(ret.equals("I"))
+                return "int";
+            else if(ret.equals("V"))
+                return "void";
+            else if(ret.equals("B"))
+                return "byte";
+            else if(ret.equals("C"))
+                return "char";
+            else if(ret.equals("D"))
+                return "double";
+            else if(ret.equals("F"))
+                return "float";
+            else if(ret.equals("J"))
+                return "long";
+            else if(ret.equals("S"))
+                return "short";
+            //TODO: Figure out what the 'P' code represents in WALA's TypeRefference
+        }
+        return ret;
+    }
 
     public void printIR(IClass cl)
     {
@@ -94,34 +122,28 @@ class WalaFactGenerator {
         Collection<IMethod> methods = cl.getDeclaredMethods();
         try {
             PrintWriter printWriter = new PrintWriter(file);
-            printWriter.write("class " + cl.getName() + "\n{\n");
+            printWriter.write("class " + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L",""));
+            printWriter.write("\n{\n");
             for(IField field : fields )
             {
-                printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getName() + "\n");
-                printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().getSignature());
-                printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().toString());
+                printWriter.write("\t" + fixTypeString(field.getFieldTypeReference().toString()) + " " + field.getName() + ";\n");
+                //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().getSignature() + "\n");
+                //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().toString() + "\n");
             }
             for (IMethod m : methods)
             {
+                printWriter.write("\n\t" + fixTypeString(m.getReturnType().toString()) + " " + m.getReference().getName().toString() + "(");
+                for (int i = 0; i < m.getNumberOfParameters(); i++) {
+                    printWriter.write(fixTypeString(m.getParameterType(i).toString()) + " ");
+                    if (i < m.getNumberOfParameters() - 1)
+                        printWriter.write(", ");
+                }
+                printWriter.write(")\n\t{\n");
                 if(!(m.isAbstract() || m.isNative()))
                 {
-                    System.out.println("hello " + m.getReference().getName().toString() + " in class " + cl.getReference().getName().toString());
-                    IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
-                    printWriter.write("\t" + m.getReturnType() + " " + m.getReference().getName().toString() + "(");
-                    for (int i = 0; i < m.getNumberOfParameters(); i++) {
-                        printWriter.write(m.getParameterType(i).toString() + " ");
-                        if (i < m.getNumberOfParameters() - 1)
-                            printWriter.write(", ");
-                    }
-                    printWriter.write(")\n{");
-
-                    if (ir == null)
-                        System.out.println("Null ir " + m.getReference().getName().toString() + " in class " + cl.getReference().getName().toString());
-                    else
-                        printWriter.write(ir.toString());
-
-                    printWriter.write("}\n");
+                    printIR(m,printWriter);
                 }
+                printWriter.write("\t}\n");
 
             }
 
@@ -129,6 +151,25 @@ class WalaFactGenerator {
             printWriter.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+        }
+    }
+    public void printIR(IMethod m,PrintWriter writer)
+    {
+        IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
+        SSAInstruction[] instructions = ir.getInstructions();
+        SSACFG cfg = ir.getControlFlowGraph();
+        for (int i = 0; i <=cfg.getMaxNumber(); i++) {
+            writer.write("\t\tBB "+ i + "\n");
+            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+            int start = basicBlock.getFirstInstructionIndex();
+            int end = basicBlock.getLastInstructionIndex();
+
+            for (int j = start; j <= end; j++) {
+                if (instructions[j] != null) {
+                    writer.write("\t\t\t" + instructions[j].toString() + "\n");
+
+                }
+            }
         }
     }
     private void generate(IField f)
