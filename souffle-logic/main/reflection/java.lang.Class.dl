@@ -57,11 +57,13 @@ ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHe
   VarPointsTo(_, ?constantHeap, ?ctx, ?param),
   Value_isHeap(?constantHeap),
   ClassNameMatchingStringConstant_Type(?type, ?constantHeap).
+                                                         
+.decl HighConfidenceAssign(?value:Value, ?inmethod:Method)                                                       
 
-.decl HighConfidenceAssign(?value:Value, ?inmethod:Method)
-
-HighConfidenceAssign(?value, ?inmethod) :-
-  AssignHeapAllocation(?value, _, ?inmethod).
+// This would make little sense if defined as just below, but there
+// are possibly other sources (e.g., from heap snapshots)
+HighConfidenceAssign(?value, ?inmethod) :-              
+  AssignHeapAllocation(?value, _, ?inmethod).           
 
 
 // If it is a local and precise string, consider it a high-confidence inference
@@ -71,10 +73,10 @@ ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
   ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap),
   Instruction_Method(?invocation, ?inmethod),
   HighConfidenceAssign(?constantHeap, ?inmethod),
-  (NumberOfClassesMatchingConstant(?constantHeap, ?num),
-   StringPrecisionThreshold(?t),
-   ?num < ?t;
-   ClassNameMatchingStringConstant_Type(?type, ?constantHeap)).
+  ((NumberOfClassesMatchingConstant(?constantHeap, ?num),
+    StringPrecisionThreshold(?t),
+    ?num < ?t) ;
+   PreClassNameMatchingStringConstantExact_Type(?type, ?constantHeap)).
 
 
 /**
@@ -248,14 +250,14 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
 .decl ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)
 
 ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) :-
-   ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
+  ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
 // Banning method propagation this way seems too restrictive
 //  _OptVarToMethod[?to] = ?inmethod,
-//  AssignHeapAllocation(?constantHeap, _, ?inmethod),
-  (NumberOfMethodsMatchingConstant(?constantHeap, ?num),
-   StringPrecisionThreshold(?t),
-   ?num < ?t;
-   MethodNameMatchingStringConstant_Signature(?signature, ?constantHeap)).
+//    HighConfidenceAssign(?constantHeap, ?inmethod),
+  ((NumberOfMethodsMatchingConstant(?constantHeap, ?num),
+    StringPrecisionThreshold(?t),
+    ?num < ?t ) ;
+   PreMethodNameMatchingStringConstantExact_Signature(?signature, ?constantHeap)).
 
 // TODO: Method objects derived from dynamic info have higher confidence.
 
@@ -418,11 +420,11 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) :-
   ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
   Var_DeclaringMethod(?to, ?inmethod),
-  HighConfidenceAssign(?value, ?inmethod),
-  (NumberOfFieldsMatchingConstant(?constantHeap, ?num),
-   StringPrecisionThreshold(?t),
-   ?num < ?t;
-   FieldNameMatchingStringConstant_Signature(?signature, ?constantHeap)).
+  HighConfidenceAssign(?constantHeap, ?inmethod),
+  ((NumberOfFieldsMatchingConstant(?constantHeap, ?num),
+    StringPrecisionThreshold(?t),
+    ?num < ?t) ;
+   PreFieldNameMatchingStringConstantExact_Signature(?signature, ?constantHeap)).
 
 /*
 //VERSION-A
