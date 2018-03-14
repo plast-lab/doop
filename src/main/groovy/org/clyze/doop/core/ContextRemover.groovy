@@ -9,14 +9,23 @@ import java.nio.file.StandardCopyOption
 public class ContextRemover {
     // Relations containing context fields (but also other fields).
     static HashMap<String, List<Integer>> fieldsToRemove = new HashMap<>();
-    // Relations only containing context fields ("context relations").
-    static HashSet<String> contextRelations = new HashSet<>();
+    // Relations that should be removed, such as those containing only context fields.
+    static HashSet<String> relationsToDelete = new HashSet<>();
+    static HashSet<String> extraRelationsToDelete =
+        [ "ContextResponse",
+          "StaticContextResponse",
+          "RecordContextResponse",
+          "ThreadStartContextResponse",
+          "StartupContextResponse",
+          "FinalizerRegisterContextResponse",
+          "InitContextResponse",
+          "InitHContextResponse" ] as Set
     // Line counter.
     static int lineN = 0
     // Trivially true fact to use when replacing context relations.
     static final String CONST_TRUE = "TRUE(1)"
-    // Context equations to handle explicitly.
-    static final List contextEquations = [
+    // Text to delete explicitly.
+    static final List textToDelete = [
         "?callerCtx = ?callerCtx",
         "?hctx = ?hctx",
         "?groupHCtx = ?groupHCtx",
@@ -37,7 +46,7 @@ public class ContextRemover {
         println "WARNING: Running the experimental context remover..."
         outFile.delete()
 
-        List outLines = ['.decl TRUE(t:number)', 'TRUE(1).']
+        List outLines = ['.decl TRUE(t:number)', "${CONST_TRUE}."]
         // First pass: recognize and transform declarations.
         inFile.eachLine { String line -> outLines << translateDecl(line) }
         // Second pass: transform logic and remove most trivial placeholders.
@@ -67,9 +76,9 @@ public class ContextRemover {
                 }
             }
             // If no fields left, this is a relation involving only contexts.
-            if (newFields.size() == 0) {
+            if ((newFields.size() == 0) || extraRelationsToDelete.contains(relName)) {
                 fieldsToRemove.remove(relName)
-                contextRelations.add(relName)
+                relationsToDelete.add(relName)
                 // println "Marking context relation ${relName}."
             } else {
                 String original = line.substring(declIdx, rParenIdx + 1)
@@ -88,8 +97,8 @@ public class ContextRemover {
         // Already processed.
         if (line.indexOf(".decl ") != -1) { return line }
 
-        // Context equations that should be eliminated.
-        contextEquations.each { lineSubstitutions << [it, CONST_TRUE] }
+        // Text that should be deleted.
+        textToDelete.each { lineSubstitutions << [it, CONST_TRUE] }
 
         // Compute substitutions for relations containing contexts.
         for (String relName in fieldsToRemove.keySet()) {
@@ -109,7 +118,7 @@ public class ContextRemover {
             }
         }
         // Replace context-only relations with trivial truths.
-        contextRelations.each { String relName ->
+        relationsToDelete.each { String relName ->
             findRels(line, relName).each { List r ->
                 if (r[0] != -1) { lineSubstitutions << [r[4], CONST_TRUE] }
             }
@@ -190,6 +199,11 @@ public class ContextRemover {
             if (relHeadStartIdx == -1) {
                 relHead = ".${relName}("
                 relHeadStartIdx = line.indexOf(relHead, startIdx)
+                if (relHeadStartIdx != -1) {
+                    int componentStartIdx = findWordStartBackwards(line, relHeadStartIdx - 1)
+                    relHead = line.substring(componentStartIdx, relHeadStartIdx) + relHead
+                    relHeadStartIdx = componentStartIdx
+                }
             }
         }
         if (relHeadStartIdx != -1) {
@@ -202,6 +216,14 @@ public class ContextRemover {
             args = splitOuter(line.substring(relHeadEndIdx, rParenIdx))
         }
         return [relHeadStartIdx, relHeadEndIdx, relHead, rParenIdx, original, args]
+    }
+
+    static int findWordStartBackwards(String line, int startIdx) {
+        for (int idx = startIdx; idx >= 0; idx--) {
+            if (!((Character)line[idx]).isLetter())
+                return idx
+        }
+        return 0
     }
 
     static boolean isContextField(String s) {

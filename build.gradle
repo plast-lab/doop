@@ -89,6 +89,16 @@ dependencies {
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion"
 
+    // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.core
+    compile group: 'com.ibm.wala', name: 'com.ibm.wala.core', version: '1.4.3'
+    // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.shrike
+    compile group: 'com.ibm.wala', name: 'com.ibm.wala.shrike', version: '1.4.3'
+    // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
+    compile group: 'com.ibm.wala', name: 'com.ibm.wala.util', version: '1.4.3'
+    // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.dalvik
+    //compile group: 'com.ibm.wala', name: 'com.ibm.wala.dalvik', version: '1.4.3'
+
+
 
     // Soot is a compile time dependency
     compile 'ext:AXMLPrinter:2.0',

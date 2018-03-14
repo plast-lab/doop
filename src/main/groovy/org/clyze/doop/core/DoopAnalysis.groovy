@@ -152,7 +152,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 runAverroes()
             }
 
-            runSoot()
+            if (options.WALA_FACT_GEN.value)
+                runWala()
+            else
+                runSoot()
 
             touch(new File(factsDir, "ApplicationClass.facts"))
             touch(new File(factsDir, "Properties.facts"))
@@ -308,7 +311,34 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
         }
 
-        logger.info "Fact generation time: ${sootTime}"
+        logger.info "Soot fact generation time: ${sootTime}"
+    }
+
+    protected void runWala() {
+        Collection<String> params
+        def inputArgs = inputFiles.collect(){File f -> ["-i", f.toString()]}.flatten() as Collection<String>
+
+        def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+        Collection<String> depArgs
+
+        depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
+        params = inputArgs + depArgs
+
+        params = params + ["-d", factsDir.toString()]
+        sootTime = Helper.timing {
+            //We invoke soot reflectively using a separate class-loader to be able
+            //to support multiple soot invocations in the same JVM @ server-side.
+            //TODO: Investigate whether this approach may lead to memory leaks,
+            //not only for soot but for all other Java-based tools, like jphantom
+            //or averroes.
+            //In such a case, we should invoke all Java-based tools using a
+            //separate process.
+            ClassLoader loader = sootClassLoader()
+            Helper.execJava(loader, "org.clyze.doop.wala.Main", params.toArray(new String[params.size()]))
+        }
+
+        logger.info "Wala fact generation time: ${sootTime}"
+
     }
 
     protected void runJPhantom(){
