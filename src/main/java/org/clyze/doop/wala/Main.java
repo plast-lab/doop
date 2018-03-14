@@ -87,11 +87,11 @@ public class Main {
 
             Database db = new Database(new File(walaParameters._outputDir), false);
             WalaFactWriter walaFactWriter = new WalaFactWriter(db);
-            WalaThreadFactory factory = new WalaThreadFactory(walaFactWriter);
-            WalaDriver driver = new WalaDriver(factory, cha.getNumberOfClasses(), 1);
+            WalaDriver driver = new WalaDriver();
 
             System.out.println("Number of classes: " + cha.getNumberOfClasses());
-            driver.doInParallel(classes);
+            //driver.doInParallel(classes);
+            driver.doSequentially(classes, walaFactWriter);
         }
 
     }

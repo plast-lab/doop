@@ -5,6 +5,7 @@ import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.ssa.SSAReturnInstruction;
+import com.ibm.wala.types.TypeReference;
 import org.clyze.doop.soot.Session;
 import soot.*;
 import soot.jimple.*;
@@ -36,7 +37,7 @@ public class WalaRepresentation {
         return "<class " + className + ">";
     }
 
-    String classConstant(Type t) {
+    String classConstant(TypeReference t) {
         return "<class " + t + ">";
     }
 
@@ -99,9 +100,9 @@ public class WalaRepresentation {
         return getMethodSignature(m) + "/@parameter" + i;
     }
 
-    String local(IMethod m, String local)
+    String local(IMethod m, Local local)
     {
-        return getMethodSignature(m) + "/" + local;
+        return getMethodSignature(m) + "/" + local.getName();
     }
 
     String newLocalIntermediate(IMethod m, Local l, Session session)
@@ -177,9 +178,9 @@ public class WalaRepresentation {
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(IMethod inMethod, SSAInstruction instruction, int index)
+    String instruction(IMethod inMethod, SSAInstruction instruction)
     {
-        return getMethodSignature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
+        return getMethodSignature(inMethod) + "/" + getKind(instruction) + "/instruction" + instruction.iindex;
     }
 
     String invoke(IMethod inMethod, InvokeExpr expr, Session session)

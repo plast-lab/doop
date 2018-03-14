@@ -15,12 +15,9 @@ import soot.*;
 import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.IdentityStmt;
-import soot.jimple.ReturnStmt;
 import soot.jimple.ThrowStmt;
 
-import java.util.Set;
-
-import static com.ibm.wala.ssa.SSACFG.*;
+import java.util.Iterator;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -28,16 +25,14 @@ import static com.ibm.wala.ssa.SSACFG.*;
  * controlling what facts are generated.
  */
 
-class WalaFactGenerator implements Runnable {
+class WalaFactGenerator {
 
     private WalaFactWriter _writer;
-    private boolean _ssa;
-    private Set<IClass> _iClasses;
-    private final int maxRetries = 10;
+    private Iterator<IClass> _iClasses;
     private AnalysisOptions options;
     private IAnalysisCacheView cache;
 
-    WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses)
+    WalaFactGenerator(WalaFactWriter writer, Iterator<IClass> iClasses)
     {
         this._writer = writer;
 
@@ -47,20 +42,20 @@ class WalaFactGenerator implements Runnable {
         cache = new AnalysisCacheImpl();
     }
 
-    @Override
+
     public void run() {
 
-        for (IClass iClass : _iClasses) {
+        while (_iClasses.hasNext()) {
+            IClass iClass = _iClasses.next();
             _writer.writeClassOrInterfaceType(iClass);
 
-            int modifiers = iClass.getModifiers();
-            if(Modifier.isAbstract(modifiers))
+            if(iClass.isAbstract())
                 _writer.writeClassModifier(iClass, "abstract");
-            if(Modifier.isFinal(modifiers))
-                _writer.writeClassModifier(iClass, "final");
-            if(Modifier.isPublic(modifiers))
+//            if(Modifier.isFinal(modifiers))
+//                _writer.writeClassModifier(iClass, "final");
+            if(iClass.isPublic())
                 _writer.writeClassModifier(iClass, "public");
-            if(Modifier.isPrivate(modifiers))
+            if(iClass.isPrivate())
                 _writer.writeClassModifier(iClass, "private");
 
             // the isInterface condition prevents Object as superclass of interface
@@ -74,32 +69,11 @@ class WalaFactGenerator implements Runnable {
 
             iClass.getAllFields().forEach(this::generate);
 
-            boolean success;
-            int numRetries = 0;
-            do {
-                success = true;
-                try {
-                    for (IMethod m : iClass.getAllMethods()) {
-                        try {
-                            generate(m);
-                        }
-                        catch (Exception exc) {
-                            System.err.println("Error while processing method: " + m);
-                            throw exc;
-                        }
-                    }
-                } catch (Exception exc) {
-                    numRetries++;
-                    if (numRetries > maxRetries) {
-                        System.err.println("\nGiving up...\n");
-                        throw exc;
-                    }
-                    else {
-                        System.err.println("\nRETRYING\n");
-                    }
-                    success = false;
-                }
-            } while (!success);
+
+            for (IMethod m : iClass.getAllMethods()) {
+                generate(m);
+            }
+
 
         }
     }
@@ -246,21 +220,21 @@ class WalaFactGenerator implements Runnable {
     private void generate(IMethod m, IR ir)
     {
 
-          SSAInstruction[] instructions = ir.getInstructions();
-          SSACFG cfg = ir.getControlFlowGraph();
-          for (int i = 0; i <=cfg.getMaxNumber(); i++) {
-              SSACFG.BasicBlock basicBlock = cfg.getNode(i);
-              int start = basicBlock.getFirstInstructionIndex();
-              int end = basicBlock.getLastInstructionIndex();
+        SSAInstruction[] instructions = ir.getInstructions();
+        SSACFG cfg = ir.getControlFlowGraph();
+        for (int i = 0; i <=cfg.getMaxNumber(); i++) {
+            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+            int start = basicBlock.getFirstInstructionIndex();
+            int end = basicBlock.getLastInstructionIndex();
 
-              for (int j = start; j <= end; j++) {
-                  if (instructions[j] != null) {
-                      if (instructions[j] instanceof SSAReturnInstruction) {
-                          generate(m, ir, (SSAReturnInstruction) instructions[j]);
-                      }
-                  }
-              }
-          }
+            for (int j = start; j <= end; j++) {
+                if (instructions[j] != null) {
+                    if (instructions[j] instanceof SSAReturnInstruction) {
+                        generate(m, ir, (SSAReturnInstruction) instructions[j]);
+                    }
+                }
+            }
+        }
 //        for(Local l : b.getLocals())
 //        {
 //            _writer.writeLocal(m, l);
@@ -642,40 +616,68 @@ class WalaFactGenerator implements Runnable {
      */
     private void generate(IMethod m, IR ir, SSAReturnInstruction instruction)
     {
-         _writer.writeReturn(m, ir, instruction);
+        SymbolTable symbolTable = ir.getSymbolTable();
 
-//        Value v = stmt.getOp();
-//
-//        if(v instanceof Local)
-//        {
-//            _writer.writeReturn(inMethod, stmt, (Local) v, session);
-//        }
-//        else if(v instanceof StringConstant)
-//        {
-//            Local tmp = _writer.writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
-//            _writer.writeReturn(inMethod, stmt, tmp, session);
-//        }
-//        else if(v instanceof ClassConstant)
-//        {
-//            Local tmp = _writer.writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
-//            _writer.writeReturn(inMethod, stmt, tmp, session);
-//        }
-//        else if(v instanceof NumericConstant)
-//        {
-//            Local tmp = _writer.writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
-//            _writer.writeReturn(inMethod, stmt, tmp, session);
-//        }
-//        else if(v instanceof NullConstant)
-//        {
-//            Local tmp = _writer.writeNullExpression(inMethod, stmt, inMethod.getReturnType(), session);
-//            _writer.writeReturn(inMethod, stmt, tmp, session);
-//            // NoNullSupport: use the line below to remove Null Constants from the facts.
-//            // _writer.writeUnsupported(inMethod, stmt, session);
-//        }
-//        else
-//        {
-//            throw new RuntimeException("Unhandled return statement: " + stmt);
-//        }
+        if (instruction.returnsVoid()) {
+            _writer.writeReturnVoid(m, instruction);
+        }
+        else {
+            int instructionResult = instruction.getResult();
+
+            if (instructionResult != -1) {
+                Local l;
+                com.ibm.wala.ssa.Value v = symbolTable.getValue(instructionResult);
+
+                if (v != null) {
+                    String s = v.toString();
+
+                    if (v.isStringConstant()) {
+                        l = new Local("v" + instructionResult, TypeReference.JavaLangString);
+                        _writer.writeStringConstantExpression(m, instruction, l, (ConstantValue) v);
+                    } else if (v.isNullConstant()) {
+                        l = new Local("v" + instructionResult, TypeReference.Null);
+                        _writer.writeNullExpression(m, instruction, l);
+                    } else if (symbolTable.isIntegerConstant(instructionResult)) {
+                        l = new Local("v" + instructionResult, TypeReference.Int);
+                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+                    } else if (symbolTable.isLongConstant(instructionResult)) {
+                        l = new Local("v" + instructionResult, TypeReference.Long);
+                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+                    } else if (symbolTable.isFloatConstant(instructionResult)) {
+                        l = new Local("v" + instructionResult, TypeReference.Float);
+                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+                    } else if (symbolTable.isIntegerConstant(instructionResult)) {
+                        l = new Local("v" + instructionResult, TypeReference.Int);
+                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+                    } else if (symbolTable.isDoubleConstant(instructionResult)) {
+                        l = new Local("v" + instructionResult, TypeReference.Double);
+                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+                    }
+                    else if (symbolTable.isBooleanConstant(instructionResult)) {
+                        l = new Local("v" + instructionResult, TypeReference.Boolean);
+                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+                    } else if (s.startsWith("#[") || (s.startsWith("#L") && s.endsWith(";"))) {
+                        l = new Local("v" + instructionResult, TypeReference.JavaLangClass);
+                        _writer.writeClassConstantExpression(m, instruction, l, (ConstantValue) v);
+                    } else if (!symbolTable.isConstant(instructionResult)) {
+                        String[] localNames = ir.getLocalNames(instruction.iindex, instructionResult);
+                        if (localNames != null) {
+                            assert localNames.length == 1;
+                            l = new Local("v" + instructionResult, localNames[0], m.getReturnType());
+                        }
+                        //TODO : Check when this occurs
+                        else {
+
+                            l = new Local("v" + instructionResult, m.getReturnType());
+                        }
+                        _writer.writeReturn(m, instruction, l);
+                    } else {
+                        throw new RuntimeException("Unhandled return statement: " + instruction.toString(symbolTable));
+                    }
+                    _writer.writeReturn(m, instruction, l);
+                }
+            }
+        }
     }
 
     private void generate(IMethod inMethod, ThrowStmt stmt, Session session)
