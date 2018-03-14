@@ -311,17 +311,17 @@ NewMetricMacro("45.0", "total leaks", Stats_Simple_LeakingTaintedInformation(_, 
  ***************************************************/
 
 #ifdef OPEN_PROGRAMS
-//Stats_Simple_ReachableFromEntryPoint(?method) :-
+//Stats_Simple_ReachableFromOpenProgramEntryPoint(?method) :-
 //  MockReachableContext(_, ?method).
 
-NewMetricMacro("60.0", "Entry Points", EntryPoint(_)).
+NewMetricMacro("60.0", "Entry Points", OpenProgramEntryPoint(_)).
 NewMetricMacro("61.0", "Mock Objects", MockObject(_, _)).
-NewMetricMacro("61.1", "Mock Objects for Receivers", MockObjFromEntryPoint(_)).
+NewMetricMacro("61.1", "Mock Objects for Receivers", MockObjFromOpenProgramEntryPoint(_)).
 NewMetricMacro("61.2", "Mock Objects for Fields", MockObjFromField(_)).
 NewMetricMacro("61.3", "Mock Objects for Arrays", MockObjFromArray(_)).
 NewMetricMacro("61.4", "Mock Objects for Formals", MockObjFromFormal(_)).
 //NewMetricMacro("62.0", "Methods Reachable from open entry points (SENS)", MockReachableContext(_,_)).
-//NewMetricMacro("62.5", "Methods Reachable from open entry points (INS)", Stats_Simple_ReachableFromEntryPoint(_)).
+//NewMetricMacro("62.5", "Methods Reachable from open entry points (INS)", Stats_Simple_ReachableFromOpenProgramEntryPoint(_)).
 #endif
 
 /***************************************************

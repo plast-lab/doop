@@ -196,6 +196,7 @@ ReachableContext(?ctx, ?meth) :-
    OverridingProtectedOnMethodOfLayoutControl(?meth)),
   isImmutableContext(?ctx).
 
+
 // Handle library-callable "on*" methods of listeners/callbacks
 // REVIEW: this is currently liberal. It checks that the app class
 // subtypes a library listener and that it has an "on*" method,
@@ -544,3 +545,10 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
    FormalParam(0, ?method, ?formal),
    // TODO: requires proper method resolution
    ThisVar(?method, ?this).
+
+
+// Contribute to the global summary relation
+ApplicationEntryPoint(?meth) :-
+  ForcedReachableAndroidContext(_, ?meth),
+  ApplicationMethod(?meth).
+

@@ -82,4 +82,7 @@ ImplicitReachable(?m) :- EvoSuiteEntryPoint(?m).
 
 #endif // DISCOVER_TESTS
 
+ApplicationEntryPoint(?meth) :-
+  ImplicitReachable(?meth),
+  ApplicationMethod(?meth).
 #endif // EXCLUDE_IMPLICITLY_REACHABLE_CODE

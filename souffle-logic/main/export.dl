@@ -14,3 +14,4 @@
 .output Stats_Metrics(IO="file",filename="Stats_Metrics.csv",delimiter="\t")
 #endif
 .output Reachable(IO="file",filename="Reachable.csv",delimiter="\t")
+.output ApplicationEntryPoint(IO="file",filename="ApplicationEntryPoint.csv",delimiter="\t")
