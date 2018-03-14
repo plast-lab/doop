@@ -682,6 +682,10 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   isImmutableHContext(?hctx).
 #endif
 
+// The code is very similar to the logic in the main analysis, however
+// we split it out because of the need (here, but not for normal value
+// loads) to filter type-incorrect values.
+
 /*************************************************************
  * Reflective load of an instance field
  *************************************************************/
@@ -694,19 +698,6 @@ ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue) :-
   Value_Type(?basevalue, ?basevaluetype),
   Field_DeclaringType(?sig, ?declaringClass),
   basic.SupertypeOf(?declaringClass, ?basevaluetype).
-
-// The code below is very similar to the logic in the main analysis,
-// however we split it out because of the need (here, but not for
-// normal value loads) to filter type-incorrect values.
-
-/** This VarPointsTo is ok **/
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
-  Value_Type(?value, ?valuetype),
-  Var_Type(?to, ?vartype),
-  basic.SupertypeOf(?vartype, ?valuetype).
-
 
 /*************************************************************
  * Reflective store of an instance field
@@ -721,10 +712,35 @@ ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) :
   Field_DeclaringType(?sig, ?declaringClass),
   basic.SupertypeOf(?declaringClass, ?basevaluetype).
 
-// The code below is very similar to the logic in the main analysis,
-// however we split it out because of the need (here, but not for
-// normal value loads) to filter type-incorrect values.
+//// Old-style logic. Slower in Souffle, so now only used in
+//// featherweight analysis.
+// /** This VarPointsTo is ok **/
+// VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+//   ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+//   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
+//   Value_Type(?value, ?valuetype),
+//   Var_Type(?to, ?vartype),
+//   basic.SupertypeOf(?vartype, ?valuetype).
+
 #ifndef FEATHERWEIGHT_ANALYSIS
+.decl ReflectiveHeapInterproceduralAssign(?sig:Field, ?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
+ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to,?fromCtx, ?from) :-
+  ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue),
+  ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from),
+  !Value_Null(?basevalue).
+  .plan 1:(2,1)
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to, ?fromCtx, ?from),
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  NotSpecialObject(?value),
+  Value_Type(?value, ?valuetype),
+  Field_Type(?sig, ?fieldtype),
+  basic.SupertypeOf(?fieldtype, ?valuetype).
+  .plan 1:(2,1,3,4,5,6)
+
+// Computed only for its own sake, if designated for output, not for
+// VarPointsTo computations
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
@@ -733,7 +749,18 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   Value_Type(?value, ?valuetype),
   Field_Type(?signature, ?fieldtype),
   basic.SupertypeOf(?fieldtype, ?valuetype).
+
+#else // FEATHERWEIGHT_ANALYSIS
+
+/** This VarPointsTo is ok **/
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
+  Value_Type(?value, ?valuetype),
+  Var_Type(?to, ?vartype),
+  basic.SupertypeOf(?vartype, ?valuetype).
 #endif
+
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
@@ -1081,9 +1108,9 @@ _OptMethodWithVarCast(?subtype, ?inMethod, ?from) :-
 .decl SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation:MethodInvocation, ?type:Type, ?inMethod:Method)
 
 SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation, ?type, ?inMethod) :-
-  _OptMethodWithVarCast(?type, ?inMethod, ?from),
+  SpecialMissingNewInstanceValue(?forNameInvocation, ?specialvalue),
   VarPointsTo(_, ?specialvalue, _, ?from),
-  SpecialMissingNewInstanceValue(?forNameInvocation, ?specialvalue).
+  _OptMethodWithVarCast(?type, ?inMethod, ?from).
 
 BackwardReflectiveAssignClassConstant(?forNameInvocation, ?type) :-
   SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation, ?type, _).
