@@ -37,7 +37,7 @@ public class ContextRemover {
         println "WARNING: Running the experimental context remover..."
         outFile.delete()
 
-        List outLines = ['.decl TRUE(t:number)', 'TRUE(1).']
+        List outLines = ['.decl TRUE(t:number)', '${CONST_TRUE}.']
         // First pass: recognize and transform declarations.
         inFile.eachLine { String line -> outLines << translateDecl(line) }
         // Second pass: transform logic and remove most trivial placeholders.
