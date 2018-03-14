@@ -424,15 +424,6 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
 
 // Special methods
 
-// Surprising as it may seem, this join is not always performed first if
-// inlined below.
-// .decl OptReflectiveSpecialMethodInvocationBaseValue(?hctx:HContext, ?value:Value, ?callerCtx:Context, ?invocation:MethodInvocation, ?callee:Method)
-
-// OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee) :-
-//   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
-//   VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
-//   .plan 1:(2,1)
-
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
@@ -444,7 +435,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   Var_Type(?this, ?varType),
   Value_Type(?value, ?valueType),
   basic.SupertypeOf(?varType, ?valueType).
-// .plan 1:(2,1,3,4,5,6)
 #else
 /** This VarPointsTo is ok **/
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
@@ -460,19 +450,10 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   Var_Type(?this, ?thisType),
   Value_Type(?value, ?valueType),
   basic.SupertypeOf(?thisType, ?valueType).
-// .plan 1:(2,1,3,4,5,6,7)
 #endif
 
 
 // Virtual methods
-
-// TODO Check if object is an instance of the class declaring the
-//      method (only overapproximation)
-// .decl OptReflectiveVirtualMethodInvocationBaseValue(?hctx:HContext, ?value:Value, ?callerCtx:Context, ?invocation:MethodInvocation, ?signature:Method)
-
-// OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature) :-
-//   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
-//   VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
 
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
@@ -488,7 +469,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   Method_Descriptor(?signature, ?descriptor),
   basic.MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
   ThisVar(?tomethod, ?this).
-// .plan 1:(2,1,3,4,5,6,7,8,9)
 #else
 /** This VarPointsTo is ok **/
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
@@ -504,7 +484,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   basic.MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
   ThisVar(?tomethod, ?this),
   ImmutableContextFromHContext(?hctx, ?calleeCtx).
-// .plan 1:(2,1,3,4,5,6,7,8,9,10)
 #endif
 
 // Return values of reflective method invocations
