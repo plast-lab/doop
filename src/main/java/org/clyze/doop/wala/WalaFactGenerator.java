@@ -16,7 +16,10 @@ import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.ThrowStmt;
+import soot.util.EscapedWriter;
 
+import java.io.*;
+import java.util.Collection;
 import java.util.Iterator;
 
 /**
@@ -47,6 +50,7 @@ class WalaFactGenerator {
 
         while (_iClasses.hasNext()) {
             IClass iClass = _iClasses.next();
+            printIR(iClass);
             _writer.writeClassOrInterfaceType(iClass);
 
             if(iClass.isAbstract())
@@ -78,6 +82,55 @@ class WalaFactGenerator {
         }
     }
 
+    public void printIR(IClass cl)
+    {
+//        PrintWriter writerOut = new PrintWriter(new EscapedWriter(new OutputStreamWriter((OutputStream)streamOut)));
+        String fileName = "WalaFacts/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
+        File file = new File(fileName);
+        file.getParentFile().getParentFile().mkdirs();
+        file.getParentFile().mkdirs();
+
+        Collection<IField> fields = cl.getAllFields();
+        Collection<IMethod> methods = cl.getDeclaredMethods();
+        try {
+            PrintWriter printWriter = new PrintWriter(file);
+            printWriter.write("class " + cl.getName() + "\n{\n");
+            for(IField field : fields )
+            {
+                printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getName() + "\n");
+                printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().getSignature());
+                printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().toString());
+            }
+            for (IMethod m : methods)
+            {
+                if(!(m.isAbstract() || m.isNative()))
+                {
+                    System.out.println("hello " + m.getReference().getName().toString() + " in class " + cl.getReference().getName().toString());
+                    IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
+                    printWriter.write("\t" + m.getReturnType() + " " + m.getReference().getName().toString() + "(");
+                    for (int i = 0; i < m.getNumberOfParameters(); i++) {
+                        printWriter.write(m.getParameterType(i).toString() + " ");
+                        if (i < m.getNumberOfParameters() - 1)
+                            printWriter.write(", ");
+                    }
+                    printWriter.write(")\n{");
+
+                    if (ir == null)
+                        System.out.println("Null ir " + m.getReference().getName().toString() + " in class " + cl.getReference().getName().toString());
+                    else
+                        printWriter.write(ir.toString());
+
+                    printWriter.write("}\n");
+                }
+
+            }
+
+            printWriter.write("}\n");
+            printWriter.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
     private void generate(IField f)
     {
         _writer.writeField(f);
