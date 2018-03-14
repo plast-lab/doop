@@ -15,8 +15,8 @@ public class ContextRemover {
     static int lineN = 0
     // Trivially true fact to use when replacing context relations.
     static final String CONST_TRUE = "TRUE(1)"
-    // Context equations to handle explicitly.
-    static final List contextEquations = [
+    // Text to delete explicitly.
+    static final List textToDelete = [
         "?callerCtx = ?callerCtx",
         "?hctx = ?hctx",
         "?groupHCtx = ?groupHCtx",
@@ -88,8 +88,8 @@ public class ContextRemover {
         // Already processed.
         if (line.indexOf(".decl ") != -1) { return line }
 
-        // Context equations that should be eliminated.
-        contextEquations.each { lineSubstitutions << [it, CONST_TRUE] }
+        // Text that should be deleted.
+        textToDelete.each { lineSubstitutions << [it, CONST_TRUE] }
 
         // Compute substitutions for relations containing contexts.
         for (String relName in fieldsToRemove.keySet()) {
