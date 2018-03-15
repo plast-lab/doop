@@ -1,176 +1,59 @@
-#ifdef ANDROID
-#include "android.dl"
-#endif
+#include "main-declarations.dl"
 
-#include "class-initialization.dl"
-#include "exceptions.dl"
-#include "finalization.dl"
-#include "implicit-reachable.dl"
-#include "native.dl"
-#include "reference.dl"
-#include "string-constants.dl"
-#ifndef DISABLE_METHOD_HANDLES
-#include "method-handles.dl"
-#endif
-#include "threads.dl"
+.comp AbstractContextSensitivity<Configuration> {
 
-#include "main-delta.dl"
+  #ifdef ANDROID
+    #include "android.dl"
+  #endif
 
-#if defined(REFLECTION)
-#include "reflection/rules.dl" 
-#endif
+  #include "context-sensitivity-declarations.dl"
+  #include "../commonMacros.dl"
+  #include "prologue.dl"
+  #include "context-sensitivity.dl"
+  #include "export.dl"
 
-#define InvocationHandlerInvoke(invokeMeth)   Method_SimpleName(invokeMeth, "invoke"), \
-  Method_DeclaringType(invokeMeth, ?class), \
-  SubtypeOf(?class, ?tInvocationHandler), \
-  isInterfaceType(?tInvocationHandler), \
-  ?tInvocationHandler = "java.lang.reflect.InvocationHandler"
+  #define InvocationHandlerInvoke(invokeMeth)   Method_SimpleName(invokeMeth, "invoke"), \
+    Method_DeclaringType(invokeMeth, ?class), \
+    basic.SubtypeOf(?class, ?tInvocationHandler), \
+    isInterfaceType(?tInvocationHandler), \
+    ?tInvocationHandler = "java.lang.reflect.InvocationHandler"
 
-#define NEW_PROXY_INSTANCE "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"
-#define DYNAMIC_PROXY_EXPORT
+  #define NEW_PROXY_INSTANCE "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"
+  #define DYNAMIC_PROXY_EXPORT
 
-#if defined(REFLECTION_DYNAMIC_PROXIES)
-#include "reflection/dynamic-proxies.dl"
-#include "reflection/dynamic-proxies-delta.dl"
-#endif // REFLECTION_DYNAMIC_PROXIES
+  #if defined(REFLECTION_DYNAMIC_PROXIES)
+    #include "reflection/dynamic-proxies.dl"
+    #include "reflection/dynamic-proxies-delta.dl"
+  #endif // REFLECTION_DYNAMIC_PROXIES
 
-#ifdef DYNAMIC_PROXY_EXPORT
-.decl ReachableProxyInvoke(?invokeMeth:Method)
-.output ReachableProxyInvoke
+  #ifdef DYNAMIC_PROXY_EXPORT
+    .decl ReachableProxyInvoke(?invokeMeth:Method)
+    .output ReachableProxyInvoke
 
-ReachableProxyInvoke(?invokeMeth) :-
-  Reachable(?invokeMeth),
-  InvocationHandlerInvoke(?invokeMeth).
+    ReachableProxyInvoke(?invokeMeth) :-
+      Reachable(?invokeMeth),
+      InvocationHandlerInvoke(?invokeMeth).
 
-.decl ReachableNewProxyInstance(?meth:Method)
-.output ReachableNewProxyInstance
+    .decl ReachableNewProxyInstance(?meth:Method)
+    .output ReachableNewProxyInstance
 
-ReachableNewProxyInstance(?meth) :-
-  Reachable(?meth),
-  ?meth = NEW_PROXY_INSTANCE.
+    ReachableNewProxyInstance(?meth) :-
+      Reachable(?meth),
+      ?meth = NEW_PROXY_INSTANCE.
 
-#endif // DYNAMIC_PROXY_EXPORT
+  #endif // DYNAMIC_PROXY_EXPORT
 
-#if defined(HEAPDL) || defined(IMPORT_DYNAMIC_FACTS)
-#include "dynamicanalysis.dl"
-#endif                            
+  #if defined(REFLECTION)
+    #include "reflection/rules.dl"
+  #endif
 
-FakeInvocation_RegisterFinalize(?heapValue, ?invo) :-
-  FakeInvocation_RegisterFinalize0(?heapValue, ?invo).
+  #ifdef TAMIFLEX
+     #include "../addons/tamiflex/declarations.dl"
+     #include "../addons/tamiflex/rules.dl"
+  #endif
+  #if defined(DACAPO) || defined(DACAPO_BACH)
+     #include "../addons/dacapo/rules.dl"
+  #endif
 
-
-Value_isHeap(?heapValue),
-isValue(?heapValue),
-Value_Type(?heapValue, ?type) :-
-  isHeapAllocation(?heapValue),
-  HeapAllocation_Type(?heapValue, ?type).
-
-// Only create values for numeric constants in a static initializer
-// (or initial field value) inside a class whose name contains
-// ".R$". We are trying to capture just the constants in Android "R"
-// nested classes. REVIEW to generalize.
-// Numeric constants are prepended with *num-constant-* to distinguish
-// them from allocations that share the same string value.
-Value_Num(cat("num-constant-", ?const), ?const),
-isValue(cat("num-constant-", ?const)),
-Value_Type(cat("num-constant-", ?const), ?type) :-
-  isNumConstant(?const),
-  AssignNumConstant_Id(?insn, ?const),
-  Instruction_Method(?insn, ?meth),
-  Method_SimpleName(?meth, "<clinit>"),
-  Method_DeclaringType(?meth, ?className),
-  isType(?className),
-  contains(".R$", ?className),
-  Type_int(?type).
-
-#ifdef ANDROID
-Value_Num(cat("num-constant-", ?const), ?const),
-isValue(cat("num-constant-", ?const)),
-Value_Type(cat("num-constant-", ?const), ?type) :-
-  isNumConstant(?const),
-  FieldInitialValue(?fld, ?const),
-  Field_DeclaringType(?fld, ?className),
-  isType(?className),
-  contains(".R$", ?className),
-  Type_int(?type).
-#endif
-
-
-Value_isNonHeap(?value) :-
-  Value_isMock(?value) ;
-  Value_Num(?value, _).
-
-Value_Null(?nullheap) :-
-  HeapAllocation_Null(?nullheap).
-
-
-Value_DeclaringType(?heapValue, ?type) :-
-  AssignHeapAllocation(?heapValue, _, ?inmethod),
-  Method_DeclaringType(?inmethod, ?type),
-  !isStringConstant(?heapValue),
-  !isClassHeap(?heapValue),
-  !isMethodHandleConstant(?heapValue).
-
-Value_DeclaringType(?heapValue, "java.lang.System") :-
-  isClassHeap(?heapValue).
-
-Value_DeclaringType(?heapValue, "java.lang.String") :-
-  isStringConstant(?heapValue).
-
-Value_DeclaringType(?value, "java.lang.Object") :-
-  Value_Null(?value);
-  MainMethodArgArray(?value);
-  MainMethodArgArrayContent(?value).
-
-Value_DeclaringType(?heapValue, "java.lang.invoke.MethodHandle") :-
-  isMethodHandleConstant(?heapValue).
-
-
-// Mark objects that are normal, i.e., not special
-NotSpecialObject(?value) :-
-  Value_isHeap(?value) ;
-  Value_isMock(?value) ;
-  Value_Num(?value, _).
-
-
-isImmutableContext(ctx), InitContextMacro("<<immutable-context>>").
-isInitialContext(ctx), InitContextMacro("<<initial-context>>").
-isJVMStartupContext(ctx), InitContextMacro("<<jvm-startup-context>>").
-isClinitContext(ctx), InitContextMacro("<<clinit-context>>").
-
-// The main method is reachable
-ReachableContext(?initialContext, ?method) :-
-  isInitialContext(?initialContext),
-  MainMethodDeclaration(?method).
-
-// Implicitly reachable methods are invoked by the JVM on startup.
-ReachableContext(?jvmStartUpContext, ?method) :-
-  isJVMStartupContext(?jvmStartUpContext),
-  ImplicitReachable(?method).
-
-// If a class needs to be initialized, then its class initializer is invoked
-// Note: InitializedClass already deals with superclasses that need initialization
-ReachableContext(?clinitContext, ?clinit) :-
-  isClinitContext(?clinitContext),
-  InitializedClass(?class),
-  ClassInitializer(?class, ?clinit).
-
-
-isImmutableHContext(hctx), InitHContextMacro("<<immutable-hcontext>>").
-isJVMStartupHContext(hctx), InitHContextMacro("<<jvm-startup-hcontext>>").
-
-// Create initial objects with their heap contexts
-SystemThreadGroup(?hctx, ?alloc) :-
-  isJVMStartupHContext(?hctx),
-  ?alloc = "<<system-thread-group>>",
-  isValue(?alloc).
-
-MainThreadGroup(?hctx, ?alloc) :-
-  isJVMStartupHContext(?hctx),
-  ?alloc = "<<main-thread-group>>",
-  isValue(?alloc).
-
-MainThread(?hctx, ?alloc) :-
-  isJVMStartupHContext(?hctx),
-  ?alloc = "<<main-thread>>",
-  isValue(?alloc).
+  .init configuration = Configuration
+}

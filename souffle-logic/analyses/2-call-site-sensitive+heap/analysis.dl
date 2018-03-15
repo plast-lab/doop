@@ -1,6 +1,8 @@
 // Context-sensitive pointer analysis with context of 2 call site and
 // a context-sensitive heap abstraction of 1 call site
 
+#include "../../main/single-phase-analysis.dl"
+
 // In this analysis, the real context is a pair of MethodInvocations and the
 // real heap context a single MethodInvocation. Keeping mapping functions is
 // the way to handle analyses where HContext = Context (since the language
@@ -8,6 +10,18 @@
 .type Context = [ invocation1:MethodInvocation, invocation2:MethodInvocation ]
 .type HContext = [ invocation:MethodInvocation ]
 
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+  ?callerCtx = [?invocation1, ?invocation2],
+  ?calleeCtx = [?invocation2, ?invo],
+  ?invocation1 = ?invocation1.
+
+StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+  StaticContextRequest(?callerCtx, ?invo),
+  ?callerCtx = [?invocation1, ?invocation2],          
+  ?calleeCtx = [?invocation2, ?invo],
+  ?invocation1 = ?invocation1.
+                    
 .decl StartupInvocation(?startupInvocation:MethodInvocation)
 
 StartupInvocation(?startupInvocation) :-

@@ -1,4 +1,59 @@
 // In this analysis, the real context and the real heap context are a Type and
 // a Value.
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
 .type Context  = [ type:Type, value:Value ]
 .type HContext = [ type:Type, value:Value ]
+
+.comp TwoTypeObjectSensitivePlusTwoHeapConfiguration : AbstractConfiguration {
+                    
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ?hctx = [?hctxType, ?hctxValue],
+    Value_DeclaringType(?hctxValue, ?type),
+    ?calleeCtx = [?type, ?value],
+    ?hctxType = ?hctxType.
+
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?calleeCtx = ?callerCtx.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),      
+    ?ctx = [?ctxType, ?ctxValue],
+    ?hctx = [?ctxType, ?ctxValue].
+
+  // For this analysis the context of a method call corresponds to the
+  // invocation site of the method.
+
+  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+    ?hctx = [?hctxType, ?hctxValue],
+    Value_DeclaringType(?hctxValue, ?type),
+    ?newCtx = [?type, ?value],
+    ?hctxType = ?hctxType.
+
+  StartupContextResponse(?hctx, ?value, ?newCtx) :-
+    StartupContextRequest(?hctx, ?value),
+    ?hctx = [?hctxType, ?hctxValue],
+    Value_DeclaringType(?hctxValue, ?type),
+    ?newCtx = [?type, ?value],
+    ?hctxType = ?hctxType.
+
+  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+    ?callerCtx = [?ctxType, ?ctxValue],
+    Value_DeclaringType(?ctxValue, ?type),
+    ?newCtx = [?type, ?value],
+    ?ctxType = ?ctxType.
+
+  InitContextResponse(?value, ?ctx) :-
+    InitContextRequest(?value),
+    ?ctx = ["Java.lang.String", ?value].
+
+  InitHContextResponse(?value, ?hctx) :-
+     InitHContextRequest(?value),
+     ?hctx = ["Java.lang.String", ?value].
+}

@@ -5,7 +5,7 @@
 
 AllConcreteImplementations(?class, ?staticType) :-
   isClassType(?class),
-  SubtypeOf(?class, ?staticType),
+  basic.SubtypeOf(?class, ?staticType),
   !ClassModifier("abstract", ?class).
 
 AllConcreteImplementations(?class, ?class) :-
@@ -19,12 +19,12 @@ ConcreteType(?type) :-
   AllConcreteImplementations(?type, _).
 
 .decl ObjToMock(?class:ReferenceType)
-.decl MockObjFromEntryPoint(?class:ReferenceType)
+.decl MockObjFromOpenProgramEntryPoint(?class:ReferenceType)
 .decl MockObjFromArray(?class:ReferenceType)
 
-MockObjFromEntryPoint(?class),
+MockObjFromOpenProgramEntryPoint(?class),
 ObjToMock(?class) :-
-  EntryPoint(?method),
+  OpenProgramEntryPoint(?method),
   Method_DeclaringType(?method, ?class),
   isReferenceType(?class),
   !ClassModifier("abstract", ?class).
@@ -68,7 +68,7 @@ FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) :-
   MockObject(?basevalue, ?class).
 
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) :-
-  isImmutableHContext(?hctx), //TODO: hctx
+  mainAnalysis.isImmutableHContext(?hctx), //TODO: hctx
   FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype),
   MockObjectForType(?value, ?fieldtype).
 #endif
@@ -87,7 +87,7 @@ MockObjectForComponentType(?value, ?arrayType) :-
   ComponentType(?arrayType, ?componentType),
   MockObjectForType(?value, ?componentType).
 
-ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) :-
+mainAnalysis.ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) :-
   MockObjectContext(?hctx, ?arrayValue, ?arrayType),
   isArrayType(?arrayType),
   MockObjectForComponentType(?componentValue, ?arrayType).
@@ -95,10 +95,10 @@ ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) :-
 // *****************
 // Formal parameters
 // *****************
-.decl FormalsForEntryPoints(?method:Method, ?formal:Var)
+.decl FormalsForOpenProgramEntryPoints(?method:Method, ?formal:Var)
 
-FormalsForEntryPoints(?method, ?formal) :-
-  EntryPoint(?method),
+FormalsForOpenProgramEntryPoints(?method, ?formal) :-
+  OpenProgramEntryPoint(?method),
   FormalParam(_, ?method, ?formal).
 
 .decl MockObjFromFormal(?type:ReferenceType)
@@ -107,7 +107,7 @@ FormalsForEntryPoints(?method, ?formal) :-
 ObjToMock(?subtype),
 MockObjFromFormal(?subtype),
 TypeForFormals(?formal, ?method, ?subtype) :-
-  FormalsForEntryPoints(?method, ?formal),
+  FormalsForOpenProgramEntryPoints(?method, ?formal),
   Var_Type(?formal, ?staticType),
   StaticToActualType(?subtype, ?staticType).
 
@@ -128,14 +128,14 @@ MockForFormal(?value, ?formal, ?type, ?method) :-
 .decl MockObject(?value:Value, ?class:ReferenceType)
 .decl MockObjectContext(?hctx:HContext, ?value:Value, ?class:ReferenceType)
 
-.decl ContextForEntryPoint(?ctx:Context, ?method:Method)
-.decl HContextForEntryPoint(?hctx:HContext, ?method:Method)
+.decl ContextForOpenProgramEntryPoint(?ctx:Context, ?method:Method)
+.decl HContextForOpenProgramEntryPoint(?hctx:HContext, ?method:Method)
 
 // bind mock objects to formals
 MockObjectContext(?hctx, ?value, ?class),
-VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
-  ContextForEntryPoint(?ctx, ?method),
-  HContextForEntryPoint(?hctx, ?method),
+mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
+  ContextForOpenProgramEntryPoint(?ctx, ?method),
+  HContextForOpenProgramEntryPoint(?hctx, ?method),
   MockForFormal(?value, ?formal, ?class, ?method).
 
 // TODO: do we need all these options?
@@ -144,52 +144,62 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 // receivers for entry points
 .decl ReceiverPointsTo(?value:Value, ?ctx:Context, ?receiver:Var, ?class:ReferenceType, ?method:Method)
 
-HContextForEntryPoint(?hctx, ?method),
+mainAnalysis.configuration.RecordContextRequest(?calleeCtx, ?value, ?receiver) :-
+  ReceiverPointsTo(?value, ?calleeCtx, ?receiver, _, _).
+
+HContextForOpenProgramEntryPoint(?hctx, ?method),
 MockObjectContext(?hctx, ?value, ?class),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) :-
+mainAnalysis.VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) :-
 #ifdef OPEN_PROGRAMS_IMMUTABLE_HCTX
-  ImmutableHContextFromContext(?calleeCtx, ?hctx),
+  ImmutableHContextFromContext(?calleeCtx, ?hctx)
 #else
-  RecordMacro(?calleeCtx, ?value, ?hctx),
+  mainAnalysis.configuration.RecordContextResponse(?calleeCtx, ?value, ?receiver, ?hctx),
+  mainAnalysis.configuration.RecordContextRequest(?calleeCtx, ?value, ?receiver),
 #endif
   ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method).
 
+
 // Important: The MergeOpenProgramEntryPointMacro can be defined
-// in such a way as to retreive some of the precision lost
+// in such a way as to retrieve some of the precision lost
 // due to having mock objects flowing everywhere,
 // see implementation in 2objH
 // see scalable (but less sound) implementation in partioned-2objH
+mainAnalysis.configuration.StartupContextRequest(?immutablehctx, ?value) :-
+  MockObjectForType(?value, _),
+  mainAnalysis.isImmutableHContext(?immutablehctx).
+
 
 // TODO: feel free to simplify options here
 ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method),
-ContextForEntryPoint(?calleeCtx, ?method) :-
+ContextForOpenProgramEntryPoint(?calleeCtx, ?method) :-
   ThisVar(?method, ?receiver),
   Method_DeclaringType(?method, ?class),
   MockObjectForType(?value, ?class),
 #ifndef MergeOpenProgramEntryPointMacro
-  isImmutableHContext(?immutablehctx),
+  mainAnalysis.isImmutableHContext(?immutablehctx),
 #endif
 #ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
-  isImmutableContext(?calleeCtx),
+  mainAnalysis.isImmutableContext(?calleeCtx),
 #endif
 #ifndef OPEN_PROGRAMS_IMMUTABLE_CTX
 #ifdef MergeOpenProgramEntryPointMacro
   MergeOpenProgramEntryPointMacro(?method, ?value, ?calleeCtx),
 #else
-  MergeStartupMacro(?immutablehctx, ?value, ?calleeCtx),
+  mainAnalysis.configuration.StartupContextResponse(?immutablehctx, ?value, ?calleeCtx),
+  mainAnalysis.configuration.StartupContextRequest(?immutablehctx, ?value),
 #endif
 #endif
-  EntryPoint(?method).
+  OpenProgramEntryPoint(?method).
 
 // TODO: requires major tweaking for context sensitive analyses
 // Consider a recency abstraction for context in static methods
-HContextForEntryPoint(?hctx, ?method),
-ContextForEntryPoint(?calleeCtx, ?method) :-
-  isImmutableHContext(?hctx),
-  isImmutableContext(?calleeCtx),
+HContextForOpenProgramEntryPoint(?hctx, ?method),
+ContextForOpenProgramEntryPoint(?calleeCtx, ?method) :-
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?calleeCtx),
   Method_Modifier("static", ?method),
   !Method_Modifier("abstract", ?method),
-  EntryPoint(?method).
+  OpenProgramEntryPoint(?method).
 
 .decl TypeToConcreteImplementationOrd(?staticType:Type, ?classOrd:number)
 .decl ConcreteImplementations(?staticType:Type, ?class:ClassType)
@@ -235,8 +245,8 @@ Value_DeclaringType(cat(?class, "::: (Mock)"), ?class) :-
 #endif
   ObjToMock(?class).
 
-// Similar for ReachableContext. If not in open program mode, add extra conditions.
-ReachableContext(?ctx, ?method) :-
+// Similar for mainAnalysis.ReachableContext. If not in open program mode, add extra conditions.
+mainAnalysis.ReachableContext(?ctx, ?method) :-
 #ifndef OPEN_PROGRAMS
   // If we are not in open-program mode, only trigger logic if no main method exists
   !MainMethodDeclaration(_),
@@ -244,11 +254,11 @@ ReachableContext(?ctx, ?method) :-
   !AndroidAppComponent(_),
 #endif
 #endif
-  ContextForEntryPoint(?ctx, ?method).
+  ContextForOpenProgramEntryPoint(?ctx, ?method).
 
 
 // "Arbitrary" methods might be made reachable. Initialize the corresponding
 // classes as well.
 InitializedClass(?class) :-
-  ReachableContext(_, ?method),
+  mainAnalysis.ReachableContext(_, ?method),
   Method_DeclaringType(?method, ?class).

@@ -30,7 +30,7 @@ MockValueConsMacro(TEST_INSTANCE(?t), ?t),
 TestCase(?t, TEST_INSTANCE(?t)) :-
   isClassType(?junitTestCase),
   ?junitTestCase = "junit.framework.TestCase",
-  SubtypeOf(?t, ?junitTestCase),
+  basic.SubtypeOf(?t, ?junitTestCase),
   Method_DeclaringType(?m, ?t),
   Method_SimpleName(?m, "setUp").
 

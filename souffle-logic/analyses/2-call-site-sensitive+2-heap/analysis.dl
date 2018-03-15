@@ -1,6 +1,9 @@
 // Context-sensitive pointer analysis with context of 2 call site and
 // a context-sensitive heap abstraction of 2 call sites
 
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
 // In this analysis, the real context and the real heap context are pairs of
 // MethodInvocations. Keeping mapping functions is the way to handle analyses
 // where HContext = Context (since the language considers them different
@@ -8,7 +11,58 @@
 .type Context = [ invocation1:MethodInvocation, invocation2:MethodInvocation ]
 .type HContext = [ invocation1:MethodInvocation, invocation2:MethodInvocation ]
 
-.decl StartupInvocation(?startupInvocation:MethodInvocation)
-StartupInvocation(?startupInvocation) :-
-     ?startupInvocation = "<<jvm-startup-context>>",
-     isMethodInvocation(?startupInvocation).
+.comp TwoCallSiteSensitivePlusTwoHeapConfiguration : AbstractConfiguration {
+      
+  // For this analysis the context of a method call corresponds to the
+  // invocation site of the method and the most significant element of the
+  // calling context for the caller method.
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ?callerCtx = [?invocation1, ?invocation2],
+    ?calleeCtx = [?invocation2, ?invo],
+    ?invocation1 = ?invocation1.
+
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?callerCtx = [?invocation1, ?invocation2],
+    ?calleeCtx = [?invocation2, ?invo],
+    ?invocation1 = ?invocation1.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),      
+    ?ctx = [?invocation1, ?invocation2], 
+    ?hctx = [?invocation1, ?invocation2].
+
+  // For this analysis the context of a method call corresponds to the
+  // invocation site of the method.
+
+  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+    ?newCtx = ?callerCtx.
+
+  StartupContextResponse(?hctx, ?value, ?newCtx) :-
+    StartupContextRequest(?hctx, ?value),
+    StartupInvocation(?invo),
+    ?newCtx = [?invo, ?invo].
+
+  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+    FakeInvocation_RegisterFinalize(?value, ?invo),
+    ?callerCtx = [?invocation1, ?invocation2],
+    ?newCtx = [?invocation2, ?invo],
+    ?invocation1 = ?invocation1.
+
+  InitContextResponse(?invo, ?ctx) :-
+    InitContextRequest(?invo),
+    ?ctx = [?invo, ?invo].
+
+  InitHContextResponse(?invo, ?hctx) :-
+    InitHContextRequest(?invo),
+    ?hctx = [?invo, ?invo].
+
+  .decl StartupInvocation(?startupInvocation:MethodInvocation)
+  StartupInvocation(?startupInvocation) :-
+    ?startupInvocation = "<<jvm-startup-context>>",
+    isMethodInvocation(?startupInvocation).
+}

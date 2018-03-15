@@ -1,11 +1,55 @@
 // Context-sensitive pointer analysis with context of 1 type and a
 // context-sensitive heap abstraction.
 
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
 // In this analysis, both the real context and the real heap context are Types
 // The type is now always a class type, because of arrays currently being a
 // non-class subtype of Object
 .type Context  = [ type:Type ]
 .type HContext = [ type:Type ]
+
+.comp OneTypeSensitivePlusHeapConfiguration : AbstractConfiguration {
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    Value_DeclaringType(?value, ?type), 
+    ?calleeCtx = [?type].
+
+  // For this analysis, static calls just keep the same context as the
+  // caller.
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?calleeCtx = ?callerCtx.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),      
+    ?ctx = [?type],
+    ?hctx = [?type].
+
+  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+    Value_DeclaringType(?value, ?type),
+    ?newCtx = [?type].
+
+  StartupContextResponse(?hctx, ?value, ?newCtx) :-
+    StartupContextRequest(?hctx, ?value),
+    Value_DeclaringType(?value, ?type),
+    ?newCtx = [?type].
+
+  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+    Value_DeclaringType(?value, ?type),
+    ?newCtx = [?type].
+
+  InitContextResponse(?type, ?ctx) :-
+    InitContextRequest(?type),
+    ?ctx = [?type].
+
+  InitHContextResponse(?type, ?hctx) :-
+    InitHContextRequest(?type),
+    ?hctx = [?type].
 
 // Dynamic analysis
 #ifdef HEAPDL
@@ -29,3 +73,4 @@ DynamicContextToHContext(?hctx, ?dynCtx) :-
    !DynamicContextHeap1(_, ?dynCtx),
    isImmutableHContext(?hctx).
 #endif
+}

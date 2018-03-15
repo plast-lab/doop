@@ -24,7 +24,7 @@ ImmutableContextFromContext(?ctx1, ?ctx2) :-
 #define CompatibleHContextsMacro(hctx1, hctx2) hctx1 = hctx1, hctx2 = hctx2
 #endif
 
-#include "main.dl"
+#include "init.dl"
 
 /**
  * Generic context-sensitive pointer analysis
@@ -35,68 +35,30 @@ ImmutableContextFromContext(?ctx1, ?ctx2) :-
  * Heap allocation
  */
 
-#ifndef AdvancedRecordBasisMacro
-isHContext(?newHCtx),
-VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
-  AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-#ifdef RecordArrayMacro
-  Value_Type(?heapValue, ?type),
-  !isArrayType(?type),
-#endif
-  RecordMacro(?ctx, ?heapValue, ?newHCtx),
-  ObjectShouldNotBeRefined(?heapValue).
-
-#else /* there is advanced behavior available */
-AdvancedRecordBasisMacro(?ctx, ?var, ?heapValue) :-
+configuration.RecordContextRequest(?ctx, ?heapValue, ?var) :-
   AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-  AdvancedRecordBasisMacro(?ctx, ?var, ?value),
-  CachedRecordMacro(?ctx, ?value, ?hctx),
-#ifdef RecordArrayMacro
-  Value_Type(?value, ?type),
-  !isArrayType(?type),
-#endif
+  configuration.RecordContextRequest(?ctx, ?value, ?var),
+  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
   ObjectShouldNotBeRefined(?value).
-#endif /* #ifndef AdvancedRecordBasisMacro */
 
-
-#ifdef RecordArrayMacro
-// This doesn't seem to pay off usually. So few analyses (e.g., 1-obj,
-// which greatly benefits) define this macro and handle arrays
-// specially.
-isHContext(?newHCtx),
-VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
-  AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  Value_Type(?heapValue, ?type),
-  isArrayType(?type),
-  RecordArrayMacro(?ctx, ?heapValue, ?newHCtx),
-  ObjectShouldNotBeRefined(?heapValue).
-#endif /* #ifdef RecordArrayMacro */
-
-isHContext(?newHCtx),
-VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
+configuration.RecordContextRequest(?ctx, ?heapValue, ?var) :-
   AssignAuxiliaryHeapAllocation(?heapValue, ?var, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  RecordMacro(?ctx, ?heapValue, ?newHCtx).
+  ReachableContext(?ctx, ?inmethod).
 
-#ifdef RecordRefinedMacro
 isHContext(?newHCtx),
 VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
-  AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  ObjectShouldBeRefined(?heapValue),
-  RecordRefinedMacro(?ctx, ?heapValue, ?newHCtx).
-#endif
+  configuration.RecordContextRequest(?ctx, ?heapValue, ?var),
+  configuration.RecordContextResponse(?ctx, ?heapValue, ?var, ?newHCtx).
 
 VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
   Reachable(?inmethod),  // optimization purposes
   AssignContextInsensitiveHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx).
+  .plan 1:(4,3,2,1)
   .plan 2:(4,3,1,2)
 
 /**
@@ -146,7 +108,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   OptAssignCast(?type, ?to, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value_Type(?value, ?valuetype),
-  SupertypeOf(?type, ?valuetype).
+  basic.SupertypeOf(?type, ?valuetype).
 #ifdef INFORMATION_FLOW
   .plan 2:(3,4,2,1)
 #endif
@@ -179,7 +141,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   NotSpecialObject(?value).
   .plan 1:(2,1,3)
-  
+
 #else
 // FEATHERWEIGHT_ANALYSIS
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
@@ -200,13 +162,13 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
 #else
 .decl NoInformationOnSignature(?signature: Field)
 .output NoInformationOnSignature
-        
+
 NoInformationOnSignature(?signature) :-
- isField(?signature), 
+ isField(?signature),
  !DynamicInstanceFieldPointsTo(?signature, _, _, _, _).
 
 .decl ConstructorVar(?var:Var)
-      
+
 ConstructorVar(?var) :-
   Var_DeclaringMethod(?var, ?meth),
   ApplicationMethod(?meth),
@@ -222,16 +184,16 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   !Value_Null(?basevalue).
 .plan 1:(3,2,1,4,5,6)
 #endif
-        
-        
+
+
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   TaintedVarPointsTo(?value, ?ctx, ?from),
-  isImmutableHContext(?hctx), 
+  isImmutableHContext(?hctx),
   !Value_Null(?basevalue).
   .plan 1:(2,1,3)
-#endif        
+#endif
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
   StoreInstanceField(?from, ?base, ?signature, _),
@@ -246,7 +208,9 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   LoadStaticField(?sig, ?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   CompatibleContextAndHContextMacro(?ctx, ?hctx).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1)
+#endif
 
 /**
  * Store static fields
@@ -301,7 +265,7 @@ Temp1(?basevalue, ?to) :-
   Value_Type(?basevalue, ?basevaluetype),
   ComponentType(?basevaluetype, ?basecomponenttype),
   Var_Type(?to, ?type),
-  SupertypeOf(?type, ?basecomponenttype).
+  basic.SupertypeOf(?type, ?basecomponenttype).
 
 Temp2(?ctx, ?to, ?basehctx, ?basevalue) :-
   Temp1(?basevalue, ?to),
@@ -322,7 +286,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 //   Value_Type(?basevalue, ?basevaluetype),
 //   Var_Type(?to, ?type),
 //   ComponentType(?basevaluetype, ?basecomponenttype),
-//   SupertypeOf(?type, ?basecomponenttype).
+//   basic.SupertypeOf(?type, ?basecomponenttype).
 
 .decl NotEmptyArrayValue(?value:Value)
 
@@ -369,8 +333,8 @@ ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) :-
   Value_Type(?value, ?valuetype),
   Value_Type(?basevalue, ?basevaluetype),
   ComponentType(?basevaluetype, ?componenttype),
-  SupertypeOf(?componenttype, ?valuetype).
- 
+  basic.SupertypeOf(?componenttype, ?valuetype).
+
 StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) :-
   ReachableStoreArrayIndexBase(?base),
   OptStoreArrayIndex(?from, ?base),
@@ -407,9 +371,6 @@ OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
 
 OptReturnAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-#ifdef INFORMATION_FLOW
-  !SanitizationMethod(?method),
-#endif
   AssignReturnValue(?invocation, ?local),
   ReturnVar(?return, ?method).
 
@@ -457,118 +418,30 @@ OptVirtualMethodInvocationBase(?invocation, ?base) :-
   Instruction_Method(?invocation, ?inmethod),
   VirtualMethodInvocation_Base(?invocation, ?base).
 
-
-// This rule is the default logic for the majority of analyses
-
-#ifndef AdvancedMergeBasisMacro
-// This is the "proper" form of the rule. We diverge from it
-// to enable more advanced merging logic.
-
-isContext(?newCtx),
-CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
-  OptVirtualMethodInvocationBase(?invocation, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  Value_Type(?value, ?valuetype),
-  ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-  ThisVar(?tomethod, ?this),
-  SiteShouldNotBeRefined(?invocation),
-  MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?newCtx).
-#ifdef INFORMATION_FLOW
-  .plan 2:(3,2,1,4,5,6)
-#endif
-
-#else /* there is optimized behavior available */
-
 // The optimization/advanced merge treatment is as follows: the main
 // analysis (this file) first creates all the possible bindings that
 // the Merge logic might need to create a new context. (It uses
-// AdvancedMergeBasisMacro to communicate these bindings to the individual
+// ContextRequest to communicate these bindings to the individual
 // context-sensitive analysis.) Then each individual analysis creates
 // new context objects by employing arbitrary logic, and communicates
 // back to the main analysis the results of context creation using
-// CachedMergeMacro.
-AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) :-
+// ContextResponse.
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value) :-
   OptVirtualMethodInvocationBase(?invocation, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
 
 // The main analysis is merely looking up the previously created
 // context objects.
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
-  CachedMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   Value_Type(?value, ?valuetype),
-  ResolveInvocation(?valuetype, ?invocation, ?tomethod),
+  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
   ThisVar(?tomethod, ?this),
   SiteShouldNotBeRefined(?invocation).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(2,1,3,4,5,6)
-#endif /* #ifndef AdvancedMergeBasisMacro */
-
-
-#ifdef MergeRefinedMacro
-#ifndef CachedMergeRefinedMacro
-// Default behavior
-/**
- * This logic applies to refinement-based (or "adaptive") analyses. The
- * analysis is first run with the filter predicate (SiteToRefine) empty,
- * performing a low-precision but cheap computation. Then the external logic
- * runs delta rules to populate the filter predicate and re-runs the analysis.
- * (Note that the #ifdef just checks if the analysis has defined the
- * appropriate macro. This is not an input flag.)
- */
-isContext(?newCtx),
-CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  OptVirtualMethodInvocationBase(?invocation, ?base),
-  Value_Type(?value, ?valuetype),
-  ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-  ThisVar(?tomethod, ?this),
-  SiteShouldBeRefined(?invocation),
-  MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx).
-
-#else /* there is optimized behavior available */
-
-AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) :-
-  OptVirtualMethodInvocationBase(?invocation, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
-
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
-  CachedMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  Value_Type(?value, ?valuetype),
-  ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-  ThisVar(?tomethod, ?this),
-  SiteShouldBeRefined(?invocation).
-  .plan 1:(2,1,3,4,5,6)
-#endif /* #ifndef CachedMergeRefinedMacro */
-#endif /* #ifdef MergeRefinedMacro */
-
-/**
- * Static method invocations
- */
-
-#ifndef AdvancedMergeStaticBasisMacro
-isContext(?newCtx),
-CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod) :-
-  ReachableContext(?callerCtx, ?inmethod),
-  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod),
-  MergeStaticMacro(?callerCtx, ?invocation, ?newCtx).
-
-#else
-
-AdvancedMergeStaticBasisMacro(?callerCtx, ?invocation) :-
-  ReachableContext(?callerCtx, ?inmethod),
-  StaticMethodInvocation(?invocation, _, ?inmethod).
-
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
-  AdvancedMergeStaticBasisMacro(?callerCtx, ?invocation),
-  CachedMergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
-  MethodInvocation_Method(?invocation, ?tomethod).
-  .plan 1:(2,1,3)
-#endif /* #ifndef AdvancedMergeStaticBasisMacro */
+#endif
 
 /**
  * Special method invocations
@@ -581,78 +454,27 @@ OptSpecialMethodInvocationBase(?invocation, ?base) :-
   Instruction_Method(?invocation, ?inmethod),
   SpecialMethodInvocation_Base(?invocation, ?base).
 
-#ifndef AdvancedMergeBasisMacro
-// Default behavior
-isContext(?newCtx),
-CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
-  OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation_Method(?invocation, ?tomethod),
-  isSpecialMethodInvocation_Insn(?invocation),
-  ThisVar(?tomethod, ?this),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  SiteShouldNotBeRefined(?invocation),
-  MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?newCtx).
-
-#else /* there is advanced behavior available */
-
-AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value) :-
   OptSpecialMethodInvocationBase(?invocation, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
 
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
-  CachedMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   MethodInvocation_Method(?invocation, ?tomethod),
   ThisVar(?tomethod, ?this),
   isSpecialMethodInvocation_Insn(?invocation),
   SiteShouldNotBeRefined(?invocation).
-  .plan 1:(2,1,3,4,5,6)
-#endif /* #ifndef AdvancedMergeBasisMacro */
-
-#ifdef MergeRefinedMacro
-#ifndef CachedMergeRefinedMacro
-// Default behavior
-isContext(?newCtx),
-CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation_Method(?invocation, ?tomethod),
-  isSpecialMethodInvocation_Insn(?invocation),
-  ThisVar(?tomethod, ?this),
-  SiteShouldBeRefined(?invocation),
-  MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?newCtx).
-
-#else /* there is advanced behavior available */
-
-AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) :-
-  OptSpecialMethodInvocationBase(?invocation, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
-
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
-  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  MethodInvocation_Method(?invocation, ?tomethod),
-  isSpecialMethodInvocation_Insn(?invocation),
-  ThisVar(?tomethod, ?this),
-  SiteShouldBeRefined(?invocation).
-#endif /* #ifndef CachedMergeRefinedMacro */
-#endif /* #ifdef MergeRefinedMacro
-
+  //.plan 1:(2,1,3,4,5,6)
 
 /**
  * Reachable
  */
-
 ReachableContext(?ctx, ?method) :-
   CallGraphEdge(_, _, ?ctx, ?method).
 
 Reachable(?method) :-
   ReachableContext(_, ?method).
-
 
 /**
  * Logic to decide whether to apply refined or regular bindings for

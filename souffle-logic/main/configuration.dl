@@ -1,0 +1,26 @@
+.comp AbstractConfiguration {
+
+  .decl ContextRequest(?ctx:Context, ?hctx:HContext, ?invo:MethodInvocation, ?value:Value)
+  .decl StaticContextRequest(?ctx:Context, ?invo:MethodInvocation)
+
+  .decl ContextResponse(?callerCtx:Context, ?hctx:HContext, ?invo:MethodInvocation, ?value:Value, ?calleeCtx:Context)
+  .decl StaticContextResponse(?callerCtx:Context, ?invo:MethodInvocation, ?calleeCtx:Context)
+
+  .decl RecordContextRequest(?callerCtx:Context, ?value:Value, ?var:Var)
+  .decl RecordContextResponse(?callerCtx:Context, ?value:Value, ?var:Var, ?hctx:HContext)
+
+  .decl ThreadStartContextRequest(?callerCtx:Context, ?hctx:HContext, ?value:Value)
+  .decl ThreadStartContextResponse(?callerCtx:Context, ?hctx:HContext, ?value:Value, ?calleeCtx:Context)
+
+  .decl StartupContextRequest(?hctx:HContext, ?value:Value)
+  .decl StartupContextResponse(?hctx:HContext, ?value:Value, ?calleeCtx:Context)
+
+  .decl FinalizerRegisterContextRequest(?callerCtx:Context, ?inmethod:Method, ?value:Value)
+  .decl FinalizerRegisterContextResponse(?callerCtx:Context, ?inmethod:Method, ?value:Value, ?newCtx:Context)
+
+  .decl InitContextRequest(?symbol:symbol)
+  .decl InitContextResponse(?symbol:symbol, ?context:Context)
+
+  .decl InitHContextRequest(?symbol:symbol)  
+  .decl InitHContextResponse(?symbol:symbol, ?hcontext:HContext)
+}

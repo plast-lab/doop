@@ -1,9 +1,56 @@
 // Context-sensitive pointer analysis with context of 3 object and a
 // context-sensitive heap abstraction.
 
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
 // In this analysis, both the real context and the real heap context are
 // triplets of Values. Keeping mapping functions is the way to handle
 // analyses where HContext = Context (since the language considers them
 // different types).
 .type Context  = [ value1:Value, value2:Value, value3:Value ]
 .type HContext = [ value1:Value, value2:Value, value3:Value ]
+
+.comp ThreeObjectSensitivePlusThreeHeapConfiguration : AbstractConfiguration {
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ?hctx = [?hctxValue1, ?hctxValue2, ?hctxValue3],
+    ?calleeCtx = [?hctxValue2, ?hctxValue3, ?value],
+    ?hctxValue1 = ?hctxValue1.
+
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?calleeCtx = ?callerCtx.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),      
+    ?ctx = [?ctxValue1, ?ctxValue2, ?ctxValue3],
+    ?hctx = [?ctxValue1, ?ctxValue2, ?ctxValue3].
+
+  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+    ?hctx = [?hctxValue1, ?hctxValue2, ?hctxValue3],
+    ?newCtx = [?hctxValue2, ?hctxValue3, ?value],
+    ?hctxValue1 = ?hctxValue1.
+
+  StartupContextResponse(?hctx, ?value, ?newCtx) :-
+    StartupContextRequest(?hctx, ?value),
+    ?hctx = [?hctxValue1, ?hctxValue2, ?hctxValue3],
+    ?newCtx = [?hctxValue2, ?hctxValue3, ?value],
+    ?hctxValue1 = ?hctxValue1.
+
+  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+    ?callerCtx = [?callerCtxValue1, ?callerCtxValue2, ?callerCtxValue3],
+    ?newCtx = [?callerCtxValue2, ?callerCtxValue3, ?value],
+    ?callerCtxValue1 = ?callerCtxValue1.
+
+  InitContextResponse(?value, ?ctx) :-
+    InitContextRequest(?value),
+    ?ctx = [?value, ?value, ?value].
+
+  InitHContextResponse(?value, ?hctx) :-
+    InitHContextRequest(?value),
+    ?hctx = [?value, ?value, ?value].
+}

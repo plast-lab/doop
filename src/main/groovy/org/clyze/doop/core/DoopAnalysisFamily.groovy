@@ -130,7 +130,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "SEPARATE_EXCEPTION_OBJECTS",
-					name: "disable-inferTypeStructure-exceptions",
+					name: "disable-merge-exceptions",
 					value: false,
 					forPreprocessor: true
 			),
@@ -183,17 +183,25 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "DACAPO",
 					name: "dacapo",
 					description: "Load additional logic for DaCapo (2006) benchmarks properties.",
-					value: false
+                    value: false,
+					forPreprocessor: true                    
 			),
 			new BooleanAnalysisOption(
 					id: "DACAPO_BACH",
 					name: "dacapo-bach",
 					description: "Load additional logic for DaCapo (Bach) benchmarks properties.",
-					value: false
+                    value: false,
+					forPreprocessor: true                    
 			),
 			new BooleanAnalysisOption(
 					id: "ONLY_APPLICATION_CLASSES_FACT_GEN",
 					name: "only-application-classes-fact-gen",
+					value: false,
+					forCacheID: true
+			),
+			new BooleanAnalysisOption(
+					id: "WALA_FACT_GEN",
+					name: "wala-fact-gen",
 					value: false,
 					forCacheID: true
 			),
@@ -242,6 +250,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "cfg",
 					value: true,
 					cli: false
+			),
+			new AnalysisOption<String>(
+					id: "CONFIGURATION",
+					name: "configuration",
+					description: "Analysis Configuration",
+					value: "ContextInsensitiveConfiguration",
+                    cli: false,
+					forCacheID: true,
+					forPreprocessor: true
 			),
 			/* End Main options */
 			/* Start preprocessor normal flags */
@@ -301,7 +318,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "COARSE_GRAINED_ALLOCATION",
 					name: "coarse-grained-allocation-sites",
-					description: "Aggressively inferTypeStructure allocation sites for all regular object types, in lib and app alike.",
+					description: "Aggressively merge allocation sites for all regular object types, in lib and app alike.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true,
@@ -309,7 +326,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "NO_MERGE_LIBRARY_OBJECTS",
-					name: "no-inferTypeStructure-library-objects",
+					name: "no-merge-library-objects",
 					description: "Disable the default policy of merging library (non-collection) objects of the same type per-method.",
 					value: false,
 					webUI: true,
@@ -623,6 +640,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_EXTRA_METRICS",
 					name: "Xextra-metrics",
 					description: "Run extra metrics logic under addons/statistics",
+					value: false,
+					nonStandard: true,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "X_CONTEXT_REMOVER",
+					name: "Xcontext-remover",
+					description: "Run the context remover for reduced memory use (only available in context-insensitive analysis).",
 					value: false,
 					nonStandard: true,
 					forPreprocessor: true

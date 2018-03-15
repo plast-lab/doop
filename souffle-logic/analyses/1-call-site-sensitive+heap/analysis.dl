@@ -1,12 +1,55 @@
 // Context-sensitive pointer analysis with context of 1 call site and a
 // context-sensnitive heap abstraction of 1 call site.
 
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+ 
 // In this analysis, both the real context and the real heap context are
 // MethodInvocations.
 .type Context  = [ invocation:MethodInvocation ]
 .type HContext = [ invocation:MethodInvocation ]
 
+.comp OneCallSiteSensitivePlusHeapConfiguration : AbstractConfiguration {
+                    
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ?calleeCtx = [?invo].
 
-.decl StartupInvocation(?invocation:MethodInvocation)
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?calleeCtx = [?invo].
 
-StartupInvocation("<<jvm-startup-context>>").
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),      
+    ?ctx = [?invo],
+    ?hctx = [?invo].
+
+// For this analysis the context of a method call corresponds to the
+// invocation site of the method.
+
+  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+    ?newCtx = ?callerCtx.
+
+  StartupContextResponse(?hctx, ?value, ?newCtx) :-
+    StartupContextRequest(?hctx, ?value),
+    StartupInvocation(?invocation),
+    ?newCtx = [?invocation].
+ 
+  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+    FakeInvocation_RegisterFinalize(?value, ?invocation),
+    ?newCtx = [?invocation].
+
+  InitContextResponse(?invocation, ?ctx) :-
+    InitContextRequest(?invocation),
+    ?ctx = [?invocation].
+
+  InitHContextResponse(?value, ?hctx) :-
+    InitHContextRequest(?value),
+    ?hctx = [?value].
+
+  .decl StartupInvocation(?invocation:MethodInvocation)
+
+  StartupInvocation("<<jvm-startup-context>>").
+}

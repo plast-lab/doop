@@ -1,12 +1,10 @@
-#include "main-declarations.dl"
-
 /**
  * Generic declarations for context-sensitive pointer analysis.
  */
 
 .decl isContext(?ctx:Context)
 .decl isHContext(?hctx:HContext)
-
+      
 // These are normally unique, but for partitioned analyses there may be
 // one per partition.
 .decl isImmutableContext(?ctx:Context)
@@ -25,7 +23,7 @@
 // Needed when context consists of different kinds
 .type ContextComponent
 
-.decl isContextComponent(?comp:ContextComponent)
+.decl isContextComponent(?comp:ContextComponent) overridable
 
 .decl ContextComponent_MethodInvocation(?invo:MethodInvocation, ?comp:ContextComponent)
 
@@ -46,7 +44,7 @@
 /**
  * Call graph
  */
-.decl CallGraphEdge(?callerCtx:Context, ?invocation:MethodInvocation, ?calleeCtx:Context, ?method:Method)
+.decl CallGraphEdge(?callerCtx:Context, ?invocation:MethodInvocation, ?calleeCtx:Context, ?method:Method) overridable
 
 /**
  * Reachable
@@ -55,13 +53,13 @@
 
 .decl ReachableContext(?ctx:Context, ?method:Method)
 
-.decl OptLoadInstanceField(?to:Var, ?signature:Field, ?base:Var)
+// .decl OptLoadInstanceField(?to:Var, ?signature:Field, ?base:Var)
 
-.decl OptLoadStaticField(?ctx:Context, ?to:Var, ?signature:Field)
+// .decl OptLoadStaticField(?ctx:Context, ?to:Var, ?signature:Field)
 
-.decl OptStoreStaticField(?signature:Field, ?from:Var)
+// .decl OptStoreStaticField(?signature:Field, ?from:Var)
 
-.decl OptStoreInstanceField(?from:Var, ?signature:Field, ?base:Var)
+// .decl OptStoreInstanceField(?from:Var, ?signature:Field, ?base:Var)
 
 .decl OptInterproceduralAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
 

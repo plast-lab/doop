@@ -32,7 +32,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?param) :-
   Value_Type(?value, ?valueType),
   ExceptionHandler_InRange(?handler, ?insn),
   ExceptionHandler_Type(?handler, ?handlerType),
-  SubtypeOf(?valueType, ?handlerType),
+  basic.SubtypeOf(?valueType, ?handlerType),
   ConcreteClass(?valueType), // filtering null_type
   ExceptionHandler_FormalParam(?handler, ?param),
   !ExceptionHandler_Impossible(?valueType, ?handler, ?insn).
@@ -51,7 +51,7 @@ ExceptionHandler_TypeIsCaught(?type, ?block) :-
   ExceptionHandler_SameInsn_Repr(?insn, ?repr),
   ExceptionHandler_SameBlock_Repr(?repr, ?block),
   ExceptionHandler_Type(?handler, ?handlerType),
-  SubtypeOf(?type, ?handlerType),
+  basic.SubtypeOf(?type, ?handlerType),
   ConcreteClass(?type).
 
 /*
@@ -67,8 +67,8 @@ ExceptionHandler_Impossible(?type, ?h2, ?insn) :-
   ExceptionHandler_Before(?h1, ?h2),
   ExceptionHandler_Type(?h1, ?h1Type),
   ExceptionHandler_Type(?h2, ?h2Type),
-  SubtypeOf(?type, ?h1Type),
-  SubtypeOf(?type, ?h2Type),
+  basic.SubtypeOf(?type, ?h1Type),
+  basic.SubtypeOf(?type, ?h2Type),
   ConcreteClass(?type).
 
 ///////////////////////////////////////////////////////////////////////////////

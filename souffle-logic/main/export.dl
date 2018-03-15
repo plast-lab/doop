@@ -1,0 +1,17 @@
+/*
+ * This file should contain only output directives.
+ * If there are no output directives, Souffle does not even run the analysis.
+ * Only the parts of the analysis that can affect the output are executed.
+ */
+
+// It is possible to have multiple relations in an .output statement
+// e.g. .output CallGraphEdge, VarPointsTo
+
+#ifndef X_SERVER_LOGIC
+.output CallGraphEdge(IO="file",filename="CallGraphEdge.csv",delimiter="\t")
+.output VarPointsTo(IO="file",filename="VarPointsTo.csv",delimiter="\t")
+.output ReachableContext(IO="file",filename="ReachableContext.csv",delimiter="\t")
+.output Stats_Metrics(IO="file",filename="Stats_Metrics.csv",delimiter="\t")
+#endif
+.output Reachable(IO="file",filename="Reachable.csv",delimiter="\t")
+.output ApplicationEntryPoint(IO="file",filename="ApplicationEntryPoint.csv",delimiter="\t")

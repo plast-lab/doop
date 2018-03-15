@@ -54,25 +54,25 @@ VarHasNoType(?var) :-
 
 NotReachableVarPointsTo(?var, ?method) :-
   Var_DeclaringMethod(?var, ?method),
-  VarPointsTo(_, _, _, ?var),
-  !Reachable(?method).
+  mainAnalysis.VarPointsTo(_, _, _, ?var),
+  !mainAnalysis.Reachable(?method).
 
 .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:Value, ?valueType:Type)
 .output VarPointsToWronglyTypedValue
 
 VarPointsToWronglyTypedValue(?var, ?varType, ?value, ?valueType) :-
   Value_Type(?value, ?valueType),
-  VarPointsTo(_, ?value, _, ?var),
+  mainAnalysis.VarPointsTo(_, ?value, _, ?var),
   Var_Type(?var, ?varType),
-  !SubtypeOf(?valueType, ?varType).
+  !basic.SubtypeOf(?valueType, ?varType).
 
 .decl VarPointsToMergedHeap(?var:Var, ?value:Value)
 .output VarPointsToMergedHeap
 
 VarPointsToMergedHeap(?var, ?value) :-
   Value_isHeap(?value),
-  HeapAllocation_Merge(?value, ?value2),
-  VarPointsTo(_, ?value, _, ?var),
+  mainAnalysis.HeapAllocation_Merge(?value, ?value2),
+  mainAnalysis.VarPointsTo(_, ?value, _, ?var),
   ?value != ?value2.
 
 .decl HeapAllocationHasNoType(?heap:HeapAllocation)

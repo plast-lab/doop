@@ -424,31 +424,24 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
 
 // Special methods
 
-// Surprising as it may seem, this join is not always performed first if
-// inlined below.
-.decl OptReflectiveSpecialMethodInvocationBaseValue(?hctx:HContext, ?value:Value, ?callerCtx:Context, ?invocation:MethodInvocation, ?callee:Method)
-
-OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee) :-
-  ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
-  .plan 1:(2,1)
-
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   :-
-  OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
+  ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ThisVar(?callee, ?this),
   Var_Type(?this, ?varType),
   Value_Type(?value, ?valueType),
-  SupertypeOf(?varType, ?valueType).
+  basic.SupertypeOf(?varType, ?valueType).
 #else
 /** This VarPointsTo is ok **/
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   :-
-  OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
+  ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ThisVar(?callee, ?this),
   ImmutableContextFromHContext(?hctx, ?calleeCtx),
 // Check if object is an instance of the class declaring the method. It's a
@@ -456,45 +449,39 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
 // special reflective calls to call private superclass methods.
   Var_Type(?this, ?thisType),
   Value_Type(?value, ?valueType),
-  SupertypeOf(?thisType, ?valueType).
+  basic.SupertypeOf(?thisType, ?valueType).
 #endif
 
 
 // Virtual methods
-
-// TODO Check if object is an instance of the class declaring the
-//      method (only overapproximation)
-.decl OptReflectiveVirtualMethodInvocationBaseValue(?hctx:HContext, ?value:Value, ?callerCtx:Context, ?invocation:MethodInvocation, ?signature:Method)
-
-OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature) :-
-  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
 
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   :-
-  OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature),
+  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   Value_Type(?value, ?valuetype),
   Method_DeclaringType(?signature, ?type),
-  SupertypeOf(?type, ?valuetype), // TODO need nicer check
+  basic.SupertypeOf(?type, ?valuetype), // TODO need nicer check
   Method_SimpleName(?signature, ?simplename),
   Method_Descriptor(?signature, ?descriptor),
-  MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
+  basic.MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
   ThisVar(?tomethod, ?this).
 #else
 /** This VarPointsTo is ok **/
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   :-
-  OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature),
+  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   Value_Type(?value, ?valuetype),
   Method_DeclaringType(?signature, ?type),
-  SupertypeOf(?type, ?valuetype), // TODO need nicer check
+  basic.SupertypeOf(?type, ?valuetype), // TODO need nicer check
   Method_SimpleName(?signature, ?simplename),
   Method_Descriptor(?signature, ?descriptor),
-  MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
+  basic.MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
   ThisVar(?tomethod, ?this),
   ImmutableContextFromHContext(?hctx, ?calleeCtx).
 #endif
@@ -569,7 +556,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 // Objects that are allocated reflectively, e.g., through Class.newInstance,
 // Constructor.newInstance, Array.newInstance.
 
-// REVIEW: need to improve this in the future. The SubtypeOf check is
+// REVIEW: need to improve this in the future. The basic.SubtypeOf check is
 // basically a no-op: the return value will always be of type Object.
 // We need to have these rules establish a forward-only result, and then
 // also do a backwards analysis to see what type this gets cast to.
@@ -580,7 +567,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
   ReflectiveAllocation(?instruction, ?type, ?value),
   Var_Type(?var, ?vartype),
-  SubtypeOf(?type, ?vartype).
+  basic.SubtypeOf(?type, ?vartype).
 #else
 /** This VarPointsTo is ok **/
 InitializedClass(?type),
@@ -589,7 +576,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
   ReflectiveAllocation(?instruction, ?type, ?value),
   Var_Type(?var, ?vartype),
-  SubtypeOf(?type, ?vartype).
+  basic.SubtypeOf(?type, ?vartype).
 #endif
 
 
@@ -636,13 +623,13 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
   Var_Type(?to, ?type),
   Value_Type(?value, ?valuetype),
-  SupertypeOf(?type, ?valuetype).
+  basic.SupertypeOf(?type, ?valuetype).
 
 /// This is unnecessary. It's already done by ArrayIndexPointsTo.
 //  // Additional type filtering based on array covariance
 //  Value_Type[?basevalue] = ?arraytype,
 //  ComponentType[?arraytype] = ?componenttype,
-//  SupertypeOf(?componenttype, ?valuetype).
+//  basic.SupertypeOf(?componenttype, ?valuetype).
 
 /*************************************************************
  * Reflective load of a static field
@@ -656,7 +643,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   StaticFieldPointsTo(?hctx, ?value, ?signature),
   Value_Type(?value, ?valuetype),
   Var_Type(?to, ?vartype),
-  SupertypeOf(?vartype, ?valuetype).
+  basic.SupertypeOf(?vartype, ?valuetype).
 
 /*************************************************************
  * Reflective store of a static field
@@ -670,7 +657,7 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value_Type(?value, ?valuetype),
   Field_Type(?signature, ?fieldtype),
-  SupertypeOf(?fieldtype, ?valuetype).
+  basic.SupertypeOf(?fieldtype, ?valuetype).
 #endif
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
@@ -678,9 +665,13 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   TaintedVarPointsTo(?value, ?ctx, ?from),
   Value_Type(?value, ?valuetype),
   Field_Type(?signature, ?fieldtype),
-  SupertypeOf(?fieldtype, ?valuetype),
+  basic.SupertypeOf(?fieldtype, ?valuetype),
   isImmutableHContext(?hctx).
 #endif
+
+// The code is very similar to the logic in the main analysis, however
+// we split it out because of the need (here, but not for normal value
+// loads) to filter type-incorrect values.
 
 /*************************************************************
  * Reflective load of an instance field
@@ -693,20 +684,7 @@ ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue) :-
   VarPointsTo(?basehctx, ?basevalue, ?baseCtx, ?base),
   Value_Type(?basevalue, ?basevaluetype),
   Field_DeclaringType(?sig, ?declaringClass),
-  SupertypeOf(?declaringClass, ?basevaluetype).
-
-// The code below is very similar to the logic in the main analysis,
-// however we split it out because of the need (here, but not for
-// normal value loads) to filter type-incorrect values.
-
-/** This VarPointsTo is ok **/
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
-  Value_Type(?value, ?valuetype),
-  Var_Type(?to, ?vartype),
-  SupertypeOf(?vartype, ?valuetype).
-
+  basic.SupertypeOf(?declaringClass, ?basevaluetype).
 
 /*************************************************************
  * Reflective store of an instance field
@@ -719,12 +697,37 @@ ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) :
   VarPointsTo(?basehctx, ?basevalue, ?baseCtx, ?base),
   Value_Type(?basevalue, ?basevaluetype),
   Field_DeclaringType(?sig, ?declaringClass),
-  SupertypeOf(?declaringClass, ?basevaluetype).
+  basic.SupertypeOf(?declaringClass, ?basevaluetype).
 
-// The code below is very similar to the logic in the main analysis,
-// however we split it out because of the need (here, but not for
-// normal value loads) to filter type-incorrect values.
+//// Old-style logic. Slower in Souffle, so now only used in
+//// featherweight analysis.
+// /** This VarPointsTo is ok **/
+// VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+//   ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+//   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
+//   Value_Type(?value, ?valuetype),
+//   Var_Type(?to, ?vartype),
+//   basic.SupertypeOf(?vartype, ?valuetype).
+
 #ifndef FEATHERWEIGHT_ANALYSIS
+.decl ReflectiveHeapInterproceduralAssign(?sig:Field, ?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
+ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to,?fromCtx, ?from) :-
+  ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue),
+  ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from),
+  !Value_Null(?basevalue).
+  .plan 1:(2,1)
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to, ?fromCtx, ?from),
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  NotSpecialObject(?value),
+  Value_Type(?value, ?valuetype),
+  Field_Type(?sig, ?fieldtype),
+  basic.SupertypeOf(?fieldtype, ?valuetype).
+  .plan 1:(2,1,3,4,5,6)
+
+// Computed only for its own sake, if designated for output, not for
+// VarPointsTo computations
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
@@ -732,8 +735,19 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   NotSpecialObject(?value),
   Value_Type(?value, ?valuetype),
   Field_Type(?signature, ?fieldtype),
-  SupertypeOf(?fieldtype, ?valuetype).
+  basic.SupertypeOf(?fieldtype, ?valuetype).
+
+#else // FEATHERWEIGHT_ANALYSIS
+
+/** This VarPointsTo is ok **/
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
+  Value_Type(?value, ?valuetype),
+  Var_Type(?to, ?vartype),
+  basic.SupertypeOf(?vartype, ?valuetype).
 #endif
+
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
@@ -741,7 +755,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   !Value_Null(?basevalue),
   Value_Type(?value, ?valuetype),
   Field_Type(?signature, ?fieldtype),
-  SupertypeOf(?fieldtype, ?valuetype),
+  basic.SupertypeOf(?fieldtype, ?valuetype),
   isImmutableHContext(?hctx).
 #endif
  
@@ -996,7 +1010,9 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx),
   AssignReturnValue(?invocation, ?return).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5)
+#endif
 
 // Special object just to designate the unknown values returned by
 // Class.newInstance. At every newInstance to which an unknown object
@@ -1061,7 +1077,7 @@ VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) :-
 .decl ClassSubtype(?subType:ClassType, ?type:ClassType)
 
 ClassSubtype(?subtype, ?type) :-
-  SubtypeOf(?subtype, ?type),
+  basic.SubtypeOf(?subtype, ?type),
   isClassType(?subtype).
 
 .decl NumberOfClassSubtypes(?type:ClassType, ?count:number)
@@ -1079,9 +1095,9 @@ _OptMethodWithVarCast(?subtype, ?inMethod, ?from) :-
 .decl SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation:MethodInvocation, ?type:Type, ?inMethod:Method)
 
 SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation, ?type, ?inMethod) :-
-  _OptMethodWithVarCast(?type, ?inMethod, ?from),
+  SpecialMissingNewInstanceValue(?forNameInvocation, ?specialvalue),
   VarPointsTo(_, ?specialvalue, _, ?from),
-  SpecialMissingNewInstanceValue(?forNameInvocation, ?specialvalue).
+  _OptMethodWithVarCast(?type, ?inMethod, ?from).
 
 BackwardReflectiveAssignClassConstant(?forNameInvocation, ?type) :-
   SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation, ?type, _).
@@ -1113,7 +1129,7 @@ InferredTypesPrecisionThreshold(10).
 TypeMatchingMethod(?subtype, ?constant) :-
   MethodNameMatchingStringConstant_Signature(?signature, ?constant),
   Method_DeclaringType(?signature, ?type),
-  SubtypeOf(?subtype, ?type).
+  basic.SubtypeOf(?subtype, ?type).
 
 .decl NumberOfTypesMatchingMethod(?constant:HeapAllocation, ?n:number)
 
@@ -1155,7 +1171,7 @@ BackwardHighConfidenceReflectiveAssignClassConstant(?forNameInvocation, ?type)  
 TypeMatchingFieldName(?subtype, ?constant) :-
   FieldNameMatchingStringConstant_Signature(?signature, ?constant),
   Field_DeclaringType(?signature, ?type),
-  SubtypeOf(?subtype, ?type).
+  basic.SubtypeOf(?subtype, ?type).
 
 .decl NumberOfTypesMatchingFieldName(?constant:HeapAllocation, ?n:number)
 
@@ -1250,7 +1266,7 @@ BackwardReflectiveAssignMethodConstant(?return, ?signature) :-
   Method_DeclaringType(?signature, ?classType),
   AssignReturnValue(?getMethodInvocation, ?return),
   Method_ReturnType(?signature, ?retType),
-  (SubtypeOf(?retType, ?castType); SupertypeOf(?retType, ?castType)).
+  (basic.SubtypeOf(?retType, ?castType); basic.SupertypeOf(?retType, ?castType)).
   // REVIEW_ strictly speaking, the return type should merely be
   // possibly-compatible with the cast type. But practically, they
   // are often the same.
@@ -1274,7 +1290,9 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx),
   AssignReturnValue(?invocation, ?return).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5)
+#endif
 
 // Make a "get" call over a special field (which knows its getField origin)
 // return a special object that also remembers the original getField call.
@@ -1302,7 +1320,7 @@ BackwardReflectiveAssignFieldConstant(?return, ?signature) :-
   VarPointsTo(_, ?classValue, _, ?from),
   ReifiedClass(?classType, ?classValue),
   OptFieldType(?fieldType, ?signature, ?classType),
-  (SubtypeOf(?fieldType, ?castType); SupertypeOf(?fieldType, ?castType)),
+  (basic.SubtypeOf(?fieldType, ?castType); basic.SupertypeOf(?fieldType, ?castType)),
   // REVIEW. Could be ?fieldType = ?castType. Precision/soundness tradeoff.
   AssignReturnValue(?getFieldInvocation, ?return).
 
@@ -1363,7 +1381,7 @@ VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
 //  VarPointsTo(_, ?value, ?ctx, ?base),
 //  OptGetMethodsClass(?type, ?getMethodsInvocation),
 //  Value_Type(?value, ?valueType),
-//  SupertypeOf(?type, ?valueType).
+//  basic.SupertypeOf(?type, ?valueType).
 
 // The clincher_ if we see the cast of a result that came
 // from an invoke, over a method that came from a getMethods, match
@@ -1437,7 +1455,7 @@ VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
 //  VarPointsTo(_, ?value, ?ctx, ?base),
 //  OptGetFieldsClass(?type, ?getFieldsInvocation),
 //  Value_Type[?value] = ?valueType,
-//  SupertypeOf(?type, ?valueType).
+//  basic.SupertypeOf(?type, ?valueType).
 
 // The clincher: if we see the cast of a result that came
 // from a get, over a field that came from a getFields, match
@@ -1561,7 +1579,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 //   ClassType(?type).
 // OptFilteredCastSubtype(?subtype, ?type) :-
 //   Opt2AssignCast(_, ?type, _, _),
-//   SubtypeOf(?subtype, ?type),
+//   basic.SubtypeOf(?subtype, ?type),
 //   ClassType(?subtype),
 //   NumberOfSubtypes[?type] <= MaximumSubtypesForInvented[].
 

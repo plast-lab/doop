@@ -230,7 +230,7 @@ MostPreciseDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromM
 
 SanitizedDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
    DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod),
-   ResolveInvocation(_, ?invocation, ?toMethod).
+   basic.ResolveInvocation(_, ?invocation, ?toMethod).
 
 SanitizedDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
    DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod),
@@ -261,7 +261,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?return) :-
    Method_Modifier("native", ?method),
    NativeReturnVar(?return, ?method),
    Method_ReturnType(?method, ?retType),
-   SubtypeOf(?type, ?retType),
+   basic.SubtypeOf(?type, ?retType),
    isImmutableHContext(?hctx), isImmutableContext(?ctx).
 
 .decl SingletonDynamicHeapObject(?type:Type, ?value:Value)
@@ -275,7 +275,7 @@ SingletonDynamicHeapObject(?type, ?value) :-
 VarPointsTo(?hctx, ?value, ?ctxFrom, ?base) :-
   DynamicCallGraphEdge(_, ?toMethod, ?invocation, ?dctxFrom, _),
   DynamicContextToContext(?ctxFrom, ?dctxFrom),
-  ResolveInvocation(?type, ?invocation, ?toMethod),
+  basic.ResolveInvocation(?type, ?invocation, ?toMethod),
   SingletonDynamicHeapObject(?type, ?value),
   MethodInvocation_Base(?invocation, ?base),
   ImmutableHContextFromContext(?ctxFrom, ?hctx).

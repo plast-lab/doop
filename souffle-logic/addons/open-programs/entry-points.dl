@@ -1,9 +1,9 @@
-.decl EntryPoint(?method:Method)
-.decl PossibleEntryPoint(?method:Method)
-.decl ClassHasPossibleEntryPoint(?class:ReferenceType)
+.decl OpenProgramEntryPoint(?method:Method)
+.decl PossibleOpenProgramEntryPoint(?method:Method)
+.decl ClassHasPossibleOpenProgramEntryPoint(?class:ReferenceType)
 
-ClassHasPossibleEntryPoint(?class),
-PossibleEntryPoint(?method) :-
+ClassHasPossibleOpenProgramEntryPoint(?class),
+PossibleOpenProgramEntryPoint(?method) :-
   Method_DeclaringType(?method, ?class),
   Method_Modifier("public", ?method),
   !Method_Modifier("abstract", ?method),
@@ -17,12 +17,12 @@ PossibleEntryPoint(?method) :-
 .decl PrefixBelow(class:ReferenceType, str:symbol)
 
 PrefixAbove(?classAbove, substr(?classAbove, 0, ?lastDotPos+1), ?lastDotPos+1) :-
-  ClassHasPossibleEntryPoint(?classAbove),
-  LastDot(?classAbove, ?lastDotPos).
+  ClassHasPossibleOpenProgramEntryPoint(?classAbove),
+  mainAnalysis.LastDot(?classAbove, ?lastDotPos).
 
 PrefixBelow(?classBelow, substr(?classBelow, 0, ?lastDotPos)) :-
-  ClassHasPossibleEntryPoint(?classBelow),
-  LastDot(?classBelow, ?lastDotPos).
+  ClassHasPossibleOpenProgramEntryPoint(?classBelow),
+  mainAnalysis.LastDot(?classBelow, ?lastDotPos).
 
 .decl ClassIsAboveOtherInNamingHierarchy(?classAbove:ReferenceType, ?classBelow:ReferenceType)
 
@@ -32,17 +32,17 @@ ClassIsAboveOtherInNamingHierarchy(?classAbove, ?classBelow) :-
   PrefixBelow(?classBelow, ?prefixBelow),
   substr(?prefixBelow, 0, ?prefixLen) = ?prefixAbove.
 
-.decl ClassWithTopLevelEntryPoint(?class:ReferenceType)
+.decl ClassWithTopLevelOpenProgramEntryPoint(?class:ReferenceType)
 .decl TopLevelApplicationClass(?class:ReferenceType)
 .decl ClassToConsider(?class:ReferenceType)
-.decl TopLevelEntryPoint(?method:Method)
+.decl TopLevelOpenProgramEntryPoint(?method:Method)
 
-ClassWithTopLevelEntryPoint(?class) :-
-  ClassHasPossibleEntryPoint(?class),
+ClassWithTopLevelOpenProgramEntryPoint(?class) :-
+  ClassHasPossibleOpenProgramEntryPoint(?class),
   !ClassIsAboveOtherInNamingHierarchy(_, ?class).
 
 TopLevelApplicationClass(?class) :-
-  ClassWithTopLevelEntryPoint(?class),
+  ClassWithTopLevelOpenProgramEntryPoint(?class),
   ApplicationClass(?class).
 
 ClassToConsider(?class) :-
@@ -52,20 +52,26 @@ ClassToConsider(?class) :-
   ApplicationClass(?class),
   !TopLevelApplicationClass(_).
 
-TopLevelEntryPoint(?method) :-
-  PossibleEntryPoint(?method),
+TopLevelOpenProgramEntryPoint(?method) :-
+  PossibleOpenProgramEntryPoint(?method),
   Method_DeclaringType(?method, ?class),
   ClassToConsider(?class).
 
 #ifdef OPEN_PROGRAMS
 // The original definition that Neville had
-EntryPoint(?method) :-
-  PossibleEntryPoint(?method),
+OpenProgramEntryPoint(?method) :-
+  PossibleOpenProgramEntryPoint(?method),
   Method_DeclaringType(?method, ?class),
   substr(?class, 0, 4) = "java".
 #else
 // The definition we currently want as default
-EntryPoint(?method) :-
-  PossibleEntryPoint(?method).
-//  TopLevelEntryPoint(?method).
+OpenProgramEntryPoint(?method) :-
+  PossibleOpenProgramEntryPoint(?method).
+//  TopLevelOpenProgramEntryPoint(?method).
 #endif
+
+// Contribute to the global summary relation
+ApplicationEntryPoint(?meth) :-
+  OpenProgramEntryPoint(?meth),
+  ApplicationMethod(?meth).
+

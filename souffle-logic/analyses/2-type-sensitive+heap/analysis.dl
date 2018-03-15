@@ -1,12 +1,63 @@
 // Context-sensitive pointer analysis with context of 2 types and a
 // context-sensitive heap abstraction.
 
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
 // In this analysis, the real context is a pair of Types and the real heap
 // context a single Type. The type is not always a class type, because of
 //arrays currently being a non-class subtype of Object.
 .type Context  = [ type1:Type, type2:Type ]
 .type HContext = [ type:Type ]
 
+.comp TwoTypeSensitivePlusHeapConfiguration : AbstractConfiguration {
+
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ?hctx = [?hctxType],
+    Value_DeclaringType(?value, ?type),
+    ?calleeCtx = [?hctxType, ?type].
+
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?calleeCtx = ?callerCtx.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),      
+    ?ctx = [?ctxType1, ?ctxType2],
+    ?hctx = [?ctxType2],
+    ?ctxType1 = ?ctxType1.
+
+  // For this analysis the context of a method call corresponds to the
+  // invocation site of the method.
+
+  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+    ?hctx = [?hctxType],
+    Value_DeclaringType(?value, ?type),
+    ?newCtx = [?hctxType, ?type].
+
+  StartupContextResponse(?hctx, ?value, ?newCtx) :-
+    StartupContextRequest(?hctx, ?value),
+    ?hctx = [?hctxType],
+    Value_DeclaringType(?value, ?type),
+    ?newCtx = [?hctxType, ?type].
+
+  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+    ?callerCtx = [?ctxType1, ?ctxType2],
+    Value_DeclaringType(?value, ?type),
+    ?newCtx = [?ctxType2, ?type],
+    ?ctxType1 = ?ctxType1.
+
+  InitContextResponse(?value, ?ctx) :-
+    InitContextRequest(?value),
+    ?ctx = [?value, ?value].
+
+  InitHContextResponse(?value, ?hctx) :-
+     InitHContextRequest(?value),
+     ?hctx = [?value].
 
 #ifdef HEAPDL
 DynamicContextToContext([?type1, ?type2], ?dynCtx) :-
@@ -40,3 +91,7 @@ DynamicContextToHContext(?hctx, ?dynCtx) :-
    !DynamicContextHeap1(_, ?dynCtx),
    isImmutableHContext(?hctx).
 #endif
+
+}
+
+      

@@ -39,7 +39,6 @@ AndroidAppComponent(?type) :-
   ContentProvider(?type);
   AndroidApplication(?type).
 
-
 .decl RegisterBroadCastReceiverVar(?var:Var)
 
 RegisterBroadCastReceiverVar(?var) :-
@@ -48,7 +47,7 @@ RegisterBroadCastReceiverVar(?var) :-
    ActualParam(0, ?invocation, ?var),
    ApplicationVar(?var),
    Var_Type(?var, ?type),
-   SupertypeOf("android.content.BroadcastReceiver", ?type).
+   basic.SupertypeOf("android.content.BroadcastReceiver", ?type).
 
 .decl ExtraAndroidAppComponent(?type:Type)
 
@@ -103,7 +102,7 @@ AndroidApplicationClass(?class) :-
 
 
 AndroidViewType(?type) :-
-  SubtypeOf(?type, ?supertype),
+  basic.SubtypeOf(?type, ?supertype),
   (?supertype = "android.view.View",
    isType(?supertype);
    ?supertype = "android.view.ViewGroup",
@@ -117,7 +116,7 @@ AndroidLibraryListenerType(?type) :-
 
 ListenerType(?type) :-
   AndroidLibraryListenerType(?listenerType),
-  SubtypeOf(?type, ?listenerType).
+  basic.SubtypeOf(?type, ?listenerType).
 
 AndroidApplicationListenerClass(?class) :-
   AndroidApplicationClass(?class),
@@ -134,7 +133,7 @@ MethodDeclaredOrInherited(?meth, ?class) :-
   Method_Descriptor(?meth, ?descriptor),
   Method_SimpleName(?meth, ?simplename),
   DirectSuperclass(?class, ?superClass),
-  MethodLookup(?simplename, ?descriptor, ?class, ?meth).
+  basic.MethodLookup(?simplename, ?descriptor, ?class, ?meth).
 
 PublicMethodOfComponent(?meth) :-
   (AndroidAppComponent(?type); ExtraAndroidAppComponent(?type)),
@@ -148,12 +147,12 @@ ProtectedMethodOfComponent(?meth) :-
 
 AppMethodOverridesAndroidLibraryMethod(?meth) :-
   AndroidApplicationClass(?type),
-  SupertypeOf(?libraryType, ?type),
+  basic.SupertypeOf(?libraryType, ?type),
   AndroidLibraryType(?libraryType),
   // Using MethodLookup for ?meth with the descriptor of the
   // overridden method takes care of covariant return types.
-  MethodLookup(?simplename, ?descriptor, ?type, ?meth),
-  MethodLookup(?simplename, ?descriptor, ?libraryType, _).
+  basic.MethodLookup(?simplename, ?descriptor, ?type, ?meth),
+  basic.MethodLookup(?simplename, ?descriptor, ?libraryType, _).
 
 // The protected method overrides one in a library type, hence it's
 // callable from the library.
@@ -196,6 +195,7 @@ ReachableContext(?ctx, ?meth) :-
   (PublicOnMethodOfLayoutControl(?meth);
    OverridingProtectedOnMethodOfLayoutControl(?meth)),
   isImmutableContext(?ctx).
+
 
 // Handle library-callable "on*" methods of listeners/callbacks
 // REVIEW: this is currently liberal. It checks that the app class
@@ -285,7 +285,7 @@ ReachableContext(?ctx, ?meth) :-
 //Both the overriden methods and the non overriden are kept, not sure 
 //if the latter are needed.
 WebClientType(?type):-
-    SubtypeOf(?type, ?supertype),
+    basic.SubtypeOf(?type, ?supertype),
     (?supertype = "android.webkit.WebViewClient",
     isType(?supertype);
     ?supertype = "android.webkit.WebChromeClient",
@@ -302,7 +302,7 @@ WebClientType(?type) :-
 ForcedReachableFromJavascriptContext(?ctx, ?meth),
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
-    MethodLookup(_,_,?class,?meth),
+    basic.MethodLookup(_,_,?class,?meth),
     ( Method_Modifier("protected", ?meth);
     Method_Modifier("public", ?meth)),
     ReachableApplicationObjectOfType(_, _, ?class),
@@ -347,7 +347,9 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   Method_DeclaringType(?meth, ?class),
   ReifiedAndroidObjectValue(?value, ?class),
   ThisVar(?meth, ?this).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(2,1,3,4,5)
+#endif
 
 // a reachable object can always be the receiver for its own methods
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
@@ -372,16 +374,17 @@ FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) :-
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
   ImmutableHContextFromContext(?ctx, ?hctx),
-  SubtypeOf(?type, ?formalType),
+  basic.SubtypeOf(?type, ?formalType),
   ReifiedAndroidObjectValue(?value, ?type).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(2,1,3,4)
-
+#endif
 
 // Do the same (use as arguments everywhere applicable) for application
 // listeners that flow into library code.
 ApplicationObjectFlowingToLibraryStaticType(?hctx, ?value, ?possibleType) :-
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
-  SupertypeOf(?possibleType, ?ofType).
+  basic.SupertypeOf(?possibleType, ?ofType).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
@@ -456,7 +459,8 @@ MultiDimensionalArrayTemp(cat(cat(?invocation, ":"), ?type), ?invocation, ?type,
 UninitialisedArray(?hctx, ?value, ?invocation, ?type),
 VarPointsTo(?hctx, ?value, ?ctx, ?from) :-
   MultiDimensionalArrayTemp(?value, ?invocation, ?type, ?ctx, ?from),
-  RecordMacro(?ctx, ?value, ?hctx).
+  configuration.RecordContextRequest(?ctx, ?value, ?from),
+  configuration.RecordContextResponse(?ctx, ?value, ?from, ?hctx).
 
 NotSpecialObject(cat(cat(?invocation, ":"), ?arrayType)),
 NotEmptyArrayValue(cat(cat(?invocation, ":"), ?arrayType)),
@@ -477,7 +481,7 @@ ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?baseva
 ActivityVarInType(?var, ?ctx, ?type) :-
    Var_DeclaringMethod(?var, ?method),
    Var_Type(?var, ?vartype),
-   SupertypeOf("android.app.Activity", ?vartype),
+   basic.SupertypeOf("android.app.Activity", ?vartype),
    ReachableContext(?ctx, ?method),
    Method_DeclaringType(?method, ?type).
 
@@ -541,3 +545,10 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
    FormalParam(0, ?method, ?formal),
    // TODO: requires proper method resolution
    ThisVar(?method, ?this).
+
+
+// Contribute to the global summary relation
+ApplicationEntryPoint(?meth) :-
+  ForcedReachableAndroidContext(_, ?meth),
+  ApplicationMethod(?meth).
+

@@ -1,13 +1,13 @@
 #include "macros.dl"
 
 TaintedValueIntroduced(?declaringType, ?invocation, ?type, "PASSWORD", ValueIdMacro(?invocation, ?type, DEFAULT_BREADCRUMB)),
-VarPointsTo(?hctx, ValueIdMacro(?invocation, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?invocation, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   ?type = "java.lang.String",
   PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base),
   Instruction_Method(?invocation, ?method),
   Method_DeclaringType(?method, ?declaringType),
-  VarPointsTo(_, ?layoutControlValue, ?ctx, ?base),
-  isImmutableHContext(?hctx),
+  mainAnalysis.VarPointsTo(_, ?layoutControlValue, ?ctx, ?base),
+  mainAnalysis.isImmutableHContext(?hctx),
   SensitiveLayoutControlValue(?layoutControlValue).
 
 
@@ -24,10 +24,10 @@ PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base) :-
 
 
 VarIsTaintedFromVar("java.lang.String", ?ctx, ?to, ?ctx, ?base) :-
-  SupertypeOf("android.text.Editable", ?type),
+  basic.SupertypeOf("android.text.Editable", ?type),
   Var_Type(?base, ?type),
   VirtualMethodInvocation_Base(?invocation, ?base),
   VirtualMethodInvocation_SimpleName(?invocation, "toString"),
   AssignReturnValue(?invocation, ?to),
   Instruction_Method(?invocation, ?method),
-  ReachableContext(?ctx, ?method).
+  mainAnalysis.ReachableContext(?ctx, ?method).

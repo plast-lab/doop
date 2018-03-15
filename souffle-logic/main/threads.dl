@@ -17,6 +17,17 @@ RunningThread(?hctx, ?value) :-
  * 1.5 and JRE 1.6 Thread.start() is defined in Java and there is native method
  * start0.
  */
+configuration.ThreadStartContextRequest(?callerCtx, ?hctx, ?value) :-
+#if defined(JRE13) || defined(JRE14)
+    ?start = "<java.lang.Thread: void start()>",
+#else
+    ?start = "<java.lang.Thread: void start0()>",
+#endif
+    ThisVar(?start, ?startThis),
+    VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis),
+    Value_Type(?value, ?valuetype),
+    basic.MethodLookup("run", "void()", ?valuetype, _).
+ 
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?run),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?runThis),
@@ -30,10 +41,10 @@ RunningThread(?hctx, ?value)
     ThisVar(?start, ?startThis),
     VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis),
     Value_Type(?value, ?valuetype),
-    MethodLookup("run", "void()", ?valuetype, ?run),
-    ThisVar(?run, ?runThis),
-    ?callerCtx = ?callerCtx, // Just to ignore "only used once" message (depends on the macro)
-    MergeThreadStartMacro(?hctx, ?value, ?callerCtx, ?calleeCtx).
+    basic.MethodLookup("run", "void()", ?valuetype, ?run),
+    ThisVar(?run, ?runThis), 
+    configuration.ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+    configuration.ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?calleeCtx).
 
 /**
  * Thread.currentThread() return running threads
@@ -62,13 +73,18 @@ ReachableCurrentThreadInvocation(?callerCtx, ?local) :-
  * invoking the private ThreadGroup() constructor (openjdk:
  * create_initial_thread_group).
  */
+
+configuration.StartupContextRequest(?hctx, ?value) :-
+    SystemThreadGroup(?hctx, ?value).
+
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
     ?signature = "<java.lang.ThreadGroup: void <init>()>",
     ThisVar(?signature, ?this),
     SystemThreadGroup(?hctx, ?value),
-    MergeStartupMacro(?hctx, ?value, ?calleeCtx).
+    configuration.StartupContextRequest(?hctx, ?value),
+    configuration.StartupContextResponse(?hctx, ?value, ?calleeCtx).
 
 /**
  * Initialization of the main thread group
@@ -80,6 +96,10 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
  *
  * TODO: set the "main" argument.
  */
+
+configuration.StartupContextRequest(?hctx, ?value) :-
+    MainThreadGroup(?hctx, ?value).
+
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
@@ -90,7 +110,8 @@ VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
     FormalParam(0, ?signature, ?groupParam),
     SystemThreadGroup(?groupHCtx, ?group),
     CompatibleHContextsMacro(?hctx, ?groupHCtx),
-    MergeStartupMacro(?hctx, ?value, ?calleeCtx).
+    configuration.StartupContextRequest(?hctx, ?value),
+    configuration.StartupContextResponse(?hctx, ?value, ?calleeCtx).
 
 /**
  * Initialization of the main thread
@@ -101,6 +122,10 @@ VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
  *
  * TODO: set the "main" argument.
  */
+
+configuration.StartupContextRequest(?hctx, ?value) :-
+    MainThread(?hctx, ?value).
+
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
@@ -111,7 +136,8 @@ VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
     FormalParam(0, ?signature, ?groupParam),
     MainThreadGroup(?groupHCtx, ?group),
     CompatibleHContextsMacro(?hctx, ?groupHCtx),
-    MergeStartupMacro(?hctx, ?value, ?calleeCtx).
+    configuration.StartupContextRequest(?hctx, ?value),
+    configuration.StartupContextResponse(?hctx, ?value, ?calleeCtx).
 
 #endif
 

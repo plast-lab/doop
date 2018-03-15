@@ -1,7 +1,7 @@
 VarPointsTo(?hctx, ?argArray, ?ctx, ?args),
 ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
    ImmutableHContextFromContext(?ctx, ?hctx),
-   MainMethodDeclaration(?mainMethod),
+   basic.MainMethodDeclaration(?mainMethod),
    ReachableContext(?ctx, ?mainMethod),
    FormalParam(0, ?mainMethod, ?args),
    MainMethodArgArray(?argArray),

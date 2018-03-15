@@ -1,4 +1,63 @@
-// In this analysis, the real context is a Type and a Value and the
-// real heap context a single Value.
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
 .type Context  = [ type:Type, value:Value ]
 .type HContext = [ value:Value ]
+
+.comp TwoTypeObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
+// In this analysis, the real context is a Type and a Value and the
+// real heap context a single Value.
+         
+// .decl CachedMerge(?hctx:HContext, ?value:Value, ?calleeCtx:Context)
+// .decl CachedMergeStatic(?callerCtx:Context, ?invo:MethodInvocation, ?calleeCtx:Context)
+
+ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx) :-
+  ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
+  ?hctx = [?hctxValue],
+  Value_DeclaringType(?hctxValue, ?type), 
+  ?calleeCtx = [?type, ?value].
+/*
+ * The above gives us an upper bound of the receiver allocator's allocator's dynamic type!
+ * Another option is the exact dynamic type of the allocator object. In that case we have:
+ * Value_Type(hctxValue, type) instead of Value_DeclaringType(hctxValue, type)
+ */
+
+// For this analysis, static calls just keep the same context as the
+// caller.
+StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+  StaticContextRequest(?callerCtx, ?invo),
+  ?calleeCtx = ?callerCtx.
+
+RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+  RecordContextRequest(?ctx, ?value, ?var),
+  ?ctx = [?ctxType, ?ctxValue],
+  ?hctx = [?ctxValue],
+  ?ctxType = ?ctxType.
+
+ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+  ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+  ?hctx = [?hctxValue],
+  Value_DeclaringType(?hctxValue, ?type),
+  ?newCtx = [?type, ?value].
+
+StartupContextResponse(?hctx, ?value, ?newCtx) :-                      
+  StartupContextRequest(?hctx, ?value),
+  ?hctx = [?hctxValue], 
+  Value_DeclaringType(?hctxValue, ?type),
+  ?newCtx = [?type, ?value].
+
+FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+  FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+  ?callerCtx = [?callerCtxType, ?callerCtxValue],
+  Value_DeclaringType(?callerCtxValue, ?type),
+  ?newCtx = [?type, ?value],
+  ?callerCtxType = ?callerCtxType.
+
+InitContextResponse(?value, ?ctx) :-
+  InitContextRequest(?value),
+  ?ctx = ["java.lang.String", ?value].
+
+InitHContextResponse(?value, ?ctx) :-
+  InitHContextRequest(?value),
+  ?ctx = [?value].
+}

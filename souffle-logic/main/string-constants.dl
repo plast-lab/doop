@@ -200,13 +200,13 @@ FieldOfClassMatchesString(?heap, ?type) :-
 // Important to not forget NullType: it derives from everything!
 MethodOfClassMatchesString(?heap, ?type) :-
   MethodOfClassMatchesString(?heap, ?superType),
-  SubtypeOf(?type, ?superType),
+  basic.SubtypeOf(?type, ?superType),
   !isNullType(?type).
 
 // Important to not forget NullType: it derives from everything!
 FieldOfClassMatchesString(?heap, ?type) :-
   FieldOfClassMatchesString(?heap, ?superType),
-  SubtypeOf(?type, ?superType),
+  basic.SubtypeOf(?type, ?superType),
   !isNullType(?type).
 
 // Also, we could restrict this to leaf classes, since they will
@@ -670,7 +670,7 @@ MethodAllocationMergeThreshold(50).
 ExceptionType(?type) :-
   ?throw = "java.lang.Throwable",
   isType(?throw),
-  SubtypeOf(?type, ?throw).
+  basic.SubtypeOf(?type, ?throw).
 
 .decl OptAssignHeapAllocation(?inmethod:Method, ?heap:HeapAllocation)
 
@@ -988,9 +988,9 @@ HeapAllocation_ContextInsensitive(?heap) :-
 //
 //ExceptionTypeToHeap2(?heap, ?heaptype) :-
 //  HeapAllocation_Type(?heap, ?heaptype),
-//  SubtypeOf(?heaptype, "java.lang.Throwable"),
+//  basic.SubtypeOf(?heaptype, "java.lang.Throwable"),
 //  ExceptionHandler_Type(_, ?handlertype),
-//  SubtypeOf(?heaptype, ?handlertype).
+//  basic.SubtypeOf(?heaptype, ?handlertype).
 
 .decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)
 
@@ -1019,7 +1019,7 @@ HeapRepresentative(?representativeHeap, ?heap) :-
 SameTypeAndMethod(?heap1, ?heap2) <-
   HeapAllocation:Type[?heap1] = ?heaptype,
   Type:Id(?throw:"java.lang.Throwable"),
-  SubtypeOf(?heaptype, ?throw),
+  basic.SubtypeOf(?heaptype, ?throw),
   HeapAllocation:Type[?heap2] = ?heaptype,
   AssignHeapAllocation(?heap1,_,?inmethod),
   AssignHeapAllocation(?heap2,_,?inmethod).

@@ -23,3 +23,27 @@ Tamiflex_ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodSt
   (_Tamiflex_ToDoopFormat(?methodStr0, ?methodStr) ;
    ?methodStr0 = ?methodStr).
 
+
+Tamiflex_ReflectionMap(?mapped, ?invocation) :-
+   Tamiflex_ReflectionData(?class, ?methodStr, ?mapped, ?inClass, ?inMethodStr, ?line),
+
+   isClassType(?class),
+   Method_SimpleName(?method, ?methodStr),
+   Method_DeclaringType(?method, ?class),
+
+   isClassType(?inClass),
+   Method_SimpleName(?inMethod, ?inMethodStr),
+   Method_DeclaringType(?inMethod, ?inClass),
+
+   (
+     // There is line information for this invocation. Match exactly with one
+     // invocation.
+     ?line > 0, MethodInvocation_Line(?invocation, ?line)
+   ;
+     // No line information available. Overapproximate by matching with any
+     // invocation inside ?inMethod matching ?method.
+     ?line = 0
+   ),
+
+   MethodInvocation_Method(?invocation, ?method),
+   Instruction_Method(?invocation, ?inMethod).

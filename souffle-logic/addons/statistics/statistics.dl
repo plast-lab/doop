@@ -9,11 +9,11 @@
 
 Stats_ApplicationHeap(?heap) :-
   ApplicationMethod(?method),
-  AssignNormalHeapAllocation(?heap, _, ?method).
+  mainAnalysis.AssignNormalHeapAllocation(?heap, _, ?method).
 
 Stats_ApplicationHeap(?heap) :-
   ApplicationMethod(?method),
-  AssignContextInsensitiveHeapAllocation(?heap, _, ?method).
+  mainAnalysis.AssignContextInsensitiveHeapAllocation(?heap, _, ?method).
 
 //Stats_ApplicationHeap(?heap) :-
 //  ApplicationMethod(?method),
@@ -59,12 +59,12 @@ Stats_ApplicationHeap(?heap) :-
 
 // Count how many objects, a var points to (context-sensitive)
 Stats_VarCount(?ctx, ?var, ?n) :-
- VarPointsTo(_, _, ?ctx, ?var),
- ?n = count : VarPointsTo(_, _, ?ctx, ?var).
+ mainAnalysis.VarPointsTo(_, _, ?ctx, ?var),
+ ?n = count : mainAnalysis.VarPointsTo(_, _, ?ctx, ?var).
 
 // Count how many objects, a var points to (value context-insensitive)
 Stats_InsensValueVarPointsTo(?value, ?ctx, ?var) :-
-  VarPointsTo(_, ?value, ?ctx, ?var).
+  mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?var).
 
 Stats_InsensValueVarCount(?ctx, ?var, ?n) :-
   Stats_InsensValueVarPointsTo(_, ?ctx, ?var),
@@ -72,7 +72,7 @@ Stats_InsensValueVarCount(?ctx, ?var, ?n) :-
 
 // Count how many objects, a var points to (base context-insensitive)
 Stats_InsensBaseVarPointsTo(?hctx, ?value, ?var) :-
-  VarPointsTo(?hctx, ?value, _, ?var).
+  mainAnalysis.VarPointsTo(?hctx, ?value, _, ?var).
 
 Stats_InsensBaseVarCount(?var, ?n) :-
   Stats_InsensBaseVarPointsTo(_, _, ?var),
@@ -103,12 +103,12 @@ Stats_InsensVars(?n) :-
 
 // Count how many objects, an array points to (context-sensitive)
 Stats_ArrayCount(?basehctx, ?basevalue, ?n) :-
-  ArrayIndexPointsTo(_, _, ?basehctx, ?basevalue),
-  ?n = count : ArrayIndexPointsTo(_, _, ?basehctx, ?basevalue).
+  mainAnalysis.ArrayIndexPointsTo(_, _, ?basehctx, ?basevalue),
+  ?n = count : mainAnalysis.ArrayIndexPointsTo(_, _, ?basehctx, ?basevalue).
 
 // Count how many objects, an array points to (value context-insensitive)
 Stats_InsensValueArrayIndexPointsTo(?value, ?basehctx, ?basevalue) :-
-  ArrayIndexPointsTo(_, ?value, ?basehctx, ?basevalue).
+  mainAnalysis.ArrayIndexPointsTo(_, ?value, ?basehctx, ?basevalue).
 
 Stats_InsensValueArrayCount(?basehctx, ?basevalue, ?n) :-
   Stats_InsensValueArrayIndexPointsTo(_, ?basehctx, ?basevalue),
@@ -116,7 +116,7 @@ Stats_InsensValueArrayCount(?basehctx, ?basevalue, ?n) :-
 
 // Count how many objects, an array points to (basevalue context-insensitive)
 Stats_InsensBaseValueArrayIndexPointsTo(?hctx, ?value, ?basevalue) :-
-  ArrayIndexPointsTo(?hctx, ?value, _, ?basevalue).
+  mainAnalysis.ArrayIndexPointsTo(?hctx, ?value, _, ?basevalue).
 
 Stats_InsensBaseValueArrayCount(?basevalue, ?n) :-
   Stats_InsensBaseValueArrayIndexPointsTo(_, _, ?basevalue),
@@ -141,12 +141,12 @@ Stats_InsensArrays(?n) :-
 
 // Count how many objects, a field points to (context-sensitive)
 Stats_FieldCount(?sig, ?basehctx, ?basevalue, ?n) :-
-  InstanceFieldPointsTo(_, _, ?sig, ?basehctx, ?basevalue),
-  ?n = count : InstanceFieldPointsTo(_, _, ?sig, ?basehctx, ?basevalue).
+  mainAnalysis.InstanceFieldPointsTo(_, _, ?sig, ?basehctx, ?basevalue),
+  ?n = count : mainAnalysis.InstanceFieldPointsTo(_, _, ?sig, ?basehctx, ?basevalue).
 
 // Count how many objects, a field points to (value context-insensitive)
 Stats_InsensValueInstanceFieldPointsTo(?value, ?sig, ?basehctx, ?basevalue) :-
-  InstanceFieldPointsTo(_, ?value, ?sig, ?basehctx, ?basevalue).
+  mainAnalysis.InstanceFieldPointsTo(_, ?value, ?sig, ?basehctx, ?basevalue).
 
 Stats_InsensValueFieldCount(?sig, ?basehctx, ?basevalue, ?n) :-
   Stats_InsensValueInstanceFieldPointsTo(_, ?sig, ?basehctx, ?basevalue),
@@ -154,7 +154,7 @@ Stats_InsensValueFieldCount(?sig, ?basehctx, ?basevalue, ?n) :-
 
 // Count how many objects, a field points to (basevalue context-insensitive)
 Stats_InsensBaseValueInstanceFieldPointsTo(?hctx, ?value, ?sig, ?basevalue) :-
-  InstanceFieldPointsTo(?hctx, ?value, ?sig, _, ?basevalue).
+  mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, _, ?basevalue).
 
 Stats_InsensBaseValueFieldCount(?sig, ?basevalue, ?n) :-
   Stats_InsensBaseValueInstanceFieldPointsTo(_, _, ?sig, ?basevalue),
@@ -199,11 +199,11 @@ Stats_InsensFields(?n) :-
 
 // Count how many contexts, a reachable method appears with
 Stats_MethodContextCount(?method, ?n) :-
-  ReachableContext(_, ?method),
-  ?n = count : ReachableContext(_, ?method).
+  mainAnalysis.ReachableContext(_, ?method),
+  ?n = count : mainAnalysis.ReachableContext(_, ?method).
 
 Stats_Methods(?n) :-
-  ?n = count : Reachable(_).
+  ?n = count : mainAnalysis.Reachable(_).
 
 //// Count how many local vars, a reachable method has
 //Stats_InsensVarInReachableMethod(?var, ?method),
