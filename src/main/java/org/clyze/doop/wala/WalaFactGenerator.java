@@ -1,8 +1,6 @@
 package org.clyze.doop.wala;
 
-import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IField;
-import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
@@ -83,36 +81,53 @@ class WalaFactGenerator {
     }
     public String fixTypeString(String original)
     {
+        boolean isArrayType = false;
+        if(original.contains("[L")) //Figure out if this is correct
+            isArrayType = true;
         String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
+        String temp;
         if(ret.contains("Primordial"))
         {
-            ret = ret.substring(ret.indexOf(",") + 1);
-            if(ret.equals("Z"))
-                return "boolean";
-            else if(ret.equals("I"))
-                return "int";
-            else if(ret.equals("V"))
-                return "void";
-            else if(ret.equals("B"))
-                return "byte";
-            else if(ret.equals("C"))
-                return "char";
-            else if(ret.equals("D"))
-                return "double";
-            else if(ret.equals("F"))
-                return "float";
-            else if(ret.equals("J"))
-                return "long";
-            else if(ret.equals("S"))
-                return "short";
+            temp = ret.substring(ret.indexOf(",") + 1);
+            if(temp.startsWith("["))
+            {
+                isArrayType = true;
+                temp = temp.substring(1);
+            }
+            if(temp.equals("Z"))
+                 ret = "boolean";
+            else if(temp.equals("I"))
+                ret = "int";
+            else if(temp.equals("V"))
+                ret = "void";
+            else if(temp.equals("B"))
+                ret = "byte";
+            else if(temp.equals("C"))
+                ret = "char";
+            else if(temp.equals("D"))
+                ret = "double";
+            else if(temp.equals("F"))
+                ret = "float";
+            else if(temp.equals("J"))
+                ret = "long";
+            else if(temp.equals("S"))
+                ret = "short";
             //TODO: Figure out what the 'P' code represents in WALA's TypeRefference
         }
+        if(isArrayType)
+            ret = ret + "[]";
         return ret;
+    }
+
+    public void printMemberAttributes(IMember member)
+    {
+
     }
 
     public void printIR(IClass cl)
     {
 //        PrintWriter writerOut = new PrintWriter(new EscapedWriter(new OutputStreamWriter((OutputStream)streamOut)));
+        ShrikeClass shrikeClass = (ShrikeClass) cl;
         String fileName = "WalaFacts/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
         File file = new File(fileName);
         file.getParentFile().getParentFile().mkdirs();
@@ -120,19 +135,63 @@ class WalaFactGenerator {
 
         Collection<IField> fields = cl.getAllFields();
         Collection<IMethod> methods = cl.getDeclaredMethods();
+        Collection<IClass> interfaces =  cl.getAllImplementedInterfaces();
         try {
             PrintWriter printWriter = new PrintWriter(file);
-            printWriter.write("class " + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L",""));
+            if(shrikeClass.isPublic())
+                printWriter.write("public ");
+            else if(shrikeClass.isPrivate())
+                printWriter.write("private ");
+
+            if(shrikeClass.isAbstract())
+                printWriter.write("abstract ");
+
+            if(shrikeClass.isInterface())
+                printWriter.write("interface ");
+            else
+                printWriter.write("class ");
+
+            printWriter.write(cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L",""));
+
             printWriter.write("\n{\n");
             for(IField field : fields )
             {
-                printWriter.write("\t" + fixTypeString(field.getFieldTypeReference().toString()) + " " + field.getName() + ";\n");
+                printWriter.write("\t");
+                if(field.isPublic())
+                    printWriter.write("public ");
+                else if(field.isPrivate())
+                    printWriter.write("private ");
+                else if(field.isProtected())
+                    printWriter.write("protected ");
+                if(field.isStatic())
+                    printWriter.write("static ");
+                printWriter.write(fixTypeString(field.getFieldTypeReference().toString()) + " " + field.getName() + ";\n");
                 //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().getSignature() + "\n");
                 //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().toString() + "\n");
             }
             for (IMethod m : methods)
             {
-                printWriter.write("\n\t" + fixTypeString(m.getReturnType().toString()) + " " + m.getReference().getName().toString() + "(");
+                printWriter.write("\n\t");
+                if(m.isPublic())
+                    printWriter.write("public ");
+                else if(m.isPrivate())
+                    printWriter.write("private ");
+                else if(m.isProtected())
+                    printWriter.write("protected ");
+
+                if(m.isStatic())
+                    printWriter.write("static ");
+
+                if(m.isFinal())
+                    printWriter.write("final ");
+
+                if(m.isAbstract())
+                    printWriter.write("abstract ");
+
+                if(m.isSynchronized())
+                    printWriter.write("synchronized ");
+
+                printWriter.write(fixTypeString(m.getReturnType().toString()) + " " + m.getReference().getName().toString() + "(");
                 for (int i = 0; i < m.getNumberOfParameters(); i++) {
                     printWriter.write(fixTypeString(m.getParameterType(i).toString()) + " ");
                     if (i < m.getNumberOfParameters() - 1)
