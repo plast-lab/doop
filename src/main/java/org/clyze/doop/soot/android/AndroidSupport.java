@@ -137,7 +137,7 @@ public class AndroidSupport {
             System.out.println("Android mode, APK = " + appInput);
             try {
                 List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
-                Set allDexClasses = new HashSet<>();
+                Set<Object> allDexClasses = new HashSet<>();
                 for (DexContainer dexContainer : listContainers) {
                     allDexClasses.addAll(dexContainer.getBase().getClasses());
                     for (Object dexBackedClassDef : allDexClasses) {
