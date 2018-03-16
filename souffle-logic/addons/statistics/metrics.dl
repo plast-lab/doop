@@ -8,6 +8,11 @@
 .decl SDKMethodDirectlyReachableFromApplication(?method:symbol)
 .decl SDKMethodDirectlyReachableFromDependency(?method:symbol)
 .decl SDKMethodDirectlyReachableFromSDK(?method:symbol)
+.decl Metrics_Method_IncomingInvo_Count(?n:number, ?method:Method)
+.decl Metrics_Method_IncomingMethods_Count(?n:number, ?method:Method)
+.decl Metrics_Method_OutgoingInvo_Count(?n:number, ?method:Method)
+.decl Metrics_Method_OutgoingMethods_Count(?n:number, ?method:Method)
+.decl Metrics_Value_AsReceiver_Count(?n:number, value:Value)
 
 .output ReachableClass
 .output ReachableApplicationClass
@@ -19,6 +24,14 @@
 .output SDKMethodDirectlyReachableFromApplication
 .output SDKMethodDirectlyReachableFromDependency
 .output SDKMethodDirectlyReachableFromSDK
+// ApplicationEntryPoint defined in implicit-reachable so other files can add
+// to the rule. Here we control if it will produce a csv file or not
+.output ApplicationEntryPoint
+.output Metrics_Method_IncomingInvo_Count
+.output Metrics_Method_IncomingMethods_Count
+.output Metrics_Method_OutgoingInvo_Count
+.output Metrics_Method_OutgoingMethods_Count
+.output Metrics_Value_AsReceiver_Count
 
 ReachableClass(?class) :-
     mainAnalysis.Reachable(?method),
@@ -99,3 +112,50 @@ SDKMethodDirectlyReachableFromSDK(?sdkMethod) :-
     !SDKMethodDirectlyReachableFromDependency(?sdkMethod),
     Method_DeclaringType(?sdkMethod, ?sdkClass),
     ReachableSDKClass(?sdkClass).
+
+
+.decl _MethodIncomingInvo(?toMethod:Method, ?invo:MethodInvocation)
+_MethodIncomingInvo(?toMethod, ?invo) :-
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod).
+
+.decl _MethodIncomingMethod(?toMethod:Method, ?inMethod:Method)
+_MethodIncomingMethod(?toMethod, ?inMethod) :-
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod),
+  Instruction_Method(?invo, ?inMethod).
+
+Metrics_Method_IncomingInvo_Count(?n, ?toMethod) :-
+  _MethodIncomingInvo(?toMethod, _),
+  ?n = count:{_MethodIncomingInvo(?toMethod, _)}.
+
+Metrics_Method_IncomingMethods_Count(?n, ?toMethod) :-
+  _MethodIncomingMethod(?toMethod, _),
+  ?n = count:{_MethodIncomingMethod(?toMethod, _)}.
+
+
+.decl _MethodOutgoingInvo(?inMethod:Method, ?invo:MethodInvocation)
+_MethodOutgoingInvo(?inMethod, ?invo) :-
+  Instruction_Method(?invo, ?inMethod),
+  mainAnalysis.CallGraphEdge(_, ?invo, _, _).
+
+.decl _MethodOutgoingMethod(?inMethod:Method, ?toMethod:Method)
+_MethodOutgoingMethod(?inMethod, ?toMethod) :-
+  Instruction_Method(?invo, ?inMethod),
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod).
+
+Metrics_Method_OutgoingInvo_Count(?n, ?inMethod) :-
+  _MethodOutgoingInvo(?inMethod, _),
+  ?n = count:{_MethodOutgoingInvo(?inMethod, _)}.
+
+Metrics_Method_OutgoingMethods_Count(?n, ?inMethod) :-
+  _MethodOutgoingMethod(?inMethod, _),
+  ?n = count:{_MethodOutgoingMethod(?inMethod, _)}.
+
+
+.decl _ValueAsReceiver(?value:Value, ?invo:VirtualMethodInvocation_Insn)
+_ValueAsReceiver(?value, ?invo) :-
+  VirtualMethodInvocation_Base(?invo, ?base),
+  mainAnalysis.VarPointsTo(_, ?value, _, ?base).
+
+Metrics_Value_AsReceiver_Count(?n, ?value) :-
+  _ValueAsReceiver(?value, _),
+  ?n = count:{_ValueAsReceiver(?value, _)}.
