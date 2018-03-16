@@ -9,24 +9,17 @@
 #include "type-hierarchy.dl"
 
 MainMethodDeclaration(?method) :-
-   MainClass(?type),
-   Method_DeclaringType(?method, ?type),
-   Method_SimpleName(?method, "main"),
-   Method_Descriptor(?method, "void(java.lang.String[])"),
-   Method_Modifier("public", ?method),
-   Method_Modifier("static", ?method).
-
-#ifdef DISCOVER_MAIN_METHODS
+#ifndef DISCOVER_MAIN_METHODS
 // Consider every main() a "main method". The JDK PolicyParser.main()
 // is excluded (or it would pollute the analysis of most programs).
-MainMethodDeclaration(?method) :-
+   MainClass(?type),
+   Method_DeclaringType(?method, ?type),
+#endif // DISCOVER_MAIN_METHODS
    ?method != "<sun.security.provider.PolicyParser: void main(java.lang.String[])>",
    Method_SimpleName(?method, "main"),
    Method_Descriptor(?method, "void(java.lang.String[])"),
    Method_Modifier("public", ?method),
    Method_Modifier("static", ?method).
-
-#endif // DISCOVER_MAIN_METHODS
 
 }
 
