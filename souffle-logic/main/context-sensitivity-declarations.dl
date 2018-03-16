@@ -20,16 +20,6 @@
 .decl ImmutableContextFromContext(?ctx1:Context, ?ctx2:Context)
 
 
-// Needed when context consists of different kinds
-.type ContextComponent
-
-.decl isContextComponent(?comp:ContextComponent) overridable
-
-.decl ContextComponent_MethodInvocation(?invo:MethodInvocation, ?comp:ContextComponent)
-
-.decl ContextComponent_Value(?value:Value, ?comp:ContextComponent)
-
-
 .decl VarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
 
 .decl InstanceFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
