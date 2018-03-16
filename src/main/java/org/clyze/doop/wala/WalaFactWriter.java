@@ -4,6 +4,7 @@ import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ssa.ConstantValue;
+import com.ibm.wala.ssa.SSABinaryOpInstruction;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.TypeReference;
@@ -369,7 +370,7 @@ public class WalaFactWriter {
         }
         else {
 
-                throw new RuntimeException("Unexpected class constant: " + constant);
+            throw new RuntimeException("Unexpected class constant: " + constant);
 //            heap =  _rep.classConstant(c);
 //            actualType = c.getName();
 //            // The code above should be functionally equivalent with the simple code below,
@@ -524,10 +525,10 @@ public class WalaFactWriter {
         String methodId = writeMethod(m);
 
         //if (!(m.getReturnType() instanceof VoidType)) {
-            String  var = _rep.nativeReturnVar(m);
-            _db.add(NATIVE_RETURN_VAR, var, methodId);
-            _db.add(VAR_TYPE, var, writeType(m.getReturnType()));
-            _db.add(VAR_DECLARING_METHOD, var, methodId);
+        String  var = _rep.nativeReturnVar(m);
+        _db.add(NATIVE_RETURN_VAR, var, methodId);
+        _db.add(VAR_TYPE, var, writeType(m.getReturnType()));
+        _db.add(VAR_DECLARING_METHOD, var, methodId);
         //}
     }
 
@@ -848,7 +849,7 @@ public class WalaFactWriter {
 //        return insn;
 //    }
 
-//    private Value writeImmediate(IMethod inMethod, Stmt stmt, Value v, Session session) {
+    //    private Value writeImmediate(IMethod inMethod, Stmt stmt, Value v, Session session) {
 ////        if (v instanceof StringConstant)
 ////            v = writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
 ////        else if (v instanceof ClassConstant)
@@ -859,24 +860,17 @@ public class WalaFactWriter {
 //        return v;
 //    }
 //
-//    void writeAssignBinop(IMethod m, AssignStmt stmt, Local left, BinopExpr right, Session session) {
-//        int index = session.calcUnitNumber(stmt);
-//        //String insn = _rep.instruction(m, stmt, session, index);
-//        String methodId = writeMethod(m);
-////
-////        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
-////        _db.add(ASSIGN_OPER_TYPE, insn, right.getSymbol());
-////
-////        if (right.getOp1() instanceof Local) {
-////            Local op1 = (Local) right.getOp1();
-////            _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
-////        }
-////
-////        if (right.getOp2() instanceof Local) {
-////            Local op2 = (Local) right.getOp2();
-////            _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
-////        }
-//    }
+    void writeAssignBinop(IMethod m, SSABinaryOpInstruction instruction, Local left, Local op1, Local op2) {
+        String insn = _rep.instruction(m, instruction);
+        String methodId = writeMethod(m);
+
+        _db.add(ASSIGN_BINOP, insn, str(instruction.iindex), _rep.local(m, left), methodId);
+        _db.add(ASSIGN_OPER_TYPE, insn, instruction.getOperator().toString());
+
+        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
+        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
+
+    }
 //
 //    void writeAssignUnop(IMethod m, AssignStmt stmt, Local left, UnopExpr right, Session session) {
 ////        int index = session.calcUnitNumber(stmt);

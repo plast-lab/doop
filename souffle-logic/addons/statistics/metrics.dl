@@ -21,16 +21,16 @@
 .output SDKMethodDirectlyReachableFromSDK
 
 ReachableClass(?class) :-
-    Reachable(?method),
+    mainAnalysis.Reachable(?method),
     Method_DeclaringType(?method, ?class).
 
 ReachableApplicationClass(?class) :-
-    Reachable(?method),
+    mainAnalysis.Reachable(?method),
     Method_DeclaringType(?method, ?class),
     ApplicationClass(?class).
 
 ReachableSDKClass(?class) :-
-    Reachable(?method),
+    mainAnalysis.Reachable(?method),
     Method_DeclaringType(?method, ?class),
     ((match("android.*", ?class),
       !match("android.support.*", ?class));
@@ -38,63 +38,63 @@ ReachableSDKClass(?class) :-
     !ApplicationClass(?class).
 
 ReachableDependencyClass(?class) :-
-    Reachable(?method),
+    mainAnalysis.Reachable(?method),
     Method_DeclaringType(?method, ?class),
     !ApplicationClass(?class),
     !ReachableSDKClass(?class).
 
 DependencyMethodDirectlyReachableFromApplication(?depMethod) :-
-    Reachable(?appMethod),
+    mainAnalysis.Reachable(?appMethod),
     Method_DeclaringType(?appMethod, ?appClass),
     ApplicationClass(?appClass),
     MethodInvocation_Method(?invo, ?appMethod),
-    CallGraphEdge(_, ?invo, _, ?depMethod),
+    mainAnalysis.CallGraphEdge(_, ?invo, _, ?depMethod),
     Method_DeclaringType(?depMethod, ?depClass),
     ReachableDependencyClass(?depClass).
 
 DependencyMethodDirectlyReachableFromDependency(?depMethod) :-
-    Reachable(?callerDepMethod),
+    mainAnalysis.Reachable(?callerDepMethod),
     Method_DeclaringType(?callerDepMethod, ?callerDepClass),
     ReachableDependencyClass(?callerDepClass),
     MethodInvocation_Method(?invo, ?callerDepMethod),
-    CallGraphEdge(_, ?invo, _, ?depMethod),
+    mainAnalysis.CallGraphEdge(_, ?invo, _, ?depMethod),
     Method_DeclaringType(?depMethod, ?depClass),
     ReachableDependencyClass(?depClass).
 
 DependencyMethodDirectlyReachableFromSDK(?depMethod) :-
-    Reachable(?sdkMethod),
+    mainAnalysis.Reachable(?sdkMethod),
     Method_DeclaringType(?sdkMethod, ?sdkClass),
     ReachableSDKClass(?sdkClass),
     MethodInvocation_Method(?invo, ?sdkMethod),
-    CallGraphEdge(_, ?invo, _, ?depMethod),
+    mainAnalysis.CallGraphEdge(_, ?invo, _, ?depMethod),
     Method_DeclaringType(?depMethod, ?depClass),
     ReachableDependencyClass(?depClass).
 
 SDKMethodDirectlyReachableFromApplication(?sdkMethod) :-
-    Reachable(?appMethod),
+    mainAnalysis.Reachable(?appMethod),
     Method_DeclaringType(?appMethod, ?appClass),
     ApplicationClass(?appClass),
     MethodInvocation_Method(?invo, ?appMethod),
-    CallGraphEdge(_, ?invo, _, ?sdkMethod),
+    mainAnalysis.CallGraphEdge(_, ?invo, _, ?sdkMethod),
     Method_DeclaringType(?sdkMethod, ?sdkClass),
     ReachableSDKClass(?sdkClass).
 
 SDKMethodDirectlyReachableFromDependency(?sdkMethod) :-
-    Reachable(?depMethod),
+    mainAnalysis.Reachable(?depMethod),
     Method_DeclaringType(?depMethod, ?depClass),
     ReachableDependencyClass(?depClass),
     MethodInvocation_Method(?invo, ?depMethod),
-    CallGraphEdge(_, ?invo, _, ?sdkMethod),
+    mainAnalysis.CallGraphEdge(_, ?invo, _, ?sdkMethod),
     !SDKMethodDirectlyReachableFromApplication(?sdkMethod),
     Method_DeclaringType(?sdkMethod, ?sdkClass),
     ReachableSDKClass(?sdkClass).
 
 SDKMethodDirectlyReachableFromSDK(?sdkMethod) :-
-    Reachable(?callerSDKMethod),
+    mainAnalysis.Reachable(?callerSDKMethod),
     Method_DeclaringType(?callerSDKMethod, ?callerSDKClass),
     ReachableSDKClass(?callerSDKClass),
     MethodInvocation_Method(?invo, ?callerSDKMethod),
-    CallGraphEdge(_, ?invo, _, ?sdkMethod),
+    mainAnalysis.CallGraphEdge(_, ?invo, _, ?sdkMethod),
     !SDKMethodDirectlyReachableFromApplication(?sdkMethod),
     !SDKMethodDirectlyReachableFromDependency(?sdkMethod),
     Method_DeclaringType(?sdkMethod, ?sdkClass),

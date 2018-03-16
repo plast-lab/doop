@@ -70,29 +70,40 @@ public class Main {
     }
 
     public static void run(WalaParameters walaParameters) throws IOException {
-        for (String input : walaParameters._inputs) {
-            AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(input, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
-            // files and organize them into a tree.
-            ClassHierarchy cha = null;
-            try {
-                cha = ClassHierarchyFactory.make(scope);
-            } catch (ClassHierarchyException e) {
-                e.printStackTrace();
-            }
-            // Set up options which govern analysis choices.  In particular, we will use all Pi nodes when
-            // building the IR.
-
-            // Create an object which caches IRs and related information, reconstructing them lazily on demand.
-            Iterator<IClass> classes = cha.iterator();      //IMethod m ;
-
-            Database db = new Database(new File(walaParameters._outputDir), false);
-            WalaFactWriter walaFactWriter = new WalaFactWriter(db);
-            WalaDriver driver = new WalaDriver();
-
-            System.out.println("Number of classes: " + cha.getNumberOfClasses());
-            //driver.doInParallel(classes);
-            driver.doSequentially(classes, walaFactWriter);
+        String classPath = "";
+        for (int i = 0; i < walaParameters._inputs.size(); i++) {
+            if (i == 0)
+                classPath += walaParameters._inputs.get(i);
+            else
+                classPath += ":" + walaParameters._inputs.get(i);
         }
+
+        for (int i = 0; i < walaParameters._libraries.size(); i++) {
+            classPath += ":" + walaParameters._libraries.get(i);
+        }
+
+        AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+        // files and organize them into a tree.
+        ClassHierarchy cha = null;
+        try {
+            cha = ClassHierarchyFactory.make(scope);
+        } catch (ClassHierarchyException e) {
+            e.printStackTrace();
+        }
+        // Set up options which govern analysis choices.  In particular, we will use all Pi nodes when
+        // building the IR.
+
+        // Create an object which caches IRs and related information, reconstructing them lazily on demand.
+        Iterator<IClass> classes = cha.iterator();      //IMethod m ;
+
+        Database db = new Database(new File(walaParameters._outputDir), false);
+        WalaFactWriter walaFactWriter = new WalaFactWriter(db);
+        WalaDriver driver = new WalaDriver();
+
+        System.out.println("Number of classes: " + cha.getNumberOfClasses());
+        //driver.doInParallel(classes);
+        driver.doSequentially(classes, walaFactWriter);
+
 
     }
 }
