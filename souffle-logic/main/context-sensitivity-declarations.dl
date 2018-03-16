@@ -53,15 +53,12 @@
 
 .decl OptInterproceduralAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
 
-.decl ReachableSpecialMethodInvocation(?invocation:MethodInvocation, ?base:Var)
-
-.decl ReachableVirtualMethodInvocation(?invocation:MethodInvocation, ?base:Var)
-
 .decl OptLoadArrayIndex(?to:Var, ?base:Var)
 
 .decl OptStoreArrayIndex(?from:Var, ?base:Var)
 
 .decl OptStoreIntoArray(?hctx:HContext, ?basehctx:HContext, ?basevalue:Value, ?value:Value)
+
 /**
  * Optimizations
  */
