@@ -42,5 +42,3 @@
 
 // [Miscellaneous]
 .decl Value_Null(?null:Value)
-
-.decl ApplicationEntryPoint(?meth:Method)

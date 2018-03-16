@@ -3,4 +3,4 @@
  */
 .decl ImplicitReachable(?sig:Method)
 
-.decl EntryPoint(?sig:Method)
+.decl ApplicationEntryPoint(?meth:Method)

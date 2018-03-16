@@ -119,6 +119,7 @@ isContext(?ctx) :-
   configuration.InitContextResponse(?s, ?ctx).
     
 // The main method is reachable
+ApplicationEntryPoint(?method),
 ReachableContext(?initialContext, ?method) :-
   isInitialContext(?initialContext),
   basic.MainMethodDeclaration(?method).

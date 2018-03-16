@@ -1,22 +1,19 @@
 package org.clyze.doop.wala;
 
-import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IField;
-import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
+import com.ibm.wala.ssa.Value;
 import com.ibm.wala.types.TypeReference;
 import org.clyze.doop.soot.Session;
 import soot.*;
-import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.ThrowStmt;
-import soot.util.EscapedWriter;
 
 import java.io.*;
 import java.util.Collection;
@@ -83,36 +80,53 @@ class WalaFactGenerator {
     }
     public String fixTypeString(String original)
     {
+        boolean isArrayType = false;
+        if(original.contains("[L")) //Figure out if this is correct
+            isArrayType = true;
         String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
+        String temp;
         if(ret.contains("Primordial"))
         {
-            ret = ret.substring(ret.indexOf(",") + 1);
-            if(ret.equals("Z"))
-                return "boolean";
-            else if(ret.equals("I"))
-                return "int";
-            else if(ret.equals("V"))
-                return "void";
-            else if(ret.equals("B"))
-                return "byte";
-            else if(ret.equals("C"))
-                return "char";
-            else if(ret.equals("D"))
-                return "double";
-            else if(ret.equals("F"))
-                return "float";
-            else if(ret.equals("J"))
-                return "long";
-            else if(ret.equals("S"))
-                return "short";
-            //TODO: Figure out what the 'P' code represents in WALA's TypeRefference
+            temp = ret.substring(ret.indexOf(",") + 1);
+            if(temp.startsWith("["))
+            {
+                isArrayType = true;
+                temp = temp.substring(1);
+            }
+            if(temp.equals("Z"))
+                ret = "boolean";
+            else if(temp.equals("I"))
+                ret = "int";
+            else if(temp.equals("V"))
+                ret = "void";
+            else if(temp.equals("B"))
+                ret = "byte";
+            else if(temp.equals("C"))
+                ret = "char";
+            else if(temp.equals("D"))
+                ret = "double";
+            else if(temp.equals("F"))
+                ret = "float";
+            else if(temp.equals("J"))
+                ret = "long";
+            else if(temp.equals("S"))
+                ret = "short";
+            //TODO: Figure out what the 'P' code represents in WALA's TypeReference
         }
+        if(isArrayType)
+            ret = ret + "[]";
         return ret;
+    }
+
+    public void printMemberAttributes(IMember member)
+    {
+
     }
 
     public void printIR(IClass cl)
     {
 //        PrintWriter writerOut = new PrintWriter(new EscapedWriter(new OutputStreamWriter((OutputStream)streamOut)));
+        ShrikeClass shrikeClass = (ShrikeClass) cl;
         String fileName = "WalaFacts/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
         File file = new File(fileName);
         file.getParentFile().getParentFile().mkdirs();
@@ -120,19 +134,66 @@ class WalaFactGenerator {
 
         Collection<IField> fields = cl.getAllFields();
         Collection<IMethod> methods = cl.getDeclaredMethods();
+        Collection<IClass> interfaces =  cl.getAllImplementedInterfaces();
         try {
             PrintWriter printWriter = new PrintWriter(file);
-            printWriter.write("class " + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L",""));
+            if(shrikeClass.isPublic())
+                printWriter.write("public ");
+            else if(shrikeClass.isPrivate())
+                printWriter.write("private ");
+
+            if(shrikeClass.isAbstract())
+                printWriter.write("abstract ");
+
+            if(shrikeClass.isInterface())
+                printWriter.write("interface ");
+            else
+                printWriter.write("class ");
+
+            printWriter.write(cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L",""));
+
             printWriter.write("\n{\n");
             for(IField field : fields )
             {
-                printWriter.write("\t" + fixTypeString(field.getFieldTypeReference().toString()) + " " + field.getName() + ";\n");
+                printWriter.write("\t");
+                if(field.isPublic())
+                    printWriter.write("public ");
+                else if(field.isPrivate())
+                    printWriter.write("private ");
+                else if(field.isProtected())
+                    printWriter.write("protected ");
+                if(field.isStatic())
+                    printWriter.write("static ");
+                printWriter.write(fixTypeString(field.getFieldTypeReference().toString()) + " " + field.getName() + ";\n");
                 //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().getSignature() + "\n");
                 //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().toString() + "\n");
             }
             for (IMethod m : methods)
             {
-                printWriter.write("\n\t" + fixTypeString(m.getReturnType().toString()) + " " + m.getReference().getName().toString() + "(");
+                printWriter.write("\n\t");
+                if(m.isPublic())
+                    printWriter.write("public ");
+                else if(m.isPrivate())
+                    printWriter.write("private ");
+                else if(m.isProtected())
+                    printWriter.write("protected ");
+
+                if(m.isStatic())
+                    printWriter.write("static ");
+
+                if(m.isFinal())
+                    printWriter.write("final ");
+
+                if(m.isAbstract())
+                    printWriter.write("abstract ");
+
+                if(m.isSynchronized())
+                    printWriter.write("synchronized ");
+
+                if(m.isNative())
+                    printWriter.write("native ");
+
+                printWriter.write(fixTypeString(m.getReturnType().toString()) + " " + m.getReference().getName().toString() + "(");
                 for (int i = 0; i < m.getNumberOfParameters(); i++) {
                     printWriter.write(fixTypeString(m.getParameterType(i).toString()) + " ");
                     if (i < m.getNumberOfParameters() - 1)
@@ -323,12 +384,19 @@ class WalaFactGenerator {
 
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
+                    this.generateDefs(m, ir, instructions[j]);
+                    this.generateUses(m, ir, instructions[j]);
+
                     if (instructions[j] instanceof SSAReturnInstruction) {
                         generate(m, ir, (SSAReturnInstruction) instructions[j]);
+                    }
+                    else if (instructions[j] instanceof SSABinaryOpInstruction) {
+                        generate(m, ir, (SSABinaryOpInstruction) instructions[j]);
                     }
                 }
             }
         }
+
 //        for(Local l : b.getLocals())
 //        {
 //            _writer.writeLocal(m, l);
@@ -463,16 +531,16 @@ class WalaFactGenerator {
      */
     public void generate(IMethod inMethod, AssignStmt stmt, Session session)
     {
-        Value left = stmt.getLeftOp();
-
-        if(left instanceof Local)
-        {
-            generateLeftLocal(inMethod, stmt, session);
-        }
-        else
-        {
-            generateLeftNonLocal(inMethod, stmt, session);
-        }
+//        Value left = stmt.getLeftOp();
+//
+//        if(left instanceof Local)
+//        {
+//            generateLeftLocal(inMethod, stmt, session);
+//        }
+//        else
+//        {
+//            generateLeftNonLocal(inMethod, stmt, session);
+//        }
     }
 
     private void generateLeftLocal(IMethod inMethod, AssignStmt stmt, Session session)
@@ -710,68 +778,104 @@ class WalaFactGenerator {
      */
     private void generate(IMethod m, IR ir, SSAReturnInstruction instruction)
     {
-        SymbolTable symbolTable = ir.getSymbolTable();
-
         if (instruction.returnsVoid()) {
             _writer.writeReturnVoid(m, instruction);
         }
         else {
-            int instructionResult = instruction.getResult();
+            int returnVar = instruction.getUse(0);
 
-            if (instructionResult != -1) {
-                Local l;
-                com.ibm.wala.ssa.Value v = symbolTable.getValue(instructionResult);
+            Local l;
+            String[] localNames = ir.getLocalNames(instruction.iindex, returnVar);
+            if (localNames != null) {
+                assert localNames.length == 1;
+                l = new Local("v" + returnVar, localNames[0], m.getReturnType());
+            }
+            //TODO : Check when this occurs
+            else {
 
-                if (v != null) {
-                    String s = v.toString();
+                l = new Local("v" + returnVar, m.getReturnType());
+            }
+            _writer.writeReturn(m, instruction, l);
 
-                    if (v.isStringConstant()) {
-                        l = new Local("v" + instructionResult, TypeReference.JavaLangString);
-                        _writer.writeStringConstantExpression(m, instruction, l, (ConstantValue) v);
-                    } else if (v.isNullConstant()) {
-                        l = new Local("v" + instructionResult, TypeReference.Null);
-                        _writer.writeNullExpression(m, instruction, l);
-                    } else if (symbolTable.isIntegerConstant(instructionResult)) {
-                        l = new Local("v" + instructionResult, TypeReference.Int);
-                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
-                    } else if (symbolTable.isLongConstant(instructionResult)) {
-                        l = new Local("v" + instructionResult, TypeReference.Long);
-                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
-                    } else if (symbolTable.isFloatConstant(instructionResult)) {
-                        l = new Local("v" + instructionResult, TypeReference.Float);
-                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
-                    } else if (symbolTable.isIntegerConstant(instructionResult)) {
-                        l = new Local("v" + instructionResult, TypeReference.Int);
-                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
-                    } else if (symbolTable.isDoubleConstant(instructionResult)) {
-                        l = new Local("v" + instructionResult, TypeReference.Double);
-                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
-                    }
-                    else if (symbolTable.isBooleanConstant(instructionResult)) {
-                        l = new Local("v" + instructionResult, TypeReference.Boolean);
-                        _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
-                    } else if (s.startsWith("#[") || (s.startsWith("#L") && s.endsWith(";"))) {
-                        l = new Local("v" + instructionResult, TypeReference.JavaLangClass);
-                        _writer.writeClassConstantExpression(m, instruction, l, (ConstantValue) v);
-                    } else if (!symbolTable.isConstant(instructionResult)) {
-                        String[] localNames = ir.getLocalNames(instruction.iindex, instructionResult);
-                        if (localNames != null) {
-                            assert localNames.length == 1;
-                            l = new Local("v" + instructionResult, localNames[0], m.getReturnType());
-                        }
-                        //TODO : Check when this occurs
-                        else {
+        }
+    }
 
-                            l = new Local("v" + instructionResult, m.getReturnType());
-                        }
-                        _writer.writeReturn(m, instruction, l);
-                    } else {
-                        throw new RuntimeException("Unhandled return statement: " + instruction.toString(symbolTable));
-                    }
-                    _writer.writeReturn(m, instruction, l);
-                }
+    private void generateDefs(IMethod m, IR ir, SSAInstruction instruction) {
+        SymbolTable symbolTable = ir.getSymbolTable();
+
+        for (int i = 0; i < instruction.getNumberOfDefs(); i++) {
+            int def = instruction.getDef(i);
+            if (def != 1 && symbolTable.isConstant(def)) {
+                Value v = symbolTable.getValue(def);
+                generateConstant(m, ir, instruction, v, def);
+            }
+            else {
+                Local l = new Local("v" + def, TypeReference.JavaLangObject);
+                _writer.writeLocal(m, l);
             }
         }
+    }
+
+    private void generateUses(IMethod m, IR ir, SSAInstruction instruction) {
+        SymbolTable symbolTable = ir.getSymbolTable();
+
+        for (int i = 0; i < instruction.getNumberOfUses(); i++) {
+            int use = instruction.getUse(i);
+            if (use != -1 && symbolTable.isConstant(use)) {
+                Value v = symbolTable.getValue(use);
+                generateConstant(m, ir, instruction, v, use);
+            }
+            else {
+                Local l = new Local("v" + use, TypeReference.JavaLangObject);
+                _writer.writeLocal(m, l);
+            }
+        }
+    }
+
+    private void generateConstant(IMethod m, IR ir, SSAInstruction instruction, Value v, int varNum) {
+        SymbolTable symbolTable = ir.getSymbolTable();
+        Local l;
+
+        String s = v.toString();
+        if (v.isStringConstant()) {
+            l = new Local("v" + varNum, TypeReference.JavaLangString);
+            _writer.writeStringConstantExpression(m, instruction, l, (ConstantValue) v);
+        } else if (v.isNullConstant()) {
+            l = new Local("v" + varNum, TypeReference.Null);
+            _writer.writeNullExpression(m, instruction, l);
+        } else if (symbolTable.isIntegerConstant(varNum)) {
+            l = new Local("v" + varNum, TypeReference.Int);
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+        } else if (symbolTable.isLongConstant(varNum)) {
+            l = new Local("v" + varNum, TypeReference.Long);
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+        } else if (symbolTable.isFloatConstant(varNum)) {
+            l = new Local("v" + varNum, TypeReference.Float);
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+        } else if (symbolTable.isIntegerConstant(varNum)) {
+            l = new Local("v" + varNum, TypeReference.Int);
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+        } else if (symbolTable.isDoubleConstant(varNum)) {
+            l = new Local("v" + varNum, TypeReference.Double);
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+        }
+        else if (symbolTable.isBooleanConstant(varNum)) {
+            l = new Local("v" + varNum, TypeReference.Boolean);
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+        } else if (s.startsWith("#[") || (s.startsWith("#L") && s.endsWith(";"))) {
+            l = new Local("v" + varNum, TypeReference.JavaLangClass);
+            _writer.writeClassConstantExpression(m, instruction, l, (ConstantValue) v);
+        }
+    }
+
+    private void generate(IMethod m, IR ir, SSABinaryOpInstruction instruction)
+    {
+        SymbolTable symbolTable = ir.getSymbolTable();
+
+        Local l = new Local(symbolTable.getValueString(instruction.getDef()), TypeReference.JavaLangObject);
+        Local op1 = new Local("v" + instruction.getUse(0), TypeReference.JavaLangObject);
+        Local op2 = new Local("v" + instruction.getUse(1), TypeReference.JavaLangObject);
+        _writer.writeAssignBinop(m, instruction, l, op1, op2);
     }
 
     private void generate(IMethod inMethod, ThrowStmt stmt, Session session)

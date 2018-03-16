@@ -133,23 +133,6 @@ Server_SField_Values(?fld, "<<XL-pt-set>>") :-
 // --Field //
 
 
-// Value-- //
-
-.decl Server_Value_AsReceiver_Count(?value:Value, ?n:number)
-.output Server_Value_AsReceiver_Count
-
-.decl _ValueAsReceiver(?value:Value, ?invo:VirtualMethodInvocation_Insn)
-_ValueAsReceiver(?value, ?invo) :-
-  VirtualMethodInvocation_Base(?invo, ?base),
-  mainAnalysis.VarPointsTo(_, ?value, _, ?base).
-
-Server_Value_AsReceiver_Count(?value, ?n) :-
-  _ValueAsReceiver(?value, _),
-  ?n = count:{_ValueAsReceiver(?value, _)}.
-
-// --Value //
-
-
 // Var-- //
 
 .decl Server_Var_Values(?class:ClassType, ?var:Var, ?value:Value)
@@ -219,9 +202,7 @@ Server_Array_Values(?arrayValue, "<<XL-pt-set>>") :-
 
 // ?method is implemented/overriden by ?subMethod
 .decl Server_Method_Subtype(?method:Method, ?subMethod:Method)
-.decl Server_Method_IncomingInvo_Count(?method:Method, ?n:number)
 .output Server_Method_Subtype
-.output Server_Method_IncomingInvo_Count
 
 Server_Method_Subtype(?method, ?subMethod) :-
   Method_DeclaringType(?method, ?type),
@@ -248,15 +229,6 @@ Server_Method_Subtype(?method, ?subMethod) :-
   _Valid_Type(?subType),
   basic.MethodImplemented(?name, _, ?subType, ?subMethod),
   basic.MethodLookup(?name, ?desc, ?subType, ?subMethod).
-
-.decl _MethodIncomingInvo(?method:Method, ?invo:MethodInvocation)
-_MethodIncomingInvo(?toMethod, ?invo) :-
-  mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod).
-
-Server_Method_IncomingInvo_Count(?method, ?n) :-
-  _MethodIncomingInvo(?method, _),
-  ?n = count:{_MethodIncomingInvo(?method, _)}.
-
 
 
 // All the methods reachable from a method (transitive call-graph)
