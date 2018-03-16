@@ -4,8 +4,8 @@
  * Heaps and Values
  ***************************************************************/
 
-.decl Stats_ReflectiveHeap(?heap:HeapAllocation)
-OUTPUT_STATS(Stats_ReflectiveHeap)
+// .decl Stats_ReflectiveHeap(?heap:HeapAllocation)
+// OUTPUT_STATS(Stats_ReflectiveHeap)
 
 .decl Stats_ApplicationHeap(?heap:HeapAllocation)
 OUTPUT_STATS(Stats_ApplicationHeap)
