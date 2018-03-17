@@ -89,17 +89,13 @@
  * Filter predicate for refinement-based/adaptive analyses
  */
 .decl SiteToRefine(?invocation:MethodInvocation)
-.decl TempSiteToRefine(?invocation:MethodInvocation)
 
 .decl ValueToRefine(?value:Value)
-.decl TempValueToRefine(?value:Value)
 
 // Is the SiteToRefine the real list of objects needing
 // refinement or its negation?
 .decl NegativeSiteFilter(?v:symbol)
-.decl TempNegativeSiteFilter(?v:symbol)
 
 // Is the ValueToRefine the real list of objects needing
 // refinement or its negation?
 .decl NegativeObjectFilter(?v:symbol)
-.decl TempNegativeObjectFilter(?v:symbol)
