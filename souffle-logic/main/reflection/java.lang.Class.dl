@@ -203,7 +203,7 @@ VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) :-
 //VERSION-A
 ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
   FillArray_PublicMethods(?hctx, ?arrayValue, ?type),
-  Method_DeclaringType[?signature] = ?type,
+  Method_DeclaringType(?signature, ?type),
   Method_Modifier("public", ?signature),
   ReifiedMethod(?signature, ?value),
   MethodNameMatchingStringConstant_Signature(?signature, _).

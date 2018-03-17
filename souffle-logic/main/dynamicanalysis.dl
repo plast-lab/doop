@@ -150,8 +150,10 @@ FromDynamicHeapObject(?hctx, ?value, ?dctx, ?value) :-
 
 .decl AllDynamicallyReachableMethod(?method:Method)
 
+#ifdef TAMIFLEX
 AllDynamicallyReachableMethod(?method) :-
    TamiflexDynamicallyReachableMethod(?method).
+#endif // TAMIFLEX
 
 AllDynamicallyReachableMethod(?method) :-
    DynamicReachableMethod(?method).
@@ -183,13 +185,13 @@ ReachableContext(?ctx, ?method) :-
    !ClassInitializer(_, ?method),
    isImmutableContext(?ctx).
 
+#ifdef TAMIFLEX
 .decl TamiflexDynamicallyReachableMethod(?inmethod:Method)
 
-#ifdef TAMIFLEX
 TamiflexDynamicallyReachableMethod(?inmethod) :-
     Tamiflex_ReflectionMap(_, ?invocation),
     Instruction_Method(?invocation, ?inmethod).
-#endif
+#endif // TAMIFLEX
 
 .decl isImmutableDCTX(?dctx:DynamicContext)
 

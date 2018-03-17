@@ -20,16 +20,6 @@
 .decl ImmutableContextFromContext(?ctx1:Context, ?ctx2:Context)
 
 
-// Needed when context consists of different kinds
-.type ContextComponent
-
-.decl isContextComponent(?comp:ContextComponent) overridable
-
-.decl ContextComponent_MethodInvocation(?invo:MethodInvocation, ?comp:ContextComponent)
-
-.decl ContextComponent_Value(?value:Value, ?comp:ContextComponent)
-
-
 .decl VarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
 
 .decl InstanceFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
@@ -38,8 +28,6 @@
 
 // array-element insensitive
 .decl ArrayIndexPointsTo(?hctx:HContext, ?value:Value, ?basehctx:HContext, ?basevalue:Value)
-
-.decl Assign(?type:Type, ?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
 
 /**
  * Call graph
@@ -63,15 +51,12 @@
 
 .decl OptInterproceduralAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
 
-.decl ReachableSpecialMethodInvocation(?invocation:MethodInvocation, ?base:Var)
-
-.decl ReachableVirtualMethodInvocation(?invocation:MethodInvocation, ?base:Var)
-
 .decl OptLoadArrayIndex(?to:Var, ?base:Var)
 
 .decl OptStoreArrayIndex(?from:Var, ?base:Var)
 
 .decl OptStoreIntoArray(?hctx:HContext, ?basehctx:HContext, ?basevalue:Value, ?value:Value)
+
 /**
  * Optimizations
  */
@@ -104,17 +89,13 @@
  * Filter predicate for refinement-based/adaptive analyses
  */
 .decl SiteToRefine(?invocation:MethodInvocation)
-.decl TempSiteToRefine(?invocation:MethodInvocation)
 
 .decl ValueToRefine(?value:Value)
-.decl TempValueToRefine(?value:Value)
 
 // Is the SiteToRefine the real list of objects needing
 // refinement or its negation?
 .decl NegativeSiteFilter(?v:symbol)
-.decl TempNegativeSiteFilter(?v:symbol)
 
 // Is the ValueToRefine the real list of objects needing
 // refinement or its negation?
 .decl NegativeObjectFilter(?v:symbol)
-.decl TempNegativeObjectFilter(?v:symbol)

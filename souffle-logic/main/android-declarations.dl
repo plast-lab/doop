@@ -21,7 +21,6 @@
 .decl ReachableApplicationObjectOfType(?hctx:HContext, ?value:Value, ?type:Type)
 .decl ApplicationObjectFlowingToLibrary(?hctx:HContext, ?value:Value, ?ofType:Type)
 .decl PublicOnMethodOfReachableListener(?meth:Method)
-.decl LibraryReachableAppListener(?type:ClassType)
 .decl LibraryReachableAppListenerType(?type:Type)
 .decl ProtectedOnMethodOfReachableListener(?meth:Method)
 .decl OverridingProtectedOnMethodOfReachableListener(?meth:Method)
