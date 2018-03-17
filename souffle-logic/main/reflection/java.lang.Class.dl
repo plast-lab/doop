@@ -130,7 +130,7 @@ VarPointsTo(?hctx, ?componentClassValue, ?callerCtx, ?to) :-
   isArrayType(?type),
   ComponentType(?type, ?componentType),
   ReifiedClass(?componentType,  ?componentClassValue).
-
+ .plan 1:(3,1,2,4,5,6,7)
 
 /*************************************************************
  * java.lang.Class.getSuperclass
@@ -251,9 +251,9 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
 
 ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) :-
   ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
-// Banning method propagation this way seems too restrictive
-//  _OptVarToMethod[?to] = ?inmethod,
-//    HighConfidenceAssign(?constantHeap, ?inmethod),
+  // We had earlier disabled the "local" filter for some reason. I'm re-enabling it
+  Var_DeclaringMethod(?to, ?inmethod),
+  HighConfidenceAssign(?constantHeap, ?inmethod),
   ((NumberOfMethodsMatchingConstant(?constantHeap, ?num),
     StringPrecisionThreshold(?t),
     ?num < ?t ) ;
