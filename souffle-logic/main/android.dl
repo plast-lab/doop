@@ -479,10 +479,10 @@ ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?baseva
 .decl ActivityVarInType(?var:Var, ?ctx:Context, ?type:Type)
 
 ActivityVarInType(?var, ?ctx, ?type) :-
+   ReachableContext(?ctx, ?method),
    Var_DeclaringMethod(?var, ?method),
    Var_Type(?var, ?vartype),
    basic.SupertypeOf("android.app.Activity", ?vartype),
-   ReachableContext(?ctx, ?method),
    Method_DeclaringType(?method, ?type).
 
 OptInterproceduralAssign(?ctxTo, ?varAcc, ?ctxFrom, ?thisActivity) :-
@@ -536,16 +536,16 @@ AsynchTaskExecute(?param, ?base) :-
 ReachableContext(?ctx, ?method),
 OptInterproceduralAssign(?ctx, ?formal, ?callerCtx, ?actual),
 VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
-   ImmutableContextFromContext(?callerCtx, ?ctx),
    AsynchTaskExecute(?actual, ?base),
    VarPointsTo(?hctx, ?basevalue, ?callerCtx, ?base),
+   ImmutableContextFromContext(?callerCtx, ?ctx),
    Value_Type(?baseValue, ?type),
    Method_DeclaringType(?method, ?type),
    Method_SimpleName(?method, "doInBackground"),
    FormalParam(0, ?method, ?formal),
    // TODO: requires proper method resolution
    ThisVar(?method, ?this).
-
+ .plan 2:(3,1,2,4,5,6,7,8)
 
 // Contribute to the global summary relation
 ApplicationEntryPoint(?meth) :-

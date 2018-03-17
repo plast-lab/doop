@@ -1223,11 +1223,11 @@ BackwardHighConfidenceReflectiveAssignClassConstant(?forNameInvocation, ?type)  
 
 /** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
   SpecialMissingGetMethodValue(?invocation, ?value),
   AssignReturnValue(?invocation, ?return),
   Instruction_Method(?invocation, ?inmethod),
-  ReachableContext(?ctx, ?inmethod).
+  ReachableContext(?ctx, ?inmethod),
+  ImmutableHContextFromContext(?ctx, ?hctx).
 
 // At the site of an invoke over a special method object (that marks
 // its "getMethod" origin), return a new special object that remembers
@@ -1235,12 +1235,12 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
 
 /** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_reflect_Method_invoke(?invocation, ?methodVar),
   VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
   SpecialMissingGetMethodValue(?getMethodInvocation, ?specialMethodValue),
   SpecialMissingInvokeValueFromGetMethod(?getMethodInvocation, ?specialvalue),
-  AssignReturnValue(?invocation, ?var).
+  AssignReturnValue(?invocation, ?var),
+  ImmutableHContextFromContext(?ctx, ?hctx).
 
 // a cast (to ?type) receives the result of an invoke call on a value
 // returned from a getMethod.
@@ -1288,8 +1288,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   SpecialMissingGetFieldValue(?invocation, ?value),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  ImmutableHContextFromContext(?ctx, ?hctx),
-  AssignReturnValue(?invocation, ?return).
+  AssignReturnValue(?invocation, ?return),
+  ImmutableHContextFromContext(?ctx, ?hctx).
 #ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5)
 #endif
@@ -1298,12 +1298,12 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
 // return a special object that also remembers the original getField call.
 /** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_reflect_Field_get(?invocation, _, ?fieldVar),
   VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
   SpecialMissingGetFieldValue(?getFieldInvocation, ?specialFieldValue),
   SpecialMissingGetValueFromGetField(?getFieldInvocation, ?specialvalue),
-  AssignReturnValue(?invocation, ?var).
+  AssignReturnValue(?invocation, ?var),
+  ImmutableHContextFromContext(?ctx, ?hctx).
 
 // a cast gets the special value returned from a "get". The value marks
 // the original getField
@@ -1344,10 +1344,10 @@ BackwardReflectiveAssignFieldConstant(?return, ?signature) :-
 // The array that the return var points to (established by forward logic)
 // is populated with the special Method object the call returns.
 ArrayIndexPointsTo(?hctx1, ?value, ?hctx, ?arrayValue) :-
-  ImmutableHContextFromContext(?ctx, ?hctx1),
   SpecialMissingGetMethodsValue(?invocation, ?value),
   AssignReturnValue(?invocation, ?return),
   VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return),
+  ImmutableHContextFromContext(?ctx, ?hctx1),
   isContext(?ctx). // hack to avoid warning
 
 // Is this slow? We've already done it in forward logic. Maybe store/reuse.
@@ -1415,8 +1415,8 @@ ArrayIndexPointsTo(?hctx, ?methodValue, ?hctx, ?arrayValue) :-
 
 // The array that the return var points to (established by forward logic)
 // is populated with the special Field object the call returns.
-ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+ArrayIndexPointsTo(?hctx1, ?value, ?hctx, ?arrayValue) :-
+  ImmutableHContextFromContext(?ctx, ?hctx1),
   SpecialMissingGetFieldsValue(?invocation, ?value),
   AssignReturnValue(?invocation, ?return),
   VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return),

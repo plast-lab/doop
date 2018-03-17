@@ -72,10 +72,11 @@ UnhandledInvokedynamic(?i, ?bootMethodId) :-
 
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod) :-
    ConstantMethodHandleLambda(?value, ?dynName, _, ?realMethod),
-   VirtualMethodInvocation_Base(?i, ?var),
    VarPointsTo(_, ?value, ?callerCtx, ?var),
-   ImmutableContextFromContext(?callerCtx, ?calleeCtx),
-   VirtualMethodInvocation_SimpleName(?i, ?dynName).
+   VirtualMethodInvocation_Base(?i, ?var),
+   VirtualMethodInvocation_SimpleName(?i, ?dynName),
+   ImmutableContextFromContext(?callerCtx, ?calleeCtx).
+
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, LAMBDA_METAFACTORY_ID) :-
    ImmutableContextFromContext(?callerCtx, ?calleeCtx),
    InvokedynamicBootstrap(?i, ?callerCtx).
@@ -113,8 +114,8 @@ Lambda_Method(?value, ?realMethod) :-
 VarPointsTo(?hctx, ConstructorReferenceValue(?type), ?ctx, ?var),
 ConstructorReference(?var, ConstructorReferenceValue(?type), ?i, ?realMethod),
 MockValueConsMacro(ConstructorReferenceValue(?type), ?type) :-
-   VirtualMethodInvocation_Base(?i, ?base),
    VarPointsTo(?hctx, ?baseVal, ?ctx, ?base),
+   VirtualMethodInvocation_Base(?i, ?base),
    Lambda_Method(?baseVal, ?realMethod),
    Method_SimpleName(?realMethod, "<init>"),
    Method_DeclaringType(?realMethod, ?type),
