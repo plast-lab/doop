@@ -29,8 +29,6 @@
 // array-element insensitive
 .decl ArrayIndexPointsTo(?hctx:HContext, ?value:Value, ?basehctx:HContext, ?basevalue:Value)
 
-.decl Assign(?type:Type, ?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
-
 /**
  * Call graph
  */
