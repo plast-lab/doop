@@ -421,9 +421,21 @@ class WalaFactGenerator {
                     else if (instructions[j] instanceof SSAArrayStoreInstruction) {
                         generate(m, ir, (SSAArrayStoreInstruction) instructions[j], session);
                     }
+                    else if (instructions[j] instanceof SSASwitchInstruction) {
+
+                    }
+                    else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
+                        generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session);
+                    }
                 }
             }
         }
+    }
+
+    public void generate(IMethod m, IR ir, SSAConditionalBranchInstruction instruction, Session session) {
+        SSAInstruction[] ssaInstructions = ir.getInstructions();
+
+        _writer.writeIf(m, instruction, ssaInstructions[instruction.getTarget()], session);
     }
 
     public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session) {
@@ -433,7 +445,6 @@ class WalaFactGenerator {
         Local index = createLocal(ir, instruction, instruction.getUse(1));
 
         _writer.writeLoadArrayIndex(m, instruction, base, to, index, session);
-
     }
 
     public void generate(IMethod m, IR ir, SSAArrayStoreInstruction instruction, Session session) {
@@ -607,8 +618,7 @@ class WalaFactGenerator {
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isDoubleConstant(l.getVarIndex())) {
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
-        }
-        else if (symbolTable.isBooleanConstant(l.getVarIndex())) {
+        } else if (symbolTable.isBooleanConstant(l.getVarIndex())) {
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (s.startsWith("#[") || (s.startsWith("#L") && s.endsWith(";"))) {
             _writer.writeClassConstantExpression(m, instruction, l, (ConstantValue) v, session);

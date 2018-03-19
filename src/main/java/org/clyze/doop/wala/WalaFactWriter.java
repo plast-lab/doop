@@ -560,33 +560,22 @@ public class WalaFactWriter {
 
         _db.add(GOTO, insn, str(index), str(indexTo), methodId);
     }
-//
-//    /**
-//     * If
-//     */
-//    void writeIf(IMethod m, Stmt stmt, Unit to, Session session) {
-//        // index was already computed earlier
-//        int index = session.getUnitNumber(stmt);
-//        session.calcInstructionNumber(to);
-//        int indexTo = session.getUnitNumber(to);
-//        String insn = _rep.instruction(m, stmt, session, index);
-//        String methodId = writeMethod(m);
-//
-//        _db.add(IF, insn, str(index), str(indexTo), methodId);
-//
-//        Value condStmt = ((IfStmt) stmt).getCondition();
-//        if (condStmt instanceof ConditionExpr) {
-//            ConditionExpr condition = (ConditionExpr) condStmt;
-//            if (condition.getOp1() instanceof Local) {
-//                Local op1 = (Local) condition.getOp1();
-//                _db.add(IF_VAR, insn, _rep.local(m, op1));
-//            }
-//            if (condition.getOp2() instanceof Local) {
-//                Local op2 = (Local) condition.getOp2();
-//                _db.add(IF_VAR, insn, _rep.local(m, op2));
-//            }
-//        }
-//    }
+
+    /**
+     * If
+     */
+    void writeIf(IMethod m, SSAConditionalBranchInstruction instruction, Local var1, Local var2, SSAInstruction to, Session session) {
+        // index was already computed earlier
+        int index = session.getInstructionNumber(instruction);
+        session.calcInstructionNumber(to);
+        int indexTo = session.getInstructionNumber(to);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = writeMethod(m);
+
+        _db.add(IF, insn, str(index), str(indexTo), methodId);
+        _db.add(IF_VAR, insn, _rep.local(m, var1));
+        _db.add(IF_VAR, insn, _rep.local(m, var2));
+    }
 //
 //    void writeTableSwitch(IMethod inMethod, TableSwitchStmt stmt, Session session) {
 //        int stmtIndex = session.getUnitNumber(stmt);
@@ -794,7 +783,6 @@ public class WalaFactWriter {
 
             }
         }
-
     }
 
     void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session) {
@@ -846,7 +834,7 @@ public class WalaFactWriter {
         return insn;
     }
 
-    public Local createLocal(IR ir, SSAInstruction instruction, int varIndex) {
+    private Local createLocal(IR ir, SSAInstruction instruction, int varIndex) {
         Local l;
         String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
         if (localNames != null) {
