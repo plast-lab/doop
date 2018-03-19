@@ -365,25 +365,10 @@ public class WalaFactWriter {
            types seem to have been translated to a syntax with the initial
            L, but arrays are still represented as [, for example [C for
            char[] */
-        if (s.charAt(0) == '[' || (s.charAt(0) == 'L' && s.endsWith(";")) ) {
-            // array type
-            TypeReference t = TypeReference.find(ClassLoaderReference.Primordial, s);
+        TypeReference t = TypeReference.find(ClassLoaderReference.Primordial, s);
 
-            heap = _rep.classConstant(t);
-            actualType = t.toString();
-        }
-        else {
-
-            throw new RuntimeException("Unexpected class constant: " + constant);
-//            heap =  _rep.classConstant(c);
-//            actualType = c.getName();
-//            // The code above should be functionally equivalent with the simple code below,
-            // but the above causes a concurrent modification exception due to a Soot
-            // bug that adds a phantom class to the Scene's hierarchy, although
-            // (based on their own comments) it shouldn't.
-//            heap = _rep.classConstant(s);
-//            actualType = s;
-        }
+        heap = _rep.classConstant(t);
+        actualType = t.toString();
 
         _db.add(CLASS_HEAP, heap, actualType);
         int index = session.calcInstructionNumber(instruction);
