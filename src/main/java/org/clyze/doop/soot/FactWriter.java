@@ -304,7 +304,7 @@ public class FactWriter {
 
         Type elementType = type;
 
-        int index = session.calcUnitNumber(stmt);
+        int index = session.calcInstructionNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
         _db.addInput("AssignMultiArrayAllocation",

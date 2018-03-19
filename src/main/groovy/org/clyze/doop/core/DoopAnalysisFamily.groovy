@@ -199,6 +199,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					forCacheID: true
 			),
+			new BooleanAnalysisOption(
+					id: "WALA_FACT_GEN",
+					name: "wala-fact-gen",
+					value: false,
+					forCacheID: true
+			),
 			new IntegerAnalysisOption(
 					id: "FACT_GEN_CORES",
 					name: "fact-gen-cores",
@@ -634,6 +640,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_EXTRA_METRICS",
 					name: "Xextra-metrics",
 					description: "Run extra metrics logic under addons/statistics",
+					value: false,
+					nonStandard: true,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "X_CONTEXT_REMOVER",
+					name: "Xcontext-remover",
+					description: "Run the context remover for reduced memory use (only available in context-insensitive analysis).",
 					value: false,
 					nonStandard: true,
 					forPreprocessor: true

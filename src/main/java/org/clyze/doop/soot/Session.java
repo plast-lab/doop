@@ -10,7 +10,7 @@ public class Session
   /** keeps the current count of temporary vars of a certain kind, identified by base name. */
   private Map<String, Integer> _tempVarMap = new HashMap<String, Integer>();
 
-  int nextNumber(String s)
+  public int nextNumber(String s)
   {
     Integer x = _tempVarMap.get(s);
 
@@ -30,7 +30,7 @@ public class Session
   private Map<Unit, Integer> _units = new HashMap<Unit, Integer>();
   private int index = 0;
 
-  int calcUnitNumber(Unit u)
+  public int calcUnitNumber(Unit u)
   {
     index++;
 
@@ -40,7 +40,7 @@ public class Session
     return index;
   }
 
-  int getUnitNumber(Unit u)
+  public int getUnitNumber(Unit u)
   {
     Integer result = _units.get(u);
     if(result == null) {

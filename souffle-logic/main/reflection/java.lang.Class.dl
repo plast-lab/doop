@@ -57,11 +57,13 @@ ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHe
   VarPointsTo(_, ?constantHeap, ?ctx, ?param),
   Value_isHeap(?constantHeap),
   ClassNameMatchingStringConstant_Type(?type, ?constantHeap).
+                                                         
+.decl HighConfidenceAssign(?value:Value, ?inmethod:Method)                                                       
 
-.decl HighConfidenceAssign(?value:Value, ?inmethod:Method)
-
-HighConfidenceAssign(?value, ?inmethod) :-
-  AssignHeapAllocation(?value, _, ?inmethod).
+// This would make little sense if defined as just below, but there
+// are possibly other sources (e.g., from heap snapshots)
+HighConfidenceAssign(?value, ?inmethod) :-              
+  AssignHeapAllocation(?value, _, ?inmethod).           
 
 
 // If it is a local and precise string, consider it a high-confidence inference
@@ -71,10 +73,10 @@ ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
   ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap),
   Instruction_Method(?invocation, ?inmethod),
   HighConfidenceAssign(?constantHeap, ?inmethod),
-  (NumberOfClassesMatchingConstant(?constantHeap, ?num),
-   StringPrecisionThreshold(?t),
-   ?num < ?t;
-   ClassNameMatchingStringConstant_Type(?type, ?constantHeap)).
+  ((NumberOfClassesMatchingConstant(?constantHeap, ?num),
+    StringPrecisionThreshold(?t),
+    ?num < ?t) ;
+   PreClassNameMatchingStringConstantExact_Type(?type, ?constantHeap)).
 
 
 /**
@@ -103,7 +105,9 @@ VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   #ifdef INFORMATION_FLOW
   .plan 2:(6,5,4,3,2,1)
   #endif
+  #ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5,6)
+  #endif
 
 // REVIEW: Note how unsound this rule is: it returns a string only
 // if the string exists in the input. 
@@ -126,7 +130,7 @@ VarPointsTo(?hctx, ?componentClassValue, ?callerCtx, ?to) :-
   isArrayType(?type),
   ComponentType(?type, ?componentType),
   ReifiedClass(?componentType,  ?componentClassValue).
-
+ .plan 1:(3,1,2,4,5,6,7)
 
 /*************************************************************
  * java.lang.Class.getSuperclass
@@ -146,8 +150,9 @@ FromGetSuperClassType(?callerCtx, ?hctx, ?type, ?to) :-
   java_lang_Class_getSuperclass(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?type, ?classValue).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,4,1)
-
+#endif
 
 VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) :-
   FromGetSuperClassType(?callerCtx, ?hctx, ?type, ?to),
@@ -198,7 +203,7 @@ VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) :-
 //VERSION-A
 ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
   FillArray_PublicMethods(?hctx, ?arrayValue, ?type),
-  Method_DeclaringType[?signature] = ?type,
+  Method_DeclaringType(?signature, ?type),
   Method_Modifier("public", ?signature),
   ReifiedMethod(?signature, ?value),
   MethodNameMatchingStringConstant_Signature(?signature, _).
@@ -245,14 +250,14 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
 .decl ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)
 
 ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) :-
-   ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
-// Banning method propagation this way seems too restrictive
-//  _OptVarToMethod[?to] = ?inmethod,
-//  AssignHeapAllocation(?constantHeap, _, ?inmethod),
-  (NumberOfMethodsMatchingConstant(?constantHeap, ?num),
-   StringPrecisionThreshold(?t),
-   ?num < ?t;
-   MethodNameMatchingStringConstant_Signature(?signature, ?constantHeap)).
+  ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
+  // We had earlier disabled the "local" filter for some reason. I'm re-enabling it
+  Var_DeclaringMethod(?to, ?inmethod),
+  HighConfidenceAssign(?constantHeap, ?inmethod),
+  ((NumberOfMethodsMatchingConstant(?constantHeap, ?num),
+    StringPrecisionThreshold(?t),
+    ?num < ?t ) ;
+   PreMethodNameMatchingStringConstantExact_Signature(?signature, ?constantHeap)).
 
 // TODO: Method objects derived from dynamic info have higher confidence.
 
@@ -415,11 +420,11 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) :-
   ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
   Var_DeclaringMethod(?to, ?inmethod),
-  HighConfidenceAssign(?value, ?inmethod),
-  (NumberOfFieldsMatchingConstant(?constantHeap, ?num),
-   StringPrecisionThreshold(?t),
-   ?num < ?t;
-   FieldNameMatchingStringConstant_Signature(?signature, ?constantHeap)).
+  HighConfidenceAssign(?constantHeap, ?inmethod),
+  ((NumberOfFieldsMatchingConstant(?constantHeap, ?num),
+    StringPrecisionThreshold(?t),
+    ?num < ?t) ;
+   PreFieldNameMatchingStringConstantExact_Signature(?signature, ?constantHeap)).
 
 /*
 //VERSION-A

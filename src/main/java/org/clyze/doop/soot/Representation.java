@@ -23,7 +23,7 @@ public class Representation {
         return _repr;
     }
 
-    String classConstant(SootClass c) {
+    public String classConstant(SootClass c) {
         return "<class " + c.getName() + ">";
     }
 

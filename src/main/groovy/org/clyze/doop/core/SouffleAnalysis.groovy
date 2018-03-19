@@ -199,7 +199,16 @@ class SouffleAnalysis extends DoopAnalysis {
         analysesCachePerName.mkdirs()
         souffleAnalysisCacheFile = new File("${Doop.souffleAnalysesCache}/${name}/${analysisChecksum}")
 
-        if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value) {
+        if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value ||
+            options.X_CONTEXT_REMOVER.value) {
+
+            if (options.X_CONTEXT_REMOVER.value) {
+                File analysisFile = new File(analysis as String)
+                File backupFile = new File("${analysis}.backup")
+                Files.copy(analysisFile.toPath(), backupFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+                ContextRemover.removeContexts(backupFile, analysisFile)
+            }
+
             def compilationCommand = ['souffle', '-c', '-o', "${outDir}/${name}" as String, analysis as String]
 
             if (options.SOUFFLE_PROFILE.value)
@@ -224,8 +233,9 @@ class SouffleAnalysis extends DoopAnalysis {
                 }
             }
             try {
+                StandardCopyOption opt = options.X_CONTEXT_REMOVER.value ? StandardCopyOption.REPLACE_EXISTING : StandardCopyOption.COPY_ATTRIBUTES
                 // Keep execute permission
-                Files.copy(new File("${outDir}/${name}").toPath(), souffleAnalysisCacheFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+                Files.copy(new File("${outDir}/${name}").toPath(), souffleAnalysisCacheFile.toPath(), opt)
             } catch (FileAlreadyExistsException ex) {
                 // If a cached file is already there, don't overwrite
                 // it (it might be used by another analysis), just reuse it.

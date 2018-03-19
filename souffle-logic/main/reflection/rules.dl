@@ -424,21 +424,13 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
 
 // Special methods
 
-// Surprising as it may seem, this join is not always performed first if
-// inlined below.
-.decl OptReflectiveSpecialMethodInvocationBaseValue(?hctx:HContext, ?value:Value, ?callerCtx:Context, ?invocation:MethodInvocation, ?callee:Method)
-
-OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee) :-
-  ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
-  .plan 1:(2,1)
-
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   :-
-  OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
+  ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ThisVar(?callee, ?this),
   Var_Type(?this, ?varType),
   Value_Type(?value, ?valueType),
@@ -448,7 +440,8 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   :-
-  OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
+  ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ThisVar(?callee, ?this),
   ImmutableContextFromHContext(?hctx, ?calleeCtx),
 // Check if object is an instance of the class declaring the method. It's a
@@ -462,20 +455,13 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
 
 // Virtual methods
 
-// TODO Check if object is an instance of the class declaring the
-//      method (only overapproximation)
-.decl OptReflectiveVirtualMethodInvocationBaseValue(?hctx:HContext, ?value:Value, ?callerCtx:Context, ?invocation:MethodInvocation, ?signature:Method)
-
-OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature) :-
-  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
-
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   :-
-  OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature),
+  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   Value_Type(?value, ?valuetype),
   Method_DeclaringType(?signature, ?type),
   basic.SupertypeOf(?type, ?valuetype), // TODO need nicer check
@@ -488,7 +474,8 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   :-
-  OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature),
+  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   Value_Type(?value, ?valuetype),
   Method_DeclaringType(?signature, ?type),
   basic.SupertypeOf(?type, ?valuetype), // TODO need nicer check
@@ -682,6 +669,10 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   isImmutableHContext(?hctx).
 #endif
 
+// The code is very similar to the logic in the main analysis, however
+// we split it out because of the need (here, but not for normal value
+// loads) to filter type-incorrect values.
+
 /*************************************************************
  * Reflective load of an instance field
  *************************************************************/
@@ -694,19 +685,6 @@ ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue) :-
   Value_Type(?basevalue, ?basevaluetype),
   Field_DeclaringType(?sig, ?declaringClass),
   basic.SupertypeOf(?declaringClass, ?basevaluetype).
-
-// The code below is very similar to the logic in the main analysis,
-// however we split it out because of the need (here, but not for
-// normal value loads) to filter type-incorrect values.
-
-/** This VarPointsTo is ok **/
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
-  Value_Type(?value, ?valuetype),
-  Var_Type(?to, ?vartype),
-  basic.SupertypeOf(?vartype, ?valuetype).
-
 
 /*************************************************************
  * Reflective store of an instance field
@@ -721,10 +699,35 @@ ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) :
   Field_DeclaringType(?sig, ?declaringClass),
   basic.SupertypeOf(?declaringClass, ?basevaluetype).
 
-// The code below is very similar to the logic in the main analysis,
-// however we split it out because of the need (here, but not for
-// normal value loads) to filter type-incorrect values.
+//// Old-style logic. Slower in Souffle, so now only used in
+//// featherweight analysis.
+// /** This VarPointsTo is ok **/
+// VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+//   ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+//   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
+//   Value_Type(?value, ?valuetype),
+//   Var_Type(?to, ?vartype),
+//   basic.SupertypeOf(?vartype, ?valuetype).
+
 #ifndef FEATHERWEIGHT_ANALYSIS
+.decl ReflectiveHeapInterproceduralAssign(?sig:Field, ?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
+ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to,?fromCtx, ?from) :-
+  ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue),
+  ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from),
+  !Value_Null(?basevalue).
+  .plan 1:(2,1)
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to, ?fromCtx, ?from),
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  NotSpecialObject(?value),
+  Value_Type(?value, ?valuetype),
+  Field_Type(?sig, ?fieldtype),
+  basic.SupertypeOf(?fieldtype, ?valuetype).
+  .plan 1:(2,1,3,4,5,6)
+
+// Computed only for its own sake, if designated for output, not for
+// VarPointsTo computations
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
@@ -733,7 +736,18 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   Value_Type(?value, ?valuetype),
   Field_Type(?signature, ?fieldtype),
   basic.SupertypeOf(?fieldtype, ?valuetype).
+
+#else // FEATHERWEIGHT_ANALYSIS
+
+/** This VarPointsTo is ok **/
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
+  Value_Type(?value, ?valuetype),
+  Var_Type(?to, ?vartype),
+  basic.SupertypeOf(?vartype, ?valuetype).
 #endif
+
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
@@ -996,7 +1010,9 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx),
   AssignReturnValue(?invocation, ?return).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5)
+#endif
 
 // Special object just to designate the unknown values returned by
 // Class.newInstance. At every newInstance to which an unknown object
@@ -1079,9 +1095,9 @@ _OptMethodWithVarCast(?subtype, ?inMethod, ?from) :-
 .decl SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation:MethodInvocation, ?type:Type, ?inMethod:Method)
 
 SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation, ?type, ?inMethod) :-
-  _OptMethodWithVarCast(?type, ?inMethod, ?from),
+  SpecialMissingNewInstanceValue(?forNameInvocation, ?specialvalue),
   VarPointsTo(_, ?specialvalue, _, ?from),
-  SpecialMissingNewInstanceValue(?forNameInvocation, ?specialvalue).
+  _OptMethodWithVarCast(?type, ?inMethod, ?from).
 
 BackwardReflectiveAssignClassConstant(?forNameInvocation, ?type) :-
   SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation, ?type, _).
@@ -1207,11 +1223,11 @@ BackwardHighConfidenceReflectiveAssignClassConstant(?forNameInvocation, ?type)  
 
 /** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
   SpecialMissingGetMethodValue(?invocation, ?value),
   AssignReturnValue(?invocation, ?return),
   Instruction_Method(?invocation, ?inmethod),
-  ReachableContext(?ctx, ?inmethod).
+  ReachableContext(?ctx, ?inmethod),
+  ImmutableHContextFromContext(?ctx, ?hctx).
 
 // At the site of an invoke over a special method object (that marks
 // its "getMethod" origin), return a new special object that remembers
@@ -1219,12 +1235,12 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
 
 /** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_reflect_Method_invoke(?invocation, ?methodVar),
   VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
   SpecialMissingGetMethodValue(?getMethodInvocation, ?specialMethodValue),
   SpecialMissingInvokeValueFromGetMethod(?getMethodInvocation, ?specialvalue),
-  AssignReturnValue(?invocation, ?var).
+  AssignReturnValue(?invocation, ?var),
+  ImmutableHContextFromContext(?ctx, ?hctx).
 
 // a cast (to ?type) receives the result of an invoke call on a value
 // returned from a getMethod.
@@ -1272,20 +1288,22 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   SpecialMissingGetFieldValue(?invocation, ?value),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  ImmutableHContextFromContext(?ctx, ?hctx),
-  AssignReturnValue(?invocation, ?return).
+  AssignReturnValue(?invocation, ?return),
+  ImmutableHContextFromContext(?ctx, ?hctx).
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5)
+#endif
 
 // Make a "get" call over a special field (which knows its getField origin)
 // return a special object that also remembers the original getField call.
 /** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_reflect_Field_get(?invocation, _, ?fieldVar),
   VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
   SpecialMissingGetFieldValue(?getFieldInvocation, ?specialFieldValue),
   SpecialMissingGetValueFromGetField(?getFieldInvocation, ?specialvalue),
-  AssignReturnValue(?invocation, ?var).
+  AssignReturnValue(?invocation, ?var),
+  ImmutableHContextFromContext(?ctx, ?hctx).
 
 // a cast gets the special value returned from a "get". The value marks
 // the original getField
@@ -1326,10 +1344,10 @@ BackwardReflectiveAssignFieldConstant(?return, ?signature) :-
 // The array that the return var points to (established by forward logic)
 // is populated with the special Method object the call returns.
 ArrayIndexPointsTo(?hctx1, ?value, ?hctx, ?arrayValue) :-
-  ImmutableHContextFromContext(?ctx, ?hctx1),
   SpecialMissingGetMethodsValue(?invocation, ?value),
   AssignReturnValue(?invocation, ?return),
   VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return),
+  ImmutableHContextFromContext(?ctx, ?hctx1),
   isContext(?ctx). // hack to avoid warning
 
 // Is this slow? We've already done it in forward logic. Maybe store/reuse.
@@ -1397,8 +1415,8 @@ ArrayIndexPointsTo(?hctx, ?methodValue, ?hctx, ?arrayValue) :-
 
 // The array that the return var points to (established by forward logic)
 // is populated with the special Field object the call returns.
-ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+ArrayIndexPointsTo(?hctx1, ?value, ?hctx, ?arrayValue) :-
+  ImmutableHContextFromContext(?ctx, ?hctx1),
   SpecialMissingGetFieldsValue(?invocation, ?value),
   AssignReturnValue(?invocation, ?return),
   VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return),

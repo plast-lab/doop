@@ -10,7 +10,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-class Driver {
+public class Driver {
     private ThreadFactory _factory;
     private boolean _generateJimple;
 
