@@ -1,5 +1,6 @@
 package org.clyze.doop.wala;
 
+import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
@@ -375,6 +376,7 @@ class WalaFactGenerator {
 
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
+        TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
         for (int i = 0; i <=cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             int start = basicBlock.getFirstInstructionIndex();
@@ -382,20 +384,20 @@ class WalaFactGenerator {
 
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
-                    this.generateDefs(m, ir, instructions[j], session);
-                    this.generateUses(m, ir, instructions[j], session);
+                    this.generateDefs(m, ir, instructions[j], session, typeInference);
+                    this.generateUses(m, ir, instructions[j], session, typeInference);
 
                     if (instructions[j] instanceof SSAReturnInstruction) {
-                        generate(m, ir, (SSAReturnInstruction) instructions[j], session);
+                        generate(m, ir, (SSAReturnInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSABinaryOpInstruction) {
-                        generate(m, ir, (SSABinaryOpInstruction) instructions[j], session);
+                        generate(m, ir, (SSABinaryOpInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAMonitorInstruction) {
-                        generate(m, ir, (SSAMonitorInstruction) instructions[j], session);
+                        generate(m, ir, (SSAMonitorInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAThrowInstruction) {
-                        generate(m, ir, (SSAThrowInstruction) instructions[j], session);
+                        generate(m, ir, (SSAThrowInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAGotoInstruction) {
                         generate(m, ir, (SSAGotoInstruction) instructions[j], session);
@@ -404,60 +406,64 @@ class WalaFactGenerator {
                         generate(m, ir, (SSAInvokeInstruction) instructions[j], session);
                     }
                     else if (instructions[j] instanceof SSAGetInstruction) {
-                        generate(m, ir, (SSAGetInstruction) instructions[j], session);
+                        generate(m, ir, (SSAGetInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAPutInstruction) {
-                        generate(m, ir, (SSAPutInstruction) instructions[j], session);
+                        generate(m, ir, (SSAPutInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAUnaryOpInstruction) {
-                        generate(m, ir, (SSAUnaryOpInstruction) instructions[j], session);
+                        generate(m, ir, (SSAUnaryOpInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAArrayLengthInstruction) {
-                        generate(m, ir, (SSAArrayLengthInstruction) instructions[j], session);
+                        generate(m, ir, (SSAArrayLengthInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAArrayLoadInstruction) {
-                        generate(m, ir, (SSAArrayLoadInstruction) instructions[j], session);
+                        generate(m, ir, (SSAArrayLoadInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAArrayStoreInstruction) {
-                        generate(m, ir, (SSAArrayStoreInstruction) instructions[j], session);
+                        generate(m, ir, (SSAArrayStoreInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSASwitchInstruction) {
 
                     }
                     else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
-                        generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session);
+                        generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
                     }
                 }
             }
         }
     }
 
-    public void generate(IMethod m, IR ir, SSAConditionalBranchInstruction instruction, Session session) {
+    public void generate(IMethod m, IR ir, SSAConditionalBranchInstruction instruction, Session session, TypeInference typeInference) {
         SSAInstruction[] ssaInstructions = ir.getInstructions();
 
-        _writer.writeIf(m, instruction, ssaInstructions[instruction.getTarget()], session);
+        // Conditional branch instructions have two uses (op1 and op2, the compared variables) and no defs
+        Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
+
+        _writer.writeIf(m, instruction, op1, op2, ssaInstructions[instruction.getTarget()], session);
     }
 
-    public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session) {
+    public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session, TypeInference typeInference) {
         // Load array instructions have a single def (to) and two uses (base and index);
-        Local to = createLocal(ir, instruction, instruction.getDef());
-        Local base = createLocal(ir, instruction, instruction.getUse(0));
-        Local index = createLocal(ir, instruction, instruction.getUse(1));
+        Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        Local index = createLocal(ir, instruction, instruction.getUse(1), typeInference);
 
         _writer.writeLoadArrayIndex(m, instruction, base, to, index, session);
     }
 
-    public void generate(IMethod m, IR ir, SSAArrayStoreInstruction instruction, Session session) {
+    public void generate(IMethod m, IR ir, SSAArrayStoreInstruction instruction, Session session, TypeInference typeInference) {
         // Store arra instructions have three uses (base, index and from) and no defs
-        Local base = createLocal(ir, instruction, instruction.getUse(0));
-        Local index = createLocal(ir, instruction, instruction.getUse(1));
-        Local from = createLocal(ir, instruction, instruction.getUse(2));
+        Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        Local index = createLocal(ir, instruction, instruction.getUse(1), typeInference);
+        Local from = createLocal(ir, instruction, instruction.getUse(2), typeInference);
 
         _writer.writeStoreArrayIndex(m, instruction, base, from, index, session);
     }
 
-    public void generate(IMethod m, IR ir, SSAGetInstruction instruction, Session session) {
-        Local to = createLocal(ir, instruction, instruction.getDef());
+    public void generate(IMethod m, IR ir, SSAGetInstruction instruction, Session session, TypeInference typeInference) {
+        Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
 
         if (instruction.isStatic()) {
             //Get static field has no uses and a single def (to)
@@ -465,22 +471,22 @@ class WalaFactGenerator {
         }
         else {
             //Get instance field has one use (base) and one def (to)
-            Local base = createLocal(ir, instruction, instruction.getUse(0));
+            Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
             _writer.writeLoadInstanceField(m, instruction, instruction.getDeclaredField(), base, to, session);
         }
     }
 
-    public void generate(IMethod m, IR ir, SSAPutInstruction instruction, Session session) {
+    public void generate(IMethod m, IR ir, SSAPutInstruction instruction, Session session, TypeInference typeInference) {
 
         if (instruction.isStatic()) {
             //Put static field has a single use (from) and no defs
-            Local from = createLocal(ir, instruction, instruction.getUse(0));
+            Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
             _writer.writeStoreStaticField(m, instruction, instruction.getDeclaredField(), from, session);
         }
         else {
             //Put instance field has two uses (base and from) and no defs
-            Local base = createLocal(ir, instruction, instruction.getUse(0));
-            Local from = createLocal(ir, instruction, instruction.getUse(1));
+            Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+            Local from = createLocal(ir, instruction, instruction.getUse(1), typeInference);
             _writer.writeStoreInstanceField(m, instruction, instruction.getDeclaredField(), base, from, session);
         }
     }
@@ -497,10 +503,10 @@ class WalaFactGenerator {
         _writer.writeGoto(m, instruction,ssaInstructions[instruction.getTarget()] , session);
     }
 
-    public void generate(IMethod m, IR ir, SSAMonitorInstruction instruction, Session session) {
+    public void generate(IMethod m, IR ir, SSAMonitorInstruction instruction, Session session, TypeInference typeInference) {
         // Monitor instructions have a single use and no defs
         int use = instruction.getUse(0);
-        Local l = createLocal(ir, instruction, use);
+        Local l = createLocal(ir, instruction, use, typeInference);
         if (instruction.isMonitorEnter()) {
             _writer.writeEnterMonitor(m, instruction, l, session);
         }
@@ -509,31 +515,31 @@ class WalaFactGenerator {
         }
     }
 
-    public void generate(IMethod m, IR ir, SSAUnaryOpInstruction instruction, Session session) {
+    public void generate(IMethod m, IR ir, SSAUnaryOpInstruction instruction, Session session, TypeInference typeInference) {
         // Unary op instructions have a single def (to) and a single use (from)
-        Local to = createLocal(ir, instruction, instruction.getDef());
-        Local from = createLocal(ir, instruction, instruction.getUse(0));
+        Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
 
         _writer.writeAssignUnop(m, instruction, to, from, session);
     }
 
-    public void generate(IMethod m, IR ir, SSAArrayLengthInstruction instruction, Session session) {
+    public void generate(IMethod m, IR ir, SSAArrayLengthInstruction instruction, Session session, TypeInference typeInference) {
         // Array length instruction have a single use (base) and a def (to)
-        Local to = createLocal(ir, instruction, instruction.getDef());
-        Local base = createLocal(ir, instruction, instruction.getUse(0));
+        Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
 
         _writer.writeAssignArrayLength(m, instruction, to, base, session);
     }
 
-    private Local createLocal(IR ir, SSAInstruction instruction, int varIndex) {
+    private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
         Local l;
         String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
         if (localNames != null) {
             assert localNames.length == 1;
-            l = new Local("v" + varIndex, varIndex, localNames[0], TypeReference.JavaLangObject);
+            l = new Local("v" + varIndex, varIndex, localNames[0], typeInference.getType(varIndex).getTypeReference());
         }
         else {
-            l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
+            l = new Local("v" + varIndex, varIndex, typeInference.getType(varIndex).getTypeReference());
         }
         return l;
     }
@@ -541,7 +547,7 @@ class WalaFactGenerator {
     /**
      * Return statement
      */
-    private void generate(IMethod m, IR ir, SSAReturnInstruction instruction, Session session)
+    private void generate(IMethod m, IR ir, SSAReturnInstruction instruction, Session session, TypeInference typeInference)
     {
         if (instruction.returnsVoid()) {
             // Return void has no uses
@@ -551,7 +557,7 @@ class WalaFactGenerator {
             // Return something has a single use
 
 
-            Local l = createLocal(ir, instruction, instruction.getUse(0));
+            Local l = createLocal(ir, instruction, instruction.getUse(0), typeInference);
 //            int returnVar = instruction.getUse(0);
 //            String[] localNames = ir.getLocalNames(instruction.iindex, returnVar);
 //            if (localNames != null) {
@@ -567,13 +573,13 @@ class WalaFactGenerator {
         }
     }
 
-    private void generateDefs(IMethod m, IR ir, SSAInstruction instruction, Session session) {
+    private void generateDefs(IMethod m, IR ir, SSAInstruction instruction, Session session, TypeInference typeInference) {
         SymbolTable symbolTable = ir.getSymbolTable();
 
         if (instruction.hasDef()) {
             for (int i = 0; i < instruction.getNumberOfDefs(); i++) {
                 int def = instruction.getDef(i);
-                Local l = createLocal(ir, instruction, def);
+                Local l = createLocal(ir, instruction, def, typeInference);
                 if (def != 1 && symbolTable.isConstant(def)) {
                     Value v = symbolTable.getValue(def);
                     generateConstant(m, ir, instruction, v, l, session);
@@ -584,12 +590,12 @@ class WalaFactGenerator {
         }
     }
 
-    private void generateUses(IMethod m, IR ir, SSAInstruction instruction, Session session) {
+    private void generateUses(IMethod m, IR ir, SSAInstruction instruction, Session session, TypeInference typeInference) {
         SymbolTable symbolTable = ir.getSymbolTable();
 
         for (int i = 0; i < instruction.getNumberOfUses(); i++) {
             int use = instruction.getUse(i);
-            Local l = createLocal(ir, instruction, use);
+            Local l = createLocal(ir, instruction, use, typeInference);
             if (use != -1 && symbolTable.isConstant(use)) {
                 Value v = symbolTable.getValue(use);
                 generateConstant(m, ir, instruction, v, l, session);
@@ -625,18 +631,17 @@ class WalaFactGenerator {
         }
     }
 
-    private void generate(IMethod m, IR ir, SSABinaryOpInstruction instruction, Session session)
+    private void generate(IMethod m, IR ir, SSABinaryOpInstruction instruction, Session session, TypeInference typeInference)
     {
         // Binary instructions have two uses and a single def
-        SymbolTable symbolTable = ir.getSymbolTable();
+        Local l = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
 
-        Local l = new Local(symbolTable.getValueString(instruction.getDef()), instruction.getDef(), TypeReference.JavaLangObject);
-        Local op1 = new Local("v" + instruction.getUse(0), instruction.getUse(0), TypeReference.JavaLangObject);
-        Local op2 = new Local("v" + instruction.getUse(1), instruction.getUse(1),TypeReference.JavaLangObject);
         _writer.writeAssignBinop(m, instruction, l, op1, op2, session);
     }
 
-    private void generate(IMethod inMethod, IR ir, SSAThrowInstruction instruction, Session session)
+    private void generate(IMethod inMethod, IR ir, SSAThrowInstruction instruction, Session session, TypeInference typeInference)
     {
         // Throw instructions have a single use and no defs
         SymbolTable symbolTable = ir.getSymbolTable();
@@ -644,7 +649,7 @@ class WalaFactGenerator {
 
         if(!symbolTable.isConstant(use))
         {
-            Local l = createLocal(ir, instruction, use);
+            Local l = createLocal(ir, instruction, use, typeInference);
 
             _writer.writeThrow(inMethod, instruction, l, session);
         }
