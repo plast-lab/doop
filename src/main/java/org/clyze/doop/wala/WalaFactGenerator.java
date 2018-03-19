@@ -9,13 +9,11 @@ import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.ssa.Value;
 import com.ibm.wala.types.TypeReference;
-import org.clyze.doop.soot.Session;
 import soot.*;
-import soot.jimple.AssignStmt;
-import soot.jimple.IdentityStmt;
-import soot.jimple.ThrowStmt;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -47,7 +45,7 @@ class WalaFactGenerator {
 
         while (_iClasses.hasNext()) {
             IClass iClass = _iClasses.next();
-            printIR(iClass);
+            //printIR(iClass);
             _writer.writeClassOrInterfaceType(iClass);
 
             if(iClass.isAbstract())
@@ -72,13 +70,12 @@ class WalaFactGenerator {
 
 
             for (IMethod m : iClass.getAllMethods()) {
-                generate(m);
+                Session session = new org.clyze.doop.wala.Session();
+                generate(m, session);
             }
-
-
         }
     }
-    public String fixTypeString(String original)
+    private String fixTypeString(String original)
     {
         boolean isArrayType = false;
         if(original.contains("[L")) //Figure out if this is correct
@@ -123,7 +120,7 @@ class WalaFactGenerator {
 
     }
 
-    public void printIR(IClass cl)
+    private void printIR(IClass cl)
     {
 //        PrintWriter writerOut = new PrintWriter(new EscapedWriter(new OutputStreamWriter((OutputStream)streamOut)));
         ShrikeClass shrikeClass = (ShrikeClass) cl;
@@ -214,7 +211,8 @@ class WalaFactGenerator {
             e.printStackTrace();
         }
     }
-    public void printIR(IMethod m,PrintWriter writer)
+
+    private void printIR(IMethod m, PrintWriter writer)
     {
         IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
         SSAInstruction[] instructions = ir.getInstructions();
@@ -302,7 +300,7 @@ class WalaFactGenerator {
         return false;
     }
 
-    void generate(IMethod m)
+    private void generate(IMethod m, Session session)
     {
         if (phantomBased(m)) {
             //m.setPhantom(true);
@@ -368,11 +366,11 @@ class WalaFactGenerator {
         if(!(m.isAbstract() || m.isNative()))
         {
             IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
-            generate(m, ir);
+            generate(m, ir, session);
         }
     }
 
-    private void generate(IMethod m, IR ir)
+    private void generate(IMethod m, IR ir, Session session)
     {
 
         SSAInstruction[] instructions = ir.getInstructions();
@@ -384,516 +382,270 @@ class WalaFactGenerator {
 
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
-                    this.generateDefs(m, ir, instructions[j]);
-                    this.generateUses(m, ir, instructions[j]);
+                    this.generateDefs(m, ir, instructions[j], session);
+                    this.generateUses(m, ir, instructions[j], session);
 
                     if (instructions[j] instanceof SSAReturnInstruction) {
-                        generate(m, ir, (SSAReturnInstruction) instructions[j]);
+                        generate(m, ir, (SSAReturnInstruction) instructions[j], session);
                     }
                     else if (instructions[j] instanceof SSABinaryOpInstruction) {
-                        generate(m, ir, (SSABinaryOpInstruction) instructions[j]);
+                        generate(m, ir, (SSABinaryOpInstruction) instructions[j], session);
+                    }
+                    else if (instructions[j] instanceof SSAMonitorInstruction) {
+                        generate(m, ir, (SSAMonitorInstruction) instructions[j], session);
+                    }
+                    else if (instructions[j] instanceof SSAThrowInstruction) {
+                        generate(m, ir, (SSAThrowInstruction) instructions[j], session);
+                    }
+                    else if (instructions[j] instanceof SSAGotoInstruction) {
+                        generate(m, ir, (SSAGotoInstruction) instructions[j], session);
+                    }
+                    else if (instructions[j] instanceof SSAInvokeInstruction) {
+                        generate(m, ir, (SSAInvokeInstruction) instructions[j], session);
+                    }
+                    else if (instructions[j] instanceof SSAGetInstruction) {
+                        generate(m, ir, (SSAGetInstruction) instructions[j], session);
+                    }
+                    else if (instructions[j] instanceof SSAPutInstruction) {
+                        generate(m, ir, (SSAPutInstruction) instructions[j], session);
+                    }
+                    else if (instructions[j] instanceof SSAUnaryOpInstruction) {
+                        generate(m, ir, (SSAUnaryOpInstruction) instructions[j], session);
+                    }
+                    else if (instructions[j] instanceof SSAArrayLengthInstruction) {
+                        generate(m, ir, (SSAArrayLengthInstruction) instructions[j], session);
+                    }
+                    else if (instructions[j] instanceof SSAArrayLoadInstruction) {
+                        generate(m, ir, (SSAArrayLoadInstruction) instructions[j], session);
+                    }
+                    else if (instructions[j] instanceof SSAArrayStoreInstruction) {
+                        generate(m, ir, (SSAArrayStoreInstruction) instructions[j], session);
                     }
                 }
             }
         }
-
-//        for(Local l : b.getLocals())
-//        {
-//            _writer.writeLocal(m, l);
-//        }
-//
-//        IrrelevantStmtSwitch sw =  new IrrelevantStmtSwitch();
-//        for(Unit u : b.getUnits())
-//        {
-//            Stmt stmt = (Stmt) u;
-//
-//            stmt.apply(sw);
-//
-//            if(sw.relevant)
-//            {
-//                if(stmt instanceof AssignStmt)
-//                {
-//                    generate(m, (AssignStmt) stmt, session);
-//                }
-//                else if(stmt instanceof IdentityStmt)
-//                {
-//                    generate(m, (IdentityStmt) stmt, session);
-//                }
-//                else if(stmt instanceof InvokeStmt)
-//                {
-//                    _writer.writeInvoke(m, stmt, stmt.getInvokeExpr(), session);
-//                }
-//                else if(stmt instanceof ReturnStmt)
-//                {
-//                    generate(m, (ReturnStmt) stmt, session);
-//                }
-//                else if(stmt instanceof ReturnVoidStmt)
-//                {
-//                    _writer.writeReturnVoid(m, stmt, session);
-//                }
-//                else if(stmt instanceof ThrowStmt)
-//                {
-//                    generate(m, (ThrowStmt) stmt, session);
-//                }
-//                else if(stmt instanceof GotoStmt)
-//                {
-//                    // processed in second run: we might not know the number of
-//                    // the unit yet.
-//                    session.calcUnitNumber(stmt);
-//                }
-//                else if(stmt instanceof IfStmt)
-//                {
-//                    // processed in second run: we might not know the number of
-//                    // the unit yet.
-//                    session.calcUnitNumber(stmt);
-//                }
-//                else if(stmt instanceof EnterMonitorStmt)
-//                {
-//                    //TODO: how to handle EnterMonitorStmt when op is not a Local?
-//                    if (((EnterMonitorStmt) stmt).getOp() instanceof Local)
-//                        _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
-//                }
-//                else if(stmt instanceof ExitMonitorStmt)
-//                {
-//                    //TODO: how to handle ExitMonitorStmt when op is not a Local?
-//                    if (((ExitMonitorStmt) stmt).getOp() instanceof Local)
-//                        _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
-//                }
-//                else if(stmt instanceof TableSwitchStmt)
-//                {
-//                    // same as IfStmt and GotoStmt.
-//                    session.calcUnitNumber(stmt);
-//                }
-//                else if(stmt instanceof LookupSwitchStmt)
-//                {
-//                    session.calcUnitNumber(stmt);
-//                }
-//                else if (stmt instanceof NopStmt) {
-//                    session.calcUnitNumber(stmt);
-//                }
-//                else
-//                {
-//                    throw new RuntimeException("Cannot handle statement: " + stmt);
-//                }
-//            }
-//            else
-//            {
-//                // only reason for assign or invoke statements to be irrelevant
-//                // is the invocation of a method on a phantom class
-//                if(stmt instanceof AssignStmt)
-//                    _writer.writeAssignPhantomInvoke(m, stmt, session);
-//                else if (stmt instanceof InvokeStmt)
-//                    _writer.writePhantomInvoke(m, stmt, session);
-//                else if (stmt instanceof BreakpointStmt)
-//                    _writer.writeBreakpointStmt(m, stmt, session);
-//                else
-//                    throw new RuntimeException("Unexpected irrelevant statement: " + stmt);
-//            }
-//        }
-//
-//        for(Unit u : b.getUnits())
-//        {
-//            Stmt stmt = (Stmt) u;
-//
-//            if(stmt instanceof GotoStmt)
-//            {
-//                _writer.writeGoto(m, stmt, ((GotoStmt) stmt).getTarget(), session);
-//            }
-//            else if(stmt instanceof IfStmt)
-//            {
-//                _writer.writeIf(m, stmt, ((IfStmt) stmt).getTarget(), session);
-//            }
-//            else if(stmt instanceof TableSwitchStmt)
-//            {
-//                _writer.writeTableSwitch(m, (TableSwitchStmt) stmt, session);
-//            }
-//            else if(stmt instanceof LookupSwitchStmt)
-//            {
-//                _writer.writeLookupSwitch(m, (LookupSwitchStmt) stmt, session);
-//            }
-//        }
-//
-//        Trap previous = null;
-//        for(Trap t : b.getTraps())
-//        {
-//            _writer.writeExceptionHandler(m, t, session);
-//            if(previous != null)
-//            {
-//                _writer.writeExceptionHandlerPrevious(m, t, previous, session);
-//            }
-//
-//            previous = t;
-//        }
     }
 
-    /**
-     * Assignment statement
-     */
-    public void generate(IMethod inMethod, AssignStmt stmt, Session session)
-    {
-//        Value left = stmt.getLeftOp();
-//
-//        if(left instanceof Local)
-//        {
-//            generateLeftLocal(inMethod, stmt, session);
-//        }
-//        else
-//        {
-//            generateLeftNonLocal(inMethod, stmt, session);
-//        }
+    public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session) {
+        // Load array instructions have a single def (to) and two uses (base and index);
+        Local to = createLocal(ir, instruction, instruction.getDef());
+        Local base = createLocal(ir, instruction, instruction.getUse(0));
+        Local index = createLocal(ir, instruction, instruction.getUse(1));
+
+        _writer.writeLoadArrayIndex(m, instruction, base, to, index, session);
+
     }
 
-    private void generateLeftLocal(IMethod inMethod, AssignStmt stmt, Session session)
-    {
-//        Local left = (Local) stmt.getLeftOp();
-//        Value right = stmt.getRightOp();
-//
-//        if(right instanceof Local)
-//        {
-//            _writer.writeAssignLocal(inMethod, stmt, left, (Local) right, session);
-//        }
-//        else if(right instanceof InvokeExpr)
-//        {
-//            _writer.writeAssignInvoke(inMethod, stmt, left, (InvokeExpr) right, session);
-//        }
-//        else if(right instanceof NewExpr)
-//        {
-//            _writer.writeAssignHeapAllocation(inMethod, stmt, left, (NewExpr) right, session);
-//        }
-//        else if(right instanceof NewArrayExpr)
-//        {
-//            _writer.writeAssignHeapAllocation(inMethod, stmt, left, (NewArrayExpr) right, session);
-//        }
-//        else if(right instanceof NewMultiArrayExpr)
-//        {
-//            _writer.writeAssignNewMultiArrayExpr(inMethod, stmt, left, (NewMultiArrayExpr) right, session);
-//        }
-//        else if(right instanceof StringConstant)
-//        {
-//            _writer.writeAssignStringConstant(inMethod, stmt, left, (StringConstant) right, session);
-//        }
-//        else if(right instanceof ClassConstant)
-//        {
-//            _writer.writeAssignClassConstant(inMethod, stmt, left, (ClassConstant) right, session);
-//        }
-//        else if(right instanceof NumericConstant)
-//        {
-//            _writer.writeAssignNumConstant(inMethod, stmt, left, (NumericConstant) right, session);
-//        }
-//        else if(right instanceof NullConstant)
-//        {
-//            _writer.writeAssignNull(inMethod, stmt, left, session);
-//            // NoNullSupport: use the line below to remove Null Constants from the facts.
-//            // _writer.writeUnsupported(inMethod, stmt, session);
-//        }
-//        else if(right instanceof InstanceFieldRef)
-//        {
-//            InstanceFieldRef ref = (InstanceFieldRef) right;
-//            _writer.writeLoadInstanceField(inMethod, stmt, ref.getField(), (Local) ref.getBase(), left, session);
-//        }
-//        else if(right instanceof StaticFieldRef)
-//        {
-//            StaticFieldRef ref = (StaticFieldRef) right;
-//            _writer.writeLoadStaticField(inMethod, stmt, ref.getField(), left, session);
-//        }
-//        else if(right instanceof ArrayRef)
-//        {
-//            ArrayRef ref = (ArrayRef) right;
-//            Local base = (Local) ref.getBase();
-//            Value index = ref.getIndex();
-//
-//            if(index instanceof Local)
-//            {
-//                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, (Local) index, session);
-//            }
-//            else if(index instanceof IntConstant)
-//            {
-//                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, null, session);
-//            }
-//            else
-//            {
-//                throw new RuntimeException("Cannot handle assignment: " + stmt + " (index: " + index.getClass() + ")");
-//            }
-//        }
-//        else if(right instanceof CastExpr)
-//        {
-//            CastExpr cast = (CastExpr) right;
-//            Value op = cast.getOp();
-//
-//            if(op instanceof Local)
-//            {
-//                _writer.writeAssignCast(inMethod, stmt, left, (Local) op, cast.getCastType(), session);
-//            }
-//            else if(op instanceof NumericConstant)
-//            {
-//                // seems to always get optimized out, do we need this?
-//                _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
-//            }
-//            else if (op instanceof NullConstant || op instanceof  ClassConstant || op instanceof  StringConstant)
-//            {
-//                _writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
-//            }
-//            else
-//            {
-//                throw new RuntimeException("Cannot handle assignment: " + stmt + " (op: " + op.getClass() + ")");
-//            }
-//        }
-//        else if(right instanceof PhiExpr)
-//        {
-//            for(Value alternative : ((PhiExpr) right).getValues())
-//            {
-//                _writer.writeAssignLocal(inMethod, stmt, left, (Local) alternative, session);
-//            }
-//        }
-//        else if (right instanceof BinopExpr)
-//        {
-//            _writer.writeAssignBinop(inMethod, stmt, left, (BinopExpr) right, session);
-//        }
-//        else if (right instanceof UnopExpr)
-//        {
-//            _writer.writeAssignUnop(inMethod, stmt, left, (UnopExpr) right, session);
-//        }
-//        else if (right instanceof InstanceOfExpr)
-//        {
-//            InstanceOfExpr expr = (InstanceOfExpr) right;
-//            if (expr.getOp() instanceof Local)
-//                _writer.writeAssignInstanceOf(inMethod, stmt, left, (Local) expr.getOp(), expr.getCheckType(), session);
-//            else // TODO check if this is possible (instanceof on something that is not a local var)
-//                _writer.writeUnsupported(inMethod, stmt, session);
-//        }
-//        else
-//        {
-//            throw new RuntimeException("Cannot handle assignment: " + stmt + " (right: " + right.getClass() + ")");
-//        }
+    public void generate(IMethod m, IR ir, SSAArrayStoreInstruction instruction, Session session) {
+        // Store arra instructions have three uses (base, index and from) and no defs
+        Local base = createLocal(ir, instruction, instruction.getUse(0));
+        Local index = createLocal(ir, instruction, instruction.getUse(1));
+        Local from = createLocal(ir, instruction, instruction.getUse(2));
+
+        _writer.writeStoreArrayIndex(m, instruction, base, from, index, session);
     }
 
-    private void generateLeftNonLocal(IMethod inMethod, AssignStmt stmt, Session session)
-    {
-//        Value left = stmt.getLeftOp();
-//        Value right = stmt.getRightOp();
-//
-//        // first make sure we have local variable for the right-hand-side.
-//        Local rightLocal = null;
-//
-//        if(right instanceof Local)
-//        {
-//            rightLocal = (Local) right;
-//        }
-//        else if(right instanceof StringConstant)
-//        {
-//            rightLocal = _writer.writeStringConstantExpression(inMethod, stmt, (StringConstant) right, session);
-//        }
-//        else if(right instanceof NumericConstant)
-//        {
-//            rightLocal = _writer.writeNumConstantExpression(inMethod, stmt, (NumericConstant) right, session);
-//        }
-//        else if(right instanceof NullConstant)
-//        {
-//            rightLocal = _writer.writeNullExpression(inMethod, stmt, left.getType(), session);
-//            // NoNullSupport: use the line below to remove Null Constants from the facts.
-//            // _writer.writeUnsupported(inMethod, stmt, session);
-//        }
-//        else if(right instanceof ClassConstant)
-//        {
-//            rightLocal = _writer.writeClassConstantExpression(inMethod, stmt, (ClassConstant) right, session);
-//        }
-//        else
-//        {
-//            throw new RuntimeException("Cannot handle rhs: " + stmt + " (right: " + right.getClass() + ")");
-//        }
-//
-//        // arrays
-//        //
-//        // NoNullSupport: use the line below to remove Null Constants from the facts.
-//        // if(left instanceof ArrayRef && rightLocal != null)
-//        if(left instanceof ArrayRef)
-//        {
-//            ArrayRef ref = (ArrayRef) left;
-//            Local base = (Local) ref.getBase();
-//            Value index = ref.getIndex();
-//
-//            if (index instanceof Local)
-//                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, (Local) index, session);
-//            else
-//                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, null, session);
-//        }
-//        // NoNullSupport: use the line below to remove Null Constants from the facts.
-//        // else if(left instanceof InstanceFieldRef && rightLocal != null)
-//        else if(left instanceof InstanceFieldRef)
-//        {
-//            InstanceFieldRef ref = (InstanceFieldRef) left;
-//            _writer.writeStoreInstanceField(inMethod, stmt, ref.getField(), (Local) ref.getBase(), rightLocal, session);
-//        }
-//        // NoNullSupport: use the line below to remove Null Constants from the facts.
-//        // else if(left instanceof StaticFieldRef && rightLocal != null)
-//        else if(left instanceof StaticFieldRef)
-//        {
-//            StaticFieldRef ref = (StaticFieldRef) left;
-//            _writer.writeStoreStaticField(inMethod, stmt, ref.getField(), rightLocal, session);
-//        }
-//        // NoNullSupport: use the else part below to remove Null Constants from the facts.
-//        /*else if(right instanceof NullConstant)
-//        {
-//            _writer.writeUnsupported(inMethod, stmt, session);
-//            // skip, not relevant for pointer analysis
-//        }*/
-//        else
-//        {
-//            throw new RuntimeException("Cannot handle assignment: " + stmt + " (right: " + right.getClass() + ")");
-//        }
+    public void generate(IMethod m, IR ir, SSAGetInstruction instruction, Session session) {
+        Local to = createLocal(ir, instruction, instruction.getDef());
+
+        if (instruction.isStatic()) {
+            //Get static field has no uses and a single def (to)
+            _writer.writeLoadStaticField(m, instruction, instruction.getDeclaredField(), to, session);
+        }
+        else {
+            //Get instance field has one use (base) and one def (to)
+            Local base = createLocal(ir, instruction, instruction.getUse(0));
+            _writer.writeLoadInstanceField(m, instruction, instruction.getDeclaredField(), base, to, session);
+        }
     }
 
-    private void generate(IMethod inMethod, IdentityStmt stmt, Session session)
-    {
-//        Value left = stmt.getLeftOp();
-//        Value right = stmt.getRightOp();
-//
-//        if(right instanceof CaughtExceptionRef) {
-//            // make sure we can jump to statement we do not care about (yet)
-//            _writer.writeUnsupported(inMethod, stmt, session);
-//
-//            /* Handled by ExceptionHandler generation (ExceptionHandler:FormalParam).
-//
-//               TODO Would be good to check more carefully that a caught
-//               exception does not occur anywhere else.
-//            */
-//            return;
-//        }
-//        else if(left instanceof Local && right instanceof ThisRef)
-//        {
-//            _writer.writeAssignLocal(inMethod, stmt, (Local) left, (ThisRef) right, session);
-//        }
-//        else if(left instanceof Local && right instanceof ParameterRef)
-//        {
-//            _writer.writeAssignLocal(inMethod, stmt, (Local) left, (ParameterRef) right, session);
-//        }
-//        else
-//        {
-//            throw new RuntimeException("Cannot handle identity statement: " + stmt);
-//        }
+    public void generate(IMethod m, IR ir, SSAPutInstruction instruction, Session session) {
+
+        if (instruction.isStatic()) {
+            //Put static field has a single use (from) and no defs
+            Local from = createLocal(ir, instruction, instruction.getUse(0));
+            _writer.writeStoreStaticField(m, instruction, instruction.getDeclaredField(), from, session);
+        }
+        else {
+            //Put instance field has two uses (base and from) and no defs
+            Local base = createLocal(ir, instruction, instruction.getUse(0));
+            Local from = createLocal(ir, instruction, instruction.getUse(1));
+            _writer.writeStoreInstanceField(m, instruction, instruction.getDeclaredField(), base, from, session);
+        }
+    }
+
+    public void generate(IMethod m, IR ir, SSAInvokeInstruction instruction, Session session) {
+        // For invoke instructions the number of uses is equal to the number of parameters
+        _writer.writeInvoke(m, ir, instruction, session);
+    }
+
+
+    public void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
+        // Go to instructions have no uses and no defs
+        SSAInstruction[] ssaInstructions = ir.getInstructions();
+        _writer.writeGoto(m, instruction,ssaInstructions[instruction.getTarget()] , session);
+    }
+
+    public void generate(IMethod m, IR ir, SSAMonitorInstruction instruction, Session session) {
+        // Monitor instructions have a single use and no defs
+        int use = instruction.getUse(0);
+        Local l = createLocal(ir, instruction, use);
+        if (instruction.isMonitorEnter()) {
+            _writer.writeEnterMonitor(m, instruction, l, session);
+        }
+        else {
+            _writer.writeExitMonitor(m, instruction, l, session);
+        }
+    }
+
+    public void generate(IMethod m, IR ir, SSAUnaryOpInstruction instruction, Session session) {
+        // Unary op instructions have a single def (to) and a single use (from)
+        Local to = createLocal(ir, instruction, instruction.getDef());
+        Local from = createLocal(ir, instruction, instruction.getUse(0));
+
+        _writer.writeAssignUnop(m, instruction, to, from, session);
+    }
+
+    public void generate(IMethod m, IR ir, SSAArrayLengthInstruction instruction, Session session) {
+        // Array length instruction have a single use (base) and a def (to)
+        Local to = createLocal(ir, instruction, instruction.getDef());
+        Local base = createLocal(ir, instruction, instruction.getUse(0));
+
+        _writer.writeAssignArrayLength(m, instruction, to, base, session);
+    }
+
+    private Local createLocal(IR ir, SSAInstruction instruction, int varIndex) {
+        Local l;
+        String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
+        if (localNames != null) {
+            assert localNames.length == 1;
+            l = new Local("v" + varIndex, varIndex, localNames[0], TypeReference.JavaLangObject);
+        }
+        else {
+            l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
+        }
+        return l;
     }
 
     /**
      * Return statement
      */
-    private void generate(IMethod m, IR ir, SSAReturnInstruction instruction)
+    private void generate(IMethod m, IR ir, SSAReturnInstruction instruction, Session session)
     {
         if (instruction.returnsVoid()) {
-            _writer.writeReturnVoid(m, instruction);
+            // Return void has no uses
+            _writer.writeReturnVoid(m, instruction, session);
         }
         else {
-            int returnVar = instruction.getUse(0);
+            // Return something has a single use
 
-            Local l;
-            String[] localNames = ir.getLocalNames(instruction.iindex, returnVar);
-            if (localNames != null) {
-                assert localNames.length == 1;
-                l = new Local("v" + returnVar, localNames[0], m.getReturnType());
-            }
-            //TODO : Check when this occurs
-            else {
 
-                l = new Local("v" + returnVar, m.getReturnType());
-            }
-            _writer.writeReturn(m, instruction, l);
-
+            Local l = createLocal(ir, instruction, instruction.getUse(0));
+//            int returnVar = instruction.getUse(0);
+//            String[] localNames = ir.getLocalNames(instruction.iindex, returnVar);
+//            if (localNames != null) {
+//                assert localNames.length == 1;
+//                l = new Local("v" + returnVar, localNames[0], m.getReturnType());
+//            }
+//            //TODO : Check when this occurs
+//            else {
+//
+//                l = new Local("v" + returnVar, m.getReturnType());
+//            }
+            _writer.writeReturn(m, instruction, l, session);
         }
     }
 
-    private void generateDefs(IMethod m, IR ir, SSAInstruction instruction) {
+    private void generateDefs(IMethod m, IR ir, SSAInstruction instruction, Session session) {
         SymbolTable symbolTable = ir.getSymbolTable();
 
-        for (int i = 0; i < instruction.getNumberOfDefs(); i++) {
-            int def = instruction.getDef(i);
-            if (def != 1 && symbolTable.isConstant(def)) {
-                Value v = symbolTable.getValue(def);
-                generateConstant(m, ir, instruction, v, def);
-            }
-            else {
-                Local l = new Local("v" + def, TypeReference.JavaLangObject);
-                _writer.writeLocal(m, l);
+        if (instruction.hasDef()) {
+            for (int i = 0; i < instruction.getNumberOfDefs(); i++) {
+                int def = instruction.getDef(i);
+                Local l = createLocal(ir, instruction, def);
+                if (def != 1 && symbolTable.isConstant(def)) {
+                    Value v = symbolTable.getValue(def);
+                    generateConstant(m, ir, instruction, v, l, session);
+                } else {
+                    _writer.writeLocal(m, l);
+                }
             }
         }
     }
 
-    private void generateUses(IMethod m, IR ir, SSAInstruction instruction) {
+    private void generateUses(IMethod m, IR ir, SSAInstruction instruction, Session session) {
         SymbolTable symbolTable = ir.getSymbolTable();
 
         for (int i = 0; i < instruction.getNumberOfUses(); i++) {
             int use = instruction.getUse(i);
+            Local l = createLocal(ir, instruction, use);
             if (use != -1 && symbolTable.isConstant(use)) {
                 Value v = symbolTable.getValue(use);
-                generateConstant(m, ir, instruction, v, use);
+                generateConstant(m, ir, instruction, v, l, session);
             }
             else {
-                Local l = new Local("v" + use, TypeReference.JavaLangObject);
                 _writer.writeLocal(m, l);
             }
         }
     }
 
-    private void generateConstant(IMethod m, IR ir, SSAInstruction instruction, Value v, int varNum) {
+    private void generateConstant(IMethod m, IR ir, SSAInstruction instruction, Value v, Local l, Session session) {
         SymbolTable symbolTable = ir.getSymbolTable();
-        Local l;
 
         String s = v.toString();
         if (v.isStringConstant()) {
-            l = new Local("v" + varNum, TypeReference.JavaLangString);
-            _writer.writeStringConstantExpression(m, instruction, l, (ConstantValue) v);
+            _writer.writeStringConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (v.isNullConstant()) {
-            l = new Local("v" + varNum, TypeReference.Null);
-            _writer.writeNullExpression(m, instruction, l);
-        } else if (symbolTable.isIntegerConstant(varNum)) {
-            l = new Local("v" + varNum, TypeReference.Int);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
-        } else if (symbolTable.isLongConstant(varNum)) {
-            l = new Local("v" + varNum, TypeReference.Long);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
-        } else if (symbolTable.isFloatConstant(varNum)) {
-            l = new Local("v" + varNum, TypeReference.Float);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
-        } else if (symbolTable.isIntegerConstant(varNum)) {
-            l = new Local("v" + varNum, TypeReference.Int);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
-        } else if (symbolTable.isDoubleConstant(varNum)) {
-            l = new Local("v" + varNum, TypeReference.Double);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+            _writer.writeNullExpression(m, instruction, l, session);
+        } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+        } else if (symbolTable.isLongConstant(l.getVarIndex())) {
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+        } else if (symbolTable.isFloatConstant(l.getVarIndex())) {
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+        } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+        } else if (symbolTable.isDoubleConstant(l.getVarIndex())) {
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         }
-        else if (symbolTable.isBooleanConstant(varNum)) {
-            l = new Local("v" + varNum, TypeReference.Boolean);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v);
+        else if (symbolTable.isBooleanConstant(l.getVarIndex())) {
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (s.startsWith("#[") || (s.startsWith("#L") && s.endsWith(";"))) {
-            l = new Local("v" + varNum, TypeReference.JavaLangClass);
-            _writer.writeClassConstantExpression(m, instruction, l, (ConstantValue) v);
+            _writer.writeClassConstantExpression(m, instruction, l, (ConstantValue) v, session);
         }
     }
 
-    private void generate(IMethod m, IR ir, SSABinaryOpInstruction instruction)
+    private void generate(IMethod m, IR ir, SSABinaryOpInstruction instruction, Session session)
     {
+        // Binary instructions have two uses and a single def
         SymbolTable symbolTable = ir.getSymbolTable();
 
-        Local l = new Local(symbolTable.getValueString(instruction.getDef()), TypeReference.JavaLangObject);
-        Local op1 = new Local("v" + instruction.getUse(0), TypeReference.JavaLangObject);
-        Local op2 = new Local("v" + instruction.getUse(1), TypeReference.JavaLangObject);
-        _writer.writeAssignBinop(m, instruction, l, op1, op2);
+        Local l = new Local(symbolTable.getValueString(instruction.getDef()), instruction.getDef(), TypeReference.JavaLangObject);
+        Local op1 = new Local("v" + instruction.getUse(0), instruction.getUse(0), TypeReference.JavaLangObject);
+        Local op2 = new Local("v" + instruction.getUse(1), instruction.getUse(1),TypeReference.JavaLangObject);
+        _writer.writeAssignBinop(m, instruction, l, op1, op2, session);
     }
 
-    private void generate(IMethod inMethod, ThrowStmt stmt, Session session)
+    private void generate(IMethod inMethod, IR ir, SSAThrowInstruction instruction, Session session)
     {
-//        Value v = stmt.getOp();
-//
-//        if(v instanceof Local)
-//        {
-//            _writer.writeThrow(inMethod, stmt, (Local) v, session);
-//        }
-//        else if(v instanceof NullConstant)
-//        {
-//            _writer.writeThrowNull(inMethod, stmt, session);
-//        }
-//        else
-//        {
-//            throw new RuntimeException("Unhandled throw statement: " + stmt);
-//        }
+        // Throw instructions have a single use and no defs
+        SymbolTable symbolTable = ir.getSymbolTable();
+        int use = instruction.getUse(0);
+
+        if(!symbolTable.isConstant(use))
+        {
+            Local l = createLocal(ir, instruction, use);
+
+            _writer.writeThrow(inMethod, instruction, l, session);
+        }
+        else if(symbolTable.isNullConstant(use))
+        {
+            _writer.writeThrowNull(inMethod, instruction, session);
+        }
+        else
+        {
+            throw new RuntimeException("Unhandled throw statement: " + instruction);
+        }
     }
 }
 

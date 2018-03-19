@@ -3,10 +3,11 @@ package org.clyze.doop.wala;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.ssa.SSAInstruction;
-import com.ibm.wala.ssa.SSAReturnInstruction;
+import com.ibm.wala.shrikeCT.BootstrapMethodsReader;
+import com.ibm.wala.ssa.*;
+import com.ibm.wala.types.FieldReference;
+import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
-import org.clyze.doop.soot.Session;
 import soot.*;
 import soot.jimple.*;
 
@@ -42,19 +43,19 @@ public class WalaRepresentation {
     }
 
     public String signature(IMethod m) {
-        String result = _methodSigRepr.get(m);
+        return m.getSignature();
+    }
 
-        if(result == null)
-        {
-            result = m.getSignature();
-            _methodSigRepr.put(m, result);
-        }
-
-        return result;
+    public String signature(MethodReference m) {
+        return m.getSignature();
     }
 
     String signature(IField f) {
         return f.getReference().getSignature();
+    }
+
+    String signature(FieldReference f) {
+        return f.getSignature();
     }
 
     String simpleName(IMethod m) {
@@ -63,6 +64,10 @@ public class WalaRepresentation {
 
     String simpleName(IField m) {
         return m.getReference().getSignature();
+    }
+
+    String simpleName(FieldReference f) {
+        return f.getSignature();
     }
 
     String descriptor(IMethod m)
@@ -144,25 +149,25 @@ public class WalaRepresentation {
             kind = "assign";
         else if(instruction instanceof DefinitionStmt)
             kind = "definition";
-        else if(instruction instanceof EnterMonitorStmt)
+        else if(instruction instanceof EnterMonitorStmt && ((SSAMonitorInstruction) instruction).isMonitorEnter())
             kind = "enter-monitor";
-        else if(instruction instanceof ExitMonitorStmt)
+        else if(instruction instanceof SSAMonitorInstruction )
             kind = "exit-monitor";
-        else if(instruction instanceof GotoStmt)
+        else if(instruction instanceof SSAGotoInstruction)
             kind = "goto";
         else if(instruction instanceof IdentityStmt)
             kind = "assign";
         else if(instruction instanceof IfStmt)
             kind = "if";
-        else if(instruction instanceof InvokeStmt)
+        else if(instruction instanceof SSAInvokeInstruction)
             kind = "invoke";
-        else if(instruction instanceof RetStmt)
+        else if(instruction instanceof SSAReturnInstruction)
             kind = "ret";
         else if(instruction instanceof SSAReturnInstruction && ((SSAReturnInstruction) instruction).returnsVoid())
             kind = "return-void";
         else if(instruction instanceof SSAReturnInstruction)
             kind = "return";
-        else if(instruction instanceof ThrowStmt)
+        else if(instruction instanceof SSAThrowInstruction)
             kind = "throw";
         return kind;
     }
@@ -178,37 +183,35 @@ public class WalaRepresentation {
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(IMethod inMethod, SSAInstruction instruction)
+    String instruction(IMethod inMethod, SSAInstruction instruction, Session session, int index)
     {
-        return getMethodSignature(inMethod) + "/" + getKind(instruction) + "/instruction" + instruction.iindex;
+        return getMethodSignature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
-
-    String invoke(IMethod inMethod, InvokeExpr expr, Session session)
+    String invoke(IMethod inMethod, SSAInvokeInstruction expr, Session session)
     {
-//        IMethod exprMethod = expr.getMethod();
-//        String defaultMid = exprMethod.getDeclaringClass() + "." + exprMethod.getName();
-//        String midPart = (expr instanceof DynamicInvokeExpr)?
-//            dynamicInvokeMiddlePart((DynamicInvokeExpr)expr, defaultMid) : defaultMid;
-//
-        return getMethodSignature(inMethod);
-//              + "/" + midPart + "/" + session.nextNumber(midPart);
+        MethodReference exprMethod = expr.getDeclaredTarget();
+        String defaultMid = exprMethod.getDeclaringClass() + "." + exprMethod.getName();
+        String midPart = (expr instanceof SSAInvokeDynamicInstruction)? dynamicInvokeMiddlePart((SSAInvokeDynamicInstruction) expr, defaultMid) : defaultMid;
+
+        return getMethodSignature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
     }
 
     // Create a middle part for invokedynamic ids. It currently
     // supports the LambdaMetafactory machinery, returning a default
     // value for other (or missing) bootstrap methods.
-    private String dynamicInvokeMiddlePart(DynamicInvokeExpr expr, String defaultResult) {
+    private String dynamicInvokeMiddlePart(SSAInvokeDynamicInstruction instruction, String defaultResult) {
 
         // The signatures of the two lambda metafactories we currently support.
         final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
         final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
 
-        //IMethodRef bootMethRef = expr.getBootstrapMethodRef();
-//        if (bootMethRef != null) {
-//            String bootMethName = bootMethRef.resolve().toString();
-//            int bootArity = expr.getBootstrapArgCount();
-//            if (bootArity > 1) {
-//                Value val1 = expr.getBootstrapArg(1);
+        BootstrapMethodsReader.BootstrapMethod bootMethRef= instruction.getBootstrap();
+        if (bootMethRef != null) {
+            String bootMethName = bootMethRef.methodName();
+            int bootArity = bootMethRef.callArgumentCount();
+            if (bootArity > 1) {
+//                bootMethRef.callArgumentKind(1);
+//                Value val1 = instruction.(1);
 //                if ((val1 instanceof MethodHandle) &&
 //                    ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
 //                     (bootMethName.equals(ALT_L_METAFACTORY)))) {
@@ -218,12 +221,12 @@ public class WalaRepresentation {
 //                }
 //                else
 //                    System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
-//            }
-//            else
-//                System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");
-//        }
-//        else
-//            System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
+            }
+            else
+                System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");
+        }
+        else
+            System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
         return defaultResult;
     }
 

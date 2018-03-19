@@ -7,22 +7,29 @@ public class Local {
     private String sourceCodeName;
     TypeReference type;
     String value;
+    int varIndex;
 
-    public Local(String name, TypeReference type) {
-        this(name, null, type);
+    Local(String name, int varIndex, TypeReference type) {
+        this(name, varIndex, null, type);
     }
 
-    public Local(String name, String sourceCodeName, TypeReference type) {
+    Local(String name, int varIndex, String sourceCodeName, TypeReference type) {
         this.name = name;
         this.sourceCodeName = sourceCodeName;
         this.type = type;
+        this.varIndex = varIndex;
     }
 
-    public Local(String name, String sourceCodeName, TypeReference type, String value) {
+    public int getVarIndex() {
+        return varIndex;
+    }
+
+    public Local(String name, int varIndex, String sourceCodeName, TypeReference type, String value) {
         this.name = name;
         this.sourceCodeName = sourceCodeName;
         this.type = type;
         this.value = value;
+        this.varIndex = varIndex;
     }
 
     public TypeReference getType() {
