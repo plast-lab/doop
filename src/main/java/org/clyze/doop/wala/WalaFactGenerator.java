@@ -534,12 +534,18 @@ class WalaFactGenerator {
     private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
         Local l;
         String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
+        TypeReference typeRef;
+        if(typeInference.getType(varIndex).getType() == null)
+            typeRef = TypeReference.JavaLangObject;
+        else
+            typeRef = typeInference.getType(varIndex).getTypeReference();
+        
         if (localNames != null) {
             assert localNames.length == 1;
-            l = new Local("v" + varIndex, varIndex, localNames[0], typeInference.getType(varIndex).getTypeReference());
+            l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
         }
         else {
-            l = new Local("v" + varIndex, varIndex, typeInference.getType(varIndex).getTypeReference());
+            l = new Local("v" + varIndex, varIndex, typeRef);
         }
         return l;
     }
