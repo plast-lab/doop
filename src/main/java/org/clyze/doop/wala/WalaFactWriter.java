@@ -551,9 +551,9 @@ public class WalaFactWriter {
      */
     void writeIf(IMethod m, SSAConditionalBranchInstruction instruction, Local var1, Local var2, SSAInstruction to, Session session) {
         // index was already computed earlier
-        int index = session.getInstructionNumber(instruction);
+        int index = session.calcInstructionNumber(instruction);
         session.calcInstructionNumber(to);
-        int indexTo = session.getInstructionNumber(to);
+        int indexTo = session.calcInstructionNumber(to);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = writeMethod(m);
 
