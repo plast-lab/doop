@@ -172,7 +172,7 @@ NoInformationOnSignature(?signature) :-
 ConstructorVar(?var) :-
   Var_DeclaringMethod(?var, ?meth),
   ApplicationMethod(?meth),
-  ClassConstructor(?meth, _).
+  basic.ClassConstructor(?meth, _).
 
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
