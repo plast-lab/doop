@@ -8,18 +8,16 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value), 
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-  SiteShouldNotBeRefined(?invocation).
- .plan 1:(2,1,3,4,5)
+  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod).
+ .plan 1:(2,1,3,4)
  
 isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   MethodInvocation_Method(?invocation, ?tomethod),
-  isSpecialMethodInvocation_Insn(?invocation),
-  SiteShouldNotBeRefined(?invocation).
- .plan 1:(2,1,3,4,5)
+  isSpecialMethodInvocation_Insn(?invocation).
+ .plan 1:(2,1,3,4)
 
 configuration.StaticContextRequest(?callerCtx, ?invocation) :-
   ReachableContext(?callerCtx, ?inmethod),
@@ -42,7 +40,6 @@ CallGraphEdge(?callerCtx, ?fakeinvo, ?newCtx, ?register) :-
   isMethod(?register),
   FormalParam(0, ?register, ?formal),
   configuration.FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?heapValue),  
-  configuration.FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?heapValue, ?newCtx),
-  ObjectShouldNotBeRefined(?heapValue).
+  configuration.FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?heapValue, ?newCtx).
 
 }

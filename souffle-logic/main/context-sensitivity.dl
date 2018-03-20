@@ -41,8 +41,7 @@ configuration.RecordContextRequest(?ctx, ?heapValue, ?var) :-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   configuration.RecordContextRequest(?ctx, ?value, ?var),
-  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
-  ObjectShouldNotBeRefined(?value).
+  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx).
 
 configuration.RecordContextRequest(?ctx, ?heapValue, ?var) :-
   AssignAuxiliaryHeapAllocation(?heapValue, ?var, ?inmethod),
@@ -437,10 +436,9 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   Value_Type(?value, ?valuetype),
   basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-  ThisVar(?tomethod, ?this),
-  SiteShouldNotBeRefined(?invocation).
+  ThisVar(?tomethod, ?this).
 #ifndef X_CONTEXT_REMOVER
-  .plan 1:(2,1,3,4,5,6)
+  .plan 1:(2,1,3,4,5)
 #endif
 
 /**
@@ -463,10 +461,9 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   MethodInvocation_Method(?invocation, ?tomethod),
   ThisVar(?tomethod, ?this),
-  isSpecialMethodInvocation_Insn(?invocation),
-  SiteShouldNotBeRefined(?invocation).
+  isSpecialMethodInvocation_Insn(?invocation).
 #ifndef X_CONTEXT_REMOVER
-  .plan 1:(2,1,3,4,5,6)
+  .plan 1:(2,1,3,4,5)
 #endif
 
 /**
@@ -477,55 +474,3 @@ ReachableContext(?ctx, ?method) :-
 
 Reachable(?method) :-
   ReachableContext(_, ?method).
-
-/**
- * Logic to decide whether to apply refined or regular bindings for
- * methods and objects
- */
-// We want to allow predicates that express the *complement* of the set
-// of objects to refine. We introduce derived-only temp predicates to
-// avoid logic replication in the points-to rule itself.
-
-.decl ObjectShouldNotBeRefined(?heap:HeapAllocation)
-
-ObjectShouldNotBeRefined(?heap) :-
-  NegativeObjectFilter("true"),
-  ValueToRefine(?heap).
-
-ObjectShouldNotBeRefined(?heap) :-
-  !NegativeObjectFilter("true"),
-  isValue(?heap),
-  !ValueToRefine(?heap).
-
-.decl ObjectShouldBeRefined(?heap:HeapAllocation)
-
-ObjectShouldBeRefined(?heap) :-
-  !NegativeObjectFilter("true"),
-  ValueToRefine(?heap).
-
-ObjectShouldBeRefined(?heap) :-
-  NegativeObjectFilter("true"),
-  isValue(?heap),
-  !ValueToRefine(?heap).
-
-.decl SiteShouldNotBeRefined(?invocation:MethodInvocation)
-
-SiteShouldNotBeRefined(?invocation) :-
-  !NegativeSiteFilter("true"),
-  isMethodInvocation(?invocation),
-  !SiteToRefine(?invocation).
-
-SiteShouldNotBeRefined(?invocation) :-
-  NegativeSiteFilter("true"),
-  SiteToRefine(?invocation).
-
-.decl SiteShouldBeRefined(?invocation:MethodInvocation)
-
-SiteShouldBeRefined(?invocation) :-
-  !NegativeSiteFilter("true"),
-  SiteToRefine(?invocation).
-
-SiteShouldBeRefined(?invocation) :-
-  NegativeSiteFilter("true"),
-  isMethodInvocation(?invocation),
-  !SiteToRefine(?invocation).
