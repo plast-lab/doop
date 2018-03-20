@@ -1,0 +1,46 @@
+#include "../../main/two-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
+.decl InOutFlowValue(?method:Method, ?value:Value)
+
+InOutFlowValue(?method, ?value) :-
+  FormalParam(?index, ?method, ?var),
+  preAnalysis.VarPointsTo(_, ?var, _, ?value),
+  ReturnVar(?method, ?returnVar),
+  preAnalysis.VarPointsTo(_, ?returnVar, _, ?value).
+
+.decl InOutFlowTwoValues(?method:Method)
+
+InOutFlowTwoValues(?method) :-
+  InOutFlow(?method, ?value1),
+  InOutFlow(?method, ?value2),
+  ?value1 != ?value2.
+
+.decl InOutFlowWrappedValue(?method:Method, ?value:Value) 
+
+InOutFlowWrappedValue(?method, ?value) :-
+  FormalParam(?index, ?method, ?var),
+  ReturnVar(?method, ?returnVar),
+  preAnalysis.VarPointsTo(_, ?var, _, ?baseValue1),
+  preAnalysis.VarPointsTo(_, ?returnVar, _, ?baseValue2).
+
+.decl InstanceFieldsPointToSameValue(?baseValue1:Value, ?baseValue2:Value, ?value:Value)
+
+InstanceFieldsPointToSameValue(?baseValue1, ?baseValue2, ?value) :-
+  preAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?baseValue1),
+  preAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?baseValue2).
+
+InstanceFieldsPointoSameValue(?baseValue1, ?baseValue2, ?value) :-
+  preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue1),
+  preAnalysis.InstanceFieldPointsTo(_, ?value2, _, _, ?baseValue2).
+  InstanceFieldsPointToSameValue(?value1, ?value2, ?value),
+  ?value1 != ?value2.
+
+.decl WrappedInOutFlowTwoValues(?method:Method)
+      
+WrappedInOutFlowTwoValues(?method) :-
+  InOutFlowWrappedValue(?method, ?value1),
+  InOutFlowWrappedValue(?method, ?value2),
+  ?value1 != ?value2.
+
+}
