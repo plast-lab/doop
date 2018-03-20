@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class WalaRepresentation {
     private Map<IMethod, String> _methodRepr = new ConcurrentHashMap<>();
-    private Map<IMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
+    private Map<String, String> _methodSigRepr = new ConcurrentHashMap<>();
     private Map<IMethod, String> _methodRefSigRepr = new ConcurrentHashMap<>();
     private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
 
@@ -45,7 +45,14 @@ public class WalaRepresentation {
     //REVIEW: Delete this and keep getMethodSignature()?
     public String signature(IMethod m) {
         //return m.getSignature();
-        return getMethodSignature(m);
+        String WalaSignature = m.getSignature();
+        if(_methodSigRepr.containsKey(WalaSignature))
+            return _methodSigRepr.get(WalaSignature);
+        else {
+            String doopSignature = getMethodSignature(m);
+            _methodSigRepr.put(WalaSignature,doopSignature);
+            return doopSignature;
+        }
     }
 
     public String signature(MethodReference m) {
@@ -102,22 +109,22 @@ public class WalaRepresentation {
 
     String thisVar(IMethod m)
     {
-        return getMethodSignature(m) + "/@this";
+        return signature(m) + "/@this";
     }
 
     String nativeReturnVar(IMethod m)
     {
-        return getMethodSignature(m) + "/@native-return";
+        return signature(m) + "/@native-return";
     }
 
     String param(IMethod m, int i)//REVIEW:SIFIS:I believe parameters are normal vi variables, same for this. Will look into it.
     {
-        return getMethodSignature(m) + "/@parameter" + i;
+        return signature(m) + "/v" + (i+1);
     }
 
     String local(IMethod m, Local local)
     {
-        return getMethodSignature(m) + "/" + local.getName();
+        return signature(m) + "/" + local.getName();
     }
 
     String newLocalIntermediate(IMethod m, Local l, Session session)
@@ -133,7 +140,7 @@ public class WalaRepresentation {
         if(result == null)
         {
             String name = "catch " + trap.getException().getName();
-            result = getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
+            result = signature(m) + "/" + name + "/" + session.nextNumber(name);
 
             _trapRepr.put(trap, result);
         }
@@ -144,7 +151,7 @@ public class WalaRepresentation {
     String throwLocal(IMethod m, Local l, Session session)
     {
         String name = "throw " + l.getName();
-        return getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
+        return signature(m) + "/" + name + "/" + session.nextNumber(name);
     }
 
     public String fixTypeString(String original)
@@ -233,7 +240,7 @@ public class WalaRepresentation {
 
     String unsupported(IMethod inMethod, SSAInstruction instruction, int index)
     {
-        return getMethodSignature(inMethod) +
+        return signature(inMethod) +
             "/unsupported " + getKind(instruction) +
             "/" +  instruction.toString() +
             "/instruction" + index;
@@ -244,7 +251,7 @@ public class WalaRepresentation {
      */
     String instruction(IMethod inMethod, SSAInstruction instruction, Session session, int index)
     {
-        return getMethodSignature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
+        return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
     String invoke(IMethod inMethod, SSAInvokeInstruction expr, Session session)
     {
@@ -252,7 +259,7 @@ public class WalaRepresentation {
         String defaultMid = exprMethod.getDeclaringClass() + "." + exprMethod.getName();
         String midPart = (expr instanceof SSAInvokeDynamicInstruction)? dynamicInvokeMiddlePart((SSAInvokeDynamicInstruction) expr, defaultMid) : defaultMid;
 
-        return getMethodSignature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
+        return signature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
     }
 
     // Create a middle part for invokedynamic ids. It currently
@@ -318,7 +325,7 @@ public class WalaRepresentation {
     private String heapAlloc(IMethod inMethod, Type type, Session session)
     {
         String s = type.toString();
-        return getMethodSignature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
+        return signature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
 
 
     }
