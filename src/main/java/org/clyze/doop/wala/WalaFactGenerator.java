@@ -30,6 +30,7 @@ class WalaFactGenerator {
     private Iterator<IClass> _iClasses;
     private AnalysisOptions options;
     private IAnalysisCacheView cache;
+    private WalaIRPrinter IRPrinter;
 
     WalaFactGenerator(WalaFactWriter writer, Iterator<IClass> iClasses)
     {
@@ -39,6 +40,7 @@ class WalaFactGenerator {
         options = new AnalysisOptions();
         options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes());
         cache = new AnalysisCacheImpl();
+        IRPrinter = new WalaIRPrinter(cache);
     }
 
 
@@ -53,7 +55,7 @@ class WalaFactGenerator {
                 continue;
             }
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
-            //printIR(iClass);
+            //IRPrinter.printIR(iClass);
             _writer.writeClassOrInterfaceType(iClass);
 
             if(iClass.isAbstract())
@@ -84,162 +86,7 @@ class WalaFactGenerator {
         }
         System.out.println("Skipped " + skipped + " from " + overall);
     }
-    private String fixTypeString(String original)
-    {
-        boolean isArrayType = false;
-        if(original.contains("[L")) //Figure out if this is correct
-            isArrayType = true;
-        String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
-        String temp;
-        if(ret.contains("Primordial"))
-        {
-            temp = ret.substring(ret.indexOf(",") + 1);
-            if(temp.startsWith("["))
-            {
-                isArrayType = true;
-                temp = temp.substring(1);
-            }
-            if(temp.equals("Z"))
-                ret = "boolean";
-            else if(temp.equals("I"))
-                ret = "int";
-            else if(temp.equals("V"))
-                ret = "void";
-            else if(temp.equals("B"))
-                ret = "byte";
-            else if(temp.equals("C"))
-                ret = "char";
-            else if(temp.equals("D"))
-                ret = "double";
-            else if(temp.equals("F"))
-                ret = "float";
-            else if(temp.equals("J"))
-                ret = "long";
-            else if(temp.equals("S"))
-                ret = "short";
-            //TODO: Figure out what the 'P' code represents in WALA's TypeReference
-        }
-        if(isArrayType)
-            ret = ret + "[]";
-        return ret;
-    }
 
-    public void printMemberAttributes(IMember member)
-    {
-
-    }
-
-    private void printIR(IClass cl)
-    {
-//        PrintWriter writerOut = new PrintWriter(new EscapedWriter(new OutputStreamWriter((OutputStream)streamOut)));
-        ShrikeClass shrikeClass = (ShrikeClass) cl;
-        String fileName = "WalaFacts/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
-        File file = new File(fileName);
-        file.getParentFile().getParentFile().mkdirs();
-        file.getParentFile().mkdirs();
-
-        Collection<IField> fields = cl.getAllFields();
-        Collection<IMethod> methods = cl.getDeclaredMethods();
-        Collection<IClass> interfaces =  cl.getAllImplementedInterfaces();
-        try {
-            PrintWriter printWriter = new PrintWriter(file);
-            if(shrikeClass.isPublic())
-                printWriter.write("public ");
-            else if(shrikeClass.isPrivate())
-                printWriter.write("private ");
-
-            if(shrikeClass.isAbstract())
-                printWriter.write("abstract ");
-
-            if(shrikeClass.isInterface())
-                printWriter.write("interface ");
-            else
-                printWriter.write("class ");
-
-            printWriter.write(cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L",""));
-
-            printWriter.write("\n{\n");
-            for(IField field : fields )
-            {
-                printWriter.write("\t");
-                if(field.isPublic())
-                    printWriter.write("public ");
-                else if(field.isPrivate())
-                    printWriter.write("private ");
-                else if(field.isProtected())
-                    printWriter.write("protected ");
-                if(field.isStatic())
-                    printWriter.write("static ");
-                printWriter.write(fixTypeString(field.getFieldTypeReference().toString()) + " " + field.getName() + ";\n");
-                //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().getSignature() + "\n");
-                //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().toString() + "\n");
-            }
-            for (IMethod m : methods)
-            {
-                printWriter.write("\n\t");
-                if(m.isPublic())
-                    printWriter.write("public ");
-                else if(m.isPrivate())
-                    printWriter.write("private ");
-                else if(m.isProtected())
-                    printWriter.write("protected ");
-
-                if(m.isStatic())
-                    printWriter.write("static ");
-
-                if(m.isFinal())
-                    printWriter.write("final ");
-
-                if(m.isAbstract())
-                    printWriter.write("abstract ");
-
-                if(m.isSynchronized())
-                    printWriter.write("synchronized ");
-
-                if(m.isNative())
-                    printWriter.write("native ");
-
-                printWriter.write(fixTypeString(m.getReturnType().toString()) + " " + m.getReference().getName().toString() + "(");
-                for (int i = 0; i < m.getNumberOfParameters(); i++) {
-                    printWriter.write(fixTypeString(m.getParameterType(i).toString()) + " ");
-                    if (i < m.getNumberOfParameters() - 1)
-                        printWriter.write(", ");
-                }
-                printWriter.write(")\n\t{\n");
-                if(!(m.isAbstract() || m.isNative()))
-                {
-                    printIR(m,printWriter);
-                }
-                printWriter.write("\t}\n");
-
-            }
-
-            printWriter.write("}\n");
-            printWriter.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void printIR(IMethod m, PrintWriter writer)
-    {
-        IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
-        SSAInstruction[] instructions = ir.getInstructions();
-        SSACFG cfg = ir.getControlFlowGraph();
-        for (int i = 0; i <=cfg.getMaxNumber(); i++) {
-            writer.write("\t\tBB "+ i + "\n");
-            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
-            int start = basicBlock.getFirstInstructionIndex();
-            int end = basicBlock.getLastInstructionIndex();
-
-            for (int j = start; j <= end; j++) {
-                if (instructions[j] != null) {
-                    writer.write("\t\t\t" + instructions[j].toString() + "\n");
-
-                }
-            }
-        }
-    }
     private void generate(IField f)
     {
         _writer.writeField(f);

@@ -110,7 +110,7 @@ public class WalaRepresentation {
         return getMethodSignature(m) + "/@native-return";
     }
 
-    String param(IMethod m, int i)//REVIEW:SIFIS:I believe parameters are normal vi variables
+    String param(IMethod m, int i)//REVIEW:SIFIS:I believe parameters are normal vi variables, same for this. Will look into it.
     {
         return getMethodSignature(m) + "/@parameter" + i;
     }
@@ -147,7 +147,7 @@ public class WalaRepresentation {
         return getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
     }
 
-    private String fixTypeString(String original)
+    public String fixTypeString(String original)
     {
         boolean isArrayType = false;
         if(original.contains("[L")) //Figure out if this is correct
@@ -216,7 +216,7 @@ public class WalaRepresentation {
             kind = "goto";
         else if(instruction instanceof IdentityStmt)
             kind = "assign";
-        else if(instruction instanceof IfStmt)
+        else if(instruction instanceof SSAConditionalBranchInstruction)
             kind = "if";
         else if(instruction instanceof SSAInvokeInstruction)
             kind = "invoke";
