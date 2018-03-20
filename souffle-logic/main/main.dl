@@ -40,12 +40,14 @@
       Reachable(?invokeMeth),
       InvocationHandlerInvoke(?invokeMeth).
 
-    .decl ReachableNewProxyInstance(?meth:Method)
+    .decl ReachableNewProxyInstance(?inMeth:Method)
     .output ReachableNewProxyInstance
 
-    ReachableNewProxyInstance(?meth) :-
-      Reachable(?meth),
-      ?meth = NEW_PROXY_INSTANCE.
+    ReachableNewProxyInstance(?inMeth) :-
+      ?newProxyInstance = NEW_PROXY_INSTANCE,
+      Reachable(?newProxyInstance),
+      CallGraphEdge(_, ?invo, _, ?newProxyInstance),
+      Instruction_Method(?invo, ?inMeth).
 
   #endif // DYNAMIC_PROXY_EXPORT
 
