@@ -42,8 +42,10 @@ public class WalaRepresentation {
         return "<class " + t + ">";
     }
 
+    //REVIEW: Delete this and keep getMethodSignature()?
     public String signature(IMethod m) {
-        return m.getSignature();
+        //return m.getSignature();
+        return getMethodSignature(m);
     }
 
     public String signature(MethodReference m) {
@@ -51,7 +53,15 @@ public class WalaRepresentation {
     }
 
     String signature(IField f) {
-        return f.getReference().getSignature();
+        //return f.getReference().getSignature();
+        StringBuilder DoopSig= new StringBuilder("<");
+        DoopSig.append(fixTypeString(f.getDeclaringClass().toString()));
+        DoopSig.append(": ");
+        DoopSig.append(fixTypeString(f.getFieldTypeReference().toString()));
+        DoopSig.append(" ");
+        DoopSig.append(f.getName().toString());
+        DoopSig.append(">");
+        return DoopSig.toString();
     }
 
     String signature(FieldReference f) {
@@ -100,7 +110,7 @@ public class WalaRepresentation {
         return getMethodSignature(m) + "/@native-return";
     }
 
-    String param(IMethod m, int i)
+    String param(IMethod m, int i)//REVIEW:SIFIS:I believe parameters are normal vi variables
     {
         return getMethodSignature(m) + "/@parameter" + i;
     }
@@ -137,9 +147,58 @@ public class WalaRepresentation {
         return getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
     }
 
+    private String fixTypeString(String original)
+    {
+        boolean isArrayType = false;
+        if(original.contains("[L")) //Figure out if this is correct
+            isArrayType = true;
+        String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
+        String temp;
+        if(ret.contains("Primordial"))
+        {
+            temp = ret.substring(ret.indexOf(",") + 1);
+            if(temp.startsWith("["))
+            {
+                isArrayType = true;
+                temp = temp.substring(1);
+            }
+            if(temp.equals("Z"))
+                ret = "boolean";
+            else if(temp.equals("I"))
+                ret = "int";
+            else if(temp.equals("V"))
+                ret = "void";
+            else if(temp.equals("B"))
+                ret = "byte";
+            else if(temp.equals("C"))
+                ret = "char";
+            else if(temp.equals("D"))
+                ret = "double";
+            else if(temp.equals("F"))
+                ret = "float";
+            else if(temp.equals("J"))
+                ret = "long";
+            else if(temp.equals("S"))
+                ret = "short";
+            //TODO: Figure out what the 'P' code represents in WALA's TypeReference
+        }
+        if(isArrayType)
+            ret = ret + "[]";
+        return ret;
+    }
+
+    //REVIEW: changed from WALA Signature to Doop-Soot like, maybe store them so we don't have to produce them like this every time?
     private String getMethodSignature(IMethod m)
     {
-        return m.getSignature();
+        //return m.getSignature();
+        String DoopSig ="<"+ fixTypeString(m.getDeclaringClass().toString())+": "+ fixTypeString(m.getReturnType().toString()) + " " + m.getReference().getName()+"(";
+        for (int i = 0; i < m.getNumberOfParameters(); i++) {
+            DoopSig+=fixTypeString(m.getParameterType(i).toString());
+            if (i < m.getNumberOfParameters() - 1)
+                DoopSig+=",";
+        }
+        DoopSig+=")>";
+        return DoopSig;
     }
 
     private String getKind(SSAInstruction instruction)

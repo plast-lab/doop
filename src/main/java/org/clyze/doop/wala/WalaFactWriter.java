@@ -125,7 +125,7 @@ public class WalaFactWriter {
     }
 
     private String writeType(IClass c) {
-        String classStr = c.getName().getClassName().toString();
+        String classStr = fixTypeString(c.getName().toString());
         // The type itself is already taken care of by writing the
         // IClass declaration, so we don't actually write the type
         // here, and just return the string.
