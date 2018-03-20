@@ -132,8 +132,49 @@ public class WalaFactWriter {
         return classStr;
     }
 
+    //TODO: Move this somewhere else
+    private String fixTypeString(String original)
+    {
+        boolean isArrayType = false;
+        if(original.contains("[L")) //Figure out if this is correct
+            isArrayType = true;
+        String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
+        String temp;
+        if(ret.contains("Primordial"))
+        {
+            temp = ret.substring(ret.indexOf(",") + 1);
+            if(temp.startsWith("["))
+            {
+                isArrayType = true;
+                temp = temp.substring(1);
+            }
+            if(temp.equals("Z"))
+                ret = "boolean";
+            else if(temp.equals("I"))
+                ret = "int";
+            else if(temp.equals("V"))
+                ret = "void";
+            else if(temp.equals("B"))
+                ret = "byte";
+            else if(temp.equals("C"))
+                ret = "char";
+            else if(temp.equals("D"))
+                ret = "double";
+            else if(temp.equals("F"))
+                ret = "float";
+            else if(temp.equals("J"))
+                ret = "long";
+            else if(temp.equals("S"))
+                ret = "short";
+            //TODO: Figure out what the 'P' code represents in WALA's TypeReference
+        }
+        if(isArrayType)
+            ret = ret + "[]";
+        return ret;
+    }
+
     private String writeType(TypeReference t) {
-        String result = t.toString();
+        String result = fixTypeString(t.toString());
 
         if (t.isArrayType()) {
             _db.add(ARRAY_TYPE, result);

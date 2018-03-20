@@ -44,8 +44,15 @@ class WalaFactGenerator {
 
     public void run() {
 
+        int skipped=0,overall=0;
         while (_iClasses.hasNext()) {
             IClass iClass = _iClasses.next();
+            overall++;
+            if(iClass.getClassLoader().getName().toString().equals("Primordial")) { //Skipping classes using the Primordial classloader for now to produce less facts
+                skipped++;
+                continue;
+            }
+            //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
             //printIR(iClass);
             _writer.writeClassOrInterfaceType(iClass);
 
@@ -75,6 +82,7 @@ class WalaFactGenerator {
                 generate(m, session);
             }
         }
+        System.out.println("Skipped " + skipped + " from " + overall);
     }
     private String fixTypeString(String original)
     {
