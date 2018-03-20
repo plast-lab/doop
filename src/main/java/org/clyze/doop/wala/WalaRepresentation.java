@@ -46,13 +46,12 @@ public class WalaRepresentation {
     public String signature(IMethod m) {
         //return m.getSignature();
         String WalaSignature = m.getSignature();
-        if(_methodSigRepr.containsKey(WalaSignature))
-            return _methodSigRepr.get(WalaSignature);
-        else {
-            String doopSignature = getMethodSignature(m);
+        String doopSignature = _methodSigRepr.get(WalaSignature);
+        if (doopSignature == null){
+            doopSignature = createMethodSignature(m);
             _methodSigRepr.put(WalaSignature,doopSignature);
-            return doopSignature;
         }
+        return doopSignature;
     }
 
     public String signature(MethodReference m) {
@@ -109,7 +108,7 @@ public class WalaRepresentation {
 
     String thisVar(IMethod m)
     {
-        return signature(m) + "/@this";
+        return signature(m) + "/v1";
     }
 
     String nativeReturnVar(IMethod m)
@@ -119,7 +118,7 @@ public class WalaRepresentation {
 
     String param(IMethod m, int i)//REVIEW:SIFIS:I believe parameters are normal vi variables, same for this. Will look into it.
     {
-        return signature(m) + "/v" + (i+1);
+        return signature(m) + "/v" + (i+2);
     }
 
     String local(IMethod m, Local local)
@@ -194,10 +193,9 @@ public class WalaRepresentation {
         return ret;
     }
 
-    //REVIEW: changed from WALA Signature to Doop-Soot like, maybe store them so we don't have to produce them like this every time?
-    private String getMethodSignature(IMethod m)
+
+    private String createMethodSignature(IMethod m)
     {
-        //return m.getSignature();
         String DoopSig ="<"+ fixTypeString(m.getDeclaringClass().toString())+": "+ fixTypeString(m.getReturnType().toString()) + " " + m.getReference().getName()+"(";
         for (int i = 0; i < m.getNumberOfParameters(); i++) {
             DoopSig+=fixTypeString(m.getParameterType(i).toString());
