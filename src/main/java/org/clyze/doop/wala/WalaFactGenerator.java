@@ -258,7 +258,7 @@ class WalaFactGenerator {
                         generate(m, ir, (SSAGotoInstruction) instructions[j], session);
                     }
                     else if (instructions[j] instanceof SSAInvokeInstruction) {
-                        generate(m, ir, (SSAInvokeInstruction) instructions[j], session);
+                        generate(m, ir, (SSAInvokeInstruction) instructions[j], session,typeInference);
                     }
                     else if (instructions[j] instanceof SSAGetInstruction) {
                         generate(m, ir, (SSAGetInstruction) instructions[j], session, typeInference);
@@ -346,9 +346,9 @@ class WalaFactGenerator {
         }
     }
 
-    public void generate(IMethod m, IR ir, SSAInvokeInstruction instruction, Session session) {
+    public void generate(IMethod m, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
         // For invoke instructions the number of uses is equal to the number of parameters
-        _writer.writeInvoke(m, ir, instruction, session);
+        _writer.writeInvoke(m, ir, instruction, session,typeInference);
     }
 
 

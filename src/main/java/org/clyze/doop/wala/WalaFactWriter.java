@@ -1,5 +1,6 @@
 package org.clyze.doop.wala;
 
+import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
@@ -754,33 +755,33 @@ public class WalaFactWriter {
 
 
 
-    private void writeActualParams(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, String invokeExprRepr, Session session) {
+    private void writeActualParams(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, String invokeExprRepr, Session session, TypeInference typeInference) {
 
         for(int i = 0; i < instruction.getNumberOfParameters(); i++) {
-            Local l = createLocal(ir, instruction, instruction.getUse(i));
+            Local l = createLocal(ir, instruction, instruction.getUse(i),typeInference);
             _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
         }
         if (instruction instanceof SSAInvokeDynamicInstruction) {
             for (int j = 0; j < ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentCount(); j++) {
                 int arg =  ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentIndex(j);
 
-                Local l = createLocal(ir, instruction, arg);
+                Local l = createLocal(ir, instruction, arg,typeInference);
                 _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, _rep.local(inMethod, l));
 
             }
         }
     }
 
-    void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session) {
-        writeInvokeHelper(inMethod, ir, instruction, session);
+    void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
+        writeInvokeHelper(inMethod, ir, instruction, session, typeInference);
     }
 
-    private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session) {
+    private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.invoke(inMethod, instruction, session);
         String methodId = _rep.signature(inMethod);
 
-        writeActualParams(inMethod, ir, instruction, insn, session);
+        writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
 
 
 //        if (tag != null) {
@@ -791,11 +792,11 @@ public class WalaFactWriter {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(instruction.getCallSite().getDeclaredTarget()), methodId);
         }
         else if (instruction.isDispatch()) {
-            Local l = createLocal(ir, instruction, instruction.getReceiver());
+            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
             _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(instruction.getCallSite().getDeclaredTarget()), _rep.local(inMethod, l), methodId);
         }
         else if (instruction.isSpecial()) {
-            Local l = createLocal(ir, instruction, instruction.getReceiver());
+            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
             _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(instruction.getCallSite().getDeclaredTarget()), _rep.local(inMethod, l), methodId);
         }
         else if (instruction instanceof SSAInvokeDynamicInstruction) {
@@ -820,15 +821,21 @@ public class WalaFactWriter {
         return insn;
     }
 
-    private Local createLocal(IR ir, SSAInstruction instruction, int varIndex) {
+    private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
         Local l;
         String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
+        TypeReference typeRef;
+        if(typeInference.getType(varIndex).getType() == null)
+            typeRef = TypeReference.JavaLangObject;
+        else
+            typeRef = typeInference.getType(varIndex).getTypeReference();
+
         if (localNames != null) {
             assert localNames.length == 1;
-            l = new Local("v" + varIndex, varIndex, localNames[0], TypeReference.JavaLangObject);
+            l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
         }
         else {
-            l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
+            l = new Local("v" + varIndex, varIndex, typeRef);
         }
         return l;
     }
