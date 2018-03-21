@@ -291,6 +291,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
         }
 
+        if (options.X_IGNORE_WRONG_STATICNESS.value) {
+            params += ["--ignoreWrongStaticness"]
+        }
+
         if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
             params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }

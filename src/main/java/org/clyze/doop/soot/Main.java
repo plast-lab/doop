@@ -132,6 +132,9 @@ public class Main {
                             System.out.println("Invalid cores argument: " + args[i]);
                         }
                         break;
+                    case "--ignoreWrongStaticness":
+                        sootParameters._ignoreWrongStaticness = true;
+                        break;
                     case "--R-out-dir":
                         i = shift(args, i);
                         sootParameters._rOutDir = args[i];
@@ -155,6 +158,7 @@ public class Main {
                         System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
                         System.err.println("  --uniqueFacts                         Eliminate redundancy from facts");
+                        System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
                         System.err.println("  --R-out-dir <directory>               Specify when to generate R code (when linking AAR inputs)");
                         System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
@@ -215,6 +219,9 @@ public class Main {
     private static void produceFacts(SootParameters sootParameters, String extraSensitiveControls) throws Exception {
         Options.v().set_output_dir(sootParameters._outputDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
+
+        if (sootParameters._ignoreWrongStaticness)
+            Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
 
         if (sootParameters._ssa) {
             Options.v().set_via_shimple(true);

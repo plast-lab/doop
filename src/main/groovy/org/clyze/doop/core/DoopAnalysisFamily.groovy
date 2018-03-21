@@ -680,6 +680,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isDir: true,
 					nonStandard: true
 			),
+			new BooleanAnalysisOption(
+					id: "X_IGNORE_WRONG_STATICNESS",
+					name: "Xignore-wrong-staticness",
+					description: "Ignore 'wrong static-ness' errors in Soot.",
+					value: false,
+					nonStandard: true
+			),
 			/* End non-standard flags */
 
 			/* TODO: deprecated or broken? */
