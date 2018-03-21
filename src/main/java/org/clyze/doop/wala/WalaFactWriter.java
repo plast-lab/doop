@@ -765,7 +765,7 @@ public class WalaFactWriter {
             for (int j = 0; j < ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentCount(); j++) {
                 int arg =  ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentIndex(j);
 
-                Local l = createLocal(ir, instruction, arg,typeInference);
+                Local l = createLocal(ir, instruction, arg); //TODO: TypeInference for bootstrap parameters??
                 _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, _rep.local(inMethod, l));
 
             }
@@ -819,6 +819,20 @@ public class WalaFactWriter {
         }
 
         return insn;
+    }
+
+    private Local createLocal(IR ir, SSAInstruction instruction, int varIndex) {
+        Local l;
+        String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
+
+        if (localNames != null) {
+            assert localNames.length == 1;
+            l = new Local("v" + varIndex, varIndex, localNames[0],TypeReference.JavaLangObject);
+        }
+        else {
+            l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
+        }
+        return l;
     }
 
     private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
