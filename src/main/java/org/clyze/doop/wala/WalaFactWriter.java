@@ -702,16 +702,8 @@ public class WalaFactWriter {
 
     void writeLocal(IMethod m, Local l) {
         String local = _rep.local(m, l);
-        TypeReference type;
 
-        if (_varTypeMap.containsKey(local))
-            type = _varTypeMap.get(local);
-        else {
-            type = l.getType();
-            _varTypeMap.put(local, type);
-        }
-
-        _db.add(VAR_TYPE, local, writeType(type));
+        _db.add(VAR_TYPE, local, writeType(l.getType()));
         _db.add(VAR_DECLARING_METHOD, local, _rep.signature(m));
     }
 
