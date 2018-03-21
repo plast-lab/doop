@@ -265,7 +265,9 @@ Server_Method_Subtype(?method, ?subMethod) :-
 // Invocation-- //
 
 .decl Server_Invocation_Values(?fromMethod:Method, ?invo:MethodInvocation, ?toMethod:Method, ?isCHA:number)
+.decl Server_ClassCallsClass(?fromClass:ClassType, ?toClass:ClassType, ?n:number)
 .output Server_Invocation_Values
+.output Server_ClassCallsClass
 
 Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 0) :-
   mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod),
@@ -276,6 +278,17 @@ Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 1) :-
   !mainAnalysis.CallGraphEdge(_, ?invo, _, _),
   Instruction_Method(?invo, ?fromMethod),
   mainAnalysis.Reachable(?fromMethod).
+
+.decl _Server_ClassCallsClass(?fromClass:ClassType, ?toClass:ClassType, ?invo:MethodInvocation)
+
+_Server_ClassCallsClass(?fromClass, ?toClass, ?invo) :-
+  Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, _),
+  Method_DeclaringType(?fromMethod, ?fromClass),
+  Method_DeclaringType(?toMethod, ?toClass).
+
+Server_ClassCallsClass(?fromClass, ?toClass, ?n) :-
+  _Server_ClassCallsClass(?fromClass, ?toClass, _),
+  ?n = count:{_Server_ClassCallsClass(?fromClass, ?toClass, _)}.
 
 /*Server_Invocation_Values(?invo, ?toMethod) :-
   InvokedynamicCallGraphEdge(_, ?invo, _, ?toMethod).
