@@ -196,7 +196,7 @@ mainAnalysis.VarPointsTo(?hctx, ?newvalue, ?ctx, ?var) :-
   mainAnalysis.isImmutableHContext(?hctx).
   .plan 1:(2,1,3)
 
-.decl XYZ(?value:Value, ?ctx:Context, ?param:Var)
+.decl XYZ(?value:Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
 
 XYZ(?existingvalue, ?ctx, ?param) :-
   ParamTaintTransferredToBase(?param, ?ctx, ?base),
@@ -216,7 +216,7 @@ BaseValueTaintedFromParamValue(ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB),
   .plan 3:(4,3,1,2,5)
   .plan 4:(5,3,1,2,4)
 #else
-.decl XYZ2(?type:Type, ?value:Value, ?ctx:Context, ?param:Var)
+.decl XYZ2(?type:Type, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
 
 XYZ2(?type, ?value, ?ctx, ?param) :-
   ParamTaintTransferredToBase(?param, ?ctx, ?base),
@@ -306,14 +306,14 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, "char[]", DEFAULT_BREADCRU
 #endif
  
 // Serialization
-.decl SerializeObjectInvocation(?base:Var, ?ctx:Context, ?var:Var)
+.decl SerializeObjectInvocation(?base:Var, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 
 SerializeObjectInvocation(?base, ?ctx, ?var) :-
   MethodInvocationInContextInApplication(?ctx, ?invocation, "<java.io.ObjectOutputStream: void writeObject(java.lang.Object)>"),
   MethodInvocation_Base(?invocation, ?base),
   ActualParam(_, ?invocation, ?var).
 
-.decl ObjectSerializedToBase(?ctx:Context, ?base:Var, ?obj:Value)
+.decl ObjectSerializedToBase(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?obj:Value)
 
 ObjectSerializedToBase(?ctx, ?base, ?obj) :-
   SerializeObjectInvocation(?base, ?ctx, ?var),

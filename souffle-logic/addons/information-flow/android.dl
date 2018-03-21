@@ -11,7 +11,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?invocation, ?type, DEFAULT_BREADCR
   SensitiveLayoutControlValue(?layoutControlValue).
 
 
-.decl PossibleLayoutGetText(?to:Var, ?invocation:MethodInvocation, ?ctx:Context, ?base:Var)
+.decl PossibleLayoutGetText(?to:Var, ?invocation:MethodInvocation, ?ctx:mainAnalysis.configuration.Context, ?base:Var)
 
 PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base) :-
   VirtualMethodInvocation_SimpleName(?invocation, "getText"),
