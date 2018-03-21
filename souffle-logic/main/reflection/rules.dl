@@ -358,9 +358,9 @@ ReifiedField(?signature, cat(cat("<<reified field ", ?signature), ">>"))
 // Specific reflective method invocations.
 // Reflective method invocations need to be specialized to determine
 // what kind of method call this is.
-.decl ReflectiveStaticMethodInvocation(?ctx:Context, ?invocation:MethodInvocation, ?signature:Method)
+.decl ReflectiveStaticMethodInvocation(?ctx:configuration.Context, ?invocation:MethodInvocation, ?signature:Method)
 
-.decl ReflectiveVirtualMethodInvocation(?signature:Method, ?invocation:MethodInvocation, ?ctx:Context, ?base:Var)
+.decl ReflectiveVirtualMethodInvocation(?signature:Method, ?invocation:MethodInvocation, ?ctx:configuration.Context, ?base:Var)
 
 // Private method invocations are special methods, unless they are static.
 
@@ -401,7 +401,7 @@ ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) :-
 // A reflective call graph edge has specific details for propagating
 // parameters and handling return values, so we distinguish them from
 // native and normal call graph edges.
-.decl ReflectiveCallGraphEdge(?callerCtx:Context, ?invocation:MethodInvocation, ?calleeCtx:Context, ?callee:Method)
+.decl ReflectiveCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?callee:Method)
 
 ReachableContext(?calleeCtx, ?callee) :-
   ReflectiveCallGraphEdge(_, _, ?calleeCtx, ?callee).
@@ -510,7 +510,7 @@ InvokeArgLoadArrayIndex(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
  * analysis--its inference point is moved later, since it can employ
  * arbitrary sophistication.
  */
-.decl ReflectiveAssignClassConstant(?ctx:Context, ?invocation:MethodInvocation, ?type:Type)
+.decl ReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)
 
 /**
  * Not every virtual method invocation has a return value, so we need
@@ -533,7 +533,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
  * meta-object for the method with the given signature.
  */
 
-.decl ReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)
+.decl ReflectiveAssignMethodConstant(?ctx:configuration.Context, ?to:Var, ?signature:Method)
 
 /** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
@@ -545,7 +545,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
  * ReflectiveAssignFieldConstant(?ctx, ?to, ?fld)_ similar to methods.
  */
 
-.decl ReflectiveAssignFieldConstant(?ctx:Context, ?to:Var, ?signature:Field)
+.decl ReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)
 
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
@@ -604,14 +604,14 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
  * Method.invoke(Object[] args) ).
  *************************************************************/
 
-.decl InvokeArgLoadArrayIndex(?calleeCtx:Context, ?to:Var, ?callerCtx:Context, ?base:Var)
+.decl InvokeArgLoadArrayIndex(?calleeCtx:configuration.Context, ?to:Var, ?callerCtx:configuration.Context, ?base:Var)
 
 /**
  * It's unfortunate this code is so similar to normal LoadArrayIndex.
  * But it's not identical because there are type casts performed silently
  * when the array is just passing arguments to a reflective method call
  */
-.decl LoadReflectiveValueArrayIndex(?calleeCtx:Context, ?to:Var, ?basehctx:HContext, ?basevalue:Value)
+.decl LoadReflectiveValueArrayIndex(?calleeCtx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)
 
 LoadReflectiveValueArrayIndex(?calleeCtx, ?to, ?basehctx, ?basevalue) :-
   InvokeArgLoadArrayIndex(?calleeCtx, ?to, ?callerCtx, ?base),
@@ -677,7 +677,7 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
  * Reflective load of an instance field
  *************************************************************/
 
-.decl ReflectiveLoadHeapInstanceField(?toCtx:Context, ?to:Var, ?signature:Field, ?basehctx:HContext, ?base:Value)
+.decl ReflectiveLoadHeapInstanceField(?toCtx:configuration.Context, ?to:Var, ?signature:Field, ?basehctx:configuration.HContext, ?base:Value)
 
 ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue) :-
   ReflectiveLoadInstanceField(?toCtx, ?to, ?sig, ?baseCtx, ?base),
@@ -690,7 +690,7 @@ ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue) :-
  * Reflective store of an instance field
  *************************************************************/
 
-.decl ReflectiveStoreHeapInstanceField(?signature:Field, ?basehctx:HContext, ?basevalue:Value, ?fromCtx:Context, ?from:Var)
+.decl ReflectiveStoreHeapInstanceField(?signature:Field, ?basehctx:configuration.HContext, ?basevalue:Value, ?fromCtx:configuration.Context, ?from:Var)
 
 ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) :-
   ReflectiveStoreInstanceField(?fromCtx, ?from, ?sig, ?baseCtx, ?base),
@@ -710,7 +710,7 @@ ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) :
 //   basic.SupertypeOf(?vartype, ?valuetype).
 
 #ifndef FEATHERWEIGHT_ANALYSIS
-.decl ReflectiveHeapInterproceduralAssign(?sig:Field, ?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
+.decl ReflectiveHeapInterproceduralAssign(?sig:Field, ?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
 ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to,?fromCtx, ?from) :-
   ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue),
   ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from),
@@ -773,18 +773,18 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
 .decl BackwardReflectiveAssignFieldConstant(?to:Var, ?signature:Field)
 .decl BackwardReflectiveAssignClassConstant(?invocation:MethodInvocation, ?type:Type)
 
-//.decl ForwardReflectiveAssignClassConstant(?ctx:Context, ?invocation:MethodInvocation, ?type:Type)
-//.decl ForwardHighConfidenceReflectiveAssignClassConstant(?ctx:Context, ?invocation:MethodInvocation, ?type:Type)
+//.decl ForwardReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)
+//.decl ForwardHighConfidenceReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)
 //.decl BackwardReflectiveAssignClassConstant(?invocation:MethodInvocation, ?type:Type)
 .decl BackwardHighConfidenceReflectiveAssignClassConstant(?invocation:MethodInvocation, ?type:Type)
 
-//.decl ForwardReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)
-//.decl ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)
+//.decl ForwardReflectiveAssignMethodConstant(?ctx:configuration.Context, ?to:Var, ?signature:Method)
+//.decl ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx:configuration.Context, ?to:Var, ?signature:Method)
 .decl BackwardReflectiveAssignMethodConstant(?to:Var, ?signature:Method)
 .decl BackwardHighConfidenceReflectiveAssignMethodConstant(?to:Var, ?signature:Method)
 
-//.decl ForwardReflectiveAssignFieldConstant(?ctx:Context, ?to:Var, ?signature:Field)
-//.decl ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx:Context, ?to:Var, ?signature:Field)
+//.decl ForwardReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)
+//.decl ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)
 //.decl BackwardReflectiveAssignFieldConstant(?to:Var, ?signature:Field)
 .decl BackwardHighConfidenceReflectiveAssignFieldConstant(?to:Var, ?signature:Field)
 
@@ -1047,7 +1047,7 @@ ArrayIndexPointsTo(?hctx, ?specialConstructorValue, ?hctx, ?arrayValue) :-
   VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to),
   SpecialMissingGetConstructorValue(?forNameInvocation, ?specialConstructorValue).
 
-.decl OptForNameFromGetConstructors(?forNameInvocation:MethodInvocation, ?ctx:Context, ?to:Var)
+.decl OptForNameFromGetConstructors(?forNameInvocation:MethodInvocation, ?ctx:configuration.Context, ?to:Var)
 
 OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to) :-
   (java_lang_Class_getConstructors(_, ?to, ?var);
@@ -1359,7 +1359,7 @@ OptGetMethodsClass(?type, ?getMethodsInvocation) :-
   VarPointsTo(_, ?classValue, _, ?from),
   ReifiedClass(?type, ?classValue).
 
-.decl OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation:MethodInvocation, ?ctx:Context, ?invocation:MethodInvocation)
+.decl OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation:MethodInvocation, ?ctx:configuration.Context, ?invocation:MethodInvocation)
 
 OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation, ?ctx, ?invocation) :-
   java_lang_reflect_Method_invoke(?invocation, ?methodVar),
@@ -1431,7 +1431,7 @@ OptGetFieldsClass(?type, ?getFieldsInvocation) :-
   VarPointsTo(_, ?classValue, _, ?from),
   ReifiedClass(?type, ?classValue).
 
-.decl OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation:MethodInvocation, ?ctx:Context, ?invocation:MethodInvocation)
+.decl OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation:MethodInvocation, ?ctx:configuration.Context, ?invocation:MethodInvocation)
 
 OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation, ?ctx, ?invocation) :-
   java_lang_reflect_Field_get(?invocation, _, ?fieldVar),

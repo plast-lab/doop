@@ -22,7 +22,7 @@ java_lang_Class_forName(?invocation, ?inmethod) :-
     isMethod(?sig) ),
   StaticMethodInvocation(?invocation, ?sig, ?inmethod).
 
-.decl ReflectiveAssignClassConstant(?ctx:Context, ?invocation:MethodInvocation, ?type:Type)
+.decl ReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)
 
 // Similar to java.lang.Class.dl but simplified.
 ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
@@ -100,7 +100,7 @@ java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, ?handler, ?interfaces) :-
    ActualParam(2, ?invo, ?handler),
    AssignReturnValue(?invo, ?ret).
 
-.decl ArrayContentsPointToInterface(?iface:ClassType, ?hctx:HContext, ?arrayValue:Value)
+.decl ArrayContentsPointToInterface(?iface:ClassType, ?hctx:configuration.HContext, ?arrayValue:Value)
 
 ArrayContentsPointToInterface(?iface, ?hctx, ?arrayValue) :-
    ArrayIndexPointsTo(_, ?interfaceVal, ?hctx, ?arrayValue),
@@ -205,7 +205,7 @@ VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
 
 .decl ProxyObject_Invocation(?value:Value, ?invo:MethodInvocation)
 .decl ProxyObject_Handler(?handlerObj:Value, ?value:Value)
-.decl ProxyObject_HandlerHctx(?hctxHandler:HContext, ?value:Value)
+.decl ProxyObject_HandlerHctx(?hctxHandler:configuration.HContext, ?value:Value)
 .decl ProxyObject_Interface(?value:Value, ?iface:InterfaceType)
 
 
@@ -222,7 +222,7 @@ ProxyObject_Interface(?value, ?iface)
 // And the clincher: if a method gets invoked on a proxy object, simulate
 // a call to the proxy object handler's "invoke" method, with the right
 // arguments passed in.
-.decl CallToMethodOfProxyObject(?value:Value, ?ctx:Context, ?invo:MethodInvocation)
+.decl CallToMethodOfProxyObject(?value:Value, ?ctx:configuration.Context, ?invo:MethodInvocation)
 
 CallToMethodOfProxyObject(?value, ?ctx, ?invo) :-
    isVirtualMethodInvocation_Insn(?invo),
@@ -243,7 +243,7 @@ VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?h) :-
 //// REVIEW
 // #ifdef REFLECTION_CONTEXT_SENSITIVITY
 // ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx), ...
-.decl ProxyCallGraphEdge(?callerCtx:Context, ?invo:MethodInvocation, ?calleeCtx:Context, ?handlerInvokeMeth:Method)
+.decl ProxyCallGraphEdge(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerInvokeMeth:Method)
 
 .decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)
 .output HandledProxy
@@ -317,7 +317,7 @@ ReachableContext(?calleeCtx, ?callee) :-
 // to the return value of the wrapped method. The exceptions mandated
 // by the spec are handled elsewhere (in exceptions.logic); here only
 // we record the internal invoke() return variable for use there.
-.decl ProxyInvokeResult(?callerCtx:Context, ?invo:MethodInvocation, ?calleeCtx:Context, ?handlerReturnVar:Var)
+.decl ProxyInvokeResult(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerReturnVar:Var)
 
 VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret),
 ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
