@@ -245,12 +245,12 @@ VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?h) :-
 // ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx), ...
 .decl ProxyCallGraphEdge(?callerCtx:Context, ?invo:MethodInvocation, ?calleeCtx:Context, ?handlerInvokeMeth:Method)
 
-.decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerInvokeMeth:Method)
+.decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)
 .output HandledProxy
 
 ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
 VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this),
-HandledProxy(?newProxyInstanceInvo, ?invoke)
+HandledProxy(?newProxyInstanceInvo, ?handlerType)
 :-
    ImmutableContextFromContext(?callerCtx, ?calleeCtx),
    CallToMethodOfProxyObject(?value, ?callerCtx, ?invo),
