@@ -1,46 +1,154 @@
-#include "../../main/two-phase-analysis.dl"
-#include "../../main/configuration.dl"
+#include "../context-insensitive/analysis.dl"
 
-.decl InOutFlowValue(?method:Method, ?value:Value)
+.init preAnalysis = BasicContextSensitivity<ContextInsensitiveConfiguration>
 
-InOutFlowValue(?method, ?value) :-
-  FormalParam(?index, ?method, ?var),
-  preAnalysis.VarPointsTo(_, ?var, _, ?value),
-  ReturnVar(?method, ?returnVar),
-  preAnalysis.VarPointsTo(_, ?returnVar, _, ?value).
+.comp IntrospectiveConfiguration : AbstractConfiguration {
+  
+.type Context
+.type HContext
+         
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+  ?calleeCtx = ?callerCtx.
 
-.decl InOutFlowTwoValues(?method:Method)
+StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+  StaticContextRequest(?callerCtx, ?invo),
+  ?calleeCtx = ?callerCtx.
+      
+#define UNIQUE_CONTEXT  "<<unique-context>>"
+#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
 
-InOutFlowTwoValues(?method) :-
-  InOutFlow(?method, ?value1),
-  InOutFlow(?method, ?value2),
+RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+  RecordContextRequest(?ctx, ?value, ?var),      
+  ?hctx = UNIQUE_HCONTEXT.
+
+// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+// have the same logic as plain Merge for this analysis.
+ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+  ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+  ?newCtx = UNIQUE_CONTEXT.
+
+StartupContextResponse(?hctx, ?value, ?calleeCtx) :-
+  StartupContextRequest(?hctx, ?value),
+  ?calleeCtx = UNIQUE_CONTEXT.
+              
+FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?calleeCtx) :-
+  FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+  ?calleeCtx = UNIQUE_CONTEXT.
+
+InitContextResponse(?s, ?ctx) :-
+  ?ctx = UNIQUE_CONTEXT,                   
+  InitContextRequest(?s).
+
+InitHContextResponse(?s, ?hctx) :-
+  ?hctx = UNIQUE_HCONTEXT,
+  InitHContextRequest(?s).
+         
+.decl InOutFlowDirectValue(?method:Method, ?value:Value)
+
+/** Direct in out flow:
+ *
+ *   arg -> value
+ *   ret -> value
+ */
+InOutFlowDirectValue(?method, ?value) :-
+  FormalParam(_, ?method, ?var),
+  preAnalysis.VarPointsTo(_, ?value, _, ?var),
+  ReturnVar(?returnVar, ?method),
+  preAnalysis.VarPointsTo(_, ?value, _, ?returnVar).
+
+.decl InOutFlowDirectTwoValues(?method:Method)
+
+InOutFlowDirectTwoValues(?method) :-
+  InOutFlowDirectValue(?method, ?value1),
+  InOutFlowDirectValue(?method, ?value2),
   ?value1 != ?value2.
 
+.output InOutFlowDirectTwoValues
+
+/**
+ * Wrapped in out flow:
+ *
+ * arg -> value
+ * ret -> ... -> ... -> value
+ */
 .decl InOutFlowWrappedValue(?method:Method, ?value:Value) 
 
 InOutFlowWrappedValue(?method, ?value) :-
-  FormalParam(?index, ?method, ?var),
-  ReturnVar(?method, ?returnVar),
-  preAnalysis.VarPointsTo(_, ?var, _, ?baseValue1),
-  preAnalysis.VarPointsTo(_, ?returnVar, _, ?baseValue2).
+  FormalParam(_, ?method, ?var),
+  ReturnVar(?returnVar, ?method),
+  preAnalysis.VarPointsTo(_, ?value, _, ?var),
+  preAnalysis.VarPointsTo(_, ?baseValue, _, ?returnVar),
+  ValuePointsTo(?baseValue, ?value),
+  ?value != ?baseValue.
 
-.decl InstanceFieldsPointToSameValue(?baseValue1:Value, ?baseValue2:Value, ?value:Value)
+.decl InOutFlowWrappedTwoValues(?method:Method)
 
-InstanceFieldsPointToSameValue(?baseValue1, ?baseValue2, ?value) :-
-  preAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?baseValue1),
-  preAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?baseValue2).
-
-InstanceFieldsPointoSameValue(?baseValue1, ?baseValue2, ?value) :-
-  preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue1),
-  preAnalysis.InstanceFieldPointsTo(_, ?value2, _, _, ?baseValue2).
-  InstanceFieldsPointToSameValue(?value1, ?value2, ?value),
-  ?value1 != ?value2.
-
-.decl WrappedInOutFlowTwoValues(?method:Method)
-      
-WrappedInOutFlowTwoValues(?method) :-
+InOutFlowWrappedTwoValues(?method) :-
   InOutFlowWrappedValue(?method, ?value1),
   InOutFlowWrappedValue(?method, ?value2),
   ?value1 != ?value2.
 
+.output InOutFlowWrappedTwoValues
+
+/**
+ * Unwrapped in out flow:
+ *
+ * arg -> ... -> ... -> ... -> value
+ * ret -> value
+ */
+.decl InOutFlowUnwrappedValue(?method:Method, ?value:Value) 
+
+InOutFlowUnwrappedValue(?method, ?value) :-
+  FormalParam(_, ?method, ?var),
+  ReturnVar(?returnVar, ?method),
+  preAnalysis.VarPointsTo(_, ?baseValue, _, ?var),
+  preAnalysis.VarPointsTo(_, ?value, _, ?returnVar),
+  ValuePointsTo(?baseValue, ?value),
+  ?value != ?baseValue.
+
+.decl InOutFlowUnwrappedTwoValues(?method:Method)
+
+InOutFlowUnwrappedTwoValues(?method) :-
+  InOutFlowUnwrappedValue(?method, ?value1),
+  InOutFlowUnwrappedValue(?method, ?value2),
+  ?value1 != ?value2.
+
+.output InOutFlowUnwrappedTwoValues
+/** Utility rule: Value points to another value directly or indirectly **/
+.decl ValuePointsTo(?baseValue:Value, ?value:Value)
+
+ValuePointsTo(?baseValue, ?value) :-
+  preAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?baseValue).
+
+ValuePointsTo(?baseValue, ?value) :-
+  preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue),
+  ValuePointsTo(?value1, ?value).                         
+
+/**
+ * Any in out flow:
+ *
+ * arg -> ... -> ... -> ... -> value
+ * ret -> ... -> ... -> ... -> value
+ */
+
+.decl InOutFlowAnyValue(?method:Method, ?value:Value) 
+
+InOutFlowAnyValue(?method, ?value) :-
+ FormalParam(_, ?method, ?var),
+ ReturnVar(?returnVar, ?method),
+ preAnalysis.VarPointsTo(_, ?baseValue1, _, ?var),
+ preAnalysis.VarPointsTo(_, ?baseValue2, _, ?returnVar),
+ ValuePointsTo(?baseValue1, ?value),
+ ValuePointsTo(?baseValue2, ?value),
+ ?baseValue1 != ?baseValue2.
+             
+.decl InOutFlowAnyTwoValues(?method:Method)
+      
+InOutFlowAnyTwoValues(?method) :-
+  InOutFlowAnyValue(?method, ?value1),
+  InOutFlowAnyValue(?method, ?value2),
+  ?value1 != ?value2.
+
+.output InOutFlowAnyTwoValues
 }

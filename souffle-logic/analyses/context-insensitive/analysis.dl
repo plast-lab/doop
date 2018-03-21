@@ -7,11 +7,13 @@
 // This is emulated by creating a single Context object and a single HContext
 // object, which are used everywhere.
 
-.type Context
-.type HContext
 
 .comp ContextInsensitiveConfiguration : AbstractConfiguration {
 
+.type Context
+.type HContext
+
+         
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   ?calleeCtx = ?callerCtx.

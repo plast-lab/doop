@@ -2,7 +2,7 @@
  * Generic declarations for context-sensitive pointer analysis.
  */
 
-.decl isContext(?ctx:Context)
+.decl isContext(?ctx:configuration.Context)
 .decl isHContext(?hctx:HContext)
       
 // These are normally unique, but for partitioned analyses there may be

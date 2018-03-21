@@ -69,6 +69,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                              "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"]
             ]
     static final availableConfigurations = [
+            "introspective" : "IntrospectiveConfiguration",
             "context-insensitive" : "ContextInsensitiveConfiguration",
             "context-insensitive-plus" : "ContextInsensitivePlusConfiguration",
             "context-insensitive-plusplus" : "ContextInsensitivePlusPlusConfiguration",
@@ -140,7 +141,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         def vars = processOptions(name, options, context)
 
-        checkAnalysis(name)
+        checkAnalysis(name, options)
         if (options.LB3.value)
             checkLogicBlox(vars)
 
@@ -223,9 +224,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         return newAnalysis(id, name, options, context)
     }
 
-    protected void checkAnalysis(String name) {
+    protected void checkAnalysis(String name, Map<String, AnalysisOption> options) {
         logger.debug "Verifying analysis name: $name"
-        def analysisPath = "${Doop.analysesPath}/${name}/analysis.logic"
+        def analysisPath
+        if (options.LB3.value) 
+          analysisPath = "${Doop.analysesPath}/${name}/analysis.logic"
+        else
+          analysisPath = "${Doop.souffleAnalysesPath}/${name}/analysis.dl"
         FileOps.findFileOrThrow(analysisPath, "Unsupported analysis: $name")
     }
 
