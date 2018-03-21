@@ -1,11 +1,3 @@
-#ifdef ANDROID
-#include "android-declarations.dl"
-#endif
-#include "class-initialization-declarations.dl"
-#include "exceptions-declarations.dl"
-#include "implicit-reachable-declarations.dl"
-#include "threads-declarations.dl"
-
 #if defined(REFLECTION)
 #include "reflection/declarations.dl"
 #endif

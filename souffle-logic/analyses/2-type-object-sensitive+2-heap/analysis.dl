@@ -4,11 +4,11 @@
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
 
-.type Context  = [ type:Type, value:Value ]
-.type HContext = [ type:Type, value:Value ]
-
 .comp TwoTypeObjectSensitivePlusTwoHeapConfiguration : AbstractConfiguration {
-                    
+
+  .type Context  = [ type:Type, value:Value ]
+  .type HContext = [ type:Type, value:Value ]
+
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
     ?hctx = [?hctxType, ?hctxValue],

@@ -11,13 +11,13 @@ OUTPUT_STATS(Stats_Simple_AssignedVariable)
 .decl Stats_Simple_Application_InsensVarPointsTo(?value:Value, ?var:Var)
 OUTPUT_STATS(Stats_Simple_Application_InsensVarPointsTo)
 
-.decl Stats_Simple_Application_VarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
+.decl Stats_Simple_Application_VarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 OUTPUT_STATS(Stats_Simple_Application_VarPointsTo)
 
 .decl Stats_Simple_InsensReachableVar(?var:Var)
 OUTPUT_STATS(Stats_Simple_InsensReachableVar)
 
-.decl Stats_Simple_ReachableVar(?ctx:Context, ?var:Var)
+.decl Stats_Simple_ReachableVar(?ctx:mainAnalysis.configuration.Context, ?var:Var)
 OUTPUT_STATS(Stats_Simple_ReachableVar)
 
 /***************************************************
@@ -30,7 +30,7 @@ OUTPUT_STATS(Stats_Simple_InsensArrayIndexPointsTo)
 .decl Stats_Simple_Application_InsensArrayIndexPointsTo(?value:Value, ?basevalue:Value)
 OUTPUT_STATS(Stats_Simple_Application_InsensArrayIndexPointsTo)
 
-.decl Stats_Simple_Application_ArrayIndexPointsTo(?hctx:HContext, ?value:Value, ?baseHCtx:HContext, ?basevalue:Value)
+.decl Stats_Simple_Application_ArrayIndexPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value)
 OUTPUT_STATS(Stats_Simple_Application_ArrayIndexPointsTo)
 
 /***************************************************
@@ -46,7 +46,7 @@ OUTPUT_STATS(Stats_Simple_InsensStaticFieldPointsTo)
 .decl Stats_Simple_Application_InsensInstanceFieldPointsTo(?value:Value, ?sig:Field, ?basevalue:Value)
 OUTPUT_STATS(Stats_Simple_Application_InsensInstanceFieldPointsTo)
 
-.decl Stats_Simple_Application_InstanceFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field, ?baseHCtx:HContext, ?basevalue:Value)
+.decl Stats_Simple_Application_InstanceFieldPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value)
 OUTPUT_STATS(Stats_Simple_Application_InstanceFieldPointsTo)
 
 /***************************************************
@@ -66,7 +66,7 @@ OUTPUT_STATS(Stats_Simple_VirtualCallGraphEdge)
 .decl Stats_Simple_InsensReachableApplicationMethod(?method:Method)
 OUTPUT_STATS(Stats_Simple_InsensReachableApplicationMethod)
 
-.decl Stats_Simple_ReachableApplicationMethod(?ctx:Context, ?method:Method)
+.decl Stats_Simple_ReachableApplicationMethod(?ctx:mainAnalysis.configuration.Context, ?method:Method)
 OUTPUT_STATS(Stats_Simple_ReachableApplicationMethod)
 
 .decl Stats_Simple_ApplicationConcreteMethod(?method:Method)
@@ -139,19 +139,19 @@ OUTPUT_STATS(Stats_Simple_Application_PotentiallyFailingCast)
 .decl Stats_Simple_Reflection_InsensArrayIndexPointsTo(?value:Value, ?basevalue:Value)
 OUTPUT_STATS(Stats_Simple_Reflection_InsensArrayIndexPointsTo)
 
-.decl Stats_Simple_Reflection_ArrayIndexPointsTo(?hctx:HContext, ?value:Value, ?baseHCtx:HContext, ?basevalue:Value)
+.decl Stats_Simple_Reflection_ArrayIndexPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value)
 OUTPUT_STATS(Stats_Simple_Reflection_ArrayIndexPointsTo)
 
 .decl Stats_Simple_Reflection_InsensVarPointsTo(?value:Value, ?var:Var)
 OUTPUT_STATS(Stats_Simple_Reflection_InsensVarPointsTo)
 
-.decl Stats_Simple_Reflection_VarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
+.decl Stats_Simple_Reflection_VarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 OUTPUT_STATS(Stats_Simple_Reflection_VarPointsTo)
 
 .decl Stats_Simple_Reflection_InsensInstanceFieldPointsTo(?value:Value, ?sig:Field, ?basevalue:Value)
 OUTPUT_STATS(Stats_Simple_Reflection_InsensInstanceFieldPointsTo)
 
-.decl Stats_Simple_Reflection_InstanceFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field, ?baseHCtx:HContext, ?basevalue:Value)
+.decl Stats_Simple_Reflection_InstanceFieldPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value)
 OUTPUT_STATS(Stats_Simple_Reflection_InstanceFieldPointsTo)
 
 .decl Stats_Simple_forName(?invocation:MethodInvocation)
@@ -175,7 +175,7 @@ OUTPUT_STATS(Stats_Simple_InsensTaintedVarPointsTo)
 .decl Stats_Simple_Application_InsensTaintedVarPointsTo(?value:Value, ?var:Var)
 OUTPUT_STATS(Stats_Simple_Application_InsensTaintedVarPointsTo)
 
-.decl Stats_Simple_Application_TaintedVarPointsTo(?value:Value, ?ctx:Context, ?var:Var)
+.decl Stats_Simple_Application_TaintedVarPointsTo(?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 OUTPUT_STATS(Stats_Simple_Application_TaintedVarPointsTo)
 
 .decl Stats_Simple_LeakingTaintedInformation(?invocation:MethodInvocation, ?objStr:symbol)

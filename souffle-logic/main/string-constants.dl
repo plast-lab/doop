@@ -579,7 +579,7 @@ FieldNamePrefix(substr(?fieldName, 0, ?length), ?sig) :-
  *************************************************************/
 
 .decl StringFactoryVar(?var:Var)
-.decl StringFactoryVarPointsTo(?factoryHctx:HContext, ?factoryValue:Value, ?ctx:Context, ?var:Var)
+.decl StringFactoryVarPointsTo(?factoryHctx:HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)
 
 StringFactoryVar(?var) :-
   StringFactoryType(?type),
@@ -609,7 +609,7 @@ VarAssignedFromStringFactoryVar(?ret, ?base) :-
 // (merge reflection strings), less coverage (require that string
 // in/out operations on Builders/Buffers are in the same method).  The
 // current approach (precise) seems to work ok.
-.decl VarFlowsIntoStringFactory(?factoryHctx:HContext, ?factoryValue:Value, ?ctx:Context, ?var:Var)
+.decl VarFlowsIntoStringFactory(?factoryHctx:HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)
 
 VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var) :-
   VarOfReflectionInterest(?ctx, ?var),
@@ -617,14 +617,14 @@ VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var) :-
   StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
   .plan 1:(3,2,1)
 
-.decl VarFlowsFromStringFactory(?ctx:Context, ?var:Var, ?factoryHctx:HContext, ?factoryValue:Value)
+.decl VarFlowsFromStringFactory(?ctx:configuration.Context, ?var:Var, ?factoryHctx:HContext, ?factoryValue:Value)
 
 VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue) :-
   VarAssignedFromStringFactoryVar(?var, ?factoryVar),
   StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
 
-.decl VarOfReflectionInterest(?ctx:Context, ?var:Var)
-.decl ReflectionStringConstantVarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
+.decl VarOfReflectionInterest(?ctx:configuration.Context, ?var:Var)
+.decl ReflectionStringConstantVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 
 VarOfReflectionInterest(?ctx, ?var),
 ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
@@ -635,7 +635,7 @@ ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 #endif
   VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
-.decl ReflectionStringConstantFlowsIntoStringFactory(?hctx:HContext, ?value:Value, ?factoryHctx:HContext, ?factoryValue:Value)
+.decl ReflectionStringConstantFlowsIntoStringFactory(?hctx:configuration.HContext, ?value:Value, ?factoryHctx:HContext, ?factoryValue:Value)
 
 ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue) :-
   VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var),

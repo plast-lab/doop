@@ -3,14 +3,13 @@
 
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
- 
-// In this analysis, both the real context and the real heap context are
-// MethodInvocations.
-.type Context  = [ invocation:MethodInvocation ]
-.type HContext = [ invocation:MethodInvocation ]
 
 .comp OneCallSiteSensitivePlusHeapConfiguration : AbstractConfiguration {
-                    
+  // In this analysis, both the real context and the real heap context are
+  // MethodInvocations.
+  .type Context  = [ invocation:MethodInvocation ]
+  .type HContext = [ invocation:MethodInvocation ]
+
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
     ?calleeCtx = [?invo].

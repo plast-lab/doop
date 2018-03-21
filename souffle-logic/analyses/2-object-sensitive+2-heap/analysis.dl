@@ -4,15 +4,15 @@
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
 
-// In this analysis, both the real context and the real heap context are pairs
-// of Values. Keeping mapping functions is the way to handle analyses
-// where HContext = Context (since the language considers them different
-// types).
-
-.type Context  = [ value1:Value, value2:Value ]
-.type HContext = [ value1:Value, value2:Value ]
-
 .comp TwoObjectSensitivePlusTwoHeapConfiguration : AbstractConfiguration {
+  // In this analysis, both the real context and the real heap context are pairs
+  // of Values. Keeping mapping functions is the way to handle analyses
+  // where HContext = Context (since the language considers them different
+  // types).
+
+  .type Context  = [ value1:Value, value2:Value ]
+  .type HContext = [ value1:Value, value2:Value ]
+
 
   // For this analysis the context of a method call corresponds to the
   // identity of the receiver object and the receiver object of the caller.

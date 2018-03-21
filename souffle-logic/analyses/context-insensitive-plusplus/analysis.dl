@@ -6,10 +6,12 @@
 #include "../../main/configuration.dl"
 #include "../../main/in-out-flow.dl"
 
+.comp ContextInsensitivePlusPlusConfiguration : AbstractConfiguration {
+
 .type UniqueContext
 .type UniqueHContext
-.type Component = MethodInvocation | Value | UniqueContext | UniqueHContext 
-.type Context  = [ c:Component ] 
+.type Component = MethodInvocation | Value | UniqueContext | UniqueHContext
+.type Context  = [ c:Component ]
 .type HContext = [ c:Component ]
 
 .decl UContext(?ctx:UniqueContext)
@@ -20,8 +22,6 @@
 
 UContext(UNIQUE_CONTEXT).
 UHContext(UNIQUE_HCONTEXT).
-
-.comp ContextInsensitivePlusPlusConfiguration : AbstractConfiguration {
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),

@@ -151,8 +151,8 @@ Tamiflex_ReifiedMethodArray(?type, cat(cat("<(Tamiflex) ", ?type), "/Method[]>")
  * are not preserved (e.g., argumens are passed as an array). This is
  * much like reflective call graph edges.
  */
-.decl TamiflexCallGraphEdge(?callerCtx:Context, ?invocation:MethodInvocation,
-                            ?calleeCtx:Context, ?callee:Method)
+.decl TamiflexCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation,
+                            ?calleeCtx:configuration.Context, ?callee:Method)
 
 ReachableContext(?calleeCtx, ?callee) :-
   TamiflexCallGraphEdge(_, _, ?calleeCtx, ?callee).
@@ -183,8 +183,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx).
 
-.decl TamiflexConstructorCallGraphEdge(?callerCtx:Context, ?invocation:MethodInvocation,
-                                       ?calleeCtx:Context, ?callee:Method)
+.decl TamiflexConstructorCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation,
+                                       ?calleeCtx:configuration.Context, ?callee:Method)
 
 // MergeMacro(?callerCtx, ?invocation, ?hctx, ?obj, ?calleeCtx),
 VarPointsTo(?hctx, ?value, ?callerCtx, ?return),
@@ -245,8 +245,8 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
 
 // Optimizing indexing
 /// two cases of tamiflex calls: regular reflective invokes ...
-.decl TamiflexInvocationFirstParam(?calleeCtx:Context, ?formal:Var,
-                                   ?callerCtx:Context, ?argsParam:Var)
+.decl TamiflexInvocationFirstParam(?calleeCtx:configuration.Context, ?formal:Var,
+                                   ?callerCtx:configuration.Context, ?argsParam:Var)
 
 TamiflexInvocationFirstParam(?calleeCtx, ?formal, ?callerCtx, ?argsParam) :-
   Tamiflex_Invoke(?callerCtx, ?invocation, ?callee),
@@ -260,8 +260,8 @@ TamiflexInvocationFirstParam(?calleeCtx, ?formal, ?callerCtx, ?argsParam) :-
   FormalParam(_, ?callee, ?formal).
 
 // Optimizing indexing
-.decl TamiflexInvocationArgumentArrayValue(?calleeCtx:Context, ?formal:Var,
-                                           ?basehctx:HContext, ?basevalue:Value)
+.decl TamiflexInvocationArgumentArrayValue(?calleeCtx:configuration.Context, ?formal:Var,
+                                           ?basehctx:configuration.HContext, ?basevalue:Value)
 
 TamiflexInvocationArgumentArrayValue(?calleeCtx, ?formal, ?basehctx, ?basevalue) :-
   TamiflexInvocationFirstParam(?calleeCtx, ?formal, ?ctx, ?base),

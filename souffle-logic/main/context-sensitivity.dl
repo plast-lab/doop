@@ -128,7 +128,6 @@ LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
 //   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 //    .plan 1:(2,1)
 
-.decl HeapInterproceduralAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
 HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
   LoadHeapInstanceField(?ctxTo, ?to, ?signature, ?basehctx, ?basevalue),
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctxFrom, ?from),
@@ -253,7 +252,7 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
 // Intermediate relations used for optimization purposes
 .decl OptLoadHeapArrayIndex(?var:Var, ?value:Value)
 .decl Temp1(?value:Value, ?var:Var)
-.decl Temp2(?ctx:Context, ?var:Var, ?hctx:HContext, ?value:Value)
+.decl Temp2(?ctx:configuration.Context, ?var:Var, ?hctx:configuration.HContext, ?value:Value)
 
 OptLoadHeapArrayIndex(?to, ?basevalue) :-
   LoadHeapArrayIndex(_, ?to, _, ?basevalue).
@@ -357,11 +356,6 @@ OptStoreArrayIndex(?from, ?base) :-
 // assignments for args and returns. It should be unnecessary, but
 // Souffle appreciates smaller deltas, since plans cannot change
 // per-rule-evaluation, only per-rule-structure.
-
-.decl OptArgAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
-.decl OptReturnAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
-.decl OptArgVarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
-.decl OptRetVarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
 
 OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),

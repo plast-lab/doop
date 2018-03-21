@@ -10,62 +10,60 @@
 
 .comp ContextInsensitiveConfiguration : AbstractConfiguration {
 
-.type Context
-.type HContext
-
+  .type Context
+  .type HContext
          
-ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  ?calleeCtx = ?callerCtx.
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ?calleeCtx = ?callerCtx.
 
-StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
-  StaticContextRequest(?callerCtx, ?invo),
-  ?calleeCtx = ?callerCtx.
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?calleeCtx = ?callerCtx.
       
- /**
- * Some library modules are generically defined, and need the macro
- * definitions for the context-sensitive pointer analysis they are
- * used in. For a context-insensitive pointer analysis we just
- * generate constant contexts.
- */
+   /**
+    * Some library modules are generically defined, and need the macro
+    * definitions for the context-sensitive pointer analysis they are
+    * used in. For a context-insensitive pointer analysis we just
+    * generate constant contexts.
+    */
 
-#define UNIQUE_CONTEXT  "<<unique-context>>"
-#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
+  #define UNIQUE_CONTEXT  "<<unique-context>>"
+  #define UNIQUE_HCONTEXT "<<unique-hcontext>>"
 
-RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
-  RecordContextRequest(?ctx, ?value, ?var),      
-  ?hctx = UNIQUE_HCONTEXT.
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),
+    ?hctx = UNIQUE_HCONTEXT.
 
-// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
-// have the same logic as plain Merge for this analysis.
-ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-  ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-  ?newCtx = UNIQUE_CONTEXT.
+  // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+  // have the same logic as plain Merge for this analysis.
+  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+    ?newCtx = UNIQUE_CONTEXT.
 
-StartupContextResponse(?hctx, ?value, ?calleeCtx) :-
-  StartupContextRequest(?hctx, ?value),
-  ?calleeCtx = UNIQUE_CONTEXT.
+  StartupContextResponse(?hctx, ?value, ?calleeCtx) :-
+    StartupContextRequest(?hctx, ?value),
+    ?calleeCtx = UNIQUE_CONTEXT.
               
-FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?calleeCtx) :-
-  FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-  ?calleeCtx = UNIQUE_CONTEXT.
+  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?calleeCtx) :-
+    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+    ?calleeCtx = UNIQUE_CONTEXT.
 
-InitContextResponse(?s, ?ctx) :-
-  ?ctx = UNIQUE_CONTEXT,                   
-  InitContextRequest(?s).
+  InitContextResponse(?s, ?ctx) :-
+    ?ctx = UNIQUE_CONTEXT,
+    InitContextRequest(?s).
 
-InitHContextResponse(?s, ?hctx) :-
-  ?hctx = UNIQUE_HCONTEXT,
-  InitHContextRequest(?s).
+  InitHContextResponse(?s, ?hctx) :-
+    ?hctx = UNIQUE_HCONTEXT,
+    InitHContextRequest(?s).
 
-#ifdef HEAPDL
-  DynamicContextToHContext(?hctx, ?dynCtx) :-
-    isDynamicContext(?dynCtx),
-    isImmutableHContext(?hctx).
+  #ifdef HEAPDL
+    DynamicContextToHContext(?hctx, ?dynCtx) :-
+      isDynamicContext(?dynCtx),
+      isImmutableHContext(?hctx).
 
-  DynamicContextToContext(?ctx, ?dynCtx) :-
-    isDynamicContext(?dynCtx),
-    isImmutableContext(?ctx).
-#endif
-
+    DynamicContextToContext(?ctx, ?dynCtx) :-
+      isDynamicContext(?dynCtx),
+      isImmutableContext(?ctx).
+  #endif
 }

@@ -1,7 +1,13 @@
 #include "main-declarations.dl"
 
 .comp AbstractContextSensitivity<Configuration> {
-
+  #ifdef ANDROID
+  #include "android-declarations.dl"
+  #endif
+  #include "class-initialization-declarations.dl"
+  #include "exceptions-declarations.dl"
+  #include "implicit-reachable-declarations.dl"
+  #include "threads-declarations.dl"
   #ifdef ANDROID
     #include "android.dl"
   #endif

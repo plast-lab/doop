@@ -4,13 +4,13 @@
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
 
-// In this analysis, the real context is a triplet of Types and the real heap
-// context a pair of Types. The type is not always a class type, because of
-// arrays currently being a non-class subtype of Object.
-.type Context  = [ type1:Type, type2:Type, type3:Type ]
-.type HContext = [ type1:Type, type2:Type ]
-
 .comp ThreeTypeSensitivePlusTwoHeapConfiguration : AbstractConfiguration {
+
+  // In this analysis, the real context is a triplet of Types and the real heap
+  // context a pair of Types. The type is not always a class type, because of
+  // arrays currently being a non-class subtype of Object.
+  .type Context  = [ type1:Type, type2:Type, type3:Type ]
+  .type HContext = [ type1:Type, type2:Type ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
