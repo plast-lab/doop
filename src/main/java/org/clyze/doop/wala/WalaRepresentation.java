@@ -31,12 +31,13 @@ public class WalaRepresentation {
     }
 
     String classConstant(IClass c) {
-        return "<class " + c.getName().getClassName().toString() + ">";
+        return "<class " + fixTypeString(c.getName().toString()) + ">";
     }
 
     String classConstant(String className) {
         return "<class " + className + ">";
     }
+
 
     String classConstant(TypeReference t) {
         return "<class " + t + ">";
@@ -44,7 +45,10 @@ public class WalaRepresentation {
 
     //REVIEW: Delete this and keep getMethodSignature()?
     public String signature(IMethod m) {
-        //return m.getSignature();
+        return signature(m.getReference());
+    }
+
+    public String signature(MethodReference m) {
         String WalaSignature = m.getSignature();
         String doopSignature = _methodSigRepr.get(WalaSignature);
         if (doopSignature == null){
@@ -54,47 +58,45 @@ public class WalaRepresentation {
         return doopSignature;
     }
 
-    public String signature(MethodReference m) {
-        return m.getSignature();
-    }
-
     String signature(IField f) {
         //return f.getReference().getSignature();
+        return signature(f.getReference());
+    }
+
+    String signature(FieldReference f) {
         StringBuilder DoopSig= new StringBuilder("<");
         DoopSig.append(fixTypeString(f.getDeclaringClass().toString()));
         DoopSig.append(": ");
-        DoopSig.append(fixTypeString(f.getFieldTypeReference().toString()));
+        DoopSig.append(fixTypeString(f.getFieldType().toString()));
         DoopSig.append(" ");
         DoopSig.append(f.getName().toString());
         DoopSig.append(">");
         return DoopSig.toString();
     }
 
-    String signature(FieldReference f) {
-        return f.getSignature();
-    }
-
     String simpleName(IMethod m) {
-        return m.getSignature();
+        return m.getReference().getName().toString();
     }
 
     String simpleName(IField m) {
-        return m.getReference().getSignature();
+        return simpleName(m.getReference());
     }
 
     String simpleName(FieldReference f) {
-        return f.getSignature();
+        return f.getName().toString();
     }
 
+    //Method descriptors using soot like format.
+    //Should maybe cache these as well.
     String descriptor(IMethod m)
     {
         StringBuilder builder = new StringBuilder();
 
-        builder.append(m.getReturnType().toString());
+        builder.append(fixTypeString(m.getReturnType().toString()));
         builder.append("(");
         for(int i = 0; i < m.getNumberOfParameters(); i++)
         {
-            builder.append(m.getParameterType(i));
+            builder.append(fixTypeString(m.getParameterType(i).toString()));
 
             if(i != m.getNumberOfParameters() - 1)
             {
@@ -193,10 +195,9 @@ public class WalaRepresentation {
         return ret;
     }
 
-
-    private String createMethodSignature(IMethod m)
+    private String createMethodSignature(MethodReference m)
     {
-        String DoopSig ="<"+ fixTypeString(m.getDeclaringClass().toString())+": "+ fixTypeString(m.getReturnType().toString()) + " " + m.getReference().getName()+"(";
+        String DoopSig ="<"+ fixTypeString(m.getDeclaringClass().toString())+": "+ fixTypeString(m.getReturnType().toString()) + " " + m.getName()+"(";
         for (int i = 0; i < m.getNumberOfParameters(); i++) {
             DoopSig+=fixTypeString(m.getParameterType(i).toString());
             if (i < m.getNumberOfParameters() - 1)

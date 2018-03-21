@@ -59,11 +59,12 @@ public class WalaFactWriter {
             return "<<METHOD HASH:" + methodRaw.hashCode() + ">>";
     }
 
+    //The final argument is not translated to Soot's descriptor format but keeps WALAs JVM-like format as Soot is also using it.
+    //This descriptor format is used by Soot only for Method.facts
     String writeMethod(IMethod m) {
-        String methodRaw = _rep.signature(m);
-        String result = hashMethodNameIfLong(methodRaw);
+        String result = _rep.signature(m);
 
-        _db.add(STRING_RAW, result, methodRaw);
+        _db.add(STRING_RAW, result, result);
         _db.add(METHOD, result, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
 //        if (m.getTag("VisibilityAnnotationTag") != null) {
 //            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
@@ -100,7 +101,7 @@ public class WalaFactWriter {
     }
 
     void writeClassOrInterfaceType(IClass c) {
-        String classStr = c.getName().getClassName().toString();
+        String classStr = _rep.fixTypeString(c.getName().toString());
         if (c.isInterface()) {
             _db.add(INTERFACE_TYPE, classStr);
         }
@@ -153,7 +154,7 @@ public class WalaFactWriter {
     void writeEnterMonitor(IMethod m, SSAMonitorInstruction instruction, Local var, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(ENTER_MONITOR, insn, str(index), _rep.local(m, var), methodId);
     }
@@ -161,7 +162,7 @@ public class WalaFactWriter {
     void writeExitMonitor(IMethod m, SSAMonitorInstruction instruction, Local var, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(EXIT_MONITOR, insn, str(index), _rep.local(m, var), methodId);
     }
@@ -324,7 +325,7 @@ public class WalaFactWriter {
         String heapId = writeStringConstant(constant);
 
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+getLineNumberFromStmt(instruction));
     }
@@ -332,7 +333,7 @@ public class WalaFactWriter {
     void writeAssignNull(IMethod m, SSAInstruction instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_NULL, insn, str(index), _rep.local(m, l), methodId);
     }
@@ -340,7 +341,7 @@ public class WalaFactWriter {
     void writeAssignNumConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, l), methodId);
     }
@@ -373,7 +374,7 @@ public class WalaFactWriter {
         _db.add(CLASS_HEAP, heap, actualType);
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
@@ -414,7 +415,7 @@ public class WalaFactWriter {
     private void writeInstanceField(IMethod m, SSAInstruction instruction, FieldReference f, Local base, Local var, Session session, PredicateFile predicateFile) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         String fieldId = writeField(f);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
@@ -431,7 +432,7 @@ public class WalaFactWriter {
     private void writeStaticField(IMethod m, SSAInstruction stmt, FieldReference f, Local var, Session session, PredicateFile predicateFile) {
         int index = session.calcInstructionNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         String fieldId = writeField(f);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), fieldId, methodId);
@@ -448,7 +449,7 @@ public class WalaFactWriter {
     private void writeFieldOrIndex(IMethod m, SSAInstruction instruction, Local base, Local var, Local arrIndex, Session session, PredicateFile predicateFile) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), methodId);
 
@@ -501,7 +502,7 @@ public class WalaFactWriter {
     }
 
     void writeMethodModifier(IMethod m, String modifier) {
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
         _db.add(METHOD_MODIFIER, modifier, methodId);
     }
 
@@ -509,7 +510,7 @@ public class WalaFactWriter {
     void writeReturn(IMethod m, SSAInstruction instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(RETURN, insn, str(index), _rep.local(m, l), methodId);
     }
@@ -517,7 +518,7 @@ public class WalaFactWriter {
     void writeReturnVoid(IMethod m, SSAInstruction instruction, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(RETURN_VOID, insn, str(index), methodId);
     }
@@ -525,7 +526,7 @@ public class WalaFactWriter {
     // The return var of native methods is exceptional, in that it does not
     // correspond to a return instruction.
     void writeNativeReturnVar(IMethod m) {
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         //if (!(m.getReturnType() instanceof VoidType)) {
         String  var = _rep.nativeReturnVar(m);
@@ -541,7 +542,7 @@ public class WalaFactWriter {
         session.calcInstructionNumber(to);
         int indexTo = session.getInstructionNumber(to);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(GOTO, insn, str(index), str(indexTo), methodId);
     }
@@ -555,7 +556,7 @@ public class WalaFactWriter {
         session.calcInstructionNumber(to);
         int indexTo = session.calcInstructionNumber(to);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(IF, insn, str(index), str(indexTo), methodId);
         _db.add(IF_VAR, insn, _rep.local(m, var1));
@@ -620,7 +621,7 @@ public class WalaFactWriter {
     void writeUnsupported(IMethod m, SSAInstruction instruction, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.unsupported(m, instruction, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(UNSUPPORTED_INSTRUCTION, insn, str(index), methodId);
     }
@@ -631,7 +632,7 @@ public class WalaFactWriter {
     void writeThrow(IMethod m, SSAThrowInstruction instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.throwLocal(m, l, session);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(THROW, insn, str(index), _rep.local(m, l), methodId);
     }
@@ -642,7 +643,7 @@ public class WalaFactWriter {
     void writeThrowNull(IMethod m, SSAThrowInstruction instruction, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(THROW_NULL, insn, str(index), methodId);
     }
@@ -679,7 +680,7 @@ public class WalaFactWriter {
 //    }
 
     void writeThisVar(IMethod m) {
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
         String thisVar = _rep.thisVar(m);
         _db.add(THIS_VAR, methodId, thisVar);
         _db.add(VAR_TYPE, thisVar, writeType(m.getReference().getDeclaringClass()));
@@ -687,11 +688,11 @@ public class WalaFactWriter {
     }
 
     void writeMethodDeclaresException(IMethod m, TypeReference exception) {
-        _db.add(METHOD_DECL_EXCEPTION, writeType(exception), writeMethod(m));
+        _db.add(METHOD_DECL_EXCEPTION, writeType(exception), _rep.signature(m));
     }
 
     void writeFormalParam(IMethod m, int i) {
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
         String var = _rep.param(m, i);
         _db.add(FORMAL_PARAM, str(i), methodId, var);
         _db.add(VAR_TYPE, var, writeType(m.getParameterType(i)));
@@ -710,7 +711,7 @@ public class WalaFactWriter {
         }
 
         _db.add(VAR_TYPE, local, writeType(type));
-        _db.add(VAR_DECLARING_METHOD, local, writeMethod(m));
+        _db.add(VAR_DECLARING_METHOD, local, _rep.signature(m));
     }
 
     Local writeStringConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
@@ -777,7 +778,7 @@ public class WalaFactWriter {
     private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.invoke(inMethod, instruction, session);
-        String methodId = writeMethod(inMethod);
+        String methodId = _rep.signature(inMethod);
 
         writeActualParams(inMethod, ir, instruction, insn, session);
 
@@ -846,7 +847,7 @@ public class WalaFactWriter {
     void writeAssignBinop(IMethod m, SSABinaryOpInstruction instruction, Local left, Local op1, Local op2, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
         _db.add(ASSIGN_OPER_TYPE, insn, instruction.getOperator().toString());
@@ -859,7 +860,7 @@ public class WalaFactWriter {
     void writeAssignUnop(IMethod m, SSAUnaryOpInstruction instruction, Local to, Local from, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), methodId);
 
@@ -872,7 +873,7 @@ public class WalaFactWriter {
     void writeAssignArrayLength(IMethod m, SSAArrayLengthInstruction instruction, Local to, Local from, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), methodId);
         _db.add(ASSIGN_OPER_TYPE, insn, " length ");
