@@ -578,9 +578,6 @@ FieldNamePrefix(substr(?fieldName, 0, ?length), ?sig) :-
  * Analysis of reflection strings flowing through String Factories
  *************************************************************/
 
-.decl StringFactoryVar(?var:Var)
-.decl StringFactoryVarPointsTo(?factoryHctx:configuration.HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)
-
 StringFactoryVar(?var) :-
   StringFactoryType(?type),
   Var_Type(?var, ?type).
@@ -880,18 +877,20 @@ AllocationShouldBeMergedPerClass(?type, ?class) :-
  *************************************************************/
 
 #ifndef CONTEXT_SENSITIVE_LIBRARY_ANALYSIS
-#include "special-library.dl"
-HeapAllocation_ContextInsensitive(?heap) :-
-  SpecialLibraryObject(?heap),
-  !HeapRepresentative(_, ?heap).
+  #include "special-library.dl"
+  HeapAllocation_ContextInsensitive(?heap) :-
+    SpecialLibraryObject(?heap),
+    !HeapRepresentative(_, ?heap).
 
-#ifdef MERGE_LIBRARY_OBJECTS_PER_METHOD
-AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
-  AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
-  ?n > 1,
-  Method_DeclaringType(?meth, ?class),
-  SpecialLibraryClass(?class).
-#endif
+  #ifdef MERGE_LIBRARY_OBJECTS_PER_METHOD
+
+    AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
+      AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
+      ?n > 1,
+      Method_DeclaringType(?meth, ?class),
+      SpecialLibraryClass(?class).
+
+  #endif
 #endif
 
 /*************************************************************
@@ -908,6 +907,9 @@ StringFactoryType(?type) :-
 StringFactoryHeap(?heap) :-
   HeapAllocation_Type(?heap, ?heaptype),
   StringFactoryType(?heaptype).
+
+.decl StringFactoryVar(?var:Var)
+.decl StringFactoryVarPointsTo(?factoryHctx:configuration.HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)
 
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
 #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS

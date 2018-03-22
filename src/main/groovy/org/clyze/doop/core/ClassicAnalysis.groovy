@@ -281,6 +281,7 @@ class ClassicAnalysis extends DoopAnalysis {
         }
 
         if (!options.MAIN_CLASS && !options.TAMIFLEX && !options.HEAPDL && !options.ANDROID && !options.DACAPO && !options.DACAPO_BACH) {
+            warnOpenPrograms()
             if (options.OPEN_PROGRAMS.value)
                 cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.logic", macros)
             else

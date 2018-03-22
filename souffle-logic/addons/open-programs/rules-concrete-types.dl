@@ -126,10 +126,10 @@ MockForFormal(?value, ?formal, ?type, ?method) :-
   MockObject(?value, ?type).
 
 .decl MockObject(?value:Value, ?class:ReferenceType)
-.decl MockObjectContext(?hctx:HContext, ?value:Value, ?class:ReferenceType)
+.decl MockObjectContext(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?class:ReferenceType)
 
-.decl ContextForOpenProgramEntryPoint(?ctx:Context, ?method:Method)
-.decl HContextForOpenProgramEntryPoint(?hctx:HContext, ?method:Method)
+.decl ContextForOpenProgramEntryPoint(?ctx:mainAnalysis.configuration.Context, ?method:Method)
+.decl HContextForOpenProgramEntryPoint(?hctx:mainAnalysis.configuration.HContext, ?method:Method)
 
 // bind mock objects to formals
 MockObjectContext(?hctx, ?value, ?class),
@@ -142,7 +142,7 @@ mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 // feel free to remove/collapse some
 
 // receivers for entry points
-.decl ReceiverPointsTo(?value:Value, ?ctx:Context, ?receiver:Var, ?class:ReferenceType, ?method:Method)
+.decl ReceiverPointsTo(?value:Value, ?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?class:ReferenceType, ?method:Method)
 
 mainAnalysis.configuration.RecordContextRequest(?calleeCtx, ?value, ?receiver) :-
   ReceiverPointsTo(?value, ?calleeCtx, ?receiver, _, _).
@@ -259,6 +259,6 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
 
 // "Arbitrary" methods might be made reachable. Initialize the corresponding
 // classes as well.
-InitializedClass(?class) :-
+mainAnalysis.InitializedClass(?class) :-
   mainAnalysis.ReachableContext(_, ?method),
   Method_DeclaringType(?method, ?class).

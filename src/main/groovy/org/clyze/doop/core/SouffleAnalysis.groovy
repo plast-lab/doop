@@ -173,6 +173,7 @@ class SouffleAnalysis extends DoopAnalysis {
                 !options.HEAPDL.value && !options.ANDROID.value &&
                 !options.DACAPO.value && !options.DACAPO_BACH.value)
         {
+            warnOpenPrograms()
             if (options.OPEN_PROGRAMS.value)
                 cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", commonMacros)
             else
