@@ -24,6 +24,10 @@ public class Local {
         return varIndex;
     }
 
+    public void setType(TypeReference newType)
+    {
+        type = newType;
+    }
     public Local(String name, int varIndex, String sourceCodeName, TypeReference type, String value) {
         this.name = name;
         this.sourceCodeName = sourceCodeName;

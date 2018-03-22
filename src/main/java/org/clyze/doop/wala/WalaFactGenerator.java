@@ -396,7 +396,7 @@ class WalaFactGenerator {
             typeRef = TypeReference.JavaLangObject;
         else
             typeRef = typeInference.getType(varIndex).getTypeReference();
-        
+        if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("type is " + typeRef.toString());
         if (localNames != null) {
             assert localNames.length == 1;
             l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
@@ -462,6 +462,7 @@ class WalaFactGenerator {
             if (use != -1 && symbolTable.isConstant(use)) {
                 Value v = symbolTable.getValue(use);
                 generateConstant(m, ir, instruction, v, l, session);
+                if(m.getName().toString().equals("nothing"))System.out.println("var v"+use + " is constant.");
             }
             else {
                 _writer.writeLocal(m, l);
@@ -474,20 +475,26 @@ class WalaFactGenerator {
 
         String s = v.toString();
         if (v.isStringConstant()) {
+            l.setType(TypeReference.JavaLangString);
             _writer.writeStringConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (v.isNullConstant()) {
             _writer.writeNullExpression(m, instruction, l, session);
         } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
+            l.setType(TypeReference.JavaLangInteger);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isLongConstant(l.getVarIndex())) {
+            l.setType(TypeReference.JavaLangLong);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isFloatConstant(l.getVarIndex())) {
+            l.setType(TypeReference.JavaLangFloat);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isDoubleConstant(l.getVarIndex())) {
+            l.setType(TypeReference.JavaLangDouble);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isBooleanConstant(l.getVarIndex())) {
+            l.setType(TypeReference.JavaLangBoolean);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (s.startsWith("#[") || (s.startsWith("#L") && s.endsWith(";"))) {
             _writer.writeClassConstantExpression(m, instruction, l, (ConstantValue) v, session);
