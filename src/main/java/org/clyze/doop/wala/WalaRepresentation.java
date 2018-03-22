@@ -43,7 +43,7 @@ public class WalaRepresentation {
         return "<class " + t + ">";
     }
 
-    //REVIEW: Delete this and keep getMethodSignature()?
+
     public String signature(IMethod m) {
         return signature(m.getReference());
     }
@@ -195,6 +195,8 @@ public class WalaRepresentation {
         return ret;
     }
 
+    //This method takes a MethodReference as a parameter and it does not include "this" as an argument
+    //Had the parameter been an IMethod it would include "this" but soot Signatures don't have it so we keep it this way.
     private String createMethodSignature(MethodReference m)
     {
         String DoopSig ="<"+ fixTypeString(m.getDeclaringClass().toString())+": "+ fixTypeString(m.getReturnType().toString()) + " " + m.getName()+"(";

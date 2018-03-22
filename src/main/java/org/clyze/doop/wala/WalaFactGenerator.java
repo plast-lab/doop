@@ -207,6 +207,8 @@ class WalaFactGenerator {
 
         for(int i = 0 ; i < m.getNumberOfParameters(); i++)
         {
+            if(i == 0 && m.isStatic() == false) //Don't produce "this" again
+                continue;
             _writer.writeFormalParam(m, i);
         }
 
