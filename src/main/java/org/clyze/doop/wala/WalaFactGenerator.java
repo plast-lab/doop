@@ -477,21 +477,19 @@ class WalaFactGenerator {
         } else if (v.isNullConstant()) {
             _writer.writeNullExpression(m, instruction, l, session);
         } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
-            l.setType(TypeReference.JavaLangInteger);
+            l.setType(TypeReference.Int);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isLongConstant(l.getVarIndex())) {
-            l.setType(TypeReference.JavaLangLong);
+            l.setType(TypeReference.Long);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isFloatConstant(l.getVarIndex())) {
-            l.setType(TypeReference.JavaLangFloat);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
-        } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
+            l.setType(TypeReference.Float);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isDoubleConstant(l.getVarIndex())) {
-            l.setType(TypeReference.JavaLangDouble);
+            l.setType(TypeReference.Double);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isBooleanConstant(l.getVarIndex())) {
-            l.setType(TypeReference.JavaLangBoolean);
+            l.setType(TypeReference.Boolean);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (s.startsWith("#[") || (s.startsWith("#L") && s.endsWith(";"))) {
             _writer.writeClassConstantExpression(m, instruction, l, (ConstantValue) v, session);
