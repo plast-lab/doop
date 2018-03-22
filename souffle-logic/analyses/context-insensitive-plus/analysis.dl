@@ -6,11 +6,10 @@
 #include "../../main/configuration.dl"
 #include "../../main/in-out-flow.dl"
 
-
+.type UniqueContext
 
 .comp ContextInsensitivePlusConfiguration : AbstractConfiguration {
 
-.type UniqueContext
 .type Context = MethodInvocation | UniqueContext
 .type HContext
 

@@ -2,46 +2,78 @@
 
 .init preAnalysis = BasicContextSensitivity<ContextInsensitiveConfiguration>
 
+.type UniqueContext
+.type UniqueHContext
+.type InstrospectiveComponent = Value | UniqueContext | UniqueHContext
+
 .comp IntrospectiveConfiguration : AbstractConfiguration {
   
-.type Context
-.type HContext
-         
-ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  ?calleeCtx = ?callerCtx.
+.type Context  = [ c1:InstrospectiveComponent, c2:InstrospectiveComponent ]
+.type HContext = [ c1:InstrospectiveComponent, c2:InstrospectiveComponent ]
 
-StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
-  StaticContextRequest(?callerCtx, ?invo),
-  ?calleeCtx = ?callerCtx.
-      
+.decl UContext(?ctx:UniqueContext)
+.decl UHContext(?hctx:UniqueHContext)
+
 #define UNIQUE_CONTEXT  "<<unique-context>>"
 #define UNIQUE_HCONTEXT "<<unique-hcontext>>"
 
+UContext(UNIQUE_CONTEXT).
+UHContext(UNIQUE_HCONTEXT).
+
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+  Value_Type(?value, ?valuetype),
+  basic.ResolveInvocation(?valuetype, ?invo, ?method),
+  !InOutFlowDirectTwoValues(?method),
+  !InOutFlowAnyTwoValues(?method),
+  UContext(?calleeCtxComp),
+  ?calleeCtx = [?calleeCtxComp, ?calleeCtxComp].
+
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+  Value_Type(?value, ?valuetype),
+  basic.ResolveInvocation(?valuetype, ?invo, ?method),    
+  (InOutFlowDirectTwoValues(?method);
+   InOutFlowAnyTwoValues(?method)),
+  ?hctx = [?hctxValue1, ?hctxValue2],
+  ?calleeCtx = [?hctxValue2, ?value],
+  ?hctxValue1 = ?hctxValue1.
+
+StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+  StaticContextRequest(?callerCtx, ?invo),
+  UContext(?calleeCtxComp),
+  ?calleeCtx = [?calleeCtxComp, ?calleeCtxComp].
+
 RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
   RecordContextRequest(?ctx, ?value, ?var),      
-  ?hctx = UNIQUE_HCONTEXT.
+  ?ctx = [?component1, ?component2],
+  ?hctx = [?component1, ?component2].
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
 ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
   ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-  ?newCtx = UNIQUE_CONTEXT.
+  UContext(?newCtxComp),
+  ?newCtx = [?newCtxComp, ?newCtxComp].
 
 StartupContextResponse(?hctx, ?value, ?calleeCtx) :-
   StartupContextRequest(?hctx, ?value),
-  ?calleeCtx = UNIQUE_CONTEXT.
+  UContext(?calleeCtxComp),
+  ?calleeCtx = [?calleeCtxComp, ?calleeCtxComp].
               
 FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?calleeCtx) :-
   FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-  ?calleeCtx = UNIQUE_CONTEXT.
+  UContext(?calleeCtxComp),
+  ?calleeCtx = [?calleeCtxComp, ?calleeCtxComp].
 
 InitContextResponse(?s, ?ctx) :-
-  ?ctx = UNIQUE_CONTEXT,                   
+  ?ctx = [?comp, ?comp],
+  UContext(?comp),                   
   InitContextRequest(?s).
 
 InitHContextResponse(?s, ?hctx) :-
-  ?hctx = UNIQUE_HCONTEXT,
+  ?hctx = [?comp, ?comp],                  
+  UHContext(?comp),
   InitHContextRequest(?s).
          
 .decl InOutFlowDirectValue(?method:Method, ?value:Value)

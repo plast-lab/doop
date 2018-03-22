@@ -6,13 +6,14 @@
 #include "../../main/configuration.dl"
 #include "../../main/in-out-flow.dl"
 
-.comp ContextInsensitivePlusPlusConfiguration : AbstractConfiguration {
-
 .type UniqueContext
 .type UniqueHContext
-.type Component = MethodInvocation | Value | UniqueContext | UniqueHContext
-.type Context  = [ c:Component ]
-.type HContext = [ c:Component ]
+.type ContextInsensitivePlusPlusComponent = MethodInvocation | Value | UniqueContext | UniqueHContext
+      
+.comp ContextInsensitivePlusPlusConfiguration : AbstractConfiguration {
+
+.type Context  = [ c:ContextInsensitivePlusPlusComponent ]
+.type HContext = [ c:ContextInsensitivePlusPlusComponent ]
 
 .decl UContext(?ctx:UniqueContext)
 .decl UHContext(?hctx:UniqueHContext)
