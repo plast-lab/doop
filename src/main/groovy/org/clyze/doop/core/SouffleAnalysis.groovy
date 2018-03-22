@@ -267,6 +267,11 @@ class SouffleAnalysis extends DoopAnalysis {
 
     @Override
     protected void produceStats() {
+        def statsPath = "${Doop.souffleAddonsPath}/statistics"
+        if (options.X_EXTRA_METRICS.value) {
+            cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
+        }
+
         if (options.X_STATS_NONE.value) return
 
         if (options.X_STATS_AROUND.value) {
@@ -281,15 +286,10 @@ class SouffleAnalysis extends DoopAnalysis {
             return
         }
 
-        def statsPath = "${Doop.souffleAddonsPath}/statistics"
         cpp.includeAtEnd("$analysis", "${statsPath}/statistics-simple.dl")
 
         if (options.X_STATS_FULL.value || options.X_STATS_DEFAULT.value) {
             cpp.includeAtEnd("$analysis", "${statsPath}/statistics.dl")
-        }
-
-        if (options.X_EXTRA_METRICS.value) {
-            cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
         }
     }
 

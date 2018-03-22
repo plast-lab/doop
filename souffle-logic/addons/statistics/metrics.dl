@@ -8,11 +8,14 @@
 .decl SDKMethodDirectlyReachableFromApplication(?method:symbol)
 .decl SDKMethodDirectlyReachableFromDependency(?method:symbol)
 .decl SDKMethodDirectlyReachableFromSDK(?method:symbol)
-.decl Metrics_Method_IncomingInvo_Count(?n:number, ?method:Method)
-.decl Metrics_Method_IncomingMethods_Count(?n:number, ?method:Method)
-.decl Metrics_Method_OutgoingInvo_Count(?n:number, ?method:Method)
-.decl Metrics_Method_OutgoingMethods_Count(?n:number, ?method:Method)
-.decl Metrics_Value_AsReceiver_Count(?n:number, value:Value)
+.decl ApplicationEntryPoint(?method:Method)
+.decl Metrics_InvocationZeroTargets(?invo:MethodInvocation)
+.decl Metrics_InvocationTargets_Count(?invo:MethodInvocation, ?n:number)
+.decl Metrics_Method_IncomingInvo_Count(?method:Method, ?n:number)
+.decl Metrics_Method_IncomingMethods_Count(?method:Method, ?n:number)
+.decl Metrics_Method_OutgoingInvo_Count(?method:Method, ?n:number)
+.decl Metrics_Method_OutgoingMethods_Count(?method:Method, ?n:number)
+.decl Metrics_Value_AsReceiver_Count(?value:Value, ?n:number)
 
 .output ReachableClass
 .output ReachableApplicationClass
@@ -24,9 +27,9 @@
 .output SDKMethodDirectlyReachableFromApplication
 .output SDKMethodDirectlyReachableFromDependency
 .output SDKMethodDirectlyReachableFromSDK
-// ApplicationEntryPoint defined in implicit-reachable so other files can add
-// to the rule. Here we control if it will produce a csv file or not
 .output ApplicationEntryPoint
+.output Metrics_InvocationZeroTargets
+.output Metrics_InvocationTargets_Count
 .output Metrics_Method_IncomingInvo_Count
 .output Metrics_Method_IncomingMethods_Count
 .output Metrics_Method_OutgoingInvo_Count
@@ -114,6 +117,23 @@ SDKMethodDirectlyReachableFromSDK(?sdkMethod) :-
     ReachableSDKClass(?sdkClass).
 
 
+ApplicationEntryPoint(?m) :- mainAnalysis.ApplicationEntryPoint(?m).
+
+.decl _Metrics_InvoTargets(?invo:MethodInvocation, ?toMethod:Method)
+
+_Metrics_InvoTargets(?invo, ?toMethod) :-
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod).
+
+Metrics_InvocationTargets_Count(?invo, ?n) :-
+  _Metrics_InvoTargets(?invo, _),
+  ?n = count:{_Metrics_InvoTargets(?invo, _)}.
+
+Metrics_InvocationZeroTargets(?invo) :-
+  isMethodInvocation(?invo),
+  Instruction_Method(?invo, ?fromMethod),
+  mainAnalysis.Reachable(?fromMethod),
+  !mainAnalysis.CallGraphEdge(_, ?invo, _, _).
+
 .decl _MethodIncomingInvo(?toMethod:Method, ?invo:MethodInvocation)
 _MethodIncomingInvo(?toMethod, ?invo) :-
   mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod).
@@ -123,14 +143,13 @@ _MethodIncomingMethod(?toMethod, ?inMethod) :-
   mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod),
   Instruction_Method(?invo, ?inMethod).
 
-Metrics_Method_IncomingInvo_Count(?n, ?toMethod) :-
+Metrics_Method_IncomingInvo_Count(?toMethod, ?n) :-
   _MethodIncomingInvo(?toMethod, _),
   ?n = count:{_MethodIncomingInvo(?toMethod, _)}.
 
-Metrics_Method_IncomingMethods_Count(?n, ?toMethod) :-
+Metrics_Method_IncomingMethods_Count(?toMethod, ?n) :-
   _MethodIncomingMethod(?toMethod, _),
   ?n = count:{_MethodIncomingMethod(?toMethod, _)}.
-
 
 .decl _MethodOutgoingInvo(?inMethod:Method, ?invo:MethodInvocation)
 _MethodOutgoingInvo(?inMethod, ?invo) :-
@@ -142,20 +161,19 @@ _MethodOutgoingMethod(?inMethod, ?toMethod) :-
   Instruction_Method(?invo, ?inMethod),
   mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod).
 
-Metrics_Method_OutgoingInvo_Count(?n, ?inMethod) :-
+Metrics_Method_OutgoingInvo_Count(?inMethod, ?n) :-
   _MethodOutgoingInvo(?inMethod, _),
   ?n = count:{_MethodOutgoingInvo(?inMethod, _)}.
 
-Metrics_Method_OutgoingMethods_Count(?n, ?inMethod) :-
+Metrics_Method_OutgoingMethods_Count(?inMethod, ?n) :-
   _MethodOutgoingMethod(?inMethod, _),
   ?n = count:{_MethodOutgoingMethod(?inMethod, _)}.
-
 
 .decl _ValueAsReceiver(?value:Value, ?invo:VirtualMethodInvocation_Insn)
 _ValueAsReceiver(?value, ?invo) :-
   VirtualMethodInvocation_Base(?invo, ?base),
   mainAnalysis.VarPointsTo(_, ?value, _, ?base).
 
-Metrics_Value_AsReceiver_Count(?n, ?value) :-
+Metrics_Value_AsReceiver_Count(?value, ?n) :-
   _ValueAsReceiver(?value, _),
   ?n = count:{_ValueAsReceiver(?value, _)}.
