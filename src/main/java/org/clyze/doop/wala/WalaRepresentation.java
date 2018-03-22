@@ -91,14 +91,14 @@ public class WalaRepresentation {
     String descriptor(IMethod m)
     {
         StringBuilder builder = new StringBuilder();
-
-        builder.append(fixTypeString(m.getReturnType().toString()));
+        MethodReference methodReference = m.getReference();
+        builder.append(fixTypeString(methodReference.getReturnType().toString()));
         builder.append("(");
-        for(int i = 0; i < m.getNumberOfParameters(); i++)
+        for(int i = 0; i < methodReference.getNumberOfParameters(); i++)
         {
-            builder.append(fixTypeString(m.getParameterType(i).toString()));
+            builder.append(fixTypeString(methodReference.getParameterType(i).toString()));
 
-            if(i != m.getNumberOfParameters() - 1)
+            if(i != methodReference.getNumberOfParameters() - 1)
             {
                 builder.append(",");
             }
