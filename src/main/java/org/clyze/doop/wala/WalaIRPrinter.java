@@ -9,6 +9,7 @@ import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSACFG;
 import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.ssa.SymbolTable;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -124,6 +125,7 @@ public class WalaIRPrinter {
         IR ir = _cache.getIR(m, Everywhere.EVERYWHERE);
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
+        SymbolTable symbolTable = ir.getSymbolTable();
         for (int i = 0; i <=cfg.getMaxNumber(); i++) {
             writer.write("\t\tBB "+ i + "\n");
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
@@ -132,7 +134,7 @@ public class WalaIRPrinter {
 
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
-                    writer.write("\t\t\t" + instructions[j].toString() + "\n");
+                    writer.write("\t\t\t" + instructions[j].toString(symbolTable) + "\n");
 
                 }
             }
