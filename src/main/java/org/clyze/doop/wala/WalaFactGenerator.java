@@ -464,9 +464,6 @@ class WalaFactGenerator {
                 generateConstant(m, ir, instruction, v, l, session);
                 if(m.getName().toString().equals("nothing"))System.out.println("var v"+use + " is constant.");
             }
-            else {
-                _writer.writeLocal(m, l);
-            }
         }
     }
 
