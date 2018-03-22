@@ -500,4 +500,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             e.printStackTrace();
         }
     }
+
+    protected void warnOpenPrograms() {
+        logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
+    }
+
 }
