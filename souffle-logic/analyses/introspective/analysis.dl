@@ -1,24 +1,19 @@
 #include "../context-insensitive/analysis.dl"
 
+#define UNIQUE_VALUE  "<<unique-value>>"
+#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
+
 .init preAnalysis = BasicContextSensitivity<ContextInsensitiveConfiguration>
 
-.type UniqueContext
-.type UniqueHContext
-.type InstrospectiveComponent = mainAnalysis.Value | UniqueContext | UniqueHContext
 
 .comp IntrospectiveConfiguration : AbstractConfiguration {
   
-.type Context  = [ c1:InstrospectiveComponent, c2:InstrospectiveComponent ]
-.type HContext = [ c1:InstrospectiveComponent, c2:InstrospectiveComponent ]
-
-.decl UContext(?ctx:UniqueContext)
-.decl UHContext(?hctx:UniqueHContext)
-
-#define UNIQUE_CONTEXT  "<<unique-context>>"
-#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
-
-UContext(UNIQUE_CONTEXT).
-UHContext(UNIQUE_HCONTEXT).
+.type Context  = [ c1:mainAnalysis.Value, c2:mainAnalysis.Value ]
+.type HContext = [ value:mainAnalysis.Value ]
+                    
+.decl UValue(?uvalue:Value)
+  
+UValue(UNIQUE_VALUE).
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
@@ -26,8 +21,8 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   basic.ResolveInvocation(?valuetype, ?invo, ?method),
   !InOutFlowDirectTwoValues(?method),
   !InOutFlowAnyTwoValues(?method),
-  UContext(?calleeCtxComp),
-  ?calleeCtx = [?calleeCtxComp, ?calleeCtxComp].
+  UValue(?uvalue),
+  ?calleeCtx = [?uvalue, ?uvalue].
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
@@ -35,46 +30,44 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   basic.ResolveInvocation(?valuetype, ?invo, ?method),    
   (InOutFlowDirectTwoValues(?method);
    InOutFlowAnyTwoValues(?method)),
-  ?hctx = [?hctxValue1, ?hctxValue2],
-  ?calleeCtx = [?hctxValue2, ?value],
-  ?hctxValue1 = ?hctxValue1.
+  ?hctx = [?hctxValue],
+  ?calleeCtx = [?hctxValue, ?value].
 
 StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
   StaticContextRequest(?callerCtx, ?invo),
-  UContext(?calleeCtxComp),
-  ?calleeCtx = [?calleeCtxComp, ?calleeCtxComp].
+  ?calleeCtx = ?callerCtx.
 
 RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
   RecordContextRequest(?ctx, ?value, ?var),      
-  ?ctx = [?component1, ?component2],
-  ?hctx = [?component1, ?component2].
+  ?ctx = [?ctxValue1, ?ctxValue2],
+  ?hctx = [?ctxValue2],
+  ?ctxValue1 = ?ctxValue1.
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
 ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
   ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-  UContext(?newCtxComp),
-  ?newCtx = [?newCtxComp, ?newCtxComp].
+  ?hctx = [?hctxValue],
+  ?newCtx = [?hctxValue, ?value].
 
-StartupContextResponse(?hctx, ?value, ?calleeCtx) :-
+StartupContextResponse(?hctx, ?value, ?newCtx) :-
   StartupContextRequest(?hctx, ?value),
-  UContext(?calleeCtxComp),
-  ?calleeCtx = [?calleeCtxComp, ?calleeCtxComp].
-              
-FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?calleeCtx) :-
+  ?hctx = [?hctxValue],
+  ?newCtx = [?hctxValue, ?value].
+
+FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
   FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-  UContext(?calleeCtxComp),
-  ?calleeCtx = [?calleeCtxComp, ?calleeCtxComp].
+  ?callerCtx = [?callerCtxValue1, ?callerCtxValue2],
+  ?newCtx = [?callerCtxValue2, ?value],
+  ?callerCtxValue1 = ?callerCtxValue1.
 
-InitContextResponse(?s, ?ctx) :-
-  ?ctx = [?comp, ?comp],
-  UContext(?comp),                   
-  InitContextRequest(?s).
+InitContextResponse(?value, ?ctx) :-
+  InitContextRequest(?value),
+  ?ctx = [?value, ?value].
 
-InitHContextResponse(?s, ?hctx) :-
-  ?hctx = [?comp, ?comp],                  
-  UHContext(?comp),
-  InitHContextRequest(?s).
+InitHContextResponse(?value, ?hctx) :-
+  InitHContextRequest(?value),
+  ?hctx = [?value].
          
 .decl InOutFlowDirectValue(?method:Method, ?value:Value)
 
@@ -95,8 +88,6 @@ InOutFlowDirectTwoValues(?method) :-
   InOutFlowDirectValue(?method, ?value1),
   InOutFlowDirectValue(?method, ?value2),
   ?value1 != ?value2.
-
-.output InOutFlowDirectTwoValues
 
 /**
  * Wrapped in out flow:
@@ -121,8 +112,6 @@ InOutFlowWrappedTwoValues(?method) :-
   InOutFlowWrappedValue(?method, ?value2),
   ?value1 != ?value2.
 
-.output InOutFlowWrappedTwoValues
-
 /**
  * Unwrapped in out flow:
  *
@@ -146,7 +135,6 @@ InOutFlowUnwrappedTwoValues(?method) :-
   InOutFlowUnwrappedValue(?method, ?value2),
   ?value1 != ?value2.
 
-.output InOutFlowUnwrappedTwoValues
 /** Utility rule: Value points to another value directly or indirectly **/
 .decl ValuePointsTo(?baseValue:Value, ?value:Value)
 
@@ -181,6 +169,4 @@ InOutFlowAnyTwoValues(?method) :-
   InOutFlowAnyValue(?method, ?value1),
   InOutFlowAnyValue(?method, ?value2),
   ?value1 != ?value2.
-
-.output InOutFlowAnyTwoValues
 }

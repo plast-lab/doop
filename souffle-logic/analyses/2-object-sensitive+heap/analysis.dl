@@ -11,8 +11,8 @@
 
   // In this analysis, the real context is a pair of Values and the real
   // heap context a single Value.
-  .type Context  = [ value1:Value, value2:Value ]
-  .type HContext = [ value:Value ]
+  .type Context  = [ value1:mainAnalysis.Value, value2:mainAnalysis.Value ]
+  .type HContext = [ value:mainAnalysis.Value ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
