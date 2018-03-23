@@ -403,6 +403,9 @@ ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) :-
 // native and normal call graph edges.
 .decl ReflectiveCallGraphEdge(?callerCtx:Context, ?invocation:MethodInvocation, ?calleeCtx:Context, ?callee:Method)
 
+.decl ReflectiveReachable(?m:Method)
+
+ReflectiveReachable(?callee),
 ReachableContext(?calleeCtx, ?callee) :-
   ReflectiveCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
