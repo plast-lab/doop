@@ -29,6 +29,8 @@
     isContext(?ctx),
     ?ctx = [?value].
 
+  #define UNIQUE_HCONTEXT "<<unique-hcontext>>"
+
   RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
     RecordContextRequest(?ctx, ?value, ?var),      
     ?hctx = UNIQUE_HCONTEXT.
