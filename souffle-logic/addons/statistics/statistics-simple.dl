@@ -119,7 +119,7 @@ Stats_Simple_PolymorphicCallSite(?from) :-
   ?size > 1.
 
 Stats_Simple_NullVirtualMethodInvocation(?invocation) :-
-  Value_Null(?null),
+  mainAnalysis.Value_Null(?null),
   Stats_Simple_InsensVarPointsTo(?null, ?base),
   VirtualMethodInvocation_Base(?invocation, ?base),
   Stats_Simple_ReachableVirtualMethodInvocation(?invocation).
@@ -139,7 +139,7 @@ Stats_Simple_Application_PolymorphicCallSite(?from) :-
   Stats_Simple_Application_ReachableVirtualMethodInvocation(?from).
 
 Stats_Simple_Application_NullVirtualMethodInvocation(?invocation) :-
-  Value_Null(?null),
+  mainAnalysis.Value_Null(?null),
   Stats_Simple_InsensVarPointsTo(?null, ?base),
   VirtualMethodInvocation_Base(?invocation, ?base),
   Stats_Simple_Application_ReachableVirtualMethodInvocation(?invocation).
@@ -161,7 +161,7 @@ Stats_Simple_ReachableCast(?inmethod, ?type, ?to, ?from) :-
 Stats_Simple_PotentiallyFailingCast(?type, ?from, ?to) :-
   Stats_Simple_ReachableCast(_, ?type, ?to, ?from),
   Stats_Simple_InsensVarPointsTo(?value, ?from),
-  Value_Type(?value, ?valuetype),
+  mainAnalysis.Value_Type(?value, ?valuetype),
   !basic.SupertypeOf(?type, ?valuetype).
 
 Stats_Simple_Application_Cast(?type, ?from, ?to, ?inmethod) :-
@@ -179,7 +179,7 @@ Stats_Simple_Application_ReachableMethod(?method) :-
 Stats_Simple_Application_PotentiallyFailingCast(?type, ?from, ?to) :-
   Stats_Simple_Application_ReachableCast(_, ?type, ?to, ?from),
   Stats_Simple_InsensVarPointsTo(?value, ?from),
-  Value_Type(?value, ?valuetype),
+  mainAnalysis.Value_Type(?value, ?valuetype),
   !basic.SupertypeOf(?type, ?valuetype).
 
 /***************************************************/
@@ -238,30 +238,30 @@ NewMetricMacro("25.5", "app reachable methods", Stats_Simple_Application_Reachab
 #ifdef REFLECTION
 Stats_Simple_Reflection_InsensArrayIndexPointsTo(?value, ?basevalue),
 Stats_Simple_Reflection_ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue) :-
-  ReflectiveValue(?value),
+  mainAnalysis.ReflectiveValue(?value),
   mainAnalysis.ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue).
 
 Stats_Simple_Reflection_InsensVarPointsTo(?value, ?var),
 Stats_Simple_Reflection_VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-  ReflectiveValue(?value),
+  mainAnalysis.ReflectiveValue(?value),
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
 Stats_Simple_Reflection_InsensInstanceFieldPointsTo(?value, ?sig, ?basevalue),
 Stats_Simple_Reflection_InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue) :-
-  ReflectiveValue(?value),
+  mainAnalysis.ReflectiveValue(?value),
   mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue).
 
 Stats_Simple_forName(?invocation) :-
-  java_lang_Class_forName(?invocation, ?inmethod),
+  mainAnalysis.java_lang_Class_forName(?invocation, ?inmethod),
   mainAnalysis.Reachable(?inmethod).
 
 Stats_Simple_Class_newInstance(?invocation) :-
-  java_lang_Class_newInstance(?invocation, _, ?from),
+  mainAnalysis.java_lang_Class_newInstance(?invocation, _, ?from),
   Var_DeclaringMethod(?from, ?inmethod),
   mainAnalysis.Reachable(?inmethod).
 
 Stats_Simple_Constructor_newInstance(?invocation) :-
-  java_lang_reflect_Constructor_newInstance(?invocation, _, ?from),
+  mainAnalysis.java_lang_reflect_Constructor_newInstance(?invocation, _, ?from),
   Var_DeclaringMethod(?from, ?inmethod),
   mainAnalysis.Reachable(?inmethod).
 

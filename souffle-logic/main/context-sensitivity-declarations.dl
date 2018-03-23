@@ -98,9 +98,9 @@
 /**
  * Filter predicate for refinement-based/adaptive analyses
  */
-.decl SiteToRefine(?invocation:MethodInvocation)
+//.decl SiteToRefine(?invocation:MethodInvocation)
 
-.decl ValueToRefine(?value:Value)
+//.decl ValueToRefine(?value:Value)
 
 // Is the SiteToRefine the real list of objects needing
 // refinement or its negation?

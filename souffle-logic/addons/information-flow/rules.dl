@@ -22,14 +22,14 @@ TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?t
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?toCtx, ?to) :-
   TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type),
   SourceFromTaintedValue(?value, ?source),
-  Value_DeclaringType(?value, ?declaringType),
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   mainAnalysis.isImmutableHContext(?hctx).
   .plan 2:(3,1,2,4)
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?toCtx, ?to) :-
   SourceFromTaintedValue(?value, ?source),
-  Value_DeclaringType(?value, ?declaringType),
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   VarIsTaintedFromValue(?type, ?value, ?toCtx, ?to),
   mainAnalysis.isImmutableHContext(?hctx).
 
@@ -125,7 +125,7 @@ VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) :-
 
 VarIsTaintedFromValue(?componentType, ?basevalue, ?ctx, ?to) :-
   TaintedValue(?basevalue),
-  Value_Type(?basevalue, ?arrayType),
+  mainAnalysis.Value_Type(?basevalue, ?arrayType),
   ComponentType(?arrayType, ?componentType),
   mainAnalysis.LoadHeapArrayIndex(?ctx, ?to, _, ?basevalue).
 
@@ -177,7 +177,7 @@ ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) :-
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   SourceFromTaintedValue(?value, ?source),
-  Value_DeclaringType(?value, ?declaringType),
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   TaintedVarPointsTo(?value, ?ctx, ?from),
   ParamTaintTransferredToRet(?type, ?to, ?ctx, ?from),
   mainAnalysis.isImmutableHContext(?hctx).
@@ -196,7 +196,7 @@ mainAnalysis.VarPointsTo(?hctx, ?newvalue, ?ctx, ?var) :-
   mainAnalysis.isImmutableHContext(?hctx).
   .plan 1:(2,1,3)
 
-.decl XYZ(?value:Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
+.decl XYZ(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
 
 XYZ(?existingvalue, ?ctx, ?param) :-
   ParamTaintTransferredToBase(?param, ?ctx, ?base),
@@ -207,22 +207,22 @@ XYZ(?existingvalue, ?ctx, ?param) :-
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 BaseValueTaintedFromParamValue(ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?existingValue) :-
   XYZ(?existingValue, ?ctx, ?param),
-  Value_Type(?existingValue, ?type),
+  mainAnalysis.Value_Type(?existingValue, ?type),
   TaintedVarPointsTo(?value, ?ctx, ?param),
   SourceFromTaintedValue(?value, ?source),
-  Value_DeclaringType(?value, ?declaringType).
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType).
   .plan 1:(2,1,3,4,5)
   .plan 2:(3,1,2,4,5)
   .plan 3:(4,3,1,2,5)
   .plan 4:(5,3,1,2,4)
 #else
-.decl XYZ2(?type:Type, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
+.decl XYZ2(?type:Type, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
 
 XYZ2(?type, ?value, ?ctx, ?param) :-
   ParamTaintTransferredToBase(?param, ?ctx, ?base),
   mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?base),
-  Value_isHeap(?value),
-  Value_Type(?value, ?type).
+  mainAnalysis.Value_isHeap(?value),
+  mainAnalysis.Value_Type(?value, ?type).
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?var) :-
@@ -230,7 +230,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   TaintedVarPointsTo(?value, ?ctx, ?from),
   mainAnalysis.AssignNormalHeapAllocation(?oldvalue, ?var, _),
   SourceFromTaintedValue(?value, ?source),
-  Value_DeclaringType(?value, ?declaringType),
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   mainAnalysis.isImmutableHContext(?hctx).
 #endif
 
@@ -298,7 +298,7 @@ TaintedValueTransferred(?declaringType, ?source, "char[]", ValueIdMacro(?source,
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, "char[]", DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   mainAnalysis.LoadHeapInstanceField(?ctx, ?to, "<java.lang.String: char[] value>", _, ?basevalue),
   TaintedValue(?basevalue),
-  Value_DeclaringType(?basevalue, ?declaringType),
+  mainAnalysis.Value_DeclaringType(?basevalue, ?declaringType),
   SourceFromTaintedValue(?basevalue, ?source),
   mainAnalysis.isImmutableHContext(?hctx).
   .plan 1:(2,1,3,4,5)
@@ -313,17 +313,17 @@ SerializeObjectInvocation(?base, ?ctx, ?var) :-
   MethodInvocation_Base(?invocation, ?base),
   ActualParam(_, ?invocation, ?var).
 
-.decl ObjectSerializedToBase(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?obj:Value)
+.decl ObjectSerializedToBase(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?obj:mainAnalysis.Value)
 
 ObjectSerializedToBase(?ctx, ?base, ?obj) :-
   SerializeObjectInvocation(?base, ?ctx, ?var),
   mainAnalysis.VarPointsTo(_, ?obj, ?ctx, ?var),
   SerializableValue(?obj).
 
-.decl SerializableValue(?obj:Value)
+.decl SerializableValue(?obj:mainAnalysis.Value)
 
 SerializableValue(?obj) :-
-   Value_Type(?obj, ?type),
+   mainAnalysis.Value_Type(?obj, ?type),
    basic.SupertypeOf("java.io.Serializable", ?type).
 
 .decl SerializableVar(?var:Var)
@@ -339,7 +339,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   !Field_Modifier("transient", ?field)),
   TaintedValue(?obj),
   Var_Type(?base, ?type),
-  Value_DeclaringType(?obj, ?declaringType),
+  mainAnalysis.Value_DeclaringType(?obj, ?declaringType),
   SourceFromTaintedValue(?obj, ?source),
   mainAnalysis.ImmutableHContextFromContext(?ctx, ?hctx).
   .plan 2: (3,2,1,4,5,6,7)
@@ -359,7 +359,7 @@ OptDeserializeInvoke(?ret) :-
    MethodInvocationInContextInApplication(_, ?invocation, "<java.io.ObjectInputStream: java.lang.Object readObject()>"),
    AssignReturnValue(?invocation, ?ret).
 
-.decl MaybeDeserializedValue(?value:Value)
+.decl MaybeDeserializedValue(?value:mainAnalysis.Value)
 
 MaybeDeserializedValue(?value) :-
    OptDeserializeInvoke(?ret),

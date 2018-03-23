@@ -15,7 +15,7 @@
 .decl Metrics_Method_IncomingMethods_Count(?method:Method, ?n:number)
 .decl Metrics_Method_OutgoingInvo_Count(?method:Method, ?n:number)
 .decl Metrics_Method_OutgoingMethods_Count(?method:Method, ?n:number)
-.decl Metrics_Value_AsReceiver_Count(?value:Value, ?n:number)
+.decl Metrics_Value_AsReceiver_Count(?value:mainAnalysis.Value, ?n:number)
 
 .output ReachableClass
 .output ReachableApplicationClass
@@ -169,7 +169,7 @@ Metrics_Method_OutgoingMethods_Count(?inMethod, ?n) :-
   _MethodOutgoingMethod(?inMethod, _),
   ?n = count:{_MethodOutgoingMethod(?inMethod, _)}.
 
-.decl _ValueAsReceiver(?value:Value, ?invo:VirtualMethodInvocation_Insn)
+.decl _ValueAsReceiver(?value:mainAnalysis.Value, ?invo:VirtualMethodInvocation_Insn)
 _ValueAsReceiver(?value, ?invo) :-
   VirtualMethodInvocation_Base(?invo, ?base),
   mainAnalysis.VarPointsTo(_, ?value, _, ?base).

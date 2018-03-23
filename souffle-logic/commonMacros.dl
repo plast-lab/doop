@@ -24,9 +24,9 @@
    HeapAllocation_Type(heap, type)
 
 #define MockValueConsMacro(value, type) \
-   Value_isMock(value), \
-   isValue(value), \
-   Value_Type(value, type)
+   mainAnalysis.Value_isMock(value), \
+   mainAnalysis.isValue(value), \
+   mainAnalysis.Value_Type(value, type)
 
 #define SpecialValueConsMacro(value, type) \
    isValue(value), \

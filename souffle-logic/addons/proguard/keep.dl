@@ -5,7 +5,7 @@ KeepMethod(cat("-keepclassmembers class ", cat(?type, cat(" { ", cat(?retType, c
 	mainAnalysis.Reachable(?m),
 	basic.MethodLookup(?simpleName, _, _, ?m),
 	Method_DeclaringType(?m, ?type),
-	AndroidApplicationClass(?type),
+	mainAnalysis.AndroidApplicationClass(?type),
 	Method_Descriptor(?m, ?descriptor),
 	Method_SimpleName(?m, ?simpleName),
 	Method_ReturnType(?m, ?retType).

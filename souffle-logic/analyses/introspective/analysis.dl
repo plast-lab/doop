@@ -4,7 +4,7 @@
 
 .type UniqueContext
 .type UniqueHContext
-.type InstrospectiveComponent = Value | UniqueContext | UniqueHContext
+.type InstrospectiveComponent = mainAnalysis.Value | UniqueContext | UniqueHContext
 
 .comp IntrospectiveConfiguration : AbstractConfiguration {
   

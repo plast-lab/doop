@@ -19,12 +19,12 @@
 .decl VarUse(?var:Var, ?inst:Instruction)
 
 .decl SanitizationMethod(?method:Method)
-.decl SanitizedValue(?value:Value)
+.decl SanitizedValue(?value:mainAnalysis.Value)
 
-.decl TaintedValue(?value:Value)
+.decl TaintedValue(?value:mainAnalysis.Value)
 .decl CallTaintingMethod(?label:InformationLabel, ?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation)
 
-.decl SourceFromTaintedValue(?value:Value, ?id:symbol)
+.decl SourceFromTaintedValue(?value:mainAnalysis.Value, ?id:symbol)
 .decl LabelFromSource(?source:symbol, ?label:InformationLabel)
 
 .decl AnyMethodInvocation(?invocation:MethodInvocation, ?tomethod:Method)
@@ -34,8 +34,8 @@
 .decl MethodInvocationInfo(?invocation:MethodInvocation, ?type:Type, ?var:Var)
 .decl TypeForReturnValue(?type:Type, ?ret:Var, ?invocation:MethodInvocation)
 
-.decl VarIsTaintedFromValue(?type:Type, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
-.decl TaintedVarTaintedFromVar(?toCtx:mainAnalysis.configuration.Context, ?to:Var, ?value:Value, ?type:Type)
+.decl VarIsTaintedFromValue(?type:Type, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
+.decl TaintedVarTaintedFromVar(?toCtx:mainAnalysis.configuration.Context, ?to:Var, ?value:mainAnalysis.Value, ?type:Type)
 
 .decl MethodReturningStringFactory(?tomethod:Method)
 .decl StringFactoryReturnInvocation(?invocation:MethodInvocation)
@@ -50,8 +50,8 @@
 .decl ParamToRetTaintTransferMethod(?method:Method)
 
 
-.decl TaintedVarPointsTo(?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
+.decl TaintedVarPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 .decl VarIsTaintedFromVar(?type:Type, ?ctx1:mainAnalysis.configuration.Context, ?var1:Var, ?ctx2:mainAnalysis.configuration.Context, ?var2:Var)
 .decl VarIsTaintedFromVarIndex(?base:Var, ?ctx1:mainAnalysis.configuration.Context, ?param:Var)
-.decl VarIsTaintedFromValueIndex(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?hctx:mainAnalysis.configuration.HContext, ?value:Value)
+.decl VarIsTaintedFromValueIndex(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value)
 
