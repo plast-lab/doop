@@ -167,13 +167,13 @@ ValuePointsTo(?baseValue, ?value) :-
 .decl InOutFlowAnyValue(?method:Method, ?value:Value) 
 
 InOutFlowAnyValue(?method, ?value) :-
- FormalParam(_, ?method, ?var),
- ReturnVar(?returnVar, ?method),
- preAnalysis.VarPointsTo(_, ?baseValue1, _, ?var),
- preAnalysis.VarPointsTo(_, ?baseValue2, _, ?returnVar),
- ValuePointsTo(?baseValue1, ?value),
- ValuePointsTo(?baseValue2, ?value),
- ?baseValue1 != ?baseValue2.
+  FormalParam(_, ?method, ?var),
+  ReturnVar(?returnVar, ?method),
+  preAnalysis.VarPointsTo(_, ?baseValue1, _, ?var),
+  preAnalysis.VarPointsTo(_, ?baseValue2, _, ?returnVar),
+  ValuePointsTo(?baseValue1, ?value),
+  ValuePointsTo(?baseValue2, ?value),
+  ?baseValue1 != ?baseValue2.
              
 .decl InOutFlowAnyTwoValues(?method:Method)
       
