@@ -12,8 +12,8 @@
 .comp OneObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
   // In this analysis, both the real context and the real heap context are
   // Values.
-  .type Context  = [ value:Value ]
-  .type HContext = [ value:Value ]
+  .type Context  = [ value:mainAnalysis.Value ]
+  .type HContext = [ value:mainAnalysis.Value ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),

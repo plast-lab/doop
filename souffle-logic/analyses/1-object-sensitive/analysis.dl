@@ -6,7 +6,7 @@
 .comp OneObjectSensitiveConfiguration : AbstractConfiguration {
 
 // In this analysis, the real context is a Value.
-.type Context = [ value:Value ]
+.type Context = [ value:mainAnalysis.Value ]
 
 // This analysis has no context for heap objects.
 // This is emulated by creating a single HContext object,
