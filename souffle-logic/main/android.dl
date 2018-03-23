@@ -296,7 +296,7 @@ WebClientType(?type) :-
     (?type = "android.webkit.WebViewClient";
      ?type = "android.webkit.WebChromeClient").
 
-.decl ForcedReachableFromJavascriptContext(?ctx:Context, ?meth:Method)
+.decl ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)
 
 
 ForcedReachableFromJavascriptContext(?ctx, ?meth),
@@ -309,7 +309,7 @@ ReachableContext(?ctx, ?meth) :-
     WebClientType(?class),
     isImmutableContext(?ctx).
 
-.decl FormalOfForcedReachableFromJavascriptContext(?ctx:Context, ?formal:Var, ?formalType:Type)
+.decl FormalOfForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)
 
 FormalOfForcedReachableFromJavascriptContext(?ctx, ?formal, ?formalType) :-
   ForcedReachableFromJavascriptContext(?ctx, ?meth),
@@ -476,7 +476,7 @@ ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?baseva
 // TODO: this is only partial support for fragments, and we fail
 // DroidBench's FragmentLifecycle2 benchmark
 
-.decl ActivityVarInType(?var:Var, ?ctx:Context, ?type:Type)
+.decl ActivityVarInType(?var:Var, ?ctx:configuration.Context, ?type:Type)
 
 ActivityVarInType(?var, ?ctx, ?type) :-
    ReachableContext(?ctx, ?method),
@@ -545,7 +545,9 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
    FormalParam(0, ?method, ?formal),
    // TODO: requires proper method resolution
    ThisVar(?method, ?this).
+#ifndef X_CONTEXT_REMOVER
  .plan 2:(3,1,2,4,5,6,7,8)
+#endif
 
 // Contribute to the global summary relation
 ApplicationEntryPoint(?meth) :-

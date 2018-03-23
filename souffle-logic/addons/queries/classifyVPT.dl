@@ -75,7 +75,7 @@ VPTNum(v, o) :- VPTOpt(v, o), Value_Num(o, _).
 VPTCIandNum(v, o) :- VPTCI(v, o), VPTNum(v, o).
 
 // Mock values (not to be confused with mock heaps): taint values, etc.
-VPTMockVal(v, o) :- VPTOpt(v, o), Value_isMock(o).
+VPTMockVal(v, o) :- VPTOpt(v, o), mainAnalysis.Value_isMock(o).
 VPTCIandMockVal(v, o) :- VPTCI(v, o), VPTMockVal(v, o).
 
 // All others: merged string constants that still arise reflectively, layout control objects

@@ -8,9 +8,12 @@
 
 .type UniqueContext
 .type UniqueHContext
-.type Component = MethodInvocation | Value | UniqueContext | UniqueHContext 
-.type Context  = [ c:Component ] 
-.type HContext = [ c:Component ]
+.type ContextInsensitivePlusPlusComponent = MethodInvocation | Value | UniqueContext | UniqueHContext
+      
+.comp ContextInsensitivePlusPlusConfiguration : AbstractConfiguration {
+
+.type Context  = [ c:ContextInsensitivePlusPlusComponent ]
+.type HContext = [ c:ContextInsensitivePlusPlusComponent ]
 
 .decl UContext(?ctx:UniqueContext)
 .decl UHContext(?hctx:UniqueHContext)
@@ -20,8 +23,6 @@
 
 UContext(UNIQUE_CONTEXT).
 UHContext(UNIQUE_HCONTEXT).
-
-.comp ContextInsensitivePlusPlusConfiguration : AbstractConfiguration {
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),

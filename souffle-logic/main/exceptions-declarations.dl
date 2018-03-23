@@ -5,7 +5,7 @@
 /**
  * Represents the exceptions a method can throw
  */
-.decl Instruction_Throws(?hctx:HContext, ?value:Value, ?ctx:Context, ?insn:Instruction)
+.decl Instruction_Throws(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?insn:Instruction)
 
 /**
  * Instructions that are in the range of an exception handler
@@ -17,7 +17,7 @@
  */
 .decl ExceptionHandler_Before(?before:ExceptionHandler, ?handler:ExceptionHandler)
 
-.decl ThrowPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?method:Method)
+.decl ThrowPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?method:Method)
 
 .decl ExceptionHandler_SameInsn_Repr(?insn:Instruction, ?repr:ExceptionHandler)
 

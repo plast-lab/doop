@@ -2,72 +2,82 @@
  * Generic declarations for context-sensitive pointer analysis.
  */
 
-.decl isContext(?ctx:Context)
-.decl isHContext(?hctx:HContext)
+.decl isContext(?ctx:configuration.Context)
+.decl isHContext(?hctx:configuration.HContext)
       
 // These are normally unique, but for partitioned analyses there may be
 // one per partition.
-.decl isImmutableContext(?ctx:Context)
-.decl isInitialContext(?ctx:Context)
-.decl isJVMStartupContext(?ctx:Context)
-.decl isClinitContext(?ctx:Context)
-.decl isImmutableHContext(?hctx:HContext)
-.decl isJVMStartupHContext(?hctx:HContext)
+.decl isImmutableContext(?ctx:configuration.Context)
+.decl isInitialContext(?ctx:configuration.Context)
+.decl isJVMStartupContext(?ctx:configuration.Context)
+.decl isClinitContext(?ctx:configuration.Context)
+.decl isImmutableHContext(?hctx:configuration.HContext)
+.decl isJVMStartupHContext(?hctx:configuration.HContext)
 
 // If we have many, get a compatible one from the other kind of context.
-.decl ImmutableContextFromHContext(?hctx:HContext, ?ctx:Context)
-.decl ImmutableHContextFromContext(?ctx:Context, ?hctx:HContext)
-.decl ImmutableContextFromContext(?ctx1:Context, ?ctx2:Context)
+.decl ImmutableContextFromHContext(?hctx:configuration.HContext, ?ctx:configuration.Context)
+.decl ImmutableHContextFromContext(?ctx:configuration.Context, ?hctx:configuration.HContext)
+.decl ImmutableContextFromContext(?ctx1:configuration.Context, ?ctx2:configuration.Context)
 
 
-.decl VarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
+.decl VarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 
-.decl InstanceFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
+.decl InstanceFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)
 
-.decl StaticFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field)
+.decl StaticFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field)
 
 // array-element insensitive
-.decl ArrayIndexPointsTo(?hctx:HContext, ?value:Value, ?basehctx:HContext, ?basevalue:Value)
+.decl ArrayIndexPointsTo(?hctx:configuration.HContext, ?value:Value, ?basehctx:configuration.HContext, ?basevalue:Value)
 
 /**
  * Call graph
  */
-.decl CallGraphEdge(?callerCtx:Context, ?invocation:MethodInvocation, ?calleeCtx:Context, ?method:Method) overridable
+.decl CallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?method:Method) overridable
 
 /**
  * Reachable
  */
 .decl Reachable(?method:Method)
 
-.decl ReachableContext(?ctx:Context, ?method:Method)
+.decl ReachableContext(?ctx:configuration.Context, ?method:Method)
 
 // .decl OptLoadInstanceField(?to:Var, ?signature:Field, ?base:Var)
 
-// .decl OptLoadStaticField(?ctx:Context, ?to:Var, ?signature:Field)
+// .decl OptLoadStaticField(?ctx:configuration.Context, ?to:Var, ?signature:Field)
 
 // .decl OptStoreStaticField(?signature:Field, ?from:Var)
 
 // .decl OptStoreInstanceField(?from:Var, ?signature:Field, ?base:Var)
 
-.decl OptInterproceduralAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
+
+/**
+ * Optimizations
+ */
+.decl OptInterproceduralAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
 
 .decl OptLoadArrayIndex(?to:Var, ?base:Var)
 
 .decl OptStoreArrayIndex(?from:Var, ?base:Var)
 
-.decl OptStoreIntoArray(?hctx:HContext, ?basehctx:HContext, ?basevalue:Value, ?value:Value)
+.decl OptStoreIntoArray(?hctx:configuration.HContext, ?basehctx:configuration.HContext, ?basevalue:Value, ?value:Value)
 
-/**
- * Optimizations
- */
+.decl OptArgAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
 
-.decl LoadHeapInstanceField(?ctx:Context, ?to:Var, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
+.decl OptReturnAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
 
-.decl StoreHeapInstanceField(?sig:Field, ?basehctx:HContext, ?basevalue:Value, ?ctx:Context, ?from:Var)
+.decl OptArgVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 
-.decl LoadHeapArrayIndex(?ctx:Context, ?to:Var, ?basehctx:HContext, ?basevalue:Value)
+.decl OptRetVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 
-.decl StoreHeapArrayIndex(?basehctx:HContext, ?basevalue:Value, ?ctx:Context, ?from:Var)
+.decl HeapInterproceduralAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
+
+.decl LoadHeapInstanceField(?ctx:configuration.Context, ?to:Var, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)
+
+.decl StoreHeapInstanceField(?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)
+
+.decl LoadHeapArrayIndex(?ctx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)
+
+.decl StoreHeapArrayIndex(?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)
 
 .decl AssignNormalHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)
 
@@ -78,19 +88,19 @@
 /**
  * Special heap abstractions.
  */
-.decl SystemThreadGroup(?hctx:HContext, ?value:Value)
+.decl SystemThreadGroup(?hctx:configuration.HContext, ?value:Value)
 
-.decl MainThreadGroup(?hctx:HContext, ?value:Value)
+.decl MainThreadGroup(?hctx:configuration.HContext, ?value:Value)
 
-.decl MainThread(?hctx:HContext, ?value:Value)
+.decl MainThread(?hctx:configuration.HContext, ?value:Value)
 
 
 /**
  * Filter predicate for refinement-based/adaptive analyses
  */
-.decl SiteToRefine(?invocation:MethodInvocation)
+//.decl SiteToRefine(?invocation:MethodInvocation)
 
-.decl ValueToRefine(?value:Value)
+//.decl ValueToRefine(?value:Value)
 
 // Is the SiteToRefine the real list of objects needing
 // refinement or its negation?

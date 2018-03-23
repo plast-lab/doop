@@ -8,17 +8,17 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?invocation, ?type, DEFAULT_BREADCR
   Method_DeclaringType(?method, ?declaringType),
   mainAnalysis.VarPointsTo(_, ?layoutControlValue, ?ctx, ?base),
   mainAnalysis.isImmutableHContext(?hctx),
-  SensitiveLayoutControlValue(?layoutControlValue).
+  mainAnalysis.SensitiveLayoutControlValue(?layoutControlValue).
 
 
-.decl PossibleLayoutGetText(?to:Var, ?invocation:MethodInvocation, ?ctx:Context, ?base:Var)
+.decl PossibleLayoutGetText(?to:Var, ?invocation:MethodInvocation, ?ctx:mainAnalysis.configuration.Context, ?base:Var)
 
 PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base) :-
   VirtualMethodInvocation_SimpleName(?invocation, "getText"),
   VirtualMethodInvocation_Base(?invocation, ?base),
   AssignReturnValue(?invocation, ?to),
   Var_Type(?base, ?type),
-  AndroidViewType(?type),
+  mainAnalysis.AndroidViewType(?type),
   MethodInvocationInContext(?ctx, ?invocation, _).
 
 

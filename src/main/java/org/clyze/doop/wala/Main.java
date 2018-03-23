@@ -82,6 +82,7 @@ public class Main {
             classPath += ":" + walaParameters._libraries.get(i);
         }
 
+        System.out.println("WALA classpath:" + classPath);
         AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
         // files and organize them into a tree.
         ClassHierarchy cha = null;

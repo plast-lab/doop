@@ -173,6 +173,7 @@ class SouffleAnalysis extends DoopAnalysis {
                 !options.HEAPDL.value && !options.ANDROID.value &&
                 !options.DACAPO.value && !options.DACAPO_BACH.value)
         {
+            warnOpenPrograms()
             if (options.OPEN_PROGRAMS.value)
                 cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", commonMacros)
             else
@@ -266,6 +267,11 @@ class SouffleAnalysis extends DoopAnalysis {
 
     @Override
     protected void produceStats() {
+        def statsPath = "${Doop.souffleAddonsPath}/statistics"
+        if (options.X_EXTRA_METRICS.value) {
+            cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
+        }
+
         if (options.X_STATS_NONE.value) return
 
         if (options.X_STATS_AROUND.value) {
@@ -280,15 +286,10 @@ class SouffleAnalysis extends DoopAnalysis {
             return
         }
 
-        def statsPath = "${Doop.souffleAddonsPath}/statistics"
         cpp.includeAtEnd("$analysis", "${statsPath}/statistics-simple.dl")
 
         if (options.X_STATS_FULL.value || options.X_STATS_DEFAULT.value) {
             cpp.includeAtEnd("$analysis", "${statsPath}/statistics.dl")
-        }
-
-        if (options.X_EXTRA_METRICS.value) {
-            cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
         }
     }
 

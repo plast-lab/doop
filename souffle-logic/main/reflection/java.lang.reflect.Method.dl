@@ -12,7 +12,7 @@
  *
  * TODO Check if class initialization handled by reflective.logic
  ************************************************************/
-.decl ReflectiveMethodInvocation(?ctx:Context, ?invocation:MethodInvocation, ?signature:Method)
+.decl ReflectiveMethodInvocation(?ctx:configuration.Context, ?invocation:MethodInvocation, ?signature:Method)
 
 ReflectiveMethodInvocation(?ctx, ?invocation, ?signature) :-
   java_lang_reflect_Method_invoke(?invocation, ?from),

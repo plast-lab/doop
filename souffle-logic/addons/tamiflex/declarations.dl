@@ -4,7 +4,7 @@
 
 .decl Tamiflex_Array_NewInstance(?invocation:MethodInvocation, ?value:Value)
 
-.decl Tamiflex_Invoke(?callerCtx:Context, ?invocation:MethodInvocation, ?method:Method)
+.decl Tamiflex_Invoke(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?method:Method)
 
 .decl Tamiflex_ReifiedField(?fld:Field, ?value:Value, ?invocation:MethodInvocation)
 

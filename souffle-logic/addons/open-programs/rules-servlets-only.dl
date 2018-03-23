@@ -77,7 +77,7 @@ MockObjFromOpenProgramEntryPoint(cat(cat("<Mock receiver ", ?class), " >")),
 MockObject(cat(cat("<Mock receiver ", ?class), " >"), ?class) :-
   MockOpenProgramEntryPoint(?class, _).
 
-.decl ValueForReceiverInContext(?ctx:Context, ?receiver:Var, ?value:Value)
+.decl ValueForReceiverInContext(?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?value:Value)
 
 ValueForReceiverInContext(?ctx, ?receiver, ?value) :-
   mainAnalysis.ReachableContext(?ctx, ?method),

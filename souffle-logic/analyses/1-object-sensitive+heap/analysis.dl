@@ -9,12 +9,12 @@
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
 
-// In this analysis, both the real context and the real heap context are
-// Values.
-.type Context  = [ value:Value ]
-.type HContext = [ value:Value ]
-
 .comp OneObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
+  // In this analysis, both the real context and the real heap context are
+  // Values.
+  .type Context  = [ value:Value ]
+  .type HContext = [ value:Value ]
+
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
     ?calleeCtx = [?value].

@@ -6,8 +6,8 @@
  Default handling of context sensitivity
 */
 
-.decl DynamicContextToContext(?ctx:Context, ?dctx:DynamicContext)
-.decl DynamicContextToHContext(?hctx:HContext, ?dctx:DynamicContext)
+.decl DynamicContextToContext(?ctx:configuration.Context, ?dctx:DynamicContext)
+.decl DynamicContextToHContext(?hctx:configuration.HContext, ?dctx:DynamicContext)
 
 DynamicContextToContext(?ctx, ?dctx) :-
    isImmutableDCTX(?dctx),
@@ -134,7 +134,7 @@ HighConfidenceAssign(?value, ?inmethod) :-
 #endif
  
 // Context insensitive allocations
-.decl FromDynamicHeapObject(?hctx:HContext, ?value:Value, ?dctx:DynamicContext, ?dheap:HeapAllocation)
+.decl FromDynamicHeapObject(?hctx:configuration.HContext, ?value:Value, ?dctx:DynamicContext, ?dheap:HeapAllocation)
 
 
 FromDynamicHeapObject(?hctx, ?value, ?dctx, ?value) :-

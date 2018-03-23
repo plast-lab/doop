@@ -3,10 +3,11 @@ package org.clyze.doop.wala;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.ssa.SSAInstruction;
-import com.ibm.wala.ssa.SSAReturnInstruction;
+import com.ibm.wala.shrikeCT.BootstrapMethodsReader;
+import com.ibm.wala.ssa.*;
+import com.ibm.wala.types.FieldReference;
+import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
-import org.clyze.doop.soot.Session;
 import soot.*;
 import soot.jimple.*;
 
@@ -15,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class WalaRepresentation {
     private Map<IMethod, String> _methodRepr = new ConcurrentHashMap<>();
-    private Map<IMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
+    private Map<String, String> _methodSigRepr = new ConcurrentHashMap<>();
     private Map<IMethod, String> _methodRefSigRepr = new ConcurrentHashMap<>();
     private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
 
@@ -30,52 +31,74 @@ public class WalaRepresentation {
     }
 
     String classConstant(IClass c) {
-        return "<class " + c.getName().getClassName().toString() + ">";
+        return "<class " + fixTypeString(c.getName().toString()) + ">";
     }
 
     String classConstant(String className) {
         return "<class " + className + ">";
     }
 
+
     String classConstant(TypeReference t) {
         return "<class " + t + ">";
     }
 
+
     public String signature(IMethod m) {
-        String result = _methodSigRepr.get(m);
+        return signature(m.getReference());
+    }
 
-        if(result == null)
-        {
-            result = m.getSignature();
-            _methodSigRepr.put(m, result);
+    public String signature(MethodReference m) {
+        String WalaSignature = m.getSignature();
+        String doopSignature = _methodSigRepr.get(WalaSignature);
+        if (doopSignature == null){
+            doopSignature = createMethodSignature(m);
+            _methodSigRepr.put(WalaSignature,doopSignature);
         }
-
-        return result;
+        return doopSignature;
     }
 
     String signature(IField f) {
-        return f.getReference().getSignature();
+        //return f.getReference().getSignature();
+        return signature(f.getReference());
+    }
+
+    String signature(FieldReference f) {
+        StringBuilder DoopSig= new StringBuilder("<");
+        DoopSig.append(fixTypeString(f.getDeclaringClass().toString()));
+        DoopSig.append(": ");
+        DoopSig.append(fixTypeString(f.getFieldType().toString()));
+        DoopSig.append(" ");
+        DoopSig.append(f.getName().toString());
+        DoopSig.append(">");
+        return DoopSig.toString();
     }
 
     String simpleName(IMethod m) {
-        return m.getSignature();
+        return m.getReference().getName().toString();
     }
 
     String simpleName(IField m) {
-        return m.getReference().getSignature();
+        return simpleName(m.getReference());
     }
 
+    String simpleName(FieldReference f) {
+        return f.getName().toString();
+    }
+
+    //Method descriptors using soot like format.
+    //Should maybe cache these as well.
     String descriptor(IMethod m)
     {
         StringBuilder builder = new StringBuilder();
-
-        builder.append(m.getReturnType().toString());
+        MethodReference methodReference = m.getReference();
+        builder.append(fixTypeString(methodReference.getReturnType().toString()));
         builder.append("(");
-        for(int i = 0; i < m.getNumberOfParameters(); i++)
+        for(int i = 0; i < methodReference.getNumberOfParameters(); i++)
         {
-            builder.append(m.getParameterType(i));
+            builder.append(fixTypeString(methodReference.getParameterType(i).toString()));
 
-            if(i != m.getNumberOfParameters() - 1)
+            if(i != methodReference.getNumberOfParameters() - 1)
             {
                 builder.append(",");
             }
@@ -87,22 +110,22 @@ public class WalaRepresentation {
 
     String thisVar(IMethod m)
     {
-        return getMethodSignature(m) + "/@this";
+        return signature(m) + "/v1";
     }
 
     String nativeReturnVar(IMethod m)
     {
-        return getMethodSignature(m) + "/@native-return";
+        return signature(m) + "/@native-return";
     }
 
-    String param(IMethod m, int i)
+    String param(IMethod m, int i)//REVIEW:SIFIS:I believe parameters are normal vi variables, same for this. Will look into it.
     {
-        return getMethodSignature(m) + "/@parameter" + i;
+        return signature(m) + "/v" + (i+1);
     }
 
     String local(IMethod m, Local local)
     {
-        return getMethodSignature(m) + "/" + local.getName();
+        return signature(m) + "/" + local.getName();
     }
 
     String newLocalIntermediate(IMethod m, Local l, Session session)
@@ -118,7 +141,7 @@ public class WalaRepresentation {
         if(result == null)
         {
             String name = "catch " + trap.getException().getName();
-            result = getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
+            result = signature(m) + "/" + name + "/" + session.nextNumber(name);
 
             _trapRepr.put(trap, result);
         }
@@ -129,12 +152,61 @@ public class WalaRepresentation {
     String throwLocal(IMethod m, Local l, Session session)
     {
         String name = "throw " + l.getName();
-        return getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
+        return signature(m) + "/" + name + "/" + session.nextNumber(name);
     }
 
-    private String getMethodSignature(IMethod m)
+    public String fixTypeString(String original)
     {
-        return m.getSignature();
+        boolean isArrayType = false;
+        if(original.contains("[L")) //Figure out if this is correct
+            isArrayType = true;
+        String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
+        String temp;
+        if(ret.contains("Primordial"))
+        {
+            temp = ret.substring(ret.indexOf(",") + 1);
+            if(temp.startsWith("["))
+            {
+                isArrayType = true;
+                temp = temp.substring(1);
+            }
+            if(temp.equals("Z"))
+                ret = "boolean";
+            else if(temp.equals("I"))
+                ret = "int";
+            else if(temp.equals("V"))
+                ret = "void";
+            else if(temp.equals("B"))
+                ret = "byte";
+            else if(temp.equals("C"))
+                ret = "char";
+            else if(temp.equals("D"))
+                ret = "double";
+            else if(temp.equals("F"))
+                ret = "float";
+            else if(temp.equals("J"))
+                ret = "long";
+            else if(temp.equals("S"))
+                ret = "short";
+            //TODO: Figure out what the 'P' code represents in WALA's TypeReference
+        }
+        if(isArrayType)
+            ret = ret + "[]";
+        return ret;
+    }
+
+    //This method takes a MethodReference as a parameter and it does not include "this" as an argument
+    //Had the parameter been an IMethod it would include "this" but soot Signatures don't have it so we keep it this way.
+    private String createMethodSignature(MethodReference m)
+    {
+        String DoopSig ="<"+ fixTypeString(m.getDeclaringClass().toString())+": "+ fixTypeString(m.getReturnType().toString()) + " " + m.getName()+"(";
+        for (int i = 0; i < m.getNumberOfParameters(); i++) {
+            DoopSig+=fixTypeString(m.getParameterType(i).toString());
+            if (i < m.getNumberOfParameters() - 1)
+                DoopSig+=",";
+        }
+        DoopSig+=")>";
+        return DoopSig;
     }
 
     private String getKind(SSAInstruction instruction)
@@ -144,32 +216,32 @@ public class WalaRepresentation {
             kind = "assign";
         else if(instruction instanceof DefinitionStmt)
             kind = "definition";
-        else if(instruction instanceof EnterMonitorStmt)
+        else if(instruction instanceof EnterMonitorStmt && ((SSAMonitorInstruction) instruction).isMonitorEnter())
             kind = "enter-monitor";
-        else if(instruction instanceof ExitMonitorStmt)
+        else if(instruction instanceof SSAMonitorInstruction )
             kind = "exit-monitor";
-        else if(instruction instanceof GotoStmt)
+        else if(instruction instanceof SSAGotoInstruction)
             kind = "goto";
         else if(instruction instanceof IdentityStmt)
             kind = "assign";
-        else if(instruction instanceof IfStmt)
+        else if(instruction instanceof SSAConditionalBranchInstruction)
             kind = "if";
-        else if(instruction instanceof InvokeStmt)
+        else if(instruction instanceof SSAInvokeInstruction)
             kind = "invoke";
-        else if(instruction instanceof RetStmt)
+        else if(instruction instanceof SSAReturnInstruction)
             kind = "ret";
         else if(instruction instanceof SSAReturnInstruction && ((SSAReturnInstruction) instruction).returnsVoid())
             kind = "return-void";
         else if(instruction instanceof SSAReturnInstruction)
             kind = "return";
-        else if(instruction instanceof ThrowStmt)
+        else if(instruction instanceof SSAThrowInstruction)
             kind = "throw";
         return kind;
     }
 
     String unsupported(IMethod inMethod, SSAInstruction instruction, int index)
     {
-        return getMethodSignature(inMethod) +
+        return signature(inMethod) +
             "/unsupported " + getKind(instruction) +
             "/" +  instruction.toString() +
             "/instruction" + index;
@@ -178,37 +250,35 @@ public class WalaRepresentation {
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(IMethod inMethod, SSAInstruction instruction)
+    String instruction(IMethod inMethod, SSAInstruction instruction, Session session, int index)
     {
-        return getMethodSignature(inMethod) + "/" + getKind(instruction) + "/instruction" + instruction.iindex;
+        return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
-
-    String invoke(IMethod inMethod, InvokeExpr expr, Session session)
+    String invoke(IMethod inMethod, SSAInvokeInstruction expr, Session session)
     {
-//        IMethod exprMethod = expr.getMethod();
-//        String defaultMid = exprMethod.getDeclaringClass() + "." + exprMethod.getName();
-//        String midPart = (expr instanceof DynamicInvokeExpr)?
-//            dynamicInvokeMiddlePart((DynamicInvokeExpr)expr, defaultMid) : defaultMid;
-//
-        return getMethodSignature(inMethod);
-//              + "/" + midPart + "/" + session.nextNumber(midPart);
+        MethodReference exprMethod = expr.getDeclaredTarget();
+        String defaultMid = exprMethod.getDeclaringClass() + "." + exprMethod.getName();
+        String midPart = (expr instanceof SSAInvokeDynamicInstruction)? dynamicInvokeMiddlePart((SSAInvokeDynamicInstruction) expr, defaultMid) : defaultMid;
+
+        return signature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
     }
 
     // Create a middle part for invokedynamic ids. It currently
     // supports the LambdaMetafactory machinery, returning a default
     // value for other (or missing) bootstrap methods.
-    private String dynamicInvokeMiddlePart(DynamicInvokeExpr expr, String defaultResult) {
+    private String dynamicInvokeMiddlePart(SSAInvokeDynamicInstruction instruction, String defaultResult) {
 
         // The signatures of the two lambda metafactories we currently support.
         final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
         final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
 
-        //IMethodRef bootMethRef = expr.getBootstrapMethodRef();
-//        if (bootMethRef != null) {
-//            String bootMethName = bootMethRef.resolve().toString();
-//            int bootArity = expr.getBootstrapArgCount();
-//            if (bootArity > 1) {
-//                Value val1 = expr.getBootstrapArg(1);
+        BootstrapMethodsReader.BootstrapMethod bootMethRef= instruction.getBootstrap();
+        if (bootMethRef != null) {
+            String bootMethName = bootMethRef.methodName();
+            int bootArity = bootMethRef.callArgumentCount();
+            if (bootArity > 1) {
+//                bootMethRef.callArgumentKind(1);
+//                Value val1 = instruction.(1);
 //                if ((val1 instanceof MethodHandle) &&
 //                    ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
 //                     (bootMethName.equals(ALT_L_METAFACTORY)))) {
@@ -218,12 +288,12 @@ public class WalaRepresentation {
 //                }
 //                else
 //                    System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
-//            }
-//            else
-//                System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");
-//        }
-//        else
-//            System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
+            }
+            else
+                System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");
+        }
+        else
+            System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
         return defaultResult;
     }
 
@@ -256,7 +326,7 @@ public class WalaRepresentation {
     private String heapAlloc(IMethod inMethod, Type type, Session session)
     {
         String s = type.toString();
-        return getMethodSignature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
+        return signature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
 
 
     }

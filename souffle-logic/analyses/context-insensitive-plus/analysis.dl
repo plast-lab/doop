@@ -7,6 +7,9 @@
 #include "../../main/in-out-flow.dl"
 
 .type UniqueContext
+
+.comp ContextInsensitivePlusConfiguration : AbstractConfiguration {
+
 .type Context = MethodInvocation | UniqueContext
 .type HContext
 
@@ -18,8 +21,6 @@
 
 UContext(UNIQUE_CONTEXT).
 UHContext(UNIQUE_HCONTEXT).
-
-.comp ContextInsensitivePlusConfiguration : AbstractConfiguration {
 
 .decl _InOutFlowMethod(?method:Method)
 

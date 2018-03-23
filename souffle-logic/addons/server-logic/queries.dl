@@ -73,9 +73,9 @@ Server_Class_ReachesField(?class, ?fld) :-
 // Field-- //
 
 .decl Server_Field_ShadowedBy(?fld:Field, ?shadowFld:Field)
-.decl Server_IField_Values(?baseValue:Value, ?fld:Field, ?value:Value)
-.decl Server_SField_Values(?fld:Field, ?value:Value)
-.decl Server_IField_Values_Count(?baseValue:Value, ?fld:Field, ?n:number)
+.decl Server_IField_Values(?baseValue:mainAnalysis.Value, ?fld:Field, ?value:mainAnalysis.Value)
+.decl Server_SField_Values(?fld:Field, ?value:mainAnalysis.Value)
+.decl Server_IField_Values_Count(?baseValue:mainAnalysis.Value, ?fld:Field, ?n:number)
 .output Server_Field_ShadowedBy
 .output Server_IField_Values
 .output Server_SField_Values
@@ -90,8 +90,8 @@ Server_Field_ShadowedBy(?fld, ?shadowFld) :-
   Field_DeclaringType(?shadowFld, ?subClass),
   Field_SimpleName(?shadowFld, ?name).
 
-.decl _IFPT(?baseValue:Value, ?fld:Field, ?value:Value)
-.decl _SFPT(?fld:Field, ?value:Value)
+.decl _IFPT(?baseValue:mainAnalysis.Value, ?fld:Field, ?value:mainAnalysis.Value)
+.decl _SFPT(?fld:Field, ?value:mainAnalysis.Value)
 .decl _SFPT_Count(?fld:Field, ?n:number)
 
 _IFPT(?baseValue, ?fld, ?value) :-
@@ -112,19 +112,19 @@ Server_IField_Values(?baseValue, ?fld, ?value) :-
   _IFPT(?baseValue, ?fld, ?value),
   Server_IField_Values_Count(?baseValue, ?fld, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD,
-  isValue(?baseValue),
-  isValue(?value).
+  mainAnalysis.isValue(?baseValue),
+  mainAnalysis.isValue(?value).
 
 Server_IField_Values(?baseValue, ?fld, "<<XL-pt-set>>") :-
   Server_IField_Values_Count(?baseValue, ?fld, ?count),
   ?count > X_SERVER_LOGIC_THRESHOLD,
-  isValue(?baseValue).
+  mainAnalysis.isValue(?baseValue).
 
 Server_SField_Values(?fld, ?value) :-
   _SFPT(?fld, ?value),
   _SFPT_Count(?fld, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD,
-  isValue(?value).
+  mainAnalysis.isValue(?value).
 
 Server_SField_Values(?fld, "<<XL-pt-set>>") :-
   _SFPT_Count(?fld, ?count),
@@ -135,12 +135,12 @@ Server_SField_Values(?fld, "<<XL-pt-set>>") :-
 
 // Var-- //
 
-.decl Server_Var_Values(?class:ClassType, ?var:Var, ?value:Value)
+.decl Server_Var_Values(?class:ClassType, ?var:Var, ?value:mainAnalysis.Value)
 .decl Server_Var_Return(?var:Var, ?method:Method)
 .output Server_Var_Values
 .output Server_Var_Return
 
-.decl _VPT(?var:Var, ?value:Value)
+.decl _VPT(?var:Var, ?value:mainAnalysis.Value)
 .decl _VPT_Count(?var:Var, ?n:number)
 
 _VPT(?var, ?value) :-
@@ -154,7 +154,7 @@ Server_Var_Values(?class, ?var, ?value) :-
   _VPT(?var, ?value),
   _VPT_Count(?var, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD,
-  isValue(?value),
+  mainAnalysis.isValue(?value),
   Var_DeclaringMethod(?var, ?method),
   Method_DeclaringType(?method, ?class).
 
@@ -173,11 +173,11 @@ Server_Var_Return(?var, ?method) :-
 
 // Array-- //
 
-.decl Server_Array_Values(?arrayValue:Value, ?value:Value)
+.decl Server_Array_Values(?arrayValue:mainAnalysis.Value, ?value:mainAnalysis.Value)
 .output Server_Array_Values
 
-.decl _AIPT(?arrayValue:Value, ?value:Value)
-.decl _AIPT_Count(?arrayValue:Value, ?n:number)
+.decl _AIPT(?arrayValue:mainAnalysis.Value, ?value:mainAnalysis.Value)
+.decl _AIPT_Count(?arrayValue:mainAnalysis.Value, ?n:number)
 
 _AIPT(?arrayValue, ?value) :-
   mainAnalysis.ArrayIndexPointsTo(_, ?value, _, ?arrayValue).
@@ -265,7 +265,9 @@ Server_Method_Subtype(?method, ?subMethod) :-
 // Invocation-- //
 
 .decl Server_Invocation_Values(?fromMethod:Method, ?invo:MethodInvocation, ?toMethod:Method, ?isCHA:number)
+.decl Server_ClassCallsClass(?fromClass:ClassType, ?toClass:ClassType)
 .output Server_Invocation_Values
+.output Server_ClassCallsClass
 
 Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 0) :-
   mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod),
@@ -276,6 +278,11 @@ Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 1) :-
   !mainAnalysis.CallGraphEdge(_, ?invo, _, _),
   Instruction_Method(?invo, ?fromMethod),
   mainAnalysis.Reachable(?fromMethod).
+
+Server_ClassCallsClass(?fromClass, ?toClass) :-
+  Server_Invocation_Values(?fromMethod, _, ?toMethod, _),
+  Method_DeclaringType(?fromMethod, ?fromClass),
+  Method_DeclaringType(?toMethod, ?toClass).
 
 /*Server_Invocation_Values(?invo, ?toMethod) :-
   InvokedynamicCallGraphEdge(_, ?invo, _, ?toMethod).
