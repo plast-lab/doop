@@ -10,8 +10,8 @@
   // triplets of Values. Keeping mapping functions is the way to handle
   // analyses where HContext = Context (since the language considers them
   // different types).
-  .type Context  = [ value1:Value, value2:Value, value3:Value ]
-  .type HContext = [ value1:Value, value2:Value, value3:Value ]
+  .type Context  = [ value1:mainAnalysis.Value, value2:mainAnalysis.Value, value3:mainAnalysis.Value ]
+  .type HContext = [ value1:mainAnalysis.Value, value2:mainAnalysis.Value, value3:mainAnalysis.Value ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
