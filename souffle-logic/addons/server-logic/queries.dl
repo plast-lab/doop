@@ -40,7 +40,7 @@ Server_Class_Keep(?type) :-
 // Reified types used
 Server_Class_Keep(?type) :-
   mainAnalysis.VarPointsTo(_, ?value, _, _),
-  ReifiedClass(?type, ?value).
+  mainAnalysis.ReifiedClass(?type, ?value).
 #endif
 
 #ifdef REFLECTION_DYNAMIC_PROXIES
