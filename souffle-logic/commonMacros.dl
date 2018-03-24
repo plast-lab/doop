@@ -28,6 +28,12 @@
    isValue(value), \
    Value_Type(value, type)
 
+// Copy of MockValueConsMacro but with proper component qualifers.
+#define mainAnalysis_MockValueConsMacro(value, type) \
+   mainAnalysis.Value_isMock(value), \
+   mainAnalysis.isValue(value), \
+   mainAnalysis.Value_Type(value, type)
+
 #define SpecialValueConsMacro(value, type) \
    isValue(value), \
    Value_Type(value, type)
