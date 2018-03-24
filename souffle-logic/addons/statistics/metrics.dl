@@ -8,7 +8,7 @@
 .decl SDKMethodDirectlyReachableFromApplication(?method:symbol)
 .decl SDKMethodDirectlyReachableFromDependency(?method:symbol)
 .decl SDKMethodDirectlyReachableFromSDK(?method:symbol)
-.decl ApplicationEntryPoint(?method:Method)
+.decl Metrics_AppEntryPoint(?method:Method)
 .decl Metrics_InvocationZeroTargets(?invo:MethodInvocation)
 .decl Metrics_InvocationTargets_Count(?invo:MethodInvocation, ?n:number)
 .decl Metrics_Method_IncomingInvo_Count(?method:Method, ?n:number)
@@ -27,7 +27,7 @@
 .output SDKMethodDirectlyReachableFromApplication
 .output SDKMethodDirectlyReachableFromDependency
 .output SDKMethodDirectlyReachableFromSDK
-.output ApplicationEntryPoint
+.output Metrics_AppEntryPoint
 .output Metrics_InvocationZeroTargets
 .output Metrics_InvocationTargets_Count
 .output Metrics_Method_IncomingInvo_Count
@@ -117,7 +117,7 @@ SDKMethodDirectlyReachableFromSDK(?sdkMethod) :-
     ReachableSDKClass(?sdkClass).
 
 
-ApplicationEntryPoint(?m) :- mainAnalysis.ApplicationEntryPoint(?m).
+Metrics_AppEntryPoint(?m) :- mainAnalysis.ApplicationEntryPoint(?m).
 
 .decl _Metrics_InvoTargets(?invo:MethodInvocation, ?toMethod:Method)
 
@@ -127,7 +127,7 @@ _Metrics_InvoTargets(?invo, ?toMethod) :-
 Metrics_InvocationTargets_Count(?invo, ?n) :-
   _Metrics_InvoTargets(?invo, _),
   ?n = count:{_Metrics_InvoTargets(?invo, _)}.
-
+  
 Metrics_InvocationZeroTargets(?invo) :-
   isMethodInvocation(?invo),
   Instruction_Method(?invo, ?fromMethod),
