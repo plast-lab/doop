@@ -104,7 +104,6 @@ class Main {
 
             int timeout = parseTimeout(userTimeout, DEFAULT_TIMEOUT)
             ExecutorService executorService = Executors.newSingleThreadExecutor()
-            boolean failureDetected = false
             try {
                 executorService.submit(new Runnable() {
                     @Override
@@ -122,7 +121,7 @@ class Main {
                         try {
                             analysis.run()
                         } catch (DoopErrorCodeException ex) {
-                            failureDetected = true
+                            // Don't continue with the analysis.
                             return
                         }
                         new CommandLineAnalysisPostProcessor().process(analysis)
@@ -131,18 +130,12 @@ class Main {
             }
             catch (TimeoutException te) {
                 logger.error "Timeout has expired ($timeout min)."
+            } finally {
                 executorService.shutdownNow()
-                System.exit(-1)
-            }
-            executorService.shutdownNow()
-
-            if (failureDetected) {
-                System.exit(-1)
             }
         } catch (e) {
             e = (e.getCause() ?: e)
             logger.error(e.getMessage(), e)
-            System.exit(-1)
         }
     }
 
