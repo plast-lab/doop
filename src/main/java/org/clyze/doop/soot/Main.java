@@ -33,7 +33,7 @@ public class Main {
         return sootParameters.applicationClassFilter.matches(klass.getName());
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Throwable {
         SootParameters sootParameters = new SootParameters();
         String extraSensitiveControls = "";
         try {
@@ -208,9 +208,11 @@ public class Main {
         }
         catch(DoopErrorCodeException errCode) {
             System.err.println("Exiting with code " + errCode.getErrorCode());
+            throw errCode;
         }
         catch(Exception exc) {
             exc.printStackTrace();
+            throw exc;
         }
     }
 

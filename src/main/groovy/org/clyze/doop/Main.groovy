@@ -7,6 +7,7 @@ import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
+import org.clyze.doop.soot.DoopErrorCodeException
 import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
 
@@ -103,6 +104,7 @@ class Main {
 
             int timeout = parseTimeout(userTimeout, DEFAULT_TIMEOUT)
             ExecutorService executorService = Executors.newSingleThreadExecutor()
+            boolean failureDetected = false
             try {
                 executorService.submit(new Runnable() {
                     @Override
@@ -117,7 +119,12 @@ class Main {
                             logger.info "Starting ${analysis.name} analysis on user-provided facts at ${analysis.options.X_START_AFTER_FACTS.value} - id: $analysis.id"
                         logger.debug analysis
                         analysis.options.BLOX_OPTS.value = bloxOptions
-                        analysis.run()
+                        try {
+                            analysis.run()
+                        } catch (DoopErrorCodeException ex) {
+                            failureDetected = true
+                            return
+                        }
                         new CommandLineAnalysisPostProcessor().process(analysis)
                     }
                 }).get(timeout, TimeUnit.MINUTES)
@@ -129,6 +136,9 @@ class Main {
             }
             executorService.shutdownNow()
 
+            if (failureDetected) {
+                System.exit(-1)
+            }
         } catch (e) {
             e = (e.getCause() ?: e)
             logger.error(e.getMessage(), e)
