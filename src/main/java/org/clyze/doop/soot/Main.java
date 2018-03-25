@@ -88,10 +88,10 @@ public class Main {
                         File f = new File(folderName);
                         if (!f.exists()) {
                             System.err.println("Dependency folder " + folderName + " does not exist");
-                            throw new DoopErrorCodeException(0);
+                            throw new DoopErrorCodeException(4);
                         } else if (!f.isDirectory()) {
                             System.err.println("Dependency folder " + folderName + " is not a directory");
-                            throw new DoopErrorCodeException(0);
+                            throw new DoopErrorCodeException(5);
                         }
                         for (File file : Objects.requireNonNull(f.listFiles())) {
                             if (file.isFile() && file.getName().endsWith(".jar")) {
@@ -178,7 +178,7 @@ public class Main {
                     default:
                         if (args[i].charAt(0) == '-') {
                             System.err.println("error: unrecognized option: " + args[i]);
-                            throw new DoopErrorCodeException(0);
+                            throw new DoopErrorCodeException(6);
                         }
                         break;
                 }
@@ -190,7 +190,7 @@ public class Main {
 
             if (sootParameters._toStdout && !sootParameters._generateJimple) {
                 System.err.println("error: --stdout must be used with --generate-jimple");
-                throw new DoopErrorCodeException(1);
+                throw new DoopErrorCodeException(7);
             }
             if (sootParameters._toStdout && sootParameters._outputDir != null) {
                 System.err.println("error: --stdout and -d options are not compatible");
@@ -207,9 +207,7 @@ public class Main {
             produceFacts(sootParameters, extraSensitiveControls);
         }
         catch(DoopErrorCodeException errCode) {
-            int n = errCode.getErrorCode();
-            if (n != 0)
-                System.err.println("Exiting with code " + n);
+            System.err.println("Exiting with code " + errCode.getErrorCode());
         }
         catch(Exception exc) {
             exc.printStackTrace();
