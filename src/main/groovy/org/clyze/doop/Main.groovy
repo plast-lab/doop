@@ -60,7 +60,7 @@ class Main {
             OptionAccessor cli = builder.parse(argsToParse)
 
             if (!cli) {
-                usageBuilder.usage()
+                // We assume usage has already been displayed by the CliBuilder.
                 return
             } else if (cli.arguments().size() != 0) {
                 logger.info "Invalid argument specified: " + cli.arguments()[0]
