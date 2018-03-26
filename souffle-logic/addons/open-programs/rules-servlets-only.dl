@@ -46,7 +46,7 @@ OpenProgramEntryPoint(?method) :-
   MockOpenProgramEntryPoint(_, ?method).
 
 // Contribute to the global summary relation
-ApplicationEntryPoint(?meth) :-
+mainAnalysis.ApplicationEntryPoint(?meth) :-
   OpenProgramEntryPoint(?meth),
   ApplicationMethod(?meth).
 
@@ -60,24 +60,24 @@ MockOpenProgramEntryPoint(?class, ?entry) :-
   PossibleOpenProgramEntryPoint(?class, ?entry),
   isMethod(?entry).
 
-ImplicitReachable(?method) :-
+mainAnalysis.ImplicitReachable(?method) :-
   MockOpenProgramEntryPoint(_, ?method).
 
 // The following two rules were originally separated to stratify negation (no longer needed)
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?receiver) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  mainAnalysis.ImmutableHContextFromContext(?ctx, ?hctx),
   ValueForReceiverInContext(?ctx, ?receiver, ?value).
   .plan 1:(2,1)
 
-.decl MockObject(?value:Value, ?type:Type)
-.decl MockObjFromOpenProgramEntryPoint(?value:Value)
+.decl MockObject(?value:mainAnalysis.Value, ?type:Type)
+.decl MockObjFromOpenProgramEntryPoint(?value:mainAnalysis.Value)
 
-MockValueConsMacro(cat(cat("<Mock receiver ", ?class), " >"), ?class),
+mainAnalysis_MockValueConsMacro(cat(cat("<Mock receiver ", ?class), " >"), ?class),
 MockObjFromOpenProgramEntryPoint(cat(cat("<Mock receiver ", ?class), " >")),
 MockObject(cat(cat("<Mock receiver ", ?class), " >"), ?class) :-
   MockOpenProgramEntryPoint(?class, _).
 
-.decl ValueForReceiverInContext(?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?value:Value)
+.decl ValueForReceiverInContext(?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?value:mainAnalysis.Value)
 
 ValueForReceiverInContext(?ctx, ?receiver, ?value) :-
   mainAnalysis.ReachableContext(?ctx, ?method),
