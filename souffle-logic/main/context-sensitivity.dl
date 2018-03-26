@@ -358,10 +358,37 @@ OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
   ActualParam(?index, ?invocation, ?actual),
   FormalParam(?index, ?method, ?formal).
 
+#ifdef INFORMATION_FLOW
+
+VarPointsTo(?hctx, ?value, ?callerCtx, ?local) :-
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  AssignReturnValue(?invocation, ?local),
+  ReturnVar(?return, ?method),
+  !SanitizationMethod(?method),
+  OptRetVarPointsTo(?hctx, ?value, ?calleeCtx, ?return).
+  .plan 1:(4,3,1,2)
+
+VarPointsTo(?hctx, ?value, ?callerCtx, ?local) :-
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  AssignReturnValue(?invocation, ?local),
+  ReturnVar(?return, ?method),
+  OptRetVarPointsTo(?hctx, ?value, ?calleeCtx, ?return),
+  isHeapAllocation(?value).
+  .plan 1:(4,5,3,1,2)
+
+#else
+
 OptReturnAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
   AssignReturnValue(?invocation, ?local),
   ReturnVar(?return, ?method).
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  OptRetVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  OptReturnAssign(?toCtx, ?to, ?fromCtx, ?from).
+  .plan 1:(2,1)
+
+#endif
 
 OptArgVarPointsTo(?hctx, ?value, ?actualCtx, ?actual) :-
   ActualParam(_, _, ?actual),
@@ -374,11 +401,6 @@ OptRetVarPointsTo(?hctx, ?value, ?returnCtx, ?return) :-
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptArgAssign(?toCtx, ?to, ?fromCtx, ?from).
-  .plan 1:(2,1)
-
-VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
-  OptRetVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
-  OptReturnAssign(?toCtx, ?to, ?fromCtx, ?from).
   .plan 1:(2,1)
 
 
