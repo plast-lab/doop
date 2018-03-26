@@ -54,6 +54,8 @@ class WalaFactGenerator {
                 skipped++;
                 continue;
             }
+            if(iClass.getName().toString().contains("ImmutableGregorianDate") || iClass.getName().toString().contains("PosixFileAttributeView")|| iClass.getName().toString().contains("TreeModel"))
+                System.out.println("Found " + iClass.getName().toString());
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
             //IRPrinter.printIR(iClass);
             _writer.writeClassOrInterfaceType(iClass);
