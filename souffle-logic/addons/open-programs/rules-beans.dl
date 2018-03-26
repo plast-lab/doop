@@ -1,0 +1,31 @@
+#include "rules-spring.dl"
+
+.decl BeanClass(cls: Type)
+.input BeanClass(IO="file", filename="BeanClasses.csv", delimiter="\t")
+
+.decl BeanInit(cls: Type, simplemeth: symbol)
+.input BeanInit(IO="file", filename="BeanInit.csv", delimiter="\t")
+
+.decl BeanReachable(cls: Type, simplemeth: symbol)
+.input BeanReachable(IO="file", filename="BeanReachable.csv", delimiter="\t")
+
+.decl BeanIoCField(cls: Type, simplefld: symbol, heap: Type)
+.input BeanIoCField(IO="file", filename="BeanIoCField.csv", delimiter="\t")
+
+
+mainAnalysis_MockValueConsMacro(cat(?class, " :: BEAN"), ?class),
+MockObjFromOpenProgramEntryPoint(cat(?class, " :: BEAN")),
+MockObject(cat(?class, " :: BEAN"), ?class) :-
+  BeanClass(?class).
+
+mainAnalysis.ImplicitReachable(?meth),
+OpenProgramEntryPoint(?meth) :-
+  BeanInit(?type, ?methSimp),
+  Method_SimpleName(?meth, ?methSimp),
+  Method_DeclaringType(?meth, ?type).
+
+mainAnalysis.ImplicitReachable(?meth),
+OpenProgramEntryPoint(?meth) :-
+  BeanReachable(?type, ?methSimp),
+  Method_SimpleName(?meth, ?methSimp),
+  Method_DeclaringType(?meth, ?type).
