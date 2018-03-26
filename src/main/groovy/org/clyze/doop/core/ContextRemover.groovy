@@ -228,7 +228,8 @@ public class ContextRemover {
 
     static boolean isContextField(String s) {
         String t = (s.split(":"))[1].trim()
-        return ((t == "Context") || (t == "HContext"))
+        List contextTypes = [ "Context", "HContext", "configuration.Context", "configuration.HContext", "mainAnalysis.configuration.Context", "mainAnalysis.configuration.HContext" ]
+        return contextTypes.contains(t)
     }
 
     static void registerFieldToRemove(String relName, int idx) {

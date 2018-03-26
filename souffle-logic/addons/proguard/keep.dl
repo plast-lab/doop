@@ -1,11 +1,13 @@
 .decl KeepMethod(?m:Method)
 .output KeepMethod
 
-KeepMethod(cat("-keepclassmembers class ", cat(?type, cat(" { ", cat(?retType, cat(" ", cat(?simpleName, cat(substr(?descriptor, strlen(?retType), strlen(?descriptor)), "; }")))))))) :-
-	mainAnalysis.Reachable(?m),
+#if defined(REFLECTION)
+KeepMethod(cat("-keep class ", cat(?type, cat(" { ", cat(?retType, cat(" ", cat(?simpleName, cat(substr(?descriptor, strlen(?retType), strlen(?descriptor)), "; }")))))))) :-
+    mainAnalysis.ReflectiveReachable(?m),
 	basic.MethodLookup(?simpleName, _, _, ?m),
 	Method_DeclaringType(?m, ?type),
-	AndroidApplicationClass(?type),
+	mainAnalysis.AndroidApplicationClass(?type),
 	Method_Descriptor(?m, ?descriptor),
 	Method_SimpleName(?m, ?simpleName),
 	Method_ReturnType(?m, ?retType).
+#endif

@@ -3,16 +3,16 @@
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
 
+.comp OneObjectSensitiveConfiguration : AbstractConfiguration {
+
 // In this analysis, the real context is a Value.
-.type Context = [ value:Value ]
+.type Context = [ value:mainAnalysis.Value ]
 
 // This analysis has no context for heap objects.
 // This is emulated by creating a single HContext object,
 // which is used everywhere.
 .type HContext
 
-.comp OneObjectSensitiveConfiguration : AbstractConfiguration {
-      
 // This analysis treats arrays specially (deeper context).
 // Only used for arrays. Maps each context to a *potential* hcontext.
 .decl ContextToHContext(?ctx:Context, ?hctx:HContext)
@@ -28,6 +28,8 @@
   ContextToHContext(?ctx, cat("<<constructed-hctx-", cat(?value, ">>"))) :-
     isContext(?ctx),
     ?ctx = [?value].
+
+  #define UNIQUE_HCONTEXT "<<unique-hcontext>>"
 
   RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
     RecordContextRequest(?ctx, ?value, ?var),      

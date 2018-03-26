@@ -6,15 +6,15 @@
   cat(cat(cat(cat(id, "::: "), type), "::: "), breadcrumb)
 
 #define TaintedValueIntroduced(declaringType, id, type, label, value) \
-  MockValueConsMacro(value, type), \
+  mainAnalysis_MockValueConsMacro(value, type), \
   TaintedValue(value), \
   SourceFromTaintedValue(value, id), \
   LabelFromSource(id, label), \
-  Value_DeclaringType(value, declaringType)
+  mainAnalysis.Value_DeclaringType(value, declaringType)
 
 #define TaintedValueTransferred(declaringType, id, type, value) \
-  MockValueConsMacro(value, type), \
+  mainAnalysis_MockValueConsMacro(value, type), \
   TaintedValue(value), \
   SourceFromTaintedValue(value, id), \
-  Value_DeclaringType(value, declaringType)
+  mainAnalysis.Value_DeclaringType(value, declaringType)
 

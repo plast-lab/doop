@@ -9,6 +9,7 @@ import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.LBBuilder
 import org.clyze.doop.input.InputResolutionContext
+import org.clyze.doop.soot.DoopErrorCodeException
 import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 import org.clyze.utils.FileOps
@@ -128,7 +129,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     @Override
     abstract void run()
 
-    protected void generateFacts() {
+    protected void generateFacts() throws DoopErrorCodeException {
         deleteQuietly(factsDir)
         factsDir.mkdirs()
 
@@ -154,8 +155,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
             if (options.WALA_FACT_GEN.value)
                 runWala()
-            else
-                runSoot()
+            else {
+                boolean success = runSoot()
+                if (!success)
+                    throw new DoopErrorCodeException(8)
+            }
 
             touch(new File(factsDir, "ApplicationClass.facts"))
             touch(new File(factsDir, "Properties.facts"))
@@ -221,7 +225,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     abstract protected void runTransformInput()
 
-    protected void runSoot() {
+    // Returns false on fact generation failure.
+    protected boolean runSoot() {
         Collection<String> depArgs
 
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
@@ -291,6 +296,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
         }
 
+        if (options.X_IGNORE_WRONG_STATICNESS.value) {
+            params += ["--ignoreWrongStaticness"]
+        }
+
         if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
             params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
@@ -299,6 +308,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
+        boolean success = false
         sootTime = Helper.timing {
             //We invoke soot reflectively using a separate class-loader to be able
             //to support multiple soot invocations in the same JVM @ server-side.
@@ -308,10 +318,16 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             //In such a case, we should invoke all Java-based tools using a
             //separate process.
             ClassLoader loader = sootClassLoader()
-            Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
+            success = Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
+        }
+
+        if (!success) {
+            logger.info "Soot fact generation failed."
+            return false
         }
 
         logger.info "Soot fact generation time: ${sootTime}"
+        return true
     }
 
     protected void runWala() {
@@ -496,4 +512,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             e.printStackTrace();
         }
     }
+
+    protected void warnOpenPrograms() {
+        logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
+    }
+
 }

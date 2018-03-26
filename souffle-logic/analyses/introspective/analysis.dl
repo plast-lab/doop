@@ -1,0 +1,298 @@
+#include "../context-insensitive/analysis.dl"
+
+#define UNIQUE_VALUE  "<<unique-value>>"
+#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
+
+.init preAnalysis = BasicContextSensitivity<ContextInsensitiveConfiguration>
+
+
+.comp IntrospectiveConfiguration : AbstractConfiguration {
+           
+.type Context  = [ c1:mainAnalysis.Value, c2:mainAnalysis.Value ]
+.type HContext = [ value:mainAnalysis.Value ]
+                    
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+  Value_Type(?value, ?valuetype),
+  basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+  Method_DeclaringType(?tomethod, ?class),
+  !InOutFlowPerClass(?class),
+  isImmutableContext(?calleeCtx).
+
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+  Value_Type(?value, ?valuetype),
+  basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+  Method_DeclaringType(?tomethod, ?class),
+  InOutFlowPerClass(?class),
+  ?hctx = [?hctxValue],
+  ?calleeCtx = [?hctxValue, ?value].
+
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+  isSpecialMethodInvocation_Insn(?invo),
+  MethodInvocation_Method(?invo, ?tomethod),
+  !InOutFlow(?tomethod),
+  isImmutableContext(?calleeCtx).
+
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+  isSpecialMethodInvocation_Insn(?invo),
+  MethodInvocation_Method(?invo, ?tomethod),
+  InOutFlow(?tomethod),
+  ?hctx = [?hctxValue],
+  ?calleeCtx = [?hctxValue, ?value].
+
+StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+  StaticContextRequest(?callerCtx, ?invo),
+  ?calleeCtx = ?callerCtx.
+
+RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+  RecordContextRequest(?ctx, ?value, ?var),      
+  ?ctx = [?ctxValue1, ?ctxValue2],
+  ?hctx = [?ctxValue2],
+  ?ctxValue1 = ?ctxValue1.
+
+// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+// have the same logic as plain Merge for this analysis.
+ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+  ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+  ?hctx = [?hctxValue],
+  ?newCtx = [?hctxValue, ?value].
+
+StartupContextResponse(?hctx, ?value, ?newCtx) :-
+  StartupContextRequest(?hctx, ?value),
+  ?hctx = [?hctxValue],
+  ?newCtx = [?hctxValue, ?value].
+
+FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+  FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+  ?callerCtx = [?callerCtxValue1, ?callerCtxValue2],
+  ?newCtx = [?callerCtxValue2, ?value],
+  ?callerCtxValue1 = ?callerCtxValue1.
+
+InitContextResponse(?value, ?ctx) :-
+  InitContextRequest(?value),
+  ?ctx = [?value, ?value].
+
+InitHContextResponse(?value, ?hctx) :-
+  InitHContextRequest(?value),
+  ?hctx = [?value].
+         
+.decl InOutFlowDirectValue(?method:Method, ?value:Value)
+
+/** Direct in out flow:
+ *
+ *   arg -> value
+ *   ret -> value
+ */
+InOutFlowDirectValue(?method, ?value) :-
+  FormalParam(_, ?method, ?var),
+  preAnalysis.VarPointsTo(_, ?value, _, ?var),
+  ReturnVar(?returnVar, ?method),
+  preAnalysis.VarPointsTo(_, ?value, _, ?returnVar).
+
+.decl InOutFlowDirectTwoValues(?method:Method)
+
+InOutFlowDirectTwoValues(?method) :-
+  InOutFlowDirectValue(?method, ?value1),
+  InOutFlowDirectValue(?method, ?value2),
+  ?value1 != ?value2.
+
+/**
+ * Wrapped in out flow:
+ *
+ * arg -> value
+ * ret -> ... -> ... -> value
+ */
+.decl InOutFlowWrappedValue(?method:Method, ?value:Value) 
+
+InOutFlowWrappedValue(?method, ?value) :-
+  FormalParam(_, ?method, ?var),
+  ReturnVar(?returnVar, ?method),
+  preAnalysis.VarPointsTo(_, ?value, _, ?var),
+  preAnalysis.VarPointsTo(_, ?baseValue, _, ?returnVar),
+  ValuePointsTo(?baseValue, ?value),
+  ?value != ?baseValue.
+
+.decl InOutFlowWrappedTwoValues(?method:Method)
+
+InOutFlowWrappedTwoValues(?method) :-
+  InOutFlowWrappedValue(?method, ?value1),
+  InOutFlowWrappedValue(?method, ?value2),
+  ?value1 != ?value2.
+
+/**
+ * Unwrapped in out flow:
+ *
+ * arg -> ... -> ... -> ... -> value
+ * ret -> value
+ */
+.decl InOutFlowUnwrappedValue(?method:Method, ?value:Value) 
+
+InOutFlowUnwrappedValue(?method, ?value) :-
+  FormalParam(_, ?method, ?var),
+  ReturnVar(?returnVar, ?method),
+  preAnalysis.VarPointsTo(_, ?baseValue, _, ?var),
+  preAnalysis.VarPointsTo(_, ?value, _, ?returnVar),
+  ValuePointsTo(?baseValue, ?value),
+  ?value != ?baseValue.
+
+.decl InOutFlowUnwrappedTwoValues(?method:Method)
+
+InOutFlowUnwrappedTwoValues(?method) :-
+  InOutFlowUnwrappedValue(?method, ?value1),
+  InOutFlowUnwrappedValue(?method, ?value2),
+  ?value1 != ?value2.
+
+/** Utility rule: Value points to another value directly or indirectly **/
+.decl ValuePointsTo(?baseValue:Value, ?value:Value)
+
+ValuePointsTo(?baseValue, ?value) :-
+  preAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?baseValue).
+
+ValuePointsTo(?baseValue, ?value) :-
+  preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue),
+  ValuePointsTo(?value1, ?value).                         
+
+/**
+ * Any in out flow:
+ *
+ * arg -> ... -> ... -> ... -> value
+ * ret -> ... -> ... -> ... -> value
+ */
+
+.decl InOutFlowAnyValue(?method:Method, ?value:Value) 
+
+InOutFlowAnyValue(?method, ?value) :-
+  FormalParam(_, ?method, ?var),
+  ReturnVar(?returnVar, ?method),
+  preAnalysis.VarPointsTo(_, ?baseValue1, _, ?var),
+  preAnalysis.VarPointsTo(_, ?baseValue2, _, ?returnVar),
+  ValuePointsTo(?baseValue1, ?value),
+  ValuePointsTo(?baseValue2, ?value),
+  ?baseValue1 != ?baseValue2.
+             
+.decl InOutFlowAnyTwoValues(?method:Method)
+      
+InOutFlowAnyTwoValues(?method) :-
+  InOutFlowAnyValue(?method, ?value1),
+  InOutFlowAnyValue(?method, ?value2),
+  ?value1 != ?value2.
+
+.decl InOutFlow(?method:Method)
+
+InOutFlow(?method) :-
+  InOutFlowDirectTwoValues(?method).
+
+InOutFlow(?method) :-
+  InOutFlowAnyTwoValues(?method).
+
+.decl InOutFlowDirectValuePerClass(?class:Type, ?value:Value)
+
+/** Direct in out flow:
+ *
+ *   arg -> value
+ *   ret -> value
+ */
+InOutFlowDirectValuePerClass(?class, ?value) :-
+  FormalParam(_, ?method1, ?var),
+  preAnalysis.VarPointsTo(_, ?value, _, ?var),
+  Method_DeclaringType(?method1, ?class),           
+  Method_DeclaringType(?method2, ?class),           
+  ReturnVar(?returnVar, ?method2),
+  preAnalysis.VarPointsTo(_, ?value, _, ?returnVar).
+
+.decl InOutFlowDirectTwoValuesPerClass(?class:Type)
+
+InOutFlowDirectTwoValuesPerClass(?class) :-
+  InOutFlowDirectValuePerClass(?class, ?value1),
+  InOutFlowDirectValuePerClass(?class, ?value2),
+  ?value1 != ?value2.
+
+/**
+ * Wrapped in out flow:
+ *
+ * arg -> value
+ * ret -> ... -> ... -> value
+ */
+.decl InOutFlowWrappedValuePerClass(?class:Type, ?value:Value) 
+
+InOutFlowWrappedValuePerClass(?class, ?value) :-
+  FormalParam(_, ?method1, ?var),
+  Method_DeclaringType(?method1, ?class),           
+  Method_DeclaringType(?method2, ?class),           
+  ReturnVar(?returnVar, ?method2),
+  preAnalysis.VarPointsTo(_, ?value, _, ?var),
+  preAnalysis.VarPointsTo(_, ?baseValue, _, ?returnVar),
+  ValuePointsTo(?baseValue, ?value),
+  ?value != ?baseValue.
+
+.decl InOutFlowWrappedTwoValuesPerClass(?class:Type)
+
+InOutFlowWrappedTwoValuesPerClass(?class) :-
+  InOutFlowWrappedValuePerClass(?class, ?value1),
+  InOutFlowWrappedValuePerClass(?class, ?value2),
+  ?value1 != ?value2.
+
+/**
+ * Unwrapped in out flow:
+ *
+ * arg -> ... -> ... -> ... -> value
+ * ret -> value
+ */
+.decl InOutFlowUnwrappedValuePerClass(?class:Type, ?value:Value) 
+
+InOutFlowUnwrappedValuePerClass(?class, ?value) :-
+  FormalParam(_, ?method1, ?var),
+  Method_DeclaringType(?method1, ?class),           
+  Method_DeclaringType(?method2, ?class),           
+  ReturnVar(?returnVar, ?method2),
+  preAnalysis.VarPointsTo(_, ?baseValue, _, ?var),
+  preAnalysis.VarPointsTo(_, ?value, _, ?returnVar),
+  ValuePointsTo(?baseValue, ?value),
+  ?value != ?baseValue.
+
+.decl InOutFlowUnwrappedTwoValuesPerClass(?class:Type)
+
+InOutFlowUnwrappedTwoValuesPerClass(?class) :-
+  InOutFlowUnwrappedValuePerClass(?class, ?value1),
+  InOutFlowUnwrappedValuePerClass(?class, ?value2),
+  ?value1 != ?value2.
+
+/**
+ * Any in out flow:
+ *
+ * arg -> ... -> ... -> ... -> value
+ * ret -> ... -> ... -> ... -> value
+ */
+
+.decl InOutFlowAnyValuePerClass(?class:Type, ?value:Value) 
+
+InOutFlowAnyValuePerClass(?class, ?value) :-
+  FormalParam(_, ?method1, ?var),
+  Method_DeclaringType(?method1, ?class),           
+  Method_DeclaringType(?method2, ?class),           
+  ReturnVar(?returnVar, ?method2),
+  preAnalysis.VarPointsTo(_, ?baseValue1, _, ?var),
+  preAnalysis.VarPointsTo(_, ?baseValue2, _, ?returnVar),
+  ValuePointsTo(?baseValue1, ?value),
+  ValuePointsTo(?baseValue2, ?value),
+  ?baseValue1 != ?baseValue2.
+             
+.decl InOutFlowAnyTwoValuesPerClass(?class:Type)
+      
+InOutFlowAnyTwoValuesPerClass(?class) :-
+  InOutFlowAnyValuePerClass(?class, ?value1),
+  InOutFlowAnyValuePerClass(?class, ?value2),
+  ?value1 != ?value2.
+
+.decl InOutFlowPerClass(?class:Type)
+
+InOutFlowPerClass(?class) :-
+  InOutFlowDirectTwoValuesPerClass(?class).
+
+InOutFlowPerClass(?class) :-
+  InOutFlowAnyTwoValuesPerClass(?class).
+
+}

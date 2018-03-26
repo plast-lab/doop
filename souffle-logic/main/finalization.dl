@@ -28,8 +28,7 @@ VarPointsTo(?newHCtx, ?heapValue, ?newCtx, ?formal) :-
   configuration.RecordContextRequest(?callerCtx, ?heapValue, ?formal),
   configuration.RecordContextResponse(?callerCtx, ?heapValue, ?formal, ?newHCtx),
   configuration.FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?heapValue),
-  configuration.FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?heapValue, ?newCtx),
-  ObjectShouldNotBeRefined(?heapValue).
+  configuration.FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?heapValue, ?newCtx).
 
 FakeInvocation_RegisterFinalize0(?val2, cat("<register-finalize ", cat(?val1, cat( "/", cat(?val2, "  >"))))),
 PlusMethodInvocation(cat("<register-finalize ", cat(?val1, cat( "/", cat(?val2, "  >"))))) :-

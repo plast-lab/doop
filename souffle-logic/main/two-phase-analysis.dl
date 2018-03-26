@@ -1,19 +1,6 @@
 #include "main.dl"
 #include "basic-context-sensitivity.dl"
 
-#ifdef Android
-.init mainAnalysis = Android
-.output mainAnalysis.VarPointsTo
-#else
-.init preAnalysis = BasicContextSensitivity
-.init mainAnalysis = AbstractContextSensitivity
-
-.output mainAnalysis.VarPointsTo
-
-mainAnalysis.CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
-    preAnalysis.CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod).
-
-mainAnalysis.isContext(?context) :-
-    preAnalysis.isContext(?context).
-#endif
+.init preAnalysis = BasicContextSensitivity<ContextInsensitiveConfiguration>
+.init mainAnalysis = BasicContextSensitivity<CONFIGURATION>
 

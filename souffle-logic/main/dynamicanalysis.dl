@@ -6,8 +6,8 @@
  Default handling of context sensitivity
 */
 
-.decl DynamicContextToContext(?ctx:Context, ?dctx:DynamicContext)
-.decl DynamicContextToHContext(?hctx:HContext, ?dctx:DynamicContext)
+.decl DynamicContextToContext(?ctx:configuration.Context, ?dctx:DynamicContext)
+.decl DynamicContextToHContext(?hctx:configuration.HContext, ?dctx:DynamicContext)
 
 DynamicContextToContext(?ctx, ?dctx) :-
    isImmutableDCTX(?dctx),
@@ -134,7 +134,7 @@ HighConfidenceAssign(?value, ?inmethod) :-
 #endif
  
 // Context insensitive allocations
-.decl FromDynamicHeapObject(?hctx:HContext, ?value:Value, ?dctx:DynamicContext, ?dheap:HeapAllocation)
+.decl FromDynamicHeapObject(?hctx:configuration.HContext, ?value:Value, ?dctx:DynamicContext, ?dheap:HeapAllocation)
 
 
 FromDynamicHeapObject(?hctx, ?value, ?dctx, ?value) :-
@@ -150,8 +150,10 @@ FromDynamicHeapObject(?hctx, ?value, ?dctx, ?value) :-
 
 .decl AllDynamicallyReachableMethod(?method:Method)
 
+#ifdef TAMIFLEX
 AllDynamicallyReachableMethod(?method) :-
    TamiflexDynamicallyReachableMethod(?method).
+#endif // TAMIFLEX
 
 AllDynamicallyReachableMethod(?method) :-
    DynamicReachableMethod(?method).
@@ -183,13 +185,13 @@ ReachableContext(?ctx, ?method) :-
    !ClassInitializer(_, ?method),
    isImmutableContext(?ctx).
 
+#ifdef TAMIFLEX
 .decl TamiflexDynamicallyReachableMethod(?inmethod:Method)
 
-#ifdef TAMIFLEX
 TamiflexDynamicallyReachableMethod(?inmethod) :-
     Tamiflex_ReflectionMap(_, ?invocation),
     Instruction_Method(?invocation, ?inmethod).
-#endif
+#endif // TAMIFLEX
 
 .decl isImmutableDCTX(?dctx:DynamicContext)
 

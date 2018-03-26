@@ -60,7 +60,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "NAME",
 					description: "The name of the analysis.",
 					value: null,
-					validValues: analysesNames(Doop.analysesPath),
+					validValues: analysesNames(Doop.analysesPath) + analysesNames(Doop.souffleAnalysesPath),
 					isMandatory: true,
 					webUI: true
 			),
@@ -680,6 +680,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isDir: true,
 					nonStandard: true
 			),
+			new BooleanAnalysisOption(
+					id: "X_IGNORE_WRONG_STATICNESS",
+					name: "Xignore-wrong-staticness",
+					description: "Ignore 'wrong static-ness' errors in Soot.",
+					value: false,
+					nonStandard: true
+			),
 			/* End non-standard flags */
 
 			/* TODO: deprecated or broken? */
@@ -731,8 +738,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		List<String> analyses = []
 		if (doopAnalysesDir)
 			new File(doopAnalysesDir).eachDir { File dir ->
-				def f = new File(dir, "analysis.logic")
-				if (f.exists() && f.isFile()) analyses << dir.name
+				analyses << dir.name
 			}
 		return analyses.sort()
 	}

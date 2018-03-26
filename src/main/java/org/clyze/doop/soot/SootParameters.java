@@ -26,6 +26,7 @@ public class SootParameters {
      boolean _generateJimple = false;
      boolean _toStdout = false;
      Integer _cores = null;
+     boolean _ignoreWrongStaticness = false;
 
      public void setInputs(List<String> inputs) {
           this._inputs = inputs;

@@ -17,7 +17,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
 
 .decl ConstantMethodHandleLambda(?value:Value, ?dynName:symbol, ?dynRet:Type, ?realMethod:Method)
 
-.decl InvokedynamicBootstrap(?invo:DynamicMethodInvocation_Insn, ?ctx:Context)
+.decl InvokedynamicBootstrap(?invo:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
 
 #define MHDesc(type, method, ret, name) \
    cat("reference ", cat(type, cat ("::", cat(method, cat(" wrapped as ", cat(ret, cat(".", name)))))))
@@ -26,7 +26,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
    cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", desc))))
 
 // Intermediate relation to make rules easier to read.
-.decl ConstantMHLambdaVPT(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method, ?invo:MethodInvocation)
+.decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method, ?invo:MethodInvocation)
 
 ConstantMHLambdaVPT(?hctx, MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?interface, ?dynName)), ?ctx, ?var, ?interface, ?dynName, ?realMethod, ?invo) :-
    isDynamicMethodInvocation_Insn(?invo),
@@ -68,14 +68,15 @@ UnhandledInvokedynamic(?i, ?bootMethodId) :-
 // graph edges: (1) invokeinterface on the method handle lambda calls
 // the real method and (2) invokedynamic calls the bootstrap method.
 
-.decl InvokedynamicCallGraphEdge(?callerCtx:Context, ?i:MethodInvocation, ?calleeCtx:Context, ?m:Method)
+.decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method)
 
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod) :-
    ConstantMethodHandleLambda(?value, ?dynName, _, ?realMethod),
-   VirtualMethodInvocation_Base(?i, ?var),
    VarPointsTo(_, ?value, ?callerCtx, ?var),
-   ImmutableContextFromContext(?callerCtx, ?calleeCtx),
-   VirtualMethodInvocation_SimpleName(?i, ?dynName).
+   VirtualMethodInvocation_Base(?i, ?var),
+   VirtualMethodInvocation_SimpleName(?i, ?dynName),
+   ImmutableContextFromContext(?callerCtx, ?calleeCtx).
+
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, LAMBDA_METAFACTORY_ID) :-
    ImmutableContextFromContext(?callerCtx, ?calleeCtx),
    InvokedynamicBootstrap(?i, ?callerCtx).
@@ -113,8 +114,8 @@ Lambda_Method(?value, ?realMethod) :-
 VarPointsTo(?hctx, ConstructorReferenceValue(?type), ?ctx, ?var),
 ConstructorReference(?var, ConstructorReferenceValue(?type), ?i, ?realMethod),
 MockValueConsMacro(ConstructorReferenceValue(?type), ?type) :-
-   VirtualMethodInvocation_Base(?i, ?base),
    VarPointsTo(?hctx, ?baseVal, ?ctx, ?base),
+   VirtualMethodInvocation_Base(?i, ?base),
    Lambda_Method(?baseVal, ?realMethod),
    Method_SimpleName(?realMethod, "<init>"),
    Method_DeclaringType(?realMethod, ?type),

@@ -290,7 +290,7 @@ Stats_Methods(?n) :-
  ***************************************************/
 
 Stats_InsensValueThrowPointsTo(?value, ?ctx, ?method) :-
-  ThrowPointsTo(_, ?value, ?ctx, ?method).
+  mainAnalysis.ThrowPointsTo(_, ?value, ?ctx, ?method).
 
 //Stats_InsensValueThrowPointsToSize(?ctx, ?method, ?size) :-
 //  Stats_InsensValueThrowPointsTo(_, ?ctx, ?method),

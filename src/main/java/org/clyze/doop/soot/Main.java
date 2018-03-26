@@ -19,10 +19,10 @@ import java.util.jar.JarInputStream;
 
 public class Main {
 
-    private static int shift(String[] args, int index) {
+    private static int shift(String[] args, int index) throws DoopErrorCodeException {
         if(args.length == index + 1) {
             System.err.println("error: option " + args[index] + " requires an argument");
-            System.exit(1);
+            throw new DoopErrorCodeException(9);
         }
         return index + 1;
     }
@@ -33,7 +33,7 @@ public class Main {
         return sootParameters.applicationClassFilter.matches(klass.getName());
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Throwable {
         SootParameters sootParameters = new SootParameters();
         String extraSensitiveControls = "";
         try {
@@ -88,10 +88,10 @@ public class Main {
                         File f = new File(folderName);
                         if (!f.exists()) {
                             System.err.println("Dependency folder " + folderName + " does not exist");
-                            throw new DoopErrorCodeException(0);
+                            throw new DoopErrorCodeException(4);
                         } else if (!f.isDirectory()) {
                             System.err.println("Dependency folder " + folderName + " is not a directory");
-                            throw new DoopErrorCodeException(0);
+                            throw new DoopErrorCodeException(5);
                         }
                         for (File file : Objects.requireNonNull(f.listFiles())) {
                             if (file.isFile() && file.getName().endsWith(".jar")) {
@@ -132,6 +132,9 @@ public class Main {
                             System.out.println("Invalid cores argument: " + args[i]);
                         }
                         break;
+                    case "--ignoreWrongStaticness":
+                        sootParameters._ignoreWrongStaticness = true;
+                        break;
                     case "--R-out-dir":
                         i = shift(args, i);
                         sootParameters._rOutDir = args[i];
@@ -155,6 +158,7 @@ public class Main {
                         System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
                         System.err.println("  --uniqueFacts                         Eliminate redundancy from facts");
+                        System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
                         System.err.println("  --R-out-dir <directory>               Specify when to generate R code (when linking AAR inputs)");
                         System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
@@ -174,7 +178,7 @@ public class Main {
                     default:
                         if (args[i].charAt(0) == '-') {
                             System.err.println("error: unrecognized option: " + args[i]);
-                            throw new DoopErrorCodeException(0);
+                            throw new DoopErrorCodeException(6);
                         }
                         break;
                 }
@@ -186,7 +190,7 @@ public class Main {
 
             if (sootParameters._toStdout && !sootParameters._generateJimple) {
                 System.err.println("error: --stdout must be used with --generate-jimple");
-                throw new DoopErrorCodeException(1);
+                throw new DoopErrorCodeException(7);
             }
             if (sootParameters._toStdout && sootParameters._outputDir != null) {
                 System.err.println("error: --stdout and -d options are not compatible");
@@ -203,18 +207,21 @@ public class Main {
             produceFacts(sootParameters, extraSensitiveControls);
         }
         catch(DoopErrorCodeException errCode) {
-            int n = errCode.getErrorCode();
-            if (n != 0)
-                System.err.println("Exiting with code " + n);
+            System.err.println("Exiting with code " + errCode.getErrorCode());
+            throw errCode;
         }
         catch(Exception exc) {
             exc.printStackTrace();
+            throw exc;
         }
     }
 
     private static void produceFacts(SootParameters sootParameters, String extraSensitiveControls) throws Exception {
         Options.v().set_output_dir(sootParameters._outputDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
+
+        if (sootParameters._ignoreWrongStaticness)
+            Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
 
         if (sootParameters._ssa) {
             Options.v().set_via_shimple(true);

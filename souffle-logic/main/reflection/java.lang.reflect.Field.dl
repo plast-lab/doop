@@ -12,7 +12,7 @@
  *************************************************************/
 
 // Reflective load of a field (static or instance)
-.decl ReflectiveLoadField(?invocation:MethodInvocation, ?ctx:Context, ?to:Var, ?signature:Field)
+.decl ReflectiveLoadField(?invocation:MethodInvocation, ?ctx:configuration.Context, ?to:Var, ?signature:Field)
 
 ReflectiveLoadField(?invocation, ?ctx, ?to, ?signature) :-
   java_lang_reflect_Field_get(?invocation, ?to, ?field),
@@ -21,14 +21,14 @@ ReflectiveLoadField(?invocation, ?ctx, ?to, ?signature) :-
 
 // Load of a static field
 // TODO Check if class initialization handled by reflective.logic
-.decl ReflectiveLoadStaticField(?ctx:Context, ?to:Var, ?signature:Field)
+.decl ReflectiveLoadStaticField(?ctx:configuration.Context, ?to:Var, ?signature:Field)
 
 ReflectiveLoadStaticField(?ctx, ?to, ?signature) :-
   ReflectiveLoadField(_, ?ctx, ?to, ?signature),
   Field_Modifier("static", ?signature).
 
 // Load of an instance field
-.decl ReflectiveLoadInstanceField(?ctx1:Context, ?to:Var, ?signature:Field, ?ctx2:Context, ?base:Var)
+.decl ReflectiveLoadInstanceField(?ctx1:configuration.Context, ?to:Var, ?signature:Field, ?ctx2:configuration.Context, ?base:Var)
 
 ReflectiveLoadInstanceField(?ctx, ?to, ?signature, ?ctx, ?base) :-
   ReflectiveLoadField(?invocation, ?ctx, ?to, ?signature),
@@ -47,7 +47,7 @@ ReflectiveLoadInstanceField(?ctx, ?to, ?signature, ?ctx, ?base) :-
  *************************************************************/
 
 // Reflective store of a field (static or instance)
-.decl ReflectiveStoreField(?invocation:MethodInvocation, ?signature:Field, ?ctx:Context, ?from:Var)
+.decl ReflectiveStoreField(?invocation:MethodInvocation, ?signature:Field, ?ctx:configuration.Context, ?from:Var)
 
 ReflectiveStoreField(?invocation, ?signature, ?ctx, ?from) :-
   java_lang_reflect_Field_set(?invocation, ?from, ?field),
@@ -56,14 +56,14 @@ ReflectiveStoreField(?invocation, ?signature, ?ctx, ?from) :-
 
 // Store of a static field
 // TODO Check if class initialization handled by reflective.logic
-.decl ReflectiveStoreStaticField(?signature:Field, ?ctx:Context, ?from:Var)
+.decl ReflectiveStoreStaticField(?signature:Field, ?ctx:configuration.Context, ?from:Var)
 
 ReflectiveStoreStaticField(?signature, ?ctx, ?from) :-
   ReflectiveStoreField(_, ?signature, ?ctx, ?from),
   Field_Modifier("static", ?signature).
 
 // Store of an instance field
-.decl ReflectiveStoreInstanceField(?ctx1:Context, ?from:Var, ?signature:Field, ?ctx2:Context, ?base:Var)
+.decl ReflectiveStoreInstanceField(?ctx1:configuration.Context, ?from:Var, ?signature:Field, ?ctx2:configuration.Context, ?base:Var)
 
 ReflectiveStoreInstanceField(?ctx, ?from, ?signature, ?ctx, ?base) :-
   ReflectiveStoreField(?invocation, ?signature, ?ctx, ?from),

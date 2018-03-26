@@ -4,13 +4,13 @@
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
 
-// In this analysis, both the real context and the real heap context are Types
-// The type is now always a class type, because of arrays currently being a
-// non-class subtype of Object
-.type Context  = [ type:Type ]
-.type HContext = [ type:Type ]
-
 .comp OneTypeSensitivePlusHeapConfiguration : AbstractConfiguration {
+
+  // In this analysis, both the real context and the real heap context are Types
+  // The type is now always a class type, because of arrays currently being a
+  // non-class subtype of Object
+  .type Context  = [ type:Type ]
+  .type HContext = [ type:Type ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
