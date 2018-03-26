@@ -564,6 +564,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "HEAPDL_DYNAMICVARPOINTSTO",
+					name: "heapdl-dvpt",
+					forCacheID: true,
+					description: "Import dynamic var-points-to information.",
+					value: false,
+					forPreprocessor: true
+			),
 			new AnalysisOption<String>(
 					id: "IMPORT_DYNAMIC_FACTS",
 					name: "import-dynamic-facts",
