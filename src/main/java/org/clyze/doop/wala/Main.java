@@ -10,6 +10,7 @@ import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
+import com.ibm.wala.properties.WalaProperties;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSAOptions;
 import com.ibm.wala.util.config.AnalysisScopeReader;
@@ -22,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Properties;
 
 public class Main {
 
@@ -50,6 +52,10 @@ public class Main {
                     case "-l":
                         i = shift(args, i);
                         walaParameters._libraries.add(args[i]);
+                        break;
+                    case "-p":
+                        i = shift(args, i);
+                        walaParameters._javaPath = args[i];
                         break;
                     case "-d":
                         i = shift(args, i);
@@ -83,6 +89,7 @@ public class Main {
         }
 
         System.out.println("WALA classpath:" + classPath);
+
         AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
         // files and organize them into a tree.
         ClassHierarchy cha = null;

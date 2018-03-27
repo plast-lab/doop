@@ -50,10 +50,10 @@ class WalaFactGenerator {
         while (_iClasses.hasNext()) {
             IClass iClass = _iClasses.next();
             overall++;
-            if(iClass.getClassLoader().getName().toString().equals("Primordial")) { //Skipping classes using the Primordial classloader for now to produce less facts
-                skipped++;
-                continue;
-            }
+//            if(iClass.getClassLoader().getName().toString().equals("Primordial")) { //Skipping classes using the Primordial classloader for now to produce less facts
+//                skipped++;
+//                continue;
+//            }
             if(iClass.getName().toString().contains("ImmutableGregorianDate") || iClass.getName().toString().contains("PosixFileAttributeView")|| iClass.getName().toString().contains("TreeModel"))
                 System.out.println("Found " + iClass.getName().toString());
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);

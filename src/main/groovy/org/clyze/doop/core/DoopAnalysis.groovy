@@ -337,7 +337,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
         Collection<String> depArgs
 
-        depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
+        //depArgs = (platformLibs.collect{ lib -> ["-p", lib.toString()] }.flatten() as Collection<String>) + deps
+        depArgs = deps
+        depArgs.add("-p " + platformLibs.get(0).getAbsolutePath().toString());
         params = inputArgs + depArgs
 
         params = params + ["-d", factsDir.toString()]
