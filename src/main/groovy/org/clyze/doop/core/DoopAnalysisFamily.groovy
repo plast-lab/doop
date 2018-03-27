@@ -60,7 +60,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "NAME",
 					description: "The name of the analysis.",
 					value: null,
-					validValues: analysesNames(Doop.analysesPath) + analysesNames(Doop.souffleAnalysesPath),
+					validValues: analysesNames(Doop.analysesPath),
 					isMandatory: true,
 					webUI: true
 			),
@@ -744,10 +744,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	]
 
 	private static List<String> analysesNames(String doopAnalysesDir) {
+		List<String> logicFiles = [ "analysis.logic", "analysis.dl" ]
 		List<String> analyses = []
 		if (doopAnalysesDir)
 			new File(doopAnalysesDir).eachDir { File dir ->
-				analyses << dir.name
+				logicFiles.each { String fName ->
+					def f = new File(dir, fName)
+					if (f.exists() && f.isFile()) analyses << dir.name
+				}
 			}
 		return analyses.sort()
 	}
