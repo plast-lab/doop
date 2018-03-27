@@ -103,8 +103,6 @@ public class WalaFactWriter {
 
     void writeClassOrInterfaceType(IClass c) {
         String classStr = _rep.fixTypeString(c.getName().toString());
-        if(c.getName().toString().contains("ImmutableGregorianDate") || c.getName().toString().contains("PosixFileAttributeView") || c.getName().toString().contains("TreeModel"))
-            System.out.println("FixType " + classStr + " interface? " + c.isInterface());
         if (c.isInterface()) {
             _db.add(INTERFACE_TYPE, classStr);
         }
