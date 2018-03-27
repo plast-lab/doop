@@ -222,6 +222,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI: true
 			),
 			new AnalysisOption<String>(
+					id: "AUTO_APP_REGEX_MODE",
+					name: "auto-app-regex-mode",
+					argName: "MODE",
+					description: "When no app regex is given, either compute an app regex for the first input ('first') or for all inputs ('all').",
+					value: null,
+					forCacheID: true,
+					webUI: true
+			),
+			new AnalysisOption<String>(
 					id: "PLATFORM",
 					name: "platform",
 					argName: "PLATFORM",
