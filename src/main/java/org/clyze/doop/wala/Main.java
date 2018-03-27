@@ -13,6 +13,7 @@ import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.properties.WalaProperties;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSAOptions;
+import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.config.AnalysisScopeReader;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.DoopErrorCodeException;
@@ -90,6 +91,11 @@ public class Main {
 
         System.out.println("WALA classpath:" + classPath);
 
+        String walaLibraries[] = WalaProperties.getJ2SEJarFiles();
+        System.out.println("Java libraries loaded by WALA automatically: ");
+        for(int i =0 ; i< walaLibraries.length ; i++)
+            System.out.println(walaLibraries[i]);
+
         AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
         // files and organize them into a tree.
         ClassHierarchy cha = null;
@@ -111,7 +117,8 @@ public class Main {
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
         //driver.doInParallel(classes);
         driver.doSequentially(classes, walaFactWriter);
-
+        db.flush();
+        db.close();
 
     }
 }
