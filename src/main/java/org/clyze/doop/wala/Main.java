@@ -1,30 +1,16 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
-import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
-import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
-import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
-import com.ibm.wala.properties.WalaProperties;
-import com.ibm.wala.ssa.IR;
-import com.ibm.wala.ssa.SSAOptions;
-import com.ibm.wala.util.WalaException;
-import com.ibm.wala.util.config.AnalysisScopeReader;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.DoopErrorCodeException;
-import org.clyze.doop.soot.Driver;
-import org.clyze.doop.soot.ThreadFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.Properties;
 
 public class Main {
 
