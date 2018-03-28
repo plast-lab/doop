@@ -12,7 +12,6 @@ import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
-import org.clyze.utils.Helper
 
 import java.util.jar.Attributes
 import java.util.jar.JarFile
@@ -645,10 +644,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             /*
             Set excluded = ["*", "**"] as Set
             analysis.jars.drop(1).each { Dependency jar ->
-                excluded += Helper.getPackages(jar.input())
+                excluded += PackageUtil.getPackages(jar.input())
             }
 
-            Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
+            Set<String> packages = PackageUtil.getPackages(analysis.jars[0].input()) - excluded
             */
 
             Set<String> packages
@@ -656,9 +655,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             // Default is 'all'.
             if ((mode == null) || (mode == 'all')) {
                 packages = [] as Set
-                vars.inputFiles.each { packages.addAll(Helper.getPackages(it)) }
+                vars.inputFiles.each { packages.addAll(PackageUtil.getPackages(it)) }
             } else if (mode == 'first') {
-                packages = Helper.getPackages(vars.inputFiles[0])
+                packages = PackageUtil.getPackages(vars.inputFiles[0])
             } else {
                 throw new RuntimeException("Invalid auto-app-regex mode: ${mode}")
             }

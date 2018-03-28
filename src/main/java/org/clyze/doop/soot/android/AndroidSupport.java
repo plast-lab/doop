@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.*;
 
 import static org.clyze.doop.soot.android.AndroidManifest.getAndroidManifest;
-import static soot.DexClassProvider.classesOfDex;
 import static soot.dexpler.DexFileProvider.*;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
