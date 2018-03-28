@@ -10,6 +10,7 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.LBBuilder
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.soot.DoopErrorCodeException
+import org.clyze.utils.AARUtils
 import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 import org.clyze.utils.FileOps
@@ -156,7 +157,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             if (options.WALA_FACT_GEN.value)
                 runWala()
             else {
-                boolean success = runSoot()
+                Set<String> tmpDirs = [] as Set
+                boolean success = runSoot(tmpDirs)
+                Helper.cleanUp(tmpDirs)
                 if (!success)
                     throw new DoopErrorCodeException(8)
             }
@@ -226,13 +229,15 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     abstract protected void runTransformInput()
 
     // Returns false on fact generation failure.
-    protected boolean runSoot() {
+    protected boolean runSoot(Set<String> tmpDirs) {
         Collection<String> depArgs
 
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         assert platform == "android" || platform == "java"
 
         def inputArgs = inputFiles.collect(){File f -> ["-i", f.toString()]}.flatten() as Collection<String>
+
+        inputArgs = AARUtils.toJars(inputArgs as List<String>, false, tmpDirs)
 
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
@@ -241,6 +246,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
         else {
             def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+            deps = AARUtils.toJars(deps as List<String>, false, tmpDirs)
             depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
 
