@@ -12,10 +12,10 @@ import static soot.DexClassProvider.classesOfDex
 public class PackageUtil {
 
     /**
-	 * Returns a set of the packages contained in the given jar.
-	 * Any classes that are not included in packages are also retrieved.
-	 */
-	static Set<String> getPackages(File archive) {
+     * Returns a set of the packages contained in the given jar.
+     * Any classes that are not included in packages are also retrieved.
+     */
+    static Set<String> getPackages(File archive) {
         String name = archive.getName().toLowerCase()
         if (name.endsWith(".jar")) {
             return getPackagesForJAR(archive)
@@ -28,7 +28,7 @@ public class PackageUtil {
         return [] as Set
     }
 
-	static Set<String> getPackagesForAPK(File apk) {
+    static Set<String> getPackagesForAPK(File apk) {
         Set<String> classNames = []
         ZipFile zip = new ZipFile(apk)
         zip.entries().each { ZipEntry entry ->
@@ -49,7 +49,7 @@ public class PackageUtil {
         return idx == -1 ? s : s.substring(0, idx) + '.*'
     }
 
-	static Set<String> getPackagesForAAR(File aar) {
+    static Set<String> getPackagesForAAR(File aar) {
         Set<String> ret = [] as Set
         Set<String> tmpDirs = [] as Set
         List<String> jars = AARUtils.toJars([aar], true, tmpDirs)
@@ -58,22 +58,22 @@ public class PackageUtil {
         return ret
     }
 
-	static Set<String> getPackagesForJAR(File jar) {
-		ZipFile zip = new ZipFile(jar)
-		Enumeration<? extends ZipEntry> entries = zip.entries()
-		List<ZipEntry> classes = entries?.findAll { ZipEntry entry ->
-			entry.getName().endsWith(".class")
-		}
-		List<String> packages = classes.collect { ZipEntry entry ->
+    static Set<String> getPackagesForJAR(File jar) {
+        ZipFile zip = new ZipFile(jar)
+        Enumeration<? extends ZipEntry> entries = zip.entries()
+        List<ZipEntry> classes = entries?.findAll { ZipEntry entry ->
+            entry.getName().endsWith(".class")
+        }
+        List<String> packages = classes.collect { ZipEntry entry ->
             String className = entry.getName()
             if (className.indexOf("/") > 0)
             return FilenameUtils.getPath(className).replace('/' as char, '.' as char) + '*'
         else
             return FilenameUtils.getBaseName(className)
-		}
+        }
 
-		packages = packages.unique()
+        packages = packages.unique()
 
-		return (packages as Set)
-	}
+        return (packages as Set)
+    }
 }
