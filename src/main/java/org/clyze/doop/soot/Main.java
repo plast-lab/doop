@@ -243,6 +243,8 @@ public class Main {
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
         if (sootParameters._android) {
+            if (sootParameters._inputs.size() > 1)
+                System.err.println("\nWARNING -- Android mode: all inputs will be preprocessed but only " + sootParameters._inputs.get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
