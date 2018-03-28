@@ -154,15 +154,17 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 runAverroes()
             }
 
+            Set<String> tmpDirs = [] as Set
             if (options.WALA_FACT_GEN.value)
-                runWala()
+                runWala(tmpDirs)
             else {
-                Set<String> tmpDirs = [] as Set
                 boolean success = runSoot(tmpDirs)
-                Helper.cleanUp(tmpDirs)
-                if (!success)
+                if (!success) {
+                    Helper.cleanUp(tmpDirs)
                     throw new DoopErrorCodeException(8)
+                }
             }
+            Helper.cleanUp(tmpDirs)
 
             touch(new File(factsDir, "ApplicationClass.facts"))
             touch(new File(factsDir, "Properties.facts"))
@@ -228,12 +230,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     abstract protected void runTransformInput()
 
-    private Map getInputArgsAndDeps(Set<String> tmpDirs) {
+    private List<String> getInputArgsJars(Set<String> tmpDirs) {
         def inputArgs = inputFiles.collect(){ File f -> ["-i", f.toString()] }.flatten() as Collection<String>
+        return AARUtils.toJars(inputArgs as List<String>, false, tmpDirs)
+    }
+
+    private List<String> getDepsJars(Set<String> tmpDirs) {
         def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
-        inputArgs = AARUtils.toJars(inputArgs as List<String>, false, tmpDirs)
-        deps = AARUtils.toJars(deps as List<String>, false, tmpDirs)
-        return [inputArgs, deps]
+        return AARUtils.toJars(deps as List<String>, false, tmpDirs)
     }
 
     // Returns false on fact generation failure.
@@ -243,7 +247,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         assert platform == "android" || platform == "java"
 
-        def (inputArgs, deps) = getInputArgsAndDeps(tmpDirs)
+        def inputArgs = getInputArgsJars(tmpDirs)
+        def deps = getDepsJars(tmpDirs)
 
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
@@ -340,10 +345,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         return true
     }
 
-    protected void runWala() {
+    protected void runWala(Set<String> tmpDirs) {
         Collection<String> params
         Collection<String> depArgs
-        def (inputArgs, deps) = getInputArgsAndDeps(tmpDirs)
+        def inputArgs = getInputArgsJars(tmpDirs)
+        def deps = getDepsJars(tmpDirs)
 
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         depArgs = deps
