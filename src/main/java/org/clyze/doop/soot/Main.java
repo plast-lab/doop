@@ -242,12 +242,10 @@ public class Main {
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
         if (sootParameters._android) {
-            if (sootParameters._inputs.size() > 1)
-                System.out.println("Warning -- Android mode -- Only " + sootParameters._inputs.get(0) + " will be considered as application file. The rest of the input files will be ignored");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
-            android = new AndroidSupport(rOutDir, sootParameters._inputs.get(0), sootParameters, extraSensitiveControls);
+            android = new AndroidSupport(rOutDir, sootParameters, extraSensitiveControls);
             android.processInputs(propertyProvider, classesInApplicationJars, classToArtifactMap, sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
