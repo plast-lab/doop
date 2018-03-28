@@ -9,10 +9,12 @@ import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
+import com.ibm.wala.types.annotations.Annotation;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -66,6 +68,13 @@ public class WalaFactWriter {
 
         _db.add(STRING_RAW, result, result);
         _db.add(METHOD, result, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
+        Iterator<Annotation> annotationIterator = m.getAnnotations().iterator();
+        while(annotationIterator.hasNext())
+        {
+            Annotation annotation = annotationIterator.next();
+            _db.add(METHOD_ANNOTATION, result, _rep.fixTypeString(annotation.toString()));
+        }
+
 //        if (m.getTag("VisibilityAnnotationTag") != null) {
 //            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
 //            for (AnnotationTag aTag : vTag.getAnnotations()) {
