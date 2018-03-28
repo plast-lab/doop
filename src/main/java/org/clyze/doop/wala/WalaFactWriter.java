@@ -72,7 +72,8 @@ public class WalaFactWriter {
         while(annotationIterator.hasNext())
         {
             Annotation annotation = annotationIterator.next();
-            _db.add(METHOD_ANNOTATION, result, _rep.fixTypeString(annotation.toString()));
+            _db.add(METHOD_ANNOTATION, result, _rep.fixTypeString(annotation.getType().toString()));
+            //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
         }
 
 //        if (m.getTag("VisibilityAnnotationTag") != null) {
