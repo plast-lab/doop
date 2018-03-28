@@ -52,8 +52,8 @@ public class PackageUtil {
     static Set<String> getPackagesForAAR(File aar) {
         Set<String> ret = [] as Set
         Set<String> tmpDirs = [] as Set
-        List<String> jars = AARUtils.toJars([aar], true, tmpDirs)
-        jars.each { jar -> ret.addAll(getPackagesForJAR(jar)) }
+        List<String> jars = AARUtils.toJars([aar.canonicalPath], true, tmpDirs)
+        jars.each { jar -> ret.addAll(getPackagesForJAR(new File(jar))) }
         tmpDirs.each { tmpDir -> FileUtils.deleteQuietly(new File(tmpDir)); }
         return ret
     }
