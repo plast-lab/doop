@@ -91,14 +91,15 @@ public class Main {
 
         System.out.println("WALA classpath:" + classPath);
 
-        String walaLibraries[] = WalaProperties.getJ2SEJarFiles();
-        System.out.println("Java libraries loaded by WALA automatically: ");
-        for(int i =0 ; i< walaLibraries.length ; i++)
-            System.out.println(walaLibraries[i]);
+        //String walaLibraries[] = WalaProperties.getJ2SEJarFiles();
+        //System.out.println("Java libraries loaded by WALA automatically: ");
+        //for(int i =0 ; i< walaLibraries.length ; i++)
+        //    System.out.println(walaLibraries[i]);
 
         //AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
-        AnalysisScope scope = WalaScopeReader.makeScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+        AnalysisScope scope = WalaScopeReader.makeScope(classPath, null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
         // files and organize them into a tree.
+
         ClassHierarchy cha = null;
         try {
             cha = ClassHierarchyFactory.make(scope);
