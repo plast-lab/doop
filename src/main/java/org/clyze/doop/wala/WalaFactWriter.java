@@ -4,6 +4,9 @@ import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.ShrikeCTMethod;
+import com.ibm.wala.shrikeCT.AnnotationsReader;
+import com.ibm.wala.shrikeCT.TypeAnnotationsReader;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.FieldReference;
@@ -14,6 +17,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,7 +79,18 @@ public class WalaFactWriter {
             _db.add(METHOD_ANNOTATION, result, _rep.fixTypeString(annotation.getType().toString()));
             //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
         }
+        ShrikeCTMethod shrikeMethod = (ShrikeCTMethod)m;
+        Collection<Annotation>[] paraAnnotations = shrikeMethod.getParameterAnnotations();
+        for(int i=0; i< paraAnnotations.length;i++)
+        {
+            annotationIterator = paraAnnotations[i].iterator();
+            while(annotationIterator.hasNext())
+            {
+                Annotation annotation = annotationIterator.next();
+                _db.add(PARAM_ANNOTATION, result, str(i), annotation.getType().toString());
+            }
 
+        }
 //        if (m.getTag("VisibilityAnnotationTag") != null) {
 //            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
 //            for (AnnotationTag aTag : vTag.getAnnotations()) {
