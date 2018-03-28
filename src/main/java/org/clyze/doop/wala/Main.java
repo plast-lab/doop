@@ -96,7 +96,8 @@ public class Main {
         for(int i =0 ; i< walaLibraries.length ; i++)
             System.out.println(walaLibraries[i]);
 
-        AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+        //AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+        AnalysisScope scope = WalaScopeReader.makeScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
         // files and organize them into a tree.
         ClassHierarchy cha = null;
         try {
