@@ -228,6 +228,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     abstract protected void runTransformInput()
 
+    private Map getInputArgsAndDeps(Set<String> tmpDirs) {
+        def inputArgs = inputFiles.collect(){ File f -> ["-i", f.toString()] }.flatten() as Collection<String>
+        def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+        inputArgs = AARUtils.toJars(inputArgs as List<String>, false, tmpDirs)
+        deps = AARUtils.toJars(deps as List<String>, false, tmpDirs)
+        return [inputArgs, deps]
+    }
+
     // Returns false on fact generation failure.
     protected boolean runSoot(Set<String> tmpDirs) {
         Collection<String> depArgs
@@ -235,9 +243,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         assert platform == "android" || platform == "java"
 
-        def inputArgs = inputFiles.collect(){File f -> ["-i", f.toString()]}.flatten() as Collection<String>
-
-        inputArgs = AARUtils.toJars(inputArgs as List<String>, false, tmpDirs)
+        def (inputArgs, deps) = getInputArgsAndDeps(tmpDirs)
 
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
@@ -245,8 +251,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
-            deps = AARUtils.toJars(deps as List<String>, false, tmpDirs)
             depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
 
@@ -338,10 +342,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     protected void runWala() {
         Collection<String> params
-        def inputArgs = inputFiles.collect(){File f -> ["-i", f.toString()]}.flatten() as Collection<String>
-
-        def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
         Collection<String> depArgs
+        def (inputArgs, deps) = getInputArgsAndDeps(tmpDirs)
 
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         depArgs = deps
