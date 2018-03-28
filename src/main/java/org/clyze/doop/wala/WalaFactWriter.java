@@ -87,7 +87,7 @@ public class WalaFactWriter {
             while(annotationIterator.hasNext())
             {
                 Annotation annotation = annotationIterator.next();
-                _db.add(PARAM_ANNOTATION, result, str(i), annotation.getType().toString());
+                _db.add(PARAM_ANNOTATION, result, str(i), _rep.fixTypeString(annotation.getType().toString()));
             }
 
         }
