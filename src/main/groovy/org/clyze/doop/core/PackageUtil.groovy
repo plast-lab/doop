@@ -6,6 +6,7 @@ import java.util.zip.ZipFile
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.FileUtils;
 import org.clyze.utils.AARUtils;
+import org.clyze.utils.Helper
 import static soot.DexClassProvider.classesOfDex
 
 // Computes the app-regex for JAR/APK/AAR inputs.
@@ -54,7 +55,7 @@ public class PackageUtil {
         Set<String> tmpDirs = [] as Set
         List<String> jars = AARUtils.toJars([aar.canonicalPath], true, tmpDirs)
         jars.each { jar -> ret.addAll(getPackagesForJAR(new File(jar))) }
-        tmpDirs.each { tmpDir -> FileUtils.deleteQuietly(new File(tmpDir)); }
+        Helper.cleanUp(tmpDirs)
         return ret
     }
 

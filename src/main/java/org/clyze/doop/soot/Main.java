@@ -5,6 +5,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.android.AndroidSupport;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import org.clyze.utils.AARUtils;
+import org.clyze.utils.Helper;
 import org.objectweb.asm.ClassReader;
 import soot.*;
 import soot.SourceLocator.FoundFile;
@@ -361,9 +362,7 @@ public class Main {
         db.close();
 
         // Clean up any temporary directories used for AAR extraction.
-        for (String tmpDir : tmpDirs) {
-            FileUtils.deleteQuietly(new File(tmpDir));
-        }
+        Helper.cleanUp(tmpDirs);
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {
