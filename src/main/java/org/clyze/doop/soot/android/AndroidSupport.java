@@ -25,7 +25,6 @@ import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.Callback
 public class AndroidSupport {
 
     private String rOutDir;
-    private String appInput;
     private SootParameters sootParameters;
     private SootMethod dummyMain;
 
@@ -37,9 +36,8 @@ public class AndroidSupport {
     private Set<PossibleLayoutControl> appUserControls = new HashSet<>();
     private String extraSensitiveControls;
 
-    public AndroidSupport(String rOutDir, String appInput, SootParameters sootParameters, String extraSensitiveControls) {
+    public AndroidSupport(String rOutDir, SootParameters sootParameters, String extraSensitiveControls) {
         this.rOutDir = rOutDir;
-        this.appInput = appInput;
         this.sootParameters = sootParameters;
         this.extraSensitiveControls = extraSensitiveControls;
     }
@@ -50,6 +48,7 @@ public class AndroidSupport {
 
     public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, Map<String, Set<String>> classToArtifactMap, String androidJars, Set<String> tmpDirs) throws Exception {
         if (sootParameters.getRunFlowdroid()) {
+            String appInput = sootParameters.getInputs().get(0);
             SetupApplication app = new SetupApplication(androidJars, appInput);
             app.getConfig().setCallbackAnalyzer(Fast);
             String filename = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
@@ -131,76 +130,80 @@ public class AndroidSupport {
     }
 
     public void addClasses(Set<String> classesInApplicationJar, Set<SootClass> classes, Scene scene) {
-        if (appInput.endsWith(".apk")) {
-            File apk = new File(appInput);
-            System.out.println("Android mode, APK = " + appInput);
-            try {
-                List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
-                Set<Object> allDexClasses = new HashSet<>();
-                for (DexContainer dexContainer : listContainers) {
-                    allDexClasses.addAll(dexContainer.getBase().getClasses());
-                    for (Object dexBackedClassDef : allDexClasses) {
-                        String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor(((DexBackedClassDef) dexBackedClassDef).getType()).getEscapedName();
-                        SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
-                        classes.add(c);
+        for (String appInput : sootParameters.getInputs()) {
+            if (appInput.endsWith(".apk")) {
+                File apk = new File(appInput);
+                System.out.println("Android mode, APK = " + appInput);
+                try {
+                    List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
+                    Set<Object> allDexClasses = new HashSet<>();
+                    for (DexContainer dexContainer : listContainers) {
+                        allDexClasses.addAll(dexContainer.getBase().getClasses());
+                        for (Object dexBackedClassDef : allDexClasses) {
+                            String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor(((DexBackedClassDef) dexBackedClassDef).getType()).getEscapedName();
+                            SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
+                            classes.add(c);
+                        }
                     }
+                    System.out.println("Classes found in apk: " + allDexClasses.size());
+                } catch (IOException ex) {
+                    System.err.println("Could not read dex classes in " + apk);
+                    ex.printStackTrace();
+                    return;
                 }
-                System.out.println("Classes found in apk: " + allDexClasses.size());
-            } catch (IOException ex) {
-                System.err.println("Could not read dex classes in " + apk);
-                ex.printStackTrace();
-                return;
+            } else {
+                // We support both AAR and JAR inputs, although JARs
+                // are not ideal for analysis in Android, as they
+                // don't contain AndroidManifest.xml.
+                System.out.println("Android mode, input = " + appInput);
+                Main.addClasses(classesInApplicationJar, classes, scene);
             }
-        } else {
-            // We support both AAR and JAR inputs, although JARs
-            // are not ideal for analysis in Android, as they
-            // don't contain AndroidManifest.xml.
-            System.out.println("Android mode, input = " + appInput);
-            Main.addClasses(classesInApplicationJar, classes, scene);
         }
     }
 
     public void writeComponents(FactWriter writer) {
-        AndroidManifest processMan = getAndroidManifest(appInput);
+        for (String appInput : sootParameters.getInputs()) {
+            AndroidManifest processMan = getAndroidManifest(appInput);
 
-        if (processMan.getApplicationName() != null)
-            writer.writeApplication(processMan.expandClassName(processMan.getApplicationName()));
-        else {
-            // If no application name, use Android's Application:
-            // "The fully qualified name of an Application subclass
-            // implemented for the application. ... In the absence of a
-            // subclass, Android uses an instance of the base
-            // Application class."
-            // https://developer.android.com/guide/topics/manifest/application-element.html
-            writer.writeApplication("android.app.Application");
-        }
-        for (String s : appActivities) {
-            writer.writeActivity(processMan.expandClassName(s));
-        }
-
-        for (String s : appServices) {
-            writer.writeService(processMan.expandClassName(s));
-        }
-
-        for (String s : appContentProviders) {
-            writer.writeContentProvider(processMan.expandClassName(s));
-        }
-
-        for (String s : appBroadcastReceivers) {
-            writer.writeBroadcastReceiver(processMan.expandClassName(s));
-        }
-
-        for (String callbackMethod : appCallbackMethods) {
-            writer.writeCallbackMethod(callbackMethod);
-        }
-
-        for (PossibleLayoutControl possibleLayoutControl : appUserControls) {
-            writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
-            if (possibleLayoutControl.isSensitive()) {
-                writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
+            if (processMan.getApplicationName() != null)
+                writer.writeApplication(processMan.expandClassName(processMan.getApplicationName()));
+            else {
+                // If no application name, use Android's Application:
+                // "The fully qualified name of an Application subclass
+                // implemented for the application. ... In the absence of a
+                // subclass, Android uses an instance of the base
+                // Application class."
+                // https://developer.android.com/guide/topics/manifest/application-element.html
+                writer.writeApplication("android.app.Application");
             }
+            for (String s : appActivities) {
+                writer.writeActivity(processMan.expandClassName(s));
+            }
+
+            for (String s : appServices) {
+                writer.writeService(processMan.expandClassName(s));
+            }
+
+            for (String s : appContentProviders) {
+                writer.writeContentProvider(processMan.expandClassName(s));
+            }
+
+            for (String s : appBroadcastReceivers) {
+                writer.writeBroadcastReceiver(processMan.expandClassName(s));
+            }
+
+            for (String callbackMethod : appCallbackMethods) {
+                writer.writeCallbackMethod(callbackMethod);
+            }
+
+            for (PossibleLayoutControl possibleLayoutControl : appUserControls) {
+                writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
+                if (possibleLayoutControl.isSensitive()) {
+                    writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
+                }
+            }
+            writeExtraSensitiveControls(writer);
         }
-        writeExtraSensitiveControls(writer);
     }
 
     // The extra sensitive controls are given as a String

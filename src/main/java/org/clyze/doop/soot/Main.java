@@ -5,6 +5,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.android.AndroidSupport;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import org.clyze.utils.AARUtils;
+import org.clyze.utils.Helper;
 import org.objectweb.asm.ClassReader;
 import soot.*;
 import soot.SourceLocator.FoundFile;
@@ -243,11 +244,11 @@ public class Main {
         Set<String> tmpDirs = new HashSet<>();
         if (sootParameters._android) {
             if (sootParameters._inputs.size() > 1)
-                System.out.println("Warning -- Android mode -- Only " + sootParameters._inputs.get(0) + " will be considered as application file. The rest of the input files will be ignored");
+                System.err.println("\nWARNING -- Android mode: all inputs will be preprocessed but only " + sootParameters._inputs.get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
-            android = new AndroidSupport(rOutDir, sootParameters._inputs.get(0), sootParameters, extraSensitiveControls);
+            android = new AndroidSupport(rOutDir, sootParameters, extraSensitiveControls);
             android.processInputs(propertyProvider, classesInApplicationJars, classToArtifactMap, sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
@@ -363,9 +364,7 @@ public class Main {
         db.close();
 
         // Clean up any temporary directories used for AAR extraction.
-        for (String tmpDir : tmpDirs) {
-            FileUtils.deleteQuietly(new File(tmpDir));
-        }
+        Helper.cleanUp(tmpDirs);
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {

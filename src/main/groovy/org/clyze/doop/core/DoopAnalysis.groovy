@@ -10,6 +10,7 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.LBBuilder
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.soot.DoopErrorCodeException
+import org.clyze.utils.AARUtils
 import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 import org.clyze.utils.FileOps
@@ -153,13 +154,17 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 runAverroes()
             }
 
+            Set<String> tmpDirs = [] as Set
             if (options.WALA_FACT_GEN.value)
-                runWala()
+                runWala(tmpDirs)
             else {
-                boolean success = runSoot()
-                if (!success)
+                boolean success = runSoot(tmpDirs)
+                if (!success) {
+                    Helper.cleanUp(tmpDirs)
                     throw new DoopErrorCodeException(8)
+                }
             }
+            Helper.cleanUp(tmpDirs)
 
             touch(new File(factsDir, "ApplicationClass.facts"))
             touch(new File(factsDir, "Properties.facts"))
@@ -225,14 +230,25 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     abstract protected void runTransformInput()
 
+    private List<String> getInputArgsJars(Set<String> tmpDirs) {
+        def inputArgs = inputFiles.collect(){ File f -> ["-i", f.toString()] }.flatten() as Collection<String>
+        return AARUtils.toJars(inputArgs as List<String>, false, tmpDirs)
+    }
+
+    private List<String> getDepsJars(Set<String> tmpDirs) {
+        def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+        return AARUtils.toJars(deps as List<String>, false, tmpDirs)
+    }
+
     // Returns false on fact generation failure.
-    protected boolean runSoot() {
+    protected boolean runSoot(Set<String> tmpDirs) {
         Collection<String> depArgs
 
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         assert platform == "android" || platform == "java"
 
-        def inputArgs = inputFiles.collect(){File f -> ["-i", f.toString()]}.flatten() as Collection<String>
+        def inputArgs = getInputArgsJars(tmpDirs)
+        def deps = getDepsJars(tmpDirs)
 
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
@@ -240,7 +256,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
             depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
 
@@ -330,12 +345,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         return true
     }
 
-    protected void runWala() {
+    protected void runWala(Set<String> tmpDirs) {
         Collection<String> params
-        def inputArgs = inputFiles.collect(){File f -> ["-i", f.toString()]}.flatten() as Collection<String>
-
-        def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
         Collection<String> depArgs
+        def inputArgs = getInputArgsJars(tmpDirs)
+        def deps = getDepsJars(tmpDirs)
 
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         depArgs = deps
