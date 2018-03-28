@@ -15,7 +15,6 @@
 .output LeakingTaintedInformation                                
 
 .decl VarIsCast(?var:Var)
-.decl VarDef(?var:Var, ?inst:Instruction)
 .decl VarUse(?var:Var, ?inst:Instruction)
 
 .decl SanitizationMethod(?method:Method)

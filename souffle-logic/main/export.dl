@@ -11,8 +11,10 @@
 .output CallGraphEdge(IO="file",filename="CallGraphEdge.csv",delimiter="\t")
 .output VarPointsTo(IO="file",filename="VarPointsTo.csv",delimiter="\t")
 .output ReachableContext(IO="file",filename="ReachableContext.csv",delimiter="\t")
+#ifndef X_STATS_NONE
 .output Stats_Metrics(IO="file",filename="Stats_Metrics.csv",delimiter="\t")
-#endif
+#endif // X_STATS_NONE
+#endif // X_SERVER_LOGIC
 .output Reachable(IO="file",filename="Reachable.csv",delimiter="\t")
 
 // It is possible to output facts in an sqlite3 db.

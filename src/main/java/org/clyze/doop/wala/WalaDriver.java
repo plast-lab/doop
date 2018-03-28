@@ -1,7 +1,6 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.classLoader.IClass;
-import soot.SootMethod;
 
 import java.util.HashSet;
 import java.util.Iterator;

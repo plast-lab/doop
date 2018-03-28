@@ -77,6 +77,7 @@ class FactGenerator implements Runnable {
                             // }
 
                             System.err.println("Error while processing method: " + m);
+                            exc.printStackTrace();
                             throw exc;
                         }
                     }
@@ -248,10 +249,22 @@ class FactGenerator implements Runnable {
                     generate(m, b, session);
                 }
             } catch (RuntimeException ex) {
-                System.err.println("Fact generation failed for method " + m.getSignature() + ":");
-                ex.printStackTrace();
+                System.err.println("Fact generation failed for method " + m.getSignature() + ".");
+                handleFactGenException(ex);
             }
         }
+    }
+
+    // Some errors are due to non-determinism; crash early
+    // and tell the user to rerun fact generation.
+    private void handleFactGenException(RuntimeException ex) {
+        String msg = ex.getMessage();
+        if ((ex instanceof java.lang.IllegalStateException) ||
+            ((msg != null) && (msg.equals("no active FastHierarchy present for scene")))) {
+            System.err.println("ERROR: fact generation should be repeated.");
+            throw ex;
+        } else
+            ex.printStackTrace();
     }
 
     private void generate(SootMethod m, Body b, Session session)

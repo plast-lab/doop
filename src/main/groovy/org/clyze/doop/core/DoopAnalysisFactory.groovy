@@ -12,7 +12,6 @@ import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
-import org.clyze.utils.Helper
 
 import java.util.jar.Attributes
 import java.util.jar.JarFile
@@ -554,6 +553,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             }
         }
 
+        if (options.APP_REGEX.value &&
+            options.AUTO_APP_REGEX_MODE.value) {
+            throw new RuntimeException("Error: options " + options.APP_REGEX.name + " and " + options.AUTO_APP_REGEX_MODE.name + " are mutually exclusive.\n")
+        }
+
         // If server mode is enabled, don't produce statistics.
         if (options.X_SERVER_LOGIC.value) {
             options.X_STATS_FULL.value = false
@@ -640,13 +644,27 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             /*
             Set excluded = ["*", "**"] as Set
             analysis.jars.drop(1).each { Dependency jar ->
-                excluded += Helper.getPackages(jar.input())
+                excluded += PackageUtil.getPackages(jar.input())
             }
 
-            Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
+            Set<String> packages = PackageUtil.getPackages(analysis.jars[0].input()) - excluded
             */
-            Set<String> packages = Helper.getPackages(vars.inputFiles[0])
+
+            Set<String> packages
+            String mode = vars.options.AUTO_APP_REGEX_MODE.value
+            // Default is 'all'.
+            if ((mode == null) || (mode == 'all')) {
+                packages = [] as Set
+                vars.inputFiles.each { packages.addAll(PackageUtil.getPackages(it)) }
+            } else if (mode == 'first') {
+                packages = PackageUtil.getPackages(vars.inputFiles[0])
+            } else {
+                throw new RuntimeException("Invalid auto-app-regex mode: ${mode}")
+            }
+
             vars.options.APP_REGEX.value = packages.sort().join(':')
+
+            logger.debug "APP_REGEX: ${vars.options.APP_REGEX.value}"
         }
     }
 

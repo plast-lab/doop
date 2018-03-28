@@ -5,6 +5,7 @@ import soot.SootMethod;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -34,7 +35,10 @@ public class Driver {
         if (_cores > 2) {
             _executor = new ThreadPoolExecutor(_cores /2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
         } else {
-            _executor = new ThreadPoolExecutor(1, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+            // No scheduling happens in the case of one core/thread. ("Tasks are
+            // guaranteed to execute sequentially, and no more than one task will
+            // be active at any given time.")
+            _executor = Executors.newSingleThreadExecutor();
         }
     }
 

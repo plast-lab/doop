@@ -6,6 +6,7 @@ import java.util.List;
 public class WalaParameters {
     List<String> _inputs = new ArrayList<>();
     List<String> _libraries = new ArrayList<>();
+    String _javaPath = null;
     String _outputDir = null;
 
     public void setInputs(List<String> inputs) {

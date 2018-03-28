@@ -18,7 +18,6 @@ LeakingTaintedInformation(?fromLabel, ?toLabel, ?ctx, ?invocation, ?value) ->
    InformationLabel(?fromLabel), InformationLabel(?toLabel),
    Context(?ctx), MethodInvocation(?invocation), string(?value).
 
-VarDef(?var, ?inst) -> Instruction(?inst), Var(?var).
 VarUse(?var, ?inst) -> Instruction(?inst), Var(?var).
 
 SanitizationMethod(?method) -> Method(?method).

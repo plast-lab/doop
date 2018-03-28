@@ -12,10 +12,7 @@ import com.ibm.wala.ssa.Value;
 import com.ibm.wala.types.TypeReference;
 import soot.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.util.Collection;
+
 import java.util.Iterator;
 
 /**
@@ -50,14 +47,14 @@ class WalaFactGenerator {
         while (_iClasses.hasNext()) {
             IClass iClass = _iClasses.next();
             overall++;
-            if(iClass.getClassLoader().getName().toString().equals("Primordial")) { //Skipping classes using the Primordial classloader for now to produce less facts
-                skipped++;
-                continue;
-            }
+//            if(iClass.getClassLoader().getName().toString().equals("Primordial")) { //Skipping classes using the Primordial classloader for now to produce less facts
+//                skipped++;
+//                continue;
+//            }
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
             //IRPrinter.printIR(iClass);
             _writer.writeClassOrInterfaceType(iClass);
-
+            //TODO: Handling of Arrays?
             if(iClass.isAbstract())
                 _writer.writeClassModifier(iClass, "abstract");
 //            if(Modifier.isFinal(modifiers))

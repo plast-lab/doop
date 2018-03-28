@@ -4,16 +4,21 @@ import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.shrikeBT.IUnaryOpInstruction;
+import com.ibm.wala.classLoader.ShrikeCTMethod;
+import com.ibm.wala.shrikeCT.AnnotationsReader;
+import com.ibm.wala.shrikeCT.TypeAnnotationsReader;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
+import com.ibm.wala.types.annotations.Annotation;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -67,6 +72,25 @@ public class WalaFactWriter {
 
         _db.add(STRING_RAW, result, result);
         _db.add(METHOD, result, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
+        Iterator<Annotation> annotationIterator = m.getAnnotations().iterator();
+        while(annotationIterator.hasNext())
+        {
+            Annotation annotation = annotationIterator.next();
+            _db.add(METHOD_ANNOTATION, result, _rep.fixTypeString(annotation.getType().toString()));
+            //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
+        }
+        ShrikeCTMethod shrikeMethod = (ShrikeCTMethod)m;
+        Collection<Annotation>[] paraAnnotations = shrikeMethod.getParameterAnnotations();
+        for(int i=0; i< paraAnnotations.length;i++)
+        {
+            annotationIterator = paraAnnotations[i].iterator();
+            while(annotationIterator.hasNext())
+            {
+                Annotation annotation = annotationIterator.next();
+                _db.add(PARAM_ANNOTATION, result, str(i), _rep.fixTypeString(annotation.getType().toString()));
+            }
+
+        }
 //        if (m.getTag("VisibilityAnnotationTag") != null) {
 //            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
 //            for (AnnotationTag aTag : vTag.getAnnotations()) {
@@ -492,7 +516,7 @@ public class WalaFactWriter {
     }
 
     void writeClassModifier(IClass c, String modifier) {
-        String type = c.getName().getClassName().toString();
+        String type = _rep.fixTypeString(c.getName().toString());
         _db.add(CLASS_MODIFIER, modifier, type);
     }
 

@@ -32,14 +32,16 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   isSpecialMethodInvocation_Insn(?invo),
   MethodInvocation_Method(?invo, ?tomethod),
-  !InOutFlow(?tomethod),
+  Method_DeclaringType(?tomethod, ?class),
+  !InOutFlowPerClass(?class),
   isImmutableContext(?calleeCtx).
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   isSpecialMethodInvocation_Insn(?invo),
   MethodInvocation_Method(?invo, ?tomethod),
-  InOutFlow(?tomethod),
+  Method_DeclaringType(?tomethod, ?class),
+  InOutFlowPerClass(?class),
   ?hctx = [?hctxValue],
   ?calleeCtx = [?hctxValue, ?value].
 
@@ -293,6 +295,8 @@ InOutFlowPerClass(?class) :-
   InOutFlowDirectTwoValuesPerClass(?class).
 
 InOutFlowPerClass(?class) :-
-  InOutFlowAnyTwoValuesPerClass(?class).
+  InOutFlowWrappedTwoValuesPerClass(?class).
 
+InOutFlowPerClass(?class) :-
+  InOutFlowUnwrappedTwoValuesPerClass(?class).
 }

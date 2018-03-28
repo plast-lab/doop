@@ -1,26 +1,15 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
-import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
-import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
-import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
-import com.ibm.wala.ssa.IR;
-import com.ibm.wala.ssa.SSAOptions;
-import com.ibm.wala.util.config.AnalysisScopeReader;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.DoopErrorCodeException;
-import org.clyze.doop.soot.Driver;
-import org.clyze.doop.soot.ThreadFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Iterator;
 
 public class Main {
@@ -50,6 +39,10 @@ public class Main {
                     case "-l":
                         i = shift(args, i);
                         walaParameters._libraries.add(args[i]);
+                        break;
+                    case "-p":
+                        i = shift(args, i);
+                        walaParameters._javaPath = args[i];
                         break;
                     case "-d":
                         i = shift(args, i);
@@ -83,8 +76,16 @@ public class Main {
         }
 
         System.out.println("WALA classpath:" + classPath);
-        AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+
+        //String walaLibraries[] = WalaProperties.getJ2SEJarFiles();
+        //System.out.println("Java libraries loaded by WALA automatically: ");
+        //for(int i =0 ; i< walaLibraries.length ; i++)
+        //    System.out.println(walaLibraries[i]);
+
+        //AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+        AnalysisScope scope = WalaScopeReader.makeScope(classPath, null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
         // files and organize them into a tree.
+
         ClassHierarchy cha = null;
         try {
             cha = ClassHierarchyFactory.make(scope);
@@ -104,7 +105,8 @@ public class Main {
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
         //driver.doInParallel(classes);
         driver.doSequentially(classes, walaFactWriter);
-
+        db.flush();
+        db.close();
 
     }
 }
