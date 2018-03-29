@@ -911,15 +911,15 @@ public class WalaFactWriter {
         _db.add(ASSIGN_OPER_TYPE, insn, " length ");
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, from));
     }
-//
-//    void writeAssignInstanceOf(IMethod m, AssignStmt stmt, Local to, Local from, TypeReference t, Session session) {
-////        int index = session.calcInstructionNumber(stmt);
-////        String insn = _rep.instruction(m, stmt, session, index);
-////        String methodId = writeMethod(m);
-////
-////        _db.add(ASSIGN_INSTANCE_OF, insn, str(index), _rep.local(m, from), _rep.local(m, to), writeType(t), methodId);
-//    }
-//
+
+    void writeAssignInstanceOf(IMethod m, SSAInstanceofInstruction instruction, Local to, Local from, TypeReference t, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = _rep.signature(m);
+
+        _db.add(ASSIGN_INSTANCE_OF, insn, str(index), _rep.local(m, from), _rep.local(m, to), writeType(t), methodId);
+    }
+
 //    void writeAssignPhantomInvoke(IMethod m, Stmt stmt, Session session) {
 ////        int index = session.calcInstructionNumber(stmt);
 ////        String insn = _rep.instruction(m, stmt, session, index);

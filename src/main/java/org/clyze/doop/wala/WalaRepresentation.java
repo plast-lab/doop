@@ -274,11 +274,13 @@ public class WalaRepresentation {
     private String getKind(SSAInstruction instruction)
     {
         String kind = "unknown";
-        if(instruction instanceof AssignStmt)
+        if(instruction instanceof AssignStmt)//IMPORTANT:TODO: MAKE SURE WE COVER ALL ASSIGN CASES
             kind = "assign";
         else if(instruction instanceof DefinitionStmt)
             kind = "definition";
-        else if(instruction instanceof EnterMonitorStmt && ((SSAMonitorInstruction) instruction).isMonitorEnter())
+        else if(instruction instanceof SSAInstanceofInstruction || instruction instanceof  SSANewInstruction || instruction instanceof SSAArrayLoadInstruction)
+            kind = "assign";
+        else if(instruction instanceof SSAMonitorInstruction && ((SSAMonitorInstruction) instruction).isMonitorEnter())
             kind = "enter-monitor";
         else if(instruction instanceof SSAMonitorInstruction )
             kind = "exit-monitor";
@@ -290,10 +292,10 @@ public class WalaRepresentation {
             kind = "if";
         else if(instruction instanceof SSAInvokeInstruction)
             kind = "invoke";
-        else if(instruction instanceof SSAReturnInstruction)
-            kind = "ret";
         else if(instruction instanceof SSAReturnInstruction && ((SSAReturnInstruction) instruction).returnsVoid())
             kind = "return-void";
+        else if(instruction instanceof SSAReturnInstruction)
+            kind = "ret";
         else if(instruction instanceof SSAReturnInstruction)
             kind = "return";
         else if(instruction instanceof SSAThrowInstruction)

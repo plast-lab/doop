@@ -283,6 +283,9 @@ class WalaFactGenerator {
                     else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
                         generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
                     }
+                    else if (instructions[j] instanceof SSAInstanceofInstruction) {
+                        generate(m, ir, (SSAInstanceofInstruction) instructions[j], session, typeInference);
+                    }
                 }
             }
         }
@@ -350,6 +353,12 @@ class WalaFactGenerator {
         _writer.writeInvoke(m, ir, instruction, session,typeInference);
     }
 
+    public void generate(IMethod m, IR ir, SSAInstanceofInstruction instruction, Session session, TypeInference typeInference) {
+        // For invoke instructions the number of uses is equal to the number of parameters
+        Local to =createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        _writer.writeAssignInstanceOf(m,  instruction, to, from,instruction.getCheckedType(), session);
+    }
 
     public void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
         // Go to instructions have no uses and no defs
