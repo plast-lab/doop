@@ -165,6 +165,7 @@ public class WalaFactWriter {
             _db.add(ARRAY_TYPE, result);
             TypeReference componentType = t.getArrayElementType();
             _db.add(COMPONENT_TYPE, result, writeType(componentType));
+            _db.add(CLASS_HEAP, _rep.classConstant(result), result);
         }
         else if (t.isPrimitiveType() || t.isReferenceType() || t.isClassType()) {
 
