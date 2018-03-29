@@ -208,7 +208,7 @@ public class WalaRepresentation {
         {
             for(int i=0 ; i< arrayTimes ; i++)
                 ret = ret + "[]";
-        }if(original.contains("[[B"))System.out.println(original + " " + ret);
+        }
         return ret;
     }
 
