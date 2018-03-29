@@ -160,7 +160,15 @@ public class WalaRepresentation {
         boolean isArrayType = false;
         int arrayTimes = 0;
         if(original.contains("[L")) //Figure out if this is correct
+        {
             isArrayType = true;
+            for( int i=0; i<original.length(); i++ ) {
+                if (original.charAt(i) == '[')
+                    arrayTimes++;
+                else
+                    break;
+            }
+        }
         String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
         String temp;
         if(ret.contains("Primordial"))
