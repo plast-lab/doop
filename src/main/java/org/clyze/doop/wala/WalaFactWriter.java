@@ -79,18 +79,18 @@ public class WalaFactWriter {
             _db.add(METHOD_ANNOTATION, result, _rep.fixTypeString(annotation.getType().toString()));
             //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
         }
-        ShrikeCTMethod shrikeMethod = (ShrikeCTMethod)m;
-        Collection<Annotation>[] paraAnnotations = shrikeMethod.getParameterAnnotations();
-        for(int i=0; i< paraAnnotations.length;i++)
-        {
-            annotationIterator = paraAnnotations[i].iterator();
-            while(annotationIterator.hasNext())
-            {
-                Annotation annotation = annotationIterator.next();
-                _db.add(PARAM_ANNOTATION, result, str(i), _rep.fixTypeString(annotation.getType().toString()));
-            }
-
-        }
+//        ShrikeCTMethod shrikeMethod = (ShrikeCTMethod)m;
+//        Collection<Annotation>[] paraAnnotations = shrikeMethod.getParameterAnnotations();
+//        for(int i=0; i< paraAnnotations.length;i++)
+//        {
+//            annotationIterator = paraAnnotations[i].iterator();
+//            while(annotationIterator.hasNext())
+//            {
+//                Annotation annotation = annotationIterator.next();
+//                _db.add(PARAM_ANNOTATION, result, str(i), _rep.fixTypeString(annotation.getType().toString()));
+//            }
+//
+//        }
 //        if (m.getTag("VisibilityAnnotationTag") != null) {
 //            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
 //            for (AnnotationTag aTag : vTag.getAnnotations()) {
