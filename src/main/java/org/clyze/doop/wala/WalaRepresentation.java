@@ -158,6 +158,7 @@ public class WalaRepresentation {
     public String fixTypeString(String original)
     {
         boolean isArrayType = false;
+        int arrayTimes = 0;
         if(original.contains("[L")) //Figure out if this is correct
             isArrayType = true;
         String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
@@ -168,7 +169,14 @@ public class WalaRepresentation {
             if(temp.startsWith("["))
             {
                 isArrayType = true;
-                temp = temp.substring(1);
+                for( int i=0; i<temp.length(); i++ ) {
+                    if( temp.charAt(i) == '[' )
+                        arrayTimes++;
+                    else
+                        break;
+
+                }
+                temp = temp.substring(arrayTimes);
             }
             if(temp.equals("Z"))
                 ret = "boolean";
@@ -191,7 +199,10 @@ public class WalaRepresentation {
             //TODO: Figure out what the 'P' code represents in WALA's TypeReference
         }
         if(isArrayType)
-            ret = ret + "[]";
+        {
+            for(int i=0 ; i< arrayTimes ; i++)
+                ret = ret + "[]";
+        }
         return ret;
     }
 
