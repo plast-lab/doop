@@ -159,24 +159,25 @@ public class WalaRepresentation {
     {
         boolean isArrayType = false;
         int arrayTimes = 0;
-        if(original.contains("[L")) //Figure out if this is correct
-        {
-            isArrayType = true;
-            for( int i=0; i<original.length(); i++ ) {
-                if (original.charAt(i) == '[')
-                    arrayTimes++;
-            }
-        }
-        String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
-        String temp;
-        if(ret.contains("Primordial"))
-        {
-            temp = ret.substring(ret.indexOf(",") + 1);
-            if(temp.startsWith("["))
+        String ret = null;
+        if(original.contains("L")) {
+            if (original.contains("[")) //Figure out if this is correct
             {
                 isArrayType = true;
-                for( int i=0; i<temp.length(); i++ ) {
-                    if( temp.charAt(i) == '[' )
+                for (int i = 0; i < original.length(); i++) {
+                    if (original.charAt(i) == '[')
+                        arrayTimes++;
+                }
+            }
+            ret = original.substring(original.indexOf("L") + 1).replaceAll("/", ".").replaceAll(">", "");
+        }
+        else {
+            String temp;
+            temp = original.substring(original.indexOf(",") + 1).replaceAll(">", "");
+            if (temp.startsWith("[")) {
+                isArrayType = true;
+                for (int i = 0; i < temp.length(); i++) {
+                    if (temp.charAt(i) == '[')
                         arrayTimes++;
                     else
                         break;
@@ -184,34 +185,78 @@ public class WalaRepresentation {
                 }
                 temp = temp.substring(arrayTimes);
             }
-            if(temp.equals("Z"))
+            if (temp.equals("Z"))
                 ret = "boolean";
-            else if(temp.equals("I"))
+            else if (temp.equals("I"))
                 ret = "int";
-            else if(temp.equals("V"))
+            else if (temp.equals("V"))
                 ret = "void";
-            else if(temp.equals("B"))
+            else if (temp.equals("B"))
                 ret = "byte";
-            else if(temp.equals("C"))
+            else if (temp.equals("C"))
                 ret = "char";
-            else if(temp.equals("D"))
+            else if (temp.equals("D"))
                 ret = "double";
-            else if(temp.equals("F"))
+            else if (temp.equals("F"))
                 ret = "float";
-            else if(temp.equals("J"))
+            else if (temp.equals("J"))
                 ret = "long";
-            else if(temp.equals("S"))
+            else if (temp.equals("S"))
                 ret = "short";
+            else
+                ret = "OTHERPRIMITIVE";
             //TODO: Figure out what the 'P' code represents in WALA's TypeReference
+
         }
         if(isArrayType)
         {
             for(int i=0 ; i< arrayTimes ; i++)
                 ret = ret + "[]";
         }
+        //if(! ret.equals(fixTypeStringOld(original)) && ! original.contains("["))
+            //System.out.println(original + " | " + ret + " | " + fixTypeStringOld(original));
         return ret;
     }
 
+    public String fixTypeStringOld(String original) {
+        boolean isArrayType = false;
+        if (original.contains("[L")) //Figure out if this is correct
+        {
+            isArrayType = true;
+        }
+        String ret = original.substring(original.indexOf("L") + 1).replaceAll("/", ".").replaceAll(">", "");
+        String temp;
+        if (ret.contains("Primordial")) {
+            temp = ret.substring(ret.indexOf(",") + 1);
+            if (temp.startsWith("[")) {
+                isArrayType = true;
+                temp = temp.substring(1);
+            }
+            if (temp.equals("Z"))
+                ret = "boolean";
+            else if (temp.equals("I"))
+                ret = "int";
+            else if (temp.equals("V"))
+                ret = "void";
+            else if (temp.equals("B"))
+                ret = "byte";
+            else if (temp.equals("C"))
+                ret = "char";
+            else if (temp.equals("D"))
+                ret = "double";
+            else if (temp.equals("F"))
+                ret = "float";
+            else if (temp.equals("J"))
+                ret = "long";
+            else if (temp.equals("S"))
+                ret = "short";
+            //TODO: Figure out what the 'P' code represents in WALA's TypeReference
+        }
+        if (isArrayType) {
+                ret = ret + "[]";
+        }
+        return ret;
+    }
     //This method takes a MethodReference as a parameter and it does not include "this" as an argument
     //Had the parameter been an IMethod it would include "this" but soot Signatures don't have it so we keep it this way.
     private String createMethodSignature(MethodReference m)
