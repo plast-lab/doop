@@ -117,13 +117,16 @@ ClassConstructor(method, type) :-
     isMethod(method),
     match(".*<init>.*", method).
 
-.decl Methods_Type(?method1:Method, ?method2:Method, ?class:Type)
+.decl MethodsOfSameType(?method1:Method, ?method2:Method, ?class:Type)
 
-Methods_Type(?method1, ?method2, ?class) :-
-  // Method_ReturnType(?method1, ?retType1),
-  // Method_ReturnType(?method2, ?retType2),
-  // ?retType1 != "void",
-  // ?retType2 != "void",
+MethodsOfSameType(?method1, ?method2, ?class) :-
+  Method_DeclaringType(?method1, ?class),
+  Method_DeclaringType(?method2, ?class).
+
+.decl MethodsOfSameNonSDKType(?method1:Method, ?method2:Method, ?class:Type)
+
+MethodsOfSameNonSDKType(?method1, ?method2, ?class) :-
   !match("java.*", ?class),
+  !match("sun.*", ?class),
   Method_DeclaringType(?method1, ?class),
   Method_DeclaringType(?method2, ?class).

@@ -66,4 +66,106 @@
       isDynamicContext(?dynCtx),
       isImmutableContext(?ctx).
   #endif
+
+/** Utility rule: Value points to another value directly or indirectly **/
+.decl ValuePointsTo(?baseValue:Value, ?value:Value)
+
+ValuePointsTo(?baseValue, ?value) :-
+  InstanceFieldPointsTo(_, ?value, _, _, ?baseValue).
+
+ValuePointsTo(?baseValue, ?value) :-
+  ValuePointsTo(?value1, ?value),
+  InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue).
+
+.decl InOutFlowDirectValuePerClass(?inMethod:Method, ?outMethod:Method, ?class:Type, ?value:Value)
+
+/** Direct in out flow:
+ *
+ *   arg -> value
+ *   ret -> value
+ */
+InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?class, ?value) :-
+  FormalParam(_, ?inMethod, ?arg),
+  VarPointsTo(_, ?value, _, ?arg),
+  basic.MethodsOfSameType(?inMethod, ?outMethod, ?class),
+  ReturnVar(?returnArg, ?outMethod),
+  VarPointsTo(_, ?value, _, ?returnArg).
+
+.decl InOutFlowDirectTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
+
+InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
+  InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?class, ?value1),
+  InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?class, ?value2),
+  ?value1 != ?value2.
+
+/**
+ * Wrapped in out flow:
+ *
+ * arg -> value
+ * ret -> ... -> ... -> value
+ */
+.decl InOutFlowWrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?class:Type, ?value:Value) 
+
+InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value) :-
+  FormalParam(_, ?inMethod, ?arg),
+  basic.MethodsOfSameType(?inMethod, ?outMethod, ?class),
+  ReturnVar(?returnArg, ?outMethod),
+  VarPointsTo(_, ?value, _, ?arg),
+  VarPointsTo(_, ?baseValue, _, ?returnArg),
+  ValuePointsTo(?baseValue, ?value),
+  ?value != ?baseValue.
+
+.decl InOutFlowWrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
+
+InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
+  InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value1),
+  InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value2),
+  ?value1 != ?value2.
+
+/**
+ * Unwrapped in out flow:
+ *
+ * arg -> ... -> ... -> ... -> value
+ * ret -> value
+ */
+.decl InOutFlowUnwrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?class:Type, ?value:Value) 
+
+InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value) :-
+  FormalParam(_, ?inMethod, ?arg),
+  basic.MethodsOfSameType(?inMethod, ?outMethod, ?class),
+  ReturnVar(?returnArg, ?outMethod),
+  VarPointsTo(_, ?baseValue, _, ?arg),
+  VarPointsTo(_, ?value, _, ?returnArg),
+  ValuePointsTo(?baseValue, ?value),
+  ?value != ?baseValue.
+
+.decl InOutFlowUnwrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
+
+InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
+  InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value1),
+  InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value2),
+  ?value1 != ?value2.
+
+.decl InOutFlowPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
+
+InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
+  InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?class).
+
+InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
+  InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class).
+
+InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
+  InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class).
+
+
+.decl ClassToRefine(?class:Type)
+.decl ClassToNotRefine(?class:Type)
+      
+ClassToRefine(?class) :-
+  InOutFlowPerClass(_, _, ?class),
+  !ClassToNotRefine(?class).
+.output ClassToRefine
+//.input ClassToRefine(IO="file", filename="/home/anantoni/Development/doop-nexgen/ClassToRefine.facts")
+.input ClassToNotRefine(IO="file", filename="/home/anantoni/Development/doop-nexgen/ClassToNotRefine.facts")
+
 }
