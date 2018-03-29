@@ -165,8 +165,6 @@ public class WalaRepresentation {
             for( int i=0; i<original.length(); i++ ) {
                 if (original.charAt(i) == '[')
                     arrayTimes++;
-                else
-                    break;
             }
         }
         String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
@@ -210,7 +208,7 @@ public class WalaRepresentation {
         {
             for(int i=0 ; i< arrayTimes ; i++)
                 ret = ret + "[]";
-        }
+        }if(original.contains("[[B"))System.out.println(original + " " + ret);
         return ret;
     }
 
