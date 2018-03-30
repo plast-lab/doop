@@ -661,6 +661,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					nonStandard: true,
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "X_SYMLINK_CACHED_FACTS",
+					name: "Xsymlink_cached_facts",
+					description: "Use symbolic links instead of copying cached facts.",
+					value: false,
+					nonStandard: true,
+					forPreprocessor: true
+			),
 			new AnalysisOption<String>(
 					id: "X_START_AFTER_FACTS",
 					name: "Xstart-after-facts",
