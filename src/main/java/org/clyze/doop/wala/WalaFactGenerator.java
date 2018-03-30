@@ -286,6 +286,12 @@ class WalaFactGenerator {
                     else if (instructions[j] instanceof SSAInstanceofInstruction) {
                         generate(m, ir, (SSAInstanceofInstruction) instructions[j], session, typeInference);
                     }
+                    else if (instructions[j] instanceof SSACheckCastInstruction) {
+                        generate(m, ir, (SSACheckCastInstruction) instructions[j], session, typeInference);
+                    }
+                    else if (instructions[j] instanceof SSAConversionInstruction) {
+                        generate(m, ir, (SSAConversionInstruction) instructions[j], session, typeInference);
+                    }
                 }
             }
         }
@@ -360,6 +366,38 @@ class WalaFactGenerator {
         _writer.writeAssignInstanceOf(m,  instruction, to, from,instruction.getCheckedType(), session);
     }
 
+    //SSACheckCastInstruction is for non primitive types
+    public void generate(IMethod m, IR ir, SSACheckCastInstruction instruction, Session session, TypeInference typeInference) {
+        // For invoke instructions the number of uses is equal to the number of parameters
+        Local to =createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        TypeReference[] types = instruction.getDeclaredResultTypes();
+        if(types.length!=1)
+        {
+            System.out.println("Instruction: " + instruction.toString(ir.getSymbolTable()));
+            for(TypeReference type:types)
+                System.out.println("CHECKCAST TYPE IS " + type.toString());
+        }
+        for(TypeReference type:types) {
+            if(ir.getSymbolTable().isStringConstant(instruction.getUse(0)) || ir.getSymbolTable().isNullConstant(instruction.getUse(0)))//TODO:No class constant?
+                _writer.writeAssignCastNull(m,instruction,to,type,session);
+            else
+                _writer.writeAssignCast(m, instruction, to, from, type, session);
+        }
+    }
+
+    //SSAConversion Instruction is only for primitive types
+    public void generate(IMethod m, IR ir, SSAConversionInstruction instruction, Session session, TypeInference typeInference) {
+        // For invoke instructions the number of uses is equal to the number of parameters
+        Local to =createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+
+        if(ir.getSymbolTable().isNumberConstant(instruction.getUse(0)) )
+            _writer.writeAssignCastNumericConstant(m, instruction, to, from , instruction.getToType(), session);
+        else
+            _writer.writeAssignCast(m, instruction, to, from , instruction.getToType(), session);
+    }
+
     public void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
         // Go to instructions have no uses and no defs
         SSAInstruction[] ssaInstructions = ir.getInstructions();
@@ -410,6 +448,8 @@ class WalaFactGenerator {
         else {
             l = new Local("v" + varIndex, varIndex, typeRef);
         }
+        if(ir.getSymbolTable().isConstant(varIndex) && ! ir.getSymbolTable().isNullConstant(varIndex))
+            l.setValue(ir.getSymbolTable().getConstantValue(varIndex).toString());
         return l;
     }
 

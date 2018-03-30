@@ -31,12 +31,12 @@ import static org.clyze.doop.common.PredicateFile.*;
 public class WalaFactWriter {
     private Database _db;
     private WalaRepresentation _rep;
-    private Map<String, TypeReference> _varTypeMap;
+    private Map<String, String> _typeMap;
 
     public WalaFactWriter(Database db) {
         _db = db;
         _rep = WalaRepresentation.getRepresentation();
-        _varTypeMap = new ConcurrentHashMap<>();
+        _typeMap = new ConcurrentHashMap<>();
     }
 
     private String str(int i) {
@@ -159,13 +159,23 @@ public class WalaFactWriter {
     }
 
     private String writeType(TypeReference t) {
-        String result = _rep.fixTypeString(t.toString());
+        String inMap = _typeMap.get(t.toString());
+        String typeName;
 
-        if (t.isArrayType()) {
-            _db.add(ARRAY_TYPE, result);
+        if(inMap == null)
+        {
+            typeName= _rep.fixTypeString(t.toString());
+            _typeMap.put(t.toString(),typeName);
+        }
+        else
+            typeName = inMap;
+
+        //If its an ArrayType and it was not on the typeMap, add the appropriate facts
+        if (t.isArrayType() && inMap == null) {
+            _db.add(ARRAY_TYPE, typeName);
             TypeReference componentType = t.getArrayElementType();
-            _db.add(COMPONENT_TYPE, result, writeType(componentType));
-            _db.add(CLASS_HEAP, _rep.classConstant(result), result);
+            _db.add(COMPONENT_TYPE, typeName, writeType(componentType));
+            _db.add(CLASS_HEAP, _rep.classConstant(typeName), typeName);
         }
         else if (t.isPrimitiveType() || t.isReferenceType() || t.isClassType()) {
 
@@ -174,7 +184,7 @@ public class WalaFactWriter {
             throw new RuntimeException("Don't know what to do with type " + t);
         }
 
-        return result;
+        return typeName;
     }
 
     void writeEnterMonitor(IMethod m, SSAMonitorInstruction instruction, Local var, Session session) {
@@ -406,30 +416,31 @@ public class WalaFactWriter {
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
     }
 
-//    void writeAssignCast(IMethod m, Stmt instruction, Local to, Local from, TypeReference t, Session session) {
-//        int index = session.calcInstructionNumber(instruction);
-//        String insn = _rep.instruction(m, instruction, session, index);
-//        String methodId = writeMethod(m);
-//
-//        _db.add(ASSIGN_CAST, insn, str(index), _rep.local(m, from), _rep.local(m, to), writeType(t), methodId);
-//    }
-//
-//    void writeAssignCastNumericConstant(IMethod m, Stmt instruction, Local to, NumericConstant constant, TypeReference t, Session session) {
-//        int index = session.calcInstructionNumber(instruction);
-//        String insn = _rep.instruction(m, instruction, session, index);
-//        String methodId = writeMethod(m);
-//
-//        _db.add(ASSIGN_CAST_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, to), writeType(t), methodId);
-//    }
-//
-//    void writeAssignCastNull(IMethod m, Stmt instruction, Local to, TypeReference t, Session session) {
-//        int index = session.calcInstructionNumber(instruction);
-//        String insn = _rep.instruction(m, instruction, session, index);
-//        String methodId = writeMethod(m);
-//
-//        _db.add(ASSIGN_CAST_NULL, insn, str(index), _rep.local(m, to), writeType(t), methodId);
-//    }
-//
+    //Parameter is SSAInstruction because both SSAConversionInstruction and SSACheckCastInstruction are cast instructions
+    void writeAssignCast(IMethod m, SSAInstruction instruction, Local to, Local from, TypeReference t, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = writeMethod(m);
+
+        _db.add(ASSIGN_CAST, insn, str(index), _rep.local(m, from), _rep.local(m, to), writeType(t), methodId);
+    }
+
+    void writeAssignCastNumericConstant(IMethod m, SSAInstruction instruction, Local to, Local from, TypeReference t, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = writeMethod(m);
+
+        _db.add(ASSIGN_CAST_NUM_CONST, insn, str(index), from.getValue(), _rep.local(m, to), writeType(t), methodId);
+    }
+
+    void writeAssignCastNull(IMethod m, SSAInstruction instruction, Local to, TypeReference t, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = writeMethod(m);
+
+        _db.add(ASSIGN_CAST_NULL, insn, str(index), _rep.local(m, to), writeType(t), methodId);
+    }
+
     void writeStoreInstanceField(IMethod m, SSAInstruction instruction, FieldReference f, Local base, Local from, Session session) {
         writeInstanceField(m, instruction, f, base, from, session, STORE_INST_FIELD);
     }
@@ -862,6 +873,8 @@ public class WalaFactWriter {
         else {
             l = new Local("v" + varIndex, varIndex, typeRef);
         }
+        if(ir.getSymbolTable().isConstant(varIndex) && ! ir.getSymbolTable().isNullConstant(varIndex))
+            l.setValue(ir.getSymbolTable().getConstantValue(varIndex).toString());
         return l;
     }
 
