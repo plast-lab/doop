@@ -663,7 +663,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "X_SYMLINK_CACHED_FACTS",
-					name: "Xsymlink_cached_facts",
+					name: "Xsymlink-cached-facts",
 					description: "Use symbolic links instead of copying cached facts.",
 					value: false,
 					nonStandard: true,
