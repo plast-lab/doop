@@ -280,6 +280,33 @@ class WalaFactGenerator {
                     else if (instructions[j] instanceof SSASwitchInstruction) {
 
                     }
+                    else if (instructions[j] instanceof SSANewInstruction) {
+
+                    }
+                    else if (instructions[j] instanceof SSAPhiInstruction) {
+
+                    }
+                    else if (instructions[j] instanceof SSAPiInstruction) { //TODO:Figure out what this does
+
+                    }
+                    else if (instructions[j] instanceof SSAGetCaughtExceptionInstruction) {
+
+                    }
+                    else if (instructions[j] instanceof SSAComparisonInstruction) {
+
+                    }
+                    else if (instructions[j] instanceof SSALoadMetadataInstruction) {
+
+                    }
+                    else if (instructions[j] instanceof SSAAddressOfInstruction) {
+
+                    }
+                    else if (instructions[j] instanceof SSAStoreIndirectInstruction) {
+                        System.out.println("Impossible!");
+                    }
+                    else if (instructions[j] instanceof SSALoadIndirectInstruction) {
+                        System.out.println("Impossible vol2!");
+                    }
                     else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
                         generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
                     }

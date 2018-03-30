@@ -280,14 +280,16 @@ public class WalaRepresentation {
             kind = "definition";
         else if(instruction instanceof SSAInstanceofInstruction || instruction instanceof  SSANewInstruction || instruction instanceof SSAArrayLoadInstruction)
             kind = "assign";
+        else if(instruction instanceof SSAConversionInstruction || instruction instanceof  SSACheckCastInstruction)
+            kind = "assign";
+        else if(instruction instanceof SSABinaryOpInstruction || instruction instanceof  SSAUnaryOpInstruction)
+            kind = "assign";
         else if(instruction instanceof SSAMonitorInstruction && ((SSAMonitorInstruction) instruction).isMonitorEnter())
             kind = "enter-monitor";
         else if(instruction instanceof SSAMonitorInstruction )
             kind = "exit-monitor";
         else if(instruction instanceof SSAGotoInstruction)
             kind = "goto";
-        else if(instruction instanceof IdentityStmt)
-            kind = "assign";
         else if(instruction instanceof SSAConditionalBranchInstruction)
             kind = "if";
         else if(instruction instanceof SSAInvokeInstruction)
