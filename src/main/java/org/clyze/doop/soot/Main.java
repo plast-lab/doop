@@ -371,8 +371,7 @@ public class Main {
         if (sootClassPathFirstElement) {
             scene.setSootClassPath(input);
             sootClassPathFirstElement = false;
-        }
-        else
+        } else
             scene.extendSootClassPath(input);
     }
 
