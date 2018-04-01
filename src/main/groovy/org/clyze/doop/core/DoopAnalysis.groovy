@@ -135,14 +135,18 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     abstract void run()
 
     protected void linkOrCopyFacts() {
-        try {
-            Path cacheDirPath = FileSystems.getDefault().getPath(cacheDir.canonicalPath)
-            Files.createSymbolicLink(factsDir.toPath(), cacheDirPath)
-        } catch (UnsupportedOperationException x) {
-            System.err.println("Filesystem does not support symbolic links, copying directory...");
-            factsDir.mkdirs()
-            FileOps.copyDirContents(cacheDir, factsDir)
+        if (options.X_SYMLINK_CACHED_FACTS.value) {
+            try {
+                Path cacheDirPath = FileSystems.getDefault().getPath(cacheDir.canonicalPath)
+                Files.createSymbolicLink(factsDir.toPath(), cacheDirPath)
+                return
+            } catch (UnsupportedOperationException x) {
+                System.err.println("Filesystem does not support symbolic links, copying directory...");
+            }
         }
+
+        factsDir.mkdirs()
+        FileOps.copyDirContents(cacheDir, factsDir)
     }
 
     protected void generateFacts() throws DoopErrorCodeException {

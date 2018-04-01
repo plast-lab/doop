@@ -18,6 +18,7 @@ public class Local {
         this.sourceCodeName = sourceCodeName;
         this.type = type;
         this.varIndex = varIndex;
+        this.value = null;
     }
 
     public int getVarIndex() {
@@ -34,6 +35,16 @@ public class Local {
         this.type = type;
         this.value = value;
         this.varIndex = varIndex;
+    }
+
+    void setValue(String _value)
+    {
+        value = _value;
+    }
+
+    String getValue()
+    {
+        return value;
     }
 
     public TypeReference getType() {
