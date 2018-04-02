@@ -564,6 +564,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "HEAPDL_DYNAMICVARPOINTSTO",
+					name: "heapdl-dvpt",
+					forCacheID: true,
+					description: "Import dynamic var-points-to information.",
+					value: false,
+					forPreprocessor: true
+			),
 			new AnalysisOption<String>(
 					id: "IMPORT_DYNAMIC_FACTS",
 					name: "import-dynamic-facts",
@@ -657,6 +665,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_CONTEXT_REMOVER",
 					name: "Xcontext-remover",
 					description: "Run the context remover for reduced memory use (only available in context-insensitive analysis).",
+					value: false,
+					nonStandard: true,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "X_SYMLINK_CACHED_FACTS",
+					name: "Xsymlink-cached-facts",
+					description: "Use symbolic links instead of copying cached facts.",
 					value: false,
 					nonStandard: true,
 					forPreprocessor: true

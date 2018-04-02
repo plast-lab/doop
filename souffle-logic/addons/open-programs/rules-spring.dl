@@ -1,0 +1,33 @@
+#include "rules-servlets-only.dl"
+#include "../../commonMacros.dl"
+
+.decl ServletMethodEP(m: Method)
+ServletMethodEP(?meth) :-
+    (Method_Annotation(?meth, "org.springframework.web.bind.annotation.RequestMapping");
+     Method_Annotation(?meth, "javax.ws.rs.DELETE");
+     Method_Annotation(?meth, "javax.ws.rs.GET");
+     Method_Annotation(?meth, "javax.ws.rs.HEAD");
+     Method_Annotation(?meth, "javax.ws.rs.OPTIONS");
+     Method_Annotation(?meth, "javax.ws.rs.POST");
+     Method_Annotation(?meth, "javax.ws.rs.PUT")).
+
+PossibleOpenProgramEntryPoint(?className, ?meth),
+mainAnalysis.ReachableContext(?ctx, ?meth) :-
+    ServletMethodEP(?meth),
+    Method_DeclaringType(?meth, ?className),
+    mainAnalysis.isValue(?val),
+    ?val = cat("SERVLET ::: ", ?meth),
+    mainAnalysis.isImmutableHContext(?hctx),
+    mainAnalysis.configuration.StartupContextRequest(?hctx, ?val),
+    mainAnalysis.configuration.StartupContextResponse(?hctx, ?val, ?ctx).
+
+mainAnalysis.isValue(cat("SERVLET ::: ", ?meth)) :- isMethod(?meth).
+
+mainAnalysis_MockValueConsMacro(cat(?fld, " :: AUTOWIRED"), ?type),
+mainAnalysis.InstanceFieldPointsTo(?hctx, cat(?fld, " :: AUTOWIRED"), ?fld, ?basehctx, ?basevalue) :-
+  Field_Annotation(?fld, "org.springframework.beans.factory.annotation.Autowired"),
+  Field_DeclaringType(?fld, ?decltype),
+  mainAnalysis.Value_Type(?basevalue, ?decltype),
+  mainAnalysis.VarPointsTo(?basehctx, ?basevalue, _, _),
+  Field_Type(?fld, ?type),
+  mainAnalysis.isImmutableHContext(?hctx).

@@ -61,7 +61,7 @@ FieldInformation(?signature, ?fieldConcreteType, ?class) :-
   FieldInformation(?signature, ?fieldStaticType, ?class),
   StaticToActualType(?fieldConcreteType, ?fieldStaticType).
 
-.decl FieldTypeForMockObject(?signature:Field, ?basevalue:Value, ?fieldtype:Type)
+.decl FieldTypeForMockObject(?signature:Field, ?basevalue:mainAnalysis.Value, ?fieldtype:Type)
 
 FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) :-
   FieldInformation(?signature, ?fieldtype, ?class),
@@ -75,13 +75,13 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) :-
 
 
 // Arrays
-.decl MockObjectForType(?value:Value, ?staticType:Type)
+.decl MockObjectForType(?value:mainAnalysis.Value, ?staticType:Type)
 
 MockObjectForType(?value, ?staticType) :-
   MockObject(?value, ?class),
   StaticToActualType(?class, ?staticType).
 
-.decl MockObjectForComponentType(?value:Value, ?arrayType:ArrayType)
+.decl MockObjectForComponentType(?value:mainAnalysis.Value, ?arrayType:ArrayType)
 
 MockObjectForComponentType(?value, ?arrayType) :-
   ComponentType(?arrayType, ?componentType),
@@ -111,7 +111,7 @@ TypeForFormals(?formal, ?method, ?subtype) :-
   Var_Type(?formal, ?staticType),
   StaticToActualType(?subtype, ?staticType).
 
-.decl MockForFormal(?value:Value, ?formal:Var, ?type:ReferenceType, ?method:Method)
+.decl MockForFormal(?value:mainAnalysis.Value, ?formal:Var, ?type:ReferenceType, ?method:Method)
 
 MockForFormal(?value, ?formal, ?type, ?method) :-
   TypeForFormals(?formal, ?method, ?type),
@@ -125,8 +125,8 @@ MockForFormal(?value, ?formal, ?type, ?method) :-
 #endif
   MockObject(?value, ?type).
 
-.decl MockObject(?value:Value, ?class:ReferenceType)
-.decl MockObjectContext(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?class:ReferenceType)
+.decl MockObject(?value:mainAnalysis.Value, ?class:ReferenceType)
+.decl MockObjectContext(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?class:ReferenceType)
 
 .decl ContextForOpenProgramEntryPoint(?ctx:mainAnalysis.configuration.Context, ?method:Method)
 .decl HContextForOpenProgramEntryPoint(?hctx:mainAnalysis.configuration.HContext, ?method:Method)
@@ -142,7 +142,7 @@ mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 // feel free to remove/collapse some
 
 // receivers for entry points
-.decl ReceiverPointsTo(?value:Value, ?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?class:ReferenceType, ?method:Method)
+.decl ReceiverPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?class:ReferenceType, ?method:Method)
 
 mainAnalysis.configuration.RecordContextRequest(?calleeCtx, ?value, ?receiver) :-
   ReceiverPointsTo(?value, ?calleeCtx, ?receiver, _, _).
@@ -234,8 +234,8 @@ StaticToActualType(?type, ?type) :-
 
 // The key point where all the mock objects are created. Triggers all the rest.
 MockObject(cat(?class, "::: (Mock)"), ?class),
-MockValueConsMacro(cat(?class, "::: (Mock)"), ?class),
-Value_DeclaringType(cat(?class, "::: (Mock)"), ?class) :-
+mainAnalysis_MockValueConsMacro(cat(?class, "::: (Mock)"), ?class),
+mainAnalysis.Value_DeclaringType(cat(?class, "::: (Mock)"), ?class) :-
 #ifndef OPEN_PROGRAMS
   // If we are not in open-program mode, only trigger logic if no main method exists
   !MainMethodDeclaration(_),

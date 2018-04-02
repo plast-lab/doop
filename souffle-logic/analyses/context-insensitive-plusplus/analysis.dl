@@ -8,10 +8,11 @@
 
 .type UniqueContext
 .type UniqueHContext
-.type ContextInsensitivePlusPlusComponent = MethodInvocation | Value | UniqueContext | UniqueHContext
-      
+.type ContextInsensitivePlusPlusComponent = MethodInvocation | mainAnalysis.Value | UniqueContext | UniqueHContext
+
 .comp ContextInsensitivePlusPlusConfiguration : AbstractConfiguration {
 
+// REVIEW: Not that it matters, but the struct should be unnecessary. E.g., see context-insensitive-plus
 .type Context  = [ c:ContextInsensitivePlusPlusComponent ]
 .type HContext = [ c:ContextInsensitivePlusPlusComponent ]
 
@@ -26,14 +27,14 @@ UHContext(UNIQUE_HCONTEXT).
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  Value_Type(?value, ?valuetype),
+  mainAnalysis.Value_Type(?value, ?valuetype),
   basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
   InOutFlowMethod(_, ?tomethod),
   ?calleeCtx = [?value].
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  Value_Type(?value, ?valuetype),
+  mainAnalysis.Value_Type(?value, ?valuetype),
   basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
   !InOutFlowMethod(_, ?tomethod),
   UContext(?calleeCtxComp),
@@ -67,10 +68,13 @@ StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
   UContext(?calleeCtxComp),
   ?calleeCtx = [?calleeCtxComp].
 
-RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-                  
-  RecordContextRequest(?ctx, ?value, ?var),      
-  ?ctx = [?component],
-  ?hctx = [?component].
+RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+  RecordContextRequest(?ctx, ?value, ?var),
+  UHContext(?hctxComp),
+  ?hctx = [?hctxComp].
+//// Comment out below to make it a 1obj instead of 1objH. Changes scalability dramatically in some cases.
+//  ?ctx = [?component],
+//  ?hctx = [?component].
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
@@ -91,11 +95,11 @@ FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?calleeCtx) :-
 
 InitContextResponse(?s, ?ctx) :-
   ?ctx = [?comp],
-  UContext(?comp),                   
+  UContext(?comp),
   InitContextRequest(?s).
 
 InitHContextResponse(?s, ?hctx) :-
-  ?hctx = [?comp],                  
+  ?hctx = [?comp],
   UHContext(?comp),
   InitHContextRequest(?s).
 

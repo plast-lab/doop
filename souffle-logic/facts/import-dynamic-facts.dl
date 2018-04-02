@@ -253,4 +253,27 @@ DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
    isDynamicContext(?ctxTo),
    isMethod(?toMethod).
 
+#ifdef HEAPDL_DYNAMICVARPOINTSTO
 
+// Import DynamicVarPointsTo facts
+.decl _DynamicVarPointsTo(?hctx: symbol, ?heap: symbol, ?ctx: symbol, ?var: symbol)
+.input _DynamicVarPointsTo(IO="file", filename="DynamicVarPointsTo.facts", delimiter="\t")
+
+// DynamicVarPointsTo
+.decl DynamicVarPointsTo(?hctx: mainAnalysis.configuration.HContext, ?heap: HeapAllocation, ?ctx: DynamicContext, ?var: Var)
+
+// @parameter and @this vars
+DynamicVarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
+    mainAnalysis.isImmutableHContext(?hctx),
+    _DynamicVarPointsTo(_, ?heap, ?ctx, ?var),
+    isVar(?var).
+
+// local vars
+DynamicVarPointsTo(?hctx, ?heap, ?ctx, ?sootVar) :-
+    mainAnalysis.isImmutableHContext(?hctx),
+    _DynamicVarPointsTo(_, ?heap, ?ctx, ?dumpedVar),
+    DynamicReachableMethod(?meth),
+    Var_DeclaringMethod(?sootVar, ?meth),
+    contains(?dumpedVar, ?sootVar). // match soot var name with dumped var name
+
+#endif

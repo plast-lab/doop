@@ -1,0 +1,26 @@
+#include "spring-sources-and-sinks.dl"
+
+BaseToRetTaintTransferMethod(?dtoMeth),
+TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  FormalParam(_, ?meth, ?to),
+  mainAnalysis.ReachableContext(?ctx, ?meth),
+  BeanReachable(?beanType, ?methSimp),
+  Method_SimpleName(?meth, ?methSimp),
+  Method_DeclaringType(?meth, ?beanType),
+  Var_Type(?to, ?type),
+  ConcreteImplementations(?type, ?ctype),
+  mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to),
+  mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx),
+  Method_DeclaringType(?dtoMeth, ?type),
+  Method_DeclaringType(?meth, ?declaringType).
+
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?val, ?fld, ?basehctx, ?basevalue) :-
+  // TODO optimize this rule
+  mainAnalysis.VarPointsTo(?basehctx, ?basevalue, _, _),
+  mainAnalysis.Value_Type(?basevalue, ?declType),
+  BeanIoCField(?declType, ?fldSimple, ?type),
+  mainAnalysis_MockValueConsMacro(?val, ?type),
+  Field_SimpleName(?fld, ?fldSimple),
+  Field_DeclaringType(?fld, ?declType),
+  mainAnalysis.isImmutableHContext(?hctx).

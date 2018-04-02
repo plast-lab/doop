@@ -134,17 +134,11 @@ public class WalaRepresentation {
         return "/intermediate/";
     }
 
-    String handler(IMethod m, Trap trap, Session session)
+    String handler(IMethod m, SSACFG.ExceptionHandlerBasicBlock basicBlock, Session session)
     {
-        String result = _trapRepr.get(trap);
-
-        if(result == null)
-        {
-            String name = "catch " + trap.getException().getName();
-            result = signature(m) + "/" + name + "/" + session.nextNumber(name);
-
-            _trapRepr.put(trap, result);
-        }
+        String result;
+        String name = "catch " + fixTypeString(basicBlock.getCaughtExceptionTypes().next().toString());
+        result = signature(m) + "/" + name + "/" + session.nextNumber(name);
 
         return result;
     }
@@ -158,43 +152,105 @@ public class WalaRepresentation {
     public String fixTypeString(String original)
     {
         boolean isArrayType = false;
-        if(original.contains("[L")) //Figure out if this is correct
-            isArrayType = true;
-        String ret = original.substring(original.indexOf("L") +1).replaceAll("/",".").replaceAll(">","");
-        String temp;
-        if(ret.contains("Primordial"))
-        {
-            temp = ret.substring(ret.indexOf(",") + 1);
-            if(temp.startsWith("["))
+        int arrayTimes = 0;
+        String ret = null;
+        if(original.contains("L")) {
+            if (original.contains("[")) //Figure out if this is correct
             {
                 isArrayType = true;
-                temp = temp.substring(1);
+                for (int i = 0; i < original.length(); i++) {
+                    if (original.charAt(i) == '[')
+                        arrayTimes++;
+                }
             }
-            if(temp.equals("Z"))
+            ret = original.substring(original.indexOf("L") + 1).replaceAll("/", ".").replaceAll(">", "");
+        }
+        else {
+            String temp;
+            temp = original.substring(original.indexOf(",") + 1).replaceAll(">", "");
+            if (temp.startsWith("[")) {
+                isArrayType = true;
+                for (int i = 0; i < temp.length(); i++) {
+                    if (temp.charAt(i) == '[')
+                        arrayTimes++;
+                    else
+                        break;
+
+                }
+                temp = temp.substring(arrayTimes);
+            }
+            if (temp.equals("Z"))
                 ret = "boolean";
-            else if(temp.equals("I"))
+            else if (temp.equals("I"))
                 ret = "int";
-            else if(temp.equals("V"))
+            else if (temp.equals("V"))
                 ret = "void";
-            else if(temp.equals("B"))
+            else if (temp.equals("B"))
                 ret = "byte";
-            else if(temp.equals("C"))
+            else if (temp.equals("C"))
                 ret = "char";
-            else if(temp.equals("D"))
+            else if (temp.equals("D"))
                 ret = "double";
-            else if(temp.equals("F"))
+            else if (temp.equals("F"))
                 ret = "float";
-            else if(temp.equals("J"))
+            else if (temp.equals("J"))
                 ret = "long";
-            else if(temp.equals("S"))
+            else if (temp.equals("S"))
                 ret = "short";
+            else
+                ret = "OTHERPRIMITIVE";
             //TODO: Figure out what the 'P' code represents in WALA's TypeReference
+
         }
         if(isArrayType)
-            ret = ret + "[]";
+        {
+            for(int i=0 ; i< arrayTimes ; i++)
+                ret = ret + "[]";
+        }
+        //if(! ret.equals(fixTypeStringOld(original)) && ! original.contains("["))
+            //System.out.println(original + " | " + ret + " | " + fixTypeStringOld(original));
         return ret;
     }
 
+    public String fixTypeStringOld(String original) {
+        boolean isArrayType = false;
+        if (original.contains("[L")) //Figure out if this is correct
+        {
+            isArrayType = true;
+        }
+        String ret = original.substring(original.indexOf("L") + 1).replaceAll("/", ".").replaceAll(">", "");
+        String temp;
+        if (ret.contains("Primordial")) {
+            temp = ret.substring(ret.indexOf(",") + 1);
+            if (temp.startsWith("[")) {
+                isArrayType = true;
+                temp = temp.substring(1);
+            }
+            if (temp.equals("Z"))
+                ret = "boolean";
+            else if (temp.equals("I"))
+                ret = "int";
+            else if (temp.equals("V"))
+                ret = "void";
+            else if (temp.equals("B"))
+                ret = "byte";
+            else if (temp.equals("C"))
+                ret = "char";
+            else if (temp.equals("D"))
+                ret = "double";
+            else if (temp.equals("F"))
+                ret = "float";
+            else if (temp.equals("J"))
+                ret = "long";
+            else if (temp.equals("S"))
+                ret = "short";
+            //TODO: Figure out what the 'P' code represents in WALA's TypeReference
+        }
+        if (isArrayType) {
+                ret = ret + "[]";
+        }
+        return ret;
+    }
     //This method takes a MethodReference as a parameter and it does not include "this" as an argument
     //Had the parameter been an IMethod it would include "this" but soot Signatures don't have it so we keep it this way.
     private String createMethodSignature(MethodReference m)
@@ -212,26 +268,30 @@ public class WalaRepresentation {
     private String getKind(SSAInstruction instruction)
     {
         String kind = "unknown";
-        if(instruction instanceof AssignStmt)
+        if(instruction instanceof AssignStmt)//IMPORTANT:TODO: MAKE SURE WE COVER ALL ASSIGN CASES
             kind = "assign";
         else if(instruction instanceof DefinitionStmt)
             kind = "definition";
-        else if(instruction instanceof EnterMonitorStmt && ((SSAMonitorInstruction) instruction).isMonitorEnter())
+        else if(instruction instanceof SSAInstanceofInstruction || instruction instanceof  SSANewInstruction || instruction instanceof SSAArrayLoadInstruction)
+            kind = "assign";
+        else if(instruction instanceof SSAConversionInstruction || instruction instanceof  SSACheckCastInstruction)
+            kind = "assign";
+        else if(instruction instanceof SSABinaryOpInstruction || instruction instanceof  SSAUnaryOpInstruction)
+            kind = "assign";
+        else if(instruction instanceof SSAMonitorInstruction && ((SSAMonitorInstruction) instruction).isMonitorEnter())
             kind = "enter-monitor";
         else if(instruction instanceof SSAMonitorInstruction )
             kind = "exit-monitor";
         else if(instruction instanceof SSAGotoInstruction)
             kind = "goto";
-        else if(instruction instanceof IdentityStmt)
-            kind = "assign";
         else if(instruction instanceof SSAConditionalBranchInstruction)
             kind = "if";
         else if(instruction instanceof SSAInvokeInstruction)
             kind = "invoke";
-        else if(instruction instanceof SSAReturnInstruction)
-            kind = "ret";
         else if(instruction instanceof SSAReturnInstruction && ((SSAReturnInstruction) instruction).returnsVoid())
             kind = "return-void";
+        else if(instruction instanceof SSAReturnInstruction)
+            kind = "ret";
         else if(instruction instanceof SSAReturnInstruction)
             kind = "return";
         else if(instruction instanceof SSAThrowInstruction)

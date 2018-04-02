@@ -256,19 +256,18 @@ public class Main {
         }
 
         Scene scene = Scene.v();
-        scene.setSootClassPath("");
         for (String input : sootParameters._inputs) {
             String inputFormat = input.endsWith(".jar")? "archive" : "file";
             System.out.println("Adding " + inputFormat + ": "  + input);
 
-            scene.extendSootClassPath(input);
+            addToSootClassPath(scene, input);
             if (sootParameters._android)
                 break;
         }
 
         for (String lib : AARUtils.toJars(sootParameters._libraries, false, tmpDirs)) {
             System.out.println("Adding archive for resolving: " + lib);
-            scene.extendSootClassPath(lib);
+            addToSootClassPath(scene, lib);
         }
 
         if (sootParameters._main != null) {
@@ -365,6 +364,15 @@ public class Main {
 
         // Clean up any temporary directories used for AAR extraction.
         Helper.cleanUp(tmpDirs);
+    }
+
+    private static boolean sootClassPathFirstElement = true;
+    private static void addToSootClassPath(Scene scene, String input) {
+        if (sootClassPathFirstElement) {
+            scene.setSootClassPath(input);
+            sootClassPathFirstElement = false;
+        } else
+            scene.extendSootClassPath(input);
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {

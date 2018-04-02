@@ -22,8 +22,9 @@ public class WalaIRPrinter {
     private IAnalysisCacheView _cache;
     private String _outputDir;
 
-    public WalaIRPrinter(IAnalysisCacheView cache)
+    public WalaIRPrinter(IAnalysisCacheView cache, String outputDir)
     {
+        _outputDir = outputDir;
         _rep = WalaRepresentation.getRepresentation();
         _cache = cache;
     }
@@ -32,7 +33,7 @@ public class WalaIRPrinter {
     {
 //        PrintWriter writerOut = new PrintWriter(new EscapedWriter(new OutputStreamWriter((OutputStream)streamOut)));
         ShrikeClass shrikeClass = (ShrikeClass) cl;
-        String fileName = "WalaFacts/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
+        String fileName = _outputDir + "/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
         File file = new File(fileName);
         file.getParentFile().getParentFile().mkdirs();
         file.getParentFile().mkdirs();
@@ -127,14 +128,20 @@ public class WalaIRPrinter {
         SSACFG cfg = ir.getControlFlowGraph();
         SymbolTable symbolTable = ir.getSymbolTable();
         for (int i = 0; i <=cfg.getMaxNumber(); i++) {
-            writer.write("\t\tBB "+ i + "\n");
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             int start = basicBlock.getFirstInstructionIndex();
             int end = basicBlock.getLastInstructionIndex();
+            writer.write("\t\tBB "+ i +" | " + start +" -> " + end+"\n");
 
+            if(basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock)
+            {
+                writer.write("\t\tHandler"+ "\n");
+                if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() != null)
+                    writer.write("\t\t\t" + ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction().toString(symbolTable) + "\n");
+            }
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
-                    writer.write("\t\t\t" + instructions[j].toString(symbolTable) + "\n");
+                    writer.write("\t\t"+j+"\t" + instructions[j].toString(symbolTable) + "\n");
 
                 }
             }

@@ -352,14 +352,6 @@ ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
 .output ArgArrayAndActualArg
 #endif // REFLECTION
 
-.decl ReachableInvocationHandler(?meth:Method)
-.output ReachableInvocationHandler
-
-ReachableInvocationHandler(?m) :-
-  basic.SubtypeOf(?customInvocationHandlerType, "java.lang.reflect.InvocationHandler"),
-  Method_DeclaringType(?m, ?customInvocationHandlerType),
-  Reachable(?m).
-
 .decl ProxiedMethod(?meth:Method)
 .output ProxiedMethod
 
