@@ -43,10 +43,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   configuration.RecordContextRequest(?ctx, ?value, ?var),
   configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx).
 
-configuration.RecordContextRequest(?ctx, ?heapValue, ?var) :-
-  AssignAuxiliaryHeapAllocation(?heapValue, ?var, ?inmethod),
-  ReachableContext(?ctx, ?inmethod).
-
 isHContext(?newHCtx),
 VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
   configuration.RecordContextRequest(?ctx, ?heapValue, ?var),
