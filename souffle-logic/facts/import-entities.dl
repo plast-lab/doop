@@ -230,16 +230,8 @@ AssignReturnValue(?invocation, ?to) :-
 
 // Properties
 
-// TODO: fix if fixed in LB Doop (currently commented out)
+.decl _Properties(?path:symbol, ?key:symbol, ?value:symbol)
+.input _Properties(IO="file", filename="Properties.facts", delimiter="\t")
 
-//.decl _Properties(?path:symbol, ?key:symbol, ?value:symbol)
-//.input _Properties(IO="file", filename="Properties.facts", delimiter="\t")
-
-//+Instruction:Id(?path:?param1),
-//+StringConstant(?path),
-//+Instruction:Id(?key:?param2),
-//+StringConstant(?key),
-//+Instruction:Id(?value:?param3),
-//+StringConstant(?value),
-//+Properties[?path, ?key] = ?value <-
-//  _Properties(?param1, ?param2, ?param3).
+Properties(?path, ?key, ?value) :-
+  _Properties(?path, ?key, ?value).
