@@ -29,7 +29,7 @@ class WalaFactGenerator {
     private IAnalysisCacheView cache;
     private WalaIRPrinter IRPrinter;
 
-    WalaFactGenerator(WalaFactWriter writer, Iterator<IClass> iClasses)
+    WalaFactGenerator(WalaFactWriter writer, Iterator<IClass> iClasses, String outDir)
     {
         this._writer = writer;
 
@@ -37,7 +37,7 @@ class WalaFactGenerator {
         options = new AnalysisOptions();
         options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes());
         cache = new AnalysisCacheImpl();
-        IRPrinter = new WalaIRPrinter(cache);
+        IRPrinter = new WalaIRPrinter(cache,outDir);
     }
 
 
@@ -52,7 +52,7 @@ class WalaFactGenerator {
 //                continue;
 //            }
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
-            //IRPrinter.printIR(iClass);
+            IRPrinter.printIR(iClass);
             //if(skipped == 0)continue;
             _writer.writeClassOrInterfaceType(iClass);
             //TODO: Handling of Arrays?

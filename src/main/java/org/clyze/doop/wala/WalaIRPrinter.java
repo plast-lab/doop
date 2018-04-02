@@ -22,8 +22,9 @@ public class WalaIRPrinter {
     private IAnalysisCacheView _cache;
     private String _outputDir;
 
-    public WalaIRPrinter(IAnalysisCacheView cache)
+    public WalaIRPrinter(IAnalysisCacheView cache, String outputDir)
     {
+        _outputDir = outputDir;
         _rep = WalaRepresentation.getRepresentation();
         _cache = cache;
     }
@@ -32,7 +33,7 @@ public class WalaIRPrinter {
     {
 //        PrintWriter writerOut = new PrintWriter(new EscapedWriter(new OutputStreamWriter((OutputStream)streamOut)));
         ShrikeClass shrikeClass = (ShrikeClass) cl;
-        String fileName = "WalaFacts/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
+        String fileName = _outputDir + "/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
         File file = new File(fileName);
         file.getParentFile().getParentFile().mkdirs();
         file.getParentFile().mkdirs();

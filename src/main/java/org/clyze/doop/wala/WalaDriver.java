@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit;
 
 public class WalaDriver {
 
-    void doSequentially(Iterator<IClass> iClasses, WalaFactWriter writer) {
-        WalaFactGenerator factGenerator = new WalaFactGenerator(writer, iClasses);
+    void doSequentially(Iterator<IClass> iClasses, WalaFactWriter writer, String outDir) {
+        WalaFactGenerator factGenerator = new WalaFactGenerator(writer, iClasses, outDir);
         //factGenerator.generate(dummyMain, new Session());
         //writer.writeAndroidEntryPoint(dummyMain);
         factGenerator.run();
