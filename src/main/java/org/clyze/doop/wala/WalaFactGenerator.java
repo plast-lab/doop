@@ -53,6 +53,7 @@ class WalaFactGenerator {
 //            }
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
             //IRPrinter.printIR(iClass);
+            //if(skipped == 0)continue;
             _writer.writeClassOrInterfaceType(iClass);
             //TODO: Handling of Arrays?
             if(iClass.isAbstract())
@@ -78,7 +79,14 @@ class WalaFactGenerator {
 
             for (IMethod m : iClass.getAllMethods()) {
                 Session session = new org.clyze.doop.wala.Session();
-                generate(m, session);
+                try {
+                    generate(m, session);
+                }
+                catch (Exception exc) {
+                    System.err.println("Error while processing method: " + m);
+                    exc.printStackTrace();
+                    throw exc;
+                }
             }
         }
         System.out.println("Skipped " + skipped + " from " + overall);
@@ -231,7 +239,7 @@ class WalaFactGenerator {
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
         TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
-        for (int i = 0; i <=cfg.getMaxNumber(); i++) {
+        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             int start = basicBlock.getFirstInstructionIndex();
             int end = basicBlock.getLastInstructionIndex();
@@ -290,16 +298,7 @@ class WalaFactGenerator {
 
                     }
                     else if (instructions[j] instanceof SSAGetCaughtExceptionInstruction) {
-                        System.out.println(instructions[j].toString(ir.getSymbolTable()));
-                        if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
-                            Iterator<TypeReference> catchIter = ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCaughtExceptionTypes();
-                            while (catchIter.hasNext()) {
-                                TypeReference next = catchIter.next();
-
-                            }
-
-                            _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference);
-                        }
+                        //Not found in instrucions[]
                     }
                     else if (instructions[j] instanceof SSAComparisonInstruction) {
 
@@ -329,6 +328,24 @@ class WalaFactGenerator {
                         generate(m, ir, (SSAConversionInstruction) instructions[j], session, typeInference);
                     }
                 }
+            }
+
+            if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
+                //System.out.println("method " + m.getName() + " in class " + m.getDeclaringClass().toString() + " Exc handling block " + start + " " + end);
+                if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() == null )
+                {
+                    //System.out.println(" NULL CATCH INSTRUCTION");
+                    continue;
+                }
+                //System.out.println( ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction().toString(ir.getSymbolTable()) + " with iindex " +((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction().iindex);
+
+//                for (int j = start; j <= end; j++)
+//                    if (instructions[j] != null)
+//                        System.out.println( instructions[j].toString(ir.getSymbolTable()));
+//                    else
+//                        System.out.println( "Instuction "+j + " is null :(");
+
+                _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference);
             }
         }
     }

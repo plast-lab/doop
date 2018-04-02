@@ -687,6 +687,13 @@ public class WalaFactWriter {
         TypeReference exc = handlerBlock.getCaughtExceptionTypes().next();
 
         SSAGetCaughtExceptionInstruction catchInstr = handlerBlock.getCatchInstruction();
+        if(catchInstr == null)
+        {
+            //System.out.println("NULL CATCH?");
+            return;
+        }
+        int index = session.calcInstructionNumber(catchInstr);
+        //System.out.println("catch def is " + catchInstr.getDef());
         Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
 //        {
 //            Unit handlerUnit = handler.getHandlerUnit();
@@ -704,8 +711,28 @@ public class WalaFactWriter {
 
         String insn = _rep.handler(m, handlerBlock, session);
         int handlerIndex = session.getInstructionNumber(catchInstr);
-        int beginIndex = session.getInstructionNumber(catchInstr);
-        int endIndex = session.getInstructionNumber(handlerBlock.getLastInstruction());
+        SSAInstruction[] instructions = ir.getInstructions();
+        SSAInstruction startInstr = null;
+        SSAInstruction endInstr = null;
+        for(int i=handlerBlock.getFirstInstructionIndex(); i <= handlerBlock.getLastInstructionIndex();i++)
+        {
+            if(instructions[i] != null)
+            {
+                if(startInstr == null)
+                {
+                    startInstr = instructions[i];
+                    endInstr = instructions[i];
+                }
+                else
+                    endInstr = instructions[i];
+            }
+        }
+        if(startInstr == null) {//Basic block has no instructions
+            //System.out.println("NO instructions in handler block :(.");
+            return;
+        }
+        int beginIndex = session.calcInstructionNumber(startInstr);
+        int endIndex = session.calcInstructionNumber(endInstr);
         _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), _rep.fixTypeString(exc.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
     }
 
@@ -858,7 +885,14 @@ public class WalaFactWriter {
 
     private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
         Local l;
+
+        if(instruction.iindex == -1)//Instructions not on the normal instructions array of the IR can have iindex==-1 ex SSAGetCaughtExceptionInstruction
+        {
+            l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
+            return l;
+        }
         String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
+
         TypeReference typeRef;
         if(typeInference.getType(varIndex).getType() == null)
             typeRef = TypeReference.JavaLangObject;
