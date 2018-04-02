@@ -922,6 +922,19 @@ public class WalaFactWriter {
 //        return v;
 //    }
 //
+    void writeAssignComparison(IMethod m, SSAComparisonInstruction instruction, Local left, Local op1, Local op2, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = _rep.signature(m);
+
+        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
+        _db.add(ASSIGN_OPER_TYPE, insn, instruction.getOperator().toString());
+
+        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
+        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
+
+    }
+
     void writeAssignBinop(IMethod m, SSABinaryOpInstruction instruction, Local left, Local op1, Local op2, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);

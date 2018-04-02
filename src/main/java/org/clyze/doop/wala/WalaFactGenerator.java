@@ -52,7 +52,7 @@ class WalaFactGenerator {
 //                continue;
 //            }
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
-            IRPrinter.printIR(iClass);
+            //IRPrinter.printIR(iClass);
             //if(skipped == 0)continue;
             _writer.writeClassOrInterfaceType(iClass);
             //TODO: Handling of Arrays?
@@ -298,22 +298,22 @@ class WalaFactGenerator {
 
                     }
                     else if (instructions[j] instanceof SSAGetCaughtExceptionInstruction) {
-                        //Not found in instrucions[]
+                        //SSAGetCaughtExceptionInstructions are not found in instrucions[]
                     }
                     else if (instructions[j] instanceof SSAComparisonInstruction) {
-
+                        generate(m, ir, (SSAComparisonInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSALoadMetadataInstruction) {
 
                     }
                     else if (instructions[j] instanceof SSAAddressOfInstruction) {
-
-                    }
-                    else if (instructions[j] instanceof SSAStoreIndirectInstruction) {
                         System.out.println("Impossible!");
                     }
-                    else if (instructions[j] instanceof SSALoadIndirectInstruction) {
+                    else if (instructions[j] instanceof SSAStoreIndirectInstruction) {
                         System.out.println("Impossible vol2!");
+                    }
+                    else if (instructions[j] instanceof SSALoadIndirectInstruction) {
+                        System.out.println("Impossible vol3!");
                     }
                     else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
                         generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
@@ -603,6 +603,15 @@ class WalaFactGenerator {
         Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
 
         _writer.writeAssignBinop(m, instruction, l, op1, op2, session);
+    }
+    private void generate(IMethod m, IR ir, SSAComparisonInstruction instruction, Session session, TypeInference typeInference)
+    {
+        // Binary instructions have two uses and a single def
+        Local l = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
+
+        _writer.writeAssignComparison(m, instruction, l, op1, op2, session);
     }
 
     private void generate(IMethod inMethod, IR ir, SSAThrowInstruction instruction, Session session, TypeInference typeInference)
