@@ -87,7 +87,7 @@ class WalaFactGenerator {
     private void generate(IField f)
     {
         _writer.writeField(f);
-        _writer.writeFieldInitialValue(f);
+        _writer.writeFieldInitialValue(f); //TODO: Fix this
 
 
         if(f.isFinal())
@@ -290,7 +290,16 @@ class WalaFactGenerator {
 
                     }
                     else if (instructions[j] instanceof SSAGetCaughtExceptionInstruction) {
+                        System.out.println(instructions[j].toString(ir.getSymbolTable()));
+                        if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
+                            Iterator<TypeReference> catchIter = ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCaughtExceptionTypes();
+                            while (catchIter.hasNext()) {
+                                TypeReference next = catchIter.next();
 
+                            }
+
+                            _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference);
+                        }
                     }
                     else if (instructions[j] instanceof SSAComparisonInstruction) {
 

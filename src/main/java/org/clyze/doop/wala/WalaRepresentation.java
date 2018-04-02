@@ -134,17 +134,11 @@ public class WalaRepresentation {
         return "/intermediate/";
     }
 
-    String handler(IMethod m, Trap trap, Session session)
+    String handler(IMethod m, SSACFG.ExceptionHandlerBasicBlock basicBlock, Session session)
     {
-        String result = _trapRepr.get(trap);
-
-        if(result == null)
-        {
-            String name = "catch " + trap.getException().getName();
-            result = signature(m) + "/" + name + "/" + session.nextNumber(name);
-
-            _trapRepr.put(trap, result);
-        }
+        String result;
+        String name = "catch " + fixTypeString(basicBlock.getCaughtExceptionTypes().next().toString());
+        result = signature(m) + "/" + name + "/" + session.nextNumber(name);
 
         return result;
     }

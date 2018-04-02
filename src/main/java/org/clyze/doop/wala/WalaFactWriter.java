@@ -679,14 +679,15 @@ public class WalaFactWriter {
         _db.add(THROW_NULL, insn, str(index), methodId);
     }
 
-//    void writeExceptionHandlerPrevious(IMethod m, Trap current, Trap previous, Session session) {
-//        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, current, session), _rep.handler(m, previous, session));
-//    }
-//
-//    void writeExceptionHandler(IMethod m, Trap handler, Session session) {
-//        IClass exc = handler.getException();
-//
-//        Local caught;
+    void writeExceptionHandlerPrevious(IMethod m, SSACFG.ExceptionHandlerBasicBlock current, SSACFG.ExceptionHandlerBasicBlock previous, Session session) {
+        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, current, session), _rep.handler(m, previous, session));
+    }
+
+    void writeExceptionHandler(IR ir, IMethod m, SSACFG.ExceptionHandlerBasicBlock handlerBlock, Session session, TypeInference typeInference) {
+        TypeReference exc = handlerBlock.getCaughtExceptionTypes().next();
+
+        SSAGetCaughtExceptionInstruction catchInstr = handlerBlock.getCatchInstruction();
+        Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
 //        {
 //            Unit handlerUnit = handler.getHandlerUnit();
 //            IdentityStmt stmt = (IdentityStmt) handlerUnit;
@@ -700,15 +701,13 @@ public class WalaFactWriter {
 //                throw new RuntimeException("Unexpected start of exception handler: " + handlerUnit);
 //            }
 //        }
-//
-//        String insn = _rep.handler(m, handler, session);
-//        int handlerIndex = session.getUnitNumber(handler.getHandlerUnit());
-//        session.calcInstructionNumber(handler.getBeginUnit());
-//        int beginIndex = session.getUnitNumber(handler.getBeginUnit());
-//        session.calcInstructionNumber(handler.getEndUnit());
-//        int endIndex = session.getUnitNumber(handler.getEndUnit());
-//        _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), exc.getName().getClassName().toString(), _rep.local(m, caught), str(beginIndex), str(endIndex));
-//    }
+
+        String insn = _rep.handler(m, handlerBlock, session);
+        int handlerIndex = session.getInstructionNumber(catchInstr);
+        int beginIndex = session.getInstructionNumber(catchInstr);
+        int endIndex = session.getInstructionNumber(handlerBlock.getLastInstruction());
+        _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), _rep.fixTypeString(exc.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
+    }
 
     void writeThisVar(IMethod m) {
         String methodId = _rep.signature(m);
