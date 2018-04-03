@@ -568,9 +568,9 @@ public class WalaFactWriter {
     }
 
     void writeGoto(IMethod m, SSAGotoInstruction instruction, SSAInstruction to, Session session) {
-        session.calcInstructionNumber(instruction);
+        //session.calcInstructionNumber(instruction);
         int index = session.getInstructionNumber(instruction);
-        session.calcInstructionNumber(to);
+        //session.calcInstructionNumber(to);
         int indexTo = session.getInstructionNumber(to);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
@@ -583,9 +583,9 @@ public class WalaFactWriter {
      */
     void writeIf(IMethod m, SSAConditionalBranchInstruction instruction, Local var1, Local var2, SSAInstruction to, Session session) {
         // index was already computed earlier
-        int index = session.calcInstructionNumber(instruction);
-        session.calcInstructionNumber(to);
-        int indexTo = session.calcInstructionNumber(to);
+        int index = session.getInstructionNumber(instruction);
+        //session.calcInstructionNumber(to);
+        int indexTo = session.getInstructionNumber(to);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
@@ -620,34 +620,61 @@ public class WalaFactWriter {
 //
 //        _db.add(TABLE_SWITCH_DEFAULT, insn, str(defaultIndex));
 //    }
-//
-//    void writeLookupSwitch(IMethod inMethod, LookupSwitchStmt stmt, Session session) {
-//        int stmtIndex = session.getUnitNumber(stmt);
-//
-//        Value v = writeImmediate(inMethod, stmt, stmt.getKey(), session);
-//
-//        if(!(v instanceof Local))
-//            throw new RuntimeException("Unexpected key for TableSwitch statement " + v + " " + v.getClass());
-//
-//        Local l = (Local) v;
-//        String insn = _rep.instruction(inMethod, stmt, session, stmtIndex);
-//        String methodId = writeMethod(inMethod);
-//
-//        _db.add(LOOKUP_SWITCH, insn, str(stmtIndex), _rep.local(inMethod, l), methodId);
-//
-//        for(int i = 0, end = stmt.getTargetCount(); i < end; i++) {
-//            int tgIndex = stmt.getLookupValue(i);
-//            session.calcInstructionNumber(stmt.getTarget(i));
-//            int indexTo = session.getUnitNumber(stmt.getTarget(i));
-//
-//            _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(indexTo));
-//        }
-//
-//        session.calcInstructionNumber(stmt.getDefaultTarget());
-//        int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
-//
-//        _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
-//    }
+
+    public int getNextNonNullInstruction(IR ir, int instructionIndex)
+    {
+        SSAInstruction[] ssaInstructions = ir.getInstructions();
+        //ISSABasicBlock basicBlock = ir.getBasicBlockForInstruction(ssaInstructions[instructionIndex]);
+        for(int i = instructionIndex +1 ; i < ssaInstructions.length; i++)
+        {
+            if(ssaInstructions[i]!=null)
+                return i;
+        }
+        return -1;
+    }
+
+    void writeLookupSwitch(IR ir,IMethod inMethod, SSASwitchInstruction instruction, Session session, Local switchVar) {
+        int instrIndex = session.getInstructionNumber(instruction);
+        int targetIndex, targetWALAIndex;
+        int defaultIndex, defaultWALAIndex;
+        //Value v = writeImmediate(inMethod, instruction, instruction.getUse(0), session);
+        String insn = _rep.instruction(inMethod, instruction, session, instrIndex);
+        String methodId = writeMethod(inMethod);
+
+        _db.add(LOOKUP_SWITCH, insn, str(instrIndex), _rep.local(inMethod, switchVar), methodId);
+
+        int casesAndLabels[] = instruction.getCasesAndLabels();
+        SSAInstruction instructions[] = ir.getInstructions();
+        for(int i = 0; i < casesAndLabels.length; i+=2) {
+            int tgIndex = casesAndLabels[i];
+            //session.calcInstructionNumber(instructions[casesAndLabels[i+1]]);
+            if(instructions[casesAndLabels[i+1]]==null)
+            {
+                targetWALAIndex = getNextNonNullInstruction(ir,casesAndLabels[i+1]);
+                if(targetWALAIndex == -1)
+                    System.out.println("This Should not be happening");
+                targetIndex = session.getInstructionNumber(instructions[targetWALAIndex]);
+            }
+            else
+                targetIndex = session.getInstructionNumber(instructions[casesAndLabels[i+1]]);
+
+            _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(targetIndex));
+        }
+
+        if(instructions[instruction.getDefault()] == null)
+        {
+            defaultWALAIndex = getNextNonNullInstruction(ir,instruction.getDefault());
+            if(defaultWALAIndex == -1)
+                System.out.println("This Should not be happening");
+            defaultIndex = session.getInstructionNumber(instructions[defaultWALAIndex]);
+        }
+        else {
+            //session.calcInstructionNumber(instructions[instruction.getDefault()]);
+            defaultIndex = session.getInstructionNumber(instructions[instruction.getDefault()]);
+        }
+
+        _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
+    }
 
     void writeUnsupported(IMethod m, SSAInstruction instruction, Session session) {
         int index = session.calcInstructionNumber(instruction);

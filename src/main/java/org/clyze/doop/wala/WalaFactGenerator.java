@@ -84,7 +84,7 @@ class WalaFactGenerator {
                     generate(m, session);
                 }
                 catch (Exception exc) {
-                    System.err.println("Error while processing method: " + m);
+                    System.err.println("Error while processing method: " + m + " of class " +m.getDeclaringClass());
                     exc.printStackTrace();
                     throw exc;
                 }
@@ -268,9 +268,6 @@ class WalaFactGenerator {
                     else if (instructions[j] instanceof SSAThrowInstruction) {
                         generate(m, ir, (SSAThrowInstruction) instructions[j], session, typeInference);
                     }
-                    else if (instructions[j] instanceof SSAGotoInstruction) {
-                        generate(m, ir, (SSAGotoInstruction) instructions[j], session);
-                    }
                     else if (instructions[j] instanceof SSAInvokeInstruction) {
                         generate(m, ir, (SSAInvokeInstruction) instructions[j], session,typeInference);
                     }
@@ -292,11 +289,8 @@ class WalaFactGenerator {
                     else if (instructions[j] instanceof SSAArrayStoreInstruction) {
                         generate(m, ir, (SSAArrayStoreInstruction) instructions[j], session, typeInference);
                     }
-                    else if (instructions[j] instanceof SSASwitchInstruction) {
-
-                    }
                     else if (instructions[j] instanceof SSANewInstruction) {
-
+                        generate(m, ir, (SSANewInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAPhiInstruction) {
                         //SSAPhiInstructions are not stored in instructions[]
@@ -311,7 +305,7 @@ class WalaFactGenerator {
                         generate(m, ir, (SSAComparisonInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSALoadMetadataInstruction) {
-
+                        generate(m, ir, (SSALoadMetadataInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAAddressOfInstruction) {
                         System.out.println("Impossible!");
@@ -322,8 +316,17 @@ class WalaFactGenerator {
                     else if (instructions[j] instanceof SSALoadIndirectInstruction) {
                         System.out.println("Impossible vol3!");
                     }
+                    else if (instructions[j] instanceof SSASwitchInstruction) {
+                        //generate(m, ir, (SSASwitchInstruction) instructions[j], session, typeInference);
+                        session.calcInstructionNumber(instructions[j]);
+                    }
+                    else if (instructions[j] instanceof SSAGotoInstruction) {
+                        //generate(m, ir, (SSAGotoInstruction) instructions[j], session);
+                        session.calcInstructionNumber(instructions[j]);
+                    }
                     else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
-                        generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
+                        //generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
+                        session.calcInstructionNumber(instructions[j]);
                     }
                     else if (instructions[j] instanceof SSAInstanceofInstruction) {
                         generate(m, ir, (SSAInstanceofInstruction) instructions[j], session, typeInference);
@@ -361,8 +364,35 @@ class WalaFactGenerator {
                 _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference);
             }
         }
+
+        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+            int start = basicBlock.getFirstInstructionIndex();
+            int end = basicBlock.getLastInstructionIndex();
+
+            for (int j = start; j <= end; j++) {
+                if (instructions[j] instanceof SSASwitchInstruction) {
+                    generate(m, ir, (SSASwitchInstruction) instructions[j], session, typeInference);
+                } else if (instructions[j] instanceof SSAGotoInstruction) {
+                    generate(m, ir, (SSAGotoInstruction) instructions[j], session);
+                } else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
+                    generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
+                }
+            }
+        }
     }
 
+    /*
+     * From what I understand all SSASwitchInsutrctions are LookUp Switches in WALA
+     * This transformation takes place in com.ibm.wala.shrikeBT.Decoder.java
+     * In constrast soot has both LookUp Switches and Table Switches
+     */
+    public void generate(IMethod m, IR ir, SSASwitchInstruction instruction, Session session, TypeInference typeInference) {
+        //Switch instructions have only one use
+        Local switchVar =createLocal(ir,instruction,instruction.getUse(0),typeInference);
+        _writer.writeLookupSwitch(ir, m, instruction, session, switchVar);
+
+    }
     public void generate(IMethod m, IR ir, SSAConditionalBranchInstruction instruction, Session session, TypeInference typeInference) {
         SSAInstruction[] ssaInstructions = ir.getInstructions();
 
@@ -370,8 +400,16 @@ class WalaFactGenerator {
         Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
         Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
 
-        _writer.writeIf(m, instruction, op1, op2, ssaInstructions[instruction.getTarget()], session);
+        if(ssaInstructions[instruction.getTarget()] == null) {
+            int nextWALAIndex = getNextNonNullInstruction(ir,instruction.getTarget());
+            if(nextWALAIndex == -1)
+                System.out.println("This Should not be happening");
+            _writer.writeIf(m, instruction, op1, op2, ssaInstructions[nextWALAIndex], session);
+        }
+        else
+            _writer.writeIf(m, instruction, op1, op2, ssaInstructions[instruction.getTarget()], session);
     }
+
 
     public void generate(IMethod m, IR ir, SSAPhiInstruction instruction, Session session, TypeInference typeInference) {
         // Phi instructions have a single def (to) and a number uses that represent the alternative values
@@ -382,6 +420,16 @@ class WalaFactGenerator {
             alternative = createLocal(ir, instruction, instruction.getUse(i), typeInference);
             _writer.writeAssignLocal(m, instruction, to, alternative, session);
         }
+    }
+
+    public void generate(IMethod m, IR ir, SSANewInstruction instruction, Session session, TypeInference typeInference) {
+        session.calcInstructionNumber(instruction);//TODO: Move this when method is implemented
+
+    }
+
+    public void generate(IMethod m, IR ir, SSALoadMetadataInstruction instruction, Session session, TypeInference typeInference) {
+        session.calcInstructionNumber(instruction);//TODO: Move this when method is implemented
+
     }
 
     public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session, TypeInference typeInference) {
@@ -478,7 +526,14 @@ class WalaFactGenerator {
     public void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
         // Go to instructions have no uses and no defs
         SSAInstruction[] ssaInstructions = ir.getInstructions();
-        _writer.writeGoto(m, instruction,ssaInstructions[instruction.getTarget()] , session);
+        if(ssaInstructions[instruction.getTarget()] == null) {
+            int nextWALAIndex = getNextNonNullInstruction(ir,instruction.getTarget());
+            if(nextWALAIndex == -1)
+                System.out.println("This Should not be happening ");
+            _writer.writeGoto(m, instruction, ssaInstructions[nextWALAIndex], session);
+        }
+        else
+            _writer.writeGoto(m, instruction,ssaInstructions[instruction.getTarget()] , session);
     }
 
     public void generate(IMethod m, IR ir, SSAMonitorInstruction instruction, Session session, TypeInference typeInference) {
@@ -664,6 +719,18 @@ class WalaFactGenerator {
         {
             throw new RuntimeException("Unhandled throw statement: " + instruction);
         }
+    }
+
+    public int getNextNonNullInstruction(IR ir, int instructionIndex)
+    {
+        SSAInstruction[] ssaInstructions = ir.getInstructions();
+        //ISSABasicBlock basicBlock = ir.getBasicBlockForInstruction(ssaInstructions[instructionIndex]);
+        for(int i = instructionIndex +1 ; i < ssaInstructions.length; i++)
+        {
+            if(ssaInstructions[i]!=null)
+                return i;
+        }
+        return -1;
     }
 }
 

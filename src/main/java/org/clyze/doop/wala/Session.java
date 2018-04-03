@@ -35,6 +35,7 @@ public class Session
         index++;
 
         // record the first unit number for this units (to handle jumps)
+
         _instructions.putIfAbsent(instruction, index);
 
         return index;
