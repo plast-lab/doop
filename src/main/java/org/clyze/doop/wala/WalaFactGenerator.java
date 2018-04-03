@@ -35,8 +35,9 @@ class WalaFactGenerator {
 
         this._iClasses = iClasses;
         options = new AnalysisOptions();
-        options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes());
-        cache = new AnalysisCacheImpl();
+        options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
+        cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
+        //cache = new AnalysisCacheImpl(new DefaultIRFactory(), options.getSSAOptions()); //Change to this to make the IR according to the SSAOptions -- to include piNodes
         IRPrinter = new WalaIRPrinter(cache,outDir);
     }
 
@@ -52,8 +53,8 @@ class WalaFactGenerator {
 //                continue;
 //            }
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
-            IRPrinter.printIR(iClass);
-            if(skipped == 0)continue;
+            //IRPrinter.printIR(iClass);
+            //if(skipped == 0)continue;
             _writer.writeClassOrInterfaceType(iClass);
             //TODO: Handling of Arrays?
             if(iClass.isAbstract())
@@ -248,7 +249,7 @@ class WalaFactGenerator {
             while(phis.hasNext())
             {
                 SSAPhiInstruction phiInstruction = phis.next();
-
+                generate(m, ir, phiInstruction, session, typeInference);
             }
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
@@ -337,7 +338,7 @@ class WalaFactGenerator {
             }
 
             Iterator<SSAPiInstruction> pis = basicBlock.iteratePis();
-            while(phis.hasNext())
+            while(pis.hasNext())
             {
                 SSAPiInstruction piInstruction = pis.next();
 
@@ -370,6 +371,17 @@ class WalaFactGenerator {
         Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
 
         _writer.writeIf(m, instruction, op1, op2, ssaInstructions[instruction.getTarget()], session);
+    }
+
+    public void generate(IMethod m, IR ir, SSAPhiInstruction instruction, Session session, TypeInference typeInference) {
+        // Phi instructions have a single def (to) and a number uses that represent the alternative values
+        Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local alternative;
+        for(int i=0; i < instruction.getNumberOfUses();i++)
+        {
+            alternative = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+            _writer.writeAssignLocal(m, instruction, to, alternative, session);
+        }
     }
 
     public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session, TypeInference typeInference) {
@@ -499,6 +511,12 @@ class WalaFactGenerator {
 
     private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
         Local l;
+
+        if(instruction.iindex == -1)//Instructions not on the normal instructions array of the IR can have iindex==-1 ex SSAGetCaughtExceptionInstruction, SSAPhiInstruction
+        {
+            l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
+            return l;
+        }
         String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
         TypeReference typeRef;
         if(typeInference.getType(varIndex).getType() == null)

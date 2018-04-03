@@ -202,14 +202,14 @@ public class WalaFactWriter {
 
         _db.add(EXIT_MONITOR, insn, str(index), _rep.local(m, var), methodId);
     }
-//
-//    void writeAssignLocal(IMethod m, Stmt stmt, Local to, Local from, Session session) {
-//        int index = session.calcInstructionNumber(stmt);
-//        String insn = _rep.instruction(m, stmt, session, index);
-//        String methodId = writeMethod(m);
-//
-//        _db.add(ASSIGN_LOCAL, insn, str(index), _rep.local(m, from), _rep.local(m, to), methodId);
-//    }
+
+    void writeAssignLocal(IMethod m, SSAInstruction instruction, Local to, Local from, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = writeMethod(m);
+
+        _db.add(ASSIGN_LOCAL, insn, str(index), _rep.local(m, from), _rep.local(m, to), methodId);
+    }
 //
 //    void writeAssignLocal(IMethod m, Stmt stmt, Local to, ThisRef ref, Session session) {
 //        int index = session.calcInstructionNumber(stmt);
@@ -886,7 +886,7 @@ public class WalaFactWriter {
     private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
         Local l;
 
-        if(instruction.iindex == -1)//Instructions not on the normal instructions array of the IR can have iindex==-1 ex SSAGetCaughtExceptionInstruction
+        if(instruction.iindex == -1)//Instructions not on the normal instructions array of the IR can have iindex==-1 ex SSAGetCaughtExceptionInstruction, , SSAPhiInstruction
         {
             l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
             return l;

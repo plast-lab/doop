@@ -151,11 +151,11 @@ public class WalaIRPrinter {
                 }
             }
             Iterator<SSAPiInstruction> pis = basicBlock.iteratePis();
-            while(phis.hasNext())
+            while(pis.hasNext())
             {
                 SSAPiInstruction piInstruction = pis.next();
                 writer.write("\t\t"+"π"+"\t" + piInstruction.toString(symbolTable) + "\n");
-                System.out.println(piInstruction.toString(symbolTable));
+                //System.out.println(piInstruction.toString(symbolTable));
             }
         }
     }
