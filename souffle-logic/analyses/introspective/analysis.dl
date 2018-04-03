@@ -5,7 +5,6 @@
 
 .init preAnalysis = BasicContextSensitivity<ContextInsensitiveConfiguration>
 
-
 .comp IntrospectiveConfiguration : AbstractConfiguration {
            
 .type Context  = [ c1:mainAnalysis.Value, c2:mainAnalysis.Value ]
@@ -232,9 +231,9 @@ ThisPointsToTwoValues(?method) :-
 // ClassToRefine(?class) :-
 //   InOutFlowPerClass(_, _, ?class).
 
-ClassToRefine(?class) :-
-  isType(?class),
-  match("java\.util\..*", ?class).
+// ClassToRefine(?class) :-
+//   isType(?class),
+//   match("java\.util\..*", ?class).
 
 // .input ClassToRefine(IO="file", filename="/home/anantoni/Development/doop-nexgen/ClassToRefine.facts")
        
@@ -272,6 +271,11 @@ ClassToRefine(?class) :-
 
 MethodToRefine(?method) :-      
   ThisPointsToTwoValues(?method).
+
+MethodToRefine(?method) :-
+  preAnalysis.Reachable(?method),
+  Method_DeclaringType(?method, ?class),                          
+  match("java\.util\..*", ?class).                                                      
 
 .output MethodToRefine
 // MethodToRefine(?method) :-
