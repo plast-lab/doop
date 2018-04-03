@@ -52,8 +52,8 @@ class WalaFactGenerator {
 //                continue;
 //            }
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
-            //IRPrinter.printIR(iClass);
-            //if(skipped == 0)continue;
+            IRPrinter.printIR(iClass);
+            if(skipped == 0)continue;
             _writer.writeClassOrInterfaceType(iClass);
             //TODO: Handling of Arrays?
             if(iClass.isAbstract())
@@ -244,6 +244,12 @@ class WalaFactGenerator {
             int start = basicBlock.getFirstInstructionIndex();
             int end = basicBlock.getLastInstructionIndex();
 
+            Iterator<SSAPhiInstruction> phis = basicBlock.iteratePhis();
+            while(phis.hasNext())
+            {
+                SSAPhiInstruction phiInstruction = phis.next();
+
+            }
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
                     this.generateDefs(m, ir, instructions[j], session, typeInference);
@@ -292,13 +298,13 @@ class WalaFactGenerator {
 
                     }
                     else if (instructions[j] instanceof SSAPhiInstruction) {
-
+                        //SSAPhiInstructions are not stored in instructions[]
                     }
                     else if (instructions[j] instanceof SSAPiInstruction) { //TODO:Figure out what this does
-
+                        //SSAPiInstructions are not stored in instructions[]
                     }
                     else if (instructions[j] instanceof SSAGetCaughtExceptionInstruction) {
-                        //SSAGetCaughtExceptionInstructions are not found in instrucions[]
+                        //SSAGetCaughtExceptionInstructions are not stored in instructions[]
                     }
                     else if (instructions[j] instanceof SSAComparisonInstruction) {
                         generate(m, ir, (SSAComparisonInstruction) instructions[j], session, typeInference);
@@ -330,6 +336,12 @@ class WalaFactGenerator {
                 }
             }
 
+            Iterator<SSAPiInstruction> pis = basicBlock.iteratePis();
+            while(phis.hasNext())
+            {
+                SSAPiInstruction piInstruction = pis.next();
+
+            }
             if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
                 //System.out.println("method " + m.getName() + " in class " + m.getDeclaringClass().toString() + " Exc handling block " + start + " " + end);
                 if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() == null )
