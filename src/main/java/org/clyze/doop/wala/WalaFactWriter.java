@@ -254,10 +254,10 @@ public class WalaFactWriter {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+getLineNumberFromStmt(instruction));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(instruction));
     }
 
-    private static int getLineNumberFromStmt(SSAInstruction instruction) {
+    private static int getLineNumberFromInstruction(SSAInstruction instruction) {
 //        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
 //        String lineNumber;
 //        if (tag == null) {
@@ -265,7 +265,8 @@ public class WalaFactWriter {
 //        } else {
 //            return tag.getLineNumber();
 //        }
-        return 0;
+        return instruction.iindex;
+        //return 0;
     }
 
     private TypeReference getComponentType(TypeReference type) {
@@ -293,7 +294,7 @@ public class WalaFactWriter {
         String methodId = writeMethod(m);
 
         _db.add(NORMAL_HEAP, heap, writeType(arrayType));
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, ""+getLineNumberFromStmt(instruction));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, ""+getLineNumberFromInstruction(instruction));
 
         TypeReference componentType = getComponentType(arrayType);
         if (componentType.isArrayType()) {
@@ -362,7 +363,7 @@ public class WalaFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+getLineNumberFromStmt(instruction));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(instruction));
     }
 
     void writeAssignNull(IMethod m, SSAInstruction instruction, Local l, Session session) {
