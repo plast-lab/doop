@@ -226,13 +226,13 @@ public class WalaFactWriter {
 //
 //        _db.add(ASSIGN_LOCAL, insn, str(index), _rep.param(m, ref.getIndex()), _rep.local(m, to), methodId);
 //    }
-//
-//    void writeAssignInvoke(IMethod inMethod, Stmt stmt, Local to, InvokeExpr expr, Session session) {
+
+//    void writeAssignInvoke(IMethod inMethod, SSAInvokeInstruction instruction, Local to, Session session) {
 //        String insn = writeInvokeHelper(inMethod, stmt, expr, session);
 //
 //        _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
 //    }
-//
+
     void writeAssignHeapAllocation(IR ir, IMethod m, SSANewInstruction instruction, Local l, Session session) {
         String heap = _rep.heapAlloc(m, instruction, session);
 
@@ -847,8 +847,9 @@ public class WalaFactWriter {
         }
     }
 
-    void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
-        writeInvokeHelper(inMethod, ir, instruction, session, typeInference);
+    void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
+        String insn = writeInvokeHelper(inMethod, ir, instruction, session, typeInference);
+        _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
     }
 
     private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
