@@ -849,7 +849,8 @@ public class WalaFactWriter {
 
     void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
         String insn = writeInvokeHelper(inMethod, ir, instruction, session, typeInference);
-        _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
+        if(to !=null)
+            _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
     }
 
     private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {

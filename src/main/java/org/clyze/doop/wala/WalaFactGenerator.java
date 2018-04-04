@@ -490,7 +490,12 @@ class WalaFactGenerator {
 
     public void generate(IMethod m, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
         // For invoke instructions the number of uses is equal to the number of parameters
-        Local l =createLocal(ir, instruction, instruction.getDef(), typeInference);
+
+        Local l;
+        if(instruction.getNumberOfReturnValues() ==0)
+            l =null;
+        else
+            l =createLocal(ir, instruction, instruction.getDef(), typeInference);
         _writer.writeInvoke(m, ir, instruction, l, session,typeInference);
     }
 
