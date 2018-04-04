@@ -423,7 +423,16 @@ class WalaFactGenerator {
     }
 
     public void generate(IMethod m, IR ir, SSANewInstruction instruction, Session session, TypeInference typeInference) {
-        session.calcInstructionNumber(instruction);//TODO: Move this when method is implemented
+        Local l = createLocal(ir,instruction,instruction.getDef(),typeInference);
+        int numOfUses = instruction.getNumberOfUses();
+        if(numOfUses < 2)
+        {
+            _writer.writeAssignHeapAllocation(ir, m, instruction, l, session);
+        }
+        else
+        {
+            _writer.writeAssignNewMultiArrayExpr(m, instruction, l, session);
+        }
 
     }
 

@@ -206,7 +206,7 @@ public class WalaFactWriter {
     void writeAssignLocal(IMethod m, SSAInstruction instruction, Local to, Local from, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_LOCAL, insn, str(index), _rep.local(m, from), _rep.local(m, to), methodId);
     }
@@ -233,30 +233,29 @@ public class WalaFactWriter {
 //        _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
 //    }
 //
-//    void writeAssignHeapAllocation(IMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session) {
-//        String heap = _rep.heapAlloc(m, expr, session);
-//
-//
-//        //_db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
-//
-//        if (expr instanceof NewArrayExpr) {
-//            NewArrayExpr newArray = (NewArrayExpr) expr;
-//            Value sizeVal = newArray.getSize();
-//
-//            if (sizeVal instanceof IntConstant) {
-//                IntConstant size = (IntConstant) sizeVal;
-//
-//                if(size.value == 0)
-//                    _db.add(EMPTY_ARRAY, heap);
-//            }
-//        }
-//
-//        // statement
-//        int index = session.calcInstructionNumber(stmt);
-//        String insn = _rep.instruction(m, stmt, session, index);
-//        String methodId = writeMethod(m);
-//        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+getLineNumberFromStmt(stmt));
-//    }
+    void writeAssignHeapAllocation(IR ir, IMethod m, SSANewInstruction instruction, Local l, Session session) {
+        String heap = _rep.heapAlloc(m, instruction, session);
+
+
+        _db.add(NORMAL_HEAP, heap, writeType(instruction.getConcreteType()));
+
+        if (instruction.getNewSite().getDeclaredType().isArrayType()) {
+            int arrayLengthVar = instruction.getUse(0);
+            SymbolTable symbolTable = ir.getSymbolTable();
+            if (symbolTable.isIntegerConstant(arrayLengthVar)) {
+                int arrayLength = symbolTable.getIntValue(arrayLengthVar);
+
+                if(arrayLength == 0)
+                    _db.add(EMPTY_ARRAY, heap);
+            }
+        }
+
+        // statement
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = _rep.signature(m);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+getLineNumberFromStmt(instruction));
+    }
 
     private static int getLineNumberFromStmt(SSAInstruction instruction) {
 //        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
@@ -281,33 +280,33 @@ public class WalaFactWriter {
      * NewMultiArray is slightly complicated because an array needs to
      * be allocated separately for every dimension of the array.
      */
-//    void writeAssignNewMultiArrayExpr(IMethod m, Stmt stmt, Local l, NewMultiArrayExpr expr, Session session) {
-//        writeAssignNewMultiArrayExprHelper(m, stmt, l, _rep.local(m,l), expr, expr.getType(), session);
-//    }
-//
-//    private void writeAssignNewMultiArrayExprHelper(IMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, TypeReference arrayType, Session session) {
-//        String heap = _rep.heapMultiArrayAlloc(m, expr, arrayType, session);
-//        int index = session.calcInstructionNumber(stmt);
-//        String insn = _rep.instruction(m, stmt, session, index);
-//
-//
-//        String methodId = writeMethod(m);
-//
-//        _db.add(NORMAL_HEAP, heap, writeType(arrayType));
-//        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, ""+getLineNumberFromStmt(stmt));
-//
-//        TypeReference componentType = getComponentType(arrayType);
-//        if (componentType.isArrayType()) {
-//            String childAssignTo = _rep.newLocalIntermediate(m, l, session);
-//            writeAssignNewMultiArrayExprHelper(m, stmt, l, childAssignTo, expr, componentType, session);
-//            int storeInsnIndex = session.calcInstructionNumber(stmt);
-//            String storeInsn = _rep.instruction(m, stmt, session, storeInsnIndex);
-//
-//            _db.add(STORE_ARRAY_INDEX, storeInsn, str(storeInsnIndex), childAssignTo, assignTo, methodId);
-//            _db.add(VAR_TYPE, childAssignTo, writeType(componentType));
-//            _db.add(VAR_DECLARING_METHOD, childAssignTo, methodId);
-//        }
-//    }
+    void writeAssignNewMultiArrayExpr(IMethod m, SSANewInstruction instruction, Local l, Session session) {
+        writeAssignNewMultiArrayExprHelper(m, instruction, l, _rep.local(m,l), instruction.getConcreteType(), session);
+    }
+
+    private void writeAssignNewMultiArrayExprHelper(IMethod m, SSANewInstruction instruction, Local l, String assignTo, TypeReference arrayType, Session session) {
+        String heap = _rep.heapMultiArrayAlloc(m, instruction, arrayType, session);
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+
+
+        String methodId = writeMethod(m);
+
+        _db.add(NORMAL_HEAP, heap, writeType(arrayType));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, ""+getLineNumberFromStmt(instruction));
+
+        TypeReference componentType = getComponentType(arrayType);
+        if (componentType.isArrayType()) {
+            String childAssignTo = _rep.newLocalIntermediate(m, l, session);
+            writeAssignNewMultiArrayExprHelper(m, instruction, l, childAssignTo, componentType, session);
+            int storeInsnIndex = session.calcInstructionNumber(instruction);
+            String storeInsn = _rep.instruction(m, instruction, session, storeInsnIndex);
+
+            _db.add(STORE_ARRAY_INDEX, storeInsn, str(storeInsnIndex), childAssignTo, assignTo, methodId);
+            _db.add(VAR_TYPE, childAssignTo, writeType(componentType));
+            _db.add(VAR_DECLARING_METHOD, childAssignTo, methodId);
+        }
+    }
 
     // The commented-out code below is what used to be in Doop2. It is not
     // equivalent to code in old Doop. I (YS) tried to have a more compatible
@@ -420,7 +419,7 @@ public class WalaFactWriter {
     void writeAssignCast(IMethod m, SSAInstruction instruction, Local to, Local from, TypeReference t, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_CAST, insn, str(index), _rep.local(m, from), _rep.local(m, to), writeType(t), methodId);
     }
@@ -428,7 +427,7 @@ public class WalaFactWriter {
     void writeAssignCastNumericConstant(IMethod m, SSAInstruction instruction, Local to, Local from, TypeReference t, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_CAST_NUM_CONST, insn, str(index), from.getValue(), _rep.local(m, to), writeType(t), methodId);
     }
@@ -436,7 +435,7 @@ public class WalaFactWriter {
     void writeAssignCastNull(IMethod m, SSAInstruction instruction, Local to, TypeReference t, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = writeMethod(m);
+        String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_CAST_NULL, insn, str(index), _rep.local(m, to), writeType(t), methodId);
     }
@@ -639,7 +638,7 @@ public class WalaFactWriter {
         int defaultIndex, defaultWALAIndex;
         //Value v = writeImmediate(inMethod, instruction, instruction.getUse(0), session);
         String insn = _rep.instruction(inMethod, instruction, session, instrIndex);
-        String methodId = writeMethod(inMethod);
+        String methodId = _rep.signature(inMethod);
 
         _db.add(LOOKUP_SWITCH, insn, str(instrIndex), _rep.local(inMethod, switchVar), methodId);
 
