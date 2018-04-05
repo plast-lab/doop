@@ -91,7 +91,7 @@ ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
 // Main logic
 AndroidLibraryType(?type) :-
   isType(?type),
-  match("^android.*", ?type).
+  match("android.*", ?type).
 
 // REVIEW: is this needed? android.support classes are included in the
 // application for compatibility with older Android versions. We
@@ -153,7 +153,6 @@ AppMethodOverridesAndroidLibraryMethod(?meth) :-
   // overridden method takes care of covariant return types.
   basic.MethodLookup(?simplename, ?descriptor, ?type, ?meth),
   basic.MethodLookup(?simplename, ?descriptor, ?libraryType, _).
-
 // The protected method overrides one in a library type, hence it's
 // callable from the library.
 
@@ -176,14 +175,14 @@ PublicOnMethodOfLayoutControl(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
   Method_SimpleName(?meth, ?simplename),
-  match("^on.*", ?simplename),
+  match("on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfLayoutControl(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
   Method_SimpleName(?meth, ?simplename),
-  match("^on.*", ?simplename),
+  match("on.*", ?simplename),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfLayoutControl(?meth) :-
@@ -240,7 +239,7 @@ PublicOnMethodOfReachableListener(?meth) :-
   MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
   Method_SimpleName(?meth, ?simplename),
-  match("^on.*", ?simplename),
+  match("on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
 
@@ -248,7 +247,7 @@ ProtectedOnMethodOfReachableListener(?meth) :-
   MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
   Method_SimpleName(?meth, ?simplename),
-  match("^on.*", ?simplename),
+  match("on.*", ?simplename),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfReachableListener(?meth) :-
@@ -282,7 +281,7 @@ ReachableContext(?ctx, ?meth) :-
 
 //The following predicates cover the two clients that can be attached to
 //a WebView adding functionality, the WebViewClient and the WebChromeClient
-//Both the overriden methods and the non overriden are kept, not sure 
+//Both the overriden methods and the non overriden are kept, not sure
 //if the latter are needed.
 WebClientType(?type):-
     basic.SubtypeOf(?type, ?supertype),
@@ -553,4 +552,3 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
 ApplicationEntryPoint(?meth) :-
   ForcedReachableAndroidContext(_, ?meth),
   ApplicationMethod(?meth).
-
