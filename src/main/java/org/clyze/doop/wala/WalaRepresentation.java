@@ -134,17 +134,11 @@ public class WalaRepresentation {
         return "/intermediate/";
     }
 
-    String handler(IMethod m, Trap trap, Session session)
+    String handler(IMethod m, SSACFG.ExceptionHandlerBasicBlock basicBlock, Session session)
     {
-        String result = _trapRepr.get(trap);
-
-        if(result == null)
-        {
-            String name = "catch " + trap.getException().getName();
-            result = signature(m) + "/" + name + "/" + session.nextNumber(name);
-
-            _trapRepr.put(trap, result);
-        }
+        String result;
+        String name = "catch " + fixTypeString(basicBlock.getCaughtExceptionTypes().next().toString());
+        result = signature(m) + "/" + name + "/" + session.nextNumber(name);
 
         return result;
     }
@@ -364,34 +358,35 @@ public class WalaRepresentation {
     }
 
 
-    String heapAlloc(IMethod inMethod, AnyNewExpr expr, Session session)
+    String heapAlloc(IMethod inMethod, SSANewInstruction instruction, Session session)
     {
-        if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
+        int newParams = instruction.getNumberOfUses();
+        if(newParams == 0 || newParams == 1) //
         {
-            return heapAlloc(inMethod, expr.getType(), session);
+            return heapAlloc(inMethod, instruction.getConcreteType(), session);
         }
-        else if(expr instanceof NewMultiArrayExpr)
+        else if(newParams > 1)
         {
-            return heapAlloc(inMethod, expr.getType(), session);
+            return heapAlloc(inMethod, instruction.getConcreteType(), session);
             //      return getMethodSignature(inMethod) + "/" + type + "/" +  session.nextNumber(type);
 
 
         }
         else
         {
-            throw new RuntimeException("Cannot handle new expression: " + expr);
+            throw new RuntimeException("Cannot handle new expression: " + instruction);
         }
     }
 
 
-    String heapMultiArrayAlloc(IMethod inMethod, NewMultiArrayExpr expr, ArrayType type, Session session)
+    String heapMultiArrayAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, Session session)
     {
         return heapAlloc(inMethod, type, session);
     }
 
-    private String heapAlloc(IMethod inMethod, Type type, Session session)
+    private String heapAlloc(IMethod inMethod, TypeReference type, Session session)
     {
-        String s = type.toString();
+        String s = fixTypeString(type.toString());
         return signature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
 
 

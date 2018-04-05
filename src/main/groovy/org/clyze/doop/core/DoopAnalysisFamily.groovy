@@ -163,13 +163,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "GENERATE_JIMPLE",
 					name: "generate-jimple",
-					description: "Generate Jimple/Shimple files along with .facts files",
+					description: "Generate Jimple/Shimple files along with .facts files.",
 					value: false,
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
 					id: "SIMULATE_NATIVE_RETURNS",
 					name: "simulate-native-returns",
+					description: "Assume native method calls return mock objects.",
 					value: false,
 					forPreprocessor: true
 			),
@@ -561,6 +562,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "heapdl-nostrings",
 					forCacheID: true,
 					description: "Do not model string values uniquely in a memory dump.",
+					value: false,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "HEAPDL_DYNAMICVARPOINTSTO",
+					name: "heapdl-dvpt",
+					forCacheID: true,
+					description: "Import dynamic var-points-to information.",
 					value: false,
 					forPreprocessor: true
 			),

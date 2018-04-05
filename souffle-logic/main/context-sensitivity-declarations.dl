@@ -81,8 +81,6 @@
 
 .decl AssignNormalHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)
 
-.decl AssignAuxiliaryHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)
-
 .decl AssignContextInsensitiveHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)
 
 /**
@@ -104,8 +102,8 @@
 
 // Is the SiteToRefine the real list of objects needing
 // refinement or its negation?
-.decl NegativeSiteFilter(?v:symbol)
+// .decl NegativeSiteFilter(?v:symbol)
 
 // Is the ValueToRefine the real list of objects needing
 // refinement or its negation?
-.decl NegativeObjectFilter(?v:symbol)
+// .decl NegativeObjectFilter(?v:symbol)

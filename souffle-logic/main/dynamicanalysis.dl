@@ -281,3 +281,12 @@ VarPointsTo(?hctx, ?value, ?ctxFrom, ?base) :-
   SingletonDynamicHeapObject(?type, ?value),
   MethodInvocation_Base(?invocation, ?base),
   ImmutableHContextFromContext(?ctxFrom, ?hctx).
+
+#ifdef HEAPDL_DYNAMICVARPOINTSTO
+
+// Import DynamicVarPointsTo into VarPointsTo
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
+    DynamicContextToContext(?ctx, ?dctx),
+    DynamicVarPointsTo(?hctx, ?heap, ?dctx, ?var).
+
+#endif

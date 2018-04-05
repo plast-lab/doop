@@ -104,7 +104,7 @@ public class Main {
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
         //driver.doInParallel(classes);
-        driver.doSequentially(classes, walaFactWriter);
+        driver.doSequentially(classes, walaFactWriter, walaParameters._outputDir);
         db.flush();
         db.close();
 

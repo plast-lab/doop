@@ -21,7 +21,7 @@ NotSingletonDynamicHeapAllocation(?param4) :-
   _DynamicNormalHeapAllocation(_, _, ?param3, ?param44),
   ?param4 != ?param44.
 
-
+    
 // 0) try to map by representation
 .decl _MatchedHeapAllocation0(?representation:symbol, ?heap:HeapAllocation)
 
@@ -78,18 +78,16 @@ DynamicHeapAllocation(?representation, ?heap) :-
 // This is used to create fake allocations in a subsequent step.
 
 .decl UnmatchedDynamicNormalHeapAllocation(?type:Type, ?representation:symbol, ?linenumber:number, ?inMethod:Method)
-.output UnmatchedDynamicNormalHeapAllocation
 
-// 4) store dynamic heap allocations that still have not been mapped
+// 4) store dynamic heap allocations that still have not been mapped 
 UnmatchedDynamicNormalHeapAllocation(?type, ?representation, ?linenumber, ?inMethod) :-
   _DynamicNormalHeapAllocation(?linenumber, ?inMethod, ?type, ?representation),
   !_MatchedHeapAllocation0(?representation, _),
   !_MatchedHeapAllocation1(?representation, _),
   !_MatchedHeapAllocation2(?representation, _).
 
-
+   
 .decl UnmatchedStaticNormalHeapAllocation(?method:Method, ?lineNumber:number, ?type:Type)
-.output UnmatchedStaticNormalHeapAllocation
 
 // We also keep track of statically inferred heap allocations that do not match
 // with dynamic heap allocations for debugging.
@@ -114,7 +112,6 @@ DynamicReachableMethod(?method) :-
    isMethod(?method).
 
 .decl UnmatchedDynamicReachableMethod(?param:symbol)
-.output UnmatchedDynamicReachableMethod
 
 UnmatchedDynamicReachableMethod(?method) :-
    _DynamicReachableMethod(?method),
@@ -166,7 +163,7 @@ DynamicContextHeap2(?heap, ?ctx) :-
 
 isDynamicContext("<Immutable dctx>").
 
-
+               
 // TODO call site sensitivity
 
 // DynamicNormalHeapObject
@@ -255,3 +252,28 @@ DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
    isDynamicContext(?ctxFrom),
    isDynamicContext(?ctxTo),
    isMethod(?toMethod).
+
+#ifdef HEAPDL_DYNAMICVARPOINTSTO
+
+// Import DynamicVarPointsTo facts
+.decl _DynamicVarPointsTo(?hctx: symbol, ?heap: symbol, ?ctx: symbol, ?var: symbol)
+.input _DynamicVarPointsTo(IO="file", filename="DynamicVarPointsTo.facts", delimiter="\t")
+
+// DynamicVarPointsTo
+.decl DynamicVarPointsTo(?hctx: mainAnalysis.configuration.HContext, ?heap: HeapAllocation, ?ctx: DynamicContext, ?var: Var)
+
+// @parameter and @this vars
+DynamicVarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
+    mainAnalysis.isImmutableHContext(?hctx),
+    _DynamicVarPointsTo(_, ?heap, ?ctx, ?var),
+    isVar(?var).
+
+// local vars
+DynamicVarPointsTo(?hctx, ?heap, ?ctx, ?sootVar) :-
+    mainAnalysis.isImmutableHContext(?hctx),
+    _DynamicVarPointsTo(_, ?heap, ?ctx, ?dumpedVar),
+    DynamicReachableMethod(?meth),
+    Var_DeclaringMethod(?sootVar, ?meth),
+    contains(?dumpedVar, ?sootVar). // match soot var name with dumped var name
+
+#endif

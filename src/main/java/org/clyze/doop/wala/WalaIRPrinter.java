@@ -6,15 +6,13 @@ import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.classLoader.ShrikeClass;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
-import com.ibm.wala.ssa.IR;
-import com.ibm.wala.ssa.SSACFG;
-import com.ibm.wala.ssa.SSAInstruction;
-import com.ibm.wala.ssa.SymbolTable;
+import com.ibm.wala.ssa.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.Collection;
+import java.util.Iterator;
 
 public class WalaIRPrinter {
 
@@ -22,8 +20,9 @@ public class WalaIRPrinter {
     private IAnalysisCacheView _cache;
     private String _outputDir;
 
-    public WalaIRPrinter(IAnalysisCacheView cache)
+    public WalaIRPrinter(IAnalysisCacheView cache, String outputDir)
     {
+        _outputDir = outputDir;
         _rep = WalaRepresentation.getRepresentation();
         _cache = cache;
     }
@@ -32,7 +31,7 @@ public class WalaIRPrinter {
     {
 //        PrintWriter writerOut = new PrintWriter(new EscapedWriter(new OutputStreamWriter((OutputStream)streamOut)));
         ShrikeClass shrikeClass = (ShrikeClass) cl;
-        String fileName = "WalaFacts/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
+        String fileName = _outputDir + "/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
         File file = new File(fileName);
         file.getParentFile().getParentFile().mkdirs();
         file.getParentFile().mkdirs();
@@ -127,16 +126,36 @@ public class WalaIRPrinter {
         SSACFG cfg = ir.getControlFlowGraph();
         SymbolTable symbolTable = ir.getSymbolTable();
         for (int i = 0; i <=cfg.getMaxNumber(); i++) {
-            writer.write("\t\tBB "+ i + "\n");
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             int start = basicBlock.getFirstInstructionIndex();
             int end = basicBlock.getLastInstructionIndex();
+            writer.write("\t----BB "+ i +" | " + start +" -> " + end+"\n");
 
+            if(basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock)
+            {
+                writer.write("\t\tHandler"+ "\n");
+                if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() != null)
+                    writer.write("\t\t\t" + ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction().toString(symbolTable) + "\n");
+            }
+            Iterator<SSAPhiInstruction> phis = basicBlock.iteratePhis();
+            while(phis.hasNext())
+            {
+                SSAPhiInstruction phiInstruction = phis.next();
+                writer.write("\t\t"+"φ"+"\t" + phiInstruction.toString(symbolTable) + "\n");
+                //System.out.println(phiInstruction.toString(symbolTable));
+            }
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
-                    writer.write("\t\t\t" + instructions[j].toString(symbolTable) + "\n");
+                    writer.write("\t\t"+j+"\t" + instructions[j].toString(symbolTable) + "\n");
 
                 }
+            }
+            Iterator<SSAPiInstruction> pis = basicBlock.iteratePis();
+            while(pis.hasNext())
+            {
+                SSAPiInstruction piInstruction = pis.next();
+                writer.write("\t\t"+"π"+"\t" + piInstruction.toString(symbolTable) + "\n");
+                //System.out.println(piInstruction.toString(symbolTable));
             }
         }
     }

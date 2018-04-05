@@ -5,7 +5,6 @@
 
 .init preAnalysis = BasicContextSensitivity<ContextInsensitiveConfiguration>
 
-
 .comp IntrospectiveConfiguration : AbstractConfiguration {
            
 .type Context  = [ c1:mainAnalysis.Value, c2:mainAnalysis.Value ]
@@ -17,14 +16,16 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
   Method_DeclaringType(?tomethod, ?class),
   !ClassToRefine(?class),
+  !MethodToRefine(?tomethod),
   isImmutableContext(?calleeCtx).
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   Value_Type(?value, ?valuetype),
   basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
-  Method_DeclaringType(?tomethod, ?class),
-  ClassToRefine(?class),
+  (Method_DeclaringType(?tomethod, ?class),
+   ClassToRefine(?class);
+   MethodToRefine(?tomethod)),
   ?hctx = [?hctxValue],
   ?calleeCtx = [?hctxValue, ?value].
 
@@ -34,14 +35,16 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   MethodInvocation_Method(?invo, ?tomethod),
   Method_DeclaringType(?tomethod, ?class),
   !ClassToRefine(?class),
+  !MethodToRefine(?tomethod),
   isImmutableContext(?calleeCtx).
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   isSpecialMethodInvocation_Insn(?invo),
   MethodInvocation_Method(?invo, ?tomethod),
-  Method_DeclaringType(?tomethod, ?class),
-  ClassToRefine(?class),  
+  (Method_DeclaringType(?tomethod, ?class),
+   ClassToRefine(?class);
+   MethodToRefine(?tomethod)),  
   ?hctx = [?hctxValue],
   ?calleeCtx = [?hctxValue, ?value].
 
@@ -83,41 +86,57 @@ InitHContextResponse(?value, ?hctx) :-
          
 
 /** Utility rule: Value points to another value directly or indirectly **/
-.decl ValuePointsTo(?baseValue:Value, ?value:Value)
+// .decl ValuePointsTo(?baseValue:Value, ?value:Value)
 
-ValuePointsTo(?baseValue, ?value) :-
-  preAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?baseValue).
-
+// ValuePointsTo(?baseValue, ?value) :-
+//   preAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?baseValue).
 // ValuePointsTo(?baseValue, ?value) :-
 //   ValuePointsTo(?value1, ?value),
 //   preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue).
 
-.decl ArgPointsTo(?arg:Var, ?method:Method, ?value:Value)
+// .decl ArgPointsTo(?arg:Var, ?method:Method, ?value:Value)
 
-ArgPointsTo(?arg, ?method, ?value) :-
-  FormalParam(?index, ?method, ?arg),
-  preAnalysis.VarPointsTo(_, ?value, _, ?arg),
-  ?index != 0.           
+// ArgPointsTo(?arg, ?method, ?value) :-
+//   FormalParam(?index, ?method, ?arg),
+//   preAnalysis.VarPointsTo(_, ?value, _, ?arg),
+//   ?index != 0.
 
-.decl InOutFlowDirectValuePerClass(?inMethod:Method, ?outMethod:Method, ?class:Type, ?value:Value)
+.decl ThisPointsTo(?method:Method, ?value:Value)
+
+ThisPointsTo(?method, ?value) :-
+  ThisVar(?method, ?this),
+  preAnalysis.VarPointsTo(_, ?value, _, ?this).
+
+.decl ThisPointsToTwoValues(?method:Method)
+     
+ThisPointsToTwoValues(?method) :-
+  ThisPointsTo(?method, ?value1),
+  ThisPointsTo(?method, ?value2),
+  ?value1 != ?value2.
+
+.printsize ThisPointsToTwoValues
 
 /** Direct in out flow:
  *
  *   arg -> value
  *   ret -> value
  */
-InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?class, ?value) :-
-  ArgPointsTo(_, ?inMethod, ?value),    
-  basic.MethodsOfSameNonSDKType(?inMethod, ?outMethod, ?class),
-  ReturnVar(?return, ?outMethod),
-  preAnalysis.VarPointsTo(_, ?value, _, ?return).
 
-.decl InOutFlowDirectTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
+// .decl InOutFlowDirectValuePerClass(?inMethod:Method, ?outMethod:Method, ?class:Type, ?value:Value)
 
-InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
-  InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?class, ?value1),
-  InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?class, ?value2),
-  ?value1 != ?value2. 
+// InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?class, ?value) :-
+//   ThisPointsToTwoValues(?inMethod),
+//   ArgPointsTo(_, ?inMethod, ?value),    
+//   basic.MethodsOfSameNonSDKType(?inMethod, ?outMethod, ?class),
+//   ReturnVar(?return, ?outMethod),
+//   preAnalysis.VarPointsTo(_, ?value, _, ?return).
+
+// .decl InOutFlowDirectTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
+
+// InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
+//   InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?class, ?value1),
+//   InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?class, ?value2),
+//   ?value1 != ?value2. 
       
 /**
  * Wrapped in out flow:
@@ -125,22 +144,23 @@ InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
  * arg -> value
  * ret -> ... -> ... -> value
  */
-.decl InOutFlowWrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?class:Type, ?value:Value) 
+// .decl InOutFlowWrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?class:Type, ?value:Value) 
 
-InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value) :-
-  ArgPointsTo(_, ?inMethod, ?value),    
-  basic.MethodsOfSameNonSDKType(?inMethod, ?outMethod, ?class),
-  ReturnVar(?return, ?outMethod),
-  preAnalysis.VarPointsTo(_, ?baseValue, _, ?return),
-  ValuePointsTo(?baseValue, ?value),
-  ?value != ?baseValue.
+// InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value) :-
+//   ThisPointsToTwoValues(?inMethod),
+//   ArgPointsTo(_, ?inMethod, ?value),    
+//   basic.MethodsOfSameNonSDKType(?inMethod, ?outMethod, ?class),
+//   ReturnVar(?return, ?outMethod),
+//   preAnalysis.VarPointsTo(_, ?baseValue, _, ?return),
+//   ValuePointsTo(?baseValue, ?value),
+//   ?value != ?baseValue.
 
-.decl InOutFlowWrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
+// .decl InOutFlowWrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
 
-InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
-  InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value1),
-  InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value2),
-  ?value1 != ?value2.
+// InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
+//   InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value1),
+//   InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value2),
+//   ?value1 != ?value2.
 
 /**
  * Unwrapped in out flow:
@@ -148,22 +168,23 @@ InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
  * arg -> ... -> ... -> ... -> value
  * ret -> value
  */
-.decl InOutFlowUnwrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?class:Type, ?value:Value) 
+// .decl InOutFlowUnwrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?class:Type, ?value:Value) 
 
-InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value) :-
-  ArgPointsTo(_, ?inMethod, ?value),    
-  basic.MethodsOfSameNonSDKType(?inMethod, ?outMethod, ?class),
-  ReturnVar(?return, ?outMethod),
-  preAnalysis.VarPointsTo(_, ?value, _, ?return),
-  ValuePointsTo(?baseValue, ?value),
-  ?value != ?baseValue.
+// InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value) :-
+//   ThisPointsToTwoValues(?inMethod),
+//   ArgPointsTo(_, ?inMethod, ?value),    
+//   basic.MethodsOfSameNonSDKType(?inMethod, ?outMethod, ?class),
+//   ReturnVar(?return, ?outMethod),
+//   preAnalysis.VarPointsTo(_, ?value, _, ?return),
+//   ValuePointsTo(?baseValue, ?value),
+//   ?value != ?baseValue.
 
-.decl InOutFlowUnwrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
+// .decl InOutFlowUnwrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
 
-InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
-  InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value1),
-  InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value2),
-  ?value1 != ?value2.
+// InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
+//   InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value1),
+//   InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?class, ?value2),
+//   ?value1 != ?value2.
 
 /**
  * Any in out flow:
@@ -191,46 +212,73 @@ InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class) :-
 //   InOutFlowAnyValuePerClass(?inMethod, ?outMethod, ?class, ?value1),
 //   InOutFlowAnyValuePerClass(?inMethod, ?outMethod, ?class, ?value2),
 //   ?value1 != ?value2.
-.decl InOutFlowPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
+// .decl InOutFlowPerClass(?inMethod:Method, ?outMethod:Method, ?class:Type)
 
-InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
-  InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?class).
+// InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
+//   InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?class).
 
-InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
-  InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class).
+// InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
+//   InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class).
 
-InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
-  InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class).
-
+// InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
+//   InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod, ?class).
 
 // InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
 //   InOutFlowAnyTwoValuesPerClass(?inMethod, ?outMethod, ?class).
-.decl TestedMethod(?method:Method)
-
-TestedMethod(?method) :-
-  Method_DeclaringType(?method, ?class),    
-  !match("java.*", ?class),
-  !match("sun.*", ?class).
 
 .decl ClassToRefine(?class:Type)
-.decl ClassToNotRefine(?class:Type)
       
-ClassToRefine(?class) :-
-  InOutFlowPerClass(_, _, ?class).
+// ClassToRefine(?class) :-
+//   InOutFlowPerClass(_, _, ?class).
 
-ClassToRefine(?class) :-
-  isType(?class),
-  match("java\.util\..*", ?class).
+// ClassToRefine(?class) :-
+//   isType(?class),
+//   match("java\.util\..*", ?class).
 
-.input ClassToRefine(IO="file", filename="/home/anantoni/Development/doop-nexgen/ClassToRefine.facts")
+// .input ClassToRefine(IO="file", filename="/home/anantoni/Development/doop-nexgen/ClassToRefine.facts")
        
 .decl MethodToRefine(?method:Method)
 
-MethodToRefine(?method) :-      
-  (InOutFlowPerClass(?method, _, _);
-   InOutFlowPerClass(_, ?method, _)).
+// MethodToRefine(?method) :-      
+//   (InOutFlowPerClass(?method, _, _);
+//    InOutFlowPerClass(_, ?method, _)).
 
-.printsize TestedMethod
+.printsize isMethod      
 .printsize MethodToRefine
 
+
+/** Direct in out flow:
+ *
+ *   arg -> value
+ *   ret -> value
+ */
+// .decl OutFlowDirectValue(?outMethod:Method, ?value:Value)
+
+// OutFlowDirectValue(?outMethod, ?value) :-
+//   ThisPointsToTwoValues(?inMethod),
+//   ArgPointsTo(_, ?inMethod, ?value),    
+//   preAnalysis.Reachable(?outMethod),
+//   ReturnVar(?return, ?outMethod),
+//   preAnalysis.VarPointsTo(_, ?value, _, ?return).
+
+
+// .decl OutFlowDirectTwoValues(?outMethod:Method)
+      
+// OutFlowDirectTwoValues(?outMethod) :-
+//   OutFlowDirectValue(?outMethod, ?value1),
+//   OutFlowDirectValue(?outMethod, ?value2),
+//   ?value1 != ?value2.
+
+MethodToRefine(?method) :-      
+  ThisPointsToTwoValues(?method).
+
+MethodToRefine(?method) :-
+  preAnalysis.Reachable(?method),
+  Method_DeclaringType(?method, ?class),                          
+  match("java\.util\..*", ?class).                                                      
+
+.output MethodToRefine
+// MethodToRefine(?method) :-
+//   OutFlowDirectTwoValues(?method).            
+           
 }
