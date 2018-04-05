@@ -73,7 +73,7 @@ OUTPUT_STATS(Stats_Simple_ReachableApplicationMethod)
 OUTPUT_STATS(Stats_Simple_ApplicationConcreteMethod)
 
 .decl Stats_Simple_NonReachableApplicationConcreteMethod(?method:Method)
-OUTPUT_STATS(Stats_Simple_NonReachableApplicationConcreteMethod)
+OUTPUT_STATS_DEFAULT(Stats_Simple_NonReachableApplicationConcreteMethod)
 
 /***************************************************
  * Virtual method invocations

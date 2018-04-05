@@ -191,7 +191,7 @@ CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Class.n
 java_lang_Class_newInstance(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Object newInstance()>"),
   isClassType(?type).
-  
+
 CreateReflectiveAllocationMacro(?invocation, ?type, "<reflective dummy ClassLoader>"),
 java_lang_Class_getClassLoader(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.ClassLoader getClassLoader()>"),
@@ -402,6 +402,7 @@ ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) :-
 // parameters and handling return values, so we distinguish them from
 // native and normal call graph edges.
 .decl ReflectiveCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?callee:Method)
+.output ReflectiveCallGraphEdge
 
 .decl ReflectiveReachable(?m:Method)
 
@@ -761,7 +762,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   basic.SupertypeOf(?fieldtype, ?valuetype),
   isImmutableHContext(?hctx).
 #endif
- 
+
 /*************************************************************
  * END forward reflection logic
  *************************************************************/
@@ -967,7 +968,7 @@ SpecialMissingGetFieldsValue(?invocation, cat(cat("<special object for missing g
    java_lang_Class_getFields(?invocation, _, _)),
   ?type = "java.lang.reflect.Field",
   isType(?type).
-  
+
 SpecialValueConsMacro(cat(cat("<special object for missing get() values ", ?invocation), ">"), ?type),
 SpecialMissingGetValueFromGetFields(?invocation, cat(cat("<special object for missing get() values ", ?invocation), ">"))
 :-
