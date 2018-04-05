@@ -645,9 +645,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
     static List<File> resolveHeapDLInputs(List<String> filePaths) {
         List<File> ret = filePaths.collect { path -> new File(path) }
-        if (ret.any { File f -> !f.exists() }) {
-            throw new RuntimeException("HeapDL input does not exist: {f.canonicalPath}")
-        }
+        File f = ret.find { !it.exists() }
+        if (f)
+            throw new RuntimeException("HeapDL input does not exist: ${f.canonicalPath}")
         return ret
     }
 
