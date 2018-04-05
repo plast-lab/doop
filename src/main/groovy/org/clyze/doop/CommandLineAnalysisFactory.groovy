@@ -288,9 +288,13 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                 o.setArgs(Option.UNLIMITED_VALUES)
                 o.setArgName(option.argName)
                 return o
-            }
-            else if (option.id == "DYNAMIC") {
+            } else if (option.id == "DYNAMIC") {
                 Option o = new Option('d', option.name, true, option.description)
+                o.setArgs(Option.UNLIMITED_VALUES)
+                o.setArgName(option.argName)
+                return o
+            } else if (option.id == "HEAPDL") {
+                Option o = new Option(null, option.name, true, option.description)
                 o.setArgs(Option.UNLIMITED_VALUES)
                 o.setArgName(option.argName)
                 return o

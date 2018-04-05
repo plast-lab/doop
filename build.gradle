@@ -29,7 +29,7 @@ group = "org.clyze"
 mainClassName = "org.clyze.doop.Main"
 
 //def heapDLVersion = "master-SNAPSHOT"
-def heapDLVersion = "1.0.0"
+def heapDLVersion = "1.0.1"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 

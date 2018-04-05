@@ -103,9 +103,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         Map<String, AnalysisOption> options
         List<String> inputFilePaths
         List<String> libraryFilePaths
+        List<String> heapdlFilePaths
         List<String> platformFilePaths
         List<File>   inputFiles
         List<File>   libraryFiles
+        List<File>   heapdlFiles
         List<File>   platformFiles
 
         @Override
@@ -118,6 +120,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     platformFilePaths: platformFilePaths.toString(),
                     inputFiles:        inputFiles.toString(),
                     libraryFiles:      libraryFiles.toString(),
+                    heapdlFiles:       heapdlFiles.toString(),
                     platformFiles:     platformFiles.toString()
             ].toString()
         }
@@ -178,6 +181,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         cacheDir,
                         vars.inputFiles,
                         vars.libraryFiles,
+                        vars.heapdlFiles,
                         vars.platformFiles,
                         commandsEnv)
             } else {
@@ -190,6 +194,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         cacheDir,
                         vars.inputFiles,
                         vars.libraryFiles,
+                        vars.heapdlFiles,
                         vars.platformFiles,
                         commandsEnv)
             }
@@ -204,6 +209,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     cacheDir,
                     vars.inputFiles,
                     vars.libraryFiles,
+                    vars.heapdlFiles,
                     vars.platformFiles,
                     commandsEnv)
         }
@@ -275,6 +281,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         Collection<String> checksums = []
         checksums += vars.inputFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
         checksums += vars.libraryFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
+        checksums += vars.heapdlFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
         checksums += vars.platformFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
 
         if (vars.options.TAMIFLEX.value && vars.options.TAMIFLEX.value != "dummy")
@@ -410,26 +417,30 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         logger.debug "Processing analysis options"
 
-
         def inputFilePaths
         def libraryFilePaths
+        def heapdlFilePaths
         def platformFilePaths
         def inputFiles
         def libraryFiles
+        def heapdlFiles
         def platformFiles
 
         if (!options.X_START_AFTER_FACTS.value) {
             inputFilePaths = context.inputs()            
-            libraryFilePaths = context.libraries()            
+            libraryFilePaths = context.libraries()
+            heapdlFilePaths = options.HEAPDL.value ?: []
             platformFilePaths = platform(options)            
 
             logger.debug "Resolving inputs and libraries"
             context.resolve()
-            
+
             inputFiles = context.getAllInputs()
             logger.debug "Input file paths: $inputFilePaths -> $inputFiles"
             libraryFiles = context.getAllLibraries()
             logger.debug "Library file paths: $libraryFilePaths -> $libraryFiles"
+            heapdlFiles = resolveHeapDLInputs(heapdlFilePaths)
+            logger.debug "HeapDL file paths: $heapdlFilePaths -> $heapdlFiles"
             platformFiles = resolve(platformFilePaths, true)
             logger.debug "Platform file paths: $platformFilePaths -> $platformFiles"
         }
@@ -616,6 +627,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 platformFilePaths: platformFilePaths,
                 inputFiles:        inputFiles,
                 libraryFiles:      libraryFiles,
+                heapdlFiles:       heapdlFiles,
                 platformFiles:     platformFiles
         )
         logger.debug vars
@@ -629,6 +641,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         filePaths.each { f -> context.add(f, isLib) }
         context.resolve()
         return isLib? context.getAllLibraries() : context.getAllInputs()
+    }
+
+    static List<File> resolveHeapDLInputs(List<String> filePaths) {
+        List<File> ret = filePaths.collect { path -> new File(path) }
+        if (ret.any { File f -> !f.exists() }) {
+            throw new RuntimeException("HeapDL input does not exist: {f.canonicalPath}")
+        }
+        return ret
     }
 
     /**
