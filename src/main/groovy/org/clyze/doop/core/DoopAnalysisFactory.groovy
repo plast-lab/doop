@@ -441,7 +441,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             logger.debug "Input file paths: $inputFilePaths -> $inputFiles"
             libraryFiles = context.getAllLibraries()
             logger.debug "Library file paths: $libraryFilePaths -> $libraryFiles"
-            heapdlFiles = resolveHeapdlInputs(heapdlFilePaths)
+            heapdlFiles = context.getAllHprofs()
             logger.debug "HeapDL file paths: $heapdlFilePaths -> $heapdlFiles"
             platformFiles = resolve(platformFilePaths, InputType.LIBRARY)
             logger.debug "Platform file paths: $platformFilePaths -> $platformFiles"
