@@ -47,12 +47,14 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
             option.cli
         }
 
-        //Get the inputFiles of the analysis (short option: i)
-        //Get the libraryFiles of the analysis (short option: l)
+        // Get the inputFiles of the analysis (short option: i)
         List<String> inputs = (!options.X_START_AFTER_FACTS.value && cli.is) ? cli.is : []
+        // Get the libraryFiles of the analysis (short option: l)
         List<String> libraries = (!options.X_START_AFTER_FACTS.value && cli.ls) ? cli.ls : []
+        // Get the hprofFiles of the analysis (long option: heapdl)
+        List<String> hprofs = (!options.X_START_AFTER_FACTS.value && cli.heapdls) ? cli.heapdls : []
 
-        return newAnalysis(FAMILY, id, name, options, inputs, libraries)
+        return newAnalysis(FAMILY, id, name, options, inputs, libraries, hprofs)
     }
 
     /**
@@ -66,6 +68,8 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         //Get the inputFiles of the analysis. If there are no inputFiles in the CLI, we get them from the properties.
         List<String> inputs
         List<String> libraries
+        List<String> hprofs
+
         if (!cli.is) {
             inputs = props.getProperty("inputFiles").split().collect { String s -> s.trim() }
             // The inputFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
@@ -85,7 +89,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
         if (!cli.ls) {
             libraries = props.getProperty("libraryFiles").split().collect { String s -> s.trim() }
-            // The inputFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
+            // The libraryFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
             libraries = libraries.collect { String lib ->
                 try {
                     // If it is not a valid URL an exception is thrown
@@ -100,13 +104,30 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         else
             libraries = cli.ls
 
-        //Get the optional id of the analysis
+        if (!cli.heapdls) {
+            hprofs = props.getProperty("heapdlFiles").split().collect { String s -> s.trim() }
+            // The heapdlFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
+            hprofs = hprofs.collect { String hprof ->
+                try {
+                    // If it is not a valid URL an exception is thrown
+                    URL url = new URL(hprof)
+                    return hprof
+                }
+                catch (e) {}
+                File f = new File(hprof)
+                return f.isAbsolute() ? hprof : new File(propsBaseDir, hprof).getCanonicalFile().getAbsolutePath()
+            }
+        }
+        else
+            hprofs = cli.heapdls
+
+        // Get the optional id of the analysis.
         String id = cli.id ?: props.getProperty("id")
 
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithPropertiesAndCLI(props, cli) { AnalysisOption option ->
             option.cli
         }
-        return newAnalysis(FAMILY, id, name, options, inputs, libraries)
+        return newAnalysis(FAMILY, id, name, options, inputs, libraries, hprofs)
     }
 
     /**

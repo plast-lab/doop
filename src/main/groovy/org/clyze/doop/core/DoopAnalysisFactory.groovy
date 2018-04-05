@@ -10,6 +10,7 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.analysis.BooleanAnalysisOption
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
+import org.clyze.doop.input.InputType
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
 
@@ -222,10 +223,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      * the default input resolution mechanism.
      */
     @Override
-    DoopAnalysis newAnalysis(AnalysisFamily family, String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths, List<String> libraryFilePaths) {
+    DoopAnalysis newAnalysis(AnalysisFamily family, String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths, List<String> libraryFilePaths, List<String> hprofFilePaths) {
         DefaultInputResolutionContext context = new DefaultInputResolutionContext()
-        context.add(inputFilePaths, false)
-        context.add(libraryFilePaths, true)
+        context.add(inputFilePaths, InputType.INPUT)
+        context.add(libraryFilePaths, InputType.LIBRARY)
+        context.add(hprofFilePaths, InputType.HPROF)
         return newAnalysis(id, name, options, context)
     }
 
@@ -429,7 +431,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         if (!options.X_START_AFTER_FACTS.value) {
             inputFilePaths = context.inputs()            
             libraryFilePaths = context.libraries()
-            heapdlFilePaths = options.HEAPDL.value ?: []
+            heapdlFilePaths = context.hprofs()
             platformFilePaths = platform(options)            
 
             logger.debug "Resolving inputs and libraries"
@@ -439,9 +441,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             logger.debug "Input file paths: $inputFilePaths -> $inputFiles"
             libraryFiles = context.getAllLibraries()
             logger.debug "Library file paths: $libraryFilePaths -> $libraryFiles"
-            heapdlFiles = resolveHeapDLInputs(heapdlFilePaths)
+            heapdlFiles = resolveHeapdlInputs(heapdlFilePaths)
             logger.debug "HeapDL file paths: $heapdlFilePaths -> $heapdlFiles"
-            platformFiles = resolve(platformFilePaths, true)
+            platformFiles = resolve(platformFilePaths, InputType.LIBRARY)
             logger.debug "Platform file paths: $platformFilePaths -> $platformFiles"
         }
 
@@ -456,7 +458,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 }
 
                 if (!options.REFLECTION.value && !options.TAMIFLEX.value)
-                    options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")], false)[0]
+                    options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")], InputType.INPUT)[0]
 
                 def benchmark = FilenameUtils.getBaseName(inputJarName)
                 logger.info "Running " + (options.DACAPO.value ? "dacapo" : "dacapo-bach") + " benchmark: $benchmark"
@@ -636,14 +638,19 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         return vars
     }
 
-    static List<File> resolve(List<String> filePaths, boolean isLib) {
+    static List<File> resolve(List<String> filePaths, InputType inputType) {
         def context = new DefaultInputResolutionContext()
-        filePaths.each { f -> context.add(f, isLib) }
+        filePaths.each { f -> context.add(f, inputType) }
         context.resolve()
-        return isLib? context.getAllLibraries() : context.getAllInputs()
+        switch (inputType) {
+        case InputType.LIBRARY: return context.getAllLibraries()
+        case InputType.INPUT: return context.getAllInputs()
+        case InputType.HPROF: return context.getAllHprofs()
+        default: throw new RuntimeException("Unknown inputType to resolve: ${inputType}")
+        }
     }
 
-    static List<File> resolveHeapDLInputs(List<String> filePaths) {
+    static List<File> resolveHeapdlInputs(List<String> filePaths) {
         List<File> ret = filePaths.collect { path -> new File(path) }
         File f = ret.find { !it.exists() }
         if (f)

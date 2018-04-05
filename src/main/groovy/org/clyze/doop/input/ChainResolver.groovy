@@ -18,16 +18,17 @@ class ChainResolver implements InputResolver {
     }
 
     @Override
-    void resolve(String input, InputResolutionContext ctx, boolean isLib) {
+    void resolve(String input, InputResolutionContext ctx, InputType inputType) {
         for(InputResolver resolver : resolvers) {
             try {
                 logger.debug "Resolving input: $input via ${resolver.name()}"
-                resolver.resolve(input, ctx, isLib)
-                logger.debug "Resolved input $input -> ${ctx.get(input, isLib)}"
+                resolver.resolve(input, ctx, inputType)
+                logger.debug "Resolved input $input -> ${ctx.get(input, inputType)}"
                 return
             }
             catch(e) {
                 logger.debug e.getMessage()
+                e.printStackTrace()
                 //logger.warn Helper.stackTraceToString(e)
             }
         }
