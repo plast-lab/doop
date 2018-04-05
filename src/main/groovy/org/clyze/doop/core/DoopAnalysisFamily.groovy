@@ -229,7 +229,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "When no app regex is given, either compute an app regex for the first input ('first') or for all inputs ('all').",
 					value: null,
 					forCacheID: true,
-					webUI: true
+					webUI: false
 			),
 			new AnalysisOption<String>(
 					id: "PLATFORM",
