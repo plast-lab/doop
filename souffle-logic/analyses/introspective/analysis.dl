@@ -17,8 +17,9 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   Method_DeclaringType(?tomethod, ?class),
   !ClassToRefine(?class),
   !MethodToRefine(?tomethod),
-  isImmutableContext(?calleeCtx).
-
+  //isImmutableContext(?calleeCtx).
+  ?calleeCtx = ?callerCtx.
+  
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   Value_Type(?value, ?valuetype),
@@ -36,7 +37,8 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   Method_DeclaringType(?tomethod, ?class),
   !ClassToRefine(?class),
   !MethodToRefine(?tomethod),
-  isImmutableContext(?calleeCtx).
+  //isImmutableContext(?calleeCtx).
+  ?calleeCtx = ?callerCtx.
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
@@ -94,16 +96,17 @@ InitHContextResponse(?value, ?hctx) :-
 //   ValuePointsTo(?value1, ?value),
 //   preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue).
 
-// .decl ArgPointsTo(?arg:Var, ?method:Method, ?value:Value)
+.decl ArgPointsTo(?arg:Var, ?method:Method, ?value:Value)
 
-// ArgPointsTo(?arg, ?method, ?value) :-
-//   FormalParam(?index, ?method, ?arg),
-//   preAnalysis.VarPointsTo(_, ?value, _, ?arg),
-//   ?index != 0.
+ArgPointsTo(?arg, ?method, ?value) :-
+  FormalParam(?index, ?method, ?arg),
+  //?index != 0,
+  preAnalysis.VarPointsTo(_, ?value, _, ?arg).
 
 .decl ThisPointsTo(?method:Method, ?value:Value)
 
 ThisPointsTo(?method, ?value) :-
+  ?method != "<java.lang.Object: void <init>()>",
   ThisVar(?method, ?this),
   preAnalysis.VarPointsTo(_, ?value, _, ?this).
 
@@ -255,6 +258,7 @@ ThisPointsToTwoValues(?method) :-
 // .decl OutFlowDirectValue(?outMethod:Method, ?value:Value)
 
 // OutFlowDirectValue(?outMethod, ?value) :-
+//   basic.MethodsOfSameType(?inMethod, ?outMethod, _),      
 //   ThisPointsToTwoValues(?inMethod),
 //   ArgPointsTo(_, ?inMethod, ?value),    
 //   preAnalysis.Reachable(?outMethod),
@@ -277,8 +281,8 @@ MethodToRefine(?method) :-
   Method_DeclaringType(?method, ?class),                          
   match("java\.util\..*", ?class).                                                      
 
-.output MethodToRefine
+// .output MethodToRefine
 // MethodToRefine(?method) :-
-//   OutFlowDirectTwoValues(?method).            
+//    OutFlowDirectTwoValues(?method).            
            
 }
