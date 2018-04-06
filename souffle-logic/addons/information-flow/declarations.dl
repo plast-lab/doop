@@ -18,7 +18,6 @@
 .decl VarUse(?var:Var, ?inst:Instruction)
 
 .decl SanitizationMethod(?method:Method)
-.decl SanitizedValue(?value:mainAnalysis.Value)
 
 .decl TaintedValue(?value:mainAnalysis.Value)
 .decl CallTaintingMethod(?label:InformationLabel, ?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation)
