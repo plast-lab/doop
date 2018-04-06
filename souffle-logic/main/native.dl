@@ -316,11 +316,6 @@ HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
   !Value_Null(?basevalue).
   .plan 1:(2,1)
 
-.output LoadFromReference
-.output LoadFromReferenceArgs
-.output StoreIntoWeakReference
-.output StoreIntoWeakReferenceArgs
-
 
 #ifdef SIMULATE_NATIVE_RETURNS
 // Crude heuristic: assume that every native method that returns a
