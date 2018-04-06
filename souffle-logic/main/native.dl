@@ -303,7 +303,7 @@ StoreIntoWeakReference(?basehctx, ?basevalue, ?ctx, ?from) :-
 LoadFromReferenceArgs(?base, ?to) :-
   ?refGet = "<java.lang.ref.Reference: java.lang.Object getReferent()>",
   MethodInvocation_Method(?invo, ?refGet),
-  VirtualMethodInvocation_Base(?invo, ?base),
+  OptSpecialMethodInvocationBase(?invo, ?base),
   AssignReturnValue(?invo, ?to).
 
 LoadFromReference(?ctx, ?to, ?basehctx, ?basevalue) :-
