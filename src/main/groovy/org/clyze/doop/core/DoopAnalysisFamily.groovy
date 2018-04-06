@@ -174,7 +174,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					forPreprocessor: true
 			),
-			new AnalysisOption<Boolean>(
+			new BooleanAnalysisOption(
 					id: "UNIQUE_FACTS",
 					name: "unique-facts",
 					description: "Eliminate redundancy from .facts files.",
@@ -721,13 +721,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Run the must-alias analysis.",
 					cli: false
 			),
-			new AnalysisOption<Boolean>(
+			new BooleanAnalysisOption(
 					id: "MUST_AFTER_MAY",
 					value: false,
 					cli: false,
 					forPreprocessor: true
 			),
-			new AnalysisOption<Boolean>(
+			new BooleanAnalysisOption(
 					id: "TRANSFORM_INPUT",
 					name: "transform-input",
 					description: "Transform input by removing redundant instructions.",
@@ -744,12 +744,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: [],
 					cli: false
 			),
-			new AnalysisOption<Boolean>(
+			new BooleanAnalysisOption(
 					id: "REFINE",
 					value: false,
 					cli: false
 			),
-			new AnalysisOption<Boolean>(
+			new BooleanAnalysisOption(
 					id: "RUN_AVERROES",
 					name: "run-averroes",
 					description: "Run averroes to create a placeholder library.",
