@@ -745,8 +745,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isFile: true,
 					description: "One or more files with tab-separated data for Config:DynamicClass. Separate multiple files with a space.",
 					value: [],
-					multipleValues: true,
-					cli: false
+					multipleValues: true
 			),
 			new BooleanAnalysisOption(
 					id: "REFINE",

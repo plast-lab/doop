@@ -79,6 +79,7 @@ ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
    PreClassNameMatchingStringConstantExact_Type(?type, ?constantHeap)).
 
 
+#ifdef DYNAMIC
 /**
  * Class.forName invocations with user-configured dynamic classes
  */
@@ -87,6 +88,7 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
   java_lang_Class_forName(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   Config_DynamicClass(?type, ?invocation).
+#endif // DYNAMIC
 
 
 /*************************************************************

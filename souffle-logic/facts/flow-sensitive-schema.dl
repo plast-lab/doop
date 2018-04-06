@@ -459,8 +459,10 @@
 // Return variables of native methods (no instructions exist)
 .decl NativeReturnVar(?var:Var, ?method:Method)
 
+#ifdef DYNAMIC
 // Types potentially returned by a specific Class.forName invocation
 .decl Config_DynamicClass(?class:ReferenceType, ?invocation:MethodInvocation)
+#endif // DYNAMIC
 
 #ifndef X_STATS_NONE
 // Predicate to store analysis statistics
