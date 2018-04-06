@@ -316,7 +316,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                 o.setArgName(option.argName)
                 return o
             } else if (option.argName) {
-                // Option accepts a String value.
+                // Option accepts a value (such as a String or an Integer).
                 Option o = new Option(null, option.name, true, desc(option))
                 o.setArgName(option.argName)
                 return o
