@@ -130,10 +130,6 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         return newAnalysis(FAMILY, id, name, options, inputs, libraries, hprofs)
     }
 
-    /**
-     * Creates the cli args from the respective analysis options (the ones with their cli property set to true).
-     * This method provides special handling for the DYNAMIC option, in order to support multiple values for it.
-     */
     static CliBuilder createCliBuilder(boolean includeNonStandard) {
 
         List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { AnalysisOption option ->
@@ -293,6 +289,12 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         option.validValues ? "$option.description Valid values: ${option.validValues.join(", ")}" : option.description
     }
 
+    /**
+     * Creates the cli args from the respective analysis options (the
+     * ones with their cli property set to true). This method
+     * provides special handling for some options (such as INPUTS), in
+     * order to support multiple values for them.
+     */
     static List<Option> convertAnalysisOptionsToCliOptions(List<AnalysisOption> options) {
         options.collect { AnalysisOption option ->
             if (option.id == "ANALYSIS") {
