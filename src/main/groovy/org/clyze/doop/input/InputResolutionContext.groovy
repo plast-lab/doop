@@ -66,7 +66,7 @@ interface InputResolutionContext {
     List<String> libraries()
 
     /**
-     * Returns all the hprofFiles of this context.
+     * Returns all the heapFiles of this context.
      */
     List<String> hprofs()
 
