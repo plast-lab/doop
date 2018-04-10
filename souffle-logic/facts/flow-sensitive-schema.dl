@@ -383,6 +383,7 @@
 .decl MethodInvocation_Method(?invocation:MethodInvocation, ?signature:Method)
 
 .decl ApplicationMethod(?method:Method)
+.output ApplicationMethod
 
 // The (call-site) variable that holds the result of the invocation
 .decl AssignReturnValue(?invocation:MethodInvocation, ?to:Var)

@@ -3,7 +3,7 @@
  ***************************************************/
 
 .decl Stats_Simple_InsensVarPointsTo(?value:mainAnalysis.Value, ?var:Var)
-OUTPUT_STATS(Stats_Simple_InsensVarPointsTo)
+OUTPUT_STATS_DEFAULT(Stats_Simple_InsensVarPointsTo)
 
 .decl Stats_Simple_AssignedVariable(?var:Var)
 OUTPUT_STATS(Stats_Simple_AssignedVariable)
