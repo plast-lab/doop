@@ -1,5 +1,7 @@
 package org.clyze.doop.input
 
+import org.clyze.analysis.InputType
+
 /**
  * The input resolution mechanism.
  * Resolves inputFiles (given as strings) to a set of files.

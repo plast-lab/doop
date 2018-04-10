@@ -3,6 +3,8 @@ package org.clyze.doop.input
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
+import org.clyze.analysis.InputType
+
 /**
  * The default implementation of the input resolution mechanism.
  */
