@@ -130,10 +130,6 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         return newAnalysis(FAMILY, id, name, options, inputs, libraries, hprofs)
     }
 
-    /**
-     * Creates the cli args from the respective analysis options (the ones with their cli property set to true).
-     * This method provides special handling for the DYNAMIC option, in order to support multiple values for it.
-     */
     static CliBuilder createCliBuilder(boolean includeNonStandard) {
 
         List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { AnalysisOption option ->
@@ -293,39 +289,39 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         option.validValues ? "$option.description Valid values: ${option.validValues.join(", ")}" : option.description
     }
 
+    /**
+     * Creates the cli args from the respective analysis options (the
+     * ones with their cli property set to true). This method
+     * provides special handling for some options (such as INPUTS), in
+     * order to support multiple values for them.
+     */
     static List<Option> convertAnalysisOptionsToCliOptions(List<AnalysisOption> options) {
+        List multiArgOptions = [ [ "id" : "INPUTS"   , "opt" : 'i'  ],
+                                 [ "id" : "LIBRARIES", "opt" : 'l'  ],
+                                 [ "id" : "DYNAMIC"  , "opt" : 'd'  ],
+                                 [ "id" : "HEAPDL"   , "opt" : null ] ]
         options.collect { AnalysisOption option ->
-            if (option.id == "ANALYSIS") {
+            if (option.multipleValues) {
+                def mOpt = multiArgOptions.find { it.id == option.id }
+                if (mOpt) {
+                    Option o = new Option(mOpt.opt, option.name, true, option.description)
+                    o.setArgs(Option.UNLIMITED_VALUES)
+                    o.setArgName(option.argName)
+                    return o
+                } else {
+                    throw new RuntimeException("Missing handling of multiple-value option ${option.id}")
+                }
+            } else if (option.id == "ANALYSIS") {
                 Option o = new Option('a', option.name, true, desc(option))
                 o.setArgName(option.argName)
                 return o
-            } else if (option.id == "INPUTS") {
-                Option o = new Option('i', option.name, true, option.description)
-                o.setArgs(Option.UNLIMITED_VALUES)
-                o.setArgName(option.argName)
-                return o
-            } else if (option.id == "LIBRARIES") {
-                Option o = new Option('l', option.name, true, option.description)
-                o.setArgs(Option.UNLIMITED_VALUES)
-                o.setArgName(option.argName)
-                return o
-            } else if (option.id == "DYNAMIC") {
-                Option o = new Option('d', option.name, true, option.description)
-                o.setArgs(Option.UNLIMITED_VALUES)
-                o.setArgName(option.argName)
-                return o
-            } else if (option.id == "HEAPDL") {
-                Option o = new Option(null, option.name, true, option.description)
-                o.setArgs(Option.UNLIMITED_VALUES)
-                o.setArgName(option.argName)
-                return o
             } else if (option.argName) {
-                //Option accepts a String value
+                // Option accepts a value (such as a String or an Integer).
                 Option o = new Option(null, option.name, true, desc(option))
                 o.setArgName(option.argName)
                 return o
             } else {
-                //Option is a boolean
+                // Option is a boolean.
                 return new Option(null, option.name, false, option.description)
             }
         }

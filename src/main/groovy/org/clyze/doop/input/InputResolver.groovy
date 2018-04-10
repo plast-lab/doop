@@ -1,5 +1,7 @@
 package org.clyze.doop.input
 
+import org.clyze.analysis.InputType
+
 /**
  * A resolver for inputs.
  */

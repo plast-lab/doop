@@ -340,14 +340,21 @@ class ClassicAnalysis extends DoopAnalysis {
                     .elapsedTime()
         }
 
-        if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
-            cpp.preprocess("${outDir}/server.logic", "${Doop.addonsPath}/server-logic/queries.logic")
+        if (options.X_SERVER_LOGIC.value) {
+            if (!options.X_STOP_AT_FACTS.value) {
+                // Show a warning as recent changes may break old scripts
+                // (e.g. removing LOGICBLOX_HOME as a deployment property).
+                logger.warn "WARNING: LB server logic is deprecated"
+                cpp.preprocess("${outDir}/server.logic", "${Doop.addonsPath}/server-logic/queries.logic")
 
-            lbBuilder
-                    .timedTransaction("-- Server Logic --")
-                    .addBlockFile("server.logic")
-                    .commit()
-                    .elapsedTime()
+                lbBuilder
+                .timedTransaction("-- Server Logic --")
+                .addBlockFile("server.logic")
+                .commit()
+                .elapsedTime()
+            } else {
+                logger.warn "WARNING: LB server logic is ignored when using --${options.X_STOP_AT_FACTS.name}"
+            }
         }
     }
 

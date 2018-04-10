@@ -8,9 +8,9 @@ import org.clyze.analysis.AnalysisFactory
 import org.clyze.analysis.AnalysisFamily
 import org.clyze.analysis.AnalysisOption
 import org.clyze.analysis.BooleanAnalysisOption
+import org.clyze.analysis.InputType
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.input.InputType
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
 

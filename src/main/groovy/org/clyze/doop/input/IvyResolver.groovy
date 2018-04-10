@@ -10,6 +10,9 @@ import org.apache.ivy.core.report.ResolveReport
 import org.apache.ivy.core.resolve.ResolveOptions
 import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorWriter
 import org.apache.ivy.util.filter.FilterHelper
+
+import org.clyze.analysis.InputType
+
 /**
  * Resolves the input as an Apache Ivy module descriptor that is downloaded using the default ivy settings.
  */

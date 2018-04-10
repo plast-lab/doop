@@ -22,8 +22,6 @@ VarUse(?var, ?inst) -> Instruction(?inst), Var(?var).
 
 SanitizationMethod(?method) -> Method(?method).
 
-SanitizedValue(?value) -> Value(?value).
-
 TaintedValue(?value) -> Value(?value).
 
 ParamToRetTaintTransferMethod(?method) -> Method(?method).

@@ -1,5 +1,6 @@
 package org.clyze.doop.input
 
+import org.clyze.analysis.InputType
 import org.clyze.utils.FileOps
 
 /**
