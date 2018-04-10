@@ -39,8 +39,8 @@ Server_Class_Keep(?type) :-
 #ifdef REFLECTION
 // Reified types used
 Server_Class_Keep(?type) :-
-  mainAnalysis.VarPointsTo(_, ?value, _, _),
-  mainAnalysis.ReifiedClass(?type, ?value).
+  mainAnalysis.ReifiedClass(?type, ?value),
+  mainAnalysis.VarPointsTo(_, ?value, _, _).
 #endif
 
 #ifdef REFLECTION_DYNAMIC_PROXIES
@@ -142,27 +142,39 @@ Server_SField_Values(?fld, "<<XL-pt-set>>") :-
 
 .decl _VPT(?var:Var, ?value:mainAnalysis.Value)
 .decl _VPT_Count(?var:Var, ?n:number)
+.decl _InterestingVar(?var:Var)
 
 _VPT(?var, ?value) :-
   mainAnalysis.VarPointsTo(_, ?value, _, ?var).
 
+_InterestingVar(?var) :-
+  _VPT(?var, _).
+
 _VPT_Count(?var, ?n) :-
-  _VPT(?var, _),
+  _InterestingVar(?var),
   ?n = count:{_VPT(?var, _)}.
+
+.decl _VarUnderThreshold(?var:Var)
+_VarUnderThreshold(?var) :-
+  _VPT_Count(?var, ?count),
+  ?count <= X_SERVER_LOGIC_THRESHOLD.
+
+.decl _VarDeclaringClass(?var:Var, ?class:Type)
+_VarDeclaringClass(?var, ?class) :-
+  _InterestingVar(?var),
+  Var_DeclaringMethod(?var, ?method),
+  Method_DeclaringType(?method, ?class).
 
 Server_Var_Values(?class, ?var, ?value) :-
   _VPT(?var, ?value),
-  _VPT_Count(?var, ?count),
-  ?count <= X_SERVER_LOGIC_THRESHOLD,
-  mainAnalysis.isValue(?value),
-  Var_DeclaringMethod(?var, ?method),
-  Method_DeclaringType(?method, ?class).
+  _VarUnderThreshold(?var),
+//  mainAnalysis.isValue(?value),
+  _VarDeclaringClass(?var, ?class).
 
 Server_Var_Values(?class, ?var, "<<XL-pt-set>>") :-
-  _VPT_Count(?var, ?count),
-  ?count > X_SERVER_LOGIC_THRESHOLD,
-  Var_DeclaringMethod(?var, ?method),
-  Method_DeclaringType(?method, ?class).
+  _InterestingVar(?var),
+  !_VarUnderThreshold(?var),
+  _VarDeclaringClass(?var, ?class).
 
 Server_Var_Return(?var, ?method) :-
   ReturnVar(?var, ?method) ;
