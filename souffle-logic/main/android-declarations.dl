@@ -1,3 +1,4 @@
+.decl AndroidOriginalAppComponent(?type:symbol)
 .decl AndroidAppComponent(?type:symbol)
 .decl ReifiedComponent(?type:Type, ?value:Value)
 .decl ReifiedLayoutControl(?type:Type, ?id:NumConstant, ?value:Value)
@@ -12,7 +13,7 @@
 .decl MethodDeclaredOrInherited(?meth:Method, ?class:ClassType)
 .decl PublicMethodOfComponent(?meth:Method)
 .decl ProtectedMethodOfComponent(?meth:Method)
-.decl AppMethodOverridesAndroidLibraryMethod(?meth:Method)
+.decl AppMethodOverridesAndroidLibraryMethod(?meth:Method, ?concreteMeth:Method)
 .decl OverridingProtectedMethodOfComponent(?meth:Method)
 .decl ForcedReachableAndroidContext(?ctx:configuration.Context, ?meth:Method)
 .decl PublicOnMethodOfLayoutControl(?meth:Method)

@@ -16,7 +16,7 @@
 //     links to other controls? Call constructors with some arguments,
 //     perhaps?)
 //   * Every layout control instantiated (in any way) has its public
-//     methods whose name starts with "on" be reachable (REVIEW: with
+//     methods whose names start with "on" be reachable (REVIEW: with
 //     what arguments?)
 //   * Refinement: certainly we need a mock LayoutInflater object passed
 //     to a fragment's "onCreateView", to allow calling "inflate" on it.
@@ -28,142 +28,65 @@
 //  interface with "Callback" or "Listener" in its name
 //   * Every instantiated listener or callback object (opt.: that flows
 //     to a library method that accepts a listener interface) has its
-//     public methods whose name starts with "on" be reachable (REVIEW:
+//     public methods whose names start with "on" be reachable (REVIEW:
 //     with what arguments?)
 **/
 
-AndroidAppComponent(?type) :-
+/**
+ * App Components, in layout resources or dynamically registered
+**/
+
+AndroidOriginalAppComponent(?type) :-
   Activity(?type);
   Service(?type);
   BroadcastReceiver(?type);
   ContentProvider(?type);
   AndroidApplication(?type).
 
+AndroidAppComponent(?type) :-
+  AndroidOriginalAppComponent(?type).
+
 .decl RegisterBroadCastReceiverVar(?var:Var)
-
 RegisterBroadCastReceiverVar(?var) :-
-   Method_SimpleName(?method, "registerReceiver"),
-   MethodInvocation_Method(?invocation, ?method),
-   ActualParam(0, ?invocation, ?var),
-   ApplicationVar(?var),
-   Var_Type(?var, ?type),
-   basic.SupertypeOf("android.content.BroadcastReceiver", ?type).
+  Method_SimpleName(?method, "registerReceiver"),
+  MethodInvocation_Method(?invocation, ?method),
+  ActualParam(0, ?invocation, ?var),
+  ApplicationVar(?var),
+  Var_Type(?var, ?type),
+  basic.SupertypeOf("android.content.BroadcastReceiver", ?type).
 
-.decl ExtraAndroidAppComponent(?type:Type)
-
-ExtraAndroidAppComponent(?type),
+AndroidAppComponent(?type),
 ReifiedAndroidObjectValue(?value, ?type) :-
-   RegisterBroadCastReceiverVar(?var),
-   VarPointsTo(_, ?value, _, ?var),
-   Value_Type(?value, ?type),
-   !AndroidAppComponent(?type).
+  RegisterBroadCastReceiverVar(?var),
+  VarPointsTo(_, ?value, _, ?var),
+  Value_Type(?value, ?type),
+  !AndroidOriginalAppComponent(?type).
 
 // Create a new heap object per component declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
 MockValueConsMacro(cat("<android component object ", cat(?type, ">")), ?type),
 ReifiedComponent(?type, cat("<android component object ", cat(?type, ">"))) :-
-  AndroidAppComponent(?type),
+  AndroidOriginalAppComponent(?type),
   isType(?type).
 
-// Create a new heap object per control object declared in layout
-// (XML) resources. (REVIEW) These are normal heap objects.
-MockValueConsMacro(cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">")))), ?type),
-ReifiedLayoutControl(?type, ?id, cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">"))))) :-
-  LayoutControl(?id, ?type, _),
-  isType(?type).
-
-SensitiveLayoutControlValue(?value) :-
-  ReifiedLayoutControl(?type, ?id, ?value),
-  SensitiveLayoutControl(?id, ?type, _).
-
-// Also instantiate implicitly some library objects
-ImplicitlyInstantiatedLibraryType(?type) :-
-  (?type = "android.content.Intent";
-   ?type = "android.os.Bundle"),
-  isType(?type).
-
-MockValueConsMacro(cat("<android library object ", cat(?type, ">")), ?type),
-ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
-  ImplicitlyInstantiatedLibraryType(?type),
-  isType(?type).
-
-
-// Main logic
-AndroidLibraryType(?type) :-
-  isType(?type),
-  match("android.*", ?type).
-
-// REVIEW: is this needed? android.support classes are included in the
-// application for compatibility with older Android versions. We
-// currently consider them library, not app.
-AndroidApplicationClass(?class) :-
-  ApplicationClass(?class),
-  !AndroidLibraryType(?class).
-
-
-AndroidViewType(?type) :-
-  basic.SubtypeOf(?type, ?supertype),
-  (?supertype = "android.view.View",
-   isType(?supertype);
-   ?supertype = "android.view.ViewGroup",
-   isType(?supertype)).
-
-AndroidLibraryListenerType(?type) :-
-  AndroidLibraryType(?type),
-  isType(?type),
-  (contains("Listener", ?type);
-   contains("Callback", ?type);
-   AndroidAppComponent(?type)).
-  // REVIEW: enhanced to consider all app components to be listener types!
-  // They all have "on*" methods. The case we needed it was for IntentService
-  // subclasses. Needed for soundness currently, but does it destroy precision?
-
-ListenerType(?type) :-
-  AndroidLibraryListenerType(?listenerType),
-  basic.SubtypeOf(?type, ?listenerType).
-
-AndroidApplicationListenerClass(?class) :-
-  AndroidApplicationClass(?class),
-  ListenerType(?class).
-
-MethodDeclaredOrInherited(?meth, ?class) :-
-  isClassType(?class),
-  Method_DeclaringType(?meth, ?class).
-
-// This keeps the superclass signature of the method. Does not guarantee
-// there is a concrete implementation until we do "MethodLookup".
-MethodDeclaredOrInherited(?meth, ?class) :-
-  MethodDeclaredOrInherited(?meth, ?superClass),
-  DirectSuperclass(?class, ?superClass).
+ReifiedAndroidObjectValue(?value, ?type) :-
+  ReifiedComponent(?type, ?value).
 
 PublicMethodOfComponent(?meth) :-
-  (AndroidAppComponent(?type); ExtraAndroidAppComponent(?type)),
+  AndroidAppComponent(?type),
   MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("public", ?meth).
 
 ProtectedMethodOfComponent(?meth) :-
-  (AndroidAppComponent(?type); ExtraAndroidAppComponent(?type)),
+  AndroidAppComponent(?type),
   MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("protected", ?meth).
 
-.decl AppClassSubtypesLibClass(?type:Type, ?libType:Type)
-AppClassSubtypesLibClass(?type, ?libraryType) :-
-  AndroidApplicationClass(?type),
-  basic.SupertypeOf(?libraryType, ?type),
-  AndroidLibraryType(?libraryType).
-
-AppMethodOverridesAndroidLibraryMethod(?methConcrete) :-
-  AppClassSubtypesLibClass(?type, ?libraryType),
-  MethodDeclaredOrInherited(?meth, ?libraryType),
-  Method_SimpleName(?meth, ?simplename),
-  Method_Descriptor(?meth, ?descriptor),
-  basic.MethodLookup(?simplename, ?descriptor, ?type, ?methConcrete).
-
 // The protected method overrides one in a library type, hence it's
 // callable from the library.
-OverridingProtectedMethodOfComponent(?meth) :-
+OverridingProtectedMethodOfComponent(?methConcrete) :-
   ProtectedMethodOfComponent(?meth),
-  AppMethodOverridesAndroidLibraryMethod(?meth).
+  AppMethodOverridesAndroidLibraryMethod(?meth, ?methConcrete).
 
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
@@ -172,8 +95,26 @@ ReachableContext(?ctx, ?meth) :-
    CallbackMethod(?meth)),
   isImmutableContext(?ctx).
 
-// Handle library-callable "on*" methods of layout controls
 
+/**
+ * Layout control objects
+**/
+
+// Create a new heap object per control object declared in layout
+// (XML) resources. (REVIEW) These are normal heap objects.
+MockValueConsMacro(cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">")))), ?type),
+ReifiedLayoutControl(?type, ?id, cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">"))))) :-
+  LayoutControl(?id, ?type, _),
+  isType(?type).
+
+ReifiedAndroidObjectValue(?value, ?type) :-
+  ReifiedLayoutControl(?type, _, ?value).
+
+SensitiveLayoutControlValue(?value) :-
+  ReifiedLayoutControl(?type, ?id, ?value),
+  SensitiveLayoutControl(?id, ?type, _).
+
+// Handle library-callable "on*" methods of layout controls
 
 PublicOnMethodOfLayoutControl(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
@@ -189,9 +130,9 @@ ProtectedOnMethodOfLayoutControl(?meth) :-
   match("on.*", ?simplename),
   Method_Modifier("protected", ?meth).
 
-OverridingProtectedOnMethodOfLayoutControl(?meth) :-
+OverridingProtectedOnMethodOfLayoutControl(?methConcrete) :-
   ProtectedOnMethodOfLayoutControl(?meth),
-  AppMethodOverridesAndroidLibraryMethod(?meth).
+  AppMethodOverridesAndroidLibraryMethod(?meth, ?methConcrete).
 
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
@@ -200,19 +141,97 @@ ReachableContext(?ctx, ?meth) :-
   isImmutableContext(?ctx).
 
 
-// Handle library-callable "on*" methods of listeners/callbacks
-// REVIEW: this is currently liberal. It checks that the app class
-// subtypes a library listener and that it has an "on*" method,
-// but that doesn't mean that method overrides one of the listener.
+/**
+ * Intents and Bundles
+**/
+
+// No implicit reachability for methods, just instantiate mock objects to be
+// used as arguments elsewhere.
+ImplicitlyInstantiatedLibraryType(?type) :-
+  (?type = "android.content.Intent";
+   ?type = "android.os.Bundle"),
+  isType(?type).
+
+MockValueConsMacro(cat("<android library object ", cat(?type, ">")), ?type),
+ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
+  ImplicitlyInstantiatedLibraryType(?type),
+  isType(?type).
+
+ReifiedAndroidObjectValue(?value, ?type) :-
+  ReifiedLibraryObject(?type, ?value).
 
 
-// ... all analysis-reachable application objects
-ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) :-
-  ApplicationClass(?ofType),
-  Value_Type(?value, ?ofType),
-  VarPointsTo(?hctx, ?value, _, _).
+/**
+ * View objects
+**/
 
-// Be liberal: if an object is a listener, and it is instantiated
+AndroidViewType(?type) :-
+  basic.SubtypeOf(?type, ?supertype),
+  (?supertype = "android.view.View";
+   ?supertype = "android.view.ViewGroup").
+
+// anantoni: Make the getters and setters of classes extending View reachable
+//// REVIEW: this seems pretty liberal
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+  Method_SimpleName(?meth, ?simplename),
+  (match("set.*", ?simplename);
+   match("get.*", ?simplename)),
+  ConcreteMethodDeclared(?meth, ?viewType),
+  AndroidViewType(?viewType),
+  isImmutableContext(?ctx).
+
+// REVIEW: should we force the instantiation of some mock View objects?
+// Otherwise we are just relying on the ones already created. Why the difference
+// in the handling of View objects and listeners?
+
+
+/**
+ * Listeners and callbacks
+**/
+
+AndroidLibraryListenerType(?type) :-
+  AndroidLibraryType(?type),
+  (contains("Listener", ?type);
+   contains("Callback", ?type)).
+
+ListenerType(?type) :-
+  AndroidLibraryListenerType(?listenerType),
+  basic.SubtypeOf(?type, ?listenerType).
+
+AndroidApplicationListenerClass(?class) :-
+  AndroidApplicationClass(?class),
+  ListenerType(?class).
+
+PublicOnMethodOfReachableListener(?meth) :-
+  MethodDeclaredOrInherited(?meth, ?class),
+  LibraryReachableAppListenerType(?class),
+  Method_SimpleName(?meth, ?simplename),
+  match("on.*", ?simplename),
+  Method_Modifier("public", ?meth).
+
+ProtectedOnMethodOfReachableListener(?meth) :-
+  MethodDeclaredOrInherited(?meth, ?class),
+  LibraryReachableAppListenerType(?class),
+  Method_SimpleName(?meth, ?simplename),
+  match("on.*", ?simplename),
+  Method_Modifier("protected", ?meth).
+
+OverridingProtectedOnMethodOfReachableListener(?methConcrete) :-
+  ProtectedOnMethodOfReachableListener(?meth),
+  AppMethodOverridesAndroidLibraryMethod(?meth, ?methConcrete).
+
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+  (PublicOnMethodOfReachableListener(?meth);
+   OverridingProtectedOnMethodOfReachableListener(?meth)),
+  isImmutableContext(?ctx).
+
+//// Note that all of the above (unlike earlier logic for views, components,
+//// layout controls) is not applied indiscriminately, but only to "LibraryReachable"
+//// listener types. These are defined below.
+
+// REVIEW: be liberal: if an object is a listener, and it is instantiated
 // in the application, then consider it to flow to the library.
 ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
 LibraryReachableAppListenerType(?ofType) :-
@@ -220,7 +239,7 @@ LibraryReachableAppListenerType(?ofType) :-
   AndroidApplicationListenerClass(?ofType).
 
 // Same if the class constant object of a listener is instantiated
-// in the application, explicitly (via <className>.class).
+// somewhere, explicitly (via <className>.class).
 // REVIEW: for extra soundness, we can consider all ReifiedClass objects.
 //  But this will probably destroy precision.
 .decl ListenerClassConstantValue(?classHeap:Value, ?type:Type)
@@ -235,10 +254,12 @@ LibraryReachableAppListenerType(?type) :-
   ListenerClassConstantValue(?classHeap, ?type),
   VarPointsTo(?hctx, ?classHeap, _, _).
 
+// Just for debugging
 .output ApplicationObjectFlowingToLibrary
 .output AndroidApplicationListenerClass
 .output AppMethodOverridesAndroidLibraryMethod
 
+//// More precise logic.
 //// Currently this is too conservative. We need to model more of
 //// the environment, such as "getActivity", "getSystemService", for
 //// this to work well.
@@ -259,129 +280,113 @@ LibraryReachableAppListenerType(?type) :-
 //   ApplicationObjectFlowingToLibrary(_, _, ?type),
 //   AndroidApplicationListenerClass(?type).
 
-PublicOnMethodOfReachableListener(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?class),
-  LibraryReachableAppListenerType(?class),
-  Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
-  Method_Modifier("public", ?meth).
+
+///**
+// * Public methods of activities
+// * REVIEW: This seems like a no-op. Activities are components. All their
+// *  public methods are reachable.
+//**/
+//
+//// make reachable public methods of Activities that take a View as first arg
+//ForcedReachableAndroidContext(?ctx, ?meth),
+//ReachableContext(?ctx, ?meth) :-
+//  Method_Modifier("public", ?meth),
+//  FormalParam(0, ?meth, ?arg),
+//  Var_Type(?arg, "android.view.View"),
+//  ConcreteMethodDeclared(?meth, ?class),
+//  Activity(?class),
+//  isImmutableContext(?ctx).
 
 
-ProtectedOnMethodOfReachableListener(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?class),
-  LibraryReachableAppListenerType(?class),
-  Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
-  Method_Modifier("protected", ?meth).
+/**
+ * Javascript interfacing
+**/
 
-OverridingProtectedOnMethodOfReachableListener(?meth) :-
-  ProtectedOnMethodOfReachableListener(?meth),
-  AppMethodOverridesAndroidLibraryMethod(?meth).
+// The following predicates cover the two clients that can be attached to
+// a WebView adding functionality: the WebViewClient and the WebChromeClient.
+// Both the overriden methods and the non-overriden are kept, not sure
+// if the latter are needed.
+WebClientType(?type):-
+  basic.SubtypeOf(?type, ?supertype),
+  (?supertype = "android.webkit.WebViewClient";
+   ?supertype = "android.webkit.WebChromeClient").
 
+.decl _ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)
+// Just for debugging
+.output _ForcedReachableFromJavascriptContext
+
+_ForcedReachableFromJavascriptContext(?ctx, ?meth),
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
-  (PublicOnMethodOfReachableListener(?meth);
-   OverridingProtectedOnMethodOfReachableListener(?meth)),
+  ConcreteMethodDeclared(?meth, ?class),
+  (Method_Modifier("protected", ?meth);
+   Method_Modifier("public", ?meth)),
+  ReachableApplicationObjectOfType(_, _, ?class),
+  WebClientType(?class),
   isImmutableContext(?ctx).
 
-// anantoni: Make the getters and setters of classes extending View reachable
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
-    Method_SimpleName(?meth, ?simplename),
-    (match("set.*", ?simplename);
-     match("get.*", ?simplename)),
-    Method_DeclaringType(?meth, ?viewType),
-    AndroidViewType(?viewType),
-    isImmutableContext(?ctx).
+//// REVIEW: I'm not sure if the current general-purpose mocking doesn't handle
+////  most of this anyway. My problem is that this rule creates mock objects based
+////  on formal types alone--e.g., interfaces or abstract classes.
+// MockValueConsMacro(cat("<android javascript object ", cat(?formalType, ">")), ?formalType),
+// ReifiedAndroidObjectValue(cat("<android javascript object ", cat(?formalType, ">")), ?formalType) :-
+//   _ForcedReachableFromJavascriptContext(_, ?meth),
+//   FormalParam(_, ?meth, ?formal),
+//  Var_Type(?formal, ?formalType).
 
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
-    Method_Modifier("public", ?meth),
-    FormalParam(0, ?meth, ?arg),
-    Var_Type(?arg, "android.view.View"),
-    Method_DeclaringType(?meth, ?class),
-    Activity(?class),
-    isImmutableContext(?ctx).
-
-//The following predicates cover the two clients that can be attached to
-//a WebView adding functionality, the WebViewClient and the WebChromeClient
-//Both the overriden methods and the non overriden are kept, not sure
-//if the latter are needed.
-WebClientType(?type):-
-    basic.SubtypeOf(?type, ?supertype),
-    (?supertype = "android.webkit.WebViewClient",
-    isType(?supertype);
-    ?supertype = "android.webkit.WebChromeClient",
-    isType(?supertype)).
-
-WebClientType(?type) :-
-    isType(?type),
-    (?type = "android.webkit.WebViewClient";
-     ?type = "android.webkit.WebChromeClient").
-
-.decl ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)
-
-
-ForcedReachableFromJavascriptContext(?ctx, ?meth),
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
-    basic.MethodLookup(_,_,?class,?meth),
-    ( Method_Modifier("protected", ?meth);
-    Method_Modifier("public", ?meth)),
-    ReachableApplicationObjectOfType(_, _, ?class),
-    WebClientType(?class),
-    isImmutableContext(?ctx).
-
-.decl FormalOfForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)
-
-FormalOfForcedReachableFromJavascriptContext(?ctx, ?formal, ?formalType) :-
-  ForcedReachableFromJavascriptContext(?ctx, ?meth),
-  FormalParam(_, ?meth, ?formal),
-  Var_Type(?formal, ?formalType).
-
-MockValueConsMacro(cat("<android javascript object ", cat(?type, ">")), ?type),
-ReifiedAndroidObjectValue(cat("<android javascript object ", cat(?type, ">")), ?type) :-
-  FormalOfForcedReachableFromJavascriptContext(_, _, ?type),
-  isType(?type).
-
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+.decl ArgToAddJavascriptInterface(?var:Var)
+// Just for debugging
+.output ArgToAddJavascriptInterface
+ArgToAddJavascriptInterface(?var) :-
   Method_SimpleName(?addjsmethod, "addJavascriptInterface"),
-  Method_DeclaringType(?addjsmethod,"android.webkit.WebView"),
-  MethodInvocation_Method(?invocation, ?addjsmethod),
-  ActualParam(0, ?invocation, ?var),
-  Var_Type(?var, ?type),
-  Method_DeclaringType(?meth,?type),
-  //Method_Annotation(?meth,"JavascriptInterface"),
+  Method_DeclaringType(?addjsmethod, "android.webkit.WebView"),
+  FormalParam(0, ?addjsmethod, ?var).
+
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+  ArgToAddJavascriptInterface(?var),
+  VarPointsTo(_, ?value, _, ?var),
+  Value_Type(?value, ?type),
+  ConcreteMethodDeclared(?meth, ?type),
+  //Method_Annotation(?meth,"android.webkit.JavascriptInterface"),
+  isImmutableContext(?ctx).
+
+
+/**
+ * General-purpose handling of all forced-reachable methods. Make their
+ * mocking as complete as possible. This uses the earlier ForcedReachable...
+ * and ReifiedAndroidObject... relations, or any objects that would
+ * exist anyway.
+**/
+
+// Link the two concepts: if an object is a ReifiedAndroidObjectValue,
+// make its constructors ForcedReachable.
+ForcedReachableAndroidContext(?ctx, ?meth) :-
+  ReifiedAndroidObjectValue(_, ?type),
+  Method_DeclaringType(?meth, ?type),
+  Method_SimpleName(?meth, "<init>"),
   isImmutableContext(?ctx).
 
 // For all the above forced reachable methods, supply a receiver
-// object of the appropriate type
-
-// First, for objects implicitly registered (XML or library).
-ReifiedAndroidObjectValue(?value, ?type) :-
-  ReifiedComponent(?type, ?value);
-  ReifiedLayoutControl(?type, _, ?value);
-  ReifiedLibraryObject(?type, ?value).
-
+// object of the appropriate type. Either mock object ...
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ForcedReachableAndroidContext(?ctx, ?meth),
-  ImmutableHContextFromContext(?ctx, ?hctx),
-  Method_DeclaringType(?meth, ?class),
+  ConcreteMethodDeclared(?meth, ?class),
   ReifiedAndroidObjectValue(?value, ?class),
+  ImmutableHContextFromContext(?ctx, ?hctx),
+//  Method_DeclaringType(?meth, ?class),
   ThisVar(?meth, ?this).
 #ifndef X_CONTEXT_REMOVER
-  .plan 1:(2,1,3,4,5)
+  .plan 1:(4,1,2,3,5)
 #endif
 
-// a reachable object can always be the receiver for its own methods
+// ... or a plain reachable object flowing to the library.
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ForcedReachableAndroidContext(?ctx, ?meth),
-  Method_DeclaringType(?meth, ?ofType),
+  ConcreteMethodDeclared(?meth, ?ofType),
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
-//  ReachableApplicationObjectOfType(?hctx, ?value, ?ofType),
   ThisVar(?meth, ?this).
-  .plan 1:(3,2,1,4)
+ .plan 1:(3,2,1,4)
 
 // ... and do the same for argument objects.
 // REVIEW: this is imprecise. It assigns any argument to a
@@ -403,16 +408,16 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   .plan 1:(2,1,3,4)
 #endif
 
-// Do the same (use as arguments everywhere applicable) for application
-// listeners that flow into library code.
-ApplicationObjectFlowingToLibraryStaticType(?hctx, ?value, ?possibleType) :-
-  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
-  basic.SupertypeOf(?possibleType, ?ofType).
-
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
-  ApplicationObjectFlowingToLibraryStaticType(?hctx, ?value, ?formalType).
-  .plan 1:(2,1)
+  basic.SubtypeOf(?type, ?formalType),
+  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?type).
+ .plan 1:(3,2,1)
+
+
+/**
+ * View and fragment retrieval by id
+**/
 
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
@@ -463,10 +468,18 @@ LayoutControlObjectValueFromId(?controlValue, ?numId) :-
 VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
   VarsAtInvocationRetrievingLayoutControl(?ret, ?var),
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
-  Value_Num(?value, ?numId),
-  LayoutControlObjectValueFromId(?controlValue, ?numId).
+//  Value_Num(?value, ?numId),
+//  LayoutControlObjectValueFromId(?controlValue, ?numId).
+  Value_Num(?value, _),
+  LayoutControlObjectValueFromId(?controlValue, _).
+/// HACK, HACK, HACK!!!!!
+/// ids currently seem broken, so I just return whatever
 
 
+/**
+ * Multi-dimenstional array ?!
+ * Neville's code (and spelling :-)), unreviewed by YS.
+**/
 
 // Special handling for multi-dimensional arrays
 NotSpecialObject(cat(cat(?invocation, ":"), ?type)),
@@ -495,38 +508,56 @@ ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?baseva
   UninitialisedArray(?hctx, ?basevalue, ?invocation, ?type).
 
 
-// Being liberal ... Any Activity parameter inside a class that is
+/**
+ * Fragment transactions.
+**/
+
+// REVIEW: Doesn't the Fact type Activity suffice?
+.decl _ActivityVar(?var:Var)
+_ActivityVar(?var) :-
+  Var_Type(?var, ?vartype),
+  basic.SupertypeOf("android.app.Activity", ?vartype).
+
+.decl BindFragment(?activityThis:Var, ?fragmentParam:Var)
+// Binding fragment's parent
+// A method call to a fragment add/replace inside an activity class
+// has this-variable ?activityThis and actual arg ?fragmentParam
+BindFragment(?activityThis, ?fragmentParam) :-
+  Method_DeclaringType(?method, "android.app.FragmentTransaction"),
+  (Method_SimpleName(?method, "add") ;
+   Method_SimpleName(?method, "replace")),
+  MethodInvocation_Method(?invocation, ?method),
+  ActualParam(_, ?invocation, ?fragmentParam),
+  Instruction_Method(?invocation, ?inmethod),
+  ThisVar(?inmethod, ?activityThis),
+  _ActivityVar(?activityThis).
+
 // TODO: this is only partial support for fragments, and we fail
 // DroidBench's FragmentLifecycle2 benchmark
 
 .decl ActivityVarInType(?var:Var, ?ctx:configuration.Context, ?type:Type)
-
 ActivityVarInType(?var, ?ctx, ?type) :-
-   ReachableContext(?ctx, ?method),
-   Var_DeclaringMethod(?var, ?method),
-   Var_Type(?var, ?vartype),
-   basic.SupertypeOf("android.app.Activity", ?vartype),
-   Method_DeclaringType(?method, ?type).
-
-OptInterproceduralAssign(?ctxTo, ?varAcc, ?ctxFrom, ?thisActivity) :-
-   ActivityVarInType(?varAcc, ?ctxTo, ?type),
-   Value_Type(?value, ?type),
-   VarPointsTo(_, ?value, _, ?fragmentParam),
-   BindFragment(?thisActivity, ?fragmentParam),
-   isImmutableContext(?ctxFrom).
+  ReachableContext(?ctx, ?method),
+  Var_DeclaringMethod(?var, ?method),
+  _ActivityVar(?var),
+  Method_DeclaringType(?method, ?type).
 
 
-.decl BindFragment(?thisActivity:Var, ?fragmentParam:Var)
+// REVIEW: this is just bad. The immutable context alone indicates it.
 
-// Binding fragment's parent
-BindFragment(?thisActivity, ?fragmentParam) :-
-   Method_DeclaringType(?method, "android.app.FragmentTransaction"),
-   (Method_SimpleName(?method, "add") ; Method_SimpleName(?method, "replace")),
-   MethodInvocation_Method(?invocation, ?method),
-   ActualParam(_, ?invocation, ?fragmentParam),
-   Instruction_Method(?invocation, ?inmethod),
-   ThisVar(?inmethod, ?thisActivity).
+// The parameter to a fragment-transaction call points to a value
+// in which an activity var can be found. Consider the current object values
+// to flow to the activity param!
+OptInterproceduralAssign(?ctxTo, ?varAcc, ?ctxFrom, ?activityThis) :-
+  BindFragment(?activityThis, ?fragmentParam),
+  VarPointsTo(_, ?value, _, ?fragmentParam),
+  Value_Type(?value, ?type),
+  ActivityVarInType(?varAcc, ?ctxTo, ?type),
+  isImmutableContext(?ctxFrom).
 
+/**
+ * WTH????
+**/
 
 // TODO: generalize this by
 // 1) getting info from factgen (Application, Component).
@@ -543,6 +574,11 @@ ReifiedApplicationAndCompatibleVar(?value, ?var) :-
    ReifiedComponent(?type, ?value),
    AndroidApplication(?type),
    Var_Type(?var, ?type).
+
+
+/**
+ * Asynchronous tasks
+**/
 
 // Asynchronous tasks are treated as synchronous method calls
 .decl AsynchTaskExecute(?param:Var, ?base:Var)
@@ -572,7 +608,86 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
  .plan 2:(3,1,2,4,5,6,7,8)
 #endif
 
-// Contribute to the global summary relation
+
+/**
+ * Contribute to the global summary relation
+**/
+
 ApplicationEntryPoint(?meth) :-
   ForcedReachableAndroidContext(_, ?meth),
   ApplicationMethod(?meth).
+
+
+/**
+ * General-purpose helpers
+**/
+
+AndroidLibraryType(?type) :-
+  isType(?type),
+  match("android.*", ?type).
+
+// REVIEW: is this needed? android.support classes are included in the
+// application for compatibility with older Android versions. We
+// currently consider them library, not app.
+AndroidApplicationClass(?class) :-
+  ApplicationClass(?class),
+  !AndroidLibraryType(?class).
+
+MethodDeclaredOrInherited(?meth, ?class) :-
+//  isClassType(?class),
+  Method_DeclaringType(?meth, ?class).
+
+// This keeps the superclass signature of the method. Does not guarantee
+// there is a concrete implementation until we do "MethodLookup".
+MethodDeclaredOrInherited(?meth, ?class) :-
+  MethodDeclaredOrInherited(?meth, ?superClass),
+  DirectSuperclass(?class, ?superClass).
+
+.decl ConcreteMethodDeclared(?meth:Method, ?class:ClassType)
+// Just for debugging
+.output ConcreteMethodDeclared
+ConcreteMethodDeclared(?meth, ?class) :-
+  isClassType(?class),
+  Method_DeclaringType(?meth, ?class),
+  !Method_Modifier("abstract", ?meth).
+
+.decl AppClassSubtypesLibClass(?type:Type, ?libType:Type)
+AppClassSubtypesLibClass(?type, ?libraryType) :-
+  AndroidApplicationClass(?type),
+  basic.SupertypeOf(?libraryType, ?type),
+  AndroidLibraryType(?libraryType).
+
+.decl LookupReturnsAppMethod(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
+LookupReturnsAppMethod(?simplename, ?descriptor, ?type, ?methConcrete) :-
+  basic.MethodLookup(?simplename, ?descriptor, ?type, ?methConcrete),
+  AndroidApplicationClass(?type).
+
+AppMethodOverridesAndroidLibraryMethod(?meth, ?methConcrete) :-
+  AppClassSubtypesLibClass(?type, ?libraryType),
+  Method_DeclaringType(?meth, ?libraryType),
+  Method_SimpleName(?meth, ?simplename),
+  Method_Descriptor(?meth, ?descriptor),
+  LookupReturnsAppMethod(?simplename, ?descriptor, ?type, ?methConcrete).
+
+.decl _AndroidApplicationValue(?value:Value, ?ofType:Type)
+_AndroidApplicationValue(?value, ?ofType) :-
+  AndroidApplicationClass(?ofType),
+  Value_Type(?value, ?ofType).
+
+// ... all analysis-reachable application objects
+ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) :-
+  _AndroidApplicationValue(?value, ?ofType),
+  VarPointsTo(?hctx, ?value, _, _).
+
+.decl _AndroidLibraryVar(?var:Var)
+_AndroidLibraryVar(?var) :-
+  AndroidLibraryType(?libraryType),
+  Method_DeclaringType(?method, ?libraryType),
+  Var_DeclaringMethod(?var, ?method).
+
+// The reasonable definition is below. This is augmented with some
+// more liberal special cases
+ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType) :-
+  _AndroidLibraryVar(?var),
+  VarPointsTo(?hctx, ?value, _, ?var),
+  _AndroidApplicationValue(?value, ?ofType).
