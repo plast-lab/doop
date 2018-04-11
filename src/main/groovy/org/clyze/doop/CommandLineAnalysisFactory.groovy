@@ -21,6 +21,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                                            'If the argument is a directory, all its *.jar files will be included.'
     static final String LIBRARIES        = 'The library files to use for dependency resolution. Separate multiple files with a space. ' +
                                            'If the argument is a directory, all its *.jar files will be included.'
+    static final String HPROFS           = 'The heap dumps to use with HeapDL. Separate multiple files with a space. '
     static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
                                            'option can be mixed with any other and is processed first.'
     static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 90 minutes).'
@@ -51,7 +52,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         List<String> inputs = (!options.X_START_AFTER_FACTS.value && cli.is) ? cli.is : []
         // Get the libraryFiles of the analysis (short option: l)
         List<String> libraries = (!options.X_START_AFTER_FACTS.value && cli.ls) ? cli.ls : []
-        // Get the hprofFiles of the analysis (long option: heapdl)
+        // Get the heapFiles of the analysis (long option: heapdl)
         List<String> hprofs = (!options.X_START_AFTER_FACTS.value && cli.heapdls) ? cli.heapdls : []
 
         return newAnalysis(FAMILY, id, name, options, inputs, libraries, hprofs)
@@ -105,8 +106,8 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
             libraries = cli.ls
 
         if (!cli.heapdls) {
-            hprofs = props.getProperty("heapdlFiles").split().collect { String s -> s.trim() }
-            // The heapdlFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
+            hprofs = props.getProperty("heapFiles").split().collect { String s -> s.trim() }
+            // The heapFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
             hprofs = hprofs.collect { String hprof ->
                 try {
                     // If it is not a valid URL an exception is thrown
@@ -219,6 +220,11 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                     #$LIBRARIES
                     #
                     libraryFiles =
+
+                    #heapFiles (file(s))
+                    #$HPROFS
+                    #
+                    heapFiles =
 
                     #
                     #level (string)

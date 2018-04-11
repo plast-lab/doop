@@ -108,7 +108,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         List<String> platformFilePaths
         List<File>   inputFiles
         List<File>   libraryFiles
-        List<File>   heapdlFiles
+        List<File>   heapFiles
         List<File>   platformFiles
 
         @Override
@@ -121,7 +121,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     platformFilePaths: platformFilePaths.toString(),
                     inputFiles:        inputFiles.toString(),
                     libraryFiles:      libraryFiles.toString(),
-                    heapdlFiles:       heapdlFiles.toString(),
+                    heapFiles:         heapFiles.toString(),
                     platformFiles:     platformFiles.toString()
             ].toString()
         }
@@ -182,7 +182,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         cacheDir,
                         vars.inputFiles,
                         vars.libraryFiles,
-                        vars.heapdlFiles,
+                        vars.heapFiles,
                         vars.platformFiles,
                         commandsEnv)
             } else {
@@ -195,7 +195,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         cacheDir,
                         vars.inputFiles,
                         vars.libraryFiles,
-                        vars.heapdlFiles,
+                        vars.heapFiles,
                         vars.platformFiles,
                         commandsEnv)
             }
@@ -210,7 +210,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     cacheDir,
                     vars.inputFiles,
                     vars.libraryFiles,
-                    vars.heapdlFiles,
+                    vars.heapFiles,
                     vars.platformFiles,
                     commandsEnv)
         }
@@ -283,7 +283,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         Collection<String> checksums = []
         checksums += vars.inputFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
         checksums += vars.libraryFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
-        checksums += vars.heapdlFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
+        checksums += vars.heapFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
         checksums += vars.platformFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
 
         if (vars.options.TAMIFLEX.value && vars.options.TAMIFLEX.value != "dummy")
@@ -425,7 +425,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def platformFilePaths
         def inputFiles
         def libraryFiles
-        def heapdlFiles
+        def heapFiles
         def platformFiles
 
         if (!options.X_START_AFTER_FACTS.value) {
@@ -441,8 +441,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             logger.debug "Input file paths: $inputFilePaths -> $inputFiles"
             libraryFiles = context.getAllLibraries()
             logger.debug "Library file paths: $libraryFilePaths -> $libraryFiles"
-            heapdlFiles = context.getAllHprofs()
-            logger.debug "HeapDL file paths: $heapdlFilePaths -> $heapdlFiles"
+            heapFiles = context.getAllHprofs()
+            logger.debug "HeapDL file paths: $heapdlFilePaths -> $heapFiles"
             platformFiles = resolve(platformFilePaths, InputType.LIBRARY)
             logger.debug "Platform file paths: $platformFilePaths -> $platformFiles"
         }
@@ -629,7 +629,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 platformFilePaths: platformFilePaths,
                 inputFiles:        inputFiles,
                 libraryFiles:      libraryFiles,
-                heapdlFiles:       heapdlFiles,
+                heapFiles:         heapFiles,
                 platformFiles:     platformFiles
         )
         logger.debug vars

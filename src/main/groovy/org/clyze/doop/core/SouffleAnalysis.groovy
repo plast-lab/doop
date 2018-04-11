@@ -49,10 +49,10 @@ class SouffleAnalysis extends DoopAnalysis {
                               File cacheDir,
                               List<File> inputFiles,
                               List<File> libraryFiles,
-                              List<File> heapdlFiles,
+                              List<File> heapFiles,
                               List<File> platformLibs,
                               Map<String, String> commandsEnvironment) {
-        super(id, name, options, ctx, outDir, cacheDir, inputFiles, libraryFiles, heapdlFiles, platformLibs, commandsEnvironment)
+        super(id, name, options, ctx, outDir, cacheDir, inputFiles, libraryFiles, heapFiles, platformLibs, commandsEnvironment)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
     }

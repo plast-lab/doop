@@ -63,7 +63,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     /**
      * The heap snapshots of the analysis
      */
-    protected List<File> heapdlFiles
+    protected List<File> heapFiles
 
     /**
      * The jre library jars for soot
@@ -107,13 +107,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                            File cacheDir,
                            List<File> inputFiles,
                            List<File> libraryFiles,
-                           List<File> heapdlFiles,
+                           List<File> heapFiles,
                            List<File> platformLibs,
                            Map<String, String> commandsEnvironment) {
         super(DoopAnalysisFamily.instance, id, name, options, outDir, inputFiles, libraryFiles)
         this.ctx = ctx
         this.cacheDir = cacheDir
-        this.heapdlFiles = heapdlFiles
+        this.heapFiles = heapFiles
         this.platformLibs = platformLibs
 
         logger      = LogFactory.getLog(getClass())
@@ -234,7 +234,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             }
 
             if (options.HEAPDL.value && !options.X_DRY_RUN.value) {
-                runHeapDL(heapdlFiles.collect { File f -> f.canonicalPath })
+                runHeapDL(heapFiles.collect { File f -> f.canonicalPath })
             }
 
             logger.info "Caching facts in $cacheDir"
