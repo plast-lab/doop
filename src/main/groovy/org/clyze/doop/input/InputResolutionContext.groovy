@@ -1,5 +1,7 @@
 package org.clyze.doop.input
 
+import org.clyze.analysis.InputType
+
 /**
  * The input resolution mechanism.
  * Resolves inputFiles (given as strings) to a set of files.
@@ -19,33 +21,33 @@ interface InputResolutionContext {
     /**
      * Adds the given input for resolution.
      */
-    void add(String input, boolean isLib)
+    void add(String input, InputType inputType)
 
     /**
      * Adds the given list of inputFiles for resolution.
      */
-    void add(List<String> inputs, boolean isLib)
+    void add(List<String> inputs, InputType inputType)
 
     /**
      * Sets the file that corresponds to the given input.
      * @param input - the input as a string
      * @param file - the file it corresponds to
      */
-    void set(String input, File file, boolean isLib)
+    void set(String input, File file, InputType inputType)
 
     /**
      * Sets the files that correspond to the given input.
      * @param input - the input as a string
      * @param files - the files it corresponds to
      */
-    void set(String input, List<File> files, boolean isLib)
+    void set(String input, List<File> files, InputType inputType)
 
     /**
      * Gets the file(s) that correspond to the given input.
      * @param input - the input as a string
      * @return the corresponding file(s)
      */
-    Set<File> get(String input, boolean isLib)
+    Set<File> get(String input, InputType inputType)
 
     /**
      * Resolves the inputFiles to their corresponding files.
@@ -64,6 +66,11 @@ interface InputResolutionContext {
     List<String> libraries()
 
     /**
+     * Returns all the heapFiles of this context.
+     */
+    List<String> hprofs()
+
+    /**
      * Gets the setInput of files that correspond to the inputFiles of this context.
      * If an input is found to be unresolved --it has no file(s)-- an exception is thrown.
      */
@@ -74,6 +81,8 @@ interface InputResolutionContext {
      * If an input is found to be unresolved --it has no file(s)-- an exception is thrown.
      */
     List<File> getAllLibraries()
+
+    List<File> getAllHprofs()
 
     List<File> getAll()
 

@@ -61,6 +61,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     InputResolutionContext ctx
 
     /**
+     * The heap snapshots of the analysis
+     */
+    protected List<File> heapFiles
+
+    /**
      * The jre library jars for soot
      */
     protected List<File> platformLibs
@@ -102,11 +107,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                            File cacheDir,
                            List<File> inputFiles,
                            List<File> libraryFiles,
+                           List<File> heapFiles,
                            List<File> platformLibs,
                            Map<String, String> commandsEnvironment) {
         super(DoopAnalysisFamily.instance, id, name, options, outDir, inputFiles, libraryFiles)
         this.ctx = ctx
         this.cacheDir = cacheDir
+        this.heapFiles = heapFiles
         this.platformLibs = platformLibs
 
         logger      = LogFactory.getLog(getClass())
@@ -227,7 +234,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             }
 
             if (options.HEAPDL.value && !options.X_DRY_RUN.value) {
-                runHeapDL(options.HEAPDL.value.toString())
+                runHeapDL(heapFiles.collect { File f -> f.canonicalPath })
             }
 
             logger.info "Caching facts in $cacheDir"
@@ -538,9 +545,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         return "$path/rt.jar"
     }
 
-    protected void runHeapDL(String filename) {
+    protected void runHeapDL(List<String> filenames) {
         try {
-            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.HEAPDL_NOSTRINGS.value ? false : true)
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filenames, options.HEAPDL_NOSTRINGS.value ? false : true)
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
             logger.info("Generated " + n + " addditional facts from memory dump")
         } catch (Exception e) {

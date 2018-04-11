@@ -276,6 +276,47 @@ SimulateNativeAllocation(
   "<sun.misc.Perf: java.nio.ByteBuffer createLong(java.lang.String,int,int,long)>/new java.nio.DirectByteBuffer/0",
   "<java.nio.DirectByteBuffer: void <init>()>").
 
+
+/**********************************************************************************
+ *
+ * java.lang.ref
+ *
+ **********************************************************************************/
+
+// REVIEW: does this need more handling, e.g., ReferenceQueue?
+
+.decl StoreIntoWeakReference(?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)
+.decl LoadFromReference(?ctx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)
+
+.decl StoreIntoWeakReferenceArgs(?from:Var, ?base:Var)
+StoreIntoWeakReferenceArgs(?from, ?base) :-
+  ?weakRefCtor = "<java.lang.ref.WeakReference: void <init>(java.lang.Object)>",
+  MethodInvocation_Method(?invo, ?weakRefCtor),
+  OptSpecialMethodInvocationBase(?invo, ?base),
+  ActualParam(0, ?invo, ?from).
+
+StoreIntoWeakReference(?basehctx, ?basevalue, ?ctx, ?from) :-
+  StoreIntoWeakReferenceArgs(?from, ?base),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+.decl LoadFromReferenceArgs(?base:Var, ?to:Var)
+LoadFromReferenceArgs(?base, ?to) :-
+  ?refGet = "<java.lang.ref.Reference: java.lang.Object getReferent()>",
+  MethodInvocation_Method(?invo, ?refGet),
+  OptSpecialMethodInvocationBase(?invo, ?base),
+  AssignReturnValue(?invo, ?to).
+
+LoadFromReference(?ctx, ?to, ?basehctx, ?basevalue) :-
+  LoadFromReferenceArgs(?base, ?to),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
+  LoadFromReference(?ctxTo, ?to, ?basehctx, ?basevalue),
+  StoreIntoWeakReference(?basehctx, ?basevalue, ?ctxFrom, ?from),
+  !Value_Null(?basevalue).
+  .plan 1:(2,1)
+
+
 #ifdef SIMULATE_NATIVE_RETURNS
 // Crude heuristic: assume that every native method that returns a
 // class type, returns an object allocated in that method.

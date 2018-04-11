@@ -176,10 +176,11 @@ class Doop {
                         // as a List, you need to append an s to its short name
                         if (option.id == "DYNAMIC") {
                             option.value = cli.ds
-                        }
+                        } else if (option.id == "HEAPDL") {
+                            option.value = cli.heapdls
                         // If the cl option has an arg, its value defines the value of the
                         // respective analysis option
-                        else if (option.argName) {
+                        } else if (option.argName) {
                             if (option instanceof BooleanAnalysisOption)
                                 option.value = optionValue.toBoolean()
                             else if (option instanceof IntegerAnalysisOption)

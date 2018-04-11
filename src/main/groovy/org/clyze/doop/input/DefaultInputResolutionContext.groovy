@@ -3,6 +3,8 @@ package org.clyze.doop.input
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
+import org.clyze.analysis.InputType
+
 /**
  * The default implementation of the input resolution mechanism.
  */
@@ -23,10 +25,12 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 
     List<String> inputs = new LinkedList<>()
     List<String> libraries = new LinkedList<>()
+    List<String> hprofs = new LinkedList<>()
 
     //The set of resolved inputFiles
     protected final Map<String, ResolvedInput> resolvedInputs = new LinkedHashMap<>()
     protected final Map<String, ResolvedInput> resolvedLibraries = new LinkedHashMap<>()
+    protected final Map<String, ResolvedInput> resolvedHprofs = new LinkedHashMap<>()
 
     //the input resolver
     protected final ChainResolver resolver
@@ -39,30 +43,47 @@ class DefaultInputResolutionContext implements InputResolutionContext {
         this.resolver = resolver
     }
 
-    @Override
-    void add(String input, boolean isLib) {
-        isLib? libraries.add(input) : inputs.add(input)
+    List targetList(InputType inputType) {
+        switch (inputType) {
+        case InputType.INPUT  : return this.inputs
+        case InputType.LIBRARY: return this.libraries
+        case InputType.HPROF  : return this.hprofs
+        default: throw new RuntimeException("Unknown inputType ${inputType}")
+        }
+    }
+
+    Map<String, ResolvedInput> targetResolvedMap(InputType inputType) {
+        switch (inputType) {
+        case InputType.INPUT  : return this.resolvedInputs
+        case InputType.LIBRARY: return this.resolvedLibraries
+        case InputType.HPROF  : return this.resolvedHprofs
+        default: throw new RuntimeException("Unknown inputType ${inputType}")
+        }
     }
 
     @Override
-    void add(List<String> inputs, boolean isLib) {
-        isLib? this.libraries.addAll(inputs) : this.inputs.addAll(inputs)
+    void add(String input, InputType inputType) {
+        targetList(inputType).add(input)
     }
 
     @Override
-    void set(String input, File file, boolean isLib) {
-        isLib? resolvedLibraries.put(input, new ResolvedInput(input, file)): resolvedInputs.put(input, new ResolvedInput(input, file))
+    void add(List<String> inputs, InputType inputType) {
+        targetList(inputType).addAll(inputs)
     }
 
     @Override
-    void set(String input, List<File> files, boolean isLib) {
-        isLib? resolvedLibraries.put(input, new ResolvedInput(input, files)) :resolvedInputs.put(input, new ResolvedInput(input, files))
+    void set(String input, File file, InputType inputType) {
+        targetResolvedMap(inputType).put(input, new ResolvedInput(input, file))
     }
 
     @Override
-    Set<File> get(String input, boolean isLib) {
-        ResolvedInput resolvedInput
-        resolvedInput = isLib?  resolvedLibraries.get(input) :  resolvedInputs.get(input)
+    void set(String input, List<File> files, InputType inputType) {
+        targetResolvedMap(inputType).put(input, new ResolvedInput(input, files))
+    }
+
+    @Override
+    Set<File> get(String input, InputType inputType) {
+        ResolvedInput resolvedInput = targetResolvedMap(inputType).get(input)
         return resolvedInput ? resolvedInput.files() : Collections.emptySet()
     }
 
@@ -72,14 +93,21 @@ class DefaultInputResolutionContext implements InputResolutionContext {
             logger.debug "Resolving input $input"
             ResolvedInput resolvedInput = resolvedInputs.get(input)
             if (!resolvedInput)
-                resolver.resolve(input, this, false)
+                resolver.resolve(input, this, InputType.INPUT)
         }
 
         libraries.each { input ->
             logger.debug "Resolving library $input"
             ResolvedInput resolvedInput = resolvedLibraries.get(input)
             if (!resolvedInput)
-                resolver.resolve(input, this, true)
+                resolver.resolve(input, this, InputType.LIBRARY)
+        }
+
+        hprofs.each { input ->
+            logger.debug "Resolving HPROF $input"
+            ResolvedInput resolvedInput = resolvedHprofs.get(input)
+            if (!resolvedInput)
+                resolver.resolve(input, this, InputType.HPROF)
         }
     }
 
@@ -121,6 +149,24 @@ class DefaultInputResolutionContext implements InputResolutionContext {
     }
 
     @Override
+    List<File> getAllHprofs() {
+        def allHprofFiles = new LinkedList<File>()
+        hprofs.each { hprof ->
+            logger.debug "Getting HPROF file ${hprof}"
+            ResolvedInput resolvedHprof = resolvedHprofs.get(hprof)
+            if (resolvedHprof) {
+                logger.debug "HPROF file ${hprof} is resolved -> ${resolvedHprof.files()}"
+                allHprofFiles.addAll(resolvedHprof.files())
+            }
+            else {
+                throw new RuntimeException("Unresolved HPROF file: ${hprof}")
+            }
+        }
+
+        return allHprofFiles
+    }
+
+    @Override
     List<File> getAll() {
         List<File> all = new LinkedList<>()
         all.addAll(getAllInputs())
@@ -139,6 +185,10 @@ class DefaultInputResolutionContext implements InputResolutionContext {
         return libraries
     }
 
+    @Override
+    List<String> hprofs() {
+        return hprofs
+    }
 
     @Override
     String toString() {

@@ -91,7 +91,7 @@ ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
 // Main logic
 AndroidLibraryType(?type) :-
   isType(?type),
-  match("^android.*", ?type).
+  match("android.*", ?type).
 
 // REVIEW: is this needed? android.support classes are included in the
 // application for compatibility with older Android versions. We
@@ -112,7 +112,11 @@ AndroidLibraryListenerType(?type) :-
   AndroidLibraryType(?type),
   isType(?type),
   (contains("Listener", ?type);
-   contains("Callback", ?type)).
+   contains("Callback", ?type);
+   AndroidAppComponent(?type)).
+  // REVIEW: enhanced to consider all app components to be listener types!
+  // They all have "on*" methods. The case we needed it was for IntentService
+  // subclasses. Needed for soundness currently, but does it destroy precision?
 
 ListenerType(?type) :-
   AndroidLibraryListenerType(?listenerType),
@@ -126,14 +130,11 @@ MethodDeclaredOrInherited(?meth, ?class) :-
   isClassType(?class),
   Method_DeclaringType(?meth, ?class).
 
-// This keeps the signature of the method in the superclass, if
-// lookup returns that method (and not an overriding one).
+// This keeps the superclass signature of the method. Does not guarantee
+// there is a concrete implementation until we do "MethodLookup".
 MethodDeclaredOrInherited(?meth, ?class) :-
   MethodDeclaredOrInherited(?meth, ?superClass),
-  Method_Descriptor(?meth, ?descriptor),
-  Method_SimpleName(?meth, ?simplename),
-  DirectSuperclass(?class, ?superClass),
-  basic.MethodLookup(?simplename, ?descriptor, ?class, ?meth).
+  DirectSuperclass(?class, ?superClass).
 
 PublicMethodOfComponent(?meth) :-
   (AndroidAppComponent(?type); ExtraAndroidAppComponent(?type)),
@@ -145,22 +146,24 @@ ProtectedMethodOfComponent(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("protected", ?meth).
 
-AppMethodOverridesAndroidLibraryMethod(?meth) :-
+.decl AppClassSubtypesLibClass(?type:Type, ?libType:Type)
+AppClassSubtypesLibClass(?type, ?libraryType) :-
   AndroidApplicationClass(?type),
   basic.SupertypeOf(?libraryType, ?type),
-  AndroidLibraryType(?libraryType),
-  // Using MethodLookup for ?meth with the descriptor of the
-  // overridden method takes care of covariant return types.
-  basic.MethodLookup(?simplename, ?descriptor, ?type, ?meth),
-  basic.MethodLookup(?simplename, ?descriptor, ?libraryType, _).
+  AndroidLibraryType(?libraryType).
+
+AppMethodOverridesAndroidLibraryMethod(?methConcrete) :-
+  AppClassSubtypesLibClass(?type, ?libraryType),
+  MethodDeclaredOrInherited(?meth, ?libraryType),
+  Method_SimpleName(?meth, ?simplename),
+  Method_Descriptor(?meth, ?descriptor),
+  basic.MethodLookup(?simplename, ?descriptor, ?type, ?methConcrete).
 
 // The protected method overrides one in a library type, hence it's
 // callable from the library.
-
 OverridingProtectedMethodOfComponent(?meth) :-
   ProtectedMethodOfComponent(?meth),
   AppMethodOverridesAndroidLibraryMethod(?meth).
-
 
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
@@ -176,14 +179,14 @@ PublicOnMethodOfLayoutControl(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
   Method_SimpleName(?meth, ?simplename),
-  match("^on.*", ?simplename),
+  match("on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfLayoutControl(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
   Method_SimpleName(?meth, ?simplename),
-  match("^on.*", ?simplename),
+  match("on.*", ?simplename),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfLayoutControl(?meth) :-
@@ -203,7 +206,7 @@ ReachableContext(?ctx, ?meth) :-
 // but that doesn't mean that method overrides one of the listener.
 
 
-// ... all analysis-reachable objects
+// ... all analysis-reachable application objects
 ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) :-
   ApplicationClass(?ofType),
   Value_Type(?value, ?ofType),
@@ -212,9 +215,29 @@ ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) :-
 // Be liberal: if an object is a listener, and it is instantiated
 // in the application, then consider it to flow to the library.
 ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
-LibraryReachableAppListenerType(?type) :-
+LibraryReachableAppListenerType(?ofType) :-
   ReachableApplicationObjectOfType(?hctx, ?value, ?ofType),
+  AndroidApplicationListenerClass(?ofType).
+
+// Same if the class constant object of a listener is instantiated
+// in the application, explicitly (via <className>.class).
+// REVIEW: for extra soundness, we can consider all ReifiedClass objects.
+//  But this will probably destroy precision.
+.decl ListenerClassConstantValue(?classHeap:Value, ?type:Type)
+ListenerClassConstantValue(?classHeap, ?type) :-
+  ClassHeap_InstanceType(?classHeap, ?type),
+  // or: ReifiedClass(?type, ?classHeap),  // needs reflection enabled!
   AndroidApplicationListenerClass(?type).
+
+ApplicationObjectFlowingToLibrary(?hctx, cat("<mock android listener-like object ", cat(?type, ">")), ?type),
+MockValueConsMacro(cat("<mock android listener-like object ", cat(?type, ">")), ?type),
+LibraryReachableAppListenerType(?type) :-
+  ListenerClassConstantValue(?classHeap, ?type),
+  VarPointsTo(?hctx, ?classHeap, _, _).
+
+.output ApplicationObjectFlowingToLibrary
+.output AndroidApplicationListenerClass
+.output AppMethodOverridesAndroidLibraryMethod
 
 //// Currently this is too conservative. We need to model more of
 //// the environment, such as "getActivity", "getSystemService", for
@@ -240,7 +263,7 @@ PublicOnMethodOfReachableListener(?meth) :-
   MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
   Method_SimpleName(?meth, ?simplename),
-  match("^on.*", ?simplename),
+  match("on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
 
@@ -248,7 +271,7 @@ ProtectedOnMethodOfReachableListener(?meth) :-
   MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
   Method_SimpleName(?meth, ?simplename),
-  match("^on.*", ?simplename),
+  match("on.*", ?simplename),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfReachableListener(?meth) :-
@@ -282,7 +305,7 @@ ReachableContext(?ctx, ?meth) :-
 
 //The following predicates cover the two clients that can be attached to
 //a WebView adding functionality, the WebViewClient and the WebChromeClient
-//Both the overriden methods and the non overriden are kept, not sure 
+//Both the overriden methods and the non overriden are kept, not sure
 //if the latter are needed.
 WebClientType(?type):-
     basic.SubtypeOf(?type, ?supertype),
@@ -553,4 +576,3 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
 ApplicationEntryPoint(?meth) :-
   ForcedReachableAndroidContext(_, ?meth),
   ApplicationMethod(?meth).
-

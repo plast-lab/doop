@@ -21,6 +21,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                                            'If the argument is a directory, all its *.jar files will be included.'
     static final String LIBRARIES        = 'The library files to use for dependency resolution. Separate multiple files with a space. ' +
                                            'If the argument is a directory, all its *.jar files will be included.'
+    static final String HPROFS           = 'The heap dumps to use with HeapDL. Separate multiple files with a space. '
     static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
                                            'option can be mixed with any other and is processed first.'
     static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 90 minutes).'
@@ -47,12 +48,14 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
             option.cli
         }
 
-        //Get the inputFiles of the analysis (short option: i)
-        //Get the libraryFiles of the analysis (short option: l)
+        // Get the inputFiles of the analysis (short option: i)
         List<String> inputs = (!options.X_START_AFTER_FACTS.value && cli.is) ? cli.is : []
+        // Get the libraryFiles of the analysis (short option: l)
         List<String> libraries = (!options.X_START_AFTER_FACTS.value && cli.ls) ? cli.ls : []
+        // Get the heapFiles of the analysis (long option: heapdl)
+        List<String> hprofs = (!options.X_START_AFTER_FACTS.value && cli.heapdls) ? cli.heapdls : []
 
-        return newAnalysis(FAMILY, id, name, options, inputs, libraries)
+        return newAnalysis(FAMILY, id, name, options, inputs, libraries, hprofs)
     }
 
     /**
@@ -66,6 +69,8 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         //Get the inputFiles of the analysis. If there are no inputFiles in the CLI, we get them from the properties.
         List<String> inputs
         List<String> libraries
+        List<String> hprofs
+
         if (!cli.is) {
             inputs = props.getProperty("inputFiles").split().collect { String s -> s.trim() }
             // The inputFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
@@ -85,7 +90,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
         if (!cli.ls) {
             libraries = props.getProperty("libraryFiles").split().collect { String s -> s.trim() }
-            // The inputFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
+            // The libraryFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
             libraries = libraries.collect { String lib ->
                 try {
                     // If it is not a valid URL an exception is thrown
@@ -100,19 +105,32 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         else
             libraries = cli.ls
 
-        //Get the optional id of the analysis
+        if (!cli.heapdls) {
+            hprofs = props.getProperty("heapFiles").split().collect { String s -> s.trim() }
+            // The heapFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
+            hprofs = hprofs.collect { String hprof ->
+                try {
+                    // If it is not a valid URL an exception is thrown
+                    URL url = new URL(hprof)
+                    return hprof
+                }
+                catch (e) {}
+                File f = new File(hprof)
+                return f.isAbsolute() ? hprof : new File(propsBaseDir, hprof).getCanonicalFile().getAbsolutePath()
+            }
+        }
+        else
+            hprofs = cli.heapdls
+
+        // Get the optional id of the analysis.
         String id = cli.id ?: props.getProperty("id")
 
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithPropertiesAndCLI(props, cli) { AnalysisOption option ->
             option.cli
         }
-        return newAnalysis(FAMILY, id, name, options, inputs, libraries)
+        return newAnalysis(FAMILY, id, name, options, inputs, libraries, hprofs)
     }
 
-    /**
-     * Creates the cli args from the respective analysis options (the ones with their cli property set to true).
-     * This method provides special handling for the DYNAMIC option, in order to support multiple values for it.
-     */
     static CliBuilder createCliBuilder(boolean includeNonStandard) {
 
         List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { AnalysisOption option ->
@@ -203,6 +221,11 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                     #
                     libraryFiles =
 
+                    #heapFiles (file(s))
+                    #$HPROFS
+                    #
+                    heapFiles =
+
                     #
                     #level (string)
                     #$LOGLEVEL
@@ -272,35 +295,39 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         option.validValues ? "$option.description Valid values: ${option.validValues.join(", ")}" : option.description
     }
 
+    /**
+     * Creates the cli args from the respective analysis options (the
+     * ones with their cli property set to true). This method
+     * provides special handling for some options (such as INPUTS), in
+     * order to support multiple values for them.
+     */
     static List<Option> convertAnalysisOptionsToCliOptions(List<AnalysisOption> options) {
+        List multiArgOptions = [ [ "id" : "INPUTS"   , "opt" : 'i'  ],
+                                 [ "id" : "LIBRARIES", "opt" : 'l'  ],
+                                 [ "id" : "DYNAMIC"  , "opt" : 'd'  ],
+                                 [ "id" : "HEAPDL"   , "opt" : null ] ]
         options.collect { AnalysisOption option ->
-            if (option.id == "ANALYSIS") {
+            if (option.multipleValues) {
+                def mOpt = multiArgOptions.find { it.id == option.id }
+                if (mOpt) {
+                    Option o = new Option(mOpt.opt, option.name, true, option.description)
+                    o.setArgs(Option.UNLIMITED_VALUES)
+                    o.setArgName(option.argName)
+                    return o
+                } else {
+                    throw new RuntimeException("Missing handling of multiple-value option ${option.id}")
+                }
+            } else if (option.id == "ANALYSIS") {
                 Option o = new Option('a', option.name, true, desc(option))
                 o.setArgName(option.argName)
                 return o
-            } else if (option.id == "INPUTS") {
-                Option o = new Option('i', option.name, true, option.description)
-                o.setArgs(Option.UNLIMITED_VALUES)
-                o.setArgName(option.argName)
-                return o
-            } else if (option.id == "LIBRARIES") {
-                Option o = new Option('l', option.name, true, option.description)
-                o.setArgs(Option.UNLIMITED_VALUES)
-                o.setArgName(option.argName)
-                return o
-            }
-            else if (option.id == "DYNAMIC") {
-                Option o = new Option('d', option.name, true, option.description)
-                o.setArgs(Option.UNLIMITED_VALUES)
-                o.setArgName(option.argName)
-                return o
             } else if (option.argName) {
-                //Option accepts a String value
+                // Option accepts a value (such as a String or an Integer).
                 Option o = new Option(null, option.name, true, desc(option))
                 o.setArgName(option.argName)
                 return o
             } else {
-                //Option is a boolean
+                // Option is a boolean.
                 return new Option(null, option.name, false, option.description)
             }
         }

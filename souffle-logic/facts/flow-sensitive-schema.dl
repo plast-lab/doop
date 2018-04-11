@@ -383,6 +383,7 @@
 .decl MethodInvocation_Method(?invocation:MethodInvocation, ?signature:Method)
 
 .decl ApplicationMethod(?method:Method)
+.output ApplicationMethod
 
 // The (call-site) variable that holds the result of the invocation
 .decl AssignReturnValue(?invocation:MethodInvocation, ?to:Var)
@@ -459,8 +460,10 @@
 // Return variables of native methods (no instructions exist)
 .decl NativeReturnVar(?var:Var, ?method:Method)
 
+#ifdef DYNAMIC
 // Types potentially returned by a specific Class.forName invocation
 .decl Config_DynamicClass(?class:ReferenceType, ?invocation:MethodInvocation)
+#endif // DYNAMIC
 
 #ifndef X_STATS_NONE
 // Predicate to store analysis statistics

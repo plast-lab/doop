@@ -35,8 +35,9 @@ class WalaFactGenerator {
 
         this._iClasses = iClasses;
         options = new AnalysisOptions();
-        options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes());
-        cache = new AnalysisCacheImpl();
+        options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
+        cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
+        //cache = new AnalysisCacheImpl(new DefaultIRFactory(), options.getSSAOptions()); //Change to this to make the IR according to the SSAOptions -- to include piNodes
         IRPrinter = new WalaIRPrinter(cache,outDir);
     }
 
@@ -52,7 +53,7 @@ class WalaFactGenerator {
 //                continue;
 //            }
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
-            IRPrinter.printIR(iClass);
+            //IRPrinter.printIR(iClass);
             //if(skipped == 0)continue;
             _writer.writeClassOrInterfaceType(iClass);
             //TODO: Handling of Arrays?
@@ -83,7 +84,7 @@ class WalaFactGenerator {
                     generate(m, session);
                 }
                 catch (Exception exc) {
-                    System.err.println("Error while processing method: " + m);
+                    System.err.println("Error while processing method: " + m + " of class " +m.getDeclaringClass());
                     exc.printStackTrace();
                     throw exc;
                 }
@@ -244,6 +245,12 @@ class WalaFactGenerator {
             int start = basicBlock.getFirstInstructionIndex();
             int end = basicBlock.getLastInstructionIndex();
 
+            Iterator<SSAPhiInstruction> phis = basicBlock.iteratePhis();
+            while(phis.hasNext())
+            {
+                SSAPhiInstruction phiInstruction = phis.next();
+                generate(m, ir, phiInstruction, session, typeInference);
+            }
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
                     this.generateDefs(m, ir, instructions[j], session, typeInference);
@@ -260,9 +267,6 @@ class WalaFactGenerator {
                     }
                     else if (instructions[j] instanceof SSAThrowInstruction) {
                         generate(m, ir, (SSAThrowInstruction) instructions[j], session, typeInference);
-                    }
-                    else if (instructions[j] instanceof SSAGotoInstruction) {
-                        generate(m, ir, (SSAGotoInstruction) instructions[j], session);
                     }
                     else if (instructions[j] instanceof SSAInvokeInstruction) {
                         generate(m, ir, (SSAInvokeInstruction) instructions[j], session,typeInference);
@@ -285,38 +289,44 @@ class WalaFactGenerator {
                     else if (instructions[j] instanceof SSAArrayStoreInstruction) {
                         generate(m, ir, (SSAArrayStoreInstruction) instructions[j], session, typeInference);
                     }
-                    else if (instructions[j] instanceof SSASwitchInstruction) {
-
-                    }
                     else if (instructions[j] instanceof SSANewInstruction) {
-
+                        generate(m, ir, (SSANewInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAPhiInstruction) {
-
+                        //SSAPhiInstructions are not stored in instructions[]
                     }
                     else if (instructions[j] instanceof SSAPiInstruction) { //TODO:Figure out what this does
-
+                        //SSAPiInstructions are not stored in instructions[]
                     }
                     else if (instructions[j] instanceof SSAGetCaughtExceptionInstruction) {
-                        //Not found in instrucions[]
+                        //SSAGetCaughtExceptionInstructions are not stored in instructions[]
                     }
                     else if (instructions[j] instanceof SSAComparisonInstruction) {
-
+                        generate(m, ir, (SSAComparisonInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSALoadMetadataInstruction) {
-
+                        generate(m, ir, (SSALoadMetadataInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSAAddressOfInstruction) {
-
-                    }
-                    else if (instructions[j] instanceof SSAStoreIndirectInstruction) {
                         System.out.println("Impossible!");
                     }
-                    else if (instructions[j] instanceof SSALoadIndirectInstruction) {
+                    else if (instructions[j] instanceof SSAStoreIndirectInstruction) {
                         System.out.println("Impossible vol2!");
                     }
+                    else if (instructions[j] instanceof SSALoadIndirectInstruction) {
+                        System.out.println("Impossible vol3!");
+                    }
+                    else if (instructions[j] instanceof SSASwitchInstruction) {
+                        //generate(m, ir, (SSASwitchInstruction) instructions[j], session, typeInference);
+                        session.calcInstructionNumber(instructions[j]);
+                    }
+                    else if (instructions[j] instanceof SSAGotoInstruction) {
+                        //generate(m, ir, (SSAGotoInstruction) instructions[j], session);
+                        session.calcInstructionNumber(instructions[j]);
+                    }
                     else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
-                        generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
+                        //generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
+                        session.calcInstructionNumber(instructions[j]);
                     }
                     else if (instructions[j] instanceof SSAInstanceofInstruction) {
                         generate(m, ir, (SSAInstanceofInstruction) instructions[j], session, typeInference);
@@ -330,6 +340,12 @@ class WalaFactGenerator {
                 }
             }
 
+            Iterator<SSAPiInstruction> pis = basicBlock.iteratePis();
+            while(pis.hasNext())
+            {
+                SSAPiInstruction piInstruction = pis.next();
+
+            }
             if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
                 //System.out.println("method " + m.getName() + " in class " + m.getDeclaringClass().toString() + " Exc handling block " + start + " " + end);
                 if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() == null )
@@ -348,8 +364,35 @@ class WalaFactGenerator {
                 _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference);
             }
         }
+
+        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+            int start = basicBlock.getFirstInstructionIndex();
+            int end = basicBlock.getLastInstructionIndex();
+
+            for (int j = start; j <= end; j++) {
+                if (instructions[j] instanceof SSASwitchInstruction) {
+                    generate(m, ir, (SSASwitchInstruction) instructions[j], session, typeInference);
+                } else if (instructions[j] instanceof SSAGotoInstruction) {
+                    generate(m, ir, (SSAGotoInstruction) instructions[j], session);
+                } else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
+                    generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
+                }
+            }
+        }
     }
 
+    /*
+     * From what I understand all SSASwitchInsutrctions are LookUp Switches in WALA
+     * This transformation takes place in com.ibm.wala.shrikeBT.Decoder.java
+     * In constrast soot has both LookUp Switches and Table Switches
+     */
+    public void generate(IMethod m, IR ir, SSASwitchInstruction instruction, Session session, TypeInference typeInference) {
+        //Switch instructions have only one use
+        Local switchVar =createLocal(ir,instruction,instruction.getUse(0),typeInference);
+        _writer.writeLookupSwitch(ir, m, instruction, session, switchVar);
+
+    }
     public void generate(IMethod m, IR ir, SSAConditionalBranchInstruction instruction, Session session, TypeInference typeInference) {
         SSAInstruction[] ssaInstructions = ir.getInstructions();
 
@@ -357,7 +400,45 @@ class WalaFactGenerator {
         Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
         Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
 
-        _writer.writeIf(m, instruction, op1, op2, ssaInstructions[instruction.getTarget()], session);
+        if(ssaInstructions[instruction.getTarget()] == null) {
+            int nextWALAIndex = getNextNonNullInstruction(ir,instruction.getTarget());
+            if(nextWALAIndex == -1)
+                System.out.println("This Should not be happening");
+            _writer.writeIf(m, instruction, op1, op2, ssaInstructions[nextWALAIndex], session);
+        }
+        else
+            _writer.writeIf(m, instruction, op1, op2, ssaInstructions[instruction.getTarget()], session);
+    }
+
+
+    public void generate(IMethod m, IR ir, SSAPhiInstruction instruction, Session session, TypeInference typeInference) {
+        // Phi instructions have a single def (to) and a number uses that represent the alternative values
+        Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local alternative;
+        for(int i=0; i < instruction.getNumberOfUses();i++)
+        {
+            alternative = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+            _writer.writeAssignLocal(m, instruction, to, alternative, session);
+        }
+    }
+
+    public void generate(IMethod m, IR ir, SSANewInstruction instruction, Session session, TypeInference typeInference) {
+        Local l = createLocal(ir,instruction,instruction.getDef(),typeInference);
+        int numOfUses = instruction.getNumberOfUses();
+        if(numOfUses < 2)
+        {
+            _writer.writeAssignHeapAllocation(ir, m, instruction, l, session);
+        }
+        else
+        {
+            _writer.writeAssignNewMultiArrayExpr(m, instruction, l, session);
+        }
+
+    }
+
+    public void generate(IMethod m, IR ir, SSALoadMetadataInstruction instruction, Session session, TypeInference typeInference) {
+        session.calcInstructionNumber(instruction);//TODO: Move this when method is implemented
+
     }
 
     public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session, TypeInference typeInference) {
@@ -409,7 +490,13 @@ class WalaFactGenerator {
 
     public void generate(IMethod m, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
         // For invoke instructions the number of uses is equal to the number of parameters
-        _writer.writeInvoke(m, ir, instruction, session,typeInference);
+
+        Local l;
+        if(instruction.getNumberOfReturnValues() ==0)
+            l =null;
+        else
+            l =createLocal(ir, instruction, instruction.getDef(), typeInference);
+        _writer.writeInvoke(m, ir, instruction, l, session,typeInference);
     }
 
     public void generate(IMethod m, IR ir, SSAInstanceofInstruction instruction, Session session, TypeInference typeInference) {
@@ -454,7 +541,14 @@ class WalaFactGenerator {
     public void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
         // Go to instructions have no uses and no defs
         SSAInstruction[] ssaInstructions = ir.getInstructions();
-        _writer.writeGoto(m, instruction,ssaInstructions[instruction.getTarget()] , session);
+        if(ssaInstructions[instruction.getTarget()] == null) {
+            int nextWALAIndex = getNextNonNullInstruction(ir,instruction.getTarget());
+            if(nextWALAIndex == -1)
+                System.out.println("This Should not be happening ");
+            _writer.writeGoto(m, instruction, ssaInstructions[nextWALAIndex], session);
+        }
+        else
+            _writer.writeGoto(m, instruction,ssaInstructions[instruction.getTarget()] , session);
     }
 
     public void generate(IMethod m, IR ir, SSAMonitorInstruction instruction, Session session, TypeInference typeInference) {
@@ -487,6 +581,12 @@ class WalaFactGenerator {
 
     private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
         Local l;
+
+        if(instruction.iindex == -1)//Instructions not on the normal instructions array of the IR can have iindex==-1 ex SSAGetCaughtExceptionInstruction, SSAPhiInstruction
+        {
+            l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
+            return l;
+        }
         String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
         TypeReference typeRef;
         if(typeInference.getType(varIndex).getType() == null)
@@ -604,6 +704,15 @@ class WalaFactGenerator {
 
         _writer.writeAssignBinop(m, instruction, l, op1, op2, session);
     }
+    private void generate(IMethod m, IR ir, SSAComparisonInstruction instruction, Session session, TypeInference typeInference)
+    {
+        // Binary instructions have two uses and a single def
+        Local l = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
+
+        _writer.writeAssignComparison(m, instruction, l, op1, op2, session);
+    }
 
     private void generate(IMethod inMethod, IR ir, SSAThrowInstruction instruction, Session session, TypeInference typeInference)
     {
@@ -625,6 +734,18 @@ class WalaFactGenerator {
         {
             throw new RuntimeException("Unhandled throw statement: " + instruction);
         }
+    }
+
+    public int getNextNonNullInstruction(IR ir, int instructionIndex)
+    {
+        SSAInstruction[] ssaInstructions = ir.getInstructions();
+        //ISSABasicBlock basicBlock = ir.getBasicBlockForInstruction(ssaInstructions[instructionIndex]);
+        for(int i = instructionIndex +1 ; i < ssaInstructions.length; i++)
+        {
+            if(ssaInstructions[i]!=null)
+                return i;
+        }
+        return -1;
     }
 }
 

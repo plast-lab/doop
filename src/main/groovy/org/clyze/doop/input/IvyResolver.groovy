@@ -10,6 +10,9 @@ import org.apache.ivy.core.report.ResolveReport
 import org.apache.ivy.core.resolve.ResolveOptions
 import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorWriter
 import org.apache.ivy.util.filter.FilterHelper
+
+import org.clyze.analysis.InputType
+
 /**
  * Resolves the input as an Apache Ivy module descriptor that is downloaded using the default ivy settings.
  */
@@ -29,7 +32,7 @@ class IvyResolver implements InputResolver {
     }
 
     @Override
-    void resolve(String input, InputResolutionContext ctx, boolean isLib) {
+    void resolve(String input, InputResolutionContext ctx, InputType inputType) {
         try {
             //Create temp ivy.xml file
             File ivyfile = File.createTempFile('ivy', '.xml')
@@ -74,16 +77,15 @@ class IvyResolver implements InputResolver {
                 }                
             }
 
-            if (isLib) {
+            if (inputType == InputType.LIBRARY) {
                 List<File> libs = [resolvedInput] + resolvedInputDependencies                
-                ctx.set(input, libs, true)
-            }
-            else {                
-                ctx.set(input, resolvedInput, false)
-                ctx.add(input, true) //add the same input as library dependency too
-                ctx.set(input, resolvedInputDependencies, true)
-            }
-
+                ctx.set(input, libs, InputType.LIBRARY)
+            } else if (inputType == InputType.INPUT) {
+                ctx.set(input, resolvedInput, InputType.INPUT)
+                ctx.add(input, InputType.LIBRARY) //add the same input as library dependency too
+                ctx.set(input, resolvedInputDependencies, InputType.LIBRARY)
+            } else
+                throw new RuntimeException("Ivy resolution is not supported for HPROF inputs.")
         } catch (e) {
             throw new RuntimeException("Not a valid Ivy input: $input", e)
         }

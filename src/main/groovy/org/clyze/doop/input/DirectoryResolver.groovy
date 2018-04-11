@@ -1,5 +1,6 @@
 package org.clyze.doop.input
 
+import org.clyze.analysis.InputType
 import org.clyze.utils.FileOps
 
 /**
@@ -13,13 +14,13 @@ class DirectoryResolver implements InputResolver {
     }
 
     @Override
-    void resolve(String input, InputResolutionContext ctx, boolean isLib) {
+    void resolve(String input, InputResolutionContext ctx, InputType inputType) {
         def dir = FileOps.findDirOrThrow(input, "Not a directory input: $input")
         def filter = FileOps.extensionFilter("jar")
 
         List<File> filesInDir = []
         dir.listFiles(filter).each { File file -> filesInDir.add(file) }
 
-        ctx.set(input, filesInDir.sort{ it.toString() }, isLib)
+        ctx.set(input, filesInDir.sort{ it.toString() }, inputType)
     }
 }

@@ -12,6 +12,7 @@ import java.nio.file.Files
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.StandardCopyOption
 
+import static org.apache.commons.io.FileUtils.copyFileToDirectory
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 
@@ -48,9 +49,10 @@ class SouffleAnalysis extends DoopAnalysis {
                               File cacheDir,
                               List<File> inputFiles,
                               List<File> libraryFiles,
+                              List<File> heapFiles,
                               List<File> platformLibs,
                               Map<String, String> commandsEnvironment) {
-        super(id, name, options, ctx, outDir, cacheDir, inputFiles, libraryFiles, platformLibs, commandsEnvironment)
+        super(id, name, options, ctx, outDir, cacheDir, inputFiles, libraryFiles, heapFiles, platformLibs, commandsEnvironment)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
     }
@@ -101,6 +103,11 @@ class SouffleAnalysis extends DoopAnalysis {
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/post-process.dl", commonMacros)
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/mock-heap.dl", commonMacros)
 
+        if (options.IMPORT_DYNAMIC_FACTS.value) {
+            // copy facts/DynamicCallGraphEdge.facts
+            copyFileToDirectory(new File(options.IMPORT_DYNAMIC_FACTS.value.toString()), factsDir)
+        }
+
         if (options.HEAPDL.value || options.IMPORT_DYNAMIC_FACTS.value) {
             cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/import-dynamic-facts.dl", commonMacros)
         }
@@ -116,6 +123,10 @@ class SouffleAnalysis extends DoopAnalysis {
     protected void basicAnalysis() {
         def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
         cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
+
+        if (options.DYNAMIC.value) {
+            throw new RuntimeException("Flag --${options.DYNAMIC.name} is not yet supported in Souffle mode.")
+        }
 
         if (options.CFG_ANALYSIS.value || name == "sound-may-point-to") {
             def cfgAnalysisPath = "${Doop.souffleAddonsPath}/cfg-analysis"
