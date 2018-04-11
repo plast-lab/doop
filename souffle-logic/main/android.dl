@@ -82,6 +82,13 @@ ProtectedMethodOfComponent(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("protected", ?meth).
 
+.decl NonPrivateConcreteMethodOfComponent(?meth:Method)
+NonPrivateConcreteMethodOfComponent(?meth) :-
+  AndroidAppComponent(?type),
+  MethodDeclaredOrInherited(?meth, ?type),
+  !Method_Modifier("private", ?meth),
+  !Method_Modifier("abstract", ?meth).
+
 // The protected method overrides one in a library type, hence it's
 // callable from the library.
 OverridingProtectedMethodOfComponent(?methConcrete) :-
@@ -90,8 +97,10 @@ OverridingProtectedMethodOfComponent(?methConcrete) :-
 
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
-  (PublicMethodOfComponent(?meth);
-   OverridingProtectedMethodOfComponent(?meth);
+//// Weaken. Seems reasonable.
+//  (PublicMethodOfComponent(?meth);
+//   OverridingProtectedMethodOfComponent(?meth);
+  (NonPrivateConcreteMethodOfComponent(?meth);
    CallbackMethod(?meth)),
   isImmutableContext(?ctx).
 
