@@ -109,13 +109,16 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 #endif
 
 /**
- * Load instance fields
+ * Load/Store instance fields
  */
 
 LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
   LoadInstanceField(?base, ?sig, ?to, _),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
+StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
+  StoreInstanceField(?from, ?base, ?signature, _),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 #ifndef FEATHERWEIGHT_ANALYSIS
 //// Much slower in Souffle, for large analyses
@@ -136,26 +139,9 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   NotSpecialObject(?value).
   .plan 1:(2,1,3)
 
-#else
-// FEATHERWEIGHT_ANALYSIS
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-#endif
-
-#if defined(HEAPDL) || defined(IMPORT_DYNAMIC_FACTS)
-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
-  HeapDLInstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  HeapDLInstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-#endif
-
-/**
- * Store instance fields
- */
-#ifndef FEATHERWEIGHT_ANALYSIS
+// InstanceFieldPointsTo is computed but remains unused (does not
+// affect outputs) for most analysis settings! Don't read from it if
+// you don't have to.
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
@@ -163,12 +149,12 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   !Value_Null(?basevalue).
 .plan 1:(2,1,3)
 
-// InstanceFieldPointsTo is computed but remains unused (does not
-// affect outputs) for most analysis settings! Don't read from it if
-// you don't have to.
-
 #else
-// FEATHERWEIGHT
+// FEATHERWEIGHT_ANALYSIS
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+
 .decl NoInformationOnSignature(?signature: Field)
 .output NoInformationOnSignature
 
@@ -194,6 +180,14 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
 .plan 1:(3,2,1,4,5,6)
 #endif
 
+#if defined(HEAPDL) || defined(IMPORT_DYNAMIC_FACTS)
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+  HeapDLInstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  HeapDLInstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+#endif
 
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
@@ -204,9 +198,6 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   .plan 1:(2,1,3)
 #endif
 
-StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
-  StoreInstanceField(?from, ?base, ?signature, _),
-  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 /**
  * Load static fields
