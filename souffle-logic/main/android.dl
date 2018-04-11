@@ -199,10 +199,14 @@ ReachableContext(?ctx, ?meth) :-
  * Listeners and callbacks
 **/
 
+// In addition to general listener/callback types, we add some interfaces with "on"
+// methods that are used for callbacks.
 AndroidLibraryListenerType(?type) :-
   AndroidLibraryType(?type),
   (contains("Listener", ?type);
-   contains("Callback", ?type)).
+   contains("Callback", ?type);
+   contains("Observer", ?type);
+   contains("android.content.ServiceConnection", ?type)).
 
 ListenerType(?type) :-
   AndroidLibraryListenerType(?listenerType),
@@ -370,7 +374,8 @@ ReachableContext(?ctx, ?meth) :-
 
 // Link the two concepts: if an object is a ReifiedAndroidObjectValue,
 // make its constructors ForcedReachable.
-ForcedReachableAndroidContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
   ReifiedAndroidObjectValue(_, ?type),
   Method_DeclaringType(?meth, ?type),
   Method_SimpleName(?meth, "<init>"),
