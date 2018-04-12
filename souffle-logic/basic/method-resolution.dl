@@ -117,11 +117,17 @@ ClassConstructor(method, type) :-
     isMethod(method),
     match(".*<init>.*", method).
 
-.decl MethodsOfSameType(?method1:Method, ?method2:Method, ?class:Type)
+.decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)
 
-MethodsOfSameType(?method1, ?method2, ?class) :-
-  Method_DeclaringType(?method1, ?class),
-  Method_DeclaringType(?method2, ?class).
+MethodsOfSameOrSuperType(?method1, ?method2) :-
+Method_DeclaringType(?method1, ?class),
+ Method_DeclaringType(?method2, ?class),
+ (Method_DeclaringType(?method2, ?class);
+  Method_DeclaringType(?method2, ?class1),
+  Method_SimpleName(?method2, ?simplename),
+  Method_Descriptor(?method2, ?descriptor),
+  !MethodImplemented(?simplename, ?descriptor, ?class, _),
+  SubtypeOf(?class, ?class1)).
 
 .decl MethodsOfSameNonSDKType(?method1:Method, ?method2:Method, ?class:Type)
 
