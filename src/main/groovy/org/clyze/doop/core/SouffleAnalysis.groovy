@@ -136,36 +136,16 @@ class SouffleAnalysis extends DoopAnalysis {
         def mainPath     = "${Doop.souffleLogicPath}/main"
         def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
 
-        // By default, assume we run a context-sensitive analysis
-        boolean isContextSensitive = true
-        try {
-            def file = FileOps.findFileOrThrow("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
-            Properties props = FileOps.loadProperties(file)
-            isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
-        }
-        catch(e) {
-            logger.debug e.getMessage()
-        }
-
         if (name == "sound-may-point-to") {
             cpp.includeAtEnd("$analysis", "${mainPath}/string-constants.dl")
             cpp.includeAtEnd("$analysis", "${mainPath}/exceptions.dl")
             cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl",
                     "${mainPath}/context-sensitivity-declarations.dl")
             cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl")
-        }
-        else {
-            if (isContextSensitive) {
-                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl")
-                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl", commonMacros)
-                cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros)
-            } else {
-                cpp.includeAtEnd("$analysis", "${analysisPath}/declarations.dl")
-                cpp.includeAtEndIfExists("$analysis", "${mainPath}/prologue.dl", commonMacros)
-                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/prologue.dl")
-                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl")
-                cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl")
-            }
+        } else {
+            cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl")
+            cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl", commonMacros)
+            cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros)
         }
 
         if (options.INFORMATION_FLOW.value) {
