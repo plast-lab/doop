@@ -21,7 +21,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                                            'If the argument is a directory, all its *.jar files will be included.'
     static final String LIBRARIES        = 'The library files to use for dependency resolution. Separate multiple files with a space. ' +
                                            'If the argument is a directory, all its *.jar files will be included.'
-    static final String HPROFS           = 'The heap dumps to use with HeapDL. Separate multiple files with a space. '
+    static final String HEAPDL           = 'The heap dumps to use with HeapDL. Separate multiple files with a space. '
     static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
                                            'option can be mixed with any other and is processed first.'
     static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 90 minutes).'
@@ -222,7 +222,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                     libraryFiles =
 
                     #heapFiles (file(s))
-                    #$HPROFS
+                    #$HEAPDL
                     #
                     heapFiles =
 
