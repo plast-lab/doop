@@ -16,7 +16,7 @@
  */
 .decl HeapAllocation_ContextInsensitive(?heap:HeapAllocation)
 
-// Merged objects are currently always context-insensitive 
+// Merged objects are currently always context-insensitive
 HeapAllocation_ContextInsensitive(?heap) :-
   HeapAllocation_Merge(?heap, _).
 
@@ -107,7 +107,7 @@ HeapAllocation_Merge(?heap, ?mergeHeap) :-
 /*************************************************************
  * String constants
  *************************************************************/
- 
+
 #ifndef DISTINGUISH_ALL_STRING_CONSTANTS
 #ifndef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 #ifndef NO_MERGES
@@ -420,6 +420,9 @@ PreFieldNameMatchingStringConstantInexact_Signature(?sig, ?string) :-
    FieldNamePrefix(?string, ?sig)),
   isHeapAllocation(?string).
 
+// This explicit enumeration is pretty stupid. We can write a rule for that,
+// now that this is no longer 2-3 lines.
+
 .decl ClassIterationTrick(?length:number)
 
 ClassIterationTrick(?length) :-
@@ -430,7 +433,15 @@ ClassIterationTrick(?length) :-
   ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
   ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
   ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
-  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46;
+  ?length = 47; ?length = 48; ?length = 49; ?length = 50; ?length = 51;
+  ?length = 52; ?length = 53; ?length = 54; ?length = 55; ?length = 56;
+  ?length = 57; ?length = 58; ?length = 59; ?length = 60; ?length = 61;
+  ?length = 62; ?length = 63; ?length = 64; ?length = 65; ?length = 66;
+  ?length = 67; ?length = 68; ?length = 69; ?length = 70; ?length = 71;
+  ?length = 72; ?length = 73; ?length = 74; ?length = 75; ?length = 76;
+  ?length = 77; ?length = 78; ?length = 79; ?length = 80; ?length = 81;
+  ?length = 82; ?length = 83; ?length = 84; ?length = 85; ?length = 86.
 
 .decl MemberPrefixIterationTrick(?length:number)
 
@@ -445,7 +456,15 @@ MemberPrefixIterationTrick(?length) :-
   ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
   ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
   ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
-  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46;
+  ?length = 47; ?length = 48; ?length = 49; ?length = 50; ?length = 51;
+  ?length = 52; ?length = 53; ?length = 54; ?length = 55; ?length = 56;
+  ?length = 57; ?length = 58; ?length = 59; ?length = 60; ?length = 61;
+  ?length = 62; ?length = 63; ?length = 64; ?length = 65; ?length = 66;
+  ?length = 67; ?length = 68; ?length = 69; ?length = 70; ?length = 71;
+  ?length = 72; ?length = 73; ?length = 74; ?length = 75; ?length = 76;
+  ?length = 77; ?length = 78; ?length = 79; ?length = 80; ?length = 81;
+  ?length = 82; ?length = 83; ?length = 84; ?length = 85; ?length = 86.
 
 .decl MemberSuffixIterationTrick(?length:number)
 
@@ -460,7 +479,15 @@ MemberSuffixIterationTrick(?length) :-
   ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
   ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
   ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
-  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46;
+  ?length = 47; ?length = 48; ?length = 49; ?length = 50; ?length = 51;
+  ?length = 52; ?length = 53; ?length = 54; ?length = 55; ?length = 56;
+  ?length = 57; ?length = 58; ?length = 59; ?length = 60; ?length = 61;
+  ?length = 62; ?length = 63; ?length = 64; ?length = 65; ?length = 66;
+  ?length = 67; ?length = 68; ?length = 69; ?length = 70; ?length = 71;
+  ?length = 72; ?length = 73; ?length = 74; ?length = 75; ?length = 76;
+  ?length = 77; ?length = 78; ?length = 79; ?length = 80; ?length = 81;
+  ?length = 82; ?length = 83; ?length = 84; ?length = 85; ?length = 86.
 
 .decl string_upper(s1:symbol, s2:symbol)
 
