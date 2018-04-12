@@ -69,6 +69,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "INPUTS",
 					name: "inputFiles",
 					argName: "FILES",
+					description: "The (application) inputs of the analysis. Accepted formats: .jar, .apk, .aar",
 					value: null,
 					multipleValues: true,
 					valueType: InputType.INPUT,
@@ -79,6 +80,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "LIBRARIES",
 					name: "libraryFiles",
 					argName: "LIBRARIES",
+					description: "The dependencies/libraries of the application. Accepted formats: .jar, .apk, .aar",
 					value: null,
 					multipleValues: true,
 					valueType: InputType.LIBRARY,
@@ -240,8 +242,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "PLATFORM",
 					name: "platform",
 					argName: "PLATFORM",
-					description: "The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22_stubs, android_22_fulljars). For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). default: java_7",
+					description: "The platform on which to perform the analysis. For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). default: java_7",
 					value: "java_7",
+					validValues: DoopAnalysisFactory.availablePlatforms,
 					webUI: true,
 					forCacheID: true,
 					forPreprocessor: true
@@ -446,6 +449,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI: true,
 					forPreprocessor: true,
 					isAdvanced: true
+			),
+			new BooleanAnalysisOption(
+					id: "LIGHT_REFLECTION_GLUE",
+					name: "light-reflection-glue",
+					description: "Handle some shallow reflection patterns without full reflection support.",
+					value: false,
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "GENERATE_PROGUARD_KEEP_DIRECTIVES",
