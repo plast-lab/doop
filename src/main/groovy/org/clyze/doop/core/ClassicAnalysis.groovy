@@ -129,10 +129,7 @@ class ClassicAnalysis extends DoopAnalysis {
                 .commit()
                 .elapsedTime()
 
-        if (options.IMPORT_DYNAMIC_FACTS.value) {
-            // copy facts/DynamicCallGraphEdge.facts
-            copyFileToDirectory(new File(options.IMPORT_DYNAMIC_FACTS.value.toString()), factsDir)
-        }
+        handleImportDynamicFacts()
 
         if (options.HEAPDL.value || options.IMPORT_DYNAMIC_FACTS.value) {
             cpp.preprocess("${outDir}/import-dynamic-facts.logic", "${Doop.factsPath}/import-dynamic-facts.logic")

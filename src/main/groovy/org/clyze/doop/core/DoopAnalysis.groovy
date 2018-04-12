@@ -20,6 +20,7 @@ import org.clyze.utils.Executor
 import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
 
+import static org.apache.commons.io.FileUtils.copyFileToDirectory
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.touch
 
@@ -559,4 +560,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
     }
 
+    protected final void handleImportDynamicFacts() {
+        if (options.IMPORT_DYNAMIC_FACTS.value) {
+            copyFileToDirectory(new File(options.IMPORT_DYNAMIC_FACTS.value.toString()), factsDir)
+        }
+    }
 }
