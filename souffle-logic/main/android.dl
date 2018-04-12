@@ -312,6 +312,42 @@ LibraryReachableAppListenerType(?type) :-
 
 
 /**
+ * Binders
+**/
+
+// Objects that implement IBinder are "remotable", used as part of a simple IPC
+// mechanism. All their methods overriding IBinder methods are reachable.
+
+.decl AndroidBinderType(?type:Type)
+AndroidBinderType("android.os.IBinder").
+
+.decl AndroidApplicationBinderClass(?class:ClassType)
+AndroidApplicationBinderClass(?class) :-
+  AndroidApplicationClass(?class),
+  basic.SubtypeOf(?class, ?binderType),
+  AndroidBinderType(?binderType).
+
+.decl ReachableAppBinderMethodOverridingLib(?methConcrete:Method)
+ReachableAppBinderMethodOverridingLib(?methConcrete) :-
+  MethodDeclaredOrInherited(?methConcrete, ?class),
+  LibraryReachableAppBinderClass(?class),
+  AppMethodOverridesAndroidLibraryMethod(_, ?methConcrete).
+
+ForcedReachableAndroidContext(?ctx, ?methConcrete),
+ReachableContext(?ctx, ?methConcrete) :-
+  ReachableAppBinderMethodOverridingLib(?methConcrete),
+  isImmutableContext(?ctx).
+
+.decl LibraryReachableAppBinderClass(?class:ClassType)
+// REVIEW: be liberal: if an object is a binder, and it is instantiated
+// in the application, then consider it to flow to the library.
+ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
+LibraryReachableAppBinderClass(?ofType) :-
+  ReachableApplicationObjectOfType(?hctx, ?value, ?ofType),
+  AndroidApplicationBinderClass(?ofType).
+
+
+/**
  * Javascript interfacing
 **/
 
@@ -427,6 +463,25 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   basic.SubtypeOf(?type, ?formalType),
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?type).
  .plan 1:(3,2,1)
+
+
+//// REVIEW Ad hoc, but useful?
+// Assign discovered components to all compatible local vars of mocked methods!
+
+// TODO: generalize this by
+// 1) getting info from factgen (Application, Component).
+// 2) Be more liberal with variable types.
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  ReifiedApplicationAndCompatibleVar(?value, ?var),
+  Var_DeclaringMethod(?var, ?method),
+  ForcedReachableAndroidContext(?ctx, ?method),
+  isImmutableHContext(?hctx).
+
+.decl ReifiedApplicationAndCompatibleVar(?value:Value, ?var:Var)
+ReifiedApplicationAndCompatibleVar(?value, ?var) :-
+  ReifiedComponent(?type, ?value),
+  AndroidApplication(?type),
+  Var_Type(?var, ?type).
 
 
 /**
@@ -568,26 +623,6 @@ OptInterproceduralAssign(?ctxTo, ?varAcc, ?ctxFrom, ?activityThis) :-
   Value_Type(?value, ?type),
   ActivityVarInType(?varAcc, ?ctxTo, ?type),
   isImmutableContext(?ctxFrom).
-
-/**
- * WTH????
-**/
-
-// TODO: generalize this by
-// 1) getting info from factgen (Application, Component).
-// 2) Be more liberal with variable types.
-VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-   ReifiedApplicationAndCompatibleVar(?value, ?var),
-   Var_DeclaringMethod(?var, ?method),
-   ForcedReachableAndroidContext(?ctx, ?method),
-   isImmutableHContext(?hctx).
-
-.decl ReifiedApplicationAndCompatibleVar(?value:Value, ?var:Var)
-
-ReifiedApplicationAndCompatibleVar(?value, ?var) :-
-   ReifiedComponent(?type, ?value),
-   AndroidApplication(?type),
-   Var_Type(?var, ?type).
 
 
 /**
