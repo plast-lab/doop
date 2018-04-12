@@ -562,7 +562,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     protected final void handleImportDynamicFacts() {
         if (options.IMPORT_DYNAMIC_FACTS.value) {
-            copyFileToDirectory(new File(options.IMPORT_DYNAMIC_FACTS.value.toString()), factsDir)
+            File f = new File(options.IMPORT_DYNAMIC_FACTS.value.toString())
+            if (f.exists()) {
+                throw new RuntimeException("Facts file ${f.canonicalPath} already exists, cannot overwrite it with imported file of same name.")
+            } else {
+                copyFileToDirectory(f, factsDir)
+            }
         }
     }
 }
