@@ -451,6 +451,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isAdvanced: true
 			),
 			new BooleanAnalysisOption(
+					id: "LIGHT_REFLECTION_GLUE",
+					name: "light-reflection-glue",
+					description: "Handle some shallow reflection patterns without full reflection support.",
+					value: false,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "GENERATE_PROGUARD_KEEP_DIRECTIVES",
 					name: "gen-proguard-keep",
 					description: "Generate keep directives for proguard",

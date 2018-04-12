@@ -54,3 +54,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   // ApplicationClass(?type),
   ReifiedClass(?type, ?value),
   AssignReturnValue(?invocation, ?return).
+
+// If the user has enabled it, also activate light-reflection-glue.
+#ifdef LIGHT_REFLECTION_GLUE
+#include "light-reflection-glue.dl"
+#endif // LIGHT_REFLECTION_GLUE
