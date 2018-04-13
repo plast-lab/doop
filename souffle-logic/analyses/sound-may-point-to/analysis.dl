@@ -29,7 +29,9 @@
   .decl IntraproceduralMustPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?var:Var)
   .decl IntraproceduralCertainMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocation)
   .decl AppAllCtxIntraproceduralMustPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var)
-  .output IntraproceduralMustPointTo, IntraproceduralCertainMethodBase, AppAllCtxIntraproceduralMustPointTo
+  .output IntraproceduralMustPointTo
+  .output IntraproceduralCertainMethodBase
+  .output AppAllCtxIntraproceduralMustPointTo
 
   IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?var) :-
     AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
@@ -128,7 +130,8 @@
   // instruction. There is also a Before_ version.
   .decl AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
   .decl Before_AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
-  .output Before_AccessPathMayPointTo, AccessPathMayPointTo
+  .output Before_AccessPathMayPointTo
+  .output AccessPathMayPointTo
 
   #include "must-alias.dl"
   .init MustAliasAnalysis = DummyMustAlias
@@ -159,11 +162,15 @@
   .decl MayCallGraphEdge(?ctx:MayContext, ?meth:Method, ?callerCtx:MayContext, ?invo:MethodInvocation)
   .decl MethodMayAssignField(?fld:Field, ?ctx: MayContext, ?toMethod:Method)
   .decl MethodHasUnresolvedInvocation(?ctx: MayContext, ?toMethod:Method)
-  .output RootMethodForMayAnalysis, MayCallGraphEdge, MethodMayAssignField, MethodHasUnresolvedInvocation
+  .output RootMethodForMayAnalysis
+  .output MayCallGraphEdge
+  .output MethodMayAssignField
+  .output MethodHasUnresolvedInvocation
 
   .decl MayCallGraphEdge_Prev(?ctx:MayContext, ?meth:Method, ?callerCtx:MayContext, ?invo:MethodInvocation)
   .decl MayReachableMethodUnderMayContext_Prev(?ctx:MayContext, ?meth:Method)
-  .output MayCallGraphEdge_Prev, MayReachableMethodUnderMayContext_Prev
+  .output MayCallGraphEdge_Prev
+  .output MayReachableMethodUnderMayContext_Prev
 
   MayReachableMethodUnderMayContext(?ctx, ?meth) :-
     RootMethodForMayAnalysis(?meth),
@@ -1352,7 +1359,8 @@
   // implies it's computed
   .decl AccessPathShouldBeRebased(?ap:AccessPath, ?from:Var, ?to:Var)
   .decl RebaseCompositeAccessPath(?ap:AccessPath, ?from:Var, ?to:Var, ?newAp:AccessPath)
-  .output AccessPathShouldBeRebased, RebaseCompositeAccessPath
+  .output AccessPathShouldBeRebased
+  .output RebaseCompositeAccessPath
 
   // If some access path is to be rebased, its non-var prefixes are as well.
   AccessPathShouldBeRebased(?newAp, ?from, ?to) :-
@@ -1646,6 +1654,12 @@ InitialRootMethodForMayAnalysis(?meth) :-
   Method_DeclaringType(?meth, ?class), ApplicationClass(?class).
 
 //// END configuration
+
+
+//// ====================================
+//// BEGIN client: assumenoexternalsideeffects
+
+//// END client: assumenoexternalsideeffects
 
 
 //// ====================================
