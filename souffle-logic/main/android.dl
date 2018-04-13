@@ -93,7 +93,7 @@ NonPrivateConcreteMethodOfComponent(?meth) :-
 // callable from the library.
 OverridingProtectedMethodOfComponent(?methConcrete) :-
   ProtectedMethodOfComponent(?meth),
-  AppMethodOverridesAndroidLibraryMethod(?meth, ?methConcrete).
+  AppMethodOverridesAndroidLibraryMethod(?methConcrete, ?meth).
 
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
@@ -141,7 +141,7 @@ ProtectedOnMethodOfLayoutControl(?meth) :-
 
 OverridingProtectedOnMethodOfLayoutControl(?methConcrete) :-
   ProtectedOnMethodOfLayoutControl(?meth),
-  AppMethodOverridesAndroidLibraryMethod(?meth, ?methConcrete).
+  AppMethodOverridesAndroidLibraryMethod(?methConcrete, ?meth).
 
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
@@ -232,7 +232,7 @@ ProtectedOnMethodOfReachableListener(?meth) :-
 
 OverridingProtectedOnMethodOfReachableListener(?methConcrete) :-
   ProtectedOnMethodOfReachableListener(?meth),
-  AppMethodOverridesAndroidLibraryMethod(?meth, ?methConcrete).
+  AppMethodOverridesAndroidLibraryMethod(?methConcrete, ?meth).
 
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
@@ -312,40 +312,100 @@ LibraryReachableAppListenerType(?type) :-
 
 
 /**
- * Binders
+ * Binders, Parcelables
 **/
 
 // Objects that implement IBinder are "remotable", used as part of a simple IPC
-// mechanism. All their methods overriding IBinder methods are reachable.
+// mechanism. Objects that implement Parcelable can be written and restored
+// from a Parcel. All their methods overriding library methods become reachable.
+// We term all of these objects "Packable".
 
-.decl AndroidBinderType(?type:Type)
-AndroidBinderType("android.os.IBinder").
+.decl AndroidPackableType(?type:Type)
+AndroidPackableType(?type) :-
+  ?type = "android.os.IBinder";
+  ?type = "android.os.Parcelable";
+  ?type = "android.os.Parcelable$Creator".
 
-.decl AndroidApplicationBinderClass(?class:ClassType)
-AndroidApplicationBinderClass(?class) :-
+.decl AndroidApplicationPackableClass(?class:ClassType)
+AndroidApplicationPackableClass(?class) :-
   AndroidApplicationClass(?class),
   basic.SubtypeOf(?class, ?binderType),
-  AndroidBinderType(?binderType).
+  AndroidPackableType(?binderType).
 
-.decl ReachableAppBinderMethodOverridingLib(?methConcrete:Method)
-ReachableAppBinderMethodOverridingLib(?methConcrete) :-
+.decl ReachableAppPackableMethodOverridingLib(?methConcrete:Method)
+ReachableAppPackableMethodOverridingLib(?methConcrete) :-
   MethodDeclaredOrInherited(?methConcrete, ?class),
-  LibraryReachableAppBinderClass(?class),
-  AppMethodOverridesAndroidLibraryMethod(_, ?methConcrete).
+  LibraryReachableAppPackableClass(?class),
+  AppMethodOverridesAndroidLibraryMethod(?methConcrete, _).
 
 ForcedReachableAndroidContext(?ctx, ?methConcrete),
 ReachableContext(?ctx, ?methConcrete) :-
-  ReachableAppBinderMethodOverridingLib(?methConcrete),
+  ReachableAppPackableMethodOverridingLib(?methConcrete),
   isImmutableContext(?ctx).
 
-.decl LibraryReachableAppBinderClass(?class:ClassType)
+.decl LibraryReachableAppPackableClass(?class:ClassType)
 // REVIEW: be liberal: if an object is a binder, and it is instantiated
 // in the application, then consider it to flow to the library.
 ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
-LibraryReachableAppBinderClass(?ofType) :-
+LibraryReachableAppPackableClass(?ofType) :-
   ReachableApplicationObjectOfType(?hctx, ?value, ?ofType),
-  AndroidApplicationBinderClass(?ofType).
+  AndroidApplicationPackableClass(?ofType).
 
+
+////////////////////////////////////////////////////////////////////////
+// But more importantly: backwards reasoning (reflection-like) for calls
+// that return Packables. If in reachable application code there is a
+// call to an Intent or Bundle method that returns a Parcelable (or
+// similar) and if that Parcelable gets to a cast, consider the cast
+// type to be instantiatable and mock it
+////////////////////////////////////////////////////////////////////////
+
+.decl LibraryMethodReturningPackable(?method:Method, ?retType:Type)
+LibraryMethodReturningPackable(?method, ?retType) :-
+  Method_ReturnType(?method, ?retType),
+  AndroidPackableType(?retType),
+  Method_DeclaringType(?method, ?libType),
+  AndroidLibraryType(?libType).
+
+.decl AppInvoReturningLibraryPackable(?invo:Instruction, ?retType:Type)
+AppInvoReturningLibraryPackable(?invo, ?retType) :-
+  LibraryMethodReturningPackable(?tomethod, ?retType),
+  MethodInvocation_Method(?invo, ?tomethod),
+  // no need for virtual resolution here. We want to see that the original method is in lib
+  Instruction_Method(?invo, ?inmethod),
+  Method_DeclaringType(?inmethod, ?class),
+  AndroidApplicationClass(?class).
+
+.decl SpecialMissingPackableValue(?invocation:MethodInvocation, ?value:Value)
+// debugging
+.output SpecialMissingPackableValue
+SpecialValueConsMacro(?value, ?retType),
+SpecialMissingPackableValue(?invo, ?value) :-
+  AppInvoReturningLibraryPackable(?invo, ?retType),
+  ?value = cat(cat("<special object for missing packable values ", ?invo), ">").
+
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+  SpecialMissingPackableValue(?invocation, ?value),
+  Instruction_Method(?invocation, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  ImmutableHContextFromContext(?ctx, ?hctx),
+  AssignReturnValue(?invocation, ?return).
+#ifndef X_CONTEXT_REMOVER
+ .plan 1:(4,3,2,1,5)
+#endif
+
+MockValueConsMacro(?value, ?concreteType),
+VarPointsTo(?hctx, ?value, ?ctx, ?to),
+ReifiedAndroidObjectValue(?value, ?concreteType) :-
+  SpecialMissingPackableValue(?invo, ?specialvalue),
+  VarPointsTo(?hctx, ?specialvalue, ?ctx, ?from),
+  AssignCast(?concreteType, ?from, ?to, _),
+  isClassType(?concreteType),
+  ?value = cat("<android inferred object of type ", cat(?concreteType, ">")).
+// REVIEW: Just one globally? No invo?
+
+// Just for debugging
+.output ReifiedAndroidObjectValue
 
 /**
  * Javascript interfacing
@@ -711,7 +771,7 @@ LookupReturnsAppMethod(?simplename, ?descriptor, ?type, ?methConcrete) :-
   basic.MethodLookup(?simplename, ?descriptor, ?type, ?methConcrete),
   AndroidApplicationClass(?type).
 
-AppMethodOverridesAndroidLibraryMethod(?meth, ?methConcrete) :-
+AppMethodOverridesAndroidLibraryMethod(?methConcrete, ?meth) :-
   AppClassSubtypesLibClass(?type, ?libraryType),
   Method_DeclaringType(?meth, ?libraryType),
   Method_SimpleName(?meth, ?simplename),
