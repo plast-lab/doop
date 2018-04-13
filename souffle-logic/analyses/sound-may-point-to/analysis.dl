@@ -455,9 +455,10 @@
   AccessPathShouldBeRebased(?actualAp, ?actual, ?formal) :-
     Before_AccessPathMayPointTo(_, _, ?actualAp, ?callerCtx, ?invo),
     MayCallGraphEdge(_, ?toMethod, ?callerCtx, ?invo),
-	?actualAp = [ ?actual, ?flds ], ?flds=?flds,
+    ?actualAp = [ ?actual, ?flds ], ?flds=?flds,
     ActualParam(?index, ?invo, ?actual),
     FormalParam(?index, ?toMethod, ?formal).
+   .plan 1: (2,1,3,4)
 
   .decl OptVirtualOrSpecialMethodInvocation_Base(?invo:MethodInvocation, ?base:Var)
   OptVirtualOrSpecialMethodInvocation_Base(?invo, ?base) :-
@@ -466,7 +467,7 @@
 
   AccessPathShouldBeRebased(?baseAp, ?base, ?this) :-
     Before_AccessPathMayPointTo(_, _, ?baseAp, ?callerCtx, ?invo),
-	OptVirtualOrSpecialMethodInvocation_Base(?invo, ?base),
+    OptVirtualOrSpecialMethodInvocation_Base(?invo, ?base),
     MayCallGraphEdge(_, ?toMethod, ?callerCtx, ?invo),
     ThisVar(?toMethod, ?this),
 	?baseAp = [ ?base, ?flds ], ?flds = ?flds.
@@ -780,19 +781,19 @@
 
   // if it's a non-array operation on collections but the info concerns an array
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     LibraryCollectionStoreOperation(?insn),
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     AccessPath_IsCollection(?ap),
-	?ap = [?base, ["dummyCollection", nil]],
+    ?ap = [?base, ["dummyCollection", nil]],
     Var_Type(?base, ?type),
     isArrayType(?type).
 
   // and the converse. TODO: more fine-grained distinction of library collections?
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     StoreArrayIndex_Base(?insn,_),
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     AccessPath_IsCollection(?ap),
-	?ap = [?base, ["dummyCollection", nil]],
+    ?ap = [?base, ["dummyCollection", nil]],
     Var_Type(?base, ?type),
     LibraryCollectionType(?type).
 
@@ -1009,7 +1010,7 @@
     NextInSamePhiNode(?insn, ?nextInsn),
     AssignLocal_From(?nextInsn, ?from),
     MayPointTo(?hctx2, ?heap2, ?ctx, ?from).
-	//.plan ?
+   .plan 1:(4,3,2,1)
 
   // for all returns of a method, the return variable has a known upper bound
   // for its points-to, and we take the union of all such bounds
@@ -1429,6 +1430,7 @@
   AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn) :-
     TentativeCollectionBaseApMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
     Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn).
+   .plan 1:(2,1)
 
   // now loads
   .decl TempMayPointTo(?heap:HeapAllocation, ?ctx:MayContext, ?to:Var)
