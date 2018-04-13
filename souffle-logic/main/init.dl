@@ -1,13 +1,9 @@
 #include "class-initialization.dl"
-#include "exceptions.dl"
 #include "finalization.dl"
 #include "implicit-reachable.dl"
 #include "native.dl"
 #include "reference.dl"
 #include "string-constants.dl"
-#ifndef DISABLE_METHOD_HANDLES
-#include "method-handles.dl"
-#endif
 #include "threads.dl"
 
 #if defined(HEAPDL) || defined(IMPORT_DYNAMIC_FACTS)
@@ -105,7 +101,7 @@ isContext(?ctx) :-
   ?s = "<<initial-context>>",
   configuration.InitContextRequest(?s),
   configuration.InitContextResponse(?s, ?ctx).
-         
+
 isJVMStartupContext(?ctx),
 isContext(?ctx) :-
   ?s = "<<jvm-startup-context>>",
@@ -117,7 +113,7 @@ isContext(?ctx) :-
   ?s = "<<clinit-context>>",
   configuration.InitContextRequest(?s),
   configuration.InitContextResponse(?s, ?ctx).
-    
+
 // The main method is reachable
 ApplicationEntryPoint(?method),
 ReachableContext(?initialContext, ?method) :-
@@ -138,7 +134,7 @@ ReachableContext(?clinitContext, ?clinit) :-
 
 configuration.InitHContextRequest("<<immutable-hcontext>>").
 configuration.InitHContextRequest("<<jvm-startup-hcontext>>").
-                                  
+
 isImmutableHContext(?hctx),
 isHContext(?hctx) :-
   ?s = "<<immutable-hcontext>>",
@@ -147,10 +143,10 @@ isHContext(?hctx) :-
 
 isJVMStartupHContext(?hctx),
 isHContext(?hctx) :-
-  ?s = "<<jvm-startup-hcontext>>", 
+  ?s = "<<jvm-startup-hcontext>>",
   configuration.InitHContextRequest(?s),
   configuration.InitHContextResponse(?s, ?hctx).
-                  
+
 // Create initial objects with their heap contexts
 SystemThreadGroup(?hctx, ?alloc) :-
   isJVMStartupHContext(?hctx),

@@ -12,6 +12,12 @@
     #include "android.dl"
   #endif
 
+  #include "string-concat.dl"
+  #include "exceptions.dl"
+  #ifndef DISABLE_METHOD_HANDLES
+    #include "method-handles.dl"
+  #endif
+
   #if defined(REFLECTION)
     #include "reflection/declarations.dl"
   #endif
@@ -19,7 +25,7 @@
   .decl FakeInvocation_RegisterFinalize0(?heap:HeapAllocation, ?invo:MethodInvocation)
 
   .decl FakeInvocation_RegisterFinalize(?value:Value, ?invo:MethodInvocation)
-  
+
   //-----------------------------------------------------------------------------
   // [Value]
   //-----------------------------------------------------------------------------
