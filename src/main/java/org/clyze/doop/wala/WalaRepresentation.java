@@ -120,10 +120,7 @@ public class WalaRepresentation {
 
     String param(IMethod m, int i)//REVIEW:SIFIS:I believe parameters are normal vi variables, same for this. Will look into it.
     {
-        if(m.isStatic())
-            return signature(m) + "/v" + (i+1);
-        else
-            return signature(m) + "/v" + (i+2);
+      return signature(m) + "/v" + (i+1);
     }
 
     String local(IMethod m, Local local)
