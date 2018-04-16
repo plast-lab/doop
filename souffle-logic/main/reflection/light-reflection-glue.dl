@@ -1,20 +1,23 @@
 // This file contains simple intraprocedural rules to handle
-// reflection patterns without Doop's full reflection support. The
-// rules do not create reified objects (such as Constructor or Method)
-// and should only be used to expose code that is behind very simple
-// reflective access. Patterns supported (assuming c is a Class object):
+// reflection patterns without Doop's full reflection support, only
+// using the "dummy-reflection" set of rules. The rules below do not
+// create reified objects (such as Constructor or Method) and should
+// only be used to expose code that is behind very simple reflective
+// access. Patterns supported (assuming c is a Class object):
 //
 // * c.get[Declared]Method("m").invoke()
 //
 // * c.getConstructor().newInstance()
+//
 
 #ifdef REFLECTION
 #error "light-reflection-glue.dl is not compatible with full reflection support"
 #endif
 
+// ** Pattern 1: local reflective method invocation **
+
 // Taken from reflection/declarations.dl.
 .decl java_lang_Class_getMethod(?to:Var, ?param:Var, ?from:Var)
-.output java_lang_Class_getMethod
 
 // Taken from reflection/rules.dl.
 java_lang_Class_getMethod(?to, ?param, ?from) :-
@@ -29,7 +32,6 @@ java_lang_Class_getMethod(?to, ?param, ?from) :-
 
 // Taken from reflection/rules.dl.
 .decl java_lang_reflect_Method_invoke(?invocation:MethodInvocation, ?methodVar:Var)
-.output java_lang_reflect_Method_invoke
 
 java_lang_reflect_Method_invoke(?invocation, ?methodVar) :-
   isMethod("<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
@@ -39,37 +41,28 @@ java_lang_reflect_Method_invoke(?invocation, ?methodVar) :-
   Method_DeclaringType(?inMethod, ?inType),
   ApplicationClass(?inType).
 
-.decl ReflectiveMethodCall(?m:Method, ?callerCtx:configuration.Context, ?calleeCtx:configuration.Context, ?this:Var, ?args:Var, ?invocation:MethodInvocation)
-.output ReflectiveMethodCall
+// A Method variable whose value (not modelled) may invoke a method reflectively.
+.decl ReflectiveMethodCall_Candidate(?methodVar:Var, ?methName:symbol, ?callerCtx:configuration.Context, ?type:Type)
 
-.decl ReflectiveMethodCall1(?methodVar:Var, ?string:symbol, ?callerCtx:configuration.Context, ?type:Type)
-.output ReflectiveMethodCall1
-ReflectiveMethodCall1(?methodVar, ?string, ?callerCtx, ?type) :-
+ReflectiveMethodCall_Candidate(?methodVar, ?methName, ?callerCtx, ?type) :-
   java_lang_Class_getMethod(?methodVar, ?param, ?from),
-  VarPointsTo(_, ?string, _, ?param),
-  isStringConstant(?string),
+  VarPointsTo(_, ?methName, _, ?param),
+  isStringConstant(?methName),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?type, ?classValue),
   ApplicationClass(?type).
 
-.decl ReflectiveMethodCall2(?methodVar:Var, ?this:Var, ?args:Var, ?invocation:MethodInvocation)
-.output ReflectiveMethodCall2
-ReflectiveMethodCall2(?methodVar, ?this, ?args, ?invocation) :-
-  java_lang_reflect_Method_invoke(?invocation, ?methodVar),
-  ActualParam(0, ?invocation, ?this),
-  ActualParam(1, ?invocation, ?args).
-
-.decl ReflectiveMethodCall3(?m:Method, ?type:Type, ?string:symbol)
-.output ReflectiveMethodCall3
-ReflectiveMethodCall3(?m, ?type, ?string) :-
-  Method_DeclaringType(?m, ?type),
-  ApplicationClass(?type),
-  Method_SimpleName(?m, ?string).
+// Hanlding of Method.invoke() on a candidate Method variable.
+.decl ReflectiveMethodCall(?m:Method, ?callerCtx:configuration.Context, ?calleeCtx:configuration.Context, ?this:Var, ?args:Var, ?invocation:MethodInvocation)
 
 ReflectiveMethodCall(?m, ?callerCtx, ?calleeCtx, ?this, ?args, ?invocation) :-
-  ReflectiveMethodCall1(?methodVar, ?string, ?callerCtx, ?type),
-  ReflectiveMethodCall2(?methodVar, ?this, ?args, ?invocation),
-  ReflectiveMethodCall3(?m, ?type, ?string),
+  ReflectiveMethodCall_Candidate(?methodVar, ?methName, ?callerCtx, ?type),
+  java_lang_reflect_Method_invoke(?invocation, ?methodVar),
+  ActualParam(0, ?invocation, ?this),
+  ActualParam(1, ?invocation, ?args),
+  Method_DeclaringType(?m, ?type),
+  ApplicationClass(?type),
+  Method_SimpleName(?m, ?methName),
   ImmutableContextFromContext(?callerCtx, ?calleeCtx).
 
 ReachableContext(?calleeCtx, ?m) :-
@@ -90,9 +83,10 @@ HeapInterproceduralAssign(?calleeCtx, ?to, ?callerCtx, ?from) :-
   ReturnVar(?from, ?m),
   AssignReturnValue(?invocation, ?to).
 
+// ** Pattern 2: local reflective construction invocation **
+
 // Copied from reflection/declarations.dl.
 .decl java_lang_Class_getConstructor(?to:Var, ?from:Var)
-.output java_lang_Class_getConstructor
 
 // Copied from reflection/rules.dl.
 java_lang_Class_getConstructor(?to, ?from) :-
@@ -103,7 +97,6 @@ java_lang_Class_getConstructor(?to, ?from) :-
 
 // Inspired from reflection/rules.dl.
 .decl java_lang_reflect_Constructor_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)
-.output java_lang_reflect_Constructor_newInstance
 
 // Copied/simplified from rules.dl.
 java_lang_reflect_Constructor_newInstance(?invocation, ?to, ?from) :-
