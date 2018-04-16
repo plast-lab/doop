@@ -36,7 +36,7 @@ java_lang_reflect_Method_invoke(?invocation, ?methodVar) :-
   MethodInvocation_Method(?invocation, "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
   VirtualMethodInvocation_Base(?invocation, ?methodVar).
 
-.decl ReflectiveMethodCall(?m:Method, ?callerCtx:configuration.Context, ?calleeCtx:configuration.Context, ?hctx:configuration.HContext, ?this:Var, ?argsVal:Value)
+.decl ReflectiveMethodCall(?m:Method, ?callerCtx:configuration.Context, ?calleeCtx:configuration.Context, ?this:Var, ?args:Var, ?invocation:MethodInvocation)
 .output ReflectiveMethodCall
 
 .decl ReflectiveMethodCall1(?methodVar:Var, ?string:symbol, ?callerCtx:configuration.Context, ?type:Type)
@@ -49,16 +49,15 @@ ReflectiveMethodCall1(?methodVar, ?string, ?callerCtx, ?type) :-
   ReifiedClass(?type, ?classValue),
   ApplicationClass(?type).
 
-.decl ReflectiveMethodCall2(?methodVar:Var, ?this:Var, ?argsVal:Value)
+.decl ReflectiveMethodCall2(?methodVar:Var, ?this:Var, ?args:Var, ?invocation:MethodInvocation)
 .output ReflectiveMethodCall2
-ReflectiveMethodCall2(?methodVar, ?this, ?argsVal) :-
+ReflectiveMethodCall2(?methodVar, ?this, ?args, ?invocation) :-
   java_lang_reflect_Method_invoke(?invocation, ?methodVar),
   Instruction_Method(?invocation, ?inMethod),
   Method_DeclaringType(?inMethod, ?inType),
   ApplicationClass(?inType),
   ActualParam(0, ?invocation, ?this),
-  ActualParam(1, ?invocation, ?args),
-  VarPointsTo(_, ?argsVal, _, ?args).
+  ActualParam(1, ?invocation, ?args).
 
 .decl ReflectiveMethodCall3(?m:Method, ?type:Type, ?string:symbol)
 .output ReflectiveMethodCall3
@@ -67,25 +66,29 @@ ReflectiveMethodCall3(?m, ?type, ?string) :-
   ApplicationClass(?type),
   Method_SimpleName(?m, ?string).
 
-ReflectiveMethodCall(?m, ?callerCtx, ?calleeCtx, ?hctx, ?this, ?argsVal) :-
+ReflectiveMethodCall(?m, ?callerCtx, ?calleeCtx, ?this, ?args, ?invocation) :-
   ReflectiveMethodCall1(?methodVar, ?string, ?callerCtx, ?type),
-  ReflectiveMethodCall2(?methodVar, ?this, ?argsVal),
+  ReflectiveMethodCall2(?methodVar, ?this, ?args, ?invocation),
   ReflectiveMethodCall3(?m, ?type, ?string),
-  ImmutableContextFromContext(?callerCtx, ?calleeCtx),
-  ImmutableHContextFromContext(?callerCtx, ?hctx).
+  ImmutableContextFromContext(?callerCtx, ?calleeCtx).
 
 ReachableContext(?calleeCtx, ?m) :-
   ReflectiveMethodCall(?m, _, ?calleeCtx, _, _, _).
 
 VarPointsTo(?hctx, ?argVal, ?calleeCtx, ?param) :-
-  ReflectiveMethodCall(?m, _, ?calleeCtx, ?hctx, _, ?argsVal),
-  ArrayIndexPointsTo(_, ?argVal, _, ?argsVal),
+  ReflectiveMethodCall(?m, _, ?calleeCtx, _, ?args, _),
+  VarPointsTo(_, ?argsVal, _, ?args),
+  ArrayIndexPointsTo(?hctx, ?argVal, _, ?argsVal),
   FormalParam(_, ?m, ?param).
 
-VarPointsTo(?hctx, ?val, ?calleeCtx, ?thisParam) :-
-  ReflectiveMethodCall(?m, _, ?calleeCtx, ?hctx, ?this, _),
-  VarPointsTo(?hctx, ?val, _, ?this),
+HeapInterproceduralAssign(?calleeCtx, ?thisParam, ?callerCtx, ?this) :-
+  ReflectiveMethodCall(?m, ?callerCtx, ?calleeCtx, ?this, _, _),
   ThisVar(?m, ?thisParam).
+
+HeapInterproceduralAssign(?calleeCtx, ?to, ?callerCtx, ?from) :-
+  ReflectiveMethodCall(?m, ?callerCtx, ?calleeCtx, _, _, ?invocation),
+  ReturnVar(?from, ?m),
+  AssignReturnValue(?invocation, ?to).
 
 // Copied from reflection/declarations.dl.
 .decl java_lang_Class_getConstructor(?to:Var, ?from:Var)
