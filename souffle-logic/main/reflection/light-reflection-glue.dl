@@ -34,7 +34,10 @@ java_lang_Class_getMethod(?to, ?param, ?from) :-
 java_lang_reflect_Method_invoke(?invocation, ?methodVar) :-
   isMethod("<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
   MethodInvocation_Method(?invocation, "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
-  VirtualMethodInvocation_Base(?invocation, ?methodVar).
+  VirtualMethodInvocation_Base(?invocation, ?methodVar),
+  Instruction_Method(?invocation, ?inMethod),
+  Method_DeclaringType(?inMethod, ?inType),
+  ApplicationClass(?inType).
 
 .decl ReflectiveMethodCall(?m:Method, ?callerCtx:configuration.Context, ?calleeCtx:configuration.Context, ?this:Var, ?args:Var, ?invocation:MethodInvocation)
 .output ReflectiveMethodCall
@@ -53,9 +56,6 @@ ReflectiveMethodCall1(?methodVar, ?string, ?callerCtx, ?type) :-
 .output ReflectiveMethodCall2
 ReflectiveMethodCall2(?methodVar, ?this, ?args, ?invocation) :-
   java_lang_reflect_Method_invoke(?invocation, ?methodVar),
-  Instruction_Method(?invocation, ?inMethod),
-  Method_DeclaringType(?inMethod, ?inType),
-  ApplicationClass(?inType),
   ActualParam(0, ?invocation, ?this),
   ActualParam(1, ?invocation, ?args).
 
