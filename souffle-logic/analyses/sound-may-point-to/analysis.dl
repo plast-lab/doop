@@ -2,8 +2,6 @@
 // "True-may"-point-to?). Does not conclude anything if it is not
 // certain it over-approximates all possible points-to targets. That
 // is, an empty points-to set means "anything can be pointed to".
-.type Context
-.type HContext
 .type String
 
 .decl InitialRootMethodForMayAnalysis(?meth:Method)
@@ -85,8 +83,8 @@
 
   AllCtxIntraproceduralMustPointToInMethod(?hctx, ?heap, ?var, ?method) :-
     InitialMayContext(?initCtx),
-	IntraproceduralMustPointTo(?hctx, ?heap, ?initCtx, ?var),
-	Var_DeclaringMethod(?var, ?method).
+    IntraproceduralMustPointTo(?hctx, ?heap, ?initCtx, ?var),
+    Var_DeclaringMethod(?var, ?method).
 
   IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?var) :-
     MayReachableMethodUnderMayContext(?ctx, ?method),
@@ -897,7 +895,7 @@
 
   // transitive unresolved call
   MethodHasUnresolvedInvocation(?ctx, ?method) :-
-	MayReachableMethodUnderMayContext_Prev(?ctx, ?method),
+    MayReachableMethodUnderMayContext_Prev(?ctx, ?method),
     MethodHasInvocationSite(?invo, ?method),
     !InvocationSiteFullyResolved(?ctx, ?invo),
     !IgnorableMethodInvocation(?invo).
@@ -908,7 +906,7 @@
 
   // transitive may-assign-field based on sound-callgraph
   MethodMayAssignField(?fld, ?ctx, ?method) :-
-	MayReachableMethodUnderMayContext_Prev(?ctx, ?method),
+    MayReachableMethodUnderMayContext_Prev(?ctx, ?method),
     Instruction_Method(?insn, ?method),
     FieldInstruction_Signature(?insn, ?fld).
 
@@ -1086,13 +1084,13 @@
   CalleeFromSameCallsite(?calleeCtx1, ?meth1, ?calleeCtx2, ?meth2) :-
     MayCallGraphEdge_Prev(?calleeCtx1, ?meth1, ?callerCtx, ?invo),
     MayCallGraphEdge_Prev(?calleeCtx2, ?meth2, ?callerCtx, ?invo),
-	ord(?meth1) < ord(?meth2).
+    ord(?meth1) < ord(?meth2).
    .plan 1: (2,1)
 
   .decl FirstCalleeFromCallsite(?calleeCtx:MayContext, ?meth:Method)
   FirstCalleeFromCallsite(?calleeCtx, ?meth) :-
     MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
-	!CalleeFromSameCallsite(_, _, ?calleeCtx, ?meth).
+    !CalleeFromSameCallsite(_, _, ?calleeCtx, ?meth).
 
   .decl NotNextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:Method, ?calleeCtxNext:MayContext, ?methNext:Method)
   NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext) :-
@@ -1116,7 +1114,7 @@
   UpToCallee_ReturnMayPointTo(?hctx2, ?heap2, ?calleeCtx, ?meth) :-
     UpToCallee_ReturnMayPointTo(?hctx1, ?heap1, ?prevCalleeCtx, ?prevMeth),
     NextCalleeFromCallsite(?prevCalleeCtx, ?prevMeth, ?calleeCtx, ?meth),
-	AllReturn_MayPointTo(?hctx2, ?heap2, ?calleeCtx, ?meth).
+    AllReturn_MayPointTo(?hctx2, ?heap2, ?calleeCtx, ?meth).
 
   .decl AllCallee_ReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeCtx:MayContext, ?meth:Method)
   AllCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
@@ -1658,6 +1656,218 @@ InitialRootMethodForMayAnalysis(?meth) :-
 
 //// ====================================
 //// BEGIN client: assumenoexternalsideeffects
+
+// .comp ExternalSideEffects<SoundMayAnalysisParameter> {
+//   .init SoundMay = SoundMayAnalysisParameter
+
+  .decl VarHasNoExternalSideEffects(?var:Var)
+  .decl InvocationHasNoExternalSideEffects(?callerCtx:MayContext, ?invo:MethodInvocation)
+  .decl MethodHasNoExternalSideEffects(?callerCtx:MayContext, ?meth:Method)
+//  .decl MethodHasNoExternalSideEffects_Prev(?callerCtx:MayContext, ?meth:Method)
+
+  // intermediate relation
+  .decl VarHasNoExternalSideEffectsUpToPhiInstruction(?insn:Instruction)
+
+  VarHasNoExternalSideEffects(?var) :-
+    Var_Type(?var, ?type),
+    !isReferenceType(?type),
+    Var_DeclaringMethod(?var, ?meth),
+    SoundMayPhase3.MayReachableMethodUnderMayContext(_, ?meth).
+
+  VarHasNoExternalSideEffects(?var) :-
+    (AssignNormalHeapAllocation(_, ?var, ?meth);
+     AssignContextInsensitiveHeapAllocation(_, ?var, ?meth)),
+    SoundMayPhase3.MayReachableMethodUnderMayContext(_, ?meth).
+
+  VarHasNoExternalSideEffects(?var) :-
+    isAssignNull_Insn(?insn),
+    AssignInstruction_To(?insn, ?var),
+    Instruction_Method(?insn, ?inMeth),
+    SoundMayPhase3.MayReachableMethodUnderMayContext(_, ?inMeth).
+
+  VarHasNoExternalSideEffects(?to) :-
+    VarHasNoExternalSideEffects(?from),
+    AssignLocal_From(?insn, ?from),
+    !PhiNodeHead(?insn, _),
+    AssignInstruction_To(?insn, ?to).
+
+  VarHasNoExternalSideEffects(?to) :-
+    AssignCast_From(?insn, ?from),
+    VarHasNoExternalSideEffects(?from),
+    AssignInstruction_To(?insn, ?to).
+
+  VarHasNoExternalSideEffects(?var) :-
+    VarHasNoExternalSideEffectsUpToPhiInstruction(?lastInsn),
+    !NextInSamePhiNode(?lastInsn, _),
+    AssignInstruction_To(?lastInsn, ?var).
+
+  VarHasNoExternalSideEffectsUpToPhiInstruction(?headInsn) :-
+    PhiNodeHead(_, ?headInsn),
+    AssignLocal_From(?headInsn, ?from),
+    VarHasNoExternalSideEffects(?from).
+
+  VarHasNoExternalSideEffectsUpToPhiInstruction(?nextInsn) :-
+    VarHasNoExternalSideEffectsUpToPhiInstruction(?insn),
+    NextInSamePhiNode(?insn, ?nextInsn),
+    AssignLocal_From(?nextInsn, ?from),
+    VarHasNoExternalSideEffects(?from).
+
+  VarHasNoExternalSideEffects(?to) :-
+    VarHasNoExternalSideEffects(?base),
+    LoadInstanceField_Base(?insn, ?base),
+    LoadInstanceField_To(?insn, ?to).
+
+  // All straightforward up to here. Now the tough part. First stores...
+
+  .decl UpToInstanceFieldStoreSafe(?meth:Method, ?storeInsn:Instruction)
+
+  UpToInstanceFieldStoreSafe(?meth, ?storeInsn) :-
+    FirstInstanceStoreInMethod(?storeInsn, ?meth),
+    StoreInstanceField_Base(?storeInsn, ?base),
+    VarHasNoExternalSideEffects(?base).
+  UpToInstanceFieldStoreSafe(?meth, ?storeInsn) :-
+    UpToInstanceFieldStoreSafe(?meth, ?prevStoreInsn),
+    NextInstanceStoreInSameMethod(?prevStoreInsn, ?storeInsn, ?meth),
+    StoreInstanceField_Base(?storeInsn, ?base),
+    VarHasNoExternalSideEffects(?base).
+
+  .decl AllInstanceFieldStoresSafe(?meth:Method)
+  AllInstanceFieldStoresSafe(?meth) :-
+    SoundMayPhase3.MayReachableMethodUnderMayContext(_, ?meth),
+    !FirstInstanceStoreInMethod(_, ?meth).
+  AllInstanceFieldStoresSafe(?meth) :-
+    UpToInstanceFieldStoreSafe(?meth, ?lastStoreInsn),
+    !NextInstanceStoreInSameMethod(?lastStoreInsn, _, ?meth).
+
+  // ... then calls.
+  // Up to a certain actual param, the method call is safe
+  .decl UpToParamCalleeSafe(?index:number, ?callerCtx:MayContext,
+                 ?invocation:MethodInvocation, ?calleeCtx:MayContext, ?toMeth:Method)
+  UpToParamCalleeSafe(0, ?callerCtx, ?invo, ?calleeCtx, ?toMeth) :-
+    SoundMayPhase3.MayCallGraphEdge(?calleeCtx, ?toMeth, ?callerCtx, ?invo),
+    ActualParam(0, ?invo, ?var),
+    VarHasNoExternalSideEffects(?var).
+  UpToParamCalleeSafe(?index+1, ?callerCtx, ?invo, ?calleeCtx, ?toMeth) :-
+    UpToParamCalleeSafe(?index, ?callerCtx, ?invo, ?calleeCtx, ?toMeth),
+    ActualParam(?index+1, ?invo, ?var),
+    VarHasNoExternalSideEffects(?var).
+
+  .decl AllParamsCalleeSafe(?callerCtx:MayContext,
+                 ?invocation:MethodInvocation, ?calleeCtx:MayContext, ?toMeth:Method)
+  AllParamsCalleeSafe(?callerCtx, ?invo, ?calleeCtx, ?toMeth) :-
+    SoundMayPhase3.MayCallGraphEdge(?calleeCtx, ?toMeth, ?callerCtx, ?invo),
+    !ActualParam(_, ?invo, _).
+  AllParamsCalleeSafe(?callerCtx, ?invo, ?calleeCtx, ?toMeth) :-
+    UpToParamCalleeSafe(?index, ?callerCtx, ?invo, ?calleeCtx, ?toMeth),
+    !ActualParam(?index+1, ?invo, _).
+
+  .decl UpToCallee_CallHasNoExternalSideEffects(?callerCtx:MayContext,
+                 ?invocation:MethodInvocation, ?calleeCtx:MayContext, ?toMeth:Method)
+  UpToCallee_CallHasNoExternalSideEffects(?callerCtx, ?invo, ?calleeCtx, ?toMeth) :-
+    SoundMayPhase3.FirstCalleeFromCallsite(?calleeCtx, ?toMeth),
+    AllParamsCalleeSafe(?callerCtx, ?invo, ?calleeCtx, ?toMeth),
+    MethodHasNoExternalSideEffects(?calleeCtx, ?toMeth).
+
+  UpToCallee_CallHasNoExternalSideEffects(?callerCtx, ?invo, ?calleeCtx, ?toMeth) :-
+    UpToCallee_CallHasNoExternalSideEffects(?callerCtx, ?invo, ?calleeCtx, ?prevMeth),
+    SoundMayPhase3.NextCalleeFromCallsite(?calleeCtx, ?prevMeth, ?calleeCtx, ?toMeth),
+    MethodHasNoExternalSideEffects(?calleeCtx, ?toMeth),
+    AllParamsCalleeSafe(?callerCtx, ?invo, ?calleeCtx, ?toMeth).
+
+  InvocationHasNoExternalSideEffects(?callerCtx, ?invo) :-
+    UpToCallee_CallHasNoExternalSideEffects(?callerCtx, ?invo, ?calleeCtx, ?toMeth),
+    !SoundMayPhase3.NextCalleeFromCallsite(?calleeCtx, ?toMeth, _, _).
+
+  MethodHasNoExternalSideEffects(?ctx, ?meth) :-
+    SoundMayPhase3.MayReachableMethodUnderMayContext(?ctx, ?meth),
+    !SoundMayPhase3.MethodHasUnresolvedInvocation(?ctx, ?meth),
+    AllInstanceFieldStoresSafe(?meth),
+    !_MethodHasMonitorInstruction(?meth),
+    !_MethodIsNative(?meth),
+    !_MethodHasStaticStore(?meth).
+
+  // Debugging
+  .output VarHasNoExternalSideEffects
+  .output InvocationHasNoExternalSideEffects
+  .output MethodHasNoExternalSideEffects
+  .output VarHasNoExternalSideEffectsUpToPhiInstruction
+  .output UpToInstanceFieldStoreSafe
+  .output AllInstanceFieldStoresSafe
+  .output UpToParamCalleeSafe
+  .output AllParamsCalleeSafe
+  .output UpToCallee_CallHasNoExternalSideEffects
+// }
+
+//// Utilities
+.decl _MethodHasMonitorInstruction(?meth:Method)
+_MethodHasMonitorInstruction(?meth) :-
+  isMonitorInstruction(?insn),
+  Instruction_Method(?insn, ?meth).
+
+.decl _MethodIsNative(?meth:Method)
+_MethodIsNative(?meth) :-
+  Method_Modifier("native", ?meth).
+
+.decl _MethodHasStaticStore(?meth:Method)
+_MethodHasStaticStore(?meth) :-
+  StoreStaticField_From(?insn, _),
+  Instruction_Method(?insn, ?meth).
+
+.decl _StoreInstanceFieldInMethod(?storeInsn:Instruction, ?meth:Method)
+_StoreInstanceFieldInMethod(?storeInsn, ?meth) :-
+  StoreInstanceField_Base(?storeInsn, _),
+  Instruction_Method(?storeInsn, ?meth).
+
+.decl InstanceStoreInSameMethod(?storeInsn1:Instruction, ?storeInsn2:Instruction, ?meth:Method)
+InstanceStoreInSameMethod(?storeInsn1, ?storeInsn2, ?meth) :-
+  _StoreInstanceFieldInMethod(?storeInsn1, ?meth),
+  _StoreInstanceFieldInMethod(?storeInsn2, ?meth),
+  ord(?storeInsn1) < ord(?storeInsn2).
+
+.decl FirstInstanceStoreInMethod(?storeInsn:Instruction, ?meth:Method)
+FirstInstanceStoreInMethod(?storeInsn, ?meth) :-
+  _StoreInstanceFieldInMethod(?storeInsn, ?meth),
+  !InstanceStoreInSameMethod(_, ?storeInsn, ?meth).
+
+.decl NotNextInstanceStoreInSameMethod(?storeInsn1:Instruction, ?storeInsn2:Instruction, ?meth:Method)
+NotNextInstanceStoreInSameMethod(?storeInsn1, ?storeInsn2, ?meth) :-
+  InstanceStoreInSameMethod(?storeInsn1, ?storeInsn2, ?meth),
+  InstanceStoreInSameMethod(?storeInsn1, ?storeInsnOther, ?meth),
+  ord(?storeInsnOther) < ord(?storeInsn2).
+
+.decl NextInstanceStoreInSameMethod(?storeInsn1:Instruction, ?storeInsn2:Instruction, ?meth:Method)
+NextInstanceStoreInSameMethod(?storeInsn1, ?storeInsn2, ?meth) :-
+  InstanceStoreInSameMethod(?storeInsn1, ?storeInsn2, ?meth),
+  !NotNextInstanceStoreInSameMethod(?storeInsn1, ?storeInsn2, ?meth).
+
+.output _MethodHasMonitorInstruction
+.output _MethodIsNative
+.output _MethodHasStaticStore
+.output _StoreInstanceFieldInMethod
+.output InstanceStoreInSameMethod
+.output FirstInstanceStoreInMethod
+.output NotNextInstanceStoreInSameMethod
+.output NextInstanceStoreInSameMethod
+
+// //// Configuration of client
+// .init SideEffectAnalysis = ExternalSideEffects<SoundMayPhase3>
+
+.decl Output_MethodHasNoExternalSideEffects(?meth:Method)
+// Output_MethodHasNoExternalSideEffects(?meth) :-
+// //   SideEffectAnalysis.MethodHasNoExternalSideEffects(?initCtx, ?meth),
+//   MethodHasNoExternalSideEffects(?initCtx, ?meth),
+//   InitialMayContext(?initCtx).
+
+Output_MethodHasNoExternalSideEffects(cat("-assumenoexternalsideeffects class ", cat(?type, cat(" { ", cat(?retType, cat(" ", cat(?simpleName, cat(substr(?descriptor, strlen(?retType), strlen(?descriptor)), "; }")))))))) :-
+  MethodHasNoExternalSideEffects(?initCtx, ?m),
+  InitialMayContext(?initCtx),
+  basic.MethodLookup(?simpleName, _, _, ?m),
+  Method_DeclaringType(?m, ?type),
+  Method_Descriptor(?m, ?descriptor),
+  Method_SimpleName(?m, ?simpleName),
+  Method_ReturnType(?m, ?retType).
+
+.output Output_MethodHasNoExternalSideEffects
 
 //// END client: assumenoexternalsideeffects
 
