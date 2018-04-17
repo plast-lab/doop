@@ -184,8 +184,7 @@ class SouffleAnalysis extends DoopAnalysis {
         analysesCachePerName.mkdirs()
         souffleAnalysisCacheFile = new File("${Doop.souffleAnalysesCache}/${name}/${analysisChecksum}")
 
-        if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value ||
-            options.X_CONTEXT_REMOVER.value) {
+        if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value) {
 
             if (options.X_CONTEXT_REMOVER.value) {
                 File analysisFile = new File(analysis as String)

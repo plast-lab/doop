@@ -775,11 +775,11 @@ public class WalaFactWriter {
         _db.add(METHOD_DECL_EXCEPTION, writeType(exception), _rep.signature(m));
     }
 
-    void writeFormalParam(IMethod m, int i) {
+    void writeFormalParam(IMethod m, int paramIndex, int actualIndex) {
         String methodId = _rep.signature(m);
-        String var = _rep.param(m, i);
-        _db.add(FORMAL_PARAM, str(i), methodId, var);
-        _db.add(VAR_TYPE, var, writeType(m.getParameterType(i)));
+        String var = _rep.param(m, paramIndex);
+        _db.add(FORMAL_PARAM, str(actualIndex), methodId, var);
+        _db.add(VAR_TYPE, var, writeType(m.getParameterType(paramIndex)));
         _db.add(VAR_DECLARING_METHOD, var, methodId);
     }
 

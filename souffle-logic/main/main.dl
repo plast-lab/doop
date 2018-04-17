@@ -61,12 +61,6 @@
   #include "context-sensitivity.dl"
   #include "export.dl"
 
-  #define InvocationHandlerInvoke(invokeMeth)   Method_SimpleName(invokeMeth, "invoke"), \
-    Method_DeclaringType(invokeMeth, ?class), \
-    basic.SubtypeOf(?class, ?tInvocationHandler), \
-    isInterfaceType(?tInvocationHandler), \
-    ?tInvocationHandler = "java.lang.reflect.InvocationHandler"
-
   #define NEW_PROXY_INSTANCE "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"
   #define DYNAMIC_PROXY_EXPORT
 
@@ -81,7 +75,11 @@
 
     ReachableProxyInvoke(?invokeMeth) :-
       Reachable(?invokeMeth),
-      InvocationHandlerInvoke(?invokeMeth).
+      Method_SimpleName(?invokeMeth, "invoke"),
+      Method_DeclaringType(?invokeMeth, ?class),
+      basic.SubtypeOf(?class, ?tInvocationHandler),
+      isInterfaceType(?tInvocationHandler),
+      ?tInvocationHandler = "java.lang.reflect.InvocationHandler".
 
     .decl ReachableNewProxyInstance(?inMeth:Method)
     .output ReachableNewProxyInstance
