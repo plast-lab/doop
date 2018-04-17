@@ -317,7 +317,7 @@ public class WalaRepresentation {
     String invoke(IMethod inMethod, SSAInvokeInstruction expr, Session session)
     {
         MethodReference exprMethod = expr.getDeclaredTarget();
-        String defaultMid = exprMethod.getDeclaringClass() + "." + exprMethod.getName();
+        String defaultMid = exprMethod.getDeclaringClass() + "." + fixTypeString(exprMethod.getName().toString());
         String midPart = (expr instanceof SSAInvokeDynamicInstruction)? dynamicInvokeMiddlePart((SSAInvokeDynamicInstruction) expr, defaultMid) : defaultMid;
 
         return signature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
