@@ -201,6 +201,10 @@ class WalaFactGenerator {
         // TODO annotation?
         // TODO enum?
 
+        if(m.isNative())
+        {
+            _writer.writeNativeReturnVar(m);
+        }
         int paramIndex = 0;
         if(!m.isStatic())
         {
