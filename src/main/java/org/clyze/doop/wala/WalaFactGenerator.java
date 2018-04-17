@@ -209,10 +209,12 @@ class WalaFactGenerator {
         }
 
         while (paramIndex < m.getNumberOfParameters()) {
-            if (m.isStatic())
+            if (m.isStatic() || m.isClinit()) {
                 _writer.writeFormalParam(m, paramIndex, paramIndex);
-            else
-                _writer.writeFormalParam(m, paramIndex,paramIndex - 1);
+            }
+            else {
+                _writer.writeFormalParam(m, paramIndex, paramIndex - 1);
+            }
             paramIndex++;
 
         }
