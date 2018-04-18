@@ -75,10 +75,10 @@ class WalaFactGenerator {
                 _writer.writeDirectSuperinterface(iClass, i);
             }
 
-            iClass.getAllFields().forEach(this::generate);
+            iClass.getDeclaredInstanceFields().forEach(this::generate);
+            iClass.getDeclaredStaticFields().forEach(this::generate);
 
-
-            for (IMethod m : iClass.getAllMethods()) {
+            for (IMethod m : iClass.getDeclaredMethods()) {
                 Session session = new org.clyze.doop.wala.Session();
                 try {
                     generate(m, session);
