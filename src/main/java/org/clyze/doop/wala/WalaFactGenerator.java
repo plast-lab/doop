@@ -53,8 +53,10 @@ class WalaFactGenerator {
 //                continue;
 //            }
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
+            //if(!iClass.getName().toString().contains("cfish"))continue;
+            //System.out.println("Class " + iClass.getName().toString() +" to be analyzed");
             //IRPrinter.printIR(iClass);
-            //if(skipped == 0)continue;
+
             _writer.writeClassOrInterfaceType(iClass);
             //TODO: Handling of Arrays?
             if(iClass.isAbstract())
@@ -600,7 +602,6 @@ class WalaFactGenerator {
             typeRef = typeInference.getType(varIndex).getTypeReference();
         if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("type is " + typeRef.toString());
         if (localNames != null) {
-            assert localNames.length == 1;
             l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
         }
         else {
