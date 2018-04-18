@@ -937,7 +937,6 @@ public class WalaFactWriter {
             typeRef = typeInference.getType(varIndex).getTypeReference();
 
         if (localNames != null) {
-            assert localNames.length == 1;
             l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
         }
         else {
