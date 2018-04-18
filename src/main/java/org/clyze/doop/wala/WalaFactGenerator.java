@@ -78,7 +78,7 @@ class WalaFactGenerator {
             iClass.getAllFields().forEach(this::generate);
 
 
-            for (IMethod m : iClass.getAllMethods()) {
+            for (IMethod m : iClass.getDeclaredMethods()) {
                 Session session = new org.clyze.doop.wala.Session();
                 try {
                     generate(m, session);
@@ -618,20 +618,8 @@ class WalaFactGenerator {
         }
         else {
             // Return something has a single use
-
-
             Local l = createLocal(ir, instruction, instruction.getUse(0), typeInference);
-//            int returnVar = instruction.getUse(0);
-//            String[] localNames = ir.getLocalNames(instruction.iindex, returnVar);
-//            if (localNames != null) {
-//                assert localNames.length == 1;
-//                l = new Local("v" + returnVar, localNames[0], m.getReturnType());
-//            }
-//            //TODO : Check when this occurs
-//            else {
-//
-//                l = new Local("v" + returnVar, m.getReturnType());
-//            }
+            l.type = m.getReturnType();
             _writer.writeReturn(m, instruction, l, session);
         }
     }
