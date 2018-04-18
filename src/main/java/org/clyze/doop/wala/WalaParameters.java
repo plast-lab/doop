@@ -1,5 +1,7 @@
 package org.clyze.doop.wala;
 
+import org.clyze.doop.util.filter.ClassFilter;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,6 +10,8 @@ public class WalaParameters {
     List<String> _libraries = new ArrayList<>();
     String _javaPath = null;
     String _outputDir = null;
+    ClassFilter applicationClassFilter;
+    String appRegex = "**";
 
     public void setInputs(List<String> inputs) {
         this._inputs = inputs;
