@@ -116,12 +116,14 @@ public class Main {
         //driver.doInParallel(classes);
 
         IClass klass;
-        while ( classes.hasNext()) {
+        while (classes.hasNext()) {
             klass = classes.next();
             if (isApplicationClass(walaParameters, klass)) {
                 walaFactWriter.writeApplicationClass(klass);
             }
         }
+
+        classes = cha.iterator();
         driver.doSequentially(classes, walaFactWriter, walaParameters._outputDir);
         db.flush();
         db.close();
