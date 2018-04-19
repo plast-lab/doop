@@ -769,12 +769,13 @@ class WalaFactGenerator {
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
 
-                    for(int k=0;k<instructions[j].getNumberOfUses();k++) {
+                    for(int k=0;k < instructions[j].getNumberOfUses();k++) {
                         typeAbstraction = typeInference.getType(instructions[j].getUse(k));
-                        if(typeAbstraction == null)
+                        if(typeAbstraction.getType() == null)
                             typeReference = TypeReference.JavaLangObject;
                         else
                             typeReference = typeAbstraction.getTypeReference();
+                        //System.out.println("v"+instructions[j].getUse(k) + " "+typeReference);
                         //System.out.println("\t\t" + _rep.fixTypeString(typeReference.toString()) + " v"+ instructions[j].getUse(k) + "\n");
                         res = varTypeMap.get(instructions[j].getUse(k));
                         if(res == null)
@@ -784,7 +785,7 @@ class WalaFactGenerator {
                     }
                     if(instructions[j].hasDef()) {
                         typeAbstraction = typeInference.getType(instructions[j].getDef());
-                        if(typeAbstraction == null)
+                        if(typeAbstraction.getType() == null)
                             typeReference = TypeReference.JavaLangObject;
                         else
                             typeReference = typeAbstraction.getTypeReference();
