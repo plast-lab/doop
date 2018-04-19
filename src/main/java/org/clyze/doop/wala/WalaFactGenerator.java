@@ -601,7 +601,7 @@ class WalaFactGenerator {
 
         TypeReference typeRef;
         if (varIndex != -1) {
-            if (typeInference.getType(varIndex).getType() == null)
+            if (typeInference.isUndefined(varIndex))
                 typeRef = TypeReference.JavaLangObject;
             else
                 typeRef = typeInference.getType(varIndex).getTypeReference();
