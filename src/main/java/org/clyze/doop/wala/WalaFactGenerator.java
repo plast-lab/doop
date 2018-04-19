@@ -13,6 +13,7 @@ import com.ibm.wala.types.TypeReference;
 import soot.*;
 
 
+import java.util.HashMap;
 import java.util.Iterator;
 
 /**
@@ -28,12 +29,14 @@ class WalaFactGenerator {
     private AnalysisOptions options;
     private IAnalysisCacheView cache;
     private WalaIRPrinter IRPrinter;
+    private WalaRepresentation _rep;
 
     WalaFactGenerator(WalaFactWriter writer, Iterator<IClass> iClasses, String outDir)
     {
         this._writer = writer;
 
         this._iClasses = iClasses;
+        _rep = WalaRepresentation.getRepresentation();
         options = new AnalysisOptions();
         options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
         cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
@@ -243,7 +246,8 @@ class WalaFactGenerator {
 
     private void generate(IMethod m, IR ir, Session session)
     {
-
+        //System.out.println(m.getName().toString());
+        HashMap<Integer, String> varTypeMap = getVarTypeMap(ir);
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
         TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
@@ -605,7 +609,7 @@ class WalaFactGenerator {
             typeRef = TypeReference.JavaLangObject;
         else
             typeRef = typeInference.getType(varIndex).getTypeReference();
-        if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("type is " + typeRef.toString());
+        if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("v" + varIndex +" type is " + typeRef.toString());
         if (localNames != null) {
             l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
         }
@@ -745,6 +749,44 @@ class WalaFactGenerator {
                 return i;
         }
         return -1;
+    }
+
+    public HashMap<Integer,String> getVarTypeMap(IR ir)
+    {
+        HashMap<Integer,String> varTypeMap = new HashMap<>();
+        String res;
+        SSAInstruction[] instructions = ir.getInstructions();
+        SSACFG cfg = ir.getControlFlowGraph();
+        TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
+
+        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+            int start = basicBlock.getFirstInstructionIndex();
+            int end = basicBlock.getLastInstructionIndex();
+            for (int j = start; j <= end; j++) {
+                if (instructions[j] != null) {
+
+                    for(int k=0;k<instructions[j].getNumberOfUses();k++) {
+                        //System.out.println("\t\t" + _rep.fixTypeString(typeInference.getType(instructions[j].getUse(k)).getTypeReference().toString()) + " v"+ instructions[j].getUse(k) + "\n");
+                        res = varTypeMap.get(instructions[j].getUse(k));
+                        if(res == null)
+                            varTypeMap.put(instructions[j].getUse(k), _rep.fixTypeString(typeInference.getType(instructions[j].getUse(k)).getTypeReference().toString()));
+                        else if(!res.equals(_rep.fixTypeString(typeInference.getType(instructions[j].getUse(k)).getTypeReference().toString())))
+                            System.out.println("WHAT");
+                    }
+                    if(instructions[j].hasDef()) {
+                        //System.out.println("\t\t" + _rep.fixTypeString(typeInference.getType(instructions[j].getDef()).getTypeReference().toString()) + " v" + instructions[j].getDef() + "\n");
+                        res = varTypeMap.get(instructions[j].getDef());
+                        if(res == null)
+                            varTypeMap.put(instructions[j].getDef(), _rep.fixTypeString(typeInference.getType(instructions[j].getDef()).getTypeReference().toString()));
+                        else if(!res.equals(_rep.fixTypeString(typeInference.getType(instructions[j].getDef()).getTypeReference().toString())))
+                            System.out.println("WHAT");
+                    }
+
+                }
+            }
+        }
+        return varTypeMap;
     }
 }
 

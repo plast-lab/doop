@@ -1,5 +1,6 @@
 package org.clyze.doop.wala;
 
+import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
@@ -10,6 +11,7 @@ import com.ibm.wala.ssa.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
@@ -122,6 +124,7 @@ public class WalaIRPrinter {
     public void printIR(IMethod m, PrintWriter writer)
     {
         IR ir = _cache.getIR(m, Everywhere.EVERYWHERE);
+        printVars(ir,writer);
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
         SymbolTable symbolTable = ir.getSymbolTable();
@@ -156,6 +159,35 @@ public class WalaIRPrinter {
                 SSAPiInstruction piInstruction = pis.next();
                 writer.write("\t\t"+"π"+"\t" + piInstruction.toString(symbolTable) + "\n");
                 //System.out.println(piInstruction.toString(symbolTable));
+            }
+        }
+    }
+    public void printVars(IR ir, PrintWriter writer)
+    {
+        SSAInstruction[] instructions = ir.getInstructions();
+        SSACFG cfg = ir.getControlFlowGraph();
+        TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
+
+        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+            int start = basicBlock.getFirstInstructionIndex();
+            int end = basicBlock.getLastInstructionIndex();
+            for (int j = start; j <= end; j++) {
+                if (instructions[j] != null) {
+
+                    for(int k=0;k<instructions[j].getNumberOfUses();k++) {
+                        try {
+                            writer.write("\t\t" + _rep.fixTypeString(typeInference.getType(instructions[j].getUse(k)).getTypeReference().toString()) + " v"+ instructions[j].getUse(k) + "\n");
+                        } catch (UnsupportedOperationException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+                    if(instructions[j].hasDef())
+                        writer.write("\t\t" + _rep.fixTypeString(typeInference.getType(instructions[j].getDef()).getTypeReference().toString()) +" v"+ instructions[j].getDef() + "\n");
+
+
+                }
             }
         }
     }
