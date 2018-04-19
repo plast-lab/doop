@@ -42,6 +42,8 @@ ProxyClassOfInterface(?iface, ?class) :-
    DirectSuperinterface(?class, ?iface),
    ProxyClass(?class).
 
+#define NEW_PROXY_INSTANCE "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"
+
 .decl java_lang_reflect_Proxy_newProxyInstance(?invo:MethodInvocation, ?ret:Var, ?handler:Var, ?interfaces:Var)
 
 java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, ?handler, ?interfaces) :-
@@ -197,7 +199,6 @@ VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?h) :-
 .decl ProxyCallGraphEdge(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerInvokeMeth:Method)
 
 .decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)
-.output HandledProxy
 
 ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
 VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this),
@@ -277,37 +278,3 @@ ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
    ReturnVar(?handlerReturnVar, ?handlerInvokeMeth),
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?handlerReturnVar),
    AssignReturnValue(?invo, ?ret).
-
-#ifdef DYNAMIC_PROXY_EXPORT
-
-.output ProxyClassOfInterface
-.output ProxyClass
-.output java_lang_reflect_Proxy_newProxyInstance
-.output ArrayContentsPointToInterface
-.output java_lang_reflect_Proxy_getProxyClass
-.output ProxyClassInstance
-.output MethodOfInterface
-.output ArgArrayOfProxyMethod
-.output PrimitiveType_Boxed
-.output PrimitiveFormalOfInterface
-.output BoxAllocationOfPrimitiveFormal
-.output ProxyObject_Invocation
-.output ProxyObject_Handler
-.output ProxyObject_HandlerHctx
-.output ProxyObject_Interface
-.output CallToMethodOfProxyObject
-.output ProxyCallGraphEdge
-.output ProxyInvokeResult
-#ifdef REFLECTION
-.output ProxyCallArgArray
-.output ArgArrayAndActualArg
-#endif // REFLECTION
-
-.decl ProxiedMethod(?meth:Method)
-.output ProxiedMethod
-
-ProxiedMethod(?meth) :-
-  ProxyCallGraphEdge(_, ?i, _, _),
-  VirtualMethodInvocation(?i, ?meth, _).
-
-#endif // DYNAMIC_PROXY_EXPORT

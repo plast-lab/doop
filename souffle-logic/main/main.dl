@@ -61,36 +61,10 @@
   #include "context-sensitivity.dl"
   #include "export.dl"
 
-  #define NEW_PROXY_INSTANCE "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"
-  #define DYNAMIC_PROXY_EXPORT
-
   #if defined(REFLECTION_DYNAMIC_PROXIES)
     #include "reflection/dynamic-proxies.dl"
     #include "reflection/dynamic-proxies-delta.dl"
   #endif // REFLECTION_DYNAMIC_PROXIES
-
-  #ifdef DYNAMIC_PROXY_EXPORT
-    .decl ReachableProxyInvoke(?invokeMeth:Method)
-    .output ReachableProxyInvoke
-
-    ReachableProxyInvoke(?invokeMeth) :-
-      Reachable(?invokeMeth),
-      Method_SimpleName(?invokeMeth, "invoke"),
-      Method_DeclaringType(?invokeMeth, ?class),
-      basic.SubtypeOf(?class, ?tInvocationHandler),
-      isInterfaceType(?tInvocationHandler),
-      ?tInvocationHandler = "java.lang.reflect.InvocationHandler".
-
-    .decl ReachableNewProxyInstance(?inMeth:Method)
-    .output ReachableNewProxyInstance
-
-    ReachableNewProxyInstance(?inMeth) :-
-      ?newProxyInstance = NEW_PROXY_INSTANCE,
-      Reachable(?newProxyInstance),
-      CallGraphEdge(_, ?invo, _, ?newProxyInstance),
-      Instruction_Method(?invo, ?inMeth).
-
-  #endif // DYNAMIC_PROXY_EXPORT
 
   #if defined(REFLECTION)
     #include "reflection/rules.dl"
