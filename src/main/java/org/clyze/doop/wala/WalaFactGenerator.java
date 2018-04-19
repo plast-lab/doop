@@ -247,6 +247,7 @@ class WalaFactGenerator {
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
         TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
+        SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
         for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             int start = basicBlock.getFirstInstructionIndex();
@@ -353,6 +354,8 @@ class WalaFactGenerator {
                 SSAPiInstruction piInstruction = pis.next();
 
             }
+
+            
             if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
                 //System.out.println("method " + m.getName() + " in class " + m.getDeclaringClass().toString() + " Exc handling block " + start + " " + end);
                 if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() == null )
@@ -367,8 +370,10 @@ class WalaFactGenerator {
 //                        System.out.println( instructions[j].toString(ir.getSymbolTable()));
 //                    else
 //                        System.out.println( "Instuction "+j + " is null :(");
-
+                if (previousHandlerBlock != null)
+                    _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock)basicBlock, previousHandlerBlock, session);
                 _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference);
+                previousHandlerBlock = (SSACFG.ExceptionHandlerBasicBlock) basicBlock;
             }
         }
 
@@ -730,7 +735,7 @@ class WalaFactGenerator {
         }
     }
 
-    public int getNextNonNullInstruction(IR ir, int instructionIndex)
+    private int getNextNonNullInstruction(IR ir, int instructionIndex)
     {
         SSAInstruction[] ssaInstructions = ir.getInstructions();
         //ISSABasicBlock basicBlock = ir.getBasicBlockForInstruction(ssaInstructions[instructionIndex]);
