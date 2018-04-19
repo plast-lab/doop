@@ -1,5 +1,7 @@
 package org.clyze.doop.wala;
 
+import com.ibm.wala.analysis.typeInference.PrimitiveType;
+import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
@@ -600,14 +602,15 @@ class WalaFactGenerator {
         Local l;
 
         TypeReference typeRef;
-        if (varIndex != -1) {
-            if (typeInference.isUndefined(varIndex))
-                typeRef = TypeReference.JavaLangObject;
-            else
-                typeRef = typeInference.getType(varIndex).getTypeReference();
+        TypeAbstraction typeAbstraction = typeInference.getType(varIndex);
+        if (typeAbstraction == null) {                    // anantoni: TypeAbstraction == null means undefined type
+            typeRef = TypeReference.JavaLangObject;
         }
-        else {
-           typeRef = TypeReference.JavaLangObject;
+        else {                                            // All other cases - including primitives - should be handled by getting the TypeReference
+            typeRef = typeAbstraction.getTypeReference();
+            if (typeRef == null) {                        // anantoni: In this case we have encountered WalaTypeAbstraction.TOP
+                typeRef = TypeReference.JavaLangObject;   // TODO: we don't know what type to give for TOP
+            }
         }
         if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("type is " + typeRef.toString());
         if (instruction.iindex != -1) {
@@ -623,11 +626,8 @@ class WalaFactGenerator {
         else {
             l = new Local("v" + varIndex, varIndex, typeRef);
         }
-        if (varIndex != -1) {
-            if(ir.getSymbolTable().isConstant(varIndex) && ! ir.getSymbolTable().isNullConstant(varIndex))
-                l.setValue(ir.getSymbolTable().getConstantValue(varIndex).toString());
-
-        }
+        if(ir.getSymbolTable().isConstant(varIndex) && ! ir.getSymbolTable().isNullConstant(varIndex))
+            l.setValue(ir.getSymbolTable().getConstantValue(varIndex).toString());
 
         return l;
     }
