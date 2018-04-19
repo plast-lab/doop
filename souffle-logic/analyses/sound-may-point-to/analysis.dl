@@ -1086,46 +1086,46 @@
     Instruction_Method(?return, ?method).
 
   // all returns of a callee is not enough. We also need "all callee" reasoning
-  .decl CalleeFromSameCallsite(?calleeCtx1:MayContext, ?meth1:Method, ?calleeCtx2:MayContext, ?meth2:Method)
-  CalleeFromSameCallsite(?calleeCtx1, ?meth1, ?calleeCtx2, ?meth2) :-
-    MayCallGraphEdge_Prev(?calleeCtx1, ?meth1, ?callerCtx, ?invo),
-    MayCallGraphEdge_Prev(?calleeCtx2, ?meth2, ?callerCtx, ?invo),
+  .decl CalleeFromSameCallsite(?calleeCtx:MayContext, ?meth1:Method, ?meth2:Method)
+  CalleeFromSameCallsite(?calleeCtx, ?meth1, ?meth2) :-
+    MayCallGraphEdge_Prev(?calleeCtx, ?meth1, ?callerCtx, ?invo),
+    MayCallGraphEdge_Prev(?calleeCtx, ?meth2, ?callerCtx, ?invo),
     ord(?meth1) < ord(?meth2).
    .plan 1: (2,1)
 
   .decl FirstCalleeFromCallsite(?calleeCtx:MayContext, ?meth:Method)
   FirstCalleeFromCallsite(?calleeCtx, ?meth) :-
     MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
-    !CalleeFromSameCallsite(_, _, ?calleeCtx, ?meth).
+    !CalleeFromSameCallsite(?calleeCtx, _, ?meth).
 
-  .decl NotNextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:Method, ?calleeCtxNext:MayContext, ?methNext:Method)
-  NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext) :-
-    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext),
-    CalleeFromSameCallsite(?calleeCtx, ?meth, _, ?methOther),
-	ord(?methOther) < ord(?methNext).
+  .decl NotNextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:Method, ?methNext:Method)
+  NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?methNext) :-
+    CalleeFromSameCallsite(?calleeCtx, ?meth, ?methNext),
+    CalleeFromSameCallsite(?calleeCtx, ?meth, ?methOther),
+    ord(?methOther) < ord(?methNext).
    .plan 1: (2,1)
 
-  .decl NextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:Method, ?calleeCtxNext:MayContext, ?methNext:Method)
-  NextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext) :-
-    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext),
-	!NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext).
+  .decl NextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:Method, ?methNext:Method)
+  NextCalleeFromCallsite(?calleeCtx, ?meth, ?methNext) :-
+    CalleeFromSameCallsite(?calleeCtx, ?meth, ?methNext),
+    !NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?methNext).
 
   .decl UpToCallee_ReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeCtx:MayContext, ?meth:Method)
   UpToCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
-	AllReturn_MayPointTo(?hctx, ?heap, ?calleeCtx, ?meth),
+    AllReturn_MayPointTo(?hctx, ?heap, ?calleeCtx, ?meth),
     MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
-	FirstCalleeFromCallsite(?calleeCtx, ?meth).
+    FirstCalleeFromCallsite(?calleeCtx, ?meth).
 
   UpToCallee_ReturnMayPointTo(?hctx1, ?heap1, ?calleeCtx, ?meth),
   UpToCallee_ReturnMayPointTo(?hctx2, ?heap2, ?calleeCtx, ?meth) :-
-    UpToCallee_ReturnMayPointTo(?hctx1, ?heap1, ?prevCalleeCtx, ?prevMeth),
-    NextCalleeFromCallsite(?prevCalleeCtx, ?prevMeth, ?calleeCtx, ?meth),
+    UpToCallee_ReturnMayPointTo(?hctx1, ?heap1, ?calleeCtx, ?prevMeth),
+    NextCalleeFromCallsite(?calleeCtx, ?prevMeth, ?meth),
     AllReturn_MayPointTo(?hctx2, ?heap2, ?calleeCtx, ?meth).
 
   .decl AllCallee_ReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeCtx:MayContext, ?meth:Method)
   AllCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
     UpToCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth),
-    !NextCalleeFromCallsite(?calleeCtx, ?meth, _, _).
+    !NextCalleeFromCallsite(?calleeCtx, ?meth, _).
 
   // same (all callee) reasoning for access paths
   .decl UpToCallee_ReturnAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeAp:AccessPath, ?calleeCtx:MayContext, ?meth:Method)
@@ -1136,14 +1136,14 @@
 
   UpToCallee_ReturnAccessPathMayPointTo(?hctx1, ?heap1, ?calleeAp, ?calleeCtx, ?meth),
   UpToCallee_ReturnAccessPathMayPointTo(?hctx2, ?heap2, ?calleeAp, ?calleeCtx, ?meth) :-
-    UpToCallee_ReturnAccessPathMayPointTo(?hctx1, ?heap1, ?calleeAp, ?prevCalleeCtx, ?prevMeth),
-    NextCalleeFromCallsite(?prevCalleeCtx, ?prevMeth, ?calleeCtx, ?meth),
-	AllReturn_AccessPathMayPointTo(?hctx2, ?heap2, ?calleeAp, ?calleeCtx, ?meth).
+    UpToCallee_ReturnAccessPathMayPointTo(?hctx1, ?heap1, ?calleeAp, ?calleeCtx, ?prevMeth),
+    NextCalleeFromCallsite(?calleeCtx, ?prevMeth, ?meth),
+    AllReturn_AccessPathMayPointTo(?hctx2, ?heap2, ?calleeAp, ?calleeCtx, ?meth).
 
   .decl AllCallee_ReturnAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeAp:AccessPath, ?calleeCtx:MayContext, ?meth:Method)
   AllCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth) :-
     UpToCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth),
-    !NextCalleeFromCallsite(?calleeCtx, ?meth, _, _).
+    !NextCalleeFromCallsite(?calleeCtx, ?meth, _).
 
 
   /// AccessPathMayPointTo for predecessors
@@ -1610,6 +1610,7 @@ SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 SoundMayPhase3.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase2.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
+/*
 .init SoundMayPhase4 = SoundMay<DummyMustPointTo>
 SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
@@ -1628,7 +1629,6 @@ SoundMayPhase6.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 SoundMayPhase6.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase5.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-/*
 .init SoundMayPhase7 = SoundMay<DummyMustPointTo>
 SoundMayPhase7.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase6.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
@@ -1662,7 +1662,7 @@ InitialRootMethodForMayAnalysis(?meth) :-
 //// ====================================
 //// BEGIN client: assumenosideeffects, assumenoexternalsideeffects
 
-#define SoundMay SoundMayPhase6
+#define SoundMay SoundMayPhase3
 
 .comp SideEffectsAnalysis {
   .decl VarHasNoSideEffects(?var:Var)
@@ -1876,28 +1876,28 @@ InitialRootMethodForMayAnalysis(?meth) :-
   // Case (A)
   UpToCallee_CallHasNoSideEffects(?callerCtx, ?invo, ?calleeCtx, ?toMeth) :-
     UpToCallee_CallHasNoSideEffects(?callerCtx, ?invo, ?calleeCtx, ?prevMeth),
-    SoundMay.NextCalleeFromCallsite(?calleeCtx, ?prevMeth, ?calleeCtx, ?toMeth),
+    SoundMay.NextCalleeFromCallsite(?calleeCtx, ?prevMeth, ?toMeth),
     MethodHasNoExternalSideEffects(?calleeCtx, ?toMeth),
     AllParamsCalleeHasNoSideEffects(?callerCtx, ?invo, ?calleeCtx, ?toMeth).
   // Case (B)
   UpToCallee_CallHasNoSideEffects(?callerCtx, ?invo, ?calleeCtx, ?toMeth) :-
     UpToCallee_CallHasNoSideEffects(?callerCtx, ?invo, ?calleeCtx, ?prevMeth),
-    SoundMay.NextCalleeFromCallsite(?calleeCtx, ?prevMeth, ?calleeCtx, ?toMeth),
+    SoundMay.NextCalleeFromCallsite(?calleeCtx, ?prevMeth, ?toMeth),
     MethodHasNoSideEffects(?calleeCtx, ?toMeth).
   // Case (C)
   UpToCallee_CallHasNoExternalSideEffects(?callerCtx, ?invo, ?calleeCtx, ?toMeth) :-
     UpToCallee_CallHasNoExternalSideEffects(?callerCtx, ?invo, ?calleeCtx, ?prevMeth),
-    SoundMay.NextCalleeFromCallsite(?calleeCtx, ?prevMeth, ?calleeCtx, ?toMeth),
+    SoundMay.NextCalleeFromCallsite(?calleeCtx, ?prevMeth, ?toMeth),
     MethodHasNoExternalSideEffects(?calleeCtx, ?toMeth),
     AllParamsCalleeHasNoExternalSideEffects(?callerCtx, ?invo, ?calleeCtx, ?toMeth).
 
   // ... and back to matching pairs
   InvocationHasNoSideEffects(?callerCtx, ?invo) :-
     UpToCallee_CallHasNoSideEffects(?callerCtx, ?invo, ?calleeCtx, ?toMeth),
-    !SoundMay.NextCalleeFromCallsite(?calleeCtx, ?toMeth, _, _).
+    !SoundMay.NextCalleeFromCallsite(?calleeCtx, ?toMeth, _).
   InvocationHasNoExternalSideEffects(?callerCtx, ?invo) :-
     UpToCallee_CallHasNoExternalSideEffects(?callerCtx, ?invo, ?calleeCtx, ?toMeth),
-    !SoundMay.NextCalleeFromCallsite(?calleeCtx, ?toMeth, _, _).
+    !SoundMay.NextCalleeFromCallsite(?calleeCtx, ?toMeth, _).
 
   .decl UpToInvocationMethodHasNoSideEffects(?callerCtx:MayContext, ?invo:MethodInvocation, ?meth:Method)
   .decl UpToInvocationMethodHasNoExternalSideEffects(?callerCtx:MayContext, ?invo:MethodInvocation, ?meth:Method)
