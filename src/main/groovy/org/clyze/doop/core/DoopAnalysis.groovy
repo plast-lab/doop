@@ -267,6 +267,27 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         return AARUtils.toJars(deps as List<String>, false, tmpDirs)
     }
 
+    private Collection<String> getPlatformParams(Collection<String> inputArgs, Collection<String> depArgs) {
+        def platform = options.PLATFORM.value.toString().tokenize("_")[0]
+        assert platform == "android" || platform == "java"
+
+        Collection<String> params
+        switch(platform) {
+            case "java":
+                params = ["--full"] + inputArgs + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+                break
+            case "android":
+                // This uses all platformLibs.
+                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+                // This uses just platformLibs[0], assumed to be android.jar.
+                params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+                break
+            default:
+                throw new RuntimeException("Unsupported platform")
+        }
+        return params
+    }
+
     // Returns false on fact generation failure.
     protected boolean runSoot(Set<String> tmpDirs) {
         Collection<String> depArgs
@@ -286,21 +307,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
 
-        Collection<String> params
-
-        switch(platform) {
-            case "java":
-                params = ["--full"] + inputArgs + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
-                break
-            case "android":
-                // This uses all platformLibs.
-                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-                // This uses just platformLibs[0], assumed to be android.jar.
-                params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
-                break
-            default:
-                throw new RuntimeException("Unsupported platform")
-        }
+        Collection<String> params = getPlatformParams(inputArgs, depArgs)
 
         if (options.SSA.value) {
             params += ["--ssa"]
@@ -373,27 +380,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runWala(Set<String> tmpDirs) {
-        Collection<String> params
         Collection<String> depArgs
         def inputArgs = getInputArgsJars(tmpDirs)
         def deps = getDepsJars(tmpDirs)
 
-        def platform = options.PLATFORM.value.toString().tokenize("_")[0]
-        assert platform == "android" || platform == "java"
-
-        switch(platform) {
-            case "java":
-                params = ["--full"] + inputArgs + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
-                break
-            case "android":
-                // This uses all platformLibs.
-                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-                // This uses just platformLibs[0], assumed to be android.jar.
-                params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
-                break
-            default:
-                throw new RuntimeException("Unsupported platform")
-        }
+        Collection<String> params = getPlatformParams(inputArgs, depArgs)
 
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         depArgs = deps
