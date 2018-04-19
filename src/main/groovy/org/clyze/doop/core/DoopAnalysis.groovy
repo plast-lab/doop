@@ -378,6 +378,23 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         def inputArgs = getInputArgsJars(tmpDirs)
         def deps = getDepsJars(tmpDirs)
 
+        def platform = options.PLATFORM.value.toString().tokenize("_")[0]
+        assert platform == "android" || platform == "java"
+
+        switch(platform) {
+            case "java":
+                params = ["--full"] + inputArgs + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+                break
+            case "android":
+                // This uses all platformLibs.
+                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+                // This uses just platformLibs[0], assumed to be android.jar.
+                params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+                break
+            default:
+                throw new RuntimeException("Unsupported platform")
+        }
+
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         depArgs = deps
         depArgs.add("-p");

@@ -57,6 +57,16 @@ public class Main {
                         i = shift(args, i);
                         walaParameters._outputDir = args[i];
                         break;
+                    case "--application-regex":
+                        i = shift(args, i);
+                        walaParameters.appRegex = args[i];
+                        break;
+                    default:
+                        if (args[i].charAt(0) == '-') {
+                            System.err.println("error: unrecognized option: " + args[i]);
+                            throw new DoopErrorCodeException(6);
+                        }
+                        break;
                 }
 
             }
