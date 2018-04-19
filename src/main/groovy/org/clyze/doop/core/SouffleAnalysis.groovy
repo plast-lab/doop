@@ -174,6 +174,17 @@ class SouffleAnalysis extends DoopAnalysis {
         if (options.GENERATE_PROGUARD_KEEP_DIRECTIVES.value) {
             cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/proguard/keep.dl")
         }
+
+        if (options.X_EXTRA_LOGIC.value) {
+            File extraLogic = new File(options.X_EXTRA_LOGIC.value as String)
+            if (extraLogic.exists()) {
+                String extraLogicPath = extraLogic.canonicalPath
+                logger.info "Adding extra logic file ${extraLogicPath}"
+                cpp.includeAtEnd("${analysis}", extraLogicPath)
+            } else {
+                logger.warn "Extra logic file does not exist: ${extraLogic}"
+            }
+        }
     }
 
     private void compileAnalysis() {

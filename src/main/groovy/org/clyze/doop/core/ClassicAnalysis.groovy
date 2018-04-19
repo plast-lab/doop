@@ -353,6 +353,10 @@ class ClassicAnalysis extends DoopAnalysis {
                 logger.warn "WARNING: LB server logic is ignored when using --${options.X_STOP_AT_FACTS.name}"
             }
         }
+
+        if (options.X_EXTRA_LOGIC.value) {
+            logger.warn "WARNING: the LB mode does not support --${options.X_EXTRA_LOGIC.name}"
+        }
     }
 
     @Override
