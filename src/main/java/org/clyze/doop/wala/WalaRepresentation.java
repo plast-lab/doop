@@ -149,7 +149,7 @@ public class WalaRepresentation {
         return signature(m) + "/" + name + "/" + session.nextNumber(name);
     }
 
-    public String fixTypeString(String original)
+    static String fixTypeString(String original)
     {
         boolean isArrayType = false;
         int arrayTimes = 0;

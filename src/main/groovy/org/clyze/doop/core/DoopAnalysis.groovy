@@ -149,7 +149,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 Files.createSymbolicLink(factsDir.toPath(), cacheDirPath)
                 return
             } catch (UnsupportedOperationException x) {
-                System.err.println("Filesystem does not support symbolic links, copying directory...");
+                System.err.println("Filesystem does not support symbolic links, copying directory...")
             }
         }
 
@@ -267,27 +267,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         return AARUtils.toJars(deps as List<String>, false, tmpDirs)
     }
 
-    private Collection<String> getPlatformParams(Collection<String> inputArgs, Collection<String> depArgs) {
-        def platform = options.PLATFORM.value.toString().tokenize("_")[0]
-        assert platform == "android" || platform == "java"
-
-        Collection<String> params
-        switch(platform) {
-            case "java":
-                params = ["--full"] + inputArgs + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
-                break
-            case "android":
-                // This uses all platformLibs.
-                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-                // This uses just platformLibs[0], assumed to be android.jar.
-                params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
-                break
-            default:
-                throw new RuntimeException("Unsupported platform")
-        }
-        return params
-    }
-
     // Returns false on fact generation failure.
     protected boolean runSoot(Set<String> tmpDirs) {
         Collection<String> depArgs
@@ -307,7 +286,21 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
 
-        Collection<String> params = getPlatformParams(inputArgs, depArgs)
+        Collection<String> params
+
+        switch(platform) {
+            case "java":
+                params = ["--full"] + inputArgs + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+                break
+            case "android":
+                // This uses all platformLibs.
+                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+                // This uses just platformLibs[0], assumed to be android.jar.
+                params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+                break
+            default:
+                throw new RuntimeException("Unsupported platform")
+        }
 
         if (options.SSA.value) {
             params += ["--ssa"]
@@ -380,18 +373,36 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runWala(Set<String> tmpDirs) {
+        Collection<String> params
         Collection<String> depArgs
         def inputArgs = getInputArgsJars(tmpDirs)
         def deps = getDepsJars(tmpDirs)
 
-        Collection<String> params = getPlatformParams(inputArgs, depArgs)
+        def platform = options.PLATFORM.value.toString().tokenize("_")[0]
+        assert platform == "android" || platform == "java"
+
+        switch(platform) {
+            case "java":
+                params = ["--application-regex", options.APP_REGEX.value.toString()]
+                break
+            case "android":
+                // This uses all platformLibs.
+                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+                // This uses just platformLibs[0], assumed to be android.jar.
+                params = ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+                break
+            default:
+                throw new RuntimeException("Unsupported platform")
+        }
 
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         depArgs = deps
-        depArgs.add("-p");
-        depArgs.add(platformLibs.get(0).getAbsolutePath().toString().replace("/rt.jar",""));
-        params = inputArgs + depArgs
-        params = params + ["-d", factsDir.toString()]
+        depArgs.add("-p")
+        depArgs.add(platformLibs.get(0).getAbsolutePath().toString().replace("/rt.jar",""))
+        params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
+
+        logger.debug "Params of wala: ${params.join(' ')}"
+
         sootTime = Helper.timing {
             //We invoke soot reflectively using a separate class-loader to be able
             //to support multiple soot invocations in the same JVM @ server-side.
@@ -560,7 +571,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
             logger.info("Generated " + n + " addditional facts from memory dump")
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace()
         }
     }
 
