@@ -1,5 +1,6 @@
 package org.clyze.doop.wala;
 
+import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
@@ -755,6 +756,8 @@ class WalaFactGenerator {
     {
         HashMap<Integer,String> varTypeMap = new HashMap<>();
         String res;
+        TypeAbstraction typeAbstraction;
+        TypeReference typeReference;
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
         TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
@@ -767,19 +770,29 @@ class WalaFactGenerator {
                 if (instructions[j] != null) {
 
                     for(int k=0;k<instructions[j].getNumberOfUses();k++) {
-                        //System.out.println("\t\t" + _rep.fixTypeString(typeInference.getType(instructions[j].getUse(k)).getTypeReference().toString()) + " v"+ instructions[j].getUse(k) + "\n");
+                        typeAbstraction = typeInference.getType(instructions[j].getUse(k));
+                        if(typeAbstraction == null)
+                            typeReference = TypeReference.JavaLangObject;
+                        else
+                            typeReference = typeAbstraction.getTypeReference();
+                        //System.out.println("\t\t" + _rep.fixTypeString(typeReference.toString()) + " v"+ instructions[j].getUse(k) + "\n");
                         res = varTypeMap.get(instructions[j].getUse(k));
                         if(res == null)
-                            varTypeMap.put(instructions[j].getUse(k), _rep.fixTypeString(typeInference.getType(instructions[j].getUse(k)).getTypeReference().toString()));
-                        else if(!res.equals(_rep.fixTypeString(typeInference.getType(instructions[j].getUse(k)).getTypeReference().toString())))
+                            varTypeMap.put(instructions[j].getUse(k), _rep.fixTypeString(typeReference.toString()));
+                        else if(!res.equals(_rep.fixTypeString(typeReference.toString())))
                             System.out.println("WHAT");
                     }
                     if(instructions[j].hasDef()) {
-                        //System.out.println("\t\t" + _rep.fixTypeString(typeInference.getType(instructions[j].getDef()).getTypeReference().toString()) + " v" + instructions[j].getDef() + "\n");
+                        typeAbstraction = typeInference.getType(instructions[j].getDef());
+                        if(typeAbstraction == null)
+                            typeReference = TypeReference.JavaLangObject;
+                        else
+                            typeReference = typeAbstraction.getTypeReference();
+                        //System.out.println("\t\t" + _rep.fixTypeString(typeReference.toString()) + " v" + instructions[j].getDef() + "\n");
                         res = varTypeMap.get(instructions[j].getDef());
                         if(res == null)
-                            varTypeMap.put(instructions[j].getDef(), _rep.fixTypeString(typeInference.getType(instructions[j].getDef()).getTypeReference().toString()));
-                        else if(!res.equals(_rep.fixTypeString(typeInference.getType(instructions[j].getDef()).getTypeReference().toString())))
+                            varTypeMap.put(instructions[j].getDef(), _rep.fixTypeString(typeReference.toString()));
+                        else if(!res.equals(_rep.fixTypeString(typeReference.toString())))
                             System.out.println("WHAT");
                     }
 
