@@ -7,6 +7,9 @@ import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.DoopErrorCodeException;
+import org.clyze.doop.soot.SootParameters;
+import org.clyze.doop.util.filter.GlobClassFilter;
+import soot.SootClass;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +23,12 @@ public class Main {
             System.exit(1);
         }
         return index + 1;
+    }
+
+    private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
+        walaParameters.applicationClassFilter = new GlobClassFilter(walaParameters.appRegex);
+
+        return walaParameters.applicationClassFilter.matches(klass.getName().toString());
     }
 
     public static void main(String[] args) throws IOException {
@@ -98,12 +107,23 @@ public class Main {
         // Create an object which caches IRs and related information, reconstructing them lazily on demand.
         Iterator<IClass> classes = cha.iterator();      //IMethod m ;
 
+
         Database db = new Database(new File(walaParameters._outputDir), false);
         WalaFactWriter walaFactWriter = new WalaFactWriter(db);
         WalaDriver driver = new WalaDriver();
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
         //driver.doInParallel(classes);
+
+        IClass klass;
+        while (classes.hasNext()) {
+            klass = classes.next();
+            if (isApplicationClass(walaParameters, klass)) {
+                walaFactWriter.writeApplicationClass(klass);
+            }
+        }
+
+        classes = cha.iterator();
         driver.doSequentially(classes, walaFactWriter, walaParameters._outputDir);
         db.flush();
         db.close();

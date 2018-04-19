@@ -53,8 +53,10 @@ class WalaFactGenerator {
 //                continue;
 //            }
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
+            //if(!iClass.getName().toString().contains("cfish"))continue;
+            //System.out.println("Class " + iClass.getName().toString() +" to be analyzed");
             //IRPrinter.printIR(iClass);
-            //if(skipped == 0)continue;
+
             _writer.writeClassOrInterfaceType(iClass);
             //TODO: Handling of Arrays?
             if(iClass.isAbstract())
@@ -75,10 +77,10 @@ class WalaFactGenerator {
                 _writer.writeDirectSuperinterface(iClass, i);
             }
 
-            iClass.getAllFields().forEach(this::generate);
+            iClass.getDeclaredInstanceFields().forEach(this::generate);
+            iClass.getDeclaredStaticFields().forEach(this::generate);
 
-
-            for (IMethod m : iClass.getAllMethods()) {
+            for (IMethod m : iClass.getDeclaredMethods()) {
                 Session session = new org.clyze.doop.wala.Session();
                 try {
                     generate(m, session);
@@ -201,6 +203,10 @@ class WalaFactGenerator {
         // TODO annotation?
         // TODO enum?
 
+        if(m.isNative())
+        {
+            _writer.writeNativeReturnVar(m);
+        }
         int paramIndex = 0;
         if(!m.isStatic())
         {
@@ -209,10 +215,12 @@ class WalaFactGenerator {
         }
 
         while (paramIndex < m.getNumberOfParameters()) {
-            if (m.isStatic())
+            if (m.isStatic() || m.isClinit()) {
                 _writer.writeFormalParam(m, paramIndex, paramIndex);
-            else
-                _writer.writeFormalParam(m, paramIndex,paramIndex - 1);
+            }
+            else {
+                _writer.writeFormalParam(m, paramIndex, paramIndex - 1);
+            }
             paramIndex++;
 
         }
@@ -594,7 +602,6 @@ class WalaFactGenerator {
             typeRef = typeInference.getType(varIndex).getTypeReference();
         if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("type is " + typeRef.toString());
         if (localNames != null) {
-            assert localNames.length == 1;
             l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
         }
         else {
@@ -616,20 +623,8 @@ class WalaFactGenerator {
         }
         else {
             // Return something has a single use
-
-
             Local l = createLocal(ir, instruction, instruction.getUse(0), typeInference);
-//            int returnVar = instruction.getUse(0);
-//            String[] localNames = ir.getLocalNames(instruction.iindex, returnVar);
-//            if (localNames != null) {
-//                assert localNames.length == 1;
-//                l = new Local("v" + returnVar, localNames[0], m.getReturnType());
-//            }
-//            //TODO : Check when this occurs
-//            else {
-//
-//                l = new Local("v" + returnVar, m.getReturnType());
-//            }
+            l.type = m.getReturnType();
             _writer.writeReturn(m, instruction, l, session);
         }
     }

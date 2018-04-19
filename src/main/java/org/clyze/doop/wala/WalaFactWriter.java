@@ -831,10 +831,18 @@ public class WalaFactWriter {
 
 
     private void writeActualParams(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, String invokeExprRepr, Session session, TypeInference typeInference) {
+        if (instruction.isStatic()) {
+            for (int i = 0; i < instruction.getNumberOfParameters(); i++) {
+                Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+                _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
+            }
+        }
+        else {
+            for (int i = 1; i < instruction.getNumberOfParameters(); i++) {
+                Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+                _db.add(ACTUAL_PARAMETER, str(i-1), invokeExprRepr, _rep.local(inMethod, l));
+            }
 
-        for(int i = 0; i < instruction.getNumberOfParameters(); i++) {
-            Local l = createLocal(ir, instruction, instruction.getUse(i),typeInference);
-            _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
         }
         if (instruction instanceof SSAInvokeDynamicInstruction) {
             for (int j = 0; j < ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentCount(); j++) {
@@ -929,7 +937,6 @@ public class WalaFactWriter {
             typeRef = typeInference.getType(varIndex).getTypeReference();
 
         if (localNames != null) {
-            assert localNames.length == 1;
             l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
         }
         else {
