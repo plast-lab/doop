@@ -924,13 +924,11 @@ public class WalaFactWriter {
 
     private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
         Local l;
-
-        if(instruction.iindex == -1)//Instructions not on the normal instructions array of the IR can have iindex==-1 ex SSAGetCaughtExceptionInstruction, , SSAPhiInstruction
-        {
-            l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
-            return l;
-        }
-        String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
+        String[] localNames ;
+        if(instruction.iindex == -1)//Instructions not on the normal instructions array of the IR can have iindex==-1 ex SSAGetCaughtExceptionInstruction, SSAPhiInstruction
+            localNames = null;
+        else
+            localNames = ir.getLocalNames(instruction.iindex, varIndex);
 
         TypeReference typeRef;
         TypeAbstraction typeAbstraction = typeInference.getType(varIndex);

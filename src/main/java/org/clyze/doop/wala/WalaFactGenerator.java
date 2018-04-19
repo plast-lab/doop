@@ -599,13 +599,12 @@ class WalaFactGenerator {
 
     private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
         Local l;
-
+        String[] localNames ;
         if(instruction.iindex == -1)//Instructions not on the normal instructions array of the IR can have iindex==-1 ex SSAGetCaughtExceptionInstruction, SSAPhiInstruction
-        {
-            l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
-            return l;
-        }
-        String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
+            localNames = null;
+        else
+            localNames = ir.getLocalNames(instruction.iindex, varIndex);
+
         TypeReference typeRef;
         TypeAbstraction typeAbstraction = typeInference.getType(varIndex);
         if(typeAbstraction.getType() == null && !(typeAbstraction instanceof JavaPrimitiveType))
@@ -613,6 +612,7 @@ class WalaFactGenerator {
         else
             typeRef = typeAbstraction.getTypeReference();
         if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("v" + varIndex +" type is " + typeRef.toString());
+
         if (localNames != null) {
             l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
         }
