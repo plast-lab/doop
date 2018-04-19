@@ -1,7 +1,5 @@
 package org.clyze.doop.wala;
 
-import com.ibm.wala.analysis.typeInference.JavaPrimitiveType;
-import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
@@ -15,7 +13,6 @@ import com.ibm.wala.types.TypeReference;
 import soot.*;
 
 
-import java.util.HashMap;
 import java.util.Iterator;
 
 /**
@@ -31,14 +28,12 @@ class WalaFactGenerator {
     private AnalysisOptions options;
     private IAnalysisCacheView cache;
     private WalaIRPrinter IRPrinter;
-    private WalaRepresentation _rep;
 
     WalaFactGenerator(WalaFactWriter writer, Iterator<IClass> iClasses, String outDir)
     {
         this._writer = writer;
 
         this._iClasses = iClasses;
-        _rep = WalaRepresentation.getRepresentation();
         options = new AnalysisOptions();
         options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
         cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
@@ -248,8 +243,7 @@ class WalaFactGenerator {
 
     private void generate(IMethod m, IR ir, Session session)
     {
-        //System.out.println(m.getName().toString());
-        HashMap<Integer, String> varTypeMap = getVarTypeMap(ir);
+
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
         TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
@@ -361,7 +355,7 @@ class WalaFactGenerator {
 
             }
 
-            
+
             if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
                 //System.out.println("method " + m.getName() + " in class " + m.getDeclaringClass().toString() + " Exc handling block " + start + " " + end);
                 if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() == null )
@@ -435,7 +429,12 @@ class WalaFactGenerator {
         Local alternative;
         for(int i=0; i < instruction.getNumberOfUses();i++)
         {
-            alternative = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+            if (instruction.getUse(i) > -1) {
+                alternative = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+            }
+            else {
+                continue;
+            }
             _writer.writeAssignLocal(m, instruction, to, alternative, session);
         }
     }
@@ -599,28 +598,37 @@ class WalaFactGenerator {
 
     private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
         Local l;
-        String[] localNames ;
-        if(instruction.iindex == -1)//Instructions not on the normal instructions array of the IR can have iindex==-1 ex SSAGetCaughtExceptionInstruction, SSAPhiInstruction
-            localNames = null;
-        else
-            localNames = ir.getLocalNames(instruction.iindex, varIndex);
 
         TypeReference typeRef;
-        TypeAbstraction typeAbstraction = typeInference.getType(varIndex);
-        if(typeAbstraction.getType() == null && !(typeAbstraction instanceof JavaPrimitiveType))
-            typeRef = TypeReference.JavaLangObject;
-        else
-            typeRef = typeAbstraction.getTypeReference();
-        if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("v" + varIndex +" type is " + typeRef.toString());
+        if (varIndex != -1) {
+            if (typeInference.getType(varIndex).getType() == null)
+                typeRef = TypeReference.JavaLangObject;
+            else
+                typeRef = typeInference.getType(varIndex).getTypeReference();
+        }
+        else {
+           typeRef = TypeReference.JavaLangObject;
+        }
+        if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("type is " + typeRef.toString());
+        if (instruction.iindex != -1) {
+            String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
+            if (localNames != null) {
 
-        if (localNames != null) {
-            l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
+                l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
+            }
+            else {
+                l = new Local("v" + varIndex, varIndex, typeRef);
+            }
         }
         else {
             l = new Local("v" + varIndex, varIndex, typeRef);
         }
-        if(ir.getSymbolTable().isConstant(varIndex) && ! ir.getSymbolTable().isNullConstant(varIndex))
-            l.setValue(ir.getSymbolTable().getConstantValue(varIndex).toString());
+        if (varIndex != -1) {
+            if(ir.getSymbolTable().isConstant(varIndex) && ! ir.getSymbolTable().isNullConstant(varIndex))
+                l.setValue(ir.getSymbolTable().getConstantValue(varIndex).toString());
+
+        }
+
         return l;
     }
 
@@ -752,57 +760,6 @@ class WalaFactGenerator {
                 return i;
         }
         return -1;
-    }
-
-    public HashMap<Integer,String> getVarTypeMap(IR ir)
-    {
-        HashMap<Integer,String> varTypeMap = new HashMap<>();
-        String res;
-        TypeAbstraction typeAbstraction;
-        TypeReference typeReference;
-        SSAInstruction[] instructions = ir.getInstructions();
-        SSACFG cfg = ir.getControlFlowGraph();
-        TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
-
-        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
-            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
-            int start = basicBlock.getFirstInstructionIndex();
-            int end = basicBlock.getLastInstructionIndex();
-            for (int j = start; j <= end; j++) {
-                if (instructions[j] != null) {
-
-                    for(int k=0;k < instructions[j].getNumberOfUses();k++) {
-                        typeAbstraction = typeInference.getType(instructions[j].getUse(k));
-                        if(typeAbstraction.getType() == null)
-                            typeReference = TypeReference.JavaLangObject;
-                        else
-                            typeReference = typeAbstraction.getTypeReference();
-                        //System.out.println("v"+instructions[j].getUse(k) + " "+typeReference);
-                        //System.out.println("\t\t" + _rep.fixTypeString(typeReference.toString()) + " v"+ instructions[j].getUse(k) + "\n");
-                        res = varTypeMap.get(instructions[j].getUse(k));
-                        if(res == null)
-                            varTypeMap.put(instructions[j].getUse(k), _rep.fixTypeString(typeReference.toString()));
-                        else if(!res.equals(_rep.fixTypeString(typeReference.toString())))
-                            System.out.println("WHAT");
-                    }
-                    if(instructions[j].hasDef()) {
-                        typeAbstraction = typeInference.getType(instructions[j].getDef());
-                        if(typeAbstraction.getType() == null)
-                            typeReference = TypeReference.JavaLangObject;
-                        else
-                            typeReference = typeAbstraction.getTypeReference();
-                        //System.out.println("\t\t" + _rep.fixTypeString(typeReference.toString()) + " v" + instructions[j].getDef() + "\n");
-                        res = varTypeMap.get(instructions[j].getDef());
-                        if(res == null)
-                            varTypeMap.put(instructions[j].getDef(), _rep.fixTypeString(typeReference.toString()));
-                        else if(!res.equals(_rep.fixTypeString(typeReference.toString())))
-                            System.out.println("WHAT");
-                    }
-
-                }
-            }
-        }
-        return varTypeMap;
     }
 }
 
