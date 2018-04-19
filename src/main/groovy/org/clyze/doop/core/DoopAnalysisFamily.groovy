@@ -678,6 +678,17 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					nonStandard: true,
 					forPreprocessor: true
 			),
+			new AnalysisOption<String>(
+					id: "X_EXTRA_LOGIC",
+					name: "Xextra-logic",
+					argName: "FILE",
+					forCacheID: true,
+					// We don't set "isFile: true" to avoid UI users uploading
+					// custom logic (that can crash the server).
+					description: "Include file with extra rules.",
+					value: null,
+					forPreprocessor: true
+			),
 			new BooleanAnalysisOption(
 					id: "X_CONTEXT_REMOVER",
 					name: "Xcontext-remover",
