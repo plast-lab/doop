@@ -267,8 +267,8 @@ ReachableContext(?calleeCtx, ?callee) :-
 
 // Handle return values_ connect the return value of handler.invoke()
 // to the return value of the wrapped method. The exceptions mandated
-// by the spec are handled elsewhere (in exceptions.logic); here only
-// we record the internal invoke() return variable for use there.
+// by the spec are handled elsewhere (in exceptions.dl); here we only
+// record the internal invoke() return variable for use there.
 .decl ProxyInvokeResult(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerReturnVar:Var)
 
 VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret),
