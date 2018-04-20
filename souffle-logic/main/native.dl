@@ -319,10 +319,10 @@ HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
 
 #ifdef SIMULATE_NATIVE_RETURNS
 // Crude heuristic: assume that every native method that returns a
-// class type C, returns an object allocated in that method. This is
-// an underapproximation: the method could return objects of a subtype
-// of C but we cannot model all of them in practice as the type
-// hierarchy under C can be big (for example when C=java.lang.Object).
+// class/array type C, returns an object allocated in that method. This is
+// an underapproximation: the method could return objects of a subtype of C
+// but we cannot model all of them in practice as the type hierarchy under
+// C can be big (for example when C=java.lang.Object).
 
 .decl ReachableNativeMethodInvocation(?invo:MethodInvocation, ?nativeMethod:Method)
 .output ReachableNativeMethodInvocation
@@ -343,7 +343,7 @@ VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return) :-
   ReachableNativeMethodInvocation(_, ?m),
   NativeReturnVar(?return, ?m),
   Var_Type(?return, ?t),
-  isReferenceType(?t),
+  (isClassType(?t) ; isArrayType(?t)),
   isImmutableHContext(?hctx),
   isImmutableContext(?ctx).
 
