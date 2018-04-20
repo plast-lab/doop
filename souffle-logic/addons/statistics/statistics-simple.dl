@@ -94,6 +94,7 @@ Stats_Simple_ApplicationConcreteMethod(?method) :-
 
 Stats_Simple_NonReachableApplicationConcreteMethod(?method) :-
   Stats_Simple_ApplicationConcreteMethod(?method),
+  !Method_Modifier("native", ?method),
   !Stats_Simple_InsensReachableApplicationMethod(?method).
 
 /***************************************************

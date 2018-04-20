@@ -104,6 +104,13 @@ ReachableContext(?ctx, ?meth) :-
    CallbackMethod(?meth)),
   isImmutableContext(?ctx).
 
+// These are externally forced entry points, possibly from a previous analysis.
+// By marking them "ForcedReachable" we enable their mocking, not just reachability.
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+  AndroidEntryPoint(?meth),
+  isImmutableContext(?ctx).
+
 
 /**
  * Layout control objects
