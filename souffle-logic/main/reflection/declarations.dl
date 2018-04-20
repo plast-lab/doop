@@ -51,7 +51,9 @@
 
 .decl java_lang_Class_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)
 
+#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
 .decl java_lang_reflect_Array_newInstance(?invocation:MethodInvocation, ?to:Var, ?param:Var)
+#endif // REFLECTION_HIGH_SOUNDNESS_MODE
 
 .decl java_lang_reflect_Constructor_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)
 

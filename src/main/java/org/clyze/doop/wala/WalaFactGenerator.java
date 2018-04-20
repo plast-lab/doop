@@ -1,5 +1,7 @@
 package org.clyze.doop.wala;
 
+import com.ibm.wala.analysis.typeInference.PrimitiveType;
+import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
@@ -247,6 +249,7 @@ class WalaFactGenerator {
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
         TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
+        SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
         for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             int start = basicBlock.getFirstInstructionIndex();
@@ -353,6 +356,8 @@ class WalaFactGenerator {
                 SSAPiInstruction piInstruction = pis.next();
 
             }
+
+
             if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
                 //System.out.println("method " + m.getName() + " in class " + m.getDeclaringClass().toString() + " Exc handling block " + start + " " + end);
                 if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() == null )
@@ -367,8 +372,10 @@ class WalaFactGenerator {
 //                        System.out.println( instructions[j].toString(ir.getSymbolTable()));
 //                    else
 //                        System.out.println( "Instuction "+j + " is null :(");
-
+                if (previousHandlerBlock != null)
+                    _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock)basicBlock, previousHandlerBlock, session);
                 _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference);
+                previousHandlerBlock = (SSACFG.ExceptionHandlerBasicBlock) basicBlock;
             }
         }
 
@@ -424,7 +431,12 @@ class WalaFactGenerator {
         Local alternative;
         for(int i=0; i < instruction.getNumberOfUses();i++)
         {
-            alternative = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+            if (instruction.getUse(i) > -1) {
+                alternative = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+            }
+            else {
+                continue;
+            }
             _writer.writeAssignLocal(m, instruction, to, alternative, session);
         }
     }
@@ -589,26 +601,34 @@ class WalaFactGenerator {
     private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
         Local l;
 
-        if(instruction.iindex == -1)//Instructions not on the normal instructions array of the IR can have iindex==-1 ex SSAGetCaughtExceptionInstruction, SSAPhiInstruction
-        {
-            l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
-            return l;
-        }
-        String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
         TypeReference typeRef;
-        if(typeInference.getType(varIndex).getType() == null)
+        TypeAbstraction typeAbstraction = typeInference.getType(varIndex);
+        if (typeAbstraction == null) {                    // anantoni: TypeAbstraction == null means undefined type
             typeRef = TypeReference.JavaLangObject;
-        else
-            typeRef = typeInference.getType(varIndex).getTypeReference();
+        }
+        else {                                            // All other cases - including primitives - should be handled by getting the TypeReference
+            typeRef = typeAbstraction.getTypeReference();
+            if (typeRef == null) {                        // anantoni: In this case we have encountered WalaTypeAbstraction.TOP
+                typeRef = TypeReference.JavaLangObject;   // TODO: we don't know what type to give for TOP
+            }
+        }
         if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("type is " + typeRef.toString());
-        if (localNames != null) {
-            l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
+        if (instruction.iindex != -1) {
+            String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
+            if (localNames != null) {
+
+                l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
+            }
+            else {
+                l = new Local("v" + varIndex, varIndex, typeRef);
+            }
         }
         else {
             l = new Local("v" + varIndex, varIndex, typeRef);
         }
         if(ir.getSymbolTable().isConstant(varIndex) && ! ir.getSymbolTable().isNullConstant(varIndex))
             l.setValue(ir.getSymbolTable().getConstantValue(varIndex).toString());
+
         return l;
     }
 
@@ -730,7 +750,7 @@ class WalaFactGenerator {
         }
     }
 
-    public int getNextNonNullInstruction(IR ir, int instructionIndex)
+    private int getNextNonNullInstruction(IR ir, int instructionIndex)
     {
         SSAInstruction[] ssaInstructions = ir.getInstructions();
         //ISSABasicBlock basicBlock = ir.getBasicBlockForInstruction(ssaInstructions[instructionIndex]);

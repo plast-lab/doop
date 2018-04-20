@@ -51,6 +51,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "LB3",
 					name: "lb",
+					description: "Use the LB engine.",
 					value: false,
 					webUI: true,
 					isAdvanced: true
@@ -90,6 +91,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "USER_SUPPLIED_ID",
 					name: "id",
+					description: "The analysis id. If omitted, it is automatically generated.",
 					argName: "ID",
 					value: null,
 					webUI: true
@@ -397,6 +399,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "REFLECTION_HIGH_SOUNDNESS_MODE",
 					name: "reflection-high-soundness-mode",
+					description: "Enable extra rules for more sound handling of reflection.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true,
@@ -486,6 +489,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new IntegerAnalysisOption(
 					id: "SOUFFLE_JOBS",
 					name: "souffle-jobs",
+					description: "Specify number of Souffle jobs to run.",
 					argName: "NUMBER",
 					value: 4
 			),
@@ -497,6 +501,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_PROFILE",
 					name: "souffle-profile",
+					description: "Enable profiling in the Souffle binary.",
 					value: false
 			),
 			/* Start Souffle related options */
@@ -676,6 +681,17 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Run extra metrics logic under addons/statistics",
 					value: false,
 					nonStandard: true,
+					forPreprocessor: true
+			),
+			new AnalysisOption<String>(
+					id: "X_EXTRA_LOGIC",
+					name: "Xextra-logic",
+					argName: "FILE",
+					forCacheID: true,
+					// We don't set "isFile: true" to avoid UI users uploading
+					// custom logic (that can crash the server).
+					description: "Include file with extra rules.",
+					value: null,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
