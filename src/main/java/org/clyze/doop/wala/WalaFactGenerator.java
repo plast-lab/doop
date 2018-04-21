@@ -57,7 +57,7 @@ class WalaFactGenerator {
             //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
             //if(!iClass.getName().toString().contains("cfish"))continue;
             //System.out.println("Class " + iClass.getName().toString() +" to be analyzed");
-            //IRPrinter.printIR(iClass);
+            IRPrinter.printIR(iClass);
 
             _writer.writeClassOrInterfaceType(iClass);
             //TODO: Handling of Arrays?

@@ -124,7 +124,7 @@ public class WalaIRPrinter {
     public void printIR(IMethod m, PrintWriter writer)
     {
         IR ir = _cache.getIR(m, Everywhere.EVERYWHERE);
-        printVars(ir,writer);
+        //printVars(ir,writer);
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
         SymbolTable symbolTable = ir.getSymbolTable();

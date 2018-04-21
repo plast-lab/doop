@@ -10,6 +10,7 @@ import com.ibm.wala.classLoader.ShrikeCTMethod;
 import com.ibm.wala.shrikeCT.AnnotationsReader;
 import com.ibm.wala.shrikeCT.TypeAnnotationsReader;
 import com.ibm.wala.ssa.*;
+import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
@@ -875,16 +876,58 @@ public class WalaFactWriter {
 //            _db.add(METHOD_INV_LINE, insn, str(tag.getLineNumber()));
 //        }
 
+        boolean found = false;
+        IClassHierarchy cha = inMethod.getClassHierarchy();
+        MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
+        IClass targetClass = cha.lookupClass(targetRef.getDeclaringClass());
+        if(targetClass == null)
+            System.out.println("NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
+        else if(targetClass.isInterface() || targetClass.isArrayClass())
+        {
+
+        }
+	else {
+            while (!found) {
+                Iterator<IMethod> it = cha.getPossibleTargets(targetRef).iterator();
+                //System.out.println("------------------------------------------------");
+                //System.out.println("Options for " + targetRef.toString() + " in " + targetClass.toString());
+                while (it.hasNext()) {
+                    IMethod curr = it.next();
+                    //System.out.println("1 " + curr.getReference().toString()+" "+curr.getReference().getDeclaringClass().getName().toString());
+                    //System.out.println("2 " + targetClass.getReference().toString()+" "+targetClass.getName().toString());
+                    //if (curr.getReference().toString().equals(targetRef.toString())) {
+                    if (curr.getReference().getDeclaringClass().getName().toString().equals(targetClass.getName().toString())
+                            && curr.getDescriptor().toString().equals(targetRef.getDescriptor().toString())) {
+                        found = true;
+                        targetRef = curr.getReference();
+                        //System.out.println("Got it!" + targetRef.toString());
+                        break;
+                    }
+                }
+                if (found) break;
+                //if (targetClass == null)
+                    //System.out.println("1NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
+
+                targetClass = targetClass.getSuperclass();
+                if (targetClass == null) {
+                    if(cha.lookupClass(targetRef.getDeclaringClass()).isAbstract())
+                        break;
+                    System.out.println("1NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
+                }
+            }
+        }
+        //System.out.println("------------------------------------------------");
+
         if (instruction.isStatic()) {
-            _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(instruction.getCallSite().getDeclaredTarget()), methodId);
+            _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
         }
         else if (instruction.isDispatch()) {
             Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
-            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(instruction.getCallSite().getDeclaredTarget()), _rep.local(inMethod, l), methodId);
+            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
         }
         else if (instruction.isSpecial()) {
             Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
-            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(instruction.getCallSite().getDeclaredTarget()), _rep.local(inMethod, l), methodId);
+            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
         }
         else if (instruction instanceof SSAInvokeDynamicInstruction) {
             MethodReference dynInfo = instruction.getDeclaredTarget();
