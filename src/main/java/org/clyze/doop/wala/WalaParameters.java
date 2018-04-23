@@ -12,6 +12,7 @@ public class WalaParameters {
     String _outputDir = null;
     ClassFilter applicationClassFilter;
     String appRegex = "**";
+    Integer _cores = null;
 
     public void setInputs(List<String> inputs) {
         this._inputs = inputs;

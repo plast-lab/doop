@@ -16,6 +16,7 @@ import soot.*;
 
 
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -23,15 +24,15 @@ import java.util.Iterator;
  * controlling what facts are generated.
  */
 
-class WalaFactGenerator {
+class WalaFactGenerator implements Runnable {
 
     private WalaFactWriter _writer;
-    private Iterator<IClass> _iClasses;
+    private Set<IClass> _iClasses;
     private AnalysisOptions options;
     private IAnalysisCacheView cache;
     private WalaIRPrinter IRPrinter;
 
-    WalaFactGenerator(WalaFactWriter writer, Iterator<IClass> iClasses, String outDir)
+    WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir)
     {
         this._writer = writer;
 
@@ -44,19 +45,13 @@ class WalaFactGenerator {
     }
 
 
+    @Override
     public void run() {
 
         int skipped=0,overall=0;
-        while (_iClasses.hasNext()) {
-            IClass iClass = _iClasses.next();
+        for (IClass iClass : _iClasses) {
             overall++;
-//            if(iClass.getClassLoader().getName().toString().equals("Primordial")) { //Skipping classes using the Primordial classloader for now to produce less facts
-//                skipped++;
-//                continue;
-//            }
-            //System.out.println("Class " + iClass.getName().toString() + " loader " + iClass.getClassLoader().getName().toString() + " skipped " + skipped + " from " + overall);
-            //if(!iClass.getName().toString().contains("cfish"))continue;
-            //System.out.println("Class " + iClass.getName().toString() +" to be analyzed");
+
             IRPrinter.printIR(iClass);
 
             _writer.writeClassOrInterfaceType(iClass);
