@@ -20,9 +20,8 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.PredicateFile.*;
@@ -866,10 +865,10 @@ public class WalaFactWriter {
 
     private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.invoke(inMethod, instruction, session);
+        //String insn = _rep.invoke(inMethod, instruction, session);
         String methodId = _rep.signature(inMethod);
 
-        writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
+        //writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
 
 
 //        if (tag != null) {
@@ -877,57 +876,88 @@ public class WalaFactWriter {
 //        }
 
         boolean found = false;
+        boolean test = false;
+        if(inMethod.getReference().getName().toString().equals("siftDown") && inMethod.getDeclaringClass().getName().toString().contains("DelayedWorkQueue"))
+            test = true;
         IClassHierarchy cha = inMethod.getClassHierarchy();
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
         IClass targetClass = cha.lookupClass(targetRef.getDeclaringClass());
+
+
         if(targetClass == null)
             System.out.println("NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
-        else if(targetClass.isInterface() || targetClass.isArrayClass())
+        else if( targetClass.isArrayClass())
         {
 
-        }
-	else {
-            while (!found) {
-                Iterator<IMethod> it = cha.getPossibleTargets(targetRef).iterator();
-                //System.out.println("------------------------------------------------");
-                //System.out.println("Options for " + targetRef.toString() + " in " + targetClass.toString());
-                while (it.hasNext()) {
-                    IMethod curr = it.next();
-                    //System.out.println("1 " + curr.getReference().toString()+" "+curr.getReference().getDeclaringClass().getName().toString());
-                    //System.out.println("2 " + targetClass.getReference().toString()+" "+targetClass.getName().toString());
-                    //if (curr.getReference().toString().equals(targetRef.toString())) {
-                    if (curr.getReference().getDeclaringClass().getName().toString().equals(targetClass.getName().toString())
-                            && curr.getDescriptor().toString().equals(targetRef.getDescriptor().toString())) {
-                        found = true;
-                        targetRef = curr.getReference();
-                        //System.out.println("Got it!" + targetRef.toString());
-                        break;
-                    }
-                }
-                if (found) break;
-                //if (targetClass == null)
-                    //System.out.println("1NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
-
-                targetClass = targetClass.getSuperclass();
-                if (targetClass == null) {
-                    if(cha.lookupClass(targetRef.getDeclaringClass()).isAbstract())
-                        break;
-                    System.out.println("1NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
+        }//else if(targetClass.isInterface())
+        else
+        {
+            if(test)System.out.println("------------------------------------------------");
+            if(test)System.out.println("Options for " + targetRef.toString() + " in " + targetClass.toString());
+            for(IMethod meth: targetClass.getAllMethods())
+                if(test)System.out.println(meth.getReference().toString());
+            if(test)System.out.println("------------------------------------------------");
+            for(IMethod meth: targetClass.getAllMethods()) {
+                //if(test)System.out.println(meth.getReference().toString());
+                if (meth.getName().toString().equals(targetRef.getName().toString())
+                        && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString())) {
+                    if(test)System.out.println("\nGot it!" + meth.toString());
+                    targetRef = meth.getReference();
+                    break;
                 }
             }
+            //System.out.println("------------------------------------------------");
+            //System.out.flush();
         }
+//	    else {
+//
+//            while (!found) {
+//                Iterator<IMethod> it = cha.getPossibleTargets(targetRef).iterator();
+//                if(test)System.out.println("------------------------------------------------");
+//                if(test)System.out.println("Options for " + targetRef.toString() + " in " + targetClass.toString());
+//                while (it.hasNext()) {
+//                    IMethod curr = it.next();
+//                    if(test)System.out.println("1 " + curr.getReference().toString()+" "+curr.getReference().getDeclaringClass().getName().toString());
+//                    if(test)System.out.println("2 " + targetClass.getReference().toString()+" "+targetClass.getName().toString());
+//                    if(test)System.out.flush();
+//                    if (curr.getReference().getDeclaringClass().getName().toString().equals(targetClass.getName().toString())
+//                            && curr.getDescriptor().toString().equals(targetRef.getDescriptor().toString())) {
+//                        found = true;
+//                        targetRef = curr.getReference();
+//                        if(test)System.out.println("Got it!" + targetRef.toString());
+//                        break;
+//                    }
+//                }
+//                if (found) break;
+//                //if (targetClass == null)
+//                    //System.out.println("1NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
+//
+//                targetClass = targetClass.getSuperclass();
+//                if (targetClass == null) {
+//                    if(cha.lookupClass(targetRef.getDeclaringClass()).isAbstract())
+//                        break;
+//                    System.out.println("1NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
+//                }
+//            }
+//        }
         //System.out.println("------------------------------------------------");
+
+        String insn = _rep.invoke(inMethod, instruction, targetRef, session);
+        writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
 
         if (instruction.isStatic()) {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
+            //_db.add(STATIC_METHOD_INV, insn, _rep.signature(targetRef), methodId);
         }
         else if (instruction.isDispatch()) {
             Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
             _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
+            //_db.add(VIRTUAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
         }
         else if (instruction.isSpecial()) {
             Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
             _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
+            //_db.add(SPECIAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
         }
         else if (instruction instanceof SSAInvokeDynamicInstruction) {
             MethodReference dynInfo = instruction.getDeclaredTarget();
