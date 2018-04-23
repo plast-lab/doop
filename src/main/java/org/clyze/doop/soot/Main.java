@@ -1,13 +1,15 @@
 package org.clyze.doop.soot;
 
-import org.apache.commons.io.FileUtils;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.android.AndroidSupport;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.Helper;
 import org.objectweb.asm.ClassReader;
-import soot.*;
+import soot.PackManager;
+import soot.Scene;
+import soot.SootClass;
+import soot.SourceLocator;
 import soot.SourceLocator.FoundFile;
 import soot.options.Options;
 
@@ -56,7 +58,7 @@ public class Main {
                         i = shift(args, i);
                         sootParameters._outputDir = args[i];
                         break;
-                    case "--main":
+                    case "--parseParamsAndRun":
                         i = shift(args, i);
                         sootParameters._main = args[i];
                         break;
@@ -149,7 +151,7 @@ public class Main {
                     case "-help":
                         System.err.println("\nusage: [options] file");
                         System.err.println("options:");
-                        System.err.println("  --main <class>                        Specify the main name of the main class");
+                        System.err.println("  --parseParamsAndRun <class>                        Specify the parseParamsAndRun name of the parseParamsAndRun class");
                         System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
                         System.err.println("  --full                                Generate facts by full transitive resolution");
                         System.err.println("  -d <directory>                        Specify where to generate csv fact files");
@@ -174,7 +176,7 @@ public class Main {
                         System.err.println("  -d <directory>                        Specify where to generate files");
                         System.err.println("  -l <archive>                          Find classes in jar/zip archive");
                         System.err.println("  -lsystem                              Find classes in default system classes");
-                        System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
+                        System.err.println("  --android-jars <archive>              The parseParamsAndRun android library jar (for android apks). The same jar should be provided in the -l option");
                         throw new DoopErrorCodeException(0);
                     default:
                         if (args[i].charAt(0) == '-') {

@@ -1,30 +1,36 @@
 package org.clyze.doop.wala;
 
-import com.ibm.wala.analysis.typeInference.PrimitiveType;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.classLoader.*;
+import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IField;
+import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
-import com.ibm.wala.ssa.Value;
 import com.ibm.wala.types.TypeReference;
-import soot.*;
-
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import soot.ArrayType;
+import soot.RefLikeType;
+import soot.RefType;
+import soot.Type;
 
 import java.util.Iterator;
 import java.util.Set;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
- * generate facts. The class FactGenerator is the main class
+ * generate facts. The class FactGenerator is the parseParamsAndRun class
  * controlling what facts are generated.
  */
 
 class WalaFactGenerator implements Runnable {
+
+    protected Log logger;
 
     private WalaFactWriter _writer;
     private Set<IClass> _iClasses;
@@ -35,7 +41,7 @@ class WalaFactGenerator implements Runnable {
     WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir)
     {
         this._writer = writer;
-
+        this.logger = LogFactory.getLog(getClass());
         this._iClasses = iClasses;
         options = new AnalysisOptions();
         options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
@@ -48,10 +54,7 @@ class WalaFactGenerator implements Runnable {
     @Override
     public void run() {
 
-        int skipped=0,overall=0;
         for (IClass iClass : _iClasses) {
-            overall++;
-
             IRPrinter.printIR(iClass);
 
             _writer.writeClassOrInterfaceType(iClass);
@@ -89,14 +92,12 @@ class WalaFactGenerator implements Runnable {
                 }
             }
         }
-        System.out.println("Skipped " + skipped + " from " + overall);
     }
 
     private void generate(IField f)
     {
         _writer.writeField(f);
         _writer.writeFieldInitialValue(f); //TODO: Fix this
-
 
         if(f.isFinal())
             _writer.writeFieldModifier(f, "final");
@@ -120,54 +121,8 @@ class WalaFactGenerator implements Runnable {
         // TODO enum?
     }
 
-
-    /* Check if a Type refers to a phantom class */
-    private static boolean phantomBased(Type t) {
-        if (t instanceof RefLikeType) {
-            if (t instanceof RefType)
-                return ((RefType) t).getSootClass().isPhantom();
-            else if (t instanceof ArrayType)
-                return phantomBased(((ArrayType) t).getElementType());
-        }
-        return false;
-    }
-
-    public static boolean phantomBased(IMethod m) {
-
-        /* Check for phantom classes */
-
-//        if (m.isPhantom()) {
-//            System.out.println("Method " + m.getSignature() + " is phantom.");
-//            return true;
-//        }
-//
-//        for(SootClass clazz: m.getExceptions())
-//            if (clazz.isPhantom()) {
-//                System.out.println("Class " + clazz.getName() + " is phantom.");
-//                return true;
-//            }
-//
-//        for(int i = 0 ; i < m.getParameterCount(); i++)
-//            if(phantomBased(m.getParameterType(i))) {
-//                System.out.println("Parameter type " + m.getParameterType(i) + " of " + m.getSignature() + " is phantom.");
-//                return true;
-//            }
-//
-//        if (phantomBased(m.getReturnType())) {
-//            System.out.println("Return type " + m.getReturnType() + " of " + m.getSignature() + " is phantom.");
-//            return true;
-//        }
-
-        return false;
-    }
-
     private void generate(IMethod m, Session session)
     {
-        if (phantomBased(m)) {
-            //m.setPhantom(true);
-            return;
-        }
-
         _writer.writeMethod(m);
         if(m.isAbstract())
             _writer.writeMethodModifier(m, "abstract");
@@ -185,20 +140,15 @@ class WalaFactGenerator implements Runnable {
             _writer.writeMethodModifier(m, "static");
         if(m.isSynchronized())
             _writer.writeMethodModifier(m, "synchronized");
-        // TODO would be nice to have isVarArgs in Soot
+        // TODO would be nice to have isVarArgs in Wala
 //        if(Modifier.isTransient(modifiers))
 //            _writer.writeMethodModifier(m, "varargs");
-        // TODO would be nice to have isBridge in Soot
         if(m.isSynchronized())
             _writer.writeMethodModifier(m, "volatile");
         if(m.isSynthetic())
             _writer.writeMethodModifier(m, "synthetic");
         if(m.isBridge())
             _writer.writeMethodModifier(m, "bridge");
-        // TODO interface?
-        // TODO strictfp?
-        // TODO annotation?
-        // TODO enum?
 
         if(m.isNative())
         {
@@ -219,7 +169,6 @@ class WalaFactGenerator implements Runnable {
                 _writer.writeFormalParam(m, paramIndex, paramIndex - 1);
             }
             paramIndex++;
-
         }
 
         try {
@@ -412,7 +361,7 @@ class WalaFactGenerator implements Runnable {
         if(ssaInstructions[instruction.getTarget()] == null) {
             int nextWALAIndex = getNextNonNullInstruction(ir,instruction.getTarget());
             if(nextWALAIndex == -1)
-                System.out.println("This Should not be happening");
+                logger.error("Error: Next non-null instruction index = -1");
             _writer.writeIf(m, instruction, op1, op2, ssaInstructions[nextWALAIndex], session);
         }
         else
@@ -447,7 +396,6 @@ class WalaFactGenerator implements Runnable {
         {
             _writer.writeAssignNewMultiArrayExpr(m, instruction, l, session);
         }
-
     }
 
     public void generate(IMethod m, IR ir, SSALoadMetadataInstruction instruction, Session session, TypeInference typeInference) {
@@ -506,16 +454,16 @@ class WalaFactGenerator implements Runnable {
         // For invoke instructions the number of uses is equal to the number of parameters
 
         Local l;
-        if(instruction.getNumberOfReturnValues() ==0)
-            l =null;
+        if(instruction.getNumberOfReturnValues() == 0)
+            l = null;
         else
-            l =createLocal(ir, instruction, instruction.getDef(), typeInference);
+            l = createLocal(ir, instruction, instruction.getDef(), typeInference);
         _writer.writeInvoke(m, ir, instruction, l, session,typeInference);
     }
 
     public void generate(IMethod m, IR ir, SSAInstanceofInstruction instruction, Session session, TypeInference typeInference) {
         // For invoke instructions the number of uses is equal to the number of parameters
-        Local to =createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
         Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
         _writer.writeAssignInstanceOf(m,  instruction, to, from,instruction.getCheckedType(), session);
     }
@@ -528,9 +476,9 @@ class WalaFactGenerator implements Runnable {
         TypeReference[] types = instruction.getDeclaredResultTypes();
         if(types.length!=1)
         {
-            System.out.println("Instruction: " + instruction.toString(ir.getSymbolTable()));
+            logger.debug("Instruction: " + instruction.toString(ir.getSymbolTable()));
             for(TypeReference type:types)
-                System.out.println("CHECKCAST TYPE IS " + type.toString());
+                logger.debug("Checkcast type is " + type.toString());
         }
         for(TypeReference type:types) {
             if(ir.getSymbolTable().isStringConstant(instruction.getUse(0)) || ir.getSymbolTable().isNullConstant(instruction.getUse(0)))//TODO:No class constant?
@@ -558,7 +506,7 @@ class WalaFactGenerator implements Runnable {
         if(ssaInstructions[instruction.getTarget()] == null) {
             int nextWALAIndex = getNextNonNullInstruction(ir,instruction.getTarget());
             if(nextWALAIndex == -1)
-                System.out.println("This Should not be happening ");
+                logger.error("Error: Next non-null instruction index = -1");
             _writer.writeGoto(m, instruction, ssaInstructions[nextWALAIndex], session);
         }
         else
@@ -757,4 +705,3 @@ class WalaFactGenerator implements Runnable {
         return -1;
     }
 }
-

@@ -26,16 +26,16 @@ import java.util.jar.JarFile;
  */
 public class WalaScopeReader {
     //The location of WALAprimordial.txt in our resources folder -- file taken from wala's repo
-    public static String SCOPE_TEXT_FILE;
+    private static String SCOPE_TEXT_FILE;
     //The location of WALAprimordial.jar.model in our resources folder -- file taken from wala's repo
     //Don't understand what this does but it is needed for some reason
-    public static String SCOPE_BIN_FILE;
+    private static String SCOPE_BIN_FILE;
     //The location of the Java library we want to run our analysis on
-    public static String JAVA_LIB_DIR;
+    private static String JAVA_LIB_DIR;
 
     private static final ClassLoader MY_CLASSLOADER = WalaScopeReader.class.getClassLoader();
 
-    public static AnalysisScope makeScope(String classPath, File exclusionsFile, String javaLibDir)
+    static AnalysisScope makeScope(String classPath, File exclusionsFile, String javaLibDir)
     {
         if (classPath == null) {
             throw new IllegalArgumentException("classPath null");
@@ -76,7 +76,7 @@ public class WalaScopeReader {
                 // try to read from jar
                 InputStream inFromJar = javaLoader.getResourceAsStream(scopeFileName);
                 if (inFromJar == null) {
-                    throw new IllegalArgumentException("Unable to retreive " + scopeFileName + " from the jar using " + javaLoader);
+                    throw new IllegalArgumentException("Unable to retrieve " + scopeFileName + " from the jar using " + javaLoader);
                 }
                 r = new BufferedReader(new InputStreamReader(inFromJar));
             }
@@ -103,7 +103,7 @@ public class WalaScopeReader {
     }
 
     //DOOP: We currently only need a fraction of these, but keeping the rest for reference to what it is capable of doing
-    public static void processScopeDefLine(AnalysisScope scope, ClassLoader javaLoader, String line) throws IOException {
+    private static void processScopeDefLine(AnalysisScope scope, ClassLoader javaLoader, String line) throws IOException {
         if (line == null) {
             throw new IllegalArgumentException("null line");
         }
@@ -145,8 +145,8 @@ public class WalaScopeReader {
         } else if ("stdlib".equals(entryType)) {
             //String[] stdlibs = WalaProperties.getJ2SEJarFiles();
             String[] stdlibs = WalaProperties.getJarsInDirectory(JAVA_LIB_DIR); //Gets the jars directly from the directory we set
-            for (int i = 0; i < stdlibs.length; i++) {
-                scope.addToScope(walaLoader, new JarFile(stdlibs[i], false));
+            for (String stdlib : stdlibs) {
+                scope.addToScope(walaLoader, new JarFile(stdlib, false));
             }
         } else {
             Assertions.UNREACHABLE();
@@ -154,7 +154,7 @@ public class WalaScopeReader {
     }
 
     //Method taken from com.ibm.wala.util.config.AnalysisScopeReader
-    public static void addClassPathToScope(String classPath, AnalysisScope scope, ClassLoaderReference loader) {
+    private static void addClassPathToScope(String classPath, AnalysisScope scope, ClassLoaderReference loader) {
         if (classPath == null) {
             throw new IllegalArgumentException("null classPath");
         }
