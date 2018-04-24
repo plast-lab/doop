@@ -118,6 +118,13 @@ PlusStoreStaticField(
   "<java.lang.System: void setIn0(java.io.InputStream)>/@parameter0",
   "<java.lang.System: java.io.InputStream in>").
 
+
+// For Wala:
+PlusStoreStaticField(
+  "<java.lang.System: void setIn0(java.io.InputStream)>",
+  "<java.lang.System: void setIn0(java.io.InputStream)>/v1",
+  "<java.lang.System: java.io.InputStream in>").
+
 /**
  * <java.lang.System: void setOut0(java.io.PrintStream)>
  */
@@ -126,12 +133,23 @@ PlusStoreStaticField(
   "<java.lang.System: void setOut0(java.io.PrintStream)>/@parameter0",
   "<java.lang.System: java.io.PrintStream out>").
 
+// For Wala:
+PlusStoreStaticField(
+  "<java.lang.System: void setOut0(java.io.PrintStream)>",
+  "<java.lang.System: void setOut0(java.io.PrintStream)>/v1",
+  "<java.lang.System: java.io.PrintStream out>").
+
 /**
  * <java.lang.System: void setErr0(java.io.PrintStream)>
  */
 PlusStoreStaticField(
   "<java.lang.System: void setErr0(java.io.PrintStream)>",
   "<java.lang.System: void setErr0(java.io.PrintStream)>/@parameter0",
+  "<java.lang.System: java.io.PrintStream err>").
+
+PlusStoreStaticField(
+  "<java.lang.System: void setErr0(java.io.PrintStream)>",
+  "<java.lang.System: void setErr0(java.io.PrintStream)>/v1",
   "<java.lang.System: java.io.PrintStream err>").
 
 /**
