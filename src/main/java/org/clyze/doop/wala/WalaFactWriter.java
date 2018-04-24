@@ -19,7 +19,10 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
 
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.PredicateFile.*;
@@ -874,7 +877,17 @@ public class WalaFactWriter {
             System.out.println("NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
         else if( targetClass.isArrayClass())
         {
-
+            IClass supClass = targetClass.getSuperclass();
+            //System.out.println("ArrayClass " +targetClass.getName().toString() + " is a child of " + supClass.getName().toString());
+            for(IMethod meth: targetClass.getAllMethods()) {
+                if (meth.getName().toString().equals(targetRef.getName().toString())
+                        && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
+                {
+                    //System.out.println("\n Target found: " + meth.toString());
+                    targetRef = meth.getReference();
+                    break;
+                }
+            }
         }//else if(targetClass.isInterface())
         else {
             logger.debug("------------------------------------------------");
@@ -893,6 +906,36 @@ public class WalaFactWriter {
                     break;
                 }
             }
+//            if(!targetClass.isInterface())
+//            {
+//                Collection<IClass> implInterfaces= targetClass.getAllImplementedInterfaces();
+//                if(!implInterfaces.isEmpty())
+//                {
+//                    boolean found = false;
+//                    Queue<IClass> classQueue = new LinkedList<>();
+//                    IClass currClass;
+//                    for(IClass c:implInterfaces) {
+//                        classQueue.add(c);
+//                        //System.out.println("Class " + targetClass.getReference().toString() +" implements " + c.getReference().toString());
+//                    }
+//                    while (!classQueue.isEmpty() && !found) {
+//                        currClass = classQueue.remove();
+//                        //System.out.println("------------------------------------------------");
+//                        //System.out.println("Looking in interface " + currClass.getReference().toString());
+//                        for(IMethod meth: currClass.getDeclaredMethods()) {
+//                            //System.out.println(meth.getReference().toString());
+//                            if (meth.getName().toString().equals(targetRef.getName().toString())
+//                                    && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
+//                            {
+//                                //System.out.println("\n Target found in interface: " + meth.toString());
+//                                targetRef = meth.getReference();
+//                                found = true;
+//                                break;
+//                            }
+//                        }//System.out.println("------------------------------------------------");
+//                    }
+//                }
+//            }
         }
 
         String insn = _rep.invoke(inMethod, instruction, targetRef, session);
