@@ -362,7 +362,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             //In such a case, we should invoke all Java-based tools using a
             //separate process.
             ClassLoader loader = sootClassLoader()
-            success = Helper.execJava(loader, "org.clyze.doop.soot.Wala", params.toArray(new String[params.size()]))
+            success = Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
         }
 
         if (!success) {
