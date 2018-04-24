@@ -588,15 +588,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             options.X_STATS_DEFAULT.value = true
         }
 
-        if (options.REFLECTION_DYNAMIC_PROXIES.value) {
-            if (!options.REFLECTION.value) {
-                String message = "\nWARNING: Dynamic proxy support without standard reflection support, using custom 'opt-reflective' reflection rules."
-                if (!options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value &&
-                    !options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-                    message += "\nWARNING: 'opt-reflective' may not work optimally, one of these flags is suggested: --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + ", --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name
-                }
-                logger.warn message
+        if (options.REFLECTION_DYNAMIC_PROXIES.value && !options.REFLECTION.value) {
+            String message = "\nWARNING: Dynamic proxy support without standard reflection support, using custom 'opt-reflective' reflection rules."
+            if (!options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value &&
+                !options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
+                message += "\nWARNING: 'opt-reflective' may not work optimally, one of these flags is suggested: --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + ", --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name
             }
+            logger.warn message
         }
 
         if (!options.REFLECTION.value) {
