@@ -303,21 +303,13 @@ class WalaFactGenerator implements Runnable {
 
 
             if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
-                //System.out.println("method " + m.getName() + " in class " + m.getDeclaringClass().toString() + " Exc handling block " + start + " " + end);
                 if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() == null )
                 {
-                    //System.out.println(" NULL CATCH INSTRUCTION");
                     continue;
                 }
-                //System.out.println( ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction().toString(ir.getSymbolTable()) + " with iindex " +((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction().iindex);
-
-//                for (int j = start; j <= end; j++)
-//                    if (instructions[j] != null)
-//                        System.out.println( instructions[j].toString(ir.getSymbolTable()));
-//                    else
-//                        System.out.println( "Instuction "+j + " is null :(");
-                if (previousHandlerBlock != null)
-                    _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock)basicBlock, previousHandlerBlock, session);
+                if (previousHandlerBlock != null) {
+                    _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock) basicBlock, previousHandlerBlock, session);
+                }
                 _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference);
                 previousHandlerBlock = (SSACFG.ExceptionHandlerBasicBlock) basicBlock;
             }
@@ -400,7 +392,6 @@ class WalaFactGenerator implements Runnable {
 
     public void generate(IMethod m, IR ir, SSALoadMetadataInstruction instruction, Session session, TypeInference typeInference) {
         session.calcInstructionNumber(instruction);//TODO: Move this when method is implemented
-
     }
 
     public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session, TypeInference typeInference) {

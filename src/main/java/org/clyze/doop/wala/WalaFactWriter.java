@@ -215,28 +215,6 @@ public class WalaFactWriter {
 
         _db.add(ASSIGN_LOCAL, insn, str(index), _rep.local(m, from), _rep.local(m, to), methodId);
     }
-//
-//    void writeAssignLocal(IMethod m, Stmt stmt, Local to, ThisRef ref, Session session) {
-//        int index = session.calcInstructionNumber(stmt);
-//        String insn = _rep.instruction(m, stmt, session, index);
-//        String methodId = writeMethod(m);
-//
-//        _db.add(ASSIGN_LOCAL, insn, str(index), _rep.thisVar(m), _rep.local(m, to), methodId);
-//    }
-//
-//    void writeAssignLocal(IMethod m, Stmt stmt, Local to, ParameterRef ref, Session session) {
-//        int index = session.calcInstructionNumber(stmt);
-//        String insn = _rep.instruction(m, stmt, session, index);
-//        String methodId = writeMethod(m);
-//
-//        _db.add(ASSIGN_LOCAL, insn, str(index), _rep.param(m, ref.getIndex()), _rep.local(m, to), methodId);
-//    }
-
-//    void writeAssignInvoke(IMethod inMethod, SSAInvokeInstruction instruction, Local to, Session session) {
-//        String insn = writeInvokeHelper(inMethod, stmt, expr, session);
-//
-//        _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
-//    }
 
     void writeAssignHeapAllocation(IR ir, IMethod m, SSANewInstruction instruction, Local l, Session session) {
         String heap = _rep.heapAlloc(m, instruction, session);
@@ -847,7 +825,7 @@ public class WalaFactWriter {
         }
         if (instruction instanceof SSAInvokeDynamicInstruction) {
             for (int j = 0; j < ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentCount(); j++) {
-                int arg =  ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentIndex(j);
+                int arg = ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentIndex(j);
 
                 Local l = createLocal(ir, instruction, arg); //TODO: TypeInference for bootstrap parameters??
                 _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, _rep.local(inMethod, l));
@@ -858,7 +836,7 @@ public class WalaFactWriter {
 
     void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
         String insn = writeInvokeHelper(inMethod, ir, instruction, session, typeInference);
-        if(to !=null)
+        if(to != null)
             _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
     }
 
