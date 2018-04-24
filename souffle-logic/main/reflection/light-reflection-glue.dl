@@ -1,6 +1,6 @@
 // This file contains simple intraprocedural rules to handle
 // reflection patterns without Doop's full reflection support, only
-// using the "dummy-reflection" set of rules. The rules below do not
+// using the "light-Class-forName" set of rules. The rules below do not
 // create reified objects (such as Constructor or Method) and should
 // only be used to expose code that is behind very simple reflective
 // access. Patterns supported (assuming c is a Class object):

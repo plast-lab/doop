@@ -1,9 +1,3 @@
-// If no reflection support has been enabled, activate a simple set of
-// rules to handle Class objects.
-#ifndef REFLECTION
-#include "dummy-reflection.dl"
-#endif // REFLECTION
-
 /* Models the dynamic proxies of Java.
 
    There are two ways to create a dynamic proxy instance_
