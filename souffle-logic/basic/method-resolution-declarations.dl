@@ -14,7 +14,8 @@
  * Encodes a CHA callgraph, effectively
  */
 .decl ResolveInvocation(?type:Type, ?invocation:MethodInvocation, ?tomethod:Method)
-
+.output ResolveInvocation
+        
 .decl OverridableMethod(?type:Type, ?method:Method)
 
 .decl ClassConstructor(?method:Method, ?type:Type)
