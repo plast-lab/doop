@@ -434,7 +434,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
         logger.debug "Params of jphantom: ${params.join(' ')}"
 
-        //we invoke the parseParamsAndRun method reflectively to avoid adding jphantom as a compile-time dependency
+        //we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
         ClassLoader loader = phantomClassLoader()
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
@@ -581,7 +581,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void warnOpenPrograms() {
-        logger.debug "\nWARNING: No parseParamsAndRun class was found. This will trigger open-program analysis!\n"
+        logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
     }
 
     protected final void handleImportDynamicFacts() {

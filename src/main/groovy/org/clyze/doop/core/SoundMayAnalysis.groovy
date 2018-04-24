@@ -61,7 +61,7 @@ class SoundMayAnalysis extends ClassicAnalysis {
     protected void mainAnalysis() {
 //        def analysisPath = "${Doop.analysesPath}/${name}"
 //        def outFile = "${outDir}/sound.logic"
-//        cpp.preprocess("${outDir}/string-constants.logic", "${Doop.logicPath}/parseParamsAndRun/string-constants.logic")
+//        cpp.preprocess("${outDir}/string-constants.logic", "${Doop.logicPath}/main/string-constants.logic")
 //
 //        connector.queue()
 //            .timedTransaction("-- String Constants --")
