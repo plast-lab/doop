@@ -14,17 +14,15 @@ import soot.jimple.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class WalaRepresentation {
-    private Map<IMethod, String> _methodRepr = new ConcurrentHashMap<>();
+class WalaRepresentation {
     private Map<String, String> _methodSigRepr = new ConcurrentHashMap<>();
-    private Map<IMethod, String> _methodRefSigRepr = new ConcurrentHashMap<>();
     private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
     private static WalaRepresentation _repr;
     private WalaRepresentation() {}
 
-    public static WalaRepresentation getRepresentation() {
+    static WalaRepresentation getRepresentation() {
         if (_repr == null)
             _repr = new WalaRepresentation();
         return _repr;
@@ -44,11 +42,11 @@ public class WalaRepresentation {
     }
 
 
-    public String signature(IMethod m) {
+    String signature(IMethod m) {
         return signature(m.getReference());
     }
 
-    public String signature(MethodReference m) {
+    String signature(MethodReference m) {
         String WalaSignature = m.getSignature();
         String doopSignature = _methodSigRepr.get(WalaSignature);
         if (doopSignature == null){
@@ -120,7 +118,7 @@ public class WalaRepresentation {
 
     String param(IMethod m, int i)//REVIEW:SIFIS:I believe parameters are normal vi variables, same for this. Will look into it.
     {
-      return signature(m) + "/v" + (i+1);
+        return signature(m) + "/v" + (i+1);
     }
 
     String local(IMethod m, Local local)
@@ -153,7 +151,8 @@ public class WalaRepresentation {
     {
         boolean isArrayType = false;
         int arrayTimes = 0;
-        String ret = null;
+        String ret;
+
         if(original.contains("L")) {
             if (original.contains("[")) //Figure out if this is correct
             {
@@ -179,26 +178,38 @@ public class WalaRepresentation {
                 }
                 temp = temp.substring(arrayTimes);
             }
-            if (temp.equals("Z"))
-                ret = "boolean";
-            else if (temp.equals("I"))
-                ret = "int";
-            else if (temp.equals("V"))
-                ret = "void";
-            else if (temp.equals("B"))
-                ret = "byte";
-            else if (temp.equals("C"))
-                ret = "char";
-            else if (temp.equals("D"))
-                ret = "double";
-            else if (temp.equals("F"))
-                ret = "float";
-            else if (temp.equals("J"))
-                ret = "long";
-            else if (temp.equals("S"))
-                ret = "short";
-            else
-                ret = "OTHERPRIMITIVE";
+            switch (temp) {
+                case "Z":
+                    ret = "boolean";
+                    break;
+                case "I":
+                    ret = "int";
+                    break;
+                case "V":
+                    ret = "void";
+                    break;
+                case "B":
+                    ret = "byte";
+                    break;
+                case "C":
+                    ret = "char";
+                    break;
+                case "D":
+                    ret = "double";
+                    break;
+                case "F":
+                    ret = "float";
+                    break;
+                case "J":
+                    ret = "long";
+                    break;
+                case "S":
+                    ret = "short";
+                    break;
+                default:
+                    ret = "OTHERPRIMITIVE";
+                    break;
+            }
             //TODO: Figure out what the 'P' code represents in WALA's TypeReference
 
         }
@@ -208,61 +219,22 @@ public class WalaRepresentation {
                 ret = ret + "[]";
         }
         //if(! ret.equals(fixTypeStringOld(original)) && ! original.contains("["))
-            //System.out.println(original + " | " + ret + " | " + fixTypeStringOld(original));
+        //System.out.println(original + " | " + ret + " | " + fixTypeStringOld(original));
         return ret;
     }
 
-    public String fixTypeStringOld(String original) {
-        boolean isArrayType = false;
-        if (original.contains("[L")) //Figure out if this is correct
-        {
-            isArrayType = true;
-        }
-        String ret = original.substring(original.indexOf("L") + 1).replaceAll("/", ".").replaceAll(">", "");
-        String temp;
-        if (ret.contains("Primordial")) {
-            temp = ret.substring(ret.indexOf(",") + 1);
-            if (temp.startsWith("[")) {
-                isArrayType = true;
-                temp = temp.substring(1);
-            }
-            if (temp.equals("Z"))
-                ret = "boolean";
-            else if (temp.equals("I"))
-                ret = "int";
-            else if (temp.equals("V"))
-                ret = "void";
-            else if (temp.equals("B"))
-                ret = "byte";
-            else if (temp.equals("C"))
-                ret = "char";
-            else if (temp.equals("D"))
-                ret = "double";
-            else if (temp.equals("F"))
-                ret = "float";
-            else if (temp.equals("J"))
-                ret = "long";
-            else if (temp.equals("S"))
-                ret = "short";
-            //TODO: Figure out what the 'P' code represents in WALA's TypeReference
-        }
-        if (isArrayType) {
-                ret = ret + "[]";
-        }
-        return ret;
-    }
     //This method takes a MethodReference as a parameter and it does not include "this" as an argument
     //Had the parameter been an IMethod it would include "this" but soot Signatures don't have it so we keep it this way.
     private String createMethodSignature(MethodReference m)
     {
-        String DoopSig ="<"+ fixTypeString(m.getDeclaringClass().toString())+": "+ fixTypeString(m.getReturnType().toString()) + " " + m.getName()+"(";
+        StringBuilder DoopSig = new StringBuilder("<" + fixTypeString(m.getDeclaringClass().toString()) + ": " + fixTypeString(m.getReturnType().toString()) + " " + m.getName() + "(");
         for (int i = 0; i < m.getNumberOfParameters(); i++) {
-            DoopSig+=fixTypeString(m.getParameterType(i).toString());
+            DoopSig.append(fixTypeString(m.getParameterType(i).toString()));
             if (i < m.getNumberOfParameters() - 1)
-                DoopSig+=",";
+                DoopSig.append(",");
         }
-        DoopSig+=")>";
-        return DoopSig;
+        DoopSig.append(")>");
+        return DoopSig.toString();
     }
 
     private String getKind(SSAInstruction instruction)
@@ -292,8 +264,6 @@ public class WalaRepresentation {
             kind = "return-void";
         else if(instruction instanceof SSAReturnInstruction)
             kind = "ret";
-        else if(instruction instanceof SSAReturnInstruction)
-            kind = "return";
         else if(instruction instanceof SSAThrowInstruction)
             kind = "throw";
         return kind;
@@ -302,9 +272,9 @@ public class WalaRepresentation {
     String unsupported(IMethod inMethod, SSAInstruction instruction, int index)
     {
         return signature(inMethod) +
-            "/unsupported " + getKind(instruction) +
-            "/" +  instruction.toString() +
-            "/instruction" + index;
+                "/unsupported " + getKind(instruction) +
+                "/" +  instruction.toString() +
+                "/instruction" + index;
     }
 
     /**
@@ -314,10 +284,10 @@ public class WalaRepresentation {
     {
         return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
-    String invoke(IMethod inMethod, SSAInvokeInstruction expr, Session session)
+    String invoke(IMethod inMethod, SSAInvokeInstruction expr, MethodReference methRef, Session session)
     {
-        MethodReference exprMethod = expr.getDeclaredTarget();
-        String defaultMid = fixTypeString(exprMethod.getDeclaringClass().toString()) + "." + exprMethod.getName().toString();
+        //MethodReference exprMethod = expr.getDeclaredTarget();
+        String defaultMid = fixTypeString(methRef.getDeclaringClass().toString()) + "." + methRef.getName().toString();
         String midPart = (expr instanceof SSAInvokeDynamicInstruction)? dynamicInvokeMiddlePart((SSAInvokeDynamicInstruction) expr, defaultMid) : defaultMid;
 
         return signature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
@@ -368,9 +338,6 @@ public class WalaRepresentation {
         else if(newParams > 1)
         {
             return heapAlloc(inMethod, instruction.getConcreteType(), session);
-            //      return getMethodSignature(inMethod) + "/" + type + "/" +  session.nextNumber(type);
-
-
         }
         else
         {

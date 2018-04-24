@@ -1,5 +1,7 @@
 package org.clyze.doop.core
 
+import org.clyze.doop.wala.WalaInvoker
+
 import java.nio.file.Files
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -209,7 +211,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             else if (options.DACAPO_BACH.value) {
                 def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
                 def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-                
+
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
@@ -360,7 +362,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             //In such a case, we should invoke all Java-based tools using a
             //separate process.
             ClassLoader loader = sootClassLoader()
-            success = Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
+            success = Helper.execJava(loader, "org.clyze.doop.soot.Wala", params.toArray(new String[params.size()]))
         }
 
         if (!success) {
@@ -395,6 +397,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 throw new RuntimeException("Unsupported platform")
         }
 
+        if (options.FACT_GEN_CORES.value) {
+            params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
+        }
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         depArgs = deps
         depArgs.add("-p")
@@ -411,8 +416,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             //or averroes.
             //In such a case, we should invoke all Java-based tools using a
             //separate process.
-            ClassLoader loader = sootClassLoader()
-            Helper.execJava(loader, "org.clyze.doop.wala.Main", params.toArray(new String[params.size()]))
+            WalaInvoker wala = new WalaInvoker()
+            wala.parseParamsAndRun(params.toArray(new String[params.size()]))
         }
 
         logger.info "Wala fact generation time: ${sootTime}"
@@ -429,7 +434,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
         logger.debug "Params of jphantom: ${params.join(' ')}"
 
-        //we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
+        //we invoke the parseParamsAndRun method reflectively to avoid adding jphantom as a compile-time dependency
         ClassLoader loader = phantomClassLoader()
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
@@ -576,7 +581,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void warnOpenPrograms() {
-        logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
+        logger.debug "\nWARNING: No parseParamsAndRun class was found. This will trigger open-program analysis!\n"
     }
 
     protected final void handleImportDynamicFacts() {

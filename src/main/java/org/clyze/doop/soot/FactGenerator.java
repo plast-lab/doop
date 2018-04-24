@@ -10,7 +10,7 @@ import java.util.Set;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
- * generate facts. The class FactGenerator is the main class
+ * generate facts. The class FactGenerator is the parseParamsAndRun class
  * controlling what facts are generated.
  */
 

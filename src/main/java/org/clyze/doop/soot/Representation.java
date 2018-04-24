@@ -7,23 +7,21 @@ import soot.jimple.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Representation {
-    private Map<SootMethod, String> _methodRepr = new ConcurrentHashMap<>();
+class Representation {
     private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
-    private Map<SootMethodRef, String> _methodRefSigRepr = new ConcurrentHashMap<>();
     private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
     private static Representation _repr;
     private Representation() {}
 
-    public static Representation getRepresentation() {
+    static Representation getRepresentation() {
         if (_repr == null)
             _repr = new Representation();
         return _repr;
     }
 
-    public String classConstant(SootClass c) {
+    String classConstant(SootClass c) {
         return "<class " + c.getName() + ">";
     }
 
@@ -35,7 +33,7 @@ public class Representation {
         return "<class " + t + ">";
     }
 
-    public String signature(SootMethod m) {
+    String signature(SootMethod m) {
         String result = _methodSigRepr.get(m);
 
         if(result == null)
@@ -251,12 +249,9 @@ public class Representation {
     {
         String s = type.toString();
         return getMethodSignature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
-
-
     }
 
     String methodHandleConstant(String handleName) {
         return "<handle " + handleName + ">";
     }
-
 }

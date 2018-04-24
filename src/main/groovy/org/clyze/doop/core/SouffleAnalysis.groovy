@@ -133,7 +133,7 @@ class SouffleAnalysis extends DoopAnalysis {
     @Override
     protected void mainAnalysis() {
         def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-        def mainPath     = "${Doop.souffleLogicPath}/main"
+        def mainPath     = "${Doop.souffleLogicPath}/parseParamsAndRun"
         def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
 
         if (name == "sound-may-point-to") {

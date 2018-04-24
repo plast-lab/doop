@@ -47,7 +47,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					cli: false
 			),
 			/* End LogicBlox related options */
-			/* Start Main options */
+			/* Start Wala options */
 			new BooleanAnalysisOption(
 					id: "LB3",
 					name: "lb",
@@ -99,9 +99,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 			new AnalysisOption<String>(
 					id: "MAIN_CLASS",
-					name: "main",
+					name: "parseParamsAndRun",
 					argName: "CLASS",
-					description: "Specify the main class.",
+					description: "Specify the parseParamsAndRun class.",
 					value: null,
 					webUI: true
 			),
@@ -165,7 +165,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "RUN_FLOWDROID",
 					name: "run-flowdroid",
-					description: "Run soot-infoflow-android to generate dummy main method.",
+					description: "Run soot-infoflow-android to generate dummy parseParamsAndRun method.",
 					value: false,
 					forCacheID: true
 			),
@@ -280,7 +280,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true,
 					forPreprocessor: true
 			),
-			/* End Main options */
+			/* End Wala options */
 			/* Start preprocessor normal flags */
 			new BooleanAnalysisOption(
 					id: "NO_MERGES",
@@ -478,8 +478,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "DISCOVER_MAIN_METHODS",
-					name: "discover-main-methods",
-					description: "Discover main() methods.",
+					name: "discover-parseParamsAndRun-methods",
+					description: "Discover parseParamsAndRun() methods.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true
@@ -560,8 +560,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "IGNORE_MAIN_METHOD",
-					name: "ignore-main-method",
-					description: "If main class is not given explicitly, do not try to discover it from jar/filename info. Open-program analysis variant will be triggered in this case.",
+					name: "ignore-parseParamsAndRun-method",
+					description: "If parseParamsAndRun class is not given explicitly, do not try to discover it from jar/filename info. Open-program analysis variant will be triggered in this case.",
 					webUI: true,
 					value: false,
 					forPreprocessor: true

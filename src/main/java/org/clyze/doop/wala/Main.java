@@ -13,7 +13,9 @@ import soot.SootClass;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 public class Main {
 
@@ -62,6 +64,14 @@ public class Main {
                     case "--application-regex":
                         i = shift(args, i);
                         walaParameters.appRegex = args[i];
+                        break;
+                    case "--fact-gen-cores":
+                        i = shift(args, i);
+                        try {
+                            walaParameters._cores = new Integer(args[i]);
+                        } catch (NumberFormatException nfe) {
+                            System.out.println("Invalid cores argument: " + args[i]);
+                        }
                         break;
                     default:
                         if (args[i].charAt(0) == '-') {
@@ -120,21 +130,29 @@ public class Main {
         Iterator<IClass> classes = cha.iterator();      //IMethod m ;
         Database db = new Database(new File(walaParameters._outputDir), false);
         WalaFactWriter walaFactWriter = new WalaFactWriter(db);
-        WalaDriver driver = new WalaDriver();
+        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir);
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
         //driver.doInParallel(classes);
 
         IClass klass;
+        int totalClasses = 0;
+        Set<IClass> classesSet = new HashSet<>();
         while (classes.hasNext()) {
             klass = classes.next();
             if (isApplicationClass(walaParameters, klass)) {
                 walaFactWriter.writeApplicationClass(klass);
             }
+            totalClasses++;
+            classesSet.add(klass);
         }
 
+        WalaDriver driver = new WalaDriver(walaThreadFactory, totalClasses, false, walaParameters._cores);
+
+
         classes = cha.iterator();
-        driver.doSequentially(classes, walaFactWriter, walaParameters._outputDir);
+        driver.doInParallel(classesSet);
+        driver.shutdown();
         db.flush();
         db.close();
 
