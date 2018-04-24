@@ -12,6 +12,12 @@
     #include "android.dl"
   #endif
 
+  #include "string-concat.dl"
+  #include "exceptions.dl"
+  #ifndef DISABLE_METHOD_HANDLES
+    #include "method-handles.dl"
+  #endif
+
   #if defined(REFLECTION)
     #include "reflection/declarations.dl"
   #endif
@@ -19,7 +25,7 @@
   .decl FakeInvocation_RegisterFinalize0(?heap:HeapAllocation, ?invo:MethodInvocation)
 
   .decl FakeInvocation_RegisterFinalize(?value:Value, ?invo:MethodInvocation)
-  
+
   //-----------------------------------------------------------------------------
   // [Value]
   //-----------------------------------------------------------------------------
@@ -55,38 +61,10 @@
   #include "context-sensitivity.dl"
   #include "export.dl"
 
-  #define InvocationHandlerInvoke(invokeMeth)   Method_SimpleName(invokeMeth, "invoke"), \
-    Method_DeclaringType(invokeMeth, ?class), \
-    basic.SubtypeOf(?class, ?tInvocationHandler), \
-    isInterfaceType(?tInvocationHandler), \
-    ?tInvocationHandler = "java.lang.reflect.InvocationHandler"
-
-  #define NEW_PROXY_INSTANCE "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"
-  #define DYNAMIC_PROXY_EXPORT
-
   #if defined(REFLECTION_DYNAMIC_PROXIES)
     #include "reflection/dynamic-proxies.dl"
     #include "reflection/dynamic-proxies-delta.dl"
   #endif // REFLECTION_DYNAMIC_PROXIES
-
-  #ifdef DYNAMIC_PROXY_EXPORT
-    .decl ReachableProxyInvoke(?invokeMeth:Method)
-    .output ReachableProxyInvoke
-
-    ReachableProxyInvoke(?invokeMeth) :-
-      Reachable(?invokeMeth),
-      InvocationHandlerInvoke(?invokeMeth).
-
-    .decl ReachableNewProxyInstance(?inMeth:Method)
-    .output ReachableNewProxyInstance
-
-    ReachableNewProxyInstance(?inMeth) :-
-      ?newProxyInstance = NEW_PROXY_INSTANCE,
-      Reachable(?newProxyInstance),
-      CallGraphEdge(_, ?invo, _, ?newProxyInstance),
-      Instruction_Method(?invo, ?inMeth).
-
-  #endif // DYNAMIC_PROXY_EXPORT
 
   #if defined(REFLECTION)
     #include "reflection/rules.dl"

@@ -7,10 +7,15 @@ import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.DoopErrorCodeException;
+import org.clyze.doop.soot.SootParameters;
+import org.clyze.doop.util.filter.GlobClassFilter;
+import soot.SootClass;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 public class Main {
 
@@ -20,6 +25,14 @@ public class Main {
             System.exit(1);
         }
         return index + 1;
+    }
+
+    private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
+        walaParameters.applicationClassFilter = new GlobClassFilter(walaParameters.appRegex);
+
+
+        // Change package delimiter from "/" to "."
+        return walaParameters.applicationClassFilter.matches(WalaRepresentation.fixTypeString(klass.getName().toString()));
     }
 
     public static void main(String[] args) throws IOException {
@@ -47,6 +60,24 @@ public class Main {
                     case "-d":
                         i = shift(args, i);
                         walaParameters._outputDir = args[i];
+                        break;
+                    case "--application-regex":
+                        i = shift(args, i);
+                        walaParameters.appRegex = args[i];
+                        break;
+                    case "--fact-gen-cores":
+                        i = shift(args, i);
+                        try {
+                            walaParameters._cores = new Integer(args[i]);
+                        } catch (NumberFormatException nfe) {
+                            System.out.println("Invalid cores argument: " + args[i]);
+                        }
+                        break;
+                    default:
+                        if (args[i].charAt(0) == '-') {
+                            System.err.println("error: unrecognized option: " + args[i]);
+                            throw new DoopErrorCodeException(6);
+                        }
                         break;
                 }
 
@@ -97,14 +128,31 @@ public class Main {
 
         // Create an object which caches IRs and related information, reconstructing them lazily on demand.
         Iterator<IClass> classes = cha.iterator();      //IMethod m ;
-
         Database db = new Database(new File(walaParameters._outputDir), false);
         WalaFactWriter walaFactWriter = new WalaFactWriter(db);
-        WalaDriver driver = new WalaDriver();
+        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir);
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
         //driver.doInParallel(classes);
-        driver.doSequentially(classes, walaFactWriter, walaParameters._outputDir);
+
+        IClass klass;
+        int totalClasses = 0;
+        Set<IClass> classesSet = new HashSet<>();
+        while (classes.hasNext()) {
+            klass = classes.next();
+            if (isApplicationClass(walaParameters, klass)) {
+                walaFactWriter.writeApplicationClass(klass);
+            }
+            totalClasses++;
+            classesSet.add(klass);
+        }
+
+        WalaDriver driver = new WalaDriver(walaThreadFactory, totalClasses, false, walaParameters._cores);
+
+
+        classes = cha.iterator();
+        driver.doInParallel(classesSet);
+        driver.shutdown();
         db.flush();
         db.close();
 

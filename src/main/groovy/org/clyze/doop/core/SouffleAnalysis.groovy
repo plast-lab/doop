@@ -12,7 +12,6 @@ import java.nio.file.Files
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.StandardCopyOption
 
-import static org.apache.commons.io.FileUtils.copyFileToDirectory
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 
@@ -103,10 +102,7 @@ class SouffleAnalysis extends DoopAnalysis {
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/post-process.dl", commonMacros)
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/mock-heap.dl", commonMacros)
 
-        if (options.IMPORT_DYNAMIC_FACTS.value) {
-            // copy facts/DynamicCallGraphEdge.facts
-            copyFileToDirectory(new File(options.IMPORT_DYNAMIC_FACTS.value.toString()), factsDir)
-        }
+        handleImportDynamicFacts()
 
         if (options.HEAPDL.value || options.IMPORT_DYNAMIC_FACTS.value) {
             cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/import-dynamic-facts.dl", commonMacros)
@@ -137,39 +133,16 @@ class SouffleAnalysis extends DoopAnalysis {
     @Override
     protected void mainAnalysis() {
         def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-        def mainPath     = "${Doop.souffleLogicPath}/main"
+        def mainPath     = "${Doop.souffleLogicPath}/parseParamsAndRun"
         def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
-
-        // By default, assume we run a context-sensitive analysis
-        boolean isContextSensitive = true
-        try {
-            def file = FileOps.findFileOrThrow("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
-            Properties props = FileOps.loadProperties(file)
-            isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
-        }
-        catch(e) {
-            logger.debug e.getMessage()
-        }
 
         if (name == "sound-may-point-to") {
             cpp.includeAtEnd("$analysis", "${mainPath}/string-constants.dl")
-            cpp.includeAtEnd("$analysis", "${mainPath}/exceptions.dl")
-            cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl",
-                    "${mainPath}/context-sensitivity-declarations.dl")
             cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl")
-        }
-        else {
-            if (isContextSensitive) {
-                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl")
-                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl", commonMacros)
-                cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros)
-            } else {
-                cpp.includeAtEnd("$analysis", "${analysisPath}/declarations.dl")
-                cpp.includeAtEndIfExists("$analysis", "${mainPath}/prologue.dl", commonMacros)
-                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/prologue.dl")
-                cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl")
-                cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl")
-            }
+        } else {
+            cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl")
+            cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl", commonMacros)
+            cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros)
         }
 
         if (options.INFORMATION_FLOW.value) {
@@ -201,6 +174,17 @@ class SouffleAnalysis extends DoopAnalysis {
         if (options.GENERATE_PROGUARD_KEEP_DIRECTIVES.value) {
             cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/proguard/keep.dl")
         }
+
+        if (options.X_EXTRA_LOGIC.value) {
+            File extraLogic = new File(options.X_EXTRA_LOGIC.value as String)
+            if (extraLogic.exists()) {
+                String extraLogicPath = extraLogic.canonicalPath
+                logger.info "Adding extra logic file ${extraLogicPath}"
+                cpp.includeAtEnd("${analysis}", extraLogicPath)
+            } else {
+                logger.warn "Extra logic file does not exist: ${extraLogic}"
+            }
+        }
     }
 
     private void compileAnalysis() {
@@ -211,8 +195,7 @@ class SouffleAnalysis extends DoopAnalysis {
         analysesCachePerName.mkdirs()
         souffleAnalysisCacheFile = new File("${Doop.souffleAnalysesCache}/${name}/${analysisChecksum}")
 
-        if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value ||
-            options.X_CONTEXT_REMOVER.value) {
+        if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value) {
 
             if (options.X_CONTEXT_REMOVER.value) {
                 File analysisFile = new File(analysis as String)

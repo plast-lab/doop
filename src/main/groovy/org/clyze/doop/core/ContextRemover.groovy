@@ -63,7 +63,7 @@ public class ContextRemover {
             int lParenIdx = line.indexOf("(")
             int rParenIdx = line.indexOf(")")
             if ((lParenIdx == -1) || (rParenIdx == -1)) {
-                throw new RuntimeException(".decl without '('/')'!")
+                throw new RuntimeException(".decl without '('/')' in ${line}")
             }
             String relName = line.substring(declIdx + ".decl ".size(), lParenIdx)
             List fields = line.substring(lParenIdx + 1, rParenIdx).split(',')

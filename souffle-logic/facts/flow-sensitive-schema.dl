@@ -487,6 +487,8 @@
 .decl SensitiveLayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
 .decl FieldInitialValue(?fld:Field, ?valueString:symbol)
 .decl AndroidEntryPoint(?m:Method)
+.decl AndroidKeepMethod(?m:Method)
+.decl AndroidKeepClass(?c:ClassType)
 .decl AndroidApplication(?t:ClassType)
 
 #endif

@@ -18,7 +18,7 @@ public class PackageUtil {
      */
     static Set<String> getPackages(File archive) {
         String name = archive.getName().toLowerCase()
-        if (name.endsWith(".jar")) {
+        if (name.endsWith(".jar") || name.endsWith(".zip")) {
             return getPackagesForJAR(archive)
         } else if (name.endsWith(".apk")) {
             return getPackagesForAPK(archive)

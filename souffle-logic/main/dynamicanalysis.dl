@@ -47,7 +47,7 @@ ImpreciseDynamicStaticFieldPointsTo(?signature, ?immutableDCTX, ?heap) :-
 MostPreciseDynamicStaticFieldPointsTo(?signature, ?dctx, ?heap) :-
    DynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
    !ImpreciseDynamicStaticFieldPointsTo(?signature, ?dctx, ?heap).
-   
+
 .decl InsStaticFieldPointsToFromDynamic(?value:Value, ?signature:Field)
 
 InsStaticFieldPointsToFromDynamic(?value, ?signature),
@@ -78,13 +78,17 @@ ImpreciseDynamicInstanceFieldPointsTo(?fld, ?DCTX2, ?heap, ?immutableDCTX, ?base
           ?heap:HeapAllocation, ?baseDCtx:DynamicContext,
           ?baseHeap:HeapAllocation
       )
-      
+
 MostPreciseDynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap) :-
    DynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap),
    !ImpreciseDynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap).
 
+// This is a replacement of the full InstanceFieldPointsTo relation, which should no longer
+// be used by default.
+.decl HeapDLInstanceFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)
+
 InsInstanceFieldPointsToFromDynamic(?value, ?fld, ?baseValue),
-InstanceFieldPointsTo(?hctx, ?value, ?fld, ?baseHctx, ?baseValue) :-
+HeapDLInstanceFieldPointsTo(?hctx, ?value, ?fld, ?baseHctx, ?baseValue) :-
    MostPreciseDynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap),
    FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap),
    FromDynamicHeapObject(?baseHctx, ?baseValue, ?baseDCtx, ?baseHeap).
@@ -92,10 +96,10 @@ InstanceFieldPointsTo(?hctx, ?value, ?fld, ?baseHctx, ?baseValue) :-
 .decl InsArrayIndexPointsToFromDynamic(?value:Value, ?baseValue:Value)
 
 .decl MostPreciseDynamicArrayIndexPointsTo(?dctx:DynamicContext, ?heap:HeapAllocation, ?baseDCtx:DynamicContext, ?baseHeap:HeapAllocation)
-      
+
 MostPreciseDynamicArrayIndexPointsTo(?dctx, ?heap, ?baseDCtx, ?baseHeap) :-
    DynamicArrayIndexPointsTo(?dctx, ?heap, ?baseDCtx, ?baseHeap).
- 
+
 InsArrayIndexPointsToFromDynamic(?value, ?baseValue),
 ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseValue) :-
    DynamicArrayIndexPointsTo(?dctx, ?heap, ?baseDCtx, ?baseHeap),
@@ -115,7 +119,7 @@ HighConfidenceLoadFromDynamicInference(?value, ?inmethod) :-
   InsInstanceFieldPointsToFromDynamic(?value, ?fld, ?baseValue),
   LoadHeapInstanceField(_, ?to, ?fld, _, ?baseValue),
   Var_DeclaringMethod(?to, ?inmethod).
-      
+
 HighConfidenceLoadFromDynamicInference(?value, ?inmethod) :-
   InsStaticFieldPointsToFromDynamic(?value, ?sig),
   LoadStaticField(?sig, ?to, ?inmethod),
@@ -132,7 +136,7 @@ HighConfidenceAssign(?value, ?inmethod) :-
 #endif
 
 #endif
- 
+
 // Context insensitive allocations
 .decl FromDynamicHeapObject(?hctx:configuration.HContext, ?value:Value, ?dctx:DynamicContext, ?dheap:HeapAllocation)
 
@@ -239,7 +243,7 @@ SanitizedDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMet
    MethodInvocation_Method(?invocation, ?toMethod).
 
 SanitizedDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
-   DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod),      
+   DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod),
    isDynamicMethodInvocation_Insn(?invocation).
 
 CallGraphEdge(?ctxFrom, ?invocation, ?ctxTo, ?toMethod) :-
@@ -267,7 +271,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?return) :-
    isImmutableHContext(?hctx), isImmutableContext(?ctx).
 
 .decl SingletonDynamicHeapObject(?type:Type, ?value:Value)
-      
+
 SingletonDynamicHeapObject(?type, ?value) :-
   DynamicHeapAllocation(?representation, ?heap),
   !NotSingletonDynamicHeapAllocation(?representation),

@@ -710,13 +710,27 @@ Instruction_Method(?instruction, ?method) :-
 
 #ifdef ANDROID
 
-// AndroidEntryPoint
+// AndroidEntryPoints
 
 .decl _AndroidEntryPoint(?method:symbol)
 .input _AndroidEntryPoint(IO="file", filename="AndroidEntryPoint.facts", delimiter="\t")
 
 AndroidEntryPoint(?method) :-
   _AndroidEntryPoint(?method).
+
+
+// The exact info from ProGuard keep annotations
+.decl _AndroidKeepMethod(?method:symbol)
+.input _AndroidKeepMethod(IO="file", filename="AndroidKeepMethod.facts", delimiter="\t")
+
+AndroidKeepMethod(?method) :-
+  _AndroidKeepMethod(?method).
+
+.decl _AndroidKeepClass(?class:symbol)
+.input _AndroidKeepClass(IO="file", filename="AndroidKeepClass.facts", delimiter="\t")
+
+AndroidKeepClass(?class) :-
+  _AndroidKeepClass(?class).
 
 
 // AndroidApplication

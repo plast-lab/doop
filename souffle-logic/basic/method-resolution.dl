@@ -117,11 +117,28 @@ ClassConstructor(method, type) :-
     isMethod(method),
     match(".*<init>.*", method).
 
-.decl MethodsOfSameType(?method1:Method, ?method2:Method, ?class:Type)
+// This shouldn't be too expensive, once MethodLookup has been computed,
+// and it's a useful concept.
+.decl MethodOverridesOther(?methodSub:Method, ?methodSuper:Method)
+MethodOverridesOther(?methSub, ?methSuper) :-
+  SubtypeOf(?subtype, ?supertype),
+  Method_DeclaringType(?methSuper, ?supertype),
+  Method_SimpleName(?methSuper, ?simplename),
+  Method_Descriptor(?methSuper, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?subtype, ?methSub),
+  ?methSub != ?methSuper.
 
-MethodsOfSameType(?method1, ?method2, ?class) :-
-  Method_DeclaringType(?method1, ?class),
-  Method_DeclaringType(?method2, ?class).
+.decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)
+
+MethodsOfSameOrSuperType(?method1, ?method2) :-
+Method_DeclaringType(?method1, ?class),
+ Method_DeclaringType(?method2, ?class),
+ (Method_DeclaringType(?method2, ?class);
+  Method_DeclaringType(?method2, ?class1),
+  Method_SimpleName(?method2, ?simplename),
+  Method_Descriptor(?method2, ?descriptor),
+  !MethodImplemented(?simplename, ?descriptor, ?class, _),
+  SubtypeOf(?class, ?class1)).
 
 .decl MethodsOfSameNonSDKType(?method1:Method, ?method2:Method, ?class:Type)
 

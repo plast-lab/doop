@@ -469,23 +469,23 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         }
 
         if (options.MAIN_CLASS.value) {
-            logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+            logger.debug "The parseParamsAndRun class is set to ${options.MAIN_CLASS.value}"
         } else {
             if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
                 if (inputFiles[0] == null) {
                     throw new RuntimeException("Error: no input files")
                 }
                 JarFile jarFile = new JarFile(inputFiles[0])
-                //Try to read the main class from the manifest contained in the jar
+                //Try to read the parseParamsAndRun class from the manifest contained in the jar
                 def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
                 if (main) {
-                    logger.debug "The main class is automatically set to ${main}"
+                    logger.debug "The parseParamsAndRun class is automatically set to ${main}"
                     options.MAIN_CLASS.value = main
                 } else {
                     //Check whether the jar contains a class with the same name
                     def jarName = FilenameUtils.getBaseName(jarFile.getName())
                     if (jarFile.getJarEntry("${jarName}.class")) {
-                        logger.debug "The main class is automatically set to ${jarName}"
+                        logger.debug "The parseParamsAndRun class is automatically set to ${jarName}"
                         options.MAIN_CLASS.value = jarName
                     }
                 }
@@ -544,6 +544,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
             options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value = true
             options.TAMIFLEX.value = null
+        }
+
+        if (options.LIGHT_REFLECTION_GLUE.value && options.REFLECTION.value) {
+            throw new RuntimeException("Error: option " + options.LIGHT_REFLECTION_GLUE.name + " is not supported when reflection support is enabled.")
         }
 
         if (options.TAMIFLEX.value) {
@@ -700,7 +704,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      */
     protected void checkLogicBlox(AnalysisVars vars) {
 
-        //BLOX_OPTS is set by the main method
+        //BLOX_OPTS is set by the parseParamsAndRun method
 
         AnalysisOption lbhome = vars.options.LOGICBLOX_HOME
 

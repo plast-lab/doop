@@ -1,5 +1,7 @@
 package org.clyze.doop.core
 
+import org.clyze.doop.wala.WalaInvoker
+
 import java.nio.file.Files
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -20,6 +22,7 @@ import org.clyze.utils.Executor
 import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
 
+import static org.apache.commons.io.FileUtils.copyFileToDirectory
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.touch
 
@@ -148,7 +151,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 Files.createSymbolicLink(factsDir.toPath(), cacheDirPath)
                 return
             } catch (UnsupportedOperationException x) {
-                System.err.println("Filesystem does not support symbolic links, copying directory...");
+                System.err.println("Filesystem does not support symbolic links, copying directory...")
             }
         }
 
@@ -208,7 +211,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             else if (options.DACAPO_BACH.value) {
                 def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
                 def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-                
+
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
@@ -377,12 +380,34 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         def inputArgs = getInputArgsJars(tmpDirs)
         def deps = getDepsJars(tmpDirs)
 
+        def platform = options.PLATFORM.value.toString().tokenize("_")[0]
+        assert platform == "android" || platform == "java"
+
+        switch(platform) {
+            case "java":
+                params = ["--application-regex", options.APP_REGEX.value.toString()]
+                break
+            case "android":
+                // This uses all platformLibs.
+                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+                // This uses just platformLibs[0], assumed to be android.jar.
+                params = ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+                break
+            default:
+                throw new RuntimeException("Unsupported platform")
+        }
+
+        if (options.FACT_GEN_CORES.value) {
+            params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
+        }
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         depArgs = deps
-        depArgs.add("-p");
-        depArgs.add(platformLibs.get(0).getAbsolutePath().toString().replace("/rt.jar",""));
-        params = inputArgs + depArgs
-        params = params + ["-d", factsDir.toString()]
+        depArgs.add("-p")
+        depArgs.add(platformLibs.get(0).getAbsolutePath().toString().replace("/rt.jar",""))
+        params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
+
+        logger.debug "Params of wala: ${params.join(' ')}"
+
         sootTime = Helper.timing {
             //We invoke soot reflectively using a separate class-loader to be able
             //to support multiple soot invocations in the same JVM @ server-side.
@@ -391,8 +416,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             //or averroes.
             //In such a case, we should invoke all Java-based tools using a
             //separate process.
-            ClassLoader loader = sootClassLoader()
-            Helper.execJava(loader, "org.clyze.doop.wala.Main", params.toArray(new String[params.size()]))
+            WalaInvoker wala = new WalaInvoker()
+            wala.parseParamsAndRun(params.toArray(new String[params.size()]))
         }
 
         logger.info "Wala fact generation time: ${sootTime}"
@@ -409,7 +434,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
         logger.debug "Params of jphantom: ${params.join(' ')}"
 
-        //we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
+        //we invoke the parseParamsAndRun method reflectively to avoid adding jphantom as a compile-time dependency
         ClassLoader loader = phantomClassLoader()
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
@@ -551,12 +576,22 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
             logger.info("Generated " + n + " addditional facts from memory dump")
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace()
         }
     }
 
     protected void warnOpenPrograms() {
-        logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
+        logger.debug "\nWARNING: No parseParamsAndRun class was found. This will trigger open-program analysis!\n"
     }
 
+    protected final void handleImportDynamicFacts() {
+        if (options.IMPORT_DYNAMIC_FACTS.value) {
+            File f = new File(options.IMPORT_DYNAMIC_FACTS.value.toString())
+            if (f.exists()) {
+                throw new RuntimeException("Facts file ${f.canonicalPath} already exists, cannot overwrite it with imported file of same name.")
+            } else {
+                copyFileToDirectory(f, factsDir)
+            }
+        }
+    }
 }

@@ -47,10 +47,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					cli: false
 			),
 			/* End LogicBlox related options */
-			/* Start Main options */
+			/* Start Wala options */
 			new BooleanAnalysisOption(
 					id: "LB3",
 					name: "lb",
+					description: "Use the LB engine.",
 					value: false,
 					webUI: true,
 					isAdvanced: true
@@ -69,6 +70,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "INPUTS",
 					name: "inputFiles",
 					argName: "FILES",
+					description: "The (application) inputs of the analysis. Accepted formats: .jar, .apk, .aar",
 					value: null,
 					multipleValues: true,
 					valueType: InputType.INPUT,
@@ -79,6 +81,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "LIBRARIES",
 					name: "libraryFiles",
 					argName: "LIBRARIES",
+					description: "The dependencies/libraries of the application. Accepted formats: .jar, .apk, .aar",
 					value: null,
 					multipleValues: true,
 					valueType: InputType.LIBRARY,
@@ -88,6 +91,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "USER_SUPPLIED_ID",
 					name: "id",
+					description: "The analysis id. If omitted, it is automatically generated.",
 					argName: "ID",
 					value: null,
 					webUI: true
@@ -95,9 +99,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 			new AnalysisOption<String>(
 					id: "MAIN_CLASS",
-					name: "main",
+					name: "parseParamsAndRun",
 					argName: "CLASS",
-					description: "Specify the main class.",
+					description: "Specify the parseParamsAndRun class.",
 					value: null,
 					webUI: true
 			),
@@ -161,7 +165,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "RUN_FLOWDROID",
 					name: "run-flowdroid",
-					description: "Run soot-infoflow-android to generate dummy main method.",
+					description: "Run soot-infoflow-android to generate dummy parseParamsAndRun method.",
 					value: false,
 					forCacheID: true
 			),
@@ -240,8 +244,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "PLATFORM",
 					name: "platform",
 					argName: "PLATFORM",
-					description: "The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22_stubs, android_22_fulljars). For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). default: java_7",
+					description: "The platform on which to perform the analysis. For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). default: java_7",
 					value: "java_7",
+					validValues: DoopAnalysisFactory.availablePlatforms,
 					webUI: true,
 					forCacheID: true,
 					forPreprocessor: true
@@ -275,7 +280,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true,
 					forPreprocessor: true
 			),
-			/* End Main options */
+			/* End Wala options */
 			/* Start preprocessor normal flags */
 			new BooleanAnalysisOption(
 					id: "NO_MERGES",
@@ -394,6 +399,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "REFLECTION_HIGH_SOUNDNESS_MODE",
 					name: "reflection-high-soundness-mode",
+					description: "Enable extra rules for more sound handling of reflection.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true,
@@ -448,6 +454,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isAdvanced: true
 			),
 			new BooleanAnalysisOption(
+					id: "LIGHT_REFLECTION_GLUE",
+					name: "light-reflection-glue",
+					description: "Handle some shallow reflection patterns without full reflection support.",
+					value: false,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "GENERATE_PROGUARD_KEEP_DIRECTIVES",
 					name: "gen-proguard-keep",
 					description: "Generate keep directives for proguard",
@@ -465,8 +478,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "DISCOVER_MAIN_METHODS",
-					name: "discover-main-methods",
-					description: "Discover main() methods.",
+					name: "discover-parseParamsAndRun-methods",
+					description: "Discover parseParamsAndRun() methods.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true
@@ -476,6 +489,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new IntegerAnalysisOption(
 					id: "SOUFFLE_JOBS",
 					name: "souffle-jobs",
+					description: "Specify number of Souffle jobs to run.",
 					argName: "NUMBER",
 					value: 4
 			),
@@ -487,6 +501,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_PROFILE",
 					name: "souffle-profile",
+					description: "Enable profiling in the Souffle binary.",
 					value: false
 			),
 			/* Start Souffle related options */
@@ -545,8 +560,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "IGNORE_MAIN_METHOD",
-					name: "ignore-main-method",
-					description: "If main class is not given explicitly, do not try to discover it from jar/filename info. Open-program analysis variant will be triggered in this case.",
+					name: "ignore-parseParamsAndRun-method",
+					description: "If parseParamsAndRun class is not given explicitly, do not try to discover it from jar/filename info. Open-program analysis variant will be triggered in this case.",
 					webUI: true,
 					value: false,
 					forPreprocessor: true
@@ -666,6 +681,17 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Run extra metrics logic under addons/statistics",
 					value: false,
 					nonStandard: true,
+					forPreprocessor: true
+			),
+			new AnalysisOption<String>(
+					id: "X_EXTRA_LOGIC",
+					name: "Xextra-logic",
+					argName: "FILE",
+					forCacheID: true,
+					// We don't set "isFile: true" to avoid UI users uploading
+					// custom logic (that can crash the server).
+					description: "Include file with extra rules.",
+					value: null,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(

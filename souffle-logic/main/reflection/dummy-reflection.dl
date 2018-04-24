@@ -1,0 +1,61 @@
+#ifdef REFLECTION
+#error "dummy-reflection.dl is not compatible with full reflection support"
+#endif
+
+// A few rules to handle expressions 'X.class' and 'Class.forName("X")' (the
+// first is compiled to the latter behind the scenes). These rules are usually
+// effective when string constants are distinguished.
+
+.decl ReifiedClass(?type:symbol, ?value:Value)
+
+// Taken from reflection/rules.dl.
+ReifiedClass(?type, ?classHeap) :-
+  isReferenceType(?type),
+  ClassHeap_InstanceType(?classHeap, ?type),
+  isValue(?classHeap).
+
+// Taken from reflection/declarations.dl.
+.decl java_lang_Class_forName(?invocation:MethodInvocation, ?inmethod:Method)
+.output java_lang_Class_forName
+
+// Taken from reflection/rules.dl.
+java_lang_Class_forName(?invocation, ?inmethod) :-
+  ( ?sig = "<java.lang.Class: java.lang.Class forName(java.lang.String)>",
+    isMethod(?sig) ;
+    ?sig = "<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>",
+    isMethod(?sig) ),
+  StaticMethodInvocation(?invocation, ?sig, ?inmethod).
+
+.decl ReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)
+
+// Similar to java.lang.Class.dl but simplified.
+ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
+  java_lang_Class_forName(?invocation, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  ActualParam(0, ?invocation, ?param),
+  VarPointsTo(_, ?string, ?ctx, ?param),
+  // The following three lines are taken from string-constants.dl.
+  isStringConstant(?string),
+  isReferenceType(?type),
+  ord(?type) = ord(?string).
+
+// Taken from reflection/rules.dl.
+/**
+ * Not every virtual method invocation has a return value, so we need
+ * to initialize classes separate from the VarPointsTo rule.
+ */
+InitializedClass(?type) :-
+  ReflectiveAssignClassConstant(_, _, ?type).
+
+// Tweaked from reflection/rules.dl.
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+  ImmutableHContextFromContext(?ctx, ?hctx),
+  ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
+  // ApplicationClass(?type),
+  ReifiedClass(?type, ?value),
+  AssignReturnValue(?invocation, ?return).
+
+// If the user has enabled it, also activate light-reflection-glue.
+#ifdef LIGHT_REFLECTION_GLUE
+#include "light-reflection-glue.dl"
+#endif // LIGHT_REFLECTION_GLUE

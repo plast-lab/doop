@@ -226,7 +226,7 @@ java_lang_reflect_Array_newInstance(?invocation, ?to, ?param) :-
   AssignReturnValue(?invocation, ?to),
   ActualParam(0, ?invocation, ?param),
   isArrayType(?arrayType).
-#endif
+#endif // REFLECTION_HIGH_SOUNDNESS_MODE
 
 // TODO Better filtering of class types
 #ifdef REFLECTION_REFINED_OBJECTS

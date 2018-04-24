@@ -11,6 +11,8 @@ public enum PredicateFile
 {
     ANDROID_APPLICATION("AndroidApplication"),
     ANDROID_ENTRY_POINT("AndroidEntryPoint"),
+    ANDROID_KEEP_METHOD("AndroidKeepMethod"),
+    ANDROID_KEEP_CLASS("AndroidKeepClass"),
     ACTIVITY("Activity"),
     SERVICE("Service"),
     CONTENT_PROVIDER("ContentProvider"),

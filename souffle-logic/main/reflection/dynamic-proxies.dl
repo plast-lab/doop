@@ -1,57 +1,8 @@
-// If no reflection support has been set, then a few rules are enabled
-// to handle expressions 'X.class' and 'Class.forName("X")' (the first
-// is compiled to the latter behind the scenes). These rules are
-// usually effective when string constants are distinguished.
+// If no reflection support has been enabled, activate a simple set of
+// rules to handle Class objects.
 #ifndef REFLECTION
-.decl ReifiedClass(?type:symbol, ?value:Value)
-
-// Taken from reflection/rules.dl.
-ReifiedClass(?type, ?classHeap) :-
-  isReferenceType(?type),
-  ClassHeap_InstanceType(?classHeap, ?type),
-  isValue(?classHeap).
-
-// Taken from reflection/declarations.dl.
-.decl java_lang_Class_forName(?invocation:MethodInvocation, ?inmethod:Method)
-
-// Taken from reflection/rules.dl.
-java_lang_Class_forName(?invocation, ?inmethod) :-
-  ( ?sig = "<java.lang.Class: java.lang.Class forName(java.lang.String)>",
-    isMethod(?sig) ;
-    ?sig = "<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>",
-    isMethod(?sig) ),
-  StaticMethodInvocation(?invocation, ?sig, ?inmethod).
-
-.decl ReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)
-
-// Similar to java.lang.Class.dl but simplified.
-ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
-  java_lang_Class_forName(?invocation, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  ActualParam(0, ?invocation, ?param),
-  VarPointsTo(_, ?string, ?ctx, ?param),
-  // The following three lines are taken from string-constants.dl.
-  isStringConstant(?string),
-  isReferenceType(?type),
-  ord(?type) = ord(?string).
-
-// Taken from reflection/rules.dl.
-/**
- * Not every virtual method invocation has a return value, so we need
- * to initialize classes separate from the VarPointsTo rule.
- */
-InitializedClass(?type) :-
-  ReflectiveAssignClassConstant(_, _, ?type).
-
-// Taken from reflection/rules.dl.
-VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
-  ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
-  ReifiedClass(?type, ?value),
-  AssignReturnValue(?invocation, ?return).
-
+#include "dummy-reflection.dl"
 #endif // REFLECTION
-
 
 /* Models the dynamic proxies of Java.
 
@@ -90,6 +41,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
 ProxyClassOfInterface(?iface, ?class) :-
    DirectSuperinterface(?class, ?iface),
    ProxyClass(?class).
+
+#define NEW_PROXY_INSTANCE "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"
 
 .decl java_lang_reflect_Proxy_newProxyInstance(?invo:MethodInvocation, ?ret:Var, ?handler:Var, ?interfaces:Var)
 
@@ -246,7 +199,6 @@ VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?h) :-
 .decl ProxyCallGraphEdge(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerInvokeMeth:Method)
 
 .decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)
-.output HandledProxy
 
 ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
 VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this),
@@ -315,8 +267,8 @@ ReachableContext(?calleeCtx, ?callee) :-
 
 // Handle return values_ connect the return value of handler.invoke()
 // to the return value of the wrapped method. The exceptions mandated
-// by the spec are handled elsewhere (in exceptions.logic); here only
-// we record the internal invoke() return variable for use there.
+// by the spec are handled elsewhere (in exceptions.dl); here we only
+// record the internal invoke() return variable for use there.
 .decl ProxyInvokeResult(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerReturnVar:Var)
 
 VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret),
@@ -326,37 +278,3 @@ ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
    ReturnVar(?handlerReturnVar, ?handlerInvokeMeth),
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?handlerReturnVar),
    AssignReturnValue(?invo, ?ret).
-
-#ifdef DYNAMIC_PROXY_EXPORT
-
-.output ProxyClassOfInterface
-.output ProxyClass
-.output java_lang_reflect_Proxy_newProxyInstance
-.output ArrayContentsPointToInterface
-.output java_lang_reflect_Proxy_getProxyClass
-.output ProxyClassInstance
-.output MethodOfInterface
-.output ArgArrayOfProxyMethod
-.output PrimitiveType_Boxed
-.output PrimitiveFormalOfInterface
-.output BoxAllocationOfPrimitiveFormal
-.output ProxyObject_Invocation
-.output ProxyObject_Handler
-.output ProxyObject_HandlerHctx
-.output ProxyObject_Interface
-.output CallToMethodOfProxyObject
-.output ProxyCallGraphEdge
-.output ProxyInvokeResult
-#ifdef REFLECTION
-.output ProxyCallArgArray
-.output ArgArrayAndActualArg
-#endif // REFLECTION
-
-.decl ProxiedMethod(?meth:Method)
-.output ProxiedMethod
-
-ProxiedMethod(?meth) :-
-  ProxyCallGraphEdge(_, ?i, _, _),
-  VirtualMethodInvocation(?i, ?meth, _).
-
-#endif // DYNAMIC_PROXY_EXPORT

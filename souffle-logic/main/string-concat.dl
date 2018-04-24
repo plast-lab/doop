@@ -1,0 +1,73 @@
+#ifdef REFLECTION_SUBSTRING_ANALYSIS
+
+/*************************************************************
+ * Analysis of reflection strings flowing through String Factories
+ *************************************************************/
+
+StringFactoryVar(?var) :-
+  StringFactoryType(?type),
+  Var_Type(?var, ?type).
+
+.decl StringFactoryVarPointsTo(?factoryHctx:configuration.HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)
+
+StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var) :-
+  StringFactoryVar(?var),
+  VarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var).
+
+.decl VarAssignedToStringFactoryVar(?param:Var, ?base:Var)
+
+VarAssignedToStringFactoryVar(?param, ?base) :-
+  VirtualMethodInvocation_SimpleName(?invocation, "append"),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  StringFactoryVar(?base),
+  ActualParam(0, ?invocation, ?param).
+
+.decl VarAssignedFromStringFactoryVar(?ret:Var, ?base:Var)
+
+VarAssignedFromStringFactoryVar(?ret, ?base) :-
+  VirtualMethodInvocation_SimpleName(?invocation, "toString"),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  StringFactoryVar(?base),
+  AssignReturnValue(?invocation, ?ret).
+
+// There can be many variations of the code below: less precision
+// (merge reflection strings), less coverage (require that string
+// in/out operations on Builders/Buffers are in the same method).  The
+// current approach (precise) seems to work ok.
+.decl VarFlowsIntoStringFactory(?factoryHctx:configuration.HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)
+
+VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var) :-
+  VarOfReflectionInterest(?ctx, ?var),
+  VarAssignedToStringFactoryVar(?var, ?factoryVar),
+  StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
+  .plan 1:(3,2,1)
+
+.decl VarFlowsFromStringFactory(?ctx:configuration.Context, ?var:Var, ?factoryHctx:configuration.HContext, ?factoryValue:Value)
+
+VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue) :-
+  VarAssignedFromStringFactoryVar(?var, ?factoryVar),
+  StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
+
+.decl VarOfReflectionInterest(?ctx:configuration.Context, ?var:Var)
+.decl ReflectionStringConstantVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
+
+VarOfReflectionInterest(?ctx, ?var),
+ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
+  ReflectionStringConstant(?value),
+#else
+  ReflectionSubstringObject(?value),
+#endif
+  VarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+.decl ReflectionStringConstantFlowsIntoStringFactory(?hctx:configuration.HContext, ?value:Value, ?factoryHctx:configuration.HContext, ?factoryValue:Value)
+
+ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue) :-
+  VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var),
+  ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue),
+  VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue).
+
+#endif // REFLECTION_SUBSTRING_ANALYSIS

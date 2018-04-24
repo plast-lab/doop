@@ -129,10 +129,7 @@ class ClassicAnalysis extends DoopAnalysis {
                 .commit()
                 .elapsedTime()
 
-        if (options.IMPORT_DYNAMIC_FACTS.value) {
-            // copy facts/DynamicCallGraphEdge.facts
-            copyFileToDirectory(new File(options.IMPORT_DYNAMIC_FACTS.value.toString()), factsDir)
-        }
+        handleImportDynamicFacts()
 
         if (options.HEAPDL.value || options.IMPORT_DYNAMIC_FACTS.value) {
             cpp.preprocess("${outDir}/import-dynamic-facts.logic", "${Doop.factsPath}/import-dynamic-facts.logic")
@@ -195,7 +192,7 @@ class ClassicAnalysis extends DoopAnalysis {
     protected void mainAnalysis() {
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
         def macros       = "${Doop.analysesPath}/${name}/macros.logic"
-        def mainPath     = "${Doop.logicPath}/main"
+        def mainPath     = "${Doop.logicPath}/parseParamsAndRun"
         def analysisPath = "${Doop.analysesPath}/${name}"
 
         // By default, assume we run a context-sensitive analysis
@@ -213,7 +210,7 @@ class ClassicAnalysis extends DoopAnalysis {
                     "${mainPath}/context-sensitivity-declarations.logic")
             cpp.preprocess("${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
             cpp.preprocessIfExists("${outDir}/${name}-delta.logic", "${analysisPath}/delta.logic",
-                    commonMacros, "${mainPath}/main-delta.logic")
+                    commonMacros, "${mainPath}/parseParamsAndRun-delta.logic")
             cpp.preprocess("${outDir}/${name}.logic", "${analysisPath}/analysis.logic",
                     commonMacros, macros, "${mainPath}/context-sensitivity.logic")
         }
@@ -231,7 +228,7 @@ class ClassicAnalysis extends DoopAnalysis {
                 .addBlockFile("prologue.logic")
                 .commit()
                 .elapsedTime()
-                .timedTransaction("-- Main Deltas -- ")
+                .timedTransaction("-- Wala Deltas -- ")
                 .executeFile("${name}-delta.logic")
 
         if (options.REFLECTION.value) {
@@ -356,6 +353,10 @@ class ClassicAnalysis extends DoopAnalysis {
                 logger.warn "WARNING: LB server logic is ignored when using --${options.X_STOP_AT_FACTS.name}"
             }
         }
+
+        if (options.X_EXTRA_LOGIC.value) {
+            logger.warn "WARNING: the LB mode does not support --${options.X_EXTRA_LOGIC.name}"
+        }
     }
 
     @Override
@@ -414,8 +415,8 @@ class ClassicAnalysis extends DoopAnalysis {
 
     private void reanalyze() {
         cpp.preprocess("${outDir}/refinement-delta.logic", "${Doop.analysesPath}/${name}/refinement-delta.logic")
-        cpp.preprocess("${outDir}/export-refinement.logic", "${Doop.logicPath}/main/export-refinement.logic")
-        cpp.preprocess("${outDir}/import-refinement.logic", "${Doop.logicPath}/main/import-refinement.logic")
+        cpp.preprocess("${outDir}/export-refinement.logic", "${Doop.logicPath}/parseParamsAndRun/export-refinement.logic")
+        cpp.preprocess("${outDir}/import-refinement.logic", "${Doop.logicPath}/parseParamsAndRun/import-refinement.logic")
 
         lbBuilder
                 .echo("++++ Refinement ++++")

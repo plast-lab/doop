@@ -16,7 +16,7 @@
  */
 .decl HeapAllocation_ContextInsensitive(?heap:HeapAllocation)
 
-// Merged objects are currently always context-insensitive 
+// Merged objects are currently always context-insensitive
 HeapAllocation_ContextInsensitive(?heap) :-
   HeapAllocation_Merge(?heap, _).
 
@@ -36,6 +36,10 @@ HeapAllocation_ContextInsensitive(?heap) :-
  * constants that the analysis thought are safe to merge, yet they do
  * arise reflectively, etc.
  */
+
+.decl AssignNormalHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)
+.decl AssignContextInsensitiveHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)
+
 AssignNormalHeapAllocation(?heap, ?var, ?inmethod) :-
   AssignHeapAllocation(?heap, ?var, ?inmethod),
   !HeapAllocation_ContextInsensitive(?heap).
@@ -107,7 +111,7 @@ HeapAllocation_Merge(?heap, ?mergeHeap) :-
 /*************************************************************
  * String constants
  *************************************************************/
- 
+
 #ifndef DISTINGUISH_ALL_STRING_CONSTANTS
 #ifndef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 #ifndef NO_MERGES
@@ -420,47 +424,25 @@ PreFieldNameMatchingStringConstantInexact_Signature(?sig, ?string) :-
    FieldNamePrefix(?string, ?sig)),
   isHeapAllocation(?string).
 
-.decl ClassIterationTrick(?length:number)
 
-ClassIterationTrick(?length) :-
-  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
-  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
-  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
-  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
-  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
-  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
-  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
-  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+.decl ClassIterationTrick(?length:number)
+ClassIterationTrick(7).
+ClassIterationTrick(?length+1) :- ClassIterationTrick(?length), ?length < 90.
 
 .decl MemberPrefixIterationTrick(?length:number)
-
-MemberPrefixIterationTrick(?length) :-
+MemberPrefixIterationTrick(7).
 #ifdef REFLECTION_HIGH_SOUNDNESS_MODE
-  ?length = 3; ?length = 4; ?length = 5; ?length = 6;
+MemberPrefixIterationTrick(3).
 #endif
-  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
-  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
-  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
-  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
-  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
-  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
-  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
-  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+MemberPrefixIterationTrick(?length+1) :- MemberPrefixIterationTrick(?length), ?length < 90.
 
 .decl MemberSuffixIterationTrick(?length:number)
-
-MemberSuffixIterationTrick(?length) :-
+MemberSuffixIterationTrick(7).
 #ifdef REFLECTION_HIGH_SOUNDNESS_MODE
-  ?length = 5; ?length = 6;
+MemberSuffixIterationTrick(5).
 #endif
-  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
-  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
-  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
-  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
-  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
-  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
-  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
-  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+MemberSuffixIterationTrick(?length+1) :- MemberSuffixIterationTrick(?length), ?length < 90.
+
 
 .decl string_upper(s1:symbol, s2:symbol)
 
@@ -573,74 +555,6 @@ FieldNamePrefix(substr(?fieldName, 0, ?length), ?sig) :-
 //  HeapAllocation:Id[?heap] = ?string,
 //  Method:SimpleName[?sig] = ?methodName,
 //  (string:substring[?methodName, _, _] = ?string ; ?methodName = ?string).
-
-/*************************************************************
- * Analysis of reflection strings flowing through String Factories
- *************************************************************/
-
-StringFactoryVar(?var) :-
-  StringFactoryType(?type),
-  Var_Type(?var, ?type).
-
-StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var) :-
-  StringFactoryVar(?var),
-  VarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var).
-
-.decl VarAssignedToStringFactoryVar(?param:Var, ?base:Var)
-
-VarAssignedToStringFactoryVar(?param, ?base) :-
-  VirtualMethodInvocation_SimpleName(?invocation, "append"),
-  VirtualMethodInvocation_Base(?invocation, ?base),
-  StringFactoryVar(?base),
-  ActualParam(0, ?invocation, ?param).
-
-.decl VarAssignedFromStringFactoryVar(?ret:Var, ?base:Var)
-
-VarAssignedFromStringFactoryVar(?ret, ?base) :-
-  VirtualMethodInvocation_SimpleName(?invocation, "toString"),
-  VirtualMethodInvocation_Base(?invocation, ?base),
-  StringFactoryVar(?base),
-  AssignReturnValue(?invocation, ?ret).
-
-// There can be many variations of the code below: less precision
-// (merge reflection strings), less coverage (require that string
-// in/out operations on Builders/Buffers are in the same method).  The
-// current approach (precise) seems to work ok.
-.decl VarFlowsIntoStringFactory(?factoryHctx:configuration.HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)
-
-VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var) :-
-  VarOfReflectionInterest(?ctx, ?var),
-  VarAssignedToStringFactoryVar(?var, ?factoryVar),
-  StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
-  .plan 1:(3,2,1)
-
-.decl VarFlowsFromStringFactory(?ctx:configuration.Context, ?var:Var, ?factoryHctx:configuration.HContext, ?factoryValue:Value)
-
-VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue) :-
-  VarAssignedFromStringFactoryVar(?var, ?factoryVar),
-  StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
-
-.decl VarOfReflectionInterest(?ctx:configuration.Context, ?var:Var)
-.decl ReflectionStringConstantVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
-
-VarOfReflectionInterest(?ctx, ?var),
-ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
-  ReflectionStringConstant(?value),
-#else
-  ReflectionSubstringObject(?value),
-#endif
-  VarPointsTo(?hctx, ?value, ?ctx, ?var).
-
-.decl ReflectionStringConstantFlowsIntoStringFactory(?hctx:configuration.HContext, ?value:Value, ?factoryHctx:configuration.HContext, ?factoryValue:Value)
-
-ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue) :-
-  VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var),
-  ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var).
-
-VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-  ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue),
-  VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue).
 
 #endif // REFLECTION_SUBSTRING_ANALYSIS
 
@@ -909,7 +823,6 @@ StringFactoryHeap(?heap) :-
   StringFactoryType(?heaptype).
 
 .decl StringFactoryVar(?var:Var)
-.decl StringFactoryVarPointsTo(?factoryHctx:configuration.HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)
 
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
 #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
