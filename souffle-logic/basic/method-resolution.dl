@@ -117,6 +117,17 @@ ClassConstructor(method, type) :-
     isMethod(method),
     match(".*<init>.*", method).
 
+// This shouldn't be too expensive, once MethodLookup has been computed,
+// and it's a useful concept.
+.decl MethodOverridesOther(?methodSub:Method, ?methodSuper:Method)
+MethodOverridesOther(?methSub, ?methSuper) :-
+  SubtypeOf(?subtype, ?supertype),
+  Method_DeclaringType(?methSuper, ?supertype),
+  Method_SimpleName(?methSuper, ?simplename),
+  Method_Descriptor(?methSuper, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?subtype, ?methSub),
+  ?methSub != ?methSuper.
+
 .decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)
 
 MethodsOfSameOrSuperType(?method1, ?method2) :-

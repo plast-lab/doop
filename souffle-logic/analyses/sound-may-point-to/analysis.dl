@@ -1984,11 +1984,11 @@ InitialRootMethodForMayAnalysis(?meth) :-
   .decl MethodHasOverridingMethodWithSideEffects(?methodSuper:Method)
   .decl MethodHasOverridingMethodWithExternalSideEffects(?methodSuper:Method)
   MethodHasOverridingMethodWithSideEffects(?methodSuper) :-
-    MethodOverridesOther(?methodSuper, ?methodSub),
+    MethodOverridesOther(?methodSub, ?methodSuper),
     SideEffects.MethodHasNoSideEffects(?initCtx, ?methodSuper),
     !SideEffects.MethodHasNoSideEffects(?initCtx, ?methodSub).
   MethodHasOverridingMethodWithExternalSideEffects(?methodSuper) :-
-    MethodOverridesOther(?methodSuper, ?methodSub),
+    MethodOverridesOther(?methodSub, ?methodSuper),
     SideEffects.MethodHasNoExternalSideEffects(?initCtx, ?methodSuper),
     !SideEffects.MethodHasNoExternalSideEffects(?initCtx, ?methodSub).
 
@@ -2114,13 +2114,6 @@ NextInvocationInSameMethod(?invo1, ?invo2, ?meth) :-
 .output FirstInvocationInMethod
 .output NotNextInvocationInSameMethod
 .output NextInvocationInSameMethod
-
-.decl MethodOverridesOther(?methodSuper:Method, ?methodSub:Method)
-MethodOverridesOther(?methSuper, ?methSub) :-
-  Method_SimpleName(?methSuper, ?simplename),
-  Method_Descriptor(?methSuper, ?descriptor),
-  basic.MethodLookup(?simplename, ?descriptor, _, ?methSub),
-  ?methSub != ?methSuper.
 
 //// END client: *sideeffects
 

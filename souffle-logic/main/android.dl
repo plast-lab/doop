@@ -104,13 +104,44 @@ ReachableContext(?ctx, ?meth) :-
    CallbackMethod(?meth)),
   isImmutableContext(?ctx).
 
-// These are externally forced entry points, possibly from a previous analysis.
 // By marking them "ForcedReachable" we enable their mocking, not just reachability.
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
   AndroidEntryPoint(?meth),
   isImmutableContext(?ctx).
 
+// Also accept info from ProGuard keep annotations (e.g., produced via -printseeds in PG).
+// Forcing the reachability and mocking of all "keep" methods.
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+  AndroidKeepMethod(?meth),
+  isImmutableContext(?ctx).
+
+// Not clear what ProGuard does with "keep" annotations for classes, but certainly
+// I've seen documented behavior in industrial code that expects it to keep no-arg
+// constructors.
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+  AndroidKeepClass(?class),
+  Method_DeclaringType(?meth, ?class),
+  Method_SimpleName(?meth, "<init>"),
+  !FormalParam(_, ?meth, _),
+  isImmutableContext(?ctx).
+
+
+
+//// TEMPORARY. Move to more permanent point and shape
+.decl MethodToRemove(?method:Method)
+MethodToRemove(?method) :-
+  ApplicationMethod(?method),
+  !ReachableContext(_, ?method),
+//  !Method_Modifier("abstract", ?method),
+  !Method_Modifier("native", ?method),
+  (basic.MethodOverridesOther(?method, _);
+   !basic.MethodOverridesOther(_, ?method)).
+   // don't throw away root methods that may be needed for dispatch of overriding methods.
+
+.output MethodToRemove
 
 /**
  * Layout control objects
