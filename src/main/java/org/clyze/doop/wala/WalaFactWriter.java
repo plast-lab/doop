@@ -19,10 +19,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.PredicateFile.*;
@@ -690,11 +687,17 @@ public class WalaFactWriter {
     }
 
     void writeExceptionHandlerPrevious(IMethod m, SSACFG.ExceptionHandlerBasicBlock current, SSACFG.ExceptionHandlerBasicBlock previous, Session session) {
-        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, current, session), _rep.handler(m, previous, session));
+        TypeReference prevType = null;
+        Iterator<TypeReference> prevTypes = previous.getCaughtExceptionTypes();
+        while(prevTypes.hasNext())
+            prevType =prevTypes.next();
+
+        TypeReference currType = current.getCaughtExceptionTypes().next();
+
+        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, currType, session), _rep.handler(m, prevType, session));
     }
 
     void writeExceptionHandler(IR ir, IMethod m, SSACFG.ExceptionHandlerBasicBlock handlerBlock, Session session, TypeInference typeInference) {
-        TypeReference exc = handlerBlock.getCaughtExceptionTypes().next();
 
         SSAGetCaughtExceptionInstruction catchInstr = handlerBlock.getCatchInstruction();
         if(catchInstr == null)
@@ -705,21 +708,7 @@ public class WalaFactWriter {
         int index = session.calcInstructionNumber(catchInstr);
         //System.out.println("catch def is " + catchInstr.getDef());
         Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
-//        {
-//            Unit handlerUnit = handler.getHandlerUnit();
-//            IdentityStmt stmt = (IdentityStmt) handlerUnit;
-//            Value left = stmt.getLeftOp();
-//            Value right = stmt.getRightOp();
-//
-//            if (right instanceof CaughtExceptionRef && left instanceof Local) {
-//                caught = (Local) left;
-//            }
-//            else {
-//                throw new RuntimeException("Unexpected start of exception handler: " + handlerUnit);
-//            }
-//        }
 
-        String insn = _rep.handler(m, handlerBlock, session);
         int handlerIndex = session.getInstructionNumber(catchInstr);
         SSAInstruction[] instructions = ir.getInstructions();
         SSAInstruction startInstr = null;
@@ -743,7 +732,18 @@ public class WalaFactWriter {
         }
         int beginIndex = session.calcInstructionNumber(startInstr);
         int endIndex = session.calcInstructionNumber(endInstr);
-        _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(exc.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
+        Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
+        String allTypes = "";
+        TypeReference prev = null;
+        while(excTypes.hasNext())
+        {
+            TypeReference excType = excTypes.next();
+            String insn = _rep.handler(m, excType, session);
+            _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
+            if(prev != null)
+                _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, excType, session), _rep.handler(m, prev, session));
+            prev = excType;
+        }
     }
 
     void writeThisVar(IMethod m) {
