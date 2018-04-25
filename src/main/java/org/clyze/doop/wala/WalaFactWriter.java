@@ -849,8 +849,20 @@ public class WalaFactWriter {
         IClassHierarchy cha = inMethod.getClassHierarchy();
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
         IClass targetClass = cha.lookupClass(targetRef.getDeclaringClass());
-
-
+//        if(instruction.isDispatch()) {
+//            int dispVar = instruction.getUse(0);
+//            TypeReference typeRef;
+//            TypeAbstraction typeAbstraction = typeInference.getType(dispVar);
+//            IClass dispClass;
+//            if(!(typeAbstraction.getType() == null && !(typeAbstraction instanceof JavaPrimitiveType)))
+//                typeRef = TypeReference.JavaLangObject;
+//            else
+//                typeRef = typeAbstraction.getTypeReference();
+//            dispClass = cha.lookupClass(typeRef);
+//            if(!targetClass.toString().equals(dispClass.toString()))
+//                System.out.println("DIFF " + targetClass.toString() + " | " + dispClass.toString());
+//
+//        }
         if(targetClass == null)
             System.out.println("NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
         else if( targetClass.isArrayClass())
@@ -884,36 +896,37 @@ public class WalaFactWriter {
                     break;
                 }
             }
-//            if(!targetClass.isInterface())
-//            {
-//                Collection<IClass> implInterfaces= targetClass.getAllImplementedInterfaces();
-//                if(!implInterfaces.isEmpty())
-//                {
-//                    boolean found = false;
-//                    Queue<IClass> classQueue = new LinkedList<>();
-//                    IClass currClass;
-//                    for(IClass c:implInterfaces) {
-//                        classQueue.add(c);
-//                        //System.out.println("Class " + targetClass.getReference().toString() +" implements " + c.getReference().toString());
+            if(targetClass.isAbstract() && ! targetClass.isInterface() && false)
+            {
+                Queue<IClass> classQueue = new LinkedList<>();
+                classQueue.addAll(targetClass.getDirectInterfaces());
+                if(!classQueue.isEmpty())
+                {
+                    boolean found = false;
+                    IClass currClass;
+//                    for(IClass c:targetClass.getDirectInterfaces()) {
+//                        //classQueue.add(c);
+//                        System.out.println("Class " + targetClass.getReference().toString() +" implements " + c.getReference().toString());
 //                    }
-//                    while (!classQueue.isEmpty() && !found) {
-//                        currClass = classQueue.remove();
-//                        //System.out.println("------------------------------------------------");
-//                        //System.out.println("Looking in interface " + currClass.getReference().toString());
-//                        for(IMethod meth: currClass.getDeclaredMethods()) {
-//                            //System.out.println(meth.getReference().toString());
-//                            if (meth.getName().toString().equals(targetRef.getName().toString())
-//                                    && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
-//                            {
-//                                //System.out.println("\n Target found in interface: " + meth.toString());
-//                                targetRef = meth.getReference();
-//                                found = true;
-//                                break;
-//                            }
-//                        }//System.out.println("------------------------------------------------");
-//                    }
-//                }
-//            }
+                    while (!classQueue.isEmpty() && !found) {
+                        currClass = classQueue.remove();
+                        //System.out.println("------------------------------------------------");
+                        //System.out.println("Looking in interface " + currClass.getReference().toString());
+                        for(IMethod meth: currClass.getDeclaredMethods()) {
+                            //System.out.println(meth.getReference().toString());
+                            if (meth.getName().toString().equals(targetRef.getName().toString())
+                                    && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
+                            {
+                                //System.out.println("\n Target found in interface: " + meth.toString());
+                                targetRef = meth.getReference();
+                                found = true;
+                                break;
+                            }
+                        }//System.out.println("------------------------------------------------");
+                        classQueue.addAll(currClass.getDirectInterfaces());
+                    }
+                }
+            }
         }
 
         String insn = _rep.invoke(inMethod, instruction, targetRef, session);
