@@ -132,10 +132,10 @@ class WalaRepresentation {
         return "/intermediate/";
     }
 
-    String handler(IMethod m, SSACFG.ExceptionHandlerBasicBlock basicBlock, Session session)
+    String handler(IMethod m, TypeReference typeReference, Session session)
     {
         String result;
-        String name = "catch " + fixTypeString(basicBlock.getCaughtExceptionTypes().next().toString());
+        String name = "catch " + fixTypeString(typeReference.toString());
         result = signature(m) + "/" + name + "/" + session.nextNumber(name);
 
         return result;
