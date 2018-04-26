@@ -434,7 +434,8 @@ public class WalaFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        String fieldId = writeField(f);
+        TypeReference declaringClass = getCorrectFieldDeclaringClass(f, m.getClassHierarchy());
+        String fieldId = _rep.signature(f, declaringClass);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
     }
 
@@ -451,7 +452,8 @@ public class WalaFactWriter {
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = _rep.signature(m);
 
-        String fieldId = writeField(f);
+        TypeReference declaringClass = getCorrectFieldDeclaringClass(f, m.getClassHierarchy());
+        String fieldId = _rep.signature(f, declaringClass);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), fieldId, methodId);
     }
 
@@ -478,6 +480,28 @@ public class WalaFactWriter {
         _db.add(APP_CLASS, writeType(application));
     }
 
+    TypeReference getCorrectFieldDeclaringClass(FieldReference f, IClassHierarchy cha)
+    {
+        IClass targetClass = cha.lookupClass(f.getDeclaringClass());
+        TypeReference typeRef = f.getDeclaringClass();
+        if(targetClass == null)
+            System.out.println("NULL for " + f.toString() + " " + f.getDeclaringClass().toString());
+        else
+        {
+            for(IField field: targetClass.getAllFields())
+            {
+//            if(targetClass.getName().toString().contains(""))
+//                System.out.println("");
+                if(field.getName().toString().equals(f.getName().toString()))
+                {
+                    typeRef = field.getDeclaringClass().getReference();
+                    break;
+                }
+            }
+        }
+        return typeRef;
+    }
+
     String writeField(IField f) {
         String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
@@ -491,7 +515,7 @@ public class WalaFactWriter {
     }
 
     private String writeField(FieldReference f) {
-        String fieldId = _rep.signature(f);
+        String fieldId = _rep.signature(f, f.getDeclaringClass());
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldType()));
 //        if (f.getTag("VisibilityAnnotationTag") != null) {
 //            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) f.getTag("VisibilityAnnotationTag");
@@ -503,7 +527,7 @@ public class WalaFactWriter {
     }
 
     void writeFieldModifier(IField f, String modifier) {
-        String fieldId = writeField(f);
+        String fieldId = _rep.signature(f);
         _db.add(FIELD_MODIFIER, modifier, fieldId);
     }
 
