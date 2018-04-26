@@ -125,6 +125,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI: true,
 					forPreprocessor: true
 			),
+			new AnalysisOption<String>(
+					id: "SEED",
+					name: "seed",
+					argName: "FILE",
+					forCacheID: true,
+					description: "Use proguard seed file",
+					value: null
+			),
 			new BooleanAnalysisOption(
 					id: "SANITY",
 					name: "sanity",
@@ -193,15 +201,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "DACAPO",
 					name: "dacapo",
 					description: "Load additional logic for DaCapo (2006) benchmarks properties.",
-                    value: false,
-					forPreprocessor: true                    
+					value: false,
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "DACAPO_BACH",
 					name: "dacapo-bach",
 					description: "Load additional logic for DaCapo (Bach) benchmarks properties.",
-                    value: false,
-					forPreprocessor: true                    
+					value: false,
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "ONLY_APPLICATION_CLASSES_FACT_GEN",
@@ -276,7 +284,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "configuration",
 					description: "Analysis Configuration",
 					value: "ContextInsensitiveConfiguration",
-                    cli: false,
+					cli: false,
 					forCacheID: true,
 					forPreprocessor: true
 			),
@@ -805,38 +813,38 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		return analyses.sort()
 	}
 
-    private static List<String> informationFlowPlatforms(String lbDir,
-                                                         String souffleDir) {
-        List<String> platforms_LB = []
-        List<String> platforms_Souffle = []
+	private static List<String> informationFlowPlatforms(String lbDir,
+														 String souffleDir) {
+		List<String> platforms_LB = []
+		List<String> platforms_Souffle = []
 
-        Closure scan = { ifDir ->
-            if (ifDir) {
-                new File("${ifDir}/information-flow")?.eachFile { File f ->
-                    String n = f.getName()
-                    String base = removeExtension(n)
-                    int platformEndIdx = base.lastIndexOf(INFORMATION_FLOW_SUFFIX)
-                    if (platformEndIdx != -1) {
-                        String ext = getExtension(n)
-                        if (ext.equals("logic")) {
-                            platforms_LB << base.substring(0, platformEndIdx)
-                        } else if (ext.equals("dl")) {
-                            platforms_Souffle << base.substring(0, platformEndIdx)
-                        }
-                    }
-                }
-            }
-        }
+		Closure scan = { ifDir ->
+			if (ifDir) {
+				new File("${ifDir}/information-flow")?.eachFile { File f ->
+					String n = f.getName()
+					String base = removeExtension(n)
+					int platformEndIdx = base.lastIndexOf(INFORMATION_FLOW_SUFFIX)
+					if (platformEndIdx != -1) {
+						String ext = getExtension(n)
+						if (ext.equals("logic")) {
+							platforms_LB << base.substring(0, platformEndIdx)
+						} else if (ext.equals("dl")) {
+							platforms_Souffle << base.substring(0, platformEndIdx)
+						}
+					}
+				}
+			}
+		}
 
-        scan(lbDir)
-        scan(souffleDir)
+		scan(lbDir)
+		scan(souffleDir)
 
-        List<String> platforms =
-            (platforms_Souffle.collect {
-                it + ((it in platforms_LB) ? "" : " (Souffle-only)")
-            }) +
-            (platforms_LB.findAll { !(it in platforms_Souffle) }
-                         .collect { it + " (LB-only)"})
-        return platforms.sort()
-    }
+		List<String> platforms =
+				(platforms_Souffle.collect {
+					it + ((it in platforms_LB) ? "" : " (Souffle-only)")
+				}) +
+						(platforms_LB.findAll { !(it in platforms_Souffle) }
+								.collect { it + " (LB-only)"})
+		return platforms.sort()
+	}
 }

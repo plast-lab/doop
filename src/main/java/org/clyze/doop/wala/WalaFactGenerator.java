@@ -556,7 +556,6 @@ class WalaFactGenerator implements Runnable {
         if (instruction.iindex != -1) {
             String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
             if (localNames != null) {
-
                 l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
             }
             else {
@@ -617,7 +616,7 @@ class WalaFactGenerator implements Runnable {
             if (use != -1 && symbolTable.isConstant(use)) {
                 Value v = symbolTable.getValue(use);
                 generateConstant(m, ir, instruction, v, l, session);
-                if(m.getName().toString().equals("nothing"))System.out.println("var v"+use + " is constant.");
+                if(m.getName().toString().equals("nothing"))System.out.println("var v" + use + " is constant.");
             }
         }
     }
@@ -676,19 +675,14 @@ class WalaFactGenerator implements Runnable {
         SymbolTable symbolTable = ir.getSymbolTable();
         int use = instruction.getUse(0);
 
-        if(!symbolTable.isConstant(use))
-        {
-            Local l = createLocal(ir, instruction, use, typeInference);
-
-            _writer.writeThrow(inMethod, instruction, l, session);
-        }
-        else if(symbolTable.isNullConstant(use))
+        if(symbolTable.isNullConstant(use))
         {
             _writer.writeThrowNull(inMethod, instruction, session);
         }
         else
         {
-            throw new RuntimeException("Unhandled throw statement: " + instruction);
+            Local l = createLocal(ir, instruction, use, typeInference);
+            _writer.writeThrow(inMethod, instruction, l, session);
         }
     }
 
