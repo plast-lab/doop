@@ -56,14 +56,16 @@ class WalaRepresentation {
         return doopSignature;
     }
 
+
     String signature(IField f) {
         //return f.getReference().getSignature();
-        return signature(f.getReference());
+        return signature(f.getReference(), f.getReference().getDeclaringClass());
     }
 
-    String signature(FieldReference f) {
+
+    String signature(FieldReference f, TypeReference declaringClass) {
         StringBuilder DoopSig= new StringBuilder("<");
-        DoopSig.append(fixTypeString(f.getDeclaringClass().toString()));
+        DoopSig.append(fixTypeString(declaringClass.toString()));
         DoopSig.append(": ");
         DoopSig.append(fixTypeString(f.getFieldType().toString()));
         DoopSig.append(" ");
@@ -132,10 +134,10 @@ class WalaRepresentation {
         return "/intermediate/";
     }
 
-    String handler(IMethod m, SSACFG.ExceptionHandlerBasicBlock basicBlock, Session session)
+    String handler(IMethod m, TypeReference typeReference, Session session)
     {
         String result;
-        String name = "catch " + fixTypeString(basicBlock.getCaughtExceptionTypes().next().toString());
+        String name = "catch " + fixTypeString(typeReference.toString());
         result = signature(m) + "/" + name + "/" + session.nextNumber(name);
 
         return result;

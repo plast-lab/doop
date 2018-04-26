@@ -19,10 +19,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.PredicateFile.*;
@@ -437,7 +434,8 @@ public class WalaFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        String fieldId = writeField(f);
+        TypeReference declaringClass = getCorrectFieldDeclaringClass(f, m.getClassHierarchy());
+        String fieldId = _rep.signature(f, declaringClass);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
     }
 
@@ -454,7 +452,8 @@ public class WalaFactWriter {
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = _rep.signature(m);
 
-        String fieldId = writeField(f);
+        TypeReference declaringClass = getCorrectFieldDeclaringClass(f, m.getClassHierarchy());
+        String fieldId = _rep.signature(f, declaringClass);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), fieldId, methodId);
     }
 
@@ -481,6 +480,28 @@ public class WalaFactWriter {
         _db.add(APP_CLASS, writeType(application));
     }
 
+    TypeReference getCorrectFieldDeclaringClass(FieldReference f, IClassHierarchy cha)
+    {
+        IClass targetClass = cha.lookupClass(f.getDeclaringClass());
+        TypeReference typeRef = f.getDeclaringClass();
+        if(targetClass == null)
+            System.out.println("NULL for " + f.toString() + " " + f.getDeclaringClass().toString());
+        else
+        {
+            for(IField field: targetClass.getAllFields())
+            {
+//            if(targetClass.getName().toString().contains(""))
+//                System.out.println("");
+                if(field.getName().toString().equals(f.getName().toString()))
+                {
+                    typeRef = field.getDeclaringClass().getReference();
+                    break;
+                }
+            }
+        }
+        return typeRef;
+    }
+
     String writeField(IField f) {
         String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
@@ -494,7 +515,7 @@ public class WalaFactWriter {
     }
 
     private String writeField(FieldReference f) {
-        String fieldId = _rep.signature(f);
+        String fieldId = _rep.signature(f, f.getDeclaringClass());
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldType()));
 //        if (f.getTag("VisibilityAnnotationTag") != null) {
 //            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) f.getTag("VisibilityAnnotationTag");
@@ -506,7 +527,7 @@ public class WalaFactWriter {
     }
 
     void writeFieldModifier(IField f, String modifier) {
-        String fieldId = writeField(f);
+        String fieldId = _rep.signature(f);
         _db.add(FIELD_MODIFIER, modifier, fieldId);
     }
 
@@ -690,11 +711,17 @@ public class WalaFactWriter {
     }
 
     void writeExceptionHandlerPrevious(IMethod m, SSACFG.ExceptionHandlerBasicBlock current, SSACFG.ExceptionHandlerBasicBlock previous, Session session) {
-        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, current, session), _rep.handler(m, previous, session));
+        TypeReference prevType = null;
+        Iterator<TypeReference> prevTypes = previous.getCaughtExceptionTypes();
+        while(prevTypes.hasNext())
+            prevType =prevTypes.next();
+
+        TypeReference currType = current.getCaughtExceptionTypes().next();
+
+        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, currType, session), _rep.handler(m, prevType, session));
     }
 
     void writeExceptionHandler(IR ir, IMethod m, SSACFG.ExceptionHandlerBasicBlock handlerBlock, Session session, TypeInference typeInference) {
-        TypeReference exc = handlerBlock.getCaughtExceptionTypes().next();
 
         SSAGetCaughtExceptionInstruction catchInstr = handlerBlock.getCatchInstruction();
         if(catchInstr == null)
@@ -705,21 +732,7 @@ public class WalaFactWriter {
         int index = session.calcInstructionNumber(catchInstr);
         //System.out.println("catch def is " + catchInstr.getDef());
         Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
-//        {
-//            Unit handlerUnit = handler.getHandlerUnit();
-//            IdentityStmt stmt = (IdentityStmt) handlerUnit;
-//            Value left = stmt.getLeftOp();
-//            Value right = stmt.getRightOp();
-//
-//            if (right instanceof CaughtExceptionRef && left instanceof Local) {
-//                caught = (Local) left;
-//            }
-//            else {
-//                throw new RuntimeException("Unexpected start of exception handler: " + handlerUnit);
-//            }
-//        }
 
-        String insn = _rep.handler(m, handlerBlock, session);
         int handlerIndex = session.getInstructionNumber(catchInstr);
         SSAInstruction[] instructions = ir.getInstructions();
         SSAInstruction startInstr = null;
@@ -743,7 +756,18 @@ public class WalaFactWriter {
         }
         int beginIndex = session.calcInstructionNumber(startInstr);
         int endIndex = session.calcInstructionNumber(endInstr);
-        _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(exc.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
+        Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
+        String allTypes = "";
+        TypeReference prev = null;
+        while(excTypes.hasNext())
+        {
+            TypeReference excType = excTypes.next();
+            String insn = _rep.handler(m, excType, session);
+            _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
+            if(prev != null)
+                _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, excType, session), _rep.handler(m, prev, session));
+            prev = excType;
+        }
     }
 
     void writeThisVar(IMethod m) {
@@ -849,8 +873,20 @@ public class WalaFactWriter {
         IClassHierarchy cha = inMethod.getClassHierarchy();
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
         IClass targetClass = cha.lookupClass(targetRef.getDeclaringClass());
-
-
+//        if(instruction.isDispatch()) {
+//            int dispVar = instruction.getUse(0);
+//            TypeReference typeRef;
+//            TypeAbstraction typeAbstraction = typeInference.getType(dispVar);
+//            IClass dispClass;
+//            if(!(typeAbstraction.getType() == null && !(typeAbstraction instanceof JavaPrimitiveType)))
+//                typeRef = TypeReference.JavaLangObject;
+//            else
+//                typeRef = typeAbstraction.getTypeReference();
+//            dispClass = cha.lookupClass(typeRef);
+//            if(!targetClass.toString().equals(dispClass.toString()))
+//                System.out.println("DIFF " + targetClass.toString() + " | " + dispClass.toString());
+//
+//        }
         if(targetClass == null)
             System.out.println("NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
         else if( targetClass.isArrayClass())
@@ -884,36 +920,37 @@ public class WalaFactWriter {
                     break;
                 }
             }
-//            if(!targetClass.isInterface())
-//            {
-//                Collection<IClass> implInterfaces= targetClass.getAllImplementedInterfaces();
-//                if(!implInterfaces.isEmpty())
-//                {
-//                    boolean found = false;
-//                    Queue<IClass> classQueue = new LinkedList<>();
-//                    IClass currClass;
-//                    for(IClass c:implInterfaces) {
-//                        classQueue.add(c);
-//                        //System.out.println("Class " + targetClass.getReference().toString() +" implements " + c.getReference().toString());
+            if(targetClass.isAbstract() && ! targetClass.isInterface() && false)
+            {
+                Queue<IClass> classQueue = new LinkedList<>();
+                classQueue.addAll(targetClass.getDirectInterfaces());
+                if(!classQueue.isEmpty())
+                {
+                    boolean found = false;
+                    IClass currClass;
+//                    for(IClass c:targetClass.getDirectInterfaces()) {
+//                        //classQueue.add(c);
+//                        System.out.println("Class " + targetClass.getReference().toString() +" implements " + c.getReference().toString());
 //                    }
-//                    while (!classQueue.isEmpty() && !found) {
-//                        currClass = classQueue.remove();
-//                        //System.out.println("------------------------------------------------");
-//                        //System.out.println("Looking in interface " + currClass.getReference().toString());
-//                        for(IMethod meth: currClass.getDeclaredMethods()) {
-//                            //System.out.println(meth.getReference().toString());
-//                            if (meth.getName().toString().equals(targetRef.getName().toString())
-//                                    && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
-//                            {
-//                                //System.out.println("\n Target found in interface: " + meth.toString());
-//                                targetRef = meth.getReference();
-//                                found = true;
-//                                break;
-//                            }
-//                        }//System.out.println("------------------------------------------------");
-//                    }
-//                }
-//            }
+                    while (!classQueue.isEmpty() && !found) {
+                        currClass = classQueue.remove();
+                        //System.out.println("------------------------------------------------");
+                        //System.out.println("Looking in interface " + currClass.getReference().toString());
+                        for(IMethod meth: currClass.getDeclaredMethods()) {
+                            //System.out.println(meth.getReference().toString());
+                            if (meth.getName().toString().equals(targetRef.getName().toString())
+                                    && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
+                            {
+                                //System.out.println("\n Target found in interface: " + meth.toString());
+                                targetRef = meth.getReference();
+                                found = true;
+                                break;
+                            }
+                        }//System.out.println("------------------------------------------------");
+                        classQueue.addAll(currClass.getDirectInterfaces());
+                    }
+                }
+            }
         }
 
         String insn = _rep.invoke(inMethod, instruction, targetRef, session);

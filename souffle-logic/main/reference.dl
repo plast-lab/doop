@@ -9,7 +9,8 @@
 
 StaticFieldPointsTo(?hctx, ?value, ?pending) :-
    ?pending = "<java.lang.ref.Reference: java.lang.ref.Reference pending>",
-   ?this = "<java.lang.ref.Reference: void <init>(java.lang.Object,java.lang.ref.ReferenceQueue)>/@this",
+   ( ?this = "<java.lang.ref.Reference: void <init>(java.lang.Object,java.lang.ref.ReferenceQueue)>/@this" ;
+   ?this = "<java.lang.ref.Reference: void <init>(java.lang.Object,java.lang.ref.ReferenceQueue)>/v1"),
    isField(?pending),
    isVar(?this),
    VarPointsTo(?hctx, ?value, _, ?this).
