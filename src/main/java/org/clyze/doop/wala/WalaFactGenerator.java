@@ -203,6 +203,8 @@ class WalaFactGenerator implements Runnable {
             while(phis.hasNext())
             {
                 SSAPhiInstruction phiInstruction = phis.next();
+                this.generateDefs(m, ir, phiInstruction, session, typeInference);
+                this.generateUses(m, ir, phiInstruction, session, typeInference);
                 generate(m, ir, phiInstruction, session, typeInference);
             }
             for (int j = start; j <= end; j++) {
@@ -605,6 +607,8 @@ class WalaFactGenerator implements Runnable {
 
         for (int i = 0; i < instruction.getNumberOfUses(); i++) {
             int use = instruction.getUse(i);
+            if(instruction instanceof  SSAPhiInstruction && use < 0)
+                continue;
             Local l = createLocal(ir, instruction, use, typeInference);
             if (use != -1 && symbolTable.isConstant(use)) {
                 Value v = symbolTable.getValue(use);
