@@ -155,7 +155,8 @@ class SouffleAnalysis extends DoopAnalysis {
 
         if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
                 !options.HEAPDL.value && !options.ANDROID.value &&
-                !options.DACAPO.value && !options.DACAPO_BACH.value)
+                !options.DACAPO.value && !options.DACAPO_BACH.value &&
+                !options.X_START_AFTER_FACTS.value)
         {
             warnOpenPrograms()
             if (options.OPEN_PROGRAMS.value)
