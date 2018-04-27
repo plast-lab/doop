@@ -469,7 +469,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         }
 
         if (options.MAIN_CLASS.value) {
-            logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+            if (options.X_START_AFTER_FACTS.value) {
+                throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.X_START_AFTER_FACTS.name}")
+            } else if (options.IGNORE_MAIN_METHOD.value) {
+                throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
+            } else {
+                logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+            }
         } else {
             if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
                 if (inputFiles[0] == null) {
