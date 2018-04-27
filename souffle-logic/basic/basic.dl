@@ -10,11 +10,13 @@
 
 MainMethodDeclaration(?method) :-
 #ifndef DISCOVER_MAIN_METHODS
-// Consider every main() a "main method". The JDK PolicyParser.main()
-// is excluded (or it would pollute the analysis of most programs).
+// Consider every main() a "main method". JDK main() methods are
+// excluded (or they would pollute the analysis of most programs).
    MainClass(?type),
    Method_DeclaringType(?method, ?type),
 #endif // DISCOVER_MAIN_METHODS
+   ?method != "<java.util.prefs.Base64: void main(java.lang.String[])>",
+   ?method != "<sun.java2d.loops.GraphicsPrimitiveMgr: void main(java.lang.String[])>",
    ?method != "<sun.security.provider.PolicyParser: void main(java.lang.String[])>",
    Method_SimpleName(?method, "main"),
    Method_Descriptor(?method, "void(java.lang.String[])"),
