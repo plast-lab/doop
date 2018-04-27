@@ -615,7 +615,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         options.values().each {
             if (it.argName && it.value && it.validValues && !(it.value in it.validValues))
-                throw new RuntimeException("Invalid value `$it.value` for option: $it.name")
+                // An unknown platform are not always an error: it may
+                // be a local subdirectory under doop-benchmarks.
+                if (it.id == "PLATFORM") {
+                    logger.warn "\nWARNING: Non-standard platform selected: ${it.value}\n"
+                } else {
+                    throw new RuntimeException("Invalid value `$it.value` for option: $it.name")
+                }
         }
 
         options.values().findAll { it.isMandatory }.each {
