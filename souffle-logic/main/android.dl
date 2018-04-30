@@ -74,18 +74,18 @@ ReifiedAndroidObjectValue(?value, ?type) :-
 
 PublicMethodOfComponent(?meth) :-
   AndroidAppComponent(?type),
-  MethodDeclaredOrInherited(?meth, ?type),
+  basic.MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("public", ?meth).
 
 ProtectedMethodOfComponent(?meth) :-
   AndroidAppComponent(?type),
-  MethodDeclaredOrInherited(?meth, ?type),
+  basic.MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("protected", ?meth).
 
 .decl NonPrivateConcreteMethodOfComponent(?meth:Method)
 NonPrivateConcreteMethodOfComponent(?meth) :-
   AndroidAppComponent(?type),
-  MethodDeclaredOrInherited(?meth, ?type),
+  basic.MethodDeclaredOrInherited(?meth, ?type),
   !Method_Modifier("private", ?meth),
   !Method_Modifier("abstract", ?meth).
 
@@ -205,14 +205,14 @@ SensitiveLayoutControlValue(?value) :-
 // Handle library-callable "on*" methods of layout controls
 
 PublicOnMethodOfLayoutControl(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?type),
+  basic.MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
   Method_SimpleName(?meth, ?simplename),
   match("on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfLayoutControl(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?type),
+  basic.MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
   Method_SimpleName(?meth, ?simplename),
   match("on.*", ?simplename),
@@ -265,7 +265,7 @@ ReachableContext(?ctx, ?meth) :-
   Method_SimpleName(?meth, ?simplename),
   (match("set.*", ?simplename);
    match("get.*", ?simplename)),
-  ConcreteMethodDeclared(?meth, ?viewType),
+  basic.ConcreteMethodDeclared(?meth, ?viewType),
   AndroidViewType(?viewType),
   isImmutableContext(?ctx).
 
@@ -296,14 +296,14 @@ AndroidApplicationListenerClass(?class) :-
   ListenerType(?class).
 
 PublicOnMethodOfReachableListener(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?class),
+  basic.MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
   Method_SimpleName(?meth, ?simplename),
   match("on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfReachableListener(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?class),
+  basic.MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
   Method_SimpleName(?meth, ?simplename),
   match("on.*", ?simplename),
@@ -385,7 +385,7 @@ LibraryReachableAppListenerType(?type) :-
 //  Method_Modifier("public", ?meth),
 //  FormalParam(0, ?meth, ?arg),
 //  Var_Type(?arg, "android.view.View"),
-//  ConcreteMethodDeclared(?meth, ?class),
+//  basic.ConcreteMethodDeclared(?meth, ?class),
 //  Activity(?class),
 //  isImmutableContext(?ctx).
 
@@ -413,7 +413,7 @@ AndroidApplicationPackableClass(?class) :-
 
 .decl ReachableAppPackableMethodOverridingLib(?methConcrete:Method)
 ReachableAppPackableMethodOverridingLib(?methConcrete) :-
-  MethodDeclaredOrInherited(?methConcrete, ?class),
+  basic.MethodDeclaredOrInherited(?methConcrete, ?class),
   LibraryReachableAppPackableClass(?class),
   AppMethodOverridesAndroidLibraryMethod(?methConcrete, _).
 
@@ -506,7 +506,7 @@ WebClientType(?type):-
 _ForcedReachableFromJavascriptContext(?ctx, ?meth),
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
-  ConcreteMethodDeclared(?meth, ?class),
+  basic.ConcreteMethodDeclared(?meth, ?class),
   (Method_Modifier("protected", ?meth);
    Method_Modifier("public", ?meth)),
   ReachableApplicationObjectOfType(_, _, ?class),
@@ -535,7 +535,7 @@ ReachableContext(?ctx, ?meth) :-
   ArgToAddJavascriptInterface(?var),
   VarPointsTo(_, ?value, _, ?var),
   Value_Type(?value, ?type),
-  ConcreteMethodDeclared(?meth, ?type),
+  basic.ConcreteMethodDeclared(?meth, ?type),
   //Method_Annotation(?meth,"android.webkit.JavascriptInterface"),
   isImmutableContext(?ctx).
 
@@ -560,7 +560,7 @@ ReachableContext(?ctx, ?meth) :-
 // object of the appropriate type. Either mock object ...
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ForcedReachableAndroidContext(?ctx, ?meth),
-  ConcreteMethodDeclared(?meth, ?class),
+  basic.ConcreteMethodDeclared(?meth, ?class),
   ReifiedAndroidObjectValue(?value, ?class),
   ImmutableHContextFromContext(?ctx, ?hctx),
 //  Method_DeclaringType(?meth, ?class),
@@ -572,7 +572,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
 // ... or a plain reachable object flowing to the library.
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ForcedReachableAndroidContext(?ctx, ?meth),
-  ConcreteMethodDeclared(?meth, ?ofType),
+  basic.ConcreteMethodDeclared(?meth, ?ofType),
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
   ThisVar(?meth, ?this).
  .plan 1:(3,2,1,4)
@@ -820,24 +820,6 @@ AndroidLibraryType(?type) :-
 AndroidApplicationClass(?class) :-
   ApplicationClass(?class),
   !AndroidLibraryType(?class).
-
-MethodDeclaredOrInherited(?meth, ?class) :-
-//  isClassType(?class),
-  Method_DeclaringType(?meth, ?class).
-
-// This keeps the superclass signature of the method. Does not guarantee
-// there is a concrete implementation until we do "MethodLookup".
-MethodDeclaredOrInherited(?meth, ?class) :-
-  MethodDeclaredOrInherited(?meth, ?superClass),
-  DirectSuperclass(?class, ?superClass).
-
-.decl ConcreteMethodDeclared(?meth:Method, ?class:ClassType)
-// Just for debugging
-.output ConcreteMethodDeclared
-ConcreteMethodDeclared(?meth, ?class) :-
-  isClassType(?class),
-  Method_DeclaringType(?meth, ?class),
-  !Method_Modifier("abstract", ?meth).
 
 .decl AppClassSubtypesLibClass(?type:Type, ?libType:Type)
 AppClassSubtypesLibClass(?type, ?libraryType) :-
