@@ -93,6 +93,14 @@ public class FactWriter {
         _db.add(ANDROID_ENTRY_POINT, _rep.signature(m));
     }
 
+    void writeAndroidKeepMethod(String methodSig) {
+        _db.add(ANDROID_KEEP_METHOD, "<" + methodSig + ">");
+    }
+
+    void writeAndroidKeepClass(String className) {
+        _db.add(ANDROID_KEEP_CLASS, className);
+    }
+
     void writeProperty(String path, String key, String value) {
         String pathId = writeStringConstant(path);
         String keyId = writeStringConstant(key);

@@ -374,18 +374,18 @@ public class WalaFactWriter {
 //    }
 
     private void writeAssignClassConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
-        String s = constant.toString().replace('/', '.');
+        String s = constant.toString();
         String heap;
         String actualType;
 
-        /* There is some weirdness in class constants: normal Java class
-           types seem to have been translated to a syntax with the initial
-           L, but arrays are still represented as [, for example [C for
-           char[] */
-        TypeReference t = TypeReference.find(ClassLoaderReference.Primordial, s);
+        TypeReference t;
+        if(constant.getValue() instanceof TypeReference)
+            t = (TypeReference) constant.getValue();
+        else
+            t = TypeReference.find(ClassLoaderReference.Primordial, s);
 
         heap = _rep.classConstant(t);
-        actualType = t.toString();
+        actualType = fixTypeString(t.toString());
 
         _db.add(CLASS_HEAP, heap, actualType);
         int index = session.calcInstructionNumber(instruction);
@@ -712,13 +712,15 @@ public class WalaFactWriter {
 
     void writeExceptionHandlerPrevious(IMethod m, SSACFG.ExceptionHandlerBasicBlock current, SSACFG.ExceptionHandlerBasicBlock previous, Session session) {
         TypeReference prevType = null;
+        SSAGetCaughtExceptionInstruction prevCatch = previous.getCatchInstruction();
         Iterator<TypeReference> prevTypes = previous.getCaughtExceptionTypes();
         while(prevTypes.hasNext())
             prevType =prevTypes.next();
 
+        SSAGetCaughtExceptionInstruction currCatch = current.getCatchInstruction();
         TypeReference currType = current.getCaughtExceptionTypes().next();
 
-        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, currType, session), _rep.handler(m, prevType, session));
+        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, currCatch, currType, session), _rep.handler(m, prevCatch, prevType, session));
     }
 
     void writeExceptionHandler(IR ir, IMethod m, SSACFG.ExceptionHandlerBasicBlock handlerBlock, Session session, TypeInference typeInference) {
@@ -758,15 +760,15 @@ public class WalaFactWriter {
         int endIndex = session.calcInstructionNumber(endInstr);
         Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
         String allTypes = "";
-        TypeReference prev = null;
+        String prev = null;
         while(excTypes.hasNext())
         {
             TypeReference excType = excTypes.next();
-            String insn = _rep.handler(m, excType, session);
+            String insn = _rep.handler(m, catchInstr, excType, session);
             _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
             if(prev != null)
-                _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, excType, session), _rep.handler(m, prev, session));
-            prev = excType;
+                _db.add(EXCEPT_HANDLER_PREV, insn, prev);
+            prev = insn;
         }
     }
 
@@ -911,16 +913,18 @@ public class WalaFactWriter {
                 logger.debug(meth.getReference().toString());
             }
             logger.debug("------------------------------------------------");
+            boolean foundAtFirst = false;
             for(IMethod meth: targetClass.getAllMethods()) {
                 if (meth.getName().toString().equals(targetRef.getName().toString())
                         && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
                 {
                     logger.debug("\n Target found: " + meth.toString());
                     targetRef = meth.getReference();
+                    foundAtFirst = true;
                     break;
                 }
             }
-            if(targetClass.isAbstract() && ! targetClass.isInterface() && false)
+            if(targetClass.isAbstract() && ! targetClass.isInterface() && !foundAtFirst)
             {
                 Queue<IClass> classQueue = new LinkedList<>();
                 classQueue.addAll(targetClass.getDirectInterfaces());

@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 class WalaRepresentation {
     private Map<String, String> _methodSigRepr = new ConcurrentHashMap<>();
-    private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
+    private Map<String, String> _catchRepr = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
     private static WalaRepresentation _repr;
@@ -38,7 +38,7 @@ class WalaRepresentation {
 
 
     String classConstant(TypeReference t) {
-        return "<class " + t + ">";
+        return "<class " + fixTypeString(t.toString()) + ">";
     }
 
 
@@ -134,12 +134,15 @@ class WalaRepresentation {
         return "/intermediate/";
     }
 
-    String handler(IMethod m, TypeReference typeReference, Session session)
+    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, Session session)
     {
-        String result;
-        String name = "catch " + fixTypeString(typeReference.toString());
-        result = signature(m) + "/" + name + "/" + session.nextNumber(name);
-
+        String query = m.getSignature() + " v" + catchInstr.getDef();
+        String result = _catchRepr.get(query);
+        if(result == null) {
+            String name = "catch " + fixTypeString(typeReference.toString());
+            result = signature(m) + "/" + name + "/" + session.nextNumber(name);
+            _catchRepr.put(query,result);
+        }
         return result;
     }
 

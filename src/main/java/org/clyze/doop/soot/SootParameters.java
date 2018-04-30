@@ -27,6 +27,7 @@ public class SootParameters {
      boolean _toStdout = false;
      Integer _cores = null;
      boolean _ignoreWrongStaticness = false;
+     String _seed = null;
 
      public void setInputs(List<String> inputs) {
           this._inputs = inputs;

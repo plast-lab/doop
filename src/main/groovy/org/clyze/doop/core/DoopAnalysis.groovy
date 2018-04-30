@@ -348,6 +348,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
+        if (options.SEED.value) {
+            params += ["--seed", options.SEED.value.toString()]
+        }
+
         params = params + ["-d", factsDir.toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
