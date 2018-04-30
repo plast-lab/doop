@@ -911,16 +911,18 @@ public class WalaFactWriter {
                 logger.debug(meth.getReference().toString());
             }
             logger.debug("------------------------------------------------");
+            boolean foundAtFirst = false;
             for(IMethod meth: targetClass.getAllMethods()) {
                 if (meth.getName().toString().equals(targetRef.getName().toString())
                         && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
                 {
                     logger.debug("\n Target found: " + meth.toString());
                     targetRef = meth.getReference();
+                    foundAtFirst = true;
                     break;
                 }
             }
-            if(targetClass.isAbstract() && ! targetClass.isInterface() && false)
+            if(targetClass.isAbstract() && ! targetClass.isInterface() && !foundAtFirst)
             {
                 Queue<IClass> classQueue = new LinkedList<>();
                 classQueue.addAll(targetClass.getDirectInterfaces());
