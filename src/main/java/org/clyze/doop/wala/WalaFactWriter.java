@@ -374,18 +374,18 @@ public class WalaFactWriter {
 //    }
 
     private void writeAssignClassConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
-        String s = constant.toString().replace('/', '.');
+        String s = constant.toString();
         String heap;
         String actualType;
 
-        /* There is some weirdness in class constants: normal Java class
-           types seem to have been translated to a syntax with the initial
-           L, but arrays are still represented as [, for example [C for
-           char[] */
-        TypeReference t = TypeReference.find(ClassLoaderReference.Primordial, s);
+        TypeReference t;
+        if(constant.getValue() instanceof TypeReference)
+            t = (TypeReference) constant.getValue();
+        else
+            t = TypeReference.find(ClassLoaderReference.Primordial, s);
 
         heap = _rep.classConstant(t);
-        actualType = t.toString();
+        actualType = fixTypeString(t.toString());
 
         _db.add(CLASS_HEAP, heap, actualType);
         int index = session.calcInstructionNumber(instruction);

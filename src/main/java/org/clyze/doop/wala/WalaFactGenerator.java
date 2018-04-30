@@ -394,6 +394,9 @@ class WalaFactGenerator implements Runnable {
 
     public void generate(IMethod m, IR ir, SSALoadMetadataInstruction instruction, Session session, TypeInference typeInference) {
         session.calcInstructionNumber(instruction);//TODO: Move this when method is implemented
+        Local l =  createLocal(ir,instruction,instruction.getDef(),typeInference);
+        Value v = new ConstantValue(instruction.getToken());
+        _writer.writeClassConstantExpression(m, instruction, l, (ConstantValue) v, session);
     }
 
     public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session, TypeInference typeInference) {

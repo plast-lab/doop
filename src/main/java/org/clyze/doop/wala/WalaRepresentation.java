@@ -38,7 +38,7 @@ class WalaRepresentation {
 
 
     String classConstant(TypeReference t) {
-        return "<class " + t + ">";
+        return "<class " + fixTypeString(t.toString()) + ">";
     }
 
 
