@@ -712,13 +712,15 @@ public class WalaFactWriter {
 
     void writeExceptionHandlerPrevious(IMethod m, SSACFG.ExceptionHandlerBasicBlock current, SSACFG.ExceptionHandlerBasicBlock previous, Session session) {
         TypeReference prevType = null;
+        SSAGetCaughtExceptionInstruction prevCatch = previous.getCatchInstruction();
         Iterator<TypeReference> prevTypes = previous.getCaughtExceptionTypes();
         while(prevTypes.hasNext())
             prevType =prevTypes.next();
 
+        SSAGetCaughtExceptionInstruction currCatch = current.getCatchInstruction();
         TypeReference currType = current.getCaughtExceptionTypes().next();
 
-        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, currType, session), _rep.handler(m, prevType, session));
+        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, currCatch, currType, session), _rep.handler(m, prevCatch, prevType, session));
     }
 
     void writeExceptionHandler(IR ir, IMethod m, SSACFG.ExceptionHandlerBasicBlock handlerBlock, Session session, TypeInference typeInference) {
@@ -758,15 +760,15 @@ public class WalaFactWriter {
         int endIndex = session.calcInstructionNumber(endInstr);
         Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
         String allTypes = "";
-        TypeReference prev = null;
+        String prev = null;
         while(excTypes.hasNext())
         {
             TypeReference excType = excTypes.next();
-            String insn = _rep.handler(m, excType, session);
+            String insn = _rep.handler(m, catchInstr, excType, session);
             _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
             if(prev != null)
-                _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, excType, session), _rep.handler(m, prev, session));
-            prev = excType;
+                _db.add(EXCEPT_HANDLER_PREV, insn, prev);
+            prev = insn;
         }
     }
 
