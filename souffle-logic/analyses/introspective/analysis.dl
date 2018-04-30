@@ -1,8 +1,5 @@
 #include "../context-insensitive/analysis.dl"
 
-#define UNIQUE_VALUE  "<<unique-value>>"
-#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
-
 .init preAnalysis = BasicContextSensitivity<ContextInsensitiveConfiguration>
 
 .comp IntrospectiveConfiguration : AbstractConfiguration {
@@ -23,8 +20,8 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   Value_Type(?value, ?valuetype),
   basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
-  (Method_DeclaringType(?tomethod, ?class),
-   ClassToRefine(?class);
+  ((Method_DeclaringType(?tomethod, ?class),
+    ClassToRefine(?class)) ;
    MethodToRefine(?tomethod)),
   ?hctx = [?hctxValue],
   ?calleeCtx = [?hctxValue, ?value].
@@ -42,8 +39,8 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   isSpecialMethodInvocation_Insn(?invo),
   MethodInvocation_Method(?invo, ?tomethod),
-  (Method_DeclaringType(?tomethod, ?class),
-   ClassToRefine(?class);
+  ((Method_DeclaringType(?tomethod, ?class),
+    ClassToRefine(?class)) ;
    MethodToRefine(?tomethod)),  
   ?hctx = [?hctxValue],
   ?calleeCtx = [?hctxValue, ?value].
@@ -95,11 +92,31 @@ ValuePointsTo(?baseValue, ?value) :-
   preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue).
 
 .decl ArgPointsTo(?arg:Var, ?method:Method, ?value:Value)
-
 ArgPointsTo(?arg, ?method, ?value) :-
-  FormalParam(?index, ?method, ?arg),
-  //?index != 0,
+  FormalParam(_, ?method, ?arg),
   preAnalysis.VarPointsTo(_, ?value, _, ?arg).
+ArgPointsTo(?arg, ?method, ?value) :-
+  ThisVar(?method, ?arg),
+  preAnalysis.VarPointsTo(_, ?value, _, ?arg).
+
+.decl RetPointsTo(?ret:Var, ?method:Method, ?value:Value)
+RetPointsTo(?ret, ?method, ?value) :-
+  ReturnVar(?ret, ?method),
+  preAnalysis.VarPointsTo(_, ?value, _, ?ret).
+
+/*
+.decl ClassArgPointsTo(?class:ClassType, ?value:Value)
+ClassArgPointsTo(?class, ?value) :-
+  ArgPointsTo(_, ?method, ?value),
+//  MethodDeclaredOrInherited(?method, ?class).
+  ConcreteMethodDeclared(?method, ?class).
+
+.decl ClassRetPointsTo(?class:ClassType, ?value:Value)
+ClassRetPointsTo(?class, ?value) :-
+  RetPointsTo(_, ?method, ?value),
+//  MethodDeclaredOrInherited(?method, ?class).
+  ConcreteMethodDeclared(?method, ?class).
+*/
 
 /** Direct in out flow:
  *
@@ -108,19 +125,16 @@ ArgPointsTo(?arg, ?method, ?value) :-
  */
 
 .decl InOutFlowDirectValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)
-
 InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value) :-
   ArgPointsTo(_, ?inMethod, ?value),    
   basic.MethodsOfSameOrSuperType(?inMethod, ?outMethod),
-  ReturnVar(?return, ?outMethod),
-  preAnalysis.VarPointsTo(_, ?value, _, ?return).
+  RetPointsTo(_, ?outMethod, ?value).
 
 .decl InOutFlowDirectTwoValuesPerClass(?inMethod:Method, ?outMethod:Method)
-
 InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod) :-
   InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value1),
   InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value2),
-  ?value1 != ?value2. 
+  ?value1 != ?value2.
       
 /**
  * Wrapped in out flow:
@@ -129,17 +143,14 @@ InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod) :-
  * ret -> ... -> ... -> value
  */
 .decl InOutFlowWrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value) 
-
 InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value) :-
   ArgPointsTo(_, ?inMethod, ?value),    
   basic.MethodsOfSameOrSuperType(?inMethod, ?outMethod),
-  ReturnVar(?return, ?outMethod),
-  preAnalysis.VarPointsTo(_, ?baseValue, _, ?return),
+  RetPointsTo(_, ?outMethod, ?baseValue),
   ValuePointsTo(?baseValue, ?value),
   ?value != ?baseValue.
 
 .decl InOutFlowWrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method)
-
 InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod) :-
   InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value1),
   InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value2),
@@ -152,17 +163,14 @@ InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod) :-
  * ret -> value
  */
 .decl InOutFlowUnwrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value) 
-
 InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?value) :-
-  ArgPointsTo(_, ?inMethod, ?value),    
+  ArgPointsTo(_, ?inMethod, ?baseValue),    
   basic.MethodsOfSameOrSuperType(?inMethod, ?outMethod),
-  ReturnVar(?return, ?outMethod),
-  preAnalysis.VarPointsTo(_, ?value, _, ?return),
+  RetPointsTo(_, ?outMethod, ?value),
   ValuePointsTo(?baseValue, ?value),
   ?value != ?baseValue.
 
 .decl InOutFlowUnwrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method)
-
 InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod) :-
   InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?value1),
   InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?value2),

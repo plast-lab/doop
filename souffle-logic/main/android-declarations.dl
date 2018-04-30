@@ -10,7 +10,6 @@
 .decl AndroidLibraryListenerType(?type:Type)
 .decl ListenerType(?type:Type)
 .decl AndroidApplicationListenerClass(?class:ClassType)
-.decl MethodDeclaredOrInherited(?meth:Method, ?class:ClassType)
 .decl PublicMethodOfComponent(?meth:Method)
 .decl ProtectedMethodOfComponent(?meth:Method)
 .decl AppMethodOverridesAndroidLibraryMethod(?meth:Method, ?concreteMeth:Method)
