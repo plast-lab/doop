@@ -3,6 +3,7 @@ package org.clyze.doop.wala;
 import com.ibm.wala.analysis.typeInference.JavaPrimitiveType;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
+import com.ibm.wala.cfg.IBasicBlock;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
@@ -731,6 +732,8 @@ public class WalaFactWriter {
             //System.out.println("NULL CATCH?");
             return;
         }
+        SSACFG cfg = ir.getControlFlowGraph();
+        Collection<ISSABasicBlock> excPredecessors = cfg.getExceptionalPredecessors(handlerBlock);
         int index = session.calcInstructionNumber(catchInstr);
         //System.out.println("catch def is " + catchInstr.getDef());
         Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
@@ -739,7 +742,33 @@ public class WalaFactWriter {
         SSAInstruction[] instructions = ir.getInstructions();
         SSAInstruction startInstr = null;
         SSAInstruction endInstr = null;
-        for(int i=handlerBlock.getFirstInstructionIndex(); i <= handlerBlock.getLastInstructionIndex();i++)
+        int startInstrIndex = -5;
+        int endInstrIndex = -5;
+        // Because in SSACFG.getExceptionalPredecessors():
+        // "The order of blocks returned should be arbitrary but deterministic."
+        // We do not know their order, so we need to iterate through them to find which is
+        // first and which is last.
+        for(ISSABasicBlock bb : excPredecessors)
+        {
+            if(startInstrIndex == -5)
+            {
+                startInstrIndex = bb.getFirstInstructionIndex();
+                endInstrIndex = bb.getLastInstructionIndex();
+            }
+            else
+            {
+                if(bb.getFirstInstructionIndex() < startInstrIndex)
+                    startInstrIndex = bb.getFirstInstructionIndex();
+                if(bb.getLastInstructionIndex() > endInstrIndex)
+                    endInstrIndex = bb.getLastInstructionIndex();
+            }
+        }
+
+        // We need to use startInstrIndex and endInstrIndex as a scope
+        // and find the first and last instruction between them because
+        // either instructions[startInstrIndex] or instructions[endInstrIndex]
+        // could be null
+        for(int i=startInstrIndex; i <= endInstrIndex; i++)
         {
             if(instructions[i] != null)
             {
@@ -756,10 +785,11 @@ public class WalaFactWriter {
             //System.out.println("NO instructions in handler block :(.");
             return;
         }
-        int beginIndex = session.calcInstructionNumber(startInstr);
-        int endIndex = session.calcInstructionNumber(endInstr);
+        session.calcInstructionNumber(startInstr);
+        int beginIndex = session.getInstructionNumber(startInstr);
+        session.calcInstructionNumber(endInstr);
+        int endIndex = session.getInstructionNumber(endInstr);
         Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
-        String allTypes = "";
         String prev = null;
         while(excTypes.hasNext())
         {

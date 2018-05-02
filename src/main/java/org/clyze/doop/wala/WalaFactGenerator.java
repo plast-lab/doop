@@ -14,13 +14,8 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.TypeReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import soot.ArrayType;
-import soot.RefLikeType;
-import soot.RefType;
-import soot.Type;
 
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -194,6 +189,7 @@ class WalaFactGenerator implements Runnable {
         SSACFG cfg = ir.getControlFlowGraph();
         TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
         SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
+
         for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             int start = basicBlock.getFirstInstructionIndex();
