@@ -4,10 +4,12 @@ import com.ibm.wala.analysis.typeInference.JavaPrimitiveType;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cfg.IBasicBlock;
+import com.ibm.wala.classLoader.IBytecodeMethod;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
+import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.FieldReference;
@@ -901,6 +903,16 @@ public class WalaFactWriter {
         //String insn = _rep.invoke(inMethod, instruction, session);
         String methodId = _rep.signature(inMethod);
 
+        IBytecodeMethod method = (IBytecodeMethod)ir.getMethod();
+        int sourceLineNum;
+        int bytecodeIndex = 0;
+        try {
+            bytecodeIndex = method.getBytecodeIndex(instruction.iindex);
+            sourceLineNum = method.getLineNumber(bytecodeIndex);
+        } catch (InvalidClassFileException e) {
+            sourceLineNum = -1;
+        }
+
         //writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
         IClassHierarchy cha = inMethod.getClassHierarchy();
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
@@ -989,6 +1001,9 @@ public class WalaFactWriter {
 
         String insn = _rep.invoke(inMethod, instruction, targetRef, session);
         writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
+
+        if(sourceLineNum != -1)
+            _db.add(METHOD_INV_LINE, insn, str(sourceLineNum));
 
         if (instruction.isStatic()) {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
