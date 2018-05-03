@@ -128,66 +128,6 @@ ReachableContext(?ctx, ?meth) :-
   !FormalParam(_, ?meth, _),
   isImmutableContext(?ctx).
 
-// Output for dead method removal. (REVIEW: move elsewhere?)
-.decl MethodToRemove(?method:Method)
-MethodToRemove(?method) :-
-  ApplicationMethod(?method),
-  !ReachableContext(_, ?method),
-//  !Method_Modifier("abstract", ?method),
-  !Method_Modifier("native", ?method),
-  (basic.MethodOverridesOther(?method, _);
-   !basic.MethodOverridesOther(_, ?method)).
-   // don't throw away root methods that may be needed for dispatch of overriding methods.
-.output MethodToRemove
-
-.decl ClassOfDeadMethod(?method:Method, ?class:ClassType)
-ClassOfDeadMethod(?method, ?class) :-
-  MethodToRemove(?method),
-  Method_DeclaringType(?method, ?class).
-
-
-
-// Very silly we have to do this.
-.decl _StringIterationTrick(?pos:number)
-_StringIterationTrick(0).
-_StringIterationTrick(?pos+1) :- _StringIterationTrick(?pos), ?pos < 256.
-
-.decl _RelevantStringPosition(?className: symbol, ?pos:number)
-_RelevantStringPosition(?className, ?pos) :-
-  ClassNameWithSlashes(_, ?className),
-  _StringIterationTrick(?pos), ?pos < strlen(?className).
-
-// REVIEW: N^2 computation, but does it matter when its application is so limited?
-.decl ClassNameWithSlashes(?className:ClassType, ?classNameWithSlash:symbol)
-ClassNameWithSlashes(?className, ?className) :-
-  ClassOfDeadMethod(_, ?className).
-ClassNameWithSlashes(?className, ?classNameTransformed) :-
-  ClassNameWithSlashes(?className, ?classNameOther),
-  _RelevantStringPosition(?className, ?pos),
-  substr(?classNameOther, ?pos, 1) = ".",
-  substr(?classNameOther, 0, ?pos) = ?prefix,
-  !contains(".", ?prefix),
-  substr(?classNameOther, ?pos+1, strlen(?className)-?pos-1) = ?suffix,
-  ?classNameTransformed = cat(?prefix, cat("/", ?suffix)).
-
-.decl ClassNameWithOnlySlashes(?className:ClassType, ?classNameTransformed:symbol)
-ClassNameWithOnlySlashes(?className, ?classNameTransformed) :-
-  ClassNameWithSlashes(?className, ?classNameTransformed),
-  !contains(".", ?classNameTransformed).
-
-
-.decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol)
-DeadMethodWithJVMDescriptor(?jvmFullName) :-
-  ClassOfDeadMethod(?method, ?class),
-  ClassNameWithOnlySlashes(?class, ?className),
-  Method_JVMDescriptor(?method, ?sig),
-  Method_SimpleName(?method, ?simplename),
-  ?jvmFullName = cat("L", cat(?className, cat(";:", cat(?simplename, ?sig)))).
-
-#define FILENAME_EXPECTED_BY_REDEX_PASS "methods_to_remove.txt"
-.output DeadMethodWithJVMDescriptor(IO="file", filename=FILENAME_EXPECTED_BY_REDEX_PASS, delimiter="\t")
-
-
 
 /**
  * Layout control objects
@@ -490,6 +430,20 @@ ReifiedAndroidObjectValue(?value, ?concreteType) :-
 
 // Just for debugging
 .output ReifiedAndroidObjectValue
+
+
+/**
+ * HACK for Runnable modeling. There are thread APIs we don't fully model,
+ * so we currently just force reachability of all "run" methods.
+**/
+
+ForcedReachableAndroidContext(?ctx, ?runmeth),
+ReachableContext(?ctx, ?runmeth) :-
+  ReachableApplicationObjectOfType(_, _, ?type),
+  Method_SimpleName(?runmeth, "run"),
+  basic.MethodDeclaredOrInherited(?runmeth, ?type),
+  isImmutableContext(?ctx).
+
 
 /**
  * Javascript interfacing
@@ -809,6 +763,66 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
 ApplicationEntryPoint(?meth) :-
   ForcedReachableAndroidContext(_, ?meth),
   ApplicationMethod(?meth).
+
+
+/**
+ * Output for dead method removal. (REVIEW: move elsewhere?)
+**/
+
+.decl MethodToRemove(?method:Method)
+MethodToRemove(?method) :-
+  ApplicationMethod(?method),
+  !ReachableContext(_, ?method),
+//  !Method_Modifier("abstract", ?method),
+  !Method_Modifier("native", ?method),
+  (basic.MethodOverridesOther(?method, _);
+   !basic.MethodOverridesOther(_, ?method)).
+   // don't throw away root methods that may be needed for dispatch of overriding methods.
+.output MethodToRemove
+
+.decl ClassOfDeadMethod(?method:Method, ?class:ClassType)
+ClassOfDeadMethod(?method, ?class) :-
+  MethodToRemove(?method),
+  Method_DeclaringType(?method, ?class).
+
+// Very silly we have to do this.
+.decl _StringIterationTrick(?pos:number)
+_StringIterationTrick(0).
+_StringIterationTrick(?pos+1) :- _StringIterationTrick(?pos), ?pos < 256.
+
+.decl _RelevantStringPosition(?className: symbol, ?pos:number)
+_RelevantStringPosition(?className, ?pos) :-
+  ClassNameWithSlashes(_, ?className),
+  _StringIterationTrick(?pos), ?pos < strlen(?className).
+
+// REVIEW: N^2 computation, but does it matter when its application is so limited?
+.decl ClassNameWithSlashes(?className:ClassType, ?classNameWithSlash:symbol)
+ClassNameWithSlashes(?className, ?className) :-
+  ClassOfDeadMethod(_, ?className).
+ClassNameWithSlashes(?className, ?classNameTransformed) :-
+  ClassNameWithSlashes(?className, ?classNameOther),
+  _RelevantStringPosition(?className, ?pos),
+  substr(?classNameOther, ?pos, 1) = ".",
+  substr(?classNameOther, 0, ?pos) = ?prefix,
+  !contains(".", ?prefix),
+  substr(?classNameOther, ?pos+1, strlen(?className)-?pos-1) = ?suffix,
+  ?classNameTransformed = cat(?prefix, cat("/", ?suffix)).
+
+.decl ClassNameWithOnlySlashes(?className:ClassType, ?classNameTransformed:symbol)
+ClassNameWithOnlySlashes(?className, ?classNameTransformed) :-
+  ClassNameWithSlashes(?className, ?classNameTransformed),
+  !contains(".", ?classNameTransformed).
+
+.decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol)
+DeadMethodWithJVMDescriptor(?jvmFullName) :-
+  ClassOfDeadMethod(?method, ?class),
+  ClassNameWithOnlySlashes(?class, ?className),
+  Method_JVMDescriptor(?method, ?sig),
+  Method_SimpleName(?method, ?simplename),
+  ?jvmFullName = cat("L", cat(?className, cat(";:", cat(?simplename, ?sig)))).
+
+#define FILENAME_EXPECTED_BY_REDEX_PASS "methods_to_remove.txt"
+.output DeadMethodWithJVMDescriptor(IO="file", filename=FILENAME_EXPECTED_BY_REDEX_PASS, delimiter="\t")
 
 
 /**
