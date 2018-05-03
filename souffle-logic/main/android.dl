@@ -766,6 +766,37 @@ ApplicationEntryPoint(?meth) :-
 
 
 /**
+ * Unobfuscated classes and members: special treatment
+**/
+
+.decl UnobfuscatedApplicationClass(?class:ClassType)
+UnobfuscatedApplicationClass(?class) :-
+  ApplicationClass(?class),
+  (match("com.*", ?class);
+   match("org.*", ?class);
+   match("android.*", ?class);
+   match("io.*", ?class);
+   match("edu.*", ?class)).
+
+// Heuristic to determine whether we are dealing with obfuscated input
+.decl ObfuscationOn()
+ObfuscationOn() :-
+  ?unobfCount = count : UnobfuscatedApplicationClass(_),
+  ?allCount = count : ApplicationClass(_),
+  ?unobfCount < ?allCount / 2.
+
+// If obfuscation is on, then treat all unobfuscated method names as
+// entry points: the programmer probably had a "keep" specification for
+// them.
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+  ObfuscationOn(),
+  UnobfuscatedApplicationClass(?class),
+  Method_DeclaringType(?meth, ?class),
+  isImmutableContext(?ctx).
+
+
+/**
  * Output for dead method removal. (REVIEW: move elsewhere?)
 **/
 
@@ -834,8 +865,8 @@ AndroidLibraryType(?type) :-
   match("android.*", ?type).
 
 // REVIEW: is this needed? android.support classes are included in the
-// application for compatibility with older Android versions. We
-// currently consider them library, not app.
+// application for compatibility with older Android versions. For several
+// purposes we consider them library, not app.
 AndroidApplicationClass(?class) :-
   ApplicationClass(?class),
   !AndroidLibraryType(?class).
