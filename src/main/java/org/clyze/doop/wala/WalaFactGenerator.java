@@ -190,6 +190,30 @@ class WalaFactGenerator implements Runnable {
         TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
         SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
 
+//        if(m.getDeclaringClass().getName().toString().contains("Locale$Builder")
+//                && m.getName().toString().contains("setLocale"))
+//            System.out.println("\n" + m.getDeclaringClass().getName().toString() + " " + m.getName().toString());
+//
+//        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+//            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+//            List <ISSABasicBlock> excSuccs = cfg.getExceptionalSuccessors(basicBlock);
+//            if(m.getDeclaringClass().getName().toString().contains("Locale$Builder")
+//                    && m.getName().toString().contains("setLocale"))
+//                for(ISSABasicBlock excSucc : excSuccs)
+//                    if(excSucc.getNumber() != cfg.exit().getNumber())
+//                        System.out.println("\tBB" +basicBlock.getNumber() + " -> BB" + excSucc.getNumber());
+//        }
+//
+//        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+//            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+//            Collection<ISSABasicBlock> excPredecs = cfg.getExceptionalPredecessors(basicBlock);
+//            if(m.getDeclaringClass().getName().toString().contains("Locale$Builder")
+//                    && m.getName().toString().contains("setLocale"))
+//                for(ISSABasicBlock excPred : excPredecs)
+//                    if(basicBlock.getNumber() != cfg.exit().getNumber())
+//                        System.out.println("\tBB" +basicBlock.getNumber() + " <- BB" + excPred.getNumber());
+//        }
+
         for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             int start = basicBlock.getFirstInstructionIndex();
