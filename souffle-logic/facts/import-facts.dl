@@ -711,71 +711,41 @@ Instruction_Method(?instruction, ?method) :-
 #ifdef ANDROID
 
 // AndroidEntryPoints
-
-.decl AndroidEntryPoint(?method:symbol)
 .input AndroidEntryPoint(IO="file", filename="AndroidEntryPoint.facts", delimiter="\t")
 
-
-
 // The exact info from ProGuard keep annotations
-.decl AndroidKeepMethod(?method:symbol)
 .input AndroidKeepMethod(IO="file", filename="AndroidKeepMethod.facts", delimiter="\t")
-
-.decl AndroidKeepClass(?class:symbol)
 .input AndroidKeepClass(IO="file", filename="AndroidKeepClass.facts", delimiter="\t")
 
 // AndroidApplication
-
-.decl AndroidApplication(?type:symbol)
 .input AndroidApplication(IO="file", filename="AndroidApplication.facts", delimiter="\t")
 
 // Activity
-
-.decl Activity(?id:symbol)
 .input Activity(IO="file", filename="Activity.facts", delimiter="\t")
-
 isType(?id) :-
   Activity(?id).
 
-
 // Service
-
-.decl Service(?id:symbol)
 .input Service(IO="file", filename="Service.facts", delimiter="\t")
-
 isType(?id) :-
   Service(?id).
 
-
 // ContentProvider
-
-.decl ContentProvider(?id:symbol)
 .input ContentProvider(IO="file", filename="ContentProvider.facts", delimiter="\t")
-
 isType(?id) :-
   ContentProvider(?id).
 
-
 // BroadcastReceiver
-
-.decl BroadcastReceiver(?id:symbol)
 .input BroadcastReceiver(IO="file", filename="BroadcastReceiver.facts", delimiter="\t")
-
 isType(?id) :-
   BroadcastReceiver(?id).
 
-
 // CallbackMethod
-
-.decl CallbackMethod(?id:symbol)
 .input CallbackMethod(IO="file", filename="CallbackMethod.facts", delimiter="\t")
-
 isMethod(?id) :-
   CallbackMethod(?id).
 
-
 // LayoutControl
-
 .decl _LayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
 .input _LayoutControl0(IO="file", filename="LayoutControl.facts", delimiter="\t")
 
@@ -785,8 +755,6 @@ isMethod(?id) :-
 .input _SensitiveLayoutControl0(IO="file", filename="SensitiveLayoutControl.facts", delimiter="\t")
 
 // FieldInitialValue
-
-.decl FieldInitialValue(?fld:symbol, ?valueString:symbol)
 .input FieldInitialValue(IO="file", filename="FieldInitialValue.facts", delimiter="\t")
 
 #endif
