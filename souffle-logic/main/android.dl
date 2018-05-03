@@ -772,11 +772,15 @@ ApplicationEntryPoint(?meth) :-
 .decl UnobfuscatedApplicationClass(?class:ClassType)
 UnobfuscatedApplicationClass(?class) :-
   ApplicationClass(?class),
-  (match("com.*", ?class);
+  (match("android.*", ?class);
+   match("butterknife.*", ?class);
+   match("com.*", ?class);
    match("org.*", ?class);
-   match("android.*", ?class);
    match("io.*", ?class);
-   match("edu.*", ?class)).
+   match("edu.*", ?class);
+   match("okhttp3.*", ?class);
+   match("retrofit.*", ?class);
+   match("retrofit2.*", ?class)).
 
 // Heuristic to determine whether we are dealing with obfuscated input
 .decl ObfuscationOn()
