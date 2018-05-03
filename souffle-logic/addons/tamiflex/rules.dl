@@ -148,7 +148,7 @@ Tamiflex_ReifiedMethodArray(?type, cat(cat("<(Tamiflex) ", ?type), "/Method[]>")
 
 /**
  * A tamiflex call graph edge is not a real one: types in the signature
- * are not preserved (e.g., argumens are passed as an array). This is
+ * are not preserved (e.g., arguments are passed as an array). This is
  * much like reflective call graph edges.
  */
 .decl TamiflexCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation,

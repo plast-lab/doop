@@ -3,10 +3,13 @@ package org.clyze.doop.wala;
 import com.ibm.wala.analysis.typeInference.JavaPrimitiveType;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
+import com.ibm.wala.cfg.IBasicBlock;
+import com.ibm.wala.classLoader.IBytecodeMethod;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
+import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.FieldReference;
@@ -731,6 +734,8 @@ public class WalaFactWriter {
             //System.out.println("NULL CATCH?");
             return;
         }
+        SSACFG cfg = ir.getControlFlowGraph();
+        Collection<ISSABasicBlock> excPredecessors = cfg.getExceptionalPredecessors(handlerBlock);
         int index = session.calcInstructionNumber(catchInstr);
         //System.out.println("catch def is " + catchInstr.getDef());
         Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
@@ -739,7 +744,33 @@ public class WalaFactWriter {
         SSAInstruction[] instructions = ir.getInstructions();
         SSAInstruction startInstr = null;
         SSAInstruction endInstr = null;
-        for(int i=handlerBlock.getFirstInstructionIndex(); i <= handlerBlock.getLastInstructionIndex();i++)
+        int startInstrIndex = -5;
+        int endInstrIndex = -5;
+        // Because in SSACFG.getExceptionalPredecessors():
+        // "The order of blocks returned should be arbitrary but deterministic."
+        // We do not know their order, so we need to iterate through them to find which is
+        // first and which is last.
+        for(ISSABasicBlock bb : excPredecessors)
+        {
+            if(startInstrIndex == -5)
+            {
+                startInstrIndex = bb.getFirstInstructionIndex();
+                endInstrIndex = bb.getLastInstructionIndex();
+            }
+            else
+            {
+                if(bb.getFirstInstructionIndex() < startInstrIndex)
+                    startInstrIndex = bb.getFirstInstructionIndex();
+                if(bb.getLastInstructionIndex() > endInstrIndex)
+                    endInstrIndex = bb.getLastInstructionIndex();
+            }
+        }
+
+        // We need to use startInstrIndex and endInstrIndex as a scope
+        // and find the first and last instruction between them because
+        // either instructions[startInstrIndex] or instructions[endInstrIndex]
+        // could be null
+        for(int i=startInstrIndex; i <= endInstrIndex; i++)
         {
             if(instructions[i] != null)
             {
@@ -756,16 +787,17 @@ public class WalaFactWriter {
             //System.out.println("NO instructions in handler block :(.");
             return;
         }
-        int beginIndex = session.calcInstructionNumber(startInstr);
-        int endIndex = session.calcInstructionNumber(endInstr);
+        session.calcInstructionNumber(startInstr);
+        int beginIndex = session.getInstructionNumber(startInstr);
+        session.calcInstructionNumber(endInstr);
+        int endIndex = session.getInstructionNumber(endInstr);
         Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
-        String allTypes = "";
         String prev = null;
         while(excTypes.hasNext())
         {
             TypeReference excType = excTypes.next();
             String insn = _rep.handler(m, catchInstr, excType, session);
-            _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
+            _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex + 1));
             if(prev != null)
                 _db.add(EXCEPT_HANDLER_PREV, insn, prev);
             prev = insn;
@@ -871,6 +903,16 @@ public class WalaFactWriter {
         //String insn = _rep.invoke(inMethod, instruction, session);
         String methodId = _rep.signature(inMethod);
 
+        IBytecodeMethod method = (IBytecodeMethod)ir.getMethod();
+        int sourceLineNum;
+        int bytecodeIndex = 0;
+        try {
+            bytecodeIndex = method.getBytecodeIndex(instruction.iindex);
+            sourceLineNum = method.getLineNumber(bytecodeIndex);
+        } catch (InvalidClassFileException e) {
+            sourceLineNum = -1;
+        }
+
         //writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
         IClassHierarchy cha = inMethod.getClassHierarchy();
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
@@ -959,6 +1001,9 @@ public class WalaFactWriter {
 
         String insn = _rep.invoke(inMethod, instruction, targetRef, session);
         writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
+
+        if(sourceLineNum != -1)
+            _db.add(METHOD_INV_LINE, insn, str(sourceLineNum));
 
         if (instruction.isStatic()) {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);

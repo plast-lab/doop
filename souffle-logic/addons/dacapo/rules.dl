@@ -1,9 +1,10 @@
 .decl Dacapo(?classNameHeap:StringConstant, method:Method)
+.input Dacapo(IO="file", filename="Dacapo.facts", delimiter="\t")
+
 
 StringConstantConsMacro(?heap, "java.lang.String"),
-HeapAllocation_Keep(?heap),
-Dacapo(?heap, ?method) :-
-  _Dacapo(?heap, ?method).
+HeapAllocation_Keep(?heap) :-
+  Dacapo(?heap, ?method).
 
 /**
  * Extra logic to handle a specific value read from a configuration file for
