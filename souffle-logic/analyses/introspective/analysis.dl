@@ -104,6 +104,11 @@ RetPointsTo(?ret, ?method, ?value) :-
   ReturnVar(?ret, ?method),
   preAnalysis.VarPointsTo(_, ?value, _, ?ret).
 
+.decl LocalPointsTo(?local:Var, ?method:Method, ?value:Value)
+LocalPointsTo(?local, ?method, ?value) :-
+  Var_DeclaringMethod(?local, ?method),
+  preAnalysis.VarPointsTo(_, ?value, _, ?local).
+
 /*
 .decl ClassArgPointsTo(?class:ClassType, ?value:Value)
 ClassArgPointsTo(?class, ?value) :-
@@ -135,7 +140,29 @@ InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod) :-
   InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value1),
   InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value2),
   ?value1 != ?value2.
-      
+
+.decl MethodTaintedByDirectFlow(?method:Method)
+
+MethodTaintedByDirectFlow(?method) :-
+  LocalPointsTo(?local, ?method, ?value1),
+  LocalPointsTo(?local, ?method, ?value2),
+  basic.MethodsOfSameOrSuperType(?inMethod, ?method),
+  InOutFlowDirectValuePerClass(?inMethod, _, ?value1),
+  InOutFlowDirectValuePerClass(?inMethod, _, ?value2),
+  ?value1 != ?value2.
+
+.decl MethodTaintedByWrappedFlow(?method:Method)
+
+MethodTaintedByWrappedFlow(?method) :-
+  LocalPointsTo(_, ?method, ?baseValue),
+  ValuePointsTo(?baseValue, ?value1),
+  ValuePointsTo(?baseValue, ?value2),
+  basic.MethodsOfSameOrSuperType(?inMethod, ?method),
+  InOutFlowDirectValuePerClass(?inMethod, _, ?value1),
+  InOutFlowDirectValuePerClass(?inMethod, _, ?value2),
+  ?value1 != ?value2.
+
+
 /**
  * Wrapped in out flow:
  *
@@ -231,7 +258,9 @@ InOutFlowPair(?inMethod, ?outMethod) :-
 
 MethodToRefine(?method) :-      
   (InOutFlowPair(?method, _);
-   InOutFlowPair(_, ?method)).
+   InOutFlowPair(_, ?method);
+   MethodTaintedByDirectFlow(?method);
+   MethodTaintedByWrappedFlow(?method)).
 
 .printsize isMethod      
 .printsize MethodToRefine
