@@ -138,11 +138,14 @@ MethodToRemove(?method) :-
   (basic.MethodOverridesOther(?method, _);
    !basic.MethodOverridesOther(_, ?method)).
    // don't throw away root methods that may be needed for dispatch of overriding methods.
+.output MethodToRemove
 
 .decl ClassOfDeadMethod(?method:Method, ?class:ClassType)
 ClassOfDeadMethod(?method, ?class) :-
   MethodToRemove(?method),
   Method_DeclaringType(?method, ?class).
+
+
 
 // Very silly we have to do this.
 .decl _StringIterationTrick(?pos:number)
@@ -154,7 +157,7 @@ _RelevantStringPosition(?className, ?pos) :-
   ClassNameWithSlashes(_, ?className),
   _StringIterationTrick(?pos), ?pos < strlen(?className).
 
-// N^2 computation, but does it matter when its application is so limited?
+// REVIEW: N^2 computation, but does it matter when its application is so limited?
 .decl ClassNameWithSlashes(?className:ClassType, ?classNameWithSlash:symbol)
 ClassNameWithSlashes(?className, ?className) :-
   ClassOfDeadMethod(_, ?className).
@@ -163,6 +166,7 @@ ClassNameWithSlashes(?className, ?classNameTransformed) :-
   _RelevantStringPosition(?className, ?pos),
   substr(?classNameOther, ?pos, 1) = ".",
   substr(?classNameOther, 0, ?pos) = ?prefix,
+  !contains(".", ?prefix),
   substr(?classNameOther, ?pos+1, strlen(?className)-?pos-1) = ?suffix,
   ?classNameTransformed = cat(?prefix, cat("/", ?suffix)).
 
@@ -170,6 +174,7 @@ ClassNameWithSlashes(?className, ?classNameTransformed) :-
 ClassNameWithOnlySlashes(?className, ?classNameTransformed) :-
   ClassNameWithSlashes(?className, ?classNameTransformed),
   !contains(".", ?classNameTransformed).
+
 
 .decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol)
 DeadMethodWithJVMDescriptor(?jvmFullName) :-
