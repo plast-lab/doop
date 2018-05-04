@@ -8,6 +8,7 @@ import com.ibm.wala.classLoader.ShrikeClass;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ssa.*;
+import com.ibm.wala.types.TypeReference;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -136,7 +137,11 @@ public class WalaIRPrinter {
 
             if(basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock)
             {
-                writer.write("\t\tHandler"+ "\n");
+                writer.write("\t\tHandler");
+                Iterator<TypeReference> types = ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCaughtExceptionTypes();
+                while(types.hasNext())
+                    writer.write(" " + types.next().getName().toString());
+                    writer.write("\n");
                 if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() != null)
                     writer.write("\t\t\t" + ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction().toString(symbolTable) + "\n");
             }

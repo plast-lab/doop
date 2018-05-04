@@ -899,7 +899,8 @@ public class WalaFactWriter {
     }
 
     private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
-        int index = session.calcInstructionNumber(instruction);
+        session.calcInstructionNumber(instruction);
+        int index = session.getInstructionNumber(instruction);
         //String insn = _rep.invoke(inMethod, instruction, session);
         String methodId = _rep.signature(inMethod);
 
