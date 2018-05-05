@@ -635,12 +635,12 @@ LayoutControlObjectValueFromId(?controlValue, ?numId) :-
 VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
   VarsAtInvocationRetrievingLayoutControl(?ret, ?var),
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
-//  Value_Num(?value, ?numId),
-//  LayoutControlObjectValueFromId(?controlValue, ?numId).
-  Value_Num(?value, _),
-  LayoutControlObjectValueFromId(?controlValue, _).
-/// HACK, HACK, HACK!!!!!
-/// ids currently seem broken, so I just return whatever
+  Value_Num(?value, ?numId),
+  LayoutControlObjectValueFromId(?controlValue, ?numId).
+///// HACK, HACK, HACK below!!!!!
+///// ids seemed broken, so I just return whatever. Fixed now (?)
+//  Value_Num(?value, _),
+//  LayoutControlObjectValueFromId(?controlValue, _).
 
 
 /**
@@ -782,12 +782,14 @@ UnobfuscatedApplicationClass(?class) :-
    match("retrofit.*", ?class);
    match("retrofit2.*", ?class)).
 
-// Heuristic to determine whether we are dealing with obfuscated input
+// Heuristic to determine whether we are dealing with obfuscated input.
+// One can also enable/disable the logic by changing the percentage of
+// classes required for determining that obfuscation is on.
 .decl ObfuscationOn()
 ObfuscationOn() :-
   ?unobfCount = count : UnobfuscatedApplicationClass(_),
   ?allCount = count : ApplicationClass(_),
-  ?unobfCount < ?allCount / 2.
+  ?unobfCount < ?allCount / 20.
 
 // If obfuscation is on, then treat all unobfuscated method names as
 // entry points: the programmer probably had a "keep" specification for
