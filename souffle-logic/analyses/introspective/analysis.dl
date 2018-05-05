@@ -135,32 +135,23 @@ InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value) :-
   basic.MethodsOfSameOrSuperType(?inMethod, ?outMethod),
   RetPointsTo(_, ?outMethod, ?value).
 
-.decl InOutFlowDirectTwoValuesPerClass(?inMethod:Method, ?outMethod:Method)
-InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod) :-
+.decl InOutFlowDirectTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)
+InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?value1) :-
   InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value1),
   InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value2),
   ?value1 != ?value2.
 
 .decl MethodTaintedByDirectFlow(?method:Method)
-
 MethodTaintedByDirectFlow(?method) :-
-  LocalPointsTo(?local, ?method, ?value1),
-  LocalPointsTo(?local, ?method, ?value2),
+  LocalPointsTo(_, ?method, ?value),
   basic.MethodsOfSameOrSuperType(?inMethod, ?method),
-  InOutFlowDirectValuePerClass(?inMethod, _, ?value1),
-  InOutFlowDirectValuePerClass(?inMethod, _, ?value2),
-  ?value1 != ?value2.
+  InOutFlowDirectTwoValuesPerClass(?inMethod, _, ?value).
 
 .decl MethodTaintedByWrappedFlow(?method:Method)
-
 MethodTaintedByWrappedFlow(?method) :-
-  LocalPointsTo(_, ?method, ?baseValue),
-  ValuePointsTo(?baseValue, ?value1),
-  ValuePointsTo(?baseValue, ?value2),
+  LocalPointsTo(_, ?method, ?value),
   basic.MethodsOfSameOrSuperType(?inMethod, ?method),
-  InOutFlowDirectValuePerClass(?inMethod, _, ?value1),
-  InOutFlowDirectValuePerClass(?inMethod, _, ?value2),
-  ?value1 != ?value2.
+  InOutFlowWrappedTwoValuesPerClass(?inMethod, _, ?value).
 
 
 /**
@@ -177,8 +168,8 @@ InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value) :-
   ValuePointsTo(?baseValue, ?value),
   ?value != ?baseValue.
 
-.decl InOutFlowWrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method)
-InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod) :-
+.decl InOutFlowWrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)
+InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod, ?value1) :-
   InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value1),
   InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value2),
   ?value1 != ?value2.
@@ -232,10 +223,10 @@ InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod) :-
 .decl InOutFlowPair(?inMethod:Method, ?outMethod:Method)
 
 InOutFlowPair(?inMethod, ?outMethod) :-
-  InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod).
+  InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, _).
 
 InOutFlowPair(?inMethod, ?outMethod) :-
-  InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod).
+  InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod,_).
 
 InOutFlowPair(?inMethod, ?outMethod) :-
   InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod).
@@ -259,7 +250,7 @@ InOutFlowPair(?inMethod, ?outMethod) :-
 MethodToRefine(?method) :-      
   (InOutFlowPair(?method, _);
    InOutFlowPair(_, ?method);
-   MethodTaintedByDirectFlow(?method);
+   MethodTaintedByDirectFlow(?method),
    MethodTaintedByWrappedFlow(?method)).
 
 .printsize isMethod      
