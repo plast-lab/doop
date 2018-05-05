@@ -171,8 +171,7 @@
     MustPointTo(?hctxBase, ?heapBase, ?ctx, ?base),
     FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn),
     ?ap = [?base, [?fld, nil]].
-  .plan 1: (2,3,1)
-  .plan 2: (3,2,1)
+  .plan 1: (2,3,1), 2: (3,2,1)
 */
 
   // //// ====================================

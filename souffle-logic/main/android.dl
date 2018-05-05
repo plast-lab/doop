@@ -553,7 +553,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   basic.SubtypeOf(?type, ?formalType),
   ReifiedAndroidObjectValue(?value, ?type).
 #ifndef X_CONTEXT_REMOVER
-  .plan 1:(2,1,3,4)
+ .plan 1:(2,1,3,4), 2:(4,3,1,2)
 #endif
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
