@@ -789,7 +789,7 @@ UnobfuscatedApplicationClass(?class) :-
 ObfuscationOn() :-
   ?unobfCount = count : UnobfuscatedApplicationClass(_),
   ?allCount = count : ApplicationClass(_),
-  ?unobfCount < ?allCount / 20.
+  ?unobfCount < ?allCount / 2.
 
 // If obfuscation is on, then treat all unobfuscated method names as
 // entry points: the programmer probably had a "keep" specification for

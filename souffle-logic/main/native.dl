@@ -342,7 +342,7 @@ HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
 // but we cannot model all of them in practice as the type hierarchy under
 // C can be big (for example when C=java.lang.Object).
 
-.decl ReachableNativeMethodInvocation(?ctx:Context, ?invo:MethodInvocation, ?nativeMethod:Method)
+.decl ReachableNativeMethodInvocation(?ctx:configuration.Context, ?invo:MethodInvocation, ?nativeMethod:Method)
 .output ReachableNativeMethodInvocation
 
 .decl _NativeMethodInvocation(?invo:MethodInvocation, ?nativeMethod:Method)
