@@ -85,8 +85,8 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  AssignLocal(?from, ?to, _),
-  VarPointsTo(?hctx, ?value, ?ctx, ?from).
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  AssignLocal(?from, ?to, _).
 
 /**
  * Cast assignments
@@ -311,20 +311,22 @@ ReachableLoadArrayIndexBase(?base) :-
  * Store array index
  */
 
+.decl OptStoreIntoArray(?hctx:configuration.HContext, ?value:Value, ?basehctx:configuration.HContext, ?basevalue:Value)
+
 #ifndef FEATHERWEIGHT_ANALYSIS
-OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value) :-
+OptStoreIntoArray(?hctx, ?value, ?basehctx, ?basevalue) :-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from).
 #endif
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
-OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value) :-
+OptStoreIntoArray(?hctx, ?value, ?basehctx, ?basevalue) :-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
   TaintedVarPointsTo(?value, ?ctx, ?from),
   isImmutableHContext(?hctx).
 #endif
 
 ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) :-
-  OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value),
+  OptStoreIntoArray(?hctx, ?value, ?basehctx, ?basevalue),
   NotSpecialObject(?value),
   NotEmptyArrayValue(?basevalue),
   Value_Type(?value, ?valuetype),
@@ -398,12 +400,12 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
 #endif
 
 OptArgVarPointsTo(?hctx, ?value, ?actualCtx, ?actual) :-
-  ActualParam(_, _, ?actual),
-  VarPointsTo(?hctx, ?value, ?actualCtx, ?actual).
+  VarPointsTo(?hctx, ?value, ?actualCtx, ?actual),
+  ActualParam(_, _, ?actual).
 
 OptRetVarPointsTo(?hctx, ?value, ?returnCtx, ?return) :-
-  ReturnVar(?return, _),
-  VarPointsTo(?hctx, ?value, ?returnCtx, ?return).
+  VarPointsTo(?hctx, ?value, ?returnCtx, ?return),
+  ReturnVar(?return, _).
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),

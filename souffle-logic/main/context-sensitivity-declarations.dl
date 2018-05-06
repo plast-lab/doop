@@ -59,8 +59,6 @@
 
 .decl OptStoreArrayIndex(?from:Var, ?base:Var)
 
-.decl OptStoreIntoArray(?hctx:configuration.HContext, ?basehctx:configuration.HContext, ?basevalue:Value, ?value:Value)
-
 .decl OptArgAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
 
 .decl OptReturnAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
