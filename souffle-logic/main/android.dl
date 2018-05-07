@@ -128,6 +128,14 @@ ReachableContext(?ctx, ?meth) :-
   !FormalParam(_, ?meth, _),
   isImmutableContext(?ctx).
 
+// also class initializers
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+  AndroidKeepClass(?class),
+  Method_DeclaringType(?meth, ?class),
+  Method_SimpleName(?meth, "<clinit>"),
+  isImmutableContext(?ctx).
+
 
 /**
  * Layout control objects
@@ -777,6 +785,7 @@ ApplicationEntryPoint(?meth) :-
 **/
 
 .decl UnobfuscatedApplicationClass(?class:ClassType)
+.output UnobfuscatedApplicationClass
 UnobfuscatedApplicationClass(?class) :-
   ApplicationClass(?class),
   (match("android.*", ?class);
@@ -789,6 +798,26 @@ UnobfuscatedApplicationClass(?class) :-
    match("retrofit.*", ?class);
    match("retrofit2.*", ?class)).
 
+.decl UnobfuscatedMethod(?meth:Method)
+.output UnobfuscatedMethod
+
+// A method with a long-ish name is likely unobfuscated, especially in
+// an unobfuscated class.
+UnobfuscatedMethod(?meth) :-
+  UnobfuscatedApplicationClass(?class),
+  Method_DeclaringType(?meth, ?class),
+  Method_SimpleName(?meth, ?name),
+  strlen(?name) > 2,
+  ?name != "<init>",
+  ?name != "<clinit>".
+  
+UnobfuscatedMethod(?meth) :-
+  ApplicationMethod(?meth),
+  Method_SimpleName(?meth, ?name),
+  strlen(?name) > 5,
+  ?name != "<init>",
+  ?name != "<clinit>".
+
 // Heuristic to determine whether we are dealing with obfuscated input.
 // One can also enable/disable the logic by changing the percentage of
 // classes required for determining that obfuscation is on.
@@ -798,21 +827,16 @@ ObfuscationOn() :-
   ?allCount = count : ApplicationClass(_),
   ?unobfCount < ?allCount / 20.
 
-.decl UnobfuscatedMethod(?meth:Method)
-.output UnobfuscatedMethod
-
-UnobfuscatedMethod(?meth) :-
-  UnobfuscatedApplicationClass(?class),
-  Method_DeclaringType(?meth, ?class).
-
 // If obfuscation is on, then treat all unobfuscated method names as
 // entry points: the programmer probably had a "keep" specification for
 // them.
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+AndroidKeepMethod(?meth) :-
   ObfuscationOn(),
-  UnobfuscatedMethod(?meth),
-  isImmutableContext(?ctx).
+  UnobfuscatedMethod(?meth).
+
+AndroidKeepClass(?class) :-
+  ObfuscationOn(),
+  UnobfuscatedApplicationClass(?class).
 
 
 /**
