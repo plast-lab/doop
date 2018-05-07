@@ -801,15 +801,17 @@ ObfuscationOn() :-
 .decl UnobfuscatedMethod(?meth:Method)
 .output UnobfuscatedMethod
 
+UnobfuscatedMethod(?meth) :-
+  UnobfuscatedApplicationClass(?class),
+  Method_DeclaringType(?meth, ?class).
+
 // If obfuscation is on, then treat all unobfuscated method names as
 // entry points: the programmer probably had a "keep" specification for
 // them.
-UnobfuscatedMethod(?meth),
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
   ObfuscationOn(),
-  UnobfuscatedApplicationClass(?class),
-  Method_DeclaringType(?meth, ?class),
+  UnobfuscatedMethod(?meth),
   isImmutableContext(?ctx).
 
 
