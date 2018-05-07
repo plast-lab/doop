@@ -149,18 +149,23 @@ SensitiveLayoutControlValue(?value) :-
 
 // Handle library-callable "on*" methods of layout controls
 
+.decl _OnEventMethod(?meth:Method)
+_OnEventMethod(?meth) :-
+  Method_SimpleName(?meth, ?simplename),
+  (match("on.*", ?simplename);
+   match("before.*", ?simplename);
+   match("after.*", ?simplename)).
+
 PublicOnMethodOfLayoutControl(?meth) :-
   basic.MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
-  Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  _OnEventMethod(?meth),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfLayoutControl(?meth) :-
   basic.MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
-  Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  _OnEventMethod(?meth),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfLayoutControl(?methConcrete) :-
@@ -243,15 +248,13 @@ AndroidApplicationListenerClass(?class) :-
 PublicOnMethodOfReachableListener(?meth) :-
   basic.MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
-  Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  _OnEventMethod(?meth),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfReachableListener(?meth) :-
   basic.MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
-  Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  _OnEventMethod(?meth),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfReachableListener(?methConcrete) :-
@@ -553,15 +556,19 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   basic.SubtypeOf(?type, ?formalType),
   ReifiedAndroidObjectValue(?value, ?type).
 #ifndef X_CONTEXT_REMOVER
-  .plan 1:(2,1,3,4)
+ .plan 1:(2,1,3,4), 2:(4,3,1,2)
 #endif
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
-  basic.SubtypeOf(?type, ?formalType),
+//  basic.SubtypeOf(?type, ?formalType),
+//// HACK below, checking if it avoids blowup for small completeness cost
+  ?type = ?formalType,
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?type).
- .plan 1:(3,2,1)
-
+#ifndef X_CONTEXT_REMOVER
+//// also needs to be removed as part of above HACK
+// .plan 1:(3,2,1)
+#endif
 
 //// REVIEW Ad hoc, but useful?
 // Assign discovered components to all compatible local vars of mocked methods!
@@ -635,12 +642,12 @@ LayoutControlObjectValueFromId(?controlValue, ?numId) :-
 VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
   VarsAtInvocationRetrievingLayoutControl(?ret, ?var),
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
-//  Value_Num(?value, ?numId),
-//  LayoutControlObjectValueFromId(?controlValue, ?numId).
-  Value_Num(?value, _),
-  LayoutControlObjectValueFromId(?controlValue, _).
-/// HACK, HACK, HACK!!!!!
-/// ids currently seem broken, so I just return whatever
+  Value_Num(?value, ?numId),
+  LayoutControlObjectValueFromId(?controlValue, ?numId).
+///// HACK, HACK, HACK below!!!!!
+///// ids seemed broken, so I just return whatever. Fixed now (?)
+//  Value_Num(?value, _),
+//  LayoutControlObjectValueFromId(?controlValue, _).
 
 
 /**
@@ -782,12 +789,21 @@ UnobfuscatedApplicationClass(?class) :-
    match("retrofit.*", ?class);
    match("retrofit2.*", ?class)).
 
-// Heuristic to determine whether we are dealing with obfuscated input
+// Heuristic to determine whether we are dealing with obfuscated input.
+// One can also enable/disable the logic by changing the percentage of
+// classes required for determining that obfuscation is on.
 .decl ObfuscationOn()
 ObfuscationOn() :-
   ?unobfCount = count : UnobfuscatedApplicationClass(_),
   ?allCount = count : ApplicationClass(_),
-  ?unobfCount < ?allCount / 2.
+  ?unobfCount < ?allCount / 20.
+
+.decl UnobfuscatedMethod(?meth:Method)
+.output UnobfuscatedMethod
+
+UnobfuscatedMethod(?meth) :-
+  UnobfuscatedApplicationClass(?class),
+  Method_DeclaringType(?meth, ?class).
 
 // If obfuscation is on, then treat all unobfuscated method names as
 // entry points: the programmer probably had a "keep" specification for
@@ -795,8 +811,7 @@ ObfuscationOn() :-
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
   ObfuscationOn(),
-  UnobfuscatedApplicationClass(?class),
-  Method_DeclaringType(?meth, ?class),
+  UnobfuscatedMethod(?meth),
   isImmutableContext(?ctx).
 
 
@@ -830,7 +845,7 @@ _RelevantStringPosition(?className, ?pos) :-
   ClassNameWithSlashes(_, ?className),
   _StringIterationTrick(?pos), ?pos < strlen(?className).
 
-// REVIEW: N^2 computation, but does it matter when its application is so limited?
+// N^2 computation, but it doesn't matter since its application is so limited
 .decl ClassNameWithSlashes(?className:ClassType, ?classNameWithSlash:symbol)
 ClassNameWithSlashes(?className, ?className) :-
   ClassOfDeadMethod(_, ?className).

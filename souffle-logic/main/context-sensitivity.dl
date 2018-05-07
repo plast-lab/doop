@@ -53,8 +53,7 @@ VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
   AssignContextInsensitiveHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx).
-  .plan 1:(4,3,2,1)
-  .plan 2:(4,3,1,2)
+  .plan 1:(4,3,2,1), 2:(4,3,1,2)
 
 /**
  * Null assignments
@@ -104,9 +103,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value_Type(?value, ?valuetype),
   basic.SupertypeOf(?type, ?valuetype).
-#ifdef INFORMATION_FLOW
-  .plan 2:(3,4,2,1)
-#endif
+ .plan 2:(3,2,1,4)
 
 /**
  * Load/Store instance fields
@@ -131,13 +128,13 @@ HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
   LoadHeapInstanceField(?ctxTo, ?to, ?signature, ?basehctx, ?basevalue),
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctxFrom, ?from),
   !Value_Null(?basevalue).
-  .plan 1:(2,1)
+ .plan 1:(2,1)
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   HeapInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   NotSpecialObject(?value).
-  .plan 1:(2,1,3)
+ .plan 1:(2,1,3), 2:(3,2,1)
 
 // InstanceFieldPointsTo is computed but remains unused (does not
 // affect outputs) for most analysis settings! Don't read from it if
@@ -147,7 +144,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   NotSpecialObject(?value),
   !Value_Null(?basevalue).
-.plan 1:(2,1,3)
+ .plan 1:(2,1,3), 2:(3,2,1)
 
 #else
 // FEATHERWEIGHT_ANALYSIS
@@ -314,26 +311,32 @@ ReachableLoadArrayIndexBase(?base) :-
  * Store array index
  */
 
+.decl OptStoreIntoArray(?hctx:configuration.HContext, ?value:Value, ?basehctx:configuration.HContext, ?basevalue:Value)
+
 #ifndef FEATHERWEIGHT_ANALYSIS
-OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value) :-
+OptStoreIntoArray(?hctx, ?value, ?basehctx, ?basevalue) :-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from).
 #endif
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
-OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value) :-
+OptStoreIntoArray(?hctx, ?value, ?basehctx, ?basevalue) :-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
   TaintedVarPointsTo(?value, ?ctx, ?from),
   isImmutableHContext(?hctx).
 #endif
 
 ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) :-
-  OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value),
+  OptStoreIntoArray(?hctx, ?value, ?basehctx, ?basevalue),
   NotSpecialObject(?value),
   NotEmptyArrayValue(?basevalue),
   Value_Type(?value, ?valuetype),
   Value_Type(?basevalue, ?basevaluetype),
   ComponentType(?basevaluetype, ?componenttype),
   basic.SupertypeOf(?componenttype, ?valuetype).
+ .plan 1:(2,1,3,4,5,6,7),
+       2:(3,1,2,4,5,6,7),
+       3:(4,1,2,3,5,6,7),
+       4:(5,1,2,3,4,6,7)
 
 StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) :-
   ReachableStoreArrayIndexBase(?base),
@@ -397,12 +400,12 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
 #endif
 
 OptArgVarPointsTo(?hctx, ?value, ?actualCtx, ?actual) :-
-  ActualParam(_, _, ?actual),
-  VarPointsTo(?hctx, ?value, ?actualCtx, ?actual).
+  VarPointsTo(?hctx, ?value, ?actualCtx, ?actual),
+  ActualParam(_, _, ?actual).
 
 OptRetVarPointsTo(?hctx, ?value, ?returnCtx, ?return) :-
-  ReturnVar(?return, _),
-  VarPointsTo(?hctx, ?value, ?returnCtx, ?return).
+  VarPointsTo(?hctx, ?value, ?returnCtx, ?return),
+  ReturnVar(?return, _).
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
@@ -456,7 +459,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
   ThisVar(?tomethod, ?this).
 #ifndef X_CONTEXT_REMOVER
-  .plan 1:(2,1,3,4,5)
+ .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5)
 #endif
 
 /**

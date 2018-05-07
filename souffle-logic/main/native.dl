@@ -342,13 +342,17 @@ HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
 // but we cannot model all of them in practice as the type hierarchy under
 // C can be big (for example when C=java.lang.Object).
 
-.decl ReachableNativeMethodInvocation(?invo:MethodInvocation, ?nativeMethod:Method)
+.decl ReachableNativeMethodInvocation(?ctx:configuration.Context, ?invo:MethodInvocation, ?nativeMethod:Method)
 .output ReachableNativeMethodInvocation
 
-ReachableNativeMethodInvocation(?invo, ?nativeMethod) :-
-   MethodInvocation_Method(?invo, ?nativeMethod),
-   Method_Modifier("native", ?nativeMethod),
-   Reachable(?nativeMethod).
+.decl _NativeMethodInvocation(?invo:MethodInvocation, ?nativeMethod:Method)
+_NativeMethodInvocation(?invo, ?nativeMethod) :-
+  Method_Modifier("native", ?nativeMethod),
+  MethodInvocation_Method(?invo, ?nativeMethod).
+
+ReachableNativeMethodInvocation(?ctx, ?invo, ?nativeMethod) :-
+  _NativeMethodInvocation(?invo, ?nativeMethod),
+  ReachableContext(?ctx, ?nativeMethod).
 
 .decl NativeMethodReturningValue(?m:Method, ?t:Type, ?return:Var, ?v:Value)
 .output NativeMethodReturningValue
@@ -358,11 +362,10 @@ ReachableNativeMethodInvocation(?invo, ?nativeMethod) :-
 NativeMethodReturningValue(?m, ?t, ?return, NativeReturnValId(?t, ?m)),
 MockValueConsMacro(NativeReturnValId(?t, ?m), ?t),
 VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return) :-
-  ReachableNativeMethodInvocation(_, ?m),
+  ReachableNativeMethodInvocation(?ctx, _, ?m),
   NativeReturnVar(?return, ?m),
   Var_Type(?return, ?t),
   (isClassType(?t) ; isArrayType(?t)),
-  isImmutableHContext(?hctx),
-  isImmutableContext(?ctx).
+  ImmutableHContextFromContext(?ctx, ?hctx).
 
 #endif // SIMULATE_NATIVE_RETURNS
