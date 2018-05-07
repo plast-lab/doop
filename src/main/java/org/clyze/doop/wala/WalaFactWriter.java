@@ -4,11 +4,9 @@ import com.ibm.wala.analysis.typeInference.JavaPrimitiveType;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cfg.IBasicBlock;
-import com.ibm.wala.classLoader.IBytecodeMethod;
-import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IField;
-import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
+import com.ibm.wala.shrikeBT.ExceptionHandler;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.ClassLoaderReference;
@@ -766,6 +764,15 @@ public class WalaFactWriter {
             }
         }
 
+        ShrikeBTMethod shrikeMethod = (ShrikeBTMethod) m;
+        ExceptionHandler[][] exceptionHandlers = null;
+        try {
+            exceptionHandlers = shrikeMethod.getHandlers();
+        } catch (InvalidClassFileException e) {
+            e.printStackTrace();
+        }
+
+
         // We need to use startInstrIndex and endInstrIndex as a scope
         // and find the first and last instruction between them because
         // either instructions[startInstrIndex] or instructions[endInstrIndex]
@@ -787,6 +794,44 @@ public class WalaFactWriter {
             //System.out.println("NO instructions in handler block :(.");
             return;
         }
+
+        if(exceptionHandlers != null)
+        {
+//            if(m.getName().toString().equals("parseNetscapeCertChain"))
+//                for(int i=0; i < handlerIndex; i++)
+//                    if(instructions[i] != null) {
+//                        System.out.println(session.getInstructionNumber(instructions[i]) + " " + instructions[i].toString(ir.getSymbolTable()));
+//                        for(int j :handlersToArray(exceptionHandlers[i]))
+//                            System.out.print(j +", ");
+//                        System.out.print("\n");
+//                    }
+            startInstrIndex =startInstr.iindex;
+            int[] upperBoundHandlerArray = handlersToArray(exceptionHandlers[startInstrIndex]);
+            while( startInstrIndex > 0 && java.util.Arrays.equals(upperBoundHandlerArray, handlersToArray(exceptionHandlers[startInstrIndex - 1])))
+                startInstrIndex--;
+            endInstrIndex =endInstr.iindex;
+            int[] lowerBoundHandlerArray = handlersToArray(exceptionHandlers[endInstrIndex]);
+            while( endInstrIndex < instructions.length -1 && java.util.Arrays.equals(lowerBoundHandlerArray, handlersToArray(exceptionHandlers[endInstrIndex + 1])))
+                endInstrIndex++;
+
+            startInstr = null;
+            endInstr = null;
+            for(int i=startInstrIndex; i <= endInstrIndex; i++)
+            {
+                if(instructions[i] != null)
+                {
+                    if(startInstr == null)
+                    {
+                        startInstr = instructions[i];
+                        endInstr = instructions[i];
+                    }
+                    else
+                        endInstr = instructions[i];
+                }
+            }
+
+        }
+
         session.calcInstructionNumber(startInstr);
         int beginIndex = session.getInstructionNumber(startInstr);
         session.calcInstructionNumber(endInstr);
@@ -802,6 +847,16 @@ public class WalaFactWriter {
                 _db.add(EXCEPT_HANDLER_PREV, insn, prev);
             prev = insn;
         }
+    }
+
+    int[] handlersToArray(ExceptionHandler[] handlers)
+    {
+        int[] targetsArray = new int[handlers.length];
+        for(int i=0; i < handlers.length ; i++)
+        {
+            targetsArray[i] = handlers[i].getHandler();
+        }
+        return targetsArray;
     }
 
     void writeThisVar(IMethod m) {
