@@ -1,3 +1,4 @@
+
 package org.clyze.doop.core
 
 import org.apache.commons.io.FileUtils
@@ -70,6 +71,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             ]
     static final availableConfigurations = [
             "introspective" : "IntrospectiveConfiguration",
+            "intro-B" : "IntroBConfiguration",
             "context-insensitive" : "ContextInsensitiveConfiguration",
             "context-insensitive-plus" : "ContextInsensitivePlusConfiguration",
             "context-insensitive-plusplus" : "ContextInsensitivePlusPlusConfiguration",

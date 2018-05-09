@@ -71,6 +71,7 @@ FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
   FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
   ?callerCtx = [?callerCtxValue1, ?callerCtxValue2],
   ?newCtx = [?callerCtxValue2, ?value],
+
   ?callerCtxValue1 = ?callerCtxValue1.
 
 InitContextResponse(?value, ?ctx) :-
@@ -80,16 +81,26 @@ InitContextResponse(?value, ?ctx) :-
 InitHContextResponse(?value, ?hctx) :-
   InitHContextRequest(?value),
   ?hctx = [?value].
-         
+
+.decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)
+MethodsOfSameOrSuperType(?method1, ?method2) :-
+   preAnalysis.Reachable(?method1),
+   basic.MethodDeclaredOrInherited(?method1, ?class),
+   preAnalysis.Reachable(?method2),
+   basic.MethodDeclaredOrInherited(?method2, ?class).
+
 
 /** Utility rule: Value points to another value directly or indirectly **/
 .decl ValuePointsTo(?baseValue:Value, ?value:Value)
 
 ValuePointsTo(?baseValue, ?value) :-
   preAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?baseValue).
-ValuePointsTo(?baseValue, ?value) :-
-  ValuePointsTo(?value1, ?value),
-  preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue).
+
+// anantoni: The recursive rule does not make much of a difference anyway
+//
+// ValuePointsTo(?baseValue, ?value) :-
+//   ValuePointsTo(?value1, ?value),
+//   preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue).
 
 .decl ArgPointsTo(?arg:Var, ?method:Method, ?value:Value)
 ArgPointsTo(?arg, ?method, ?value) :-
@@ -131,9 +142,7 @@ ClassRetPointsTo(?class, ?value) :-
 
 .decl InOutFlowDirectValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)
 InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value) :-
-  ArgPointsTo(_, ?inMethod, ?value),    
-  basic.MethodsOfSameOrSuperType(?inMethod, ?outMethod),
-  RetPointsTo(_, ?outMethod, ?value).
+   MethodValuePair(?inMethod, ?value, ?outMethod, ?value).
 
 .decl InOutFlowDirectTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)
 InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?value1) :-
@@ -144,13 +153,13 @@ InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?value1) :-
 .decl MethodTaintedByDirectFlow(?method:Method)
 MethodTaintedByDirectFlow(?method) :-
   LocalPointsTo(_, ?method, ?value),
-  basic.MethodsOfSameOrSuperType(?inMethod, ?method),
+  MethodsOfSameOrSuperType(?inMethod, ?method),
   InOutFlowDirectTwoValuesPerClass(?inMethod, _, ?value).
 
 .decl MethodTaintedByWrappedFlow(?method:Method)
 MethodTaintedByWrappedFlow(?method) :-
   LocalPointsTo(_, ?method, ?value),
-  basic.MethodsOfSameOrSuperType(?inMethod, ?method),
+  MethodsOfSameOrSuperType(?inMethod, ?method),
   InOutFlowWrappedTwoValuesPerClass(?inMethod, _, ?value).
 
 
@@ -160,11 +169,15 @@ MethodTaintedByWrappedFlow(?method) :-
  * arg -> value
  * ret -> ... -> ... -> value
  */
+.decl MethodValuePair(?inMethod:Method, ?argValue:Value, ?outMethod:Method, ?retValue:Value)
+MethodValuePair(?inMethod, ?argValue, ?outMethod, ?retValue) :-
+   ArgPointsTo(_, ?inMethod, ?argValue),    
+   MethodsOfSameOrSuperType(?inMethod, ?outMethod),
+   RetPointsTo(_, ?outMethod, ?retValue).
+   
 .decl InOutFlowWrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value) 
 InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value) :-
-  ArgPointsTo(_, ?inMethod, ?value),    
-  basic.MethodsOfSameOrSuperType(?inMethod, ?outMethod),
-  RetPointsTo(_, ?outMethod, ?baseValue),
+  MethodValuePair(?inMethod, ?value, ?outMethod, ?baseValue),
   ValuePointsTo(?baseValue, ?value),
   ?value != ?baseValue.
 
@@ -182,9 +195,7 @@ InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod, ?value1) :-
  */
 .decl InOutFlowUnwrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value) 
 InOutFlowUnwrappedValuePerClass(?inMethod, ?outMethod, ?value) :-
-  ArgPointsTo(_, ?inMethod, ?baseValue),    
-  basic.MethodsOfSameOrSuperType(?inMethod, ?outMethod),
-  RetPointsTo(_, ?outMethod, ?value),
+  MethodValuePair(?inMethod, ?baseValue, ?outMethod, ?value),
   ValuePointsTo(?baseValue, ?value),
   ?value != ?baseValue.
 
@@ -228,8 +239,8 @@ InOutFlowPair(?inMethod, ?outMethod) :-
 InOutFlowPair(?inMethod, ?outMethod) :-
   InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod,_).
 
-InOutFlowPair(?inMethod, ?outMethod) :-
-  InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod).
+// InOutFlowPair(?inMethod, ?outMethod) :-
+//   InOutFlowUnwrappedTwoValuesPerClass(?inMethod, ?outMethod).
 
 // InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
 //   InOutFlowAnyTwoValuesPerClass(?inMethod, ?outMethod, ?class).
@@ -250,8 +261,9 @@ InOutFlowPair(?inMethod, ?outMethod) :-
 MethodToRefine(?method) :-      
   (InOutFlowPair(?method, _);
    InOutFlowPair(_, ?method);
-   MethodTaintedByDirectFlow(?method),
-   MethodTaintedByWrappedFlow(?method)).
+   MethodTaintedByDirectFlow(?method);
+   MethodTaintedByWrappedFlow(?method)
+  ).                            
 
 .printsize isMethod      
 .printsize MethodToRefine
