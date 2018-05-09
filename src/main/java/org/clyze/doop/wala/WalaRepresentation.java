@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 class WalaRepresentation {
     private Map<String, String> _methodSigRepr = new ConcurrentHashMap<>();
     private Map<String, String> _catchRepr = new ConcurrentHashMap<>();
+    private Map<String, Integer> _handlerNumOfScopes = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
     private static WalaRepresentation _repr;
@@ -134,9 +135,28 @@ class WalaRepresentation {
         return "/intermediate/";
     }
 
-    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, Session session)
+    void putHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, int scopeIndex)
     {
-        String query = m.getSignature() + " v" + catchInstr.getDef();
+
+        String handler = m.getSignature() + " v" + catchInstr.getDef();
+        _handlerNumOfScopes.put(handler, scopeIndex);
+
+    }
+
+    int getHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr)
+    {
+        String handler = m.getSignature() + " v" + catchInstr.getDef();
+        Integer numOfScopes = _handlerNumOfScopes.get(handler);
+        if(numOfScopes == null)
+            return 0;
+        else
+            return numOfScopes;
+    }
+
+    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, Session session, int scopeIndex)
+    {
+        String query = m.getSignature() + " v" + catchInstr.getDef()+ "-" + scopeIndex;
+
         String result = _catchRepr.get(query);
         if(result == null) {
             String name = "catch " + fixTypeString(typeReference.toString());

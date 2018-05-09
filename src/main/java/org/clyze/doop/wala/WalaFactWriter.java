@@ -715,16 +715,70 @@ public class WalaFactWriter {
         TypeReference prevType = null;
         SSAGetCaughtExceptionInstruction prevCatch = previous.getCatchInstruction();
         Iterator<TypeReference> prevTypes = previous.getCaughtExceptionTypes();
+        int prevNumOfScopes = _rep.getHandlerNumOfScopes(m,prevCatch);
         while(prevTypes.hasNext())
             prevType =prevTypes.next();
 
         SSAGetCaughtExceptionInstruction currCatch = current.getCatchInstruction();
         TypeReference currType = current.getCaughtExceptionTypes().next();
 
-        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, currCatch, currType, session), _rep.handler(m, prevCatch, prevType, session));
+        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, currCatch, currType, session,0), _rep.handler(m, prevCatch, prevType, session, prevNumOfScopes));
     }
 
-    void writeExceptionHandler(IR ir, IMethod m, SSACFG.ExceptionHandlerBasicBlock handlerBlock, Session session, TypeInference typeInference) {
+    void writeExceptionHandler(IR ir, IMethod m, SSACFG.ExceptionHandlerBasicBlock handlerBlock, Session session, TypeInference typeInference, WalaExceptionHelper exceptionHelper) {
+
+        SSAGetCaughtExceptionInstruction catchInstr = handlerBlock.getCatchInstruction();
+        if(catchInstr == null)
+        {
+            //System.out.println("NULL CATCH?");
+            return;
+        }
+        SSACFG cfg = ir.getControlFlowGraph();
+        session.calcInstructionNumber(catchInstr);
+        int handlerIndex = session.getInstructionNumber(catchInstr);
+        //System.out.println("catch def is " + catchInstr.getDef());
+        Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
+
+        SSAInstruction[] instructions = ir.getInstructions();
+        SSAInstruction startInstr = null;
+        SSAInstruction endInstr = null;
+
+        Integer[] scopeArray = exceptionHelper.computeScopeForExceptionHandler(handlerBlock.getFirstInstructionIndex());
+        if(scopeArray.length == 0)
+        {
+            System.out.println("ScopeArray has 0 length :(. Handler " + handlerBlock.getFirstInstructionIndex());
+        }
+
+
+
+        for(int i=0; i < scopeArray.length; i+=2) {
+            startInstr = instructions[scopeArray[i]];
+            endInstr = instructions[scopeArray[i + 1]];
+            session.calcInstructionNumber(startInstr);
+            int beginIndex = session.getInstructionNumber(startInstr);
+            session.calcInstructionNumber(endInstr);
+            int endIndex = session.getInstructionNumber(endInstr);
+            Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
+            String prev = null;
+            if(m.getName().toString().equals("loadManifest") &&
+                    m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
+                System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
+                        scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
+                        handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
+            while (excTypes.hasNext()) {
+                TypeReference excType = excTypes.next();
+                String insn = _rep.handler(m, catchInstr, excType, session, i/2);
+                _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex + 1));
+                if (prev != null)
+                    _db.add(EXCEPT_HANDLER_PREV, insn, prev);
+                prev = insn;
+            }
+        }
+        if(scopeArray.length > 2)
+            _rep.putHandlerNumOfScopes(m, catchInstr,(scopeArray.length - 1)/2 );
+    }
+
+    void writeExceptionHandlerOld(IR ir, IMethod m, SSACFG.ExceptionHandlerBasicBlock handlerBlock, Session session, TypeInference typeInference) {
 
         SSAGetCaughtExceptionInstruction catchInstr = handlerBlock.getCatchInstruction();
         if(catchInstr == null)
@@ -841,7 +895,7 @@ public class WalaFactWriter {
         while(excTypes.hasNext())
         {
             TypeReference excType = excTypes.next();
-            String insn = _rep.handler(m, catchInstr, excType, session);
+            String insn = _rep.handler(m, catchInstr, excType, session,0);
             _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex + 1));
             if(prev != null)
                 _db.add(EXCEPT_HANDLER_PREV, insn, prev);

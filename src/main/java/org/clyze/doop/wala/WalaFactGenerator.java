@@ -5,10 +5,12 @@ import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.ShrikeBTMethod;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
+import com.ibm.wala.shrikeBT.ExceptionHandler;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.TypeReference;
@@ -189,16 +191,35 @@ class WalaFactGenerator implements Runnable {
         SSACFG cfg = ir.getControlFlowGraph();
         TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
         SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
+        ShrikeBTMethod shrikeMethod = (ShrikeBTMethod) m;
+        ExceptionHandler[][] exceptionHandlers = null;
+        try {
+            exceptionHandlers = shrikeMethod.getHandlers();
+        } catch (InvalidClassFileException e) {
+            e.printStackTrace();
+        }
+        WalaExceptionHelper walaExceptionHelper = new WalaExceptionHelper(instructions,exceptionHandlers);
 
-//        if(m.getDeclaringClass().getName().toString().contains("Locale$Builder")
-//                && m.getName().toString().contains("setLocale"))
+        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+            int start = basicBlock.getFirstInstructionIndex();
+            int end = basicBlock.getLastInstructionIndex();
+
+            for (int j = start; j <= end; j++) {
+                walaExceptionHelper.computeArraysForInstruction(j);
+            }
+        }
+
+
+//        if(m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package")
+//                && m.getName().toString().contains("loadManifest"))
 //            System.out.println("\n" + m.getDeclaringClass().getName().toString() + " " + m.getName().toString());
 //
 //        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
 //            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
 //            List <ISSABasicBlock> excSuccs = cfg.getExceptionalSuccessors(basicBlock);
-//            if(m.getDeclaringClass().getName().toString().contains("Locale$Builder")
-//                    && m.getName().toString().contains("setLocale"))
+//            if(m.getName().toString().equals("loadManifest")
+//                    && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
 //                for(ISSABasicBlock excSucc : excSuccs)
 //                    if(excSucc.getNumber() != cfg.exit().getNumber())
 //                        System.out.println("\tBB" +basicBlock.getNumber() + " -> BB" + excSucc.getNumber());
@@ -207,8 +228,8 @@ class WalaFactGenerator implements Runnable {
 //        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
 //            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
 //            Collection<ISSABasicBlock> excPredecs = cfg.getExceptionalPredecessors(basicBlock);
-//            if(m.getDeclaringClass().getName().toString().contains("Locale$Builder")
-//                    && m.getName().toString().contains("setLocale"))
+//            if(m.getName().toString().equals("loadManifest")
+//                    && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
 //                for(ISSABasicBlock excPred : excPredecs)
 //                    if(basicBlock.getNumber() != cfg.exit().getNumber())
 //                        System.out.println("\tBB" +basicBlock.getNumber() + " <- BB" + excPred.getNumber());
@@ -320,7 +341,6 @@ class WalaFactGenerator implements Runnable {
             while(pis.hasNext())
             {
                 SSAPiInstruction piInstruction = pis.next();
-
             }
 
 
@@ -330,7 +350,7 @@ class WalaFactGenerator implements Runnable {
                     continue;
                 }
                 generateDefs(m,ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(),session, typeInference);
-                _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference);
+                _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference, walaExceptionHelper);
                 if (previousHandlerBlock != null) {
                     _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock) basicBlock, previousHandlerBlock, session);
                 }
@@ -352,6 +372,38 @@ class WalaFactGenerator implements Runnable {
                     generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
                 }
             }
+        }
+
+        int[][] exceArrays = walaExceptionHelper.exceArrays;
+        String[][] exceTypeArrays = walaExceptionHelper.exceTypeArrays;
+        HashSet<Integer> done = new HashSet<>();
+
+        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+            int start = basicBlock.getFirstInstructionIndex();
+            int end = basicBlock.getLastInstructionIndex();
+
+            for (int j = start; j <= end; j++) {
+                if(instructions[j] != null)
+                {
+                    if(m.getName().toString().equals("loadManifest") && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package")) {
+                        System.out.println(session.getInstructionNumber(instructions[j]) + " " + instructions[j].toString(ir.getSymbolTable()));
+                        for (int k = 0; k < exceArrays[j].length ; k++) {
+                            System.out.print(exceArrays[j][k] +" - " + exceTypeArrays[j][k] + ", ");
+                            if(!done.contains(exceArrays[j][k]))
+                                done.add(exceArrays[j][k]);
+                        }
+                        System.out.print("\n");
+                    }
+                }
+            }
+        }
+        for(int excHandler : done)
+        {
+            Integer[] scope = walaExceptionHelper.computeScopeForExceptionHandler(excHandler);
+            System.out.println("scope of " + excHandler);
+            for(int i=0; i < scope.length ; i+=2)
+                System.out.println("(" + scope[i] + " - " + scope[i+1] + ")");
         }
     }
 
@@ -716,5 +768,25 @@ class WalaFactGenerator implements Runnable {
                 return i;
         }
         return -1;
+    }
+
+    int[] handlersToArray(ExceptionHandler[] handlers)
+    {
+        int[] targetsArray = new int[handlers.length];
+        for(int i=0; i < handlers.length ; i++)
+        {
+            targetsArray[i] = handlers[i].getHandler();
+        }
+        return targetsArray;
+    }
+
+    String[] handlersStringArray(ExceptionHandler[] handlers)
+    {
+        String[] targetsArray = new String[handlers.length];
+        for(int i=0; i < handlers.length ; i++)
+        {
+            targetsArray[i] = handlers[i].getCatchClass();
+        }
+        return targetsArray;
     }
 }
