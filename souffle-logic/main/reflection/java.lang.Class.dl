@@ -417,6 +417,7 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
   basic.SupertypeOf(?superClass, ?type),
   Field_DeclaringType(?signature, ?superClass),
   Field_Modifier("public", ?signature).
+ .plan 2:(4,5,1,2,3,6,7,8,9)
 
 // If it is a local and precise string, consider it a high-confidence inference
 .decl ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)

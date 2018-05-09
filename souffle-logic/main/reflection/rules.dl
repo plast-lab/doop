@@ -439,6 +439,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   Var_Type(?this, ?varType),
   Value_Type(?value, ?valueType),
   basic.SupertypeOf(?varType, ?valueType).
+ // REVIEW: need plan, when we start using it
 #else
 /** This VarPointsTo is ok **/
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
@@ -454,6 +455,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   Var_Type(?this, ?thisType),
   Value_Type(?value, ?valueType),
   basic.SupertypeOf(?thisType, ?valueType).
+ .plan 3:(6,2,1,3,4,5,7)
 #endif
 
 
