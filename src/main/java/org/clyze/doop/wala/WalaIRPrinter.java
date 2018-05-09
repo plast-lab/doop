@@ -149,7 +149,7 @@ public class WalaIRPrinter {
             while(phis.hasNext())
             {
                 SSAPhiInstruction phiInstruction = phis.next();
-                writer.write("\t\t"+"φ"+"\t" + phiInstruction.toString(symbolTable) + "\n");
+                writer.write("\t\t\t" + phiInstruction.toString(symbolTable) + "\n");
                 //System.out.println(phiInstruction.toString(symbolTable));
             }
             for (int j = start; j <= end; j++) {
@@ -162,7 +162,7 @@ public class WalaIRPrinter {
             while(pis.hasNext())
             {
                 SSAPiInstruction piInstruction = pis.next();
-                writer.write("\t\t"+"π"+"\t" + piInstruction.toString(symbolTable) + "\n");
+                writer.write("\t\t\t" + piInstruction.toString(symbolTable) + "\n");
                 //System.out.println(piInstruction.toString(symbolTable));
             }
         }
