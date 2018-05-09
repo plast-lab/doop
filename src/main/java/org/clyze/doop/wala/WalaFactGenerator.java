@@ -211,29 +211,29 @@ class WalaFactGenerator implements Runnable {
         }
 
 
-        if(m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package")
-                && m.getName().toString().contains("loadManifest"))
-            System.out.println("\n" + m.getDeclaringClass().getName().toString() + " " + m.getName().toString());
-
-        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
-            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
-            List <ISSABasicBlock> excSuccs = cfg.getExceptionalSuccessors(basicBlock);
-            if(m.getName().toString().equals("loadManifest")
-                    && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
-                for(ISSABasicBlock excSucc : excSuccs)
-                    if(excSucc.getNumber() != cfg.exit().getNumber())
-                        System.out.println("\tBB" +basicBlock.getNumber() + " -> BB" + excSucc.getNumber());
-        }
-
-        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
-            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
-            Collection<ISSABasicBlock> excPredecs = cfg.getExceptionalPredecessors(basicBlock);
-            if(m.getName().toString().equals("loadManifest")
-                    && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
-                for(ISSABasicBlock excPred : excPredecs)
-                    if(basicBlock.getNumber() != cfg.exit().getNumber())
-                        System.out.println("\tBB" +basicBlock.getNumber() + " <- BB" + excPred.getNumber());
-        }
+//        if(m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package")
+//                && m.getName().toString().contains("loadManifest"))
+//            System.out.println("\n" + m.getDeclaringClass().getName().toString() + " " + m.getName().toString());
+//
+//        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+//            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+//            List <ISSABasicBlock> excSuccs = cfg.getExceptionalSuccessors(basicBlock);
+//            if(m.getName().toString().equals("loadManifest")
+//                    && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
+//                for(ISSABasicBlock excSucc : excSuccs)
+//                    if(excSucc.getNumber() != cfg.exit().getNumber())
+//                        System.out.println("\tBB" +basicBlock.getNumber() + " -> BB" + excSucc.getNumber());
+//        }
+//
+//        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+//            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+//            Collection<ISSABasicBlock> excPredecs = cfg.getExceptionalPredecessors(basicBlock);
+//            if(m.getName().toString().equals("loadManifest")
+//                    && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
+//                for(ISSABasicBlock excPred : excPredecs)
+//                    if(basicBlock.getNumber() != cfg.exit().getNumber())
+//                        System.out.println("\tBB" +basicBlock.getNumber() + " <- BB" + excPred.getNumber());
+//        }
 
         for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
@@ -350,7 +350,7 @@ class WalaFactGenerator implements Runnable {
                     continue;
                 }
                 generateDefs(m,ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(),session, typeInference);
-                _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference);
+                _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference, walaExceptionHelper);
                 if (previousHandlerBlock != null) {
                     _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock) basicBlock, previousHandlerBlock, session);
                 }

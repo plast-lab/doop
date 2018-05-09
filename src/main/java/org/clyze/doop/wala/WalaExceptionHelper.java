@@ -87,6 +87,8 @@ public class WalaExceptionHelper {
             }
             previous = found;
         }
+        if(scopeArrayList.isEmpty())
+            return new Integer[0];
         Integer[] scopeArray = new Integer[scopeArrayList.size()];
         scopeArray = scopeArrayList.toArray(scopeArray);
         walaHandlerScopes.put(walaExceptionHandlerID,scopeArray);
