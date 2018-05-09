@@ -750,7 +750,7 @@ public class WalaFactWriter {
         }
 
 
-
+        String prev = null;
         for(int i=0; i < scopeArray.length; i+=2) {
             startInstr = instructions[scopeArray[i]];
             endInstr = instructions[scopeArray[i + 1]];
@@ -759,7 +759,6 @@ public class WalaFactWriter {
             session.calcInstructionNumber(endInstr);
             int endIndex = session.getInstructionNumber(endInstr);
             Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
-            String prev = null;
             if(m.getName().toString().equals("loadManifest") &&
                     m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
                 System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
