@@ -746,13 +746,10 @@ isMethod(?id) :-
   CallbackMethod(?id).
 
 // LayoutControl
-.decl _LayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
-.input _LayoutControl0(IO="file", filename="LayoutControl.facts", delimiter="\t")
-
+.input LayoutControl0(IO="file", filename="LayoutControl.facts", delimiter="\t")
 
 // SensitiveLayoutControl
-.decl _SensitiveLayoutControl0(?param1:NumConstant, ?param2:symbol, ?param3:symbol)
-.input _SensitiveLayoutControl0(IO="file", filename="SensitiveLayoutControl.facts", delimiter="\t")
+.input SensitiveLayoutControl0(IO="file", filename="SensitiveLayoutControl.facts", delimiter="\t")
 
 // FieldInitialValue
 .input FieldInitialValue(IO="file", filename="FieldInitialValue.facts", delimiter="\t")
