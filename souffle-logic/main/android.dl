@@ -128,14 +128,6 @@ ReachableContext(?ctx, ?meth) :-
   !FormalParam(_, ?meth, _),
   isImmutableContext(?ctx).
 
-// also class initializers
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
-  AndroidKeepClass(?class),
-  Method_DeclaringType(?meth, ?class),
-  Method_SimpleName(?meth, "<clinit>"),
-  isImmutableContext(?ctx).
-
 
 /**
  * Layout control objects
@@ -569,12 +561,19 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 
 // Attempt at a policy that yields a reasonable compromise between
 // precision and completeness: ask for real objects of a most-refined
-// subclass.
+// subclass, or of identical type to the declared one.
 .decl _NotMostRefinedType(?type:Type)
 _NotMostRefinedType(?type) :-
   ConcreteClass(?type),
   basic.SubtypeOf(?other, ?type),
   ?other != ?type.
+
+VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
+  FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
+  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?formalType).
+#ifndef X_CONTEXT_REMOVER
+ .plan 1:(2,1)
+#endif
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
@@ -832,7 +831,7 @@ UnobfuscatedMethod(?meth) :-
 ObfuscationOn() :-
   ?unobfCount = count : UnobfuscatedApplicationClass(_),
   ?allCount = count : ApplicationClass(_),
-  ?unobfCount < ?allCount / 5.
+  ?unobfCount < ?allCount / 2.
 
 // If obfuscation is on, then treat all unobfuscated method names as
 // entry points: the programmer probably had a "keep" specification for
