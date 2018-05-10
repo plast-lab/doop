@@ -3,7 +3,6 @@ package org.clyze.doop.wala;
 import com.ibm.wala.analysis.typeInference.JavaPrimitiveType;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.cfg.IBasicBlock;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.shrikeBT.ExceptionHandler;
@@ -486,7 +485,7 @@ public class WalaFactWriter {
         IClass targetClass = cha.lookupClass(f.getDeclaringClass());
         TypeReference typeRef = f.getDeclaringClass();
         if(targetClass == null)
-            System.out.println("NULL for " + f.toString() + " " + f.getDeclaringClass().toString());
+            System.out.println("Failed to find class: " + fixTypeString(f.getDeclaringClass().getName().toString()) + " in class hierarchy.");
         else
         {
             for(IField field: targetClass.getAllFields())
@@ -730,7 +729,6 @@ public class WalaFactWriter {
         SSAGetCaughtExceptionInstruction catchInstr = handlerBlock.getCatchInstruction();
         if(catchInstr == null)
         {
-            //System.out.println("NULL CATCH?");
             return;
         }
         SSACFG cfg = ir.getControlFlowGraph();
@@ -759,15 +757,15 @@ public class WalaFactWriter {
             session.calcInstructionNumber(endInstr);
             int endIndex = session.getInstructionNumber(endInstr);
             Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
-            if(m.getName().toString().equals("loadManifest") &&
-                    m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
+            if(m.getName().toString().equals("parseNetscapeCertChain") &&
+                    m.getDeclaringClass().getName().toString().contains("PKCS7"))
                 System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
                         scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
                         handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
             while (excTypes.hasNext()) {
                 TypeReference excType = excTypes.next();
                 String insn = _rep.handler(m, catchInstr, excType, session, i/2);
-                _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex + 1));
+                _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
                 if (prev != null)
                     _db.add(EXCEPT_HANDLER_PREV, insn, prev);
                 prev = insn;
@@ -1041,10 +1039,9 @@ public class WalaFactWriter {
 //
 //        }
         if(targetClass == null)
-            System.out.println("NULL for " + targetRef.toString() + " " + targetRef.getDeclaringClass().toString());
+            System.out.println("Failed to find class: "  + fixTypeString(targetRef.getDeclaringClass().getName().toString()) + " in class chierarchy.");
         else if( targetClass.isArrayClass())
         {
-            IClass supClass = targetClass.getSuperclass();
             //System.out.println("ArrayClass " +targetClass.getName().toString() + " is a child of " + supClass.getName().toString());
             for(IMethod meth: targetClass.getAllMethods()) {
                 if (meth.getName().toString().equals(targetRef.getName().toString())
@@ -1057,19 +1054,11 @@ public class WalaFactWriter {
             }
         }//else if(targetClass.isInterface())
         else {
-            logger.debug("------------------------------------------------");
-            logger.debug("Options for " + targetRef.toString() + " in " + targetClass.toString());
-
-            for (IMethod meth : targetClass.getAllMethods()) {
-                logger.debug(meth.getReference().toString());
-            }
-            logger.debug("------------------------------------------------");
             boolean foundAtFirst = false;
             for(IMethod meth: targetClass.getAllMethods()) {
                 if (meth.getName().toString().equals(targetRef.getName().toString())
                         && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
                 {
-                    logger.debug("\n Target found: " + meth.toString());
                     targetRef = meth.getReference();
                     foundAtFirst = true;
                     break;

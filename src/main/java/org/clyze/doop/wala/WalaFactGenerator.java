@@ -376,7 +376,6 @@ class WalaFactGenerator implements Runnable {
 
         int[][] exceArrays = walaExceptionHelper.exceArrays;
         String[][] exceTypeArrays = walaExceptionHelper.exceTypeArrays;
-        HashSet<Integer> done = new HashSet<>();
 
         for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
@@ -386,24 +385,16 @@ class WalaFactGenerator implements Runnable {
             for (int j = start; j <= end; j++) {
                 if(instructions[j] != null)
                 {
-                    if(m.getName().toString().equals("loadManifest") && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package")) {
+                    if(m.getName().toString().equals("parseNetscapeCertChain") &&
+                            m.getDeclaringClass().getName().toString().contains("PKCS7")) {
                         System.out.println(session.getInstructionNumber(instructions[j]) + " " + instructions[j].toString(ir.getSymbolTable()));
                         for (int k = 0; k < exceArrays[j].length ; k++) {
                             System.out.print(exceArrays[j][k] +" - " + exceTypeArrays[j][k] + ", ");
-                            if(!done.contains(exceArrays[j][k]))
-                                done.add(exceArrays[j][k]);
                         }
                         System.out.print("\n");
                     }
                 }
             }
-        }
-        for(int excHandler : done)
-        {
-            Integer[] scope = walaExceptionHelper.computeScopeForExceptionHandler(excHandler);
-            System.out.println("scope of " + excHandler);
-            for(int i=0; i < scope.length ; i+=2)
-                System.out.println("(" + scope[i] + " - " + scope[i+1] + ")");
         }
     }
 
@@ -624,7 +615,6 @@ class WalaFactGenerator implements Runnable {
                 typeRef = TypeReference.JavaLangObject;   // TODO: we don't know what type to give for TOP
             }
         }
-        if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("type is " + typeRef.toString());
         if (instruction.iindex != -1) {
             String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
             if (localNames != null) {
@@ -688,7 +678,6 @@ class WalaFactGenerator implements Runnable {
             if (use != -1 && symbolTable.isConstant(use)) {
                 Value v = symbolTable.getValue(use);
                 generateConstant(m, ir, instruction, v, l, session);
-                if(m.getName().toString().equals("nothing"))System.out.println("var v" + use + " is constant.");
             }
         }
     }
