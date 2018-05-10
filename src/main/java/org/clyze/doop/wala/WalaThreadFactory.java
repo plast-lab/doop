@@ -16,7 +16,7 @@ public class WalaThreadFactory {
     }
 
     Runnable newFactGenRunnable(Set<IClass> iClasses) {
-        return new WalaFactGenerator(_factWriter, iClasses, _outDir);
+        return new WalaFactGenerator(_factWriter, iClasses, _outDir, false);
     }
 
     public WalaFactWriter get_factWriter() {

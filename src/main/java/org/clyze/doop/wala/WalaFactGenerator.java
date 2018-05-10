@@ -3,6 +3,7 @@ package org.clyze.doop.wala;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
+import com.ibm.wala.dalvik.classLoader.DexIRFactory;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
@@ -32,14 +33,17 @@ class WalaFactGenerator implements Runnable {
     private IAnalysisCacheView cache;
     private WalaIRPrinter IRPrinter;
 
-    WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir)
+    WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir, boolean androidAnalysis)
     {
         this._writer = writer;
         this.logger = LogFactory.getLog(getClass());
         this._iClasses = iClasses;
         options = new AnalysisOptions();
         options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
-        cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
+        if(androidAnalysis)
+            cache = new AnalysisCacheImpl(new DexIRFactory());
+        else
+            cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
         //cache = new AnalysisCacheImpl(new DefaultIRFactory(), options.getSSAOptions()); //Change to this to make the IR according to the SSAOptions -- to include piNodes
         IRPrinter = new WalaIRPrinter(cache,outDir);
     }

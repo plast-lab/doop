@@ -43,7 +43,7 @@ class WalaDriver {
             _tmpClassGroup.add(iClasses.next());
         }
 
-        WalaFactGenerator factGenerator = new WalaFactGenerator(writer, _tmpClassGroup, outDir);
+        WalaFactGenerator factGenerator = new WalaFactGenerator(writer, _tmpClassGroup, outDir, false);
         //factGenerator.generate(dummyMain, new Session());
         //writer.writeAndroidEntryPoint(dummyMain);
         factGenerator.run();
