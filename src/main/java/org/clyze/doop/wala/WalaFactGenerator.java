@@ -2,10 +2,7 @@ package org.clyze.doop.wala;
 
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IField;
-import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.classLoader.ShrikeBTMethod;
+import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
@@ -191,10 +188,10 @@ class WalaFactGenerator implements Runnable {
         SSACFG cfg = ir.getControlFlowGraph();
         TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
         SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
-        ShrikeBTMethod shrikeMethod = (ShrikeBTMethod) m;
+        IBytecodeMethod bytecodeMethod = (IBytecodeMethod) m;
         ExceptionHandler[][] exceptionHandlers = null;
         try {
-            exceptionHandlers = shrikeMethod.getHandlers();
+            exceptionHandlers = bytecodeMethod.getHandlers();
         } catch (InvalidClassFileException e) {
             e.printStackTrace();
         }

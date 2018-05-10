@@ -815,7 +815,7 @@ public class WalaFactWriter {
             }
         }
 
-        ShrikeBTMethod shrikeMethod = (ShrikeBTMethod) m;
+        IBytecodeMethod shrikeMethod = (IBytecodeMethod) m;
         ExceptionHandler[][] exceptionHandlers = null;
         try {
             exceptionHandlers = shrikeMethod.getHandlers();
