@@ -2,7 +2,7 @@
 
 .init preAnalysis = BasicContextSensitivity<ContextInsensitiveConfiguration>
 
-.comp IntrospectiveConfiguration : AbstractConfiguration {
+.comp IntroAConfiguration : AbstractConfiguration {
            
 .type Context  = [ c1:mainAnalysis.Value, c2:mainAnalysis.Value ]
 .type HContext = [ value:mainAnalysis.Value ]
@@ -11,8 +11,6 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   Value_Type(?value, ?valuetype),
   basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
-  Method_DeclaringType(?tomethod, ?class),
-  !ClassToRefine(?class),
   !MethodToRefine(?tomethod),
   isImmutableContext(?calleeCtx).
   
@@ -20,9 +18,7 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   Value_Type(?value, ?valuetype),
   basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
-  ((Method_DeclaringType(?tomethod, ?class),
-    ClassToRefine(?class)) ;
-   MethodToRefine(?tomethod)),
+  MethodToRefine(?tomethod),
   ?hctx = [?hctxValue],
   ?calleeCtx = [?hctxValue, ?value].
 
@@ -30,8 +26,6 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   isSpecialMethodInvocation_Insn(?invo),
   MethodInvocation_Method(?invo, ?tomethod),
-  Method_DeclaringType(?tomethod, ?class),
-  !ClassToRefine(?class),
   !MethodToRefine(?tomethod),
   isImmutableContext(?calleeCtx).
 
@@ -39,15 +33,21 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   isSpecialMethodInvocation_Insn(?invo),
   MethodInvocation_Method(?invo, ?tomethod),
-  ((Method_DeclaringType(?tomethod, ?class),
-    ClassToRefine(?class)) ;
-   MethodToRefine(?tomethod)),  
+  MethodToRefine(?tomethod),  
   ?hctx = [?hctxValue],
   ?calleeCtx = [?hctxValue, ?value].
 
 StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
   StaticContextRequest(?callerCtx, ?invo),
+  MethodInvocation_Method(?invo, ?tomethod),
+  MethodToRefine(?tomethod),
   ?calleeCtx = ?callerCtx.
+
+StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+  StaticContextRequest(?callerCtx, ?invo),
+  MethodInvocation_Method(?invo, ?tomethod),
+  !MethodToRefine(?tomethod),
+  isImmutableContext(?calleeCtx).
 
 RecordContextResponse(?ctx, ?value, ?arg, ?hctx) :-
   RecordContextRequest(?ctx, ?value, ?arg),      
@@ -146,9 +146,9 @@ InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value) :-
 
 .decl InOutFlowDirectTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)
 InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?value1) :-
-  InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value1),
-  InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value2),
-  ?value1 != ?value2.
+  InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value1).
+  // InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value2),
+  // ?value1 != ?value2.
 
 .decl MethodTaintedByDirectFlow(?method:Method)
 MethodTaintedByDirectFlow(?method) :-
@@ -183,9 +183,9 @@ InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value) :-
 
 .decl InOutFlowWrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)
 InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod, ?value1) :-
-  InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value1),
-  InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value2),
-  ?value1 != ?value2.
+   InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value1).
+  // InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value2),
+  // ?value1 != ?value2.
 
 /**
  * Unwrapped in out flow:
