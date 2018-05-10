@@ -54,7 +54,7 @@ OUTPUT_STATS(Stats_Simple_Application_InstanceFieldPointsTo)
  ***************************************************/
 
 .decl Stats_Simple_InsensCallGraphEdge(?from:MethodInvocation, ?to:Method)
-OUTPUT_STATS(Stats_Simple_InsensCallGraphEdge)
+OUTPUT_STATS_DEFAULT(Stats_Simple_InsensCallGraphEdge)
 
 .decl Stats_Simple_VirtualCallGraphEdge(?from:MethodInvocation, ?to:Method)
 OUTPUT_STATS(Stats_Simple_VirtualCallGraphEdge)
@@ -219,8 +219,8 @@ OUTPUT_STATS(Stats_Simple_InsensDynamicArrayIndexPointsTo)
 
 .decl Stats_Simple_Application_DynamicReachableMethod(?method:Method)
 OUTPUT_STATS(Stats_Simple_Application_DynamicReachableMethod)
-OUTPUT_STATS(DynamicReachableMethod)
+OUTPUT_STATS_DEFAULT(DynamicReachableMethod)
 
 .decl Stats_Simple_InsensDynamicCallGraphEdge(?fromMeth:Method, ?invocation:MethodInvocation, ?toMeth:Method)
-OUTPUT_STATS(Stats_Simple_InsensDynamicCallGraphEdge)
+OUTPUT_STATS_DEFAULT(Stats_Simple_InsensDynamicCallGraphEdge)
 #endif
