@@ -182,3 +182,9 @@ _ValueAsReceiver(?value, ?invo) :-
 Metrics_Value_AsReceiver_Count(?value, ?n) :-
   _ValueAsReceiver(?value, _),
   ?n = count:{_ValueAsReceiver(?value, _)}.
+
+.decl VPTCountPerVar(?var:Var, ?n:number)
+
+VPTCountPerVar(?var, Y) :- isVar(?var), Y =  count : mainAnalysis.VarPointsTo(_, _, _, ?var), Y > 0.
+
+.output VPTCountPerVar

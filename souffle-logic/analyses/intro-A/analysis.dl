@@ -101,6 +101,16 @@ ValuePointsTo(?baseValue, ?value) :-
 // ValuePointsTo(?baseValue, ?value) :-
 //   ValuePointsTo(?value1, ?value),
 //   preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue).
+.decl ArgPointsToTooManyValues(?arg:Var, ?method:Method)
+ArgPointsToTooManyValues(?arg, ?method) :-
+   FormalParam(_, ?method, ?arg),
+   VPTCountPerVar(?arg, ?n),
+   ?n > 100.
+
+ArgPointsToTooManyValues(?arg, ?method) :-
+   ThisVar(?method, ?arg),
+   VPTCountPerVar(?arg, ?n),
+   ?n > 100.
 
 .decl ArgPointsTo(?arg:Var, ?method:Method, ?value:Value)
 ArgPointsTo(?arg, ?method, ?value) :-
@@ -134,12 +144,19 @@ ClassRetPointsTo(?class, ?value) :-
   ConcreteMethodDeclared(?method, ?class).
 */
 
+
+.decl MethodValuePair(?inMethod:Method, ?argValue:Value, ?outMethod:Method, ?retValue:Value)
+MethodValuePair(?inMethod, ?argValue, ?outMethod, ?retValue) :-
+   !ArgPointsToTooManyValues(_, ?inMethod),
+   ArgPointsTo(_, ?inMethod, ?argValue),    
+   MethodsOfSameOrSuperType(?inMethod, ?outMethod),
+   RetPointsTo(_, ?outMethod, ?retValue).
+
 /** Direct in out flow:
  *
  *   arg -> value
  *   ret -> value
  */
-
 .decl InOutFlowDirectValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)
 InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value) :-
    MethodValuePair(?inMethod, ?value, ?outMethod, ?value).
@@ -168,13 +185,7 @@ MethodTaintedByWrappedFlow(?method) :-
  *
  * arg -> value
  * ret -> ... -> ... -> value
- */
-.decl MethodValuePair(?inMethod:Method, ?argValue:Value, ?outMethod:Method, ?retValue:Value)
-MethodValuePair(?inMethod, ?argValue, ?outMethod, ?retValue) :-
-   ArgPointsTo(_, ?inMethod, ?argValue),    
-   MethodsOfSameOrSuperType(?inMethod, ?outMethod),
-   RetPointsTo(_, ?outMethod, ?retValue).
-   
+ */   
 .decl InOutFlowWrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value) 
 InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value) :-
   MethodValuePair(?inMethod, ?value, ?outMethod, ?baseValue),
@@ -267,6 +278,11 @@ MethodToRefine(?method) :-
 
 .printsize isMethod      
 .printsize MethodToRefine
+
+.decl VPTCountPerVar(?var:Var, ?n:number)
+
+VPTCountPerVar(?var, Y) :- isVar(?var), Y =  count : preAnalysis.VarPointsTo(_, _, _, ?var), Y > 0.
+
 
 
 /** Direct in out flow:
