@@ -815,10 +815,10 @@ public class WalaFactWriter {
             }
         }
 
-        IBytecodeMethod shrikeMethod = (IBytecodeMethod) m;
+        IBytecodeMethod bytecodeMethod = (IBytecodeMethod) m;
         ExceptionHandler[][] exceptionHandlers = null;
         try {
-            exceptionHandlers = shrikeMethod.getHandlers();
+            exceptionHandlers = bytecodeMethod.getHandlers();
         } catch (InvalidClassFileException e) {
             e.printStackTrace();
         }

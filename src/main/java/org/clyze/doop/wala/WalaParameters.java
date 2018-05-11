@@ -13,6 +13,8 @@ public class WalaParameters {
     ClassFilter applicationClassFilter;
     String appRegex = "**";
     Integer _cores = null;
+    boolean _android = false;
+    String _androidJars = null;
 
     public void setInputs(List<String> inputs) {
         this._inputs = inputs;

@@ -56,6 +56,12 @@ public class WalaInvoker {
 
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
+                    case "--android-jars":
+                        i = shift(args, i);
+                        //walaParameters._allowPhantom = true;
+                        walaParameters._android = true;
+                        walaParameters._androidJars = args[i];
+                        break;
                     case "-i":
                         i = shift(args, i);
                         walaParameters._inputs.add(args[i]);
@@ -125,15 +131,12 @@ public class WalaInvoker {
         } catch (ClassHierarchyException e) {
             e.printStackTrace();
         }
-        // Set up options which govern analysis choices.  In particular, we will use all Pi nodes when
-        // building the IR.
 
-        // Create an object which caches IRs and related information, reconstructing them lazily on demand.
         assert cha != null;
-        Iterator<IClass> classes = cha.iterator();      //IMethod m ;
+        Iterator<IClass> classes = cha.iterator();
         Database db = new Database(new File(walaParameters._outputDir), false);
         WalaFactWriter walaFactWriter = new WalaFactWriter(db);
-        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir);
+        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 
         logger.debug("Number of classes: " + cha.getNumberOfClasses());
 
@@ -147,7 +150,7 @@ public class WalaInvoker {
             classesSet.add(klass);
         }
 
-        WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), false, walaParameters._cores);
+        WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), false, walaParameters._cores, walaParameters._android);
         driver.doInParallel(classesSet);
         driver.shutdown();
         db.flush();

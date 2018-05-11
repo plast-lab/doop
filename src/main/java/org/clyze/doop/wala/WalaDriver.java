@@ -11,6 +11,7 @@ class WalaDriver {
 
     private WalaThreadFactory _factory;
     private boolean _generateJimple;
+    private boolean _android;
 
     private ExecutorService _executor;
     private int _classCounter;
@@ -18,12 +19,13 @@ class WalaDriver {
     private int _totalClasses;
 
     WalaDriver(WalaThreadFactory factory, int totalClasses, boolean generateJimple,
-           Integer cores) {
+           Integer cores, boolean android) {
         _factory = factory;
         _classCounter = 0;
         _tmpClassGroup = new HashSet<>();
         _totalClasses = totalClasses;
         _generateJimple = generateJimple;
+        _android = android;
         int _cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
 
         System.out.println("Fact generation cores: " + _cores);
@@ -43,7 +45,7 @@ class WalaDriver {
             _tmpClassGroup.add(iClasses.next());
         }
 
-        WalaFactGenerator factGenerator = new WalaFactGenerator(writer, _tmpClassGroup, outDir, false);
+        WalaFactGenerator factGenerator = new WalaFactGenerator(writer, _tmpClassGroup, outDir, _android);
         //factGenerator.generate(dummyMain, new Session());
         //writer.writeAndroidEntryPoint(dummyMain);
         factGenerator.run();
