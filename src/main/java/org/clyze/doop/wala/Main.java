@@ -45,6 +45,12 @@ public class Main {
 
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
+                    case "--android-jars":
+                        i = shift(args, i);
+                        //walaParameters._allowPhantom = true;
+                        walaParameters._android = true;
+                        walaParameters._androidJars = args[i];
+                        break;
                     case "-i":
                         i = shift(args, i);
                         walaParameters._inputs.add(args[i]);
@@ -108,14 +114,9 @@ public class Main {
 
         System.out.println("WALA classpath:" + classPath);
 
-        //String walaLibraries[] = WalaProperties.getJ2SEJarFiles();
-        //System.out.println("Java libraries loaded by WALA automatically: ");
-        //for(int i =0 ; i< walaLibraries.length ; i++)
-        //    System.out.println(walaLibraries[i]);
-
-        //AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
-        AnalysisScope scope = WalaScopeReader.makeScope(classPath, null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+        // Build a class hierarchy representing all classes to analyze.  This step will read the class
         // files and organize them into a tree.
+        AnalysisScope scope = WalaScopeReader.makeScope(classPath, null, walaParameters._javaPath);
 
         ClassHierarchy cha = null;
         try {
@@ -123,17 +124,13 @@ public class Main {
         } catch (ClassHierarchyException e) {
             e.printStackTrace();
         }
-        // Set up options which govern analysis choices.  In particular, we will use all Pi nodes when
-        // building the IR.
 
-        // Create an object which caches IRs and related information, reconstructing them lazily on demand.
-        Iterator<IClass> classes = cha.iterator();      //IMethod m ;
+        Iterator<IClass> classes = cha.iterator();
         Database db = new Database(new File(walaParameters._outputDir), false);
         WalaFactWriter walaFactWriter = new WalaFactWriter(db);
-        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir);
+        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
-        //driver.doInParallel(classes);
 
         IClass klass;
         int totalClasses = 0;
@@ -147,10 +144,8 @@ public class Main {
             classesSet.add(klass);
         }
 
-        WalaDriver driver = new WalaDriver(walaThreadFactory, totalClasses, false, walaParameters._cores);
+        WalaDriver driver = new WalaDriver(walaThreadFactory, totalClasses, false, walaParameters._cores, walaParameters._android);
 
-
-        classes = cha.iterator();
         driver.doInParallel(classesSet);
         driver.shutdown();
         db.flush();

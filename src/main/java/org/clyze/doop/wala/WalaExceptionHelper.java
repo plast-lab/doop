@@ -12,11 +12,11 @@ public class WalaExceptionHelper {
     String[][] exceTypeArrays;
     SSAInstruction[] instructions;
     Map<Integer,Integer[]> walaHandlerScopes;
-    ExceptionHandler[][] shrikeExceptionHandlers;
+    ExceptionHandler[][] walaExceptionHandlers;
 
-    public WalaExceptionHelper(SSAInstruction[] instrs, ExceptionHandler[][] shrikeExcHandlers)
+    public WalaExceptionHelper(SSAInstruction[] instrs, ExceptionHandler[][] walaExcHandlers)
     {
-        shrikeExceptionHandlers = shrikeExcHandlers;
+        walaExceptionHandlers = walaExcHandlers;
         instructions = instrs;
         exceArrays = new int[instructions.length][];
         exceTypeArrays = new String[instructions.length][];
@@ -47,8 +47,8 @@ public class WalaExceptionHelper {
     {
         if(instructions[instrIndex] != null)
         {
-            exceArrays[instrIndex] = handlersToArray(shrikeExceptionHandlers[instrIndex]);
-            exceTypeArrays[instrIndex] = handlersStringArray(shrikeExceptionHandlers[instrIndex]);
+            exceArrays[instrIndex] = handlersToArray(walaExceptionHandlers[instrIndex]);
+            exceTypeArrays[instrIndex] = handlersStringArray(walaExceptionHandlers[instrIndex]);
         }
         else
         {

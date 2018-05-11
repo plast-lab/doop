@@ -2,10 +2,8 @@ package org.clyze.doop.wala;
 
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IField;
-import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.classLoader.ShrikeBTMethod;
+import com.ibm.wala.classLoader.*;
+import com.ibm.wala.dalvik.classLoader.DexIRFactory;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
@@ -35,14 +33,17 @@ class WalaFactGenerator implements Runnable {
     private IAnalysisCacheView cache;
     private WalaIRPrinter IRPrinter;
 
-    WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir)
+    WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir, boolean androidAnalysis)
     {
         this._writer = writer;
         this.logger = LogFactory.getLog(getClass());
         this._iClasses = iClasses;
         options = new AnalysisOptions();
         options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
-        cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
+        if(androidAnalysis)
+            cache = new AnalysisCacheImpl(new DexIRFactory());
+        else
+            cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
         //cache = new AnalysisCacheImpl(new DefaultIRFactory(), options.getSSAOptions()); //Change to this to make the IR according to the SSAOptions -- to include piNodes
         IRPrinter = new WalaIRPrinter(cache,outDir);
     }
@@ -191,10 +192,10 @@ class WalaFactGenerator implements Runnable {
         SSACFG cfg = ir.getControlFlowGraph();
         TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
         SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
-        ShrikeBTMethod shrikeMethod = (ShrikeBTMethod) m;
+        IBytecodeMethod bytecodeMethod = (IBytecodeMethod) m;
         ExceptionHandler[][] exceptionHandlers = null;
         try {
-            exceptionHandlers = shrikeMethod.getHandlers();
+            exceptionHandlers = bytecodeMethod.getHandlers();
         } catch (InvalidClassFileException e) {
             e.printStackTrace();
         }
@@ -376,7 +377,6 @@ class WalaFactGenerator implements Runnable {
 
         int[][] exceArrays = walaExceptionHelper.exceArrays;
         String[][] exceTypeArrays = walaExceptionHelper.exceTypeArrays;
-        HashSet<Integer> done = new HashSet<>();
 
         for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
@@ -386,24 +386,16 @@ class WalaFactGenerator implements Runnable {
             for (int j = start; j <= end; j++) {
                 if(instructions[j] != null)
                 {
-                    if(m.getName().toString().equals("loadManifest") && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package")) {
+                    if(m.getName().toString().equals("parseNetscapeCertChain") &&
+                            m.getDeclaringClass().getName().toString().contains("PKCS7")) {
                         System.out.println(session.getInstructionNumber(instructions[j]) + " " + instructions[j].toString(ir.getSymbolTable()));
                         for (int k = 0; k < exceArrays[j].length ; k++) {
                             System.out.print(exceArrays[j][k] +" - " + exceTypeArrays[j][k] + ", ");
-                            if(!done.contains(exceArrays[j][k]))
-                                done.add(exceArrays[j][k]);
                         }
                         System.out.print("\n");
                     }
                 }
             }
-        }
-        for(int excHandler : done)
-        {
-            Integer[] scope = walaExceptionHelper.computeScopeForExceptionHandler(excHandler);
-            System.out.println("scope of " + excHandler);
-            for(int i=0; i < scope.length ; i+=2)
-                System.out.println("(" + scope[i] + " - " + scope[i+1] + ")");
         }
     }
 
@@ -624,7 +616,6 @@ class WalaFactGenerator implements Runnable {
                 typeRef = TypeReference.JavaLangObject;   // TODO: we don't know what type to give for TOP
             }
         }
-        if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("type is " + typeRef.toString());
         if (instruction.iindex != -1) {
             String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
             if (localNames != null) {
@@ -688,7 +679,6 @@ class WalaFactGenerator implements Runnable {
             if (use != -1 && symbolTable.isConstant(use)) {
                 Value v = symbolTable.getValue(use);
                 generateConstant(m, ir, instruction, v, l, session);
-                if(m.getName().toString().equals("nothing"))System.out.println("var v" + use + " is constant.");
             }
         }
     }

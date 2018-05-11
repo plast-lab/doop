@@ -1,10 +1,7 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IField;
-import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.classLoader.ShrikeClass;
+import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ssa.*;
@@ -12,7 +9,6 @@ import com.ibm.wala.types.TypeReference;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
@@ -33,7 +29,7 @@ public class WalaIRPrinter {
     void printIR(IClass cl)
     {
 //        PrintWriter writerOut = new PrintWriter(new EscapedWriter(new OutputStreamWriter((OutputStream)streamOut)));
-        ShrikeClass shrikeClass = (ShrikeClass) cl;
+        BytecodeClass bytecodeClass = (BytecodeClass) cl;
         String fileName = _outputDir + "/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
         File file = new File(fileName);
         file.getParentFile().getParentFile().mkdirs();
@@ -44,15 +40,15 @@ public class WalaIRPrinter {
         Collection<IClass> interfaces =  cl.getAllImplementedInterfaces();
         try {
             PrintWriter printWriter = new PrintWriter(file);
-            if(shrikeClass.isPublic())
+            if(bytecodeClass.isPublic())
                 printWriter.write("public ");
-            else if(shrikeClass.isPrivate())
+            else if(bytecodeClass.isPrivate())
                 printWriter.write("private ");
 
-            if(shrikeClass.isAbstract())
+            if(bytecodeClass.isAbstract())
                 printWriter.write("abstract ");
 
-            if(shrikeClass.isInterface())
+            if(bytecodeClass.isInterface())
                 printWriter.write("interface ");
             else
                 printWriter.write("class ");
