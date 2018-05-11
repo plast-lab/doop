@@ -1196,7 +1196,6 @@ public class WalaFactWriter {
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
-        _db.add(ASSIGN_OPER_TYPE, insn, instruction.getOperator().toString());
 
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
@@ -1209,7 +1208,6 @@ public class WalaFactWriter {
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
-        _db.add(ASSIGN_OPER_TYPE, insn, instruction.getOperator().toString());
 
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
@@ -1223,9 +1221,6 @@ public class WalaFactWriter {
 
         _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), methodId);
 
-        if (instruction.getOpcode().toString().equals("neg") )
-            _db.add(ASSIGN_OPER_TYPE, insn, " !");
-
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, from));
     }
 
@@ -1235,7 +1230,6 @@ public class WalaFactWriter {
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), methodId);
-        _db.add(ASSIGN_OPER_TYPE, insn, " length ");
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, from));
     }
 

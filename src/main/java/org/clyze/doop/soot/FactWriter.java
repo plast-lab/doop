@@ -901,7 +901,6 @@ public class FactWriter {
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
-        _db.add(ASSIGN_OPER_TYPE, insn, right.getSymbol());
 
         if (right.getOp1() instanceof Local) {
             Local op1 = (Local) right.getOp1();
@@ -920,13 +919,6 @@ public class FactWriter {
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, left), methodId);
-
-        if (right instanceof LengthExpr) {
-            _db.add(ASSIGN_OPER_TYPE, insn, " length ");
-        }
-        else if (right instanceof NegExpr) {
-            _db.add(ASSIGN_OPER_TYPE, insn, " !");
-        }
 
         if (right.getOp() instanceof Local) {
             Local op = (Local) right.getOp();

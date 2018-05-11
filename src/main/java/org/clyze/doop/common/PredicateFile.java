@@ -67,7 +67,6 @@ public enum PredicateFile
     ASSIGN_BINOP("AssignBinop"),
     ASSIGN_UNOP("AssignUnop"),
     ASSIGN_OPER_FROM("AssignOperFrom"),
-    ASSIGN_OPER_TYPE("AssignOperType"),
     SPECIAL_METHOD_INV("SpecialMethodInvocation"),
     IF_VAR("IfVar"),
     VIRTUAL_METHOD_INV("VirtualMethodInvocation"),

@@ -153,15 +153,6 @@ AssignOper_From(?instruction, ?from) :-
   _AssignOperFrom(?instruction, ?from).
 
 
-// AssignOperType
-
-.decl _AssignOperType(?instruction:symbol, ?type:symbol)
-.input _AssignOperType(IO="file", filename="AssignOperType.facts", delimiter="\t")
-
-AssignOper_Type(?instruction, ?type) :-
-  _AssignOperType(?instruction, ?type).
-
-
 // IfVar
 
 .decl _IfVar(?instruction:symbol, ?var:symbol)
