@@ -171,12 +171,12 @@ class FactGenerator implements Runnable {
 
     void generate(SootMethod m, Session session)
     {
+        _writer.writeMethod(m);
+
         if (phantomBased(m)) {
             //m.setPhantom(true);
             return;
         }
-
-        _writer.writeMethod(m);
 
         int modifiers = m.getModifiers();
         if(Modifier.isAbstract(modifiers))
