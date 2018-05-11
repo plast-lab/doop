@@ -161,6 +161,20 @@ public class FactWriter {
         return result;
     }
 
+    void writePhantomType(Type t) {
+        _db.add(PHANTOM_TYPE, writeType(t));
+    }
+
+    void writePhantomMethod(SootMethod m) {
+        String sig = writeMethod(m);
+        _db.add(PHANTOM_METHOD, sig);
+    }
+
+    void writePhantomBasedMethod(SootMethod m) {
+        String sig = writeMethod(m);
+        _db.add(PHANTOM_BASED_METHOD, sig);
+    }
+
     void writeEnterMonitor(SootMethod m, Stmt stmt, Local var, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);

@@ -789,3 +789,11 @@ isAnnotation(?annotation) :-
     Method_Annotation(?meth, ?annotation);
     Field_Annotation(?field, ?annotation);
     Param_Annotation(?meth, ?i, ?annotation).
+
+// Phantom types/methods and phantom-based methods.
+.decl PhantomType(?t:Type)
+.input PhantomType(IO="file", filename="PhantomType.facts", delimiter="\t")
+.decl PhantomMethod(?m:Method)
+.input PhantomMethod(IO="file", filename="PhantomMethod.facts", delimiter="\t")
+.decl PhantomBasedMethod(?m:Method)
+.input PhantomBasedMethod(IO="file", filename="PhantomBasedMethod.facts", delimiter="\t")

@@ -1,0 +1,50 @@
+// Consider phantom types to be indications of dead code. The
+// following rules compute possible dead methods/types.
+
+.decl DeadInstruction(?i:Instruction)
+.output DeadInstruction
+
+// An instruction is dead if it involves a phantom type.
+
+DeadInstruction(?instruction) :-
+  AssignHeapAllocation_Heap(?instruction, ?heap),
+  HeapAllocation_Type(?heap, ?pt),
+  PhantomType(?pt).
+
+DeadInstruction(?instruction) :-
+  (AssignCast_Type(?instruction, ?pt);
+   AssignInstanceOf_Type(?instruction, ?type)),
+  PhantomType(?pt).
+
+DeadInstruction(?instruction) :-
+  MethodInvocation_Method(?instruction, ?method),
+  Method_DeclaringType(?method, ?pt),
+  PhantomType(?pt).
+
+// A method invocation instruction is dead if it calls a dead method.
+
+DeadInstruction(?instruction) :-
+  MethodInvocation_Method(?instruction, ?method),
+  DeadMethod(?method).
+
+.decl DeadMethod(?m:Method)
+.output DeadMethod
+
+// A method is dead if it contains a dead instruction or is
+// phantom-based (i.e. the method signature contains a phantom type).
+DeadMethod(?m) :- Instruction_Method(?i, ?m), DeadInstruction(?i).
+DeadMethod(?m) :- PhantomBasedMethod(?m).
+
+.decl DeadType(?type:Type)
+.output DeadType
+
+// Dead types contain field or method signatures involving phantom types.
+
+DeadType(?type) :-
+  Field_DeclaringType(?sig, ?type),
+  Field_Type(?sig, ?pt),
+  PhantomType(?pt).
+
+DeadType(?type) :-
+  PhantomBasedMethod(?m),
+  Method_DeclaringType(?m, ?type).

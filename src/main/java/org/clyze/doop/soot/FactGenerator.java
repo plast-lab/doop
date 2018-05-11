@@ -131,49 +131,58 @@ class FactGenerator implements Runnable {
 
 
     /* Check if a Type refers to a phantom class */
-    private static boolean phantomBased(Type t) {
+    private boolean isPhantom(Type t) {
+        boolean isPhantom = false;
         if (t instanceof RefLikeType) {
             if (t instanceof RefType)
-                return ((RefType) t).getSootClass().isPhantom();
+                isPhantom = ((RefType) t).getSootClass().isPhantom();
             else if (t instanceof ArrayType)
-                return phantomBased(((ArrayType) t).getElementType());
+                isPhantom = isPhantom(((ArrayType) t).getElementType());
         }
-        return false;
+        if (isPhantom)
+            _writer.writePhantomType(t);
+        return isPhantom;
     }
 
-    public static boolean phantomBased(SootMethod m) {
+    public boolean isPhantomBased(SootMethod m) {
         /* Check for phantom classes */
 
         if (m.isPhantom()) {
             System.out.println("Method " + m.getSignature() + " is phantom.");
+            _writer.writePhantomMethod(m);
             return true;
         }
 
+        boolean isPhantomBased = false;
+
         for(SootClass clazz: m.getExceptions())
-            if (clazz.isPhantom()) {
+            if (isPhantom(clazz.getType())) {
                 System.out.println("Class " + clazz.getName() + " is phantom.");
-                return true;
+                isPhantomBased = true;
             }
 
         for(int i = 0 ; i < m.getParameterCount(); i++)
-            if(phantomBased(m.getParameterType(i))) {
+            if(isPhantom(m.getParameterType(i))) {
                 System.out.println("Parameter type " + m.getParameterType(i) + " of " + m.getSignature() + " is phantom.");
-                return true;
+                isPhantomBased = true;
             }
 
-        if (phantomBased(m.getReturnType())) {
+        if (isPhantom(m.getReturnType())) {
             System.out.println("Return type " + m.getReturnType() + " of " + m.getSignature() + " is phantom.");
-            return true;
+            isPhantomBased = true;
         }
 
-        return false;
+        if (isPhantomBased)
+            _writer.writePhantomBasedMethod(m);
+
+        return isPhantomBased;
     }
 
     void generate(SootMethod m, Session session)
     {
         _writer.writeMethod(m);
 
-        if (phantomBased(m)) {
+        if (isPhantomBased(m)) {
             //m.setPhantom(true);
             return;
         }
