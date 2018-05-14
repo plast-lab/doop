@@ -889,16 +889,30 @@ public class FactWriter {
             _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
         }
         else if (expr instanceof DynamicInvokeExpr) {
-            DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
-            SootMethodRef dynInfo = di.getMethodRef();
-            String dynArity = String.valueOf(dynInfo.parameterTypes().size());
-            _db.add(DYNAMIC_METHOD_INV, insn, str(index), _rep.signature(di.getBootstrapMethodRef().resolve()), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynInfo.parameterTypes().toString(), methodId);
+            writeDynamicInvoke((DynamicInvokeExpr)expr, index, insn, methodId);
         }
         else {
             throw new RuntimeException("Cannot handle invoke expr: " + expr);
         }
 
         return insn;
+    }
+
+    private String getBootstrapSig(DynamicInvokeExpr di) {
+        SootMethodRef bootstrapMeth = di.getBootstrapMethodRef();
+        if (bootstrapMeth.declaringClass().isPhantom()) {
+            String bootstrapSig = bootstrapMeth.toString();
+            System.out.println("Bootstrap method is phantom: " + bootstrapSig);
+            _db.add(PHANTOM_METHOD, bootstrapSig);
+            return bootstrapSig;
+        } else
+            return _rep.signature(bootstrapMeth.resolve());
+    }
+
+    private void writeDynamicInvoke(DynamicInvokeExpr di, int index, String insn, String methodId) {
+        SootMethodRef dynInfo = di.getMethodRef();
+        String dynArity = String.valueOf(dynInfo.parameterTypes().size());
+        _db.add(DYNAMIC_METHOD_INV, insn, str(index), getBootstrapSig(di), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynInfo.parameterTypes().toString(), methodId);
     }
 
     private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {
