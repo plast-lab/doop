@@ -294,8 +294,7 @@ class FactGenerator implements Runnable {
                 } else if (u instanceof IdentityStmt) {
                     generate(m, (IdentityStmt) u, session);
                 } else if (u instanceof InvokeStmt) {
-                    InvokeStmt stmt = (InvokeStmt) u;
-                    _writer.writeInvoke(m, stmt, stmt.getInvokeExpr(), session);
+                    _writer.writeInvoke(m, (InvokeStmt) u, session);
                 } else if (u instanceof ReturnStmt) {
                     generate(m, (ReturnStmt) u, session);
                 } else if (u instanceof ReturnVoidStmt) {

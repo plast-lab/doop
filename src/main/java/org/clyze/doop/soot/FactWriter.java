@@ -862,7 +862,8 @@ public class FactWriter {
         }
     }
 
-    void writeInvoke(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session) {
+    void writeInvoke(SootMethod inMethod, Stmt stmt, Session session) {
+        InvokeExpr expr = stmt.getInvokeExpr();
         writeInvokeHelper(inMethod, stmt, expr, session);
     }
 
