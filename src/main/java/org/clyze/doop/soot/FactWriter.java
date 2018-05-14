@@ -175,7 +175,7 @@ public class FactWriter {
         _db.add(PHANTOM_BASED_METHOD, sig);
     }
 
-    void writeEnterMonitor(SootMethod m, Stmt stmt, Local var, Session session) {
+    void writeEnterMonitor(SootMethod m, EnterMonitorStmt stmt, Local var, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
@@ -183,7 +183,7 @@ public class FactWriter {
         _db.add(ENTER_MONITOR, insn, str(index), _rep.local(m, var), methodId);
     }
 
-    void writeExitMonitor(SootMethod m, Stmt stmt, Local var, Session session) {
+    void writeExitMonitor(SootMethod m, ExitMonitorStmt stmt, Local var, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
@@ -568,7 +568,8 @@ public class FactWriter {
         }
     }
 
-    void writeGoto(SootMethod m, Stmt stmt, Unit to, Session session) {
+    void writeGoto(SootMethod m, GotoStmt stmt, Session session) {
+        Unit to = stmt.getTarget();
         session.calcUnitNumber(stmt);
         int index = session.getUnitNumber(stmt);
         session.calcUnitNumber(to);
@@ -582,7 +583,8 @@ public class FactWriter {
     /**
      * If
      */
-    void writeIf(SootMethod m, Stmt stmt, Unit to, Session session) {
+    void writeIf(SootMethod m, IfStmt stmt, Session session) {
+        Unit to = stmt.getTarget();
         // index was already computed earlier
         int index = session.getUnitNumber(stmt);
         session.calcUnitNumber(to);

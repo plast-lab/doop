@@ -107,6 +107,6 @@ class IrrelevantStmtSwitch implements StmtSwitch
 
     public void defaultCase(Object obj)
     {
-        throw new RuntimeException("uh, why is this invoked?");
+        throw new RuntimeException("IrrelevantStmtSwitch found non-statement object.");
     }
 }
