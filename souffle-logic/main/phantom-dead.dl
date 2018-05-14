@@ -36,7 +36,7 @@ DeadInstruction(?instruction) :-
 DeadInstruction(?instruction) :-
   PhantomInvoke(?instruction).
 
-// A method invocation instruction is dead if it calls a dead method.
+// Recursively, an invocation instruction is dead if it calls a dead method.
 
 DeadInstruction(?instruction) :-
   MethodInvocation_Method(?instruction, ?method),
