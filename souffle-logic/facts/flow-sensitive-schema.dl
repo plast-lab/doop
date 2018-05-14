@@ -359,8 +359,6 @@
 // Assign expression vars
 .decl AssignOper_From(?insn:AssignOper_Insn, ?from:Var)
 
-.decl AssignOper_Type(?insn:AssignOper_Insn, ?type:symbol)
-
 // Assign Heap Allocation
 .decl AssignHeapAllocation_Heap(?insn:AssignHeapAllocation_Insn, ?heap:HeapAllocation)
 
