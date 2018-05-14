@@ -16,7 +16,6 @@ class IrrelevantStmtSwitch implements StmtSwitch
         // bootstrap method is declared in a phantom class
         if (right instanceof DynamicInvokeExpr) {
             relevant = !(Options.v().allow_phantom_refs()
-                    && (right instanceof DynamicInvokeExpr)
                     && ((DynamicInvokeExpr) right).getBootstrapMethodRef()
                          .declaringClass()
                          .isPhantom());
