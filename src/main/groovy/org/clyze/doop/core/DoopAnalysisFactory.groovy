@@ -70,9 +70,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                              "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"]
             ]
     static final availableConfigurations = [
-            "intro-A" : "IntroAConfiguration",
-            "intro-B" : "IntroBConfiguration",
-            "intro-C" : "IntroCConfiguration",
+            "twophase-A" : "TwoPhaseAConfiguration",
+            "twophase-B" : "TwoPhaseBConfiguration",
             "context-insensitive" : "ContextInsensitiveConfiguration",
             "context-insensitive-plus" : "ContextInsensitivePlusConfiguration",
             "context-insensitive-plusplus" : "ContextInsensitivePlusPlusConfiguration",
