@@ -167,6 +167,7 @@ public class FactWriter {
 
     void writePhantomMethod(SootMethod m) {
         String sig = writeMethod(m);
+        System.out.println("Method " + sig + " is phantom.");
         _db.add(PHANTOM_METHOD, sig);
     }
 

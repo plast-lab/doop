@@ -171,7 +171,6 @@ class FactGenerator implements Runnable {
         _writer.writeMethod(m);
 
         if (m.isPhantom()) {
-            System.out.println("Method " + m.getSignature() + " is phantom.");
             _writer.writePhantomMethod(m);
             return;
         }
