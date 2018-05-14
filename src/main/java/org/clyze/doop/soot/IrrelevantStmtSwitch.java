@@ -42,13 +42,18 @@ class IrrelevantStmtSwitch implements StmtSwitch
         relevant = false;
     }
 
+    public void caseInvokeStmt(InvokeStmt stmt) {
+        relevant = true;
+        if (Options.v().allow_phantom_refs())
+            inspectMethod(stmt.getInvokeExpr().getMethod());
+    }
+
     // According to http://www.brics.dk/SootGuide/sootsurvivorsguide.pdf
     // a Jimple RetStmt is never created when generating Jimple from bytecode.
     public void caseRetStmt(RetStmt stmt) {
         relevant = false;
     }
 
-    public void caseInvokeStmt(InvokeStmt stmt)             { relevant = true; }
     public void caseEnterMonitorStmt(EnterMonitorStmt stmt) { relevant = true; }
     public void caseExitMonitorStmt(ExitMonitorStmt stmt)   { relevant = true; }
     public void caseGotoStmt(GotoStmt stmt)                 { relevant = true; }

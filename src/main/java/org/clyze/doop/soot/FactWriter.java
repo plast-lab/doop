@@ -173,6 +173,7 @@ public class FactWriter {
 
     void writePhantomBasedMethod(SootMethod m) {
         String sig = writeMethod(m);
+        System.out.println("Method signature " + sig + " contains phantom types.");
         _db.add(PHANTOM_BASED_METHOD, sig);
     }
 

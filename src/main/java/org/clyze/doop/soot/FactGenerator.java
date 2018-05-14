@@ -148,7 +148,7 @@ class FactGenerator implements Runnable {
     public boolean isPhantomBased(SootMethod m) {
         for (SootClass clazz: m.getExceptions())
             if (isPhantom(clazz.getType())) {
-                System.out.println("Class " + clazz.getName() + " is phantom.");
+                System.out.println("Exception " + clazz.getName() + " is phantom.");
                 return true;
             }
 
@@ -311,10 +311,14 @@ class FactGenerator implements Runnable {
                     throw new RuntimeException("Cannot handle statement: " + u);
                 }
             } else {
-                // only reason for assign statements to be irrelevant
+                // only reason for assign or invoke statements to be irrelevant
                 // is the invocation of a method on a phantom class
                 if (u instanceof AssignStmt) {
                     _writer.writeAssignPhantomInvoke(m, (AssignStmt) u, session);
+                    generatePhantom(sw.cause);
+                } else if (u instanceof InvokeStmt) {
+                    // record invocation and calculate PhantomInvoke via logic
+                    _writer.writeInvoke(m, (InvokeStmt) u, session);
                     generatePhantom(sw.cause);
                 } else if (u instanceof BreakpointStmt)
                     _writer.writeBreakpointStmt(m, (BreakpointStmt) u, session);
@@ -351,10 +355,15 @@ class FactGenerator implements Runnable {
     }
 
     private void generatePhantom(Object cause) {
-        if (cause instanceof SootClass)
-            _writer.writePhantomType(((SootClass)cause).getType());
-        else if (cause instanceof SootMethod)
-            _writer.writePhantomMethod((SootMethod)cause);
+        if (cause instanceof SootClass) {
+            Type t = ((SootClass)cause).getType();
+            System.out.println("Type " + t + " is phantom.");
+            _writer.writePhantomType(t);
+        } else if (cause instanceof SootMethod) {
+            SootMethod meth = (SootMethod)cause;
+            System.out.println("Method " + meth.getSignature() + " is phantom.");
+            _writer.writePhantomMethod(meth);
+        }
         else
             System.err.println("Ignoring phantom cause: " + cause);
     }
