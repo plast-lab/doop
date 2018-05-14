@@ -144,48 +144,40 @@ class FactGenerator implements Runnable {
         return isPhantom;
     }
 
+    /* Check for phantom classes in a method signature. */
     public boolean isPhantomBased(SootMethod m) {
-        /* Check for phantom classes */
-
-        if (m.isPhantom()) {
-            System.out.println("Method " + m.getSignature() + " is phantom.");
-            _writer.writePhantomMethod(m);
-            return true;
-        }
-
-        boolean isPhantomBased = false;
-
-        for(SootClass clazz: m.getExceptions())
+        for (SootClass clazz: m.getExceptions())
             if (isPhantom(clazz.getType())) {
                 System.out.println("Class " + clazz.getName() + " is phantom.");
-                isPhantomBased = true;
+                return true;
             }
 
-        for(int i = 0 ; i < m.getParameterCount(); i++)
+        for (int i = 0 ; i < m.getParameterCount(); i++)
             if(isPhantom(m.getParameterType(i))) {
                 System.out.println("Parameter type " + m.getParameterType(i) + " of " + m.getSignature() + " is phantom.");
-                isPhantomBased = true;
+                return true;
             }
 
         if (isPhantom(m.getReturnType())) {
             System.out.println("Return type " + m.getReturnType() + " of " + m.getSignature() + " is phantom.");
-            isPhantomBased = true;
+            return true;
         }
 
-        if (isPhantomBased)
-            _writer.writePhantomBasedMethod(m);
-
-        return isPhantomBased;
+        return false;
     }
 
     void generate(SootMethod m, Session session)
     {
         _writer.writeMethod(m);
 
-        if (isPhantomBased(m)) {
-            //m.setPhantom(true);
+        if (m.isPhantom()) {
+            System.out.println("Method " + m.getSignature() + " is phantom.");
+            _writer.writePhantomMethod(m);
             return;
         }
+
+        if (isPhantomBased(m))
+            _writer.writePhantomBasedMethod(m);
 
         int modifiers = m.getModifiers();
         if(Modifier.isAbstract(modifiers))
