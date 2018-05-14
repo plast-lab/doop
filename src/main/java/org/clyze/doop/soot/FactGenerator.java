@@ -317,7 +317,6 @@ class FactGenerator implements Runnable {
                     _writer.writeAssignPhantomInvoke(m, (AssignStmt) u, session);
                     generatePhantom(sw.cause);
                 } else if (u instanceof InvokeStmt) {
-                    _writer.writePhantomInvoke(m, (InvokeStmt) u, session);
                     generatePhantom(sw.cause);
                 } else if (u instanceof BreakpointStmt)
                     _writer.writeBreakpointStmt(m, (BreakpointStmt) u, session);

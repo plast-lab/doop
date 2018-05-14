@@ -661,19 +661,6 @@ Instruction_Method(?instruction, ?method) :-
   _AssignPhantomInvoke(?instruction, ?index, ?method).
 
 
-// PhantomInvoke
-
-.decl _PhantomInvoke(?instruction:symbol, ?index:number, ?method:symbol)
-.input _PhantomInvoke(IO="file", filename="PhantomInvoke.facts", delimiter="\t")
-
-isInstruction(?instruction),
-isUnsupportedInstruction(?instruction),
-isPhantomInvoke(?instruction),
-Instruction_Index(?instruction, ?index),
-Instruction_Method(?instruction, ?method) :-
-  _PhantomInvoke(?instruction, ?index, ?method).
-
-
 // BreakPointStmt
 
 .decl _BreakpointStmt(?instruction:symbol, ?index:number, ?method:symbol)

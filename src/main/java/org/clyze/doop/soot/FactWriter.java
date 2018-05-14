@@ -974,14 +974,6 @@ public class FactWriter {
         _db.add(ASSIGN_PHANTOM_INVOKE, insn, str(index), methodId);
     }
 
-    void writePhantomInvoke(SootMethod m, InvokeStmt stmt, Session session) {
-        int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, session, index);
-        String methodId = writeMethod(m);
-
-        _db.add(PHANTOM_INVOKE, insn, str(index), methodId);
-    }
-
     void writeBreakpointStmt(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);

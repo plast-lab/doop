@@ -1006,25 +1006,6 @@ _AssignPhantomInvoke(?ref, ?index, ?method) ->
    _AssignPhantomInvoke(?ref, ?index, ?method).
 
 
-// PhantomInvoke
-
-lang:physical:storageModel[`_PhantomInvoke] = "DelimitedFile".
-lang:physical:filePath[`_PhantomInvoke] = "facts/PhantomInvoke.facts".
-lang:physical:delimiter[`_PhantomInvoke] = "\t".
-lang:physical:hasColumnNames[`_PhantomInvoke] = false.
-
-_PhantomInvoke(?ref, ?index, ?method) ->
-   string(?ref),
-   int[32](?index),
-   string(?method).
-
-+PhantomInvoke(?x),
-+Instruction:Id(?x:?ref),
-+Instruction:Index[?x] = ?index,
-+Instruction:Method[?x] = ?method <-
-   _PhantomInvoke(?ref, ?index, ?method).
-
-
 // BreakpointStmt
 
 lang:physical:storageModel[`_BreakpointStmt] = "DelimitedFile".

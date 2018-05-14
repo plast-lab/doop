@@ -234,12 +234,10 @@
 
 .type UnsupportedInstruction          = Instruction
 .type AssignPhantomInvoke             = UnsupportedInstruction
-.type PhantomInvoke                   = UnsupportedInstruction
 .type BreakpointStmt                  = UnsupportedInstruction
 
 .decl isUnsupportedInstruction(?insn:UnsupportedInstruction)
 .decl isAssignPhantomInvoke(?insn:AssignPhantomInvoke)
-.decl isPhantomInvoke(?insn:PhantomInvoke)
 .decl isBreakpointStmt(?insn:BreakpointStmt)
 
 //-----------------------------------------------------------------------------

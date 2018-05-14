@@ -74,5 +74,4 @@ Instruction(?insn) ->
    StaticMethodInvocation:Insn(?insn) ;
    UnsupportedInstruction(?insn) ;
    AssignPhantomInvoke(?insn) ;
-   PhantomInvoke(?insn) ;
    BreakpointStmt(?insn).

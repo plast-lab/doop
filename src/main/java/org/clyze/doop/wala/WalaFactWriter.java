@@ -1249,14 +1249,6 @@ public class WalaFactWriter {
 ////        _db.add(ASSIGN_PHANTOM_INVOKE, insn, str(index), methodId);
 //    }
 //
-//    void writePhantomInvoke(IMethod m, Stmt stmt, Session session) {
-////        int index = session.calcInstructionNumber(stmt);
-////        String insn = _rep.instruction(m, stmt, session, index);
-////        String methodId = writeMethod(m);
-////
-////        _db.add(PHANTOM_INVOKE, insn, str(index), methodId);
-//    }
-//
 //    void writeBreakpointStmt(IMethod m, Stmt stmt, Session session) {
 ////        int index = session.calcInstructionNumber(stmt);
 ////        String insn = _rep.instruction(m, stmt, session, index);

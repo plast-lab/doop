@@ -94,7 +94,6 @@ public enum PredicateFile
     RETURN("Return"),
     RETURN_VOID("ReturnVoid"),
     ASSIGN_PHANTOM_INVOKE("AssignPhantomInvoke"),
-    PHANTOM_INVOKE("PhantomInvoke"),
     PHANTOM_METHOD("PhantomMethod"),
     PHANTOM_BASED_METHOD("PhantomBasedMethod"),
     PHANTOM_TYPE("PhantomType"),
