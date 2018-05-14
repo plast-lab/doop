@@ -38,16 +38,16 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ?calleeCtx = [?hctxValue, ?value].
 
 StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
-  StaticContextRequest(?callerCtx, ?invo),
-  MethodInvocation_Method(?invo, ?tomethod),
-  MethodToRefine(?tomethod),
-  ?calleeCtx = ?callerCtx.
+   StaticContextRequest(?callerCtx, ?invo),
+   MethodInvocation_Method(?invo, ?tomethod),
+   !MethodToRefine(?tomethod),
+   isImmutableContext(?calleeCtx).
 
 StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
   StaticContextRequest(?callerCtx, ?invo),
   MethodInvocation_Method(?invo, ?tomethod),
-  !MethodToRefine(?tomethod),
-  isImmutableContext(?calleeCtx).
+  MethodToRefine(?tomethod),
+  ?calleeCtx = ?callerCtx.
 
 RecordContextResponse(?ctx, ?value, ?arg, ?hctx) :-
   RecordContextRequest(?ctx, ?value, ?arg),      
@@ -84,12 +84,12 @@ InitHContextResponse(?value, ?hctx) :-
 
 .decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)
 MethodsOfSameOrSuperType(?method1, ?method2) :-
-   preAnalysis.Reachable(?method1),
-   basic.MethodDeclaredOrInherited(?method1, ?class),
-   preAnalysis.Reachable(?method2),
-   basic.MethodDeclaredOrInherited(?method2, ?class).
-
-
+   !ThisPointsToTooManyValues(?method1),
+   !ArgPointsToTooManyValues(_, ?method1),
+   !ThisPointsToTooManyValues(?method2),
+   !ArgPointsToTooManyValues(_, ?method2),
+   basic.MethodsOfSameOrSuperType(?method1, ?method2).
+   
 /** Utility rule: Value points to another value directly or indirectly **/
 .decl ValuePointsTo(?baseValue:Value, ?value:Value)
 
@@ -101,17 +101,20 @@ ValuePointsTo(?baseValue, ?value) :-
 // ValuePointsTo(?baseValue, ?value) :-
 //   ValuePointsTo(?value1, ?value),
 //   preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue).
+
+// anantoni: These filters can be vital to achieving good scale
 .decl ArgPointsToTooManyValues(?arg:Var, ?method:Method)
 ArgPointsToTooManyValues(?arg, ?method) :-
-   FormalParam(_, ?method, ?arg),
-   VPTCountPerVar(?arg, ?n),
-   ?n > 100.
+  FormalParam(_, ?method, ?arg),
+  VPTCountPerVar(?arg, ?n),
+  ?n > 10000.
 
-ArgPointsToTooManyValues(?arg, ?method) :-
-   ThisVar(?method, ?arg),
-   VPTCountPerVar(?arg, ?n),
-   ?n > 100.
-
+.decl ThisPointsToTooManyValues(?method:Method)
+ThisPointsToTooManyValues(?method) :-
+  ThisVar(?method, ?this),
+  VPTCountPerVar(?this, ?n),
+  ?n = 1.
+  
 .decl ArgPointsTo(?arg:Var, ?method:Method, ?value:Value)
 ArgPointsTo(?arg, ?method, ?value) :-
   FormalParam(_, ?method, ?arg),
@@ -130,24 +133,8 @@ LocalPointsTo(?local, ?method, ?value) :-
   Var_DeclaringMethod(?local, ?method),
   preAnalysis.VarPointsTo(_, ?value, _, ?local).
 
-/*
-.decl ClassArgPointsTo(?class:ClassType, ?value:Value)
-ClassArgPointsTo(?class, ?value) :-
-  ArgPointsTo(_, ?method, ?value),
-//  MethodDeclaredOrInherited(?method, ?class).
-  ConcreteMethodDeclared(?method, ?class).
-
-.decl ClassRetPointsTo(?class:ClassType, ?value:Value)
-ClassRetPointsTo(?class, ?value) :-
-  RetPointsTo(_, ?method, ?value),
-//  MethodDeclaredOrInherited(?method, ?class).
-  ConcreteMethodDeclared(?method, ?class).
-*/
-
-
 .decl MethodValuePair(?inMethod:Method, ?argValue:Value, ?outMethod:Method, ?retValue:Value)
 MethodValuePair(?inMethod, ?argValue, ?outMethod, ?retValue) :-
-   !ArgPointsToTooManyValues(_, ?inMethod),
    ArgPointsTo(_, ?inMethod, ?argValue),    
    MethodsOfSameOrSuperType(?inMethod, ?outMethod),
    RetPointsTo(_, ?outMethod, ?retValue).
@@ -163,9 +150,9 @@ InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value) :-
 
 .decl InOutFlowDirectTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)
 InOutFlowDirectTwoValuesPerClass(?inMethod, ?outMethod, ?value1) :-
-  InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value1).
-  // InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value2),
-  // ?value1 != ?value2.
+  InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value1),
+  InOutFlowDirectValuePerClass(?inMethod, ?outMethod, ?value2),
+  ?value1 != ?value2.
 
 .decl MethodTaintedByDirectFlow(?method:Method)
 MethodTaintedByDirectFlow(?method) :-
@@ -194,9 +181,9 @@ InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value) :-
 
 .decl InOutFlowWrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)
 InOutFlowWrappedTwoValuesPerClass(?inMethod, ?outMethod, ?value1) :-
-   InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value1).
-  // InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value2),
-  // ?value1 != ?value2.
+   InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value1),
+   InOutFlowWrappedValuePerClass(?inMethod, ?outMethod, ?value2),
+   ?value1 != ?value2.
 
 /**
  * Unwrapped in out flow:
@@ -273,11 +260,18 @@ MethodToRefine(?method) :-
   (InOutFlowPair(?method, _);
    InOutFlowPair(_, ?method);
    MethodTaintedByDirectFlow(?method);
-   MethodTaintedByWrappedFlow(?method)
+   MethodTaintedByWrappedFlow(?method);   
+   (Method_DeclaringType(?method, ?type),
+    match(?type, "java\.util\..*")),
+   !match(?method, "boolean equals.*"),
+   ?method != "<java.lang.Object: void <init>()>"
   ).                            
 
-.printsize isMethod      
+.printsize isMethod
 .printsize MethodToRefine
+
+.output MethodToRefine
+
 
 .decl VPTCountPerVar(?var:Var, ?n:number)
 

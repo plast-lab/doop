@@ -185,6 +185,12 @@ Metrics_Value_AsReceiver_Count(?value, ?n) :-
 
 .decl VPTCountPerVar(?var:Var, ?n:number)
 
-VPTCountPerVar(?var, Y) :- isVar(?var), Y =  count : mainAnalysis.VarPointsTo(_, _, _, ?var), Y > 0.
+VPTCountPerVar(?var, Y) :- isVar(?var), Y =  count : mainAnalysis.VarPointsTo(_, _, _, ?var).
 
 .output VPTCountPerVar
+
+.decl ContextsPerMethod(?method:Method, ?n:number)
+
+ContextsPerMethod(?method, Y) :- isMethod(?method), Y = count: mainAnalysis.ReachableContext(_, ?method).        
+
+.output ContextsPerMethod
