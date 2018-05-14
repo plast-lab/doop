@@ -302,11 +302,8 @@ class FactGenerator implements Runnable {
                     _writer.writeReturnVoid(m, (ReturnVoidStmt)u, session);
                 } else if (u instanceof ThrowStmt) {
                     generate(m, (ThrowStmt) u, session);
-                } else if (u instanceof GotoStmt) {
-                    // processed in second run: we might not know the number of
-                    // the unit yet.
-                    session.calcUnitNumber(u);
-                } else if (u instanceof IfStmt) {
+                } else if ((u instanceof GotoStmt) || (u instanceof IfStmt) ||
+                           (u instanceof SwitchStmt) || (u instanceof NopStmt)) {
                     // processed in second run: we might not know the number of
                     // the unit yet.
                     session.calcUnitNumber(u);
@@ -320,11 +317,6 @@ class FactGenerator implements Runnable {
                     ExitMonitorStmt stmt = (ExitMonitorStmt) u;
                     if (stmt.getOp() instanceof Local)
                         _writer.writeExitMonitor(m, stmt, (Local) stmt.getOp(), session);
-                } else if ((u instanceof TableSwitchStmt) ||
-                           (u instanceof LookupSwitchStmt) ||
-                           (u instanceof NopStmt)) {
-                    // same as IfStmt and GotoStmt.
-                    session.calcUnitNumber(u);
                 } else {
                     throw new RuntimeException("Cannot handle statement: " + u);
                 }
