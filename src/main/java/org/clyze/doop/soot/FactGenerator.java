@@ -313,11 +313,13 @@ class FactGenerator implements Runnable {
             } else {
                 // only reason for assign or invoke statements to be irrelevant
                 // is the invocation of a method on a phantom class
-                if (u instanceof AssignStmt)
+                if (u instanceof AssignStmt) {
                     _writer.writeAssignPhantomInvoke(m, (AssignStmt) u, session);
-                else if (u instanceof InvokeStmt)
+                    generatePhantom(sw.cause);
+                } else if (u instanceof InvokeStmt) {
                     _writer.writePhantomInvoke(m, (InvokeStmt) u, session);
-                else if (u instanceof BreakpointStmt)
+                    generatePhantom(sw.cause);
+                } else if (u instanceof BreakpointStmt)
                     _writer.writeBreakpointStmt(m, (BreakpointStmt) u, session);
                 else
                     throw new RuntimeException("Unexpected irrelevant statement: " + u);
@@ -349,6 +351,15 @@ class FactGenerator implements Runnable {
 
             previous = t;
         }
+    }
+
+    private void generatePhantom(Object cause) {
+        if (cause instanceof SootClass)
+            _writer.writePhantomType(((SootClass)cause).getType());
+        else if (cause instanceof SootMethod)
+            _writer.writePhantomMethod((SootMethod)cause);
+        else
+            System.err.println("Ignoring phantom cause: " + cause);
     }
 
     /**

@@ -966,7 +966,7 @@ public class FactWriter {
         _db.add(ASSIGN_INSTANCE_OF, insn, str(index), _rep.local(m, from), _rep.local(m, to), writeType(t), methodId);
     }
 
-    void writeAssignPhantomInvoke(SootMethod m, Stmt stmt, Session session) {
+    void writeAssignPhantomInvoke(SootMethod m, AssignStmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
@@ -974,7 +974,7 @@ public class FactWriter {
         _db.add(ASSIGN_PHANTOM_INVOKE, insn, str(index), methodId);
     }
 
-    void writePhantomInvoke(SootMethod m, Stmt stmt, Session session) {
+    void writePhantomInvoke(SootMethod m, InvokeStmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
