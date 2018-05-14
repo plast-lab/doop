@@ -72,7 +72,6 @@ public class Main {
                         break;
                     case "--android-jars":
                         i = shift(args, i);
-                        sootParameters._allowPhantom = true;
                         sootParameters._android = true;
                         sootParameters._androidJars = args[i];
                         break;
