@@ -311,12 +311,10 @@ class FactGenerator implements Runnable {
                     throw new RuntimeException("Cannot handle statement: " + u);
                 }
             } else {
-                // only reason for assign or invoke statements to be irrelevant
+                // only reason for assign statements to be irrelevant
                 // is the invocation of a method on a phantom class
                 if (u instanceof AssignStmt) {
                     _writer.writeAssignPhantomInvoke(m, (AssignStmt) u, session);
-                    generatePhantom(sw.cause);
-                } else if (u instanceof InvokeStmt) {
                     generatePhantom(sw.cause);
                 } else if (u instanceof BreakpointStmt)
                     _writer.writeBreakpointStmt(m, (BreakpointStmt) u, session);
