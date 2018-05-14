@@ -53,7 +53,11 @@ DeadMethod(?m) :- PhantomBasedMethod(?m).
 .decl DeadType(?type:Type)
 .output DeadType
 
-// Dead types contain field or method signatures involving phantom types.
+// Dead types (a) are phantom types, (b) contain field or method
+// signatures involving phantom types, or (c) contain dead methods.
+
+DeadType(?type) :-
+  PhantomType(?type).
 
 DeadType(?type) :-
   Field_DeclaringType(?sig, ?type),
@@ -63,3 +67,19 @@ DeadType(?type) :-
 DeadType(?type) :-
   PhantomBasedMethod(?m),
   Method_DeclaringType(?m, ?type).
+
+DeadType(?type) :-
+  DeadMethod(?m),
+  Method_DeclaringType(?m, ?type).
+
+// Removed methods are phantom methods belonging to non-phantom
+// types. Examples of this: (a) removing methods from a class via bytecode
+// engineering, (b) a piece of code using a wrong version of a library.
+
+.decl RemovedMethod(?method:Method)
+.output RemovedMethod
+
+RemovedMethod(?method) :-
+  PhantomMethod(?method),
+  Method_DeclaringType(?method, ?type),
+  !PhantomType(?type).
