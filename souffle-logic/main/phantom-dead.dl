@@ -30,7 +30,7 @@ DeadInstruction(?instruction) :-
 
 DeadInstruction(?instruction) :-
   (AssignCast_Type(?instruction, ?pt);
-   AssignInstanceOf_Type(?instruction, ?type)),
+   AssignInstanceOf_Type(?instruction, ?pt)),
   PhantomType(?pt).
 
 DeadInstruction(?instruction) :-
