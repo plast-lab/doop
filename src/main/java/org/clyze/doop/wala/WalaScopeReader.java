@@ -1,8 +1,10 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.classLoader.BinaryDirectoryTreeModule;
+import com.ibm.wala.classLoader.JarFileModule;
 import com.ibm.wala.classLoader.Module;
 import com.ibm.wala.classLoader.SourceDirectoryTreeModule;
+import com.ibm.wala.dalvik.classLoader.DexFileModule;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.properties.WalaProperties;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
@@ -53,6 +55,39 @@ public class WalaScopeReader {
         }
         ClassLoaderReference loader = scope.getLoader(AnalysisScope.APPLICATION);
         addClassPathToScope(classPath, scope, loader);
+        return scope;
+    }
+
+    public static AnalysisScope setUpAndroidAnalysisScope(String classpath, String exclusions, String androidLib) throws IOException {
+        AnalysisScope scope;
+        scope = AnalysisScope.createJavaAnalysisScope();
+
+        File exclusionsFile = new File(exclusions);
+        try (final InputStream fs = exclusionsFile.exists()? new FileInputStream(exclusionsFile): FileProvider.class.getClassLoader().getResourceAsStream(exclusionsFile.getName())) {
+            scope.setExclusions(new FileOfClasses(fs));
+        }
+
+        scope.setLoaderImpl(ClassLoaderReference.Primordial,
+                "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
+
+
+        if(androidLib.endsWith(".apk"))
+        {
+            scope.addToScope(ClassLoaderReference.Primordial, DexFileModule.make(new File(androidLib)));
+        }
+        else
+        {
+            final JarFile jar = new JarFile(new File(androidLib));
+            scope.addToScope(ClassLoaderReference.Primordial, new JarFileModule(jar));
+        }
+
+
+
+        scope.setLoaderImpl(ClassLoaderReference.Application,
+                "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
+
+        scope.addToScope(ClassLoaderReference.Application, DexFileModule.make(new File(classpath)));
+
         return scope;
     }
 

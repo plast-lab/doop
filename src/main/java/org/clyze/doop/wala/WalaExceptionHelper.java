@@ -97,6 +97,8 @@ public class WalaExceptionHelper {
 
     int[] handlersToArray(ExceptionHandler[] handlers)
     {
+        if(handlers == null) //Happens in Android
+            return new int[0];
         int[] targetsArray = new int[handlers.length];
         for(int i=0; i < handlers.length ; i++)
         {
@@ -107,6 +109,8 @@ public class WalaExceptionHelper {
 
     String[] handlersStringArray(ExceptionHandler[] handlers)
     {
+        if(handlers == null) //Happens in Android
+            return new String[0];
         String[] targetsArray = new String[handlers.length];
         for(int i=0; i < handlers.length ; i++)
         {

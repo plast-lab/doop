@@ -1143,7 +1143,7 @@ public class WalaFactWriter {
         Local l;
         String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
 
-        if (localNames != null) {
+        if (localNames != null && localNames.length != 0) {
             assert localNames.length == 1;
             l = new Local("v" + varIndex, varIndex, localNames[0],TypeReference.JavaLangObject);
         }
@@ -1168,7 +1168,7 @@ public class WalaFactWriter {
         else
             typeRef = typeAbstraction.getTypeReference();
 
-        if (localNames != null) {
+        if (localNames != null && localNames.length != 0) {
             l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
         }
         else {

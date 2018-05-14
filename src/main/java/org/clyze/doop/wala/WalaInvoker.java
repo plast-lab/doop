@@ -61,6 +61,7 @@ public class WalaInvoker {
                         //walaParameters._allowPhantom = true;
                         walaParameters._android = true;
                         walaParameters._androidJars = args[i];
+                        System.out.println("WALA ANDROID JARS " + walaParameters._androidJars);
                         break;
                     case "-i":
                         i = shift(args, i);
@@ -122,8 +123,12 @@ public class WalaInvoker {
             classPath.append(":").append(walaParameters._libraries.get(i));
         }
 
-        logger.debug("WALA classpath:" + classPath);
-        AnalysisScope scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+        System.out.println("WALA classpath:" + classPath);
+        AnalysisScope scope;
+        if(walaParameters._android)
+            scope = WalaScopeReader.setUpAndroidAnalysisScope(classPath.toString(),"",walaParameters._androidJars);
+        else
+            scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 
         ClassHierarchy cha = null;
         try {
@@ -138,7 +143,7 @@ public class WalaInvoker {
         WalaFactWriter walaFactWriter = new WalaFactWriter(db);
         WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 
-        logger.debug("Number of classes: " + cha.getNumberOfClasses());
+        System.out.println("Number of classes: " + cha.getNumberOfClasses());
 
         IClass klass;
         Set<IClass> classesSet = new HashSet<>();

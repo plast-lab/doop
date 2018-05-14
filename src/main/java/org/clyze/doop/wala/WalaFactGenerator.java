@@ -170,10 +170,11 @@ class WalaFactGenerator implements Runnable {
         }
 
         try {
-            for(TypeReference exceptionType: m.getDeclaredExceptions())
-            {
-                _writer.writeMethodDeclaresException(m, exceptionType);
-            }
+            if(m.getDeclaredExceptions()!= null) //Android can return null, java cannot
+                for(TypeReference exceptionType: m.getDeclaredExceptions())
+                {
+                    _writer.writeMethodDeclaresException(m, exceptionType);
+                }
         } catch (InvalidClassFileException e) {
             e.printStackTrace();
         }
@@ -417,14 +418,17 @@ class WalaFactGenerator implements Runnable {
         Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
         Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
 
-        if(ssaInstructions[instruction.getTarget()] == null) {
-            int nextWALAIndex = getNextNonNullInstruction(ir,instruction.getTarget());
+        int brachTarget = instruction.getTarget();
+        if(brachTarget == -1) //In Android conditional branches can have -1 as target
+            brachTarget =0;
+        if(ssaInstructions[brachTarget] == null) {
+            int nextWALAIndex = getNextNonNullInstruction(ir,brachTarget);
             if(nextWALAIndex == -1)
                 logger.error("Error: Next non-null instruction index = -1");
             _writer.writeIf(m, instruction, op1, op2, ssaInstructions[nextWALAIndex], session);
         }
         else
-            _writer.writeIf(m, instruction, op1, op2, ssaInstructions[instruction.getTarget()], session);
+            _writer.writeIf(m, instruction, op1, op2, ssaInstructions[brachTarget], session);
     }
 
 
@@ -564,14 +568,17 @@ class WalaFactGenerator implements Runnable {
     public void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
         // Go to instructions have no uses and no defs
         SSAInstruction[] ssaInstructions = ir.getInstructions();
-        if(ssaInstructions[instruction.getTarget()] == null) {
-            int nextWALAIndex = getNextNonNullInstruction(ir,instruction.getTarget());
+        int gotoTarget = instruction.getTarget();
+        if(gotoTarget < 0) //In Android conditional GoTos can have -1 as target
+            gotoTarget = 0;
+        if(ssaInstructions[gotoTarget] == null) {
+            int nextWALAIndex = getNextNonNullInstruction(ir,gotoTarget);
             if(nextWALAIndex == -1)
                 logger.error("Error: Next non-null instruction index = -1");
             _writer.writeGoto(m, instruction, ssaInstructions[nextWALAIndex], session);
         }
         else
-            _writer.writeGoto(m, instruction,ssaInstructions[instruction.getTarget()] , session);
+            _writer.writeGoto(m, instruction,ssaInstructions[gotoTarget] , session);
     }
 
     public void generate(IMethod m, IR ir, SSAMonitorInstruction instruction, Session session, TypeInference typeInference) {
@@ -618,7 +625,7 @@ class WalaFactGenerator implements Runnable {
         }
         if (instruction.iindex != -1) {
             String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
-            if (localNames != null) {
+            if (localNames != null && localNames.length != 0) {
                 l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
             }
             else {
