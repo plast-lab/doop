@@ -700,6 +700,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					// custom logic (that can crash the server).
 					description: "Include file with extra rules.",
 					value: null,
+					nonStandard: true,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
