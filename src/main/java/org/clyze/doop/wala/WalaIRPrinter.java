@@ -35,7 +35,7 @@ public class WalaIRPrinter {
         file.getParentFile().getParentFile().mkdirs();
         file.getParentFile().mkdirs();
 
-        Collection<IField> fields = cl.getAllFields();
+//        Collection<IField> fields = cl.getAllFields();
         Collection<IMethod> methods = cl.getDeclaredMethods();
         Collection<IClass> interfaces =  cl.getAllImplementedInterfaces();
         try {
@@ -56,21 +56,21 @@ public class WalaIRPrinter {
             printWriter.write(cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L",""));
 
             printWriter.write("\n{\n");
-            for(IField field : fields )
-            {
-                printWriter.write("\t");
-                if(field.isPublic())
-                    printWriter.write("public ");
-                else if(field.isPrivate())
-                    printWriter.write("private ");
-                else if(field.isProtected())
-                    printWriter.write("protected ");
-                if(field.isStatic())
-                    printWriter.write("static ");
-                printWriter.write(fixTypeString(field.getFieldTypeReference().toString()) + " " + field.getName() + ";\n");
-                //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().getSignature() + "\n");
-                //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().toString() + "\n");
-            }
+//            for(IField field : fields )
+//            {
+//                printWriter.write("\t");
+//                if(field.isPublic())
+//                    printWriter.write("public ");
+//                else if(field.isPrivate())
+//                    printWriter.write("private ");
+//                else if(field.isProtected())
+//                    printWriter.write("protected ");
+//                if(field.isStatic())
+//                    printWriter.write("static ");
+//                printWriter.write(fixTypeString(field.getFieldTypeReference().toString()) + " " + field.getName() + ";\n");
+//                //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().getSignature() + "\n");
+//                //printWriter.write("\t" + field.getFieldTypeReference().toString() + " " + field.getReference().toString() + "\n");
+//            }
             for (IMethod m : methods)
             {
                 printWriter.write("\n\t");

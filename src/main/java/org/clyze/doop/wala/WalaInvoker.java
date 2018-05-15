@@ -140,7 +140,7 @@ public class WalaInvoker {
         assert cha != null;
         Iterator<IClass> classes = cha.iterator();
         Database db = new Database(new File(walaParameters._outputDir), false);
-        WalaFactWriter walaFactWriter = new WalaFactWriter(db);
+        WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
         WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
@@ -154,7 +154,7 @@ public class WalaInvoker {
             }
             classesSet.add(klass);
         }
-
+        walaParameters._cores = 1;
         WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), false, walaParameters._cores, walaParameters._android);
         driver.doInParallel(classesSet);
         driver.shutdown();

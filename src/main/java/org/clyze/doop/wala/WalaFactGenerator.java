@@ -3,6 +3,7 @@ package org.clyze.doop.wala;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
+import com.ibm.wala.dalvik.analysis.typeInference.DalvikTypeInference;
 import com.ibm.wala.dalvik.classLoader.DexIRFactory;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
@@ -30,6 +31,7 @@ class WalaFactGenerator implements Runnable {
     private WalaFactWriter _writer;
     private Set<IClass> _iClasses;
     private AnalysisOptions options;
+    private boolean _android;
     private IAnalysisCacheView cache;
     private WalaIRPrinter IRPrinter;
 
@@ -40,6 +42,7 @@ class WalaFactGenerator implements Runnable {
         this._iClasses = iClasses;
         options = new AnalysisOptions();
         options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
+        _android = androidAnalysis;
         if(androidAnalysis)
             cache = new AnalysisCacheImpl(new DexIRFactory());
         else
@@ -76,7 +79,13 @@ class WalaFactGenerator implements Runnable {
             }
 
             iClass.getDeclaredInstanceFields().forEach(this::generate);
-            iClass.getDeclaredStaticFields().forEach(this::generate);
+            try{
+                iClass.getDeclaredStaticFields().forEach(this::generate);
+            }catch (NullPointerException exc) //For some reason in DexClasses .getDeclaredStaticFields() can throw a NullPointerException
+            {
+                ;
+            }
+
 
             for (IMethod m : iClass.getDeclaredMethods()) {
                 Session session = new org.clyze.doop.wala.Session();
@@ -191,7 +200,11 @@ class WalaFactGenerator implements Runnable {
 
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
-        TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
+        TypeInference typeInference;
+        if(_android)
+            typeInference = DalvikTypeInference.make(ir, true);
+        else
+            typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
         SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
         IBytecodeMethod bytecodeMethod = (IBytecodeMethod) m;
         ExceptionHandler[][] exceptionHandlers = null;
@@ -419,6 +432,16 @@ class WalaFactGenerator implements Runnable {
         Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
 
         int brachTarget = instruction.getTarget();
+
+        if(_android) {
+            IBytecodeMethod bm = (IBytecodeMethod)m;
+            try {
+                brachTarget = bm.getInstructionIndex(brachTarget);
+            } catch (InvalidClassFileException e) {
+                e.printStackTrace();
+            }
+        }
+
         if(brachTarget == -1) //In Android conditional branches can have -1 as target
             brachTarget =0;
         if(ssaInstructions[brachTarget] == null) {
@@ -569,6 +592,14 @@ class WalaFactGenerator implements Runnable {
         // Go to instructions have no uses and no defs
         SSAInstruction[] ssaInstructions = ir.getInstructions();
         int gotoTarget = instruction.getTarget();
+//        if(_android) {
+//            IBytecodeMethod bm = (IBytecodeMethod)m;
+//            try {
+//                gotoTarget = bm.getInstructionIndex(gotoTarget);
+//            } catch (InvalidClassFileException e) {
+//                e.printStackTrace();
+//            }
+//        }
         if(gotoTarget < 0) //In Android conditional GoTos can have -1 as target
             gotoTarget = 0;
         if(ssaInstructions[gotoTarget] == null) {

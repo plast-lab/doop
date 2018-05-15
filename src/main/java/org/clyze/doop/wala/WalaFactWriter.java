@@ -30,6 +30,7 @@ import static org.clyze.doop.wala.WalaRepresentation.fixTypeString;
  * database.
  */
 public class WalaFactWriter {
+    private boolean _android;
     private Database _db;
     private WalaRepresentation _rep;
     private Map<String, String> _typeMap;/**
@@ -37,7 +38,8 @@ public class WalaFactWriter {
      */
     protected Log logger;
 
-    WalaFactWriter(Database db) {
+    WalaFactWriter(Database db, boolean android) {
+        _android = android;
         _db = db;
         _rep = WalaRepresentation.getRepresentation();
         _typeMap = new ConcurrentHashMap<>();
@@ -480,6 +482,25 @@ public class WalaFactWriter {
         _db.add(APP_CLASS, writeType(application));
     }
 
+    Collection <IField> getAllFieldsOfClass(IClass cl) //for some reason
+    {
+        Collection <IField> result = new LinkedList<IField>();
+        result.addAll(cl.getAllInstanceFields());
+
+        IClass s = cl;
+        while (s != null) {
+            try {
+                Collection<IField> flds = s.getDeclaredStaticFields();
+                result.addAll(flds);
+            }catch (NullPointerException exc){
+                ;
+            }
+
+            s = s.getSuperclass();
+        }
+        return result;
+    }
+
     TypeReference getCorrectFieldDeclaringClass(FieldReference f, IClassHierarchy cha)
     {
         IClass targetClass = cha.lookupClass(f.getDeclaringClass());
@@ -488,7 +509,8 @@ public class WalaFactWriter {
             System.out.println("Failed to find class: " + fixTypeString(f.getDeclaringClass().getName().toString()) + " in class hierarchy.");
         else
         {
-            for(IField field: targetClass.getAllFields())
+            //for(IField field: targetClass.getAllFields())
+            for(IField field: getAllFieldsOfClass(targetClass))
             {
 //            if(targetClass.getName().toString().contains(""))
 //                System.out.println("");
@@ -638,46 +660,59 @@ public class WalaFactWriter {
     }
 
     void writeLookupSwitch(IR ir,IMethod inMethod, SSASwitchInstruction instruction, Session session, Local switchVar) {
-        int instrIndex = session.getInstructionNumber(instruction);
-        int targetIndex, targetWALAIndex;
-        int defaultIndex, defaultWALAIndex;
-        //Value v = writeImmediate(inMethod, instruction, instruction.getUse(0), session);
-        String insn = _rep.instruction(inMethod, instruction, session, instrIndex);
-        String methodId = _rep.signature(inMethod);
-
-        _db.add(LOOKUP_SWITCH, insn, str(instrIndex), _rep.local(inMethod, switchVar), methodId);
-
-        int casesAndLabels[] = instruction.getCasesAndLabels();
-        SSAInstruction instructions[] = ir.getInstructions();
-        for(int i = 0; i < casesAndLabels.length; i+=2) {
-            int tgIndex = casesAndLabels[i];
-            //session.calcInstructionNumber(instructions[casesAndLabels[i+1]]);
-            if(instructions[casesAndLabels[i+1]]==null)
-            {
-                targetWALAIndex = getNextNonNullInstruction(ir,casesAndLabels[i+1]);
-                if(targetWALAIndex == -1)
-                    logger.error("Error: Next non-null instruction index = -1");
-                targetIndex = session.getInstructionNumber(instructions[targetWALAIndex]);
-            }
-            else
-                targetIndex = session.getInstructionNumber(instructions[casesAndLabels[i+1]]);
-
-            _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(targetIndex));
-        }
-
-        if(instructions[instruction.getDefault()] == null)
-        {
-            defaultWALAIndex = getNextNonNullInstruction(ir,instruction.getDefault());
-            if(defaultWALAIndex == -1)
-                logger.error("Error: Next non-null instruction index = -1");
-            defaultIndex = session.getInstructionNumber(instructions[defaultWALAIndex]);
-        }
-        else {
-            //session.calcInstructionNumber(instructions[instruction.getDefault()]);
-            defaultIndex = session.getInstructionNumber(instructions[instruction.getDefault()]);
-        }
-
-        _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
+//        int instrIndex = session.getInstructionNumber(instruction);
+//        int targetIndex, targetWALAIndex;
+//        int defaultIndex, defaultWALAIndex;
+//        IBytecodeMethod bm = (IBytecodeMethod) inMethod;
+//        //Value v = writeImmediate(inMethod, instruction, instruction.getUse(0), session);
+//        String insn = _rep.instruction(inMethod, instruction, session, instrIndex);
+//        String methodId = _rep.signature(inMethod);
+//
+//        _db.add(LOOKUP_SWITCH, insn, str(instrIndex), _rep.local(inMethod, switchVar), methodId);
+//
+//        int casesAndLabels[] = instruction.getCasesAndLabels();
+//        SSAInstruction instructions[] = ir.getInstructions();
+//        for(int i = 0; i < casesAndLabels.length; i+=2) {
+//            int tgIndex = casesAndLabels[i];
+//            //session.calcInstructionNumber(instructions[casesAndLabels[i+1]]);
+//            targetWALAIndex = casesAndLabels[i+1];
+//            if(_android) {
+//                try {
+//                    targetWALAIndex = bm.getInstructionIndex(targetWALAIndex);
+//                } catch (InvalidClassFileException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            if(instructions[targetWALAIndex] == null)
+//            {
+//                targetWALAIndex = getNextNonNullInstruction(ir,targetWALAIndex);
+//                if(targetWALAIndex == -1)
+//                    logger.error("Error: Next non-null instruction index = -1");
+//            }
+//            targetIndex = session.getInstructionNumber(instructions[targetWALAIndex]);
+//
+//            _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(targetIndex));
+//        }
+//
+//        defaultWALAIndex = instruction.getDefault();
+//        if(_android) {
+//            try {
+//                defaultWALAIndex = bm.getInstructionIndex(defaultWALAIndex);
+//            } catch (InvalidClassFileException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        if(instructions[defaultWALAIndex] == null)
+//        {
+//            defaultWALAIndex = getNextNonNullInstruction(ir,defaultWALAIndex);
+//            if(defaultWALAIndex == -1)
+//                logger.error("Error: Next non-null instruction index = -1");
+//        }
+//        //session.calcInstructionNumber(instructions[defaultWALAIndex]);
+//        defaultIndex = session.getInstructionNumber(instructions[defaultWALAIndex]);
+//
+//
+//        _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
     }
 
     void writeUnsupported(IMethod m, SSAInstruction instruction, Session session) {

@@ -127,7 +127,7 @@ public class Main {
 
         Iterator<IClass> classes = cha.iterator();
         Database db = new Database(new File(walaParameters._outputDir), false);
-        WalaFactWriter walaFactWriter = new WalaFactWriter(db);
+        WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
         WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
