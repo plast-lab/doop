@@ -722,7 +722,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "X_START_AFTER_FACTS",
 					name: "Xstart-after-facts",
-					description: "Import facts from OUT_DIR and start the analysis",
+					description: "Import facts from OUT_DIR and start the analysis.",
 					argName: "OUT_DIR",
 					isDir: true,
 					nonStandard: true,
