@@ -139,12 +139,13 @@ public class WalaFactWriter {
             _db.add(CLASS_TYPE, classStr);
         }
         _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
-//        if (c.getTag("VisibilityAnnotationTag") != null) {
-//            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
-//            for (AnnotationTag aTag : vTag.getAnnotations()) {
-//                _db.add(CLASS_ANNOTATION, classStr, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
-//            }
-//        }
+
+        Collection<Annotation> annotations = c.getAnnotations();
+        if(annotations != null) {
+            for (Annotation annotation : annotations) {
+                _db.add(CLASS_ANNOTATION, classStr, fixTypeString(annotation.getType().toString()));
+            }
+        }
     }
 
     void writeDirectSuperclass(IClass sub, IClass sup) {
@@ -482,7 +483,7 @@ public class WalaFactWriter {
         _db.add(APP_CLASS, writeType(application));
     }
 
-    Collection <IField> getAllFieldsOfClass(IClass cl) //for some reason
+    static Collection <IField> getAllFieldsOfClass(IClass cl) //for some reason
     {
         Collection <IField> result = new LinkedList<IField>();
         result.addAll(cl.getAllInstanceFields());
@@ -501,7 +502,7 @@ public class WalaFactWriter {
         return result;
     }
 
-    TypeReference getCorrectFieldDeclaringClass(FieldReference f, IClassHierarchy cha)
+    private TypeReference getCorrectFieldDeclaringClass(FieldReference f, IClassHierarchy cha)
     {
         IClass targetClass = cha.lookupClass(f.getDeclaringClass());
         TypeReference typeRef = f.getDeclaringClass();
@@ -510,10 +511,9 @@ public class WalaFactWriter {
         else
         {
             //for(IField field: targetClass.getAllFields())
+            //We use our own method instead of IClass.getAllFields() because sometimes getAllFields() throws NullPointerException.
             for(IField field: getAllFieldsOfClass(targetClass))
             {
-//            if(targetClass.getName().toString().contains(""))
-//                System.out.println("");
                 if(field.getName().toString().equals(f.getName().toString()))
                 {
                     typeRef = field.getDeclaringClass().getReference();
@@ -527,12 +527,12 @@ public class WalaFactWriter {
     String writeField(IField f) {
         String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
-//        if (f.getTag("VisibilityAnnotationTag") != null) {
-//            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) f.getTag("VisibilityAnnotationTag");
-//            for (AnnotationTag aTag : vTag.getAnnotations()) {
-//                _db.add(FIELD_ANNOTATION, fieldId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
-//            }
-//        }
+        Collection<Annotation> annotations = f.getAnnotations();
+        if(annotations != null) {
+            for (Annotation annotation : annotations) {
+                _db.add(FIELD_ANNOTATION, fieldId, fixTypeString(annotation.getType().toString()));
+            }
+        }
         return fieldId;
     }
 
@@ -585,12 +585,10 @@ public class WalaFactWriter {
     void writeNativeReturnVar(IMethod m) {
         String methodId = _rep.signature(m);
 
-        //if (!(m.getReturnType() instanceof VoidType)) {
         String  var = _rep.nativeReturnVar(m);
         _db.add(NATIVE_RETURN_VAR, var, methodId);
         _db.add(VAR_TYPE, var, writeType(m.getReturnType()));
         _db.add(VAR_DECLARING_METHOD, var, methodId);
-        //}
     }
 
     void writeGoto(IMethod m, SSAGotoInstruction instruction, SSAInstruction to, Session session) {
@@ -766,10 +764,9 @@ public class WalaFactWriter {
         {
             return;
         }
-        SSACFG cfg = ir.getControlFlowGraph();
+
         session.calcInstructionNumber(catchInstr);
         int handlerIndex = session.getInstructionNumber(catchInstr);
-        //System.out.println("catch def is " + catchInstr.getDef());
         Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
 
         SSAInstruction[] instructions = ir.getInstructions();
@@ -792,11 +789,11 @@ public class WalaFactWriter {
             session.calcInstructionNumber(endInstr);
             int endIndex = session.getInstructionNumber(endInstr);
             Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
-            if(m.getName().toString().equals("parseNetscapeCertChain") &&
-                    m.getDeclaringClass().getName().toString().contains("PKCS7"))
-                System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
-                        scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
-                        handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
+//            if(m.getName().toString().equals("parseNetscapeCertChain") &&
+//                    m.getDeclaringClass().getName().toString().contains("PKCS7"))
+//                System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
+//                        scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
+//                        handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
             while (excTypes.hasNext()) {
                 TypeReference excType = excTypes.next();
                 String insn = _rep.handler(m, catchInstr, excType, session, i/2);
@@ -808,141 +805,6 @@ public class WalaFactWriter {
         }
         if(scopeArray.length > 2)
             _rep.putHandlerNumOfScopes(m, catchInstr,(scopeArray.length - 1)/2 );
-    }
-
-    void writeExceptionHandlerOld(IR ir, IMethod m, SSACFG.ExceptionHandlerBasicBlock handlerBlock, Session session, TypeInference typeInference) {
-
-        SSAGetCaughtExceptionInstruction catchInstr = handlerBlock.getCatchInstruction();
-        if(catchInstr == null)
-        {
-            //System.out.println("NULL CATCH?");
-            return;
-        }
-        SSACFG cfg = ir.getControlFlowGraph();
-        Collection<ISSABasicBlock> excPredecessors = cfg.getExceptionalPredecessors(handlerBlock);
-        int index = session.calcInstructionNumber(catchInstr);
-        //System.out.println("catch def is " + catchInstr.getDef());
-        Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
-
-        int handlerIndex = session.getInstructionNumber(catchInstr);
-        SSAInstruction[] instructions = ir.getInstructions();
-        SSAInstruction startInstr = null;
-        SSAInstruction endInstr = null;
-        int startInstrIndex = -5;
-        int endInstrIndex = -5;
-        // Because in SSACFG.getExceptionalPredecessors():
-        // "The order of blocks returned should be arbitrary but deterministic."
-        // We do not know their order, so we need to iterate through them to find which is
-        // first and which is last.
-        for(ISSABasicBlock bb : excPredecessors)
-        {
-            if(startInstrIndex == -5)
-            {
-                startInstrIndex = bb.getFirstInstructionIndex();
-                endInstrIndex = bb.getLastInstructionIndex();
-            }
-            else
-            {
-                if(bb.getFirstInstructionIndex() < startInstrIndex)
-                    startInstrIndex = bb.getFirstInstructionIndex();
-                if(bb.getLastInstructionIndex() > endInstrIndex)
-                    endInstrIndex = bb.getLastInstructionIndex();
-            }
-        }
-
-        IBytecodeMethod bytecodeMethod = (IBytecodeMethod) m;
-        ExceptionHandler[][] exceptionHandlers = null;
-        try {
-            exceptionHandlers = bytecodeMethod.getHandlers();
-        } catch (InvalidClassFileException e) {
-            e.printStackTrace();
-        }
-
-
-        // We need to use startInstrIndex and endInstrIndex as a scope
-        // and find the first and last instruction between them because
-        // either instructions[startInstrIndex] or instructions[endInstrIndex]
-        // could be null
-        for(int i=startInstrIndex; i <= endInstrIndex; i++)
-        {
-            if(instructions[i] != null)
-            {
-                if(startInstr == null)
-                {
-                    startInstr = instructions[i];
-                    endInstr = instructions[i];
-                }
-                else
-                    endInstr = instructions[i];
-            }
-        }
-        if(startInstr == null) {//Basic block has no instructions
-            //System.out.println("NO instructions in handler block :(.");
-            return;
-        }
-
-        if(exceptionHandlers != null)
-        {
-//            if(m.getName().toString().equals("parseNetscapeCertChain"))
-//                for(int i=0; i < handlerIndex; i++)
-//                    if(instructions[i] != null) {
-//                        System.out.println(session.getInstructionNumber(instructions[i]) + " " + instructions[i].toString(ir.getSymbolTable()));
-//                        for(int j :handlersToArray(exceptionHandlers[i]))
-//                            System.out.print(j +", ");
-//                        System.out.print("\n");
-//                    }
-            startInstrIndex =startInstr.iindex;
-            int[] upperBoundHandlerArray = handlersToArray(exceptionHandlers[startInstrIndex]);
-            while( startInstrIndex > 0 && java.util.Arrays.equals(upperBoundHandlerArray, handlersToArray(exceptionHandlers[startInstrIndex - 1])))
-                startInstrIndex--;
-            endInstrIndex =endInstr.iindex;
-            int[] lowerBoundHandlerArray = handlersToArray(exceptionHandlers[endInstrIndex]);
-            while( endInstrIndex < instructions.length -1 && java.util.Arrays.equals(lowerBoundHandlerArray, handlersToArray(exceptionHandlers[endInstrIndex + 1])))
-                endInstrIndex++;
-
-            startInstr = null;
-            endInstr = null;
-            for(int i=startInstrIndex; i <= endInstrIndex; i++)
-            {
-                if(instructions[i] != null)
-                {
-                    if(startInstr == null)
-                    {
-                        startInstr = instructions[i];
-                        endInstr = instructions[i];
-                    }
-                    else
-                        endInstr = instructions[i];
-                }
-            }
-
-        }
-
-        session.calcInstructionNumber(startInstr);
-        int beginIndex = session.getInstructionNumber(startInstr);
-        session.calcInstructionNumber(endInstr);
-        int endIndex = session.getInstructionNumber(endInstr);
-        Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
-        String prev = null;
-        while(excTypes.hasNext())
-        {
-            TypeReference excType = excTypes.next();
-            String insn = _rep.handler(m, catchInstr, excType, session,0);
-            _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex + 1));
-            if(prev != null)
-                _db.add(EXCEPT_HANDLER_PREV, insn, prev);
-            prev = insn;
-        }
-    }
-
-    int[] handlersToArray(ExceptionHandler[] handlers)
-    {
-        int[] targetsArray = new int[handlers.length];
-        for(int i=0; i < handlers.length ; i++)
-        {
-            targetsArray[i] = handlers[i].getHandler();
-        }
-        return targetsArray;
     }
 
     void writeThisVar(IMethod m) {
@@ -1042,7 +904,6 @@ public class WalaFactWriter {
     private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
         session.calcInstructionNumber(instruction);
         int index = session.getInstructionNumber(instruction);
-        //String insn = _rep.invoke(inMethod, instruction, session);
         String methodId = _rep.signature(inMethod);
 
         IBytecodeMethod method = (IBytecodeMethod)ir.getMethod();
@@ -1055,39 +916,23 @@ public class WalaFactWriter {
             sourceLineNum = -1;
         }
 
-        //writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
         IClassHierarchy cha = inMethod.getClassHierarchy();
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
         IClass targetClass = cha.lookupClass(targetRef.getDeclaringClass());
-//        if(instruction.isDispatch()) {
-//            int dispVar = instruction.getUse(0);
-//            TypeReference typeRef;
-//            TypeAbstraction typeAbstraction = typeInference.getType(dispVar);
-//            IClass dispClass;
-//            if(!(typeAbstraction.getType() == null && !(typeAbstraction instanceof JavaPrimitiveType)))
-//                typeRef = TypeReference.JavaLangObject;
-//            else
-//                typeRef = typeAbstraction.getTypeReference();
-//            dispClass = cha.lookupClass(typeRef);
-//            if(!targetClass.toString().equals(dispClass.toString()))
-//                System.out.println("DIFF " + targetClass.toString() + " | " + dispClass.toString());
-//
-//        }
+
         if(targetClass == null)
             System.out.println("Failed to find class: "  + fixTypeString(targetRef.getDeclaringClass().getName().toString()) + " in class chierarchy.");
         else if( targetClass.isArrayClass())
         {
-            //System.out.println("ArrayClass " +targetClass.getName().toString() + " is a child of " + supClass.getName().toString());
             for(IMethod meth: targetClass.getAllMethods()) {
                 if (meth.getName().toString().equals(targetRef.getName().toString())
                         && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
                 {
-                    //System.out.println("\n Target found: " + meth.toString());
                     targetRef = meth.getReference();
                     break;
                 }
             }
-        }//else if(targetClass.isInterface())
+        }
         else {
             boolean foundAtFirst = false;
             for(IMethod meth: targetClass.getAllMethods()) {
@@ -1107,25 +952,17 @@ public class WalaFactWriter {
                 {
                     boolean found = false;
                     IClass currClass;
-//                    for(IClass c:targetClass.getDirectInterfaces()) {
-//                        //classQueue.add(c);
-//                        System.out.println("Class " + targetClass.getReference().toString() +" implements " + c.getReference().toString());
-//                    }
                     while (!classQueue.isEmpty() && !found) {
                         currClass = classQueue.remove();
-                        //System.out.println("------------------------------------------------");
-                        //System.out.println("Looking in interface " + currClass.getReference().toString());
                         for(IMethod meth: currClass.getDeclaredMethods()) {
-                            //System.out.println(meth.getReference().toString());
                             if (meth.getName().toString().equals(targetRef.getName().toString())
                                     && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
                             {
-                                //System.out.println("\n Target found in interface: " + meth.toString());
                                 targetRef = meth.getReference();
                                 found = true;
                                 break;
                             }
-                        }//System.out.println("------------------------------------------------");
+                        }
                         classQueue.addAll(currClass.getDirectInterfaces());
                     }
                 }

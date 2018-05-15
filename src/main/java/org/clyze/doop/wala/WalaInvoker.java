@@ -154,7 +154,7 @@ public class WalaInvoker {
             }
             classesSet.add(klass);
         }
-        walaParameters._cores = 1;
+
         WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), false, walaParameters._cores, walaParameters._android);
         driver.doInParallel(classesSet);
         driver.shutdown();

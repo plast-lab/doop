@@ -8,11 +8,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class WalaExceptionHelper {
-    int[][] exceArrays;
-    String[][] exceTypeArrays;
-    SSAInstruction[] instructions;
-    Map<Integer,Integer[]> walaHandlerScopes;
-    ExceptionHandler[][] walaExceptionHandlers;
+    private int[][] exceArrays;
+    private String[][] exceTypeArrays;
+    private SSAInstruction[] instructions;
+    private Map<Integer,Integer[]> walaHandlerScopes;
+    private ExceptionHandler[][] walaExceptionHandlers;
 
     public WalaExceptionHelper(SSAInstruction[] instrs, ExceptionHandler[][] walaExcHandlers)
     {
@@ -95,7 +95,7 @@ public class WalaExceptionHelper {
         return scopeArray;
     }
 
-    int[] handlersToArray(ExceptionHandler[] handlers)
+    private int[] handlersToArray(ExceptionHandler[] handlers)
     {
         if(handlers == null) //Happens in Android
             return new int[0];
@@ -107,7 +107,7 @@ public class WalaExceptionHelper {
         return targetsArray;
     }
 
-    String[] handlersStringArray(ExceptionHandler[] handlers)
+    private String[] handlersStringArray(ExceptionHandler[] handlers)
     {
         if(handlers == null) //Happens in Android
             return new String[0];

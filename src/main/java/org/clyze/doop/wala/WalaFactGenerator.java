@@ -204,7 +204,7 @@ class WalaFactGenerator implements Runnable {
         if(_android)
             typeInference = DalvikTypeInference.make(ir, true);
         else
-            typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
+            typeInference = TypeInference.make(ir,true);
         SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
         IBytecodeMethod bytecodeMethod = (IBytecodeMethod) m;
         ExceptionHandler[][] exceptionHandlers = null;
@@ -389,28 +389,28 @@ class WalaFactGenerator implements Runnable {
             }
         }
 
-        int[][] exceArrays = walaExceptionHelper.exceArrays;
-        String[][] exceTypeArrays = walaExceptionHelper.exceTypeArrays;
-
-        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
-            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
-            int start = basicBlock.getFirstInstructionIndex();
-            int end = basicBlock.getLastInstructionIndex();
-
-            for (int j = start; j <= end; j++) {
-                if(instructions[j] != null)
-                {
-                    if(m.getName().toString().equals("parseNetscapeCertChain") &&
-                            m.getDeclaringClass().getName().toString().contains("PKCS7")) {
-                        System.out.println(session.getInstructionNumber(instructions[j]) + " " + instructions[j].toString(ir.getSymbolTable()));
-                        for (int k = 0; k < exceArrays[j].length ; k++) {
-                            System.out.print(exceArrays[j][k] +" - " + exceTypeArrays[j][k] + ", ");
-                        }
-                        System.out.print("\n");
-                    }
-                }
-            }
-        }
+//        int[][] exceArrays = walaExceptionHelper.exceArrays;
+//        String[][] exceTypeArrays = walaExceptionHelper.exceTypeArrays;
+//
+//        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+//            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+//            int start = basicBlock.getFirstInstructionIndex();
+//            int end = basicBlock.getLastInstructionIndex();
+//
+//            for (int j = start; j <= end; j++) {
+//                if(instructions[j] != null)
+//                {
+//                    if(m.getName().toString().equals("parseNetscapeCertChain") &&
+//                            m.getDeclaringClass().getName().toString().contains("PKCS7")) {
+//                        System.out.println(session.getInstructionNumber(instructions[j]) + " " + instructions[j].toString(ir.getSymbolTable()));
+//                        for (int k = 0; k < exceArrays[j].length ; k++) {
+//                            System.out.print(exceArrays[j][k] +" - " + exceTypeArrays[j][k] + ", ");
+//                        }
+//                        System.out.print("\n");
+//                    }
+//                }
+//            }
+//        }
     }
 
     /*
@@ -796,25 +796,5 @@ class WalaFactGenerator implements Runnable {
                 return i;
         }
         return -1;
-    }
-
-    int[] handlersToArray(ExceptionHandler[] handlers)
-    {
-        int[] targetsArray = new int[handlers.length];
-        for(int i=0; i < handlers.length ; i++)
-        {
-            targetsArray[i] = handlers[i].getHandler();
-        }
-        return targetsArray;
-    }
-
-    String[] handlersStringArray(ExceptionHandler[] handlers)
-    {
-        String[] targetsArray = new String[handlers.length];
-        for(int i=0; i < handlers.length ; i++)
-        {
-            targetsArray[i] = handlers[i].getCatchClass();
-        }
-        return targetsArray;
     }
 }
