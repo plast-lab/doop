@@ -480,7 +480,7 @@ class WalaFactGenerator implements Runnable {
         }
         else
         {
-            _writer.writeAssignNewMultiArrayExpr(m, instruction, l, session);
+            _writer.writeAssignNewMultiArrayExpr(ir, m, instruction, l, session);
         }
     }
 
@@ -727,7 +727,7 @@ class WalaFactGenerator implements Runnable {
         String s = v.toString();
         if (v.isStringConstant()) {
             l.setType(TypeReference.JavaLangString);
-            _writer.writeStringConstantExpression(m, instruction, l, (ConstantValue) v, session);
+            _writer.writeStringConstantExpression(ir, m, instruction, l, (ConstantValue) v, session);
         } else if (v.isNullConstant()) {
             _writer.writeNullExpression(m, instruction, l, session);
         } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {

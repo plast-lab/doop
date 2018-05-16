@@ -237,19 +237,22 @@ public class WalaFactWriter {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(instruction));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(ir, instruction));
     }
 
-    private static int getLineNumberFromInstruction(SSAInstruction instruction) {
-//        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
-//        String lineNumber;
-//        if (tag == null) {
-//            return  0;
-//        } else {
-//            return tag.getLineNumber();
-//        }
-        return instruction.iindex;
-        //return 0;
+    private static int getLineNumberFromInstruction(IR ir, SSAInstruction instruction) {
+        if(instruction.iindex == -1)
+            return 0;
+        IBytecodeMethod method = (IBytecodeMethod)ir.getMethod();
+        int sourceLineNum;
+        int bytecodeIndex;
+        try {
+            bytecodeIndex = method.getBytecodeIndex(instruction.iindex);
+            sourceLineNum = method.getLineNumber(bytecodeIndex);
+        } catch (InvalidClassFileException e) {
+            sourceLineNum = 0;
+        }
+        return sourceLineNum;
     }
 
     private TypeReference getComponentType(TypeReference type) {
@@ -264,11 +267,11 @@ public class WalaFactWriter {
      * NewMultiArray is slightly complicated because an array needs to
      * be allocated separately for every dimension of the array.
      */
-    void writeAssignNewMultiArrayExpr(IMethod m, SSANewInstruction instruction, Local l, Session session) {
-        writeAssignNewMultiArrayExprHelper(m, instruction, l, _rep.local(m,l), instruction.getConcreteType(), session);
+    void writeAssignNewMultiArrayExpr(IR ir, IMethod m, SSANewInstruction instruction, Local l, Session session) {
+        writeAssignNewMultiArrayExprHelper(ir, m, instruction, l, _rep.local(m,l), instruction.getConcreteType(), session);
     }
 
-    private void writeAssignNewMultiArrayExprHelper(IMethod m, SSANewInstruction instruction, Local l, String assignTo, TypeReference arrayType, Session session) {
+    private void writeAssignNewMultiArrayExprHelper(IR ir, IMethod m, SSANewInstruction instruction, Local l, String assignTo, TypeReference arrayType, Session session) {
         String heap = _rep.heapMultiArrayAlloc(m, instruction, arrayType, session);
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
@@ -277,12 +280,12 @@ public class WalaFactWriter {
         String methodId = writeMethod(m);
 
         _db.add(NORMAL_HEAP, heap, writeType(arrayType));
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, ""+getLineNumberFromInstruction(instruction));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, ""+getLineNumberFromInstruction(ir, instruction));
 
         TypeReference componentType = getComponentType(arrayType);
         if (componentType.isArrayType()) {
             String childAssignTo = _rep.newLocalIntermediate(m, l, session);
-            writeAssignNewMultiArrayExprHelper(m, instruction, l, childAssignTo, componentType, session);
+            writeAssignNewMultiArrayExprHelper(ir, m, instruction, l, childAssignTo, componentType, session);
             int storeInsnIndex = session.calcInstructionNumber(instruction);
             String storeInsn = _rep.instruction(m, instruction, session, storeInsnIndex);
 
@@ -338,7 +341,7 @@ public class WalaFactWriter {
     }
     */
 
-    private void writeAssignStringConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue s, Session session) {
+    private void writeAssignStringConstant(IR ir, IMethod m, SSAInstruction instruction, Local l, ConstantValue s, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String constant = s.getValue().toString();
         String heapId = writeStringConstant(constant);
@@ -346,7 +349,7 @@ public class WalaFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(instruction));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(ir, instruction));
     }
 
     private void writeAssignNull(IMethod m, SSAInstruction instruction, Local l, Session session) {
@@ -834,10 +837,10 @@ public class WalaFactWriter {
         _db.add(VAR_DECLARING_METHOD, local, _rep.signature(m));
     }
 
-    void writeStringConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+    void writeStringConstantExpression(IR ir, IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         // introduce a new temporary variable
         writeLocal(inMethod, l);
-        writeAssignStringConstant(inMethod, instruction, l, constant, session);
+        writeAssignStringConstant(ir, inMethod, instruction, l, constant, session);
     }
 
     void writeNullExpression(IMethod inMethod, SSAInstruction instruction, Local l, Session session) {
