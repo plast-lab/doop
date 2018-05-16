@@ -455,7 +455,9 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   Var_Type(?this, ?thisType),
   Value_Type(?value, ?valueType),
   basic.SupertypeOf(?thisType, ?valueType).
+#ifndef X_CONTEXT_REMOVER
  .plan 3:(6,2,1,3,4,5,7)
+#endif
 #endif
 
 
