@@ -471,8 +471,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         }
 
         if (options.MAIN_CLASS.value) {
-            if (options.X_START_AFTER_FACTS.value) {
-                throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.X_START_AFTER_FACTS.name}")
+            if (options.X_START_AFTER_FACTS.value &&
+                options.X_SYMLINK_CACHED_FACTS.value) {
+                throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.X_START_AFTER_FACTS.name} when using symbolic links")
             } else if (options.IGNORE_MAIN_METHOD.value) {
                 throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
             } else {
