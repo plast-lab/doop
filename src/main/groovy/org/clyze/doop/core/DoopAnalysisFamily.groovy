@@ -133,7 +133,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "seed",
 					argName: "FILE",
 					forCacheID: true,
-					description: "Use proguard seed file",
+					description: "Use ProGuard seed file.",
 					changesFacts: true,
 					value: null
 			),
@@ -268,7 +268,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "ANDROID",
 					name: "android",
-					description: "If true the analysis is ran on an Android app",
+					description: "If true the analysis is ran on an Android app.",
 					value: false,
 					forPreprocessor: true
 			),
@@ -299,7 +299,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "NO_MERGES",
 					name: "no-merges",
-					description: "No merges for string constants",
+					description: "No merges for string constants.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true,
@@ -308,7 +308,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
 					name: "distinguish-reflection-only-string-constants",
-					description: "Merge all string constants except those useful for reflection",
+					description: "Merge all string constants except those useful for reflection.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true,
@@ -317,7 +317,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DISTINGUISH_ALL_STRING_CONSTANTS",
 					name: "distinguish-all-string-constants",
-					description: "Treat string constants as regular objects",
+					description: "Treat string constants as regular objects.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true,
