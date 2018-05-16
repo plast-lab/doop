@@ -1,26 +1,59 @@
 package org.clyze.doop.wala;
 
+import com.ibm.wala.classLoader.IBytecodeMethod;
+import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.shrikeBT.ExceptionHandler;
+import com.ibm.wala.shrikeCT.InvalidClassFileException;
+import com.ibm.wala.ssa.SSACFG;
 import com.ibm.wala.ssa.SSAInstruction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+/*
+ * We use this class to take advantage of the information the com.ibm.wala.shrikeBT.ExceptionHandler class offers.
+ * For each IBytecodeMethod there is an ExceptionHandler[][] containing an array of ExceptionHandler for each instruction
+ * of the instruction array.
+ * Using this array we create 2 arrays: exceArrays and exceTypeArrays
+ * exceArrays: for each instruction contains an array of int representing the ids of each handler that is active in that instruction
+ * exceTypeArrays: for each element of exceArrays contains the String representation of the type of the handler
+ *
+ * Using exceArrays we can create the scopes of each handler: the scopes are represented in an array of int and the
+ * number of scopes is the length of that array divided by two.[0,3,7,12] contains two scopes 0-3 and 7-12
+ * The scopes of each handler are stored in walaHandlerScopes
+ */
+
 public class WalaExceptionHelper {
     private int[][] exceArrays;
-    private String[][] exceTypeArrays;
+    private String[][] exceTypeArrays; //We do not currently use this information but we may do so in the future.
     private SSAInstruction[] instructions;
     private Map<Integer,Integer[]> walaHandlerScopes;
     private ExceptionHandler[][] walaExceptionHandlers;
 
-    public WalaExceptionHelper(SSAInstruction[] instrs, ExceptionHandler[][] walaExcHandlers)
+    WalaExceptionHelper(SSAInstruction[] instrs, IMethod m, SSACFG cfg)
     {
-        walaExceptionHandlers = walaExcHandlers;
+        IBytecodeMethod bytecodeMethod = (IBytecodeMethod) m;
+        walaExceptionHandlers = null;
+        try {
+            walaExceptionHandlers = bytecodeMethod.getHandlers();
+        } catch (InvalidClassFileException e) {
+            throw new RuntimeException(e);
+        }
         instructions = instrs;
         exceArrays = new int[instructions.length][];
         exceTypeArrays = new String[instructions.length][];
         walaHandlerScopes = new HashMap<>();
+
+        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+            int start = basicBlock.getFirstInstructionIndex();
+            int end = basicBlock.getLastInstructionIndex();
+
+            for (int j = start; j <= end; j++) {
+                this.computeArraysForInstruction(j);
+            }
+        }
     }
 
     public int getWalaExceptionID(int instrIndex, int exceptionIndex)
@@ -43,7 +76,7 @@ public class WalaExceptionHelper {
         return exceTypeArrays[instrIndex];
     }
 
-    public void computeArraysForInstruction(int instrIndex)
+    private void computeArraysForInstruction(int instrIndex)
     {
         if(instructions[instrIndex] != null)
         {

@@ -1,6 +1,5 @@
 package org.clyze.doop.wala;
 
-import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.dalvik.analysis.typeInference.DalvikTypeInference;
@@ -9,7 +8,6 @@ import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
-import com.ibm.wala.shrikeBT.ExceptionHandler;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.TypeReference;
@@ -200,33 +198,16 @@ class WalaFactGenerator implements Runnable {
 
     private void generate(IMethod m, IR ir, Session session)
     {
-
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
+        SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
         TypeInference typeInference;
         if(_android)
             typeInference = DalvikTypeInference.make(ir, true);
         else
             typeInference = TypeInference.make(ir,true);
-        SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
-        IBytecodeMethod bytecodeMethod = (IBytecodeMethod) m;
-        ExceptionHandler[][] exceptionHandlers = null;
-        try {
-            exceptionHandlers = bytecodeMethod.getHandlers();
-        } catch (InvalidClassFileException e) {
-            e.printStackTrace();
-        }
-        WalaExceptionHelper walaExceptionHelper = new WalaExceptionHelper(instructions,exceptionHandlers);
 
-        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
-            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
-            int start = basicBlock.getFirstInstructionIndex();
-            int end = basicBlock.getLastInstructionIndex();
-
-            for (int j = start; j <= end; j++) {
-                walaExceptionHelper.computeArraysForInstruction(j);
-            }
-        }
+        WalaExceptionHelper walaExceptionHelper = new WalaExceptionHelper(instructions, m, cfg);
 
 
 //        if(m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package")
@@ -262,13 +243,13 @@ class WalaFactGenerator implements Runnable {
             while(phis.hasNext())
             {
                 SSAPhiInstruction phiInstruction = phis.next();
-                this.generateDefs(m, ir, phiInstruction, session, typeInference);
+                this.generateDefs(m, ir, phiInstruction, typeInference);
                 this.generateUses(m, ir, phiInstruction, session, typeInference);
                 generate(m, ir, phiInstruction, session, typeInference);
             }
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
-                    this.generateDefs(m, ir, instructions[j], session, typeInference);
+                    this.generateDefs(m, ir, instructions[j], typeInference);
                     this.generateUses(m, ir, instructions[j], session, typeInference);
 
                     if (instructions[j] instanceof SSAReturnInstruction) {
@@ -367,7 +348,7 @@ class WalaFactGenerator implements Runnable {
                 {
                     continue;
                 }
-                generateDefs(m,ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(),session, typeInference);
+                generateDefs(m,ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(), typeInference);
                 _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference, walaExceptionHelper);
                 if (previousHandlerBlock != null) {
                     _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock) basicBlock, previousHandlerBlock, session);
@@ -652,37 +633,36 @@ class WalaFactGenerator implements Runnable {
         else {
             // Return something has a single use
             Local l = createLocal(ir, instruction, instruction.getUse(0), typeInference);
-            l.type = m.getReturnType();
             _writer.writeReturn(m, instruction, l, session);
         }
     }
 
-    private void generateDefs(IMethod m, IR ir, SSAInstruction instruction, Session session, TypeInference typeInference) {
-        SymbolTable symbolTable = ir.getSymbolTable();
+    // Instructions have zero to two defs.According to WALA's documentation:
+    // "SSAInvokeInstructions may additionally def a second variable, representing the exceptional return value."
+    // For each def we use writeLocal to produce VAR_TYPE and VAR_DECLARING_TYPE facts.
+    //We probably don't need to produce facts for it the second def.
+    private void generateDefs(IMethod m, IR ir, SSAInstruction instruction, TypeInference typeInference) {
 
         if (instruction.hasDef()) {
             for (int i = 0; i < instruction.getNumberOfDefs(); i++) {
                 int def = instruction.getDef(i);
                 Local l = createLocal(ir, instruction, def, typeInference);
-                if (def != 1 && symbolTable.isConstant(def)) {
-                    Value v = symbolTable.getValue(def);
-                    generateConstant(m, ir, instruction, v, l, session);
-                } else {
-                    _writer.writeLocal(m, l);
-                }
+                _writer.writeLocal(m, l);
             }
         }
     }
 
+    //We only need to generate VAR_TYPE and VAR_DECLARING_TYPE facts for the used variables if they are constants
+    //The others have either been previous defs or method parameters/this so they have already had facts produced.
     private void generateUses(IMethod m, IR ir, SSAInstruction instruction, Session session, TypeInference typeInference) {
         SymbolTable symbolTable = ir.getSymbolTable();
 
         for (int i = 0; i < instruction.getNumberOfUses(); i++) {
             int use = instruction.getUse(i);
-            if(instruction instanceof  SSAPhiInstruction && use < 0)
+            if(instruction instanceof  SSAPhiInstruction && use < 0) //For some reason phi instructions can have -1 as use
                 continue;
-            Local l = createLocal(ir, instruction, use, typeInference);
             if (use != -1 && symbolTable.isConstant(use)) {
+                Local l = createLocal(ir, instruction, use, typeInference);
                 Value v = symbolTable.getValue(use);
                 generateConstant(m, ir, instruction, v, l, session);
             }
