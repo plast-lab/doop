@@ -103,6 +103,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "CLASS",
 					description: "Specify the main class.",
 					value: null,
+					changesFacts: true,
 					webUI: true
 			),
 			new AnalysisOption<String>(
@@ -112,6 +113,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Specify the partitions.",
 					value: null,
 					webUI: false,
+					changesFacts: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
@@ -123,6 +125,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use file with tamiflex data for reflection.",
 					value: null,
 					webUI: true,
+					changesFacts: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
@@ -131,6 +134,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "FILE",
 					forCacheID: true,
 					description: "Use proguard seed file",
+					changesFacts: true,
 					value: null
 			),
 			new BooleanAnalysisOption(
@@ -237,6 +241,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "A regex expression for the Java package names of the analyzed application.",
 					value: null,
 					forCacheID: true,
+					changesFacts: true,
 					webUI: true
 			),
 			new AnalysisOption<String>(
@@ -246,6 +251,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "When no app regex is given, either compute an app regex for the first input ('first') or for all inputs ('all').",
 					value: null,
 					forCacheID: true,
+					changesFacts: true,
 					webUI: false
 			),
 			new AnalysisOption<String>(
@@ -544,6 +550,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "CONTROLS",
 					description: "Load additional sensitive layout control from string triplets \"id1,type1,parent_id1,...\".",
 					value: null,
+					changesFacts: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption(
@@ -584,6 +591,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					valueType: InputType.HPROF,
 					webUI: false,
 					forCacheID: true,
+					changesFacts: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
@@ -784,6 +792,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isFile: true,
 					description: "One or more files with tab-separated data for Config:DynamicClass. Separate multiple files with a space.",
 					value: [],
+					changesFacts: true,
 					multipleValues: true
 			),
 			new BooleanAnalysisOption(
