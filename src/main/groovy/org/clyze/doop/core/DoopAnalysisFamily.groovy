@@ -108,7 +108,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "IMPORT_PARTITIONS",
 					name: "import-partitions",
-					argName: "file",
+					argName: "FILE",
 					description: "Specify the partitions.",
 					value: null,
 					webUI: false,
@@ -471,7 +471,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "GENERATE_PROGUARD_KEEP_DIRECTIVES",
 					name: "gen-proguard-keep",
-					description: "Generate keep directives for proguard",
+					description: "Generate keep directives for ProGuard.",
 					value: false,
 					webUI: true,
 					isAdvanced: true
