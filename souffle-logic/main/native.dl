@@ -357,7 +357,7 @@ ReachableNativeMethodInvocation(?ctx, ?invo, ?nativeMethod) :-
 .decl NativeMethodReturningValue(?m:Method, ?t:Type, ?return:Var, ?v:Value)
 .output NativeMethodReturningValue
 
-#define NativeReturnValId(t, m) cat(t, cat(" value allocated in ", m))
+#define NativeReturnValId(t, m) cat("<native ", cat(t, cat(" value allocated in ", cat(m, ">"))))
 
 NativeMethodReturningValue(?m, ?t, ?return, NativeReturnValId(?t, ?m)),
 MockValueConsMacro(NativeReturnValId(?t, ?m), ?t),

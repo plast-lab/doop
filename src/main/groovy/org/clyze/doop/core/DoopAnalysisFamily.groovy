@@ -193,7 +193,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "simulate-native-returns",
 					description: "Assume native method calls return mock objects.",
 					value: false,
-					forPreprocessor: true
+					forPreprocessor: true,
+					webUI: true,
+					isAdvanced: true
 			),
 			new BooleanAnalysisOption(
 					id: "UNIQUE_FACTS",
