@@ -13,7 +13,7 @@ import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
 
-import static org.clyze.doop.wala.WalaRepresentation.*;
+import static org.clyze.doop.wala.WalaUtils.fixTypeString;
 
 public class WalaIRPrinter {
 
@@ -165,6 +165,7 @@ public class WalaIRPrinter {
         }
     }
 
+    //Needs work.
     public void printVars(IR ir, PrintWriter writer)
     {
         SSAInstruction[] instructions = ir.getInstructions();

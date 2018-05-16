@@ -18,6 +18,9 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.*;
 
+import static org.clyze.doop.wala.WalaUtils.createLocal;
+import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
+
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
  * generate facts. The class FactGenerator is the parseParamsAndRun class
@@ -445,13 +448,11 @@ class WalaFactGenerator implements Runnable {
         if(brachTarget == -1) //In Android conditional branches can have -1 as target
             brachTarget =0;
         if(ssaInstructions[brachTarget] == null) {
-            int nextWALAIndex = getNextNonNullInstruction(ir,brachTarget);
-            if(nextWALAIndex == -1)
+            brachTarget = getNextNonNullInstruction(ir,brachTarget);
+            if(brachTarget == -1)
                 logger.error("Error: Next non-null instruction index = -1");
-            _writer.writeIf(m, instruction, op1, op2, ssaInstructions[nextWALAIndex], session);
         }
-        else
-            _writer.writeIf(m, instruction, op1, op2, ssaInstructions[brachTarget], session);
+        _writer.writeIf(m, instruction, op1, op2, ssaInstructions[brachTarget], session);
     }
 
 
@@ -603,13 +604,11 @@ class WalaFactGenerator implements Runnable {
         if(gotoTarget < 0) //In Android conditional GoTos can have -1 as target
             gotoTarget = 0;
         if(ssaInstructions[gotoTarget] == null) {
-            int nextWALAIndex = getNextNonNullInstruction(ir,gotoTarget);
-            if(nextWALAIndex == -1)
+            gotoTarget = getNextNonNullInstruction(ir,gotoTarget);
+            if(gotoTarget == -1)
                 logger.error("Error: Next non-null instruction index = -1");
-            _writer.writeGoto(m, instruction, ssaInstructions[nextWALAIndex], session);
         }
-        else
-            _writer.writeGoto(m, instruction,ssaInstructions[gotoTarget] , session);
+        _writer.writeGoto(m, instruction,ssaInstructions[gotoTarget] , session);
     }
 
     public void generate(IMethod m, IR ir, SSAMonitorInstruction instruction, Session session, TypeInference typeInference) {
@@ -640,37 +639,6 @@ class WalaFactGenerator implements Runnable {
         _writer.writeAssignArrayLength(m, instruction, to, base, session);
     }
 
-    private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
-        Local l;
-
-        TypeReference typeRef;
-        TypeAbstraction typeAbstraction = typeInference.getType(varIndex);
-        if (typeAbstraction == null) {                    // anantoni: TypeAbstraction == null means undefined type
-            typeRef = TypeReference.JavaLangObject;
-        }
-        else {                                            // All other cases - including primitives - should be handled by getting the TypeReference
-            typeRef = typeAbstraction.getTypeReference();
-            if (typeRef == null) {                        // anantoni: In this case we have encountered WalaTypeAbstraction.TOP
-                typeRef = TypeReference.JavaLangObject;   // TODO: we don't know what type to give for TOP
-            }
-        }
-        if (instruction.iindex != -1) {
-            String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
-            if (localNames != null && localNames.length != 0) {
-                l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
-            }
-            else {
-                l = new Local("v" + varIndex, varIndex, typeRef);
-            }
-        }
-        else {
-            l = new Local("v" + varIndex, varIndex, typeRef);
-        }
-        if(ir.getSymbolTable().isConstant(varIndex) && ! ir.getSymbolTable().isNullConstant(varIndex))
-            l.setValue(ir.getSymbolTable().getConstantValue(varIndex).toString());
-
-        return l;
-    }
 
     /**
      * Return statement
@@ -784,17 +752,5 @@ class WalaFactGenerator implements Runnable {
             Local l = createLocal(ir, instruction, use, typeInference);
             _writer.writeThrow(inMethod, instruction, l, session);
         }
-    }
-
-    private int getNextNonNullInstruction(IR ir, int instructionIndex)
-    {
-        SSAInstruction[] ssaInstructions = ir.getInstructions();
-        //ISSABasicBlock basicBlock = ir.getBasicBlockForInstruction(ssaInstructions[instructionIndex]);
-        for(int i = instructionIndex +1 ; i < ssaInstructions.length; i++)
-        {
-            if(ssaInstructions[i]!=null)
-                return i;
-        }
-        return -1;
     }
 }

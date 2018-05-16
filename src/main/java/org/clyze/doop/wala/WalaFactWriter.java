@@ -23,7 +23,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.PredicateFile.*;
-import static org.clyze.doop.wala.WalaRepresentation.fixTypeString;
+import static org.clyze.doop.wala.WalaUtils.createLocal;
+import static org.clyze.doop.wala.WalaUtils.fixTypeString;
+import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 
 /**
  * FactWriter determines the format of a fact and adds it to a
@@ -33,9 +35,12 @@ public class WalaFactWriter {
     private boolean _android;
     private Database _db;
     private WalaRepresentation _rep;
-    private Map<String, String> _typeMap;/**
-     * Used for logging various messages
-     */
+
+    //Map from WALA's JVM like type string to our format
+    //Used in writeType()
+    private Map<String, String> _typeMap;
+
+    //Used for logging various messages
     protected Log logger;
 
     WalaFactWriter(Database db, boolean android) {
@@ -149,11 +154,11 @@ public class WalaFactWriter {
     }
 
     void writeDirectSuperclass(IClass sub, IClass sup) {
-        _db.add(DIRECT_SUPER_CLASS, writeType(sub), writeType(sup));
+        _db.add(DIRECT_SUPER_CLASS, writeType(sub.getReference()), writeType(sup.getReference()));
     }
 
     void writeDirectSuperinterface(IClass clazz, IClass iface) {
-        _db.add(DIRECT_SUPER_IFACE, writeType(clazz), writeType(iface));
+        _db.add(DIRECT_SUPER_IFACE, writeType(clazz.getReference()), writeType(iface.getReference()));
     }
 
     private String writeType(IClass c) {
@@ -233,13 +238,14 @@ public class WalaFactWriter {
             }
         }
 
-        // statement
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(ir, instruction));
     }
 
+    //Sifis: This information is not correct for StringConstants as we take the index of
+    // the instruction these constants are used in
     private static int getLineNumberFromInstruction(IR ir, SSAInstruction instruction) {
         if(instruction.iindex == -1)
             return 0;
@@ -483,10 +489,11 @@ public class WalaFactWriter {
     }
 
     void writeApplicationClass(IClass application) {
-        _db.add(APP_CLASS, writeType(application));
+        _db.add(APP_CLASS, writeType(application.getReference()));
     }
 
-    static Collection <IField> getAllFieldsOfClass(IClass cl) //for some reason
+    //To be used instead of IClass.getAllFields()to avoid NullPointerExceptions in Android
+    static Collection <IField> getAllFieldsOfClass(IClass cl)
     {
         Collection <IField> result = new LinkedList<IField>();
         result.addAll(cl.getAllInstanceFields());
@@ -527,7 +534,7 @@ public class WalaFactWriter {
         return typeRef;
     }
 
-    String writeField(IField f) {
+    public String writeField(IField f) {
         String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
         Collection<Annotation> annotations = f.getAnnotations();
@@ -539,17 +546,6 @@ public class WalaFactWriter {
         return fieldId;
     }
 
-    private String writeField(FieldReference f) {
-        String fieldId = _rep.signature(f, f.getDeclaringClass());
-        _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldType()));
-//        if (f.getTag("VisibilityAnnotationTag") != null) {
-//            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) f.getTag("VisibilityAnnotationTag");
-//            for (AnnotationTag aTag : vTag.getAnnotations()) {
-//                _db.add(FIELD_ANNOTATION, fieldId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
-//            }
-//        }
-        return fieldId;
-    }
 
     void writeFieldModifier(IField f, String modifier) {
         String fieldId = _rep.signature(f);
@@ -648,72 +644,63 @@ public class WalaFactWriter {
 //        _db.add(TABLE_SWITCH_DEFAULT, insn, str(defaultIndex));
 //    }
 
-    private int getNextNonNullInstruction(IR ir, int instructionIndex)
-    {
-        SSAInstruction[] ssaInstructions = ir.getInstructions();
-        //ISSABasicBlock basicBlock = ir.getBasicBlockForInstruction(ssaInstructions[instructionIndex]);
-        for(int i = instructionIndex +1 ; i < ssaInstructions.length; i++)
-        {
-            if(ssaInstructions[i]!=null)
-                return i;
-        }
-        return -1;
-    }
 
     void writeLookupSwitch(IR ir,IMethod inMethod, SSASwitchInstruction instruction, Session session, Local switchVar) {
-//        int instrIndex = session.getInstructionNumber(instruction);
-//        int targetIndex, targetWALAIndex;
-//        int defaultIndex, defaultWALAIndex;
-//        IBytecodeMethod bm = (IBytecodeMethod) inMethod;
-//        //Value v = writeImmediate(inMethod, instruction, instruction.getUse(0), session);
-//        String insn = _rep.instruction(inMethod, instruction, session, instrIndex);
-//        String methodId = _rep.signature(inMethod);
-//
-//        _db.add(LOOKUP_SWITCH, insn, str(instrIndex), _rep.local(inMethod, switchVar), methodId);
-//
-//        int casesAndLabels[] = instruction.getCasesAndLabels();
-//        SSAInstruction instructions[] = ir.getInstructions();
-//        for(int i = 0; i < casesAndLabels.length; i+=2) {
-//            int tgIndex = casesAndLabels[i];
-//            //session.calcInstructionNumber(instructions[casesAndLabels[i+1]]);
-//            targetWALAIndex = casesAndLabels[i+1];
-//            if(_android) {
-//                try {
-//                    targetWALAIndex = bm.getInstructionIndex(targetWALAIndex);
-//                } catch (InvalidClassFileException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            if(instructions[targetWALAIndex] == null)
-//            {
-//                targetWALAIndex = getNextNonNullInstruction(ir,targetWALAIndex);
-//                if(targetWALAIndex == -1)
-//                    logger.error("Error: Next non-null instruction index = -1");
-//            }
-//            targetIndex = session.getInstructionNumber(instructions[targetWALAIndex]);
-//
-//            _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(targetIndex));
-//        }
-//
-//        defaultWALAIndex = instruction.getDefault();
-//        if(_android) {
-//            try {
-//                defaultWALAIndex = bm.getInstructionIndex(defaultWALAIndex);
-//            } catch (InvalidClassFileException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        if(instructions[defaultWALAIndex] == null)
-//        {
-//            defaultWALAIndex = getNextNonNullInstruction(ir,defaultWALAIndex);
-//            if(defaultWALAIndex == -1)
-//                logger.error("Error: Next non-null instruction index = -1");
-//        }
-//        //session.calcInstructionNumber(instructions[defaultWALAIndex]);
-//        defaultIndex = session.getInstructionNumber(instructions[defaultWALAIndex]);
-//
-//
-//        _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
+        if(_android) //Currently disabled for android
+            return;
+        int instrIndex = session.getInstructionNumber(instruction);
+        int targetIndex, targetWALAIndex;
+        int defaultIndex, defaultWALAIndex;
+        IBytecodeMethod bm = (IBytecodeMethod) inMethod;
+        //Value v = writeImmediate(inMethod, instruction, instruction.getUse(0), session);
+        String insn = _rep.instruction(inMethod, instruction, session, instrIndex);
+        String methodId = _rep.signature(inMethod);
+
+        _db.add(LOOKUP_SWITCH, insn, str(instrIndex), _rep.local(inMethod, switchVar), methodId);
+
+        int casesAndLabels[] = instruction.getCasesAndLabels();
+        SSAInstruction instructions[] = ir.getInstructions();
+        for(int i = 0; i < casesAndLabels.length; i+=2) {
+            int tgIndex = casesAndLabels[i];
+            //session.calcInstructionNumber(instructions[casesAndLabels[i+1]]);
+            targetWALAIndex = casesAndLabels[i+1];
+            if(_android) {
+                try {
+                    targetWALAIndex = bm.getInstructionIndex(targetWALAIndex);
+                } catch (InvalidClassFileException e) {
+                    e.printStackTrace();
+                }
+            }
+            if(instructions[targetWALAIndex] == null)
+            {
+                targetWALAIndex = getNextNonNullInstruction(ir,targetWALAIndex);
+                if(targetWALAIndex == -1)
+                    logger.error("Error: Next non-null instruction index = -1");
+            }
+            targetIndex = session.getInstructionNumber(instructions[targetWALAIndex]);
+
+            _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(targetIndex));
+        }
+
+        defaultWALAIndex = instruction.getDefault();
+        if(_android) {
+            try {
+                defaultWALAIndex = bm.getInstructionIndex(defaultWALAIndex);
+            } catch (InvalidClassFileException e) {
+                e.printStackTrace();
+            }
+        }
+        if(instructions[defaultWALAIndex] == null)
+        {
+            defaultWALAIndex = getNextNonNullInstruction(ir,defaultWALAIndex);
+            if(defaultWALAIndex == -1)
+                logger.error("Error: Next non-null instruction index = -1");
+        }
+        //session.calcInstructionNumber(instructions[defaultWALAIndex]);
+        defaultIndex = session.getInstructionNumber(instructions[defaultWALAIndex]);
+
+
+        _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
     }
 
     void writeUnsupported(IMethod m, SSAInstruction instruction, Session session) {
@@ -1012,46 +999,6 @@ public class WalaFactWriter {
         }
 
         return insn;
-    }
-
-    private Local createLocal(IR ir, SSAInstruction instruction, int varIndex) {
-        Local l;
-        String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
-
-        if (localNames != null && localNames.length != 0) {
-            assert localNames.length == 1;
-            l = new Local("v" + varIndex, varIndex, localNames[0],TypeReference.JavaLangObject);
-        }
-        else {
-            l = new Local("v" + varIndex, varIndex, TypeReference.JavaLangObject);
-        }
-        return l;
-    }
-
-    private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
-        Local l;
-        String[] localNames ;
-        if(instruction.iindex == -1)//Instructions not on the normal instructions array of the IR can have iindex==-1 ex SSAGetCaughtExceptionInstruction, SSAPhiInstruction
-            localNames = null;
-        else
-            localNames = ir.getLocalNames(instruction.iindex, varIndex);
-
-        TypeReference typeRef;
-        TypeAbstraction typeAbstraction = typeInference.getType(varIndex);
-        if(typeAbstraction.getType() == null && !(typeAbstraction instanceof JavaPrimitiveType))
-            typeRef = TypeReference.JavaLangObject;
-        else
-            typeRef = typeAbstraction.getTypeReference();
-
-        if (localNames != null && localNames.length != 0) {
-            l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
-        }
-        else {
-            l = new Local("v" + varIndex, varIndex, typeRef);
-        }
-        if(ir.getSymbolTable().isConstant(varIndex) && ! ir.getSymbolTable().isNullConstant(varIndex))
-            l.setValue(ir.getSymbolTable().getConstantValue(varIndex).toString());
-        return l;
     }
 
     //        private Value writeImmediate(IMethod inMethod, Stmt stmt, Value v, Session session) {

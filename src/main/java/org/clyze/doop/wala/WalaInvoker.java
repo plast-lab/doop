@@ -43,7 +43,7 @@ public class WalaInvoker {
 
 
         // Change package delimiter from "/" to "."
-        return walaParameters.applicationClassFilter.matches(WalaRepresentation.fixTypeString(klass.getName().toString()));
+        return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
     }
 
     public void parseParamsAndRun(String[] args) throws IOException {

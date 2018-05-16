@@ -32,7 +32,7 @@ public class Main {
 
 
         // Change package delimiter from "/" to "."
-        return walaParameters.applicationClassFilter.matches(WalaRepresentation.fixTypeString(klass.getName().toString()));
+        return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
     }
 
     public static void main(String[] args) throws IOException {

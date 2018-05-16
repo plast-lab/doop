@@ -14,6 +14,8 @@ import soot.jimple.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.clyze.doop.wala.WalaUtils.fixTypeString;
+
 class WalaRepresentation {
     private Map<String, String> _methodSigRepr = new ConcurrentHashMap<>();
     private Map<String, String> _catchRepr = new ConcurrentHashMap<>();
@@ -170,82 +172,6 @@ class WalaRepresentation {
     {
         String name = "throw " + l.getName();
         return signature(m) + "/" + name + "/" + session.nextNumber(name);
-    }
-
-    static String fixTypeString(String original)
-    {
-        boolean isArrayType = false;
-        int arrayTimes = 0;
-        String ret;
-
-        if(original.contains("L")) {
-            if (original.contains("[")) //Figure out if this is correct
-            {
-                isArrayType = true;
-                for (int i = 0; i < original.length(); i++) {
-                    if (original.charAt(i) == '[')
-                        arrayTimes++;
-                }
-            }
-            ret = original.substring(original.indexOf("L") + 1).replaceAll("/", ".").replaceAll(">", "");
-        }
-        else {
-            String temp;
-            temp = original.substring(original.indexOf(",") + 1).replaceAll(">", "");
-            if (temp.startsWith("[")) {
-                isArrayType = true;
-                for (int i = 0; i < temp.length(); i++) {
-                    if (temp.charAt(i) == '[')
-                        arrayTimes++;
-                    else
-                        break;
-
-                }
-                temp = temp.substring(arrayTimes);
-            }
-            switch (temp) {
-                case "Z":
-                    ret = "boolean";
-                    break;
-                case "I":
-                    ret = "int";
-                    break;
-                case "V":
-                    ret = "void";
-                    break;
-                case "B":
-                    ret = "byte";
-                    break;
-                case "C":
-                    ret = "char";
-                    break;
-                case "D":
-                    ret = "double";
-                    break;
-                case "F":
-                    ret = "float";
-                    break;
-                case "J":
-                    ret = "long";
-                    break;
-                case "S":
-                    ret = "short";
-                    break;
-                default:
-                    ret = "OTHERPRIMITIVE";
-                    break;
-            }
-            //TODO: Figure out what the 'P' code represents in WALA's TypeReference
-
-        }
-        if(isArrayType)
-        {
-            for(int i=0 ; i< arrayTimes ; i++)
-                ret = ret + "[]";
-        }
-        //if(! ret.equals(fixTypeStringOld(original)) && ! original.contains("["))
-        //System.out.println(original + " | " + ret + " | " + fixTypeStringOld(original));
-        return ret;
     }
 
     //This method takes a MethodReference as a parameter and it does not include "this" as an argument
