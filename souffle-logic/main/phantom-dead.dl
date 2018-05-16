@@ -53,11 +53,8 @@ DeadMethod(?m) :- PhantomBasedMethod(?m).
 .decl DeadType(?type:Type)
 .output DeadType
 
-// Dead types (a) are phantom types, (b) contain field or method
-// signatures involving phantom types, or (c) contain dead methods.
-
-DeadType(?type) :-
-  PhantomType(?type).
+// Dead types (a) contain field or method signatures involving phantom
+// types, or (b) contain dead methods.
 
 DeadType(?type) :-
   Field_DeclaringType(?sig, ?type),
