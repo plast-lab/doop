@@ -17,6 +17,7 @@ import org.apache.commons.logging.LogFactory;
 import java.util.*;
 
 import static org.clyze.doop.wala.WalaUtils.createLocal;
+import static org.clyze.doop.wala.WalaUtils.fixTypeString;
 import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 
 /**
@@ -202,8 +203,16 @@ class WalaFactGenerator implements Runnable {
         SSACFG cfg = ir.getControlFlowGraph();
         SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
         TypeInference typeInference;
-        if(_android)
-            typeInference = DalvikTypeInference.make(ir, true);
+        if(_android) { //Sometimes DalvikTypeInference fails due to assertion so we try with normal TypeInference
+            try {
+                typeInference = DalvikTypeInference.make(ir, true);
+            }
+            catch(Throwable er) {
+                System.out.println("\nDalvik Type Inference failed for method: "+ m.getName().toString() + " of class: " + fixTypeString(m.getDeclaringClass().getName().toString()) + "\n");
+                typeInference = null;
+                return;
+            }
+        }
         else
             typeInference = TypeInference.make(ir,true);
 

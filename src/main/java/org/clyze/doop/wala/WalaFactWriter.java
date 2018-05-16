@@ -145,10 +145,12 @@ public class WalaFactWriter {
         }
         _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
 
-        Collection<Annotation> annotations = c.getAnnotations();
-        if(annotations != null) {
-            for (Annotation annotation : annotations) {
-                _db.add(CLASS_ANNOTATION, classStr, fixTypeString(annotation.getType().toString()));
+        if(!_android) { //We have currently disabled annotations for Android
+            Collection<Annotation> annotations = c.getAnnotations();
+            if (annotations != null) {
+                for (Annotation annotation : annotations) {
+                    _db.add(CLASS_ANNOTATION, classStr, fixTypeString(annotation.getType().toString()));
+                }
             }
         }
     }
@@ -537,10 +539,12 @@ public class WalaFactWriter {
     public String writeField(IField f) {
         String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
-        Collection<Annotation> annotations = f.getAnnotations();
-        if(annotations != null) {
-            for (Annotation annotation : annotations) {
-                _db.add(FIELD_ANNOTATION, fieldId, fixTypeString(annotation.getType().toString()));
+        if(!_android) { //Currently annotations do not work on android and are disabled
+            Collection<Annotation> annotations = f.getAnnotations();
+            if (annotations != null) {
+                for (Annotation annotation : annotations) {
+                    _db.add(FIELD_ANNOTATION, fieldId, fixTypeString(annotation.getType().toString()));
+                }
             }
         }
         return fieldId;
