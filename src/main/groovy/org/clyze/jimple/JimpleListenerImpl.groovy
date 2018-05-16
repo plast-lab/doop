@@ -469,13 +469,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		if (origFile.canonicalPath != sourceFile.canonicalPath)
 			FileUtils.copyFile(origFile, sourceFile)
 		// abc/def/Foo.jimple
-		def sourceFileName = "${packageName}/${className}.${extension}" as String
+		def sourceFileName = packageName ? "${packageName}/${className}.${extension}" : "${className}.${extension}"
 
 		def parser = new JimpleParser(
 				new CommonTokenStream(
 						new JimpleLexer(
 								new ANTLRFileStream(sourceFile as String))))
-		def listener = new JimpleListenerImpl(sourceFileName)
+		def listener = new JimpleListenerImpl(sourceFileName as String)
 		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 
 		return listener.metadata
