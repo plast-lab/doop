@@ -159,7 +159,10 @@ public class WalaInvoker {
         Set<IClass> classesSet = new HashSet<>();
         while (classes.hasNext()) {
             klass = classes.next();
-            if (isApplicationClass(walaParameters, klass)) {
+            if (!walaParameters._android && isApplicationClass(walaParameters, klass)) {
+                walaFactWriter.writeApplicationClass(klass);
+            }
+            if (walaParameters._android && klass.getClassLoader().getName().toString().equals("Application")) {
                 walaFactWriter.writeApplicationClass(klass);
             }
             classesSet.add(klass);
