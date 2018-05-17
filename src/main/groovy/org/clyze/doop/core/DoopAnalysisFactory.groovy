@@ -31,43 +31,43 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
     static final String HASH_ALGO = "SHA-256"
-    static final Set<String> availablePlatforms =
-        [ // JDKs
-          "java_3", "java_4", "java_5", "java_6", "java_7", "java_8",
-          // Android compiled from sources
-          "android_22_fulljars", "android_25_fulljars",
-          // Android API stubs (from the SDK)
-          "android_7_stubs" , "android_15_stubs", "android_16_stubs", "android_17_stubs",
-          "android_18_stubs", "android_19_stubs", "android_20_stubs", "android_21_stubs",
-          "android_22_stubs", "android_23_stubs", "android_24_stubs", "android_25_stubs",
-          "android_26_stubs",
-          // Android-Robolectric
-          "android_26_robolectric"
-        ]
     static String platformsLib
 
     static final Map<String, Set<String>> artifactsForPlatform =
-            ["java_3" : ["rt.jar"],
-             "java_4" : ["rt.jar", "jce.jar", "jsse.jar"],
-             "java_5" : ["rt.jar", "jce.jar", "jsse.jar"],
-             "java_6" : ["rt.jar", "jce.jar", "jsse.jar"],
-             "java_7" : ["rt.jar", "jce.jar", "jsse.jar", "tools.jar"],
-             "java_8" : ["rt.jar", "jce.jar", "jsse.jar"],
-             "android_17" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
-             "android_18" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
-             "android_19" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
-             "android_20" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
-             "android_21" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
-             "android_22" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
-                             "optional/org.apache.http.legacy.jar"],
-             "android_23" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
-                             "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
-             "android_24" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
-                             "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
-             "android_25" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
-                             "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
-             "android_26" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
-                             "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"]
+            [ // JDKs
+              "java_3" : ["rt.jar"],
+              "java_4" : ["rt.jar", "jce.jar", "jsse.jar"],
+              "java_5" : ["rt.jar", "jce.jar", "jsse.jar"],
+              "java_6" : ["rt.jar", "jce.jar", "jsse.jar"],
+              "java_7" : ["rt.jar", "jce.jar", "jsse.jar", "tools.jar"],
+              "java_8" : ["rt.jar", "jce.jar", "jsse.jar"],
+              // Android compiled from sources
+              "android_22_fulljars" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
+                                       "optional/org.apache.http.legacy.jar"],
+              "android_25_fulljars" : ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
+                                       "optional/org.apache.http.legacy.jar"],
+              // Android API stubs (from the SDK)
+              "android_7_stubs"  : ["android.jar", "data/layoutlib.jar"],
+              "android_15_stubs" : ["android.jar", "data/layoutlib.jar"],
+              "android_16_stubs" : ["android.jar", "data/layoutlib.jar", "uiautomator.jar"],
+              "android_17_stubs" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
+              "android_18_stubs" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
+              "android_19_stubs" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
+              "android_20_stubs" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
+              "android_21_stubs" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
+              "android_22_stubs" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
+                                    "optional/org.apache.http.legacy.jar"],
+              "android_23_stubs" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
+                                    "optional/org.apache.http.legacy.jar"],
+              "android_24_stubs" : ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
+                                    "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
+              "android_25_stubs" : ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
+                                    "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
+              "android_26_stubs" : ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
+                                    "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
+              // Android-Robolectric
+              "android_26_robolectric" : ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
+                                    "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
             ]
     static final availableConfigurations = [
             "twophase-A" : "TwoPhaseAConfiguration",
@@ -300,10 +300,18 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
     }
 
     /**
-     * Generates a list of the platform library arguments for soot
+     * Generates a list of the platform library arguments for Soot
+     * (file paths of .jar archives).
+     *
+     * @param options A Map that should at least have entries: ANDROID,
+     *                PLATFORM, PLATFORMS_LIB. Entries ANDROID and JREx
+     *                may be mutated after this method runs.
+     * @return        The list of artifact paths for the platform.
      */
     protected static List<String> platform(Map<String, AnalysisOption> options) {
-        def platformInfo = options.PLATFORM.value.toString().tokenize("_")
+        def platformFullName = options.PLATFORM.value.toString()
+        String platformsLib = options.PLATFORMS_LIB.value.toString()
+        def platformInfo = platformFullName.tokenize("_")
         if (platformInfo.size() < 2) {
             throw new RuntimeException("Invalid platform ${platformInfo}")
         }
@@ -313,25 +321,15 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         switch(platform) {
             case "java":
                 if (platformInfo.size == 2) {
-                    def files = getArtifactsForPlatform(options.PLATFORM.value.toString(), options.PLATFORMS_LIB.value.toString())
-                    files.each({File file ->
-                        platformArtifactPaths.add(file.canonicalPath)
-                    })
+                    platformArtifactPaths = getArtifactsForJava(platformFullName, version, platformsLib)
                 }
                 else if (platformInfo.size == 3) {
                     String minorVersion = platformInfo[2]
-
-                    switch (version) {
-                        case 7:
-                        case 8:
-                            String platformPath = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}.0_${minorVersion}/lib"
-                            platformArtifactPaths = ["${platformPath}/rt.jar",
-                                     "${platformPath}/jce.jar",
-                                     "${platformPath}/jsse.jar"]
-                            break
-                        default:
-                            throw new RuntimeException("Invalid JRE version: $version")
+                    String platformPath = "${platformsLib}/JREs/jre1.${version}.0_${minorVersion}/lib"
+                    if (!((new File(platformPath)).exists())) {
+                        throw new RuntimeException("Minor-version platform does not exist: ${platformFullName}")
                     }
+                    platformArtifactPaths = getArtifactsForPlatformWithPath(platformFullName, platformPath)
                 }
                 else {
                     throw new RuntimeException("Invalid JRE version: $version")
@@ -358,54 +356,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 if (![ "stubs", "fulljars", "robolectric" ].contains(libFlavor)) {
                     throw new RuntimeException("Invalid Android platform: $platformInfo")
                 }
-                String path = "${options.PLATFORMS_LIB.value}/Android/${libFlavor}/Android/Sdk/platforms/android-${version}"
+                String path = "${platformsLib}/Android/${libFlavor}/Android/Sdk/platforms/android-${version}"
+                platformArtifactPaths = getArtifactsForPlatformWithPath(platformFullName, path)
                 options.ANDROID.value = true
-
-                switch(version) {
-                    case 7:
-                    case 15:
-                        platformArtifactPaths = ["${path}/android.jar",
-                                 "${path}/data/layoutlib.jar"]
-                        break
-                    case 16:
-                        platformArtifactPaths = ["${path}/android.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    case 17:
-                    case 18:
-                    case 19:
-                    case 20:
-                    case 21:
-                    case 22:
-                        platformArtifactPaths = ["${path}/android.jar",
-                                 "${path}/data/icu4j.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    case 23:
-                        platformArtifactPaths = ["${path}/android.jar",
-                                 "${path}/optional/org.apache.http.legacy.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    case 24:
-                    case 25:
-                    case 26:
-                        platformArtifactPaths = ["${path}/android.jar",
-                                 "${path}/android-stubs-src.jar",
-                                 "${path}/optional/org.apache.http.legacy.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    default:
-                        throw new RuntimeException("Invalid android version: $version")
-                }
                 if (libFlavor == "robolectric") {
                     String roboJRE = "java_8"
                     println "Using ${roboJRE} with Robolectric"
-                    def files = getArtifactsForPlatform(roboJRE, options.PLATFORMS_LIB.value.toString())
-                    files.each { platformArtifactPaths.add(it.canonicalPath) }
+                    def files = getArtifactsForJava(roboJRE, 8, platformsLib)
+                    platformArtifactPaths.addAll(files)
                 }
                 break
             default:
@@ -780,33 +738,33 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         return availablePlatforms
     }
 
+    static final Set<String> getAvailablePlatforms() {
+        return artifactsForPlatform.keySet() as Set<String>
+    }
+
     /**
-     * Given the platform id e.g., java_7, java_8, android_25 etc and platforms lib path,
-     * it returns the set of (.jar) files associated with that platform
+     * Returns the files needed to resolve a platform. This is a
+     * helper method; to get the artifacts for a platform, use
      *
-     * @param platformID The platform id
-     * @param platformsLib The platforms lib path, currently necessary since the method is static and platform libs path
-     * is part of the analysis options
-     * @return the set of jar files
+     * @param platformFullName   the platform ("java_8")
+     * @param path               the path where the 
      */
-    public static Set<File> getArtifactsForPlatform(String platformID, String platformsLib) {
-        def platformInfo = platformID.tokenize("_")
-        if (platformInfo.size() < 2) {
-            throw new RuntimeException("Invalid platform ${platformInfo}")
+    private static final List<String> getArtifactsForPlatformWithPath(String platformFullName, String path) {
+        List artifacts = artifactsForPlatform.get(platformFullName)
+        if (artifacts == null) {
+            throw new RuntimeException("Could not find artifacts for platform: ${platformFullName}")
         }
-        def version = platformInfo[1].toInteger()
-        String path = "${platformsLib}/JREs/jre1.${version}/lib/"
+        return artifacts.collect { "${path}/${it}" }.collect { fname ->
+            File f = new File(fname)
+            if (!f.exists()) {
+                throw new RuntimeException("Missing artifact: ${fname}")
+            }
+            f.canonicalPath
+        }
+    }
 
-        Set<File> files = []
-        if (artifactsForPlatform.get(platformID) == null) {
-            throw new RuntimeException("Unsupported platform: $platformID")
-        }
-        else {
-            artifactsForPlatform.get(platformID).each({String fileName ->
-                files.add(new File(path+fileName))
-            })
-        }
-
-        return files
+    private static final List<String> getArtifactsForJava(String platformFullName, Integer version, String platformsLib) {
+        String platformPath = "${platformsLib}/JREs/jre1.${version}/lib/"
+        return getArtifactsForPlatformWithPath(platformFullName, platformPath)
     }
 }
