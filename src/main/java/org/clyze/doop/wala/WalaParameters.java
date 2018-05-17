@@ -7,7 +7,8 @@ import java.util.List;
 
 public class WalaParameters {
     List<String> _inputs = new ArrayList<>();
-    List<String> _libraries = new ArrayList<>();
+    List<String> _appLibraries = new ArrayList<>();
+    List<String> _platformLibraries = new ArrayList<>();
     String _javaPath = null;
     String _outputDir = null;
     ClassFilter applicationClassFilter;
@@ -24,18 +25,27 @@ public class WalaParameters {
         return this._inputs;
     }
 
-    public void setLibraries(List<String> libraries) {
-        this._libraries = libraries;
+    public void setAppLibraries(List<String> libraries) {
+        this._appLibraries = libraries;
     }
 
-    public List<String> getLibraries() {
-        return this._libraries;
+    public List<String> getAppLibraries() {
+        return this._appLibraries;
+    }
+
+    public void setPlatformLibraries(List<String> libraries) {
+        this._platformLibraries = libraries;
+    }
+
+    public List<String> getPlatformLibraries() {
+        return this._platformLibraries;
     }
 
     public List<String> getInputsAndLibraries() {
         List<String> ret = new ArrayList<>();
         ret.addAll(this._inputs);
-        ret.addAll(this._libraries);
+        ret.addAll(this._appLibraries);
+        ret.addAll(this._platformLibraries);
         return ret;
     }
 

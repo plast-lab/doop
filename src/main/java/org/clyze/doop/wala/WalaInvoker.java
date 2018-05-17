@@ -69,7 +69,11 @@ public class WalaInvoker {
                         break;
                     case "-l":
                         i = shift(args, i);
-                        walaParameters._libraries.add(args[i]);
+                        walaParameters._appLibraries.add(args[i]);
+                        break;
+                    case "-el":
+                        i = shift(args, i);
+                        walaParameters._platformLibraries.add(args[i]);
                         break;
                     case "-p":
                         i = shift(args, i);
@@ -119,14 +123,20 @@ public class WalaInvoker {
                 classPath.append(":").append(walaParameters._inputs.get(i));
         }
 
-        for (int i = 0; i < walaParameters._libraries.size(); i++) {
-            classPath.append(":").append(walaParameters._libraries.get(i));
+        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
+            classPath.append(":").append(walaParameters._appLibraries.get(i));
         }
 
         System.out.println("WALA classpath:" + classPath);
+        for (String lib : walaParameters.getPlatformLibraries())
+            System.out.println("Platform Library: " + lib);
+
+        for (String lib : walaParameters.getAppLibraries())
+            System.out.println("Application Library: " + lib);
+
         AnalysisScope scope;
         if(walaParameters._android)
-            scope = WalaScopeReader.setUpAndroidAnalysisScope(classPath.toString(),"",walaParameters._androidJars);
+            scope = WalaScopeReader.setUpAndroidAnalysisScope(classPath.toString(),"", walaParameters._platformLibraries, walaParameters._appLibraries);
         else
             scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 

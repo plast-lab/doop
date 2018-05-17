@@ -1,11 +1,8 @@
 package org.clyze.doop.wala;
 
-import com.ibm.wala.analysis.typeInference.JavaPrimitiveType;
-import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
-import com.ibm.wala.shrikeBT.ExceptionHandler;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.ClassLoaderReference;
@@ -145,7 +142,7 @@ public class WalaFactWriter {
         }
         _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
 
-        if(!_android) { //We have currently disabled annotations for Android
+        if(c instanceof ShrikeClass) { //We have currently disabled annotations for Android
             Collection<Annotation> annotations = c.getAnnotations();
             if (annotations != null) {
                 for (Annotation annotation : annotations) {
@@ -539,7 +536,7 @@ public class WalaFactWriter {
     public String writeField(IField f) {
         String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
-        if(!_android) { //Currently annotations do not work on android and are disabled
+        if(f instanceof FieldImpl) { //Currently annotations do not work on android and are disabled
             Collection<Annotation> annotations = f.getAnnotations();
             if (annotations != null) {
                 for (Annotation annotation : annotations) {

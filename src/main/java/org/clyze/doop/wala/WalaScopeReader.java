@@ -15,6 +15,7 @@ import com.ibm.wala.util.io.FileProvider;
 import com.ibm.wala.util.strings.Atom;
 
 import java.io.*;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.jar.JarFile;
 
@@ -58,7 +59,7 @@ public class WalaScopeReader {
         return scope;
     }
 
-    public static AnalysisScope setUpAndroidAnalysisScope(String classpath, String exclusions, String androidLib) throws IOException {
+    public static AnalysisScope setUpAndroidAnalysisScope(String classpath, String exclusions, List<String> androidLibs, List<String> appLibs) throws IOException {
         AnalysisScope scope;
         scope = AnalysisScope.createJavaAnalysisScope();
 
@@ -70,17 +71,26 @@ public class WalaScopeReader {
         scope.setLoaderImpl(ClassLoaderReference.Primordial,
                 "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
 
-
-        if(androidLib.endsWith(".apk"))
-        {
-            scope.addToScope(ClassLoaderReference.Primordial, DexFileModule.make(new File(androidLib)));
-        }
-        else
-        {
-            final JarFile jar = new JarFile(new File(androidLib));
-            scope.addToScope(ClassLoaderReference.Primordial, new JarFileModule(jar));
+        for(String androidLib : androidLibs) {
+            if (androidLib.endsWith(".apk")) {
+                scope.addToScope(ClassLoaderReference.Primordial, DexFileModule.make(new File(androidLib)));
+            } else {
+                final JarFile jar = new JarFile(new File(androidLib));
+                scope.addToScope(ClassLoaderReference.Primordial, new JarFileModule(jar));
+            }
         }
 
+        scope.setLoaderImpl(ClassLoaderReference.Extension,
+                "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
+
+        for(String appLib : appLibs) {
+            if (appLib.endsWith(".apk")) {
+                scope.addToScope(ClassLoaderReference.Extension, DexFileModule.make(new File(appLib)));
+            } else {
+                final JarFile jar = new JarFile(new File(appLib));
+                scope.addToScope(ClassLoaderReference.Extension, new JarFileModule(jar));
+            }
+        }
 
 
         scope.setLoaderImpl(ClassLoaderReference.Application,

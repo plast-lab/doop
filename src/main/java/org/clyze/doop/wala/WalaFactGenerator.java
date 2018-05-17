@@ -59,7 +59,6 @@ class WalaFactGenerator implements Runnable {
 
         for (IClass iClass : _iClasses) {
             IRPrinter.printIR(iClass);
-
             _writer.writeClassOrInterfaceType(iClass);
             //TODO: Handling of Arrays?
             if(iClass.isAbstract())

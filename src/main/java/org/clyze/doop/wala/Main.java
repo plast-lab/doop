@@ -57,7 +57,11 @@ public class Main {
                         break;
                     case "-l":
                         i = shift(args, i);
-                        walaParameters._libraries.add(args[i]);
+                        walaParameters._appLibraries.add(args[i]);
+                        break;
+                    case "-el":
+                        i = shift(args, i);
+                        walaParameters._platformLibraries.add(args[i]);
                         break;
                     case "-p":
                         i = shift(args, i);
@@ -108,8 +112,8 @@ public class Main {
                 classPath += ":" + walaParameters._inputs.get(i);
         }
 
-        for (int i = 0; i < walaParameters._libraries.size(); i++) {
-            classPath += ":" + walaParameters._libraries.get(i);
+        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
+            classPath += ":" + walaParameters._appLibraries.get(i);
         }
 
         System.out.println("WALA classpath:" + classPath);
