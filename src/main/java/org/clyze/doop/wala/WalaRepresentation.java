@@ -87,12 +87,12 @@ class WalaRepresentation {
         return DoopSig.toString();
     }
 
-    String simpleName(IMethod m) {
-        return m.getReference().getName().toString();
+    String simpleName(MethodReference mr) {
+        return mr.getName().toString();
     }
 
-    String simpleName(IField m) {
-        return simpleName(m.getReference());
+    String simpleName(IField f) {
+        return simpleName(f.getReference());
     }
 
     String simpleName(FieldReference f) {
@@ -101,10 +101,9 @@ class WalaRepresentation {
 
     //Method descriptors using soot like format.
     //Should maybe cache these as well.
-    String descriptor(IMethod m)
+    String descriptor(MethodReference methodReference)
     {
         StringBuilder builder = new StringBuilder();
-        MethodReference methodReference = m.getReference();
         builder.append(fixTypeString(methodReference.getReturnType().toString()));
         builder.append("(");
         for(int i = 0; i < methodReference.getNumberOfParameters(); i++)

@@ -81,7 +81,7 @@ public class WalaFactWriter {
         String result = _rep.signature(m);
 
         _db.add(STRING_RAW, result, result);
-        _db.add(METHOD, result, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
+        _db.add(METHOD, result, _rep.simpleName(m.getReference()), _rep.descriptor(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
         for (Annotation annotation : m.getAnnotations()) {
             _db.add(METHOD_ANNOTATION, result, fixTypeString(annotation.getType().toString()));
             //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
@@ -194,6 +194,26 @@ public class WalaFactWriter {
         }
 
         return typeName;
+    }
+
+    void writePhantomType(TypeReference t) {
+        _db.add(PHANTOM_TYPE, writeType(t));
+    }
+
+    void writePhantomMethod(MethodReference m) {
+        String sig = _rep.signature(m);
+        System.out.println("Method " + sig + " is phantom.");
+        _db.add(PHANTOM_METHOD, sig);
+        _db.add(STRING_RAW, sig, sig);
+        _db.add(METHOD, sig, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
+    }
+
+    void writePhantomBasedMethod(MethodReference m) {
+        String sig = _rep.signature(m);
+        System.out.println("Method signature " + sig + " contains phantom types.");
+        _db.add(PHANTOM_BASED_METHOD, sig);
+        _db.add(STRING_RAW, sig, sig);
+        _db.add(METHOD, sig, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
     }
 
     void writeEnterMonitor(IMethod m, SSAMonitorInstruction instruction, Local var, Session session) {
@@ -911,8 +931,11 @@ public class WalaFactWriter {
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
         IClass targetClass = cha.lookupClass(targetRef.getDeclaringClass());
 
-        if(targetClass == null)
-            System.out.println("Failed to find class: "  + fixTypeString(targetRef.getDeclaringClass().getName().toString()) + " in class chierarchy.");
+        if(targetClass == null) {
+            //System.out.println("Failed to find class: " + fixTypeString(targetRef.getDeclaringClass().getName().toString()) + " in class chierarchy.");
+            writePhantomType(targetRef.getDeclaringClass());
+            writePhantomMethod(targetRef);
+        }
         else if( targetClass.isArrayClass())
         {
             for(IMethod meth: targetClass.getAllMethods()) {
@@ -956,8 +979,12 @@ public class WalaFactWriter {
                         }
                         classQueue.addAll(currClass.getDirectInterfaces());
                     }
+                    if(!found)
+                        writePhantomMethod(targetRef);
                 }
             }
+            else if(!foundAtFirst)
+                writePhantomMethod(targetRef);
         }
 
         String insn = _rep.invoke(inMethod, instruction, targetRef, session);
