@@ -321,67 +321,94 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
     }
 
     /**
+     * Break up a platform name into its components. Examples:
+     * "java_8" -> ["java", 8, null] and
+     * "android_25_fulljars" -> ["android", 25, "fulljars"].
+     *
+     * @param platformName   Platform name.
+     * @return               The platform components.
+     */
+    protected static List tokenizePlatform(String platformName) {
+        def platformInfo = platformName.tokenize("_")
+        int partsCount = platformInfo.size()
+        if ((partsCount != 2) && (partsCount != 3)) {
+            throw new RuntimeException("Invalid platform: ${platformName}")
+        }
+        String platform = platformInfo[0]
+        int version = platformInfo[1].toInteger()
+        String variant = partsCount == 3 ? platformInfo[2] : null
+        if ((platform == "android") && (variant == null)) {
+            throw new RuntimeException("Invalid Android platform: ${platformInfo}")
+        }
+        return [platform, version, variant]
+    }
+
+    /**
      * Generates a list of the platform library arguments for Soot
      * (file paths of .jar archives).
      *
-     * @param options A Map that should at least have entries: ANDROID,
-     *                PLATFORM, PLATFORMS_LIB. Entries ANDROID and JREx
-     *                may be mutated after this method runs.
-     * @return        The list of artifact paths for the platform.
+     * @param platformName    The name of the platform (e.g., "java_8").
+     * @param platformsLib    The path of the Doop platforms directory.
+     * @return                The list of artifact paths for the platform.
      */
-    static List<String> platform0(String platformFullName, String platformsLib) {
-        def platformInfo = platformFullName.tokenize("_")
-        if (platformInfo.size() < 2) {
-            throw new RuntimeException("Invalid platform ${platformInfo}")
-        }
-        def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
-
-        def platformArtifactPaths
-        switch(platform) {
+    protected static List<String> getArtifactsForPlatform(String platformName, String platformsLib) {
+        def (platform, version, variant) = tokenizePlatform(platformName)
+        switch (platform) {
             case "java":
-                if (platformInfo.size == 2) {
-                    def platformPath = "${platformsLib}/JREs/jre1.${version}/lib/"
-                    platformArtifactPaths = getArtifactsForPlatformWithPath(platformFullName, platformPath)
-                }
-                else if (platformInfo.size == 3) {
-                    def minorVersion = platformInfo[2]
-                    def platformPath = "${platformsLib}/JREs/jre1.${version}.0_${minorVersion}/lib"
-                    if (!((new File(platformPath)).exists())) {
-                        throw new RuntimeException("Minor-version platform does not exist: $platformFullName")
-                    }
-                    platformArtifactPaths = getArtifactsForPlatformWithPath(platformFullName, platformPath)
+                if (variant == null) {
+                    return getArtifactsForJava(platformName, version, platformsLib)
                 }
                 else {
-                    throw new RuntimeException("Invalid JRE version: $version")
+                    // Custom support for minor versions installed
+                    // locally, e.g., "java_8_debug".
+                    String platformPath = "${platformsLib}/JREs/jre1.${version}.0_${variant}/lib"
+                    if (!((new File(platformPath)).exists())) {
+                        throw new RuntimeException("Minor-version platform does not exist: ${platformName}")
+                    }
+                    return getArtifactsForPlatformWithPath(platformName, platformPath)
                 }
-                break
             case "android":
-                if (platformInfo.size < 3) {
-                    throw new RuntimeException("Invalid Android platform: $platformInfo")
+                if (![ "stubs", "fulljars", "robolectric" ].contains(variant)) {
+                    throw new RuntimeException("Invalid Android platform: ${platformName}")
                 }
-                // If the user has given a platform ending in
-                // "_fulljars", then use the "fulljars" subdirectory of
-                // the platforms library, otherwise use the "stubs"
-                // one. This permits use of two Android system JARs
-                // side-by-side: either the stubs provided by the
-                // official Android SDK or a custom Android build.
-                def libFlavor = platformInfo[2]
-                if (![ "stubs", "fulljars", "robolectric" ].contains(libFlavor)) {
-                    throw new RuntimeException("Invalid Android platform: $platformInfo")
+                String path = "${platformsLib}/Android/${variant}/Android/Sdk/platforms/android-${version}"
+                List platformArtifactPaths = getArtifactsForPlatformWithPath(platformName, path)
+                if (variant == "robolectric") {
+                    String roboJRE = "java_8"
+                    println "Using ${roboJRE} with Robolectric"
+                    def files = getArtifactsForJava(roboJRE, 8, platformsLib)
+                    platformArtifactPaths.addAll(files)
                 }
-                def path = "${platformsLib}/Android/${libFlavor}/Android/Sdk/platforms/android-$version"
-                platformArtifactPaths = getArtifactsForPlatformWithPath(platformFullName, path)
-                if (libFlavor == "robolectric") {
-                    def roboJRE = "java_8"
-                    println "Using $roboJRE with Robolectric"
-                    def platformPath = "${platformsLib}/JREs/jre1.8/lib/"
-                    platformArtifactPaths += getArtifactsForPlatformWithPath(roboJRE, platformPath)
-                }
-                break
+                return platformArtifactPaths
             default:
-                throw new RuntimeException("Invalid platform: $platform")
+                throw new RuntimeException("Invalid platform: ${platform}")
         }
-        return platformArtifactPaths
+    }
+
+    /**
+     * Set options according to the platform used. This functionality
+     * is independent of fact generation and is used to turn on
+     * preprocessor flags in the analysis logic.
+     *
+     * @param options        the Doop options to affect
+     * @param platformName   the platform ("java_8", "android_25_fulljars")
+     */
+    private static void setOptionsForPlatform(Map<String, AnalysisOption> options,
+                                              String platformName) {
+        def (platform, version, variant) = tokenizePlatform(platformName)
+        if (platform == "java") {
+            // generate the JRE constant for the preprocessor
+            def jreOption = new BooleanAnalysisOption(
+                id:"JRE1"+version,
+                value:true,
+                forPreprocessor: true
+            )
+            options[(jreOption.id)] = jreOption
+        } else if (platform == "android") {
+            options.ANDROID.value = true
+        } else {
+            throw new RuntimeException("No options for ${platformName}")
+        }
     }
 
     /**
@@ -391,6 +418,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         logger.debug "Processing analysis options"
 
+        String platformName = options.PLATFORM.value.toString()
+        String platformsLib = options.PLATFORMS_LIB.value.toString()
         def inputFilePaths
         def libraryFilePaths
         def heapdlFilePaths
@@ -404,11 +433,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             inputFilePaths = context.inputs()            
             libraryFilePaths = context.libraries()
             heapdlFilePaths = context.hprofs()
-            platformFilePaths = platform(options)            
+            platformFilePaths = getArtifactsForPlatform(platformName, platformsLib)
 
             logger.debug "Resolving inputs and libraries"
             context.resolve()
-
             inputFiles = context.getAllInputs()
             logger.debug "Input file paths: $inputFilePaths -> $inputFiles"
             libraryFiles = context.getAllLibraries()
@@ -418,6 +446,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             platformFiles = resolve(platformFilePaths, InputType.LIBRARY)
             logger.debug "Platform file paths: $platformFilePaths -> $platformFiles"
         }
+
+        setOptionsForPlatform(options, platformName)
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
             if (!options.X_START_AFTER_FACTS.value) {
@@ -754,13 +784,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      * Returns the files needed to resolve a platform. This is a
      * helper method; to get the artifacts for a platform, use
      *
-     * @param platformFullName   the platform ("java_8")
-     * @param path               the path where the 
+     * @param platformName   the platform ("java_8")
+     * @param path           the path of the artifacts
      */
-    private static final List<String> getArtifactsForPlatformWithPath(String platformFullName, String path) {
-        List artifacts = artifactsForPlatform.get(platformFullName)
+    private static final List<String> getArtifactsForPlatformWithPath(String platformName, String path) {
+        List artifacts = artifactsForPlatform.get(platformName)
         if (artifacts == null) {
-            throw new RuntimeException("Could not find artifacts for platform: ${platformFullName}")
+            throw new RuntimeException("Could not find artifacts for platform: ${platformName}")
         }
         return artifacts.collect { "${path}/${it}" }.collect { fname ->
             File f = new File(fname)
@@ -769,5 +799,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             }
             f.canonicalPath
         }
+    }
+
+    private static final List<String> getArtifactsForJava(String platformName, Integer version, String platformsLib) {
+        String platformPath = "${platformsLib}/JREs/jre1.${version}/lib/"
+        return getArtifactsForPlatformWithPath(platformName, platformPath)
     }
 }
