@@ -31,8 +31,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
     static final String HASH_ALGO = "SHA-256"
-    static String platformsLib
-
     static final Map<String, Set<String>> artifactsForPlatform =
             [ // JDKs
               "java_3" : ["rt.jar"],
@@ -299,6 +297,29 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         return CheckSum.checksum(id, HASH_ALGO)
     }
 
+    protected static List<String> platform(Map<String, AnalysisOption> options) {
+        def platformFullName = options.PLATFORM.value as String
+        def platformsLib = options.PLATFORMS_LIB.value as String
+
+        def platformArtifactPaths = platform0(platformFullName, platformsLib)
+
+        def platformInfo = platformFullName.tokenize("_")
+        def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
+        if (platform == "java") {
+            // generate the JRE constant for the preprocessor
+            def jreOption = new BooleanAnalysisOption(
+                    id:"JRE1"+version,
+                    value:true,
+                    forPreprocessor: true
+            )
+            options[(jreOption.id)] = jreOption
+        }
+        else if (platform == "android") {
+            options.ANDROID.value = true
+        }
+        return platformArtifactPaths
+    }
+
     /**
      * Generates a list of the platform library arguments for Soot
      * (file paths of .jar archives).
@@ -308,39 +329,31 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      *                may be mutated after this method runs.
      * @return        The list of artifact paths for the platform.
      */
-    protected static List<String> platform(Map<String, AnalysisOption> options) {
-        def platformFullName = options.PLATFORM.value.toString()
-        String platformsLib = options.PLATFORMS_LIB.value.toString()
+    static List<String> platform0(String platformFullName, String platformsLib) {
         def platformInfo = platformFullName.tokenize("_")
         if (platformInfo.size() < 2) {
             throw new RuntimeException("Invalid platform ${platformInfo}")
         }
         def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
 
-        def platformArtifactPaths = []
+        def platformArtifactPaths
         switch(platform) {
             case "java":
                 if (platformInfo.size == 2) {
-                    platformArtifactPaths = getArtifactsForJava(platformFullName, version, platformsLib)
+                    def platformPath = "${platformsLib}/JREs/jre1.${version}/lib/"
+                    platformArtifactPaths = getArtifactsForPlatformWithPath(platformFullName, platformPath)
                 }
                 else if (platformInfo.size == 3) {
-                    String minorVersion = platformInfo[2]
-                    String platformPath = "${platformsLib}/JREs/jre1.${version}.0_${minorVersion}/lib"
+                    def minorVersion = platformInfo[2]
+                    def platformPath = "${platformsLib}/JREs/jre1.${version}.0_${minorVersion}/lib"
                     if (!((new File(platformPath)).exists())) {
-                        throw new RuntimeException("Minor-version platform does not exist: ${platformFullName}")
+                        throw new RuntimeException("Minor-version platform does not exist: $platformFullName")
                     }
                     platformArtifactPaths = getArtifactsForPlatformWithPath(platformFullName, platformPath)
                 }
                 else {
                     throw new RuntimeException("Invalid JRE version: $version")
                 }
-                // generate the JRE constant for the preprocessor
-                def jreOption = new BooleanAnalysisOption(
-                        id:"JRE1"+version,
-                        value:true,
-                        forPreprocessor: true
-                )
-                options[(jreOption.id)] = jreOption
                 break
             case "android":
                 if (platformInfo.size < 3) {
@@ -352,18 +365,17 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 // one. This permits use of two Android system JARs
                 // side-by-side: either the stubs provided by the
                 // official Android SDK or a custom Android build.
-                String libFlavor = platformInfo[2]
+                def libFlavor = platformInfo[2]
                 if (![ "stubs", "fulljars", "robolectric" ].contains(libFlavor)) {
                     throw new RuntimeException("Invalid Android platform: $platformInfo")
                 }
-                String path = "${platformsLib}/Android/${libFlavor}/Android/Sdk/platforms/android-${version}"
+                def path = "${platformsLib}/Android/${libFlavor}/Android/Sdk/platforms/android-$version"
                 platformArtifactPaths = getArtifactsForPlatformWithPath(platformFullName, path)
-                options.ANDROID.value = true
                 if (libFlavor == "robolectric") {
-                    String roboJRE = "java_8"
-                    println "Using ${roboJRE} with Robolectric"
-                    def files = getArtifactsForJava(roboJRE, 8, platformsLib)
-                    platformArtifactPaths.addAll(files)
+                    def roboJRE = "java_8"
+                    println "Using $roboJRE with Robolectric"
+                    def platformPath = "${platformsLib}/JREs/jre1.8/lib/"
+                    platformArtifactPaths += getArtifactsForPlatformWithPath(roboJRE, platformPath)
                 }
                 break
             default:
@@ -734,10 +746,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      *
      * @return the set of the available platforms
      */
-    public static Set<String> availablePlatforms() {
-        return availablePlatforms
-    }
-
     static final Set<String> getAvailablePlatforms() {
         return artifactsForPlatform.keySet() as Set<String>
     }
@@ -761,10 +769,5 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             }
             f.canonicalPath
         }
-    }
-
-    private static final List<String> getArtifactsForJava(String platformFullName, Integer version, String platformsLib) {
-        String platformPath = "${platformsLib}/JREs/jre1.${version}/lib/"
-        return getArtifactsForPlatformWithPath(platformFullName, platformPath)
     }
 }
