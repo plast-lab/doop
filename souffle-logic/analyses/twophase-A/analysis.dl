@@ -318,6 +318,13 @@ VPTCountPerVar(?var, Y) :- isVar(?var), Y =  count : preAnalysis.VarPointsTo(_, 
 
 // .output MethodToRefine
 // MethodToRefine(?method) :-
-//    OutFlowDirectTwoValues(?method).            
+//    OutFlowDirectTwoValues(?method).
+
+#ifdef SPECIAL_CONTEXT_SENSITIVITY_METHODS
+.decl SpecialContextSensitivityMethods(?method:Method, ?sensivity:symbol)
+.input SpecialContextSensitivityMethods(IO="file", filename="SPECIAL_CONTEXT_SENSITIVITY_METHODS", delimiter=",")
+
+.output SpecialContextSensitivityMethods
+#endif
            
 }

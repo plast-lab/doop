@@ -137,6 +137,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					changesFacts: true,
 					value: null
 			),
+			new AnalysisOption<String>(
+					id: "SPECIAL_CONTEXT_SENSITIVITY_METHODS",
+					name: "special-cs-methods",
+					argName: "FILE",
+					description: "Use a file that specifies special context sensitivity for some methods",
+					value: null,
+					forPreprocessor: true
+			),
 			new BooleanAnalysisOption(
 					id: "SANITY",
 					name: "sanity",
