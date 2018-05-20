@@ -183,12 +183,35 @@ Metrics_Value_AsReceiver_Count(?value, ?n) :-
   _ValueAsReceiver(?value, _),
   ?n = count:{_ValueAsReceiver(?value, _)}.
 
-.decl VPTCountPerVar(?var:Var, ?n:number)
+.decl VPTCountPerMethod(?method:Method, ?n:number)
 
-VPTCountPerVar(?var, Y) :- isVar(?var), Y =  count : mainAnalysis.VarPointsTo(_, _, _, ?var).
+VPTCountPerMethod(?method, Y) :-
+   isVar(?var),
+   Var_DeclaringMethod(?var, ?method),
+   Y =  count : {mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var),
+   ?hctx = ?hctx,
+   ?ctx = ?ctx,
+   ?value = ?value}.
 
-.output VPTCountPerVar
+.decl NeighboringMethodsInCallGraph(?method:Method, ?neighbor:Method)
 
+NeighboringMethodsInCallGraph(?method, ?method) :-
+   VPTCountPerMethod(?method, _).
+
+NeighboringMethodsInCallGraph(?neigh, ?method),
+NeighboringMethodsInCallGraph(?method, ?neigh) :-
+   mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
+   Instruction_Method(?invo, ?neigh).
+
+.decl VPTImpact(?method:Method, ?n:number)
+
+VPTImpact(?method, Y) :-
+  isMethod(?method),
+  Y = sum ?n: { NeighboringMethodsInCallGraph(?method, ?neigh), VPTCountPerMethod(?neigh, ?n) }.
+  
+.output VPTCountPerMethod
+.output VPTImpact
+        
 .decl ContextsPerMethod(?method:Method, ?n:number)
 
 ContextsPerMethod(?method, Y) :- isMethod(?method), Y = count: mainAnalysis.ReachableContext(_, ?method).        

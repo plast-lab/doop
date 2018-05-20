@@ -2,8 +2,9 @@
 
 .init preAnalysis = BasicContextSensitivity<ContextInsensitiveConfiguration>
 
-.comp IntroAConfiguration : AbstractConfiguration {
-           
+                    
+.comp TwoPhaseAConfiguration : AbstractConfiguration {
+
 .type Context  = [ c1:mainAnalysis.Value, c2:mainAnalysis.Value ]
 .type HContext = [ value:mainAnalysis.Value ]
                     
