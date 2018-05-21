@@ -19,8 +19,8 @@ HeapAllocation_ContextInsensitive(?heap) :-
 
 .decl InvokedynamicBootstrap(?invo:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
 
-#define MHDesc(type, method, ret, name) \
-   cat("reference ", cat(type, cat ("::", cat(method, cat(" wrapped as ", cat(ret, cat(".", name)))))))
+#define MHDesc(type, method, real, ret, name) \
+   cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))
 
 #define MHValue(invo, ret, desc) \
    cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", desc))))
@@ -28,7 +28,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
 // Intermediate relation to make rules easier to read.
 .decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method, ?invo:MethodInvocation)
 
-ConstantMHLambdaVPT(?hctx, MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?interface, ?dynName)), ?ctx, ?var, ?interface, ?dynName, ?realMethod, ?invo) :-
+ConstantMHLambdaVPT(?hctx, MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?realMethod, ?interface, ?dynName)), ?ctx, ?var, ?interface, ?dynName, ?realMethod, ?invo) :-
    isDynamicMethodInvocation_Insn(?invo),
    BootstrapParam(1, ?invo, ?handleVar),
    DynamicMethodInvocation_Bootstrap(?invo, LAMBDA_METAFACTORY_ID),

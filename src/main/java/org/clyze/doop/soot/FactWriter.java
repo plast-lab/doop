@@ -93,6 +93,14 @@ public class FactWriter {
         _db.add(ANDROID_ENTRY_POINT, _rep.signature(m));
     }
 
+    void writeAndroidKeepMethod(String methodSig) {
+        _db.add(ANDROID_KEEP_METHOD, "<" + methodSig + ">");
+    }
+
+    void writeAndroidKeepClass(String className) {
+        _db.add(ANDROID_KEEP_CLASS, className);
+    }
+
     void writeProperty(String path, String key, String value) {
         String pathId = writeStringConstant(path);
         String keyId = writeStringConstant(key);
@@ -153,7 +161,23 @@ public class FactWriter {
         return result;
     }
 
-    void writeEnterMonitor(SootMethod m, Stmt stmt, Local var, Session session) {
+    void writePhantomType(Type t) {
+        _db.add(PHANTOM_TYPE, writeType(t));
+    }
+
+    void writePhantomMethod(SootMethod m) {
+        String sig = writeMethod(m);
+        System.out.println("Method " + sig + " is phantom.");
+        _db.add(PHANTOM_METHOD, sig);
+    }
+
+    void writePhantomBasedMethod(SootMethod m) {
+        String sig = writeMethod(m);
+        System.out.println("Method signature " + sig + " contains phantom types.");
+        _db.add(PHANTOM_BASED_METHOD, sig);
+    }
+
+    void writeEnterMonitor(SootMethod m, EnterMonitorStmt stmt, Local var, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
@@ -161,7 +185,7 @@ public class FactWriter {
         _db.add(ENTER_MONITOR, insn, str(index), _rep.local(m, var), methodId);
     }
 
-    void writeExitMonitor(SootMethod m, Stmt stmt, Local var, Session session) {
+    void writeExitMonitor(SootMethod m, ExitMonitorStmt stmt, Local var, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
@@ -546,7 +570,8 @@ public class FactWriter {
         }
     }
 
-    void writeGoto(SootMethod m, Stmt stmt, Unit to, Session session) {
+    void writeGoto(SootMethod m, GotoStmt stmt, Session session) {
+        Unit to = stmt.getTarget();
         session.calcUnitNumber(stmt);
         int index = session.getUnitNumber(stmt);
         session.calcUnitNumber(to);
@@ -560,7 +585,8 @@ public class FactWriter {
     /**
      * If
      */
-    void writeIf(SootMethod m, Stmt stmt, Unit to, Session session) {
+    void writeIf(SootMethod m, IfStmt stmt, Session session) {
+        Unit to = stmt.getTarget();
         // index was already computed earlier
         int index = session.getUnitNumber(stmt);
         session.calcUnitNumber(to);
@@ -838,7 +864,8 @@ public class FactWriter {
         }
     }
 
-    void writeInvoke(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session) {
+    void writeInvoke(SootMethod inMethod, Stmt stmt, Session session) {
+        InvokeExpr expr = stmt.getInvokeExpr();
         writeInvokeHelper(inMethod, stmt, expr, session);
     }
 
@@ -864,16 +891,30 @@ public class FactWriter {
             _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
         }
         else if (expr instanceof DynamicInvokeExpr) {
-            DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
-            SootMethodRef dynInfo = di.getMethodRef();
-            String dynArity = String.valueOf(dynInfo.parameterTypes().size());
-            _db.add(DYNAMIC_METHOD_INV, insn, str(index), _rep.signature(di.getBootstrapMethodRef().resolve()), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynInfo.parameterTypes().toString(), methodId);
+            writeDynamicInvoke((DynamicInvokeExpr)expr, index, insn, methodId);
         }
         else {
             throw new RuntimeException("Cannot handle invoke expr: " + expr);
         }
 
         return insn;
+    }
+
+    private String getBootstrapSig(DynamicInvokeExpr di) {
+        SootMethodRef bootstrapMeth = di.getBootstrapMethodRef();
+        if (bootstrapMeth.declaringClass().isPhantom()) {
+            String bootstrapSig = bootstrapMeth.toString();
+            System.out.println("Bootstrap method is phantom: " + bootstrapSig);
+            _db.add(PHANTOM_METHOD, bootstrapSig);
+            return bootstrapSig;
+        } else
+            return _rep.signature(bootstrapMeth.resolve());
+    }
+
+    private void writeDynamicInvoke(DynamicInvokeExpr di, int index, String insn, String methodId) {
+        SootMethodRef dynInfo = di.getMethodRef();
+        String dynArity = String.valueOf(dynInfo.parameterTypes().size());
+        _db.add(DYNAMIC_METHOD_INV, insn, str(index), getBootstrapSig(di), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynInfo.parameterTypes().toString(), methodId);
     }
 
     private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {
@@ -893,7 +934,6 @@ public class FactWriter {
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
-        _db.add(ASSIGN_OPER_TYPE, insn, right.getSymbol());
 
         if (right.getOp1() instanceof Local) {
             Local op1 = (Local) right.getOp1();
@@ -913,13 +953,6 @@ public class FactWriter {
 
         _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, left), methodId);
 
-        if (right instanceof LengthExpr) {
-            _db.add(ASSIGN_OPER_TYPE, insn, " length ");
-        }
-        else if (right instanceof NegExpr) {
-            _db.add(ASSIGN_OPER_TYPE, insn, " !");
-        }
-
         if (right.getOp() instanceof Local) {
             Local op = (Local) right.getOp();
             _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op));
@@ -934,20 +967,12 @@ public class FactWriter {
         _db.add(ASSIGN_INSTANCE_OF, insn, str(index), _rep.local(m, from), _rep.local(m, to), writeType(t), methodId);
     }
 
-    void writeAssignPhantomInvoke(SootMethod m, Stmt stmt, Session session) {
+    void writeAssignPhantomInvoke(SootMethod m, AssignStmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_PHANTOM_INVOKE, insn, str(index), methodId);
-    }
-
-    void writePhantomInvoke(SootMethod m, Stmt stmt, Session session) {
-        int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, session, index);
-        String methodId = writeMethod(m);
-
-        _db.add(PHANTOM_INVOKE, insn, str(index), methodId);
     }
 
     void writeBreakpointStmt(SootMethod m, Stmt stmt, Session session) {

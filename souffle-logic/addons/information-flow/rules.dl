@@ -211,10 +211,7 @@ BaseValueTaintedFromParamValue(ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB),
   TaintedVarPointsTo(?value, ?ctx, ?param),
   SourceFromTaintedValue(?value, ?source),
   mainAnalysis.Value_DeclaringType(?value, ?declaringType).
-  .plan 1:(2,1,3,4,5)
-  .plan 2:(3,1,2,4,5)
-  .plan 3:(4,3,1,2,5)
-  .plan 4:(5,3,1,2,4)
+  .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5), 3:(4,3,1,2,5), 4:(5,3,1,2,4)
 #else
 .decl XYZ2(?type:Type, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
 

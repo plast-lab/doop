@@ -234,12 +234,10 @@
 
 .type UnsupportedInstruction          = Instruction
 .type AssignPhantomInvoke             = UnsupportedInstruction
-.type PhantomInvoke                   = UnsupportedInstruction
 .type BreakpointStmt                  = UnsupportedInstruction
 
 .decl isUnsupportedInstruction(?insn:UnsupportedInstruction)
 .decl isAssignPhantomInvoke(?insn:AssignPhantomInvoke)
-.decl isPhantomInvoke(?insn:PhantomInvoke)
 .decl isBreakpointStmt(?insn:BreakpointStmt)
 
 //-----------------------------------------------------------------------------
@@ -358,8 +356,6 @@
 
 // Assign expression vars
 .decl AssignOper_From(?insn:AssignOper_Insn, ?from:Var)
-
-.decl AssignOper_Type(?insn:AssignOper_Insn, ?type:symbol)
 
 // Assign Heap Allocation
 .decl AssignHeapAllocation_Heap(?insn:AssignHeapAllocation_Insn, ?heap:HeapAllocation)

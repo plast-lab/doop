@@ -153,15 +153,6 @@ AssignOper_From(?instruction, ?from) :-
   _AssignOperFrom(?instruction, ?from).
 
 
-// AssignOperType
-
-.decl _AssignOperType(?instruction:symbol, ?type:symbol)
-.input _AssignOperType(IO="file", filename="AssignOperType.facts", delimiter="\t")
-
-AssignOper_Type(?instruction, ?type) :-
-  _AssignOperType(?instruction, ?type).
-
-
 // IfVar
 
 .decl _IfVar(?instruction:symbol, ?var:symbol)
@@ -670,19 +661,6 @@ Instruction_Method(?instruction, ?method) :-
   _AssignPhantomInvoke(?instruction, ?index, ?method).
 
 
-// PhantomInvoke
-
-.decl _PhantomInvoke(?instruction:symbol, ?index:number, ?method:symbol)
-.input _PhantomInvoke(IO="file", filename="PhantomInvoke.facts", delimiter="\t")
-
-isInstruction(?instruction),
-isUnsupportedInstruction(?instruction),
-isPhantomInvoke(?instruction),
-Instruction_Index(?instruction, ?index),
-Instruction_Method(?instruction, ?method) :-
-  _PhantomInvoke(?instruction, ?index, ?method).
-
-
 // BreakPointStmt
 
 .decl _BreakpointStmt(?instruction:symbol, ?index:number, ?method:symbol)
@@ -711,111 +689,48 @@ Instruction_Method(?instruction, ?method) :-
 #ifdef ANDROID
 
 // AndroidEntryPoints
-
-.decl _AndroidEntryPoint(?method:symbol)
-.input _AndroidEntryPoint(IO="file", filename="AndroidEntryPoint.facts", delimiter="\t")
-
-AndroidEntryPoint(?method) :-
-  _AndroidEntryPoint(?method).
-
+.input AndroidEntryPoint(IO="file", filename="AndroidEntryPoint.facts", delimiter="\t")
 
 // The exact info from ProGuard keep annotations
-.decl _AndroidKeepMethod(?method:symbol)
-.input _AndroidKeepMethod(IO="file", filename="AndroidKeepMethod.facts", delimiter="\t")
-
-AndroidKeepMethod(?method) :-
-  _AndroidKeepMethod(?method).
-
-.decl _AndroidKeepClass(?class:symbol)
-.input _AndroidKeepClass(IO="file", filename="AndroidKeepClass.facts", delimiter="\t")
-
-AndroidKeepClass(?class) :-
-  _AndroidKeepClass(?class).
-
+.input AndroidKeepMethod(IO="file", filename="AndroidKeepMethod.facts", delimiter="\t")
+.input AndroidKeepClass(IO="file", filename="AndroidKeepClass.facts", delimiter="\t")
 
 // AndroidApplication
-
-.decl _AndroidApplication(?type:symbol)
-.input _AndroidApplication(IO="file", filename="AndroidApplication.facts", delimiter="\t")
-
-AndroidApplication(?type) :-
-   _AndroidApplication(?type).
-
+.input AndroidApplication(IO="file", filename="AndroidApplication.facts", delimiter="\t")
 
 // Activity
-
-.decl _Activity(?id:symbol)
-.input _Activity(IO="file", filename="Activity.facts", delimiter="\t")
-
-isType(?id),
-Activity(?id) :-
-  _Activity(?id).
-
+.input Activity(IO="file", filename="Activity.facts", delimiter="\t")
+isType(?id) :-
+  Activity(?id).
 
 // Service
-
-.decl _Service(?id:symbol)
-.input _Service(IO="file", filename="Service.facts", delimiter="\t")
-
-isType(?id),
-Service(?id) :-
-  _Service(?id).
-
+.input Service(IO="file", filename="Service.facts", delimiter="\t")
+isType(?id) :-
+  Service(?id).
 
 // ContentProvider
-
-.decl _ContentProvider(?id:symbol)
-.input _ContentProvider(IO="file", filename="ContentProvider.facts", delimiter="\t")
-
-isType(?id),
-ContentProvider(?id) :-
-  _ContentProvider(?id).
-
+.input ContentProvider(IO="file", filename="ContentProvider.facts", delimiter="\t")
+isType(?id) :-
+  ContentProvider(?id).
 
 // BroadcastReceiver
-
-.decl _BroadcastReceiver(?id:symbol)
-.input _BroadcastReceiver(IO="file", filename="BroadcastReceiver.facts", delimiter="\t")
-
-isType(?id),
-BroadcastReceiver(?id) :-
-  _BroadcastReceiver(?id).
-
+.input BroadcastReceiver(IO="file", filename="BroadcastReceiver.facts", delimiter="\t")
+isType(?id) :-
+  BroadcastReceiver(?id).
 
 // CallbackMethod
-
-.decl _CallbackMethod(?id:symbol)
-.input _CallbackMethod(IO="file", filename="CallbackMethod.facts", delimiter="\t")
-
-isMethod(?id),
-CallbackMethod(?id) :-
-  _CallbackMethod(?id).
-
+.input CallbackMethod(IO="file", filename="CallbackMethod.facts", delimiter="\t")
+isMethod(?id) :-
+  CallbackMethod(?id).
 
 // LayoutControl
-
-.decl _LayoutControl(?id:NumConstant, ?typename:symbol, ?parent:symbol)
-.input _LayoutControl(IO="file", filename="LayoutControl.facts", delimiter="\t")
-
-LayoutControl0(?id, ?typename, ?parent) :-
-  _LayoutControl(?id, ?typename, ?parent).
-
+.input LayoutControl0(IO="file", filename="LayoutControl.facts", delimiter="\t")
 
 // SensitiveLayoutControl
-.decl _SensitiveLayoutControl(?param1:NumConstant, ?param2:symbol, ?param3:symbol)
-.input _SensitiveLayoutControl(IO="file", filename="SensitiveLayoutControl.facts", delimiter="\t")
-
-SensitiveLayoutControl0(?id, ?typename, ?parent) :-
-  _SensitiveLayoutControl(?id, ?typename, ?parent).
-
+.input SensitiveLayoutControl0(IO="file", filename="SensitiveLayoutControl.facts", delimiter="\t")
 
 // FieldInitialValue
-
-.decl _FieldInitialValue(?fld:symbol, ?valueString:symbol)
-.input _FieldInitialValue(IO="file", filename="FieldInitialValue.facts", delimiter="\t")
-
-FieldInitialValue(?fld, ?valueString) :-
-  _FieldInitialValue(?fld, ?valueString).
+.input FieldInitialValue(IO="file", filename="FieldInitialValue.facts", delimiter="\t")
 
 #endif
 
@@ -845,11 +760,6 @@ isType(?t), isReferenceType(?t), isNullType(?t), Type_null(?t) :- ?t = "null_typ
 isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.lang.Object".
 
 
-// Dacapo
-
-.decl _Dacapo(?id:symbol, ?method:symbol)
-.input _Dacapo(IO="file", filename="Dacapo.facts", delimiter="\t")
-
 
 // Annotations
 // Method
@@ -866,3 +776,11 @@ isAnnotation(?annotation) :-
     Method_Annotation(?meth, ?annotation);
     Field_Annotation(?field, ?annotation);
     Param_Annotation(?meth, ?i, ?annotation).
+
+// Phantom types/methods and phantom-based methods.
+.decl PhantomType(?t:Type)
+.input PhantomType(IO="file", filename="PhantomType.facts", delimiter="\t")
+.decl PhantomMethod(?m:Method)
+.input PhantomMethod(IO="file", filename="PhantomMethod.facts", delimiter="\t")
+.decl PhantomBasedMethod(?m:Method)
+.input PhantomBasedMethod(IO="file", filename="PhantomBasedMethod.facts", delimiter="\t")

@@ -1,22 +1,19 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IField;
-import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.classLoader.ShrikeClass;
+import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ssa.*;
+import com.ibm.wala.types.TypeReference;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
 
-import static org.clyze.doop.wala.WalaRepresentation.*;
+import static org.clyze.doop.wala.WalaUtils.fixTypeString;
 
 public class WalaIRPrinter {
 
@@ -32,26 +29,27 @@ public class WalaIRPrinter {
     void printIR(IClass cl)
     {
 //        PrintWriter writerOut = new PrintWriter(new EscapedWriter(new OutputStreamWriter((OutputStream)streamOut)));
-        ShrikeClass shrikeClass = (ShrikeClass) cl;
+        BytecodeClass bytecodeClass = (BytecodeClass) cl;
         String fileName = _outputDir + "/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
         File file = new File(fileName);
         file.getParentFile().getParentFile().mkdirs();
         file.getParentFile().mkdirs();
 
-        Collection<IField> fields = cl.getAllFields();
+//        Collection<IField> fields = cl.getAllFields();
+        Collection<IField> fields = WalaFactWriter.getAllFieldsOfClass(cl);
         Collection<IMethod> methods = cl.getDeclaredMethods();
         Collection<IClass> interfaces =  cl.getAllImplementedInterfaces();
         try {
             PrintWriter printWriter = new PrintWriter(file);
-            if(shrikeClass.isPublic())
+            if(bytecodeClass.isPublic())
                 printWriter.write("public ");
-            else if(shrikeClass.isPrivate())
+            else if(bytecodeClass.isPrivate())
                 printWriter.write("private ");
 
-            if(shrikeClass.isAbstract())
+            if(bytecodeClass.isAbstract())
                 printWriter.write("abstract ");
 
-            if(shrikeClass.isInterface())
+            if(bytecodeClass.isInterface())
                 printWriter.write("interface ");
             else
                 printWriter.write("class ");
@@ -136,7 +134,11 @@ public class WalaIRPrinter {
 
             if(basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock)
             {
-                writer.write("\t\tHandler"+ "\n");
+                writer.write("\t\tHandler");
+                Iterator<TypeReference> types = ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCaughtExceptionTypes();
+                while(types.hasNext())
+                    writer.write(" " + types.next().getName().toString());
+                    writer.write("\n");
                 if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() != null)
                     writer.write("\t\t\t" + ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction().toString(symbolTable) + "\n");
             }
@@ -144,7 +146,7 @@ public class WalaIRPrinter {
             while(phis.hasNext())
             {
                 SSAPhiInstruction phiInstruction = phis.next();
-                writer.write("\t\t"+"φ"+"\t" + phiInstruction.toString(symbolTable) + "\n");
+                writer.write("\t\t\t" + phiInstruction.toString(symbolTable) + "\n");
                 //System.out.println(phiInstruction.toString(symbolTable));
             }
             for (int j = start; j <= end; j++) {
@@ -157,12 +159,13 @@ public class WalaIRPrinter {
             while(pis.hasNext())
             {
                 SSAPiInstruction piInstruction = pis.next();
-                writer.write("\t\t"+"π"+"\t" + piInstruction.toString(symbolTable) + "\n");
+                writer.write("\t\t\t" + piInstruction.toString(symbolTable) + "\n");
                 //System.out.println(piInstruction.toString(symbolTable));
             }
         }
     }
 
+    //Needs work.
     public void printVars(IR ir, PrintWriter writer)
     {
         SSAInstruction[] instructions = ir.getInstructions();

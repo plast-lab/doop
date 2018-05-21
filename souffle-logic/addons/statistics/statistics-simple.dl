@@ -20,10 +20,10 @@ Stats_Simple_InsensVarPointsTo(?value, ?var) :-
 Stats_Simple_AssignedVariable(?var) :-
   Stats_Simple_InsensVarPointsTo(_, ?var).
 
-Stats_Simple_Application_InsensVarPointsTo(?value, ?var),
-Stats_Simple_Application_VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-  ApplicationVar(?var),
-  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
+// Stats_Simple_Application_InsensVarPointsTo(?value, ?var),
+// Stats_Simple_Application_VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+//   ApplicationVar(?var),
+//   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
 Stats_Simple_InsensReachableVar(?var),
 Stats_Simple_ReachableVar(?ctx, ?var) :-
@@ -186,8 +186,8 @@ Stats_Simple_Application_PotentiallyFailingCast(?type, ?from, ?to) :-
 
 NewMetricMacro( "1.0", "var points-to (INS)", Stats_Simple_InsensVarPointsTo(_, _)).
 NewMetricMacro( "1.5", "var points-to (SENS)", mainAnalysis.VarPointsTo(_, _, _, _)).
-NewMetricMacro( "5.0", "app var points-to (INS)", Stats_Simple_Application_InsensVarPointsTo(_, _)).
-NewMetricMacro( "5.5", "app var points-to (SENS)", Stats_Simple_Application_VarPointsTo(_, _, _, _)).
+// NewMetricMacro( "5.0", "app var points-to (INS)", Stats_Simple_Application_InsensVarPointsTo(_, _)).
+// NewMetricMacro( "5.5", "app var points-to (SENS)", Stats_Simple_Application_VarPointsTo(_, _, _, _)).
 NewMetricMacro("10.0", "reachable variables (INS)", Stats_Simple_InsensReachableVar(_)).
 NewMetricMacro("10.5", "reachable variables (SENS)", Stats_Simple_ReachableVar(_, _)).
 

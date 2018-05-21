@@ -226,22 +226,6 @@ _AssignOperFrom(?instruction, ?from) ->
    Instruction:Id(?insn:?insnval),
    _AssignOperFrom(?insnval, ?from).
 
-// AssignOperType
-
-lang:physical:storageModel[`_AssignOperType] = "DelimitedFile".
-lang:physical:filePath[`_AssignOperType] = "facts/AssignOperType.facts".
-lang:physical:delimiter[`_AssignOperType] = "\t".
-lang:physical:hasColumnNames[`_AssignOperType] = false.
-
-_AssignOperType(?instruction, ?type) ->
-   string(?instruction),
-   string(?type).
-
-+AssignOper:Type(?insn, ?type) <-
-   AssignOper:Insn(?insn),
-   Instruction:Id(?insn:?insnval),
-   _AssignOperType(?insnval, ?type).
-
 // IfVar
 
 lang:physical:storageModel[`_IfVar] = "DelimitedFile".
@@ -1020,25 +1004,6 @@ _AssignPhantomInvoke(?ref, ?index, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
    _AssignPhantomInvoke(?ref, ?index, ?method).
-
-
-// PhantomInvoke
-
-lang:physical:storageModel[`_PhantomInvoke] = "DelimitedFile".
-lang:physical:filePath[`_PhantomInvoke] = "facts/PhantomInvoke.facts".
-lang:physical:delimiter[`_PhantomInvoke] = "\t".
-lang:physical:hasColumnNames[`_PhantomInvoke] = false.
-
-_PhantomInvoke(?ref, ?index, ?method) ->
-   string(?ref),
-   int[32](?index),
-   string(?method).
-
-+PhantomInvoke(?x),
-+Instruction:Id(?x:?ref),
-+Instruction:Index[?x] = ?index,
-+Instruction:Method[?x] = ?method <-
-   _PhantomInvoke(?ref, ?index, ?method).
 
 
 // BreakpointStmt

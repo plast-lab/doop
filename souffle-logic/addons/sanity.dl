@@ -166,5 +166,4 @@ InstructionIsNotConcreteInstruction(?insn) :-
   !isStaticMethodInvocation_Insn(?insn),
   !isUnsupportedInstruction(?insn),
   !isAssignPhantomInvoke(?insn),
-  !isPhantomInvoke(?insn),
   !isBreakpointStmt(?insn).

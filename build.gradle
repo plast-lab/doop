@@ -29,7 +29,7 @@ group = "org.clyze"
 mainClassName = "org.clyze.doop.Main"
 
 //def heapDLVersion = "master-SNAPSHOT"
-def heapDLVersion = "1.0.1"
+def heapDLVersion = "1.0.2"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
@@ -52,6 +52,10 @@ repositories {
         url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
     }
 
+   maven {
+       name "manu's repo"
+       url "https://raw.github.com/msridhar/maven-jars/mvn-repo/"
+   }
 
     maven {
         url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
@@ -96,8 +100,7 @@ dependencies {
     // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
     compile group: 'com.ibm.wala', name: 'com.ibm.wala.util', version: '1.4.3'
     // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.dalvik
-    //compile group: 'com.ibm.wala', name: 'com.ibm.wala.dalvik', version: '1.4.3'
-
+    compile group: 'com.ibm.wala', name: 'com.ibm.wala.dalvik', version: '1.4.3'
 
 
     // Soot is a compile time dependency

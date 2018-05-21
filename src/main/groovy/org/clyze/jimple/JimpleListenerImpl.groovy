@@ -159,30 +159,27 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	void exitAssignmentStmt(AssignmentStmtContext ctx) {
-		if (ctx.IDENTIFIER(0))
-			addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+		addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
 
-		// "@parameter"/"@this" vars have no explicit definition
-		if (ctx.IDENTIFIER(1) && (ctx.IDENTIFIER(1).text.startsWith("@parameter") || (ctx.IDENTIFIER(1).text.startsWith("@this")))) {
+		// @parameterN and @this
+		if (ctx.IDENTIFIER(2)) {
 			def v = var(ctx.IDENTIFIER(1), true)
 			v.type = ctx.IDENTIFIER(2).text
 			pending.pop()
 			metadata.variables << v
+			addTypeUsage(ctx.IDENTIFIER(2))
 		} else if (ctx.IDENTIFIER(1))
 			addVarUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
-
-		(0..1).each {
-			if (ctx.value(it)?.IDENTIFIER())
-				addVarUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
-		}
 
 		// Cast Assignment
 		if (hasToken(ctx, "(") && !hasToken(ctx, "Phi"))
 			addTypeUsage(ctx.IDENTIFIER(1))
+		// Read field
+		else if (ctx.fieldSig())
+			metadata.usages << fieldUsage(ctx.fieldSig(), UsageKind.DATA_READ)
+		// Phi
 		else if (hasToken(ctx, "Phi"))
 			gatherIdentifiers(ctx.identifierList()).each { addVarUsage(it, UsageKind.DATA_READ) }
-
-		addTypeUsage(ctx.IDENTIFIER(2))
 	}
 
 	void exitReturnStmt(ReturnStmtContext ctx) {
@@ -469,13 +466,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		if (origFile.canonicalPath != sourceFile.canonicalPath)
 			FileUtils.copyFile(origFile, sourceFile)
 		// abc/def/Foo.jimple
-		def sourceFileName = "${packageName}/${className}.${extension}" as String
+		def sourceFileName = packageName ? "${packageName}/${className}.${extension}" : "${className}.${extension}"
 
 		def parser = new JimpleParser(
 				new CommonTokenStream(
 						new JimpleLexer(
 								new ANTLRFileStream(sourceFile as String))))
-		def listener = new JimpleListenerImpl(sourceFileName)
+		def listener = new JimpleListenerImpl(sourceFileName as String)
 		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 
 		return listener.metadata

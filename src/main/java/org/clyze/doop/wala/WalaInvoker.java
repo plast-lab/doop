@@ -1,10 +1,15 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.dalvik.classLoader.DexIRFactory;
+import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
+import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
+import com.ibm.wala.util.ref.ReferenceCleanser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
@@ -43,7 +48,7 @@ public class WalaInvoker {
 
 
         // Change package delimiter from "/" to "."
-        return walaParameters.applicationClassFilter.matches(WalaRepresentation.fixTypeString(klass.getName().toString()));
+        return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
     }
 
     public void parseParamsAndRun(String[] args) throws IOException {
@@ -56,13 +61,24 @@ public class WalaInvoker {
 
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
+                    case "--android-jars":
+                        i = shift(args, i);
+                        //walaParameters._allowPhantom = true;
+                        walaParameters._android = true;
+                        walaParameters._androidJars = args[i];
+                        System.out.println("WALA ANDROID JARS " + walaParameters._androidJars);
+                        break;
                     case "-i":
                         i = shift(args, i);
                         walaParameters._inputs.add(args[i]);
                         break;
                     case "-l":
                         i = shift(args, i);
-                        walaParameters._libraries.add(args[i]);
+                        walaParameters._appLibraries.add(args[i]);
+                        break;
+                    case "-el":
+                        i = shift(args, i);
+                        walaParameters._platformLibraries.add(args[i]);
                         break;
                     case "-p":
                         i = shift(args, i);
@@ -112,12 +128,22 @@ public class WalaInvoker {
                 classPath.append(":").append(walaParameters._inputs.get(i));
         }
 
-        for (int i = 0; i < walaParameters._libraries.size(); i++) {
-            classPath.append(":").append(walaParameters._libraries.get(i));
+        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
+            classPath.append(":").append(walaParameters._appLibraries.get(i));
         }
 
-        logger.debug("WALA classpath:" + classPath);
-        AnalysisScope scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+        System.out.println("WALA classpath:" + classPath);
+        for (String lib : walaParameters.getPlatformLibraries())
+            System.out.println("Platform Library: " + lib);
+
+        for (String lib : walaParameters.getAppLibraries())
+            System.out.println("Application Library: " + lib);
+
+        AnalysisScope scope;
+        if(walaParameters._android)
+            scope = WalaScopeReader.setUpAndroidAnalysisScope(classPath.toString(),"", walaParameters._platformLibraries, walaParameters._appLibraries);
+        else
+            scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 
         ClassHierarchy cha = null;
         try {
@@ -125,32 +151,42 @@ public class WalaInvoker {
         } catch (ClassHierarchyException e) {
             e.printStackTrace();
         }
-        // Set up options which govern analysis choices.  In particular, we will use all Pi nodes when
-        // building the IR.
 
-        // Create an object which caches IRs and related information, reconstructing them lazily on demand.
         assert cha != null;
-        Iterator<IClass> classes = cha.iterator();      //IMethod m ;
+        Iterator<IClass> classes = cha.iterator();
         Database db = new Database(new File(walaParameters._outputDir), false);
-        WalaFactWriter walaFactWriter = new WalaFactWriter(db);
-        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir);
+        WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
+        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 
-        logger.debug("Number of classes: " + cha.getNumberOfClasses());
+        System.out.println("Number of classes: " + cha.getNumberOfClasses());
+
+        IAnalysisCacheView cache;
+        if(walaParameters._android)
+            cache = new AnalysisCacheImpl(new DexIRFactory());
+        else
+            cache = new AnalysisCacheImpl();
 
         IClass klass;
         Set<IClass> classesSet = new HashSet<>();
         while (classes.hasNext()) {
             klass = classes.next();
-            if (isApplicationClass(walaParameters, klass)) {
+            if (!walaParameters._android && isApplicationClass(walaParameters, klass)) {
+                walaFactWriter.writeApplicationClass(klass);
+            }
+            if (walaParameters._android && klass.getClassLoader().getName().toString().equals("Application")) {
                 walaFactWriter.writeApplicationClass(klass);
             }
             classesSet.add(klass);
+            for(IMethod m: klass.getDeclaredMethods())
+                cache.getIR(m);
+
         }
 
-        WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), false, walaParameters._cores);
+        WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), false, walaParameters._cores, walaParameters._android, cache);
         driver.doInParallel(classesSet);
         driver.shutdown();
         db.flush();
         db.close();
     }
+
 }

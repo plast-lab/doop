@@ -131,37 +131,34 @@ class FactGenerator implements Runnable {
 
 
     /* Check if a Type refers to a phantom class */
-    private static boolean phantomBased(Type t) {
+    private boolean isPhantom(Type t) {
+        boolean isPhantom = false;
         if (t instanceof RefLikeType) {
             if (t instanceof RefType)
-                return ((RefType) t).getSootClass().isPhantom();
+                isPhantom = ((RefType) t).getSootClass().isPhantom();
             else if (t instanceof ArrayType)
-                return phantomBased(((ArrayType) t).getElementType());
+                isPhantom = isPhantom(((ArrayType) t).getElementType());
         }
-        return false;
+        if (isPhantom)
+            _writer.writePhantomType(t);
+        return isPhantom;
     }
 
-    public static boolean phantomBased(SootMethod m) {
-        /* Check for phantom classes */
-
-        if (m.isPhantom()) {
-            System.out.println("Method " + m.getSignature() + " is phantom.");
-            return true;
-        }
-
-        for(SootClass clazz: m.getExceptions())
-            if (clazz.isPhantom()) {
-                System.out.println("Class " + clazz.getName() + " is phantom.");
+    /* Check for phantom classes in a method signature. */
+    public boolean isPhantomBased(SootMethod m) {
+        for (SootClass clazz: m.getExceptions())
+            if (isPhantom(clazz.getType())) {
+                System.out.println("Exception " + clazz.getName() + " is phantom.");
                 return true;
             }
 
-        for(int i = 0 ; i < m.getParameterCount(); i++)
-            if(phantomBased(m.getParameterType(i))) {
+        for (int i = 0 ; i < m.getParameterCount(); i++)
+            if(isPhantom(m.getParameterType(i))) {
                 System.out.println("Parameter type " + m.getParameterType(i) + " of " + m.getSignature() + " is phantom.");
                 return true;
             }
 
-        if (phantomBased(m.getReturnType())) {
+        if (isPhantom(m.getReturnType())) {
             System.out.println("Return type " + m.getReturnType() + " of " + m.getSignature() + " is phantom.");
             return true;
         }
@@ -171,12 +168,15 @@ class FactGenerator implements Runnable {
 
     void generate(SootMethod m, Session session)
     {
-        if (phantomBased(m)) {
-            //m.setPhantom(true);
+        _writer.writeMethod(m);
+
+        if (m.isPhantom()) {
+            _writer.writePhantomMethod(m);
             return;
         }
 
-        _writer.writeMethod(m);
+        if (isPhantomBased(m))
+            _writer.writePhantomBasedMethod(m);
 
         int modifiers = m.getModifiers();
         if(Modifier.isAbstract(modifiers))
@@ -275,114 +275,69 @@ class FactGenerator implements Runnable {
             _writer.writeLocal(m, l);
         }
 
-        IrrelevantStmtSwitch sw =  new IrrelevantStmtSwitch();
-        for(Unit u : b.getUnits())
-        {
-            Stmt stmt = (Stmt) u;
+        IrrelevantStmtSwitch sw = new IrrelevantStmtSwitch();
+        for(Unit u : b.getUnits()) {
+            u.apply(sw);
 
-            stmt.apply(sw);
-
-            if(sw.relevant)
-            {
-                if(stmt instanceof AssignStmt)
-                {
-                    generate(m, (AssignStmt) stmt, session);
-                }
-                else if(stmt instanceof IdentityStmt)
-                {
-                    generate(m, (IdentityStmt) stmt, session);
-                }
-                else if(stmt instanceof InvokeStmt)
-                {
-                    _writer.writeInvoke(m, stmt, stmt.getInvokeExpr(), session);
-                }
-                else if(stmt instanceof ReturnStmt)
-                {
-                    generate(m, (ReturnStmt) stmt, session);
-                }
-                else if(stmt instanceof ReturnVoidStmt)
-                {
-                    _writer.writeReturnVoid(m, stmt, session);
-                }
-                else if(stmt instanceof ThrowStmt)
-                {
-                    generate(m, (ThrowStmt) stmt, session);
-                }
-                else if(stmt instanceof GotoStmt)
-                {
+            if (sw.relevant) {
+                if (u instanceof AssignStmt) {
+                    generate(m, (AssignStmt) u, session);
+                } else if (u instanceof IdentityStmt) {
+                    generate(m, (IdentityStmt) u, session);
+                } else if (u instanceof InvokeStmt) {
+                    _writer.writeInvoke(m, (InvokeStmt) u, session);
+                } else if (u instanceof ReturnStmt) {
+                    generate(m, (ReturnStmt) u, session);
+                } else if (u instanceof ReturnVoidStmt) {
+                    _writer.writeReturnVoid(m, (ReturnVoidStmt)u, session);
+                } else if (u instanceof ThrowStmt) {
+                    generate(m, (ThrowStmt) u, session);
+                } else if ((u instanceof GotoStmt) || (u instanceof IfStmt) ||
+                           (u instanceof SwitchStmt) || (u instanceof NopStmt)) {
                     // processed in second run: we might not know the number of
                     // the unit yet.
-                    session.calcUnitNumber(stmt);
-                }
-                else if(stmt instanceof IfStmt)
-                {
-                    // processed in second run: we might not know the number of
-                    // the unit yet.
-                    session.calcUnitNumber(stmt);
-                }
-                else if(stmt instanceof EnterMonitorStmt)
-                {
+                    session.calcUnitNumber(u);
+                } else if (u instanceof EnterMonitorStmt) {
                     //TODO: how to handle EnterMonitorStmt when op is not a Local?
-                    if (((EnterMonitorStmt) stmt).getOp() instanceof Local)
-                        _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
-                }
-                else if(stmt instanceof ExitMonitorStmt)
-                {
+                    EnterMonitorStmt stmt = (EnterMonitorStmt) u;
+                    if (stmt.getOp() instanceof Local)
+                        _writer.writeEnterMonitor(m, stmt, (Local) stmt.getOp(), session);
+                } else if (u instanceof ExitMonitorStmt) {
                     //TODO: how to handle ExitMonitorStmt when op is not a Local?
-                    if (((ExitMonitorStmt) stmt).getOp() instanceof Local)
-                        _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
+                    ExitMonitorStmt stmt = (ExitMonitorStmt) u;
+                    if (stmt.getOp() instanceof Local)
+                        _writer.writeExitMonitor(m, stmt, (Local) stmt.getOp(), session);
+                } else {
+                    throw new RuntimeException("Cannot handle statement: " + u);
                 }
-                else if(stmt instanceof TableSwitchStmt)
-                {
-                    // same as IfStmt and GotoStmt.
-                    session.calcUnitNumber(stmt);
-                }
-                else if(stmt instanceof LookupSwitchStmt)
-                {
-                    session.calcUnitNumber(stmt);
-                }
-                else if (stmt instanceof NopStmt) {
-                    session.calcUnitNumber(stmt);
-                }
-                else
-                {
-                    throw new RuntimeException("Cannot handle statement: " + stmt);
-                }
-            }
-            else
-            {
+            } else {
                 // only reason for assign or invoke statements to be irrelevant
                 // is the invocation of a method on a phantom class
-                if(stmt instanceof AssignStmt)
-                    _writer.writeAssignPhantomInvoke(m, stmt, session);
-                else if (stmt instanceof InvokeStmt)
-                    _writer.writePhantomInvoke(m, stmt, session);
-                else if (stmt instanceof BreakpointStmt)
-                    _writer.writeBreakpointStmt(m, stmt, session);
+                if (u instanceof AssignStmt) {
+                    _writer.writeAssignPhantomInvoke(m, (AssignStmt) u, session);
+                    generatePhantom(sw.cause);
+                } else if (u instanceof InvokeStmt) {
+                    // record invocation and calculate PhantomInvoke via logic
+                    _writer.writeInvoke(m, (InvokeStmt) u, session);
+                    generatePhantom(sw.cause);
+                } else if (u instanceof BreakpointStmt)
+                    _writer.writeBreakpointStmt(m, (BreakpointStmt) u, session);
                 else
-                    throw new RuntimeException("Unexpected irrelevant statement: " + stmt);
+                    throw new RuntimeException("Unexpected irrelevant statement: " + u);
             }
         }
 
-        for(Unit u : b.getUnits())
-        {
-            Stmt stmt = (Stmt) u;
-
-            if(stmt instanceof GotoStmt)
-            {
-                _writer.writeGoto(m, stmt, ((GotoStmt) stmt).getTarget(), session);
-            }
-            else if(stmt instanceof IfStmt)
-            {
-                _writer.writeIf(m, stmt, ((IfStmt) stmt).getTarget(), session);
-            }
-            else if(stmt instanceof TableSwitchStmt)
-            {
-                _writer.writeTableSwitch(m, (TableSwitchStmt) stmt, session);
-            }
-            else if(stmt instanceof LookupSwitchStmt)
-            {
-                _writer.writeLookupSwitch(m, (LookupSwitchStmt) stmt, session);
+        for(Unit u : b.getUnits()) {
+            if (u instanceof GotoStmt) {
+                _writer.writeGoto(m, (GotoStmt)u, session);
+            } else if (u instanceof IfStmt) {
+                _writer.writeIf(m, (IfStmt) u, session);
+            } else if (u instanceof TableSwitchStmt) {
+                _writer.writeTableSwitch(m, (TableSwitchStmt) u, session);
+            } else if (u instanceof LookupSwitchStmt) {
+                _writer.writeLookupSwitch(m, (LookupSwitchStmt) u, session);
+            } else if (!(u instanceof Stmt)) {
+                throw new RuntimeException("Not a statement: " + u);
             }
         }
 
@@ -390,13 +345,27 @@ class FactGenerator implements Runnable {
         for(Trap t : b.getTraps())
         {
             _writer.writeExceptionHandler(m, t, session);
-            if(previous != null)
+            if (previous != null)
             {
                 _writer.writeExceptionHandlerPrevious(m, t, previous, session);
             }
 
             previous = t;
         }
+    }
+
+    private void generatePhantom(Object cause) {
+        if (cause instanceof SootClass) {
+            Type t = ((SootClass)cause).getType();
+            System.out.println("Type " + t + " is phantom.");
+            _writer.writePhantomType(t);
+        } else if (cause instanceof SootMethod) {
+            SootMethod meth = (SootMethod)cause;
+            System.out.println("Method " + meth.getSignature() + " is phantom.");
+            _writer.writePhantomMethod(meth);
+        }
+        else
+            System.err.println("Ignoring phantom cause: " + cause);
     }
 
     /**

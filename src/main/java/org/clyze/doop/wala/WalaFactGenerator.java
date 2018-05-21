@@ -1,10 +1,9 @@
 package org.clyze.doop.wala;
 
-import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.classLoader.IClass;
-import com.ibm.wala.classLoader.IField;
-import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.*;
+import com.ibm.wala.dalvik.analysis.typeInference.DalvikTypeInference;
+import com.ibm.wala.dalvik.classLoader.DexIRFactory;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
@@ -14,13 +13,12 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.TypeReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import soot.ArrayType;
-import soot.RefLikeType;
-import soot.RefType;
-import soot.Type;
 
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
+
+import static org.clyze.doop.wala.WalaUtils.createLocal;
+import static org.clyze.doop.wala.WalaUtils.fixTypeString;
+import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -35,17 +33,23 @@ class WalaFactGenerator implements Runnable {
     private WalaFactWriter _writer;
     private Set<IClass> _iClasses;
     private AnalysisOptions options;
+    private boolean _android;
     private IAnalysisCacheView cache;
     private WalaIRPrinter IRPrinter;
 
-    WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir)
+    WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir, boolean androidAnalysis, IAnalysisCacheView analysisCache)
     {
         this._writer = writer;
         this.logger = LogFactory.getLog(getClass());
         this._iClasses = iClasses;
         options = new AnalysisOptions();
         options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
-        cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
+        _android = androidAnalysis;
+        cache = analysisCache;
+//        if(androidAnalysis)
+//            cache = new AnalysisCacheImpl(new DexIRFactory());
+//        else
+//            cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
         //cache = new AnalysisCacheImpl(new DefaultIRFactory(), options.getSSAOptions()); //Change to this to make the IR according to the SSAOptions -- to include piNodes
         IRPrinter = new WalaIRPrinter(cache,outDir);
     }
@@ -56,7 +60,6 @@ class WalaFactGenerator implements Runnable {
 
         for (IClass iClass : _iClasses) {
             IRPrinter.printIR(iClass);
-
             _writer.writeClassOrInterfaceType(iClass);
             //TODO: Handling of Arrays?
             if(iClass.isAbstract())
@@ -78,7 +81,13 @@ class WalaFactGenerator implements Runnable {
             }
 
             iClass.getDeclaredInstanceFields().forEach(this::generate);
-            iClass.getDeclaredStaticFields().forEach(this::generate);
+            try{
+                iClass.getDeclaredStaticFields().forEach(this::generate);
+            }catch (NullPointerException exc) //For some reason in DexClasses .getDeclaredStaticFields() can throw a NullPointerException
+            {
+                ;
+            }
+
 
             for (IMethod m : iClass.getDeclaredMethods()) {
                 Session session = new org.clyze.doop.wala.Session();
@@ -172,10 +181,11 @@ class WalaFactGenerator implements Runnable {
         }
 
         try {
-            for(TypeReference exceptionType: m.getDeclaredExceptions())
-            {
-                _writer.writeMethodDeclaresException(m, exceptionType);
-            }
+            if(m.getDeclaredExceptions()!= null) //Android can return null, java cannot
+                for(TypeReference exceptionType: m.getDeclaredExceptions())
+                {
+                    _writer.writeMethodDeclaresException(m, exceptionType);
+                }
         } catch (InvalidClassFileException e) {
             e.printStackTrace();
         }
@@ -189,11 +199,50 @@ class WalaFactGenerator implements Runnable {
 
     private void generate(IMethod m, IR ir, Session session)
     {
-
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
-        TypeInference typeInference = TypeInference.make(ir,true); // Not sure about true for doPrimitives
         SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
+        TypeInference typeInference;
+        if(_android) { //Sometimes DalvikTypeInference fails due to assertion so we try with normal TypeInference
+            try {
+                typeInference = DalvikTypeInference.make(ir, true);
+            }
+            catch(Throwable er) {
+                System.out.println("\nDalvik Type Inference failed for method: "+ m.getName().toString() + " of class: " + fixTypeString(m.getDeclaringClass().getName().toString()) + "\n");
+                typeInference = null;
+                return;
+            }
+        }
+        else
+            typeInference = TypeInference.make(ir,true);
+
+        WalaExceptionHelper walaExceptionHelper = new WalaExceptionHelper(instructions, m, cfg);
+
+
+//        if(m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package")
+//                && m.getName().toString().contains("loadManifest"))
+//            System.out.println("\n" + m.getDeclaringClass().getName().toString() + " " + m.getName().toString());
+//
+//        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+//            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+//            List <ISSABasicBlock> excSuccs = cfg.getExceptionalSuccessors(basicBlock);
+//            if(m.getName().toString().equals("loadManifest")
+//                    && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
+//                for(ISSABasicBlock excSucc : excSuccs)
+//                    if(excSucc.getNumber() != cfg.exit().getNumber())
+//                        System.out.println("\tBB" +basicBlock.getNumber() + " -> BB" + excSucc.getNumber());
+//        }
+//
+//        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+//            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+//            Collection<ISSABasicBlock> excPredecs = cfg.getExceptionalPredecessors(basicBlock);
+//            if(m.getName().toString().equals("loadManifest")
+//                    && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
+//                for(ISSABasicBlock excPred : excPredecs)
+//                    if(basicBlock.getNumber() != cfg.exit().getNumber())
+//                        System.out.println("\tBB" +basicBlock.getNumber() + " <- BB" + excPred.getNumber());
+//        }
+
         for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             int start = basicBlock.getFirstInstructionIndex();
@@ -203,13 +252,13 @@ class WalaFactGenerator implements Runnable {
             while(phis.hasNext())
             {
                 SSAPhiInstruction phiInstruction = phis.next();
-                this.generateDefs(m, ir, phiInstruction, session, typeInference);
+                this.generateDefs(m, ir, phiInstruction, typeInference);
                 this.generateUses(m, ir, phiInstruction, session, typeInference);
                 generate(m, ir, phiInstruction, session, typeInference);
             }
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
-                    this.generateDefs(m, ir, instructions[j], session, typeInference);
+                    this.generateDefs(m, ir, instructions[j], typeInference);
                     this.generateUses(m, ir, instructions[j], session, typeInference);
 
                     if (instructions[j] instanceof SSAReturnInstruction) {
@@ -300,7 +349,6 @@ class WalaFactGenerator implements Runnable {
             while(pis.hasNext())
             {
                 SSAPiInstruction piInstruction = pis.next();
-
             }
 
 
@@ -309,10 +357,11 @@ class WalaFactGenerator implements Runnable {
                 {
                     continue;
                 }
+                generateDefs(m,ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(), typeInference);
+                _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference, walaExceptionHelper);
                 if (previousHandlerBlock != null) {
                     _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock) basicBlock, previousHandlerBlock, session);
                 }
-                _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference);
                 previousHandlerBlock = (SSACFG.ExceptionHandlerBasicBlock) basicBlock;
             }
         }
@@ -332,6 +381,29 @@ class WalaFactGenerator implements Runnable {
                 }
             }
         }
+
+//        int[][] exceArrays = walaExceptionHelper.exceArrays;
+//        String[][] exceTypeArrays = walaExceptionHelper.exceTypeArrays;
+//
+//        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+//            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+//            int start = basicBlock.getFirstInstructionIndex();
+//            int end = basicBlock.getLastInstructionIndex();
+//
+//            for (int j = start; j <= end; j++) {
+//                if(instructions[j] != null)
+//                {
+//                    if(m.getName().toString().equals("parseNetscapeCertChain") &&
+//                            m.getDeclaringClass().getName().toString().contains("PKCS7")) {
+//                        System.out.println(session.getInstructionNumber(instructions[j]) + " " + instructions[j].toString(ir.getSymbolTable()));
+//                        for (int k = 0; k < exceArrays[j].length ; k++) {
+//                            System.out.print(exceArrays[j][k] +" - " + exceTypeArrays[j][k] + ", ");
+//                        }
+//                        System.out.print("\n");
+//                    }
+//                }
+//            }
+//        }
     }
 
     /*
@@ -352,14 +424,25 @@ class WalaFactGenerator implements Runnable {
         Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
         Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
 
-        if(ssaInstructions[instruction.getTarget()] == null) {
-            int nextWALAIndex = getNextNonNullInstruction(ir,instruction.getTarget());
-            if(nextWALAIndex == -1)
-                logger.error("Error: Next non-null instruction index = -1");
-            _writer.writeIf(m, instruction, op1, op2, ssaInstructions[nextWALAIndex], session);
+        int brachTarget = instruction.getTarget();
+
+        if(_android) {
+            IBytecodeMethod bm = (IBytecodeMethod)m;
+            try {
+                brachTarget = bm.getInstructionIndex(brachTarget);
+            } catch (InvalidClassFileException e) {
+                e.printStackTrace();
+            }
         }
-        else
-            _writer.writeIf(m, instruction, op1, op2, ssaInstructions[instruction.getTarget()], session);
+
+        if(brachTarget == -1) //In Android conditional branches can have -1 as target
+            brachTarget =0;
+        if(ssaInstructions[brachTarget] == null) {
+            brachTarget = getNextNonNullInstruction(ir,brachTarget);
+            if(brachTarget == -1)
+                logger.error("Error: Next non-null instruction index = -1");
+        }
+        _writer.writeIf(m, instruction, op1, op2, ssaInstructions[brachTarget], session);
     }
 
 
@@ -388,12 +471,15 @@ class WalaFactGenerator implements Runnable {
         }
         else
         {
-            _writer.writeAssignNewMultiArrayExpr(m, instruction, l, session);
+            _writer.writeAssignNewMultiArrayExpr(ir, m, instruction, l, session);
         }
     }
 
     public void generate(IMethod m, IR ir, SSALoadMetadataInstruction instruction, Session session, TypeInference typeInference) {
         session.calcInstructionNumber(instruction);//TODO: Move this when method is implemented
+        Local l =  createLocal(ir,instruction,instruction.getDef(),typeInference);
+        Value v = new ConstantValue(instruction.getToken());
+        _writer.writeClassConstantExpression(m, instruction, l, (ConstantValue) v, session);
     }
 
     public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session, TypeInference typeInference) {
@@ -496,14 +582,23 @@ class WalaFactGenerator implements Runnable {
     public void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
         // Go to instructions have no uses and no defs
         SSAInstruction[] ssaInstructions = ir.getInstructions();
-        if(ssaInstructions[instruction.getTarget()] == null) {
-            int nextWALAIndex = getNextNonNullInstruction(ir,instruction.getTarget());
-            if(nextWALAIndex == -1)
+        int gotoTarget = instruction.getTarget();
+//        if(_android) {
+//            IBytecodeMethod bm = (IBytecodeMethod)m;
+//            try {
+//                gotoTarget = bm.getInstructionIndex(gotoTarget);
+//            } catch (InvalidClassFileException e) {
+//                e.printStackTrace();
+//            }
+//        }
+        if(gotoTarget < 0) //In Android conditional GoTos can have -1 as target
+            gotoTarget = 0;
+        if(ssaInstructions[gotoTarget] == null) {
+            gotoTarget = getNextNonNullInstruction(ir,gotoTarget);
+            if(gotoTarget == -1)
                 logger.error("Error: Next non-null instruction index = -1");
-            _writer.writeGoto(m, instruction, ssaInstructions[nextWALAIndex], session);
         }
-        else
-            _writer.writeGoto(m, instruction,ssaInstructions[instruction.getTarget()] , session);
+        _writer.writeGoto(m, instruction,ssaInstructions[gotoTarget] , session);
     }
 
     public void generate(IMethod m, IR ir, SSAMonitorInstruction instruction, Session session, TypeInference typeInference) {
@@ -534,39 +629,6 @@ class WalaFactGenerator implements Runnable {
         _writer.writeAssignArrayLength(m, instruction, to, base, session);
     }
 
-    private Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
-        Local l;
-
-        TypeReference typeRef;
-        TypeAbstraction typeAbstraction = typeInference.getType(varIndex);
-        if (typeAbstraction == null) {                    // anantoni: TypeAbstraction == null means undefined type
-            typeRef = TypeReference.JavaLangObject;
-        }
-        else {                                            // All other cases - including primitives - should be handled by getting the TypeReference
-            typeRef = typeAbstraction.getTypeReference();
-            if (typeRef == null) {                        // anantoni: In this case we have encountered WalaTypeAbstraction.TOP
-                typeRef = TypeReference.JavaLangObject;   // TODO: we don't know what type to give for TOP
-            }
-        }
-        if(ir.getMethod().getName().toString().equals("nothing"))System.out.println("type is " + typeRef.toString());
-        if (instruction.iindex != -1) {
-            String[] localNames = ir.getLocalNames(instruction.iindex, varIndex);
-            if (localNames != null) {
-
-                l = new Local("v" + varIndex, varIndex, localNames[0], typeRef);
-            }
-            else {
-                l = new Local("v" + varIndex, varIndex, typeRef);
-            }
-        }
-        else {
-            l = new Local("v" + varIndex, varIndex, typeRef);
-        }
-        if(ir.getSymbolTable().isConstant(varIndex) && ! ir.getSymbolTable().isNullConstant(varIndex))
-            l.setValue(ir.getSymbolTable().getConstantValue(varIndex).toString());
-
-        return l;
-    }
 
     /**
      * Return statement
@@ -580,40 +642,38 @@ class WalaFactGenerator implements Runnable {
         else {
             // Return something has a single use
             Local l = createLocal(ir, instruction, instruction.getUse(0), typeInference);
-            l.type = m.getReturnType();
             _writer.writeReturn(m, instruction, l, session);
         }
     }
 
-    private void generateDefs(IMethod m, IR ir, SSAInstruction instruction, Session session, TypeInference typeInference) {
-        SymbolTable symbolTable = ir.getSymbolTable();
+    // Instructions have zero to two defs.According to WALA's documentation:
+    // "SSAInvokeInstructions may additionally def a second variable, representing the exceptional return value."
+    // For each def we use writeLocal to produce VAR_TYPE and VAR_DECLARING_TYPE facts.
+    //We probably don't need to produce facts for it the second def.
+    private void generateDefs(IMethod m, IR ir, SSAInstruction instruction, TypeInference typeInference) {
 
         if (instruction.hasDef()) {
             for (int i = 0; i < instruction.getNumberOfDefs(); i++) {
                 int def = instruction.getDef(i);
                 Local l = createLocal(ir, instruction, def, typeInference);
-                if (def != 1 && symbolTable.isConstant(def)) {
-                    Value v = symbolTable.getValue(def);
-                    generateConstant(m, ir, instruction, v, l, session);
-                } else {
-                    _writer.writeLocal(m, l);
-                }
+                _writer.writeLocal(m, l);
             }
         }
     }
 
+    //We only need to generate VAR_TYPE and VAR_DECLARING_TYPE facts for the used variables if they are constants
+    //The others have either been previous defs or method parameters/this so they have already had facts produced.
     private void generateUses(IMethod m, IR ir, SSAInstruction instruction, Session session, TypeInference typeInference) {
         SymbolTable symbolTable = ir.getSymbolTable();
 
         for (int i = 0; i < instruction.getNumberOfUses(); i++) {
             int use = instruction.getUse(i);
-            if(instruction instanceof  SSAPhiInstruction && use < 0)
+            if(instruction instanceof  SSAPhiInstruction && use < 0) //For some reason phi instructions can have -1 as use
                 continue;
-            Local l = createLocal(ir, instruction, use, typeInference);
             if (use != -1 && symbolTable.isConstant(use)) {
+                Local l = createLocal(ir, instruction, use, typeInference);
                 Value v = symbolTable.getValue(use);
                 generateConstant(m, ir, instruction, v, l, session);
-                if(m.getName().toString().equals("nothing"))System.out.println("var v"+use + " is constant.");
             }
         }
     }
@@ -624,7 +684,7 @@ class WalaFactGenerator implements Runnable {
         String s = v.toString();
         if (v.isStringConstant()) {
             l.setType(TypeReference.JavaLangString);
-            _writer.writeStringConstantExpression(m, instruction, l, (ConstantValue) v, session);
+            _writer.writeStringConstantExpression(ir, m, instruction, l, (ConstantValue) v, session);
         } else if (v.isNullConstant()) {
             _writer.writeNullExpression(m, instruction, l, session);
         } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
@@ -672,31 +732,14 @@ class WalaFactGenerator implements Runnable {
         SymbolTable symbolTable = ir.getSymbolTable();
         int use = instruction.getUse(0);
 
-        if(!symbolTable.isConstant(use))
-        {
-            Local l = createLocal(ir, instruction, use, typeInference);
-
-            _writer.writeThrow(inMethod, instruction, l, session);
-        }
-        else if(symbolTable.isNullConstant(use))
+        if(symbolTable.isNullConstant(use))
         {
             _writer.writeThrowNull(inMethod, instruction, session);
         }
         else
         {
-            throw new RuntimeException("Unhandled throw statement: " + instruction);
+            Local l = createLocal(ir, instruction, use, typeInference);
+            _writer.writeThrow(inMethod, instruction, l, session);
         }
-    }
-
-    private int getNextNonNullInstruction(IR ir, int instructionIndex)
-    {
-        SSAInstruction[] ssaInstructions = ir.getInstructions();
-        //ISSABasicBlock basicBlock = ir.getBasicBlockForInstruction(ssaInstructions[instructionIndex]);
-        for(int i = instructionIndex +1 ; i < ssaInstructions.length; i++)
-        {
-            if(ssaInstructions[i]!=null)
-                return i;
-        }
-        return -1;
     }
 }

@@ -1,0 +1,82 @@
+// Consider phantom types to be indications of dead code. The
+// following rules compute possible dead methods/types.
+
+// PhantomInvoke records invocations to methods of phantom types or to
+// just phantom methods (methods missing from existing types).
+
+.decl PhantomInvoke(?instruction:Instruction)
+.output PhantomInvoke
+
+PhantomInvoke(?instruction),
+isUnsupportedInstruction(?instruction) :-
+  MethodInvocation_Method(?instruction, ?method),
+  Method_DeclaringType(?method, ?pt),
+  PhantomType(?pt).
+
+PhantomInvoke(?instruction),
+isUnsupportedInstruction(?instruction) :-
+  MethodInvocation_Method(?instruction, ?method),
+  PhantomMethod(?method).
+
+.decl DeadInstruction(?i:Instruction)
+.output DeadInstruction
+
+// An instruction is dead if it involves a phantom type.
+
+DeadInstruction(?instruction) :-
+  AssignHeapAllocation_Heap(?instruction, ?heap),
+  HeapAllocation_Type(?heap, ?pt),
+  PhantomType(?pt).
+
+DeadInstruction(?instruction) :-
+  (AssignCast_Type(?instruction, ?pt);
+   AssignInstanceOf_Type(?instruction, ?pt)),
+  PhantomType(?pt).
+
+DeadInstruction(?instruction) :-
+  PhantomInvoke(?instruction).
+
+// Recursively, an invocation instruction is dead if it calls a dead method.
+
+DeadInstruction(?instruction) :-
+  MethodInvocation_Method(?instruction, ?method),
+  DeadMethod(?method).
+
+.decl DeadMethod(?m:Method)
+.output DeadMethod
+
+// A method is dead if it contains a dead instruction or is
+// phantom-based (i.e. the method signature contains a phantom type).
+DeadMethod(?m) :- Instruction_Method(?i, ?m), DeadInstruction(?i).
+DeadMethod(?m) :- PhantomBasedMethod(?m).
+
+.decl DeadType(?type:Type)
+.output DeadType
+
+// Dead types (a) contain field or method signatures involving phantom
+// types, or (b) contain dead methods.
+
+DeadType(?type) :-
+  Field_DeclaringType(?sig, ?type),
+  Field_Type(?sig, ?pt),
+  PhantomType(?pt).
+
+DeadType(?type) :-
+  PhantomBasedMethod(?m),
+  Method_DeclaringType(?m, ?type).
+
+DeadType(?type) :-
+  DeadMethod(?m),
+  Method_DeclaringType(?m, ?type).
+
+// Removed methods are phantom methods belonging to non-phantom
+// types. Examples of this: (a) removing methods from a class via bytecode
+// engineering, (b) a piece of code using a wrong version of a library.
+
+.decl RemovedMethod(?method:Method)
+.output RemovedMethod
+
+RemovedMethod(?method) :-
+  PhantomMethod(?method),
+  Method_DeclaringType(?method, ?type),
+  !PhantomType(?type).

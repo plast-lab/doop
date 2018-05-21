@@ -406,17 +406,26 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
 .decl ForwardReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)
 .decl ForwardReflectiveAssignFieldConstantString(?ctx:configuration.Context, ?to:Var, ?signature:Field, ?constantHeap:Value)
 
-ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
-ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap) :-
+.decl OptGetFieldFromClass(?to:Var, ?ctx:configuration.Context, ?param:Var, ?type:Type)
+OptGetFieldFromClass(?to, ?ctx, ?param, ?type) :-
   java_lang_Class_getField(?to, ?param, ?from),
-  VarPointsTo(_, ?reifiedType, ?ctx, ?from),
-  ReifiedClass(?type, ?reifiedType),
-  VarPointsTo(_, ?constantHeap, ?ctx, ?param),
-  Value_isHeap(?constantHeap),
-  FieldNameMatchingStringConstant_Signature(?signature, ?constantHeap),
+  VarPointsTo(_, ?reifiedClass, ?ctx, ?from),
+  ReifiedClass(?type, ?reifiedClass).
+
+.decl OptTypeContainsPublicField(?type:Type, ?signature:Field)
+OptTypeContainsPublicField(?type, ?signature) :-
   basic.SupertypeOf(?superClass, ?type),
   Field_DeclaringType(?signature, ?superClass),
   Field_Modifier("public", ?signature).
+
+ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
+ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap) :-
+  OptGetFieldFromClass(?to, ?ctx, ?param, ?type),
+  VarPointsTo(_, ?constantHeap, ?ctx, ?param),
+  Value_isHeap(?constantHeap),
+  FieldNameMatchingStringConstant_Signature(?signature, ?constantHeap),
+  OptTypeContainsPublicField(?type, ?signature).
+ .plan 1:(2,1,3,4,5)
 
 // If it is a local and precise string, consider it a high-confidence inference
 .decl ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)

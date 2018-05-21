@@ -67,7 +67,6 @@ public enum PredicateFile
     ASSIGN_BINOP("AssignBinop"),
     ASSIGN_UNOP("AssignUnop"),
     ASSIGN_OPER_FROM("AssignOperFrom"),
-    ASSIGN_OPER_TYPE("AssignOperType"),
     SPECIAL_METHOD_INV("SpecialMethodInvocation"),
     IF_VAR("IfVar"),
     VIRTUAL_METHOD_INV("VirtualMethodInvocation"),
@@ -95,7 +94,9 @@ public enum PredicateFile
     RETURN("Return"),
     RETURN_VOID("ReturnVoid"),
     ASSIGN_PHANTOM_INVOKE("AssignPhantomInvoke"),
-    PHANTOM_INVOKE("PhantomInvoke"),
+    PHANTOM_METHOD("PhantomMethod"),
+    PHANTOM_BASED_METHOD("PhantomBasedMethod"),
+    PHANTOM_TYPE("PhantomType"),
     BREAKPOINT_STMT("BreakpointStmt"),
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
     CLASS_ARTIFACT("Class-Artifact");

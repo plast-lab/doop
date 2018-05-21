@@ -103,15 +103,17 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "CLASS",
 					description: "Specify the main class.",
 					value: null,
+					changesFacts: true,
 					webUI: true
 			),
 			new AnalysisOption<String>(
 					id: "IMPORT_PARTITIONS",
 					name: "import-partitions",
-					argName: "file",
+					argName: "FILE",
 					description: "Specify the partitions.",
 					value: null,
 					webUI: false,
+					changesFacts: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
@@ -123,6 +125,24 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use file with tamiflex data for reflection.",
 					value: null,
 					webUI: true,
+					changesFacts: true,
+					forPreprocessor: true
+			),
+			new AnalysisOption<String>(
+					id: "SEED",
+					name: "seed",
+					argName: "FILE",
+					forCacheID: true,
+					description: "Use ProGuard seed file.",
+					changesFacts: true,
+					value: null
+			),
+			new AnalysisOption<String>(
+					id: "SPECIAL_CONTEXT_SENSITIVITY_METHODS",
+					name: "special-cs-methods",
+					argName: "FILE",
+					description: "Use a file that specifies special context sensitivity for some methods",
+					value: null,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -181,7 +201,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "simulate-native-returns",
 					description: "Assume native method calls return mock objects.",
 					value: false,
-					forPreprocessor: true
+					forPreprocessor: true,
+					webUI: true,
+					isAdvanced: true
 			),
 			new BooleanAnalysisOption(
 					id: "UNIQUE_FACTS",
@@ -193,15 +215,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "DACAPO",
 					name: "dacapo",
 					description: "Load additional logic for DaCapo (2006) benchmarks properties.",
-                    value: false,
-					forPreprocessor: true                    
+					value: false,
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "DACAPO_BACH",
 					name: "dacapo-bach",
 					description: "Load additional logic for DaCapo (Bach) benchmarks properties.",
-                    value: false,
-					forPreprocessor: true                    
+					value: false,
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "ONLY_APPLICATION_CLASSES_FACT_GEN",
@@ -229,6 +251,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "A regex expression for the Java package names of the analyzed application.",
 					value: null,
 					forCacheID: true,
+					changesFacts: true,
 					webUI: true
 			),
 			new AnalysisOption<String>(
@@ -238,6 +261,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "When no app regex is given, either compute an app regex for the first input ('first') or for all inputs ('all').",
 					value: null,
 					forCacheID: true,
+					changesFacts: true,
 					webUI: false
 			),
 			new AnalysisOption<String>(
@@ -254,7 +278,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "ANDROID",
 					name: "android",
-					description: "If true the analysis is ran on an Android app",
+					description: "If true the analysis is ran on an Android app.",
 					value: false,
 					forPreprocessor: true
 			),
@@ -276,7 +300,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "configuration",
 					description: "Analysis Configuration",
 					value: "ContextInsensitiveConfiguration",
-                    cli: false,
+					cli: false,
 					forCacheID: true,
 					forPreprocessor: true
 			),
@@ -285,7 +309,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "NO_MERGES",
 					name: "no-merges",
-					description: "No merges for string constants",
+					description: "No merges for string constants.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true,
@@ -294,7 +318,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
 					name: "distinguish-reflection-only-string-constants",
-					description: "Merge all string constants except those useful for reflection",
+					description: "Merge all string constants except those useful for reflection.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true,
@@ -303,7 +327,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DISTINGUISH_ALL_STRING_CONSTANTS",
 					name: "distinguish-all-string-constants",
-					description: "Treat string constants as regular objects",
+					description: "Treat string constants as regular objects.",
 					value: false,
 					webUI: true,
 					forPreprocessor: true,
@@ -463,7 +487,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "GENERATE_PROGUARD_KEEP_DIRECTIVES",
 					name: "gen-proguard-keep",
-					description: "Generate keep directives for proguard",
+					description: "Generate keep directives for ProGuard.",
 					value: false,
 					webUI: true,
 					isAdvanced: true
@@ -536,6 +560,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "CONTROLS",
 					description: "Load additional sensitive layout control from string triplets \"id1,type1,parent_id1,...\".",
 					value: null,
+					changesFacts: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption(
@@ -576,6 +601,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					valueType: InputType.HPROF,
 					webUI: false,
 					forCacheID: true,
+					changesFacts: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
@@ -692,6 +718,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					// custom logic (that can crash the server).
 					description: "Include file with extra rules.",
 					value: null,
+					nonStandard: true,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -713,7 +740,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "X_START_AFTER_FACTS",
 					name: "Xstart-after-facts",
-					description: "Import facts from OUT_DIR and start the analysis",
+					description: "Import facts from OUT_DIR and start the analysis.",
 					argName: "OUT_DIR",
 					isDir: true,
 					nonStandard: true,
@@ -775,6 +802,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isFile: true,
 					description: "One or more files with tab-separated data for Config:DynamicClass. Separate multiple files with a space.",
 					value: [],
+					changesFacts: true,
 					multipleValues: true
 			),
 			new BooleanAnalysisOption(
@@ -805,38 +833,38 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		return analyses.sort()
 	}
 
-    private static List<String> informationFlowPlatforms(String lbDir,
-                                                         String souffleDir) {
-        List<String> platforms_LB = []
-        List<String> platforms_Souffle = []
+	private static List<String> informationFlowPlatforms(String lbDir,
+														 String souffleDir) {
+		List<String> platforms_LB = []
+		List<String> platforms_Souffle = []
 
-        Closure scan = { ifDir ->
-            if (ifDir) {
-                new File("${ifDir}/information-flow")?.eachFile { File f ->
-                    String n = f.getName()
-                    String base = removeExtension(n)
-                    int platformEndIdx = base.lastIndexOf(INFORMATION_FLOW_SUFFIX)
-                    if (platformEndIdx != -1) {
-                        String ext = getExtension(n)
-                        if (ext.equals("logic")) {
-                            platforms_LB << base.substring(0, platformEndIdx)
-                        } else if (ext.equals("dl")) {
-                            platforms_Souffle << base.substring(0, platformEndIdx)
-                        }
-                    }
-                }
-            }
-        }
+		Closure scan = { ifDir ->
+			if (ifDir) {
+				new File("${ifDir}/information-flow")?.eachFile { File f ->
+					String n = f.getName()
+					String base = removeExtension(n)
+					int platformEndIdx = base.lastIndexOf(INFORMATION_FLOW_SUFFIX)
+					if (platformEndIdx != -1) {
+						String ext = getExtension(n)
+						if (ext.equals("logic")) {
+							platforms_LB << base.substring(0, platformEndIdx)
+						} else if (ext.equals("dl")) {
+							platforms_Souffle << base.substring(0, platformEndIdx)
+						}
+					}
+				}
+			}
+		}
 
-        scan(lbDir)
-        scan(souffleDir)
+		scan(lbDir)
+		scan(souffleDir)
 
-        List<String> platforms =
-            (platforms_Souffle.collect {
-                it + ((it in platforms_LB) ? "" : " (Souffle-only)")
-            }) +
-            (platforms_LB.findAll { !(it in platforms_Souffle) }
-                         .collect { it + " (LB-only)"})
-        return platforms.sort()
-    }
+		List<String> platforms =
+				(platforms_Souffle.collect {
+					it + ((it in platforms_LB) ? "" : " (Souffle-only)")
+				}) +
+						(platforms_LB.findAll { !(it in platforms_Souffle) }
+								.collect { it + " (LB-only)"})
+		return platforms.sort()
+	}
 }

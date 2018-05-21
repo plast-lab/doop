@@ -1,10 +1,15 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.dalvik.classLoader.DexIRFactory;
+import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
+import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
+import com.ibm.wala.util.ref.ReferenceCleanser;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.DoopErrorCodeException;
 import org.clyze.doop.soot.SootParameters;
@@ -19,6 +24,9 @@ import java.util.Set;
 
 public class Main {
 
+    private final static int WIPE_SOFT_CACHE_INTERVAL = 2500;
+    private static int wipeCount = 0;
+
     private static int shift(String[] args, int index) {
         if(args.length == index + 1) {
             System.err.println("error: option " + args[index] + " requires an argument");
@@ -32,7 +40,7 @@ public class Main {
 
 
         // Change package delimiter from "/" to "."
-        return walaParameters.applicationClassFilter.matches(WalaRepresentation.fixTypeString(klass.getName().toString()));
+        return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
     }
 
     public static void main(String[] args) throws IOException {
@@ -45,13 +53,23 @@ public class Main {
 
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
+                    case "--android-jars":
+                        i = shift(args, i);
+                        //walaParameters._allowPhantom = true;
+                        walaParameters._android = true;
+                        walaParameters._androidJars = args[i];
+                        break;
                     case "-i":
                         i = shift(args, i);
                         walaParameters._inputs.add(args[i]);
                         break;
                     case "-l":
                         i = shift(args, i);
-                        walaParameters._libraries.add(args[i]);
+                        walaParameters._appLibraries.add(args[i]);
+                        break;
+                    case "-el":
+                        i = shift(args, i);
+                        walaParameters._platformLibraries.add(args[i]);
                         break;
                     case "-p":
                         i = shift(args, i);
@@ -102,20 +120,15 @@ public class Main {
                 classPath += ":" + walaParameters._inputs.get(i);
         }
 
-        for (int i = 0; i < walaParameters._libraries.size(); i++) {
-            classPath += ":" + walaParameters._libraries.get(i);
+        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
+            classPath += ":" + walaParameters._appLibraries.get(i);
         }
 
         System.out.println("WALA classpath:" + classPath);
 
-        //String walaLibraries[] = WalaProperties.getJ2SEJarFiles();
-        //System.out.println("Java libraries loaded by WALA automatically: ");
-        //for(int i =0 ; i< walaLibraries.length ; i++)
-        //    System.out.println(walaLibraries[i]);
-
-        //AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, null);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
-        AnalysisScope scope = WalaScopeReader.makeScope(classPath, null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+        // Build a class hierarchy representing all classes to analyze.  This step will read the class
         // files and organize them into a tree.
+        AnalysisScope scope = WalaScopeReader.makeScope(classPath, null, walaParameters._javaPath);
 
         ClassHierarchy cha = null;
         try {
@@ -123,17 +136,19 @@ public class Main {
         } catch (ClassHierarchyException e) {
             e.printStackTrace();
         }
-        // Set up options which govern analysis choices.  In particular, we will use all Pi nodes when
-        // building the IR.
 
-        // Create an object which caches IRs and related information, reconstructing them lazily on demand.
-        Iterator<IClass> classes = cha.iterator();      //IMethod m ;
+        Iterator<IClass> classes = cha.iterator();
         Database db = new Database(new File(walaParameters._outputDir), false);
-        WalaFactWriter walaFactWriter = new WalaFactWriter(db);
-        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir);
+        WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
+        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
-        //driver.doInParallel(classes);
+
+        IAnalysisCacheView cache;
+        if(walaParameters._android)
+            cache = new AnalysisCacheImpl(new DexIRFactory());
+        else
+            cache = new AnalysisCacheImpl();
 
         IClass klass;
         int totalClasses = 0;
@@ -145,16 +160,26 @@ public class Main {
             }
             totalClasses++;
             classesSet.add(klass);
+            for(IMethod m: klass.getDeclaredMethods()) {
+                cache.getIR(m);
+                wipeSoftCaches();
+            }
         }
 
-        WalaDriver driver = new WalaDriver(walaThreadFactory, totalClasses, false, walaParameters._cores);
+        WalaDriver driver = new WalaDriver(walaThreadFactory, totalClasses, false, walaParameters._cores, walaParameters._android, cache);
 
-
-        classes = cha.iterator();
         driver.doInParallel(classesSet);
         driver.shutdown();
         db.flush();
         db.close();
 
+    }
+
+    private static void wipeSoftCaches() {
+        wipeCount++;
+        if (wipeCount >= WIPE_SOFT_CACHE_INTERVAL) {
+            wipeCount = 0;
+            ReferenceCleanser.clearSoftCaches();
+        }
     }
 }

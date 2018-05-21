@@ -128,20 +128,30 @@ MethodOverridesOther(?methSub, ?methSuper) :-
   MethodLookup(?simplename, ?descriptor, ?subtype, ?methSub),
   ?methSub != ?methSuper.
 
-.decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)
+.decl ConcreteMethodDeclared(?meth:Method, ?class:ClassType)
+ConcreteMethodDeclared(?meth, ?class) :-
+  isClassType(?class),
+  Method_DeclaringType(?meth, ?class),
+  !Method_Modifier("abstract", ?meth).
 
+.decl MethodDeclaredOrInherited(?meth:Method, ?class:ClassType)
+MethodDeclaredOrInherited(?meth, ?class) :-
+//  isClassType(?class),
+  Method_DeclaringType(?meth, ?class).
+
+// This keeps the superclass signature of the method. Does not guarantee
+// there is a concrete implementation until we do "MethodLookup".
+MethodDeclaredOrInherited(?meth, ?class) :-
+  MethodDeclaredOrInherited(?meth, ?superClass),
+  DirectSuperclass(?class, ?superClass).
+
+// REVIEW: a little wasteful, but guessing it doesn't matter.
+.decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)
 MethodsOfSameOrSuperType(?method1, ?method2) :-
-Method_DeclaringType(?method1, ?class),
- Method_DeclaringType(?method2, ?class),
- (Method_DeclaringType(?method2, ?class);
-  Method_DeclaringType(?method2, ?class1),
-  Method_SimpleName(?method2, ?simplename),
-  Method_Descriptor(?method2, ?descriptor),
-  !MethodImplemented(?simplename, ?descriptor, ?class, _),
-  SubtypeOf(?class, ?class1)).
+  MethodDeclaredOrInherited(?method1, ?class),
+  MethodDeclaredOrInherited(?method2, ?class).
 
 .decl MethodsOfSameNonSDKType(?method1:Method, ?method2:Method, ?class:Type)
-
 MethodsOfSameNonSDKType(?method1, ?method2, ?class) :-
   !match("java.*", ?class),
   !match("sun.*", ?class),

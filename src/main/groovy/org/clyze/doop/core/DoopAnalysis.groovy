@@ -348,6 +348,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
+        if (options.SEED.value) {
+            params += ["--seed", options.SEED.value.toString()]
+        }
+
         params = params + ["-d", factsDir.toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
@@ -386,12 +390,16 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         switch(platform) {
             case "java":
                 params = ["--application-regex", options.APP_REGEX.value.toString()]
+                depArgs = deps
+                depArgs.add("-p")
+                depArgs.add(platformLibs.get(0).getAbsolutePath().toString().replace("/rt.jar",""))
                 break
             case "android":
                 // This uses all platformLibs.
                 // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
                 // This uses just platformLibs[0], assumed to be android.jar.
-                params = ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+                depArgs = (platformLibs.collect{ lib -> ["-el", lib.toString()] }.flatten() as Collection<String>) + deps
+                params =  ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
                 break
             default:
                 throw new RuntimeException("Unsupported platform")
@@ -401,9 +409,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
         }
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-        depArgs = deps
-        depArgs.add("-p")
-        depArgs.add(platformLibs.get(0).getAbsolutePath().toString().replace("/rt.jar",""))
         params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
 
         logger.debug "Params of wala: ${params.join(' ')}"

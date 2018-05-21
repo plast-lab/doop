@@ -13,12 +13,17 @@ import soot.SourceLocator;
 import soot.SourceLocator.FoundFile;
 import soot.options.Options;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
+import java.util.stream.Stream;
 
 public class Main {
 
@@ -67,7 +72,6 @@ public class Main {
                         break;
                     case "--android-jars":
                         i = shift(args, i);
-                        sootParameters._allowPhantom = true;
                         sootParameters._android = true;
                         sootParameters._androidJars = args[i];
                         break;
@@ -145,6 +149,10 @@ public class Main {
                     case "--extra-sensitive-controls":
                         i = shift(args, i);
                         extraSensitiveControls = args[i];
+                        break;
+                    case "--seed":
+                        i = shift(args, i);
+                        sootParameters._seed = args[i];
                         break;
                     case "-h":
                     case "--help":
@@ -362,10 +370,28 @@ public class Main {
             driver.shutdown();
         }
 
+        if (sootParameters._seed != null) {
+            try (Stream<String> stream = Files.lines(Paths.get(sootParameters._seed))) {
+                stream.forEach(line -> processSeedFileLine(line, writer));
+            }
+        }
+
         db.close();
 
         // Clean up any temporary directories used for AAR extraction.
         Helper.cleanUp(tmpDirs);
+    }
+
+    private static void processSeedFileLine(String line, FactWriter factWriter) {
+        if (line.contains("(")) {
+            factWriter.writeAndroidKeepMethod(line);
+        }
+        else if (line.contains(":")) {
+
+        }
+        else {
+            factWriter.writeAndroidKeepClass(line);
+        }
     }
 
     private static boolean sootClassPathFirstElement = true;

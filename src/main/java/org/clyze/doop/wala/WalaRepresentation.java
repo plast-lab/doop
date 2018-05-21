@@ -14,9 +14,22 @@ import soot.jimple.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.clyze.doop.wala.WalaUtils.fixTypeString;
+
 class WalaRepresentation {
     private Map<String, String> _methodSigRepr = new ConcurrentHashMap<>();
-    private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
+
+    /*
+     * Each catch instruction is identified by the combination of: the method signature of the method it is in,
+     * the ir variable def'ed by it and the scope number (to cover cases with multiple scopes for one catch, more right below)
+     */
+    private Map<String, String> _catchRepr = new ConcurrentHashMap<>();
+    /*
+     * For each handler that has more than one scope the number of scopes are stored on a map because they can be useful
+     * Each different scope of a handler is represented by a different Exception_Handler fact
+     * We use it when we need to produce Exception_Handler_Previous facts and need to find the last exception handler of a block
+     */
+    private Map<String, Integer> _handlerNumOfScopes = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
     private static WalaRepresentation _repr;
@@ -38,7 +51,7 @@ class WalaRepresentation {
 
 
     String classConstant(TypeReference t) {
-        return "<class " + t + ">";
+        return "<class " + fixTypeString(t.toString()) + ">";
     }
 
 
@@ -74,12 +87,12 @@ class WalaRepresentation {
         return DoopSig.toString();
     }
 
-    String simpleName(IMethod m) {
-        return m.getReference().getName().toString();
+    String simpleName(MethodReference mr) {
+        return mr.getName().toString();
     }
 
-    String simpleName(IField m) {
-        return simpleName(m.getReference());
+    String simpleName(IField f) {
+        return simpleName(f.getReference());
     }
 
     String simpleName(FieldReference f) {
@@ -88,10 +101,9 @@ class WalaRepresentation {
 
     //Method descriptors using soot like format.
     //Should maybe cache these as well.
-    String descriptor(IMethod m)
+    String descriptor(MethodReference methodReference)
     {
         StringBuilder builder = new StringBuilder();
-        MethodReference methodReference = m.getReference();
         builder.append(fixTypeString(methodReference.getReturnType().toString()));
         builder.append("(");
         for(int i = 0; i < methodReference.getNumberOfParameters(); i++)
@@ -134,12 +146,34 @@ class WalaRepresentation {
         return "/intermediate/";
     }
 
-    String handler(IMethod m, TypeReference typeReference, Session session)
+    void putHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, int scopeIndex)
     {
-        String result;
-        String name = "catch " + fixTypeString(typeReference.toString());
-        result = signature(m) + "/" + name + "/" + session.nextNumber(name);
 
+        String handler = m.getSignature() + " v" + catchInstr.getDef();
+        _handlerNumOfScopes.put(handler, scopeIndex);
+
+    }
+
+    int getHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr)
+    {
+        String handler = m.getSignature() + " v" + catchInstr.getDef();
+        Integer numOfScopes = _handlerNumOfScopes.get(handler);
+        if(numOfScopes == null)
+            return 0;
+        else
+            return numOfScopes;
+    }
+
+    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, Session session, int scopeIndex)
+    {
+        String query = m.getSignature() + " v" + catchInstr.getDef()+ "-" + scopeIndex;
+
+        String result = _catchRepr.get(query);
+        if(result == null) {
+            String name = "catch " + fixTypeString(typeReference.toString());
+            result = signature(m) + "/" + name + "/" + session.nextNumber(name);
+            _catchRepr.put(query,result);
+        }
         return result;
     }
 
@@ -147,82 +181,6 @@ class WalaRepresentation {
     {
         String name = "throw " + l.getName();
         return signature(m) + "/" + name + "/" + session.nextNumber(name);
-    }
-
-    static String fixTypeString(String original)
-    {
-        boolean isArrayType = false;
-        int arrayTimes = 0;
-        String ret;
-
-        if(original.contains("L")) {
-            if (original.contains("[")) //Figure out if this is correct
-            {
-                isArrayType = true;
-                for (int i = 0; i < original.length(); i++) {
-                    if (original.charAt(i) == '[')
-                        arrayTimes++;
-                }
-            }
-            ret = original.substring(original.indexOf("L") + 1).replaceAll("/", ".").replaceAll(">", "");
-        }
-        else {
-            String temp;
-            temp = original.substring(original.indexOf(",") + 1).replaceAll(">", "");
-            if (temp.startsWith("[")) {
-                isArrayType = true;
-                for (int i = 0; i < temp.length(); i++) {
-                    if (temp.charAt(i) == '[')
-                        arrayTimes++;
-                    else
-                        break;
-
-                }
-                temp = temp.substring(arrayTimes);
-            }
-            switch (temp) {
-                case "Z":
-                    ret = "boolean";
-                    break;
-                case "I":
-                    ret = "int";
-                    break;
-                case "V":
-                    ret = "void";
-                    break;
-                case "B":
-                    ret = "byte";
-                    break;
-                case "C":
-                    ret = "char";
-                    break;
-                case "D":
-                    ret = "double";
-                    break;
-                case "F":
-                    ret = "float";
-                    break;
-                case "J":
-                    ret = "long";
-                    break;
-                case "S":
-                    ret = "short";
-                    break;
-                default:
-                    ret = "OTHERPRIMITIVE";
-                    break;
-            }
-            //TODO: Figure out what the 'P' code represents in WALA's TypeReference
-
-        }
-        if(isArrayType)
-        {
-            for(int i=0 ; i< arrayTimes ; i++)
-                ret = ret + "[]";
-        }
-        //if(! ret.equals(fixTypeStringOld(original)) && ! original.contains("["))
-        //System.out.println(original + " | " + ret + " | " + fixTypeStringOld(original));
-        return ret;
     }
 
     //This method takes a MethodReference as a parameter and it does not include "this" as an argument

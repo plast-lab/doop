@@ -74,18 +74,18 @@ ReifiedAndroidObjectValue(?value, ?type) :-
 
 PublicMethodOfComponent(?meth) :-
   AndroidAppComponent(?type),
-  MethodDeclaredOrInherited(?meth, ?type),
+  basic.MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("public", ?meth).
 
 ProtectedMethodOfComponent(?meth) :-
   AndroidAppComponent(?type),
-  MethodDeclaredOrInherited(?meth, ?type),
+  basic.MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("protected", ?meth).
 
 .decl NonPrivateConcreteMethodOfComponent(?meth:Method)
 NonPrivateConcreteMethodOfComponent(?meth) :-
   AndroidAppComponent(?type),
-  MethodDeclaredOrInherited(?meth, ?type),
+  basic.MethodDeclaredOrInherited(?meth, ?type),
   !Method_Modifier("private", ?meth),
   !Method_Modifier("abstract", ?meth).
 
@@ -128,61 +128,6 @@ ReachableContext(?ctx, ?meth) :-
   !FormalParam(_, ?meth, _),
   isImmutableContext(?ctx).
 
-// Output for dead method removal. (REVIEW: move elsewhere?)
-.decl MethodToRemove(?method:Method)
-MethodToRemove(?method) :-
-  ApplicationMethod(?method),
-  !ReachableContext(_, ?method),
-//  !Method_Modifier("abstract", ?method),
-  !Method_Modifier("native", ?method),
-  (basic.MethodOverridesOther(?method, _);
-   !basic.MethodOverridesOther(_, ?method)).
-   // don't throw away root methods that may be needed for dispatch of overriding methods.
-
-.decl ClassOfDeadMethod(?method:Method, ?class:ClassType)
-ClassOfDeadMethod(?method, ?class) :-
-  MethodToRemove(?method),
-  Method_DeclaringType(?method, ?class).
-
-// Very silly we have to do this.
-.decl _StringIterationTrick(?pos:number)
-_StringIterationTrick(0).
-_StringIterationTrick(?pos+1) :- _StringIterationTrick(?pos), ?pos < 256.
-
-.decl _RelevantStringPosition(?className: symbol, ?pos:number)
-_RelevantStringPosition(?className, ?pos) :-
-  ClassNameWithSlashes(_, ?className),
-  _StringIterationTrick(?pos), ?pos < strlen(?className).
-
-// N^2 computation, but does it matter when its application is so limited?
-.decl ClassNameWithSlashes(?className:ClassType, ?classNameWithSlash:symbol)
-ClassNameWithSlashes(?className, ?className) :-
-  ClassOfDeadMethod(_, ?className).
-ClassNameWithSlashes(?className, ?classNameTransformed) :-
-  ClassNameWithSlashes(?className, ?classNameOther),
-  _RelevantStringPosition(?className, ?pos),
-  substr(?classNameOther, ?pos, 1) = ".",
-  substr(?classNameOther, 0, ?pos) = ?prefix,
-  substr(?classNameOther, ?pos+1, strlen(?className)-?pos-1) = ?suffix,
-  ?classNameTransformed = cat(?prefix, cat("/", ?suffix)).
-
-.decl ClassNameWithOnlySlashes(?className:ClassType, ?classNameTransformed:symbol)
-ClassNameWithOnlySlashes(?className, ?classNameTransformed) :-
-  ClassNameWithSlashes(?className, ?classNameTransformed),
-  !contains(".", ?classNameTransformed).
-
-.decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol)
-DeadMethodWithJVMDescriptor(?jvmFullName) :-
-  ClassOfDeadMethod(?method, ?class),
-  ClassNameWithOnlySlashes(?class, ?className),
-  Method_JVMDescriptor(?method, ?sig),
-  Method_SimpleName(?method, ?simplename),
-  ?jvmFullName = cat("L", cat(?className, cat(";:", cat(?simplename, ?sig)))).
-
-#define FILENAME_EXPECTED_BY_REDEX_PASS "methods_to_remove.txt"
-.output DeadMethodWithJVMDescriptor(IO="file", filename=FILENAME_EXPECTED_BY_REDEX_PASS, delimiter="\t")
-
-
 
 /**
  * Layout control objects
@@ -204,18 +149,23 @@ SensitiveLayoutControlValue(?value) :-
 
 // Handle library-callable "on*" methods of layout controls
 
-PublicOnMethodOfLayoutControl(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?type),
-  LayoutControl(_, ?type, _),
+.decl _OnEventMethod(?meth:Method)
+_OnEventMethod(?meth) :-
   Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  (match("on.*", ?simplename);
+   match("before.*", ?simplename);
+   match("after.*", ?simplename)).
+
+PublicOnMethodOfLayoutControl(?meth) :-
+  basic.MethodDeclaredOrInherited(?meth, ?type),
+  LayoutControl(_, ?type, _),
+  _OnEventMethod(?meth),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfLayoutControl(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?type),
+  basic.MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
-  Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  _OnEventMethod(?meth),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfLayoutControl(?methConcrete) :-
@@ -265,7 +215,7 @@ ReachableContext(?ctx, ?meth) :-
   Method_SimpleName(?meth, ?simplename),
   (match("set.*", ?simplename);
    match("get.*", ?simplename)),
-  ConcreteMethodDeclared(?meth, ?viewType),
+  basic.ConcreteMethodDeclared(?meth, ?viewType),
   AndroidViewType(?viewType),
   isImmutableContext(?ctx).
 
@@ -296,17 +246,15 @@ AndroidApplicationListenerClass(?class) :-
   ListenerType(?class).
 
 PublicOnMethodOfReachableListener(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?class),
+  basic.MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
-  Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  _OnEventMethod(?meth),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfReachableListener(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?class),
+  basic.MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
-  Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  _OnEventMethod(?meth),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfReachableListener(?methConcrete) :-
@@ -340,8 +288,10 @@ ListenerClassConstantValue(?classHeap, ?type) :-
   // or: ReifiedClass(?type, ?classHeap),  // needs reflection enabled!
   AndroidApplicationListenerClass(?type).
 
-ApplicationObjectFlowingToLibrary(?hctx, cat("<mock android listener-like object ", cat(?type, ">")), ?type),
-MockValueConsMacro(cat("<mock android listener-like object ", cat(?type, ">")), ?type),
+#define MOCK_LISTENER(t) cat("<mock android listener-like object ", cat(?type, ">"))
+
+ApplicationObjectFlowingToLibrary(?hctx, MOCK_LISTENER(?type), ?type),
+MockValueConsMacro(MOCK_LISTENER(?type), ?type),
 LibraryReachableAppListenerType(?type) :-
   ListenerClassConstantValue(?classHeap, ?type),
   VarPointsTo(?hctx, ?classHeap, _, _).
@@ -385,7 +335,7 @@ LibraryReachableAppListenerType(?type) :-
 //  Method_Modifier("public", ?meth),
 //  FormalParam(0, ?meth, ?arg),
 //  Var_Type(?arg, "android.view.View"),
-//  ConcreteMethodDeclared(?meth, ?class),
+//  basic.ConcreteMethodDeclared(?meth, ?class),
 //  Activity(?class),
 //  isImmutableContext(?ctx).
 
@@ -413,7 +363,7 @@ AndroidApplicationPackableClass(?class) :-
 
 .decl ReachableAppPackableMethodOverridingLib(?methConcrete:Method)
 ReachableAppPackableMethodOverridingLib(?methConcrete) :-
-  MethodDeclaredOrInherited(?methConcrete, ?class),
+  basic.MethodDeclaredOrInherited(?methConcrete, ?class),
   LibraryReachableAppPackableClass(?class),
   AppMethodOverridesAndroidLibraryMethod(?methConcrete, _).
 
@@ -486,6 +436,20 @@ ReifiedAndroidObjectValue(?value, ?concreteType) :-
 // Just for debugging
 .output ReifiedAndroidObjectValue
 
+
+/**
+ * HACK for Runnable modeling. There are thread APIs we don't fully model,
+ * so we currently just force reachability of all "run" methods.
+**/
+
+ForcedReachableAndroidContext(?ctx, ?runmeth),
+ReachableContext(?ctx, ?runmeth) :-
+  ReachableApplicationObjectOfType(_, _, ?type),
+  Method_SimpleName(?runmeth, "run"),
+  basic.MethodDeclaredOrInherited(?runmeth, ?type),
+  isImmutableContext(?ctx).
+
+
 /**
  * Javascript interfacing
 **/
@@ -506,7 +470,7 @@ WebClientType(?type):-
 _ForcedReachableFromJavascriptContext(?ctx, ?meth),
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
-  ConcreteMethodDeclared(?meth, ?class),
+  basic.ConcreteMethodDeclared(?meth, ?class),
   (Method_Modifier("protected", ?meth);
    Method_Modifier("public", ?meth)),
   ReachableApplicationObjectOfType(_, _, ?class),
@@ -535,7 +499,7 @@ ReachableContext(?ctx, ?meth) :-
   ArgToAddJavascriptInterface(?var),
   VarPointsTo(_, ?value, _, ?var),
   Value_Type(?value, ?type),
-  ConcreteMethodDeclared(?meth, ?type),
+  basic.ConcreteMethodDeclared(?meth, ?type),
   //Method_Annotation(?meth,"android.webkit.JavascriptInterface"),
   isImmutableContext(?ctx).
 
@@ -560,7 +524,7 @@ ReachableContext(?ctx, ?meth) :-
 // object of the appropriate type. Either mock object ...
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ForcedReachableAndroidContext(?ctx, ?meth),
-  ConcreteMethodDeclared(?meth, ?class),
+  basic.ConcreteMethodDeclared(?meth, ?class),
   ReifiedAndroidObjectValue(?value, ?class),
   ImmutableHContextFromContext(?ctx, ?hctx),
 //  Method_DeclaringType(?meth, ?class),
@@ -572,7 +536,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
 // ... or a plain reachable object flowing to the library.
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ForcedReachableAndroidContext(?ctx, ?meth),
-  ConcreteMethodDeclared(?meth, ?ofType),
+  basic.ConcreteMethodDeclared(?meth, ?ofType),
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
   ThisVar(?meth, ?this).
  .plan 1:(3,2,1,4)
@@ -594,15 +558,33 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   basic.SubtypeOf(?type, ?formalType),
   ReifiedAndroidObjectValue(?value, ?type).
 #ifndef X_CONTEXT_REMOVER
-  .plan 1:(2,1,3,4)
+ .plan 1:(2,1,3,4), 2:(4,3,1,2)
+#endif
+
+// Attempt at a policy that yields a reasonable compromise between
+// precision and completeness: ask for real objects of a most-refined
+// subclass, or of identical type to the declared one.
+.decl _NotMostRefinedType(?type:Type)
+_NotMostRefinedType(?type) :-
+  ConcreteClass(?type),
+  basic.SubtypeOf(?other, ?type),
+  ?other != ?type.
+
+VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
+  FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
+  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?formalType).
+#ifndef X_CONTEXT_REMOVER
+ .plan 1:(2,1)
 #endif
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
   basic.SubtypeOf(?type, ?formalType),
+  !_NotMostRefinedType(?type),
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?type).
+#ifndef X_CONTEXT_REMOVER
  .plan 1:(3,2,1)
-
+#endif
 
 //// REVIEW Ad hoc, but useful?
 // Assign discovered components to all compatible local vars of mocked methods!
@@ -676,12 +658,12 @@ LayoutControlObjectValueFromId(?controlValue, ?numId) :-
 VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
   VarsAtInvocationRetrievingLayoutControl(?ret, ?var),
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
-//  Value_Num(?value, ?numId),
-//  LayoutControlObjectValueFromId(?controlValue, ?numId).
-  Value_Num(?value, _),
-  LayoutControlObjectValueFromId(?controlValue, _).
-/// HACK, HACK, HACK!!!!!
-/// ids currently seem broken, so I just return whatever
+  Value_Num(?value, ?numId),
+  LayoutControlObjectValueFromId(?controlValue, ?numId).
+///// HACK, HACK, HACK below!!!!!
+///// ids seemed broken, so I just return whatever. Fixed now (?)
+//  Value_Num(?value, _),
+//  LayoutControlObjectValueFromId(?controlValue, _).
 
 
 /**
@@ -807,6 +789,125 @@ ApplicationEntryPoint(?meth) :-
 
 
 /**
+ * Unobfuscated classes and members: special treatment
+**/
+
+.decl UnobfuscatedApplicationClass(?class:ClassType)
+.output UnobfuscatedApplicationClass
+UnobfuscatedApplicationClass(?class) :-
+  ApplicationClass(?class),
+  (match("android.*", ?class);
+   match("butterknife.*", ?class);
+   match("com.*", ?class);
+   match("org.*", ?class);
+   match("io.*", ?class);
+   match("edu.*", ?class);
+   match("okhttp3.*", ?class);
+   match("retrofit.*", ?class);
+   match("retrofit2.*", ?class)).
+
+.decl UnobfuscatedMethod(?meth:Method)
+.output UnobfuscatedMethod
+
+// A method with a long-ish name is likely unobfuscated, especially in
+// an unobfuscated class.
+UnobfuscatedMethod(?meth) :-
+  UnobfuscatedApplicationClass(?class),
+  Method_DeclaringType(?meth, ?class),
+  Method_SimpleName(?meth, ?name),
+  strlen(?name) > 2,
+  ?name != "<init>",
+  ?name != "<clinit>".
+  
+UnobfuscatedMethod(?meth) :-
+  ApplicationMethod(?meth),
+  Method_SimpleName(?meth, ?name),
+  strlen(?name) > 5,
+  ?name != "<init>",
+  ?name != "<clinit>".
+
+// Heuristic to determine whether we are dealing with obfuscated input.
+// One can also enable/disable the logic by changing the percentage of
+// classes required for determining that obfuscation is on.
+.decl ObfuscationOn()
+ObfuscationOn() :-
+  ?unobfCount = count : UnobfuscatedApplicationClass(_),
+  ?allCount = count : ApplicationClass(_),
+  ?unobfCount < ?allCount / 2.
+
+// If obfuscation is on, then treat all unobfuscated method names as
+// entry points: the programmer probably had a "keep" specification for
+// them. Note that AndroidKeep* are both input and derived predicates.
+AndroidKeepMethod(?meth) :-
+  ObfuscationOn(),
+  UnobfuscatedMethod(?meth).
+
+AndroidKeepClass(?class) :-
+  ObfuscationOn(),
+  UnobfuscatedApplicationClass(?class).
+
+
+/**
+ * Output for dead method removal. (REVIEW: move elsewhere?)
+**/
+
+.decl MethodToRemove(?method:Method)
+MethodToRemove(?method) :-
+  ApplicationMethod(?method),
+  !ReachableContext(_, ?method),
+//  !Method_Modifier("abstract", ?method),
+  !Method_Modifier("native", ?method),
+  (basic.MethodOverridesOther(?method, _);
+   !basic.MethodOverridesOther(_, ?method)).
+   // don't throw away root methods that may be needed for dispatch of overriding methods.
+.output MethodToRemove
+
+.decl ClassOfDeadMethod(?method:Method, ?class:ClassType)
+ClassOfDeadMethod(?method, ?class) :-
+  MethodToRemove(?method),
+  Method_DeclaringType(?method, ?class).
+
+// Very silly we have to do this.
+.decl _StringIterationTrick(?pos:number)
+_StringIterationTrick(0).
+_StringIterationTrick(?pos+1) :- _StringIterationTrick(?pos), ?pos < 256.
+
+.decl _RelevantStringPosition(?className: symbol, ?pos:number)
+_RelevantStringPosition(?className, ?pos) :-
+  ClassNameWithSlashes(_, ?className),
+  _StringIterationTrick(?pos), ?pos < strlen(?className).
+
+// N^2 computation, but it doesn't matter since its application is so limited
+.decl ClassNameWithSlashes(?className:ClassType, ?classNameWithSlash:symbol)
+ClassNameWithSlashes(?className, ?className) :-
+  ClassOfDeadMethod(_, ?className).
+ClassNameWithSlashes(?className, ?classNameTransformed) :-
+  ClassNameWithSlashes(?className, ?classNameOther),
+  _RelevantStringPosition(?className, ?pos),
+  substr(?classNameOther, ?pos, 1) = ".",
+  substr(?classNameOther, 0, ?pos) = ?prefix,
+  !contains(".", ?prefix),
+  substr(?classNameOther, ?pos+1, strlen(?className)-?pos-1) = ?suffix,
+  ?classNameTransformed = cat(?prefix, cat("/", ?suffix)).
+
+.decl ClassNameWithOnlySlashes(?className:ClassType, ?classNameTransformed:symbol)
+ClassNameWithOnlySlashes(?className, ?classNameTransformed) :-
+  ClassNameWithSlashes(?className, ?classNameTransformed),
+  !contains(".", ?classNameTransformed).
+
+.decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol)
+DeadMethodWithJVMDescriptor(?jvmFullName) :-
+  ClassOfDeadMethod(?method, ?class),
+  ClassNameWithOnlySlashes(?class, ?className),
+  Method_JVMDescriptor(?method, ?sig),
+  Method_SimpleName(?method, ?simplename),
+  ?jvmFullName = cat("L", cat(?className, cat(";:", cat(?simplename, ?sig)))).
+
+#define FILENAME_EXPECTED_BY_REDEX_PASS "methods_to_remove.txt"
+.output DeadMethodWithJVMDescriptor(IO="file", filename=FILENAME_EXPECTED_BY_REDEX_PASS, delimiter="\t")
+
+
+/**
  * General-purpose helpers
 **/
 
@@ -815,29 +916,11 @@ AndroidLibraryType(?type) :-
   match("android.*", ?type).
 
 // REVIEW: is this needed? android.support classes are included in the
-// application for compatibility with older Android versions. We
-// currently consider them library, not app.
+// application for compatibility with older Android versions. For several
+// purposes we consider them library, not app.
 AndroidApplicationClass(?class) :-
-  ApplicationClass(?class),
-  !AndroidLibraryType(?class).
-
-MethodDeclaredOrInherited(?meth, ?class) :-
-//  isClassType(?class),
-  Method_DeclaringType(?meth, ?class).
-
-// This keeps the superclass signature of the method. Does not guarantee
-// there is a concrete implementation until we do "MethodLookup".
-MethodDeclaredOrInherited(?meth, ?class) :-
-  MethodDeclaredOrInherited(?meth, ?superClass),
-  DirectSuperclass(?class, ?superClass).
-
-.decl ConcreteMethodDeclared(?meth:Method, ?class:ClassType)
-// Just for debugging
-.output ConcreteMethodDeclared
-ConcreteMethodDeclared(?meth, ?class) :-
-  isClassType(?class),
-  Method_DeclaringType(?meth, ?class),
-  !Method_Modifier("abstract", ?meth).
+  ApplicationClass(?class). 
+//  !AndroidLibraryType(?class).
 
 .decl AppClassSubtypesLibClass(?type:Type, ?libType:Type)
 AppClassSubtypesLibClass(?type, ?libraryType) :-

@@ -206,7 +206,6 @@ lang:entity(`DynamicMethodInvocation:Insn).
 
 lang:entity(`UnsupportedInstruction).
 lang:entity(`AssignPhantomInvoke).
-lang:entity(`PhantomInvoke).
 lang:entity(`BreakpointStmt).
 
 Throw:Insn(?insn)                      -> Instruction(?insn).
@@ -252,7 +251,6 @@ DynamicMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 
 UnsupportedInstruction(?insn)          -> Instruction(?insn).
 AssignPhantomInvoke(?insn)             -> UnsupportedInstruction(?insn).
-PhantomInvoke(?insn)                   -> UnsupportedInstruction(?insn).
 BreakpointStmt(?insn)                  -> UnsupportedInstruction(?insn).
 
 //-----------------------------------------------------------------------------
