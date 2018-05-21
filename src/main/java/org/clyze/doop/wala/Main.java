@@ -67,6 +67,12 @@ public class Main {
                         i = shift(args, i);
                         walaParameters._appLibraries.add(args[i]);
                         break;
+                    case "--uniqueFacts":
+                        walaParameters._uniqueFacts = true;
+                        break;
+                    case "--generate-ir":
+                        walaParameters._generateIR = true;
+                        break;
                     case "-el":
                         i = shift(args, i);
                         walaParameters._platformLibraries.add(args[i]);
@@ -138,7 +144,7 @@ public class Main {
         }
 
         Iterator<IClass> classes = cha.iterator();
-        Database db = new Database(new File(walaParameters._outputDir), false);
+        Database db = new Database(new File(walaParameters._outputDir), walaParameters._uniqueFacts);
         WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
         WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 

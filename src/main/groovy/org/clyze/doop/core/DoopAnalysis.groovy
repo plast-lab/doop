@@ -408,6 +408,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (options.FACT_GEN_CORES.value) {
             params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
         }
+        if (options.GENERATE_JIMPLE.value) {
+            params += ["--generate-ir"]
+        }
+        if (options.UNIQUE_FACTS.value) {
+            params += ["--uniqueFacts"]
+        }
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
 
