@@ -25,7 +25,11 @@ public class WalaUtils {
         Local l;
 
         TypeReference typeRef;
-        TypeAbstraction typeAbstraction = typeInference.getType(varIndex);
+        TypeAbstraction typeAbstraction;
+        if(typeInference == null)   // TypeInference can be null if we catch an error during it's creation, consider all types Object
+            typeAbstraction = null;
+        else
+            typeAbstraction = typeInference.getType(varIndex);
         if (typeAbstraction == null) {                    // anantoni: TypeAbstraction == null means undefined type
             typeRef = TypeReference.JavaLangObject;
         }

@@ -5,6 +5,7 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.analysis.BooleanAnalysisOption
 import org.clyze.analysis.IntegerAnalysisOption
 import org.clyze.analysis.InputType
+import static org.clyze.analysis.UI.*
 
 import static DoopAnalysis.INFORMATION_FLOW_SUFFIX
 import static org.apache.commons.io.FilenameUtils.getExtension
@@ -53,7 +54,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "lb",
 					description: "Use the LB engine.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					isAdvanced: true
 			),
 			new AnalysisOption<String>(
@@ -64,7 +65,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: null,
 					validValues: analysesNames(Doop.analysesPath),
 					isMandatory: true,
-					webUI: true
+					webUI: AnalysisForm
 			),
 			new AnalysisOption<String>(
 					id: "INPUTS",
@@ -75,7 +76,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					multipleValues: true,
 					valueType: InputType.INPUT,
 					isMandatory: false,
-					webUI: true
+					webUI: InputBundleForm
 			),
 			new AnalysisOption<String>(
 					id: "LIBRARIES",
@@ -86,7 +87,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					multipleValues: true,
 					valueType: InputType.LIBRARY,
 					isMandatory: false,
-					webUI: true
+					webUI: InputBundleForm
 			),
 			new AnalysisOption<String>(
 					id: "USER_SUPPLIED_ID",
@@ -94,7 +95,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "The analysis id. If omitted, it is automatically generated.",
 					argName: "ID",
 					value: null,
-					webUI: true
+					webUI: InputBundleForm
 			),
 
 			new AnalysisOption<String>(
@@ -104,7 +105,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Specify the main class.",
 					value: null,
 					changesFacts: true,
-					webUI: true
+					webUI: InputBundleForm
 			),
 			new AnalysisOption<String>(
 					id: "IMPORT_PARTITIONS",
@@ -112,7 +113,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "FILE",
 					description: "Specify the partitions.",
 					value: null,
-					webUI: false,
 					changesFacts: true,
 					forPreprocessor: true
 			),
@@ -124,7 +124,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isFile: true,
 					description: "Use file with tamiflex data for reflection.",
 					value: null,
-					webUI: true,
+					webUI: InputBundleForm,
 					changesFacts: true,
 					forPreprocessor: true
 			),
@@ -202,7 +202,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Assume native method calls return mock objects.",
 					value: false,
 					forPreprocessor: true,
-					webUI: true,
+					webUI: AnalysisForm,
 					isAdvanced: true
 			),
 			new BooleanAnalysisOption(
@@ -252,7 +252,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: null,
 					forCacheID: true,
 					changesFacts: true,
-					webUI: true
+					webUI: InputBundleForm
 			),
 			new AnalysisOption<String>(
 					id: "AUTO_APP_REGEX_MODE",
@@ -261,8 +261,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "When no app regex is given, either compute an app regex for the first input ('first') or for all inputs ('all').",
 					value: null,
 					forCacheID: true,
-					changesFacts: true,
-					webUI: false
+					changesFacts: true
 			),
 			new AnalysisOption<String>(
 					id: "PLATFORM",
@@ -271,7 +270,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "The platform on which to perform the analysis. For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). default: java_7",
 					value: "java_7",
 					validValues: DoopAnalysisFactory.availablePlatforms,
-					webUI: true,
+					webUI: InputBundleForm,
 					forCacheID: true,
 					forPreprocessor: true
 			),
@@ -311,7 +310,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "no-merges",
 					description: "No merges for string constants.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -320,7 +319,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "distinguish-reflection-only-string-constants",
 					description: "Merge all string constants except those useful for reflection.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -329,7 +328,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "distinguish-all-string-constants",
 					description: "Treat string constants as regular objects.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -338,7 +337,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "distinguish-all-string-buffers",
 					description: "Avoids merging string buffer objects (not recommended).",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -347,7 +346,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "distinguish-string-buffers-per-package",
 					description: "Merges string buffer objects only on a per-package basis (default behavior for reflection-classic).",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -355,7 +354,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "EXCLUDE_IMPLICITLY_REACHABLE_CODE",
 					name: "exclude-implicitly-reachable-code",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -364,7 +363,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "coarse-grained-allocation-sites",
 					description: "Aggressively merge allocation sites for all regular object types, in lib and app alike.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -373,7 +372,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "no-merge-library-objects",
 					description: "Disable the default policy of merging library (non-collection) objects of the same type per-method.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 			),
 			new BooleanAnalysisOption(
 					id: "MERGE_LIBRARY_OBJECTS_PER_METHOD",
@@ -386,7 +385,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "cs-library",
 					description: "Enable context-sensitive analysis for internal library objects.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -401,14 +400,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "reflection-classic",
 					description: "Enable (classic subset of) logic for handling Java reflection.",
 					value: false,
-					webUI: true
+					webUI: AnalysisForm
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_SUBSTRING_ANALYSIS",
 					name: "reflection-substring-analysis",
 					description: "Allows reasoning on what substrings may yield reflection objects.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -416,7 +415,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "REFLECTION_CONTEXT_SENSITIVITY",
 					name: "reflection-context-sensitivity",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -425,7 +424,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "reflection-high-soundness-mode",
 					description: "Enable extra rules for more sound handling of reflection.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -433,7 +432,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS",
 					name: "reflection-speculative-use-based-analysis",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -441,7 +440,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "REFLECTION_INVENT_UNKNOWN_OBJECTS",
 					name: "reflection-invent-unknown-objects",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -456,7 +455,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "disable-method-handles",
 					description: "Disable handling of 'invokedynamic' and method handles.",
 					value: false,
-					webUI: false,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -464,7 +462,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "REFLECTION_REFINED_OBJECTS",
 					name: "reflection-refined-objects",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -473,7 +471,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "reflection-dynamic-proxies",
 					description: "Enable handling of the Java dynamic proxy API.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
@@ -489,7 +487,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "gen-proguard-keep",
 					description: "Generate keep directives for ProGuard.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					isAdvanced: true
 			),
 			new BooleanAnalysisOption(
@@ -497,7 +495,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "discover-tests",
 					description: "Discover testing code (e.g. marked with JUnit annotations).",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -505,7 +503,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "discover-main-methods",
 					description: "Discover main() methods.",
 					value: false,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true
 			),
 			/* End preprocessor normal flags */
@@ -587,7 +585,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "IGNORE_MAIN_METHOD",
 					name: "ignore-main-method",
 					description: "If main class is not given explicitly, do not try to discover it from jar/filename info. Open-program analysis variant will be triggered in this case.",
-					webUI: true,
+					webUI: AnalysisForm,
 					value: false,
 					forPreprocessor: true
 			),
@@ -599,7 +597,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: null,
 					multipleValues: true,
 					valueType: InputType.HPROF,
-					webUI: false,
 					forCacheID: true,
 					changesFacts: true,
 					forPreprocessor: true
@@ -753,7 +750,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Threshold when reporting point-to information in server logic (per points-to set). default: 1000",
 					value: 1000,
 					nonStandard: true,
-					webUI: true,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),

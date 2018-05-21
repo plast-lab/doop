@@ -42,8 +42,8 @@ class WalaFactGenerator implements Runnable {
         this._writer = writer;
         this.logger = LogFactory.getLog(getClass());
         this._iClasses = iClasses;
-        options = new AnalysisOptions();
-        options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
+        //options = new AnalysisOptions();
+        //options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
         _android = androidAnalysis;
         cache = analysisCache;
 //        if(androidAnalysis)
@@ -210,7 +210,7 @@ class WalaFactGenerator implements Runnable {
             catch(Throwable er) {
                 System.out.println("\nDalvik Type Inference failed for method: "+ m.getName().toString() + " of class: " + fixTypeString(m.getDeclaringClass().getName().toString()) + "\n");
                 typeInference = null;
-                return;
+                //return;
             }
         }
         else
