@@ -101,6 +101,14 @@ public class FactWriter {
         _db.add(ANDROID_KEEP_CLASS, className);
     }
 
+    void writeSpecialSensitivityMethod(String line) {
+        String[] linePieces = line.split(",");
+        String method = linePieces[0].trim();
+        String sensitivity = linePieces[1].trim();
+
+        _db.add(SPECIAL_CONTEXT_SENSITIVITY_METHOD, method, sensitivity);
+    }
+
     void writeProperty(String path, String key, String value) {
         String pathId = writeStringConstant(path);
         String keyId = writeStringConstant(key);

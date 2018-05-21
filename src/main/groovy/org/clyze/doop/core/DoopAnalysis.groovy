@@ -352,6 +352,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--seed", options.SEED.value.toString()]
         }
 
+        if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
+            params += ["--special-cs-methods", options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString()]
+        }
         params = params + ["-d", factsDir.toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"

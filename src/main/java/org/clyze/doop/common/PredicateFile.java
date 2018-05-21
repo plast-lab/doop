@@ -99,7 +99,8 @@ public enum PredicateFile
     PHANTOM_TYPE("PhantomType"),
     BREAKPOINT_STMT("BreakpointStmt"),
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
-    CLASS_ARTIFACT("Class-Artifact");
+    CLASS_ARTIFACT("Class-Artifact"),
+    SPECIAL_CONTEXT_SENSITIVITY_METHOD("SpecialContextSensitivityMethod");
 
     private final String name;
 

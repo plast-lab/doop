@@ -154,6 +154,10 @@ public class Main {
                         i = shift(args, i);
                         sootParameters._seed = args[i];
                         break;
+                    case "--special-cs-methods":
+                        i = shift(args, i);
+                        sootParameters._specialCSMethods = args[i];
+                        break;
                     case "-h":
                     case "--help":
                     case "-help":
@@ -376,6 +380,12 @@ public class Main {
             }
         }
 
+        if (sootParameters._specialCSMethods != null) {
+            try (Stream<String> stream = Files.lines(Paths.get(sootParameters._seed))) {
+                stream.forEach(line -> processSpecialSensitivityMethodFileLine(line, writer));
+            }
+        }
+
         db.close();
 
         // Clean up any temporary directories used for AAR extraction.
@@ -391,6 +401,12 @@ public class Main {
         }
         else {
             factWriter.writeAndroidKeepClass(line);
+        }
+    }
+
+    private static void processSpecialSensitivityMethodFileLine(String line, FactWriter factWriter) {
+        if (line.contains(",")) {
+            factWriter.writeSpecialSensitivityMethod(line);
         }
     }
 

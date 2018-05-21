@@ -28,6 +28,7 @@ public class SootParameters {
      Integer _cores = null;
      boolean _ignoreWrongStaticness = false;
      String _seed = null;
+     String _specialCSMethods = null;
 
      public void setInputs(List<String> inputs) {
           this._inputs = inputs;
