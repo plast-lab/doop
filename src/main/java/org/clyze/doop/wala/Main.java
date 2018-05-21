@@ -1,10 +1,15 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.dalvik.classLoader.DexIRFactory;
+import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
+import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
+import com.ibm.wala.util.ref.ReferenceCleanser;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.DoopErrorCodeException;
 import org.clyze.doop.soot.SootParameters;
@@ -18,6 +23,9 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class Main {
+
+    private final static int WIPE_SOFT_CACHE_INTERVAL = 2500;
+    private static int wipeCount = 0;
 
     private static int shift(String[] args, int index) {
         if(args.length == index + 1) {
@@ -136,6 +144,12 @@ public class Main {
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
 
+        IAnalysisCacheView cache;
+        if(walaParameters._android)
+            cache = new AnalysisCacheImpl(new DexIRFactory());
+        else
+            cache = new AnalysisCacheImpl();
+
         IClass klass;
         int totalClasses = 0;
         Set<IClass> classesSet = new HashSet<>();
@@ -146,14 +160,26 @@ public class Main {
             }
             totalClasses++;
             classesSet.add(klass);
+            for(IMethod m: klass.getDeclaredMethods()) {
+                cache.getIR(m);
+                wipeSoftCaches();
+            }
         }
 
-        WalaDriver driver = new WalaDriver(walaThreadFactory, totalClasses, false, walaParameters._cores, walaParameters._android);
+        WalaDriver driver = new WalaDriver(walaThreadFactory, totalClasses, false, walaParameters._cores, walaParameters._android, cache);
 
         driver.doInParallel(classesSet);
         driver.shutdown();
         db.flush();
         db.close();
 
+    }
+
+    private static void wipeSoftCaches() {
+        wipeCount++;
+        if (wipeCount >= WIPE_SOFT_CACHE_INTERVAL) {
+            wipeCount = 0;
+            ReferenceCleanser.clearSoftCaches();
+        }
     }
 }

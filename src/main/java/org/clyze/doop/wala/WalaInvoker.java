@@ -1,10 +1,15 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.dalvik.classLoader.DexIRFactory;
+import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
+import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
+import com.ibm.wala.util.ref.ReferenceCleanser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
@@ -155,6 +160,12 @@ public class WalaInvoker {
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
 
+        IAnalysisCacheView cache;
+        if(walaParameters._android)
+            cache = new AnalysisCacheImpl(new DexIRFactory());
+        else
+            cache = new AnalysisCacheImpl();
+
         IClass klass;
         Set<IClass> classesSet = new HashSet<>();
         while (classes.hasNext()) {
@@ -166,12 +177,16 @@ public class WalaInvoker {
                 walaFactWriter.writeApplicationClass(klass);
             }
             classesSet.add(klass);
+            for(IMethod m: klass.getDeclaredMethods())
+                cache.getIR(m);
+
         }
 
-        WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), false, walaParameters._cores, walaParameters._android);
+        WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), false, walaParameters._cores, walaParameters._android, cache);
         driver.doInParallel(classesSet);
         driver.shutdown();
         db.flush();
         db.close();
     }
+
 }

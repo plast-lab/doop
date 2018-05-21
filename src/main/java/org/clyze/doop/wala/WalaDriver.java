@@ -1,6 +1,7 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -17,15 +18,17 @@ class WalaDriver {
     private int _classCounter;
     private Set<IClass> _tmpClassGroup;
     private int _totalClasses;
+    private IAnalysisCacheView _cache;
 
     WalaDriver(WalaThreadFactory factory, int totalClasses, boolean generateJimple,
-           Integer cores, boolean android) {
+           Integer cores, boolean android, IAnalysisCacheView cache) {
         _factory = factory;
         _classCounter = 0;
         _tmpClassGroup = new HashSet<>();
         _totalClasses = totalClasses;
         _generateJimple = generateJimple;
         _android = android;
+        _cache = cache;
         int _cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
 
         System.out.println("Fact generation cores: " + _cores);
@@ -45,7 +48,7 @@ class WalaDriver {
             _tmpClassGroup.add(iClasses.next());
         }
 
-        WalaFactGenerator factGenerator = new WalaFactGenerator(writer, _tmpClassGroup, outDir, _android);
+        WalaFactGenerator factGenerator = new WalaFactGenerator(writer, _tmpClassGroup, outDir, _android, _cache);
         //factGenerator.generate(dummyMain, new Session());
         //writer.writeAndroidEntryPoint(dummyMain);
         factGenerator.run();
@@ -62,7 +65,7 @@ class WalaDriver {
 
         int _classSplit = 80;
         if ((_classCounter % _classSplit == 0) || (_classCounter == _totalClasses)) {
-            Runnable runnable = _factory.newFactGenRunnable(_tmpClassGroup);
+            Runnable runnable = _factory.newFactGenRunnable(_tmpClassGroup, _cache);
             _executor.execute(runnable);
             _tmpClassGroup = new HashSet<>();
         }

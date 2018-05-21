@@ -37,7 +37,7 @@ class WalaFactGenerator implements Runnable {
     private IAnalysisCacheView cache;
     private WalaIRPrinter IRPrinter;
 
-    WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir, boolean androidAnalysis)
+    WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir, boolean androidAnalysis, IAnalysisCacheView analysisCache)
     {
         this._writer = writer;
         this.logger = LogFactory.getLog(getClass());
@@ -45,10 +45,11 @@ class WalaFactGenerator implements Runnable {
         options = new AnalysisOptions();
         options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active
         _android = androidAnalysis;
-        if(androidAnalysis)
-            cache = new AnalysisCacheImpl(new DexIRFactory());
-        else
-            cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
+        cache = analysisCache;
+//        if(androidAnalysis)
+//            cache = new AnalysisCacheImpl(new DexIRFactory());
+//        else
+//            cache = new AnalysisCacheImpl();                //Without the SSaOptions -- piNodes
         //cache = new AnalysisCacheImpl(new DefaultIRFactory(), options.getSSAOptions()); //Change to this to make the IR according to the SSAOptions -- to include piNodes
         IRPrinter = new WalaIRPrinter(cache,outDir);
     }
