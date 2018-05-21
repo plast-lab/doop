@@ -4,12 +4,15 @@ import org.clyze.persistent.model.doop.DynamicMethodInvocation;
 import soot.*;
 import soot.jimple.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 class Representation {
     private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
     private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
+    private List<String> jimpleKeywordList = Jimple.jimpleKeywordList();
+    private Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
     private static Representation _repr;
@@ -50,7 +53,16 @@ class Representation {
     }
 
     String simpleName(SootMethod m) {
-        return m.getName();
+        String result = methodNames.get(m);
+        if (result == null) {
+            result = m.getName();
+            // Fix simple name if it is a special Jimple keyword.
+            if (!result.startsWith("'") && jimpleKeywordList.contains(result)) {
+                result = "'" + result + "'";
+                methodNames.put(m, result);
+            }
+        }
+        return result;
     }
 
     String simpleName(SootField m) {
@@ -178,7 +190,7 @@ class Representation {
     String invoke(SootMethod inMethod, InvokeExpr expr, Session session)
     {
         SootMethod exprMethod = expr.getMethod();
-        String defaultMid = exprMethod.getDeclaringClass() + "." + exprMethod.getName();
+        String defaultMid = exprMethod.getDeclaringClass() + "." + simpleName(exprMethod);
         String midPart = (expr instanceof DynamicInvokeExpr)?
             dynamicInvokeMiddlePart((DynamicInvokeExpr)expr, defaultMid) : defaultMid;
 
