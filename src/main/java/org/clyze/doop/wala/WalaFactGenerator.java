@@ -8,6 +8,7 @@ import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
+import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.TypeReference;
@@ -169,6 +170,8 @@ class WalaFactGenerator implements Runnable {
             _writer.writeThisVar(m);
             paramIndex = 1;
         }
+        if(isPhantomBased(m))
+            _writer.writePhantomBasedMethod(m.getReference());
 
         while (paramIndex < m.getNumberOfParameters()) {
             if (m.isStatic() || m.isClinit()) {
@@ -404,6 +407,49 @@ class WalaFactGenerator implements Runnable {
 //                }
 //            }
 //        }
+    }
+
+    /* Check if a Type refers to a phantom class */
+    private boolean isPhantom(TypeReference t, IClassHierarchy cha) {
+        if(t.isPrimitiveType())
+            return false;
+        if(t.isArrayType())
+            return isPhantom(t.getArrayElementType(),cha);
+        if(cha.lookupClass(t) == null) {
+            _writer.writePhantomType(t);
+            return true;
+        }
+        else
+            return false;
+    }
+
+    /* Check for phantom classes in a method signature. */
+    public boolean isPhantomBased(IMethod m) {
+        IClassHierarchy cha = m.getClassHierarchy();
+        try {
+            TypeReference[] exceptions = m.getDeclaredExceptions();
+            if(exceptions!= null)
+                for (TypeReference exc: exceptions)
+                    if (isPhantom(exc, cha)) {
+                        System.out.println("Exception " + fixTypeString(exc.getName().toString()) + " is phantom.");
+                        return true;
+                    }
+        } catch (InvalidClassFileException e) {
+            e.printStackTrace();
+        }
+
+        for (int i = 0 ; i < m.getNumberOfParameters(); i++)
+            if(isPhantom(m.getParameterType(i), cha)) {
+                System.out.println("Parameter type " + fixTypeString(m.getParameterType(i).toString()) + " of " + m.getSignature() + " is phantom.");
+                return true;
+            }
+
+        if (isPhantom(m.getReturnType(), cha)) {
+            System.out.println("Return type " + fixTypeString(m.getReturnType().toString()) + " of " + m.getSignature() + " is phantom.");
+            return true;
+        }
+
+        return false;
     }
 
     /*

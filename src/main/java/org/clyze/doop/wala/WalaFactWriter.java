@@ -535,8 +535,10 @@ public class WalaFactWriter {
     {
         IClass targetClass = cha.lookupClass(f.getDeclaringClass());
         TypeReference typeRef = f.getDeclaringClass();
-        if(targetClass == null)
+        if(targetClass == null) {
             System.out.println("Failed to find class: " + fixTypeString(f.getDeclaringClass().getName().toString()) + " in class hierarchy.");
+            writePhantomType(f.getDeclaringClass());
+        }
         else
         {
             //for(IField field: targetClass.getAllFields())
