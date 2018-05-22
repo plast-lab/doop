@@ -17,6 +17,8 @@
 
 .decl java_lang_Class_getName(?to:Var, ?from:Var)
 
+.decl java_lang_Class_getCanonicalName(?to:Var, ?from:Var)
+
 .decl java_lang_Class_getComponentType(?to:Var, ?from:Var)
 
 .decl java_lang_Class_getSuperclass(?to:Var, ?from:Var)

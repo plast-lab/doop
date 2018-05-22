@@ -92,14 +92,19 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
 
 
 /*************************************************************
- * java.lang.Class.getName
+ * java.lang.Class.getName and java.lang.Class.getCanonicalName
  *
  *   public String getName()
+ *   public String getCanonicalName()
+ *
+ * TODO: getCanonicalName() for local and anonymous classes
+ * TODO: primitive classes
  *************************************************************/
 
 VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   ImmutableHContextFromContext(?callerCtx, ?hctx),
-  java_lang_Class_getName(?to, ?from),
+  (java_lang_Class_getName(?to, ?from);
+   java_lang_Class_getCanonicalName(?to, ?from)),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?className, ?classValue),
   isStringConstant(?className),
