@@ -381,7 +381,7 @@ public class Main {
         }
 
         if (sootParameters._specialCSMethods != null) {
-            try (Stream<String> stream = Files.lines(Paths.get(sootParameters._seed))) {
+            try (Stream<String> stream = Files.lines(Paths.get(sootParameters._specialCSMethods))) {
                 stream.forEach(line -> processSpecialSensitivityMethodFileLine(line, writer));
             }
         }
