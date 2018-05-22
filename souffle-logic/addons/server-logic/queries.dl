@@ -1,3 +1,6 @@
+// String constants are bare strings so we transform their ids for presentation.
+#define STRING_CONSTANT(x) cat("<string constant `", cat(x, "`>"))
+
 // Class-- //
 
 .decl _Valid_Type(?type:ReferenceType)
@@ -113,7 +116,16 @@ Server_IField_Values(?baseValue, ?fld, ?value) :-
   Server_IField_Values_Count(?baseValue, ?fld, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD,
   mainAnalysis.isValue(?baseValue),
-  mainAnalysis.isValue(?value).
+  mainAnalysis.isValue(?value),
+  !isStringConstant(?value).
+
+Server_IField_Values(?baseValue, ?fld, STRING_CONSTANT(?value)) :-
+  _IFPT(?baseValue, ?fld, ?value),
+  Server_IField_Values_Count(?baseValue, ?fld, ?count),
+  ?count <= X_SERVER_LOGIC_THRESHOLD,
+  mainAnalysis.isValue(?baseValue),
+  mainAnalysis.isValue(?value),
+  isStringConstant(?value).
 
 Server_IField_Values(?baseValue, ?fld, "<<XL-pt-set>>") :-
   Server_IField_Values_Count(?baseValue, ?fld, ?count),
@@ -124,6 +136,14 @@ Server_SField_Values(?fld, ?value) :-
   _SFPT(?fld, ?value),
   _SFPT_Count(?fld, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD,
+  !isStringConstant(?value),
+  mainAnalysis.isValue(?value).
+
+Server_SField_Values(?fld, STRING_CONSTANT(?value)) :-
+  _SFPT(?fld, ?value),
+  _SFPT_Count(?fld, ?count),
+  ?count <= X_SERVER_LOGIC_THRESHOLD,
+  isStringConstant(?value),
   mainAnalysis.isValue(?value).
 
 Server_SField_Values(?fld, "<<XL-pt-set>>") :-
@@ -169,6 +189,14 @@ Server_Var_Values(?class, ?var, ?value) :-
   _VPT(?var, ?value),
   _VarUnderThreshold(?var),
 //  mainAnalysis.isValue(?value),
+  !isStringConstant(?value),
+  _VarDeclaringClass(?var, ?class).
+
+Server_Var_Values(?class, ?var, STRING_CONSTANT(?value)) :-
+  _VPT(?var, ?value),
+  _VarUnderThreshold(?var),
+//  mainAnalysis.isValue(?value),
+  isStringConstant(?value),
   _VarDeclaringClass(?var, ?class).
 
 Server_Var_Values(?class, ?var, "<<XL-pt-set>>") :-
