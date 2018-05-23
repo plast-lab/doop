@@ -1005,7 +1005,23 @@ public class WalaFactWriter {
         if(sourceLineNum != -1)
             _db.add(METHOD_INV_LINE, insn, str(sourceLineNum));
 
-        if (instruction.isStatic()) {
+        if (instruction instanceof SSAInvokeDynamicInstruction) { //Had to put these first because wala considers them static
+//            MethodReference dynInfo = instruction.getDeclaredTarget();
+            MethodReference dynInfo = targetRef;
+            String dynArity = String.valueOf(dynInfo.getNumberOfParameters());
+
+            StringBuilder parameterTypes = new StringBuilder();
+            for (int i = 0; i < dynInfo.getNumberOfParameters(); i++) {
+                if (i==0) {
+                    parameterTypes.append(fixTypeString(dynInfo.getParameterType(i).toString()));
+                }
+                else {
+                    parameterTypes.append(", ").append(fixTypeString(dynInfo.getParameterType(i).toString()));
+                }
+            }
+            _db.add(DYNAMIC_METHOD_INV, insn, str(index), _rep.signature(dynInfo), dynInfo.getName().toString(), fixTypeString(dynInfo.getReturnType().toString()), dynArity, parameterTypes.toString(), methodId);
+        }
+        else if (instruction.isStatic()) {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
             //_db.add(STATIC_METHOD_INV, insn, _rep.signature(targetRef), methodId);
         }
@@ -1018,21 +1034,6 @@ public class WalaFactWriter {
             Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
             _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
             //_db.add(SPECIAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
-        }
-        else if (instruction instanceof SSAInvokeDynamicInstruction) {
-            MethodReference dynInfo = instruction.getDeclaredTarget();
-            String dynArity = String.valueOf(dynInfo.getNumberOfParameters());
-
-            StringBuilder parameterTypes = new StringBuilder();
-            for (int i = 0; i < dynInfo.getNumberOfParameters(); i++) {
-                if (i==0) {
-                    parameterTypes.append(dynInfo.getParameterType(i));
-                }
-                else {
-                    parameterTypes.append(", ").append(dynInfo.getParameterType(i));
-                }
-            }
-            _db.add(DYNAMIC_METHOD_INV, insn, str(index), dynInfo.getSignature(), dynInfo.getName().toString(), dynInfo.getReturnType().toString(), dynArity, parameterTypes.toString(), methodId);
         }
         else {
             throw new RuntimeException("Cannot handle invoke instruction: " + instruction);
