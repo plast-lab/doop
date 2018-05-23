@@ -405,7 +405,7 @@ public class Main {
     }
 
     private static void processSpecialSensitivityMethodFileLine(String line, FactWriter factWriter) {
-        if (line.contains(",")) {
+        if (line.contains(", ")) {
             factWriter.writeSpecialSensitivityMethod(line);
         }
     }

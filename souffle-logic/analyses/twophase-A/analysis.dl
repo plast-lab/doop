@@ -95,9 +95,7 @@ InitHContextResponse(?value, ?hctx) :-
 .decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)
 MethodsOfSameOrSuperType(?method1, ?method2) :-
    !ThisPointsToTooManyValues(?method1),
-   !ArgPointsToTooManyValues(_, ?method1),
    !ThisPointsToTooManyValues(?method2),
-   !ArgPointsToTooManyValues(_, ?method2),
    basic.MethodsOfSameOrSuperType(?method1, ?method2).
    
 /** Utility rule: Value points to another value directly or indirectly **/
@@ -113,11 +111,11 @@ ValuePointsTo(?baseValue, ?value) :-
 //   preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue).
 
 // anantoni: These filters can be vital to achieving good scale
-.decl ArgPointsToTooManyValues(?arg:Var, ?method:Method)
-ArgPointsToTooManyValues(?arg, ?method) :-
-  FormalParam(_, ?method, ?arg),
-  VPTCountPerVar(?arg, ?n),
-  ?n > 10000.
+// .decl ArgPointsToTooManyValues(?arg:Var, ?method:Method)
+// ArgPointsToTooManyValues(?arg, ?method) :-
+//   FormalParam(_, ?method, ?arg),
+//   VPTCountPerVar(?arg, ?n),
+//   ?n > 10000.
 
 .decl ThisPointsToTooManyValues(?method:Method)
 ThisPointsToTooManyValues(?method) :-
@@ -257,14 +255,12 @@ InOutFlowPair(?inMethod, ?outMethod) :-
 .decl MethodToRefine(?method:Method)
 
 MethodToRefine(?method) :-      
-  InOutFlowPair(?method, _);
+  (InOutFlowPair(?method, _);
    InOutFlowPair(_, ?method);
    MethodTaintedByDirectFlow(?method);
-   MethodTaintedByWrappedFlow(?method).   
-   // (Method_DeclaringType(?method, ?type),
-   //  match(?type, "java\.util\..*")),
-   // !match(?method, "boolean equals.*"),
-   // ?method != "<java.lang.Object: void <init>()>"
+   MethodTaintedByWrappedFlow(?method)),
+  !SpecialContextSensitivityMethod(?method, _).
+
 .printsize isMethod
 .printsize MethodToRefine
 .output MethodToRefine
@@ -272,7 +268,7 @@ MethodToRefine(?method) :-
 
 .decl VPTCountPerVar(?var:Var, ?n:number)
 
-VPTCountPerVar(?var, Y) :- isVar(?var), Y =  count : preAnalysis.VarPointsTo(_, _, _, ?var), Y > 0.
+VPTCountPerVar(?var, Y) :- ThisVar(_, ?var), Y =  count : preAnalysis.VarPointsTo(_, _, _, ?var), Y > 0.
 
 .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)
 .input SpecialContextSensitivityMethod(IO="file", filename="SpecialContextSensitivityMethod.facts", delimiter="\t")

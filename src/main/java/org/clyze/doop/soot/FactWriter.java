@@ -102,7 +102,7 @@ public class FactWriter {
     }
 
     void writeSpecialSensitivityMethod(String line) {
-        String[] linePieces = line.split(",");
+        String[] linePieces = line.split(", ");
         String method = linePieces[0].trim();
         String sensitivity = linePieces[1].trim();
 

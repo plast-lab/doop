@@ -200,14 +200,24 @@ NeighboringMethodsInCallGraph(?method, ?method) :-
 
 NeighboringMethodsInCallGraph(?neigh, ?method),
 NeighboringMethodsInCallGraph(?method, ?neigh) :-
-   mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
-   Instruction_Method(?invo, ?neigh).
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
+  Instruction_Method(?invo, ?neigh).
 
+.decl TwoLevelCallerMethodInCallGraph(?neighbor:Method, ?method:Method)
+
+TwoLevelCallerMethodInCallGraph(?neigh, ?method) :-
+  NeighboringMethodsInCallGraph(?intermediatemethod, ?method),
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?intermediatemethod),
+  Instruction_Method(?invo, ?neigh).
+
+TwoLevelCallerMethodInCallGraph(?neigh, ?method) :-
+  NeighboringMethodsInCallGraph(?neigh, ?method).
+                               
 .decl VPTImpact(?method:Method, ?n:number)
 
 VPTImpact(?method, Y) :-
   isMethod(?method),
-  Y = sum ?n: { NeighboringMethodsInCallGraph(?method, ?neigh), VPTCountPerMethod(?neigh, ?n) }.
+  Y = sum ?n: { TwoLevelCallerMethodInCallGraph(?neigh, ?method), VPTCountPerMethod(?neigh, ?n) }.
   
 .output VPTCountPerMethod
 .output VPTImpact
