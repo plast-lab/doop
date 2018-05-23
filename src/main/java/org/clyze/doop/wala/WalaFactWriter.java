@@ -3,6 +3,7 @@ package org.clyze.doop.wala;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
+import com.ibm.wala.shrikeCT.BootstrapMethodsReader;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.ClassLoaderReference;
@@ -1019,7 +1020,8 @@ public class WalaFactWriter {
                     parameterTypes.append(", ").append(fixTypeString(dynInfo.getParameterType(i).toString()));
                 }
             }
-            _db.add(DYNAMIC_METHOD_INV, insn, str(index), _rep.signature(dynInfo), dynInfo.getName().toString(), fixTypeString(dynInfo.getReturnType().toString()), dynArity, parameterTypes.toString(), methodId);
+            String sig= getBootstrapSig(((SSAInvokeDynamicInstruction) instruction).getBootstrap(),inMethod.getClassHierarchy());
+            _db.add(DYNAMIC_METHOD_INV, insn, str(index), sig, dynInfo.getName().toString(), fixTypeString(dynInfo.getReturnType().toString()), dynArity, parameterTypes.toString(), methodId);
         }
         else if (instruction.isStatic()) {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
@@ -1040,6 +1042,45 @@ public class WalaFactWriter {
         }
 
         return insn;
+    }
+
+    private String getBootstrapSig(BootstrapMethodsReader.BootstrapMethod bootstrapMeth, IClassHierarchy cha) {
+//        if (cha.lookupClass()) {
+//            String bootstrapSig = bootstrapMeth.toString();
+//            System.out.println("Bootstrap method is phantom: " + bootstrapSig);
+//            _db.add(PHANTOM_METHOD, bootstrapSig);
+//            return bootstrapSig;
+//        } else
+//            return _rep.signature(bootstrapMeth.resolve());
+        String declaringClass = bootstrapMeth.methodClass().replace('/','.');
+        String[] splitTypes = bootstrapMeth.methodType().split("\\)");
+        String returnType = splitTypes[1].substring(1,splitTypes[1].length() - 1).replace('/','.');
+        //String argTypes = splitTypes[0].substring(2,splitTypes[0].length() - 1).replace(";L",",").replace('/','.');
+        String[] splitArgTypes = splitTypes[0].substring(1,splitTypes[0].length() - 1).split(";");
+        StringBuilder bootStrapSig= new StringBuilder("<");
+        bootStrapSig.append(declaringClass);
+        bootStrapSig.append(": ");
+        bootStrapSig.append(returnType);
+        bootStrapSig.append(" ");
+        bootStrapSig.append(bootstrapMeth.methodName());
+        bootStrapSig.append("(");
+        boolean first = true;
+        for(String argType: splitArgTypes)
+        {
+            if(!first)
+            {
+                bootStrapSig.append(",");
+            }
+            else
+                first = false;
+            bootStrapSig.append(fixTypeString(argType));
+        }
+        //bootStrapSig.append(argTypes);
+        bootStrapSig.append(")>");
+
+
+        System.out.println("\n\n\n\n\n\nBOOTSTRAP SIG " + bootStrapSig);
+        return bootStrapSig.toString();
     }
 
     //        private Value writeImmediate(IMethod inMethod, Stmt stmt, Value v, Session session) {
