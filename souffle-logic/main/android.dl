@@ -867,11 +867,6 @@ ClassOfDeadMethod(?method, ?class) :-
   MethodToRemove(?method),
   Method_DeclaringType(?method, ?class).
 
-// Very silly we have to do this.
-.decl _StringIterationTrick(?pos:number)
-_StringIterationTrick(0).
-_StringIterationTrick(?pos+1) :- _StringIterationTrick(?pos), ?pos < 256.
-
 .decl _RelevantStringPosition(?className: symbol, ?pos:number)
 _RelevantStringPosition(?className, ?pos) :-
   ClassNameWithSlashes(_, ?className),

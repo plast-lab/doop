@@ -116,6 +116,26 @@ VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   .plan 1:(3,2,1,4,5,6)
   #endif
 
+/*************************************************************
+ * java.lang.Class.getSimpleName
+ *
+ *   public String getSimpleName()
+ *************************************************************/
+
+// This is an opaque invocation, so we read its facts directly.
+VarPointsTo(?hctx, ?simpleName, ?ctx, ?return) :-
+  ReachableContext(?ctx, ?caller),
+  _VirtualMethodInvocation(?invocation, _, ?method, ?base, ?caller),
+  ?method = "<java.lang.Class: java.lang.String getSimpleName()>",
+  VarPointsTo(?hctx, ?classValue, ?ctx, ?base),
+  ReifiedClass(?className, ?classValue),
+  AssignReturnValue(?invocation, ?return),
+  MinimalSuffix(?className, ?simpleName).
+
+// TODO: getSimpleName() must return "" when the class is anonymous
+// (such as a lambda).
+
+
 // REVIEW: Note how unsound this rule is: it returns a string only
 // if the string exists in the input. 
 
