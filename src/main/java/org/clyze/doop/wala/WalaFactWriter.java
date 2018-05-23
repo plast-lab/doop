@@ -528,6 +528,16 @@ public class WalaFactWriter {
 
             s = s.getSuperclass();
         }
+        if(cl.getAllImplementedInterfaces() != null) {
+            for (IClass interf : cl.getAllImplementedInterfaces()) {
+                try {
+                    Collection<IField> flds = interf.getDeclaredStaticFields();
+                    result.addAll(flds);
+                } catch (NullPointerException exc) {
+                    ;
+                }
+            }
+        }
         return result;
     }
 
