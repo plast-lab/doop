@@ -21,10 +21,10 @@ import java.util.jar.JarFile
 /**
  * A Factory for creating Analysis objects.
  *
- * All the methods invoked by newAnalysis (either directly or indirectly) could
- * have been static helpers (e.g. entailed in the Helper class) but they are
- * protected instance methods to allow descendants to customize all possible
- * aspects of Analysis creation.
+ * [Note] All the methods invoked by newAnalysis (either directly or
+ * indirectly) could have been static helpers (e.g. entailed in the
+ * Helper class) but they are protected instance methods to allow
+ * descendants to customize all possible aspects of Analysis creation.
  */
 class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
@@ -242,7 +242,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         FileOps.findFileOrThrow(analysisPath, "Unsupported analysis: $name")
     }
 
-    protected static String validateUserSuppliedId(String id) {
+    // This method may not be static, see [Note] above.
+    protected String validateUserSuppliedId(String id) {
         def trimmed = id.trim()
         def isValid = trimmed.toCharArray().every {
             c -> Character.isLetter(c) || Character.isDigit(c) || c in EXTRA_ID_CHARACTERS
@@ -255,7 +256,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         return trimmed
     }
 
-    protected static File createOutputDirectory(AnalysisVars vars, String id) {
+    // This method may not be static, see [Note] above.
+    protected File createOutputDirectory(AnalysisVars vars, String id) {
         def outDir = new File("${Doop.doopOut}/${vars.name}/${id}")
         FileUtils.deleteQuietly(outDir)
         outDir.mkdirs()
@@ -298,29 +300,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         return CheckSum.checksum(id, HASH_ALGO)
     }
 
-    protected static List<String> platform(Map<String, AnalysisOption> options) {
-        def platformFullName = options.PLATFORM.value as String
-        def platformsLib = options.PLATFORMS_LIB.value as String
-
-        def platformArtifactPaths = platform0(platformFullName, platformsLib)
-
-        def platformInfo = platformFullName.tokenize("_")
-        def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
-        if (platform == "java") {
-            // generate the JRE constant for the preprocessor
-            def jreOption = new BooleanAnalysisOption(
-                    id:"JRE1"+version,
-                    value:true,
-                    forPreprocessor: true
-            )
-            options[(jreOption.id)] = jreOption
-        }
-        else if (platform == "android") {
-            options.ANDROID.value = true
-        }
-        return platformArtifactPaths
-    }
-
     /**
      * Break up a platform name into its components. Examples:
      * "java_8" -> ["java", 8, null] and
@@ -329,7 +308,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      * @param platformName   Platform name.
      * @return               The platform components.
      */
-    protected static List tokenizePlatform(String platformName) {
+    private static List tokenizePlatform(String platformName) {
         def platformInfo = platformName.tokenize("_")
         int partsCount = platformInfo.size()
         if ((partsCount != 2) && (partsCount != 3)) {
@@ -352,7 +331,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      * @param platformsLib    The path of the Doop platforms directory.
      * @return                The list of artifact paths for the platform.
      */
-    protected static List<String> getArtifactsForPlatform(String platformName, String platformsLib) {
+    public static List<String> getArtifactsForPlatform(String platformName, String platformsLib) {
         def (platform, version, variant) = tokenizePlatform(platformName)
         switch (platform) {
             case "java":
