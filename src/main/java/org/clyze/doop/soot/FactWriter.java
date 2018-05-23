@@ -104,7 +104,9 @@ public class FactWriter {
     void writeSpecialSensitivityMethod(String line) {
         String[] linePieces = line.split(", ");
         String method = linePieces[0].trim();
+        System.out.println("Method: " + method);
         String sensitivity = linePieces[1].trim();
+        System.out.println("Sensitivity: " + sensitivity);
 
         _db.add(SPECIAL_CONTEXT_SENSITIVITY_METHOD, method, sensitivity);
     }

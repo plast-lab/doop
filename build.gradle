@@ -14,7 +14,7 @@ plugins {
     id 'groovy'
     id 'maven-publish'
     //see https://github.com/researchgate/gradle-release
-    id 'net.researchgate.release' version '2.4.0'
+    id 'net.researchgate.release' version '2.6.0'
 }
 
 apply from  : "benchmarks.gradle"
@@ -34,7 +34,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 task wrapper(type: Wrapper) {
-    gradleVersion = "3.5"
+    gradleVersion = "4.7"
 }
 
 repositories {
