@@ -87,6 +87,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             "2-object-sensitive" : "TwoObjectSensitiveConfiguration",
             "2-object-sensitive+heap" : "TwoObjectSensitivePlusHeapConfiguration",
             "special-2-object-sensitive+heap" : "SpecialTwoObjectSensitivePlusHeapConfiguration",
+            "special-2-type-sensitive+heap" : "SpecialTwoTypeSensitivePlusHeapConfiguration",
             "2-object-sensitive+2-heap" : "TwoObjectSensitivePlusTwoHeapConfiguration",
             "3-object-sensitive+3-heap" : "ThreeObjectSensitivePlusThreeHeapConfiguration",
             "2-type-object-sensitive+heap" : "TwoObjectSensitivePlusHeapConfiguration",
