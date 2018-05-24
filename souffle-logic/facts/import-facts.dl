@@ -435,7 +435,7 @@ ExceptionHandler_End(?handler, ?end) :-
 
 // Method
 
-.decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol)
+.decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol, ?arity:number)
 .input _Method(IO="file", filename="Method.facts", delimiter="\t")
 
 isMethod(?method),
@@ -444,8 +444,9 @@ Method_SimpleName(?method, ?simplename),
 Method_Params(?method, ?params),
 Method_DeclaringType(?method, ?declaringType),
 Method_JVMDescriptor(?method, ?jvmDescriptor),
+Method_Arity(?method, ?arity),
 Method_ReturnType(?method, ?returnType) :-
-  _Method(?method, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor).
+  _Method(?method, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor, ?arity).
 
 isMethodDescriptor(?descriptor),
 Method_Descriptor(?method, ?descriptor) :-

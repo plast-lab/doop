@@ -84,6 +84,7 @@
 .decl Method_SimpleName(?method:Method, ?simpleName:symbol)
 .decl Method_Params(?method:Method, ?params:symbol)
 .decl Method_Descriptor(?method:Method, ?descriptor:MethodDescriptor)
+.decl Method_Arity(?method:Method, ?arity:number)
 
 .type JVMDescriptor
 .decl isJVMDescriptor(?jvmd:JVMDescriptor)

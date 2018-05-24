@@ -63,9 +63,10 @@ public class FactWriter {
     String writeMethod(SootMethod m) {
         String methodRaw = _rep.signature(m);
         String result = hashMethodNameIfLong(methodRaw);
+        String arity = Integer.toString(m.getParameterCount());
 
         _db.add(STRING_RAW, result, methodRaw);
-        _db.add(METHOD, result, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()));
+        _db.add(METHOD, result, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
