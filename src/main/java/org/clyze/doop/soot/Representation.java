@@ -69,24 +69,22 @@ class Representation {
         return m.getName();
     }
 
-    String descriptor(SootMethod m)
-    {
+    String params(SootMethod m) {
         StringBuilder builder = new StringBuilder();
-
-        builder.append(m.getReturnType().toString());
+        int count = m.getParameterCount();
         builder.append("(");
-        for(int i = 0; i < m.getParameterCount(); i++)
-        {
+        for(int i = 0; i < count; i++) {
             builder.append(m.getParameterType(i));
-
-            if(i != m.getParameterCount() - 1)
-            {
+            if (i != count - 1)
                 builder.append(",");
-            }
         }
         builder.append(")");
-
         return builder.toString();
+    }
+
+    String descriptor(SootMethod m)
+    {
+        return m.getReturnType().toString() + params(m);
     }
 
     String thisVar(SootMethod m)

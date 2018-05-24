@@ -82,6 +82,7 @@
 .decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
 .decl Method_ReturnType(?method:Method, ?returnType:Type)
 .decl Method_SimpleName(?method:Method, ?simpleName:symbol)
+.decl Method_Params(?method:Method, ?params:symbol)
 .decl Method_Descriptor(?method:Method, ?descriptor:MethodDescriptor)
 
 .type JVMDescriptor

@@ -65,7 +65,7 @@ public class FactWriter {
         String result = hashMethodNameIfLong(methodRaw);
 
         _db.add(STRING_RAW, result, methodRaw);
-        _db.add(METHOD, result, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()));
+        _db.add(METHOD, result, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()));
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {

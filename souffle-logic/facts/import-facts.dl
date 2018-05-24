@@ -439,15 +439,19 @@ ExceptionHandler_End(?handler, ?end) :-
 .input _Method(IO="file", filename="Method.facts", delimiter="\t")
 
 isMethod(?method),
-isMethodDescriptor(?descriptor),
 isJVMDescriptor(?jvmDescriptor),
 Method_SimpleName(?method, ?simplename),
-Method_Descriptor(?method, ?descriptor),
+Method_Params(?method, ?params),
 Method_DeclaringType(?method, ?declaringType),
 Method_JVMDescriptor(?method, ?jvmDescriptor),
 Method_ReturnType(?method, ?returnType) :-
-  _Method(?method, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescriptor).
+  _Method(?method, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor).
 
+isMethodDescriptor(?descriptor),
+Method_Descriptor(?method, ?descriptor) :-
+  Method_ReturnType(?method, ?retType),
+  Method_Params(?method, ?params),
+  ?descriptor = cat(?retType, ?params).
 
 // StoreInstanceField
 
