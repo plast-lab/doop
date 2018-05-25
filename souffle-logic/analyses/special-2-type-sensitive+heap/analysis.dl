@@ -67,10 +67,19 @@
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
     isSpecialMethodInvocation_Insn(?invo),
     MethodInvocation_Method(?invo, ?tomethod),
-    SpecialContextSensitivityMethod(?tomethod, "2-object-sensitive"),
+    (SpecialContextSensitivityMethod(?tomethod, "2-type-sensitive");
+     !SpecialContextSensitivityMethod(?tomethod, _)),
     ?hctx = [?hctxType],
     Value_DeclaringType(?value, ?type),
     ?calleeCtx = [?hctxType, ?type].
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    isSpecialMethodInvocation_Insn(?invo),
+    MethodInvocation_Method(?invo, ?tomethod),
+    SpecialContextSensitivityMethod(?tomethod, "2-object-sensitive"),
+    ?hctx = [?hctxValue],
+    ?calleeCtx = [?hctxValue, ?value].
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

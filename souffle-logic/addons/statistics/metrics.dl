@@ -193,35 +193,61 @@ VPTCountPerMethod(?method, Y) :-
    ?ctx = ?ctx,
    ?value = ?value}.
 
-.decl NeighboringMethodsInCallGraph(?method:Method, ?neighbor:Method)
+.decl NeighboringMethodsInCallGraph(?method:Method, ?neighbor:Method, ?weight:number)
 
-NeighboringMethodsInCallGraph(?method, ?method) :-
+NeighboringMethodsInCallGraph(?method, ?method, 4) :-
    VPTCountPerMethod(?method, _).
 
-NeighboringMethodsInCallGraph(?neigh, ?method),
-NeighboringMethodsInCallGraph(?method, ?neigh) :-
+NeighboringMethodsInCallGraph(?neigh, ?method, 2),
+NeighboringMethodsInCallGraph(?method, ?neigh, 2) :-
   mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
   Instruction_Method(?invo, ?neigh).
 
-.decl TwoLevelCallerMethodInCallGraph(?neighbor:Method, ?method:Method)
+.decl TwoLevelCallerMethodInCallGraph(?neighbor:Method, ?method:Method, ?weight:number)
 
-TwoLevelCallerMethodInCallGraph(?neigh, ?method) :-
-  NeighboringMethodsInCallGraph(?intermediatemethod, ?method),
+TwoLevelCallerMethodInCallGraph(?neigh, ?method, 1) :-
+  NeighboringMethodsInCallGraph(?intermediatemethod, ?method, 2),
   mainAnalysis.CallGraphEdge(_, ?invo, _, ?intermediatemethod),
   Instruction_Method(?invo, ?neigh).
 
-TwoLevelCallerMethodInCallGraph(?neigh, ?method) :-
-  NeighboringMethodsInCallGraph(?neigh, ?method).
-                               
-.decl VPTImpact(?method:Method, ?n:number)
+TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight) :-
+   NeighboringMethodsInCallGraph(?neigh, ?method, ?weight).
 
+.decl VPTImpact(?method:Method, ?n:number)
+      
 VPTImpact(?method, Y) :-
   isMethod(?method),
-  Y = sum ?n: { TwoLevelCallerMethodInCallGraph(?neigh, ?method), VPTCountPerMethod(?neigh, ?n) }.
+  Y = sum ?n * ?weight: { TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight), VPTCountPerMethod(?neigh, ?n) }.
   
 .output VPTCountPerMethod
 .output VPTImpact
+
+.decl PointsToCountPerType(?type:Type, Y:number)
+PointsToCountPerType(?type, Y) :-
+   isType(?type),
+   Y = count : {mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), mainAnalysis.Value_Type(?value, ?type),
+   ?hctx = ?hctx,
+   ?ctx = ?ctx,
+   ?var = ?var}.
+
+.output PointsToCountPerType
         
+.decl InstanceFieldPointsToCountPerType(?type:Type, Y:number)
+InstanceFieldPointsToCountPerType(?type, Y) :-
+  isType(?type),
+  Y = count : {mainAnalysis.InstanceFieldPointsTo(_, _, _, _, ?basevalue), mainAnalysis.Value_Type(?basevalue, ?type)}.
+
+.output InstanceFieldPointsToCountPerType
+
+.decl IFPTToVPTRatioPerType(?type:Type, ?n:number)
+IFPTToVPTRatioPerType(?type, ?n) :-
+  PointsToCountPerType(?type, ?n1),
+  InstanceFieldPointsToCountPerType(?type, ?n2),
+  ?n = ?n1/?n2,
+  ?n2 > 0.
+
+.output IFPTToVPTRatioPerType
+
 .decl ContextsPerMethod(?method:Method, ?n:number)
 
 ContextsPerMethod(?method, Y) :- isMethod(?method), Y = count: mainAnalysis.ReachableContext(_, ?method).        
