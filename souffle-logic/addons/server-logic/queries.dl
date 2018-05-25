@@ -345,8 +345,8 @@ Server_ClassCallsClass(?fromClass, ?toClass) :-
 .decl _AppReachable_Count(?n:number)
 
 _AppVirtual(?invo) :-
-  isVirtualMethodInvocation_Insn(?invo),
-  Instruction_Method(?invo, ?method),
+  // Use facts so that opaque method invocations are also recognized.
+  _VirtualMethodInvocation(?invo, _, _, _, ?method),
   ApplicationMethod(?method).
 
 _AppVirtual_Resolved(?invo) :-
