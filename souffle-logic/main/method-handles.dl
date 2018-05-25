@@ -120,3 +120,132 @@ MockValueConsMacro(ConstructorReferenceValue(?type), ?type) :-
    Method_SimpleName(?realMethod, "<init>"),
    Method_DeclaringType(?realMethod, ?type),
    AssignReturnValue(?i, ?var).
+
+// Method handles that interact with reflection are exprerimental, use
+// corresponding command-line option to enable them.
+#ifdef REFLECTION_METHOD_HANDLES
+
+// We treat method descriptors as MethodType values (with slight
+// changes, e.g. in the treatment of 'void' or constructors).
+
+.decl MethodType_ReturnType(?descriptor:symbol, ?declType:Type, ?rType:Type)
+
+// Return types for non-constructors.
+MethodType_ReturnType(?descriptor, ?declType, ?rType) :-
+  Method_Descriptor(?method, ?descriptor),
+  Method_ReturnType(?method, ?rType),
+  Method_SimpleName(?method, ?name),
+  ?name != "<clinit>",
+  ?name != "<init>",
+  Method_DeclaringType(?method, ?declType).
+
+// Return types for constructors are not "void" but the type constructed.
+MethodType_ReturnType(?descriptor, ?rType, ?rType) :-
+  Method_Descriptor(?method, ?descriptor),
+  Method_SimpleName(?method, "<init>"),
+  Method_DeclaringType(?method, ?rType).
+
+.decl MethodType_ParamType(?descriptor:symbol, ?index:number, ?pType:Type)
+
+MethodType_ParamType(?descriptor, ?index, ?pType) :-
+  Method_Descriptor(?method, ?descriptor),
+  FormalParam(?index, ?method, ?var),
+  _Var_Type(?var, ?pType).
+
+#ifdef REFLECTION
+
+// MethodType API entry points. The actual logic: every methodType()
+// invocation creates a single mock object that picks all descriptors
+// that match its type.
+
+#define MTEntryPoint(id, sig) \
+.decl id(?invo:MethodInvocation) \
+id(?invo) :- \
+   ?signature = sig, \
+   MethodInvocation_Method(?invo, ?signature)
+
+MTEntryPoint(MethodType1, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class)>").
+MTEntryPoint(MethodType2, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class)>").
+MTEntryPoint(MethodType3, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class,java.lang.Class[])>").
+MTEntryPoint(MethodType4, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class[])>").
+MTEntryPoint(MethodType5, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.invoke.MethodType)>").
+MTEntryPoint(MethodType6, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.util.List)>").
+
+.decl MTValue_Invocation(?value:Value, ?invo:MethodInvocation)
+
+#define MTValue(i) cat("MethodType value from ", i)
+
+.decl MTValue_ReturnType(?value:Value, ?type:Type)
+.decl MTValue_ParamValue(?value:Value, ?index:number, ?classValue:Value)
+
+// The first argument to methodType() is always the return type.
+MockValueConsMacro(MTValue(?invo), "java.lang.invoke.MethodType"),
+VarPointsTo(?hctx, MTValue(?invo), ?callerCtx, ?ret),
+MTValue_Invocation(MTValue(?invo), ?invo),
+MTValue_ReturnType(MTValue(?invo), ?type)
+:-
+   ( MethodType1(?invo) ; MethodType2(?invo) ; MethodType3(?invo) ;
+     MethodType4(?invo) ; MethodType5(?invo) ; MethodType6(?invo) ),
+   Instruction_Method(?invo, ?caller),
+   ReachableContext(?callerCtx, ?caller),
+   ActualParam(0, ?invo, ?param),
+   VarPointsTo(?hctx, ?classValue, ?callerCtx, ?param),
+   ReifiedClass(?type, ?classValue),
+   AssignReturnValue(?invo, ?ret).
+
+// MethodType2, MethodType4: second parameter.
+MockValueConsMacro(MTValue(?invo), "java.lang.invoke.MethodType"),
+VarPointsTo(?hctx, MTValue(?invo), ?callerCtx, ?ret),
+MTValue_Invocation(MTValue(?invo), ?invo),
+MTValue_ParamValue(MTValue(?invo), 0, ?classValue) :-
+   ( MethodType2(?invo) ; MethodType4(?invo) ),
+   ActualParam(1, ?invo, ?param),
+   VarPointsTo(?hctx, ?classValue, ?callerCtx, ?param),
+   // ReifiedClass(?type, ?classValue),
+   AssignReturnValue(?invo, ?ret).
+
+// MethodType1 lacks a parameter, so we use a dummy value instead.
+#define MT_NOARGS_VALUE "<mock dummy methodType() class for first argument>"
+MockValueConsMacro(MT_NOARGS_VALUE, "java.lang.Class"),
+MTValue_ParamValue(MTValue(?invo), 0, MT_NOARGS_VALUE) :-
+   MethodType1(?invo).
+
+// Helper relation to treat 'void' and 'java.lang.Void' as the same
+// type in descriptors.
+.decl MTValueReturnTypeMatchesDescriptor(?value:Value, ?descriptor:symbol)
+
+MTValueReturnTypeMatchesDescriptor(?value, ?descriptor) :-
+   MTValue_ReturnType(?value, "java.lang.Void"),
+   MethodType_ReturnType(?descriptor, _, "void").
+MTValueReturnTypeMatchesDescriptor(?value, ?descriptor) :-
+   MTValue_ReturnType(?value, ?rType),
+   MethodType_ReturnType(?descriptor, _, ?rType).
+
+.decl Descriptor_Arity(?descriptor:symbol, ?arity:number)
+
+Descriptor_Arity(?descriptor, ?arity) :-
+  Method_Descriptor(?method, ?descriptor),
+  Method_Arity(?method, ?arity).
+
+.decl MTValueMatchesDescriptor(?value:Value, ?descriptor:symbol)
+
+// MethodType1.
+MTValueMatchesDescriptor(?value, ?descriptor) :-
+   MethodType1(?invo),
+   MTValue_Invocation(?value, ?invo),
+   MTValueReturnTypeMatchesDescriptor(?value, ?descriptor),
+   MTValue_ParamValue(?value, 0, MT_NOARGS_VALUE),
+   Descriptor_Arity(?descriptor, 0).
+
+// MethodType2.
+MTValueMatchesDescriptor(?value, ?descriptor) :-
+   MethodType2(?invo),
+   MTValue_Invocation(?value, ?invo),
+   MTValueReturnTypeMatchesDescriptor(?value, ?descriptor),
+   MTValue_ParamValue(?value, 0, ?classValue0),
+   ReifiedClass(?pType0, ?classValue0),
+   MethodType_ParamType(?descriptor, 0, ?pType0),
+   Descriptor_Arity(?descriptor, 1).
+
+#endif // REFLECTION
+#endif // REFLECTION_METHOD_HANDLES
