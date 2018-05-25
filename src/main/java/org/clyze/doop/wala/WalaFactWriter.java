@@ -4,6 +4,8 @@ import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.shrikeCT.BootstrapMethodsReader;
+import com.ibm.wala.shrikeCT.ClassConstants;
+import com.ibm.wala.shrikeCT.ConstantPoolParser;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.ClassLoaderReference;
@@ -17,6 +19,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
 
+import javax.sound.midi.SysexMessage;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -393,17 +396,18 @@ public class WalaFactWriter {
 
         _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, l), methodId);
     }
-//
-//    private void writeAssignMethodHandleConstant(IMethod m, Stmt stmt, Local l, MethodHandle constant, Session session) {
-//        int index = session.calcInstructionNumber(stmt);
-//        String insn = _rep.instruction(m, stmt, session, index);
-//        String handleName = constant.getMethodRef().toString();
-//        String heap = _rep.methodHandleConstant(handleName);
-//        String methodId = writeMethod(m);
-//
-//        _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
-//        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
-//    }
+
+    private void writeAssignMethodHandleConstant(IMethod m, SSAInstruction instr, ConstantValue constant, Local l, Session session) {
+        int index = session.calcInstructionNumber(instr);
+        String insn = _rep.instruction(m, instr, session, index);
+        //String handleName = constant.getMethodRef().toString();
+        String handleName =(String) constant.getValue();
+        String heap = _rep.methodHandleConstant(handleName);
+        String methodId = _rep.signature(m);
+
+        _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
+    }
 
     private void writeAssignClassConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         String s = constant.toString();
@@ -882,15 +886,15 @@ public class WalaFactWriter {
         writeAssignClassConstant(inMethod, instruction, l, constant, session);
     }
 
-//    private Local writeMethodHandleConstantExpression(IMethod inMethod, SSAInstruction instruction, ConstantValue constant, Session session) {
-//        // introduce a new temporary variable
-//        String basename = "$mhandleconstant";
-//        String varname = basename + session.nextNumber(basename);
-//        Local l = new Local(varname, TypeReference.JavaLangInvokeMethodHandle);
-//        writeLocal(inMethod, l);
-//        //writeAssignMethodHandleConstant(inMethod, instruction, l, constant, session);
-//        return l;
-//    }
+    private Local writeMethodHandleConstantExpression(IMethod inMethod, SSAInstruction instruction, ConstantValue constant, Session session) {
+        // introduce a new temporary variable
+        String basename = "$mhandleconstant";
+        String varname = basename + session.nextNumber(basename);
+        Local l = new Local(varname,-1, TypeReference.JavaLangInvokeMethodHandle);
+        writeLocal(inMethod, l);
+        writeAssignMethodHandleConstant(inMethod, instruction, constant, l, session);
+        return l;
+    }
 
 
 
@@ -917,6 +921,79 @@ public class WalaFactWriter {
 
             }
         }
+    }
+
+    private Local bootstrapParamHelper(SSAInvokeDynamicInstruction dynamicInvoke, int argNum, Session session)
+    {
+        Local param = null;
+        BootstrapMethodsReader.BootstrapMethod bootstrapMethod = dynamicInvoke.getBootstrap();
+        //Object argObj = bootstrapMethod.callArgument();
+        TypeReference argType = TypeReference.JavaLangObject;
+        String basename = "";
+        int argumentKind = bootstrapMethod.callArgumentKind(argNum);
+        ConstantPoolParser constantPool = bootstrapMethod.getCP();
+        int index = bootstrapMethod.callArgumentIndex(argNum);
+        String argValue = "<NOVALUE>";
+        try {
+            if (argumentKind == ClassConstants.CONSTANT_Utf8 || argumentKind == ClassConstants.CONSTANT_String) {
+                argType = TypeReference.JavaLangString;
+                basename = "$stringconstant";
+                if (argumentKind == ClassConstants.CONSTANT_Utf8)
+                    argValue = constantPool.getCPUtf8(index);
+                else
+                    argValue = constantPool.getCPString(index);
+            } else if (argumentKind == ClassConstants.CONSTANT_Class) {
+                argType = TypeReference.JavaLangClass;
+                basename = "$classconstant";
+                argValue = constantPool.getCPClass(index);
+            } else if (argumentKind == ClassConstants.CONSTANT_Integer) {
+                argType = TypeReference.JavaLangInteger;
+                basename = "$numconstant";
+                argValue = Integer.toString(constantPool.getCPInt(index));
+            } else if (argumentKind == ClassConstants.CONSTANT_Float) {
+                argType = TypeReference.JavaLangFloat;
+                basename = "$numconstant";
+                argValue = Float.toString(constantPool.getCPFloat(index));
+            } else if (argumentKind == ClassConstants.CONSTANT_Double) {
+                argType = TypeReference.JavaLangDouble;
+                basename = "$numconstant";
+                argValue = Double.toString(constantPool.getCPDouble(index));
+            } else if (argumentKind == ClassConstants.CONSTANT_Long) {
+                argType = TypeReference.JavaLangLong;
+                basename = "$numconstant";
+                argValue = Long.toString(constantPool.getCPLong(index));
+            } else if (argumentKind == ClassConstants.CONSTANT_MethodHandle) {
+                argType = TypeReference.JavaLangInvokeMethodHandle;
+                basename = "$mhandleconstant";
+                argValue ="<" + constantPool.getCPHandleClass(index) + ": ";
+                argValue +=constantPool.getCPHandleType(index) + " " + constantPool.getCPHandleName(index) +"()>" ;
+            } else if (argumentKind == ClassConstants.CONSTANT_MethodType) {
+                argType = TypeReference.JavaLangInvokeMethodType;
+                basename = "$mtypeconstant";
+                argValue ="<" + constantPool.getCPMethodType(index)+">";
+            }
+        }catch(InvalidClassFileException exc)
+        {
+            System.err.println("InvalidClassFile ");
+        }
+        ConstantValue val = new ConstantValue(argValue);
+        String varname = basename + session.nextNumber(basename);
+        Local l = new Local (varname, -1, argType);
+        if (argumentKind == ClassConstants.CONSTANT_Utf8 || argumentKind == ClassConstants.CONSTANT_String) {
+
+        }else if (argumentKind == ClassConstants.CONSTANT_Integer || argumentKind == ClassConstants.CONSTANT_Float
+                || argumentKind == ClassConstants.CONSTANT_Double || argumentKind == ClassConstants.CONSTANT_Long) {
+
+        }else if (argumentKind == ClassConstants.CONSTANT_Class) {
+
+        }else if (argumentKind == ClassConstants.CONSTANT_MethodHandle) {
+
+        }else if (argumentKind == ClassConstants.CONSTANT_MethodType) {
+
+        }
+
+
+        return param;
     }
 
     void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
