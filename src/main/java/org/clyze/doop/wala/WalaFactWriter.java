@@ -83,9 +83,10 @@ public class WalaFactWriter {
     //This descriptor format is used by Soot only for Method.facts
     String writeMethod(IMethod m) {
         String result = _rep.signature(m);
+        String arity = Integer.toString(m.getNumberOfParameters());
 
         _db.add(STRING_RAW, result, result);
-        _db.add(METHOD, result, _rep.simpleName(m.getReference()), _rep.descriptor(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
+        _db.add(METHOD, result, _rep.simpleName(m.getReference()), _rep.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         for (Annotation annotation : m.getAnnotations()) {
             _db.add(METHOD_ANNOTATION, result, fixTypeString(annotation.getType().toString()));
             //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
@@ -209,15 +210,17 @@ public class WalaFactWriter {
         System.out.println("Method " + sig + " is phantom.");
         _db.add(PHANTOM_METHOD, sig);
         _db.add(STRING_RAW, sig, sig);
-        _db.add(METHOD, sig, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
+        String arity = Integer.toString(m.getNumberOfParameters());
+        _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
     }
 
     void writePhantomBasedMethod(MethodReference m) {
         String sig = _rep.signature(m);
         System.out.println("Method signature " + sig + " contains phantom types.");
         _db.add(PHANTOM_BASED_METHOD, sig);
-        _db.add(STRING_RAW, sig, sig);
-        _db.add(METHOD, sig, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
+//        _db.add(STRING_RAW, sig, sig);
+//        String arity = Integer.toString(m.getNumberOfParameters());
+//        _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
     }
 
     void writeEnterMonitor(IMethod m, SSAMonitorInstruction instruction, Local var, Session session) {

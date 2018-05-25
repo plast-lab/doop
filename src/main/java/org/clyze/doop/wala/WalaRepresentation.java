@@ -8,8 +8,6 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
-import soot.*;
-import soot.jimple.*;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -101,16 +99,16 @@ class WalaRepresentation {
 
     //Method descriptors using soot like format.
     //Should maybe cache these as well.
-    String descriptor(MethodReference methodReference)
+    String params(MethodReference methodReference)
     {
         StringBuilder builder = new StringBuilder();
-        builder.append(fixTypeString(methodReference.getReturnType().toString()));
+        int count = methodReference.getNumberOfParameters();
         builder.append("(");
-        for(int i = 0; i < methodReference.getNumberOfParameters(); i++)
+        for(int i = 0; i < count; i++)
         {
             builder.append(fixTypeString(methodReference.getParameterType(i).toString()));
 
-            if(i != methodReference.getNumberOfParameters() - 1)
+            if(i != count - 1)
             {
                 builder.append(",");
             }
@@ -118,6 +116,11 @@ class WalaRepresentation {
         builder.append(")");
 
         return builder.toString();
+    }
+
+    String descriptor(MethodReference methodReference)
+    {
+        return fixTypeString(methodReference.getReturnType().toString()) + params(methodReference);
     }
 
     String thisVar(IMethod m)
@@ -200,11 +203,11 @@ class WalaRepresentation {
     private String getKind(SSAInstruction instruction)
     {
         String kind = "unknown";
-        if(instruction instanceof AssignStmt)//IMPORTANT:TODO: MAKE SURE WE COVER ALL ASSIGN CASES
-            kind = "assign";
-        else if(instruction instanceof DefinitionStmt)
-            kind = "definition";
-        else if(instruction instanceof SSAInstanceofInstruction || instruction instanceof  SSANewInstruction || instruction instanceof SSAArrayLoadInstruction)
+//        if(instruction instanceof AssignStmt)//IMPORTANT:TODO: MAKE SURE WE COVER ALL ASSIGN CASES
+//            kind = "assign";
+//        else if(instruction instanceof DefinitionStmt)
+//            kind = "definition";
+        if(instruction instanceof SSAInstanceofInstruction || instruction instanceof  SSANewInstruction || instruction instanceof SSAArrayLoadInstruction)
             kind = "assign";
         else if(instruction instanceof SSAConversionInstruction || instruction instanceof  SSACheckCastInstruction)
             kind = "assign";
