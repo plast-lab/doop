@@ -400,7 +400,7 @@ public class WalaFactWriter {
         _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, l), methodId);
     }
 
-    private void writeAssignMethodHandleConstant(IMethod m, SSAInstruction instr, ConstantValue constant, Local l, Session session) {
+    private void writeAssignMethodHandleConstant(IMethod m, SSAInstruction instr, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instr);
         String insn = _rep.instruction(m, instr, session, index);
         //String handleName = constant.getMethodRef().toString();
@@ -423,8 +423,22 @@ public class WalaFactWriter {
         else
             t = TypeReference.find(ClassLoaderReference.Primordial, s);
 
-        heap = _rep.classConstant(t);
-        actualType = fixTypeString(t.toString());
+        if(t == null) {
+            if(s.startsWith("("))
+            {
+                heap = "<class " + s + ">";
+                actualType = s;
+            }
+            else {
+                heap = "<class " + fixTypeString(s) + ">";
+                actualType = fixTypeString(s);
+            }
+        }
+        else {
+            heap = _rep.classConstant(t);
+            actualType = fixTypeString(t.toString());
+        }
+
 
         _db.add(CLASS_HEAP, heap, actualType);
         int index = session.calcInstructionNumber(instruction);
@@ -889,13 +903,13 @@ public class WalaFactWriter {
         writeAssignClassConstant(inMethod, instruction, l, constant, session);
     }
 
-    private Local writeMethodHandleConstantExpression(IMethod inMethod, SSAInstruction instruction, ConstantValue constant, Session session) {
+    private Local writeMethodHandleConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         // introduce a new temporary variable
-        String basename = "$mhandleconstant";
-        String varname = basename + session.nextNumber(basename);
-        Local l = new Local(varname,-1, TypeReference.JavaLangInvokeMethodHandle);
+//        String basename = "$mhandleconstant";
+//        String varname = basename + session.nextNumber(basename);
+//        Local l = new Local(varname,-1, TypeReference.JavaLangInvokeMethodHandle);
         writeLocal(inMethod, l);
-        writeAssignMethodHandleConstant(inMethod, instruction, constant, l, session);
+        writeAssignMethodHandleConstant(inMethod, instruction, l, constant, session);
         return l;
     }
 
@@ -919,14 +933,15 @@ public class WalaFactWriter {
             for (int j = 0; j < ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentCount(); j++) {
                 int arg = ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentIndex(j);
 
-                Local l = createLocal(ir, instruction, arg); //TODO: TypeInference for bootstrap parameters??
+                //Local l = createLocal(ir, instruction, arg); //TODO: TypeInference for bootstrap parameters??
+                Local l = bootstrapParamHelper(ir, inMethod, (SSAInvokeDynamicInstruction)instruction, j, session);
                 _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, _rep.local(inMethod, l));
 
             }
         }
     }
 
-    private Local bootstrapParamHelper(SSAInvokeDynamicInstruction dynamicInvoke, int argNum, Session session)
+    private Local bootstrapParamHelper(IR ir, IMethod m, SSAInvokeDynamicInstruction dynamicInvoke, int argNum, Session session)
     {
         Local param = null;
         BootstrapMethodsReader.BootstrapMethod bootstrapMethod = dynamicInvoke.getBootstrap();
@@ -972,8 +987,9 @@ public class WalaFactWriter {
                 argValue +=constantPool.getCPHandleType(index) + " " + constantPool.getCPHandleName(index) +"()>" ;
             } else if (argumentKind == ClassConstants.CONSTANT_MethodType) {
                 argType = TypeReference.JavaLangInvokeMethodType;
-                basename = "$mtypeconstant";
-                argValue ="<" + constantPool.getCPMethodType(index)+">";
+                //basename = "$mtypeconstant";
+                basename = "$classconstant";
+                argValue =constantPool.getCPMethodType(index);
             }
         }catch(InvalidClassFileException exc)
         {
@@ -983,20 +999,21 @@ public class WalaFactWriter {
         String varname = basename + session.nextNumber(basename);
         Local l = new Local (varname, -1, argType);
         if (argumentKind == ClassConstants.CONSTANT_Utf8 || argumentKind == ClassConstants.CONSTANT_String) {
-
+            this.writeStringConstantExpression(ir, m, dynamicInvoke, l, val, session);
         }else if (argumentKind == ClassConstants.CONSTANT_Integer || argumentKind == ClassConstants.CONSTANT_Float
                 || argumentKind == ClassConstants.CONSTANT_Double || argumentKind == ClassConstants.CONSTANT_Long) {
-
-        }else if (argumentKind == ClassConstants.CONSTANT_Class) {
-
+            this.writeNumConstantExpression(m, dynamicInvoke, l, val, session);
+        }else if (argumentKind == ClassConstants.CONSTANT_Class || argumentKind == ClassConstants.CONSTANT_MethodType) {
+            System.out.println("CLASSCONST" + val.getValue());
+            this.writeClassConstantExpression(m, dynamicInvoke, l, val, session);
         }else if (argumentKind == ClassConstants.CONSTANT_MethodHandle) {
+            this.writeMethodHandleConstantExpression(m, dynamicInvoke, l, val, session);
+        }//else if (argumentKind == ClassConstants.CONSTANT_MethodType) {
+        //
+        //}
 
-        }else if (argumentKind == ClassConstants.CONSTANT_MethodType) {
 
-        }
-
-
-        return param;
+        return l;
     }
 
     void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
