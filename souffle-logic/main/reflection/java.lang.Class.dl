@@ -573,24 +573,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   isType(?type),
   ?type = "java.lang.ClassLoader",
   ReflectiveAllocation(?invocation, ?type, ?value).
-  
-/*************************************************************
- * java.lang.ClassLoader.getResource
- *
- *   public URL getResource(java.lang.String)
- *
- * NOTE  
- * We just create a dummy value to represent the URL resource returned.
- *************************************************************/
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
-  java_lang_ClassLoader_getResource(?invocation, ?to, ?from),
-  Var_DeclaringMethod(?from, ?method),
-  ReachableContext(?ctx, ?method),
-  isType(?type),
-  ?type = "java.net.URL",
-  ReflectiveAllocation(?invocation, ?type, ?value).
-
 
 /*************************************************************
  * Auxiliaries

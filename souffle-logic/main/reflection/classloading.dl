@@ -1,0 +1,44 @@
+// A collection of rules for java.lang.ClassLoader and
+// platform-specific class-loading functionality.
+
+/*************************************************************
+ * java.lang.ClassLoader.getResource
+ *
+ *   public URL getResource(java.lang.String)
+ *
+ * NOTE
+ * We just create a dummy value to represent the URL resource returned.
+ *************************************************************/
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  ImmutableHContextFromContext(?ctx, ?hctx),
+  java_lang_ClassLoader_getResource(?invocation, ?to, ?from),
+  Var_DeclaringMethod(?from, ?method),
+  ReachableContext(?ctx, ?method),
+  isType(?type),
+  ?type = "java.net.URL",
+  ReflectiveAllocation(?invocation, ?type, ?value).
+
+// Dalvik internals.
+#ifdef ANDROID
+
+.decl DalvikMethodInvocation(?var:Var, ?m:Method, ?ctx:configuration.Context, ?hctx:configuration.HContext)
+.output DalvikMethodInvocation
+
+DalvikMethodInvocation(?var, ?m, ?ctx, ?hctx) :-
+  ReachableContext(?ctx, ?meth),
+  Instruction_Method(?invocation, ?meth),
+  AssignReturnValue(?invocation, ?var),
+  MethodInvocation_Method(?invocation, ?m),
+  Method_DeclaringType(?m, ?t),
+  (?t = "dalvik.system.VMStack" ; ?t = "dalvik.system.VMRuntime"),
+  ImmutableHContextFromContext(?ctx, ?hctx).
+
+#define MOCK_DALVIK_CLASSLOADER "<mock Dalvik class-loader>"
+
+MockValueConsMacro(MOCK_DALVIK_CLASSLOADER, "java.lang.ClassLoader"),
+VarPointsTo(?hctx, MOCK_DALVIK_CLASSLOADER, ?ctx, ?var) :-
+  DalvikMethodInvocation(?var, ?m, ?ctx, ?hctx),
+  (?m = "<dalvik.system.VMStack: java.lang.ClassLoader getCallingClassLoader()>";
+   ?m = "<dalvik.system.VMStack: java.lang.ClassLoader getClosestUserClassLoader()>").
+
+#endif // ANDROID
