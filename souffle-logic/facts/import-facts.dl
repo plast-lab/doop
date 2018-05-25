@@ -327,12 +327,14 @@ MethodInvocation_Base(?invocation, ?base) :-
 isMethod(?signature),
 isInstruction(?instruction),
 isMethodInvocation(?instruction),
-isStaticMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
 MethodInvocation_Method(?instruction, ?signature) :-
   _StaticMethodInvocation(?instruction, ?index, ?signature, ?method).
 
+isStaticMethodInvocation_Insn(?instruction) :-
+  _StaticMethodInvocation(?instruction, _, ?signature, _),
+  !isOpaqueMethod(?signature).
 
 // Special method invocation
 
@@ -342,13 +344,15 @@ MethodInvocation_Method(?instruction, ?signature) :-
 isMethod(?signature),
 isInstruction(?instruction),
 isMethodInvocation(?instruction),
-isSpecialMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
-SpecialMethodInvocation_Base(?instruction, ?base),
 MethodInvocation_Method(?instruction, ?signature) :-
   _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
+isSpecialMethodInvocation_Insn(?instruction),
+SpecialMethodInvocation_Base(?instruction, ?base) :-
+  _SpecialMethodInvocation(?instruction, _, ?signature, ?base, _),
+  !isOpaqueMethod(?signature).
 
 // Virtual method invocation
 
@@ -359,18 +363,14 @@ isMethod(?signature),
 isInstruction(?instruction),
 isMethodInvocation(?instruction),
 Instruction_Index(?instruction, ?index),
-Instruction_Method(?instruction, ?method) :-
+Instruction_Method(?instruction, ?method),
+MethodInvocation_Method(?instruction, ?signature) :-
   _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
 isVirtualMethodInvocation_Insn(?instruction),
-MethodInvocation_Method(?instruction, ?signature),
 VirtualMethodInvocation_Base(?instruction, ?base) :-
   _VirtualMethodInvocation(?instruction, _, ?signature, ?base, ?method),
   !isOpaqueMethod(?signature).
-
-isOpaqueInstruction(?instruction) :-
-  _VirtualMethodInvocation(?instruction, _, ?signature, _, _),
-  isOpaqueMethod(?signature).
 
 // Dynamic method invocation
 
@@ -389,6 +389,14 @@ DynamicMethodInvocation_DynReturnType(?instruction, ?dynRetType),
 DynamicMethodInvocation_DynParamTypes(?instruction, ?dynParamTypes),
 DynamicMethodInvocation_DynArity(?instruction, ?dynArity) :-
   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?method).
+
+// Opaque method invocations
+
+isOpaqueInstruction(?instruction) :-
+  (_StaticMethodInvocation(?instruction, _, ?signature, _);
+   _SpecialMethodInvocation(?instruction, _, ?signature, _, _);
+   _VirtualMethodInvocation(?instruction, _, ?signature, _, _)),
+  isOpaqueMethod(?signature).
 
 
 // Throw
