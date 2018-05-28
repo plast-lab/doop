@@ -88,6 +88,8 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
   (?heapRepr = "<<string-builder>>",
    HeapRepresentative(?heapRepr, ?heap));
   (?heapRepr = "<<pystring-object>>",
+   HeapRepresentative(?heapRepr, ?heap));
+  (?heapRepr = "<<class-metaobject>>",
    HeapRepresentative(?heapRepr, ?heap)).
 
 .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
@@ -122,6 +124,11 @@ HeapRepresentative(?constant, ?heap) :-
   ?constant = "<<string-constant>>",
   isHeapAllocation(?constant),
   !HeapAllocation_Keep(?heap).
+
+// HeapRepresentative("<<class-metaobject>>", ?heap) :-
+//   HeapAllocation_Type(?heap, "java.lang.Class"),
+//   !HeapAllocation_Keep(?heap).
+
 #endif
 #endif
 #endif // distinguish-no-string-constants mode
@@ -877,9 +884,9 @@ HeapRepresentative("<<string-builder>>", ?heap) :-
   HeapAllocation_Type(?heap, "java.lang.StringBuilder"),
   !HeapAllocation_Keep(?heap).
 
-// HeapRepresentative("<<pystring-object>>", ?heap) :-
-//   HeapAllocation_Type(?heap, "org.python.core.PyString"),
-//   !HeapAllocation_Keep(?heap).
+HeapRepresentative("<<pystring-object>>", ?heap) :-
+  HeapAllocation_Type(?heap, "org.python.core.PyString"),
+  !HeapAllocation_Keep(?heap).
 #endif
 #endif
 #endif
