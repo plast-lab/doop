@@ -24,9 +24,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.PredicateFile.*;
-import static org.clyze.doop.wala.WalaUtils.createLocal;
-import static org.clyze.doop.wala.WalaUtils.fixTypeString;
-import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
+import static org.clyze.doop.wala.WalaUtils.*;
 
 /**
  * FactWriter determines the format of a fact and adds it to a
@@ -207,7 +205,7 @@ public class WalaFactWriter {
 
     void writePhantomMethod(MethodReference m) {
         String sig = _rep.signature(m);
-        System.out.println("Method " + sig + " is phantom.");
+        //System.out.println("Method " + sig + " is phantom.");
         _db.add(PHANTOM_METHOD, sig);
         _db.add(STRING_RAW, sig, sig);
         String arity = Integer.toString(m.getNumberOfParameters());
@@ -216,7 +214,7 @@ public class WalaFactWriter {
 
     void writePhantomBasedMethod(MethodReference m) {
         String sig = _rep.signature(m);
-        System.out.println("Method signature " + sig + " contains phantom types.");
+        //System.out.println("Method signature " + sig + " contains phantom types.");
         _db.add(PHANTOM_BASED_METHOD, sig);
 //        _db.add(STRING_RAW, sig, sig);
 //        String arity = Integer.toString(m.getNumberOfParameters());
@@ -568,7 +566,7 @@ public class WalaFactWriter {
         IClass targetClass = cha.lookupClass(f.getDeclaringClass());
         TypeReference typeRef = f.getDeclaringClass();
         if(targetClass == null) {
-            System.out.println("Failed to find class: " + fixTypeString(f.getDeclaringClass().getName().toString()) + " in class hierarchy.");
+            //System.out.println("Failed to find class: " + fixTypeString(f.getDeclaringClass().getName().toString()) + " in class hierarchy.");
             writePhantomType(f.getDeclaringClass());
         }
         else
@@ -983,8 +981,9 @@ public class WalaFactWriter {
             } else if (argumentKind == ClassConstants.CONSTANT_MethodHandle) {
                 argType = TypeReference.JavaLangInvokeMethodHandle;
                 basename = "$mhandleconstant";
-                argValue ="<" + constantPool.getCPHandleClass(index) + ": ";
-                argValue +=constantPool.getCPHandleType(index) + " " + constantPool.getCPHandleName(index) +"()>" ;
+                argValue ="<" + constantPool.getCPHandleClass(index).replace('/','.') + ": ";
+                //argValue +=constantPool.getCPHandleType(index) + " " + constantPool.getCPHandleName(index) +"()>" ;
+                argValue += createMethodSignature(constantPool.getCPHandleType(index), constantPool.getCPHandleName(index)) +">";
             } else if (argumentKind == ClassConstants.CONSTANT_MethodType) {
                 argType = TypeReference.JavaLangInvokeMethodType;
                 //basename = "$mtypeconstant";
@@ -1150,30 +1149,11 @@ public class WalaFactWriter {
 //        } else
 //            return _rep.signature(bootstrapMeth.resolve());
         String declaringClass = bootstrapMeth.methodClass().replace('/','.');
-        String[] splitTypes = bootstrapMeth.methodType().split("\\)");
-        String returnType = splitTypes[1].substring(1,splitTypes[1].length() - 1).replace('/','.');
-        //String argTypes = splitTypes[0].substring(2,splitTypes[0].length() - 1).replace(";L",",").replace('/','.');
-        String[] splitArgTypes = splitTypes[0].substring(1,splitTypes[0].length() - 1).split(";");
-        StringBuilder bootStrapSig= new StringBuilder("<");
+        StringBuilder bootStrapSig = new StringBuilder("<");
         bootStrapSig.append(declaringClass);
         bootStrapSig.append(": ");
-        bootStrapSig.append(returnType);
-        bootStrapSig.append(" ");
-        bootStrapSig.append(bootstrapMeth.methodName());
-        bootStrapSig.append("(");
-        boolean first = true;
-        for(String argType: splitArgTypes)
-        {
-            if(!first)
-            {
-                bootStrapSig.append(",");
-            }
-            else
-                first = false;
-            bootStrapSig.append(fixTypeString(argType));
-        }
-        //bootStrapSig.append(argTypes);
-        bootStrapSig.append(")>");
+        bootStrapSig.append(createMethodSignature(bootstrapMeth.methodType(),bootstrapMeth.methodName()));
+        bootStrapSig.append(">");
 
 
         System.out.println("\n\n\n\n\n\nBOOTSTRAP SIG " + bootStrapSig);
