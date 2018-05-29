@@ -1,0 +1,29 @@
+#ifdef REFLECTION
+
+.decl ClassLoaderMethod(?method:Method, ?argIdx:number)
+.output ClassLoaderMethod
+
+#define CLASS_LOADER_METHOD(method, idx) ClassLoaderMethod(?m, idx) :- isMethod(?m), ?m = method
+
+CLASS_LOADER_METHOD("<dalvik.system.DexFile: java.lang.Class defineClassNative(java.lang.String,java.lang.ClassLoader,java.lang.Object,dalvik.system.DexFile)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int,java.security.ProtectionDomain)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class defineClass(java.lang.String,java.nio.ByteBuffer,java.security.ProtectionDomain)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class findLoadedClass(java.lang.String)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class findSystemClass(java.lang.String)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class findBootstrapClassOrNull(java.lang.String)>", 0).
+CLASS_LOADER_METHOD("<java.net.URLClassLoader: java.lang.Class defineClass(java.lang.String,sun.misc.Resource)>", 0).
+CLASS_LOADER_METHOD("<java.security.SecureClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int,java.security.CodeSource)>", 0).
+CLASS_LOADER_METHOD("<java.security.SecureClassLoader: java.lang.Class defineClass(java.lang.String,java.nio.ByteBuffer,java.security.CodeSource)>", 0).
+
+isOpaqueMethod(?method) :- ClassLoaderMethod(?method, _).
+
+#define OPAQUE_METHOD(meth) isOpaqueMethod(m) :- isMethod(m), m = meth
+
+OPAQUE_METHOD("<java.lang.Class: java.lang.String getSimpleName()>").
+
+#ifdef ANDROID
+OPAQUE_METHOD("<java.lang.Class: java.lang.String getNameNative()>").
+#endif // ANDROID
+
+#endif // REFLECTION

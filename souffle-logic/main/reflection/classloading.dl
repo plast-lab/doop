@@ -18,6 +18,22 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   ?type = "java.net.URL",
   ReflectiveAllocation(?invocation, ?type, ?value).
 
+/*************************************************************
+ * Class-loading methods
+ *************************************************************/
+
+VarPointsTo(?hctx, ?classValue, ?callerCtx, ?classResultVar) :-
+  ReachableContext(?callerCtx, ?caller),
+  (_StaticMethodInvocation(?invocation, _, ?method, ?caller);
+   _SpecialMethodInvocation(?invocation, _, ?method, _, ?caller);
+   _VirtualMethodInvocation(?invocation, _, ?method, _, ?caller)),
+  ClassLoaderMethod(?method, ?argIdx),
+  ActualParam(?argIdx, ?invocation, ?arg),
+  VarPointsTo(_, ?className, _, ?arg),
+  ReifiedClass(?className, ?classValue),
+  AssignReturnValue(?invocation, ?classResultVar),
+  ImmutableHContextFromContext(?callerCtx, ?hctx).
+
 // Dalvik internals.
 #ifdef ANDROID
 

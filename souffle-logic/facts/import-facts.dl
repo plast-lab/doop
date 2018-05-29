@@ -1,8 +1,4 @@
-#ifdef REFLECTION
-#define OPAQUE_METHOD(meth) isOpaqueMethod(m) :- isMethod(m), m = meth
-
-OPAQUE_METHOD("<java.lang.Class: java.lang.String getSimpleName()>").
-#endif // REFLECTION
+#include "opaque-methods.dl"
 
 // MainClass
 .decl _MainClass(?class:symbol)
