@@ -4,14 +4,19 @@ import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.shrikeCT.BootstrapMethodsReader;
+import com.ibm.wala.shrikeCT.ClassConstants;
+import com.ibm.wala.shrikeCT.ConstantPoolParser;
+import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
+import org.clyze.persistent.model.doop.DynamicMethodInvocation;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.clyze.doop.wala.WalaUtils.createMethodSignature;
 import static org.clyze.doop.wala.WalaUtils.fixTypeString;
 
 class WalaRepresentation {
@@ -247,11 +252,11 @@ class WalaRepresentation {
     {
         return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
-    String invoke(IMethod inMethod, SSAInvokeInstruction expr, MethodReference methRef, Session session)
+    String invoke(IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, Session session)
     {
         //MethodReference exprMethod = expr.getDeclaredTarget();
         String defaultMid = fixTypeString(methRef.getDeclaringClass().toString()) + "." + methRef.getName().toString();
-        String midPart = (expr instanceof SSAInvokeDynamicInstruction)? dynamicInvokeMiddlePart((SSAInvokeDynamicInstruction) expr, defaultMid) : defaultMid;
+        String midPart = (instr instanceof SSAInvokeDynamicInstruction)? dynamicInvokeMiddlePart((SSAInvokeDynamicInstruction) instr, defaultMid) : defaultMid;
 
         return signature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
     }
@@ -265,22 +270,30 @@ class WalaRepresentation {
         final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
         final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
 
-        BootstrapMethodsReader.BootstrapMethod bootMethRef= instruction.getBootstrap();
+        BootstrapMethodsReader.BootstrapMethod bootMethRef = instruction.getBootstrap();
+        ConstantPoolParser constantPool = bootMethRef.getCP();
         if (bootMethRef != null) {
-            String bootMethName = bootMethRef.methodName();
             int bootArity = bootMethRef.callArgumentCount();
             if (bootArity > 1) {
-//                bootMethRef.callArgumentKind(1);
-//                Value val1 = instruction.(1);
-//                if ((val1 instanceof MethodHandle) &&
-//                    ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
-//                     (bootMethName.equals(ALT_L_METAFACTORY)))) {
-//                    IMethodRef smr = ((MethodHandle)val1).getMethodRef();
-//                    return DynamicMethodInvocation.genId(smr.declaringClass().toString(),
-//                            smr.name());
-//                }
-//                else
-//                    System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
+                int argType = bootMethRef.callArgumentKind(1);
+                int argIndex = bootMethRef.callArgumentIndex(1);
+
+                String bootMethName = "<" + bootMethRef.methodClass().replace('/','.') + ": ";
+                bootMethName += WalaUtils.createMethodSignature(bootMethRef.methodType(),bootMethRef.methodName()) + ">";
+                if ((argType == ClassConstants.CONSTANT_MethodHandle) &&
+                    ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
+                     (bootMethName.equals(ALT_L_METAFACTORY)))) {
+                    try {
+                        String declaringClass = constantPool.getCPHandleClass(argIndex).replace('/','.');
+                        String name = constantPool.getCPHandleName(argIndex);
+                        return DynamicMethodInvocation.genId(declaringClass, name);
+                    } catch (InvalidClassFileException e) {
+                        System.out.println("Representation: Unsupported invokedynamic, caught InvalidClassFileException returning default result.");
+                        return defaultResult;
+                    }
+                }
+                else
+                    System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
             }
             else
                 System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");

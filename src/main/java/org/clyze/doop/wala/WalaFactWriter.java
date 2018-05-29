@@ -1116,7 +1116,7 @@ public class WalaFactWriter {
                     parameterTypes.append(", ").append(fixTypeString(dynInfo.getParameterType(i).toString()));
                 }
             }
-            String sig= getBootstrapSig(((SSAInvokeDynamicInstruction) instruction).getBootstrap(),inMethod.getClassHierarchy());
+            String sig = getBootstrapSig(((SSAInvokeDynamicInstruction) instruction).getBootstrap(),inMethod.getClassHierarchy());
             _db.add(DYNAMIC_METHOD_INV, insn, str(index), sig, dynInfo.getName().toString(), fixTypeString(dynInfo.getReturnType().toString()), dynArity, parameterTypes.toString(), methodId);
         }
         else if (instruction.isStatic()) {
