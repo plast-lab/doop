@@ -411,7 +411,7 @@ public class WalaFactWriter {
     }
 
     private void writeAssignClassConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
-        String s = constant.toString();
+        String s = constant.toString().substring(1);
         String heap;
         String actualType;
 
@@ -422,8 +422,9 @@ public class WalaFactWriter {
             t = TypeReference.find(ClassLoaderReference.Primordial, s);
 
         if(t == null) {
-            if(s.startsWith("("))
+            if(s.startsWith("("))//TODO: This doesn't seem right but keep it as it is until it is changed in the Soot fact gen
             {
+                s = s.replace('/', '.');
                 heap = "<class " + s + ">";
                 actualType = s;
             }
