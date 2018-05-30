@@ -267,6 +267,10 @@ class SouffleAnalysis extends DoopAnalysis {
             cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
         }
 
+        if (options.X_SENSITIVITY_HEURISTICS.value) {
+            cpp.includeAtEnd("$analysis", "${statsPath}/sensitivity-heuristics.dl")
+        }
+
         if (options.X_STATS_NONE.value) return
 
         if (options.X_STATS_AROUND.value) {

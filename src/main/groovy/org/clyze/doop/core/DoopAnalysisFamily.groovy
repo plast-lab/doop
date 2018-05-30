@@ -712,7 +712,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Run extra metrics logic under addons/statistics",
 					value: false,
 					nonStandard: true,
-					forPreprocessor: true
+					forPreprocessor: false
+			),
+			new BooleanAnalysisOption(
+					id: "X_SENSITIVITY_HEURISTICS",
+					name: "Xsensitivity-heuristics",
+					description: "Run sensitivity heuristics logic under addons/statistics",
+					value: false,
+					nonStandard: true,
+					forPreprocessor: false
 			),
 			new AnalysisOption<String>(
 					id: "X_EXTRA_LOGIC",
