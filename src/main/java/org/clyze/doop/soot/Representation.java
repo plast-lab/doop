@@ -36,6 +36,10 @@ class Representation {
         return "<class " + t + ">";
     }
 
+    String methodTypeConstant(String s) {
+        return s;
+    }
+
     String signature(SootMethod m) {
         String result = _methodSigRepr.get(m);
 

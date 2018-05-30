@@ -57,6 +57,7 @@ public enum PredicateFile
     EMPTY_ARRAY("EmptyArray"),
     CLASS_HEAP("ClassHeap"),
     METHOD_HANDLE_CONSTANT("MethodHandleConstant"),
+    METHOD_TYPE_CONSTANT("MethodTypeConstant"),
     STRING_CONST("StringConstant"),
     STRING_RAW("StringRaw"),
     FIELD_SIGNATURE("Field"),

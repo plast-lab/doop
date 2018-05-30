@@ -395,20 +395,23 @@ public class FactWriter {
     void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstant constant, Session session) {
         String s = constant.getValue().replace('/', '.');
         String heap;
-        String actualType;
+        char first = s.charAt(0);
 
         /* There is some weirdness in class constants: normal Java class
            types seem to have been translated to a syntax with the initial
            L, but arrays are still represented as [, for example [C for
            char[] */
-        if (s.charAt(0) == '[' || (s.charAt(0) == 'L' && s.endsWith(";")) ) {
+        if (first == '[' || (first == 'L' && s.endsWith(";")) ) {
             // array type
             Type t = soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(s);
-
             heap = _rep.classConstant(t);
-            actualType = t.toString();
-        }
-        else {
+            String actualType = t.toString();
+            _db.add(CLASS_HEAP, heap, actualType);
+        } else if (first == '(') {
+            // method type constant (viewed by Soot as a class constant)
+            heap = _rep.methodTypeConstant(s);
+            _db.add(METHOD_TYPE_CONSTANT, heap);
+        } else {
 //            SootClass c = soot.Scene.v().getSootClass(s);
 //            if (c == null) {
 //                throw new RuntimeException("Unexpected class constant: " + constant);
@@ -423,10 +426,9 @@ public class FactWriter {
             // bug that adds a phantom class to the Scene's hierarchy, although
             // (based on their own comments) it shouldn't.
             heap = _rep.classConstant(s);
-            actualType = s;
+            String actualType = s;
+            _db.add(CLASS_HEAP, heap, actualType);
         }
-
-        _db.add(CLASS_HEAP, heap, actualType);
 
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
