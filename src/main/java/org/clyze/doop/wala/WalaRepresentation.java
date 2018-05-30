@@ -57,6 +57,9 @@ class WalaRepresentation {
         return "<class " + fixTypeString(t.toString()) + ">";
     }
 
+    String methodTypeConstant(String s) {
+        return s;
+    }
 
     String signature(IMethod m) {
         return signature(m.getReference());

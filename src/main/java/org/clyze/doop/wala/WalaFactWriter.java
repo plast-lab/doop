@@ -398,6 +398,18 @@ public class WalaFactWriter {
         _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
     }
 
+    private void writeAssignMethodTypeConstant(IMethod m, SSAInstruction instr, Local l, ConstantValue constant, Session session) {
+        int index = session.calcInstructionNumber(instr);
+        String insn = _rep.instruction(m, instr, session, index);
+        //String handleName = constant.getMethodRef().toString();
+        String handleName =(String) constant.getValue();
+        String heap = _rep.methodTypeConstant(handleName);
+        String methodId = _rep.signature(m);
+
+        _db.add(METHOD_TYPE_CONSTANT, heap);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
+    }
+
     private void writeAssignMethodHandleConstant(IMethod m, SSAInstruction instr, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instr);
         String insn = _rep.instruction(m, instr, session, index);
@@ -422,16 +434,8 @@ public class WalaFactWriter {
             t = TypeReference.find(ClassLoaderReference.Primordial, s);
 
         if(t == null) {
-            if(s.startsWith("("))//TODO: This doesn't seem right but keep it as it is until it is changed in the Soot fact gen
-            {
-                s = s.replace('/', '.');
-                heap = "<class " + s + ">";
-                actualType = s;
-            }
-            else {
-                heap = "<class " + fixTypeString(s) + ">";
-                actualType = fixTypeString(s);
-            }
+            heap = "<class " + fixTypeString(s) + ">";
+            actualType = fixTypeString(s);
         }
         else {
             heap = _rep.classConstant(t);
@@ -912,6 +916,15 @@ public class WalaFactWriter {
         return l;
     }
 
+    private Local writeMethodTypeConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+        // introduce a new temporary variable
+//        String basename = "$mhandleconstant";
+//        String varname = basename + session.nextNumber(basename);
+//        Local l = new Local(varname,-1, TypeReference.JavaLangInvokeMethodHandle);
+        writeLocal(inMethod, l);
+        writeAssignMethodTypeConstant(inMethod, instruction, l, constant, session);
+        return l;
+    }
 
 
     private void writeActualParams(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, String invokeExprRepr, Session session, TypeInference typeInference) {
@@ -987,9 +1000,8 @@ public class WalaFactWriter {
                 argValue += createMethodSignature(constantPool.getCPHandleType(index), constantPool.getCPHandleName(index)) +">";
             } else if (argumentKind == ClassConstants.CONSTANT_MethodType) {
                 argType = TypeReference.JavaLangInvokeMethodType;
-                //basename = "$mtypeconstant";
-                basename = "$classconstant";
-                argValue =constantPool.getCPMethodType(index);
+                basename = "$mtypeconstant";
+                argValue = constantPool.getCPMethodType(index);
             }
         }catch(InvalidClassFileException exc)
         {
@@ -1003,14 +1015,14 @@ public class WalaFactWriter {
         }else if (argumentKind == ClassConstants.CONSTANT_Integer || argumentKind == ClassConstants.CONSTANT_Float
                 || argumentKind == ClassConstants.CONSTANT_Double || argumentKind == ClassConstants.CONSTANT_Long) {
             this.writeNumConstantExpression(m, dynamicInvoke, l, val, session);
-        }else if (argumentKind == ClassConstants.CONSTANT_Class || argumentKind == ClassConstants.CONSTANT_MethodType) {
+        }else if (argumentKind == ClassConstants.CONSTANT_Class) {
             System.out.println("CLASSCONST" + val.getValue());
             this.writeClassConstantExpression(m, dynamicInvoke, l, val, session);
         }else if (argumentKind == ClassConstants.CONSTANT_MethodHandle) {
             this.writeMethodHandleConstantExpression(m, dynamicInvoke, l, val, session);
-        }//else if (argumentKind == ClassConstants.CONSTANT_MethodType) {
-        //
-        //}
+        }else if (argumentKind == ClassConstants.CONSTANT_MethodType) {
+            this.writeMethodTypeConstantExpression(m, dynamicInvoke, l, val, session);
+        }
 
 
         return l;
