@@ -123,12 +123,14 @@
 .type StringConstant       = HeapAllocation
 .type ClassHeap            = HeapAllocation
 .type MethodHandleConstant = HeapAllocation
+.type MethodTypeConstant   = HeapAllocation
 
 .decl isHeapAllocation(?h:HeapAllocation)
 .decl isNormalHeap(?h:NormalHeap)
 .decl isStringConstant(?h:StringConstant)
 .decl isClassHeap(?h:ClassHeap)
 .decl isMethodHandleConstant(?h:MethodHandleConstant)
+.decl isMethodTypeConstant(?h:MethodTypeConstant)
 .decl isStringRaw(?id:symbol)
 
 .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
