@@ -123,11 +123,6 @@ class WalaRepresentation {
         return builder.toString();
     }
 
-    String descriptor(MethodReference methodReference)
-    {
-        return fixTypeString(methodReference.getReturnType().toString()) + params(methodReference);
-    }
-
     String thisVar(IMethod m)
     {
         return signature(m) + "/v1";

@@ -86,11 +86,6 @@ class Representation {
         return builder.toString();
     }
 
-    String descriptor(SootMethod m)
-    {
-        return m.getReturnType().toString() + params(m);
-    }
-
     String thisVar(SootMethod m)
     {
         return getMethodSignature(m) + "/@this";
