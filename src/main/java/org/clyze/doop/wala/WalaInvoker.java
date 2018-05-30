@@ -134,9 +134,9 @@ public class WalaInvoker {
                 classPath.append(":").append(walaParameters._inputs.get(i));
         }
 
-        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
-            classPath.append(":").append(walaParameters._appLibraries.get(i));
-        }
+//        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
+//            classPath.append(":").append(walaParameters._appLibraries.get(i));
+//        }
 
         System.out.println("WALA classpath:" + classPath);
         for (String lib : walaParameters.getPlatformLibraries())
@@ -147,9 +147,10 @@ public class WalaInvoker {
 
         AnalysisScope scope;
         if(walaParameters._android)
-            scope = WalaScopeReader.setUpAndroidAnalysisScope(classPath.toString(),"", walaParameters._platformLibraries, walaParameters._appLibraries);
+            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters._inputs,"", walaParameters._platformLibraries, walaParameters._appLibraries);
         else
-            scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters._inputs,"", walaParameters._platformLibraries, walaParameters._appLibraries);
+            //scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 
         ClassHierarchy cha = null;
         try {

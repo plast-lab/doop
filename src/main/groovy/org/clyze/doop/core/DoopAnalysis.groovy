@@ -396,6 +396,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 depArgs = deps
                 depArgs.add("-p")
                 depArgs.add(platformLibs.get(0).getAbsolutePath().toString().replace("/rt.jar",""))
+                depArgs = (platformLibs.collect{ lib -> ["-el", lib.toString()] }.flatten() as Collection<String>) + depArgs
                 break
             case "android":
                 // This uses all platformLibs.
