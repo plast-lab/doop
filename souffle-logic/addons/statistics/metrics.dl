@@ -183,44 +183,6 @@ Metrics_Value_AsReceiver_Count(?value, ?n) :-
   _ValueAsReceiver(?value, _),
   ?n = count:{_ValueAsReceiver(?value, _)}.
 
-.decl VPTCountPerMethod(?method:Method, ?n:number)
-
-VPTCountPerMethod(?method, Y) :-
-   isVar(?var),
-   Var_DeclaringMethod(?var, ?method),
-   Y =  count : {mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var),
-   ?hctx = ?hctx,
-   ?ctx = ?ctx,
-   ?value = ?value}.
-
-.decl NeighboringMethodsInCallGraph(?method:Method, ?neighbor:Method, ?weight:number)
-
-NeighboringMethodsInCallGraph(?method, ?method, 4) :-
-   VPTCountPerMethod(?method, _).
-
-NeighboringMethodsInCallGraph(?neigh, ?method, 2),
-NeighboringMethodsInCallGraph(?method, ?neigh, 2) :-
-  mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
-  Instruction_Method(?invo, ?neigh).
-
-.decl TwoLevelCallerMethodInCallGraph(?neighbor:Method, ?method:Method, ?weight:number)
-
-TwoLevelCallerMethodInCallGraph(?neigh, ?method, 1) :-
-  NeighboringMethodsInCallGraph(?intermediatemethod, ?method, 2),
-  mainAnalysis.CallGraphEdge(_, ?invo, _, ?intermediatemethod),
-  Instruction_Method(?invo, ?neigh).
-
-TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight) :-
-   NeighboringMethodsInCallGraph(?neigh, ?method, ?weight).
-
-.decl VPTImpact(?method:Method, ?n:number)
-      
-VPTImpact(?method, Y) :-
-  isMethod(?method),
-  Y = sum ?n * ?weight: { TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight), VPTCountPerMethod(?neigh, ?n) }.
-  
-.output VPTCountPerMethod
-.output VPTImpact
 
 .decl PointsToCountPerType(?type:Type, Y:number)
 PointsToCountPerType(?type, Y) :-

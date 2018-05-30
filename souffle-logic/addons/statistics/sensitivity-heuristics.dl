@@ -1,0 +1,51 @@
+.decl VPTCountPerMethod(?method:Method, ?n:number)
+
+VPTCountPerMethod(?method, Y) :-
+   isVar(?var),
+   Var_DeclaringMethod(?var, ?method),
+   Y =  count : {mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var),
+   ?hctx = ?hctx,
+   ?ctx = ?ctx,
+   ?value = ?value}.
+
+.decl CalleeCountPerMethod(?method:Method, ?n:number)
+
+CalleeCountPerMethod(?method, Y) :-
+  isMethod(?method),
+  Y =  count : {mainAnalysis.CallGraphEdge(_, ?invo, _, ?tomethod),
+                Instruction_Method(?invo, ?method),
+                ?tomethod = ?tomethod}.
+
+
+                             
+.decl NeighboringMethodsInCallGraph(?method:Method, ?neighbor:Method, ?weight:number)
+
+NeighboringMethodsInCallGraph(?method, ?method, 1) :-
+   VPTCountPerMethod(?method, _).
+
+NeighboringMethodsInCallGraph(?neigh, ?method, ?weight),
+NeighboringMethodsInCallGraph(?method, ?neigh, ?weight) :-
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
+  Instruction_Method(?invo, ?neigh),
+  CalleeCountPerMethod(?neigh, ?weight).
+
+.decl TwoLevelCallerMethodInCallGraph(?neighbor:Method, ?method:Method, ?weight:number)
+
+TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight) :-
+  NeighboringMethodsInCallGraph(?intermediatemethod, ?method, _),
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?intermediatemethod),
+  Instruction_Method(?invo, ?neigh),
+  CalleeCountPerMethod(?neigh, ?weight).
+
+TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight) :-
+   NeighboringMethodsInCallGraph(?neigh, ?method, ?weight).
+
+.decl WeightedRegionalVPTSize(?method:Method, ?n:number)
+      
+WeightedRegionalVPTSize(?method, Y) :-
+  isMethod(?method),
+  Y = sum ?n * 1000 / ?weight: { TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight), VPTCountPerMethod(?neigh, ?n) }.
+  
+.output VPTCountPerMethod
+.output CalleeCountPerMethod
+.output WeightedRegionalVPTSize
