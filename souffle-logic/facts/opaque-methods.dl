@@ -12,7 +12,6 @@ CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class defineClass(java.la
 CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class findLoadedClass(java.lang.String)>", 0).
 CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class findSystemClass(java.lang.String)>", 0).
 CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class findBootstrapClassOrNull(java.lang.String)>", 0).
-CLASS_LOADER_METHOD("<java.net.URLClassLoader: java.lang.Class defineClass(java.lang.String,sun.misc.Resource)>", 0).
 CLASS_LOADER_METHOD("<java.security.SecureClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int,java.security.CodeSource)>", 0).
 CLASS_LOADER_METHOD("<java.security.SecureClassLoader: java.lang.Class defineClass(java.lang.String,java.nio.ByteBuffer,java.security.CodeSource)>", 0).
 
