@@ -44,11 +44,10 @@ public class WalaInvoker {
     }
 
     private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
-        walaParameters.applicationClassFilter = new GlobClassFilter(walaParameters.appRegex);
-
-
+        //walaParameters.applicationClassFilter = new GlobClassFilter(walaParameters.appRegex);
         // Change package delimiter from "/" to "."
-        return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
+        //return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
+        return(klass.getClassLoader().getName().toString().equals("Application"));
     }
 
     public void parseParamsAndRun(String[] args) throws IOException {
@@ -177,10 +176,7 @@ public class WalaInvoker {
         Set<IClass> classesSet = new HashSet<>();
         while (classes.hasNext()) {
             klass = classes.next();
-            if (!walaParameters._android && isApplicationClass(walaParameters, klass)) {
-                walaFactWriter.writeApplicationClass(klass);
-            }
-            if (walaParameters._android && klass.getClassLoader().getName().toString().equals("Application")) {
+            if (isApplicationClass(walaParameters, klass)) {
                 walaFactWriter.writeApplicationClass(klass);
             }
             classesSet.add(klass);
