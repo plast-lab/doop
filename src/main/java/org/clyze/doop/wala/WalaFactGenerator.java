@@ -361,11 +361,12 @@ class WalaFactGenerator implements Runnable {
                     continue;
                 }
                 generateDefs(m,ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(), typeInference);
-                _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference, walaExceptionHelper);
-                if (previousHandlerBlock != null) {
-                    _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock) basicBlock, previousHandlerBlock, session);
-                }
-                previousHandlerBlock = (SSACFG.ExceptionHandlerBasicBlock) basicBlock;
+                session.calcInstructionNumber(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction());
+//                _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference, walaExceptionHelper);
+//                if (previousHandlerBlock != null) {
+//                    _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock) basicBlock, previousHandlerBlock, session);
+//                }
+//                previousHandlerBlock = (SSACFG.ExceptionHandlerBasicBlock) basicBlock;
             }
         }
 
@@ -385,9 +386,23 @@ class WalaFactGenerator implements Runnable {
             }
         }
 
+        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
+            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
+            if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
+                if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() == null )
+                {
+                    continue;
+                }_writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference, walaExceptionHelper);
+                if (previousHandlerBlock != null) {
+                    _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock) basicBlock, previousHandlerBlock, session);
+                }
+                previousHandlerBlock = (SSACFG.ExceptionHandlerBasicBlock) basicBlock;
+            }
+        }
+
 //        int[][] exceArrays = walaExceptionHelper.exceArrays;
 //        String[][] exceTypeArrays = walaExceptionHelper.exceTypeArrays;
-//
+
 //        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
 //            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
 //            int start = basicBlock.getFirstInstructionIndex();
@@ -396,8 +411,8 @@ class WalaFactGenerator implements Runnable {
 //            for (int j = start; j <= end; j++) {
 //                if(instructions[j] != null)
 //                {
-//                    if(m.getName().toString().equals("parseNetscapeCertChain") &&
-//                            m.getDeclaringClass().getName().toString().contains("PKCS7")) {
+//                    if(m.getName().toString().equals("initialize") &&
+//                            m.getDeclaringClass().getName().toString().equals("Lokhttp3/internal/cache/DiskLruCache")) {
 //                        System.out.println(session.getInstructionNumber(instructions[j]) + " " + instructions[j].toString(ir.getSymbolTable()));
 //                        for (int k = 0; k < exceArrays[j].length ; k++) {
 //                            System.out.print(exceArrays[j][k] +" - " + exceTypeArrays[j][k] + ", ");

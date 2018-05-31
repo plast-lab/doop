@@ -813,7 +813,6 @@ public class WalaFactWriter {
             return;
         }
 
-        session.calcInstructionNumber(catchInstr);
         int handlerIndex = session.getInstructionNumber(catchInstr);
         Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
 
@@ -832,13 +831,11 @@ public class WalaFactWriter {
         for(int i=0; i < scopeArray.length; i+=2) {
             startInstr = instructions[scopeArray[i]];
             endInstr = instructions[scopeArray[i + 1]];
-            session.calcInstructionNumber(startInstr);
             int beginIndex = session.getInstructionNumber(startInstr);
-            session.calcInstructionNumber(endInstr);
             int endIndex = session.getInstructionNumber(endInstr);
             Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
-//            if(m.getName().toString().equals("parseNetscapeCertChain") &&
-//                    m.getDeclaringClass().getName().toString().contains("PKCS7"))
+//            if(m.getName().toString().equals("initialize") &&
+//                    m.getDeclaringClass().getName().toString().contains("Lokhttp3/internal/cache/DiskLruCache"))
 //                System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
 //                        scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
 //                        handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
@@ -1169,7 +1166,7 @@ public class WalaFactWriter {
         bootStrapSig.append(">");
 
 
-        System.out.println("\n\n\n\n\n\nBOOTSTRAP SIG " + bootStrapSig);
+        //System.out.println("\n\n\n\n\n\nBOOTSTRAP SIG " + bootStrapSig);
         return bootStrapSig.toString();
     }
 
