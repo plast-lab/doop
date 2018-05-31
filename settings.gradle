@@ -1,1 +1,6 @@
 rootProject.name = 'doop'
+
+if (hasProperty("use_composite_builds") && use_composite_builds.toBoolean()) {
+	['../clue-common', '../panda']
+			.findAll { file(it).exists() }.each { includeBuild(it) }
+}
