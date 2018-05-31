@@ -14,6 +14,7 @@ CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class findSystemClass(jav
 CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class findBootstrapClassOrNull(java.lang.String)>", 0).
 CLASS_LOADER_METHOD("<java.security.SecureClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int,java.security.CodeSource)>", 0).
 CLASS_LOADER_METHOD("<java.security.SecureClassLoader: java.lang.Class defineClass(java.lang.String,java.nio.ByteBuffer,java.security.CodeSource)>", 0).
+CLASS_LOADER_METHOD("<java.lang.VMClassLoader: java.lang.Class findLoadedClass(java.lang.ClassLoader,java.lang.String)>", 1).
 
 isOpaqueMethod(?method) :- ClassLoaderMethod(?method, _).
 
