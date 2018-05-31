@@ -104,8 +104,14 @@ Method(?x), Method:Id(?x:?id) -> string(?id).
 Method:DeclaringType[?method] = ?declaringType ->
    Method(?method), ReferenceType(?declaringType).
 
+Method:Arity[?method] = ?arity ->
+   Method(?method), int[32](?arity).
+
 Method:ReturnType[?method] = ?returnType ->
    Method(?method), Type(?returnType).
+
+Method:Params[?method] = ?params ->
+   Method(?method), string(?params).
 
 Method:SimpleName[?method] = ?simplename ->
    Method(?method), SimpleName(?simplename).

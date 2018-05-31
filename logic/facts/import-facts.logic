@@ -634,24 +634,26 @@ lang:physical:filePath[`_Method] = "facts/Method.facts".
 lang:physical:delimiter[`_Method] = "\t".
 lang:physical:hasColumnNames[`_Method] = false.
 
-_Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescriptor, ?arity) ->
+_Method(?ref, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor, ?arity) ->
    string(?ref),
    string(?simplename),
-   string(?descriptor),
+   string(?params),
    string(?declaringType),
    string(?returnType),
    string(?jvmDescriptor),
-   string(?arity).
+   int[32](?arity).
 
 +Method(?x),
 +Method:Id(?x:?ref),
 +Method:SimpleName[?x] = ?simplename,
++Method:Params[?x] = ?params,
++Method:Arity[?x] = ?arity,
 +Method:Descriptor[?x] = ?descriptor,
 +Method:DeclaringType[?x] = ?declaringType,
 +Method:JVMDescriptor[?x] = ?jvmDescriptor,
 +Method:ReturnType[?x] = ?returnType <-
-   _Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescriptor, _).
-
+   _Method(?ref, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor, ?arity),
+   ?descriptor = ?returnType + ?params.
 
 // StoreInstanceField
 
