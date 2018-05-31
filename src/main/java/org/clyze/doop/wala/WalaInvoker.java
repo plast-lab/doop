@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 public class WalaInvoker {
@@ -97,6 +98,10 @@ public class WalaInvoker {
                         i = shift(args, i);
                         walaParameters.appRegex = args[i];
                         break;
+                    case "--extra-sensitive-controls":
+                        i = shift(args, i);
+                        walaParameters._extraSensitiveControls = args[i];
+                        break;
                     case "--fact-gen-cores":
                         i = shift(args, i);
                         try {
@@ -146,7 +151,7 @@ public class WalaInvoker {
 
         AnalysisScope scope;
         if(walaParameters._android)
-            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters._inputs,"", walaParameters._platformLibraries, walaParameters._appLibraries);
+            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters._inputs, "", walaParameters._platformLibraries, walaParameters._appLibraries);
         else
             scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters._inputs,"", walaParameters._platformLibraries, walaParameters._appLibraries);
             //scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
@@ -164,6 +169,15 @@ public class WalaInvoker {
         WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
         WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //WARNING: This introduces a dependency to SOOT
+        //TODO: Find an alternative way to do this using WALA
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if(walaParameters._android)
+        {
+            WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters._inputs, walaFactWriter, walaParameters._extraSensitiveControls);
+            parser.writeComponents();
+        }
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
 
         IAnalysisCacheView cache;
