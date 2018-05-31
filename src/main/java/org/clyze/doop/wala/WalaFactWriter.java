@@ -39,6 +39,12 @@ public class WalaFactWriter {
     //Used in writeType()
     private Map<String, String> _typeMap;
 
+    private Map<String, String> _phantomType;
+
+    private Map<String, String> _phantomMethod;
+
+    private Map<String, String> _phantomBasedMethod;
+
     //Used for logging various messages
     protected Log logger;
 
@@ -47,6 +53,9 @@ public class WalaFactWriter {
         _db = db;
         _rep = WalaRepresentation.getRepresentation();
         _typeMap = new ConcurrentHashMap<>();
+        _phantomType = new ConcurrentHashMap<>();
+        _phantomMethod = new ConcurrentHashMap<>();
+        _phantomBasedMethod = new ConcurrentHashMap<>();
         logger =  LogFactory.getLog(getClass());
 
     }
@@ -200,22 +209,32 @@ public class WalaFactWriter {
     }
 
     void writePhantomType(TypeReference t) {
-        _db.add(PHANTOM_TYPE, writeType(t));
+        String type = writeType(t);
+        if(_phantomType.get(type) == null) {
+            _db.add(PHANTOM_TYPE, type);
+            _phantomType.put(type,"");
+        }
     }
 
     void writePhantomMethod(MethodReference m) {
         String sig = _rep.signature(m);
-        //System.out.println("Method " + sig + " is phantom.");
-        _db.add(PHANTOM_METHOD, sig);
-        _db.add(STRING_RAW, sig, sig);
-        String arity = Integer.toString(m.getNumberOfParameters());
-        _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        if(_phantomMethod.get(sig) == null) {
+            //System.out.println("Method " + sig + " is phantom.");
+            _phantomMethod.put(sig,"");
+            _db.add(PHANTOM_METHOD, sig);
+            _db.add(STRING_RAW, sig, sig);
+            String arity = Integer.toString(m.getNumberOfParameters());
+            _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        }
     }
 
     void writePhantomBasedMethod(MethodReference m) {
         String sig = _rep.signature(m);
         //System.out.println("Method signature " + sig + " contains phantom types.");
-        _db.add(PHANTOM_BASED_METHOD, sig);
+        if(_phantomBasedMethod.get(sig) == null) {
+            _phantomBasedMethod.put(sig,"");
+            _db.add(PHANTOM_BASED_METHOD, sig);
+        }
 //        _db.add(STRING_RAW, sig, sig);
 //        String arity = Integer.toString(m.getNumberOfParameters());
 //        _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
