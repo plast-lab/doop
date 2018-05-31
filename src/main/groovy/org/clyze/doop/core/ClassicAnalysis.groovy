@@ -278,12 +278,10 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.preprocess("${outDir}/addons.logic", options.IMPORT_PARTITIONS.value.toString())
         }
 
-        if (!options.MAIN_CLASS && !options.TAMIFLEX && !options.HEAPDL && !options.ANDROID && !options.DACAPO && !options.DACAPO_BACH) {
-            warnOpenPrograms()
-            if (options.OPEN_PROGRAMS.value)
-                cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.logic", macros)
-            else
-                cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-concrete-types.logic", macros)
+        String openProgramsRules = options.OPEN_PROGRAMS.value
+        if (openProgramsRules) {
+            logger.debug "Using open-programs rules: ${openProgramsRules}"
+            cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${openProgramsRules}.logic", macros)
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
         }
 

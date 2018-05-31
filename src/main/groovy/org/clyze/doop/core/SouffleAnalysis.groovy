@@ -153,16 +153,10 @@ class SouffleAnalysis extends DoopAnalysis {
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
         }
 
-        if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
-                !options.HEAPDL.value && !options.ANDROID.value &&
-                !options.DACAPO.value && !options.DACAPO_BACH.value &&
-                !options.X_START_AFTER_FACTS.value)
-        {
-            warnOpenPrograms()
-            if (options.OPEN_PROGRAMS.value)
-                cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", commonMacros)
-            else
-                cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-concrete-types.dl", commonMacros)
+        String openProgramsRules = options.OPEN_PROGRAMS.value
+        if (openProgramsRules) {
+            logger.debug "Using open-programs rules: ${openProgramsRules}"
+            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${openProgramsRules}.dl", commonMacros)
         }
 
         if (options.SANITY.value)

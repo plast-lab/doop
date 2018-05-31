@@ -595,10 +595,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
     }
 
-    protected void warnOpenPrograms() {
-        logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
-    }
-
     protected final void handleImportDynamicFacts() {
         if (options.IMPORT_DYNAMIC_FACTS.value) {
             File f = new File(options.IMPORT_DYNAMIC_FACTS.value.toString())

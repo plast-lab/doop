@@ -495,7 +495,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
         }
 
-
         if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
                 options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value) {
             logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
@@ -550,6 +549,15 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         if (options.MUST.value) {
             options.MUST_AFTER_MAY.value = true
+        }
+
+        if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
+            !options.HEAPDL.value && !options.ANDROID.value &&
+            !options.DACAPO.value && !options.DACAPO_BACH.value &&
+            !options.X_START_AFTER_FACTS.value) {
+            logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
+            if (!options.OPEN_PROGRAMS.value)
+                options.OPEN_PROGRAMS.value = "concrete-types"
         }
 
         if (options.X_DRY_RUN.value) {
