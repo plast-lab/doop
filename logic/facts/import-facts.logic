@@ -640,7 +640,8 @@ _Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescrip
    string(?descriptor),
    string(?declaringType),
    string(?returnType),
-   string(?jvmDescriptor).
+   string(?jvmDescriptor),
+   string(?arity).
 
 +Method(?x),
 +Method:Id(?x:?ref),
@@ -649,7 +650,7 @@ _Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescrip
 +Method:DeclaringType[?x] = ?declaringType,
 +Method:JVMDescriptor[?x] = ?jvmDescriptor,
 +Method:ReturnType[?x] = ?returnType <-
-   _Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescriptor).
+   _Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescriptor, _).
 
 
 // StoreInstanceField
