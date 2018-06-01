@@ -28,6 +28,7 @@ public class Session
      because temporary variables (and assignments to them from constants) will be inserted
      while the Jimple code is being processed. */
     private Map<SSAInstruction, Integer> _instructions = new HashMap<>();
+    private Map<SSAInstruction, Integer> _instructionsMaxIndex = new HashMap<>();
     private int index = 0;
 
     public int calcInstructionNumber(SSAInstruction instruction)
@@ -35,15 +36,24 @@ public class Session
         index++;
 
         // record the first unit number for this units (to handle jumps)
-
         _instructions.putIfAbsent(instruction, index);
-
+        _instructionsMaxIndex.put(instruction, index);
         return index;
     }
 
     public int getInstructionNumber(SSAInstruction instruction)
     {
         Integer result = _instructions.get(instruction);
+        if(result == null) {
+            throw new RuntimeException("No unit number available for '" + instruction + "'");
+        }
+
+        return result;
+    }
+
+    public int getMaxInstructionNumber(SSAInstruction instruction)
+    {
+        Integer result = _instructionsMaxIndex.get(instruction);
         if(result == null) {
             throw new RuntimeException("No unit number available for '" + instruction + "'");
         }

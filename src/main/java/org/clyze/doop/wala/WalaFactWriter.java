@@ -668,9 +668,7 @@ public class WalaFactWriter {
     }
 
     void writeGoto(IMethod m, SSAGotoInstruction instruction, SSAInstruction to, Session session) {
-        //session.calcInstructionNumber(instruction);
         int index = session.getInstructionNumber(instruction);
-        //session.calcInstructionNumber(to);
         int indexTo = session.getInstructionNumber(to);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
@@ -684,7 +682,6 @@ public class WalaFactWriter {
     void writeIf(IMethod m, SSAConditionalBranchInstruction instruction, Local var1, Local var2, SSAInstruction to, Session session) {
         // index was already computed earlier
         int index = session.getInstructionNumber(instruction);
-        //session.calcInstructionNumber(to);
         int indexTo = session.getInstructionNumber(to);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
@@ -851,7 +848,7 @@ public class WalaFactWriter {
             startInstr = instructions[scopeArray[i]];
             endInstr = instructions[scopeArray[i + 1]];
             int beginIndex = session.getInstructionNumber(startInstr);
-            int endIndex = session.getInstructionNumber(endInstr);
+            int endIndex = session.getMaxInstructionNumber(endInstr);
             Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
 //            if(m.getName().toString().equals("initialize") &&
 //                    m.getDeclaringClass().getName().toString().contains("Lokhttp3/internal/cache/DiskLruCache"))
@@ -1051,8 +1048,6 @@ public class WalaFactWriter {
     }
 
     private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
-        session.calcInstructionNumber(instruction);
-        int index = session.getInstructionNumber(instruction);
         String methodId = _rep.signature(inMethod);
 
         IBytecodeMethod method = (IBytecodeMethod)ir.getMethod();
@@ -1127,6 +1122,8 @@ public class WalaFactWriter {
 
         String insn = _rep.invoke(inMethod, instruction, targetRef, session);
         writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
+
+        int index = session.calcInstructionNumber(instruction);
 
         if(sourceLineNum != -1)
             _db.add(METHOD_INV_LINE, insn, str(sourceLineNum));
