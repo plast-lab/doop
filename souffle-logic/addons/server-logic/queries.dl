@@ -377,28 +377,3 @@ Server_Metrics("AppMethod (reachable)", ?n) :- _AppReachable_Count(?n).
 //Server_Metrics("AppMethod (%)", ?n) :- ?n = (1.0 * _AppReachable_Count(?c1)) / _AppMethod_Count(?c2).
 
 // --Metrics //
-
-
-// Method signature fix
-//
-// The problem: when writing Jimple, Soot may create method signatures
-// A.m() even though m() is defined in some supertype S of A. This
-// creates mismatches between Doop and Jimple identifiers ("S.m"
-// vs. "A.m"). The following rules record this information in
-// SubtypeMethodSignature, so that such signatures can be later fixed.
-
-.decl InheritedMethod(?subType:Type, ?simplename:symbol, ?returnType:Type, ?params:symbol, ?method:Method)
-
-InheritedMethod(?subType, ?simplename, ?returnType, ?params, ?method) :-
-  basic.MethodLookup(?simplename, _, ?subType, ?method),
-  Method_DeclaringType(?method, ?superType),
-  ?subType != ?superType,
-  Method_ReturnType(?method, ?returnType),
-  Method_Params(?method, ?params).
-
-.decl SubtypeMethodSignature(?sub:symbol, ?original:Method)
-.output SubtypeMethodSignature
-
-SubtypeMethodSignature(?sub, ?original) :-
-  InheritedMethod(?subType, ?simplename, ?returnType, ?params, ?original),
-  ?sub = cat("<", cat(?subType, cat(": ", cat(?returnType, cat(" ", cat(?simplename, cat(?params, ">"))))))).

@@ -7,6 +7,7 @@
 #include "subclass.dl"
 #include "superinterface.dl"
 #include "type-hierarchy.dl"
+#include "jimple-hack.dl"
 
 MainMethodDeclaration(?method) :-
 #ifndef DISCOVER_MAIN_METHODS
@@ -22,7 +23,6 @@ MainMethodDeclaration(?method) :-
    Method_Descriptor(?method, "void(java.lang.String[])"),
    Method_Modifier("public", ?method),
    Method_Modifier("static", ?method).
-
 }
 
 .init basic = Basic
