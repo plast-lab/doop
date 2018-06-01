@@ -402,7 +402,7 @@ class WalaFactGenerator implements Runnable {
 
 //        int[][] exceArrays = walaExceptionHelper.exceArrays;
 //        String[][] exceTypeArrays = walaExceptionHelper.exceTypeArrays;
-
+//
 //        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
 //            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
 //            int start = basicBlock.getFirstInstructionIndex();
@@ -413,7 +413,7 @@ class WalaFactGenerator implements Runnable {
 //                {
 //                    if(m.getName().toString().equals("initialize") &&
 //                            m.getDeclaringClass().getName().toString().equals("Lokhttp3/internal/cache/DiskLruCache")) {
-//                        System.out.println(session.getInstructionNumber(instructions[j]) + " " + instructions[j].toString(ir.getSymbolTable()));
+//                        System.out.println(instructions[j].iindex + " " +session.getInstructionNumber(instructions[j]) + " " + session.getMaxInstructionNumber(instructions[j]) + " " + instructions[j].toString(ir.getSymbolTable()));
 //                        for (int k = 0; k < exceArrays[j].length ; k++) {
 //                            System.out.print(exceArrays[j][k] +" - " + exceTypeArrays[j][k] + ", ");
 //                        }
@@ -446,7 +446,7 @@ class WalaFactGenerator implements Runnable {
             if(exceptions!= null)
                 for (TypeReference exc: exceptions)
                     if (isPhantom(exc, cha)) {
-                        System.out.println("Exception " + fixTypeString(exc.getName().toString()) + " is phantom.");
+                        //System.out.println("Exception " + fixTypeString(exc.getName().toString()) + " is phantom.");
                         return true;
                     }
         } catch (InvalidClassFileException e) {
@@ -455,12 +455,12 @@ class WalaFactGenerator implements Runnable {
 
         for (int i = 0 ; i < m.getNumberOfParameters(); i++)
             if(isPhantom(m.getParameterType(i), cha)) {
-                System.out.println("Parameter type " + fixTypeString(m.getParameterType(i).toString()) + " of " + m.getSignature() + " is phantom.");
+                //System.out.println("Parameter type " + fixTypeString(m.getParameterType(i).toString()) + " of " + m.getSignature() + " is phantom.");
                 return true;
             }
 
         if (isPhantom(m.getReturnType(), cha)) {
-            System.out.println("Return type " + fixTypeString(m.getReturnType().toString()) + " of " + m.getSignature() + " is phantom.");
+            //System.out.println("Return type " + fixTypeString(m.getReturnType().toString()) + " of " + m.getSignature() + " is phantom.");
             return true;
         }
 

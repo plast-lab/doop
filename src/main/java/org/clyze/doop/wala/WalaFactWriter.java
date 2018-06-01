@@ -39,6 +39,7 @@ public class WalaFactWriter {
     //Used in writeType()
     private Map<String, String> _typeMap;
 
+    //The Maps bellow are used as Sets in order not to put duplicate phantom* facts
     private Map<String, String> _phantomType;
 
     private Map<String, String> _phantomMethod;
@@ -62,6 +63,21 @@ public class WalaFactWriter {
 
     private String str(int i) {
         return String.valueOf(i);
+    }
+
+    int getNumberOfPhantomTypes()
+    {
+        return _phantomType.size();
+    }
+
+    int getNumberOfPhantomMethods()
+    {
+        return _phantomMethod.size();
+    }
+
+    int getNumberOfPhantomBasedMethods()
+    {
+        return _phantomBasedMethod.size();
     }
 
     private String writeStringConstant(String constant) {
@@ -850,11 +866,11 @@ public class WalaFactWriter {
             int beginIndex = session.getInstructionNumber(startInstr);
             int endIndex = session.getMaxInstructionNumber(endInstr);
             Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
-//            if(m.getName().toString().equals("initialize") &&
-//                    m.getDeclaringClass().getName().toString().contains("Lokhttp3/internal/cache/DiskLruCache"))
-//                System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
-//                        scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
-//                        handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
+            if(m.getName().toString().equals("initialize") &&
+                    m.getDeclaringClass().getName().toString().contains("Lokhttp3/internal/cache/DiskLruCache"))
+                System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
+                        scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
+                        handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
             while (excTypes.hasNext()) {
                 TypeReference excType = excTypes.next();
                 String insn = _rep.handler(m, catchInstr, excType, session, i/2);

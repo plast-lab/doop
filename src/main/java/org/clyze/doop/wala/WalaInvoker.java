@@ -202,6 +202,13 @@ public class WalaInvoker {
         WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), false, walaParameters._cores, walaParameters._android, cache);
         driver.doInParallel(classesSet);
         driver.shutdown();
+
+        if(walaFactWriter.getNumberOfPhantomTypes() > 0)
+            System.out.println("WARNING: Input contains phantom types. \nNumber of phantom types:" + walaFactWriter.getNumberOfPhantomTypes());
+        if(walaFactWriter.getNumberOfPhantomMethods() > 0)
+            System.out.println("WARNING: Input contains phantom methods. \nNumber of phantom methods:" + walaFactWriter.getNumberOfPhantomMethods());
+        if(walaFactWriter.getNumberOfPhantomBasedMethods() > 0)
+            System.out.println("WARNING: Input contains phantom based methods. \nNumber of phantom based methods:" + walaFactWriter.getNumberOfPhantomBasedMethods());
         db.flush();
         db.close();
     }
