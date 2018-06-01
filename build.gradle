@@ -214,7 +214,6 @@ if (project.hasProperty('artifactory_user')) {
     task logicJar(type:Jar) {
         from "$projectDir/logic"
     }
-
     task souffleLogicJar(type:Jar) {
         from "$projectDir/souffle-logic"
     }
@@ -227,7 +226,6 @@ if (project.hasProperty('artifactory_user')) {
                 artifact logicJar {
                     classifier "logic"
                 }
-
                 artifact souffleLogicJar {
                     classifier "souffle-logic"
                 }
@@ -240,26 +238,17 @@ if (project.hasProperty('artifactory_user')) {
                     username artifactory_user
                     password artifactory_password
                 }
-
-                url version.endsWith("-SNAPSHOT") ?
-                        "$artifactory_contextUrl/libs-snapshot-local" :
-                        "$artifactory_contextUrl/libs-release-local"
-
+                url "$artifactory_contextUrl/libs-release-local"
             }
         }
     }
 
     release {
         failOnSnapshotDependencies = false
-        failOnUnversionedFiles = false
-        failOnCommitNeeded = false
 
         git {
            commitVersionFileOnly = true
         }
-        /* publish before releasing
-           buildTasks =['build', 'publish']
-         */
     }
 
     afterReleaseBuild.dependsOn publish
