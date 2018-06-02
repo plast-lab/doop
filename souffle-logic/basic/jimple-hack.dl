@@ -4,13 +4,13 @@
 // A.m() even though m() is defined in some supertype S of A. This
 // creates mismatches between Doop and Jimple identifiers ("S.m" vs. "A.m").
 
-.decl JimpleHack(?subMethodSig:symbol, ?origMethodSig:symbol, ?desc:MethodDescriptor)
+.decl JimpleHack(?subMethodSig:symbol, ?origMethodSig:symbol, ?params:symbol)
 .output JimpleHack
 
-JimpleHack(?subMethodSig, ?superMethodSig, ?desc) :-
+JimpleHack(?subMethodSig, ?superMethodSig, ?params) :-
 	Method_DeclaringType(?method, ?superType),
 	Method_SimpleName(?method, ?simplename),
-	Method_Descriptor(?method, ?desc),
+	Method_Params(?method, ?params),
 	SubtypeOf(?subType, ?superType),
 	?subType != ?superType,
 	!isNullType(?subType),
