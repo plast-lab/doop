@@ -1,11 +1,5 @@
 package org.clyze.doop.core
 
-import org.clyze.doop.wala.WalaInvoker
-
-import java.nio.file.Files
-import java.nio.file.FileSystems
-import java.nio.file.Path
-
 import groovy.transform.TypeChecked
 import heapdl.core.MemoryAnalyser
 import org.apache.commons.io.FilenameUtils
@@ -13,18 +7,17 @@ import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
-import org.clyze.doop.LBBuilder
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.soot.DoopErrorCodeException
-import org.clyze.utils.AARUtils
-import org.clyze.utils.CPreprocessor
-import org.clyze.utils.Executor
-import org.clyze.utils.FileOps
-import org.clyze.utils.Helper
+import org.clyze.doop.utils.LBBuilder
+import org.clyze.doop.wala.WalaInvoker
+import org.clyze.utils.*
 
-import static org.apache.commons.io.FileUtils.copyFileToDirectory
-import static org.apache.commons.io.FileUtils.deleteQuietly
-import static org.apache.commons.io.FileUtils.touch
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.Path
+
+import static org.apache.commons.io.FileUtils.*
 
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
@@ -32,577 +25,573 @@ import static org.apache.commons.io.FileUtils.touch
 @TypeChecked
 abstract class DoopAnalysis extends Analysis implements Runnable {
 
-    /**
-     * Used for logging various messages
-     */
-    protected Log logger
-
-    /**
-     * The facts dir for the input facts
-     */
-    protected File factsDir
-
-    /**
-     * The cache dir for the input facts
-     */
-
-    protected File cacheDir
-
-    /**
-     * The underlying workspace
-     */
-    protected File database
-
-    /**
-     * The dir used for running averroes
-     */
-    protected File averroesDir
-
-    /**
-     * The analysis input resolution mechanism
-     */
-    InputResolutionContext ctx
-
-    /**
-     * The heap snapshots of the analysis
-     */
-    protected List<File> heapFiles
-
-    /**
-     * The jre library jars for soot
-     */
-    protected List<File> platformLibs
-
-    /**
-     * Used for invoking external commnands
-     */
-    protected Executor executor
-
-    /**
-     * Used for invoking the C preprocessor
-     */
-    protected CPreprocessor cpp
-
-    /**
-     * Interface with the underlying workspace
-     */
-    LBBuilder lbBuilder
-
-    /**
-     * Total time for the soot invocation
-     */
-    protected long sootTime
-
-    /**
-     * The suffix of information flow platforms.
-     */
-    static final INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
-
-    /*
-     * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
-     * in order to ensure that internal state is initialized at one point and the init method is no longer required.
-     */
-    protected DoopAnalysis(String id,
-                           String name,
-                           Map<String, AnalysisOption> options,
-                           InputResolutionContext ctx,
-                           File outDir,
-                           File cacheDir,
-                           List<File> inputFiles,
-                           List<File> libraryFiles,
-                           List<File> heapFiles,
-                           List<File> platformLibs,
-                           Map<String, String> commandsEnvironment) {
-        super(DoopAnalysisFamily.instance, id, name, options, outDir, inputFiles, libraryFiles)
-        this.ctx = ctx
-        this.cacheDir = cacheDir
-        this.heapFiles = heapFiles
-        this.platformLibs = platformLibs
-
-        logger      = LogFactory.getLog(getClass())
-
-        if (options.X_STOP_AT_FACTS.value) {
-            factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
-        }
-        else {
-            factsDir = new File(outDir, "facts")
-
-        }
-        database    = new File(outDir, "database")
-        averroesDir = new File(outDir, "averroes")
-
-        executor    = new Executor(commandsEnvironment)
-        cpp         = new CPreprocessor(this, executor)
-    }
-
-    String toString() {
-        return [id:id, name:name, outDir:outDir, cacheDir:cacheDir, inputFiles:ctx.toString()]
-                .collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") + "\n" +
-                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
-    }
-
-    @Override
-    abstract void run()
-
-    protected void linkOrCopyFacts() {
-        if (options.X_SYMLINK_CACHED_FACTS.value) {
-            try {
-                Path cacheDirPath = FileSystems.getDefault().getPath(cacheDir.canonicalPath)
-                Files.createSymbolicLink(factsDir.toPath(), cacheDirPath)
-                return
-            } catch (UnsupportedOperationException x) {
-                System.err.println("Filesystem does not support symbolic links, copying directory...")
-            }
-        }
-
-        factsDir.mkdirs()
-        FileOps.copyDirContents(cacheDir, factsDir)
-    }
-
-    protected void generateFacts() throws DoopErrorCodeException {
-        deleteQuietly(factsDir)
-
-        if (cacheDir.exists() && options.CACHE.value) {
-            logger.info "Using cached facts from $cacheDir"
-            linkOrCopyFacts()
-        }
-        else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
-            String importedFactsDir = options.X_START_AFTER_FACTS.value
-            logger.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
-            linkOrCopyFacts()
-        }
-        else {
-            factsDir.mkdirs()
-            logger.info "-- Fact Generation --"
-
-            if (options.RUN_JPHANTOM.value) {
-                runJPhantom()
-            }
-
-            if (options.RUN_AVERROES.value) {
-                runAverroes()
-            }
-
-            Set<String> tmpDirs = [] as Set
-            if (options.WALA_FACT_GEN.value)
-                runWala(tmpDirs)
-            else {
-                boolean success = runSoot(tmpDirs)
-                if (!success) {
-                    Helper.cleanUp(tmpDirs)
-                    throw new DoopErrorCodeException(8)
-                }
-            }
-            Helper.cleanUp(tmpDirs)
-
-            touch(new File(factsDir, "ApplicationClass.facts"))
-            touch(new File(factsDir, "Properties.facts"))
-            touch(new File(factsDir, "Dacapo.facts"))
-            touch(new File(factsDir, "MainClass.facts"))
-
-            if (options.DACAPO.value) {
-                def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
-                def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-
-                new File(factsDir, "Dacapo.facts").withWriter { w ->
-                    w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
-                }
-            }
-            else if (options.DACAPO_BACH.value) {
-                def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
-                def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-
-                new File(factsDir, "Dacapo.facts").withWriter { w ->
-                    w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
-                }
-            }
-            if (options.MAIN_CLASS.value) {
-                new File(factsDir, "MainClass.facts").withWriter { w ->
-                    w << "${options.MAIN_CLASS.value}"
-                }
-            }
-
-            if (options.TAMIFLEX.value) {
-                File origTamFile = new File(options.TAMIFLEX.value.toString())
-
-                new File(factsDir, "Tamiflex.facts").withWriter { w ->
-                    origTamFile.eachLine { line ->
-                        w << line
-                                .replaceFirst(/;[^;]*;$/, "")
-                                .replaceFirst(/;$/, ";0")
-                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + ";" + second+ "\n" }
-                                .replaceAll(";", "\t").replaceFirst(/\./, "\t")
-                    }
-                }
-            }
-
-            if (options.HEAPDL.value && !options.X_DRY_RUN.value) {
-                runHeapDL(heapFiles.collect { File f -> f.canonicalPath })
-            }
-
-            logger.info "Caching facts in $cacheDir"
-            deleteQuietly(cacheDir)
-            cacheDir.mkdirs()
-            FileOps.copyDirContents(factsDir, cacheDir)
-            new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
-            logger.info "----"
-        }
-    }
-
-    abstract protected void initDatabase()
-
-    abstract protected void basicAnalysis()
-
-    abstract protected void mainAnalysis()
-
-    abstract protected void produceStats()
-
-    abstract protected void runTransformInput()
-
-    private List<String> getInputArgsJars(Set<String> tmpDirs) {
-        def inputArgs = inputFiles.collect(){ File f -> ["-i", f.toString()] }.flatten() as Collection<String>
-        return AARUtils.toJars(inputArgs as List<String>, false, tmpDirs)
-    }
-
-    private List<String> getDepsJars(Set<String> tmpDirs) {
-        def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
-        return AARUtils.toJars(deps as List<String>, false, tmpDirs)
-    }
-
-    // Returns false on fact generation failure.
-    protected boolean runSoot(Set<String> tmpDirs) {
-        Collection<String> depArgs
-
-        def platform = options.PLATFORM.value.toString().tokenize("_")[0]
-        assert platform == "android" || platform == "java"
-
-        def inputArgs = getInputArgsJars(tmpDirs)
-        def deps = getDepsJars(tmpDirs)
-
-        if (options.RUN_AVERROES.value) {
-            //change linked arg and injar accordingly
-            inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
-            depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
-        }
-        else {
-            depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-        }
-
-        Collection<String> params
-
-        switch(platform) {
-            case "java":
-                params = ["--full"] + inputArgs + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
-                break
-            case "android":
-                // This uses all platformLibs.
-                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-                // This uses just platformLibs[0], assumed to be android.jar.
-                params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
-                break
-            default:
-                throw new RuntimeException("Unsupported platform")
-        }
-
-        if (options.SSA.value) {
-            params += ["--ssa"]
-        }
-
-        if (!options.RUN_JPHANTOM.value) {
-            params += ["--allow-phantom"]
-        }
-
-        if (options.RUN_FLOWDROID.value) {
-            params += ["--run-flowdroid"]
-        }
-
-        if (options.ONLY_APPLICATION_CLASSES_FACT_GEN.value) {
-            params += ["--only-application-classes-fact-gen"]
-        }
-
-        if (options.GENERATE_JIMPLE.value) {
-            params += ["--generate-jimple"]
-        }
-
-        if (options.X_DRY_RUN.value) {
-            params += ["--noFacts"]
-        }
-
-        if (options.UNIQUE_FACTS.value) {
-            params += ["--uniqueFacts"]
-        }
-
-        if (options.FACT_GEN_CORES.value) {
-            params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
-        }
-
-        if (options.X_R_OUT_DIR.value) {
-            params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
-        }
-
-        if (options.X_IGNORE_WRONG_STATICNESS.value) {
-            params += ["--ignoreWrongStaticness"]
-        }
-
-        if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
-            params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
-        }
-
-        if (options.SEED.value) {
-            params += ["--seed", options.SEED.value.toString()]
-        }
-
-        if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
-            params += ["--special-cs-methods", options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString()]
-        }
-        params = params + ["-d", factsDir.toString()]
-
-        logger.debug "Params of soot: ${params.join(' ')}"
-
-        boolean success = false
-        sootTime = Helper.timing {
-            //We invoke soot reflectively using a separate class-loader to be able
-            //to support multiple soot invocations in the same JVM @ server-side.
-            //TODO: Investigate whether this approach may lead to memory leaks,
-            //not only for soot but for all other Java-based tools, like jphantom
-            //or averroes.
-            //In such a case, we should invoke all Java-based tools using a
-            //separate process.
-            ClassLoader loader = sootClassLoader()
-            success = Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
-        }
-
-        if (!success) {
-            logger.info "Soot fact generation failed."
-            return false
-        }
-
-        logger.info "Soot fact generation time: ${sootTime}"
-        return true
-    }
-
-    protected void runWala(Set<String> tmpDirs) {
-        Collection<String> params
-        Collection<String> depArgs
-        def inputArgs = getInputArgsJars(tmpDirs)
-        def deps = getDepsJars(tmpDirs)
-
-        def platform = options.PLATFORM.value.toString().tokenize("_")[0]
-        assert platform == "android" || platform == "java"
-
-        switch(platform) {
-            case "java":
-                params = ["--application-regex", options.APP_REGEX.value.toString()]
-                depArgs = deps
-                depArgs.add("-p")
-                depArgs.add(platformLibs.get(0).getAbsolutePath().toString().replace("/rt.jar",""))
-                depArgs = (platformLibs.collect{ lib -> ["-el", lib.toString()] }.flatten() as Collection<String>) + depArgs
-                break
-            case "android":
-                // This uses all platformLibs.
-                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-                // This uses just platformLibs[0], assumed to be android.jar.
-                depArgs = (platformLibs.collect{ lib -> ["-el", lib.toString()] }.flatten() as Collection<String>) + deps
-                params =  ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
-                break
-            default:
-                throw new RuntimeException("Unsupported platform")
-        }
-
-        if (options.FACT_GEN_CORES.value) {
-            params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
-        }
-        if (options.GENERATE_JIMPLE.value) {
-            params += ["--generate-ir"]
-        }
-        if (options.UNIQUE_FACTS.value) {
-            params += ["--uniqueFacts"]
-        }
-        //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-        params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
-
-        logger.debug "Params of wala: ${params.join(' ')}"
-
-        sootTime = Helper.timing {
-            //We invoke soot reflectively using a separate class-loader to be able
-            //to support multiple soot invocations in the same JVM @ server-side.
-            //TODO: Investigate whether this approach may lead to memory leaks,
-            //not only for soot but for all other Java-based tools, like jphantom
-            //or averroes.
-            //In such a case, we should invoke all Java-based tools using a
-            //separate process.
-            WalaInvoker wala = new WalaInvoker()
-            wala.parseParamsAndRun(params.toArray(new String[params.size()]))
-        }
-
-        logger.info "Wala fact generation time: ${sootTime}"
-
-    }
-
-    protected void runJPhantom(){
-        logger.info "-- Running jphantom to generate complement jar --"
-
-        String jar = inputFiles[0].toString()
-        String jarName = FilenameUtils.getBaseName(jar)
-        String jarExt = FilenameUtils.getExtension(jar)
-        String newJar = "${jarName}-complemented.${jarExt}"
-        String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
-        logger.debug "Params of jphantom: ${params.join(' ')}"
-
-        //we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
-        ClassLoader loader = phantomClassLoader()
-        Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
-
-        //set the jar of the analysis to the complemented one
-        inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
-    }
-
-    protected void runAverroes() {
-        logger.info "-- Running averroes --"
-
-        ClassLoader loader = averroesClassLoader()
-        Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
-    }
-
-
-    protected String cacheMeta() {
-        Collection<String> inputJars = inputFiles.collect {
-            File file -> file.toString()
-        }
-        Collection<String> cacheOptions = options.values().findAll {
-            it.forCacheID
-        }.collect {
-            AnalysisOption option -> option.toString()
-        }.sort()
-        return (inputJars + cacheOptions).join("\n")
-    }
-
-    /**
-     * Creates a new class loader for running jphantom
-     */
-    protected ClassLoader phantomClassLoader() {
-        return copyOfCurrentClasspath()
-    }
-    /**
-     * Creates a new class loader for running soot
-     */
-    protected ClassLoader sootClassLoader() {
-        return copyOfCurrentClasspath()
-    }
-
-    protected ClassLoader copyOfCurrentClasspath() {
-        URLClassLoader loader = this.getClass().getClassLoader() as URLClassLoader
-        URL[] classpath = loader.getURLs()
-        return new URLClassLoader(classpath, null as ClassLoader)
-    }
-
-    /**
-     * Creates a new class loader for running averroes
-     */
-    protected ClassLoader averroesClassLoader() {
-        //TODO: for now, we hard-code the averroes jar and properties
-        String jar = "${Doop.doopHome}/lib/averroes-no-properties.jar"
-        String properties = "$outDir/averroes.properties"
-
-        //Determine the library jars
-        Collection<String> libraryJars = inputFiles.drop(1).collect { it.toString() } + jreAverroesLibraries()
-
-        //Create the averroes properties
-        Properties props = new Properties()
-        props.setProperty("application_includes", options.APP_REGEX.value as String)
-        props.setProperty("main_class", options.MAIN_CLASS as String)
-        props.setProperty("input_jar_files", inputFiles[0].toString())
-        props.setProperty("library_jar_files", libraryJars.join(":"))
-
-        //Concatenate the dynamic files
-        if (options.DYNAMIC.value) {
-            List<String> dynFiles = options.DYNAMIC.value as List<String>
-            File dynFileAll = new File(outDir, "all.dyn")
-            dynFiles.each {String dynFile ->
-                dynFileAll.append new File(dynFile).text
-            }
-            props.setProperty("dynamic_classes_file", dynFileAll.toString())
-        }
-
-        props.setProperty("tamiflex_facts_file", options.TAMIFLEX.value as String)
-        props.setProperty("output_dir", averroesDir as String)
-        props.setProperty("jre", javaAverroesLibrary())
-
-        new File(properties).newWriter().withWriter { Writer writer ->
-            props.store(writer, null)
-        }
-
-        def file1 = FileOps.findFileOrThrow(jar, "averroes jar missing or invalid: $jar")
-        def file2 = FileOps.findFileOrThrow(properties, "averroes properties missing or invalid: $properties")
-
-        List<URL> classpath = [file1.toURI().toURL(), file2.toURI().toURL()]
-        return new URLClassLoader(classpath as URL[])
-    }
-
-    /**
-     * Generates a list for the jre libs for averroes
-     */
-    protected List<String> jreAverroesLibraries() {
-
-        def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
-        assert platformLibsValue.size() == 2
-        def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
-        assert platform == "java"
-
-        String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
-
-        //Not using if/else for readability
-        switch(version) {
-            case "1.3":
-                return []
-            case "1.4":
-                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-            case "1.5":
-                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-            case "1.6":
-                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-            case "1.7":
-                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-            case "1.8":
-                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-            case "system":
-                String javaHome = System.getProperty("java.home")
-                return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"] as List<String>
-        }
-    }
-
-    /**
-     * Generates the full path to the rt.jar required by averroes
-     */
-    protected String javaAverroesLibrary() {
-
-        def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
-        assert platformLibsValue.size() == 2
-        def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
-        assert platform == "java"
-
-        String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
-        return "$path/rt.jar"
-    }
-
-    protected void runHeapDL(List<String> filenames) {
-        try {
-            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filenames, options.HEAPDL_NOSTRINGS.value ? false : true)
-            int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
-            logger.info("Generated " + n + " addditional facts from memory dump")
-        } catch (Exception e) {
-            e.printStackTrace()
-        }
-    }
-
-    protected final void handleImportDynamicFacts() {
-        if (options.IMPORT_DYNAMIC_FACTS.value) {
-            File f = new File(options.IMPORT_DYNAMIC_FACTS.value.toString())
-            if (f.exists()) {
-                throw new RuntimeException("Facts file ${f.canonicalPath} already exists, cannot overwrite it with imported file of same name.")
-            } else {
-                copyFileToDirectory(f, factsDir)
-            }
-        }
-    }
+	/**
+	 * Used for logging various messages
+	 */
+	protected Log logger
+
+	/**
+	 * The facts dir for the input facts
+	 */
+	protected File factsDir
+
+	/**
+	 * The cache dir for the input facts
+	 */
+
+	protected File cacheDir
+
+	/**
+	 * The underlying workspace
+	 */
+	protected File database
+
+	/**
+	 * The dir used for running averroes
+	 */
+	protected File averroesDir
+
+	/**
+	 * The analysis input resolution mechanism
+	 */
+	InputResolutionContext ctx
+
+	/**
+	 * The heap snapshots of the analysis
+	 */
+	protected List<File> heapFiles
+
+	/**
+	 * The jre library jars for soot
+	 */
+	protected List<File> platformLibs
+
+	/**
+	 * Used for invoking external commnands
+	 */
+	protected Executor executor
+
+	/**
+	 * Used for invoking the C preprocessor
+	 */
+	protected CPreprocessor cpp
+
+	/**
+	 * Interface with the underlying workspace
+	 */
+	LBBuilder lbBuilder
+
+	/**
+	 * Total time for the soot invocation
+	 */
+	protected long sootTime
+
+	/**
+	 * The suffix of information flow platforms.
+	 */
+	static final INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
+
+	/*
+	 * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
+	 * in order to ensure that internal state is initialized at one point and the init method is no longer required.
+	 */
+
+	protected DoopAnalysis(String id,
+	                       String name,
+	                       Map<String, AnalysisOption> options,
+	                       InputResolutionContext ctx,
+	                       File outDir,
+	                       File cacheDir,
+	                       List<File> inputFiles,
+	                       List<File> libraryFiles,
+	                       List<File> heapFiles,
+	                       List<File> platformLibs,
+	                       Map<String, String> commandsEnvironment) {
+		super(DoopAnalysisFamily.instance, id, name, options, outDir, inputFiles, libraryFiles)
+		this.ctx = ctx
+		this.cacheDir = cacheDir
+		this.heapFiles = heapFiles
+		this.platformLibs = platformLibs
+
+		logger = LogFactory.getLog(getClass())
+
+		if (options.X_STOP_AT_FACTS.value) {
+			factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
+		} else {
+			factsDir = new File(outDir, "facts")
+
+		}
+		database = new File(outDir, "database")
+		averroesDir = new File(outDir, "averroes")
+
+		executor = new Executor(commandsEnvironment)
+		cpp = new CPreprocessor(this, executor)
+	}
+
+	String toString() {
+		return [id: id, name: name, outDir: outDir, cacheDir: cacheDir, inputFiles: ctx.toString()]
+				.collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") + "\n" +
+				options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
+	}
+
+	@Override
+	abstract void run()
+
+	protected void linkOrCopyFacts() {
+		if (options.X_SYMLINK_CACHED_FACTS.value) {
+			try {
+				Path cacheDirPath = FileSystems.getDefault().getPath(cacheDir.canonicalPath)
+				Files.createSymbolicLink(factsDir.toPath(), cacheDirPath)
+				return
+			} catch (UnsupportedOperationException x) {
+				System.err.println("Filesystem does not support symbolic links, copying directory...")
+			}
+		}
+
+		factsDir.mkdirs()
+		FileOps.copyDirContents(cacheDir, factsDir)
+	}
+
+	protected void generateFacts() throws DoopErrorCodeException {
+		deleteQuietly(factsDir)
+
+		if (cacheDir.exists() && options.CACHE.value) {
+			logger.info "Using cached facts from $cacheDir"
+			linkOrCopyFacts()
+		} else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
+			String importedFactsDir = options.X_START_AFTER_FACTS.value
+			logger.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
+			linkOrCopyFacts()
+		} else {
+			factsDir.mkdirs()
+			logger.info "-- Fact Generation --"
+
+			if (options.RUN_JPHANTOM.value) {
+				runJPhantom()
+			}
+
+			if (options.RUN_AVERROES.value) {
+				runAverroes()
+			}
+
+			Set<String> tmpDirs = [] as Set
+			if (options.WALA_FACT_GEN.value)
+				runWala(tmpDirs)
+			else {
+				boolean success = runSoot(tmpDirs)
+				if (!success) {
+					Helper.cleanUp(tmpDirs)
+					throw new DoopErrorCodeException(8)
+				}
+			}
+			Helper.cleanUp(tmpDirs)
+
+			touch(new File(factsDir, "ApplicationClass.facts"))
+			touch(new File(factsDir, "Properties.facts"))
+			touch(new File(factsDir, "Dacapo.facts"))
+			touch(new File(factsDir, "MainClass.facts"))
+
+			if (options.DACAPO.value) {
+				def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+				def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+
+				new File(factsDir, "Dacapo.facts").withWriter { w ->
+					w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
+				}
+			} else if (options.DACAPO_BACH.value) {
+				def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+				def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+
+				new File(factsDir, "Dacapo.facts").withWriter { w ->
+					w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
+				}
+			}
+			if (options.MAIN_CLASS.value) {
+				new File(factsDir, "MainClass.facts").withWriter { w ->
+					w << "${options.MAIN_CLASS.value}"
+				}
+			}
+
+			if (options.TAMIFLEX.value) {
+				File origTamFile = new File(options.TAMIFLEX.value.toString())
+
+				new File(factsDir, "Tamiflex.facts").withWriter { w ->
+					origTamFile.eachLine { line ->
+						w << line
+								.replaceFirst(/;[^;]*;$/, "")
+								.replaceFirst(/;$/, ";0")
+								.replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + ";" + second + "\n" }
+								.replaceAll(";", "\t").replaceFirst(/\./, "\t")
+					}
+				}
+			}
+
+			if (options.HEAPDL.value && !options.X_DRY_RUN.value) {
+				runHeapDL(heapFiles.collect { File f -> f.canonicalPath })
+			}
+
+			logger.info "Caching facts in $cacheDir"
+			deleteQuietly(cacheDir)
+			cacheDir.mkdirs()
+			FileOps.copyDirContents(factsDir, cacheDir)
+			new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
+			logger.info "----"
+		}
+	}
+
+	abstract protected void initDatabase()
+
+	abstract protected void basicAnalysis()
+
+	abstract protected void mainAnalysis()
+
+	abstract protected void produceStats()
+
+	abstract protected void runTransformInput()
+
+	private List<String> getInputArgsJars(Set<String> tmpDirs) {
+		def inputArgs = inputFiles.collect() { File f -> ["-i", f.toString()] }.flatten() as Collection<String>
+		return AARUtils.toJars(inputArgs as List<String>, false, tmpDirs)
+	}
+
+	private List<String> getDepsJars(Set<String> tmpDirs) {
+		def deps = libraryFiles.collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
+		return AARUtils.toJars(deps as List<String>, false, tmpDirs)
+	}
+
+	// Returns false on fact generation failure.
+	protected boolean runSoot(Set<String> tmpDirs) {
+		Collection<String> depArgs
+
+		def platform = options.PLATFORM.value.toString().tokenize("_")[0]
+		assert platform == "android" || platform == "java"
+
+		def inputArgs = getInputArgsJars(tmpDirs)
+		def deps = getDepsJars(tmpDirs)
+
+		if (options.RUN_AVERROES.value) {
+			//change linked arg and injar accordingly
+			inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
+			depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
+		} else {
+			depArgs = (platformLibs.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
+		}
+
+		Collection<String> params
+
+		switch (platform) {
+			case "java":
+				params = ["--full"] + inputArgs + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+				break
+			case "android":
+				// This uses all platformLibs.
+				// params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+				// This uses just platformLibs[0], assumed to be android.jar.
+				params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+				break
+			default:
+				throw new RuntimeException("Unsupported platform")
+		}
+
+		if (options.SSA.value) {
+			params += ["--ssa"]
+		}
+
+		if (!options.RUN_JPHANTOM.value) {
+			params += ["--allow-phantom"]
+		}
+
+		if (options.RUN_FLOWDROID.value) {
+			params += ["--run-flowdroid"]
+		}
+
+		if (options.ONLY_APPLICATION_CLASSES_FACT_GEN.value) {
+			params += ["--only-application-classes-fact-gen"]
+		}
+
+		if (options.GENERATE_JIMPLE.value) {
+			params += ["--generate-jimple"]
+		}
+
+		if (options.X_DRY_RUN.value) {
+			params += ["--noFacts"]
+		}
+
+		if (options.UNIQUE_FACTS.value) {
+			params += ["--uniqueFacts"]
+		}
+
+		if (options.FACT_GEN_CORES.value) {
+			params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
+		}
+
+		if (options.X_R_OUT_DIR.value) {
+			params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
+		}
+
+		if (options.X_IGNORE_WRONG_STATICNESS.value) {
+			params += ["--ignoreWrongStaticness"]
+		}
+
+		if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
+			params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
+		}
+
+		if (options.SEED.value) {
+			params += ["--seed", options.SEED.value.toString()]
+		}
+
+		if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
+			params += ["--special-cs-methods", options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString()]
+		}
+		params = params + ["-d", factsDir.toString()]
+
+		logger.debug "Params of soot: ${params.join(' ')}"
+
+		boolean success = false
+		sootTime = Helper.timing {
+			//We invoke soot reflectively using a separate class-loader to be able
+			//to support multiple soot invocations in the same JVM @ server-side.
+			//TODO: Investigate whether this approach may lead to memory leaks,
+			//not only for soot but for all other Java-based tools, like jphantom
+			//or averroes.
+			//In such a case, we should invoke all Java-based tools using a
+			//separate process.
+			ClassLoader loader = sootClassLoader()
+			success = Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
+		}
+
+		if (!success) {
+			logger.info "Soot fact generation failed."
+			return false
+		}
+
+		logger.info "Soot fact generation time: ${sootTime}"
+		return true
+	}
+
+	protected void runWala(Set<String> tmpDirs) {
+		Collection<String> params
+		Collection<String> depArgs
+		def inputArgs = getInputArgsJars(tmpDirs)
+		def deps = getDepsJars(tmpDirs)
+
+		def platform = options.PLATFORM.value.toString().tokenize("_")[0]
+		assert platform == "android" || platform == "java"
+
+		switch (platform) {
+			case "java":
+				params = ["--application-regex", options.APP_REGEX.value.toString()]
+				depArgs = deps
+				depArgs.add("-p")
+				depArgs.add(platformLibs.get(0).getAbsolutePath().toString().replace("/rt.jar", ""))
+				depArgs = (platformLibs.collect { lib -> ["-el", lib.toString()] }.flatten() as Collection<String>) + depArgs
+				break
+			case "android":
+				// This uses all platformLibs.
+				// params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+				// This uses just platformLibs[0], assumed to be android.jar.
+				depArgs = (platformLibs.collect { lib -> ["-el", lib.toString()] }.flatten() as Collection<String>) + deps
+				params = ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+				break
+			default:
+				throw new RuntimeException("Unsupported platform")
+		}
+
+		if (options.FACT_GEN_CORES.value) {
+			params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
+		}
+		if (options.GENERATE_JIMPLE.value) {
+			params += ["--generate-ir"]
+		}
+		if (options.UNIQUE_FACTS.value) {
+			params += ["--uniqueFacts"]
+		}
+		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
+		params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
+
+		logger.debug "Params of wala: ${params.join(' ')}"
+
+		sootTime = Helper.timing {
+			//We invoke soot reflectively using a separate class-loader to be able
+			//to support multiple soot invocations in the same JVM @ server-side.
+			//TODO: Investigate whether this approach may lead to memory leaks,
+			//not only for soot but for all other Java-based tools, like jphantom
+			//or averroes.
+			//In such a case, we should invoke all Java-based tools using a
+			//separate process.
+			WalaInvoker wala = new WalaInvoker()
+			wala.parseParamsAndRun(params.toArray(new String[params.size()]))
+		}
+
+		logger.info "Wala fact generation time: ${sootTime}"
+
+	}
+
+	protected void runJPhantom() {
+		logger.info "-- Running jphantom to generate complement jar --"
+
+		String jar = inputFiles[0].toString()
+		String jarName = FilenameUtils.getBaseName(jar)
+		String jarExt = FilenameUtils.getExtension(jar)
+		String newJar = "${jarName}-complemented.${jarExt}"
+		String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
+		logger.debug "Params of jphantom: ${params.join(' ')}"
+
+		//we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
+		ClassLoader loader = phantomClassLoader()
+		Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
+
+		//set the jar of the analysis to the complemented one
+		inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
+	}
+
+	protected void runAverroes() {
+		logger.info "-- Running averroes --"
+
+		ClassLoader loader = averroesClassLoader()
+		Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
+	}
+
+
+	protected String cacheMeta() {
+		Collection<String> inputJars = inputFiles.collect {
+			File file -> file.toString()
+		}
+		Collection<String> cacheOptions = options.values().findAll {
+			it.forCacheID
+		}.collect {
+			AnalysisOption option -> option.toString()
+		}.sort()
+		return (inputJars + cacheOptions).join("\n")
+	}
+
+	/**
+	 * Creates a new class loader for running jphantom
+	 */
+	protected ClassLoader phantomClassLoader() {
+		return copyOfCurrentClasspath()
+	}
+	/**
+	 * Creates a new class loader for running soot
+	 */
+	protected ClassLoader sootClassLoader() {
+		return copyOfCurrentClasspath()
+	}
+
+	protected ClassLoader copyOfCurrentClasspath() {
+		URLClassLoader loader = this.getClass().getClassLoader() as URLClassLoader
+		URL[] classpath = loader.getURLs()
+		return new URLClassLoader(classpath, null as ClassLoader)
+	}
+
+	/**
+	 * Creates a new class loader for running averroes
+	 */
+	protected ClassLoader averroesClassLoader() {
+		//TODO: for now, we hard-code the averroes jar and properties
+		String jar = "${Doop.doopHome}/lib/averroes-no-properties.jar"
+		String properties = "$outDir/averroes.properties"
+
+		//Determine the library jars
+		Collection<String> libraryJars = inputFiles.drop(1).collect { it.toString() } + jreAverroesLibraries()
+
+		//Create the averroes properties
+		Properties props = new Properties()
+		props.setProperty("application_includes", options.APP_REGEX.value as String)
+		props.setProperty("main_class", options.MAIN_CLASS as String)
+		props.setProperty("input_jar_files", inputFiles[0].toString())
+		props.setProperty("library_jar_files", libraryJars.join(":"))
+
+		//Concatenate the dynamic files
+		if (options.DYNAMIC.value) {
+			List<String> dynFiles = options.DYNAMIC.value as List<String>
+			File dynFileAll = new File(outDir, "all.dyn")
+			dynFiles.each { String dynFile ->
+				dynFileAll.append new File(dynFile).text
+			}
+			props.setProperty("dynamic_classes_file", dynFileAll.toString())
+		}
+
+		props.setProperty("tamiflex_facts_file", options.TAMIFLEX.value as String)
+		props.setProperty("output_dir", averroesDir as String)
+		props.setProperty("jre", javaAverroesLibrary())
+
+		new File(properties).newWriter().withWriter { Writer writer ->
+			props.store(writer, null)
+		}
+
+		def file1 = FileOps.findFileOrThrow(jar, "averroes jar missing or invalid: $jar")
+		def file2 = FileOps.findFileOrThrow(properties, "averroes properties missing or invalid: $properties")
+
+		List<URL> classpath = [file1.toURI().toURL(), file2.toURI().toURL()]
+		return new URLClassLoader(classpath as URL[])
+	}
+
+	/**
+	 * Generates a list for the jre libs for averroes
+	 */
+	protected List<String> jreAverroesLibraries() {
+
+		def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
+		assert platformLibsValue.size() == 2
+		def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
+		assert platform == "java"
+
+		String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
+
+		//Not using if/else for readability
+		switch (version) {
+			case "1.3":
+				return []
+			case "1.4":
+				return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
+			case "1.5":
+				return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
+			case "1.6":
+				return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
+			case "1.7":
+				return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
+			case "1.8":
+				return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
+			case "system":
+				String javaHome = System.getProperty("java.home")
+				return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"] as List<String>
+		}
+	}
+
+	/**
+	 * Generates the full path to the rt.jar required by averroes
+	 */
+	protected String javaAverroesLibrary() {
+
+		def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
+		assert platformLibsValue.size() == 2
+		def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
+		assert platform == "java"
+
+		String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
+		return "$path/rt.jar"
+	}
+
+	protected void runHeapDL(List<String> filenames) {
+		try {
+			MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filenames, options.HEAPDL_NOSTRINGS.value ? false : true)
+			int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
+			logger.info("Generated " + n + " addditional facts from memory dump")
+		} catch (Exception e) {
+			e.printStackTrace()
+		}
+	}
+
+	protected final void handleImportDynamicFacts() {
+		if (options.IMPORT_DYNAMIC_FACTS.value) {
+			File f = new File(options.IMPORT_DYNAMIC_FACTS.value.toString())
+			if (f.exists()) {
+				throw new RuntimeException("Facts file ${f.canonicalPath} already exists, cannot overwrite it with imported file of same name.")
+			} else {
+				copyFileToDirectory(f, factsDir)
+			}
+		}
+	}
 }

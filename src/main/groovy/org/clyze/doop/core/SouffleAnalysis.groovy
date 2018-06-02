@@ -4,8 +4,8 @@ import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.input.InputResolutionContext
+import org.clyze.doop.utils.ContextRemover
 import org.clyze.utils.CheckSum
-import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
 
 import java.nio.file.Files

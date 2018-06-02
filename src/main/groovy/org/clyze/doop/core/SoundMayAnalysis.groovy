@@ -8,7 +8,7 @@ import org.clyze.doop.input.InputResolutionContext
 @CompileStatic
 @TypeChecked
 @Deprecated
-class SoundMayAnalysis extends ClassicAnalysis {
+class SoundMayAnalysis extends LB3Analysis {
 
     protected SoundMayAnalysis(String id,
                                String name,

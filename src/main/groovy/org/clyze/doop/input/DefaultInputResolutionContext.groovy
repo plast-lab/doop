@@ -2,7 +2,6 @@ package org.clyze.doop.input
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-
 import org.clyze.analysis.InputType
 
 /**
@@ -111,7 +110,6 @@ class DefaultInputResolutionContext implements InputResolutionContext {
         }
     }
 
-
     @Override
     List<File> getAllInputs() {
         def allFiles = new LinkedList<File>()
@@ -176,22 +174,14 @@ class DefaultInputResolutionContext implements InputResolutionContext {
     }
 
     @Override
-    List<String> inputs() {
-        return inputs
-    }
+    List<String> inputs() { inputs }
 
     @Override
-    List<String> libraries() {
-        return libraries
-    }
+    List<String> libraries() { libraries }
 
     @Override
-    List<String> hprofs() {
-        return hprofs
-    }
+    List<String> hprofs() { hprofs }
 
     @Override
-    String toString() {
-        return "Inputs: ${inputs()} Libraries: ${libraries()}"
-    }
+    String toString() { "Inputs: ${inputs()} Libraries: ${libraries()}" }
 }

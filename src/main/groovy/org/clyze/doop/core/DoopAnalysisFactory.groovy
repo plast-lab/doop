@@ -12,6 +12,7 @@ import org.clyze.analysis.BooleanAnalysisOption
 import org.clyze.analysis.InputType
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
+import org.clyze.doop.utils.PackageUtil
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
 
@@ -175,7 +176,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         if (options.LB3.value) {
             if (name != "sound-may-point-to") {
                 options.CFG_ANALYSIS.value = false
-                analysis = new ClassicAnalysis(
+                analysis = new LB3Analysis(
                         analysisId,
                         name.replace(File.separator, "-"),
                         options,

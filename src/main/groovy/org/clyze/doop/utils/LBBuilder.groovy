@@ -1,4 +1,4 @@
-package org.clyze.doop
+package org.clyze.doop.utils
 
 import org.apache.commons.logging.Log
 import org.clyze.utils.CPreprocessor

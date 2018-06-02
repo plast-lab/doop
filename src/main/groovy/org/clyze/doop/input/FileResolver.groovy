@@ -8,14 +8,10 @@ import org.clyze.utils.FileOps
  */
 class FileResolver implements InputResolver {
 
-    @Override
-    String name() {
-        return "file"
-    }
+	String name() { "file" }
 
-    @Override
-    void resolve(String input, InputResolutionContext ctx, InputType inputType) {
-        def file = FileOps.findFileOrThrow(input, "Not a file input: $input")
-        ctx.set(input, file, inputType)
-    }
+	void resolve(String input, InputResolutionContext ctx, InputType inputType) {
+		def file = FileOps.findFileOrThrow(input, "Not a file input: $input")
+		ctx.set(input, file, inputType)
+	}
 }

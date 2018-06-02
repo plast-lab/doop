@@ -2,7 +2,6 @@ package org.clyze.doop.input
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-
 import org.clyze.analysis.InputType
 
 class ChainResolver implements InputResolver {
@@ -14,12 +13,8 @@ class ChainResolver implements InputResolver {
         this.resolvers = resolvers
     }
 
-    @Override
-    String name() {
-        return "chain"
-    }
+    String name() { "chain" }
 
-    @Override
     void resolve(String input, InputResolutionContext ctx, InputType inputType) {
         for(InputResolver resolver : resolvers) {
             try {
