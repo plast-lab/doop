@@ -113,7 +113,9 @@ public class WalaFactWriter {
     //This descriptor format is used by Soot only for Method.facts
     String writeMethod(IMethod m) {
         String result = _rep.signature(m);
-        String arity = Integer.toString(m.getNumberOfParameters());
+        String arity = Integer.toString(m.getNumberOfParameters() - 1);
+        if(m.isStatic())
+            arity = Integer.toString(m.getNumberOfParameters());
 
         _db.add(STRING_RAW, result, result);
         _db.add(METHOD, result, _rep.simpleName(m.getReference()), _rep.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
