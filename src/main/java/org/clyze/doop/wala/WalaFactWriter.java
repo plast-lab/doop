@@ -46,6 +46,8 @@ public class WalaFactWriter {
 
     private Map<String, String> _phantomBasedMethod;
 
+    private Set<String> _signaturePolyMorphicMethods;
+
     //Used for logging various messages
     protected Log logger;
 
@@ -58,7 +60,12 @@ public class WalaFactWriter {
         _phantomMethod = new ConcurrentHashMap<>();
         _phantomBasedMethod = new ConcurrentHashMap<>();
         logger =  LogFactory.getLog(getClass());
+        _signaturePolyMorphicMethods = null;
+    }
 
+    public void setSignaturePolyMorphicMethods(Set<String> signaturePolyMorphicMethods)
+    {
+        _signaturePolyMorphicMethods = signaturePolyMorphicMethods;
     }
 
     private String str(int i) {
@@ -1107,34 +1114,43 @@ public class WalaFactWriter {
                     break;
                 }
             }
-            if(targetClass.isAbstract() && ! targetClass.isInterface() && !foundAtFirst)
-            {
-                Queue<IClass> classQueue = new LinkedList<>();
-                classQueue.addAll(targetClass.getDirectInterfaces());
-                if(!classQueue.isEmpty())
+            if(!foundAtFirst) {
+                String methRepr = fixTypeString(targetClass.getName().toString()) + ":" + targetRef.getName();
+                if(_signaturePolyMorphicMethods.contains(methRepr))
                 {
-                    boolean found = false;
-                    IClass currClass;
-                    while (!classQueue.isEmpty() && !found) {
-                        currClass = classQueue.remove();
-                        for(IMethod meth: currClass.getDeclaredMethods()) {
-                            if (meth.getName().toString().equals(targetRef.getName().toString())
-                                    && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
-                            {
-                                targetRef = meth.getReference();
-                                found = true;
-                                break;
-                            }
-                        }
-                        classQueue.addAll(currClass.getDirectInterfaces());
-                    }
-                    if(!found)
-                        writePhantomMethod(targetRef);
+                    System.out.println("Gotya! " + targetRef);
+                    addFactsForSignaturePolymorphic(targetRef);
                 }
+                if(targetClass.isAbstract() && ! targetClass.isInterface())
+                {
+                    Queue<IClass> classQueue = new LinkedList<>();
+                    classQueue.addAll(targetClass.getDirectInterfaces());
+                    if(!classQueue.isEmpty())
+                    {
+                        boolean found = false;
+                        IClass currClass;
+                        while (!classQueue.isEmpty() && !found) {
+                            currClass = classQueue.remove();
+                            for(IMethod meth: currClass.getDeclaredMethods()) {
+                                if (meth.getName().toString().equals(targetRef.getName().toString())
+                                        && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
+                                {
+                                    targetRef = meth.getReference();
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            classQueue.addAll(currClass.getDirectInterfaces());
+                        }
+                        if(!found)
+                            writePhantomMethod(targetRef);
+                    }
+                }
+                else
+                    writePhantomMethod(targetRef);
             }
-            else if(!foundAtFirst)
-                writePhantomMethod(targetRef);
         }
+
 
         String insn = _rep.invoke(inMethod, instruction, targetRef, session);
         writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
@@ -1180,6 +1196,14 @@ public class WalaFactWriter {
         }
 
         return insn;
+    }
+
+    private void addFactsForSignaturePolymorphic(MethodReference m)
+    {
+        String sig = _rep.signature(m);
+        _db.add(STRING_RAW, sig, sig);
+        String arity = Integer.toString(m.getNumberOfParameters());
+        _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
     }
 
     private String getBootstrapSig(BootstrapMethodsReader.BootstrapMethod bootstrapMeth, IClassHierarchy cha) {
