@@ -875,11 +875,11 @@ public class WalaFactWriter {
             int beginIndex = session.getInstructionNumber(startInstr);
             int endIndex = session.getMaxInstructionNumber(endInstr);
             Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
-            if(m.getName().toString().equals("initialize") &&
-                    m.getDeclaringClass().getName().toString().contains("Lokhttp3/internal/cache/DiskLruCache"))
-                System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
-                        scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
-                        handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
+//            if(m.getName().toString().equals("initialize") &&
+//                    m.getDeclaringClass().getName().toString().contains("Lokhttp3/internal/cache/DiskLruCache"))
+//                System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
+//                        scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
+//                        handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
             while (excTypes.hasNext()) {
                 TypeReference excType = excTypes.next();
                 String insn = _rep.handler(m, catchInstr, excType, session, i/2);
@@ -1120,7 +1120,6 @@ public class WalaFactWriter {
                 String methRepr = fixTypeString(targetClass.getName().toString()) + ":" + targetRef.getName();
                 if(_signaturePolyMorphicMethods.contains(methRepr))
                 {
-                    System.out.println("Gotya! " + targetRef);
                     addFactsForSignaturePolymorphic(targetRef);
                 }
                 if(targetClass.isAbstract() && ! targetClass.isInterface())

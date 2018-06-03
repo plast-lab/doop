@@ -219,9 +219,8 @@ public class WalaInvoker {
         String className = WalaUtils.fixTypeString(m.getDeclaringClass().getName().toString());
         for(Annotation ann: annotations)
         {
-            if(ann.getType().toString().contains("PolymorphicSignature"))
+            if(ann.getType().getName().toString().equals("Ljava/lang/invoke/MethodHandle$PolymorphicSignature"))
             {
-                //System.out.println(m.toString());
                 signaturePolymorphics.add(className + ":" + m.getName().toString());
             }
         }
