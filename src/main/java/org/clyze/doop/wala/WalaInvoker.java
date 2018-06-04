@@ -9,6 +9,8 @@ import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
+import com.ibm.wala.shrikeCT.InvalidClassFileException;
+import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -17,10 +19,7 @@ import org.clyze.doop.soot.DoopErrorCodeException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class WalaInvoker {
 
@@ -185,7 +184,7 @@ public class WalaInvoker {
 
         IClass klass;
         Set<IClass> classesSet = new HashSet<>();
-        Set<String> signaturePolymorphicMethods = new HashSet<>();
+        Map<String, List<String>> signaturePolymorphicMethods = new HashMap<>();
         while (classes.hasNext()) {
             klass = classes.next();
             if (isApplicationClass(walaParameters, klass)) {
@@ -213,7 +212,7 @@ public class WalaInvoker {
         db.close();
     }
 
-    private void addIfSignaturePolymorphic(IMethod m, Set <String> signaturePolymorphics)
+    private void addIfSignaturePolymorphic(IMethod m, Map <String, List<String>> signaturePolymorphics)
     {
         Collection<Annotation> annotations = m.getAnnotations();
         String className = WalaUtils.fixTypeString(m.getDeclaringClass().getName().toString());
@@ -221,7 +220,17 @@ public class WalaInvoker {
         {
             if(ann.getType().getName().toString().equals("Ljava/lang/invoke/MethodHandle$PolymorphicSignature"))
             {
-                signaturePolymorphics.add(className + ":" + m.getName().toString());
+                List<String> declaredExceptions = new ArrayList<>();
+                try{
+                    TypeReference[] exceptions = m.getDeclaredExceptions();
+                    if(exceptions != null && exceptions.length > 0) {
+                        for(TypeReference exc: exceptions)
+                            declaredExceptions.add(WalaUtils.fixTypeString(exc.toString()));
+                    }
+                } catch (InvalidClassFileException e) {
+                    e.printStackTrace();
+                }
+                signaturePolymorphics.put(className + ":" + m.getName().toString(), declaredExceptions);
             }
         }
     }

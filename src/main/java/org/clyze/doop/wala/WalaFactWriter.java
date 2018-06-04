@@ -2,6 +2,7 @@ package org.clyze.doop.wala;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
+import com.ibm.wala.dalvik.classLoader.DexIMethod;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.shrikeCT.BootstrapMethodsReader;
 import com.ibm.wala.shrikeCT.ClassConstants;
@@ -18,6 +19,7 @@ import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
+import soot.dexpler.DexMethod;
 
 import javax.sound.midi.SysexMessage;
 import java.util.*;
@@ -46,7 +48,7 @@ public class WalaFactWriter {
 
     private Map<String, String> _phantomBasedMethod;
 
-    private Set<String> _signaturePolyMorphicMethods;
+    private Map<String,List<String>> _signaturePolyMorphicMethods;
 
     //Used for logging various messages
     protected Log logger;
@@ -63,7 +65,7 @@ public class WalaFactWriter {
         _signaturePolyMorphicMethods = null;
     }
 
-    public void setSignaturePolyMorphicMethods(Set<String> signaturePolyMorphicMethods)
+    public void setSignaturePolyMorphicMethods(Map<String,List<String>> signaturePolyMorphicMethods)
     {
         _signaturePolyMorphicMethods = signaturePolyMorphicMethods;
     }
@@ -745,7 +747,7 @@ public class WalaFactWriter {
 
 
     void writeLookupSwitch(IR ir,IMethod inMethod, SSASwitchInstruction instruction, Session session, Local switchVar) {
-        if(_android) //Currently disabled for android
+        if(inMethod instanceof DexIMethod) //Currently disabled for android
             return;
         int instrIndex = session.getInstructionNumber(instruction);
         int targetIndex, targetWALAIndex;
@@ -1118,9 +1120,9 @@ public class WalaFactWriter {
             }
             if(!foundAtFirst) {
                 String methRepr = fixTypeString(targetClass.getName().toString()) + ":" + targetRef.getName();
-                if(_signaturePolyMorphicMethods.contains(methRepr))
+                if(_signaturePolyMorphicMethods.get(methRepr) != null)
                 {
-                    addFactsForSignaturePolymorphic(targetRef);
+                    addFactsForSignaturePolymorphic(targetRef, _signaturePolyMorphicMethods.get(methRepr));
                 }
                 if(targetClass.isAbstract() && ! targetClass.isInterface())
                 {
@@ -1199,12 +1201,43 @@ public class WalaFactWriter {
         return insn;
     }
 
-    private void addFactsForSignaturePolymorphic(MethodReference m)
+    private void addFactsForSignaturePolymorphic(MethodReference m, List<String> declaredExceptions)
     {
         String sig = _rep.signature(m);
         _db.add(STRING_RAW, sig, sig);
         String arity = Integer.toString(m.getNumberOfParameters());
         _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        addMockExceptionThrows(m, declaredExceptions);
+    }
+
+    void addMockExceptionThrows(MethodReference mr, List<String> declaredExceptions)
+    {
+        int i = -2;
+        String varBase = "mockExc";
+        String methodSig = _rep.signature(mr);
+        String var;
+        String heap;
+        String newInstr;
+        String specInvInstr;
+        String throwInstr;
+        String targetRef;
+
+        for(String declaredExc : declaredExceptions)
+        {
+            i+=3;
+            var = methodSig + "/" + varBase + Integer.toString(i);
+            _db.add(VAR_TYPE, var, declaredExc);
+            _db.add(VAR_DECLARING_METHOD, var, methodSig);
+            heap = methodSig + "/new " + declaredExc + "/0";
+            _db.add(NORMAL_HEAP, heap, declaredExc);
+            newInstr = methodSig + "/assign/instruction" + str(i);
+            _db.add(ASSIGN_HEAP_ALLOC, newInstr, str(i), heap, var, methodSig, "0");
+            specInvInstr = methodSig +"/" + declaredExc +".<init>/0" ;
+            targetRef = "<" + declaredExc + ":  void <init>()>";
+            _db.add(SPECIAL_METHOD_INV, specInvInstr, str(i+1), targetRef, var, methodSig);
+            throwInstr = methodSig + "/throw " +varBase + Integer.toString(i) + "/0";
+            _db.add(THROW, throwInstr, str(i+2),var, methodSig);
+        }
     }
 
     private String getBootstrapSig(BootstrapMethodsReader.BootstrapMethod bootstrapMeth, IClassHierarchy cha) {

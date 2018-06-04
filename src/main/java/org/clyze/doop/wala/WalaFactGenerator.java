@@ -185,6 +185,14 @@ class WalaFactGenerator implements Runnable {
 
         try {
             if(m.getDeclaredExceptions()!= null) //Android can return null, java cannot
+                if(m.isNative() && m.getDeclaredExceptions().length > 0) {
+                    List<String> declaredExceptions = new ArrayList<>();
+                    for(TypeReference exceptionType: m.getDeclaredExceptions()) {
+                        System.out.println("Method " + _writer.writeMethod(m) + " throws " + fixTypeString(exceptionType.toString()));
+                        declaredExceptions.add(fixTypeString(exceptionType.toString()));
+                    }
+                    _writer.addMockExceptionThrows(m.getReference(), declaredExceptions);
+                }
                 for(TypeReference exceptionType: m.getDeclaredExceptions())
                 {
                     _writer.writeMethodDeclaresException(m, exceptionType);
