@@ -765,7 +765,7 @@ public class WalaFactWriter {
             int tgIndex = casesAndLabels[i];
             //session.calcInstructionNumber(instructions[casesAndLabels[i+1]]);
             targetWALAIndex = casesAndLabels[i+1];
-            if(_android) {
+            if(inMethod instanceof DexIMethod) {
                 try {
                     targetWALAIndex = bm.getInstructionIndex(targetWALAIndex);
                 } catch (InvalidClassFileException e) {
@@ -784,7 +784,7 @@ public class WalaFactWriter {
         }
 
         defaultWALAIndex = instruction.getDefault();
-        if(_android) {
+        if(inMethod instanceof DexIMethod) {
             try {
                 defaultWALAIndex = bm.getInstructionIndex(defaultWALAIndex);
             } catch (InvalidClassFileException e) {
