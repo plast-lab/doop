@@ -22,7 +22,22 @@ CLASS_LOADER_METHOD("<java.security.SecureClassLoader: java.lang.Class defineCla
 // java.lang.VMClassLoader
 CLASS_LOADER_METHOD("<java.lang.VMClassLoader: java.lang.Class findLoadedClass(java.lang.ClassLoader,java.lang.String)>", 1).
 
+.decl MTEntryPoint(?id:number, ?invo:MethodInvocation, ?sig:Method)
+
+#define MTEP(id, sig) \
+MTEntryPoint(id, ?invo, ?signature) :- \
+   _StaticMethodInvocation(?invo, _, ?signature, _), \
+   ?signature = sig
+
+MTEP(1, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class)>").
+MTEP(2, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class)>").
+MTEP(3, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class,java.lang.Class[])>").
+MTEP(4, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class[])>").
+MTEP(5, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.invoke.MethodType)>").
+MTEP(6, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.util.List)>").
+
 isOpaqueMethod(?method) :- ClassLoaderMethod(?method, _).
+isOpaqueMethod(?method) :- MTEntryPoint(_, _, ?method).
 
 #define OPAQUE_METHOD(meth) isOpaqueMethod(m) :- isMethod(m), m = meth
 
