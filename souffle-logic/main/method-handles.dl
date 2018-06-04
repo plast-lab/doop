@@ -236,7 +236,6 @@ MTCallMatchesDescriptor(?invo, ?descriptor) :-
 #define MT_VALUE(desc) cat("<mock MethodType ", cat(desc, ">"))
 
 // Make methodType() return special descriptors.
-DebugVPT(?ret, ?descriptor),
 MockValueConsMacro(MT_VALUE(?descriptor), "java.lang.invoke.MethodType"),
 MTValue_Descriptor(MT_VALUE(?descriptor), ?descriptor),
 VarPointsTo(?hctx, MT_VALUE(?descriptor), ?callerCtx, ?ret) :-
