@@ -121,6 +121,14 @@ MockValueConsMacro(ConstructorReferenceValue(?type), ?type) :-
    Method_DeclaringType(?realMethod, ?type),
    AssignReturnValue(?i, ?var).
 
+// Method handles usually need reflection except they come from the constant pool.
+.decl MethodHandle_Method(?mh: Value, ?method: Method)
+.decl isMethodHandle(?mh:Value)
+
+isMethodHandle(?mh),
+MethodHandle_Method(?mh, ?method) :-
+   MethodHandleConstant_Method(?mh, ?method).
+
 // Method handles that interact with reflection are exprerimental, use
 // corresponding command-line option to enable them.
 #ifdef REFLECTION_METHOD_HANDLES
