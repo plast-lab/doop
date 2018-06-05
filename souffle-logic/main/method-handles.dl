@@ -244,5 +244,57 @@ VarPointsTo(?hctx, MT_VALUE(?descriptor), ?callerCtx, ?ret) :-
    AssignReturnValue(?invo, ?ret),
    ImmutableHContextFromContext(?callerCtx, ?hctx).
 
+// Method lookup methods.
+
+.decl FindVirtual(?invo:MethodInvocation)
+
+FindVirtual(?invo) :-
+   MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findVirtual(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>"),
+   Instruction_Method(?invo, ?caller),
+   ReachableContext(_, ?caller).
+
+.decl FindStatic(?invo:MethodInvocation)
+
+FindStatic(?invo) :-
+   MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findStatic(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>"),
+   Instruction_Method(?invo, ?caller),
+   ReachableContext(_, ?caller).
+
+// Lookup rules.
+
+.decl MethodFinder(?invo:MethodInvocation, ?ret:Var)
+
+MethodFinder(?invo, ?ret) :-
+   ( FindStatic(?invo) ; FindVirtual(?invo) ),
+   VirtualMethodInvocation_Base(?invo, ?lookup),
+   VarPointsTo(_, ?baseVal, _, ?lookup),
+   !Value_Null(?baseVal),
+   AssignReturnValue(?invo, ?ret).
+
+.decl MHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method)
+
+MHLookup(?type, ?id, ?mt, ?method) :-
+   Method_DeclaringType(?method, ?type),
+   Method_SimpleName(?method, ?id),
+   Method_Descriptor(?method, ?descriptor),
+   MTValue_Descriptor(?mt, ?descriptor).
+
+// Mock method handle values.
+#define MH(meth) cat("<computed method handle for ", cat(meth, ">"))
+
+MockValueConsMacro(MH(?method), "java.lang.invoke.MethodHandle"),
+isMethodHandle(MH(?method)),
+MethodHandle_Method(MH(?method), ?method),
+VarPointsTo(?hctx, MH(?method), ?ctx, ?ret) :-
+   MethodFinder(?invo, ?ret),
+   ActualParam(0, ?invo, ?classParam),
+   VarPointsTo(?hctx, ?classValue, ?ctx, ?classParam),
+   ReifiedClass(?type, ?classValue),
+   ActualParam(1, ?invo, ?stringParam),
+   VarPointsTo(_, ?id, _, ?stringParam),
+   ActualParam(2, ?invo, ?mtParam),
+   VarPointsTo(_, ?mt, _, ?mtParam),
+   MHLookup(?type, ?id, ?mt, ?method).
+
 #endif // REFLECTION
 #endif // REFLECTION_METHOD_HANDLES
