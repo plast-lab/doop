@@ -2,6 +2,7 @@ package org.clyze.doop.wala;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
+import com.ibm.wala.dalvik.classLoader.DexIMethod;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.shrikeCT.BootstrapMethodsReader;
 import com.ibm.wala.shrikeCT.ClassConstants;
@@ -18,6 +19,7 @@ import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
+import soot.dexpler.DexMethod;
 
 import javax.sound.midi.SysexMessage;
 import java.util.*;
@@ -46,6 +48,8 @@ public class WalaFactWriter {
 
     private Map<String, String> _phantomBasedMethod;
 
+    private Map<String,List<String>> _signaturePolyMorphicMethods;
+
     //Used for logging various messages
     protected Log logger;
 
@@ -58,7 +62,12 @@ public class WalaFactWriter {
         _phantomMethod = new ConcurrentHashMap<>();
         _phantomBasedMethod = new ConcurrentHashMap<>();
         logger =  LogFactory.getLog(getClass());
+        _signaturePolyMorphicMethods = null;
+    }
 
+    public void setSignaturePolyMorphicMethods(Map<String,List<String>> signaturePolyMorphicMethods)
+    {
+        _signaturePolyMorphicMethods = signaturePolyMorphicMethods;
     }
 
     private String str(int i) {
@@ -106,7 +115,9 @@ public class WalaFactWriter {
     //This descriptor format is used by Soot only for Method.facts
     String writeMethod(IMethod m) {
         String result = _rep.signature(m);
-        String arity = Integer.toString(m.getNumberOfParameters());
+        String arity = Integer.toString(m.getNumberOfParameters() - 1);
+        if(m.isStatic())
+            arity = Integer.toString(m.getNumberOfParameters());
 
         _db.add(STRING_RAW, result, result);
         _db.add(METHOD, result, _rep.simpleName(m.getReference()), _rep.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
@@ -736,7 +747,7 @@ public class WalaFactWriter {
 
 
     void writeLookupSwitch(IR ir,IMethod inMethod, SSASwitchInstruction instruction, Session session, Local switchVar) {
-        if(_android) //Currently disabled for android
+        if(inMethod instanceof DexIMethod) //Currently disabled for android
             return;
         int instrIndex = session.getInstructionNumber(instruction);
         int targetIndex, targetWALAIndex;
@@ -754,7 +765,7 @@ public class WalaFactWriter {
             int tgIndex = casesAndLabels[i];
             //session.calcInstructionNumber(instructions[casesAndLabels[i+1]]);
             targetWALAIndex = casesAndLabels[i+1];
-            if(_android) {
+            if(inMethod instanceof DexIMethod) {
                 try {
                     targetWALAIndex = bm.getInstructionIndex(targetWALAIndex);
                 } catch (InvalidClassFileException e) {
@@ -773,7 +784,7 @@ public class WalaFactWriter {
         }
 
         defaultWALAIndex = instruction.getDefault();
-        if(_android) {
+        if(inMethod instanceof DexIMethod) {
             try {
                 defaultWALAIndex = bm.getInstructionIndex(defaultWALAIndex);
             } catch (InvalidClassFileException e) {
@@ -866,11 +877,11 @@ public class WalaFactWriter {
             int beginIndex = session.getInstructionNumber(startInstr);
             int endIndex = session.getMaxInstructionNumber(endInstr);
             Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
-            if(m.getName().toString().equals("initialize") &&
-                    m.getDeclaringClass().getName().toString().contains("Lokhttp3/internal/cache/DiskLruCache"))
-                System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
-                        scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
-                        handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
+//            if(m.getName().toString().equals("initialize") &&
+//                    m.getDeclaringClass().getName().toString().contains("Lokhttp3/internal/cache/DiskLruCache"))
+//                System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
+//                        scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
+//                        handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
             while (excTypes.hasNext()) {
                 TypeReference excType = excTypes.next();
                 String insn = _rep.handler(m, catchInstr, excType, session, i/2);
@@ -1107,34 +1118,42 @@ public class WalaFactWriter {
                     break;
                 }
             }
-            if(targetClass.isAbstract() && ! targetClass.isInterface() && !foundAtFirst)
-            {
-                Queue<IClass> classQueue = new LinkedList<>();
-                classQueue.addAll(targetClass.getDirectInterfaces());
-                if(!classQueue.isEmpty())
+            if(!foundAtFirst) {
+                String methRepr = fixTypeString(targetClass.getName().toString()) + ":" + targetRef.getName();
+                if(_signaturePolyMorphicMethods.get(methRepr) != null)
                 {
-                    boolean found = false;
-                    IClass currClass;
-                    while (!classQueue.isEmpty() && !found) {
-                        currClass = classQueue.remove();
-                        for(IMethod meth: currClass.getDeclaredMethods()) {
-                            if (meth.getName().toString().equals(targetRef.getName().toString())
-                                    && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
-                            {
-                                targetRef = meth.getReference();
-                                found = true;
-                                break;
-                            }
-                        }
-                        classQueue.addAll(currClass.getDirectInterfaces());
-                    }
-                    if(!found)
-                        writePhantomMethod(targetRef);
+                    addFactsForSignaturePolymorphic(targetRef, _signaturePolyMorphicMethods.get(methRepr));
                 }
+                if(targetClass.isAbstract() && ! targetClass.isInterface())
+                {
+                    Queue<IClass> classQueue = new LinkedList<>();
+                    classQueue.addAll(targetClass.getDirectInterfaces());
+                    if(!classQueue.isEmpty())
+                    {
+                        boolean found = false;
+                        IClass currClass;
+                        while (!classQueue.isEmpty() && !found) {
+                            currClass = classQueue.remove();
+                            for(IMethod meth: currClass.getDeclaredMethods()) {
+                                if (meth.getName().toString().equals(targetRef.getName().toString())
+                                        && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
+                                {
+                                    targetRef = meth.getReference();
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            classQueue.addAll(currClass.getDirectInterfaces());
+                        }
+                        if(!found)
+                            writePhantomMethod(targetRef);
+                    }
+                }
+                else
+                    writePhantomMethod(targetRef);
             }
-            else if(!foundAtFirst)
-                writePhantomMethod(targetRef);
         }
+
 
         String insn = _rep.invoke(inMethod, instruction, targetRef, session);
         writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
@@ -1180,6 +1199,45 @@ public class WalaFactWriter {
         }
 
         return insn;
+    }
+
+    private void addFactsForSignaturePolymorphic(MethodReference m, List<String> declaredExceptions)
+    {
+        String sig = _rep.signature(m);
+        _db.add(STRING_RAW, sig, sig);
+        String arity = Integer.toString(m.getNumberOfParameters());
+        _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        addMockExceptionThrows(m, declaredExceptions);
+    }
+
+    void addMockExceptionThrows(MethodReference mr, List<String> declaredExceptions)
+    {
+        int i = -2;
+        String varBase = "mockExc";
+        String methodSig = _rep.signature(mr);
+        String var;
+        String heap;
+        String newInstr;
+        String specInvInstr;
+        String throwInstr;
+        String targetRef;
+
+        for(String declaredExc : declaredExceptions)
+        {
+            i+=3;
+            var = methodSig + "/" + varBase + Integer.toString(i);
+            _db.add(VAR_TYPE, var, declaredExc);
+            _db.add(VAR_DECLARING_METHOD, var, methodSig);
+            heap = methodSig + "/new " + declaredExc + "/0";
+            _db.add(NORMAL_HEAP, heap, declaredExc);
+            newInstr = methodSig + "/assign/instruction" + str(i);
+            _db.add(ASSIGN_HEAP_ALLOC, newInstr, str(i), heap, var, methodSig, "0");
+            specInvInstr = methodSig +"/" + declaredExc +".<init>/0" ;
+            targetRef = "<" + declaredExc + ":  void <init>()>";
+            _db.add(SPECIAL_METHOD_INV, specInvInstr, str(i+1), targetRef, var, methodSig);
+            throwInstr = methodSig + "/throw " +varBase + Integer.toString(i) + "/0";
+            _db.add(THROW, throwInstr, str(i+2),var, methodSig);
+        }
     }
 
     private String getBootstrapSig(BootstrapMethodsReader.BootstrapMethod bootstrapMeth, IClassHierarchy cha) {
