@@ -747,8 +747,8 @@ public class WalaFactWriter {
 
 
     void writeLookupSwitch(IR ir,IMethod inMethod, SSASwitchInstruction instruction, Session session, Local switchVar) {
-        if(inMethod instanceof DexIMethod) //Currently disabled for android
-            return;
+//        if(inMethod instanceof DexIMethod) //Currently disabled for android
+//            return;
         int instrIndex = session.getInstructionNumber(instruction);
         int targetIndex, targetWALAIndex;
         int defaultIndex, defaultWALAIndex;
@@ -840,7 +840,7 @@ public class WalaFactWriter {
         Iterator<TypeReference> prevTypes = previous.getCaughtExceptionTypes();
         int prevNumOfScopes = _rep.getHandlerNumOfScopes(m,prevCatch);
         while(prevTypes.hasNext())
-            prevType =prevTypes.next();
+            prevType = prevTypes.next();
 
         SSAGetCaughtExceptionInstruction currCatch = current.getCatchInstruction();
         TypeReference currType = current.getCaughtExceptionTypes().next();
@@ -1207,7 +1207,7 @@ public class WalaFactWriter {
         _db.add(STRING_RAW, sig, sig);
         String arity = Integer.toString(m.getNumberOfParameters());
         _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
-        addMockExceptionThrows(m, declaredExceptions);
+        //addMockExceptionThrows(m, declaredExceptions);
     }
 
     void addMockExceptionThrows(MethodReference mr, List<String> declaredExceptions)

@@ -172,7 +172,7 @@ class WalaRepresentation {
 
     String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, Session session, int scopeIndex)
     {
-        String query = m.getSignature() + " v" + catchInstr.getDef()+ "-" + scopeIndex;
+        String query = m.getSignature() + fixTypeString(typeReference.toString()) + " v" + catchInstr.getDef()+ "-" + scopeIndex;
 
         String result = _catchRepr.get(query);
         if(result == null) {
