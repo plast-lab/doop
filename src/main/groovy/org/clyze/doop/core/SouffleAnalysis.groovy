@@ -64,7 +64,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         // Souffle has no persistent database.
         if (options.X_STOP_AT_INIT.value) {
-            logger.info "Option ${options.X_STOP_AT_INIT.name} is equivalent to ${options.X_STOP_AT_INIT.name} for Souffle-based analyses."
+            logger.info "Option ${options.X_STOP_AT_INIT.name} is equivalent to ${options.X_STOP_AT_FACTS.name} for Souffle-based analyses."
             return
         }
 
@@ -74,8 +74,10 @@ class SouffleAnalysis extends DoopAnalysis {
 
         initDatabase()
         basicAnalysis()
-        mainAnalysis()
-        produceStats()
+        if (!options.X_STOP_AT_BASIC.value) {
+            mainAnalysis()
+            produceStats()
+        }
 
         compileAnalysis()
         executeAnalysis(options.SOUFFLE_JOBS.value as Integer)
