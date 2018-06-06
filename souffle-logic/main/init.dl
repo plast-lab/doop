@@ -27,7 +27,8 @@ Value_Type(?heapValue, ?type) :-
 // them from allocations that share the same string value.
 Value_Num(cat("num-constant-", ?const), ?const),
 isValue(cat("num-constant-", ?const)),
-Value_Type(cat("num-constant-", ?const), ?type) :-
+Value_Type(cat("num-constant-", ?const), ?type),
+Value_DeclaringType(cat("num-constant-", ?const), ?className) :-
   isNumConstant(?const),
   AssignNumConstant_Id(?insn, ?const),
   Instruction_Method(?insn, ?meth),
@@ -40,7 +41,8 @@ Value_Type(cat("num-constant-", ?const), ?type) :-
 #ifdef ANDROID
 Value_Num(cat("num-constant-", ?const), ?const),
 isValue(cat("num-constant-", ?const)),
-Value_Type(cat("num-constant-", ?const), ?type) :-
+Value_Type(cat("num-constant-", ?const), ?type),
+Value_DeclaringType(cat("num-constant-", ?const), ?className) :-
   isNumConstant(?const),
   FieldInitialValue(?fld, ?const),
   Field_DeclaringType(?fld, ?className),

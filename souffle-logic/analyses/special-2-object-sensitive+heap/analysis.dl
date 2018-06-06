@@ -4,6 +4,8 @@
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
 
+.type ContextComponent = Type | mainAnalysis.Value
+
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object and the receiver object of the caller.
 // Again, this may trigger creation of a new object.
@@ -11,8 +13,8 @@
 
   // In this analysis, the real context is a pair of Values and the real
   // heap context a single Value.
-  .type Context  = [ value1:mainAnalysis.Value, value2:mainAnalysis.Value ]
-  .type HContext = [ value:mainAnalysis.Value ]
+  .type Context  = [ value1:ContextComponent, value2:ContextComponent ]
+  .type HContext = [ value:ContextComponent ]
 
    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
@@ -20,6 +22,23 @@
      basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
      SpecialContextSensitivityMethod(?tomethod, "context-insensitive"),
      isImmutableContext(?calleeCtx).
+
+   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+     Value_Type(?value, ?valuetype),
+     basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),     
+     SpecialContextSensitivityMethod(?tomethod, "1-type-sensitive"),
+     Value_DeclaringType(?value, ?type),
+     ?calleeCtx = [?type, ?type].
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    Value_Type(?value, ?valuetype),
+    basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),     
+    SpecialContextSensitivityMethod(?tomethod, "2-type-sensitive"),
+    ?hctx = [?hctxType],
+    Value_DeclaringType(?value, ?type),
+    ?calleeCtx = [?hctxType, ?type].
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
@@ -41,6 +60,23 @@
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
     isSpecialMethodInvocation_Insn(?invo),
     MethodInvocation_Method(?invo, ?tomethod),
+    SpecialContextSensitivityMethod(?tomethod, "1-type-sensitive"),
+    Value_DeclaringType(?value, ?type),
+    ?calleeCtx = [?type, ?type].
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    isSpecialMethodInvocation_Insn(?invo),
+    MethodInvocation_Method(?invo, ?tomethod),
+    SpecialContextSensitivityMethod(?tomethod, "2-type-sensitive"),
+    ?hctx = [?hctxType],
+    Value_DeclaringType(?value, ?type),
+    ?calleeCtx = [?hctxType, ?type].
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    isSpecialMethodInvocation_Insn(?invo),
+    MethodInvocation_Method(?invo, ?tomethod),
     (SpecialContextSensitivityMethod(?tomethod, "2-object-sensitive");
      !SpecialContextSensitivityMethod(?tomethod, _)),   
     ?hctx = [?hctxValue],
@@ -55,8 +91,7 @@
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),
     MethodInvocation_Method(?invo, ?tomethod),
-    (SpecialContextSensitivityMethod(?tomethod, "2-object-sensitive");
-     !SpecialContextSensitivityMethod(?tomethod, _)),       
+    !SpecialContextSensitivityMethod(?tomethod, "context-insensitive"),
     ?calleeCtx = ?callerCtx.
 
   RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-

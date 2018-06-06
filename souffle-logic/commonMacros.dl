@@ -26,17 +26,20 @@
 #define MockValueConsMacro(value, type) \
    Value_isMock(value), \
    isValue(value), \
-   Value_Type(value, type)
+   Value_Type(value, type), \
+   Value_DeclaringType(value, "java.lang.Object") \
 
 // Copy of MockValueConsMacro but with proper component qualifers.
 #define mainAnalysis_MockValueConsMacro(value, type) \
    mainAnalysis.Value_isMock(value), \
    mainAnalysis.isValue(value), \
-   mainAnalysis.Value_Type(value, type)
+   mainAnalysis.Value_Type(value, type), \
+   mainAnalysis.Value_DeclaringType(value, "java.lang.Object") \
 
 #define SpecialValueConsMacro(value, type) \
    isValue(value), \
-   Value_Type(value, type)
+   Value_Type(value, type), \
+   Value_DeclaringType(value, "java.lang.Object") \
 
 #define PlusVar(var, method, type) \
    isVar(var), \
