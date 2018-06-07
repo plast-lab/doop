@@ -462,8 +462,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "REFLECTION_METHOD_HANDLES",
 					name: "reflection-method-handles",
-					description: "Reflection-based handling of the method handle APIs (possibly expensive).",
+					description: "Reflection-based handling of the method handle APIs.",
 					value: false,
+					webUI: AnalysisForm,
 					forPreprocessor: true,
 					isAdvanced: true
 			),
