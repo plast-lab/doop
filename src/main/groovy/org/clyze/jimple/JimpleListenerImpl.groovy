@@ -444,6 +444,10 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		// abc/def/Foo.jimple
 		def listener = new JimpleListenerImpl(filename - baseDir, processor)
 		def parser = new JimpleParser(new CommonTokenStream(new JimpleLexer(new ANTLRFileStream(filename))))
-		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
+		try {
+			ParseTreeWalker.DEFAULT.walk(listener, parser.program())
+		} catch (Exception e) {
+			throw new Exception("Jimple File: $filename", e)
+		}
 	}
 }
