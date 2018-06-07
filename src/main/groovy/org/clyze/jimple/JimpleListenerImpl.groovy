@@ -30,21 +30,22 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 	BasicMetadata metadata = new BasicMetadata()
 
-	Closure defaultProcessor = { Element e ->
-		if (e instanceof Klass) metadata.classes << e as Klass
-		else if (e instanceof Field) metadata.fields << e as Field
-		else if (e instanceof Method) metadata.methods << e as Method
-		else if (e instanceof Variable) metadata.variables << e as Variable
-		else if (e instanceof Usage) metadata.usages << e as Usage
-		else if (e instanceof HeapAllocation) metadata.heapAllocations << e as HeapAllocation
-		else if (e instanceof MethodInvocation) metadata.invocations << e as MethodInvocation
-	}
-
 	Closure processor
 
-	JimpleListenerImpl(String filename, Closure processor = defaultProcessor) {
+	JimpleListenerImpl(String filename, Closure processor = null) {
 		this.filename = filename
-		this.processor = processor
+		if (processor)
+			this.processor = processor
+		else
+			this.processor = { Element e ->
+				if (e instanceof Klass) metadata.classes << (e as Klass)
+				else if (e instanceof Field) metadata.fields << (e as Field)
+				else if (e instanceof Method) metadata.methods << (e as Method)
+				else if (e instanceof Variable) metadata.variables << (e as Variable)
+				else if (e instanceof Usage) metadata.usages << (e as Usage)
+				else if (e instanceof HeapAllocation) metadata.heapAllocations << (e as HeapAllocation)
+				else if (e instanceof MethodInvocation) metadata.invocations << (e as MethodInvocation)
+			}
 	}
 
 	void enterKlass(KlassContext ctx) {
