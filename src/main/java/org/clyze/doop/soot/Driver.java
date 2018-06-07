@@ -11,9 +11,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.clyze.doop.soot.DoopErrorCodeException;
+
 public class Driver {
     private ThreadFactory _factory;
     private boolean _generateJimple;
+    private int _cores;
 
     private ExecutorService _executor;
     private int _classCounter;
@@ -28,10 +31,12 @@ public class Driver {
         _tmpClassGroup = new HashSet<>();
         _totalClasses = totalClasses;
         _generateJimple = generateJimple;
-        int _cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
+        _cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
 
         System.out.println("Fact generation cores: " + _cores);
+    }
 
+    private void initExecutor() {
         if (_cores > 2) {
             _executor = new ThreadPoolExecutor(_cores /2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
         } else {
@@ -42,22 +47,25 @@ public class Driver {
         }
     }
 
-    void doInParallel(Set<SootClass> classesToProcess) {
+    void doInParallel(Set<SootClass> classesToProcess) throws DoopErrorCodeException {
+        initExecutor();
         classesToProcess.forEach(this::generate);
-
+        shutdownExecutor();
     }
 
-    void writeInParallel(Set<SootClass> classesToProcess) {
+    void writeInParallel(Set<SootClass> classesToProcess) throws DoopErrorCodeException {
+        initExecutor();
         classesToProcess.forEach(this::write);
-
+        shutdownExecutor();
     }
 
-    void shutdown() {
+    void shutdownExecutor() throws DoopErrorCodeException {
         _executor.shutdown();
         try {
             _executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         } catch (InterruptedException e) {
             System.err.println(e.getMessage());
+            throw new DoopErrorCodeException(10);
         }
     }
 

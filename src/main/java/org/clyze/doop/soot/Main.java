@@ -371,7 +371,6 @@ public class Main {
                 System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
                 driver.writeInParallel(jimpleClasses);
             }
-            driver.shutdown();
         }
 
         if (sootParameters._seed != null) {
