@@ -1,6 +1,5 @@
 package org.clyze.jimple
 
-import com.google.gson.GsonBuilder
 import groovy.transform.CompileStatic
 import org.antlr.v4.runtime.ANTLRFileStream
 import org.antlr.v4.runtime.CommonTokenStream
@@ -8,9 +7,10 @@ import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ErrorNode
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
-import org.apache.commons.io.FileUtils
+import org.clyze.persistent.model.Element
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.doop.*
+import org.clyze.persistent.model.doop.Class as Klass
 
 import static org.clyze.jimple.JimpleParser.*
 
@@ -30,8 +30,21 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 	BasicMetadata metadata = new BasicMetadata()
 
-	JimpleListenerImpl(String filename) {
+	Closure defaultProcessor = { Element e ->
+		if (e instanceof Klass) metadata.classes << e as Klass
+		else if (e instanceof Field) metadata.fields << e as Field
+		else if (e instanceof Method) metadata.methods << e as Method
+		else if (e instanceof Variable) metadata.variables << e as Variable
+		else if (e instanceof Usage) metadata.usages << e as Usage
+		else if (e instanceof HeapAllocation) metadata.heapAllocations << e as HeapAllocation
+		else if (e instanceof MethodInvocation) metadata.invocations << e as MethodInvocation
+	}
+
+	Closure processor
+
+	JimpleListenerImpl(String filename, Closure processor = defaultProcessor) {
 		this.filename = filename
+		this.processor = processor
 	}
 
 	void enterKlass(KlassContext ctx) {
@@ -44,7 +57,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def className = getClassName(qualifiedName)
 		inInterface = hasToken(ctx, "interface")
 
-		klass = new Class(
+		processor.call new Class(
 				position,
 				filename,
 				className,
@@ -57,7 +70,6 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				false, //isAnonymous, missing?
 				hasToken(ctx, "abstract")
 		)
-		metadata.classes << klass
 
 		addTypeUsage(ctx.IDENTIFIER(1))
 		gatherIdentifiers(ctx.identifierList()).each { addTypeUsage it }
@@ -71,7 +83,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def name = ctx.IDENTIFIER(1).text
 		def position = new Position(line, line, startCol, startCol + name.length())
 
-		def f = new Field(
+		processor.call new Field(
 				position,
 				filename,
 				name,
@@ -80,7 +92,6 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				klass.doopId, //declaringClassDoopId
 				ctx.modifier().any() { hasToken(it, "static") }
 		)
-		metadata.fields << f
 	}
 
 	void enterMethod(MethodContext ctx) {
@@ -114,7 +125,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		def endline = ctx.methodBody() ? getLastToken(ctx.methodBody()).symbol.line : line
 		method.outerPosition = new Position(line, endline, 0, 0)
-		metadata.methods << method
+		processor.call method
 
 		heapCounters = [:].withDefault { 0 }
 		methodInvoCounters = [:].withDefault { 0 }
@@ -125,8 +136,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	void exitIdentifierList(IdentifierListContext ctx) {
-		if (inDecl)
-			metadata.variables << var(ctx.IDENTIFIER(), true)
+		if (inDecl) processor.call var(ctx.IDENTIFIER(), true)
 	}
 
 	void enterDeclarationStmt(DeclarationStmtContext ctx) {
@@ -149,7 +159,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			addVarUsage(ctx.IDENTIFIER(), UsageKind.DATA_READ)
 
 		if (ctx.fieldSig())
-			metadata.usages << fieldUsage(ctx.fieldSig(), UsageKind.DATA_WRITE)
+			processor.call fieldUsage(ctx.fieldSig(), UsageKind.DATA_WRITE)
 
 		(0..1).each {
 			if (ctx.value(it)?.IDENTIFIER())
@@ -165,7 +175,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			def v = var(ctx.IDENTIFIER(1), true)
 			v.type = ctx.IDENTIFIER(2).text
 			pending.pop()
-			metadata.variables << v
+			processor.call v
 			addTypeUsage(ctx.IDENTIFIER(2))
 		} else if (ctx.IDENTIFIER(1))
 			addVarUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
@@ -175,7 +185,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			addTypeUsage(ctx.IDENTIFIER(1))
 		// Read field
 		else if (ctx.fieldSig())
-			metadata.usages << fieldUsage(ctx.fieldSig(), UsageKind.DATA_READ)
+			processor.call fieldUsage(ctx.fieldSig(), UsageKind.DATA_READ)
 		// Phi
 		else if (hasToken(ctx, "Phi"))
 			gatherIdentifiers(ctx.identifierList()).each { addVarUsage(it, UsageKind.DATA_READ) }
@@ -221,7 +231,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def c = heapCounters[type] as int
 		heapCounters[type] = c + 1
 
-		metadata.heapAllocations << new HeapAllocation(
+		processor.call new HeapAllocation(
 				new Position(line, line, startCol, endCol),
 				filename,
 				"${method.doopId}/new $type/$c", //doopId
@@ -259,7 +269,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			gDoopId = "${method.doopId}/${methodClass}.$methodName/$c"
 		}
 
-		metadata.invocations << new MethodInvocation(
+		processor.call new MethodInvocation(
 				new Position(line, line, startCol, endCol),
 				filename,
 				methodName,
@@ -352,7 +362,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def startCol = id.symbol.charPositionInLine + 1
 		def name = id.text
 
-		metadata.usages << new Usage(
+		processor.call new Usage(
 				new Position(line, line, startCol, startCol + name.length()),
 				filename,
 				"${method.doopId}/$name", //doopId
@@ -386,7 +396,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		if (name == "void") return
 
-		metadata.usages << new Usage(
+		processor.call new Usage(
 				new Position(line, line, startCol, startCol + name.length()),
 				filename,
 				name, //doopId
@@ -426,27 +436,12 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		i >= 0 ? qualifiedName[(i + 1)..-1] : qualifiedName
 	}
 
-	static String parseJimple2JSON(String filename, String baseDir) {
-		def metadata = parseJimple(filename, baseDir)
-		def json = [:]
-		//json.put("Class", metadata.classes)
-		//json.put("Field", metadata.fields)
-		//json.put("Method", metadata.methods)
-		//json.put("Variable", metadata.variables)
-		//json.put("MethodInvocation", metadata.invocations)
-		//json.put("HeapAllocation", metadata.heapAllocations)
-		//json.put("Usage", metadata.usages)
-		new GsonBuilder().disableHtmlEscaping().create().toJson(json)
-	}
-
-	static BasicMetadata parseJimple(String filename, String baseDir) {
+	static void parseJimple(String filename, String baseDir, Closure processor) {
 		// filename: XYZ/abc/def/Foo.jimple
 		if (!baseDir.endsWith("/")) baseDir += "/"
 		// abc/def/Foo.jimple
-		def listener = new JimpleListenerImpl(filename - baseDir)
+		def listener = new JimpleListenerImpl(filename - baseDir, processor)
 		def parser = new JimpleParser(new CommonTokenStream(new JimpleLexer(new ANTLRFileStream(filename))))
 		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
-
-		return listener.metadata
 	}
 }
