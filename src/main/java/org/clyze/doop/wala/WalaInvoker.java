@@ -47,7 +47,7 @@ public class WalaInvoker {
         return(klass.getClassLoader().getName().toString().equals("Application"));
     }
 
-    public void parseParamsAndRun(String[] args) throws IOException {
+    public void main(String[] args) throws IOException {
         WalaParameters walaParameters = new WalaParameters();
         try {
             if (args.length == 0) {

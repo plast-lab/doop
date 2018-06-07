@@ -421,7 +421,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			//In such a case, we should invoke all Java-based tools using a
 			//separate process.
 			WalaInvoker wala = new WalaInvoker()
-			wala.parseParamsAndRun(params.toArray(new String[params.size()]))
+			wala.main(params.toArray(new String[params.size()]))
 		}
 
 		logger.info "Wala fact generation time: ${sootTime}"

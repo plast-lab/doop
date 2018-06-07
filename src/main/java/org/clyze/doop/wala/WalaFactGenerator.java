@@ -24,7 +24,7 @@ import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
- * generate facts. The class FactGenerator is the parseParamsAndRun class
+ * generate facts. The class FactGenerator is the main class
  * controlling what facts are generated.
  */
 
