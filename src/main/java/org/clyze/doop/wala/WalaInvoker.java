@@ -193,6 +193,7 @@ public class WalaInvoker {
             classesSet.add(klass);
             for(IMethod m: klass.getDeclaredMethods()) {
                 addIfSignaturePolymorphic(m, signaturePolymorphicMethods);
+                //System.out.println(m.toString());
                 cache.getIR(m);
             }
         }
