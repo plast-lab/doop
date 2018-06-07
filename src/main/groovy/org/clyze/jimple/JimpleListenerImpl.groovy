@@ -21,7 +21,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	List<Variable> pending
 	Map varTypes = [:]
 	Map heapCounters
-	Class klass
+	Klass klass
 	Method method
 	Map methodInvoCounters
 	Map values = [:]
@@ -58,7 +58,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def className = getClassName(qualifiedName)
 		inInterface = hasToken(ctx, "interface")
 
-		processor.call new Class(
+		klass = new Klass(
 				position,
 				filename,
 				className,
@@ -71,6 +71,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				false, //isAnonymous, missing?
 				hasToken(ctx, "abstract")
 		)
+		processor.call klass
 
 		addTypeUsage(ctx.IDENTIFIER(1))
 		gatherIdentifiers(ctx.identifierList()).each { addTypeUsage it }
