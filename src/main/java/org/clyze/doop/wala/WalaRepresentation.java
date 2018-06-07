@@ -148,8 +148,8 @@ class WalaRepresentation {
 
     String newLocalIntermediate(IMethod m, Local l, Session session)
     {
-        //String s = local(m, l);
-        return "/intermediate/";
+        String s = local(m, l);
+        return s + "/intermediate/" + session.nextNumber(s);
     }
 
     void putHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, int scopeIndex)
