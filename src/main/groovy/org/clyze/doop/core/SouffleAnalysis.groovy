@@ -24,22 +24,6 @@ class SouffleAnalysis extends DoopAnalysis {
      */
     File analysis
 
-    /**
-     * The cache dir for the analysis executable
-     */
-    File analysesCachePerName
-
-    /**
-     * Total time for Souffle compilation phase
-     */
-    protected long compilationTime
-
-    /**
-     * Total time for analysis execution
-     */
-    protected long executionTime
-    File souffleAnalysisCacheFile
-
     protected SouffleAnalysis(String id,
                               String name,
                               Map<String, AnalysisOption> options,
@@ -79,15 +63,21 @@ class SouffleAnalysis extends DoopAnalysis {
             produceStats()
         }
 
-        compileAnalysis()
-        executeAnalysis(options.SOUFFLE_JOBS.value as Integer)
+        def cacheDir = new File(Doop.souffleAnalysesCache, name)
+        cacheDir.mkdirs()
+        def script = new SouffleScript(analysis, factsDir, outDir, cacheDir, executor, logger)
+        script.run(
+                options.SOUFFLE_JOBS.value as int,
+                options.SOUFFLE_PROFILE.value as boolean,
+                options.SOUFFLE_DEBUG.value as boolean,
+                options.X_CONTEXT_REMOVER.value as boolean)
 
         if (!options.X_SERVER_LOGIC.value) {
             int dbSize = (sizeOfDirectory(database) / 1024).intValue()
             File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
             runtimeMetricsFile.createNewFile()
-            runtimeMetricsFile.append("analysis compilation time (sec)\t$compilationTime\n")
-            runtimeMetricsFile.append("analysis execution time (sec)\t$executionTime\n")
+            runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
+            runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
             runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
             runtimeMetricsFile.append("soot-fact-generation time (sec)\t$sootTime\n")
         }
@@ -182,78 +172,6 @@ class SouffleAnalysis extends DoopAnalysis {
                 logger.warn "Extra logic file does not exist: ${extraLogic}"
             }
         }
-    }
-
-    private void compileAnalysis() {
-        def analysisFileChecksum = CheckSum.checksum(analysis, DoopAnalysisFactory.HASH_ALGO)
-        def stringToHash = analysisFileChecksum + options.SOUFFLE_PROFILE.value.toString()
-        def analysisChecksum = CheckSum.checksum(stringToHash, DoopAnalysisFactory.HASH_ALGO)
-        analysesCachePerName = new File("${Doop.souffleAnalysesCache}/${name}")
-        analysesCachePerName.mkdirs()
-        souffleAnalysisCacheFile = new File("${Doop.souffleAnalysesCache}/${name}/${analysisChecksum}")
-
-        if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value) {
-
-            if (options.X_CONTEXT_REMOVER.value) {
-                File analysisFile = new File(analysis as String)
-                File backupFile = new File("${analysis}.backup")
-                Files.copy(analysisFile.toPath(), backupFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
-                ContextRemover.removeContexts(backupFile, analysisFile)
-            }
-
-            def compilationCommand = ['souffle', '-c', '-o', "${outDir}/${name}" as String, analysis as String]
-
-            if (options.SOUFFLE_PROFILE.value)
-                compilationCommand << ("-p${outDir}/profile.txt" as String)
-            if (options.SOUFFLE_DEBUG.value)
-                compilationCommand << ("-r${outDir}/report.html" as String)
-
-            logger.info "Compiling Datalog to C++ program and executable"
-            logger.debug "Compilation command: $compilationCommand"
-
-            def ignoreCounter = 0
-            compilationTime = Helper.timing {
-                executor.execute(compilationCommand.collect { it as String }) { String line ->
-                    if (ignoreCounter != 0) ignoreCounter--
-                    else if (line.startsWith("Warning: No rules/facts defined for relation") ||
-                            line.startsWith("Warning: Deprecated output qualifier was used")) {
-                        logger.info line
-                        ignoreCounter = 2
-                    }
-                    else if (line.startsWith("Warning: Record types in output relations are not printed verbatim")) ignoreCounter = 2
-                    else logger.info line
-                }
-            }
-            try {
-                StandardCopyOption opt = options.X_CONTEXT_REMOVER.value ? StandardCopyOption.REPLACE_EXISTING : StandardCopyOption.COPY_ATTRIBUTES
-                // Keep execute permission
-                Files.copy(new File("${outDir}/${name}").toPath(), souffleAnalysisCacheFile.toPath(), opt)
-            } catch (FileAlreadyExistsException ex) {
-                // If a cached file is already there, don't overwrite
-                // it (it might be used by another analysis), just reuse it.
-                logger.info "Copy failed, someone else has already created ${souffleAnalysisCacheFile.toPath()}"
-            }
-
-            logger.info "Analysis compilation time (sec): $compilationTime"
-            logger.info "Caching analysis executable ${analysisChecksum} in $analysesCachePerName"
-        }
-        else {
-            logger.info "Using cached analysis executable ${analysisChecksum} from ${analysesCachePerName}"
-        }
-    }
-
-    private void executeAnalysis(int jobs) {
-        deleteQuietly(database)
-        database.mkdirs()
-
-        def executionCommand = [souffleAnalysisCacheFile, "-j$jobs", "-F$factsDir", "-D$database"]
-        if (options.SOUFFLE_PROFILE.value)
-            executionCommand << ("-p${outDir}/profile.txt" as String)
-
-        logger.debug "Execution command: $executionCommand"
-        logger.info "Running analysis"
-        executionTime = Helper.timing { executor.execute(executionCommand.collect { it as String }) }
-        logger.info "Analysis execution time (sec): $executionTime"
     }
 
     @Override
