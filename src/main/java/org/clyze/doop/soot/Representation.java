@@ -184,22 +184,26 @@ class Representation {
         return getMethodSignature(inMethod) + "/" + getKind(stmt) + "/instruction" + index;
     }
 
-    String invoke(SootMethod inMethod, InvokeExpr expr, Session session)
-    {
-        SootMethod exprMethod = expr.getMethod();
-        String defaultMid = exprMethod.getDeclaringClass() + "." + simpleName(exprMethod);
-        String midPart = (expr instanceof DynamicInvokeExpr)?
-            dynamicInvokeMiddlePart((DynamicInvokeExpr)expr, defaultMid) : defaultMid;
-
+    String invoke(SootMethod inMethod, InvokeExpr expr, Session session) {
+        String midPart = (expr instanceof DynamicInvokeExpr) ?
+            dynamicInvokeIdMiddle((DynamicInvokeExpr)expr) : invokeIdMiddle(expr);
         return getMethodSignature(inMethod) +
                "/" + midPart + "/" + session.nextNumber(midPart);
+    }
+
+    private String invokeIdMiddle(InvokeExpr expr) {
+        SootMethod exprMethod = expr.getMethod();
+        if (expr instanceof InstanceInvokeExpr) {
+            Type baseType = ((InstanceInvokeExpr)expr).getBase().getType();
+            return baseType.toString() + "." + simpleName(exprMethod);
+        } else
+            return exprMethod.getDeclaringClass() + "." + simpleName(exprMethod);
     }
 
     // Create a middle part for invokedynamic ids. It currently
     // supports the LambdaMetafactory machinery, returning a default
     // value for other (or missing) bootstrap methods.
-    private String dynamicInvokeMiddlePart(DynamicInvokeExpr expr, String defaultResult) {
-
+    private String dynamicInvokeIdMiddle(DynamicInvokeExpr expr) {
         // The signatures of the two lambda metafactories we currently support.
         final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
         final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
@@ -225,7 +229,7 @@ class Representation {
         }
         else
             System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
-        return defaultResult;
+        return invokeIdMiddle(expr);
     }
 
 
