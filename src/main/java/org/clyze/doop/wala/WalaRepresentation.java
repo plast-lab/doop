@@ -216,6 +216,10 @@ class WalaRepresentation {
             kind = "assign";
         else if(instruction instanceof SSABinaryOpInstruction || instruction instanceof  SSAUnaryOpInstruction)
             kind = "assign";
+        else if(instruction instanceof  SSALoadMetadataInstruction)
+            kind = "assign";
+        else if(instruction instanceof  SSAGetInstruction)
+            kind = "assign";
         else if(instruction instanceof SSAMonitorInstruction && ((SSAMonitorInstruction) instruction).isMonitorEnter())
             kind = "enter-monitor";
         else if(instruction instanceof SSAMonitorInstruction )

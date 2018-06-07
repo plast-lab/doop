@@ -422,7 +422,7 @@ public class WalaFactWriter {
         String constant = s.getValue().toString();
         String heapId = writeStringConstant(constant);
 
-        String insn = _rep.instruction(m, instruction, session, index);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(ir, instruction));
@@ -430,7 +430,7 @@ public class WalaFactWriter {
 
     private void writeAssignNull(IMethod m, SSAInstruction instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.instruction(m, instruction, session, index);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_NULL, insn, str(index), _rep.local(m, l), methodId);
@@ -438,7 +438,7 @@ public class WalaFactWriter {
 
     private void writeAssignNumConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.instruction(m, instruction, session, index);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
@@ -446,7 +446,7 @@ public class WalaFactWriter {
 
     private void writeAssignMethodTypeConstant(IMethod m, SSAInstruction instr, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instr);
-        String insn = _rep.instruction(m, instr, session, index);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         //String handleName = constant.getMethodRef().toString();
         String handleName =(String) constant.getValue();
         String heap = _rep.methodTypeConstant(handleName);
@@ -458,7 +458,7 @@ public class WalaFactWriter {
 
     private void writeAssignMethodHandleConstant(IMethod m, SSAInstruction instr, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instr);
-        String insn = _rep.instruction(m, instr, session, index);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         //String handleName = constant.getMethodRef().toString();
         String handleName =(String) constant.getValue();
         String heap = _rep.methodHandleConstant(handleName);
@@ -491,7 +491,7 @@ public class WalaFactWriter {
 
         _db.add(CLASS_HEAP, heap, actualType);
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.instruction(m, instruction, session, index);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
