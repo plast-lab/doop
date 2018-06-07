@@ -79,12 +79,17 @@ dependencies {
 
     // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.core
     compile group: 'com.ibm.wala', name: 'com.ibm.wala.core', version: '1.4.3'
+    //compile group: 'ext', name: 'com.ibm.wala.core', version: '1.5.0-SNAPSHOT'
     // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.shrike
     compile group: 'com.ibm.wala', name: 'com.ibm.wala.shrike', version: '1.4.3'
+    //compile group: 'ext', name: 'com.ibm.wala.shrike', version: '1.5.0-SNAPSHOT'
     // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
     compile group: 'com.ibm.wala', name: 'com.ibm.wala.util', version: '1.4.3'
+    //compile group: 'ext', name: 'com.ibm.wala.util', version: '1.5.0-SNAPSHOT'
     // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.dalvik
     compile group: 'com.ibm.wala', name: 'com.ibm.wala.dalvik', version: '1.4.3'
+    //compile group: 'ext', name: 'com.ibm.wala.dalvik', version: '1.5.0-SNAPSHOT'
+    //compile group: 'ext', name: 'com.ibm.wala.cast', version: '1.5.0-SNAPSHOT'
 
 
     // Soot is a compile time dependency
