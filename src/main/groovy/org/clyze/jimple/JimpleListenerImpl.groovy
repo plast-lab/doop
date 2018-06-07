@@ -9,7 +9,6 @@ import org.antlr.v4.runtime.tree.ErrorNode
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.commons.io.FileUtils
-import org.apache.commons.io.FilenameUtils
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.doop.*
 
@@ -286,7 +285,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				def mName = v.IDENTIFIER(2).text
 				def invoId = DynamicMethodInvocation.genId(declClass, mName)
 				if (bootName == "java.lang.invoke.LambdaMetafactory.metafactory" ||
-					bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
+						bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
 					def c = methodInvoCounters[invoId] as int
 					methodInvoCounters[invoId] = c + 1
 					return "${method.doopId}/${invoId}/$c"
@@ -427,9 +426,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		i >= 0 ? qualifiedName[(i + 1)..-1] : qualifiedName
 	}
 
-	static String parseJimple2JSON(String filename, String outPath) {
-		def metadata = parseJimple(filename, outPath)
-
+	static String parseJimple2JSON(String filename, String outDir, String baseDir) {
+		def metadata = parseJimple(filename, outDir, baseDir)
 		def json = [:]
 		//json.put("Class", metadata.classes)
 		//json.put("Field", metadata.fields)
@@ -441,39 +439,21 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		new GsonBuilder().disableHtmlEscaping().create().toJson(json)
 	}
 
-	static BasicMetadata parseJimple(String filename, String outPath) {
-		// XYZ/abc.def.Foo.jimple
-		def origFile = new File(filename)
-		// XYZ
-		def dir
-		if (outPath == null) {
-			dir = (origFile.parentFile as String) ?: "."
-		} else {
-			dir = outPath
-		}
-		def extension = FilenameUtils.getExtension(FilenameUtils.getName(filename))
-		// abc.def.Foo
-		def qualifiedName = FilenameUtils.removeExtension(FilenameUtils.getName(filename))
-		def packageName = getPackageName(qualifiedName)
-		def className = getClassName(qualifiedName)
-
-		// abc/def
-		packageName = packageName.replaceAll("\\.", "/")
-		// XYZ/abc/def
-		def path = new File(dir, packageName)
-		path.mkdirs()
-		// XYZ/abc/def/Foo.jimple
-		def sourceFile = new File(path, "${className}.$extension")
-		if (origFile.canonicalPath != sourceFile.canonicalPath)
-			FileUtils.copyFile(origFile, sourceFile)
-		// abc/def/Foo.jimple
-		def sourceFileName = packageName ? "${packageName}/${className}.${extension}" : "${className}.${extension}"
+	static BasicMetadata parseJimple(String filename, String outDir, String baseDir) {
+		// filename: XYZ/abc/def/Foo.jimple
+		// cleanedPath: abc/def/Foo.jimple
+		// outFile: PQR/abc/def/Foo.jimple
+		if (!baseDir.endsWith("/")) baseDir += "/"
+		def cleanedPath = filename - baseDir
+		def outFile = new File(outDir, cleanedPath)
+		outFile.parentFile.mkdirs()
+		FileUtils.copyFile(new File(filename), outFile)
 
 		def parser = new JimpleParser(
 				new CommonTokenStream(
 						new JimpleLexer(
-								new ANTLRFileStream(sourceFile as String))))
-		def listener = new JimpleListenerImpl(sourceFileName as String)
+								new ANTLRFileStream(outFile as String))))
+		def listener = new JimpleListenerImpl(cleanedPath)
 		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 
 		return listener.metadata
