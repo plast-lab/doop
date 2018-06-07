@@ -426,8 +426,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		i >= 0 ? qualifiedName[(i + 1)..-1] : qualifiedName
 	}
 
-	static String parseJimple2JSON(String filename, String outDir, String baseDir) {
-		def metadata = parseJimple(filename, outDir, baseDir)
+	static String parseJimple2JSON(String filename, String baseDir) {
+		def metadata = parseJimple(filename, baseDir)
 		def json = [:]
 		//json.put("Class", metadata.classes)
 		//json.put("Field", metadata.fields)
@@ -439,21 +439,12 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		new GsonBuilder().disableHtmlEscaping().create().toJson(json)
 	}
 
-	static BasicMetadata parseJimple(String filename, String outDir, String baseDir) {
+	static BasicMetadata parseJimple(String filename, String baseDir) {
 		// filename: XYZ/abc/def/Foo.jimple
-		// cleanedPath: abc/def/Foo.jimple
-		// outFile: PQR/abc/def/Foo.jimple
 		if (!baseDir.endsWith("/")) baseDir += "/"
-		def cleanedPath = filename - baseDir
-		def outFile = new File(outDir, cleanedPath)
-		outFile.parentFile.mkdirs()
-		FileUtils.copyFile(new File(filename), outFile)
-
-		def parser = new JimpleParser(
-				new CommonTokenStream(
-						new JimpleLexer(
-								new ANTLRFileStream(outFile as String))))
-		def listener = new JimpleListenerImpl(cleanedPath)
+		// abc/def/Foo.jimple
+		def listener = new JimpleListenerImpl(filename - baseDir)
+		def parser = new JimpleParser(new CommonTokenStream(new JimpleLexer(new ANTLRFileStream(filename))))
 		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 
 		return listener.metadata
