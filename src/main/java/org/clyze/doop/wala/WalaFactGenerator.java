@@ -232,30 +232,6 @@ class WalaFactGenerator implements Runnable {
         WalaExceptionHelper walaExceptionHelper = new WalaExceptionHelper(instructions, m, cfg);
 
 
-//        if(m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package")
-//                && m.getName().toString().contains("loadManifest"))
-//            System.out.println("\n" + m.getDeclaringClass().getName().toString() + " " + m.getName().toString());
-//
-//        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
-//            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
-//            List <ISSABasicBlock> excSuccs = cfg.getExceptionalSuccessors(basicBlock);
-//            if(m.getName().toString().equals("loadManifest")
-//                    && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
-//                for(ISSABasicBlock excSucc : excSuccs)
-//                    if(excSucc.getNumber() != cfg.exit().getNumber())
-//                        System.out.println("\tBB" +basicBlock.getNumber() + " -> BB" + excSucc.getNumber());
-//        }
-//
-//        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
-//            SSACFG.BasicBlock basicBlock = cfg.getNode(i);
-//            Collection<ISSABasicBlock> excPredecs = cfg.getExceptionalPredecessors(basicBlock);
-//            if(m.getName().toString().equals("loadManifest")
-//                    && m.getDeclaringClass().getName().toString().equals("Ljava/lang/Package"))
-//                for(ISSABasicBlock excPred : excPredecs)
-//                    if(basicBlock.getNumber() != cfg.exit().getNumber())
-//                        System.out.println("\tBB" +basicBlock.getNumber() + " <- BB" + excPred.getNumber());
-//        }
-
         for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             int start = basicBlock.getFirstInstructionIndex();
@@ -269,6 +245,16 @@ class WalaFactGenerator implements Runnable {
                 this.generateUses(m, ir, phiInstruction, session, typeInference);
                 generate(m, ir, phiInstruction, session, typeInference);
             }
+
+            if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
+                if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() == null )
+                {
+                    continue;
+                }
+                generateDefs(m,ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(), typeInference);
+                session.calcInstructionNumber(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction());
+            }
+
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
                     this.generateDefs(m, ir, instructions[j], typeInference);
@@ -310,29 +296,20 @@ class WalaFactGenerator implements Runnable {
                     else if (instructions[j] instanceof SSANewInstruction) {
                         generate(m, ir, (SSANewInstruction) instructions[j], session, typeInference);
                     }
-                    else if (instructions[j] instanceof SSAPhiInstruction) {
-                        //SSAPhiInstructions are not stored in instructions[]
-                    }
-                    else if (instructions[j] instanceof SSAPiInstruction) { //TODO:Figure out what this does
-                        //SSAPiInstructions are not stored in instructions[]
-                    }
-                    else if (instructions[j] instanceof SSAGetCaughtExceptionInstruction) {
-                        //SSAGetCaughtExceptionInstructions are not stored in instructions[]
-                    }
                     else if (instructions[j] instanceof SSAComparisonInstruction) {
                         generate(m, ir, (SSAComparisonInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSALoadMetadataInstruction) {
                         generate(m, ir, (SSALoadMetadataInstruction) instructions[j], session, typeInference);
                     }
-                    else if (instructions[j] instanceof SSAAddressOfInstruction) {
-                        System.out.println("Impossible!");
+                    else if (instructions[j] instanceof SSAInstanceofInstruction) {
+                        generate(m, ir, (SSAInstanceofInstruction) instructions[j], session, typeInference);
                     }
-                    else if (instructions[j] instanceof SSAStoreIndirectInstruction) {
-                        System.out.println("Impossible vol2!");
+                    else if (instructions[j] instanceof SSACheckCastInstruction) {
+                        generate(m, ir, (SSACheckCastInstruction) instructions[j], session, typeInference);
                     }
-                    else if (instructions[j] instanceof SSALoadIndirectInstruction) {
-                        System.out.println("Impossible vol3!");
+                    else if (instructions[j] instanceof SSAConversionInstruction) {
+                        generate(m, ir, (SSAConversionInstruction) instructions[j], session, typeInference);
                     }
                     else if (instructions[j] instanceof SSASwitchInstruction) {
                         //generate(m, ir, (SSASwitchInstruction) instructions[j], session, typeInference);
@@ -346,14 +323,8 @@ class WalaFactGenerator implements Runnable {
                         //generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
                         session.calcInstructionNumber(instructions[j]);
                     }
-                    else if (instructions[j] instanceof SSAInstanceofInstruction) {
-                        generate(m, ir, (SSAInstanceofInstruction) instructions[j], session, typeInference);
-                    }
-                    else if (instructions[j] instanceof SSACheckCastInstruction) {
-                        generate(m, ir, (SSACheckCastInstruction) instructions[j], session, typeInference);
-                    }
-                    else if (instructions[j] instanceof SSAConversionInstruction) {
-                        generate(m, ir, (SSAConversionInstruction) instructions[j], session, typeInference);
+                    else{
+                        System.out.println("Unknown instruction.");
                     }
                 }
             }
@@ -362,21 +333,6 @@ class WalaFactGenerator implements Runnable {
             while(pis.hasNext())
             {
                 SSAPiInstruction piInstruction = pis.next();
-            }
-
-
-            if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
-                if(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction() == null )
-                {
-                    continue;
-                }
-                generateDefs(m,ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(), typeInference);
-                session.calcInstructionNumber(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction());
-//                _writer.writeExceptionHandler(ir, m ,(SSACFG.ExceptionHandlerBasicBlock)basicBlock,session, typeInference, walaExceptionHelper);
-//                if (previousHandlerBlock != null) {
-//                    _writer.writeExceptionHandlerPrevious(m, (SSACFG.ExceptionHandlerBasicBlock) basicBlock, previousHandlerBlock, session);
-//                }
-//                previousHandlerBlock = (SSACFG.ExceptionHandlerBasicBlock) basicBlock;
             }
         }
 
@@ -484,7 +440,7 @@ class WalaFactGenerator implements Runnable {
      */
     public void generate(IMethod m, IR ir, SSASwitchInstruction instruction, Session session, TypeInference typeInference) {
         //Switch instructions have only one use
-        Local switchVar =createLocal(ir,instruction,instruction.getUse(0),typeInference);
+        Local switchVar = createLocal(ir,instruction,instruction.getUse(0),typeInference);
         _writer.writeLookupSwitch(ir, m, instruction, session, switchVar);
 
     }
