@@ -7,7 +7,6 @@
 #include "subclass.dl"
 #include "superinterface.dl"
 #include "type-hierarchy.dl"
-#include "jimple-hack.dl"
 
 MainMethodDeclaration(?method) :-
 #ifndef DISCOVER_MAIN_METHODS
