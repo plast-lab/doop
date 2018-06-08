@@ -277,7 +277,6 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				methodName,
 				gDoopId, //doopId
 				method.doopId, //invokingMethodDoopId
-				"(${gatherIdentifiers(ctx.methodSig().identifierList()).join(",")})" as String
 		)
 	}
 
