@@ -1157,7 +1157,7 @@ public class WalaFactWriter {
         }
 
 
-        String insn = _rep.invoke(inMethod, instruction, targetRef, session);
+        String insn = _rep.invoke(ir,inMethod, instruction, targetRef, session, typeInference);
         writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
 
         int index = session.calcInstructionNumber(instruction);

@@ -1,5 +1,6 @@
 package org.clyze.doop.wala;
 
+import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
@@ -254,13 +255,29 @@ class WalaRepresentation {
     {
         return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
-    String invoke(IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, Session session)
+    String invoke(IR ir, IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, Session session, TypeInference typeInference)
     {
-        //MethodReference exprMethod = expr.getDeclaredTarget();
         String defaultMid = fixTypeString(methRef.getDeclaringClass().toString()) + "." + methRef.getName().toString();
-        String midPart = (instr instanceof SSAInvokeDynamicInstruction)? dynamicInvokeMiddlePart((SSAInvokeDynamicInstruction) instr, defaultMid) : defaultMid;
+        String midPart;
+        if (instr instanceof SSAInvokeDynamicInstruction)
+            midPart = dynamicInvokeMiddlePart((SSAInvokeDynamicInstruction) instr, defaultMid);
+        else
+            midPart = invokeIdMiddle(ir, instr, methRef, typeInference);
 
         return signature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
+    }
+
+    private String invokeIdMiddle(IR ir, SSAInvokeInstruction instr, MethodReference resolvedTargetRef, TypeInference typeInference) {
+        MethodReference defaultTargetRef = instr.getDeclaredTarget();
+
+        if (instr.isDispatch() || instr.isSpecial()) {
+            Local l = WalaUtils.createLocal(ir, instr,instr.getReceiver(), typeInference);
+            if(fixTypeString(l.getType().toString()).equals("java.lang.Object")) //Hack around faulty typeInference
+                return fixTypeString(defaultTargetRef.getDeclaringClass().toString())+ "." + simpleName(resolvedTargetRef);
+            else
+                return fixTypeString(l.getType().toString())+ "." + simpleName(resolvedTargetRef);
+        } else
+            return fixTypeString(resolvedTargetRef.getDeclaringClass().toString())+ "." + simpleName(resolvedTargetRef);
     }
 
     // Create a middle part for invokedynamic ids. It currently
