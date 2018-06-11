@@ -17,8 +17,6 @@ plugins {
     id 'net.researchgate.release' version '2.6.0'
 }
 
-apply from  : "benchmarks.gradle"
-
 applicationDefaultJvmArgs = ["-Xmx12000m", "-Xss2000m"]
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
@@ -39,20 +37,10 @@ task wrapper(type: Wrapper) {
 
 repositories {
     mavenLocal()
-    maven {
-        url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps"
-    }
-    maven{
-        url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-    }
+    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
+    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
     if (heapDLVersion == "master-SNAPSHOT")
         maven { url 'https://jitpack.io' }
-}
-
-task printClasspath {
-    doLast {
-        configurations.compile.each { println it }
-    }
 }
 
 configurations.all {
@@ -66,7 +54,7 @@ dependencies {
 
     compile "org.clyze:clue-common:3.0.+",
             "org.clyze:deepdoop:0.9.+",
-            "org.codehaus.groovy:groovy-all:2.4.13",             // Groovy
+            "org.codehaus.groovy:groovy-all:2.4.13",            // Groovy
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
@@ -75,29 +63,25 @@ dependencies {
             "org.ow2.asm:asm-debug-all:5.1",                    // Java Bytecode library
             "org.smali:dexlib2:2.2b4",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
-            "com.github.plast-lab:HeapDL:$heapDLVersion"
-
-    // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.core
-    compile group: 'com.ibm.wala', name: 'com.ibm.wala.core', version: '1.4.3'
-    //compile group: 'ext', name: 'com.ibm.wala.core', version: '1.5.0-SNAPSHOT'
-    // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.shrike
-    compile group: 'com.ibm.wala', name: 'com.ibm.wala.shrike', version: '1.4.3'
-    //compile group: 'ext', name: 'com.ibm.wala.shrike', version: '1.5.0-SNAPSHOT'
-    // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
-    compile group: 'com.ibm.wala', name: 'com.ibm.wala.util', version: '1.4.3'
-    //compile group: 'ext', name: 'com.ibm.wala.util', version: '1.5.0-SNAPSHOT'
-    // https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.dalvik
-    compile group: 'com.ibm.wala', name: 'com.ibm.wala.dalvik', version: '1.4.3'
-    //compile group: 'ext', name: 'com.ibm.wala.dalvik', version: '1.5.0-SNAPSHOT'
-    //compile group: 'ext', name: 'com.ibm.wala.cast', version: '1.5.0-SNAPSHOT'
-
-
-    // Soot is a compile time dependency
-    compile 'ext:AXMLPrinter:2.0',
+            "com.github.plast-lab:HeapDL:$heapDLVersion",
+            /// Soot is a compile time dependency
+            "ext:AXMLPrinter:2.0",
             "ext:sootclasses:3.2.+",
             "ext:soot-infoflow:1.2.+",
-            "ext:soot-infoflow-android:1.2.+"
-
+            "ext:soot-infoflow-android:1.2.+",
+            /// WALA
+            /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.core
+            "com.ibm.wala:com.ibm.wala.core:1.4.3",
+            //"ext:com.ibm.wala.core:1.5.0-SNAPSHOT",
+            /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.shrike
+            "com.ibm.wala:com.ibm.wala.shrike:1.4.3",
+            //"ext:com.ibm.wala.shrike:1.5.0-SNAPSHOT",
+            /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
+            "com.ibm.wala:com.ibm.wala.util:1.4.3",
+            //"ext:com.ibm.wala.util:1.5.0-SNAPSHOT",
+            /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.dalvik
+            "com.ibm.wala:com.ibm.wala.dalvik:1.4.3"
+            //"ext:com.ibm.wala.dalvik:1.5.0-SNAPSHOT"
 
     // JPhantom is a runtime dependency
     runtime "org.clyze:jphantom:1.2",
@@ -126,41 +110,10 @@ applicationDistribution.from(projectDir) {
 
 run {
     //debug true
-    //We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
+    // We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
     if (project.hasProperty('args')) {
         args project.property('args').split()
-    }
-}
-
-task generateJimple(type: JavaExec) {
-    description 'Generate Jimple/Shimple file'
-    group = 'Other'
-    main = 'org.clyze.doop.soot.Main'
-    classpath = sourceSets.main.runtimeClasspath
-    if (!project.hasProperty('args') ||
-        project.property('args').isEmpty() ||
-        project.property('args') == '-h' ||
-        project.property('args') == '--help') {
-        args = ["--generate-jimple-help"]
-    } else {
-        def gradleInvocationDir = System.getProperty('user.dir')
-        def givenArgs = project.property('args').tokenize()
-        def index = givenArgs.indexOf("-d")
-        if (index != -1) {
-            def outDir = givenArgs[index+1]
-            if (!outDir.startsWith("/"))
-                givenArgs[index+1] = gradleInvocationDir + "/" + outDir
-        }
-        else {
-            givenArgs = ["-d", gradleInvocationDir] + givenArgs
-        }
-        def lastIndex = givenArgs.size()-1
-        def inputFile = givenArgs[lastIndex]
-        if (!inputFile.startsWith("/"))
-            givenArgs[lastIndex] = gradleInvocationDir + "/" + inputFile
-
-        args = ["--generate-jimple", "--allow-phantom"] + givenArgs
     }
 }
 
@@ -184,7 +137,7 @@ test {
     }
 }
 
-task veryClean {
+task fullClean {
     doLast {
         def out   = System.getenv('DOOP_OUT')   ?: "$projectDir/out"
         def cache = System.getenv('DOOP_CACHE') ?: "$projectDir/cache"
@@ -194,7 +147,13 @@ task veryClean {
         org.apache.commons.io.FileUtils.deleteQuietly(new File('last-analysis'))
     }
 }
-veryClean.dependsOn clean
+fullClean.dependsOn clean
+
+task printClasspath {
+    doLast {
+        configurations.compile.each { println it }
+    }
+}
 
 
 if (project.hasProperty('artifactory_user')) {

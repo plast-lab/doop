@@ -1,3 +1,0 @@
-#!/bin/bash
-[ "x$DOOP_HOME" = "x" ] && { echo "Environment variable DOOP_HOME is not set" ; exit 1 ; }
-eval '$DOOP_HOME/gradlew -p $DOOP_HOME generateJimple -Pargs="'$@'"'
