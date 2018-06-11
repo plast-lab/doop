@@ -3,7 +3,6 @@ package org.clyze.doop.utils
 import groovy.transform.TupleConstructor
 import org.apache.commons.logging.Log
 import org.clyze.doop.core.DoopAnalysisFactory
-import org.clyze.doop.utils.ContextRemover
 import org.clyze.utils.CheckSum
 import org.clyze.utils.Executor
 import org.clyze.utils.Helper
@@ -28,6 +27,10 @@ class SouffleScript {
 	long executionTime = 0L
 
 	def run(int jobs, boolean profile = false, boolean debug = false, boolean removeContext = false) {
+		def origFile = scriptFile
+		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
+		executor.execute(["cpp", "-P", origFile, scriptFile].collect { it as String }) { logger.info it }
+
 		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
 		def c2 = c1 + profile.toString()
 		def checksum = CheckSum.checksum(c2, DoopAnalysisFactory.HASH_ALGO)
@@ -59,8 +62,7 @@ class SouffleScript {
 							line.startsWith("Warning: Deprecated output qualifier was used")) {
 						logger.info line
 						ignoreCounter = 2
-					}
-					else if (line.startsWith("Warning: Record types in output relations are not printed verbatim")) ignoreCounter = 2
+					} else if (line.startsWith("Warning: Record types in output relations are not printed verbatim")) ignoreCounter = 2
 					else logger.info line
 				}
 			}
@@ -77,8 +79,7 @@ class SouffleScript {
 
 			logger.info "Analysis compilation time (sec): $compilationTime"
 			logger.info "Caching analysis executable $checksum in $cacheDir"
-		}
-		else {
+		} else {
 			logger.info "Using cached analysis executable $checksum from $cacheDir"
 		}
 
