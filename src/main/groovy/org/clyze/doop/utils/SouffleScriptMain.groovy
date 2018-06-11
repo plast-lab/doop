@@ -17,9 +17,8 @@ def env = [:]
 env.putAll(System.getenv())
 def executor = new Executor(env)
 
-Helper.initLogging("INFO", "${Doop.doopHome}/build/logs", true)
+Helper.initLogging("INFO", "$outDir/logs", true)
 def logger = LogFactory.getLog(getClass())
-logger.info "${Doop.doopHome}/build/logs"
 
 def script = new SouffleScript(scriptFile, factsDir, outDir, cacheDir, executor, logger)
 script.run(jobs.toInteger(), profile.toBoolean(), debug.toBoolean())
