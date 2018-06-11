@@ -219,6 +219,8 @@ class WalaRepresentation {
             kind = "assign";
         else if(instruction instanceof  SSAGetInstruction || instruction instanceof SSAPutInstruction)
             kind = "assign";
+        else if(instruction instanceof  SSAGetCaughtExceptionInstruction)
+            kind = "definition";
         else if(instruction instanceof SSAMonitorInstruction && ((SSAMonitorInstruction) instruction).isMonitorEnter())
             kind = "enter-monitor";
         else if(instruction instanceof SSAMonitorInstruction )
@@ -238,11 +240,11 @@ class WalaRepresentation {
         return kind;
     }
 
-    String unsupported(IMethod inMethod, SSAInstruction instruction, int index)
+    String unsupported(IMethod inMethod, IR ir, SSAInstruction instruction, int index)
     {
         return signature(inMethod) +
                 "/unsupported " + getKind(instruction) +
-                "/" +  instruction.toString() +
+                "/" +  instruction.toString(ir.getSymbolTable()).replace(" ", "") +
                 "/instruction" + index;
     }
 

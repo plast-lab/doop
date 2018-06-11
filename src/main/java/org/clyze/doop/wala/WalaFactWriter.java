@@ -708,7 +708,7 @@ public class WalaFactWriter {
      */
     void writeIf(IMethod m, SSAConditionalBranchInstruction instruction, Local var1, Local var2, SSAInstruction to, Session session) {
         // index was already computed earlier
-        int index = session.getInstructionNumber(instruction);
+        int index = session.getMaxInstructionNumber(instruction);
         int indexTo = session.getInstructionNumber(to);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
@@ -804,9 +804,9 @@ public class WalaFactWriter {
         _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
     }
 
-    void writeUnsupported(IMethod m, SSAInstruction instruction, Session session) {
+    void writeUnsupported(IMethod m, IR ir, SSAInstruction instruction, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.unsupported(m, instruction, index);
+        String insn = _rep.unsupported(m, ir, instruction, index);
         String methodId = _rep.signature(m);
 
         _db.add(UNSUPPORTED_INSTRUCTION, insn, str(index), methodId);
