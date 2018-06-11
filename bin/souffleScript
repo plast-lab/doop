@@ -1,0 +1,4 @@
+#!/bin/bash
+# Args: <Script File> <Input Dir> <Output Dir> <Cache Dir> <#Souffle Jobs> <Profile:true/false> <Debug:true/false>
+[ "x$DOOP_HOME" = "x" ] && { echo "Environment variable DOOP_HOME is not set" ; exit 1 ; }
+eval '$DOOP_HOME/gradlew souffleScript -Pargs="'$@'"'

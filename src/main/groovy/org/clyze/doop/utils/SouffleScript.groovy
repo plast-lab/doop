@@ -1,7 +1,8 @@
-package org.clyze.doop.core
+package org.clyze.doop.utils
 
 import groovy.transform.TupleConstructor
 import org.apache.commons.logging.Log
+import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.doop.utils.ContextRemover
 import org.clyze.utils.CheckSum
 import org.clyze.utils.Executor

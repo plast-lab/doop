@@ -122,9 +122,17 @@ task jimple2json(type: JavaExec) {
     group = 'Other'
     main = 'org.clyze.jimple.Main'
     classpath = sourceSets.main.runtimeClasspath
-    if (project.hasProperty("args")) {
+    if (project.hasProperty("args"))
         args project.property("args").split()
-    }
+}
+
+task souffleScript(type: JavaExec) {
+    description 'Run a custom Souffle Script'
+    group = 'Other'
+    main = 'org.clyze.doop.utils.SouffleScriptMain'
+    classpath = sourceSets.main.runtimeClasspath
+    if (project.hasProperty("args"))
+        args project.property("args").split()
 }
 
 compileJava {
