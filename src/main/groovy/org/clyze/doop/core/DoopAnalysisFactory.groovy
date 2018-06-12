@@ -174,36 +174,19 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         DoopAnalysis analysis
         if (options.LB3.value) {
-            if (name != "sound-may-point-to") {
-                options.CFG_ANALYSIS.value = false
-                analysis = new LB3Analysis(
-                        analysisId,
-                        name.replace(File.separator, "-"),
-                        options,
-                        context,
-                        outDir,
-                        cacheDir,
-                        vars.inputFiles,
-                        vars.libraryFiles,
-                        vars.heapFiles,
-                        vars.platformFiles,
-                        commandsEnv)
-            } else {
-                analysis = new SoundMayAnalysis(
-                        analysisId,
-                        name.replace(File.separator, "-"),
-                        options,
-                        context,
-                        outDir,
-                        cacheDir,
-                        vars.inputFiles,
-                        vars.libraryFiles,
-                        vars.heapFiles,
-                        vars.platformFiles,
-                        commandsEnv)
-            }
+            analysis = new LB3Analysis(
+                    analysisId,
+                    name.replace(File.separator, "-"),
+                    options,
+                    context,
+                    outDir,
+                    cacheDir,
+                    vars.inputFiles,
+                    vars.libraryFiles,
+                    vars.heapFiles,
+                    vars.platformFiles,
+                    commandsEnv)
         } else {
-            options.CFG_ANALYSIS.value = false
             analysis = new SouffleAnalysis(
                     analysisId,
                     name.replace(File.separator, "-"),

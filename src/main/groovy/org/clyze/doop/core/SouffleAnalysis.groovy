@@ -1,15 +1,15 @@
 package org.clyze.doop.core
 
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
-import org.clyze.analysis.AnalysisOption
-import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.utils.SouffleScript
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 
 @CompileStatic
+@InheritConstructors
 @TypeChecked
 class SouffleAnalysis extends DoopAnalysis {
 
@@ -17,22 +17,6 @@ class SouffleAnalysis extends DoopAnalysis {
      * The analysis logic file
      */
     File analysis
-
-    protected SouffleAnalysis(String id,
-                              String name,
-                              Map<String, AnalysisOption> options,
-                              InputResolutionContext ctx,
-                              File outDir,
-                              File cacheDir,
-                              List<File> inputFiles,
-                              List<File> libraryFiles,
-                              List<File> heapFiles,
-                              List<File> platformLibs,
-                              Map<String, String> commandsEnvironment) {
-        super(id, name, options, ctx, outDir, cacheDir, inputFiles, libraryFiles, heapFiles, platformLibs, commandsEnvironment)
-
-        new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
-    }
 
     @Override
     void run() {
@@ -77,8 +61,7 @@ class SouffleAnalysis extends DoopAnalysis {
         }
     }
 
-    @Override
-    protected void initDatabase() {
+    void initDatabase() {
         def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-sensitive-schema.dl")
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-insensitive-schema.dl")
@@ -101,8 +84,7 @@ class SouffleAnalysis extends DoopAnalysis {
         }
     }
 
-    @Override
-    protected void basicAnalysis() {
+    void basicAnalysis() {
         def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
         cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
 
@@ -116,8 +98,7 @@ class SouffleAnalysis extends DoopAnalysis {
         }
     }
 
-    @Override
-    protected void mainAnalysis() {
+    void mainAnalysis() {
         def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
         def mainPath     = "${Doop.souffleLogicPath}/main"
         def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
@@ -168,8 +149,7 @@ class SouffleAnalysis extends DoopAnalysis {
         }
     }
 
-    @Override
-    protected void produceStats() {
+    void produceStats() {
         def statsPath = "${Doop.souffleAddonsPath}/statistics"
         if (options.X_EXTRA_METRICS.value) {
             cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
@@ -199,9 +179,6 @@ class SouffleAnalysis extends DoopAnalysis {
             cpp.includeAtEnd("$analysis", "${statsPath}/statistics.dl")
         }
     }
-
-    @Override
-    protected void runTransformInput() {}
 
     @Override
     void processRelation(String query, Closure outputLineProcessor) {

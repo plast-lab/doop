@@ -1,10 +1,9 @@
 package org.clyze.doop.core
 
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
-import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.utils.LBBuilder
-import org.clyze.doop.input.InputResolutionContext
 import org.clyze.utils.Executor
 import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
@@ -20,26 +19,11 @@ import static org.apache.commons.io.FileUtils.*
  * The run() method is the entry point. No other methods should be called directly by other classes.
  */
 @CompileStatic
+@InheritConstructors
 @TypeChecked
 class LB3Analysis extends DoopAnalysis {
 
     boolean isRefineStep
-
-    protected LB3Analysis(String id,
-                          String name,
-                          Map<String, AnalysisOption> options,
-                          InputResolutionContext ctx,
-                          File outDir,
-                          File cacheDir,
-                          List<File> inputFiles,
-                          List<File> libraryFiles,
-                          List<File> heapFiles,
-                          List<File> platformLibs,
-                          Map<String, String> commandsEnvironment) {
-        super(id, name, options, ctx, outDir, cacheDir, inputFiles, libraryFiles, heapFiles, platformLibs, commandsEnvironment)
-
-        new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
-    }
 
     @Override
     void run() {
@@ -78,8 +62,7 @@ class LB3Analysis extends DoopAnalysis {
         executor.execute(outDir as String, cmd, Executor.STDOUT_PRINTER)
     }
 
-    @Override
-    protected void initDatabase() {
+    void initDatabase() {
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
 
         deleteQuietly(database)
@@ -151,8 +134,7 @@ class LB3Analysis extends DoopAnalysis {
             runTransformInput()
     }
 
-    @Override
-    protected void basicAnalysis() {
+    void basicAnalysis() {
         if (options.DYNAMIC.value) {
             List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.eachWithIndex { String dynFile, Integer index ->
@@ -188,8 +170,7 @@ class LB3Analysis extends DoopAnalysis {
                 .elapsedTime()
     }
 
-    @Override
-    protected void mainAnalysis() {
+    void mainAnalysis() {
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
         def macros       = "${Doop.analysesPath}/${name}/macros.logic"
         def mainPath     = "${Doop.logicPath}/main"
@@ -357,8 +338,7 @@ class LB3Analysis extends DoopAnalysis {
         }
     }
 
-    @Override
-    protected void produceStats() {
+    void produceStats() {
         if (options.X_STATS_NONE.value) return;
 
         if (options.X_STATS_AROUND.value) {
@@ -391,8 +371,7 @@ class LB3Analysis extends DoopAnalysis {
                 .elapsedTime()
     }
 
-    @Override
-    protected void runTransformInput() {
+    void runTransformInput() {
         cpp.preprocess("${outDir}/transform.logic", "${Doop.addonsPath}/transform/rules.logic", "${Doop.addonsPath}/transform/declarations.logic")
         lbBuilder
                 .echo("-- Transforming Facts --")

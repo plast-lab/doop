@@ -21,9 +21,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	void init() {}
 
 	@Override
-	List<AnalysisOption> supportedOptions() {
-		return SUPPORTED_OPTIONS
-	}
+	List<AnalysisOption> supportedOptions() { SUPPORTED_OPTIONS }
 
 	private static List<AnalysisOption> SUPPORTED_OPTIONS = [
 			/* Start LogicBlox related options */
@@ -47,8 +45,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: null,
 					cli: false
 			),
-			/* End LogicBlox related options */
-			/* Start Main options */
 			new BooleanAnalysisOption(
 					id: "LB3",
 					name: "lb",
@@ -57,6 +53,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI: AnalysisForm,
 					isAdvanced: true
 			),
+			/* End LogicBlox related options */
+			/* Start Main options */
 			new AnalysisOption<String>(
 					id: "ANALYSIS",
 					name: "analysis",
@@ -292,8 +290,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "CFG_ANALYSIS",
 					name: "cfg",
-					value: true,
-					cli: false
+					value: false,
+					cli: true
 			),
 			new AnalysisOption<String>(
 					id: "CONFIGURATION",
@@ -852,11 +850,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		return analyses.sort()
 	}
 
-	private static List<String> informationFlowPlatforms(String lbDir,
-														 String souffleDir) {
+	private static List<String> informationFlowPlatforms(String lbDir, String souffleDir) {
 		List<String> platforms_LB = []
 		List<String> platforms_Souffle = []
-
 		Closure scan = { ifDir ->
 			if (ifDir) {
 				new File("${ifDir}/information-flow")?.eachFile { File f ->

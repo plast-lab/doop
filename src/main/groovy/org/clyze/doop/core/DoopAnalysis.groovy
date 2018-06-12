@@ -126,6 +126,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 		executor = new Executor(commandsEnvironment)
 		cpp = new CPreprocessor(this, executor)
+
+		new File(outDir, "meta").withWriter { it.write(this.toString()) }
 	}
 
 	String toString() {
@@ -238,16 +240,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			logger.info "----"
 		}
 	}
-
-	abstract protected void initDatabase()
-
-	abstract protected void basicAnalysis()
-
-	abstract protected void mainAnalysis()
-
-	abstract protected void produceStats()
-
-	abstract protected void runTransformInput()
 
 	private List<String> getInputArgsJars(Set<String> tmpDirs) {
 		def inputArgs = inputFiles.collect() { File f -> ["-i", f.toString()] }.flatten() as Collection<String>
@@ -452,7 +444,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		ClassLoader loader = averroesClassLoader()
 		Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
 	}
-
 
 	protected String cacheMeta() {
 		Collection<String> inputJars = inputFiles.collect {

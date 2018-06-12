@@ -57,8 +57,7 @@ class SoundMayAnalysis extends LB3Analysis {
 //                         Stats:Runtime("disk footprint (KB)", $dbSize).""")
     }
 
-    @Override
-    protected void mainAnalysis() {
+    void mainAnalysis() {
 //        def analysisPath = "${Doop.analysesPath}/${name}"
 //        def outFile = "${outDir}/sound.logic"
 //        cpp.preprocess("${outDir}/string-constants.logic", "${Doop.logicPath}/main/string-constants.logic")
