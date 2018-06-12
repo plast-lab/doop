@@ -1023,6 +1023,13 @@
     MayPointTo(?hctx2, ?heap2, ?ctx, ?from).
    .plan 1:(4,3,2,1)
 
+  // special case: propagate info unchanged if "from" var is same as "to"
+  MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?nextInsn) :-
+    MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?insn),
+    NextInSamePhiNode(?insn, ?nextInsn),
+    AssignLocal_From(?nextInsn, ?from),
+    AssignInstruction_To(?nextInsn, ?from).
+
   // for all returns of a method, the return variable has a known upper bound
   // for its points-to, and we take the union of all such bounds
   .decl UpToReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?return:Instruction)
