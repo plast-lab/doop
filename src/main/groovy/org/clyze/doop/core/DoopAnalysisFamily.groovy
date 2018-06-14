@@ -50,7 +50,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "lb",
 					description: "Use the LB engine.",
 					value: false,
-					webUI: AnalysisForm,
 					isAdvanced: true
 			),
 			/* End LogicBlox related options */
