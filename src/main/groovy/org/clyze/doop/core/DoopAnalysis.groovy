@@ -8,6 +8,7 @@ import org.apache.commons.logging.LogFactory
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.input.InputResolutionContext
+import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.soot.DoopErrorCodeException
 import org.clyze.doop.utils.LBBuilder
 import org.clyze.doop.wala.WalaInvoker
@@ -177,6 +178,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			}
 
 			Set<String> tmpDirs = [] as Set
+			if (options.PYTHON_FACT_GEN.value) {
+				runPython(tmpDirs)
+				return
+			}
 			if (options.WALA_FACT_GEN.value)
 				runWala(tmpDirs)
 			else {
@@ -413,6 +418,39 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			//In such a case, we should invoke all Java-based tools using a
 			//separate process.
 			WalaInvoker wala = new WalaInvoker()
+			wala.main(params.toArray(new String[params.size()]))
+		}
+
+		logger.info "Wala fact generation time: ${sootTime}"
+
+	}
+
+	protected void runPython(Set<String> tmpDirs) {
+		Collection<String> params = []
+		Collection<String> depArgs
+		def inputArgs = getInputArgsJars(tmpDirs)
+		def deps = getDepsJars(tmpDirs)
+
+		def platform = options.PLATFORM.value.toString().tokenize("_")[0]
+
+
+
+		if (options.FACT_GEN_CORES.value) {
+			params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
+		}
+		if (options.GENERATE_JIMPLE.value) {
+			params += ["--generate-ir"]
+		}
+		if (options.UNIQUE_FACTS.value) {
+			params += ["--uniqueFacts"]
+		}
+		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
+		params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
+
+		logger.debug "Params of wala: ${params.join(' ')}"
+
+		sootTime = Helper.timing {
+			PythonInvoker wala = new PythonInvoker()
 			wala.main(params.toArray(new String[params.size()]))
 		}
 
