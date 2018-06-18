@@ -140,19 +140,27 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	@Override
 	abstract void run()
 
-	protected void linkOrCopyFacts() {
+	/**
+	 * Copies (or makes a symbolic link of) facts from an existing
+	 * directory to the "facts" directory of an analysis. Used both
+	 * when reading cached facts and when starting an analysis from
+	 * existing facts.
+	 *
+	 * @param fromDir	 the existing directory containing the facts
+	 */
+	protected void linkOrCopyFacts(File fromDir) {
 		if (options.X_SYMLINK_CACHED_FACTS.value) {
 			try {
-				Path cacheDirPath = FileSystems.getDefault().getPath(cacheDir.canonicalPath)
-				Files.createSymbolicLink(factsDir.toPath(), cacheDirPath)
+				Path fromDirPath = FileSystems.getDefault().getPath(fromDir.canonicalPath)
+				Files.createSymbolicLink(factsDir.toPath(), fromDirPath)
 				return
 			} catch (UnsupportedOperationException x) {
-				System.err.println("Filesystem does not support symbolic links, copying directory...")
+				System.err.println("Filesystem does not support symbolic links, copying directory instead...")
 			}
 		}
 
 		factsDir.mkdirs()
-		FileOps.copyDirContents(cacheDir, factsDir)
+		FileOps.copyDirContents(fromDir, factsDir)
 	}
 
 	protected void generateFacts() throws DoopErrorCodeException {
@@ -160,11 +168,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 		if (cacheDir.exists() && options.CACHE.value) {
 			logger.info "Using cached facts from $cacheDir"
-			linkOrCopyFacts()
+			linkOrCopyFacts(cacheDir)
 		} else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
 			String importedFactsDir = options.X_START_AFTER_FACTS.value
 			logger.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
-			linkOrCopyFacts()
+			linkOrCopyFacts(new File(importedFactsDir))
 		} else {
 			factsDir.mkdirs()
 			logger.info "-- Fact Generation --"
