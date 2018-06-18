@@ -237,11 +237,15 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				runHeapDL(heapFiles.collect { File f -> f.canonicalPath })
 			}
 
-			logger.info "Caching facts in $cacheDir"
-			deleteQuietly(cacheDir)
-			cacheDir.mkdirs()
-			FileOps.copyDirContents(factsDir, cacheDir)
-			new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
+			if (!options.X_START_AFTER_FACTS.value) {
+				logger.info "Caching facts in $cacheDir"
+				deleteQuietly(cacheDir)
+				cacheDir.mkdirs()
+				FileOps.copyDirContents(factsDir, cacheDir)
+				new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
+			} else if (options.CACHE.value) {
+				logger.warn "WARNING: Imported facts are not cached."
+			}
 			logger.info "----"
 		}
 	}
