@@ -29,7 +29,7 @@ class SouffleScript {
 	def run(int jobs, boolean profile = false, boolean debug = false, boolean removeContext = false) {
 		def origFile = scriptFile
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
-		executor.execute(["cpp", "-P", origFile, scriptFile].collect { it as String }) { logger.info it }
+		executor.execute("cpp -P $origFile $scriptFile".split().toList()) { logger.info it }
 
 		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
 		def c2 = c1 + profile.toString()
@@ -45,18 +45,18 @@ class SouffleScript {
 			}
 
 			def executable = new File(outDir, "exe")
-			def compilationCommand = ['souffle', '-c', '-o', executable, scriptFile]
+			def compilationCommand = "souffle -c -o $executable $scriptFile".split().toList()
 			if (profile)
-				compilationCommand << ("-p${outDir}/profile.txt")
+				compilationCommand << ("-p${outDir}/profile.txt" as String)
 			if (debug)
-				compilationCommand << ("-r${outDir}/report.html")
+				compilationCommand << ("-r${outDir}/report.html" as String)
 
 			logger.info "Compiling Datalog to C++ program and executable"
 			logger.debug "Compilation command: $compilationCommand"
 
 			def ignoreCounter = 0
 			compilationTime = Helper.timing {
-				executor.execute(compilationCommand.collect { it as String }) { String line ->
+				executor.execute(compilationCommand) { String line ->
 					if (ignoreCounter != 0) ignoreCounter--
 					else if (line.startsWith("Warning: No rules/facts defined for relation") ||
 							line.startsWith("Warning: Deprecated output qualifier was used")) {
@@ -93,7 +93,9 @@ class SouffleScript {
 
 		logger.debug "Execution command: $executionCommand"
 		logger.info "Running analysis"
-		executionTime = Helper.timing { executor.execute(executionCommand.collect { it as String }) }
+		executionTime = Helper.timing {
+			executor.execute(outDir as String, executionCommand.collect { it as String }, true)
+		}
 		logger.info "Analysis execution time (sec): $executionTime"
 
 		return [compilationTime, executionTime]
