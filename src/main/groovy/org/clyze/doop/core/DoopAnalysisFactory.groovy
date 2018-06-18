@@ -157,8 +157,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         // if not empty or null
         def analysisId = id ? validateUserSuppliedId(id) : generateId(vars)
 
-        def cacheId = generateCacheID(vars)
-
         def outDir = createOutputDirectory(vars, analysisId)
 
         def cacheDir
@@ -168,6 +166,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
         }
         else {
+            def cacheId = generateCacheID(vars)
             cacheDir = new File("${Doop.doopCache}/$cacheId")
             checkAppGlob(vars)
         }
