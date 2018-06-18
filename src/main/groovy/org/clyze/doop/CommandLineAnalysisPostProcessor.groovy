@@ -1,17 +1,15 @@
 package org.clyze.doop
 
+import groovy.util.logging.Log4j
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
 import org.clyze.analysis.AnalysisPostProcessor
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
 
 import java.nio.file.Files
 
+@Log4j
 class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnalysis> {
-
-	protected Log logger = LogFactory.getLog(getClass())
 
 	@Override
 	void process(DoopAnalysis analysis) {
@@ -34,7 +32,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 			file.eachLine { String line -> lines << line.replace("\t", ", ") }
 		}
 
-		logger.info "-- Runtime metrics --"
+		log.info "-- Runtime metrics --"
 		lines.sort()*.split(", ").each {
 			printf("%-80s %,d\n", it[0], it[1] as long)
 		}
@@ -51,7 +49,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 				file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
 			}
 
-			logger.info "-- Statistics --"
+			log.info "-- Statistics --"
 			lines.sort()*.split(", ").each {
 				printf("%-80s %,d\n", it[1], it[2] as long)
 			}
@@ -60,7 +58,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
 	void printSanityResults(DoopAnalysis analysis) {
 		def file = new File("${analysis.database}/Sanity.csv")
-		logger.info "-- Sanity Results --"
+		log.info "-- Sanity Results --"
 		file.readLines().sort()*.split("\t").each {
 			printf("%-80s %,d\n", it[1], it[2] as long)
 		}
@@ -68,7 +66,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
 	void linkResult(DoopAnalysis analysis) {
 		if (analysis.options.X_STOP_AT_FACTS.value) {
-			logger.info "Making facts available at ${analysis.options.X_STOP_AT_FACTS.value}"
+			log.info "Making facts available at ${analysis.options.X_STOP_AT_FACTS.value}"
 			return
 		}
 
@@ -83,16 +81,16 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 		def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
 		humanDatabase.mkdirs()
 		if (humanDatabase.exists()) humanDatabase.delete()
-		logger.info "Making database available at $humanDatabase"
+		log.info "Making database available at $humanDatabase"
 		Files.createSymbolicLink(humanDatabase.toPath(), analysis.database.toPath())
 
 		def lastAnalysis = new File("${Doop.doopHome}/last-analysis")
 		if (lastAnalysis.exists()) lastAnalysis.delete()
-		logger.info "Making database available at $lastAnalysis"
+		log.info "Making database available at $lastAnalysis"
 		Files.createSymbolicLink(lastAnalysis.toPath(), analysis.database.toPath())
 
 		if (analysis.options.SOUFFLE_PROFILE.value)
-			logger.info "Souffle analysis profile available at ${analysis.outDir}/profile.txt"
+			log.info "Souffle analysis profile available at ${analysis.outDir}/profile.txt"
 	}
 
 	static boolean filterOutLBWarn(String line) {

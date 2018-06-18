@@ -1,9 +1,10 @@
 package org.clyze.doop.utils
 
-import org.apache.commons.logging.Log
+import groovy.util.logging.Log4j
 import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 
+@Log4j
 class LBBuilder {
 
     CPreprocessor cpp
@@ -37,9 +38,9 @@ class LBBuilder {
         return this
     }
 
-    void invoke(Log logger, String bloxbatch, String bloxOpts, Executor executor) {
+    void invoke(String bloxbatch, String bloxOpts, Executor executor) {
         writer.close()
-        logger.info "Using generated script $script"
+        log.info "Using generated script $script"
         def cmd = [bloxbatch, '-script', script as String]
         if (bloxOpts) cmd += (bloxOpts.split(" ") as List)
         executor.execute(cmd)

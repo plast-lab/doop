@@ -1,10 +1,9 @@
 package org.clyze.doop.core
 
 import groovy.transform.TypeChecked
+import groovy.util.logging.Log4j
 import heapdl.core.MemoryAnalyser
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.input.InputResolutionContext
@@ -23,13 +22,9 @@ import static org.apache.commons.io.FileUtils.*
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
  */
+@Log4j
 @TypeChecked
 abstract class DoopAnalysis extends Analysis implements Runnable {
-
-	/**
-	 * Used for logging various messages
-	 */
-	protected Log logger
 
 	/**
 	 * The facts dir for the input facts
@@ -114,8 +109,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		this.heapFiles = heapFiles
 		this.platformLibs = platformLibs
 
-		logger = LogFactory.getLog(getClass())
-
 		if (options.X_STOP_AT_FACTS.value) {
 			factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
 		} else {
@@ -167,15 +160,15 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		deleteQuietly(factsDir)
 
 		if (cacheDir.exists() && options.CACHE.value) {
-			logger.info "Using cached facts from $cacheDir"
+			log.info "Using cached facts from $cacheDir"
 			linkOrCopyFacts(cacheDir)
 		} else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
-			String importedFactsDir = options.X_START_AFTER_FACTS.value
-			logger.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
+			def importedFactsDir = options.X_START_AFTER_FACTS.value as String
+			log.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
 			linkOrCopyFacts(new File(importedFactsDir))
 		} else {
 			factsDir.mkdirs()
-			logger.info "-- Fact Generation --"
+			log.info "-- Fact Generation --"
 
 			if (options.RUN_JPHANTOM.value) {
 				runJPhantom()
@@ -246,15 +239,15 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			}
 
 			if (!options.X_START_AFTER_FACTS.value) {
-				logger.info "Caching facts in $cacheDir"
+				log.info "Caching facts in $cacheDir"
 				deleteQuietly(cacheDir)
 				cacheDir.mkdirs()
 				FileOps.copyDirContents(factsDir, cacheDir)
 				new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
 			} else if (options.CACHE.value) {
-				logger.warn "WARNING: Imported facts are not cached."
+				log.warn "WARNING: Imported facts are not cached."
 			}
-			logger.info "----"
+			log.info "----"
 		}
 	}
 
@@ -355,7 +348,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		}
 		params = params + ["-d", factsDir.toString()]
 
-		logger.debug "Params of soot: ${params.join(' ')}"
+		log.debug "Params of soot: ${params.join(' ')}"
 
 		boolean success = false
 		sootTime = Helper.timing {
@@ -371,11 +364,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		}
 
 		if (!success) {
-			logger.info "Soot fact generation failed."
+			log.info "Soot fact generation failed."
 			return false
 		}
 
-		logger.info "Soot fact generation time: ${sootTime}"
+		log.info "Soot fact generation time: ${sootTime}"
 		return true
 	}
 
@@ -419,7 +412,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 		params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
 
-		logger.debug "Params of wala: ${params.join(' ')}"
+		log.debug "Params of wala: ${params.join(' ')}"
 
 		sootTime = Helper.timing {
 			//We invoke soot reflectively using a separate class-loader to be able
@@ -433,8 +426,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			wala.main(params.toArray(new String[params.size()]))
 		}
 
-		logger.info "Wala fact generation time: ${sootTime}"
-
+		log.info "Wala fact generation time: ${sootTime}"
 	}
 
 	protected void runPython(Set<String> tmpDirs) {
@@ -459,26 +451,26 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 		params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
 
-		logger.debug "Params of wala: ${params.join(' ')}"
+		log.debug "Params of wala: ${params.join(' ')}"
 
 		sootTime = Helper.timing {
 			PythonInvoker wala = new PythonInvoker()
 			wala.main(params.toArray(new String[params.size()]))
 		}
 
-		logger.info "Wala fact generation time: ${sootTime}"
+		log.info "Wala fact generation time: ${sootTime}"
 
 	}
 
 	protected void runJPhantom() {
-		logger.info "-- Running jphantom to generate complement jar --"
+		log.info "-- Running jphantom to generate complement jar --"
 
 		String jar = inputFiles[0].toString()
 		String jarName = FilenameUtils.getBaseName(jar)
 		String jarExt = FilenameUtils.getExtension(jar)
 		String newJar = "${jarName}-complemented.${jarExt}"
 		String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
-		logger.debug "Params of jphantom: ${params.join(' ')}"
+		log.debug "Params of jphantom: ${params.join(' ')}"
 
 		//we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
 		ClassLoader loader = phantomClassLoader()
@@ -489,7 +481,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	}
 
 	protected void runAverroes() {
-		logger.info "-- Running averroes --"
+		log.info "-- Running averroes --"
 
 		ClassLoader loader = averroesClassLoader()
 		Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
@@ -510,15 +502,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	/**
 	 * Creates a new class loader for running jphantom
 	 */
-	protected ClassLoader phantomClassLoader() {
-		return copyOfCurrentClasspath()
-	}
+	protected ClassLoader phantomClassLoader() { copyOfCurrentClasspath() }
+
 	/**
 	 * Creates a new class loader for running soot
 	 */
-	protected ClassLoader sootClassLoader() {
-		return copyOfCurrentClasspath()
-	}
+	protected ClassLoader sootClassLoader() { copyOfCurrentClasspath() }
 
 	protected ClassLoader copyOfCurrentClasspath() {
 		URLClassLoader loader = this.getClass().getClassLoader() as URLClassLoader
@@ -619,7 +608,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		try {
 			MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filenames, options.HEAPDL_NOSTRINGS.value ? false : true)
 			int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
-			logger.info("Generated " + n + " addditional facts from memory dump")
+			log.info("Generated " + n + " addditional facts from memory dump")
 		} catch (Exception e) {
 			e.printStackTrace()
 		}

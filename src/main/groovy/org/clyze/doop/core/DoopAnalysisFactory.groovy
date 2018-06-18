@@ -1,15 +1,10 @@
 
 package org.clyze.doop.core
 
+import groovy.util.logging.Log4j
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
-import org.clyze.analysis.AnalysisFactory
-import org.clyze.analysis.AnalysisFamily
-import org.clyze.analysis.AnalysisOption
-import org.clyze.analysis.BooleanAnalysisOption
-import org.clyze.analysis.InputType
+import org.clyze.analysis.*
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.utils.PackageUtil
@@ -27,9 +22,9 @@ import java.util.jar.JarFile
  * Helper class) but they are protected instance methods to allow
  * descendants to customize all possible aspects of Analysis creation.
  */
+@Log4j
 class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
-    Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
     static final String HASH_ALGO = "SHA-256"
     static final Map<String, Set<String>> artifactsForPlatform =
@@ -162,7 +157,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def cacheDir
 
         if (options.X_START_AFTER_FACTS.value) {
-            cacheDir = new File(options.X_START_AFTER_FACTS.value)
+            cacheDir = new File(options.X_START_AFTER_FACTS.value as String)
             FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
         }
         else {
@@ -199,7 +194,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     vars.platformFiles,
                     commandsEnv)
         }
-        logger.debug "Created new analysis"
+        log.debug "Created new analysis"
         return analysis
     }
 
@@ -217,7 +212,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
     }
 
     protected void checkAnalysis(String name, Map<String, AnalysisOption> options) {
-        logger.debug "Verifying analysis name: $name"
+        log.debug "Verifying analysis name: $name"
         def analysisPath
         if (options.LB3.value) 
           analysisPath = "${Doop.analysesPath}/${name}/analysis.logic"
@@ -256,7 +251,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             String option -> return vars.options.get(option).toString()
         }
         idComponents = [vars.name] + vars.inputFilePaths + vars.libraryFilePaths + idComponents
-        logger.debug("ID components: $idComponents")
+        log.debug "ID components: $idComponents"
         def id = idComponents.join('-')
 
         return CheckSum.checksum(id, HASH_ALGO)
@@ -278,7 +273,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         idComponents = checksums + idComponents
 
-        logger.debug("Cache ID components: $idComponents")
+        log.debug "Cache ID components: $idComponents"
         def id = idComponents.join('-')
 
         return CheckSum.checksum(id, HASH_ALGO)
@@ -315,7 +310,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      * @param platformsLib    The path of the Doop platforms directory.
      * @return                The list of artifact paths for the platform.
      */
-    public static List<String> getArtifactsForPlatform(String platformName, String platformsLib) {
+    static List<String> getArtifactsForPlatform(String platformName, String platformsLib) {
         def (platform, version, variant) = tokenizePlatform(platformName)
         switch (platform) {
             case "java":
@@ -380,7 +375,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      */
     protected AnalysisVars processOptions(String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
 
-        logger.debug "Processing analysis options"
+        log.debug "Processing analysis options"
 
         String platformName = options.PLATFORM.value.toString()
         String platformsLib = options.PLATFORMS_LIB.value.toString()
@@ -399,16 +394,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             heapdlFilePaths = context.hprofs()
             platformFilePaths = getArtifactsForPlatform(platformName, platformsLib)
 
-            logger.debug "Resolving inputs and libraries"
+            log.debug "Resolving inputs and libraries"
             context.resolve()
             inputFiles = context.getAllInputs()
-            logger.debug "Input file paths: $inputFilePaths -> $inputFiles"
+            log.debug "Input file paths: $inputFilePaths -> $inputFiles"
             libraryFiles = context.getAllLibraries()
-            logger.debug "Library file paths: $libraryFilePaths -> $libraryFiles"
+            log.debug "Library file paths: $libraryFilePaths -> $libraryFiles"
             heapFiles = context.getAllHprofs()
-            logger.debug "HeapDL file paths: $heapdlFilePaths -> $heapFiles"
+            log.debug "HeapDL file paths: $heapdlFilePaths -> $heapFiles"
             platformFiles = resolve(platformFilePaths, InputType.LIBRARY)
-            logger.debug "Platform file paths: $platformFilePaths -> $platformFiles"
+            log.debug "Platform file paths: $platformFilePaths -> $platformFiles"
         }
 
         setOptionsForPlatform(options, platformName)
@@ -427,7 +422,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")], InputType.INPUT)[0]
 
                 def benchmark = FilenameUtils.getBaseName(inputJarName)
-                logger.info "Running " + (options.DACAPO.value ? "dacapo" : "dacapo-bach") + " benchmark: $benchmark"
+                log.info "Running ${options.DACAPO.value ? "dacapo" : "dacapo-bach"} benchmark: $benchmark"
             }
             else {
                 options.TAMIFLEX.value = "dummy"
@@ -441,7 +436,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             } else if (options.IGNORE_MAIN_METHOD.value) {
                 throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
             } else {
-                logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+                log.debug "The main class is set to ${options.MAIN_CLASS.value}"
             }
         } else {
             if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
@@ -452,13 +447,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 //Try to read the main class from the manifest contained in the jar
                 def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
                 if (main) {
-                    logger.debug "The main class is automatically set to ${main}"
+                    log.debug "The main class is automatically set to ${main}"
                     options.MAIN_CLASS.value = main
                 } else {
                     //Check whether the jar contains a class with the same name
                     def jarName = FilenameUtils.getBaseName(jarFile.getName())
                     if (jarFile.getJarEntry("${jarName}.class")) {
-                        logger.debug "The main class is automatically set to ${jarName}"
+                        log.debug "The main class is automatically set to ${jarName}"
                         options.MAIN_CLASS.value = jarName
                     }
                 }
@@ -469,7 +464,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.each { String dynFile ->
                 FileOps.findFileOrThrow(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
-                logger.debug "The DYNAMIC option has been set to ${dynFile}"
+                log.debug "The DYNAMIC option has been set to ${dynFile}"
             }
         }
 
@@ -480,7 +475,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
                 options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value) {
-            logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
+            log.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
         }
 
         if (options.NO_MERGE_LIBRARY_OBJECTS.value) {
@@ -488,7 +483,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         }
 
         if (options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value && options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
-            logger.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
+            log.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
         }
 
         if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value &&
@@ -538,7 +533,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             !options.HEAPDL.value && !options.ANDROID.value &&
             !options.DACAPO.value && !options.DACAPO_BACH.value &&
             !options.X_START_AFTER_FACTS.value) {
-            logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
+            log.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
             if (!options.OPEN_PROGRAMS.value)
                 options.OPEN_PROGRAMS.value = "concrete-types"
         }
@@ -547,7 +542,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             options.X_STATS_NONE.value = true
             options.X_SERVER_LOGIC.value = true
             if (options.CACHE.value) {
-                logger.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
+                log.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
             }
         }
 
@@ -575,7 +570,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 !options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
                 message += "\nWARNING: 'opt-reflective' may not work optimally, one of these flags is suggested: --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + ", --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name
             }
-            logger.warn message
+            log.warn message
         }
 
         if (!options.REFLECTION.value) {
@@ -586,11 +581,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     options.REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS.value ||
                     options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
                     options.REFLECTION_REFINED_OBJECTS.value) {
-                logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
+                log.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
             } else if (options.TAMIFLEX.value) {
-                logger.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
+                log.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
             } else {
-                logger.warn "\nWARNING: Handling of Java reflection is disabled!\n"
+                log.warn "\nWARNING: Handling of Java reflection is disabled!\n"
             }
         }
 
@@ -599,7 +594,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 // An unknown platform are not always an error: it may
                 // be a local subdirectory under doop-benchmarks.
                 if (it.id == "PLATFORM") {
-                    logger.warn "\nWARNING: Non-standard platform selected: ${it.value}\n"
+                    log.warn "\nWARNING: Non-standard platform selected: ${it.value}\n"
                 } else {
                     throw new RuntimeException("Invalid value `$it.value` for option: $it.name")
                 }
@@ -609,7 +604,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             if (!it.value) throw new RuntimeException("Missing mandatory argument: $it.name")
         }
 
-        logger.debug "---------------"
+        log.debug "---------------"
         AnalysisVars vars = new AnalysisVars(
                 name:              name,
                 options:           options,
@@ -621,8 +616,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 heapFiles:         heapFiles,
                 platformFiles:     platformFiles
         )
-        logger.debug vars
-        logger.debug "---------------"
+        log.debug vars
+        log.debug "---------------"
 
         return vars
     }
@@ -654,7 +649,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      */
     protected void checkAppGlob(AnalysisVars vars) {
         if (!vars.options.APP_REGEX.value) {
-            logger.debug "Generating app regex"
+            log.debug "Generating app regex"
 
             //We process only the first jar for determining the application classes
             /*
@@ -680,7 +675,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
             vars.options.APP_REGEX.value = packages.sort().join(':')
 
-            logger.debug "APP_REGEX: ${vars.options.APP_REGEX.value}"
+            log.debug "APP_REGEX: ${vars.options.APP_REGEX.value}"
         }
     }
 
@@ -693,7 +688,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         AnalysisOption lbhome = vars.options.LOGICBLOX_HOME
 
-        logger.debug "Verifying LogicBlox home: ${lbhome.value}"
+        log.debug "Verifying LogicBlox home: ${lbhome.value}"
 
         def lbHomeDir = FileOps.findDirOrThrow(lbhome.value as String, "The ${lbhome.id} value is invalid: ${lbhome.value}")
 
@@ -717,7 +712,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      */
     protected Map<String, String> initExternalCommandsEnvironment(AnalysisVars vars) {
 
-        logger.debug "Initializing the environment of the external commands"
+        log.debug "Initializing the environment of the external commands"
 
         Map<String, String> env = [:]
         env.putAll(System.getenv())

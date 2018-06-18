@@ -26,7 +26,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         // Souffle has no persistent database.
         if (options.X_STOP_AT_INIT.value) {
-            logger.info "Option ${options.X_STOP_AT_INIT.name} is equivalent to ${options.X_STOP_AT_FACTS.name} for Souffle-based analyses."
+	        log.info "Option ${options.X_STOP_AT_INIT.name} is equivalent to ${options.X_STOP_AT_FACTS.name} for Souffle-based analyses."
             return
         }
 
@@ -43,7 +43,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         def cacheDir = new File(Doop.souffleAnalysesCache, name)
         cacheDir.mkdirs()
-        def script = new SouffleScript(analysis, factsDir, outDir, cacheDir, executor, logger)
+        def script = new SouffleScript(analysis, factsDir, outDir, cacheDir, executor)
         script.run(
                 options.SOUFFLE_JOBS.value as int,
                 (options.X_MONITORING_INTERVAL.value as long) * 1000,
@@ -123,7 +123,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         String openProgramsRules = options.OPEN_PROGRAMS.value
         if (openProgramsRules) {
-            logger.debug "Using open-programs rules: ${openProgramsRules}"
+            log.debug "Using open-programs rules: ${openProgramsRules}"
             cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${openProgramsRules}.dl", commonMacros)
         }
 
@@ -142,10 +142,10 @@ class SouffleAnalysis extends DoopAnalysis {
             File extraLogic = new File(options.X_EXTRA_LOGIC.value as String)
             if (extraLogic.exists()) {
                 String extraLogicPath = extraLogic.canonicalPath
-                logger.info "Adding extra logic file ${extraLogicPath}"
+                log.info "Adding extra logic file ${extraLogicPath}"
                 cpp.includeAtEnd("${analysis}", extraLogicPath)
             } else {
-                logger.warn "Extra logic file does not exist: ${extraLogic}"
+                log.warn "Extra logic file does not exist: ${extraLogic}"
             }
         }
     }

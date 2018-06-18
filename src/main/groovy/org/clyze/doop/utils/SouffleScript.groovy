@@ -1,7 +1,7 @@
 package org.clyze.doop.utils
 
 import groovy.transform.TupleConstructor
-import org.apache.commons.logging.Log
+import groovy.util.logging.Log4j
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.utils.CheckSum
 import org.clyze.utils.Executor
@@ -13,6 +13,7 @@ import java.nio.file.StandardCopyOption
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 
+@Log4j
 @TupleConstructor
 class SouffleScript {
 
@@ -21,7 +22,6 @@ class SouffleScript {
 	File outDir
 	File cacheDir
 	Executor executor
-	Log logger
 
 	long compilationTime = 0L
 	long executionTime = 0L
@@ -29,7 +29,7 @@ class SouffleScript {
 	def run(int jobs, long monitoringInterval, boolean profile = false, boolean debug = false, boolean removeContext = false) {
 		def origFile = scriptFile
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
-		executor.execute("cpp -P $origFile $scriptFile".split().toList()) { logger.info it }
+		executor.execute("cpp -P $origFile $scriptFile".split().toList()) { log.info it }
 
 		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
 		def c2 = c1 + profile.toString()
@@ -51,8 +51,8 @@ class SouffleScript {
 			if (debug)
 				compilationCommand << ("-r${outDir}/report.html" as String)
 
-			logger.info "Compiling Datalog to C++ program and executable"
-			logger.debug "Compilation command: $compilationCommand"
+			log.info "Compiling Datalog to C++ program and executable"
+			log.debug "Compilation command: $compilationCommand"
 
 			def ignoreCounter = 0
 			compilationTime = Helper.timing {
@@ -60,10 +60,10 @@ class SouffleScript {
 					if (ignoreCounter != 0) ignoreCounter--
 					else if (line.startsWith("Warning: No rules/facts defined for relation") ||
 							line.startsWith("Warning: Deprecated output qualifier was used")) {
-						logger.info line
+						log.info line
 						ignoreCounter = 2
 					} else if (line.startsWith("Warning: Record types in output relations are not printed verbatim")) ignoreCounter = 2
-					else logger.info line
+					else log.info line
 				}
 			}
 
@@ -74,13 +74,13 @@ class SouffleScript {
 			} catch (FileAlreadyExistsException e) {
 				// If a cached file is already there, don't overwrite it
 				// (it might be used by another analysis), just reuse it.
-				logger.info "Copy failed, someone else has already created ${cacheFile.canonicalPath}"
+				log.info "Copy failed, someone else has already created ${cacheFile.canonicalPath}"
 			}
 
-			logger.info "Analysis compilation time (sec): $compilationTime"
-			logger.info "Caching analysis executable $checksum in $cacheDir"
+			log.info "Analysis compilation time (sec): $compilationTime"
+			log.info "Caching analysis executable $checksum in $cacheDir"
 		} else {
-			logger.info "Using cached analysis executable $checksum from $cacheDir"
+			log.info "Using cached analysis executable $checksum from $cacheDir"
 		}
 
 		def db = new File(outDir, "database")
@@ -91,15 +91,15 @@ class SouffleScript {
 		if (profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 
-		logger.debug "Execution command: $executionCommand"
-		logger.info "Running analysis"
+		log.debug "Execution command: $executionCommand"
+		log.info "Running analysis"
 		executionTime = Helper.timing {
 			executor.monitoringInterval = monitoringInterval
 			executor.isMonitoringEnabled = true
 			executor.execute(executionCommand)
 			executor.isMonitoringEnabled = false
 		}
-		logger.info "Analysis execution time (sec): $executionTime"
+		log.info "Analysis execution time (sec): $executionTime"
 
 		return [compilationTime, executionTime]
 	}

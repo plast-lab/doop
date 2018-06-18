@@ -46,16 +46,16 @@ class LB3Analysis extends DoopAnalysis {
                     reanalyze()
                 }
                 catch(e) {
-                    logger.debug e.getMessage()
+                    log.debug e.getMessage()
                 }
 
                 produceStats()
             }
         }
 
-        logger.info "\nAnalysis START"
-        long t = Helper.timing { lbBuilder.invoke(logger, options.BLOXBATCH.value as String, (options.BLOX_OPTS.value ?: '') as String, executor) }
-        logger.info "Analysis END\n"
+        log.info "\nAnalysis START"
+        long t = Helper.timing { lbBuilder.invoke(options.BLOXBATCH.value as String, (options.BLOX_OPTS.value ?: '') as String, executor) }
+        log.info "Analysis END\n"
         int dbSize = (sizeOfDirectory(database) / 1024).intValue()
         def cmdData = "Stats:Runtime(\"script wall-clock time (sec)\", $t). Stats:Runtime(\"disk footprint (KB)\", $dbSize)."
         def cmd = [options.BLOXBATCH.value as String, '-db', database as String, '-addBlock', cmdData as String]
@@ -184,7 +184,7 @@ class LB3Analysis extends DoopAnalysis {
             isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
         }
         catch(e) {
-            logger.debug e.getMessage()
+            log.debug e.getMessage()
         }
         if (isContextSensitive) {
             cpp.preprocessIfExists("${outDir}/${name}-declarations.logic", "${analysisPath}/declarations.logic",
@@ -261,7 +261,7 @@ class LB3Analysis extends DoopAnalysis {
 
         String openProgramsRules = options.OPEN_PROGRAMS.value
         if (openProgramsRules) {
-            logger.debug "Using open-programs rules: ${openProgramsRules}"
+            log.debug "Using open-programs rules: ${openProgramsRules}"
             cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${openProgramsRules}.logic", macros)
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
         }
@@ -320,7 +320,7 @@ class LB3Analysis extends DoopAnalysis {
             if (!options.X_STOP_AT_FACTS.value) {
                 // Show a warning as recent changes may break old scripts
                 // (e.g. removing LOGICBLOX_HOME as a deployment property).
-                logger.warn "WARNING: LB server logic is deprecated"
+                log.warn "WARNING: LB server logic is deprecated"
                 cpp.preprocess("${outDir}/server.logic", "${Doop.addonsPath}/server-logic/queries.logic")
 
                 lbBuilder
@@ -329,12 +329,12 @@ class LB3Analysis extends DoopAnalysis {
                 .commit()
                 .elapsedTime()
             } else {
-                logger.warn "WARNING: LB server logic is ignored when using --${options.X_STOP_AT_FACTS.name}"
+                log.warn "WARNING: LB server logic is ignored when using --${options.X_STOP_AT_FACTS.name}"
             }
         }
 
         if (options.X_EXTRA_LOGIC.value) {
-            logger.warn "WARNING: the LB mode does not support --${options.X_EXTRA_LOGIC.name}"
+            log.warn "WARNING: the LB mode does not support --${options.X_EXTRA_LOGIC.name}"
         }
     }
 

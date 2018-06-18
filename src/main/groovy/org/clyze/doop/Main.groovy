@@ -1,8 +1,7 @@
 package org.clyze.doop
 
 import groovy.transform.CompileStatic
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
+import groovy.util.logging.Log4j
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import org.clyze.doop.core.Doop
@@ -20,9 +19,9 @@ import java.util.concurrent.TimeoutException
  * The entry point for the standalone doop app.
  */
 @CompileStatic
+@Log4j
 class Main {
 
-    private static final Log logger = LogFactory.getLog(Main)
     private static final int DEFAULT_TIMEOUT = 90 // 90 minutes
 
     // Allow access to the analysis object from external code
@@ -63,7 +62,7 @@ class Main {
                 // We assume usage has already been displayed by the CliBuilder.
                 return
             } else if (cli.arguments().size() != 0) {
-                logger.info "Invalid argument specified: " + cli.arguments()[0]
+                log.info "Invalid argument specified: " + cli.arguments()[0]
                 usageBuilder.usage()
                 return
             } else if (cli['h']) {
@@ -109,14 +108,14 @@ class Main {
                     @Override
                     void run() {
                         if (!analysis.options.X_START_AFTER_FACTS.value) {
-                            logger.info "Starting ${analysis.name} analysis"
-                            logger.info "Id       : $analysis.id"
-                            logger.info "Inputs   : ${analysis.inputFiles.join(', ')}"
-                            logger.info "Libraries: ${analysis.libraryFiles.join(', ')}"
+                            log.info "Starting ${analysis.name} analysis"
+                            log.info "Id       : $analysis.id"
+                            log.info "Inputs   : ${analysis.inputFiles.join(', ')}"
+                            log.info "Libraries: ${analysis.libraryFiles.join(', ')}"
                         }
                         else
-                            logger.info "Starting ${analysis.name} analysis on user-provided facts at ${analysis.options.X_START_AFTER_FACTS.value} - id: $analysis.id"
-                        logger.debug analysis
+                            log.info "Starting ${analysis.name} analysis on user-provided facts at ${analysis.options.X_START_AFTER_FACTS.value} - id: $analysis.id"
+                        log.debug analysis
                         analysis.options.BLOX_OPTS.value = bloxOptions
                         try {
                             analysis.run()
@@ -129,13 +128,13 @@ class Main {
                 }).get(timeout, TimeUnit.MINUTES)
             }
             catch (TimeoutException te) {
-                logger.error "Timeout has expired ($timeout min)."
+                log.error "Timeout has expired ($timeout min)."
             } finally {
                 executorService.shutdownNow()
             }
         } catch (e) {
             e = (e.getCause() ?: e)
-            logger.error(e.getMessage(), e)
+            log.error(e.getMessage(), e)
         }
     }
 
@@ -152,7 +151,7 @@ class Main {
                     Logger.getRootLogger().setLevel(Level.ERROR)
                     break
                 default:
-                    logger.info "Invalid log level: $logLevel - using default (info)"
+                    log.info "Invalid log level: $logLevel - using default (info)"
             }
         }
     }
@@ -162,16 +161,16 @@ class Main {
         try {
             timeout = Integer.parseInt(userTimeout)
         }
-        catch (ex) {
-            logger.info "Using the default timeout ($timeout min)."
+        catch (all) {
+            log.info "Using the default timeout ($timeout min)."
             return defaultTimeout
         }
 
         if (timeout <= 0) {
-            logger.info "Invalid user supplied timeout: $timeout - using the default ($defaultTimeout min)."
+            log.info "Invalid user supplied timeout: $timeout - using the default ($defaultTimeout min)."
             return defaultTimeout
         } else {
-            logger.info "Using a timeout of $timeout min."
+            log.info "Using a timeout of $timeout min."
             return timeout
         }
     }
