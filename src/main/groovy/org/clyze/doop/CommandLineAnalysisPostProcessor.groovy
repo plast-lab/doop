@@ -85,11 +85,11 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
         def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
         humanDatabase.mkdirs()
         logger.info "Making database available at $humanDatabase"
-        analysis.executor.execute(['ln', '-s', '-f', analysis.database as String, humanDatabase as String])
+        analysis.executor.execute(['ln', '-s', '-f', analysis.database, humanDatabase].collect { it as String })
 
         def lastAnalysis = "${Doop.doopHome}/last-analysis"
         logger.info "Making database available at $lastAnalysis"
-        analysis.executor.execute(['ln', '-s', '-f', '-n', analysis.database as String, lastAnalysis as String])
+        analysis.executor.execute(['ln', '-s', '-f', '-n', analysis.database, lastAnalysis].collect { it as String })
 
         if (analysis.options.SOUFFLE_PROFILE.value)
             logger.info "Souffle analysis profile available at ${analysis.outDir}/profile.txt"

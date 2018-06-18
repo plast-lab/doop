@@ -125,7 +125,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		database = new File(outDir, "database")
 		averroesDir = new File(outDir, "averroes")
 
-		executor = new Executor(commandsEnvironment)
+		executor = new Executor(outDir, commandsEnvironment)
 		cpp = new CPreprocessor(this, executor)
 
 		new File(outDir, "meta").withWriter { it.write(this.toString()) }

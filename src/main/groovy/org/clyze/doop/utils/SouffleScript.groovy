@@ -87,14 +87,16 @@ class SouffleScript {
 		deleteQuietly(db)
 		db.mkdirs()
 
-		def executionCommand = [cacheFile, "-j$jobs", "-F$inDir", "-D$db"]
+		def executionCommand = "$cacheFile -j$jobs -F$inDir -D$db".split().toList()
 		if (profile)
-			executionCommand << ("-p${outDir}/profile.txt")
+			executionCommand << ("-p${outDir}/profile.txt" as String)
 
 		logger.debug "Execution command: $executionCommand"
 		logger.info "Running analysis"
 		executionTime = Helper.timing {
-			executor.execute(outDir as String, executionCommand.collect { it as String }, true)
+			executor.isMonitoringEnabled = true
+			executor.execute(executionCommand)
+			executor.isMonitoringEnabled = false
 		}
 		logger.info "Analysis execution time (sec): $executionTime"
 

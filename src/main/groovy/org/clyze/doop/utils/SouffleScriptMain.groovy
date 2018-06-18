@@ -15,7 +15,7 @@ cacheDir.mkdirs()
 
 def env = [:]
 env.putAll(System.getenv())
-def executor = new Executor(env)
+def executor = new Executor(outDir, env)
 
 Helper.initLogging("INFO", "$outDir/logs", true)
 def logger = LogFactory.getLog(getClass())

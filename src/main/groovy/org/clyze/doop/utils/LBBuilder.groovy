@@ -42,7 +42,7 @@ class LBBuilder {
         logger.info "Using generated script $script"
         def cmd = [bloxbatch, '-script', script as String]
         if (bloxOpts) cmd += (bloxOpts.split(" ") as List)
-        executor.execute(outDir as String, cmd)
+        executor.execute(cmd)
     }
 
     void include(String filePath) {

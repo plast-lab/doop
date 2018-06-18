@@ -59,7 +59,7 @@ class LB3Analysis extends DoopAnalysis {
         int dbSize = (sizeOfDirectory(database) / 1024).intValue()
         def cmdData = "Stats:Runtime(\"script wall-clock time (sec)\", $t). Stats:Runtime(\"disk footprint (KB)\", $dbSize)."
         def cmd = [options.BLOXBATCH.value as String, '-db', database as String, '-addBlock', cmdData as String]
-        executor.execute(outDir as String, cmd, Executor.STDOUT_PRINTER)
+        executor.execute(cmd, Executor.STDOUT_PRINTER)
     }
 
     void initDatabase() {
@@ -426,6 +426,6 @@ class LB3Analysis extends DoopAnalysis {
     @Override
     void processRelation(String relation, Closure outputLineProcessor) {
         def cmd = [options.BLOXBATCH.value as String, '-db', database as String, '-query', relation]
-        executor.execute(outDir as String, cmd, outputLineProcessor)
+        executor.execute(cmd, outputLineProcessor)
     }
 }
