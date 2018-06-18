@@ -46,6 +46,7 @@ class SouffleAnalysis extends DoopAnalysis {
         def script = new SouffleScript(analysis, factsDir, outDir, cacheDir, executor, logger)
         script.run(
                 options.SOUFFLE_JOBS.value as int,
+                (options.X_MONITORING_INTERVAL.value as long) * 1000,
                 options.SOUFFLE_PROFILE.value as boolean,
                 options.SOUFFLE_DEBUG.value as boolean,
                 options.X_CONTEXT_REMOVER.value as boolean)

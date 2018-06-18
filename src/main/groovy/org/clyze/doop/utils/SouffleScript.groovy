@@ -26,7 +26,7 @@ class SouffleScript {
 	long compilationTime = 0L
 	long executionTime = 0L
 
-	def run(int jobs, boolean profile = false, boolean debug = false, boolean removeContext = false) {
+	def run(int jobs, long monitoringInterval, boolean profile = false, boolean debug = false, boolean removeContext = false) {
 		def origFile = scriptFile
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		executor.execute("cpp -P $origFile $scriptFile".split().toList()) { logger.info it }
@@ -94,6 +94,7 @@ class SouffleScript {
 		logger.debug "Execution command: $executionCommand"
 		logger.info "Running analysis"
 		executionTime = Helper.timing {
+			executor.monitoringInterval = monitoringInterval
 			executor.isMonitoringEnabled = true
 			executor.execute(executionCommand)
 			executor.isMonitoringEnabled = false

@@ -792,6 +792,16 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					nonStandard: true
 			),
+			new IntegerAnalysisOption(
+					id: "X_MONITORING_INTERVAL",
+					name: "Xmonitoring-interval",
+					argName: "INTERVAL",
+					description: "Monitoring interval for sampling memory and cpu usage. default: 5sec",
+					value: 5,
+					nonStandard: true,
+					webUI: AnalysisForm,
+					isAdvanced: true
+			),
 			/* End non-standard flags */
 
 			/* TODO: deprecated or broken? */
