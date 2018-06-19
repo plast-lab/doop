@@ -126,16 +126,4 @@ public class PythonInvoker {
             }
         }
     }
-
-    SourceURLModule getScript(String name) throws IOException {
-        try {
-            System.out.println("WHAT " + name);
-            URL url = new URL("file://" + name);
-            System.out.println("WHAT WHAT file://" + name);
-            return new SourceURLModule(url);
-        } catch (MalformedURLException e) {
-            return new SourceURLModule(getClass().getClassLoader().getResource(name));
-        }
-    }
-
 }
