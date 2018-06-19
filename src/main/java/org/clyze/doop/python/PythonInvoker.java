@@ -1,15 +1,25 @@
 package org.clyze.doop.python;
 
+import com.ibm.wala.cast.ir.ssa.AstIRFactory;
 import com.ibm.wala.cast.python.loader.PythonLoaderFactory;
-import com.ibm.wala.ipa.callgraph.AnalysisScope;
+import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.SourceURLModule;
+import com.ibm.wala.ipa.callgraph.*;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.ipa.cha.SeqClassHierarchyFactory;
+import com.ibm.wala.ssa.IR;
+import com.ibm.wala.ssa.IRFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.soot.DoopErrorCodeException;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Iterator;
 
 public class PythonInvoker {
 
@@ -89,13 +99,42 @@ public class PythonInvoker {
 
     public void run(PythonParameters parameters) throws IOException
     {
-        AnalysisScope scope = PythonScopeBuilder.buildAnalysisScope(parameters._inputs);
-        IClassHierarchy cha = null;
-        PythonLoaderFactory loader = new PythonLoaderFactory();
+        PythonIREngine pythonIREngine = new PythonIREngine(parameters._inputs);
+        AnalysisScope scope = pythonIREngine.buildAnalysisScope();
+        IClassHierarchy cha = pythonIREngine.buildClassHierarchy();
+
+        IAnalysisCacheView cache = pythonIREngine.getAnalysisCache();
+        Iterator<IClass> classes = cha.iterator();
+        while(classes.hasNext())
+        {
+            IClass klass = classes.next();
+            String sourceFileName="";
+            try{
+                sourceFileName = klass.getSourceFileName();
+            }catch(NullPointerException ex)
+            {
+
+            }
+            System.out.println("class: " + klass.toString() + " in file:" + sourceFileName);
+            Collection<? extends IMethod> methods = klass.getDeclaredMethods();
+            for(IMethod m : methods)
+            {
+                m.getName();
+                System.out.println("\t"+m.getSignature());
+                IR ir = cache.getIR(m);
+                System.out.println(ir.toString());
+            }
+        }
+    }
+
+    SourceURLModule getScript(String name) throws IOException {
         try {
-            cha = SeqClassHierarchyFactory.make(scope, loader);
-        } catch (ClassHierarchyException e) {
-            System.err.println("Exception when creating a Class Hierarchy: "+ e);
+            System.out.println("WHAT " + name);
+            URL url = new URL("file://" + name);
+            System.out.println("WHAT WHAT file://" + name);
+            return new SourceURLModule(url);
+        } catch (MalformedURLException e) {
+            return new SourceURLModule(getClass().getClassLoader().getResource(name));
         }
     }
 
