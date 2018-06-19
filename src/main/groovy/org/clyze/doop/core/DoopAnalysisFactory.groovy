@@ -35,6 +35,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
               "java_6" : ["rt.jar", "jce.jar", "jsse.jar"],
               "java_7" : ["rt.jar", "jce.jar", "jsse.jar", "tools.jar"],
               "java_8" : ["rt.jar", "jce.jar", "jsse.jar"],
+              "java_8_mini" : ["rt.jar", "jce.jar", "jsse.jar"],
               // Android compiled from sources
               "android_22_fulljars" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
                                        "optional/org.apache.http.legacy.jar"],
@@ -63,7 +64,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
               "android_26_robolectric" : ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
                                     "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
               //Python
-              "python"           :[],
+              "python"           : [ ],
             ]
     static final availableConfigurations = [
             "twophase-A" : "TwoPhaseAConfiguration",
@@ -324,7 +325,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 else {
                     // Custom support for minor versions installed
                     // locally, e.g., "java_8_debug".
-                    String platformPath = "${platformsLib}/JREs/jre1.${version}.0_${variant}/lib"
+                    String platformPath = "${platformsLib}/JREs/jre1.${version}_${variant}/lib"
                     if (!((new File(platformPath)).exists())) {
                         throw new RuntimeException("Minor-version platform does not exist: ${platformName}")
                     }
