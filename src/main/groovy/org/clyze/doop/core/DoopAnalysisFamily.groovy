@@ -799,7 +799,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Monitoring interval for sampling memory and cpu usage. default: 5sec",
 					value: 5,
 					nonStandard: true,
-					webUI: AnalysisForm,
 					isAdvanced: true
 			),
 			/* End non-standard flags */
