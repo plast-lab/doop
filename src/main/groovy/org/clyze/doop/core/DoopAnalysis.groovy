@@ -244,7 +244,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				cacheDir.mkdirs()
 				FileOps.copyDirContents(factsDir, cacheDir)
 				new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
-			} else if (options.CACHE.value) {
+			} else {
 				log.warn "WARNING: Imported facts are not cached."
 			}
 			log.info "----"
