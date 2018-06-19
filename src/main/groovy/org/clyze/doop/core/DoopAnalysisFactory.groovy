@@ -62,6 +62,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
               // Android-Robolectric
               "android_26_robolectric" : ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
                                     "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
+              //Python
+              "python"           :[],
             ]
     static final availableConfigurations = [
             "twophase-A" : "TwoPhaseAConfiguration",
@@ -288,6 +290,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      * @return               The platform components.
      */
     private static List tokenizePlatform(String platformName) {
+        if(platformName == "python")
+            return [platformName, "", ""]
         def platformInfo = platformName.tokenize("_")
         int partsCount = platformInfo.size()
         if ((partsCount != 2) && (partsCount != 3)) {
@@ -339,6 +343,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     platformArtifactPaths.addAll(files)
                 }
                 return platformArtifactPaths
+            case "python":
+                return new ArrayList<String>(0)
             default:
                 throw new RuntimeException("Invalid platform: ${platform}")
         }
@@ -365,6 +371,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             options[(jreOption.id)] = jreOption
         } else if (platform == "android") {
             options.ANDROID.value = true
+        }else if (platform == "python") {
+            options.PYTHON.value = true
         } else {
             throw new RuntimeException("No options for ${platformName}")
         }
@@ -428,37 +436,39 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 options.TAMIFLEX.value = "dummy"
             }
         }
-
-        if (options.MAIN_CLASS.value) {
-            if (options.X_START_AFTER_FACTS.value &&
-                options.X_SYMLINK_CACHED_FACTS.value) {
-                throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.X_START_AFTER_FACTS.name} when using symbolic links")
-            } else if (options.IGNORE_MAIN_METHOD.value) {
-                throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
-            } else {
-                log.debug "The main class is set to ${options.MAIN_CLASS.value}"
-            }
-        } else {
-            if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
-                if (inputFiles[0] == null) {
-                    throw new RuntimeException("Error: no input files")
-                }
-                JarFile jarFile = new JarFile(inputFiles[0])
-                //Try to read the main class from the manifest contained in the jar
-                def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
-                if (main) {
-                    log.debug "The main class is automatically set to ${main}"
-                    options.MAIN_CLASS.value = main
+        if(! options.PYTHON.value) {
+            if (options.MAIN_CLASS.value) {
+                if (options.X_START_AFTER_FACTS.value &&
+                        options.X_SYMLINK_CACHED_FACTS.value) {
+                    throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.X_START_AFTER_FACTS.name} when using symbolic links")
+                } else if (options.IGNORE_MAIN_METHOD.value) {
+                    throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
                 } else {
-                    //Check whether the jar contains a class with the same name
-                    def jarName = FilenameUtils.getBaseName(jarFile.getName())
-                    if (jarFile.getJarEntry("${jarName}.class")) {
-                        log.debug "The main class is automatically set to ${jarName}"
-                        options.MAIN_CLASS.value = jarName
+                    log.debug "The main class is set to ${options.MAIN_CLASS.value}"
+                }
+            } else {
+                if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
+                    if (inputFiles[0] == null) {
+                        throw new RuntimeException("Error: no input files")
+                    }
+                    JarFile jarFile = new JarFile(inputFiles[0])
+                    //Try to read the main class from the manifest contained in the jar
+                    def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
+                    if (main) {
+                        log.debug "The main class is automatically set to ${main}"
+                        options.MAIN_CLASS.value = main
+                    } else {
+                        //Check whether the jar contains a class with the same name
+                        def jarName = FilenameUtils.getBaseName(jarFile.getName())
+                        if (jarFile.getJarEntry("${jarName}.class")) {
+                            log.debug "The main class is automatically set to ${jarName}"
+                            options.MAIN_CLASS.value = jarName
+                        }
                     }
                 }
             }
         }
+
 
         if (options.DYNAMIC.value) {
             List<String> dynFiles = options.DYNAMIC.value as List<String>

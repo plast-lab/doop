@@ -3,10 +3,12 @@ package org.clyze.doop.python;
 import com.ibm.wala.cast.python.ir.PythonLanguage;
 import com.ibm.wala.cast.python.types.PythonTypes;
 import com.ibm.wala.classLoader.Module;
+import com.ibm.wala.classLoader.SourceFileModule;
 import com.ibm.wala.classLoader.SourceURLModule;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.types.ClassLoaderReference;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -26,7 +28,8 @@ public class PythonScopeBuilder {
         List<Module> modules = new ArrayList<>(fileNames.size());
         for(String file : fileNames) {
             if(file.endsWith(".py"))
-                modules.add(new SourceURLModule(new URL(file)));
+                modules.add(new SourceFileModule(new File(file), file, null));
+                //modules.add(new SourceURLModule(new URL("file://" + file)));
             else
                 System.err.println("Unrecognised type of file " + file);
         }

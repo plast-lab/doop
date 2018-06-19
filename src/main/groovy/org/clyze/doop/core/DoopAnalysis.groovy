@@ -179,7 +179,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			}
 
 			Set<String> tmpDirs = [] as Set
-			if (options.PYTHON_FACT_GEN.value) {
+			if (options.PYTHON.value) {
 				runPython(tmpDirs)
 				return
 			}
@@ -431,12 +431,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 	protected void runPython(Set<String> tmpDirs) {
 		Collection<String> params = []
-		Collection<String> depArgs
+		Collection<String> depArgs = []
 		def inputArgs = getInputArgsJars(tmpDirs)
 		def deps = getDepsJars(tmpDirs)
 
 		def platform = options.PLATFORM.value.toString().tokenize("_")[0]
-
+		assert platform == "python"
 
 
 		if (options.FACT_GEN_CORES.value) {

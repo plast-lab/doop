@@ -236,8 +236,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
-					id: "PYTHON_FACT_GEN",
-					name: "python-fact-gen",
+					id: "PYTHON",
+					name: "python",
 					value: false,
 					forCacheID: true
 			),
