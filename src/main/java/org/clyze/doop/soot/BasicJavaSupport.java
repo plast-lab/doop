@@ -52,6 +52,11 @@ public class BasicJavaSupport {
         }
     }
 
+    /**
+     * Process a JAR input.
+     * @param desc       the kind of the input ("application" or "library")
+     * @param filename   the JAR filename
+     */
     private void processJar(String desc, String filename) throws IOException {
         JarEntry entry;
         try (JarInputStream jin = new JarInputStream(new FileInputStream(filename));
@@ -67,9 +72,9 @@ public class BasicJavaSupport {
                 if (entryName.endsWith(".class")) {
                     ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
                     String className = reader.getClassName().replace("/", ".");
-                    classesInApplicationJars.add(className);
-                    String artifact = filename.substring(filename.lastIndexOf('/') + 1, filename.length());
-                    registerArtifactClass(artifact, className, "-");
+                    if (desc.equals("application"))
+                        classesInApplicationJars.add(className);
+                    registerArtifactClass(jarFile.getName(), className, "-");
                 } else if (entryName.endsWith(".properties")) {
                     propertyProvider.addProperties((new FoundFile(filename, entryName)));
                 } /* Skip non-class files and non-property files */
