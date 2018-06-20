@@ -6,7 +6,6 @@ import com.ibm.wala.cast.python.loader.PythonLoaderFactory;
 import com.ibm.wala.cast.python.types.PythonTypes;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.classLoader.Module;
-import com.ibm.wala.classLoader.SourceFileModule;
 import com.ibm.wala.classLoader.SourceURLModule;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
@@ -17,8 +16,6 @@ import com.ibm.wala.ipa.cha.SeqClassHierarchyFactory;
 import com.ibm.wala.ssa.IRFactory;
 import com.ibm.wala.types.ClassLoaderReference;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -32,7 +29,6 @@ public class PythonIREngine {
     private PythonLoaderFactory loader;
     private AnalysisScope scope;
     private IClassHierarchy cha;
-    private IRFactory<IMethod> irs;
     private IAnalysisCacheView cache;
 
     public List<Module> getModules() {
@@ -59,7 +55,7 @@ public class PythonIREngine {
     {
         modules = new ArrayList<>(fileNames.size());
         loader = new PythonLoaderFactory();
-        irs = AstIRFactory.makeDefaultFactory();
+        IRFactory<IMethod> irs = AstIRFactory.makeDefaultFactory();
         cache = new AnalysisCacheImpl(irs);
         for(String file : fileNames) {
             if(file.endsWith(".py")) {

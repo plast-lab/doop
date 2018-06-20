@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 public class PythonInvoker {
 
@@ -105,9 +107,11 @@ public class PythonInvoker {
 
         IAnalysisCacheView cache = pythonIREngine.getAnalysisCache();
         Iterator<IClass> classes = cha.iterator();
+        Set<IClass> classSet = new HashSet<>();
         while(classes.hasNext())
         {
             IClass klass = classes.next();
+            classSet.add(klass);
             String sourceFileName="";
             try{
                 sourceFileName = klass.getSourceFileName();
@@ -125,5 +129,8 @@ public class PythonInvoker {
                 System.out.println(ir.toString());
             }
         }
+        PythonFactWriter factWriter = new PythonFactWriter();
+        PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
+        pythonFactGenerator.run();
     }
 }
