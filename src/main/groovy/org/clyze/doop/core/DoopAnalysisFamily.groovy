@@ -41,15 +41,22 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isMandatory: true,
 					webUI: AnalysisForm
 			),
-			new AnalysisOption<String>(
+			new AnalysisOption<File>(
 					id: "OUT_DIR",
 					cli: false
 			),
-			new AnalysisOption<String>(
+			new AnalysisOption<File>(
 					id: "CACHE_DIR",
 					cli: false
 			),
-			new AnalysisOption<String>(
+			new IntegerAnalysisOption(
+					id: "TIMEOUT",
+					"description": "The analysis max allocated execution time. Measured in minutes.",
+					value: 90, // Minutes
+					cli: false,
+					webUI: AnalysisForm
+			),
+			new AnalysisOption<List<String>>(
 					id: "INPUTS",
 					name: "input-file",
 					optName: "i",
@@ -62,7 +69,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isMandatory: false,
 					webUI: InputBundleForm
 			),
-			new AnalysisOption<String>(
+			new AnalysisOption<List<String>>(
 					id: "LIBRARIES",
 					name: "library-file",
 					optName: "l",
@@ -83,7 +90,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					valueType: InputType.LIBRARY,
 					cli: false
 			),
-			new AnalysisOption<String>(
+			new AnalysisOption<List<String>>(
 					id: "HEAPDLS",
 					name: "heapdl-file",
 					argName: "HEAPDL",

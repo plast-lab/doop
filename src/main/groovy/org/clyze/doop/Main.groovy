@@ -6,6 +6,7 @@ import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
+import org.clyze.doop.core.DoopAnalysisFamily
 import org.clyze.doop.soot.DoopErrorCodeException
 import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
@@ -21,8 +22,6 @@ import java.util.concurrent.TimeoutException
 @CompileStatic
 @Log4j
 class Main {
-
-    private static final int DEFAULT_TIMEOUT = 90 // minutes
 
     // Allow access to the analysis object from external code
     static DoopAnalysis analysis
@@ -94,9 +93,10 @@ class Main {
                 usageBuilder.usage()
                 return
             }
-            analysis.options.BLOX_OPTS.value = bloxOptions
 
-            int timeout = parseTimeout(userTimeout, DEFAULT_TIMEOUT)
+            analysis.options.BLOX_OPTS.value = bloxOptions
+            analysis.options.TIMEOUT.value = parseTimeoutOrDefault(userTimeout)
+
             def executorService = Executors.newSingleThreadExecutor()
             try {
                 executorService.submit(new Runnable() {
@@ -110,9 +110,9 @@ class Main {
                             // Don't continue with the analysis.
                         }
                     }
-                }).get(timeout, TimeUnit.MINUTES)
+                }).get(analysis.options.TIMEOUT.value as int, TimeUnit.MINUTES)
             } catch (TimeoutException te) {
-                log.error "Timeout has expired ($timeout min)."
+                log.error "Timeout has expired (${analysis.options.TIMEOUT.value} min)."
             } finally {
                 executorService.shutdownNow()
             }
@@ -141,7 +141,9 @@ class Main {
         }
     }
 
-    private static int parseTimeout(String userTimeout, int defaultTimeout) {
+    private static int parseTimeoutOrDefault(String userTimeout) {
+        def defaultTimeout = DoopAnalysisFamily.instance.supportedOptions().find { it.id == "TIMEOUT" }.value as Integer
+
         if (!userTimeout.toBoolean()) {
             log.info "No user supplied timeout - using the default ($defaultTimeout min)."
             return defaultTimeout

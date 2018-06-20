@@ -73,7 +73,7 @@ class Doop {
 	 * @return Map < String , AnalysisOptions > .
 	 */
 	static Map<String, AnalysisOption> createDefaultAnalysisOptions() {
-		return DoopAnalysisFamily.instance.supportedOptions().collectEntries { [(it.id): it.clone()] }		
+		DoopAnalysisFamily.instance.supportedOptions().collectEntries { [(it.id): it.clone()] }
 	}
 
 	/**
