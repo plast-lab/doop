@@ -207,7 +207,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			}
 			if (options.MAIN_CLASS.value) {
 				new File(factsDir, "MainClass.facts").withWriter { w ->
-					w << "${options.MAIN_CLASS.value}"
+					options.MAIN_CLASS.value.each { w.writeLine(it as String) }
 				}
 			}
 
