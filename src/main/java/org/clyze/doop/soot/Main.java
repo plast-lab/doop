@@ -413,7 +413,7 @@ public class Main {
             }
         }
 
-        System.out.println("Artifact-to-class map for " + artifactToClassMap.size() + " artifacts");
+        System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
         for (String artifact : artifactToClassMap.keySet())
             for (ArtifactEntry ae : artifactToClassMap.get(artifact))
                 writer.writeClassArtifact(artifact, ae.className, ae.subArtifact);
