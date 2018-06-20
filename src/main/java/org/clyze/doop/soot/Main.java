@@ -280,20 +280,16 @@ public class Main {
             addToSootClassPath(scene, lib);
         }
 
-        if (sootParameters._main != null) {
+        if (sootParameters._main != null)
             Options.v().set_main_class(sootParameters._main);
-        }
 
-        if (sootParameters._mode == SootParameters.Mode.FULL) {
+        if (sootParameters._mode == SootParameters.Mode.FULL)
             Options.v().set_full_resolver(true);
-        }
 
-        if (sootParameters._allowPhantom) {
+        if (sootParameters._allowPhantom)
             Options.v().set_allow_phantom_refs(true);
-        }
 
         java.addClasses(classes, scene);
-
         scene.loadNecessaryClasses();
 
         /*
@@ -306,9 +302,8 @@ public class Main {
 
         classes.stream().filter((klass) -> isApplicationClass(sootParameters, klass)).forEachOrdered(SootClass::setApplicationClass);
 
-        if (sootParameters._mode == SootParameters.Mode.FULL && !sootParameters._onlyApplicationClassesFactGen) {
+        if (sootParameters._mode == SootParameters.Mode.FULL && !sootParameters._onlyApplicationClassesFactGen)
             classes = new HashSet<>(scene.getClasses());
-        }
 
         try {
             System.out.println("Total classes in Scene: " + classes.size());
@@ -324,7 +319,6 @@ public class Main {
         Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple, sootParameters._cores);
 
         writePreliminaryFacts(classes, propertyProvider, artifactToClassMap, writer);
-
         db.flush();
 
         if (sootParameters._android) {
@@ -337,6 +331,7 @@ public class Main {
                 android.writeComponents(writer);
             }
         }
+
         if (!sootParameters._noFacts) {
             scene.getOrMakeFastHierarchy();
             // avoids a concurrent modification exception, since we may
@@ -377,19 +372,14 @@ public class Main {
     private static void processSeedFileLine(String line, FactWriter factWriter) {
         if (line.contains("(")) {
             factWriter.writeAndroidKeepMethod(line);
-        }
-        else if (line.contains(":")) {
-
-        }
-        else {
+        } else if (!line.contains(":")) {
             factWriter.writeAndroidKeepClass(line);
         }
     }
 
     private static void processSpecialSensitivityMethodFileLine(String line, FactWriter factWriter) {
-        if (line.contains(", ")) {
+        if (line.contains(", "))
             factWriter.writeSpecialSensitivityMethod(line);
-        }
     }
 
     private static boolean sootClassPathFirstElement = true;
