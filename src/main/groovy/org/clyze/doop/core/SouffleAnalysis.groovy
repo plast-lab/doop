@@ -76,7 +76,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         handleImportDynamicFacts()
 
-        if (options.HEAPDL.value || options.IMPORT_DYNAMIC_FACTS.value) {
+        if (options.HEAPDLS.value || options.IMPORT_DYNAMIC_FACTS.value) {
             cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/import-dynamic-facts.dl", commonMacros)
         }
 
@@ -91,8 +91,8 @@ class SouffleAnalysis extends DoopAnalysis {
         def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
         cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
 
-        if (options.DYNAMIC.value) {
-            throw new RuntimeException("Flag --${options.DYNAMIC.name} is not yet supported in Souffle mode.")
+        if (options.DYNAMIC_FILES.value) {
+            throw new RuntimeException("Flag --${options.DYNAMIC_FILES.name} is not yet supported in Souffle mode.")
         }
 
         if (options.CFG_ANALYSIS.value || name == "sound-may-point-to") {

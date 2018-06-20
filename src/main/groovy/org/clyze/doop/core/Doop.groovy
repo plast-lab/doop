@@ -1,6 +1,6 @@
 package org.clyze.doop.core
 
-import org.apache.log4j.Logger
+import groovy.util.logging.Log4j
 import org.clyze.analysis.AnalysisOption
 import org.clyze.analysis.BooleanAnalysisOption
 import org.clyze.analysis.IntegerAnalysisOption
@@ -9,6 +9,7 @@ import org.clyze.utils.FileOps
 /**
  * Doop initialization and supported options.
  */
+@Log4j
 class Doop {
 
 	static final String ARTIFACTORY_PLATFORMS_URL = "http://centauri.di.uoa.gr:8081/artifactory/Platforms"
@@ -74,13 +75,8 @@ class Doop {
 	 * @return Map < String , AnalysisOptions > .
 	 */
 	static Map<String, AnalysisOption> createDefaultAnalysisOptions() {
-		defaultOptionsMap = [:]
-		Map<String, AnalysisOption> options = [:]
-		DoopAnalysisFamily.instance.supportedOptions().each {
-			AnalysisOption option ->
-				defaultOptionsMap.put(option.id, option)
-				options.put(option.id, option.clone())
-		}
+		def options = DoopAnalysisFamily.instance.supportedOptions().collectEntries { [(it.id): it] }
+		if (!defaultOptionsMap) defaultOptionsMap = [:] + options
 		return options
 	}
 
@@ -93,7 +89,7 @@ class Doop {
 	 * @return the default analysis options overridden by the values contained in the CLI option accessor.
 	 */
 	static Map<String, AnalysisOption> overrideDefaultOptionsWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
-		Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+		def options = createDefaultAnalysisOptions()
 		overrideOptionsWithCLI(options, cli, filter)
 		return options
 	}
@@ -136,7 +132,7 @@ class Doop {
 					boolean filtered = filter ? filter.call(option) : true
 					if (filtered) {
 						if (option.id == "DYNAMIC") {
-							option.value = value.split().collect { String s -> s.trim() }
+							option.value = value.split().collect { it.trim() }
 						} else if (option.argName) {
 							option.value = value
 						} else {
@@ -159,18 +155,17 @@ class Doop {
 	 */
 	static void overrideOptionsWithCLI(Map<String, AnalysisOption> options, OptionAccessor cli, Closure<Boolean> filter) {
 		options.values().each { AnalysisOption option ->
-			String optionName = option.name
-			if (optionName) {
-				def optionValue = cli[(optionName)]
-				Logger.getRootLogger().debug "Processing $optionName"
+			def name = option.name
+			if (name) {
+				log.debug "Processing $name"
+				def optionValue = option.multipleValues ? cli[("${name}s")]: cli[(name)]
 				if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
-					boolean filtered = filter ? filter.call(option) : true
-					if (filtered) {
+					if (filter ? filter.call(option) : true) {
 						// NOTE: Obscure cli builder feature: to get the value of a cl option
 						// as a List, you need to append an s to its short name
 						if (option.id == "DYNAMIC") {
 							option.value = cli.ds
-						} else if (option.id == "HEAPDL") {
+						} else if (option.id == "HEAPDLS") {
 							option.value = cli.heapdls
 							// If the cl option has an arg, its value defines the value of the
 							// respective analysis option

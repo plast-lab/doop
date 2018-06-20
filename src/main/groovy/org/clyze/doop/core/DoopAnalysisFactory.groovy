@@ -97,40 +97,18 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             "partitioned-2-object-sensitive_heap" : "PartitionedTwoObjectSensitivePlusHeapConfiguration",
     ]
 
-    /**
-     * A helper class that acts as an intermediate holder of the analysis variables.
-     */
-    protected static class AnalysisVars {
-        String name
-        Map<String, AnalysisOption> options
-        List<String> inputFilePaths
-        List<String> libraryFilePaths
-        List<String> heapdlFilePaths
-        List<String> platformFilePaths
-        List<File>   inputFiles
-        List<File>   libraryFiles
-        List<File>   heapFiles
-        List<File>   platformFiles
-
-        @Override
-        String toString() {
-            return [
-                    name:              name,
-                    options:           options.values().toString(),
-                    inputFilePaths:    inputFilePaths.toString(),
-                    libraryFilePaths:  libraryFilePaths.toString(),
-                    platformFilePaths: platformFilePaths.toString(),
-                    inputFiles:        inputFiles.toString(),
-                    libraryFiles:      libraryFiles.toString(),
-                    heapFiles:         heapFiles.toString(),
-                    platformFiles:     platformFiles.toString()
-            ].toString()
-        }
-    }
-
-    private static getConfiguration(String analysisName) {
-        return availableConfigurations.get(analysisName)
-    }
+	/**
+	 * Creates a new analysis, verifying the correctness of its name, options and inputFiles using
+	 * the default input resolution mechanism.
+	 */
+	@Override
+	DoopAnalysis newAnalysis(AnalysisFamily family, Map<String, AnalysisOption> options) {
+		def context = new DefaultInputResolutionContext()
+		context.add(options.INPUTS.value as List<String>, InputType.INPUT)
+		context.add(options.LIBRARIES.value as List<String>, InputType.LIBRARY)
+		context.add(options.HEAPDLS.value as List<String>, InputType.HPROF)
+		return newAnalysis(options, context)
+	}
 
     /**
      * Creates a new analysis, verifying the correctness of its id, name, options and inputFiles using
@@ -140,88 +118,57 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      * - if it is valid, it will be used to identify the analysis,
      * - if it is invalid, an exception will be thrown.
      */
-    DoopAnalysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
-        options.CONFIGURATION.value = getConfiguration(name)
+    DoopAnalysis newAnalysis(Map<String, AnalysisOption> options, InputResolutionContext context) {
+        processOptions(options, context)
+        // If not empty or null
+	    def id = options.USER_SUPPLIED_ID.value as String
+	    options.USER_SUPPLIED_ID.value = id ? validateUserSuppliedId(id) : generateId(options)
 
-        def vars = processOptions(name, options, context)
+        checkAnalysis(options)
+	    if (options.LB3.value) checkLogicBlox(options)
 
-        checkAnalysis(name, options)
-        if (options.LB3.value)
-            checkLogicBlox(vars)
+        options.CONFIGURATION.value = availableConfigurations.get(options.ANALYSIS.value)
 
-        //init the environment used for executing commands
-        Map<String, String> commandsEnv = initExternalCommandsEnvironment(vars)
+        // Initialize the environment used for executing commands
+        def commandsEnv = initExternalCommandsEnvironment(options)
+	    def outDir = createOutputDirectory(options)
 
-        // if not empty or null
-        def analysisId = id ? validateUserSuppliedId(id) : generateId(vars)
-
-        def outDir = createOutputDirectory(vars, analysisId)
-
-        def cacheDir
-
+        File cacheDir
         if (options.X_START_AFTER_FACTS.value) {
             cacheDir = new File(options.X_START_AFTER_FACTS.value as String)
             FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
-        }
-        else {
-            def cacheId = generateCacheID(vars)
+        } else {
+            def cacheId = generateCacheID(options)
             cacheDir = new File("${Doop.doopCache}/$cacheId")
-            checkAppGlob(vars)
+            checkAppGlob(options)
         }
 
-        DoopAnalysis analysis
         if (options.LB3.value) {
-            analysis = new LB3Analysis(
-                    analysisId,
-                    name.replace(File.separator, "-"),
+		    log.debug "Created new analysis"
+            return new LB3Analysis(
                     options,
                     context,
                     outDir,
                     cacheDir,
-                    vars.inputFiles,
-                    vars.libraryFiles,
-                    vars.heapFiles,
-                    vars.platformFiles,
                     commandsEnv)
         } else {
-            analysis = new SouffleAnalysis(
-                    analysisId,
-                    name.replace(File.separator, "-"),
+		    log.debug "Created new analysis"
+            return new SouffleAnalysis(
                     options,
                     context,
                     outDir,
                     cacheDir,
-                    vars.inputFiles,
-                    vars.libraryFiles,
-                    vars.heapFiles,
-                    vars.platformFiles,
                     commandsEnv)
         }
-        log.debug "Created new analysis"
-        return analysis
     }
 
-    /**
-     * Creates a new analysis, verifying the correctness of its name, options and inputFiles using
-     * the default input resolution mechanism.
-     */
-    @Override
-    DoopAnalysis newAnalysis(AnalysisFamily family, String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths, List<String> libraryFilePaths, List<String> hprofFilePaths) {
-        DefaultInputResolutionContext context = new DefaultInputResolutionContext()
-        context.add(inputFilePaths, InputType.INPUT)
-        context.add(libraryFilePaths, InputType.LIBRARY)
-        context.add(hprofFilePaths, InputType.HPROF)
-        return newAnalysis(id, name, options, context)
-    }
-
-    protected void checkAnalysis(String name, Map<String, AnalysisOption> options) {
+    static void checkAnalysis(Map<String, AnalysisOption> options) {
+        def name = options.ANALYSIS.value
         log.debug "Verifying analysis name: $name"
-        def analysisPath
-        if (options.LB3.value) 
-          analysisPath = "${Doop.analysesPath}/${name}/analysis.logic"
+        if (options.LB3.value)
+            FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/analysis.logic", "Unsupported analysis: $name")
         else
-          analysisPath = "${Doop.souffleAnalysesPath}/${name}/analysis.dl"
-        FileOps.findFileOrThrow(analysisPath, "Unsupported analysis: $name")
+            FileOps.findFileOrThrow("${Doop.souffleAnalysesPath}/${name}/analysis.dl", "Unsupported analysis: $name")
     }
 
     // This method may not be static, see [Note] above.
@@ -230,49 +177,45 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def isValid = trimmed.toCharArray().every {
             c -> Character.isLetter(c) || Character.isDigit(c) || c in EXTRA_ID_CHARACTERS
         }
-
-        if (!isValid) {
+        if (!isValid)
             throw new RuntimeException("Invalid analysis id: $id. The id should contain only letters, digits, " +
                     "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}.")
-        }
         return trimmed
     }
 
     // This method may not be static, see [Note] above.
-    protected File createOutputDirectory(AnalysisVars vars, String id) {
-        def outDir = new File("${Doop.doopOut}/${vars.name}/${id}")
+    protected File createOutputDirectory(Map<String, AnalysisOption> options) {
+        def outDir = new File("${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}")
         FileUtils.deleteQuietly(outDir)
         outDir.mkdirs()
         FileOps.findDirOrThrow(outDir, "Could not create analysis directory: ${outDir}")
         return outDir
     }
 
-    protected String generateId(AnalysisVars vars) {
-        Collection<String> idComponents = vars.options.keySet().findAll {
-            !Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION.contains(it)
-        }.collect {
-            String option -> return vars.options.get(option).toString()
-        }
-        idComponents = [vars.name] + vars.inputFilePaths + vars.libraryFilePaths + idComponents
+    protected String generateId(Map<String, AnalysisOption> options) {
+        Collection<String> idComponents = options.keySet()
+                .findAll { !(it in Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION) }
+                .collect { options[it] as String }
+        idComponents = options.INPUTS.value + options.LIBRARIES.value + idComponents
         log.debug "ID components: $idComponents"
         def id = idComponents.join('-')
 
         return CheckSum.checksum(id, HASH_ALGO)
     }
 
-    protected String generateCacheID(AnalysisVars vars) {
-        Collection<String> idComponents = vars.options.values()
+    protected String generateCacheID(Map<String, AnalysisOption> options) {
+        Collection<String> idComponents = options.values()
                 .findAll { it.forCacheID }
-                .collect { option -> option.toString() }
+                .collect { it as String }
 
         Collection<String> checksums = []
-        checksums += vars.inputFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
-        checksums += vars.libraryFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
-        checksums += vars.heapFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
-        checksums += vars.platformFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
+        checksums += options.INPUTS.value.collect { File file -> CheckSum.checksum(file, HASH_ALGO) }
+        checksums += options.LIBRARIES.value.collect { File file -> CheckSum.checksum(file, HASH_ALGO) }
+        checksums += options.HEAPDLS.value.collect { File file -> CheckSum.checksum(file, HASH_ALGO) }
+        checksums += options.PLATFORMS.value.collect { File file -> CheckSum.checksum(file, HASH_ALGO) }
 
-        if (vars.options.TAMIFLEX.value && vars.options.TAMIFLEX.value != "dummy")
-            checksums += [CheckSum.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
+        if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy")
+            checksums += [CheckSum.checksum(new File(options.TAMIFLEX.value as String), HASH_ALGO)]
 
         idComponents = checksums + idComponents
 
@@ -359,14 +302,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      * @param options        the Doop options to affect
      * @param platformName   the platform ("java_8", "android_25_fulljars")
      */
-    private static void setOptionsForPlatform(Map<String, AnalysisOption> options,
-                                              String platformName) {
+    private static void setOptionsForPlatform(Map<String, AnalysisOption> options, String platformName) {
         def (platform, version, variant) = tokenizePlatform(platformName)
         if (platform == "java") {
             // generate the JRE constant for the preprocessor
             def jreOption = new BooleanAnalysisOption(
-                id:"JRE1"+version,
-                value:true,
+                id: "JRE1$version" as String,
+                value: true,
                 forPreprocessor: true
             )
             options[(jreOption.id)] = jreOption
@@ -382,105 +324,93 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
     /**
      * Processes the options of the analysis.
      */
-    protected AnalysisVars processOptions(String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
-
+    static void processOptions(Map<String, AnalysisOption> options, InputResolutionContext context) {
         log.debug "Processing analysis options"
-
-        String platformName = options.PLATFORM.value.toString()
-        String platformsLib = options.PLATFORMS_LIB.value.toString()
-        def inputFilePaths
-        def libraryFilePaths
-        def heapdlFilePaths
-        def platformFilePaths
-        def inputFiles
-        def libraryFiles
-        def heapFiles
-        def platformFiles
+        def platformName = options.PLATFORM.value as String
+        def platformsLib = options.PLATFORMS_LIB.value as String
 
         if (!options.X_START_AFTER_FACTS.value) {
-            inputFilePaths = context.inputs()            
-            libraryFilePaths = context.libraries()
-            heapdlFilePaths = context.hprofs()
-            platformFilePaths = getArtifactsForPlatform(platformName, platformsLib)
-
-            log.debug "Resolving inputs and libraries"
+            log.debug "Resolving files"
             context.resolve()
-            inputFiles = context.getAllInputs()
-            log.debug "Input file paths: $inputFilePaths -> $inputFiles"
-            libraryFiles = context.getAllLibraries()
-            log.debug "Library file paths: $libraryFilePaths -> $libraryFiles"
-            heapFiles = context.getAllHprofs()
-            log.debug "HeapDL file paths: $heapdlFilePaths -> $heapFiles"
-            platformFiles = resolve(platformFilePaths, InputType.LIBRARY)
-            log.debug "Platform file paths: $platformFilePaths -> $platformFiles"
+
+            options.INPUTS.value = context.getAllInputs()
+            log.debug "Input file paths: ${context.inputs()} -> ${options.INPUTS.value}"
+
+            options.LIBRARIES.value = context.getAllLibraries()
+            log.debug "Library file paths: ${context.libraries()} -> ${options.LIBRARIES.value}"
+
+            options.HEAPDLS.value = context.getAllHprofs()
+            log.debug "HeapDL file paths: ${context.hprofs()} -> ${options.HEAPDLS.value}"
+
+            def platformFilePaths = getArtifactsForPlatform(platformName, platformsLib)
+            options.PLATFORMS.value = resolve(platformFilePaths, InputType.LIBRARY)
+            log.debug "Platform file paths: $platformFilePaths -> ${options.PLATFORMS.value}"
         }
 
         setOptionsForPlatform(options, platformName)
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
             if (!options.X_START_AFTER_FACTS.value) {
-                def inputJarName = inputFilePaths[0]
+                def libraryPaths = context.libraries()
+                def inputJarName = context.inputs().first()
                 def deps = inputJarName.replace(".jar", "-deps.jar")
-                if (!inputFilePaths.contains(deps) && !libraryFilePaths.contains(deps)) {
-                    libraryFilePaths.add(deps)
+                if (!(deps in libraryPaths)) {
+                    libraryPaths << deps
                     context.resolve()
-                    libraryFiles = context.getAllLibraries()
+                    options.LIBRARIES.value = context.getAllLibraries()
                 }
 
                 if (!options.REFLECTION.value && !options.TAMIFLEX.value)
-                    options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")], InputType.INPUT)[0]
+                    options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")], InputType.INPUT).first()
 
                 def benchmark = FilenameUtils.getBaseName(inputJarName)
                 log.info "Running ${options.DACAPO.value ? "dacapo" : "dacapo-bach"} benchmark: $benchmark"
-            }
-            else {
+            } else {
                 options.TAMIFLEX.value = "dummy"
             }
         }
+
         if(! options.PYTHON.value) {
-            if (options.MAIN_CLASS.value) {
-                if (options.X_START_AFTER_FACTS.value &&
-                        options.X_SYMLINK_CACHED_FACTS.value) {
-                    throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.X_START_AFTER_FACTS.name} when using symbolic links")
-                } else if (options.IGNORE_MAIN_METHOD.value) {
-                    throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
-                } else {
-                    log.debug "The main class is set to ${options.MAIN_CLASS.value}"
-                }
-            } else {
-                if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
-                    if (inputFiles[0] == null) {
-                        throw new RuntimeException("Error: no input files")
-                    }
-                    JarFile jarFile = new JarFile(inputFiles[0])
-                    //Try to read the main class from the manifest contained in the jar
-                    def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
-                    if (main) {
-                        log.debug "The main class is automatically set to ${main}"
-                        options.MAIN_CLASS.value = main
-                    } else {
-                        //Check whether the jar contains a class with the same name
-                        def jarName = FilenameUtils.getBaseName(jarFile.getName())
-                        if (jarFile.getJarEntry("${jarName}.class")) {
-                            log.debug "The main class is automatically set to ${jarName}"
-                            options.MAIN_CLASS.value = jarName
-                        }
-                    }
-                }
-            }
-        }
+			if (options.MAIN_CLASS.value) {
+				if (options.X_START_AFTER_FACTS.value && options.X_SYMLINK_CACHED_FACTS.value) {
+					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.X_START_AFTER_FACTS.name} when using symbolic links")
+				} else if (options.IGNORE_MAIN_METHOD.value) {
+					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
+				} else {
+					log.info "The main class(es) are set to ${options.MAIN_CLASS.value}"
+				}
+			} else {
+				if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
+					options.INPUTS.value.each {
+						def jarFile = new JarFile(it)
+						//Try to read the main class from the manifest contained in the jar
+						def main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS)
+						if (main) {
+							log.debug "Main class(es) expanded with ${main}"
+							options.MAIN_CLASS.value << main
+						} else {
+							//Check whether the jar contains a class with the same name
+							def jarName = FilenameUtils.getBaseName(jarFile.name)
+							if (jarFile.getJarEntry("${jarName}.class")) {
+								log.debug "Main class(es) expanded with ${jarName}"
+								options.MAIN_CLASS.value << jarName
+							}
+						}
+					}
+				}
+			}
+		}
 
-
-        if (options.DYNAMIC.value) {
-            List<String> dynFiles = options.DYNAMIC.value as List<String>
+        if (options.DYNAMIC_FILES.value) {
+            def dynFiles = options.DYNAMIC_FILES.value as List<String>
             dynFiles.each { String dynFile ->
-                FileOps.findFileOrThrow(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
-                log.debug "The DYNAMIC option has been set to ${dynFile}"
+                FileOps.findFileOrThrow(dynFile, "The DYNAMIC_FILES option is invalid: ${dynFile}")
+                log.debug "The DYNAMIC_FILES option has been set to ${dynFile}"
             }
         }
 
         if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
-            def tamFile = options.TAMIFLEX.value.toString()
+            def tamFile = options.TAMIFLEX.value as String
             FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
         }
 
@@ -541,7 +471,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         }
 
         if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
-            !options.HEAPDL.value && !options.ANDROID.value &&
+            !options.HEAPDLS.value && !options.ANDROID.value &&
             !options.DACAPO.value && !options.DACAPO_BACH.value &&
             !options.X_START_AFTER_FACTS.value) {
             log.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
@@ -614,23 +544,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         options.values().findAll { it.isMandatory }.each {
             if (!it.value) throw new RuntimeException("Missing mandatory argument: $it.name")
         }
-
-        log.debug "---------------"
-        AnalysisVars vars = new AnalysisVars(
-                name:              name,
-                options:           options,
-                inputFilePaths:    inputFilePaths,
-                libraryFilePaths:  libraryFilePaths,
-                platformFilePaths: platformFilePaths,
-                inputFiles:        inputFiles,
-                libraryFiles:      libraryFiles,
-                heapFiles:         heapFiles,
-                platformFiles:     platformFiles
-        )
-        log.debug vars
-        log.debug "---------------"
-
-        return vars
     }
 
     static List<File> resolve(List<String> filePaths, InputType inputType) {
@@ -638,19 +551,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         filePaths.each { f -> context.add(f, inputType) }
         context.resolve()
         switch (inputType) {
-        case InputType.LIBRARY: return context.getAllLibraries()
-        case InputType.INPUT: return context.getAllInputs()
-        case InputType.HPROF: return context.getAllHprofs()
-        default: throw new RuntimeException("Unknown inputType to resolve: ${inputType}")
+            case InputType.LIBRARY: return context.getAllLibraries()
+            case InputType.INPUT: return context.getAllInputs()
+            case InputType.HPROF: return context.getAllHprofs()
+            default: throw new RuntimeException("Unknown inputType to resolve: ${inputType}")
         }
-    }
-
-    static List<File> resolveHeapdlInputs(List<String> filePaths) {
-        List<File> ret = filePaths.collect { path -> new File(path) }
-        File f = ret.find { !it.exists() }
-        if (f)
-            throw new RuntimeException("HeapDL input does not exist: ${f.canonicalPath}")
-        return ret
     }
 
     /**
@@ -658,56 +563,41 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      *
      * If an app regex is not present, it generates one.
      */
-    protected void checkAppGlob(AnalysisVars vars) {
-        if (!vars.options.APP_REGEX.value) {
+    protected void checkAppGlob(Map<String, AnalysisOption> options) {
+        if (!options.APP_REGEX.value) {
             log.debug "Generating app regex"
 
-            //We process only the first jar for determining the application classes
-            /*
-            Set excluded = ["*", "**"] as Set
-            analysis.jars.drop(1).each { Dependency jar ->
-                excluded += PackageUtil.getPackages(jar.input())
-            }
-
-            Set<String> packages = PackageUtil.getPackages(analysis.jars[0].input()) - excluded
-            */
-
             Set<String> packages
-            String mode = vars.options.AUTO_APP_REGEX_MODE.value
+            String mode = options.AUTO_APP_REGEX_MODE.value
             // Default is 'all'.
             if ((mode == null) || (mode == 'all')) {
                 packages = [] as Set
-                vars.inputFiles.each { packages.addAll(PackageUtil.getPackages(it)) }
+                options.INPUTS.value.each { packages.addAll(PackageUtil.getPackages(it)) }
             } else if (mode == 'first') {
-                packages = PackageUtil.getPackages(vars.inputFiles[0])
+                packages = PackageUtil.getPackages(options.INPUTS.value.first())
             } else {
                 throw new RuntimeException("Invalid auto-app-regex mode: ${mode}")
             }
 
-            vars.options.APP_REGEX.value = packages.sort().join(':')
-
-            log.debug "APP_REGEX: ${vars.options.APP_REGEX.value}"
+            options.APP_REGEX.value = packages.sort().join(':')
+            log.debug "APP_REGEX: ${options.APP_REGEX.value}"
         }
     }
 
     /**
      * Verifies the correctness of the LogicBlox related options
      */
-    protected void checkLogicBlox(AnalysisVars vars) {
-
+    protected void checkLogicBlox(Map<String, AnalysisOption> options) {
         //BLOX_OPTS is set by the main method
-
-        AnalysisOption lbhome = vars.options.LOGICBLOX_HOME
-
+        def lbhome = options.LOGICBLOX_HOME
         log.debug "Verifying LogicBlox home: ${lbhome.value}"
-
         def lbHomeDir = FileOps.findDirOrThrow(lbhome.value as String, "The ${lbhome.id} value is invalid: ${lbhome.value}")
 
         def oldldpath = System.getenv("LD_LIBRARY_PATH")
-        vars.options.LD_LIBRARY_PATH.value = lbHomeDir.getAbsolutePath() + "/bin" + ":" + oldldpath
-        def bloxbatch = lbHomeDir.getAbsolutePath() + "/bin/bloxbatch"
+        options.LD_LIBRARY_PATH.value = lbHomeDir.absolutePath + "/bin" + ":" + oldldpath
+        def bloxbatch = lbHomeDir.absolutePath + "/bin/bloxbatch"
         FileOps.findFileOrThrow(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
-        vars.options.BLOXBATCH.value = bloxbatch
+        options.BLOXBATCH.value = bloxbatch
     }
 
     /**
@@ -721,8 +611,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      *     <li>adding the variables/paths/tweaks to meet the lb-env-bin.sh requirements of the pa-datalog distro
      * </ul>
      */
-    protected Map<String, String> initExternalCommandsEnvironment(AnalysisVars vars) {
-
+    protected Map<String, String> initExternalCommandsEnvironment(Map<String, AnalysisOption> options) {
         log.debug "Initializing the environment of the external commands"
 
         Map<String, String> env = [:]
@@ -730,8 +619,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         env.LC_ALL = "en_US.UTF-8"
 
-        if (vars.options.LB3.value) {
-            String lbHome = vars.options.LOGICBLOX_HOME.value
+        if (options.LB3.value) {
+            def lbHome = options.LOGICBLOX_HOME.value
             env.LOGICBLOX_HOME = lbHome
             //We add these LB specific env vars here to make the server deployment more flexible (and the cli user's life easier)
             env.LB_PAGER_FORCE_START = "true"
@@ -739,10 +628,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             env.DOOP_HOME = Doop.doopHome
 
             //We add the following for pa-datalog to function properly (copied from the lib-env-bin.sh script)
-            String path = env.PATH
+            def path = env.PATH
             env.PATH = "${lbHome}/bin:${path ?: ""}" as String
 
-            String ldLibraryPath = vars.options.LD_LIBRARY_PATH.value
+            def ldLibraryPath = options.LD_LIBRARY_PATH.value
             env.LD_LIBRARY_PATH = "${lbHome}/lib/cpp:${ldLibraryPath ?: ""}" as String
         }
 

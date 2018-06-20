@@ -26,6 +26,7 @@ import static org.apache.commons.io.FileUtils.*
 class LB3Analysis extends DoopAnalysis {
 
     boolean isRefineStep
+    LBBuilder lbBuilder
 
     @Override
     void run() {
@@ -116,7 +117,7 @@ class LB3Analysis extends DoopAnalysis {
 
         handleImportDynamicFacts()
 
-        if (options.HEAPDL.value || options.IMPORT_DYNAMIC_FACTS.value) {
+        if (options.HEAPDLS.value || options.IMPORT_DYNAMIC_FACTS.value) {
             cpp.preprocess("${outDir}/import-dynamic-facts.logic", "${Doop.factsPath}/import-dynamic-facts.logic")
             cpp.preprocess("${outDir}/import-dynamic-facts2.logic", "${Doop.factsPath}/import-dynamic-facts2.logic")
             cpp.preprocess("${outDir}/externalheaps.logic", "${Doop.factsPath}/externalheaps.logic", commonMacros)
@@ -137,8 +138,8 @@ class LB3Analysis extends DoopAnalysis {
     }
 
     void basicAnalysis() {
-        if (options.DYNAMIC.value) {
-            List<String> dynFiles = options.DYNAMIC.value as List<String>
+        if (options.DYNAMIC_FILES.value) {
+            def dynFiles = options.DYNAMIC_FILES.value as List<String>
             dynFiles.eachWithIndex { String dynFile, Integer index ->
                 File f = new File(dynFile)
                 File dynImport = new File(outDir, "dynamic${index}.import")

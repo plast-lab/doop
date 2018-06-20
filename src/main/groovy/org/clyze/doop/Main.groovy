@@ -9,8 +9,8 @@ import org.clyze.doop.core.DoopAnalysis
 import org.clyze.doop.soot.DoopErrorCodeException
 import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
+import org.codehaus.groovy.runtime.StackTraceUtils
 
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeoutException
 @Log4j
 class Main {
 
-    private static final int DEFAULT_TIMEOUT = 90 // 90 minutes
+    private static final int DEFAULT_TIMEOUT = 90 // minutes
 
     // Allow access to the analysis object from external code
     static DoopAnalysis analysis
@@ -47,7 +47,7 @@ class Main {
 
             def argsToParse
             def bloxOptions
-            def index = args.findIndexOf { arg -> arg == "--" }
+            def index = args.findIndexOf { it == "--" }
             if (index == -1) {
                 argsToParse = args
                 bloxOptions = null
@@ -56,8 +56,7 @@ class Main {
                 bloxOptions = args[(index + 1)..(args.length - 1)].join(' ')
             }
 
-            OptionAccessor cli = builder.parse(argsToParse)
-
+            def cli = builder.parse(argsToParse)
             if (!cli) {
                 // We assume usage has already been displayed by the CliBuilder.
                 return
@@ -77,64 +76,50 @@ class Main {
             try {
                 if (cli['p']) {
                     //create analysis from the properties file & the cli options
-                    String file = cli['p'] as String
-                    File f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
-                    File propsBaseDir = f.getAbsoluteFile().getParentFile()
-                    Properties props = FileOps.loadProperties(f)
+                    def file = cli['p'] as String
+                    def f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
+                    def propsBaseDir = f.absoluteFile.parentFile
+                    def props = FileOps.loadProperties(f)
 
                     changeLogLevel(cli['L'] ?: props.getProperty("level"))
-
                     userTimeout = cli['t'] ?: props.getProperty("timeout")
-
                     analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
                 } else {
                     changeLogLevel(cli['L'])
-
                     userTimeout = cli['t']
-
                     analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
                 }
-            }
-            catch (e) {
-                println e.getMessage()
+            } catch (e) {
+                log.error e.message
                 usageBuilder.usage()
                 return
             }
+            analysis.options.BLOX_OPTS.value = bloxOptions
 
             int timeout = parseTimeout(userTimeout, DEFAULT_TIMEOUT)
-            ExecutorService executorService = Executors.newSingleThreadExecutor()
+            def executorService = Executors.newSingleThreadExecutor()
             try {
                 executorService.submit(new Runnable() {
                     @Override
                     void run() {
-                        if (!analysis.options.X_START_AFTER_FACTS.value) {
-                            log.info "Starting ${analysis.name} analysis"
-                            log.info "Id       : $analysis.id"
-                            log.info "Inputs   : ${analysis.inputFiles.join(', ')}"
-                            log.info "Libraries: ${analysis.libraryFiles.join(', ')}"
-                        }
-                        else
-                            log.info "Starting ${analysis.name} analysis on user-provided facts at ${analysis.options.X_START_AFTER_FACTS.value} - id: $analysis.id"
-                        log.debug analysis
-                        analysis.options.BLOX_OPTS.value = bloxOptions
                         try {
+                            log.debug analysis
                             analysis.run()
+                            new CommandLineAnalysisPostProcessor().process(analysis)
                         } catch (DoopErrorCodeException ex) {
                             // Don't continue with the analysis.
-                            return
                         }
-                        new CommandLineAnalysisPostProcessor().process(analysis)
                     }
                 }).get(timeout, TimeUnit.MINUTES)
-            }
-            catch (TimeoutException te) {
+            } catch (TimeoutException te) {
                 log.error "Timeout has expired ($timeout min)."
             } finally {
                 executorService.shutdownNow()
             }
         } catch (e) {
             e = (e.getCause() ?: e)
-            log.error(e.getMessage(), e)
+	        e = StackTraceUtils.deepSanitize e
+            log.error(e.message, e)
         }
     }
 
@@ -157,13 +142,11 @@ class Main {
     }
 
     private static int parseTimeout(String userTimeout, int defaultTimeout) {
-        int timeout = defaultTimeout
+        int timeout
         try {
             timeout = Integer.parseInt(userTimeout)
-        }
-        catch (all) {
-            log.info "Using the default timeout ($timeout min)."
-            return defaultTimeout
+        } catch (all) {
+            timeout = -1
         }
 
         if (timeout <= 0) {

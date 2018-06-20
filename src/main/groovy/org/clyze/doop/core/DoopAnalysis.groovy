@@ -9,7 +9,6 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.soot.DoopErrorCodeException
-import org.clyze.doop.utils.LBBuilder
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 
@@ -53,16 +52,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	InputResolutionContext ctx
 
 	/**
-	 * The heap snapshots of the analysis
-	 */
-	protected List<File> heapFiles
-
-	/**
-	 * The jre library jars for soot
-	 */
-	protected List<File> platformLibs
-
-	/**
 	 * Used for invoking external commnands
 	 */
 	protected Executor executor
@@ -71,11 +60,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	 * Used for invoking the C preprocessor
 	 */
 	protected CPreprocessor cpp
-
-	/**
-	 * Interface with the underlying workspace
-	 */
-	LBBuilder lbBuilder
 
 	/**
 	 * Total time for the soot invocation
@@ -87,34 +71,41 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	 */
 	static final INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
 
+	String getId() { options.USER_SUPPLIED_ID.value as String }
+
+	String getName() { options.ANALYSIS.value.toString().replace(File.separator, "-") }
+
+	List<File> getInputFiles() { options.INPUTS.value as List<File> }
+
+	List<File> getLibraryFiles() { options.LIBRARIES.value as List<File> }
+
 	/*
 	 * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
 	 * in order to ensure that internal state is initialized at one point and the init method is no longer required.
 	 */
 
-	protected DoopAnalysis(String id,
-	                       String name,
-	                       Map<String, AnalysisOption> options,
+	protected DoopAnalysis(Map<String, AnalysisOption> options,
 	                       InputResolutionContext ctx,
 	                       File outDir,
 	                       File cacheDir,
-	                       List<File> inputFiles,
-	                       List<File> libraryFiles,
-	                       List<File> heapFiles,
-	                       List<File> platformLibs,
 	                       Map<String, String> commandsEnvironment) {
-		super(DoopAnalysisFamily.instance, id, name, options, outDir, inputFiles, libraryFiles)
+		super(DoopAnalysisFamily.instance, options, outDir)
 		this.ctx = ctx
 		this.cacheDir = cacheDir
-		this.heapFiles = heapFiles
-		this.platformLibs = platformLibs
 
-		if (options.X_STOP_AT_FACTS.value) {
+		if (!options.X_START_AFTER_FACTS.value) {
+			log.info "New $name analysis"
+			log.info "Id       : $id"
+			log.info "Inputs   : ${inputFiles.join(', ')}"
+			log.info "Libraries: ${libraryFiles.join(', ')}"
+		} else
+			log.info "New $name analysis on user-provided facts at ${options.X_START_AFTER_FACTS.value} - id: $id"
+
+		if (options.X_STOP_AT_FACTS.value)
 			factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
-		} else {
+		else
 			factsDir = new File(outDir, "facts")
 
-		}
 		database = new File(outDir, "database")
 		averroesDir = new File(outDir, "averroes")
 
@@ -234,8 +225,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				}
 			}
 
-			if (options.HEAPDL.value && !options.X_DRY_RUN.value) {
-				runHeapDL(heapFiles.collect { File f -> f.canonicalPath })
+			if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
+				runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
 			}
 
 			if (!options.X_START_AFTER_FACTS.value) {
@@ -276,7 +267,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
 			depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
 		} else {
-			depArgs = (platformLibs.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
+			depArgs = (options.PLATFORMS.value.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 		}
 
 		Collection<String> params
@@ -289,7 +280,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				// This uses all platformLibs.
 				// params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
 				// This uses just platformLibs[0], assumed to be android.jar.
-				params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+				params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [(options.PLATFORMS.value as List<File>).first().absolutePath]
 				break
 			default:
 				throw new RuntimeException("Unsupported platform")
@@ -381,20 +372,22 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		def platform = options.PLATFORM.value.toString().tokenize("_")[0]
 		assert platform == "android" || platform == "java"
 
+		def platformFiles = options.PLATFORMS.value as List<File>
+
 		switch (platform) {
 			case "java":
 				params = ["--application-regex", options.APP_REGEX.value.toString()]
 				depArgs = deps
 				depArgs.add("-p")
-				depArgs.add(platformLibs.get(0).getAbsolutePath().toString().replace("/rt.jar", ""))
-				depArgs = (platformLibs.collect { lib -> ["-el", lib.toString()] }.flatten() as Collection<String>) + depArgs
+				depArgs.add(platformFiles.first().absolutePath.toString().replace("/rt.jar", ""))
+				depArgs = (platformFiles.collect { lib -> ["-el", lib.toString()] }.flatten() as Collection<String>) + depArgs
 				break
 			case "android":
 				// This uses all platformLibs.
 				// params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
 				// This uses just platformLibs[0], assumed to be android.jar.
-				depArgs = (platformLibs.collect { lib -> ["-el", lib.toString()] }.flatten() as Collection<String>) + deps
-				params = ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+				depArgs = (platformFiles.collect { lib -> ["-el", lib.toString()] }.flatten() as Collection<String>) + deps
+				params = ["--android-jars"] + [platformFiles.first().absolutePath]
 				break
 			default:
 				throw new RuntimeException("Unsupported platform")
@@ -534,8 +527,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		props.setProperty("library_jar_files", libraryJars.join(":"))
 
 		//Concatenate the dynamic files
-		if (options.DYNAMIC.value) {
-			List<String> dynFiles = options.DYNAMIC.value as List<String>
+		if (options.DYNAMIC_FILES.value) {
+			def dynFiles = options.DYNAMIC_FILES.value as List<String>
 			File dynFileAll = new File(outDir, "all.dyn")
 			dynFiles.each { String dynFile ->
 				dynFileAll.append new File(dynFile).text
