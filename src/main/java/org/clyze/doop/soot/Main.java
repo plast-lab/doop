@@ -250,7 +250,7 @@ public class Main {
         PropertyProvider propertyProvider = new PropertyProvider();
         Set<SootClass> classes = new HashSet<>();
         Set<String> classesInApplicationJars = new HashSet<>();
-        Map<String, Set<String>> classToArtifactMap = new HashMap<>();
+        Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
 
         AndroidSupport android = null;
 
@@ -263,10 +263,10 @@ public class Main {
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
             android = new AndroidSupport(rOutDir, sootParameters, extraSensitiveControls);
-            android.processInputs(propertyProvider, classesInApplicationJars, classToArtifactMap, sootParameters._androidJars, tmpDirs);
+            android.processInputs(propertyProvider, classesInApplicationJars, artifactToClassMap, sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
-            populateClassesInAppJar(sootParameters._inputs, sootParameters._libraries, classesInApplicationJars, classToArtifactMap, propertyProvider);
+            populateClassesInAppJar(sootParameters._inputs, sootParameters._libraries, classesInApplicationJars, artifactToClassMap, propertyProvider);
         }
 
         Scene scene = Scene.v();
@@ -303,7 +303,7 @@ public class Main {
             if (android == null) {
                 System.err.println("Internal error when adding Android classes.");
             } else {
-                android.addClasses(classesInApplicationJars, classes, scene);
+                android.addClasses(artifactToClassMap, classesInApplicationJars, classes, scene);
             }
         } else {
             addClasses(classesInApplicationJars, classes, scene);
@@ -341,7 +341,7 @@ public class Main {
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
         Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple, sootParameters._cores);
 
-        writePreliminaryFacts(classes, propertyProvider, classToArtifactMap, writer);
+        writePreliminaryFacts(classes, propertyProvider, artifactToClassMap, writer);
 
         db.flush();
 
@@ -366,9 +366,10 @@ public class Main {
             if (sootParameters._generateJimple) {
                 Set<SootClass> jimpleClasses = new HashSet<>(classes);
                 List<String> allClassNames = new ArrayList<>();
-                for (String artifact : classToArtifactMap.keySet()) {
+                for (String artifact : artifactToClassMap.keySet()) {
 //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
-                        allClassNames.addAll(classToArtifactMap.get(artifact));
+                    Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
+                    allClassNames.addAll(artEntries);
                 }
                 forceResolveClasses(allClassNames, jimpleClasses, scene);
                 System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
@@ -427,17 +428,14 @@ public class Main {
         }
     }
 
-    private static void populateClassToArtifactMap(Map<String, Set<String>> classToArtifactMap, String libraryFilename, String className) {
-        Set<String> artifactClasses;
-        if (!classToArtifactMap.containsKey(libraryFilename)) {
-            artifactClasses = new HashSet<>();
-            artifactClasses.add(className);
-            classToArtifactMap.put(libraryFilename, artifactClasses);
-        }
-        else {
-            artifactClasses = classToArtifactMap.get(libraryFilename);
-            artifactClasses.add(className);
-        }
+    public static void registerArtifactClass(Map<String, Set<ArtifactEntry>> artifactToClassMap, String artifact, String className, String subArtifact) {
+        ArtifactEntry ae = new ArtifactEntry(className, subArtifact);
+        if (!artifactToClassMap.containsKey(artifact)) {
+            Set<ArtifactEntry> artifactClasses = new HashSet<>();
+            artifactClasses.add(ae);
+            artifactToClassMap.put(artifact, artifactClasses);
+        } else
+            artifactToClassMap.get(artifact).add(ae);
     }
 
     public static void addClasses(Collection<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
@@ -482,7 +480,7 @@ public class Main {
         addCommonDynamicClass(scene, "sun.net.www.protocol.jar.Handler");
     }
 
-    private static void writePreliminaryFacts(Set<SootClass> classes, PropertyProvider propertyProvider, Map<String, Set<String>> classToArtifactMap, FactWriter writer) {
+    private static void writePreliminaryFacts(Set<SootClass> classes, PropertyProvider propertyProvider, Map<String, Set<ArtifactEntry>> artifactToClassMap, FactWriter writer) {
         classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
 
         // Read all stored properties files
@@ -496,17 +494,19 @@ public class Main {
             }
         }
 
-        System.out.println("Class-to-Artifact map size: " + classToArtifactMap.size());
-        for (String artifact : classToArtifactMap.keySet())
-            for (String className : classToArtifactMap.get(artifact))
-                writer.writeClassArtifact(artifact, className);
+        System.out.println("Artifact-to-class map for " + artifactToClassMap.size() + " artifacts");
+        for (String artifact : artifactToClassMap.keySet())
+            for (ArtifactEntry ae : artifactToClassMap.get(artifact))
+                writer.writeClassArtifact(artifact, ae.className, ae.subArtifact);
     }
 
     /**
      * Helper method to read classes and property files from JAR/AAR files.
      *
-     * @param inputFilenames             the list of all input jar file names
+     * @param inputFilenames           the list of all input jar file names
+     * @param libraryFilenames         the list of all library file names
      * @param classesInApplicationJar  the set to populate
+     * @param artifactToClassMap       map from artifacts to class entries
      * @param propertyProvider         the provider to use for .properties files
      *
      * @return the name of the JAR file that was processed; this is
@@ -517,18 +517,23 @@ public class Main {
     public static void populateClassesInAppJar(List<String> inputFilenames,
                                                List<String> libraryFilenames,
                                                Set<String> classesInApplicationJar,
-                                               Map<String, Set<String>> classToArtifactMap,
+                                               Map<String, Set<ArtifactEntry>> artifactToClassMap,
                                                PropertyProvider propertyProvider) throws Exception {
 
-        for (String inputFilename : inputFilenames) {
+        for (String inputFilename : inputFilenames)
+            processJar("application", inputFilename, propertyProvider, classesInApplicationJar, artifactToClassMap);
 
-            JarEntry entry;
+        for (String libraryFilename : libraryFilenames) {
+            processJar("library", libraryFilename, propertyProvider, classesInApplicationJar, artifactToClassMap);
+        }
+    }
 
-            try (JarInputStream jin = new JarInputStream(new FileInputStream(inputFilename));
-                 JarFile jarFile = new JarFile(inputFilename))
+    private static void processJar(String desc, String filename, PropertyProvider propertyProvider, Set<String> classesInApplicationJar, Map<String, Set<ArtifactEntry>> artifactToClassMap) throws java.io.IOException {
+        JarEntry entry;
+        try (JarInputStream jin = new JarInputStream(new FileInputStream(filename));
+             JarFile jarFile = new JarFile(filename))
             {
-                System.out.println("Processing application JAR: " + inputFilename);
-
+                System.out.println("Processing " + desc + " JAR: " + filename);
                 /* List all JAR entries */
                 while ((entry = jin.getNextJarEntry()) != null) {
                     /* Skip directories */
@@ -540,38 +545,12 @@ public class Main {
                         ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
                         String className = reader.getClassName().replace("/", ".");
                         classesInApplicationJar.add(className);
-                        populateClassToArtifactMap(classToArtifactMap, inputFilename.substring(inputFilename.lastIndexOf('/') + 1, inputFilename.length()), className);
+                        String artifact = filename.substring(filename.lastIndexOf('/') + 1, filename.length());
+                        registerArtifactClass(artifactToClassMap, artifact, className, "-");
                     } else if (entryName.endsWith(".properties")) {
-                        propertyProvider.addProperties((new FoundFile(inputFilename, entryName)));
+                        propertyProvider.addProperties((new FoundFile(filename, entryName)));
                     } /* Skip non-class files and non-property files */
                 }
             }
-        }
-
-        for (String libraryFilename : libraryFilenames) {
-            JarEntry entry;
-
-            try (JarInputStream jin = new JarInputStream(new FileInputStream(libraryFilename));
-                 JarFile jarFile = new JarFile(libraryFilename)) {
-
-                System.out.println("Processing library JAR: " + libraryFilename);
-
-                /* List all JAR entries */
-                while ((entry = jin.getNextJarEntry()) != null) {
-                    /* Skip directories */
-                    if (entry.isDirectory())
-                        continue;
-
-                    String entryName = entry.getName();
-                    if (entryName.endsWith(".class")) {
-                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                        String className = reader.getClassName().replace("/", ".");
-                        populateClassToArtifactMap(classToArtifactMap, libraryFilename.substring(libraryFilename.lastIndexOf('/') + 1, libraryFilename.length()), className);
-                    } else if (entryName.endsWith(".properties")) {
-                        propertyProvider.addProperties((new FoundFile(libraryFilename, entryName)));
-                    } /* Skip non-class files and non-property files */
-                }
-            }
-        }
     }
 }

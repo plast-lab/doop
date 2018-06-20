@@ -1,5 +1,6 @@
 package org.clyze.doop.soot.android;
 
+import org.clyze.doop.soot.ArtifactEntry;
 import org.clyze.doop.soot.FactWriter;
 import org.clyze.doop.soot.Main;
 import org.clyze.doop.soot.PropertyProvider;
@@ -46,7 +47,7 @@ public class AndroidSupport {
         return dummyMain;
     }
 
-    public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, Map<String, Set<String>> classToArtifactMap, String androidJars, Set<String> tmpDirs) throws Exception {
+    public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, Map<String, Set<ArtifactEntry>> artifactToClassMap, String androidJars, Set<String> tmpDirs) throws Exception {
         if (sootParameters.getRunFlowdroid()) {
             String appInput = sootParameters.getInputs().get(0);
             SetupApplication app = new SetupApplication(androidJars, appInput);
@@ -115,7 +116,7 @@ public class AndroidSupport {
             sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs));
 
             sootParameters.getInputs().subList(1, sootParameters.getInputs().size()).clear();
-            Main.populateClassesInAppJar(sootParameters.getInputs(), sootParameters.getLibraries(), classesInApplicationJar, classToArtifactMap, propertyProvider);
+            Main.populateClassesInAppJar(sootParameters.getInputs(), sootParameters.getLibraries(), classesInApplicationJar, artifactToClassMap, propertyProvider);
         }
     }
 
@@ -129,7 +130,7 @@ public class AndroidSupport {
         System.out.println("possible layout controls: " + appUserControls.size());
     }
 
-    public void addClasses(Set<String> classesInApplicationJar, Set<SootClass> classes, Scene scene) {
+    public void addClasses(Map<String, Set<ArtifactEntry>> artifactToClassMap, Set<String> classesInApplicationJar, Set<SootClass> classes, Scene scene) {
         for (String appInput : sootParameters.getInputs()) {
             if (appInput.endsWith(".apk")) {
                 File apk = new File(appInput);
@@ -143,6 +144,8 @@ public class AndroidSupport {
                             String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor(((DexBackedClassDef) dexBackedClassDef).getType()).getEscapedName();
                             SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
                             classes.add(c);
+                            String artifact = apk.getName();
+                            Main.registerArtifactClass(artifactToClassMap, artifact, escapeClassName, dexContainer.getDexName());
                         }
                     }
                     System.out.println("Classes found in apk: " + allDexClasses.size());
