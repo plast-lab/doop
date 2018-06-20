@@ -92,7 +92,6 @@ dependencies {
 
     // JPhantom is a runtime dependency
     runtime "org.clyze:jphantom:1.2",
-            "ext:averroes-no-properties:1.0-SNAPSHOT",
             "ext:herosclasses:1.1",
             "ext:axml:2.0",
             "org.smali:util:2.2b4"                              // Dexlib2 utilities

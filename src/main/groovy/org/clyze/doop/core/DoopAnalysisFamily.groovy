@@ -827,14 +827,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					cli: false
 			),
-			new BooleanAnalysisOption(
-					id: "RUN_AVERROES",
-					name: "run-averroes",
-					description: "Run averroes to create a placeholder library.",
-					value: false,
-					forCacheID: true,
-					cli: false
-			),
 	]
 
 	private static List<String> analysesNames(String doopAnalysesDir) {

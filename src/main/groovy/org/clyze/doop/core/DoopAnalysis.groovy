@@ -42,11 +42,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	protected File database
 
 	/**
-	 * The dir used for running averroes
-	 */
-	protected File averroesDir
-
-	/**
 	 * The analysis input resolution mechanism
 	 */
 	InputResolutionContext ctx
@@ -107,7 +102,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			factsDir = new File(outDir, "facts")
 
 		database = new File(outDir, "database")
-		averroesDir = new File(outDir, "averroes")
 
 		executor = new Executor(outDir, commandsEnvironment)
 		cpp = new CPreprocessor(this, executor)
@@ -163,10 +157,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 			if (options.RUN_JPHANTOM.value) {
 				runJPhantom()
-			}
-
-			if (options.RUN_AVERROES.value) {
-				runAverroes()
 			}
 
 			Set<String> tmpDirs = [] as Set
@@ -261,14 +251,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 		def inputArgs = getInputArgsJars(tmpDirs)
 		def deps = getDepsJars(tmpDirs)
-
-		if (options.RUN_AVERROES.value) {
-			//change linked arg and injar accordingly
-			inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
-			depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
-		} else {
-			depArgs = (options.PLATFORMS.value.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-		}
+		depArgs = (options.PLATFORMS.value.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 
 		Collection<String> params
 
@@ -346,8 +329,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			//We invoke soot reflectively using a separate class-loader to be able
 			//to support multiple soot invocations in the same JVM @ server-side.
 			//TODO: Investigate whether this approach may lead to memory leaks,
-			//not only for soot but for all other Java-based tools, like jphantom
-			//or averroes.
+			//not only for soot but for all other Java-based tools, like jphantom.
 			//In such a case, we should invoke all Java-based tools using a
 			//separate process.
 			ClassLoader loader = sootClassLoader()
@@ -411,8 +393,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			//We invoke soot reflectively using a separate class-loader to be able
 			//to support multiple soot invocations in the same JVM @ server-side.
 			//TODO: Investigate whether this approach may lead to memory leaks,
-			//not only for soot but for all other Java-based tools, like jphantom
-			//or averroes.
+			//not only for soot but for all other Java-based tools, like jphantom.
 			//In such a case, we should invoke all Java-based tools using a
 			//separate process.
 			WalaInvoker wala = new WalaInvoker()
@@ -473,13 +454,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
 	}
 
-	protected void runAverroes() {
-		log.info "-- Running averroes --"
-
-		ClassLoader loader = averroesClassLoader()
-		Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
-	}
-
 	protected String cacheMeta() {
 		Collection<String> inputJars = inputFiles.collect {
 			File file -> file.toString()
@@ -506,84 +480,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		URLClassLoader loader = this.getClass().getClassLoader() as URLClassLoader
 		URL[] classpath = loader.getURLs()
 		return new URLClassLoader(classpath, null as ClassLoader)
-	}
-
-	/**
-	 * Creates a new class loader for running averroes
-	 */
-	protected ClassLoader averroesClassLoader() {
-		//TODO: for now, we hard-code the averroes jar and properties
-		String jar = "${Doop.doopHome}/lib/averroes-no-properties.jar"
-		String properties = "$outDir/averroes.properties"
-
-		//Determine the library jars
-		Collection<String> libraryJars = inputFiles.drop(1).collect { it.toString() } + jreAverroesLibraries()
-
-		//Create the averroes properties
-		Properties props = new Properties()
-		props.setProperty("application_includes", options.APP_REGEX.value as String)
-		props.setProperty("main_class", options.MAIN_CLASS as String)
-		props.setProperty("input_jar_files", inputFiles[0].toString())
-		props.setProperty("library_jar_files", libraryJars.join(":"))
-		props.setProperty("tamiflex_facts_file", options.TAMIFLEX.value as String)
-		props.setProperty("output_dir", averroesDir as String)
-		props.setProperty("jre", javaAverroesLibrary())
-
-		new File(properties).newWriter().withWriter { Writer writer ->
-			props.store(writer, null)
-		}
-
-		def file1 = FileOps.findFileOrThrow(jar, "averroes jar missing or invalid: $jar")
-		def file2 = FileOps.findFileOrThrow(properties, "averroes properties missing or invalid: $properties")
-
-		List<URL> classpath = [file1.toURI().toURL(), file2.toURI().toURL()]
-		return new URLClassLoader(classpath as URL[])
-	}
-
-	/**
-	 * Generates a list for the jre libs for averroes
-	 */
-	protected List<String> jreAverroesLibraries() {
-
-		def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
-		assert platformLibsValue.size() == 2
-		def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
-		assert platform == "java"
-
-		String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
-
-		//Not using if/else for readability
-		switch (version) {
-			case "1.3":
-				return []
-			case "1.4":
-				return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-			case "1.5":
-				return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-			case "1.6":
-				return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-			case "1.7":
-				return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-			case "1.8":
-				return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-			case "system":
-				String javaHome = System.getProperty("java.home")
-				return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"] as List<String>
-		}
-	}
-
-	/**
-	 * Generates the full path to the rt.jar required by averroes
-	 */
-	protected String javaAverroesLibrary() {
-
-		def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
-		assert platformLibsValue.size() == 2
-		def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
-		assert platform == "java"
-
-		String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
-		return "$path/rt.jar"
 	}
 
 	protected void runHeapDL(List<String> filenames) {
