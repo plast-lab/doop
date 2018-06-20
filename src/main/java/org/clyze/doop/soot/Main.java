@@ -275,8 +275,10 @@ public class Main {
             System.out.println("Adding " + inputFormat + ": "  + input);
 
             addToSootClassPath(scene, input);
-            if (sootParameters._android)
+            if (sootParameters._android) {
+                System.out.println("WARNING: skipping rest of inputs");
                 break;
+            }
         }
 
         for (String lib : AARUtils.toJars(sootParameters._libraries, false, tmpDirs)) {
