@@ -42,6 +42,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI: AnalysisForm
 			),
 			new AnalysisOption<String>(
+					id: "OUT_DIR",
+					cli: false
+			),
+			new AnalysisOption<String>(
+					id: "CACHE_DIR",
+					cli: false
+			),
+			new AnalysisOption<String>(
 					id: "INPUTS",
 					name: "input-file",
 					optName: "i",

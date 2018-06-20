@@ -31,12 +31,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	protected File factsDir
 
 	/**
-	 * The cache dir for the input facts
-	 */
-
-	protected File cacheDir
-
-	/**
 	 * The underlying workspace
 	 */
 	protected File database
@@ -70,6 +64,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 	String getName() { options.ANALYSIS.value.toString().replace(File.separator, "-") }
 
+	File getOutDir() { options.OUT_DIR.value as File }
+
+	File getCacheDir() { options.CACHE_DIR.value as File }
+
 	List<File> getInputFiles() { options.INPUTS.value as List<File> }
 
 	List<File> getLibraryFiles() { options.LIBRARIES.value as List<File> }
@@ -81,12 +79,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 	protected DoopAnalysis(Map<String, AnalysisOption> options,
 	                       InputResolutionContext ctx,
-	                       File outDir,
-	                       File cacheDir,
 	                       Map<String, String> commandsEnvironment) {
-		super(DoopAnalysisFamily.instance, options, outDir)
+		super(DoopAnalysisFamily.instance, options)
 		this.ctx = ctx
-		this.cacheDir = cacheDir
 
 		if (!options.X_START_AFTER_FACTS.value) {
 			log.info "New $name analysis"

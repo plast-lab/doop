@@ -131,35 +131,23 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         // Initialize the environment used for executing commands
         def commandsEnv = initExternalCommandsEnvironment(options)
-	    def outDir = createOutputDirectory(options)
+	    createOutputDirectory(options)
 
-        File cacheDir
         if (options.X_START_AFTER_FACTS.value) {
-            cacheDir = new File(options.X_START_AFTER_FACTS.value as String)
+            def cacheDir = new File(options.X_START_AFTER_FACTS.value as String)
             FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
+            options.CACHE_DIR.value = cacheDir
         } else {
             def cacheId = generateCacheID(options)
-            cacheDir = new File("${Doop.doopCache}/$cacheId")
+            options.CACHE_DIR.value = new File(Doop.doopCache, cacheId)
             checkAppGlob(options)
         }
 
-        if (options.LB3.value) {
-		    log.debug "Created new analysis"
-            return new LB3Analysis(
-                    options,
-                    context,
-                    outDir,
-                    cacheDir,
-                    commandsEnv)
-        } else {
-		    log.debug "Created new analysis"
-            return new SouffleAnalysis(
-                    options,
-                    context,
-                    outDir,
-                    cacheDir,
-                    commandsEnv)
-        }
+        log.debug "Created new analysis"
+        if (options.LB3.value)
+            return new LB3Analysis(options, context, commandsEnv)
+        else
+            return new SouffleAnalysis(options, context, commandsEnv)
     }
 
     static void checkAnalysis(Map<String, AnalysisOption> options) {
@@ -189,6 +177,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         FileUtils.deleteQuietly(outDir)
         outDir.mkdirs()
         FileOps.findDirOrThrow(outDir, "Could not create analysis directory: ${outDir}")
+        options.OUT_DIR.value = outDir
         return outDir
     }
 
