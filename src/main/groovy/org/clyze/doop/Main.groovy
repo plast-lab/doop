@@ -142,6 +142,11 @@ class Main {
     }
 
     private static int parseTimeout(String userTimeout, int defaultTimeout) {
+        if (!userTimeout.toBoolean()) {
+            log.info "No user supplied timeout - using the default ($defaultTimeout min)."
+            return defaultTimeout
+        }
+
         int timeout
         try {
             timeout = Integer.parseInt(userTimeout)
