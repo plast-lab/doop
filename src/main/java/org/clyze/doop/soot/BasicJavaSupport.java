@@ -1,5 +1,6 @@
 package org.clyze.doop.soot;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -74,7 +75,8 @@ public class BasicJavaSupport {
                     String className = reader.getClassName().replace("/", ".");
                     if (desc.equals("application"))
                         classesInApplicationJars.add(className);
-                    registerArtifactClass(jarFile.getName(), className, "-");
+                    String artifact = (new File(jarFile.getName())).getName();
+                    registerArtifactClass(artifact, className, "-");
                 } else if (entryName.endsWith(".properties")) {
                     propertyProvider.addProperties((new FoundFile(filename, entryName)));
                 } /* Skip non-class files and non-property files */
