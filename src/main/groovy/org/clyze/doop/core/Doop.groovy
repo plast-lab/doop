@@ -156,16 +156,14 @@ class Doop {
 			def name = option.name
 			if (name) {
 				log.debug "Processing $name"
+				// NOTE: Obscure cli builder feature: to get the value of a cl option
+				// as a List, you need to append an s to its short name
 				def optionValue = option.multipleValues ? cli[("${name}s")]: cli[(name)]
 				if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
 					if (filter ? filter.call(option) : true) {
-						// NOTE: Obscure cli builder feature: to get the value of a cl option
-						// as a List, you need to append an s to its short name
-						if (option.id == "HEAPDLS") {
-							option.value = cli.heapdls
-							// If the cl option has an arg, its value defines the value of the
-							// respective analysis option
-						} else if (option.argName) {
+						// If the cl option has an argument, its value defines the value of the
+						// respective analysis option
+						if (option.argName) {
 							if (option instanceof BooleanAnalysisOption)
 								option.value = optionValue.toBoolean()
 							else if (option instanceof IntegerAnalysisOption)
@@ -173,7 +171,7 @@ class Doop {
 							else
 								option.value = optionValue
 						}
-						// If the cl option has no arg and it's a boolean flag toggle the
+						// If the cl option has no argument and it's a boolean flag toggle the
 						// default value of the respective analysis option
 						else {
 							def defaultOption = defaultOptionsMap.get(option.id)
