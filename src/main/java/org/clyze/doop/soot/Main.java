@@ -276,7 +276,8 @@ public class Main {
 
             addToSootClassPath(scene, input);
             if (sootParameters._android) {
-                System.out.println("WARNING: skipping rest of inputs");
+                if (sootParameters._inputs.size() > 1)
+                    System.out.println("WARNING: skipping rest of inputs");
                 break;
             }
         }
