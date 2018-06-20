@@ -107,18 +107,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: System.getenv("DOOP_PLATFORMS_LIB") ?: Doop.ARTIFACTORY_PLATFORMS_URL,
 					cli: false
 			),
-			new AnalysisOption<String>(
-					id: "DYNAMIC_FILES",
-					name: "dynamic-file",
-					argName: "FILE",
-					description: "One or more files with tab-separated data for Config:DynamicClass. Separate multiple files with a space.",
-					value: [],
-					valueType: InputType.DYNAMIC,
-					multipleValues: true,
-					isFile: true,
-					changesFacts: true,
-					webUI: InputBundleForm
-			),
 
 			new AnalysisOption<List<String>>(
 					id: "MAIN_CLASS",

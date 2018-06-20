@@ -525,17 +525,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		props.setProperty("main_class", options.MAIN_CLASS as String)
 		props.setProperty("input_jar_files", inputFiles[0].toString())
 		props.setProperty("library_jar_files", libraryJars.join(":"))
-
-		//Concatenate the dynamic files
-		if (options.DYNAMIC_FILES.value) {
-			def dynFiles = options.DYNAMIC_FILES.value as List<String>
-			File dynFileAll = new File(outDir, "all.dyn")
-			dynFiles.each { String dynFile ->
-				dynFileAll.append new File(dynFile).text
-			}
-			props.setProperty("dynamic_classes_file", dynFileAll.toString())
-		}
-
 		props.setProperty("tamiflex_facts_file", options.TAMIFLEX.value as String)
 		props.setProperty("output_dir", averroesDir as String)
 		props.setProperty("jre", javaAverroesLibrary())

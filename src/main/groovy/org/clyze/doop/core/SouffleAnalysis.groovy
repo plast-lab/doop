@@ -91,10 +91,6 @@ class SouffleAnalysis extends DoopAnalysis {
         def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
         cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
 
-        if (options.DYNAMIC_FILES.value) {
-            throw new RuntimeException("Flag --${options.DYNAMIC_FILES.name} is not yet supported in Souffle mode.")
-        }
-
         if (options.CFG_ANALYSIS.value || name == "sound-may-point-to") {
             def cfgAnalysisPath = "${Doop.souffleAddonsPath}/cfg-analysis"
             cpp.includeAtEnd("$analysis", "${cfgAnalysisPath}/analysis.dl", "${cfgAnalysisPath}/declarations.dl")

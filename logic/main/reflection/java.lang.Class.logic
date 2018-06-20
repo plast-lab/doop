@@ -59,16 +59,6 @@ ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
    ClassNameMatchingStringConstant:Type(?type, ?constantHeap)).
 
 
-/**
- * Class.forName invocations with user-configured dynamic classes
- */
-ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
-ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
-  java:lang:Class:forName(?invocation, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  Config:DynamicClass(?type, ?invocation).
-
-
 /*************************************************************
  * java.lang.Class.getName
  *

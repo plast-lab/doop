@@ -138,23 +138,6 @@ class LB3Analysis extends DoopAnalysis {
     }
 
     void basicAnalysis() {
-        if (options.DYNAMIC_FILES.value) {
-            def dynFiles = options.DYNAMIC_FILES.value as List<String>
-            dynFiles.eachWithIndex { String dynFile, Integer index ->
-                File f = new File(dynFile)
-                File dynImport = new File(outDir, "dynamic${index}.import")
-                FileOps.writeToFile dynImport, """\
-                                              option,delimiter,"\t"
-                                              option,hasColumnNames,false
-
-                                              fromFile,"${f.getCanonicalPath()}",a,inv,b,type
-                                              toPredicate,Config:DynamicClass,type,inv
-                                              """.toString().stripIndent()
-
-                lbBuilder.eval("import -f $dynImport")
-            }
-        }
-
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
         cpp.preprocess("${outDir}/basic.logic", "${Doop.logicPath}/basic/basic.logic", commonMacros)
 

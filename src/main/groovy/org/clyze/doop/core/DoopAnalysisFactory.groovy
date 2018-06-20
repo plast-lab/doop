@@ -401,14 +401,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
-        if (options.DYNAMIC_FILES.value) {
-            def dynFiles = options.DYNAMIC_FILES.value as List<String>
-            dynFiles.each { String dynFile ->
-                FileOps.findFileOrThrow(dynFile, "The DYNAMIC_FILES option is invalid: ${dynFile}")
-                log.debug "The DYNAMIC_FILES option has been set to ${dynFile}"
-            }
-        }
-
         if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
             def tamFile = options.TAMIFLEX.value as String
             FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")

@@ -131,9 +131,7 @@ class Doop {
 				if (option && value && value.trim().length() > 0) {
 					boolean filtered = filter ? filter.call(option) : true
 					if (filtered) {
-						if (option.id == "DYNAMIC") {
-							option.value = value.split().collect { it.trim() }
-						} else if (option.argName) {
+						if (option.argName) {
 							option.value = value
 						} else {
 							option.value = value.toBoolean()
@@ -163,9 +161,7 @@ class Doop {
 					if (filter ? filter.call(option) : true) {
 						// NOTE: Obscure cli builder feature: to get the value of a cl option
 						// as a List, you need to append an s to its short name
-						if (option.id == "DYNAMIC") {
-							option.value = cli.ds
-						} else if (option.id == "HEAPDLS") {
+						if (option.id == "HEAPDLS") {
 							option.value = cli.heapdls
 							// If the cl option has an arg, its value defines the value of the
 							// respective analysis option

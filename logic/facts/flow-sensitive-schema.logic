@@ -554,10 +554,6 @@ Properties[?path, ?key] = ?value ->
 NativeReturnVar(?var, ?method) ->
    Var(?var), Method(?method).
 
-// Types potentially returned by a specific Class.forName invocation
-Config:DynamicClass(?class, ?invocation) ->
-  ReferenceType(?class), MethodInvocation(?invocation).
-
 // Predicates to store runtime metrics and statistics
 Stats:Runtime(?attr, ?value) -> string(?attr), uint[64](?value).
 Stats:Metrics(?index, ?attr, ?value) -> decimal[64](?index), string(?attr), uint[64](?value).
