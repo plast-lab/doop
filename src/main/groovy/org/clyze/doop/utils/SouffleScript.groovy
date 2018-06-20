@@ -94,10 +94,9 @@ class SouffleScript {
 		log.debug "Execution command: $executionCommand"
 		log.info "Running analysis"
 		executionTime = Helper.timing {
-			executor.monitoringInterval = monitoringInterval
-			executor.isMonitoringEnabled = true
-			executor.execute(executionCommand)
-			executor.isMonitoringEnabled = false
+			executor.enableMonitor(monitoringInterval)
+					.execute(executionCommand)
+					.disableMonitor()
 		}
 		log.info "Analysis execution time (sec): $executionTime"
 
