@@ -48,6 +48,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new IntegerAnalysisOption(
 					id: "TIMEOUT",
+					name: "timeout",
+					optName: "t",
+					argName: "MINUTES",
 					"description": "The analysis max allocated execution time. Measured in minutes.",
 					value: 90, // Minutes
 					cli: false,
