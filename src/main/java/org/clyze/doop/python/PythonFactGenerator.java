@@ -2,19 +2,26 @@ package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.analysis.typeInference.AstTypeInference;
+import com.ibm.wala.cast.ir.ssa.AstGlobalRead;
+import com.ibm.wala.cast.ir.ssa.AstGlobalWrite;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
+import com.ibm.wala.cast.python.types.PythonTypes;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ssa.*;
+import com.ibm.wala.types.TypeReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.python.utils.PythonIRPrinter;
+import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
 import java.util.Iterator;
 import java.util.Set;
+
+import static org.clyze.doop.python.utils.PythonUtils.createLocal;
 
 public class PythonFactGenerator implements Runnable{
     protected Log logger;
@@ -137,9 +144,15 @@ public class PythonFactGenerator implements Runnable{
                         //generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAAbstractInvokeInstruction) {
                         //generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAGetInstruction) {System.out.println("get" + instructions[j].toString() + " - " + instructions[j].getClass().getSimpleName());
+                    } else if (instructions[j] instanceof AstGlobalRead) {
                         //generate(m, ir, (SSAGetInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAPutInstruction) {System.out.println("oi" + instructions[j].toString() + " - " + instructions[j].getClass().getSimpleName());
+                    } else if (instructions[j] instanceof SSAGetInstruction) {
+                        System.out.println("get" + instructions[j].toString() + " - " + instructions[j].getClass().getName());
+                        //generate(m, ir, (SSAGetInstruction) instructions[j], session, typeInference);
+                    } else if (instructions[j] instanceof AstGlobalWrite) {
+                        //generate(m, ir, (SSAPutInstruction) instructions[j], session, typeInference);
+                    } else if (instructions[j] instanceof SSAPutInstruction) {
+                        System.out.println("oi" + instructions[j].toString() + " - " + instructions[j].getClass().getName());
                         //generate(m, ir, (SSAPutInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAUnaryOpInstruction) {
                         //generate(m, ir, (SSAUnaryOpInstruction) instructions[j], session, typeInference);
@@ -168,7 +181,7 @@ public class PythonFactGenerator implements Runnable{
                     } else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
                         session.calcInstructionNumber(instructions[j]);
                     } else {
-                        System.out.println("Unknown instruction: " + instructions[j].getClass().getSimpleName());
+                        System.out.println("Unknown instruction: " + instructions[j].getClass().getName());
                     }
                 }
             }
@@ -200,6 +213,188 @@ public class PythonFactGenerator implements Runnable{
             if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
 
             }
+        }
+    }
+
+    public void generate(IMethod m, IR ir, SSAUnaryOpInstruction instruction, Session session, TypeInference typeInference) {
+        // Unary op instructions have a single def (to) and a single use (from)
+        Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+
+        _writer.writeAssignUnop(m, instruction, to, from, session);
+    }
+
+    private void generate(IMethod m, IR ir, SSABinaryOpInstruction instruction, Session session, TypeInference typeInference)
+    {
+        // Binary instructions have two uses and a single def
+        Local l = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
+
+        _writer.writeAssignBinop(m, instruction, l, op1, op2, session);
+    }
+    private void generate(IMethod m, IR ir, SSAComparisonInstruction instruction, Session session, TypeInference typeInference)
+    {
+        // Binary instructions have two uses and a single def
+        Local l = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
+
+        _writer.writeAssignComparison(m, instruction, l, op1, op2, session);
+    }
+
+    private void generate(IMethod inMethod, IR ir, SSAThrowInstruction instruction, Session session, TypeInference typeInference)
+    {
+        // Throw instructions have a single use and no defs
+        SymbolTable symbolTable = ir.getSymbolTable();
+        int use = instruction.getUse(0);
+
+        if(symbolTable.isNullConstant(use))
+        {
+            _writer.writeThrowNull(inMethod, instruction, session);
+        }
+        else
+        {
+            Local l = createLocal(ir, instruction, use, typeInference);
+            _writer.writeThrow(inMethod, instruction, l, session);
+        }
+    }
+
+    public void generate(IMethod m, IR ir, SSAPhiInstruction instruction, Session session, TypeInference typeInference) {
+        // Phi instructions have a single def (to) and a number uses that represent the alternative values
+        Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        Local alternative;
+        for(int i=0; i < instruction.getNumberOfUses();i++)
+        {
+            if (instruction.getUse(i) > -1) {
+                alternative = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+            }
+            else {
+                continue;
+            }
+            _writer.writeAssignLocal(m, instruction, to, alternative, session);
+        }
+    }
+
+    public void generate(IMethod m, IR ir, SSANewInstruction instruction, Session session, TypeInference typeInference) {
+        Local l = createLocal(ir,instruction,instruction.getDef(),typeInference);
+        int numOfUses = instruction.getNumberOfUses();
+        if(numOfUses < 2)
+        {
+            _writer.writeAssignHeapAllocation(ir, m, instruction, l, session);
+        }
+        else
+        {
+            //_writer.writeAssignNewMultiArrayExpr(ir, m, instruction, l, session);
+        }
+    }
+
+    public void generate(IMethod m, IR ir, SSAGetInstruction instruction, Session session, TypeInference typeInference) {
+        Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
+
+        if (instruction.isStatic()) {
+            //Get static field has no uses and a single def (to)
+            _writer.writeLoadStaticField(m, instruction, instruction.getDeclaredField(), to, session);
+        }
+        else {
+            //Get instance field has one use (base) and one def (to)
+            Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+            _writer.writeLoadInstanceField(m, instruction, instruction.getDeclaredField(), base, to, session);
+        }
+    }
+
+    public void generate(IMethod m, IR ir, SSAPutInstruction instruction, Session session, TypeInference typeInference) {
+
+        if (instruction.isStatic()) {
+            //Put static field has a single use (from) and no defs
+            Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+            _writer.writeStoreStaticField(m, instruction, instruction.getDeclaredField(), from, session);
+        }
+        else {
+            //Put instance field has two uses (base and from) and no defs
+            Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+            Local from = createLocal(ir, instruction, instruction.getUse(1), typeInference);
+            _writer.writeStoreInstanceField(m, instruction, instruction.getDeclaredField(), base, from, session);
+        }
+    }
+
+    public void generate(IMethod m, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
+        // For invoke instructions the number of uses is equal to the number of parameters
+
+        Local l;
+        if(instruction.getNumberOfReturnValues() == 0)
+            l = null;
+        else
+            l = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        _writer.writeInvoke(m, ir, instruction, l, session,typeInference);
+    }
+
+    /**
+     * Return statement
+     */
+    private void generate(IMethod m, IR ir, SSAReturnInstruction instruction, Session session, TypeInference typeInference)
+    {
+        if (instruction.returnsVoid()) {
+            // Return void has no uses
+            _writer.writeReturnVoid(m, instruction, session);
+        }
+        else {
+            // Return something has a single use
+            Local l = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+            _writer.writeReturn(m, instruction, l, session);
+        }
+    }
+
+    // Instructions have zero to two defs.According to WALA's documentation:
+    // "SSAInvokeInstructions may additionally def a second variable, representing the exceptional return value."
+    // For each def we use writeLocal to produce VAR_TYPE and VAR_DECLARING_TYPE facts.
+    //We probably don't need to produce facts for it the second def.
+    private void generateDefs(IMethod m, IR ir, SSAInstruction instruction, TypeInference typeInference) {
+
+        if (instruction.hasDef()) {
+            for (int i = 0; i < instruction.getNumberOfDefs(); i++) {
+                int def = instruction.getDef(i);
+                Local l = createLocal(ir, instruction, def, typeInference);
+                _writer.writeLocal(m, l);
+            }
+        }
+    }
+
+    //We only need to generate VAR_TYPE and VAR_DECLARING_TYPE facts for the used variables if they are constants
+    //The others have either been previous defs or method parameters/this so they have already had facts produced.
+    private void generateUses(IMethod m, IR ir, SSAInstruction instruction, Session session, TypeInference typeInference) {
+        SymbolTable symbolTable = ir.getSymbolTable();
+
+        for (int i = 0; i < instruction.getNumberOfUses(); i++) {
+            int use = instruction.getUse(i);
+            if(instruction instanceof  SSAPhiInstruction && use < 0) //For some reason phi instructions can have -1 as use
+                continue;
+            if (use != -1 && symbolTable.isConstant(use)) {
+                Local l = createLocal(ir, instruction, use, typeInference);
+                Value v = symbolTable.getValue(use);
+                generateConstant(m, ir, instruction, v, l, session);
+            }
+        }
+    }
+
+    private void generateConstant(IMethod m, IR ir, SSAInstruction instruction, Value v, Local l, Session session) {
+        SymbolTable symbolTable = ir.getSymbolTable();
+
+        String s = v.toString();
+        if (v.isStringConstant()) {
+            l.setType(PythonTypes.object);
+            _writer.writeStringConstantExpression(ir, m, instruction, l, (ConstantValue) v, session);
+        } else if (v.isNullConstant()) {
+            _writer.writeNullExpression(m, instruction, l, session);
+        } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
+            l.setType(PythonTypes.object);
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+        } else if (symbolTable.isFloatConstant(l.getVarIndex())) {
+            l.setType(PythonTypes.object);
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+        } else if (symbolTable.isBooleanConstant(l.getVarIndex())) {
+            l.setType(PythonTypes.object);
+            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         }
     }
 

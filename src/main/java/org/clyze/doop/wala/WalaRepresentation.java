@@ -137,7 +137,7 @@ class WalaRepresentation {
         return signature(m) + "/@native-return";
     }
 
-    String param(IMethod m, int i)//REVIEW:SIFIS:I believe parameters are normal vi variables, same for this. Will look into it.
+    String param(IMethod m, int i)
     {
         return signature(m) + "/v" + (i+1);
     }

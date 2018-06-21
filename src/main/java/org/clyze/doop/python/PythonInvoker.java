@@ -13,8 +13,10 @@ import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.IRFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.clyze.doop.python.utils.PythonDatabase;
 import org.clyze.doop.soot.DoopErrorCodeException;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -127,7 +129,8 @@ public class PythonInvoker {
                     System.out.println(ir.toString());
                 }
             }
-            PythonFactWriter factWriter = new PythonFactWriter();
+            PythonDatabase db = new PythonDatabase(new File(parameters._outputDir),parameters._uniqueFacts);
+            PythonFactWriter factWriter = new PythonFactWriter(db);
             PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
             pythonFactGenerator.run();
         }
