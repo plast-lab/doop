@@ -239,29 +239,23 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 	// Returns false on fact generation failure.
 	protected boolean runSoot(Set<String> tmpDirs) {
-		Collection<String> depArgs
 
 		def platform = options.PLATFORM.value.toString().tokenize("_")[0]
-		assert platform == "android" || platform == "java"
+		if (platform != "android" && platform != "java")
+			throw new RuntimeException("Unsupported platform: ${platform}")
 
 		def inputArgs = getInputArgsJars(tmpDirs)
+
 		def deps = getDepsJars(tmpDirs)
-		depArgs = (options.PLATFORMS.value.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
+		Collection<String> depArgs = (options.PLATFORMS.value.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 
-		Collection<String> params
+		Collection<String> params = ["--application-regex", options.APP_REGEX.value.toString(), "--full"] + inputArgs + depArgs
 
-		switch (platform) {
-			case "java":
-				params = ["--full"] + inputArgs + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
-				break
-			case "android":
-				// This uses all platformLibs.
-				// params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-				// This uses just platformLibs[0], assumed to be android.jar.
-				params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [(options.PLATFORMS.value as List<File>).first().absolutePath]
-				break
-			default:
-				throw new RuntimeException("Unsupported platform")
+		if (platform == "android") {
+			// This uses all platformLibs.
+			// params = ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+			// This uses just platformLibs[0], assumed to be android.jar.
+			params.addAll(["--android-jars", (options.PLATFORMS.value as List<File>).first().absolutePath])
 		}
 
 		if (options.SSA.value) {
@@ -341,19 +335,19 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	}
 
 	protected void runWala(Set<String> tmpDirs) {
-		Collection<String> params
 		Collection<String> depArgs
 		def inputArgs = getInputArgsJars(tmpDirs)
 		def deps = getDepsJars(tmpDirs)
 
 		def platform = options.PLATFORM.value.toString().tokenize("_")[0]
-		assert platform == "android" || platform == "java"
+		if (platform != "android" && platform != "java")
+			throw new RuntimeException("Unsupported platform: ${platform}")
 
 		def platformFiles = options.PLATFORMS.value as List<File>
+		Collection<String> params = ["--application-regex", options.APP_REGEX.value.toString()]
 
 		switch (platform) {
 			case "java":
-				params = ["--application-regex", options.APP_REGEX.value.toString()]
 				depArgs = deps
 				depArgs.add("-p")
 				depArgs.add(platformFiles.first().absolutePath.toString().replace("/rt.jar", ""))
@@ -364,7 +358,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				// params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
 				// This uses just platformLibs[0], assumed to be android.jar.
 				depArgs = (platformFiles.collect { lib -> ["-el", lib.toString()] }.flatten() as Collection<String>) + deps
-				params = ["--android-jars"] + [platformFiles.first().absolutePath]
+				params.addAll(["--android-jars"] + [platformFiles.first().absolutePath])
 				break
 			default:
 				throw new RuntimeException("Unsupported platform")
