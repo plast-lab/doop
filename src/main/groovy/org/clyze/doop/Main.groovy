@@ -6,7 +6,6 @@ import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
-import org.clyze.doop.core.DoopAnalysisFamily
 import org.clyze.doop.soot.DoopErrorCodeException
 import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
@@ -95,7 +94,10 @@ class Main {
 			}
 
 			analysis.options.BLOX_OPTS.value = bloxOptions
-			analysis.options.TIMEOUT.value = parseTimeoutOrDefault(userTimeout)
+
+			if (userTimeout != "false")
+				analysis.options.TIMEOUT.value = parseTimeoutOrDefault(userTimeout, analysis.options.TIMEOUT.value as int)
+			log.info "Using a timeout of ${analysis.options.TIMEOUT.value} min."
 
 			def executorService = Executors.newSingleThreadExecutor()
 			try {
@@ -141,27 +143,14 @@ class Main {
 		}
 	}
 
-	private static int parseTimeoutOrDefault(String userTimeout) {
-		def defaultTimeout = DoopAnalysisFamily.instance.supportedOptions().find { it.id == "TIMEOUT" }.value as Integer
-
-		if (!userTimeout.toBoolean()) {
-			log.info "No user supplied timeout - using the default ($defaultTimeout min)."
-			return defaultTimeout
-		}
-
-		int timeout
+	private static int parseTimeoutOrDefault(String userTimeout, int defaultTimeout) {
 		try {
-			timeout = Integer.parseInt(userTimeout)
-		} catch (all) {
-			timeout = -1
-		}
-
-		if (timeout <= 0) {
-			log.info "Invalid user supplied timeout: $timeout - using the default ($defaultTimeout min)."
-			return defaultTimeout
-		} else {
-			log.info "Using a timeout of $timeout min."
+			def timeout = Integer.parseInt(userTimeout)
+			if (timeout <= 0) throw new Exception()
 			return timeout
+		} catch (all) {
+			log.info "Invalid user supplied timeout: `$userTimeout` - fallback to default."
+			return defaultTimeout
 		}
 	}
 }
