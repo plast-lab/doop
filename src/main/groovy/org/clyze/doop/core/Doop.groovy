@@ -154,7 +154,7 @@ class Doop {
 				log.debug "Processing $name"
 				// NOTE: Obscure cli builder feature: to get the value of a cl option
 				// as a List, you need to append an s to its short name
-				def optionValue = option.multipleValues ? cli[("${name}s")]: cli[(name)]
+				def optionValue = option.multipleValues ? cli[("${name}s")] : cli[(name)]
 				if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
 					if (filter ? filter.call(option) : true) {
 						// If the cl option has an argument, its value defines the value of the
@@ -169,7 +169,7 @@ class Doop {
 						}
 						// If the cl option has no argument and it's a boolean flag which
 						// is now set to true (all boolean options are false by default)
-						else {							
+						else {
 							option.value = true
 						}
 					}

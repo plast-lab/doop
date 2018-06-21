@@ -119,7 +119,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	 * when reading cached facts and when starting an analysis from
 	 * existing facts.
 	 *
-	 * @param fromDir	 the existing directory containing the facts
+	 * @param fromDir the existing directory containing the facts
 	 */
 	protected void linkOrCopyFacts(File fromDir) {
 		if (options.X_SYMLINK_CACHED_FACTS.value) {

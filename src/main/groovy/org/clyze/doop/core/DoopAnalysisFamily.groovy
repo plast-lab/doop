@@ -1,15 +1,12 @@
 package org.clyze.doop.core
 
-import org.clyze.analysis.AnalysisFamily
-import org.clyze.analysis.AnalysisOption
-import org.clyze.analysis.BooleanAnalysisOption
-import org.clyze.analysis.IntegerAnalysisOption
-import org.clyze.analysis.InputType
-import static org.clyze.analysis.UI.*
+import org.clyze.analysis.*
 
 import static DoopAnalysis.INFORMATION_FLOW_SUFFIX
 import static org.apache.commons.io.FilenameUtils.getExtension
 import static org.apache.commons.io.FilenameUtils.removeExtension
+import static org.clyze.analysis.UI.AnalysisForm
+import static org.clyze.analysis.UI.InputBundleForm
 
 @Singleton
 class DoopAnalysisFamily implements AnalysisFamily {
@@ -154,7 +151,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "TAMIFLEX",
 					name: "tamiflex",
 					argName: "FILE",
-					forCacheID: true,					
+					forCacheID: true,
 					description: "Use file with tamiflex data for reflection.",
 					isFile: true,
 					webUI: InputBundleForm,
@@ -845,7 +842,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	]
 
 	private static List<String> analysesNames(String doopAnalysesDir) {
-		List<String> logicFiles = [ "analysis.logic", "analysis.dl" ]
+		List<String> logicFiles = ["analysis.logic", "analysis.dl"]
 		List<String> analyses = []
 		if (doopAnalysesDir)
 			new File(doopAnalysesDir).eachDir { File dir ->
@@ -886,7 +883,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					it + ((it in platforms_LB) ? "" : " (Souffle-only)")
 				}) +
 						(platforms_LB.findAll { !(it in platforms_Souffle) }
-								.collect { it + " (LB-only)"})
+								.collect { it + " (LB-only)" })
 		return platforms.sort()
 	}
 }
