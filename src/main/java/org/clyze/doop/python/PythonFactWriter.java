@@ -1,6 +1,7 @@
 package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
+import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
@@ -17,10 +18,7 @@ import org.clyze.doop.python.utils.PythonPredicateFile;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -400,8 +398,8 @@ public class PythonFactWriter {
         writeAssignNumConstant(inMethod, instruction, l, constant, session);
     }
 
-    //TODO: This needs work!!!!!!!!!!!!
-    private void writeActualParams(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, String invokeExprRepr, Session session, TypeInference typeInference) {
+    //TODO: This needs work for pythons positional params!!!!!!!!!!!!
+    private void writeActualParams(IMethod inMethod, IR ir, SSAAbstractInvokeInstruction instruction, String invokeExprRepr, Session session, TypeInference typeInference) {
         if (instruction.isStatic()) {
             //for (int i = 0; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 0; i < instruction.getNumberOfPositionalParameters(); i++) {
@@ -415,7 +413,6 @@ public class PythonFactWriter {
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
                 _db.add(ACTUAL_PARAMETER, str(i-1), invokeExprRepr, _rep.local(inMethod, l));
             }
-
         }
     }
 
@@ -451,6 +448,50 @@ public class PythonFactWriter {
         _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), methodId);
 
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, from));
+    }
+
+    void writePythonInvoke(IMethod inMethod, IR ir, PythonInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
+        String insn = writePythonInvokeHelper(inMethod, ir, instruction, session, typeInference);
+        if(to != null)
+            _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
+    }
+
+    private String writePythonInvokeHelper(IMethod inMethod, IR ir, PythonInvokeInstruction instruction, Session session, TypeInference typeInference) {
+        String methodId = _rep.signature(inMethod);
+
+        int sourceLineNum = getLineNumberFromInstruction(ir,instruction);
+
+
+        MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
+
+
+        String insn = _rep.invoke(ir,inMethod, instruction, targetRef, session, typeInference);
+        writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
+
+        int index = session.calcInstructionNumber(instruction);
+
+        if(sourceLineNum != -1)
+            _db.add(METHOD_INV_LINE, insn, str(sourceLineNum));
+
+        if (instruction.isStatic()) {
+            _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
+            //_db.add(STATIC_METHOD_INV, insn, _rep.signature(targetRef), methodId);
+        }
+        else if (instruction.isDispatch()) {
+            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
+            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
+            //_db.add(VIRTUAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
+        }
+        else if (instruction.isSpecial()) {
+            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
+            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
+            //_db.add(SPECIAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
+        }
+        else {
+            throw new RuntimeException("Cannot handle invoke instruction: " + instruction);
+        }
+
+        return insn;
     }
 
     void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {

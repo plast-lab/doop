@@ -250,7 +250,7 @@ public class PythonRepresentation {
     {
         return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
-    String invoke(IR ir, IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, Session session, TypeInference typeInference)
+    String invoke(IR ir, IMethod inMethod, SSAAbstractInvokeInstruction instr, MethodReference methRef, Session session, TypeInference typeInference)
     {
         String defaultMid = fixType(methRef.getDeclaringClass()) + "." + methRef.getName().toString();
         String midPart;

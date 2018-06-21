@@ -100,6 +100,8 @@ public class PythonInvoker {
 
     public void run(PythonParameters parameters) throws IOException
     {
+        PythonDatabase db = new PythonDatabase(new File(parameters._outputDir),parameters._uniqueFacts);
+        PythonFactWriter factWriter = new PythonFactWriter(db);
         for(String inputFile: parameters._inputs) {
             //PythonIREngine pythonIREngine = new PythonIREngine(parameters._inputs);
             List<String> singleInputList= new ArrayList<>(1);
@@ -129,8 +131,6 @@ public class PythonInvoker {
                     System.out.println(ir.toString());
                 }
             }
-            PythonDatabase db = new PythonDatabase(new File(parameters._outputDir),parameters._uniqueFacts);
-            PythonFactWriter factWriter = new PythonFactWriter(db);
             PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
             pythonFactGenerator.run();
         }

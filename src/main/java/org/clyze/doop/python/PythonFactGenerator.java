@@ -101,7 +101,7 @@ public class PythonFactGenerator implements Runnable{
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
         SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
-        TypeInference typeInference;
+        TypeInference typeInference = null;
 
         //typeInference = AstTypeInference.make(ir, true);
 
@@ -133,17 +133,17 @@ public class PythonFactGenerator implements Runnable{
                     //this.generateDefs(m, ir, instructions[j], typeInference);
                     //this.generateUses(m, ir, instructions[j], session, typeInference);
                     if (instructions[j] instanceof SSAReturnInstruction) {
-                        //generate(m, ir, (SSAReturnInstruction) instructions[j], session, typeInference);
+                        generate(m, ir, (SSAReturnInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSABinaryOpInstruction) {
-                        //generate(m, ir, (SSABinaryOpInstruction) instructions[j], session, typeInference);
+                        generate(m, ir, (SSABinaryOpInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAMonitorInstruction) {
                         //generate(m, ir, (SSAMonitorInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAThrowInstruction) {
-                        //generate(m, ir, (SSAThrowInstruction) instructions[j], session, typeInference);
+                        generate(m, ir, (SSAThrowInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof PythonInvokeInstruction) {
                         //generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAAbstractInvokeInstruction) {
-                        //generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
+                        generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof AstGlobalRead) {
                         //generate(m, ir, (SSAGetInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAGetInstruction) {
@@ -316,6 +316,17 @@ public class PythonFactGenerator implements Runnable{
             Local from = createLocal(ir, instruction, instruction.getUse(1), typeInference);
             _writer.writeStoreInstanceField(m, instruction, instruction.getDeclaredField(), base, from, session);
         }
+    }
+
+    public void generate(IMethod m, IR ir, PythonInvokeInstruction instruction, Session session, TypeInference typeInference) {
+        // For invoke instructions the number of uses is equal to the number of parameters
+
+        Local l;
+        if(instruction.getNumberOfReturnValues() == 0)
+            l = null;
+        else
+            l = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        _writer.writePythonInvoke(m, ir, instruction, l, session,typeInference);
     }
 
     public void generate(IMethod m, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
