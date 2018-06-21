@@ -88,7 +88,8 @@ class Main {
 					analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
 				}
 			} catch (e) {
-				log.error e.message
+				e = StackTraceUtils.deepSanitize e
+				log.error(e.message, e)
 				usageBuilder.usage()
 				return
 			}
