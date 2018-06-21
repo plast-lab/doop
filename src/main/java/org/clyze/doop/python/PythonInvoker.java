@@ -18,10 +18,7 @@ import org.clyze.doop.soot.DoopErrorCodeException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class PythonInvoker {
 
@@ -101,36 +98,38 @@ public class PythonInvoker {
 
     public void run(PythonParameters parameters) throws IOException
     {
-        PythonIREngine pythonIREngine = new PythonIREngine(parameters._inputs);
-        AnalysisScope scope = pythonIREngine.buildAnalysisScope();
-        IClassHierarchy cha = pythonIREngine.buildClassHierarchy();
+        for(String inputFile: parameters._inputs) {
+            //PythonIREngine pythonIREngine = new PythonIREngine(parameters._inputs);
+            List<String> singleInputList= new ArrayList<>(1);
+            singleInputList.add(inputFile);
+            PythonIREngine pythonIREngine = new PythonIREngine(singleInputList);
+            pythonIREngine.buildAnalysisScope();
+            IClassHierarchy cha = pythonIREngine.buildClassHierarchy();
 
-        IAnalysisCacheView cache = pythonIREngine.getAnalysisCache();
-        Iterator<IClass> classes = cha.iterator();
-        Set<IClass> classSet = new HashSet<>();
-        while(classes.hasNext())
-        {
-            IClass klass = classes.next();
-            classSet.add(klass);
-            String sourceFileName="";
-            try{
-                sourceFileName = klass.getSourceFileName();
-            }catch(NullPointerException ex)
-            {
+            IAnalysisCacheView cache = pythonIREngine.getAnalysisCache();
+            Iterator<IClass> classes = cha.iterator();
+            Set<IClass> classSet = new HashSet<>();
+            while (classes.hasNext()) {
+                IClass klass = classes.next();
+                classSet.add(klass);
+                String sourceFileName = "";
+                try {
+                    sourceFileName = klass.getSourceFileName();
+                } catch (NullPointerException ex) {
 
+                }
+                System.out.println("class: " + klass.toString() + " in file:" + sourceFileName);
+                Collection<? extends IMethod> methods = klass.getDeclaredMethods();
+                for (IMethod m : methods) {
+                    m.getName();
+                    System.out.println("\t" + m.getSignature());
+                    IR ir = cache.getIR(m);
+                    System.out.println(ir.toString());
+                }
             }
-            System.out.println("class: " + klass.toString() + " in file:" + sourceFileName);
-            Collection<? extends IMethod> methods = klass.getDeclaredMethods();
-            for(IMethod m : methods)
-            {
-                m.getName();
-                System.out.println("\t"+m.getSignature());
-                IR ir = cache.getIR(m);
-                System.out.println(ir.toString());
-            }
+            PythonFactWriter factWriter = new PythonFactWriter();
+            PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
+            pythonFactGenerator.run();
         }
-        PythonFactWriter factWriter = new PythonFactWriter();
-        PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
-        pythonFactGenerator.run();
     }
 }

@@ -137,9 +137,9 @@ public class PythonFactGenerator implements Runnable{
                         //generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAAbstractInvokeInstruction) {
                         //generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAGetInstruction) {System.out.println("get" + instructions[j].toString());
+                    } else if (instructions[j] instanceof SSAGetInstruction) {System.out.println("get" + instructions[j].toString() + " - " + instructions[j].getClass().getSimpleName());
                         //generate(m, ir, (SSAGetInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAPutInstruction) {System.out.println("oi" + instructions[j].toString());
+                    } else if (instructions[j] instanceof SSAPutInstruction) {System.out.println("oi" + instructions[j].toString() + " - " + instructions[j].getClass().getSimpleName());
                         //generate(m, ir, (SSAPutInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAUnaryOpInstruction) {
                         //generate(m, ir, (SSAUnaryOpInstruction) instructions[j], session, typeInference);
