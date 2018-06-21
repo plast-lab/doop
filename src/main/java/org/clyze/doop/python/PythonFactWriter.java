@@ -404,14 +404,14 @@ public class PythonFactWriter {
             //for (int i = 0; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 0; i < instruction.getNumberOfPositionalParameters(); i++) {
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
-                _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
+                _db.add(ACTUAL_POSITIONAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
             }
         }
         else {
             //for (int i = 1; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 1; i < instruction.getNumberOfPositionalParameters(); i++) {
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
-                _db.add(ACTUAL_PARAMETER, str(i-1), invokeExprRepr, _rep.local(inMethod, l));
+                _db.add(ACTUAL_POSITIONAL_PARAMETER, str(i-1), invokeExprRepr, _rep.local(inMethod, l));
             }
         }
     }
