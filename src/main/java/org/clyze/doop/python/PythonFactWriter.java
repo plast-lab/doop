@@ -124,18 +124,18 @@ public class PythonFactWriter {
             typeName = inMap;
 
         //If its an ArrayType and it was not on the typeMap, add the appropriate facts
-        if (t.isArrayType() && inMap == null) {
-            _db.add(ARRAY_TYPE, typeName);
-            TypeReference componentType = t.getArrayElementType();
-            _db.add(COMPONENT_TYPE, typeName, writeType(componentType));
-            _db.add(CLASS_HEAP, _rep.classConstant(typeName), typeName);
-        }
-        else if (t.isPrimitiveType() || t.isReferenceType() || t.isClassType()) {
-
-        }
-        else {
-            throw new RuntimeException("Don't know what to do with type " + t);
-        }
+//        if (t.isArrayType() && inMap == null) {
+//            _db.add(ARRAY_TYPE, typeName);
+//            TypeReference componentType = t.getArrayElementType();
+//            _db.add(COMPONENT_TYPE, typeName, writeType(componentType));
+//            _db.add(CLASS_HEAP, _rep.classConstant(typeName), typeName);
+//        }
+//        else if (t.isPrimitiveType() || t.isReferenceType() || t.isClassType()) {
+//
+//        }
+//        else {
+//            throw new RuntimeException("Don't know what to do with type " + t);
+//        }
 
         return typeName;
     }
@@ -170,16 +170,16 @@ public class PythonFactWriter {
 
         _db.add(NORMAL_HEAP, heap, writeType(instruction.getConcreteType()));
 
-        if (instruction.getNewSite().getDeclaredType().isArrayType()) {
-            int arrayLengthVar = instruction.getUse(0);
-            SymbolTable symbolTable = ir.getSymbolTable();
-            if (symbolTable.isIntegerConstant(arrayLengthVar)) {
-                int arrayLength = symbolTable.getIntValue(arrayLengthVar);
-
-                if(arrayLength == 0)
-                    _db.add(EMPTY_ARRAY, heap);
-            }
-        }
+//        if (instruction.getNewSite().getDeclaredType().isArrayType()) {
+//            int arrayLengthVar = instruction.getUse(0);
+//            SymbolTable symbolTable = ir.getSymbolTable();
+//            if (symbolTable.isIntegerConstant(arrayLengthVar)) {
+//                int arrayLength = symbolTable.getIntValue(arrayLengthVar);
+//
+//                if(arrayLength == 0)
+//                    _db.add(EMPTY_ARRAY, heap);
+//            }
+//        }
 
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
@@ -236,6 +236,20 @@ public class PythonFactWriter {
 
     void writeStoreInstanceField(IMethod m, SSAInstruction instruction, FieldReference f, Local base, Local from, Session session) {
         writeInstanceField(m, instruction, f, base, from, session, STORE_INST_FIELD);
+    }
+
+    void writeGlobalRead(IMethod m, SSAInstruction instruction, Local to, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = _rep.signature(m);
+        _db.add(GLOBAL_READ, insn, str(index), _rep.local(m, to), methodId);
+    }
+
+    void writeGlobalWrite(IMethod m, SSAInstruction instruction, Local from, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = _rep.signature(m);
+        _db.add(GLOBAL_WRITE, insn, str(index), _rep.local(m, from), methodId);
     }
 
     void writeLoadInstanceField(IMethod m, SSAInstruction instruction, FieldReference f, Local base, Local to, Session session) {

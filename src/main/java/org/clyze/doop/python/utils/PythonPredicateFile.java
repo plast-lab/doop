@@ -15,7 +15,8 @@ public enum PythonPredicateFile
     CLASS_MODIFIER("ClassModifier"),
     ARRAY_TYPE("ArrayType"),
     INTERFACE_TYPE("InterfaceType"),
-    COMPONENT_TYPE("ComponentType"),
+    GLOBAL_READ("GlobalRead"),
+    GLOBAL_WRITE("GlobalWrite"),
     ACTUAL_POSITIONAL_PARAMETER("ActualPositionalParam"),
     ACTUAL_KEYWORD_PARAMETER("ActualKeywordParam"),
     BOOTSTRAP_PARAMETER("BootstrapParam"),
@@ -44,7 +45,6 @@ public enum PythonPredicateFile
     ASSIGN_NULL("AssignNull"),
     ASSIGN_INSTANCE_OF("AssignInstanceOf"),
     NORMAL_HEAP("NormalHeap"),
-    EMPTY_ARRAY("EmptyArray"),
     CLASS_HEAP("ClassHeap"),
     METHOD_HANDLE_CONSTANT("MethodHandleConstant"),
     METHOD_TYPE_CONSTANT("MethodTypeConstant"),
@@ -67,19 +67,14 @@ public enum PythonPredicateFile
     EXCEPTION_HANDLER("ExceptionHandler"),
     METHOD("Method"),
     FUNCTION("Function"),
+    FUNCTION_INVOCATION("FunctionInvocation"),
     METHOD_ANNOTATION("Method-Annotation"),
     STORE_INST_FIELD("StoreInstanceField"),
     LOAD_INST_FIELD("LoadInstanceField"),
     STORE_STATIC_FIELD("StoreStaticField"),
     LOAD_STATIC_FIELD("LoadStaticField"),
-    STORE_ARRAY_INDEX("StoreArrayIndex"),
-    LOAD_ARRAY_INDEX("LoadArrayIndex"),
-    ARRAY_INSN_INDEX("ArrayInsnIndex"),
     GOTO("Goto"),
     IF("If"),
-    TABLE_SWITCH("TableSwitch"),
-    TABLE_SWITCH_TARGET("TableSwitch-Target"),
-    TABLE_SWITCH_DEFAULT("TableSwitch-Default"),
     LOOKUP_SWITCH("LookupSwitch"),
     LOOKUP_SWITCH_TARGET("LookupSwitch-Target"),
     LOOKUP_SWITCH_DEFAULT("LookupSwitch-Default"),
@@ -90,8 +85,7 @@ public enum PythonPredicateFile
     PHANTOM_BASED_METHOD("PhantomBasedMethod"),
     PHANTOM_TYPE("PhantomType"),
     BREAKPOINT_STMT("BreakpointStmt"),
-    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
-    SPECIAL_CONTEXT_SENSITIVITY_METHOD("SpecialContextSensitivityMethod");
+    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction");
 
     private final String name;
 

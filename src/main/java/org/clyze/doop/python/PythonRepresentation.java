@@ -1,6 +1,7 @@
 package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
+import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
@@ -31,6 +32,7 @@ public class PythonRepresentation {
      */
     private Map<String, Integer> _handlerNumOfScopes = new ConcurrentHashMap<>();
 
+    private String _fileName;
     // Make it a trivial singleton.
     private static PythonRepresentation _repr;
     private PythonRepresentation() {}
@@ -39,6 +41,10 @@ public class PythonRepresentation {
         if (_repr == null)
             _repr = new PythonRepresentation();
         return _repr;
+    }
+    public PythonRepresentation(String fileName)
+    {
+        _fileName = fileName;
     }
     String classConstant(IClass c) {
         return "<class " + fixType(c.getReference()) + ">";
@@ -58,7 +64,10 @@ public class PythonRepresentation {
     }
 
     String signature(IMethod m) {
-        return signature(m.getReference());
+        //return signature(m.getReference());
+        String sourceFileName = m.getDeclaringClass().getSourceFileName();
+        String functionName = m.getDeclaringClass().getName().toString().substring(1);
+        return "<" + sourceFileName + ":" + functionName + ">";
     }
 
     String signature(MethodReference m) {
@@ -254,7 +263,10 @@ public class PythonRepresentation {
     {
         String defaultMid = fixType(methRef.getDeclaringClass()) + "." + methRef.getName().toString();
         String midPart;
-        midPart = defaultMid;
+        if(instr instanceof PythonInvokeInstruction)
+            midPart = "invoke";
+        else
+            midPart = defaultMid;
 
         return signature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
     }

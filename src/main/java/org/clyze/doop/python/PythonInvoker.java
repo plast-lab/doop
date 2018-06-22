@@ -134,5 +134,6 @@ public class PythonInvoker {
             PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
             pythonFactGenerator.run();
         }
+        db.close();
     }
 }

@@ -4,6 +4,7 @@ import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.analysis.typeInference.AstTypeInference;
 import com.ibm.wala.cast.ir.ssa.AstGlobalRead;
 import com.ibm.wala.cast.ir.ssa.AstGlobalWrite;
+import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.cast.python.types.PythonTypes;
 import com.ibm.wala.classLoader.IClass;
@@ -18,6 +19,8 @@ import org.clyze.doop.python.utils.PythonIRPrinter;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -30,6 +33,11 @@ public class PythonFactGenerator implements Runnable{
     private IAnalysisCacheView cache;
     private PythonIRPrinter IRPrinter;
     private Set<IClass> _iClasses;
+
+    //The classes that are in the class hierarchy by default
+    //Useful on our current one-classhierarchy-per-file approach
+    private static final String[] DEFAULT_CLASSES = new String[]{"list", "Root", "Exception", "object", "CodeBody", "trampoline"};
+    private static final Set<String> defaultClasses = new HashSet<>(Arrays.asList(DEFAULT_CLASSES));;
 
     PythonFactGenerator(PythonFactWriter writer, Set<IClass> iClasses, String outDir, IAnalysisCacheView analysisCache)
     {
@@ -44,6 +52,18 @@ public class PythonFactGenerator implements Runnable{
     public void run() {
 
         for (IClass iClass : _iClasses) {
+            String className = iClass.getName().toString().substring(1);
+            if(iClass instanceof CAstAbstractModuleLoader.CoreClass) {
+                System.out.println("Adding Class " + className );
+                if(defaultClasses.contains(className))
+                    continue;
+                iClass.getAllFields().forEach(this::generate);
+            }else if (iClass instanceof CAstAbstractModuleLoader.DynamicCodeBody) {
+                System.out.println("Adding Function " + className);
+            }else{
+                System.out.println("Uknown type of Class " + className + " object type " + iClass.getClass().getName());
+                throw new RuntimeException(":(");
+            }
             //IRPrinter.printIR(iClass);
 //            _writer.writeClassOrInterfaceType(iClass);
 //            //TODO: Handling of Arrays?
@@ -89,7 +109,7 @@ public class PythonFactGenerator implements Runnable{
     }
 
     private void generate(IField f) {
-
+        System.out.println("GENERATING FIELD!! "+f);
     }
 
     private void generate(IMethod m, Session session) {
@@ -130,10 +150,12 @@ public class PythonFactGenerator implements Runnable{
 
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
-                    //this.generateDefs(m, ir, instructions[j], typeInference);
-                    //this.generateUses(m, ir, instructions[j], session, typeInference);
+                    this.generateDefs(m, ir, instructions[j], typeInference);
+                    this.generateUses(m, ir, instructions[j], session, typeInference);
                     if (instructions[j] instanceof SSAReturnInstruction) {
                         generate(m, ir, (SSAReturnInstruction) instructions[j], session, typeInference);
+                    } else if (instructions[j] instanceof SSAUnaryOpInstruction) {
+                        generate(m, ir, (SSAUnaryOpInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSABinaryOpInstruction) {
                         generate(m, ir, (SSABinaryOpInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAMonitorInstruction) {
@@ -141,27 +163,19 @@ public class PythonFactGenerator implements Runnable{
                     } else if (instructions[j] instanceof SSAThrowInstruction) {
                         generate(m, ir, (SSAThrowInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof PythonInvokeInstruction) {
-                        //generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAAbstractInvokeInstruction) {
+                        generate(m, ir, (PythonInvokeInstruction) instructions[j], session, typeInference);
+                    } else if (instructions[j] instanceof SSAInvokeInstruction) {
                         generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof AstGlobalRead) {
-                        //generate(m, ir, (SSAGetInstruction) instructions[j], session, typeInference);
+                        generate(m, ir, (AstGlobalRead) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAGetInstruction) {
                         System.out.println("get" + instructions[j].toString() + " - " + instructions[j].getClass().getName());
-                        //generate(m, ir, (SSAGetInstruction) instructions[j], session, typeInference);
+                        generate(m, ir, (SSAGetInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof AstGlobalWrite) {
-                        //generate(m, ir, (SSAPutInstruction) instructions[j], session, typeInference);
+                        generate(m, ir, (AstGlobalWrite) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAPutInstruction) {
                         System.out.println("oi" + instructions[j].toString() + " - " + instructions[j].getClass().getName());
-                        //generate(m, ir, (SSAPutInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAUnaryOpInstruction) {
-                        //generate(m, ir, (SSAUnaryOpInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAArrayLengthInstruction) {
-                        //generate(m, ir, (SSAArrayLengthInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAArrayLoadInstruction) {
-                        //generate(m, ir, (SSAArrayLoadInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAArrayStoreInstruction) {
-                        //generate(m, ir, (SSAArrayStoreInstruction) instructions[j], session, typeInference);
+                        generate(m, ir, (SSAPutInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSANewInstruction) {
                         //generate(m, ir, (SSANewInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAComparisonInstruction) {
@@ -181,7 +195,7 @@ public class PythonFactGenerator implements Runnable{
                     } else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
                         session.calcInstructionNumber(instructions[j]);
                     } else {
-                        System.out.println("Unknown instruction: " + instructions[j].getClass().getName());
+                        System.out.println("Unknown instruction: " +instructions[j] + " of type: " + instructions[j].getClass().getName());
                     }
                 }
             }
@@ -289,6 +303,12 @@ public class PythonFactGenerator implements Runnable{
         }
     }
 
+    public void generate(IMethod m, IR ir, AstGlobalRead instruction, Session session, TypeInference typeInference) {
+        Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
+        _writer.writeGlobalRead(m, instruction, to, session);
+
+    }
+
     public void generate(IMethod m, IR ir, SSAGetInstruction instruction, Session session, TypeInference typeInference) {
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
 
@@ -301,6 +321,14 @@ public class PythonFactGenerator implements Runnable{
             Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
             _writer.writeLoadInstanceField(m, instruction, instruction.getDeclaredField(), base, to, session);
         }
+    }
+
+    public void generate(IMethod m, IR ir, AstGlobalWrite instruction, Session session, TypeInference typeInference) {
+
+        Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        System.out.println("global write generate");
+        _writer.writeGlobalWrite(m, instruction, from, session);
+
     }
 
     public void generate(IMethod m, IR ir, SSAPutInstruction instruction, Session session, TypeInference typeInference) {
