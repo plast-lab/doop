@@ -51,7 +51,7 @@ interface InputResolutionContext {
 
 	/**
 	 * Resolves the inputFiles to their corresponding files.
-	 * If an input is unresolved --it has not file(s)-- an exception is thrown.
+	 * If an input is unresolved --it has no file(s)-- an exception is thrown.
 	 */
 	void resolve()
 
@@ -66,24 +66,26 @@ interface InputResolutionContext {
 	List<String> libraries()
 
 	/**
+	 * Returns all the platformFiles of this context.
+	 */
+	List<String> platformFiles()
+
+	/**
 	 * Returns all the heapFiles of this context.
 	 */
 	List<String> hprofs()
 
 	/**
-	 * Gets the setInput of files that correspond to the inputFiles of this context.
+	 * Get the setInput of files that correspond to the inputFiles of this context.
 	 * If an input is found to be unresolved --it has no file(s)-- an exception is thrown.
 	 */
 	List<File> getAllInputs()
 
-	/**
-	 * Gets the setInput of files that correspond to the inputFiles of this context.
-	 * If an input is found to be unresolved --it has no file(s)-- an exception is thrown.
-	 */
 	List<File> getAllLibraries()
+
+	List<File> getAllPlatformFiles()
 
 	List<File> getAllHprofs()
 
 	List<File> getAll()
-
 }

@@ -1,30 +1,22 @@
 package org.clyze.doop.input
 
+import groovy.transform.TupleConstructor
 import org.clyze.analysis.InputType
-import org.clyze.doop.input.InputResolutionContext
 
+@TupleConstructor
 class ResolvedInputResolutionContext implements InputResolutionContext {
 
-	private final List<String> inputs
-	private final List<String> libraries
-	private final List<String> hprofs
-	private final List<File> inputFiles
-	private final List<File> libraryFiles
-	private final List<File> heapFiles
-
-	ResolvedInputResolutionContext(List<String> inputs, List<String> libraries, List<String> hprofs, List<File> inputFiles, List<File> libraryFiles, List<File> heapFiles) {
-		this.inputs = inputs
-		this.libraries = libraries
-		this.hprofs = hprofs
-		this.inputFiles = inputFiles
-		this.libraryFiles = libraryFiles
-		this.heapFiles = heapFiles
-	}
+	List<String> inputs
+	List<String> libraries
+	List<String> platformFiles
+	List<String> hprofs
+	List<File> allInputs
+	List<File> allLibraries
+	List<File> allPlatformFiles
+	List<File> allHprofs
 
 	@Override
-	boolean isTransitive() {
-		return false
-	}
+	boolean isTransitive() { false }
 
 	@Override
 	void setTransitive(boolean transitive) {
@@ -62,40 +54,17 @@ class ResolvedInputResolutionContext implements InputResolutionContext {
 	}
 
 	@Override
-	List<File> getAll() {
-		List<File> all = new LinkedList<>()
-		all.addAll(inputFiles)
-		all.addAll(libraryFiles)
-		return all
-	}
+	List<File> getAll() { allInputs + allLibraries + allPlatformFiles + allHprofs }
 
 	@Override
-	List<File> getAllLibraries() {
-		return libraryFiles
-	}
+	List<String> inputs() { inputs }
 
 	@Override
-	List<File> getAllInputs() {
-		return inputFiles
-	}
+	List<String> libraries() { libraries }
 
 	@Override
-	List<File> getAllHprofs() {
-		return heapFiles
-	}
+	List<String> platformFiles() { platformFiles }
 
 	@Override
-	List<String> inputs() {
-		return inputs
-	}
-
-	@Override
-	List<String> libraries() {
-		return libraries
-	}
-
-	@Override
-	List<String> hprofs() {
-		return hprofs
-	}
+	List<String> hprofs() { hprofs }
 }
