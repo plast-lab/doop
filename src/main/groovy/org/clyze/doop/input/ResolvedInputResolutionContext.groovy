@@ -8,7 +8,7 @@ class ResolvedInputResolutionContext implements InputResolutionContext {
 
 	List<String> inputs
 	List<String> libraries
-	List<String> platformFilenames
+	List<String> platformFiles
 	List<String> hprofs
 	List<File> allInputs
 	List<File> allLibraries
@@ -16,15 +16,15 @@ class ResolvedInputResolutionContext implements InputResolutionContext {
 	List<File> allHprofs
 
 	String toString() {
-		return "Resolved input resolution context:\n" +
-			"inputs = ${inputs}\n" +
-			"libraries = ${libraries}\n" +
-			"platformFilenames = ${platformFilenames}\n" +
-			"hprofs = ${hprofs}\n" +
-			"allInputs = ${allInputs}\n" +
-			"allLibraries = ${allLibraries}\n" +
-			"allPlatformFiles = ${allPlatformFiles}\n" +
-			"allHprofs = ${allHprofs}\n"
+"""
+inputs = $inputs
+libraries = $libraries
+platformFilenames = $platformFiles
+hprofs = $hprofs
+allInputs = $allInputs
+allLibraries = $allLibraries
+allPlatformFiles = $allPlatformFiles
+allHprofs = $allHprofs"""
 	}
 
 	@Override
@@ -75,7 +75,7 @@ class ResolvedInputResolutionContext implements InputResolutionContext {
 	List<String> libraries() { libraries }
 
 	@Override
-	List<String> platformFiles() { platformFilenames }
+	List<String> platformFiles() { platformFiles }
 
 	@Override
 	List<String> hprofs() { hprofs }
