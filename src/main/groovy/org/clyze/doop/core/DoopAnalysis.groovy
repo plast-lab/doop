@@ -247,7 +247,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		def inputArgs = getInputArgsJars(tmpDirs)
 
 		def deps = getDepsJars(tmpDirs)
-		Collection<String> depArgs = (options.PLATFORMS.value.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
+		List<File> platforms = options.PLATFORMS.value as List<File>
+		if (!platforms) {
+			throw new RuntimeException("internal option '${options.PLATFORMS.name}' is empty")
+		}
+
+		Collection<String> depArgs = (platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 
 		Collection<String> params = ["--application-regex", options.APP_REGEX.value.toString(), "--full"] + inputArgs + depArgs
 
@@ -255,7 +260,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			// This uses all platformLibs.
 			// params = ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
 			// This uses just platformLibs[0], assumed to be android.jar.
-			params.addAll(["--android-jars", (options.PLATFORMS.value as List<File>).first().absolutePath])
+			params.addAll(["--android-jars", platforms.first().absolutePath])
 		}
 
 		if (options.SSA.value) {
