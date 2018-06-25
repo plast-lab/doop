@@ -12,8 +12,6 @@ import org.clyze.utils.FileOps
 @Log4j
 class Doop {
 
-	static final String ARTIFACTORY_PLATFORMS_URL = "http://centauri.di.uoa.gr:8081/artifactory/Platforms"
-
 	static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [
 			"LOGICBLOX_HOME",
 			"LD_LIBRARY_PATH",

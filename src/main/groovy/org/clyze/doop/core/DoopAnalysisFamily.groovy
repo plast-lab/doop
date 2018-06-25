@@ -119,7 +119,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "PLATFORMS_LIB",
 					name: "platforms-lib",
 					description: "The path to the platform libs directory.",
-					value: System.getenv("DOOP_PLATFORMS_LIB") ?: Doop.ARTIFACTORY_PLATFORMS_URL,
+					value: System.getenv("DOOP_PLATFORMS_LIB"),
 					cli: false
 			),
 
