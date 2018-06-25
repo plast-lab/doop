@@ -19,7 +19,7 @@ class ResolvedInputResolutionContext implements InputResolutionContext {
 """
 inputs = $inputs
 libraries = $libraries
-platformFilenames = $platformFiles
+platformFiles = $platformFiles
 hprofs = $hprofs
 allInputs = $allInputs
 allLibraries = $allLibraries
