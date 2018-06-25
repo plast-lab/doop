@@ -17,6 +17,8 @@ public enum PythonPredicateFile
     INTERFACE_TYPE("InterfaceType"),
     GLOBAL_READ("GlobalRead"),
     GLOBAL_WRITE("GlobalWrite"),
+    LEXICAL_READ("LexicalRead"),
+    LEXICAL_WRITE("LexicalWrite"),
     ACTUAL_POSITIONAL_PARAMETER("ActualPositionalParam"),
     ACTUAL_KEYWORD_PARAMETER("ActualKeywordParam"),
     BOOTSTRAP_PARAMETER("BootstrapParam"),

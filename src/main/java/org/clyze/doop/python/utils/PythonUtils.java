@@ -11,7 +11,7 @@ import org.clyze.doop.wala.Local;
 public class PythonUtils {
     public static String fixType(TypeReference type)
     {
-        String typeString =  type.getName().toString();
+        String typeString =  type.getName().toString().substring(1);
         return typeString;
     }
 

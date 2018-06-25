@@ -4,8 +4,6 @@ import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
 import com.ibm.wala.dalvik.analysis.typeInference.DalvikTypeInference;
 import com.ibm.wala.dalvik.classLoader.DexIMethod;
-import com.ibm.wala.dalvik.classLoader.DexIRFactory;
-import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;

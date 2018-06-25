@@ -1,8 +1,13 @@
 package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
+import com.ibm.wala.cast.ir.ssa.AstLexicalAccess;
+import com.ibm.wala.cast.ir.ssa.AstLexicalRead;
+import com.ibm.wala.cast.ir.ssa.AstLexicalWrite;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
+import com.ibm.wala.classLoader.FieldImpl;
 import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
@@ -75,6 +80,20 @@ public class PythonFactWriter {
             //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
         }
         return result;
+    }
+
+    public String writeField(IField f) {
+        String fieldId = _rep.signature(f);
+        _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
+        if(f instanceof FieldImpl) { //Currently annotations do not work on android and are disabled
+            Collection<Annotation> annotations = f.getAnnotations();
+            if (annotations != null) {
+                for (Annotation annotation : annotations) {
+                    _db.add(FIELD_ANNOTATION, fieldId, fixType(annotation.getType()));
+                }
+            }
+        }
+        return fieldId;
     }
 
     void writeClassOrInterfaceType(IClass c) {
@@ -238,18 +257,33 @@ public class PythonFactWriter {
         writeInstanceField(m, instruction, f, base, from, session, STORE_INST_FIELD);
     }
 
-    void writeGlobalRead(IMethod m, SSAInstruction instruction, Local to, Session session) {
+    void writeLexicalAccess(IMethod m, AstLexicalAccess instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
-        _db.add(GLOBAL_READ, insn, str(index), _rep.local(m, to), methodId);
+        String varName = instruction.getAccess(0).variableName;
+        String varDefiner = instruction.getAccess(0).variableDefiner.substring(1);
+        if(instruction instanceof AstLexicalWrite){
+            _db.add(LEXICAL_WRITE, insn, str(index), varName, varDefiner, _rep.local(m, l), methodId);
+        }else if(instruction instanceof AstLexicalRead){
+            _db.add(LEXICAL_READ, insn, str(index), _rep.local(m, l), varName, varDefiner, methodId);
+        }else{
+            throw new RuntimeException();
+        }
     }
 
-    void writeGlobalWrite(IMethod m, SSAInstruction instruction, Local from, Session session) {
+    void writeGlobalRead(IMethod m, SSAInstruction instruction, Local to, String globalName, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
-        _db.add(GLOBAL_WRITE, insn, str(index), _rep.local(m, from), methodId);
+        _db.add(GLOBAL_READ, insn, str(index), _rep.local(m, to), globalName, methodId);
+    }
+
+    void writeGlobalWrite(IMethod m, SSAInstruction instruction, Local from, String globalName, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = _rep.signature(m);
+        _db.add(GLOBAL_WRITE, insn, str(index), globalName, _rep.local(m, from), methodId);
     }
 
     void writeLoadInstanceField(IMethod m, SSAInstruction instruction, FieldReference f, Local base, Local to, Session session) {
@@ -261,7 +295,6 @@ public class PythonFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        //TypeReference declaringClass = getCorrectFieldDeclaringClass(f, m.getClassHierarchy());
         TypeReference declaringClass = f.getDeclaringClass();
         String fieldId = _rep.signature(f, declaringClass);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);

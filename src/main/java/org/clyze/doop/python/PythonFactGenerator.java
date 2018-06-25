@@ -4,6 +4,8 @@ import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.analysis.typeInference.AstTypeInference;
 import com.ibm.wala.cast.ir.ssa.AstGlobalRead;
 import com.ibm.wala.cast.ir.ssa.AstGlobalWrite;
+import com.ibm.wala.cast.ir.ssa.AstLexicalAccess;
+import com.ibm.wala.cast.ir.ssa.AstLexicalRead;
 import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.cast.python.types.PythonTypes;
@@ -66,7 +68,6 @@ public class PythonFactGenerator implements Runnable{
             }
             //IRPrinter.printIR(iClass);
 //            _writer.writeClassOrInterfaceType(iClass);
-//            //TODO: Handling of Arrays?
 //            if(iClass.isAbstract())
 //                _writer.writeClassModifier(iClass, "abstract");
 ////            if(Modifier.isFinal(modifiers))
@@ -109,7 +110,8 @@ public class PythonFactGenerator implements Runnable{
     }
 
     private void generate(IField f) {
-        System.out.println("GENERATING FIELD!! "+f);
+        System.out.println("GENERATING FIELD!! "+f.getName());
+        _writer.writeField(f);
     }
 
     private void generate(IMethod m, Session session) {
@@ -158,14 +160,14 @@ public class PythonFactGenerator implements Runnable{
                         generate(m, ir, (SSAUnaryOpInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSABinaryOpInstruction) {
                         generate(m, ir, (SSABinaryOpInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAMonitorInstruction) {
-                        //generate(m, ir, (SSAMonitorInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAThrowInstruction) {
                         generate(m, ir, (SSAThrowInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof PythonInvokeInstruction) {
                         generate(m, ir, (PythonInvokeInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAInvokeInstruction) {
                         generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
+                    }else if (instructions[j] instanceof AstLexicalAccess) {
+                        generate(m, ir, (AstLexicalAccess) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof AstGlobalRead) {
                         generate(m, ir, (AstGlobalRead) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAGetInstruction) {
@@ -177,17 +179,9 @@ public class PythonFactGenerator implements Runnable{
                         System.out.println("oi" + instructions[j].toString() + " - " + instructions[j].getClass().getName());
                         generate(m, ir, (SSAPutInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSANewInstruction) {
-                        //generate(m, ir, (SSANewInstruction) instructions[j], session, typeInference);
+                        generate(m, ir, (SSANewInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAComparisonInstruction) {
-                        //generate(m, ir, (SSAComparisonInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSALoadMetadataInstruction) {
-                        //generate(m, ir, (SSALoadMetadataInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAInstanceofInstruction) {
-                        //generate(m, ir, (SSAInstanceofInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSACheckCastInstruction) {
-                        //generate(m, ir, (SSACheckCastInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAConversionInstruction) {
-                        //generate(m, ir, (SSAConversionInstruction) instructions[j], session, typeInference);
+                        generate(m, ir, (SSAComparisonInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSASwitchInstruction) {
                         session.calcInstructionNumber(instructions[j]);
                     } else if (instructions[j] instanceof SSAGotoInstruction) {
@@ -303,9 +297,20 @@ public class PythonFactGenerator implements Runnable{
         }
     }
 
+    public void generate(IMethod m, IR ir, AstLexicalAccess instruction, Session session, TypeInference typeInference){
+        Local l;
+        if(instruction.getAccessCount() !=1)
+            System.out.println("instruction: " + instruction.toString(ir.getSymbolTable()) + " has more than one access!!!");
+        l = createLocal(ir, instruction, instruction.getAccess(0).valueNumber, typeInference);
+        _writer.writeLexicalAccess(m, instruction, l, session);
+    }
+
     public void generate(IMethod m, IR ir, AstGlobalRead instruction, Session session, TypeInference typeInference) {
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
-        _writer.writeGlobalRead(m, instruction, to, session);
+        String globalName = instruction.getGlobalName();
+        if(globalName.startsWith("global "))
+            globalName = globalName.substring(7);
+        _writer.writeGlobalRead(m, instruction, to, globalName, session);
 
     }
 
@@ -326,8 +331,10 @@ public class PythonFactGenerator implements Runnable{
     public void generate(IMethod m, IR ir, AstGlobalWrite instruction, Session session, TypeInference typeInference) {
 
         Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
-        System.out.println("global write generate");
-        _writer.writeGlobalWrite(m, instruction, from, session);
+        String globalName = instruction.getGlobalName();
+        if(globalName.startsWith("global "))
+            globalName = globalName.substring(7);
+        _writer.writeGlobalWrite(m, instruction, from, globalName, session);
 
     }
 
