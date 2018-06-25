@@ -8,12 +8,24 @@ class ResolvedInputResolutionContext implements InputResolutionContext {
 
 	List<String> inputs
 	List<String> libraries
-	List<String> platformFiles
+	List<String> platformFilenames
 	List<String> hprofs
 	List<File> allInputs
 	List<File> allLibraries
 	List<File> allPlatformFiles
 	List<File> allHprofs
+
+	String toString() {
+		return "Resolved input resolution context:\n" +
+			"inputs = ${inputs}\n" +
+			"libraries = ${libraries}\n" +
+			"platformFilenames = ${platformFilenames}\n" +
+			"hprofs = ${hprofs}\n" +
+			"allInputs = ${allInputs}\n" +
+			"allLibraries = ${allLibraries}\n" +
+			"allPlatformFiles = ${allPlatformFiles}\n" +
+			"allHprofs = ${allHprofs}\n"
+	}
 
 	@Override
 	boolean isTransitive() { false }
@@ -63,7 +75,7 @@ class ResolvedInputResolutionContext implements InputResolutionContext {
 	List<String> libraries() { libraries }
 
 	@Override
-	List<String> platformFiles() { platformFiles }
+	List<String> platformFiles() { platformFilenames }
 
 	@Override
 	List<String> hprofs() { hprofs }
