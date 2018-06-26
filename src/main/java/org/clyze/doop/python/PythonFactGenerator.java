@@ -2,12 +2,11 @@ package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.analysis.typeInference.AstTypeInference;
-import com.ibm.wala.cast.ir.ssa.AstGlobalRead;
-import com.ibm.wala.cast.ir.ssa.AstGlobalWrite;
-import com.ibm.wala.cast.ir.ssa.AstLexicalAccess;
-import com.ibm.wala.cast.ir.ssa.AstLexicalRead;
+import com.ibm.wala.cast.ir.ssa.*;
 import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
+import com.ibm.wala.cast.python.ssa.PythonPropertyRead;
+import com.ibm.wala.cast.python.ssa.PythonPropertyWrite;
 import com.ibm.wala.cast.python.types.PythonTypes;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
@@ -55,27 +54,22 @@ public class PythonFactGenerator implements Runnable{
 
         for (IClass iClass : _iClasses) {
             String className = iClass.getName().toString().substring(1);
+
             if(iClass instanceof CAstAbstractModuleLoader.CoreClass) {
+
                 System.out.println("Adding Class " + className );
                 if(defaultClasses.contains(className))
                     continue;
                 iClass.getAllFields().forEach(this::generate);
-            }else if (iClass instanceof CAstAbstractModuleLoader.DynamicCodeBody) {
-                System.out.println("Adding Function " + className);
-            }else{
-                System.out.println("Uknown type of Class " + className + " object type " + iClass.getClass().getName());
-                throw new RuntimeException(":(");
-            }
-            //IRPrinter.printIR(iClass);
-//            _writer.writeClassOrInterfaceType(iClass);
-//            if(iClass.isAbstract())
-//                _writer.writeClassModifier(iClass, "abstract");
+                _writer.writeClassOrInterfaceType(iClass);
+                if(iClass.isAbstract())
+                    _writer.writeClassModifier(iClass, "abstract");
 ////            if(Modifier.isFinal(modifiers))
 ////                _writer.writeClassModifier(iClass, "final");
-//            if(iClass.isPublic())
-//                _writer.writeClassModifier(iClass, "public");
-//            if(iClass.isPrivate())
-//                _writer.writeClassModifier(iClass, "private");
+                if(iClass.isPublic())
+                    _writer.writeClassModifier(iClass, "public");
+                if(iClass.isPrivate())
+                    _writer.writeClassModifier(iClass, "private");
 //
 //            // the isInterface condition prevents Object as superclass of interface
 //            if (iClass.getSuperclass() != null && !iClass.isInterface()) {
@@ -85,14 +79,23 @@ public class PythonFactGenerator implements Runnable{
 //            for (IClass i : iClass.getAllImplementedInterfaces()) {
 //                _writer.writeDirectSuperinterface(iClass, i);
 //            }
-//
-//            iClass.getDeclaredInstanceFields().forEach(this::generate);
-//            try{
-//                iClass.getDeclaredStaticFields().forEach(this::generate);
-//            }catch (NullPointerException exc) //For some reason in DexClasses .getDeclaredStaticFields() can throw a NullPointerException
-//            {
-//                ;
-//            }
+
+            }else if (iClass instanceof CAstAbstractModuleLoader.DynamicCodeBody) {
+
+                System.out.println("Adding Function " + className);
+                if(className.contains("/")){
+                    String[] cName = className.split("/");
+                    String declaringClass = cName[0];
+                    String methodName = cName[1];
+                }
+                else{
+
+                }
+
+            }else{
+                System.out.println("Uknown type of Class " + className + " object type " + iClass.getClass().getName());
+                throw new RuntimeException(":(");
+            }
 
 
             for (IMethod m : iClass.getDeclaredMethods()) {
@@ -166,17 +169,23 @@ public class PythonFactGenerator implements Runnable{
                         generate(m, ir, (PythonInvokeInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAInvokeInstruction) {
                         generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
-                    }else if (instructions[j] instanceof AstLexicalAccess) {
+                    } else if (instructions[j] instanceof EachElementHasNextInstruction) {
+                        generate(m, ir, (EachElementHasNextInstruction) instructions[j], session, typeInference);
+                    } else if (instructions[j] instanceof EachElementGetInstruction) {
+                        generate(m, ir, (EachElementGetInstruction) instructions[j], session, typeInference);
+                    } else if (instructions[j] instanceof AstLexicalAccess) {
                         generate(m, ir, (AstLexicalAccess) instructions[j], session, typeInference);
+                    } else if (instructions[j] instanceof ReflectiveMemberAccess) { // PythonPropertyWrite, PythonPropertyRead
+                        generate(m, ir, (ReflectiveMemberAccess) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof AstGlobalRead) {
                         generate(m, ir, (AstGlobalRead) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAGetInstruction) {
-                        System.out.println("get" + instructions[j].toString() + " - " + instructions[j].getClass().getName());
+                        //System.out.println("get" + instructions[j].toString() + " - " + instructions[j].getClass().getName());
                         generate(m, ir, (SSAGetInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof AstGlobalWrite) {
                         generate(m, ir, (AstGlobalWrite) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAPutInstruction) {
-                        System.out.println("oi" + instructions[j].toString() + " - " + instructions[j].getClass().getName());
+                        //System.out.println("oi" + instructions[j].toString() + " - " + instructions[j].getClass().getName());
                         generate(m, ir, (SSAPutInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSANewInstruction) {
                         generate(m, ir, (SSANewInstruction) instructions[j], session, typeInference);
@@ -189,7 +198,7 @@ public class PythonFactGenerator implements Runnable{
                     } else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
                         session.calcInstructionNumber(instructions[j]);
                     } else {
-                        System.out.println("Unknown instruction: " +instructions[j] + " of type: " + instructions[j].getClass().getName());
+                        System.out.println("Unknown instruction: " +instructions[j].toString(ir.getSymbolTable()) + " of type: " + instructions[j].getClass().getName());
                     }
                 }
             }
@@ -297,12 +306,28 @@ public class PythonFactGenerator implements Runnable{
         }
     }
 
+    public void generate(IMethod m, IR ir, EachElementGetInstruction instruction, Session session, TypeInference typeInference){
+        Local target = createLocal(ir,instruction,instruction.getDef(),typeInference);
+        Local iter = createLocal(ir,instruction,instruction.getUse(0),typeInference);
+        _writer.writeEachElementGet(m, instruction, target, iter, session);
+    }
+
+    public void generate(IMethod m, IR ir, EachElementHasNextInstruction instruction, Session session, TypeInference typeInference){
+        Local target = createLocal(ir,instruction,instruction.getDef(),typeInference);
+        Local iter = createLocal(ir,instruction,instruction.getUse(0),typeInference);
+        _writer.writeEachElementHasNext(m, instruction, target, iter, session);
+    }
+
     public void generate(IMethod m, IR ir, AstLexicalAccess instruction, Session session, TypeInference typeInference){
         Local l;
         if(instruction.getAccessCount() !=1)
             System.out.println("instruction: " + instruction.toString(ir.getSymbolTable()) + " has more than one access!!!");
         l = createLocal(ir, instruction, instruction.getAccess(0).valueNumber, typeInference);
         _writer.writeLexicalAccess(m, instruction, l, session);
+    }
+
+    public void generate(IMethod m, IR ir, ReflectiveMemberAccess instruction, Session session, TypeInference typeInference){
+        _writer.writeReflectiveAccess(m, ir, instruction, session, typeInference);
     }
 
     public void generate(IMethod m, IR ir, AstGlobalRead instruction, Session session, TypeInference typeInference) {

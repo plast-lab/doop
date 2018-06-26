@@ -1,10 +1,10 @@
 package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.cast.ir.ssa.AstLexicalAccess;
-import com.ibm.wala.cast.ir.ssa.AstLexicalRead;
-import com.ibm.wala.cast.ir.ssa.AstLexicalWrite;
+import com.ibm.wala.cast.ir.ssa.*;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
+import com.ibm.wala.cast.python.ssa.PythonPropertyRead;
+import com.ibm.wala.cast.python.ssa.PythonPropertyWrite;
 import com.ibm.wala.classLoader.FieldImpl;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
@@ -113,6 +113,11 @@ public class PythonFactWriter {
             }
         }
 
+    }
+
+    void writeClassModifier(IClass c, String modifier) {
+        String type = fixType(c.getReference());
+        _db.add(CLASS_MODIFIER, modifier, type);
     }
 
     void writeDirectSuperclass(IClass sub, IClass sup) {
@@ -257,6 +262,38 @@ public class PythonFactWriter {
         writeInstanceField(m, instruction, f, base, from, session, STORE_INST_FIELD);
     }
 
+    void writeEachElementGet(IMethod m, EachElementGetInstruction instruction, Local target, Local iterVar, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = _rep.signature(m);
+        _db.add(ITERATOR_GET_NEXT, insn, str(index), _rep.local(m, target), _rep.local(m, iterVar), methodId);
+    }
+
+    void writeEachElementHasNext(IMethod m, EachElementHasNextInstruction instruction, Local target, Local iterVar, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = _rep.signature(m);
+        _db.add(ITERATOR_HAS_NEXT, insn, str(index), _rep.local(m, target), _rep.local(m, iterVar), methodId);
+    }
+
+    void writeReflectiveAccess(IMethod m, IR ir, ReflectiveMemberAccess instruction, Session session, TypeInference typeInference) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = _rep.signature(m);
+        Local baseVar = createLocal(ir, instruction, instruction.getObjectRef(), typeInference);
+        Local fieldVar = createLocal(ir, instruction, instruction.getMemberRef(), typeInference);
+        Local l;
+        if(instruction instanceof PythonPropertyWrite){
+            l = createLocal(ir, instruction, instruction.getUse(2), typeInference);
+            _db.add(REFLECTIVE_WRITE, insn, str(index), _rep.local(m, baseVar), _rep.local(m, fieldVar), _rep.local(m, l), methodId);
+        }else if(instruction instanceof PythonPropertyRead){
+            l = createLocal(ir, instruction, instruction.getDef(), typeInference);
+            _db.add(REFLECTIVE_READ, insn, str(index), _rep.local(m, l), _rep.local(m, baseVar), _rep.local(m, fieldVar), methodId);
+        }else{
+            throw new RuntimeException("Unexpected ReflectiveMemberAccess subclass of type: "+ instruction.getClass().getName());
+        }
+    }
+
     void writeLexicalAccess(IMethod m, AstLexicalAccess instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
@@ -268,7 +305,7 @@ public class PythonFactWriter {
         }else if(instruction instanceof AstLexicalRead){
             _db.add(LEXICAL_READ, insn, str(index), _rep.local(m, l), varName, varDefiner, methodId);
         }else{
-            throw new RuntimeException();
+            throw new RuntimeException("Unexpected AstLexicalAccess subclass of type: "+ instruction.getClass().getName());
         }
     }
 
