@@ -355,7 +355,6 @@ _AppReachable(?method) :-
 
 Server_Metrics("#AppVirtual (static)", ?n) :- ?n = count:{_AppVirtual(_)}.
 Server_Metrics("#AppVirtual (resolved)", ?n) :- ?n = count:{_AppVirtual_Resolved(_)}.
-Server_Metrics("#AppMethod (static)", ?n) :- ?n = count:{ApplicationMethod(_)}.
 Server_Metrics("#AppMethod (reachable)", ?n) :- ?n = count:{_AppReachable(_)}.
 
 .decl _ClassTypeUnion(?c:ReferenceType)
