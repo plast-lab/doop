@@ -338,11 +338,7 @@ Server_ClassCallsClass(?fromClass, ?toClass) :-
 
 .decl _AppVirtual(?invo:MethodInvocation)
 .decl _AppVirtual_Resolved(?invo:MethodInvocation)
-.decl _AppVirtual_Count(?n:number)
-.decl _AppVirtual_Resolved_Count(?n:number)
 .decl _AppReachable(?method:Method)
-.decl _AppMethod_Count(?n:number)
-.decl _AppReachable_Count(?n:number)
 
 _AppVirtual(?invo) :-
   // Use facts so that opaque method invocations are also recognized.
@@ -353,27 +349,25 @@ _AppVirtual_Resolved(?invo) :-
   _AppVirtual(?invo),
   mainAnalysis.CallGraphEdge(_, ?invo, _, _).
 
-_AppVirtual_Count(?n) :-
-  ?n = count:{_AppVirtual(_)}.
-
-_AppVirtual_Resolved_Count(?n) :-
-  ?n = count:{_AppVirtual_Resolved(_)}.
-
 _AppReachable(?method) :-
   mainAnalysis.Reachable(?method),
   ApplicationMethod(?method).
 
-_AppMethod_Count(?n) :-
-  ?n = count:{ApplicationMethod(_)}.
+Server_Metrics("#AppVirtual (static)", ?n) :- ?n = count:{_AppVirtual(_)}.
+Server_Metrics("#AppVirtual (resolved)", ?n) :- ?n = count:{_AppVirtual_Resolved(_)}.
+Server_Metrics("#AppMethod (static)", ?n) :- ?n = count:{ApplicationMethod(_)}.
+Server_Metrics("#AppMethod (reachable)", ?n) :- ?n = count:{_AppReachable(_)}.
 
-_AppReachable_Count(?n) :-
-  ?n = count:{_AppReachable(_)}.
+.decl _ClassTypeUnion(?c:ReferenceType)
+_ClassTypeUnion(?c) :- isClassType(?c) ; isInterfaceType(?c).
 
-Server_Metrics("AppVirtual (static)", ?n) :- _AppVirtual_Count(?n).
-Server_Metrics("AppVirtual (resolved)", ?n) :- _AppVirtual_Resolved_Count(?n).
-//Server_Metrics("AppVirtual (%)", ?n) :- ?n = (1.0 * _AppVirtual_Resolved_Count(?c1)) / _AppVirtual_Count(?c2).
-Server_Metrics("AppMethod (static)", ?n) :- _AppMethod_Count(?n).
-Server_Metrics("AppMethod (reachable)", ?n) :- _AppReachable_Count(?n).
-//Server_Metrics("AppMethod (%)", ?n) :- ?n = (1.0 * _AppReachable_Count(?c1)) / _AppMethod_Count(?c2).
+Server_Metrics("#AppClass", ?n) :- ?n = count:{ApplicationClass(_)}.
+Server_Metrics("#Class", ?n) :- ?n = count:{_ClassTypeUnion(_)}.
+Server_Metrics("#AppMethod", ?n) :- ?n = count:{ApplicationMethod(_)}.
+Server_Metrics("#Method", ?n) :- ?n = count:{isMethod(_)}.
+Server_Metrics("#Field", ?n) :- ?n = count:{isField(_)}.
+Server_Metrics("#Var", ?n) :- ?n = count:{isVar(_)}.
+Server_Metrics("#HeapAllocation", ?n) :- ?n = count:{isHeapAllocation(_)}.
+Server_Metrics("#MethodInvocation", ?n) :- ?n = count:{isMethodInvocation(_)}.
 
 // --Metrics //
