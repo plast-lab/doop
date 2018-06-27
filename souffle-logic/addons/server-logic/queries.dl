@@ -205,8 +205,9 @@ Server_Var_Values(?class, ?var, "<<XL-pt-set>>") :-
   _VarDeclaringClass(?var, ?class).
 
 Server_Var_Return(?var, ?method) :-
-  ReturnVar(?var, ?method) ;
-  NativeReturnVar(?var, ?method).
+  (ReturnVar(?var, ?method) ;
+   NativeReturnVar(?var, ?method)),
+   _VPT(?var, _).
 
 // --Var //
 
