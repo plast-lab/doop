@@ -24,6 +24,7 @@
 
 .decl SourceFromTaintedValue(?value:mainAnalysis.Value, ?id:symbol)
 .decl LabelFromSource(?source:symbol, ?label:InformationLabel)
+.decl TaintedValueTransferred(?declaringType: Type, ?id: symbol, ?type: Type, ?value: mainAnalysis.Value)
 
 .decl AnyMethodInvocation(?invocation:MethodInvocation, ?tomethod:Method)
 .decl MethodInvocationInContext(?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?tomethod:Method)
@@ -31,6 +32,7 @@
 
 .decl MethodInvocationInfo(?invocation:MethodInvocation, ?type:Type, ?var:Var)
 .decl TypeForReturnValue(?type:Type, ?ret:Var, ?invocation:MethodInvocation)
+.decl TaintedObjectSerialized(?declaringType: Type, ?source: symbol, ?type: Type, ?hctx: mainAnalysis.configuration.HContext, ?val: mainAnalysis.Value, ?ctx: mainAnalysis.configuration.Context, ?base: Var)
 
 .decl VarIsTaintedFromValue(?type:Type, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 .decl TaintedVarTaintedFromVar(?toCtx:mainAnalysis.configuration.Context, ?to:Var, ?value:mainAnalysis.Value, ?type:Type)

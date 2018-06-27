@@ -11,10 +11,3 @@
   SourceFromTaintedValue(value, id), \
   LabelFromSource(id, label), \
   mainAnalysis.Value_DeclaringType(value, declaringType)
-
-#define TaintedValueTransferred(declaringType, id, type, value) \
-  mainAnalysis_MockValueConsMacro(value, type), \
-  TaintedValue(value), \
-  SourceFromTaintedValue(value, id), \
-  mainAnalysis.Value_DeclaringType(value, declaringType)
-

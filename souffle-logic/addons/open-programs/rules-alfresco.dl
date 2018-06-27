@@ -36,7 +36,7 @@ mainAnalysis.VarPointsTo(?hctx, MOCK_WEBAPP_CTX(?class), ?ctx, ?to) :-
    contains("java.lang.Object", ?type) ;
    contains("org.alfresco.service.", ?type)),
   ConcreteImplementations(?type, ?class).
-
+.plan 2: (3,1,2,4)
 
 
 WebappMock(MOCK_WEBAPP_CTX(?class)),
