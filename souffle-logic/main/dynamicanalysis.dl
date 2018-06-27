@@ -294,3 +294,5 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
     DynamicVarPointsTo(?hctx, ?heap, ?dctx, ?var).
 
 #endif
+
+isHeapAllocation(?heap), HeapAllocation_Type(?heap, ?type), OriginalHeapAllocation_Type(?heap, ?type) :- _DynamicNormalHeapAllocation(_, _, ?type, ?heap).
