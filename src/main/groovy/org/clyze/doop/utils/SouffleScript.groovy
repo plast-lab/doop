@@ -1,6 +1,5 @@
 package org.clyze.doop.utils
 
-import groovy.transform.TupleConstructor
 import groovy.util.logging.Log4j
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.utils.CheckSum
@@ -14,22 +13,17 @@ import java.nio.file.StandardCopyOption
 import static org.apache.commons.io.FileUtils.deleteQuietly
 
 @Log4j
-@TupleConstructor
 class SouffleScript {
-
-	File scriptFile
-	File inDir
-	File outDir
-	File cacheDir
-	Executor executor
 
 	long compilationTime = 0L
 	long executionTime = 0L
 
-	def run(int jobs, long monitoringInterval, boolean profile = false, boolean debug = false, boolean removeContext = false) {
-		def origFile = scriptFile
+	def run(File origScriptFile, File inDir, File outDir, File cacheDir,
+	        Executor executor, int jobs, long monitoringInterval, Closure monitorClosure = null,
+	        boolean profile = false, boolean debug = false, boolean removeContext = false) {
+
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
-		executor.execute("cpp -P $origFile $scriptFile".split().toList()) { log.info it }
+		executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
 
 		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
 		def c2 = c1 + profile.toString()
@@ -74,7 +68,7 @@ class SouffleScript {
 			} catch (FileAlreadyExistsException e) {
 				// If a cached file is already there, don't overwrite it
 				// (it might be used by another analysis), just reuse it.
-				log.info "Copy failed, someone else has already created ${cacheFile.canonicalPath}"
+				log.info (e.message)
 			}
 
 			log.info "Analysis compilation time (sec): $compilationTime"
@@ -94,9 +88,7 @@ class SouffleScript {
 		log.debug "Execution command: $executionCommand"
 		log.info "Running analysis"
 		executionTime = Helper.timing {
-			executor.enableMonitor(monitoringInterval)
-					.execute(executionCommand)
-					.disableMonitor()
+			executor.enableMonitor(monitoringInterval, monitorClosure).execute(executionCommand).disableMonitor()
 		}
 		log.info "Analysis execution time (sec): $executionTime"
 
