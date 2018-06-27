@@ -49,12 +49,27 @@ NeighboringMethodsInCallGraph(?neigh, ?method, ?weight) :-
 // TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight) :-
 //    NeighboringMethodsInCallGraph(?neigh, ?method, ?weight).
 
-.decl WeightedRegionalVPTSize(?method:Method, ?n:number)
+.decl WeightedLocalVPTSize(?method:Method, ?n:number)
       
-WeightedRegionalVPTSize(?method, Y) :-
+WeightedLocalVPTSize(?method, Y) :-
   isMethod(?method),
   Y = sum ?n * 100 / ?weight: { NeighboringMethodsInCallGraph(?neigh, ?method, ?weight), VPTCountPerMethod(?neigh, ?n) }.
-  
-.output VPTCountPerMethod
-.output CalleeCountPerMethod
-.output WeightedRegionalVPTSize
+
+.decl LocalIFPTSize(?method:Method, ?n:number)
+
+LocalIFPTSize(?method, Y) :-
+  isMethod(?method),
+  Y = count : {Var_DeclaringMethod(?var, ?method),
+  mainAnalysis.VarPointsTo(_, ?basevalue, _, ?var),
+  mainAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?basevalue)}.  
+
+.decl MethodWeight(?method:Method, ?n:number)
+
+MethodWeight(?method, ?n) :-      
+  WeightLocalVPTSize(?method, ?size1),
+  LocalIFPTSize(?method, ?size2),
+  ?n = ?size1 + ?size2.
+
+.output WeightedLocalVPTSize
+.output LocalIFPTSize
+.output MethodWeight
