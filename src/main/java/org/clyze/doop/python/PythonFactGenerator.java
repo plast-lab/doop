@@ -72,31 +72,33 @@ public class PythonFactGenerator implements Runnable{
                     _writer.writeClassModifier(iClass, "private");
 //
 //            // the isInterface condition prevents Object as superclass of interface
-//            if (iClass.getSuperclass() != null && !iClass.isInterface()) {
-//                _writer.writeDirectSuperclass(iClass, iClass.getSuperclass());
-//            }
-//
-//            for (IClass i : iClass.getAllImplementedInterfaces()) {
-//                _writer.writeDirectSuperinterface(iClass, i);
-//            }
+            if (iClass.getSuperclass() != null && !iClass.isInterface()) {
+                _writer.writeDirectSuperclass(iClass, iClass.getSuperclass());
+                System.out.println("Class " + className +" extends " + iClass.getSuperclass().getName().toString().substring(1));
+            }
+
+            for (IClass i : iClass.getAllImplementedInterfaces()) {
+                _writer.writeDirectSuperinterface(iClass, i);
+                System.out.println("Class " + className +" implements " + i.getName().toString().substring(1));
+            }
 
             }else if (iClass instanceof CAstAbstractModuleLoader.DynamicCodeBody) {
 
-                System.out.println("Adding Function " + className);
+
                 if(className.contains("/")){
                     String[] cName = className.split("/");
                     String declaringClass = cName[0];
                     String methodName = cName[1];
+                    System.out.println("Adding Method " + methodName + " of class " + declaringClass);
                 }
                 else{
-
+                    System.out.println("Adding Function " + className);
                 }
 
             }else{
-                System.out.println("Uknown type of Class " + className + " object type " + iClass.getClass().getName());
+                System.out.println("Uknown type of Class " + className + " object type: " + iClass.getClass().getName());
                 throw new RuntimeException(":(");
             }
-
 
             for (IMethod m : iClass.getDeclaredMethods()) {
                 Session session = new org.clyze.doop.wala.Session();
@@ -104,7 +106,7 @@ public class PythonFactGenerator implements Runnable{
                     generate(m, session);
                 }
                 catch (Exception exc) {
-                    System.err.println("Error while processing method: " + m + " of class " +m.getDeclaringClass());
+                    System.err.println("Error while processing method: " +className);
                     exc.printStackTrace();
                     throw exc;
                 }
@@ -167,8 +169,8 @@ public class PythonFactGenerator implements Runnable{
                         generate(m, ir, (SSAThrowInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof PythonInvokeInstruction) {
                         generate(m, ir, (PythonInvokeInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSAInvokeInstruction) {
-                        generate(m, ir, (SSAInvokeInstruction) instructions[j], session, typeInference);
+                    } else if (instructions[j] instanceof SSAAbstractInvokeInstruction) {
+                        generate(m, ir, (SSAAbstractInvokeInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof EachElementHasNextInstruction) {
                         generate(m, ir, (EachElementHasNextInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof EachElementGetInstruction) {
@@ -389,7 +391,7 @@ public class PythonFactGenerator implements Runnable{
         _writer.writePythonInvoke(m, ir, instruction, l, session,typeInference);
     }
 
-    public void generate(IMethod m, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
+    public void generate(IMethod m, IR ir, SSAAbstractInvokeInstruction instruction, Session session, TypeInference typeInference) {
         // For invoke instructions the number of uses is equal to the number of parameters
 
         Local l;
