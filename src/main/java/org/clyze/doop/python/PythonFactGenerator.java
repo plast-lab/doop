@@ -4,6 +4,7 @@ import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.analysis.typeInference.AstTypeInference;
 import com.ibm.wala.cast.ir.ssa.*;
 import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
+import com.ibm.wala.cast.python.loader.PythonLoader;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.cast.python.ssa.PythonPropertyRead;
 import com.ibm.wala.cast.python.ssa.PythonPropertyWrite;
@@ -53,19 +54,26 @@ public class PythonFactGenerator implements Runnable{
     public void run() {
 
         for (IClass iClass : _iClasses) {
-            String className = iClass.getName().toString().substring(1);
-
+            String cName = iClass.getName().toString().substring(1);
+            String[] classNameParts = cName.split("/");
+            String declaringModule;
             if(iClass instanceof CAstAbstractModuleLoader.CoreClass) {
-
-                System.out.println("Adding Class " + className );
+                String className;
+                if(classNameParts.length == 2){
+                    declaringModule = classNameParts[0].replace("script ","");
+                    className = classNameParts[1];
+                }
+                else{
+                    declaringModule = "BUILTIN";
+                    className = classNameParts[0];
+                }
+                System.out.println("Adding Class <" + declaringModule + ":" + className + ">");
                 if(defaultClasses.contains(className))
                     continue;
                 iClass.getAllFields().forEach(this::generate);
                 _writer.writeClassOrInterfaceType(iClass);
                 if(iClass.isAbstract())
                     _writer.writeClassModifier(iClass, "abstract");
-////            if(Modifier.isFinal(modifiers))
-////                _writer.writeClassModifier(iClass, "final");
                 if(iClass.isPublic())
                     _writer.writeClassModifier(iClass, "public");
                 if(iClass.isPrivate())
@@ -84,19 +92,29 @@ public class PythonFactGenerator implements Runnable{
 
             }else if (iClass instanceof CAstAbstractModuleLoader.DynamicCodeBody) {
 
-
-                if(className.contains("/")){
-                    String[] cName = className.split("/");
-                    String declaringClass = cName[0];
-                    String methodName = cName[1];
-                    System.out.println("Adding Method " + methodName + " of class " + declaringClass);
+                declaringModule = classNameParts[0].replace("script ","");
+                if(classNameParts.length >= 3){
+                    String parClassName = "L" +classNameParts[0];
+                    for(int i=1; i<classNameParts.length -1; i++)
+                        parClassName += "/" + classNameParts[i];
+                    TypeReference type = TypeReference.find(PythonTypes.pythonLoader, parClassName);
+                    IClass decClass = iClass.getClassHierarchy().lookupClass(type);
+                    if(decClass instanceof CAstAbstractModuleLoader.CoreClass){
+                        String declaringClass = classNameParts[1];
+                        String methodName = classNameParts[2];
+                        System.out.println("Adding Method <" + declaringModule + ":" + declaringClass + ":" + methodName + ">");
+                    }else{
+                        String outerFunct = classNameParts[1];
+                        String methodName = classNameParts[2];
+                        System.out.println("Adding Inner Function <" + declaringModule + ":" + outerFunct + ":" + methodName + ">");
+                    }
                 }
                 else{
-                    System.out.println("Adding Function " + className);
+                    System.out.println("Adding Function  <" + declaringModule + ":" +  classNameParts[classNameParts.length - 1] + ">");
                 }
 
             }else{
-                System.out.println("Uknown type of Class " + className + " object type: " + iClass.getClass().getName());
+                System.out.println("Uknown type of Class " + cName + " object type: " + iClass.getClass().getName());
                 throw new RuntimeException(":(");
             }
 
@@ -106,7 +124,7 @@ public class PythonFactGenerator implements Runnable{
                     generate(m, session);
                 }
                 catch (Exception exc) {
-                    System.err.println("Error while processing method: " +className);
+                    System.err.println("Error while processing method: " + cName);
                     exc.printStackTrace();
                     throw exc;
                 }

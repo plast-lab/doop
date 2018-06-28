@@ -66,8 +66,9 @@ public class PythonRepresentation {
     String signature(IMethod m) {
         //return signature(m.getReference());
         String sourceFileName = m.getDeclaringClass().getSourceFileName();
-        String functionName = m.getDeclaringClass().getName().toString().substring(1);
-        return "<" + sourceFileName + ":" + functionName + ">";
+        String sourceFolderName = sourceFileName.substring(0, sourceFileName.lastIndexOf("/") + 1);
+        String functionName = m.getDeclaringClass().getName().toString().substring(1).replace("script ","").replace("/",":");
+        return "<" + sourceFolderName + functionName + ">";
     }
 
     String signature(MethodReference m) {
