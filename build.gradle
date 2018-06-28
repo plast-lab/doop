@@ -52,7 +52,7 @@ configurations.all {
 
 dependencies {
 
-    compile "org.clyze:clue-common:3.3.+",
+    compile "org.clyze:clue-common:3.4.+",
             "org.clyze:deepdoop:0.9.+",
             "org.codehaus.groovy:groovy-all:2.4.13",            // Groovy
             "commons-logging:commons-logging:1.1",              // Logging wrapper

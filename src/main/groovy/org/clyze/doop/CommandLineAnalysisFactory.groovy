@@ -204,7 +204,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	private static void writeAsProperty(AnalysisOption option, Writer w) {
 		def type, id = option.id.toLowerCase()
 
-		if (option.isFile) {
+		if (option.argInputType) {
 			type = "(file)"
 		} else if (option.argName && option instanceof BooleanAnalysisOption) {
 			type = "(boolean)"

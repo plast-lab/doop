@@ -128,7 +128,10 @@ class Doop {
 						if (option.argName) {
 							option.value = value
 						} else {
-							option.value = value.toBoolean()
+							// value.toBoolean will fail on null
+							// value as Boolean will return null, on null
+							// value as boolean will return false, on null
+							option.value = value as boolean
 						}
 					}
 				}
