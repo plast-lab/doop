@@ -551,21 +551,18 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_STATS_FULL",
 					name: "Xstats-full",
 					description: "Load additional logic for collecting statistics.",
-					nonStandard: true,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_NONE",
 					name: "Xstats-none",
 					description: "Do not load logic for collecting statistics.",
-					nonStandard: true,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_DEFAULT",
 					name: "Xstats-default",
 					description: "Load default logic for collecting statistics.",
-					nonStandard: true,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -573,54 +570,46 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xstats-around",
 					description: "Load custom logic for collecting statistics.",
 					argName: "FILE",
-					argInputType: InputType.MISC,
-					nonStandard: true
+					argInputType: InputType.MISC
 			),
 			new AnalysisOption<String>(
 					id: "X_STOP_AT_FACTS",
 					name: "Xstop-at-facts",
 					description: "Only generate facts and exit. Link result to OUT_DIR",
 					argName: "OUT_DIR",
-					argInputType: InputType.MISC,
-					nonStandard: true
+					argInputType: InputType.MISC
 			),
 			new BooleanAnalysisOption(
 					id: "X_STOP_AT_INIT",
 					name: "Xstop-at-init",
-					description: "Initialize database with facts and exit.",
-					nonStandard: true
+					description: "Initialize database with facts and exit."
 			),
 			new BooleanAnalysisOption(
 					id: "X_STOP_AT_BASIC",
 					name: "Xstop-at-basic",
-					description: "Run the basic analysis and exit.",
-					nonStandard: true
+					description: "Run the basic analysis and exit."
 			),
 			new BooleanAnalysisOption(
 					id: "X_DRY_RUN",
 					name: "Xdry-run",
-					description: "Do a dry run of the analysis.",
-					nonStandard: true
+					description: "Do a dry run of the analysis."
 			),
 			new BooleanAnalysisOption(
 					id: "X_SERVER_LOGIC",
 					name: "Xserver-logic",
 					description: "Run server queries under addons/server-logic",
-					nonStandard: true,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_EXTRA_METRICS",
 					name: "Xextra-metrics",
 					description: "Run extra metrics logic under addons/statistics",
-					nonStandard: true,
 					forPreprocessor: false
 			),
 			new BooleanAnalysisOption(
 					id: "X_SENSITIVITY_HEURISTICS",
 					name: "Xsensitivity-heuristics",
 					description: "Run sensitivity heuristics logic under addons/statistics",
-					nonStandard: true,
 					forPreprocessor: false
 			),
 			new AnalysisOption<String>(
@@ -629,21 +618,18 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Include file with extra rules.",
 					argName: "FILE",
 					argInputType: InputType.MISC,
-					nonStandard: true,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_CONTEXT_REMOVER",
 					name: "Xcontext-remover",
 					description: "Run the context remover for reduced memory use (only available in context-insensitive analysis).",
-					nonStandard: true,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_SYMLINK_CACHED_FACTS",
 					name: "Xsymlink-cached-facts",
 					description: "Use symbolic links instead of copying cached facts.",
-					nonStandard: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
@@ -652,7 +638,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Import facts from OUT_DIR and start the analysis.",
 					argName: "OUT_DIR",
 					argInputType: InputType.MISC,
-					nonStandard: true,
 					forPreprocessor: true
 			),
 			new IntegerAnalysisOption(
@@ -661,7 +646,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "THRESHOLD",
 					description: "Threshold when reporting point-to information in server logic (per points-to set). default: 1000",
 					value: 1000,
-					nonStandard: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
@@ -669,22 +653,19 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "XR-out-dir",
 					description: "When linking AAR inputs, place generated R code in R_OUT_DIR",
 					argName: "R_OUT_DIR",
-					argInputType: InputType.MISC,
-					nonStandard: true
+					argInputType: InputType.MISC
 			),
 			new BooleanAnalysisOption(
 					id: "X_IGNORE_WRONG_STATICNESS",
 					name: "Xignore-wrong-staticness",
-					description: "Ignore 'wrong static-ness' errors in Soot.",
-					nonStandard: true
+					description: "Ignore 'wrong static-ness' errors in Soot."
 			),
 			new IntegerAnalysisOption(
 					id: "X_MONITORING_INTERVAL",
 					name: "Xmonitoring-interval",
 					argName: "INTERVAL",
 					description: "Monitoring interval for sampling memory and cpu usage. default: 5sec",
-					value: 5,
-					nonStandard: true
+					value: 5
 			),
 			/* End non-standard flags */
 

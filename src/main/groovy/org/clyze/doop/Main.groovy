@@ -31,15 +31,11 @@ class Main {
 		Helper.initLogging("INFO", "${Doop.doopHome}/build/logs", true)
 
 		try {
-			// The builder for displaying usage should not include non-standard flags
-			def usageBuilder = CommandLineAnalysisFactory.createCliBuilder(false)
-			// The builder for displaying usage of non-standard flags
-			def nonStandardUsageBuilder = CommandLineAnalysisFactory.createNonStandardCliBuilder()
-			// The builder for actually parsing the arguments needs to include non-standard flags
-			def builder = CommandLineAnalysisFactory.createCliBuilder(true)
+			// The builder for displaying usage and parging the arguments
+			def clidBuilder = CommandLineAnalysisFactory.createCliBuilder()
 
 			if (!args) {
-				usageBuilder.usage()
+				clidBuilder.usage()
 				return
 			}
 
@@ -54,19 +50,16 @@ class Main {
 				bloxOptions = args[(index + 1)..(args.length - 1)].join(' ')
 			}
 
-			def cli = builder.parse(argsToParse)
+			def cli = clidBuilder.parse(argsToParse)
 			if (!cli) {
 				// We assume usage has already been displayed by the CliBuilder.
 				return
 			} else if (cli.arguments().size() != 0) {
 				log.info "Invalid argument specified: " + cli.arguments()[0]
-				usageBuilder.usage()
+				clidBuilder.usage()
 				return
 			} else if (cli['h']) {
-				usageBuilder.usage()
-				return
-			} else if (cli['X']) {
-				nonStandardUsageBuilder.usage()
+				clidBuilder.usage()
 				return
 			}
 
@@ -90,7 +83,7 @@ class Main {
 			} catch (e) {
 				e = StackTraceUtils.deepSanitize e
 				log.error(e.message, e)
-				usageBuilder.usage()
+				clidBuilder.usage()
 				return
 			}
 
