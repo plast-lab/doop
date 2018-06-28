@@ -20,8 +20,6 @@ class SouffleAnalysis extends DoopAnalysis {
 	 */
 	File analysis
 
-	Closure monitorClosure = null
-
 	@Override
 	void run() {
 		generateFacts()
