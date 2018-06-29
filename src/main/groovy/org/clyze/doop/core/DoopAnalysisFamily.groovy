@@ -18,6 +18,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	@Override
 	List<AnalysisOption> supportedOptions() { SUPPORTED_OPTIONS }
 
+	@Override
+	Map<String, AnalysisOption> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
+
 	private static List<AnalysisOption> SUPPORTED_OPTIONS = [
 			/* Start Main options */
 			new AnalysisOption<String>(
