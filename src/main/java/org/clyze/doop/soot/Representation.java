@@ -71,6 +71,10 @@ class Representation {
         return escape ? "'"+n+"'" : n;
     }
 
+    private String simpleName(SootMethodRef m) {
+        return escapeSimpleName(m.name());
+    }
+
     String simpleName(SootField m) {
         return m.getName();
     }
@@ -194,12 +198,8 @@ class Representation {
     }
 
     private String invokeIdMiddle(InvokeExpr expr) {
-        SootMethod exprMethod = expr.getMethod();
-        if (expr instanceof InstanceInvokeExpr) {
-            Type baseType = ((InstanceInvokeExpr)expr).getBase().getType();
-            return baseType.toString() + "." + simpleName(exprMethod);
-        } else
-            return exprMethod.getDeclaringClass() + "." + simpleName(exprMethod);
+        SootMethodRef exprMethodRef = expr.getMethodRef();
+        return exprMethodRef.declaringClass() + "." + simpleName(exprMethodRef);
     }
 
     // Create a middle part for invokedynamic ids. It currently
