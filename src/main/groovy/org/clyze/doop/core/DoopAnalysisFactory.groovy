@@ -229,6 +229,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 			options.HEAPDLS.value = context.allHeapDLs
 			log.debug "HeapDL file paths: ${context.heapDLs()} -> ${options.HEAPDLS.value}"
+		} else {
+			// Dummy value so the option is not empty, because otherwise it is mandatory
+			options.INPUTS.value = "false"
 		}
 
 		setOptionsForPlatform(options, platformName)
