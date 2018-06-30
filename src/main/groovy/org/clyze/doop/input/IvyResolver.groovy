@@ -79,7 +79,7 @@ class IvyResolver implements InputResolver {
 				ctx.add(input, InputType.LIBRARY) //add the same input as library dependency too
 				ctx.set(input, resolvedInputDependencies, InputType.LIBRARY)
 			} else
-				throw new RuntimeException("Ivy resolution is not supported for HPROF inputs.")
+				throw new RuntimeException("Ivy resolution is not supported for HeapDL inputs.")
 		} catch (e) {
 			throw new RuntimeException("Not a valid Ivy input: $input", e)
 		}

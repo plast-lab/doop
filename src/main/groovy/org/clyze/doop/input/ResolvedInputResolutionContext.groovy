@@ -9,22 +9,22 @@ class ResolvedInputResolutionContext implements InputResolutionContext {
 	List<String> inputs
 	List<String> libraries
 	List<String> platformFiles
-	List<String> hprofs
+	List<String> heapDLs
 	List<File> allInputs
 	List<File> allLibraries
 	List<File> allPlatformFiles
-	List<File> allHprofs
+	List<File> allHeapDLs
 
 	String toString() {
 """
 inputs = $inputs
 libraries = $libraries
 platformFiles = $platformFiles
-hprofs = $hprofs
+heapDLs = $heapDLs
 allInputs = $allInputs
 allLibraries = $allLibraries
 allPlatformFiles = $allPlatformFiles
-allHprofs = $allHprofs"""
+allHeapDLs = $allHeapDLs"""
 	}
 
 	@Override
@@ -66,7 +66,7 @@ allHprofs = $allHprofs"""
 	}
 
 	@Override
-	List<File> getAll() { allInputs + allLibraries + allPlatformFiles + allHprofs }
+	List<File> getAll() { allInputs + allLibraries + allPlatformFiles + allHeapDLs }
 
 	@Override
 	List<String> inputs() { inputs }
@@ -78,5 +78,5 @@ allHprofs = $allHprofs"""
 	List<String> platformFiles() { platformFiles }
 
 	@Override
-	List<String> hprofs() { hprofs }
+	List<String> heapDLs() { heapDLs }
 }
