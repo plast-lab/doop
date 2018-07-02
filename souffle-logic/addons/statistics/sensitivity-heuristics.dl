@@ -61,12 +61,13 @@ LocalIFPTSize(?method, Y) :-
   isMethod(?method),
   Y = count : {Var_DeclaringMethod(?var, ?method),
   mainAnalysis.VarPointsTo(_, ?basevalue, _, ?var),
-  mainAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?basevalue)}.  
+  mainAnalysis.InstanceFieldPointsTo(_, ?value, _, _, ?basevalue),
+  ?value = ?value}.  
 
 .decl MethodWeight(?method:Method, ?n:number)
 
 MethodWeight(?method, ?n) :-      
-  WeightLocalVPTSize(?method, ?size1),
+  WeightedLocalVPTSize(?method, ?size1),
   LocalIFPTSize(?method, ?size2),
   ?n = ?size1 + ?size2.
 
