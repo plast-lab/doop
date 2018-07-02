@@ -8,60 +8,59 @@ _Valid_Type(?type) :-
   isReferenceType(?type),
   !Type_null(?type),
   !isArrayType(?type),
-  Server_Class_Keep(?type).
-
+  _Server_Interesting_Type(?type).
 
 // ?class is implemented/extended by ?subClass
 .decl Server_Class_Subtype(?class:ReferenceType, ?subClass:ReferenceType)
-.decl Server_Class_Keep(?class:ReferenceType)
 // ?class has access to ?field (either it is declared in the class, or in a superclass)
-.decl Server_Class_ReachesField(?class:ClassType, ?fld:Field)
+.decl Server_Type_Can_Access_Field(?class:ClassType, ?fld:Field)
 .output Server_Class_Subtype
-.output Server_Class_Keep
-.output Server_Class_ReachesField
+.output Server_Type_Can_Access_Field
 
 Server_Class_Subtype(?class, ?subClass) :-
   basic.SubtypeOfDifferent(?subClass, ?class),
   _Valid_Type(?class),
   _Valid_Type(?subClass).
 
+.decl _Server_Interesting_Type(?class:ReferenceType)
+
 // All application types
-Server_Class_Keep(?class) :-
+_Server_Interesting_Type(?class) :-
   ApplicationClass(?class).
 
 // All classes with a reachable method
-Server_Class_Keep(?class) :-
+_Server_Interesting_Type(?class) :-
   Method_DeclaringType(?method, ?class),
   mainAnalysis.Reachable(?method).
 
 // Types of class heaps used
-Server_Class_Keep(?type) :-
+_Server_Interesting_Type(?type) :-
   mainAnalysis.VarPointsTo(_, ?classHeap, _, _),
   ClassHeap_InstanceType(?classHeap, ?type).
 
 #ifdef REFLECTION
 // Reified types used
-Server_Class_Keep(?type) :-
+_Server_Interesting_Type(?type) :-
   mainAnalysis.ReifiedClass(?type, ?value),
   mainAnalysis.VarPointsTo(_, ?value, _, _).
 #endif
 
 #ifdef REFLECTION_DYNAMIC_PROXIES
 // Proxied interfaces
-Server_Class_Keep(?interface) :-
+_Server_Interesting_Type(?interface) :-
   ProxyObject_Interface(_, ?interface).
 #endif
 
 // Transitively, everything up the hierarchy
-Server_Class_Keep(?interface) :-
-  Server_Class_Keep(?class),
+_Server_Interesting_Type(?interface) :-
+  _Server_Interesting_Type(?class),
   basic.SupertypeOf(?interface, ?class).
 
-Server_Class_ReachesField(?class, ?fld) :-
+Server_Type_Can_Access_Field(?class, ?fld) :-
   Field_DeclaringType(?fld, ?class),
-  Server_Class_Keep(?class).
+  _Server_Interesting_Type(?class).
 
-Server_Class_ReachesField(?class, ?fld) :-
+Server_Type_Can_Access_Field(?class, ?fld) :-
   Field_DeclaringType(?fld, ?supertype),
   Field_Modifier(?mod, ?fld),
   !Modifier_private(?mod),
