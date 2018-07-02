@@ -198,7 +198,7 @@ OUTPUT_STATS(Stats_Simple_OriginalTaintedValue)
  * Memory Dump
  ***************************************************/
 
-#ifdef HEAPDL
+#ifdef HEAPDLS
 .decl NotLibraryHeapAllocation(?heap:HeapAllocation)
 OUTPUT_STATS(NotLibraryHeapAllocation)
 

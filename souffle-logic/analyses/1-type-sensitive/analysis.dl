@@ -58,7 +58,7 @@
     InitHContextRequest(?s),
     ?hctx = UNIQUE_HCONTEXT.
 
-#ifdef HEAPDL
+#ifdef HEAPDLS
 DynamicContextToContext([ ?type ], ?dynCtx) :-
    Value_byDynamicHeap(?heap1, ?value),
    Value_Type(?value, ?type),

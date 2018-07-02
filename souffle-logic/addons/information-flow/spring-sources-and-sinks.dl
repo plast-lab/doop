@@ -165,8 +165,6 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?c
   Method_DeclaringType(?meth, ?declaringType).
 
 #ifdef OPEN_PROGRAMS
-.output ServletMethodEP
-
 BaseToRetTaintTransferMethod(?dtoMeth),
 TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
@@ -178,3 +176,4 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?
   mainAnalysis.isImmutableHContext(?hctx),
   Method_DeclaringType(?dtoMeth, ?type),
   Method_DeclaringType(?meth, ?declaringType).
+#endif

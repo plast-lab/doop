@@ -129,7 +129,7 @@
      InitHContextRequest(?value),
      ?hctx = [?value].
 
-#ifdef HEAPDL
+#ifdef HEAPDLS
 DynamicContextToContext([?type1, ?type2], ?dynCtx) :-
    DynamicContextHeap1(?heap1, ?dynCtx),
    Value_byDynamicHeap(?heap1, ?value1),

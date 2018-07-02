@@ -49,7 +49,6 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 		// Get the libraryFiles of the analysis (short option: l)
 		options.LIBRARIES.value = (!options.X_START_AFTER_FACTS.value && cli.ls) ? cli.ls : []
 		// Get the heapFiles of the analysis (long option: heapdl)
-		options.HEAPDLS.value = (!options.X_START_AFTER_FACTS.value && cli.heapdls) ? cli.heapdls : []
 
 		newAnalysis(FAMILY, options)
 	}

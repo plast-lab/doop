@@ -6,7 +6,7 @@
 #include "string-constants.dl"
 #include "threads.dl"
 
-#if defined(HEAPDL) || defined(IMPORT_DYNAMIC_FACTS)
+#if defined(HEAPDLS) || defined(IMPORT_DYNAMIC_FACTS)
 #include "dynamicanalysis.dl"
 #endif
 

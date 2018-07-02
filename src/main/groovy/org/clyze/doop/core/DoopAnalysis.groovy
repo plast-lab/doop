@@ -210,11 +210,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				}
 			}
 
-			if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
-				runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
-			}
-
 			if (!options.X_START_AFTER_FACTS.value) {
+				if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
+					runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
+				}
+
 				log.info "Caching facts in $cacheDir"
 				deleteQuietly(cacheDir)
 				cacheDir.mkdirs()

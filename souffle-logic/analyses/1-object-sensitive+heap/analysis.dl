@@ -52,7 +52,7 @@
     ?hctx = [?value].
 
 // Dynamic analysis
-#ifdef HEAPDL
+#ifdef HEAPDLS
 DynamicContextToContext([ ?value ], ?dynCtx) :-
    Value_byDynamicHeap(?heap1, ?value),
    DynamicContextHeap1(?heap1, ?dynCtx).
