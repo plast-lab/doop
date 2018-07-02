@@ -383,17 +383,21 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 		log.debug "Params of wala: ${params.join(' ')}"
 
-		sootTime = Helper.timing {
-			//We invoke soot reflectively using a separate class-loader to be able
-			//to support multiple soot invocations in the same JVM @ server-side.
-			//TODO: Investigate whether this approach may lead to memory leaks,
-			//not only for soot but for all other Java-based tools, like jphantom.
-			//In such a case, we should invoke all Java-based tools using a
-			//separate process.
-			WalaInvoker wala = new WalaInvoker()
-			wala.main(params.toArray(new String[params.size()]))
+		try {
+			sootTime = Helper.timing {
+				//We invoke soot reflectively using a separate class-loader to be able
+				//to support multiple soot invocations in the same JVM @ server-side.
+				//TODO: Investigate whether this approach may lead to memory leaks,
+				//not only for soot but for all other Java-based tools, like jphantom.
+				//In such a case, we should invoke all Java-based tools using a
+				//separate process.
+				WalaInvoker wala = new WalaInvoker()
+				wala.main(params.toArray(new String[params.size()]))
+			}
+		}catch(Throwable walaError){
+			System.out.println("Wala fact generation Error: " + walaError)
+			throw new RuntimeException(walaError);
 		}
-
 		log.info "Wala fact generation time: ${sootTime}"
 	}
 
@@ -421,11 +425,15 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 		log.debug "Params of wala: ${params.join(' ')}"
 
-		sootTime = Helper.timing {
-			PythonInvoker wala = new PythonInvoker()
-			wala.main(params.toArray(new String[params.size()]))
+		try {
+			sootTime = Helper.timing {
+				PythonInvoker wala = new PythonInvoker()
+				wala.main(params.toArray(new String[params.size()]))
+			}
+		}catch(Throwable walaError){
+			System.out.println("Wala fact generation Error: " + walaError)
+			throw new RuntimeException(walaError);
 		}
-
 		log.info "Wala fact generation time: ${sootTime}"
 
 	}

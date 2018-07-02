@@ -11,6 +11,7 @@ import org.clyze.persistent.model.Element
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.doop.*
 import org.clyze.persistent.model.doop.Class as Klass
+import org.codehaus.groovy.runtime.StackTraceUtils
 
 import static org.clyze.jimple.JimpleParser.*
 
@@ -445,8 +446,9 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def parser = new JimpleParser(new CommonTokenStream(new JimpleLexer(new ANTLRFileStream(filename))))
 		try {
 			ParseTreeWalker.DEFAULT.walk(listener, parser.program())
-		} catch (Exception e) {
-			throw new Exception("Jimple File: $filename", e)
+		} catch (all) {
+			all = StackTraceUtils.deepSanitize all
+			throw StackTraceUtils.deepSanitize(new Throwable("Jimple File: $filename", all))
 		}
 	}
 }

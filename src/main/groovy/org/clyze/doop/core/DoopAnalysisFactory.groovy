@@ -72,7 +72,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def platformFiles = new PlatformManager(options.PLATFORMS_LIB.value as String).find(platformName)
 		context.add(platformFiles, InputType.PLATFORM)
 
-		context.add(options.HEAPDLS.value as List<String>, InputType.HPROF)
+		context.add(options.HEAPDLS.value as List<String>, InputType.HEAPDL)
 		return newAnalysis(options, context)
 	}
 
@@ -227,8 +227,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.PLATFORMS.value = context.allPlatformFiles
 			log.debug "Platform file paths: ${context.platformFiles()} -> ${options.PLATFORMS.value}"
 
-			options.HEAPDLS.value = context.allHprofs
-			log.debug "HeapDL file paths: ${context.hprofs()} -> ${options.HEAPDLS.value}"
+			options.HEAPDLS.value = context.allHeapDLs
+			log.debug "HeapDL file paths: ${context.heapDLs()} -> ${options.HEAPDLS.value}"
+		} else {
+			// Dummy value so the option is not empty, because otherwise it is mandatory
+			options.INPUTS.value = "false"
 		}
 
 		setOptionsForPlatform(options, platformName)

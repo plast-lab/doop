@@ -11,17 +11,24 @@ ServletMethodEP(?meth) :-
      Method_Annotation(?meth, "javax.ws.rs.POST");
      Method_Annotation(?meth, "javax.ws.rs.PUT")).
 
+
+mainAnalysis.configuration.StartupContextRequest(?hctx, ?val) :-
+    ServletMethodEP(?meth),
+    ?val = cat("SERVLET ::: ", ?meth),
+    mainAnalysis.isValue(?val),
+    mainAnalysis.isImmutableHContext(?hctx).
+
 PossibleOpenProgramEntryPoint(?className, ?meth),
 mainAnalysis.ReachableContext(?ctx, ?meth) :-
     ServletMethodEP(?meth),
     Method_DeclaringType(?meth, ?className),
-    mainAnalysis.isValue(?val),
     ?val = cat("SERVLET ::: ", ?meth),
+    mainAnalysis.isValue(?val),
     mainAnalysis.isImmutableHContext(?hctx),
     mainAnalysis.configuration.StartupContextRequest(?hctx, ?val),
     mainAnalysis.configuration.StartupContextResponse(?hctx, ?val, ?ctx).
 
-mainAnalysis.isValue(cat("SERVLET ::: ", ?meth)) :- isMethod(?meth).
+mainAnalysis.isValue(cat("SERVLET ::: ", ?meth)) :- isMethod(?meth), ServletMethodEP(?meth).
 
 mainAnalysis_MockValueConsMacro(cat(?fld, " :: AUTOWIRED"), ?type),
 mainAnalysis.InstanceFieldPointsTo(?hctx, cat(?fld, " :: AUTOWIRED"), ?fld, ?basehctx, ?basevalue) :-

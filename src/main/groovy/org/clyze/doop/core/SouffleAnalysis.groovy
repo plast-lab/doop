@@ -45,10 +45,11 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		def cacheDir = new File(Doop.souffleAnalysesCache, name)
 		cacheDir.mkdirs()
-		def script = new SouffleScript(analysis, factsDir, outDir, cacheDir, executor)
-		script.run(
-				options.SOUFFLE_JOBS.value as int,
+		def script = new SouffleScript()
+		script.run(analysis, factsDir, outDir, cacheDir,
+				executor, options.SOUFFLE_JOBS.value as int,
 				(options.X_MONITORING_INTERVAL.value as long) * 1000,
+				monitorClosure,
 				options.SOUFFLE_PROFILE.value as boolean,
 				options.SOUFFLE_DEBUG.value as boolean,
 				options.X_CONTEXT_REMOVER.value as boolean)

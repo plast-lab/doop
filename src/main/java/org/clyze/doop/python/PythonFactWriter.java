@@ -191,19 +191,7 @@ public class PythonFactWriter {
     void writeAssignHeapAllocation(IR ir, IMethod m, SSANewInstruction instruction, Local l, Session session) {
         String heap = _rep.heapAlloc(m, instruction, session);
 
-
         _db.add(NORMAL_HEAP, heap, writeType(instruction.getConcreteType()));
-
-//        if (instruction.getNewSite().getDeclaredType().isArrayType()) {
-//            int arrayLengthVar = instruction.getUse(0);
-//            SymbolTable symbolTable = ir.getSymbolTable();
-//            if (symbolTable.isIntegerConstant(arrayLengthVar)) {
-//                int arrayLength = symbolTable.getIntValue(arrayLengthVar);
-//
-//                if(arrayLength == 0)
-//                    _db.add(EMPTY_ARRAY, heap);
-//            }
-//        }
 
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
@@ -333,7 +321,8 @@ public class PythonFactWriter {
         String methodId = _rep.signature(m);
 
         TypeReference declaringClass = f.getDeclaringClass();
-        String fieldId = _rep.signature(f, declaringClass);
+        //String fieldId = _rep.signature(f, declaringClass);
+        String fieldId = _rep.simpleName(f);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
     }
 
@@ -352,7 +341,8 @@ public class PythonFactWriter {
 
         //TypeReference declaringClass = getCorrectFieldDeclaringClass(f, m.getClassHierarchy());
         TypeReference declaringClass = f.getDeclaringClass();
-        String fieldId = _rep.signature(f, declaringClass);
+//        String fieldId = _rep.signature(f, declaringClass);
+        String fieldId = _rep.simpleName(f);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), fieldId, methodId);
     }
 
@@ -578,13 +568,13 @@ public class PythonFactWriter {
         return insn;
     }
 
-    void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
-        String insn = writeInvokeHelper(inMethod, ir, instruction, session, typeInference);
+    void writeInvoke(IMethod inMethod, IR ir, SSAAbstractInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
+        String insn = writeInvokeHelper(inMethod, ir, instruction, to, session, typeInference);
         if(to != null)
             _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
     }
 
-    private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
+    private String writeInvokeHelper(IMethod inMethod, IR ir, SSAAbstractInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
         String methodId = _rep.signature(inMethod);
 
         int sourceLineNum = getLineNumberFromInstruction(ir,instruction);
@@ -603,16 +593,26 @@ public class PythonFactWriter {
 
         if (instruction.isStatic()) {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
+            if(targetRef.getName().toString().equals("import")){
+                String fileName = inMethod.getDeclaringClass().getSourceFileName();
+                String module = fixType(targetRef.getReturnType());
+                _db.add(IMPORT, fileName, _rep.local(inMethod,to), module);
+            }
+            else{
+                throw new RuntimeException("Unexpected invoke instruction(non-import static): " + instruction);
+            }
             //_db.add(STATIC_METHOD_INV, insn, _rep.signature(targetRef), methodId);
         }
         else if (instruction.isDispatch()) {
-            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
-            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
+            throw new RuntimeException("Unexpected invoke instruction(virtual): " + instruction);
+//            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
+//            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
             //_db.add(VIRTUAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
         }
         else if (instruction.isSpecial()) {
-            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
-            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
+            throw new RuntimeException("Unexpected invoke instruction(special): " + instruction);
+//            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
+//            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
             //_db.add(SPECIAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
         }
         else {

@@ -18,6 +18,12 @@ TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) :-
   TaintedVarPointsTo(?value, ?fromCtx, ?from).
   .plan 1:(2,1)
 
+mainAnalysis_MockValueConsMacro(?value, ?type),
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?id),
+mainAnalysis.Value_DeclaringType(?value, ?declaringType) :-
+  TaintedValueTransferred(?declaringType, ?id, ?type, ?value).
+
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?toCtx, ?to) :-
   TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type),
@@ -329,8 +335,7 @@ SerializableVar(?var) :-
    Var_Type(?var, ?type),
    basic.SupertypeOf("java.io.Serializable", ?type).
 
-TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
-mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?base) :-
+TaintedObjectSerialized(?declaringType, ?source, ?type, ?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?base) :-
   ObjectSerializedToBase(?ctx, ?base, ?baseobj),
   (mainAnalysis.InstanceFieldPointsTo(_, ?obj, ?field, _, ?baseobj),
   !Field_Modifier("transient", ?field)),
@@ -339,7 +344,11 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   mainAnalysis.Value_DeclaringType(?obj, ?declaringType),
   SourceFromTaintedValue(?obj, ?source),
   mainAnalysis.ImmutableHContextFromContext(?ctx, ?hctx).
-  .plan 2: (3,2,1,4,5,6,7)
+  .plan 2: (3,2,1,4,5,6,7), 5: (6,2,1,4,3,5,7)
+
+TaintedValueTransferred(?declaringType, ?source, ?type, ?val),
+mainAnalysis.VarPointsTo(?hctx, ?val, ?ctx, ?base) :-
+    TaintedObjectSerialized(?declaringType, ?source, ?type, ?hctx, ?val, ?ctx, ?base).
 
 VarIsTaintedFromValue(?type, ?basevalue, ?ctx, ?to) :-
    MaybeDeserializedValue(?basevalue),

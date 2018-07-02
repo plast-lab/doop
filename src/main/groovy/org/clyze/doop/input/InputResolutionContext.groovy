@@ -73,7 +73,7 @@ interface InputResolutionContext {
 	/**
 	 * Returns all the heapFiles of this context.
 	 */
-	List<String> hprofs()
+	List<String> heapDLs()
 
 	/**
 	 * Get the setInput of files that correspond to the inputFiles of this context.
@@ -85,7 +85,7 @@ interface InputResolutionContext {
 
 	List<File> getAllPlatformFiles()
 
-	List<File> getAllHprofs()
+	List<File> getAllHeapDLs()
 
 	List<File> getAll()
 }

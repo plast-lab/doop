@@ -71,7 +71,7 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 	List<String> platformFiles() { files[InputType.PLATFORM] }
 
 	@Override
-	List<String> hprofs() { files[InputType.HPROF] }
+	List<String> heapDLs() { files[InputType.HEAPDL] }
 
 	private List<File> get0(InputType inputType) {
 		def resolvedList = []
@@ -98,7 +98,7 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 	List<File> getAllPlatformFiles() { get0(InputType.PLATFORM) }
 
 	@Override
-	List<File> getAllHprofs() { get0(InputType.HPROF) }
+	List<File> getAllHeapDLs() { get0(InputType.HEAPDL) }
 
 	@Override
 	List<File> getAll() { files.keySet().collect { inputType -> get0(inputType) }.flatten() as List<File> }

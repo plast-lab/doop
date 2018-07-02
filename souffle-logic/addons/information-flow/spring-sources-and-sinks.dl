@@ -34,8 +34,20 @@ LeakingSinkMethodPattern(0, "<java.sql.PreparedStatement: void setString\(.*\)>"
 SanitizationMethod(?method) :-
   (?method = "<java.net.URLEncoder: java.lang.String encode(java.lang.String)>" ;
    ?method = "<java.net.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>" ;
+   ?method = "<org.apache.catalina.util.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>" ;
    SanitizationMethodIffBaseUntainted(?method)),
   isMethod(?method).
+
+SanitizationMethod(?overriddenMethod) :-
+   SanitizationMethod(?method),
+   Method_DeclaringType(?method, ?superclass),
+   Method_SimpleName(?method, ?name),
+   Method_Descriptor(?method, ?descriptor),
+   basic.SubtypeOf(?class, ?superclass),
+   isClassType(?class),
+   Method_DeclaringType(?overriddenMethod, ?class),
+   Method_SimpleName(?overriddenMethod, ?name),
+   Method_Descriptor(?overriddenMethod, ?descriptor).
 
 SanitizationMethodIffBaseUntainted(?method) :-
   (?method = "<java.util.Properties: java.lang.String getProperty(java.lang.String)>" ;
@@ -44,7 +56,20 @@ SanitizationMethodIffBaseUntainted(?method) :-
    ?method = "<java.util.HashMap: java.lang.Object get(java.lang.Object)>"),
   isMethod(?method).
 
+SanitizationMethodIffBaseUntainted(?overriddenMethod) :-
+   SanitizationMethodIffBaseUntainted(?method),
+   Method_DeclaringType(?method, ?superclass),
+   Method_SimpleName(?method, ?name),
+   Method_Descriptor(?method, ?descriptor),
+   basic.SubtypeOf(?class, ?superclass),
+   isClassType(?class),
+   Method_DeclaringType(?overriddenMethod, ?class),
+   Method_SimpleName(?overriddenMethod, ?name),
+   Method_Descriptor(?overriddenMethod, ?descriptor).
+
 BaseToRetTaintTransferMethod(?method) :- SanitizationMethodIffBaseUntainted(?method).
+
+SanitizationMethod(?method) :- LeakingSinkMethodArg(_, _, ?method).
 
 TaintSourceMethod("default", ?method) :-
  (?method = "<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>" ;
@@ -135,20 +160,21 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?c
   Param_Annotation(?meth, ?idx, "org.springframework.web.bind.annotation.PathVariable")),
   mainAnalysis.ReachableContext(?ctx, ?meth),
   Var_Type(?to, ?type),
-  mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?to),
-  mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?to, ?hctx),
+  mainAnalysis.isImmutableHContext(?hctx),
   Method_DeclaringType(?dtoMeth, ?type),
   Method_DeclaringType(?meth, ?declaringType).
+
+#ifdef OPEN_PROGRAMS
+.output ServletMethodEP
 
 BaseToRetTaintTransferMethod(?dtoMeth),
 TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
-  FormalParam(_, ?meth, ?to),
   ServletMethodEP(?meth),
+  FormalParam(_, ?meth, ?to),
   mainAnalysis.ReachableContext(?ctx, ?meth),
   Var_Type(?to, ?type),
   ConcreteImplementations(?type, ?ctype),
-  mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to),
-  mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx),
+  mainAnalysis.isImmutableHContext(?hctx),
   Method_DeclaringType(?dtoMeth, ?type),
   Method_DeclaringType(?meth, ?declaringType).

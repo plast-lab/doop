@@ -88,10 +88,8 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 		}
 	}
 
-	static CliBuilder createCliBuilder(boolean includeNonStandard) {
-		List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { AnalysisOption option ->
-			option.cli && (includeNonStandard || !option.nonStandard) //all options with cli property
-		}
+	static CliBuilder createCliBuilder() {
+		List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { it.cli }
 
 		def cli = new CliBuilder(
 				parser: new GnuParser(),
@@ -107,28 +105,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 			L(longOpt: 'level', LOGLEVEL, args: 1, argName: 'LOG_LEVEL')
 			p(longOpt: 'properties', PROPS, args: 1, argName: "PROPERTIES")
 			t(longOpt: 'timeout', TIMEOUT, args: 1, argName: 'TIMEOUT')
-			X(longOpt: 'X', 'Display information about non-standard options and exit.')
 		}
-
-		addAnalysisOptionsToCliBuilder(cliOptions, cli)
-
-		return cli
-	}
-
-	/**
-	 * Creates the nonStandard args from the respective analysis options (the ones with their nonStandard property set to true).
-	 */
-	static CliBuilder createNonStandardCliBuilder() {
-		List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { AnalysisOption option ->
-			option.nonStandard //all options with nonStandard property
-		}
-
-		def cli = new CliBuilder(
-				parser: new GnuParser(),
-				usage: USAGE,
-				footer: "\nThese options are non-standard and subject to change without notice.",
-				width: WIDTH,
-		)
 
 		addAnalysisOptionsToCliBuilder(cliOptions, cli)
 
@@ -204,7 +181,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	private static void writeAsProperty(AnalysisOption option, Writer w) {
 		def type, id = option.id.toLowerCase()
 
-		if (option.isFile) {
+		if (option.argInputType) {
 			type = "(file)"
 		} else if (option.argName && option instanceof BooleanAnalysisOption) {
 			type = "(boolean)"

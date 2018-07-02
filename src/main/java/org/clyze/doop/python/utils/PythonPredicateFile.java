@@ -15,6 +15,7 @@ public enum PythonPredicateFile
     CLASS_MODIFIER("ClassModifier"),
     ARRAY_TYPE("ArrayType"),
     INTERFACE_TYPE("InterfaceType"),
+    IMPORT("Import"),
     GLOBAL_READ("GlobalRead"),
     GLOBAL_WRITE("GlobalWrite"),
     LEXICAL_READ("LexicalRead"),

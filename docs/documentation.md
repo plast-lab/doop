@@ -196,15 +196,19 @@ A class that models an analysis option. Each option contains the following attri
 
 * *id*: The identifier of the option (as used internally by the code, the preprocessors, etc.).
 * *name*: The name of the option (as presented to the end-user).
+* *optName*: The shorthand name of the option (for usage in cli).
 * *description*: The description of the option (which is also presented to the end-user).
 * *value*: The value of the option.
-* *forPreprocessor*: Boolean flag indicating that the option is used by the preprocessor.
-* *cli*: Boolean flag indicating whether the option should be included in the CLI.
-* *webUI* - Boolean flag indicating whether the option should be included in the Web UI.
+* *validValues*: Optional set of valid values.
+* *multipleValues*: Boolean flag indicating that the option accepts multiple values.
 * *argName* - The description of the option's value which will be displayed to the end-user. All String options should
               define an argName.
-* *isAdvanced* - Boolean flag indicating whether the option is "advanced".
-* *isFile* - Boolean value indicating whether the value of the option should be treated as a file.
+* *argInputType*: The InputType for options that have a file as argument.
+* *cli*: Boolean flag indicating whether the option should be included in the CLI.
+* *isMandatory*: Boolean flag indicating whether the options is mandatory or not.
+* *forCacheID*: Boolean flag indicating whether the option should affect the computation of the cache ID.
+* *forPreprocessor*: Boolean flag indicating whether the option is used by the preprocessor.
+* *changesFacts*: Boolean flag indicating whether the option may affect the generated facts.
 
 The use of this class allows us to significantly simplify and reduce the code required to process and manage the
 analysis options in the various Doop usage scenarios.
