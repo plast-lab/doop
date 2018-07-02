@@ -2,9 +2,11 @@ package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.ir.ssa.*;
+import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.cast.python.ssa.PythonPropertyRead;
 import com.ibm.wala.cast.python.ssa.PythonPropertyWrite;
+import com.ibm.wala.cast.python.types.PythonTypes;
 import com.ibm.wala.classLoader.FieldImpl;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
@@ -69,35 +71,49 @@ public class PythonFactWriter {
 
     String writeMethod(IMethod m) {
         String result = _rep.signature(m);
+        String par = result;
+        if(par.contains(":"))
+            par = result.substring(0, result.lastIndexOf(":")).concat(">");
         String arity = Integer.toString(m.getNumberOfParameters() - 1);
         if(m.isStatic())
             arity = Integer.toString(m.getNumberOfParameters());
 
-        _db.add(STRING_RAW, result, result);
-        _db.add(METHOD, result, _rep.simpleName(m.getReference()), _rep.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
-        for (Annotation annotation : m.getAnnotations()) {
-            _db.add(METHOD_ANNOTATION, result, fixType(annotation.getType()));
-            //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
+        String cName = m.getDeclaringClass().getName().toString().substring(1);
+        String[] classNameParts = cName.split("/");
+        String declaringModule = classNameParts[0].replace("script ","");
+        if(classNameParts.length >= 3){
+            String parClassName = "L" +classNameParts[0];
+            for(int i=1; i<classNameParts.length -1; i++)
+                parClassName += "/" + classNameParts[i];
+            TypeReference type = TypeReference.find(PythonTypes.pythonLoader, parClassName);
+            IClass decClass = m.getDeclaringClass().getClassHierarchy().lookupClass(type);
+            if(decClass instanceof CAstAbstractModuleLoader.CoreClass){
+                String declaringClass = classNameParts[1];
+                String methodName = classNameParts[2];
+                System.out.println("Adding Method <" + declaringModule + ":" + declaringClass + ":" + methodName + ">");
+            }else{
+                String outerFunct = classNameParts[1];
+                String methodName = classNameParts[2];
+                System.out.println("Adding Inner Function <" + declaringModule + ":" + outerFunct + ":" + methodName + ">");
+            }
         }
+        else{
+            System.out.println("Adding Function  <" + declaringModule + ":" +  classNameParts[classNameParts.length - 1] + ">");
+        }
+
+        _db.add(STRING_RAW, result, result);
+        _db.add(METHOD, result, _rep.simpleName(m), _rep.params(m), par, arity);
         return result;
     }
 
     public String writeField(IField f) {
         String fieldId = _rep.signature(f);
-        _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
-        if(f instanceof FieldImpl) { //Currently annotations do not work on android and are disabled
-            Collection<Annotation> annotations = f.getAnnotations();
-            if (annotations != null) {
-                for (Annotation annotation : annotations) {
-                    _db.add(FIELD_ANNOTATION, fieldId, fixType(annotation.getType()));
-                }
-            }
-        }
+        _db.add(FIELD_SIGNATURE, fieldId, _rep.classType(f.getDeclaringClass()), _rep.simpleName(f));
         return fieldId;
     }
 
     void writeClassOrInterfaceType(IClass c) {
-        String classStr = fixType(c.getReference());
+        String classStr = _rep.classType(c);
         if (c.isInterface()) {
             _db.add(INTERFACE_TYPE, classStr);
         }
@@ -116,16 +132,16 @@ public class PythonFactWriter {
     }
 
     void writeClassModifier(IClass c, String modifier) {
-        String type = fixType(c.getReference());
+        String type = _rep.classType(c);
         _db.add(CLASS_MODIFIER, modifier, type);
     }
 
     void writeDirectSuperclass(IClass sub, IClass sup) {
-        _db.add(DIRECT_SUPER_CLASS, writeType(sub.getReference()), writeType(sup.getReference()));
+        _db.add(DIRECT_SUPER_CLASS, _rep.classType(sub), _rep.classType(sup));
     }
 
     void writeDirectSuperinterface(IClass clazz, IClass iface) {
-        _db.add(DIRECT_SUPER_IFACE, writeType(clazz.getReference()), writeType(iface.getReference()));
+        _db.add(DIRECT_SUPER_IFACE, _rep.classType(clazz), _rep.classType(iface));
     }
 
     private String writeType(IClass c) {
@@ -254,7 +270,7 @@ public class PythonFactWriter {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
-        _db.add(ITERATOR_GET_NEXT, insn, str(index), _rep.local(m, target), _rep.local(m, iterVar), methodId);
+        _db.add(ITERATOR_GET_NEXT_PROPERTY_NAME, insn, str(index), _rep.local(m, target), _rep.local(m, iterVar), methodId);
     }
 
     void writeEachElementHasNext(IMethod m, EachElementHasNextInstruction instruction, Local target, Local iterVar, Session session) {
@@ -547,22 +563,19 @@ public class PythonFactWriter {
         if(sourceLineNum != -1)
             _db.add(METHOD_INV_LINE, insn, str(sourceLineNum));
 
-        if (instruction.isStatic()) {
-            _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
-            //_db.add(STATIC_METHOD_INV, insn, _rep.signature(targetRef), methodId);
+        Local functionObject = createLocal(ir,instruction,instruction.getUse(0),typeInference);
+        if (instruction.isDispatch()) {
+            //System.out.println("Virtual "+ instruction.toString(ir.getSymbolTable()));
+            _db.add(VIRTUAL_METHOD_INV, insn, str(index),_rep.local(inMethod, functionObject),methodId);
         }
-        else if (instruction.isDispatch()) {
-            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
-            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
-            //_db.add(VIRTUAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
+        else if (instruction.isStatic()) {
+            throw new RuntimeException("Cannot handle Static invocation "+ instruction.toString(ir.getSymbolTable()));
         }
         else if (instruction.isSpecial()) {
-            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
-            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
-            //_db.add(SPECIAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
+            throw new RuntimeException("Cannot handle Special invocation "+ instruction.toString(ir.getSymbolTable()));
         }
         else {
-            throw new RuntimeException("Cannot handle invoke instruction: " + instruction);
+            throw new RuntimeException("Cannot handle invoke instruction: " + instruction.toString(ir.getSymbolTable()));
         }
 
         return insn;
@@ -576,15 +589,11 @@ public class PythonFactWriter {
 
     private String writeInvokeHelper(IMethod inMethod, IR ir, SSAAbstractInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
         String methodId = _rep.signature(inMethod);
-
         int sourceLineNum = getLineNumberFromInstruction(ir,instruction);
 
-
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
-
-
         String insn = _rep.invoke(ir,inMethod, instruction, targetRef, session, typeInference);
-        writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
+        //writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
 
         int index = session.calcInstructionNumber(instruction);
 

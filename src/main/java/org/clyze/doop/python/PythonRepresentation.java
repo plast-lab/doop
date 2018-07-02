@@ -46,9 +46,6 @@ public class PythonRepresentation {
     {
         _fileName = fileName;
     }
-    String classConstant(IClass c) {
-        return "<class " + fixType(c.getReference()) + ">";
-    }
 
     String classConstant(String className) {
         return "<class " + className + ">";
@@ -59,6 +56,29 @@ public class PythonRepresentation {
         return "<class " + fixType(t) + ">";
     }
 
+    String classConstant(IClass c) {
+        return "<class " + classType(c) + ">";
+    }
+
+    //TODO: Have correct module name, opened an issue about it.
+    String classType(IClass klass) {
+        String cName = klass.getName().toString().substring(1);
+        String[] classNameParts = cName.split("/");
+        String declaringModule;
+        //System.out.println(cName);
+        String className;
+        if(classNameParts.length == 2){
+            declaringModule = classNameParts[0].replace("script ","");
+            //declaringModule = klass.getSourceFileName();
+            className = classNameParts[1];
+        }
+        else{
+            declaringModule = "BUILTIN";
+            className = classNameParts[0];
+        }
+        return declaringModule + ":" + className;
+    }
+
     String methodTypeConstant(String s) {
         return s;
     }
@@ -67,7 +87,7 @@ public class PythonRepresentation {
         //return signature(m.getReference());
         String sourceFileName = m.getDeclaringClass().getSourceFileName();
         String sourceFolderName = sourceFileName.substring(0, sourceFileName.lastIndexOf("/") + 1);
-        String functionName = m.getDeclaringClass().getName().toString().substring(1).replace("script ","").replace("/",":");
+        String functionName = m.getDeclaringClass().getName().toString().substring(1).replaceFirst("script ","").replace("/",":");
         return "<" + sourceFolderName + functionName + ">";
     }
 
@@ -84,7 +104,13 @@ public class PythonRepresentation {
 
     String signature(IField f) {
         //return f.getReference().getSignature();
-        return signature(f.getReference(), f.getReference().getDeclaringClass());
+        //return signature(f.getReference(), f.getReference().getDeclaringClass());
+        //String sourceFileName = f.getDeclaringClass().getSourceFileName();
+        //String sourceFolderName = sourceFileName.substring(0, sourceFileName.lastIndexOf("/") + 1);
+        String declaringClass = f.getDeclaringClass().getName().toString().replace("Lscript ","");
+        String functionName = f.getDeclaringClass().getName().toString().substring(1).replaceFirst("script ","").replace("/",":");
+        String fieldName = f.getName().toString();
+        return "<" + declaringClass +  ":" + fieldName + ">";
     }
 
 
@@ -99,8 +125,9 @@ public class PythonRepresentation {
         return DoopSig.toString();
     }
 
-    String simpleName(MethodReference mr) {
-        return mr.getName().toString();
+    String simpleName(IMethod m) {
+        String[] splitClassName = m.getDeclaringClass().getName().toString().split("/");
+        return splitClassName[splitClassName.length - 1];
     }
 
     String simpleName(IField f) {
@@ -113,14 +140,14 @@ public class PythonRepresentation {
 
     //Method descriptors using soot like format.
     //Should maybe cache these as well.
-    String params(MethodReference methodReference)
+    String params(IMethod m)
     {
         StringBuilder builder = new StringBuilder();
-        int count = methodReference.getNumberOfParameters();
+        int count = m.getNumberOfParameters();
         builder.append("(");
         for(int i = 0; i < count; i++)
         {
-            builder.append(fixType(methodReference.getParameterType(i)));
+            builder.append(fixType(m.getParameterType(i)));
 
             if(i != count - 1)
             {

@@ -57,6 +57,7 @@ public class PythonFactGenerator implements Runnable{
             String cName = iClass.getName().toString().substring(1);
             String[] classNameParts = cName.split("/");
             String declaringModule;
+            //System.out.println(cName);
             if(iClass instanceof CAstAbstractModuleLoader.CoreClass) {
                 String className;
                 if(classNameParts.length == 2){
@@ -92,26 +93,26 @@ public class PythonFactGenerator implements Runnable{
 
             }else if (iClass instanceof CAstAbstractModuleLoader.DynamicCodeBody) {
 
-                declaringModule = classNameParts[0].replace("script ","");
-                if(classNameParts.length >= 3){
-                    String parClassName = "L" +classNameParts[0];
-                    for(int i=1; i<classNameParts.length -1; i++)
-                        parClassName += "/" + classNameParts[i];
-                    TypeReference type = TypeReference.find(PythonTypes.pythonLoader, parClassName);
-                    IClass decClass = iClass.getClassHierarchy().lookupClass(type);
-                    if(decClass instanceof CAstAbstractModuleLoader.CoreClass){
-                        String declaringClass = classNameParts[1];
-                        String methodName = classNameParts[2];
-                        System.out.println("Adding Method <" + declaringModule + ":" + declaringClass + ":" + methodName + ">");
-                    }else{
-                        String outerFunct = classNameParts[1];
-                        String methodName = classNameParts[2];
-                        System.out.println("Adding Inner Function <" + declaringModule + ":" + outerFunct + ":" + methodName + ">");
-                    }
-                }
-                else{
-                    System.out.println("Adding Function  <" + declaringModule + ":" +  classNameParts[classNameParts.length - 1] + ">");
-                }
+//                declaringModule = classNameParts[0].replace("script ","");
+//                if(classNameParts.length >= 3){
+//                    String parClassName = "L" +classNameParts[0];
+//                    for(int i=1; i<classNameParts.length -1; i++)
+//                        parClassName += "/" + classNameParts[i];
+//                    TypeReference type = TypeReference.find(PythonTypes.pythonLoader, parClassName);
+//                    IClass decClass = iClass.getClassHierarchy().lookupClass(type);
+//                    if(decClass instanceof CAstAbstractModuleLoader.CoreClass){
+//                        String declaringClass = classNameParts[1];
+//                        String methodName = classNameParts[2];
+//                        System.out.println("Adding Method <" + declaringModule + ":" + declaringClass + ":" + methodName + ">");
+//                    }else{
+//                        String outerFunct = classNameParts[1];
+//                        String methodName = classNameParts[2];
+//                        System.out.println("Adding Inner Function <" + declaringModule + ":" + outerFunct + ":" + methodName + ">");
+//                    }
+//                }
+//                else{
+//                    System.out.println("Adding Function  <" + declaringModule + ":" +  classNameParts[classNameParts.length - 1] + ">");
+//                }
 
             }else{
                 System.out.println("Uknown type of Class " + cName + " object type: " + iClass.getClass().getName());
@@ -138,6 +139,7 @@ public class PythonFactGenerator implements Runnable{
     }
 
     private void generate(IMethod m, Session session) {
+        _writer.writeMethod(m);
         IR ir = cache.getIR(m);
         generate(m, ir, session);
     }
