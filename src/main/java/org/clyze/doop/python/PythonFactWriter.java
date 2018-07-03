@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.python.utils.PythonPredicateFile.*;
+import static org.clyze.doop.python.utils.PythonUtils.fixNewType;
 import static org.clyze.doop.python.utils.PythonUtils.fixType;
 import static org.clyze.doop.python.utils.PythonUtils.createLocal;
 
@@ -207,7 +208,7 @@ public class PythonFactWriter {
     void writeAssignHeapAllocation(IR ir, IMethod m, SSANewInstruction instruction, Local l, Session session) {
         String heap = _rep.heapAlloc(m, instruction, session);
 
-        _db.add(NORMAL_HEAP, heap, writeType(instruction.getConcreteType()));
+        _db.add(NORMAL_HEAP, heap, fixNewType(m, instruction, instruction.getConcreteType()));
 
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);

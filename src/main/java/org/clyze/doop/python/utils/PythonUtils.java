@@ -3,8 +3,10 @@ package org.clyze.doop.python.utils;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.python.types.PythonTypes;
+import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.ssa.SSANewInstruction;
 import com.ibm.wala.types.TypeReference;
 import org.clyze.doop.wala.Local;
 
@@ -12,6 +14,22 @@ public class PythonUtils {
     public static String fixType(TypeReference type)
     {
         String typeString =  type.getName().toString().substring(1);
+        return typeString;
+    }
+
+    public static String fixNewType(IMethod inMethod, SSANewInstruction instruction, TypeReference type)
+    {
+        String typeString = fixType(type);
+        if(typeString.startsWith("script ")){
+            typeString = typeString.replace("script ", "");
+            String scriptName = typeString.substring(0, typeString.indexOf('/'));
+            String sourceFileName = inMethod.getDeclaringClass().getSourceFileName();
+            if(sourceFileName.contains(scriptName)){
+                typeString = sourceFileName.concat(typeString.substring(typeString.indexOf('/')).replace("/",":"));
+            }else{
+                throw new RuntimeException("Unexpected new "+ instruction);
+            }
+        }
         return typeString;
     }
 

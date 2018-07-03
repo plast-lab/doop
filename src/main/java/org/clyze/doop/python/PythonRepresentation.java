@@ -15,6 +15,7 @@ import org.clyze.doop.wala.Session;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.clyze.doop.python.utils.PythonUtils.fixNewType;
 import static org.clyze.doop.python.utils.PythonUtils.fixType;
 
 public class PythonRepresentation {
@@ -306,11 +307,7 @@ public class PythonRepresentation {
         int newParams = instruction.getNumberOfUses();
         if(newParams == 0 || newParams == 1) //
         {
-            return heapAlloc(inMethod, instruction.getConcreteType(), session);
-        }
-        else if(newParams > 1)
-        {
-            return heapAlloc(inMethod, instruction.getConcreteType(), session);
+            return heapAlloc(inMethod, instruction, instruction.getConcreteType(), session);
         }
         else
         {
@@ -321,12 +318,13 @@ public class PythonRepresentation {
 
     String heapMultiArrayAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, Session session)
     {
-        return heapAlloc(inMethod, type, session);
+        return heapAlloc(inMethod, instruction, type, session);
     }
 
-    private String heapAlloc(IMethod inMethod, TypeReference type, Session session)
+    private String heapAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, Session session)
     {
-        String s = fixType(type);
+        String s = fixNewType(inMethod, instruction, type);
+
         return signature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
 
 
