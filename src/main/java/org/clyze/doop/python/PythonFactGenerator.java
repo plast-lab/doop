@@ -463,8 +463,6 @@ public class PythonFactGenerator implements Runnable{
 
         for (int i = 0; i < instruction.getNumberOfUses(); i++) {
             int use = instruction.getUse(i);
-            if(instruction instanceof  SSAPhiInstruction && use < 0) //For some reason phi instructions can have -1 as use
-                continue;
             if (use != -1 && symbolTable.isConstant(use)) {
                 Local l = createLocal(ir, instruction, use, typeInference);
                 Value v = symbolTable.getValue(use);

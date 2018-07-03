@@ -299,26 +299,6 @@ public class PythonFactWriter {
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
     }
 
-    void writeStoreStaticField(IMethod m, SSAInstruction instruction, FieldReference f, Local from, Session session) {
-        writeStaticField(m, instruction, f, from, session, STORE_STATIC_FIELD);
-    }
-
-    void writeLoadStaticField(IMethod m, SSAInstruction instruction, FieldReference f, Local to, Session session) {
-        writeStaticField(m, instruction, f, to, session, LOAD_STATIC_FIELD);
-    }
-
-    private void writeStaticField(IMethod m, SSAInstruction stmt, FieldReference f, Local var, Session session, PythonPredicateFile predicateFile) {
-        int index = session.calcInstructionNumber(stmt);
-        String insn = _rep.instruction(m, stmt, session, index);
-        String methodId = _rep.signature(m);
-
-        //TypeReference declaringClass = getCorrectFieldDeclaringClass(f, m.getClassHierarchy());
-        TypeReference declaringClass = f.getDeclaringClass();
-//        String fieldId = _rep.signature(f, declaringClass);
-        String fieldId = _rep.simpleName(f);
-        _db.add(predicateFile, insn, str(index), _rep.local(m, var), fieldId, methodId);
-    }
-
     void writeReturn(IMethod m, SSAInstruction instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
