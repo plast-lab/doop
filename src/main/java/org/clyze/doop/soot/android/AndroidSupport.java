@@ -138,16 +138,17 @@ public class AndroidSupport extends BasicJavaSupport {
             if (appInput.endsWith(".apk")) {
                 File apk = new File(appInput);
                 System.out.println("Android mode, APK = " + appInput);
+                String artifact = apk.getName();
                 try {
                     List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
                     Set<Object> allDexClasses = new HashSet<>();
                     for (DexContainer dexContainer : listContainers) {
-                        allDexClasses.addAll(dexContainer.getBase().getClasses());
-                        for (Object dexBackedClassDef : allDexClasses) {
-                            String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor(((DexBackedClassDef) dexBackedClassDef).getType()).getEscapedName();
+                        Set<? extends DexBackedClassDef> dexClasses = dexContainer.getBase().getClasses();
+                        allDexClasses.addAll(dexClasses);
+                        for (DexBackedClassDef dexBackedClassDef : dexClasses) {
+                            String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor((dexBackedClassDef).getType()).getEscapedName();
                             SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
                             classes.add(c);
-                            String artifact = apk.getName();
                             registerArtifactClass(artifact, escapeClassName, dexContainer.getDexName());
                         }
                     }
