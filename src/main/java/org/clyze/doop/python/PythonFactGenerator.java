@@ -140,7 +140,27 @@ public class PythonFactGenerator implements Runnable{
 
     private void generate(IMethod m, Session session) {
         _writer.writeMethod(m);
+        int paramIndex = 0;
+
+
+        if(!m.isStatic())
+        {
+            //_writer.writeThisVar(m);    //Currently doesn't make sense so it is commented out. "self" is on v2
+            paramIndex = 1;
+        }
+
         IR ir = cache.getIR(m);
+
+        while (paramIndex < m.getNumberOfParameters()) {
+            if (m.isStatic()) { //Currently not supported by WALAs front end but hopefully we can ask it from them.
+                _writer.writeFormalParam(m, ir, paramIndex, paramIndex);
+            }
+            else {
+                _writer.writeFormalParam(m, ir, paramIndex, paramIndex - 1);
+            }
+            paramIndex++;
+        }
+
         generate(m, ir, session);
     }
 
@@ -447,7 +467,13 @@ public class PythonFactGenerator implements Runnable{
         if (instruction.hasDef()) {
             for (int i = 0; i < instruction.getNumberOfDefs(); i++) {
                 int def = instruction.getDef(i);
+                String[] names = null;
                 Local l = createLocal(ir, instruction, def, typeInference);
+                if(instruction.iindex > -1) {
+                    names = ir.getLocalNames(instruction.iindex, def);
+                    if(names.length > 0)
+                        l.setSourceName(names[0]);
+                }
                 _writer.writeLocal(m, l);
             }
         }

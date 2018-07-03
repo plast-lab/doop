@@ -54,4 +54,13 @@ public class Local {
     public String getName() {
         return name;
     }
+
+    public String getSourceName() {
+        return sourceCodeName;
+    }
+
+    public void setSourceName(String sourceName){
+        sourceCodeName = sourceName;
+    }
+
 }

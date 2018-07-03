@@ -38,6 +38,7 @@ public enum PythonPredicateFile
     NATIVE_RETURN_VAR("NativeReturnVar"),
     VAR_TYPE("Var-Type"),
     VAR_DECLARING_METHOD("Var-DeclaringMethod"),
+    VAR_SOURCE_NAME("Var-SourceName"),
     APP_CLASS("ApplicationClass"),
     THIS_VAR("ThisVar"),
     EXCEPT_HANDLER_PREV("ExceptionHandler-Previous"),

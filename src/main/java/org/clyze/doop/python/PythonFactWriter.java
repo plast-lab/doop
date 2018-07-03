@@ -102,7 +102,7 @@ public class PythonFactWriter {
         }
 
         _db.add(STRING_RAW, result, result);
-        _db.add(METHOD, result, _rep.simpleName(m), _rep.params(m), par, arity);
+        _db.add(METHOD, result, _rep.simpleName(m), par, arity);
         return result;
     }
 
@@ -385,7 +385,6 @@ public class PythonFactWriter {
 
         String  var = _rep.nativeReturnVar(m);
         _db.add(NATIVE_RETURN_VAR, var, methodId);
-        _db.add(VAR_TYPE, var, writeType(m.getReturnType()));
         _db.add(VAR_DECLARING_METHOD, var, methodId);
     }
 
@@ -447,7 +446,7 @@ public class PythonFactWriter {
         String methodId = _rep.signature(m);
         String thisVar = _rep.thisVar(m);
         _db.add(THIS_VAR, methodId, thisVar);
-        _db.add(VAR_TYPE, thisVar, writeType(m.getReference().getDeclaringClass()));
+        //_db.add(VAR_TYPE, thisVar, writeType(m.getReference().getDeclaringClass()));
         _db.add(VAR_DECLARING_METHOD, thisVar, methodId);
     }
 
@@ -455,18 +454,21 @@ public class PythonFactWriter {
         _db.add(METHOD_DECL_EXCEPTION, writeType(exception), _rep.signature(m));
     }
 
-    void writeFormalParam(IMethod m, int paramIndex, int actualIndex) {
+    void writeFormalParam(IMethod m, IR ir, int paramIndex, int actualIndex) {
         String methodId = _rep.signature(m);
         String var = _rep.param(m, paramIndex);
         _db.add(FORMAL_PARAM, str(actualIndex), methodId, var);
-        _db.add(VAR_TYPE, var, writeType(m.getParameterType(paramIndex)));
         _db.add(VAR_DECLARING_METHOD, var, methodId);
+        String[] names = null;
+        names = ir.getLocalNames(0, paramIndex + 1);
+        if(names.length > 0)
+            _db.add(VAR_SOURCE_NAME, var, names[0]);
     }
 
     void writeLocal(IMethod m, Local l) {
         String local = _rep.local(m, l);
-
-        _db.add(VAR_TYPE, local, writeType(l.getType()));
+        if(l.getSourceName() != null)
+            _db.add(VAR_SOURCE_NAME, local, l.getSourceName());
         _db.add(VAR_DECLARING_METHOD, local, _rep.signature(m));
     }
 

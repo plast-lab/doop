@@ -107,7 +107,7 @@ public class PythonRepresentation {
         //return signature(f.getReference(), f.getReference().getDeclaringClass());
         //String sourceFileName = f.getDeclaringClass().getSourceFileName();
         //String sourceFolderName = sourceFileName.substring(0, sourceFileName.lastIndexOf("/") + 1);
-        String declaringClass = f.getDeclaringClass().getName().toString().replace("Lscript ","");
+        String declaringClass = f.getDeclaringClass().getName().toString().replace("Lscript ","").replace(".py/",".py:");
         String functionName = f.getDeclaringClass().getName().toString().substring(1).replaceFirst("script ","").replace("/",":");
         String fieldName = f.getName().toString();
         return "<" + declaringClass +  ":" + fieldName + ">";
@@ -127,7 +127,9 @@ public class PythonRepresentation {
 
     String simpleName(IMethod m) {
         String[] splitClassName = m.getDeclaringClass().getName().toString().split("/");
-        return splitClassName[splitClassName.length - 1];
+        String methodName = splitClassName[splitClassName.length - 1];
+        methodName = methodName.replace("Lscript ","");
+        return methodName;
     }
 
     String simpleName(IField f) {
