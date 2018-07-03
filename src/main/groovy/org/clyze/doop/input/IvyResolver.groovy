@@ -76,7 +76,7 @@ class IvyResolver implements InputResolver {
 				ctx.set(input, libs, InputType.LIBRARY)
 			} else if (inputType == InputType.INPUT) {
 				ctx.set(input, resolvedInput, InputType.INPUT)
-				ctx.add(input, InputType.LIBRARY) //add the same input as library dependency too
+				//ctx.add(input, InputType.LIBRARY) //add the same input as library dependency too
 				ctx.set(input, resolvedInputDependencies, InputType.LIBRARY)
 			} else
 				throw new RuntimeException("Ivy resolution is not supported for HeapDL inputs.")

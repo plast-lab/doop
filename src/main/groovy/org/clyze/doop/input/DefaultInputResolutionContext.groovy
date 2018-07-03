@@ -51,6 +51,7 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 
 	@Override
 	void resolve() {
+		files = files.asImmutable()
 		files.each { inputType, paths ->
 			paths.each { path ->
 				log.debug "Resolving $path ($inputType)"
