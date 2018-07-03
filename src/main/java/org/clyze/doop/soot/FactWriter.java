@@ -121,12 +121,13 @@ public class FactWriter {
 
     void writeClassOrInterfaceType(SootClass c) {
         String classStr = c.getName();
-        if (c.isInterface()) {
-            _db.add(INTERFACE_TYPE, classStr);
+        boolean isInterface = c.isInterface();
+        if (c.isPhantom()) {
+            String desc = isInterface ? "Interface " : "Class ";
+            System.out.println(desc + classStr + " is phantom.");
+            writePhantomType(c);
         }
-        else {
-            _db.add(CLASS_TYPE, classStr);
-        }
+        _db.add(isInterface ? INTERFACE_TYPE : CLASS_TYPE, classStr);
         _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
         if (c.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
@@ -174,6 +175,10 @@ public class FactWriter {
 
     void writePhantomType(Type t) {
         _db.add(PHANTOM_TYPE, writeType(t));
+    }
+
+    void writePhantomType(SootClass c) {
+        _db.add(PHANTOM_TYPE, writeType(c));
     }
 
     void writePhantomMethod(SootMethod m) {
@@ -540,12 +545,10 @@ public class FactWriter {
 
     void writeClassModifier(SootClass c, String modifier) {
         String type = c.getName();
-        if (c.isInterface()) {
+        if (c.isInterface())
             _db.add(INTERFACE_TYPE, type);
-        }
-        else {
+        else
             _db.add(CLASS_TYPE, type);
-        }
         _db.add(CLASS_MODIFIER, modifier, type);
     }
 
