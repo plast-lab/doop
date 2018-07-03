@@ -115,34 +115,13 @@ public class PythonFactWriter {
 
     void writeClassOrInterfaceType(IClass c) {
         String classStr = _rep.classType(c);
-        if (c.isInterface()) {
-            _db.add(INTERFACE_TYPE, classStr);
-        }
-        else {
-            _db.add(CLASS_TYPE, classStr);
-        }
+        _db.add(CLASS_TYPE, classStr);
         _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
-
-        Collection<Annotation> annotations = c.getAnnotations();
-        if (annotations != null) {
-            for (Annotation annotation : annotations) {
-                _db.add(CLASS_ANNOTATION, classStr, fixType(annotation.getType()));
-            }
-        }
-
     }
 
-    void writeClassModifier(IClass c, String modifier) {
-        String type = _rep.classType(c);
-        _db.add(CLASS_MODIFIER, modifier, type);
-    }
 
     void writeDirectSuperclass(IClass sub, IClass sup) {
         _db.add(DIRECT_SUPER_CLASS, _rep.classType(sub), _rep.classType(sup));
-    }
-
-    void writeDirectSuperinterface(IClass clazz, IClass iface) {
-        _db.add(DIRECT_SUPER_IFACE, _rep.classType(clazz), _rep.classType(iface));
     }
 
     private String writeType(IClass c) {
@@ -179,22 +158,6 @@ public class PythonFactWriter {
 //        }
 
         return typeName;
-    }
-
-    void writeEnterMonitor(IMethod m, SSAMonitorInstruction instruction, Local var, Session session) {
-        int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = _rep.signature(m);
-
-        _db.add(ENTER_MONITOR, insn, str(index), _rep.local(m, var), methodId);
-    }
-
-    void writeExitMonitor(IMethod m, SSAMonitorInstruction instruction, Local var, Session session) {
-        int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = _rep.signature(m);
-
-        _db.add(EXIT_MONITOR, insn, str(index), _rep.local(m, var), methodId);
     }
 
     void writeAssignLocal(IMethod m, SSAInstruction instruction, Local to, Local from, Session session) {
@@ -272,13 +235,6 @@ public class PythonFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
         _db.add(ITERATOR_GET_NEXT_PROPERTY_NAME, insn, str(index), _rep.local(m, target), _rep.local(m, iterVar), methodId);
-    }
-
-    void writeEachElementHasNext(IMethod m, EachElementHasNextInstruction instruction, Local target, Local iterVar, Session session) {
-        int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.instruction(m, instruction, session, index);
-        String methodId = _rep.signature(m);
-        _db.add(ITERATOR_HAS_NEXT, insn, str(index), _rep.local(m, target), _rep.local(m, iterVar), methodId);
     }
 
     void writeReflectiveAccess(IMethod m, IR ir, ReflectiveMemberAccess instruction, Session session, TypeInference typeInference) {

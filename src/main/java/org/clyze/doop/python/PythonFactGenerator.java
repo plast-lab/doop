@@ -1,20 +1,15 @@
 package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.cast.analysis.typeInference.AstTypeInference;
 import com.ibm.wala.cast.ir.ssa.*;
 import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
-import com.ibm.wala.cast.python.loader.PythonLoader;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
-import com.ibm.wala.cast.python.ssa.PythonPropertyRead;
-import com.ibm.wala.cast.python.ssa.PythonPropertyWrite;
 import com.ibm.wala.cast.python.types.PythonTypes;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ssa.*;
-import com.ibm.wala.types.TypeReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.python.utils.PythonIRPrinter;
@@ -73,23 +68,12 @@ public class PythonFactGenerator implements Runnable{
                     continue;
                 iClass.getAllFields().forEach(this::generate);
                 _writer.writeClassOrInterfaceType(iClass);
-                if(iClass.isAbstract())
-                    _writer.writeClassModifier(iClass, "abstract");
-                if(iClass.isPublic())
-                    _writer.writeClassModifier(iClass, "public");
-                if(iClass.isPrivate())
-                    _writer.writeClassModifier(iClass, "private");
 //
 //            // the isInterface condition prevents Object as superclass of interface
-            if (iClass.getSuperclass() != null && !iClass.isInterface()) {
-                _writer.writeDirectSuperclass(iClass, iClass.getSuperclass());
-                System.out.println("Class " + className +" extends " + iClass.getSuperclass().getName().toString().substring(1));
-            }
-
-            for (IClass i : iClass.getAllImplementedInterfaces()) {
-                _writer.writeDirectSuperinterface(iClass, i);
-                System.out.println("Class " + className +" implements " + i.getName().toString().substring(1));
-            }
+                if (iClass.getSuperclass() != null && !iClass.isInterface()) {
+                    _writer.writeDirectSuperclass(iClass, iClass.getSuperclass());
+                    System.out.println("Class " + className +" extends " + iClass.getSuperclass().getName().toString().substring(1));
+                }
 
             }else if (iClass instanceof CAstAbstractModuleLoader.DynamicCodeBody) {
 
@@ -211,8 +195,6 @@ public class PythonFactGenerator implements Runnable{
                         generate(m, ir, (PythonInvokeInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAAbstractInvokeInstruction) {
                         generate(m, ir, (SSAAbstractInvokeInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof EachElementHasNextInstruction) {
-                        generate(m, ir, (EachElementHasNextInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof EachElementGetInstruction) {
                         generate(m, ir, (EachElementGetInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof AstLexicalAccess) {
@@ -344,6 +326,7 @@ public class PythonFactGenerator implements Runnable{
         }
         else
         {
+            throw new RuntimeException("Unsupported new instr " + instruction.toString(ir.getSymbolTable()));
             //_writer.writeAssignNewMultiArrayExpr(ir, m, instruction, l, session);
         }
     }
@@ -352,12 +335,6 @@ public class PythonFactGenerator implements Runnable{
         Local target = createLocal(ir,instruction,instruction.getDef(),typeInference);
         Local iter = createLocal(ir,instruction,instruction.getUse(0),typeInference);
         _writer.writeEachElementGet(m, instruction, target, iter, session);
-    }
-
-    public void generate(IMethod m, IR ir, EachElementHasNextInstruction instruction, Session session, TypeInference typeInference){
-        Local target = createLocal(ir,instruction,instruction.getDef(),typeInference);
-        Local iter = createLocal(ir,instruction,instruction.getUse(0),typeInference);
-        _writer.writeEachElementHasNext(m, instruction, target, iter, session);
     }
 
     public void generate(IMethod m, IR ir, AstLexicalAccess instruction, Session session, TypeInference typeInference){
@@ -385,14 +362,14 @@ public class PythonFactGenerator implements Runnable{
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
 
         if (instruction.isStatic()) {
+            throw new RuntimeException("Unexpected static get " + instruction.toString(ir.getSymbolTable()));
             //Get static field has no uses and a single def (to)
-            _writer.writeLoadStaticField(m, instruction, instruction.getDeclaredField(), to, session);
+            //_writer.writeLoadStaticField(m, instruction, instruction.getDeclaredField(), to, session);
         }
-        else {
-            //Get instance field has one use (base) and one def (to)
-            Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
-            _writer.writeLoadInstanceField(m, instruction, instruction.getDeclaredField(), base, to, session);
-        }
+        //Get instance field has one use (base) and one def (to)
+        Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        _writer.writeLoadInstanceField(m, instruction, instruction.getDeclaredField(), base, to, session);
+
     }
 
     public void generate(IMethod m, IR ir, AstGlobalWrite instruction, Session session, TypeInference typeInference) {
@@ -408,16 +385,16 @@ public class PythonFactGenerator implements Runnable{
     public void generate(IMethod m, IR ir, SSAPutInstruction instruction, Session session, TypeInference typeInference) {
 
         if (instruction.isStatic()) {
+            throw new RuntimeException("Unexpected static put " + instruction.toString(ir.getSymbolTable()));
             //Put static field has a single use (from) and no defs
-            Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
-            _writer.writeStoreStaticField(m, instruction, instruction.getDeclaredField(), from, session);
+            //Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+            //_writer.writeStoreStaticField(m, instruction, instruction.getDeclaredField(), from, session);
         }
-        else {
-            //Put instance field has two uses (base and from) and no defs
-            Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
-            Local from = createLocal(ir, instruction, instruction.getUse(1), typeInference);
-            _writer.writeStoreInstanceField(m, instruction, instruction.getDeclaredField(), base, from, session);
-        }
+        //Put instance field has two uses (base and from) and no defs
+        Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        Local from = createLocal(ir, instruction, instruction.getUse(1), typeInference);
+        _writer.writeStoreInstanceField(m, instruction, instruction.getDeclaredField(), base, from, session);
+
     }
 
     public void generate(IMethod m, IR ir, PythonInvokeInstruction instruction, Session session, TypeInference typeInference) {
