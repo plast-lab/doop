@@ -16,6 +16,9 @@ class BenchmarksResolver implements InputResolver {
 	String name() { "benchmarks (${benchmarkDir.absolutePath})" }
 
 	void resolve(String input, InputResolutionContext ctx, InputType inputType) {
+		if (input.contains(".."))
+			throw new RuntimeException("Not a valid platform file: $input")
+
 		def res = ["android-benchmarks", "dacapo-2006", "dacapo-bach"].collect {
 			try {
 				FileOps.findFileOrThrow(new File(new File(benchmarkDir, it), input), "")
