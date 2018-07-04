@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import static org.clyze.doop.python.utils.PythonUtils.createLocal;
+import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 
 public class PythonFactGenerator implements Runnable{
     protected Log logger;
@@ -165,9 +166,9 @@ public class PythonFactGenerator implements Runnable{
             Iterator<SSAPhiInstruction> phis = basicBlock.iteratePhis();
             while (phis.hasNext()) {
                 SSAPhiInstruction phiInstruction = phis.next();
-                //this.generateDefs(m, ir, phiInstruction, typeInference);
-                //this.generateUses(m, ir, phiInstruction, session, typeInference);
-                //generate(m, ir, phiInstruction, session, typeInference);
+                this.generateDefs(m, ir, phiInstruction, typeInference);
+                this.generateUses(m, ir, phiInstruction, session, typeInference);
+                generate(m, ir, phiInstruction, session, typeInference);
             }
 
             if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
@@ -215,8 +216,6 @@ public class PythonFactGenerator implements Runnable{
                         generate(m, ir, (SSANewInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAComparisonInstruction) {
                         generate(m, ir, (SSAComparisonInstruction) instructions[j], session, typeInference);
-                    } else if (instructions[j] instanceof SSASwitchInstruction) {
-                        session.calcInstructionNumber(instructions[j]);
                     } else if (instructions[j] instanceof SSAGotoInstruction) {
                         session.calcInstructionNumber(instructions[j]);
                     } else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
@@ -239,12 +238,10 @@ public class PythonFactGenerator implements Runnable{
             int end = basicBlock.getLastInstructionIndex();
 
             for (int j = start; j <= end; j++) {
-                if (instructions[j] instanceof SSASwitchInstruction) {
-                    //generate(m, ir, (SSASwitchInstruction) instructions[j], session, typeInference);
-                } else if (instructions[j] instanceof SSAGotoInstruction) {
-                    //generate(m, ir, (SSAGotoInstruction) instructions[j], session);
+                if (instructions[j] instanceof SSAGotoInstruction) {
+                    generate(m, ir, (SSAGotoInstruction) instructions[j], session);
                 } else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
-                    //generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
+                    generate(m, ir, (SSAConditionalBranchInstruction) instructions[j], session, typeInference);
                 }
             }
         }
@@ -255,6 +252,55 @@ public class PythonFactGenerator implements Runnable{
 
             }
         }
+    }
+
+    public void generate(IMethod m, IR ir, SSAConditionalBranchInstruction instruction, Session session, TypeInference typeInference) {
+        SSAInstruction[] ssaInstructions = ir.getInstructions();
+        SSAInstruction targetInstr;
+        // Conditional branch instructions have two uses (op1 and op2, the compared variables) and no defs
+        Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
+        Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
+
+        int brachTarget = instruction.getTarget();
+
+        if(brachTarget < 0)
+        {
+            System.out.println("instr with negative target " + instruction.toString(ir.getSymbolTable()));
+            brachTarget = 0;
+        }
+
+        if(brachTarget == -1) //In Android conditional branches can have -1 as target
+            brachTarget =0;
+        if(ssaInstructions[brachTarget] == null) {
+            targetInstr = getNextNonNullInstruction(ir,brachTarget);
+            if(targetInstr == null)
+                logger.error("Error: Next non-null instruction does not exist.");
+        }
+        else
+            targetInstr = ssaInstructions[brachTarget];
+        _writer.writeIf(m, instruction, op1, op2, targetInstr, session);
+    }
+
+
+    public void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
+        // Go to instructions have no uses and no defs
+        SSAInstruction[] ssaInstructions = ir.getInstructions();
+        SSAInstruction targetInstr;
+        int gotoTarget = instruction.getTarget();
+        if(gotoTarget < 0)
+        {
+            System.out.println("goto " + instruction.getTarget() + " for instr " + instruction.toString());
+            gotoTarget = 0;
+        }
+
+        if(ssaInstructions[gotoTarget] == null) {
+            targetInstr = getNextNonNullInstruction(ir,gotoTarget);
+            if(targetInstr == null)
+                System.out.println("Error: Next non-null instruction does not exist.");
+        }
+        else
+            targetInstr = ssaInstructions[gotoTarget];
+        _writer.writeGoto(m, instruction,targetInstr , session);
     }
 
     public void generate(IMethod m, IR ir, SSAUnaryOpInstruction instruction, Session session, TypeInference typeInference) {
