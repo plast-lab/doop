@@ -1,18 +1,18 @@
 package org.clyze.doop.soot;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.*;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarInputStream;
 import org.objectweb.asm.ClassReader;
 import soot.Scene;
 import soot.SootClass;
 import soot.SourceLocator;
 import soot.SourceLocator.FoundFile;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 
 /**
  * This class gathers Java-specific code (such as JAR handling).
@@ -71,12 +71,16 @@ public class BasicJavaSupport {
 
                 String entryName = entry.getName();
                 if (entryName.endsWith(".class")) {
-                    ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                    String className = reader.getClassName().replace("/", ".");
-                    if (desc.equals("application"))
-                        classesInApplicationJars.add(className);
-                    String artifact = (new File(jarFile.getName())).getName();
-                    registerArtifactClass(artifact, className, "-");
+                    try {
+                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
+                        String className = reader.getClassName().replace("/", ".");
+                        if (desc.equals("application"))
+                            classesInApplicationJars.add(className);
+                        String artifact = (new File(jarFile.getName())).getName();
+                        registerArtifactClass(artifact, className, "-");
+                    } catch (IllegalArgumentException e) {
+                        System.err.println("-- Problematic .class file \"" + entryName + "\"");
+                    }
                 } else if (entryName.endsWith(".properties")) {
                     propertyProvider.addProperties((new FoundFile(filename, entryName)));
                 } /* Skip non-class files and non-property files */
