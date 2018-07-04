@@ -3,22 +3,45 @@ package org.clyze.doop.wala;
 import com.ibm.wala.analysis.typeInference.JavaPrimitiveType;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.ssa.IR;
-import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.TypeReference;
+
+import java.util.Iterator;
 
 public class WalaUtils {
 
-    public static int getNextNonNullInstruction(IR ir, int instructionIndex)
+    public static SSAInstruction getNextNonNullInstruction(IR ir, int instructionIndex)
     {
         SSAInstruction[] ssaInstructions = ir.getInstructions();
-        //ISSABasicBlock basicBlock = ir.getBasicBlockForInstruction(ssaInstructions[instructionIndex]);
-        for(int i = instructionIndex +1 ; i < ssaInstructions.length; i++)
-        {
-            if(ssaInstructions[i]!=null)
-                return i;
+        SSACFG cfg = ir.getControlFlowGraph();
+        ISSABasicBlock basicBlock = cfg.getBlockForInstruction(instructionIndex);
+        int bbNum = basicBlock.getNumber();
+        int lastbbNum = cfg.getMaxNumber();
+        int startIndex;
+        int endIndex;
+        for(int i=bbNum; i<=lastbbNum; i++){
+            ISSABasicBlock currBB = cfg.getBasicBlock(i);
+            if(i == bbNum){
+                startIndex = instructionIndex + 1;
+            }
+            else{
+                startIndex = currBB.getFirstInstructionIndex();
+                Iterator<SSAPhiInstruction> phis = currBB.iteratePhis();
+                if(phis.hasNext())
+                    return phis.next();
+            }
+            endIndex = currBB.getLastInstructionIndex();
+            for(int j = startIndex; j<= endIndex; j++){
+                if(ssaInstructions[j]!=null)
+                    return ssaInstructions[j];
+            }
         }
-        return -1;
+//        for(int i = instructionIndex +1 ; i < ssaInstructions.length; i++)
+//        {
+//            if(ssaInstructions[i]!= null)
+//                return ssaInstructions[i];
+//        }
+        return null;
     }
 
     public static Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {

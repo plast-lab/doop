@@ -445,7 +445,7 @@ class WalaFactGenerator implements Runnable {
     }
     public void generate(IMethod m, IR ir, SSAConditionalBranchInstruction instruction, Session session, TypeInference typeInference) {
         SSAInstruction[] ssaInstructions = ir.getInstructions();
-
+        SSAInstruction targetInstr;
         // Conditional branch instructions have two uses (op1 and op2, the compared variables) and no defs
         Local op1 = createLocal(ir, instruction, instruction.getUse(0), typeInference);
         Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
@@ -464,11 +464,13 @@ class WalaFactGenerator implements Runnable {
         if(brachTarget == -1) //In Android conditional branches can have -1 as target
             brachTarget =0;
         if(ssaInstructions[brachTarget] == null) {
-            brachTarget = getNextNonNullInstruction(ir,brachTarget);
-            if(brachTarget == -1)
+            targetInstr = getNextNonNullInstruction(ir,brachTarget);
+            if(targetInstr == null)
                 logger.error("Error: Next non-null instruction index = -1");
         }
-        _writer.writeIf(m, instruction, op1, op2, ssaInstructions[brachTarget], session);
+        else
+            targetInstr = ssaInstructions[brachTarget];
+        _writer.writeIf(m, instruction, op1, op2, targetInstr, session);
     }
 
 
@@ -607,6 +609,7 @@ class WalaFactGenerator implements Runnable {
     public void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
         // Go to instructions have no uses and no defs
         SSAInstruction[] ssaInstructions = ir.getInstructions();
+        SSAInstruction targetInstr;
         int gotoTarget = instruction.getTarget();
 //        if(m instanceof DexIMethod) {
 //            IBytecodeMethod bm = (IBytecodeMethod)m;
@@ -623,11 +626,13 @@ class WalaFactGenerator implements Runnable {
         }
 
         if(ssaInstructions[gotoTarget] == null) {
-            gotoTarget = getNextNonNullInstruction(ir,gotoTarget);
-            if(gotoTarget == -1)
-                logger.error("Error: Next non-null instruction index = -1");
+            targetInstr = getNextNonNullInstruction(ir,gotoTarget);
+            if(targetInstr == null)
+                System.out.println("Error: Next non-null instruction index = -1");
         }
-        _writer.writeGoto(m, instruction,ssaInstructions[gotoTarget] , session);
+        else
+            targetInstr = ssaInstructions[gotoTarget];
+        _writer.writeGoto(m, instruction,targetInstr , session);
     }
 
     public void generate(IMethod m, IR ir, SSAMonitorInstruction instruction, Session session, TypeInference typeInference) {
