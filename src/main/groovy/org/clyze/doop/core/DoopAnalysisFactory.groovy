@@ -214,6 +214,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		log.debug "Processing analysis options"
 		def platformName = options.PLATFORM.value as String
 
+		if (options.X_STOP_AT_FACTS.value) {
+			// Dummy value so the option is not empty, because otherwise it is mandatory
+			// Must be a valid one
+			options.ANALYSIS.value = "context-insensitive"
+		}
+
 		if (!options.X_START_AFTER_FACTS.value) {
 			log.debug "Resolving files"
 			context.resolve()
@@ -231,7 +237,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			log.debug "HeapDL file paths: ${context.heapDLs()} -> ${options.HEAPDLS.value}"
 		} else {
 			// Dummy value so the option is not empty, because otherwise it is mandatory
-			options.INPUTS.value = "false"
+			options.INPUTS.value = ["false"]
 		}
 
 		setOptionsForPlatform(options, platformName)
@@ -264,7 +270,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				} else if (options.IGNORE_MAIN_METHOD.value) {
 					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
 				} else {
-					log.info "The main class(es) are set to ${options.MAIN_CLASS.value}"
+					log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
 				}
 			} else {
 				if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {

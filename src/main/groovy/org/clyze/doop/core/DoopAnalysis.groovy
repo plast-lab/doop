@@ -190,11 +190,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 					w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
 				}
 			}
-			if (options.MAIN_CLASS.value) {
-				new File(factsDir, "MainClass.facts").withWriter { w ->
-					options.MAIN_CLASS.value.each { w.writeLine(it as String) }
-				}
-			}
 
 			if (options.TAMIFLEX.value) {
 				File origTamFile = new File(options.TAMIFLEX.value.toString())
@@ -224,6 +219,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				log.warn "WARNING: Imported facts are not cached."
 			}
 			log.info "----"
+		}
+
+		if (options.MAIN_CLASS.value) {
+			new File(factsDir, "MainClass.facts").withWriterAppend { w ->
+				options.MAIN_CLASS.value.each { w.writeLine(it as String) }
+			}
 		}
 	}
 
@@ -394,7 +395,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				WalaInvoker wala = new WalaInvoker()
 				wala.main(params.toArray(new String[params.size()]))
 			}
-		}catch(Throwable walaError){
+		}catch(Error walaError){
 			System.out.println("Wala fact generation Error: " + walaError)
 			throw new RuntimeException(walaError);
 		}
@@ -430,7 +431,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				PythonInvoker wala = new PythonInvoker()
 				wala.main(params.toArray(new String[params.size()]))
 			}
-		}catch(Throwable walaError){
+		}catch(Error walaError){
 			System.out.println("Wala fact generation Error: " + walaError)
 			throw new RuntimeException(walaError);
 		}

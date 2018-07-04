@@ -194,7 +194,11 @@ public class WalaInvoker {
             for(IMethod m: klass.getDeclaredMethods()) {
                 addIfSignaturePolymorphic(m, signaturePolymorphicMethods);
                 //System.out.println(m.toString());
-                cache.getIR(m);
+                try {
+                    cache.getIR(m);
+                }catch (Throwable e){
+                    System.out.println("Error while creating IR for method: " + m.getReference() + "\n"+ e);
+                }
             }
         }
         walaFactWriter.setSignaturePolyMorphicMethods(signaturePolymorphicMethods);

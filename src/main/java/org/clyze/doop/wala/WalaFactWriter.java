@@ -774,11 +774,13 @@ public class WalaFactWriter {
             }
             if(instructions[targetWALAIndex] == null)
             {
-                targetWALAIndex = getNextNonNullInstruction(ir,targetWALAIndex);
-                if(targetWALAIndex == -1)
-                    logger.error("Error: Next non-null instruction index = -1");
+                SSAInstruction correctInstr = getNextNonNullInstruction(ir,targetWALAIndex);
+                if(correctInstr == null)
+                    System.out.println("Error: Next non-null instruction index = -1");
+                targetIndex = session.getInstructionNumber(correctInstr);
             }
-            targetIndex = session.getInstructionNumber(instructions[targetWALAIndex]);
+            else
+                targetIndex = session.getInstructionNumber(instructions[targetWALAIndex]);
 
             _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(targetIndex));
         }
@@ -793,12 +795,13 @@ public class WalaFactWriter {
         }
         if(instructions[defaultWALAIndex] == null)
         {
-            defaultWALAIndex = getNextNonNullInstruction(ir,defaultWALAIndex);
-            if(defaultWALAIndex == -1)
-                logger.error("Error: Next non-null instruction index = -1");
+            SSAInstruction correctInstr = getNextNonNullInstruction(ir,defaultWALAIndex);
+            if(correctInstr == null)
+                System.out.println("Error: Next non-null instruction index = -1");
+            defaultIndex = session.getInstructionNumber(correctInstr);
         }
-        //session.calcInstructionNumber(instructions[defaultWALAIndex]);
-        defaultIndex = session.getInstructionNumber(instructions[defaultWALAIndex]);
+        else
+            defaultIndex = session.getInstructionNumber(instructions[defaultWALAIndex]);
 
 
         _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
