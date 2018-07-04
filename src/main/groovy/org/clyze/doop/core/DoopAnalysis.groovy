@@ -395,7 +395,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				WalaInvoker wala = new WalaInvoker()
 				wala.main(params.toArray(new String[params.size()]))
 			}
-		}catch(Throwable walaError){
+		}catch(Error walaError){
 			System.out.println("Wala fact generation Error: " + walaError)
 			throw new RuntimeException(walaError);
 		}
@@ -431,7 +431,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				PythonInvoker wala = new PythonInvoker()
 				wala.main(params.toArray(new String[params.size()]))
 			}
-		}catch(Throwable walaError){
+		}catch(Error walaError){
 			System.out.println("Wala fact generation Error: " + walaError)
 			throw new RuntimeException(walaError);
 		}
