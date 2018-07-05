@@ -122,9 +122,8 @@ public class FactWriter {
     void writeClassOrInterfaceType(SootClass c) {
         String classStr = c.getName();
         boolean isInterface = c.isInterface();
-        if (c.isPhantom()) {
-            String desc = isInterface ? "Interface " : "Class ";
-            System.out.println(desc + classStr + " is phantom.");
+        if (isInterface && c.isPhantom()) {
+            System.out.println("Interface " + classStr + " is phantom.");
             writePhantomType(c);
         }
         _db.add(isInterface ? INTERFACE_TYPE : CLASS_TYPE, classStr);
