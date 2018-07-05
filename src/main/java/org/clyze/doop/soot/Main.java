@@ -239,7 +239,6 @@ public class Main {
         Options.v().set_keep_line_number(true);
 
         PropertyProvider propertyProvider = new PropertyProvider();
-        Set<SootClass> classes = new HashSet<>();
         Set<String> classesInApplicationJars = new HashSet<>();
         Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
 
@@ -289,6 +288,7 @@ public class Main {
         if (sootParameters._allowPhantom)
             Options.v().set_allow_phantom_refs(true);
 
+        Set<SootClass> classes = new HashSet<>();
         java.addClasses(classes, scene);
         scene.loadNecessaryClasses();
 
