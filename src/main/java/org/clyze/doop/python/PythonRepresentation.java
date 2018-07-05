@@ -69,8 +69,8 @@ public class PythonRepresentation {
         //System.out.println(cName);
         String className;
         if(classNameParts.length == 2){
-            declaringModule = classNameParts[0].replace("script ","");
-            //declaringModule = klass.getSourceFileName();
+            //declaringModule = classNameParts[0].replace("script ","");
+            declaringModule = klass.getSourceFileName();
             className = classNameParts[1];
         }
         else{
