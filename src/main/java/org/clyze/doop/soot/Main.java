@@ -358,16 +358,16 @@ public class Main {
             // later be asking soot to add phantom classes to the scene's hierarchy
             driver.doInParallel(classes);
             if (sootParameters._generateJimple) {
-                Set<SootClass> jimpleClasses = new HashSet<>(classes);
-                List<String> allClassNames = new ArrayList<>();
-                for (String artifact : artifactToClassMap.keySet()) {
-//                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
-                    Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
-                    allClassNames.addAll(artEntries);
-                }
-                forceResolveClasses(allClassNames, jimpleClasses, scene);
-                System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
-                driver.writeInParallel(jimpleClasses);
+//                Set<SootClass> jimpleClasses = new HashSet<>(classes);
+//                List<String> allClassNames = new ArrayList<>();
+//                for (String artifact : artifactToClassMap.keySet()) {
+////                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
+//                    Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
+//                    allClassNames.addAll(artEntries);
+//                }
+//                forceResolveClasses(allClassNames, jimpleClasses, scene);
+//                System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + classes.size());
+                driver.writeInParallel(classes);
             }
         }
 
@@ -411,6 +411,7 @@ public class Main {
             scene.extendSootClassPath(input);
     }
 
+    @Deprecated
     private static void forceResolveClasses(Collection<String> classesToResolve, Collection<SootClass> resolvedClasses, Scene scene) {
         for (String className : classesToResolve) {
             scene.forceResolve(className, SootClass.BODIES);
