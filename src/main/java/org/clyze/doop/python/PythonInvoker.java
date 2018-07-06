@@ -1,16 +1,10 @@
 package org.clyze.doop.python;
 
-import com.ibm.wala.cast.ir.ssa.AstIRFactory;
-import com.ibm.wala.cast.python.loader.PythonLoaderFactory;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.classLoader.SourceURLModule;
-import com.ibm.wala.ipa.callgraph.*;
-import com.ibm.wala.ipa.cha.ClassHierarchyException;
+import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
-import com.ibm.wala.ipa.cha.SeqClassHierarchyFactory;
 import com.ibm.wala.ssa.IR;
-import com.ibm.wala.ssa.IRFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.python.utils.PythonDatabase;
@@ -18,9 +12,10 @@ import org.clyze.doop.soot.DoopErrorCodeException;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 public class PythonInvoker {
 
@@ -56,9 +51,6 @@ public class PythonInvoker {
                     case "-l":
                         i = shift(args, i);
                         parameters._appLibraries.add(args[i]);
-                        break;
-                    case "--uniqueFacts":
-                        parameters._uniqueFacts = true;
                         break;
                     case "--generate-ir":
                         parameters._generateIR = true;
@@ -100,7 +92,7 @@ public class PythonInvoker {
 
     public void run(PythonParameters parameters) throws IOException
     {
-        PythonDatabase db = new PythonDatabase(new File(parameters._outputDir),parameters._uniqueFacts);
+        PythonDatabase db = new PythonDatabase(new File(parameters._outputDir));
         PythonFactWriter factWriter = new PythonFactWriter(db);
         //for(String inputFile: parameters._inputs) {
             PythonIREngine pythonIREngine = new PythonIREngine(parameters._inputs);

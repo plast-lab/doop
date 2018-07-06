@@ -72,9 +72,6 @@ public class WalaInvoker {
                         i = shift(args, i);
                         walaParameters._appLibraries.add(args[i]);
                         break;
-                    case "--uniqueFacts":
-                        walaParameters._uniqueFacts = true;
-                        break;
                     case "--generate-ir":
                         walaParameters._generateIR = true;
                         break;
@@ -161,7 +158,7 @@ public class WalaInvoker {
 
         assert cha != null;
         Iterator<IClass> classes = cha.iterator();
-        Database db = new Database(new File(walaParameters._outputDir), walaParameters._uniqueFacts);
+        Database db = new Database(new File(walaParameters._outputDir));
         WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
         WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 

@@ -216,11 +216,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "UNIQUE_FACTS",
-					name: "unique-facts",
-					description: "Eliminate redundancy from .facts files.",
-			),
-			new BooleanAnalysisOption(
 					id: "DACAPO",
 					name: "dacapo",
 					description: "Load additional logic for DaCapo (2006) benchmarks properties.",
@@ -231,11 +226,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "dacapo-bach",
 					description: "Load additional logic for DaCapo (Bach) benchmarks properties.",
 					forPreprocessor: true
-			),
-			new BooleanAnalysisOption(
-					id: "ONLY_APPLICATION_CLASSES_FACT_GEN",
-					name: "only-application-classes-fact-gen",
-					forCacheID: true
 			),
 			new BooleanAnalysisOption(
 					id: "WALA_FACT_GEN",
@@ -525,6 +515,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use dynamic information from file.",
 					forPreprocessor: true
 			),
+
 			/* Start LogicBlox related options */
 			new AnalysisOption<String>(
 					id: "LOGICBLOX_HOME",
@@ -549,6 +540,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use the LB engine."
 			),
 			/* End LogicBlox related options */
+
 			/* Start non-standard flags */
 			new BooleanAnalysisOption(
 					id: "X_STATS_FULL",
@@ -669,6 +661,21 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "INTERVAL",
 					description: "Monitoring interval for sampling memory and cpu usage. default: 5sec",
 					value: 5
+			),
+			new BooleanAnalysisOption(
+					id: "X_APPLICATION_ONLY_FACTS",
+					name: "Xapplication-only-facts",
+					forCacheID: true
+			),
+			new BooleanAnalysisOption(
+					id: "X_LIBRARY_ONLY_FACTS",
+					name: "Xlibrary-only-facts",
+					forCacheID: true
+			),
+			new BooleanAnalysisOption(
+					id: "X_UNIQUE_FACTS",
+					name: "Xunique-facts",
+					description: "Eliminate redundancy from .facts files.",
 			),
 			/* End non-standard flags */
 

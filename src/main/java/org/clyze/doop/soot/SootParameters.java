@@ -16,12 +16,12 @@ public class SootParameters {
      boolean _android = false;
      String _androidJars = null;
      boolean _allowPhantom = false;
-     boolean _onlyApplicationClassesFactGen = false;
+     boolean _applicationOnlyFacts = false;
+     boolean _libraryOnlyFacts = false;
      ClassFilter applicationClassFilter;
      String appRegex = "**";
      boolean _runFlowdroid = false;
      boolean _noFacts = false;
-     boolean _uniqueFacts = false;
      String _rOutDir = null;
      boolean _generateJimple = false;
      boolean _toStdout = false;

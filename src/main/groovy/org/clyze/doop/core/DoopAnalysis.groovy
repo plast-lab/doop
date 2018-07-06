@@ -11,6 +11,7 @@ import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.soot.DoopErrorCodeException
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
+import org.codehaus.groovy.runtime.StackTraceUtils
 
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -155,20 +156,29 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			}
 
 			Set<String> tmpDirs = [] as Set
-			if (options.PYTHON.value) {
-				runPython(tmpDirs)
-				return
+			try {
+				if (options.PYTHON.value) runPython(tmpDirs)
+				else if (options.WALA_FACT_GEN.value) runWala(tmpDirs)
+				else runSoot(tmpDirs)
+			} catch (all) {
+				all = StackTraceUtils.deepSanitize all
+				log.info all
+				throw new DoopErrorCodeException(8)
+			} finally {
+				Helper.cleanUp(tmpDirs)
 			}
-			if (options.WALA_FACT_GEN.value)
-				runWala(tmpDirs)
-			else {
-				boolean success = runSoot(tmpDirs)
-				if (!success) {
-					Helper.cleanUp(tmpDirs)
-					throw new DoopErrorCodeException(8)
+
+			if (options.X_UNIQUE_FACTS.value) {
+				def timing = Helper.timing {
+					factsDir.eachFileMatch(~/.*.facts/) { file ->
+						def uniqueLines = file.readLines().toSet()
+						def tmp = new File(factsDir, "${file.name}.tmp")
+						tmp.withWriter { w -> uniqueLines.each { w.writeLine(it) } }
+						tmp.renameTo(file)
+					}
 				}
+				log.info "Time to make facts unique: $timing"
 			}
-			Helper.cleanUp(tmpDirs)
 
 			touch(new File(factsDir, "ApplicationClass.facts"))
 			touch(new File(factsDir, "Properties.facts"))
@@ -238,9 +248,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		return AARUtils.toJars(deps as List<String>, false, tmpDirs)
 	}
 
-	// Returns false on fact generation failure.
-	protected boolean runSoot(Set<String> tmpDirs) {
-
+	protected void runSoot(Set<String> tmpDirs) {
 		def platform = options.PLATFORM.value.toString().tokenize("_")[0]
 		if (platform != "android" && platform != "java")
 			throw new RuntimeException("Unsupported platform: ${platform}")
@@ -276,20 +284,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--run-flowdroid"]
 		}
 
-		if (options.ONLY_APPLICATION_CLASSES_FACT_GEN.value) {
-			params += ["--only-application-classes-fact-gen"]
-		}
-
 		if (options.GENERATE_JIMPLE.value) {
 			params += ["--generate-jimple"]
 		}
 
 		if (options.X_DRY_RUN.value) {
 			params += ["--noFacts"]
-		}
-
-		if (options.UNIQUE_FACTS.value) {
-			params += ["--uniqueFacts"]
 		}
 
 		if (options.FACT_GEN_CORES.value) {
@@ -302,6 +302,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 		if (options.X_IGNORE_WRONG_STATICNESS.value) {
 			params += ["--ignoreWrongStaticness"]
+		}
+
+		if (options.X_APPLICATION_ONLY_FACTS.value) {
+			params += ["--application-only-facts"]
+		}
+
+		if (options.X_LIBRARY_ONLY_FACTS.value) {
+			params += ["--library-only-facts"]
 		}
 
 		if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
@@ -319,7 +327,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 		log.debug "Params of soot: ${params.join(' ')}"
 
-		boolean success = false
 		sootTime = Helper.timing {
 			//We invoke soot reflectively using a separate class-loader to be able
 			//to support multiple soot invocations in the same JVM @ server-side.
@@ -328,16 +335,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			//In such a case, we should invoke all Java-based tools using a
 			//separate process.
 			ClassLoader loader = sootClassLoader()
-			success = Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
+			def success = Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
+			if (!success)
+				throw new RuntimeException("Soot fact generation Error")
 		}
-
-		if (!success) {
-			log.info "Soot fact generation failed."
-			return false
-		}
-
 		log.info "Soot fact generation time: ${sootTime}"
-		return true
 	}
 
 	protected void runWala(Set<String> tmpDirs) {
@@ -376,9 +378,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		if (options.GENERATE_JIMPLE.value) {
 			params += ["--generate-ir"]
 		}
-		if (options.UNIQUE_FACTS.value) {
-			params += ["--uniqueFacts"]
-		}
 		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 		params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
 
@@ -395,9 +394,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				WalaInvoker wala = new WalaInvoker()
 				wala.main(params.toArray(new String[params.size()]))
 			}
-		}catch(Error walaError){
-			System.out.println("Wala fact generation Error: " + walaError)
-			throw new RuntimeException(walaError);
+		} catch(walaError){
+			throw new RuntimeException("Wala fact generation Error: $walaError", walaError)
 		}
 		log.info "Wala fact generation time: ${sootTime}"
 	}
@@ -411,14 +409,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		def platform = options.PLATFORM.value.toString().tokenize("_")[0]
 		assert platform == "python"
 
-
 		if (options.FACT_GEN_CORES.value) {
 			params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
 		}
 		if (options.GENERATE_JIMPLE.value) {
 			params += ["--generate-ir"]
 		}
-		if (options.UNIQUE_FACTS.value) {
+		if (options.X_UNIQUE_FACTS.value) {
 			params += ["--uniqueFacts"]
 		}
 		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
@@ -431,12 +428,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				PythonInvoker wala = new PythonInvoker()
 				wala.main(params.toArray(new String[params.size()]))
 			}
-		}catch(Error walaError){
-			System.out.println("Wala fact generation Error: " + walaError)
-			throw new RuntimeException(walaError);
+		} catch(walaError){
+			throw new RuntimeException("Wala fact generation Error: $walaError", walaError)
 		}
 		log.info "Wala fact generation time: ${sootTime}"
-
 	}
 
 	protected void runJPhantom() {

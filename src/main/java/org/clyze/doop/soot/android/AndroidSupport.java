@@ -1,11 +1,6 @@
 package org.clyze.doop.soot.android;
 
-import org.clyze.doop.soot.ArtifactEntry;
-import org.clyze.doop.soot.BasicJavaSupport;
-import org.clyze.doop.soot.FactWriter;
-import org.clyze.doop.soot.Main;
-import org.clyze.doop.soot.PropertyProvider;
-import org.clyze.doop.soot.SootParameters;
+import org.clyze.doop.soot.*;
 import org.clyze.utils.AARUtils;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import soot.Scene;
@@ -21,7 +16,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static org.clyze.doop.soot.android.AndroidManifest.getAndroidManifest;
-import static soot.dexpler.DexFileProvider.*;
+import static soot.dexpler.DexFileProvider.DexContainer;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
 public class AndroidSupport extends BasicJavaSupport {
@@ -38,8 +33,8 @@ public class AndroidSupport extends BasicJavaSupport {
     private Set<PossibleLayoutControl> appUserControls = new HashSet<>();
     private String extraSensitiveControls;
 
-    public AndroidSupport(Set<String> classesInApplicationJar, Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider, String rOutDir, SootParameters sootParameters, String extraSensitiveControls) {
-        super(classesInApplicationJar, artifactToClassMap, propertyProvider);
+    public AndroidSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider, String rOutDir, SootParameters sootParameters, String extraSensitiveControls) {
+        super(artifactToClassMap, propertyProvider);
         this.rOutDir = rOutDir;
         this.sootParameters = sootParameters;
         this.extraSensitiveControls = extraSensitiveControls;
@@ -133,7 +128,7 @@ public class AndroidSupport extends BasicJavaSupport {
     }
 
     @Override
-    public void addClasses(Set<SootClass> classes, Scene scene) {
+    public void addAppClasses(Set<SootClass> classes, Scene scene) {
         for (String appInput : sootParameters.getInputs()) {
             if (appInput.endsWith(".apk")) {
                 File apk = new File(appInput);

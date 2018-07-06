@@ -16,7 +16,6 @@ public class WalaParameters {
     String appRegex = "**";
     Integer _cores = null;
     boolean _android = false;
-    boolean _uniqueFacts = false;
     boolean _generateIR = false;
     String _androidJars = null;
 

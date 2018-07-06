@@ -4,29 +4,20 @@ package org.clyze.doop.python.utils;
 import java.io.*;
 import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Map;
 
 
 public class PythonDatabase implements Closeable, Flushable {
     private static final char SEP = '\t';
     private static final char EOL = '\n';
-    private File directory = null;
-    // Flag to control the uniqueness of the generated facts.
-    private boolean uniques;
 
     private final Map<PythonPredicateFile, Writer> _writers;
-    private final EnumMap<PythonPredicateFile, HashSet<String>> _sets;
 
-    public PythonDatabase(File directory, boolean uniques) throws IOException {
-        this.directory = directory;
-        this.uniques = uniques;
+    public PythonDatabase(File directory) throws IOException {
         this._writers = new EnumMap<>(PythonPredicateFile.class);
-        this._sets = new EnumMap<>(PythonPredicateFile.class);
 
         for(PythonPredicateFile predicateFile : EnumSet.allOf(PythonPredicateFile.class)) {
-            _writers.put(predicateFile, predicateFile.getWriter(this.directory, ".facts"));
-            _sets.put(predicateFile, new HashSet<String>());
+            _writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
         }
     }
 
@@ -64,10 +55,7 @@ public class PythonDatabase implements Closeable, Flushable {
             line.append(EOL);
             Writer writer = _writers.get(predicateFile);
             synchronized(predicateFile) {
-                String s = line.toString();
-                if (uniques && !(_sets.get(predicateFile).add(s)))
-                    return;
-                writer.write(s);
+                writer.write(line.toString());
             }
         } catch(IOException exc) {
             throw new RuntimeException(exc);

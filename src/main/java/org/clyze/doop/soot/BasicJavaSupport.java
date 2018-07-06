@@ -20,11 +20,13 @@ import java.util.jar.JarInputStream;
 public class BasicJavaSupport {
 
     protected Set<String> classesInApplicationJars;
+    protected Set<String> classesInLibraryJars;
     private Map<String, Set<ArtifactEntry>> artifactToClassMap;
     private PropertyProvider propertyProvider;
 
-    public BasicJavaSupport(Set<String> classesInApplicationJars, Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider) {
-        this.classesInApplicationJars = classesInApplicationJars;
+    public BasicJavaSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider) {
+        this.classesInApplicationJars = new HashSet<>();
+        this.classesInLibraryJars = new HashSet<>();
         this.artifactToClassMap = artifactToClassMap;
         this.propertyProvider = propertyProvider;
     }
@@ -34,9 +36,6 @@ public class BasicJavaSupport {
      *
      * @param inputFilenames           the list of all input jar file names
      * @param libraryFilenames         the list of all library file names
-     * @param classesInApplicationJars the set to populate
-     * @param artifactToClassMap       map from artifacts to class entries
-     * @param propertyProvider         the provider to use for .properties files
      *
      * @return the name of the JAR file that was processed; this is
      * either the original first parameter, or the locally saved
@@ -45,24 +44,26 @@ public class BasicJavaSupport {
      */
     public void populateClassesInAppJar(List<String> inputFilenames,
                                         List<String> libraryFilenames) throws IOException {
-        for (String inputFilename : inputFilenames)
-            processJar("application", inputFilename);
+        for (String inputFilename : inputFilenames) {
+            System.out.println("Processing application JAR: " + inputFilename);
+            processJar(classesInApplicationJars, inputFilename);
+        }
 
         for (String libraryFilename : libraryFilenames) {
-            processJar("library", libraryFilename);
+            System.out.println("Processing library JAR: " + libraryFilename);
+            processJar(classesInLibraryJars, libraryFilename);
         }
     }
 
     /**
      * Process a JAR input.
-     * @param desc       the kind of the input ("application" or "library")
+     * @param classSet   appropriate set to add class names
      * @param filename   the JAR filename
      */
-    private void processJar(String desc, String filename) throws IOException {
+    private void processJar(Set<String> classSet, String filename) throws IOException {
         JarEntry entry;
         try (JarInputStream jin = new JarInputStream(new FileInputStream(filename));
              JarFile jarFile = new JarFile(filename)) {
-            System.out.println("Processing " + desc + " JAR: " + filename);
             /* List all JAR entries */
             while ((entry = jin.getNextJarEntry()) != null) {
                 /* Skip directories */
@@ -74,8 +75,7 @@ public class BasicJavaSupport {
                     try {
                         ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
                         String className = reader.getClassName().replace("/", ".");
-                        if (desc.equals("application"))
-                            classesInApplicationJars.add(className);
+                        classSet.add(className);
                         String artifact = (new File(jarFile.getName())).getName();
                         registerArtifactClass(artifact, className, "-");
                     } catch (IllegalArgumentException e) {
@@ -111,11 +111,18 @@ public class BasicJavaSupport {
         }
     }
 
-    public void addClasses(Set<SootClass> classes, Scene scene) {
+    public void addAppClasses(Set<SootClass> classes, Scene scene) {
         addSootClasses(classesInApplicationJars, classes, scene);
         addBasicClasses(scene);
 
         System.out.println("Classes in input (application) jar(s): " + classesInApplicationJars.size());
+    }
+
+    public void addLibClasses(Set<SootClass> classes, Scene scene) {
+        addSootClasses(classesInLibraryJars, classes, scene);
+        addBasicClasses(scene);
+
+        System.out.println("Classes in library jar(s): " + classesInLibraryJars.size());
     }
 
     private static void addBasicClasses(Scene scene) {

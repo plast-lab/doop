@@ -107,8 +107,11 @@ public class Main {
                     case "--run-flowdroid":
                         sootParameters._runFlowdroid = true;
                         break;
-                    case "--only-application-classes-fact-gen":
-                        sootParameters._onlyApplicationClassesFactGen = true;
+                    case "--application-only-facts":
+                        sootParameters._applicationOnlyFacts = true;
+                        break;
+                    case "--library-only-facts":
+                        sootParameters._libraryOnlyFacts = true;
                         break;
                     case "--generate-jimple":
                         sootParameters._generateJimple = true;
@@ -118,9 +121,6 @@ public class Main {
                         break;
                     case "--noFacts":
                         sootParameters._noFacts = true;
-                        break;
-                    case "--uniqueFacts":
-                        sootParameters._uniqueFacts = true;
                         break;
                     case "--fact-gen-cores":
                         i = shift(args, i);
@@ -161,9 +161,9 @@ public class Main {
                         System.err.println("  -l <archive>                          Find classes in jar/zip archive");
                         System.err.println("  -lsystem                              Find classes in default system classes");
                         System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
-                        System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
+                        System.err.println("  --application-only-facts              Generate facts only for application classes");
+                        System.err.println("  --library-only-facts                  Generate facts only for library classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
-                        System.err.println("  --uniqueFacts                         Eliminate redundancy from facts");
                         System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
                         System.err.println("  --R-out-dir <directory>               Specify when to generate R code (when linking AAR inputs)");
                         System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
@@ -239,10 +239,10 @@ public class Main {
         Options.v().set_keep_line_number(true);
 
         PropertyProvider propertyProvider = new PropertyProvider();
-        Set<String> classesInApplicationJars = new HashSet<>();
+        Set<SootClass> classes = new HashSet<>();
         Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
 
-        BasicJavaSupport java = null;
+        BasicJavaSupport java;
 
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
@@ -252,12 +252,12 @@ public class Main {
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
-            AndroidSupport android = new AndroidSupport(classesInApplicationJars, artifactToClassMap, propertyProvider, rOutDir, sootParameters, extraSensitiveControls);
+            AndroidSupport android = new AndroidSupport(artifactToClassMap, propertyProvider, rOutDir, sootParameters, extraSensitiveControls);
             android.processInputs(sootParameters._androidJars, tmpDirs);
             java = android;
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
-            java = new BasicJavaSupport(classesInApplicationJars, artifactToClassMap, propertyProvider);
+            java = new BasicJavaSupport(artifactToClassMap, propertyProvider);
             java.populateClassesInAppJar(sootParameters._inputs, sootParameters._libraries);
         }
 
@@ -288,8 +288,11 @@ public class Main {
         if (sootParameters._allowPhantom)
             Options.v().set_allow_phantom_refs(true);
 
-        Set<SootClass> classes = new HashSet<>();
-        java.addClasses(classes, scene);
+        if (sootParameters._libraryOnlyFacts)
+            java.addLibClasses(classes, scene);
+        else
+            java.addAppClasses(classes, scene);
+
         scene.loadNecessaryClasses();
 
         /*
@@ -302,7 +305,7 @@ public class Main {
 
         classes.stream().filter((klass) -> isApplicationClass(sootParameters, klass)).forEachOrdered(SootClass::setApplicationClass);
 
-        if (sootParameters._mode == SootParameters.Mode.FULL && !sootParameters._onlyApplicationClassesFactGen)
+        if (sootParameters._mode == SootParameters.Mode.FULL && !sootParameters._applicationOnlyFacts)
             classes = new HashSet<>(scene.getClasses());
 
         try {
@@ -313,7 +316,7 @@ public class Main {
         catch (Exception ex) {
             System.out.println("Not all bodies retrieved");
         }
-        Database db = new Database(new File(sootParameters._outputDir), sootParameters._uniqueFacts);
+        Database db = new Database(new File(sootParameters._outputDir));
         FactWriter writer = new FactWriter(db);
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
         Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple, sootParameters._cores);
