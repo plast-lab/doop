@@ -1,6 +1,7 @@
 package org.clyze.doop.core
 
 import org.clyze.analysis.*
+import org.clyze.doop.soot.SootParameters
 
 import static DoopAnalysis.INFORMATION_FLOW_SUFFIX
 import static org.apache.commons.io.FilenameUtils.getExtension
@@ -662,14 +663,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Monitoring interval for sampling memory and cpu usage. default: 5sec",
 					value: 5
 			),
-			new BooleanAnalysisOption(
-					id: "X_APPLICATION_ONLY_FACTS",
-					name: "Xapplication-only-facts",
-					forCacheID: true
-			),
-			new BooleanAnalysisOption(
-					id: "X_LIBRARY_ONLY_FACTS",
-					name: "Xlibrary-only-facts",
+			new AnalysisOption<String>(
+					id: "X_FACTS_SUBSET",
+					name: "Xfacts-subset",
+					description: "Produce facts only for a subset of the given classes",
+					argName: "SUBSET",
+					validValues: SootParameters.FactsSubSet.values().collect { it as String },
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(

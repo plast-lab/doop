@@ -6,18 +6,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SootParameters {
-     enum Mode {INPUTS, FULL}
+     enum Mode { INPUTS, FULL }
+
+     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
+
      Mode _mode = null;
      List<String> _inputs = new ArrayList<>();
      List<String> _libraries = new ArrayList<>();
+     List<String> _dependencies = new ArrayList<>();
      String _outputDir = null;
      String _main = null;
      boolean _ssa = false;
      boolean _android = false;
      String _androidJars = null;
      boolean _allowPhantom = false;
-     boolean _applicationOnlyFacts = false;
-     boolean _libraryOnlyFacts = false;
+     FactsSubSet _factsSubSet = null;
      ClassFilter applicationClassFilter;
      String appRegex = "**";
      boolean _runFlowdroid = false;
@@ -29,6 +32,7 @@ public class SootParameters {
      boolean _ignoreWrongStaticness = false;
      String _seed = null;
      String _specialCSMethods = null;
+     public String extraSensitiveControls = "";
 
      public void setInputs(List<String> inputs) {
           this._inputs = inputs;

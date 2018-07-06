@@ -31,13 +31,11 @@ public class AndroidSupport extends BasicJavaSupport {
     private Set<String> appBroadcastReceivers = new HashSet<>();
     private Set<String> appCallbackMethods = new HashSet<>();
     private Set<PossibleLayoutControl> appUserControls = new HashSet<>();
-    private String extraSensitiveControls;
 
-    public AndroidSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider, String rOutDir, SootParameters sootParameters, String extraSensitiveControls) {
+    public AndroidSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider, String rOutDir, SootParameters sootParameters) {
         super(artifactToClassMap, propertyProvider);
         this.rOutDir = rOutDir;
         this.sootParameters = sootParameters;
-        this.extraSensitiveControls = extraSensitiveControls;
     }
 
     public SootMethod getDummyMain() {
@@ -113,7 +111,7 @@ public class AndroidSupport extends BasicJavaSupport {
             sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs));
 
             sootParameters.getInputs().subList(1, sootParameters.getInputs().size()).clear();
-            populateClassesInAppJar(sootParameters.getInputs(), sootParameters.getLibraries());
+            populateClassesInAppJar(sootParameters);
         }
     }
 
@@ -211,13 +209,13 @@ public class AndroidSupport extends BasicJavaSupport {
     // The extra sensitive controls are given as a String
     // "id1,type1,parentId1,id2,type2,parentId2,...".
     void writeExtraSensitiveControls(FactWriter writer) {
-        if (extraSensitiveControls.equals("")) {
+        if (sootParameters.extraSensitiveControls.equals("")) {
             return;
         }
-        String[] parts = extraSensitiveControls.split(",");
+        String[] parts = sootParameters.extraSensitiveControls.split(",");
         int partsLen = parts.length;
         if (partsLen % 3 != 0) {
-            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + extraSensitiveControls + "\"");
+            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + sootParameters.extraSensitiveControls + "\"");
             return;
         }
         for (int i = 0; i < partsLen; i += 3) {

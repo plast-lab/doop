@@ -34,12 +34,14 @@ public class Main {
 
     public static void main(String[] args) throws Throwable {
         SootParameters sootParameters = new SootParameters();
-        String extraSensitiveControls = "";
         try {
             if (args.length == 0) {
                 System.err.println("usage: [options] file...");
                 throw new DoopErrorCodeException(0);
             }
+
+            List<String> dependencies = new ArrayList<>();
+            List<String> platforms = new ArrayList<>();
 
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
@@ -70,15 +72,19 @@ public class Main {
                         i = shift(args, i);
                         sootParameters._inputs.add(args[i]);
                         break;
+                    case "-ld":
+                        i = shift(args, i);
+                        dependencies.add(args[i]);
+                        break;
                     case "-l":
                         i = shift(args, i);
-                        sootParameters._libraries.add(args[i]);
+                        platforms.add(args[i]);
                         break;
                     case "-lsystem":
                         String javaHome = System.getProperty("java.home");
-                        sootParameters._libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
-                        sootParameters._libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
-                        sootParameters._libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
+                        platforms.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
+                        platforms.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
+                        platforms.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
                         break;
                     case "--deps":
                         i = shift(args, i);
@@ -93,7 +99,7 @@ public class Main {
                         }
                         for (File file : Objects.requireNonNull(f.listFiles())) {
                             if (file.isFile() && file.getName().endsWith(".jar")) {
-                                sootParameters._libraries.add(file.getCanonicalPath());
+                                dependencies.add(file.getCanonicalPath());
                             }
                         }
                         break;
@@ -107,11 +113,9 @@ public class Main {
                     case "--run-flowdroid":
                         sootParameters._runFlowdroid = true;
                         break;
-                    case "--application-only-facts":
-                        sootParameters._applicationOnlyFacts = true;
-                        break;
-                    case "--library-only-facts":
-                        sootParameters._libraryOnlyFacts = true;
+                    case "--facts-subset":
+                        i = shift(args, i);
+                        sootParameters._factsSubSet = SootParameters.FactsSubSet.valueOf(args[i]);
                         break;
                     case "--generate-jimple":
                         sootParameters._generateJimple = true;
@@ -139,7 +143,7 @@ public class Main {
                         break;
                     case "--extra-sensitive-controls":
                         i = shift(args, i);
-                        extraSensitiveControls = args[i];
+                        sootParameters.extraSensitiveControls = args[i];
                         break;
                     case "--seed":
                         i = shift(args, i);
@@ -158,10 +162,11 @@ public class Main {
                         System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
                         System.err.println("  --full                                Generate facts by full transitive resolution");
                         System.err.println("  -d <directory>                        Specify where to generate csv fact files");
-                        System.err.println("  -l <archive>                          Find classes in jar/zip archive");
+                        System.err.println("  -l <archive>                          Find (library) classes in jar/zip archive");
+                        System.err.println("  -ld <archive>                         Find (dependency) classes in jar/zip archive");
                         System.err.println("  -lsystem                              Find classes in default system classes");
                         System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
-                        System.err.println("  --application-only-facts              Generate facts only for application classes");
+                        System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
                         System.err.println("  --library-only-facts                  Generate facts only for library classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
                         System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
@@ -190,7 +195,15 @@ public class Main {
                 }
             }
 
-            if(sootParameters._mode == null) {
+            if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
+                sootParameters._dependencies = dependencies;
+                sootParameters._libraries = platforms;
+            } else {
+                sootParameters._libraries = platforms;
+                sootParameters._libraries.addAll(dependencies);
+            }
+
+            if (sootParameters._mode == null) {
                 sootParameters._mode = SootParameters.Mode.INPUTS;
             }
 
@@ -210,7 +223,8 @@ public class Main {
             else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
                 sootParameters._outputDir = System.getProperty("user.dir");
             }
-            produceFacts(sootParameters, extraSensitiveControls);
+
+            produceFacts(sootParameters);
         }
         catch(DoopErrorCodeException errCode) {
             System.err.println("Exiting with code " + errCode.getErrorCode());
@@ -222,7 +236,7 @@ public class Main {
         }
     }
 
-    private static void produceFacts(SootParameters sootParameters, String extraSensitiveControls) throws Exception {
+    private static void produceFacts(SootParameters sootParameters) throws Exception {
         Options.v().set_output_dir(sootParameters._outputDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
 
@@ -252,13 +266,13 @@ public class Main {
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
-            AndroidSupport android = new AndroidSupport(artifactToClassMap, propertyProvider, rOutDir, sootParameters, extraSensitiveControls);
+            AndroidSupport android = new AndroidSupport(artifactToClassMap, propertyProvider, rOutDir, sootParameters);
             android.processInputs(sootParameters._androidJars, tmpDirs);
             java = android;
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
             java = new BasicJavaSupport(artifactToClassMap, propertyProvider);
-            java.populateClassesInAppJar(sootParameters._inputs, sootParameters._libraries);
+            java.populateClassesInAppJar(sootParameters);
         }
 
         Scene scene = Scene.v();
@@ -288,10 +302,13 @@ public class Main {
         if (sootParameters._allowPhantom)
             Options.v().set_allow_phantom_refs(true);
 
-        if (sootParameters._libraryOnlyFacts)
-            java.addLibClasses(classes, scene);
-        else
+        if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP)
             java.addAppClasses(classes, scene);
+        else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
+            java.addAppClasses(classes, scene);
+            java.addDepClasses(classes, scene);
+        } else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.PLATFORM)
+            java.addLibClasses(classes, scene);
 
         scene.loadNecessaryClasses();
 
@@ -305,7 +322,7 @@ public class Main {
 
         classes.stream().filter((klass) -> isApplicationClass(sootParameters, klass)).forEachOrdered(SootClass::setApplicationClass);
 
-        if (sootParameters._mode == SootParameters.Mode.FULL && !sootParameters._applicationOnlyFacts)
+        if (sootParameters._mode == SootParameters.Mode.FULL && sootParameters._factsSubSet == null)
             classes = new HashSet<>(scene.getClasses());
 
         try {

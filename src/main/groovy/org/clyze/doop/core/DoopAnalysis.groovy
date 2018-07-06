@@ -244,7 +244,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	}
 
 	private List<String> getDepsJars(Set<String> tmpDirs) {
-		def deps = libraryFiles.collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
+		def deps = libraryFiles.collect { File f -> ["-ld", f.toString()] }.flatten() as Collection<String>
 		return AARUtils.toJars(deps as List<String>, false, tmpDirs)
 	}
 
@@ -304,12 +304,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--ignoreWrongStaticness"]
 		}
 
-		if (options.X_APPLICATION_ONLY_FACTS.value) {
-			params += ["--application-only-facts"]
-		}
-
-		if (options.X_LIBRARY_ONLY_FACTS.value) {
-			params += ["--library-only-facts"]
+		if (options.X_FACTS_SUBSET.value) {
+			params += ["--facts-subset", options.X_FACTS_SUBSET.value.toString()]
 		}
 
 		if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {

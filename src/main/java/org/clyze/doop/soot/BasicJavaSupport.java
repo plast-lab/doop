@@ -21,12 +21,14 @@ public class BasicJavaSupport {
 
     protected Set<String> classesInApplicationJars;
     protected Set<String> classesInLibraryJars;
+    protected Set<String> classesInDependencyJars;
     private Map<String, Set<ArtifactEntry>> artifactToClassMap;
     private PropertyProvider propertyProvider;
 
     public BasicJavaSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider) {
         this.classesInApplicationJars = new HashSet<>();
         this.classesInLibraryJars = new HashSet<>();
+        this.classesInDependencyJars = new HashSet<>();
         this.artifactToClassMap = artifactToClassMap;
         this.propertyProvider = propertyProvider;
     }
@@ -34,24 +36,25 @@ public class BasicJavaSupport {
     /**
      * Helper method to read classes and property files from JAR/AAR files.
      *
-     * @param inputFilenames           the list of all input jar file names
-     * @param libraryFilenames         the list of all library file names
+     * @param sootParameters the list of all the given soot parameters
      *
      * @return the name of the JAR file that was processed; this is
      * either the original first parameter, or the locally saved
      * classes.jar found in the .aar file (if such a file was given)
      *
      */
-    public void populateClassesInAppJar(List<String> inputFilenames,
-                                        List<String> libraryFilenames) throws IOException {
-        for (String inputFilename : inputFilenames) {
-            System.out.println("Processing application JAR: " + inputFilename);
-            processJar(classesInApplicationJars, inputFilename);
+    public void populateClassesInAppJar(SootParameters sootParameters) throws IOException {
+        for (String filename : sootParameters._inputs) {
+            System.out.println("Processing application JAR: " + filename);
+            processJar(classesInApplicationJars, filename);
         }
-
-        for (String libraryFilename : libraryFilenames) {
-            System.out.println("Processing library JAR: " + libraryFilename);
-            processJar(classesInLibraryJars, libraryFilename);
+        for (String filename :  sootParameters._libraries) {
+            System.out.println("Processing library JAR: " + filename);
+            processJar(classesInLibraryJars, filename);
+        }
+        for (String filename :  sootParameters._dependencies) {
+            System.out.println("Processing dependency JAR: " + filename);
+            processJar(classesInDependencyJars, filename);
         }
     }
 
@@ -114,15 +117,18 @@ public class BasicJavaSupport {
     public void addAppClasses(Set<SootClass> classes, Scene scene) {
         addSootClasses(classesInApplicationJars, classes, scene);
         addBasicClasses(scene);
-
         System.out.println("Classes in input (application) jar(s): " + classesInApplicationJars.size());
     }
 
     public void addLibClasses(Set<SootClass> classes, Scene scene) {
         addSootClasses(classesInLibraryJars, classes, scene);
         addBasicClasses(scene);
-
         System.out.println("Classes in library jar(s): " + classesInLibraryJars.size());
+    }
+
+    public void addDepClasses(Set<SootClass> classes, Scene scene) {
+        addSootClasses(classesInDependencyJars, classes, scene);
+        System.out.println("Classes in dependency jar(s): " + classesInDependencyJars.size());
     }
 
     private static void addBasicClasses(Scene scene) {
