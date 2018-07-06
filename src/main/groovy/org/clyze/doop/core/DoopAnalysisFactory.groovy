@@ -64,11 +64,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 */
 	@Override
 	DoopAnalysis newAnalysis(AnalysisFamily family, Map<String, AnalysisOption> options) {
-		def context = new DefaultInputResolutionContext()
+		def context
+		def platformName = options.PLATFORM.value as String
+		if (platformName.contains("python"))
+			context = new DefaultInputResolutionContext(DefaultInputResolutionContext.PYTHON_RESOLVER)
+
+		else
+			context = new DefaultInputResolutionContext()
 		context.add(options.INPUTS.value as List<String>, InputType.INPUT)
 		context.add(options.LIBRARIES.value as List<String>, InputType.LIBRARY)
 
-		def platformName = options.PLATFORM.value as String
 		def platformFiles = new PlatformManager(options.PLATFORMS_LIB.value as String).find(platformName)
 		context.add(platformFiles, InputType.PLATFORM)
 
