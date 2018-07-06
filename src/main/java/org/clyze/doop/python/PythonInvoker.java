@@ -12,10 +12,7 @@ import org.clyze.doop.soot.DoopErrorCodeException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class PythonInvoker {
 
@@ -94,11 +91,11 @@ public class PythonInvoker {
     {
         PythonDatabase db = new PythonDatabase(new File(parameters._outputDir));
         PythonFactWriter factWriter = new PythonFactWriter(db);
-        //for(String inputFile: parameters._inputs) {
-            PythonIREngine pythonIREngine = new PythonIREngine(parameters._inputs);
-            //List<String> singleInputList= new ArrayList<>(1);
-            //singleInputList.add(inputFile);
-            //PythonIREngine pythonIREngine = new PythonIREngine(singleInputList);
+        for(String inputFile: parameters._inputs) {
+            //PythonIREngine pythonIREngine = new PythonIREngine(parameters._inputs);
+            List<String> singleInputList= new ArrayList<>(1);
+            singleInputList.add(inputFile);
+            PythonIREngine pythonIREngine = new PythonIREngine(singleInputList);
             pythonIREngine.buildAnalysisScope();
             IClassHierarchy cha = pythonIREngine.buildClassHierarchy();
 
@@ -125,7 +122,7 @@ public class PythonInvoker {
             }
             PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
             pythonFactGenerator.run();
-        //}
+        }
         db.close();
     }
 }
