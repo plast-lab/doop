@@ -898,7 +898,7 @@ DeadMethodWithJVMDescriptor(?jvmFullName) :-
   Method_SimpleName(?method, ?simplename),
   ?jvmFullName = cat("L", cat(?className, cat(";:", cat(?simplename, ?sig)))).
 
-#define FILENAME_EXPECTED_BY_REDEX_PASS "methods_to_remove.txt"
+#define FILENAME_EXPECTED_BY_REDEX_PASS "methods_to_remove.csv"
 .output DeadMethodWithJVMDescriptor(IO="file", filename=FILENAME_EXPECTED_BY_REDEX_PASS, delimiter="\t")
 
 
