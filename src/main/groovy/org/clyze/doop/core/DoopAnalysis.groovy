@@ -155,6 +155,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				runJPhantom()
 			}
 
+			def existingFactsDir = options.X_USE_EXISTING_FACTS.value as File
+			if (existingFactsDir) {
+				log.info "Expanding upon facts found in: $existingFactsDir.canonicalPath"
+				linkOrCopyFacts(existingFactsDir)
+			}
+
 			Set<String> tmpDirs = [] as Set
 			try {
 				if (options.PYTHON.value) runPython(tmpDirs)
@@ -410,9 +416,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		}
 		if (options.GENERATE_JIMPLE.value) {
 			params += ["--generate-ir"]
-		}
-		if (options.X_UNIQUE_FACTS.value) {
-			params += ["--uniqueFacts"]
 		}
 		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 		params = params + inputArgs + depArgs + ["-d", factsDir.toString()]

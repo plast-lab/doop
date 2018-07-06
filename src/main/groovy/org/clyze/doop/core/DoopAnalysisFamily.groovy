@@ -676,6 +676,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xunique-facts",
 					description: "Eliminate redundancy from .facts files.",
 			),
+			new AnalysisOption<String>(
+					id: "X_USE_EXISTING_FACTS",
+					name: "Xuse-existing-facts",
+					description: "Expand upon the facts found in the given directory.",
+					argName: "DIR",
+					argInputType: InputType.MISC
+			),
 			/* End non-standard flags */
 
 			/* TODO: deprecated or broken? */
