@@ -336,7 +336,7 @@ public class Main {
         Database db = new Database(new File(sootParameters._outputDir));
         FactWriter writer = new FactWriter(db);
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
-        Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple, sootParameters._cores);
+        Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
 
         writePreliminaryFacts(classes, propertyProvider, artifactToClassMap, writer);
         db.flush();
