@@ -104,14 +104,11 @@ public class PythonRepresentation {
 
 
     String signature(IField f) {
-        //return f.getReference().getSignature();
-        //return signature(f.getReference(), f.getReference().getDeclaringClass());
-        //String sourceFileName = f.getDeclaringClass().getSourceFileName();
-        //String sourceFolderName = sourceFileName.substring(0, sourceFileName.lastIndexOf("/") + 1);
-        String declaringClass = f.getDeclaringClass().getName().toString().replace("Lscript ","").replace(".py/",".py:");
-        String functionName = f.getDeclaringClass().getName().toString().substring(1).replaceFirst("script ","").replace("/",":");
+        String sourceFileName = f.getDeclaringClass().getSourceFileName();
+        String declaringClass = f.getDeclaringClass().getName().toString();
+        declaringClass = declaringClass.substring(declaringClass.indexOf(".py") + 4);
         String fieldName = f.getName().toString();
-        return "<" + declaringClass +  ":" + fieldName + ">";
+        return "<" + sourceFileName + ":" + declaringClass +  ":" + fieldName + ">";
     }
 
 
