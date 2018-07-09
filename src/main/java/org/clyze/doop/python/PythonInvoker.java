@@ -91,38 +91,52 @@ public class PythonInvoker {
     {
         PythonDatabase db = new PythonDatabase(new File(parameters._outputDir));
         PythonFactWriter factWriter = new PythonFactWriter(db);
+        int numOfFailures = 0;
+        int numOfEmptyCha = 0;
         for(String inputFile: parameters._inputs) {
-            //PythonIREngine pythonIREngine = new PythonIREngine(parameters._inputs);
-            List<String> singleInputList= new ArrayList<>(1);
-            singleInputList.add(inputFile);
-            PythonIREngine pythonIREngine = new PythonIREngine(singleInputList);
-            pythonIREngine.buildAnalysisScope();
-            IClassHierarchy cha = pythonIREngine.buildClassHierarchy();
+            try{
+                int numOfClassesInCha = 0;
+                //PythonIREngine pythonIREngine = new PythonIREngine(parameters._inputs);
+                List<String> singleInputList= new ArrayList<>(1);
+                singleInputList.add(inputFile);
+                PythonIREngine pythonIREngine = new PythonIREngine(singleInputList);
+                pythonIREngine.buildAnalysisScope();
+                IClassHierarchy cha = pythonIREngine.buildClassHierarchy();
 
-            IAnalysisCacheView cache = pythonIREngine.getAnalysisCache();
-            Iterator<IClass> classes = cha.iterator();
-            Set<IClass> classSet = new HashSet<>();
-            while (classes.hasNext()) {
-                IClass klass = classes.next();
-                classSet.add(klass);
-                String sourceFileName = "";
-                try {
-                    sourceFileName = klass.getSourceFileName();
-                } catch (NullPointerException ex) {
+                IAnalysisCacheView cache = pythonIREngine.getAnalysisCache();
+                Iterator<IClass> classes = cha.iterator();
+                Set<IClass> classSet = new HashSet<>();
+                while (classes.hasNext()) {
+                    numOfClassesInCha++;
+                    IClass klass = classes.next();
+                    classSet.add(klass);
+                    String sourceFileName = "";
+                    try {
+                        sourceFileName = klass.getSourceFileName();
+                    } catch (NullPointerException ex) {
 
+                    }
+                    //System.out.println("class: " + klass.toString() + " in file:" + sourceFileName);
+                    Collection<? extends IMethod> methods = klass.getDeclaredMethods();
+                    for (IMethod m : methods) {
+                        m.getName();
+                        //System.out.println("\t" + m.getSignature());
+                        IR ir = cache.getIR(m);
+                        //System.out.println(ir.toString());
+                    }
                 }
-                System.out.println("class: " + klass.toString() + " in file:" + sourceFileName);
-                Collection<? extends IMethod> methods = klass.getDeclaredMethods();
-                for (IMethod m : methods) {
-                    m.getName();
-                    System.out.println("\t" + m.getSignature());
-                    IR ir = cache.getIR(m);
-                    System.out.println(ir.toString());
-                }
+                PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
+                pythonFactGenerator.run();
+                if(numOfClassesInCha == 6)
+                    numOfEmptyCha++;
+            }catch (Throwable t){
+                t.printStackTrace();
+                numOfFailures++;
             }
-            PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
-            pythonFactGenerator.run();
         }
+        System.out.println("Failed for " + numOfFailures + " out of " + parameters._inputs.size() + " python script files.");
+        System.out.println("Empty Class Hierarchy for " + numOfEmptyCha + " out of " + parameters._inputs.size() + " python script files.");
+
         db.close();
     }
 }

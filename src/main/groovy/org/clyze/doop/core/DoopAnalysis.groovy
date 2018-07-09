@@ -428,6 +428,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				wala.main(params.toArray(new String[params.size()]))
 			}
 		} catch(walaError){
+			walaError.printStackTrace()
 			throw new RuntimeException("Wala fact generation Error: $walaError", walaError)
 		}
 		log.info "Wala fact generation time: ${sootTime}"
