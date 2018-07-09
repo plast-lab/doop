@@ -20,9 +20,7 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 	static final ChainResolver PYTHON_RESOLVER = new ChainResolver(
 			// The order matters
 			new FileResolver(),
-			new PythonDirectoryResolver(),
-			new URLResolver(),
-			IvyResolver.newInstance()
+			new PythonDirectoryResolver()
 	)
 
 	// The input resolver

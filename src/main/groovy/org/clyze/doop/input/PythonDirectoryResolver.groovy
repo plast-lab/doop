@@ -11,8 +11,15 @@ class PythonDirectoryResolver implements InputResolver {
         def dir = FileOps.findDirOrThrow(input, "Not a directory input: $input")
         //def filter = FileOps.extensionFilter("jar")
         def subDirs = new ArrayList<File>()
-        dir.eachDir {subDir -> subDirs.add(subDir)}
+        def q = [dir] as Queue
+        subDirs.add(dir)
+        while(!q.isEmpty()) {
+            File ddir = q.remove();
+            println"Trying for dir " + ddir
+            ddir.eachDir { subDir -> subDirs.add(subDir); q.add(subDir) }
+        }
+        println "Dirs " + subDirs
         //def filesInDir = dir.listFiles(filter).toList()
-        ctx.set(input, [dir] + subDirs.sort { it.toString() }, inputType)
+        ctx.set(input, subDirs.sort { it.toString() }, inputType)
     }
 }

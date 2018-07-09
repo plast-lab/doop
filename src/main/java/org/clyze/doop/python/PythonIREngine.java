@@ -16,6 +16,7 @@ import com.ibm.wala.ipa.cha.SeqClassHierarchyFactory;
 import com.ibm.wala.ssa.IRFactory;
 import com.ibm.wala.types.ClassLoaderReference;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -66,8 +67,30 @@ public class PythonIREngine {
                     System.err.println("Failed to create module for file " + absolutePath + "\nexception:" + ex);
                 }
             }
-            else
-                System.err.println("Unrecognised type of file " + file);
+            else{
+                File f = new File(file);
+                if(f.isDirectory()) {
+                    File[] listOfFiles = f.listFiles();
+
+                    for (int i = 0; i < listOfFiles.length; i++) {
+                        String absPath = listOfFiles[i].getAbsolutePath();
+                        Path absolutePath = Paths.get(absPath).normalize();
+                        if(absolutePath.toString().endsWith(".py")) {
+                            try {
+                                modules.add(new SourceURLModule(new URL("file://" + absolutePath)));
+                                System.out.println("Added file " + absolutePath);
+                            } catch (MalformedURLException ex) {
+                                System.err.println("Failed to create module for file " + absolutePath + "\nexception:" + ex);
+                            }
+                        }
+                        else{
+                            //Maybe do something with .c or .h files at some point
+                        }
+                    }
+                }
+                else
+                    System.err.println("Unrecognised type of file " + file);
+            }
         }
     }
 
