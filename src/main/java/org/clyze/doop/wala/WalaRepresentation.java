@@ -49,7 +49,7 @@ class WalaRepresentation {
         return "<class " + fixTypeString(c.getName().toString()) + ">";
     }
 
-    String classConstant(String className) {
+    static String classConstant(String className) {
         return "<class " + className + ">";
     }
 
@@ -354,8 +354,7 @@ class WalaRepresentation {
 
     }
 
-    String methodHandleConstant(String handleName) {
+    static String methodHandleConstant(String handleName) {
         return "<handle " + handleName + ">";
     }
-
 }

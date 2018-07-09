@@ -28,7 +28,7 @@ class Representation {
         return "<class " + c.getName() + ">";
     }
 
-    String classConstant(String className) {
+    static String classConstant(String className) {
         return "<class " + className + ">";
     }
 
@@ -266,7 +266,7 @@ class Representation {
         return getMethodSignature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
     }
 
-    String methodHandleConstant(String handleName) {
+    static String methodHandleConstant(String handleName) {
         return "<handle " + handleName + ">";
     }
 }
