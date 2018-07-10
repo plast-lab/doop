@@ -309,6 +309,8 @@ public class Main {
             java.addDepClasses(classes, scene);
         } else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.PLATFORM)
             java.addLibClasses(classes, scene);
+        else
+            java.addAppClasses(classes, scene);
 
         scene.loadNecessaryClasses();
 
