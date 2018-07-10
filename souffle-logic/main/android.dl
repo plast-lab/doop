@@ -890,8 +890,8 @@ ClassNameWithOnlySlashes(?className, ?classNameTransformed) :-
   ClassNameWithSlashes(?className, ?classNameTransformed),
   !contains(".", ?classNameTransformed).
 
-.decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol)
-DeadMethodWithJVMDescriptor(?jvmFullName) :-
+.decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol, ?method:symbol)
+DeadMethodWithJVMDescriptor(?jvmFullName, ?method) :-
   ClassOfDeadMethod(?method, ?class),
   ClassNameWithOnlySlashes(?class, ?className),
   Method_JVMDescriptor(?method, ?sig),
