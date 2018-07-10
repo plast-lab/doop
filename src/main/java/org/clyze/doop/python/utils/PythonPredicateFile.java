@@ -67,7 +67,9 @@ public enum PythonPredicateFile
     RETURN("Return"),
     RETURN_VOID("ReturnVoid"),
     BREAKPOINT_STMT("BreakpointStmt"),
-    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction");
+    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
+    EMPTY_CHA("EmptyCha"),
+    ERROR_OR_EXCEPTON("ErrorOrException");
 
     private final String name;
 

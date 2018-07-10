@@ -569,4 +569,9 @@ public class PythonFactWriter {
 
         return insn;
     }
+
+    void writeError(PythonPredicateFile predFile, String fileName, String... args)
+    {
+        _db.add(predFile, fileName, args);
+    }
 }

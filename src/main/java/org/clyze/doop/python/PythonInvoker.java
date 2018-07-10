@@ -8,6 +8,7 @@ import com.ibm.wala.ssa.IR;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.python.utils.PythonDatabase;
+import org.clyze.doop.python.utils.PythonPredicateFile;
 import org.clyze.doop.soot.DoopErrorCodeException;
 
 import java.io.File;
@@ -127,11 +128,15 @@ public class PythonInvoker {
                 }
                 PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
                 pythonFactGenerator.run();
-                if(numOfClassesInCha == 6)
+                if(numOfClassesInCha == 6) {
                     numOfEmptyCha++;
+                    factWriter.writeError(PythonPredicateFile.EMPTY_CHA, inputFile);
+                }
             }catch (Throwable t){
                 t.printStackTrace();
                 numOfFailures++;
+
+                factWriter.writeError(PythonPredicateFile.ERROR_OR_EXCEPTON, inputFile, t.toString());
             }
         }
         System.out.println("Failed for " + numOfFailures + " out of " + parameters._inputs.size() + " python script files.");
