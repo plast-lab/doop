@@ -160,9 +160,9 @@
 
 .decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)
 
-      SpecialContextSensitivityMethodConstraintViolated(?method) :-
-      SpecialContextSensitivityMethod(?method, _),
- !isMethod(?method).
+SpecialContextSensitivityMethodConstraintViolated(?method) :-
+  SpecialContextSensitivityMethod(?method, _),
+  !isMethod(?method).
 
 .printsize SpecialContextSensitivityMethodConstraintViolated
 }
