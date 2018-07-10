@@ -109,6 +109,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def paramTypeNames = paramTypes.collect { it.text }
 		def params = paramTypeNames.join(",")
 
+		def endline = ctx.methodBody() ? getLastToken(ctx.methodBody()).symbol.line : line
+
 		method = new Method(
 				position,
 				filename,
@@ -119,19 +121,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				null, //params, TODO
 				paramTypeNames as String[],
 				ctx.modifier().any() { hasToken(it, "static") },
-				0, //totalInvocations, missing?
-				0  //totalAllocations, missing?
-		)
-		method.isInterface = inInterface
-		method.isAbstract = ctx.modifier()?.any { it.text == "abstract" }
-		method.isNative = ctx.modifier()?.any { it.text == "native" }
-
-		def endline = ctx.methodBody() ? getLastToken(ctx.methodBody()).symbol.line : line
-		method.outerPosition = new Position(line, endline, 0, 0)
-		processor.call method
+				inInterface,
+				ctx.modifier()?.any { it.text == "abstract" },
+				ctx.modifier()?.any { it.text == "native" },
+				new Position(line, endline, 0, 0)
+		)		
 
 		heapCounters = [:].withDefault { 0 }
 		methodInvoCounters = [:].withDefault { 0 }
+		processor.call method
 
 		addTypeUsage(ctx.IDENTIFIER(0))
 		paramTypes.each { addTypeUsage it }
@@ -278,6 +276,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				methodName,
 				gDoopId, //doopId
 				method.doopId, //invokingMethodDoopId
+				false //inIIB
 		)
 	}
 
@@ -349,7 +348,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				null, //type, provided later
 				method.doopId, //declaringMethodDoopId
 				isLocal,
-				!isLocal
+				!isLocal,
+				false //inIIB
 		)
 
 		if (varTypes[v.doopId])
