@@ -67,13 +67,17 @@ public class PythonRepresentation {
         String[] classNameParts = cName.split("/");
         String declaringModule;
         //System.out.println(cName);
-        String className;
-        if(classNameParts.length == 2){
+        String className = "";
+        if(classNameParts.length >= 2){
             //declaringModule = classNameParts[0].replace("script ","");
             declaringModule = klass.getSourceFileName();
-            className = classNameParts[1];
+            for(int i=1; i < classNameParts.length; i++) {
+                className += classNameParts[i];
+                if(i!= classNameParts.length -1)
+                    className+=":";
+            }
         }
-        else{
+        else {
             declaringModule = "BUILTIN";
             className = classNameParts[0];
         }

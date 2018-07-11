@@ -3,6 +3,7 @@ package org.clyze.doop.python;
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.ir.ssa.*;
 import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
+import com.ibm.wala.cast.python.loader.PythonLoader;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.cast.python.types.PythonTypes;
 import com.ibm.wala.classLoader.IClass;
@@ -56,48 +57,31 @@ public class PythonFactGenerator implements Runnable{
             //System.out.println(cName);
             if(iClass instanceof CAstAbstractModuleLoader.CoreClass) {
                 String className;
-                if(classNameParts.length == 2){
-                    declaringModule = classNameParts[0].replace("script ","");
-                    className = classNameParts[1];
+                if(iClass instanceof PythonLoader.PythonClass) {
+                    if (classNameParts.length >= 2) {
+                        declaringModule = classNameParts[0].replace("script ", "");
+                        className = classNameParts[1];
+                    } else {
+                        throw new RuntimeException("BUILTING CLASS of PythonClass type? "+ classNameParts[0]);
+                    }
                 }
                 else{
                     declaringModule = "BUILTIN";
                     className = classNameParts[0];
                 }
-                System.out.println("Adding Class <" + declaringModule + ":" + className + ">");
-                if(defaultClasses.contains(className))
+                if(declaringModule.equals("BUILTIN") && defaultClasses.contains(className))
                     continue;
+
+                String clRepr = _writer.writeClassOrInterfaceType(iClass);
                 iClass.getAllFields().forEach(this::generate);
-                _writer.writeClassOrInterfaceType(iClass);
-//
-//            // the isInterface condition prevents Object as superclass of interface
-                if (iClass.getSuperclass() != null && !iClass.isInterface()) {
+                System.out.println("Adding Class <" + clRepr + ">");
+
+                if (iClass.getSuperclass() != null && !iClass.isInterface()) {//Currently all seem to have object as a superclass, something not working on WALA's part
                     _writer.writeDirectSuperclass(iClass, iClass.getSuperclass());
                     System.out.println("Class " + className +" extends " + iClass.getSuperclass().getName().toString().substring(1));
                 }
 
             }else if (iClass instanceof CAstAbstractModuleLoader.DynamicCodeBody) {
-
-//                declaringModule = classNameParts[0].replace("script ","");
-//                if(classNameParts.length >= 3){
-//                    String parClassName = "L" +classNameParts[0];
-//                    for(int i=1; i<classNameParts.length -1; i++)
-//                        parClassName += "/" + classNameParts[i];
-//                    TypeReference type = TypeReference.find(PythonTypes.pythonLoader, parClassName);
-//                    IClass decClass = iClass.getClassHierarchy().lookupClass(type);
-//                    if(decClass instanceof CAstAbstractModuleLoader.CoreClass){
-//                        String declaringClass = classNameParts[1];
-//                        String methodName = classNameParts[2];
-//                        System.out.println("Adding Method <" + declaringModule + ":" + declaringClass + ":" + methodName + ">");
-//                    }else{
-//                        String outerFunct = classNameParts[1];
-//                        String methodName = classNameParts[2];
-//                        System.out.println("Adding Inner Function <" + declaringModule + ":" + outerFunct + ":" + methodName + ">");
-//                    }
-//                }
-//                else{
-//                    System.out.println("Adding Function  <" + declaringModule + ":" +  classNameParts[classNameParts.length - 1] + ">");
-//                }
 
             }else{
                 System.out.println("Uknown type of Class " + cName + " object type: " + iClass.getClass().getName());
@@ -119,8 +103,8 @@ public class PythonFactGenerator implements Runnable{
     }
 
     private void generate(IField f) {
-        System.out.println("GENERATING FIELD!! "+f.getName());
-        _writer.writeField(f);
+        String fieldRepr = _writer.writeField(f);
+        System.out.println("Added Field: " + fieldRepr);
     }
 
     private void generate(IMethod m, Session session) {

@@ -89,17 +89,20 @@ public class PythonFactWriter {
             TypeReference type = TypeReference.find(PythonTypes.pythonLoader, parClassName);
             IClass decClass = m.getDeclaringClass().getClassHierarchy().lookupClass(type);
             if(decClass instanceof CAstAbstractModuleLoader.CoreClass){
-                String declaringClass = classNameParts[1];
-                String methodName = classNameParts[2];
-                System.out.println("Adding Method <" + declaringModule + ":" + declaringClass + ":" + methodName + ">");
+//                String declaringClass = classNameParts[1];
+//                String methodName = classNameParts[2];
+//                System.out.println("Adding Method <" + declaringModule + ":" + declaringClass + ":" + methodName + ">");
+                System.out.println("Adding Method " + result);
             }else{
-                String outerFunct = classNameParts[1];
-                String methodName = classNameParts[2];
-                System.out.println("Adding Inner Function <" + declaringModule + ":" + outerFunct + ":" + methodName + ">");
+//                String outerFunct = classNameParts[1];
+//                String methodName = classNameParts[2];
+//                System.out.println("Adding Inner Function <" + declaringModule + ":" + outerFunct + ":" + methodName + ">");
+                System.out.println("Adding Inner Function " + result);
             }
         }
         else{
-            System.out.println("Adding Function  <" + declaringModule + ":" +  classNameParts[classNameParts.length - 1] + ">");
+//            System.out.println("Adding Function  <" + declaringModule + ":" +  classNameParts[classNameParts.length - 1] + ">");
+            System.out.println("Adding Function " + result);
         }
 
         _db.add(STRING_RAW, result, result);
@@ -113,10 +116,11 @@ public class PythonFactWriter {
         return fieldId;
     }
 
-    void writeClassOrInterfaceType(IClass c) {
+    String writeClassOrInterfaceType(IClass c) {
         String classStr = _rep.classType(c);
         _db.add(CLASS_TYPE, classStr);
         _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
+        return classStr;
     }
 
 
