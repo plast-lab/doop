@@ -1,0 +1,69 @@
+.type NumConstant
+.decl isNumConstant(?n:NumConstant)
+
+.type Type
+.type PrimitiveType = Type
+.type ClassType = Type
+
+.decl isType(?t:Type)
+.decl isPrimitiveType(?t:PrimitiveType)
+.decl isClassType(?t:ClassType)
+
+// Inheritance and Subtyping
+
+.decl DirectSuperclass(?class:ClassType, ?superclass:ClassType)
+
+.decl Type_boolean(?t:PrimitiveType)
+.decl Type_int(?t:PrimitiveType)
+.decl Type_long(?t:PrimitiveType)
+.decl Type_float(?t:PrimitiveType)
+.decl Type_complex(?t:PrimitiveType)
+.decl Type_string(?t:PrimitiveType)
+
+//-----------------------------------------------------------------------------
+
+.type Field
+.decl isField(?field:Field)
+
+.decl Field_DeclaringType(?field:Field, ?declaringClass:ReferenceType)
+.decl Field_SimpleName(?field:Field, ?simpleName:symbol)
+
+//-----------------------------------------------------------------------------
+
+.type Method
+.decl isMethod(?m:Method)
+
+
+.decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
+.decl Method_SimpleName(?method:Method, ?simpleName:symbol)
+.decl Method_Arity(?method:Method, ?arity:number)
+
+.decl FormalParam(?index:number, ?method:Method, ?var:Var)
+
+.decl ThisVar(?method:Method, ?var:Var)
+
+//-----------------------------------------------------------------------------
+
+.type Var
+.decl isVar(v:Var)
+
+.decl Var_DeclaringMethod(?var:Var, ?method:Method)
+
+.decl ApplicationVar(?var:Var)
+
+
+//-----------------------------------------------------------------------------
+// [Heap Allocation]
+//-----------------------------------------------------------------------------
+
+.type HeapAllocation
+.type NormalHeap           = HeapAllocation
+.type StringConstant       = HeapAllocation
+
+.decl isHeapAllocation(?h:HeapAllocation)
+.decl isNormalHeap(?h:NormalHeap)
+.decl isStringConstant(?h:StringConstant)
+.decl isStringRaw(?id:symbol)
+
+.decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
+.decl OriginalHeapAllocation_Type(?heap:HeapAllocation, ?type:Type)

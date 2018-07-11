@@ -119,7 +119,6 @@ public class PythonFactWriter {
     String writeClassOrInterfaceType(IClass c) {
         String classStr = _rep.classType(c);
         _db.add(CLASS_TYPE, classStr);
-        _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
         return classStr;
     }
 
@@ -311,12 +310,12 @@ public class PythonFactWriter {
         _db.add(RETURN, insn, str(index), _rep.local(m, l), methodId);
     }
 
-    void writeReturnVoid(IMethod m, SSAInstruction instruction, Session session) {
+    void writeReturnNone(IMethod m, SSAInstruction instruction, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        _db.add(RETURN_VOID, insn, str(index), methodId);
+        _db.add(RETURN_NONE, insn, str(index), methodId);
     }
 
     // The return var of native methods is exceptional, in that it does not
@@ -389,10 +388,6 @@ public class PythonFactWriter {
         _db.add(THIS_VAR, methodId, thisVar);
         //_db.add(VAR_TYPE, thisVar, writeType(m.getReference().getDeclaringClass()));
         _db.add(VAR_DECLARING_METHOD, thisVar, methodId);
-    }
-
-    void writeMethodDeclaresException(IMethod m, TypeReference exception) {
-        _db.add(METHOD_DECL_EXCEPTION, writeType(exception), _rep.signature(m));
     }
 
     void writeFormalParam(IMethod m, IR ir, int paramIndex, int actualIndex) {

@@ -456,7 +456,7 @@ public class PythonFactGenerator implements Runnable{
     {
         if (instruction.returnsVoid()) {
             // Return void has no uses
-            _writer.writeReturnVoid(m, instruction, session);
+            _writer.writeReturnNone(m, instruction, session);
         }
         else {
             // Return something has a single use
