@@ -74,11 +74,6 @@ VarPointsTo(?hctxImmutable, ?proxyClassObj, ?ctx, ?ret) :-
    ReifiedClass(?proxyClass, ?proxyClassObj),
    ImmutableHContextFromContext(?ctx, ?hctxImmutable).
 
-// _OptVarPointsToForArray(?ctx, ?interfaces, ?hctx, ?interfacesValue) :-
-//    VarPointsTo(?hctx, ?arrayObj, ?ctx, ?arrayVar),
-//    Value_Heap[?arrayObj] = ?arrayHeap,
-//    ArrayType(HeapAllocation_Type[?arrayHeap]).
-
 // Create a new heap allocation per
 // (newProxyInstance call, interface type) pair.
 //// REVIEW_ ideally these should be allocated context sensitively, i.e.,
