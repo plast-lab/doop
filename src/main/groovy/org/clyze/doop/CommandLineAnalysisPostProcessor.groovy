@@ -2,6 +2,7 @@ package org.clyze.doop
 
 import groovy.util.logging.Log4j
 import org.apache.commons.io.FilenameUtils
+import org.apache.commons.io.FileUtils
 import org.clyze.analysis.AnalysisPostProcessor
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
@@ -80,12 +81,14 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
 		def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
 		humanDatabase.mkdirs()
-		if (humanDatabase.exists()) humanDatabase.delete()
+		if (humanDatabase.exists()) {
+			FileUtils.deleteDirectory(humanDatabase)
+		}
 		log.info "Making database available at $humanDatabase"
 		Files.createSymbolicLink(humanDatabase.toPath(), analysis.database.toPath())
 
 		def lastAnalysis = new File("${Doop.doopHome}/last-analysis")
-		if (lastAnalysis.exists()) lastAnalysis.delete()
+		Files.deleteIfExists(lastAnalysis.toPath())
 		log.info "Making database available at $lastAnalysis"
 		Files.createSymbolicLink(lastAnalysis.toPath(), analysis.database.toPath())
 
