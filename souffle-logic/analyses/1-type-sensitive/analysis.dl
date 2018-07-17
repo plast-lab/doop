@@ -5,6 +5,7 @@
 
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
+#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
 
 .comp OneTypeSensitiveConfiguration : AbstractConfiguration {
 
