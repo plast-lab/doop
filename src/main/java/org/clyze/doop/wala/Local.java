@@ -9,11 +9,11 @@ public class Local {
     String value;
     int varIndex;
 
-    Local(String name, int varIndex, TypeReference type) {
+    public Local(String name, int varIndex, TypeReference type) {
         this(name, varIndex, null, type);
     }
 
-    Local(String name, int varIndex, String sourceCodeName, TypeReference type) {
+    public Local(String name, int varIndex, String sourceCodeName, TypeReference type) {
         this.name = name;
         this.sourceCodeName = sourceCodeName;
         this.type = type;
@@ -37,12 +37,12 @@ public class Local {
         this.varIndex = varIndex;
     }
 
-    void setValue(String _value)
+    public void setValue(String _value)
     {
         value = _value;
     }
 
-    String getValue()
+    public String getValue()
     {
         return value;
     }
@@ -54,4 +54,13 @@ public class Local {
     public String getName() {
         return name;
     }
+
+    public String getSourceName() {
+        return sourceCodeName;
+    }
+
+    public void setSourceName(String sourceName){
+        sourceCodeName = sourceName;
+    }
+
 }

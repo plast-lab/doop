@@ -1,9 +1,6 @@
 package org.clyze.doop.soot.android;
 
-import org.clyze.doop.soot.FactWriter;
-import org.clyze.doop.soot.Main;
-import org.clyze.doop.soot.PropertyProvider;
-import org.clyze.doop.soot.SootParameters;
+import org.clyze.doop.soot.*;
 import org.clyze.utils.AARUtils;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import soot.Scene;
@@ -19,10 +16,10 @@ import java.io.IOException;
 import java.util.*;
 
 import static org.clyze.doop.soot.android.AndroidManifest.getAndroidManifest;
-import static soot.dexpler.DexFileProvider.*;
+import static soot.dexpler.DexFileProvider.DexContainer;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
-public class AndroidSupport {
+public class AndroidSupport extends BasicJavaSupport {
 
     private String rOutDir;
     private SootParameters sootParameters;
@@ -34,19 +31,18 @@ public class AndroidSupport {
     private Set<String> appBroadcastReceivers = new HashSet<>();
     private Set<String> appCallbackMethods = new HashSet<>();
     private Set<PossibleLayoutControl> appUserControls = new HashSet<>();
-    private String extraSensitiveControls;
 
-    public AndroidSupport(String rOutDir, SootParameters sootParameters, String extraSensitiveControls) {
+    public AndroidSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider, String rOutDir, SootParameters sootParameters) {
+        super(artifactToClassMap, propertyProvider);
         this.rOutDir = rOutDir;
         this.sootParameters = sootParameters;
-        this.extraSensitiveControls = extraSensitiveControls;
     }
 
     public SootMethod getDummyMain() {
         return dummyMain;
     }
 
-    public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, Map<String, Set<String>> classToArtifactMap, String androidJars, Set<String> tmpDirs) throws Exception {
+    public void processInputs(String androidJars, Set<String> tmpDirs) throws Exception {
         if (sootParameters.getRunFlowdroid()) {
             String appInput = sootParameters.getInputs().get(0);
             SetupApplication app = new SetupApplication(androidJars, appInput);
@@ -115,7 +111,7 @@ public class AndroidSupport {
             sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs));
 
             sootParameters.getInputs().subList(1, sootParameters.getInputs().size()).clear();
-            Main.populateClassesInAppJar(sootParameters.getInputs(), sootParameters.getLibraries(), classesInApplicationJar, classToArtifactMap, propertyProvider);
+            populateClassesInAppJar(sootParameters);
         }
     }
 
@@ -129,20 +125,24 @@ public class AndroidSupport {
         System.out.println("possible layout controls: " + appUserControls.size());
     }
 
-    public void addClasses(Set<String> classesInApplicationJar, Set<SootClass> classes, Scene scene) {
+    @Override
+    public void addAppClasses(Set<SootClass> classes, Scene scene) {
         for (String appInput : sootParameters.getInputs()) {
             if (appInput.endsWith(".apk")) {
                 File apk = new File(appInput);
                 System.out.println("Android mode, APK = " + appInput);
+                String artifact = apk.getName();
                 try {
                     List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
                     Set<Object> allDexClasses = new HashSet<>();
                     for (DexContainer dexContainer : listContainers) {
-                        allDexClasses.addAll(dexContainer.getBase().getClasses());
-                        for (Object dexBackedClassDef : allDexClasses) {
-                            String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor(((DexBackedClassDef) dexBackedClassDef).getType()).getEscapedName();
+                        Set<? extends DexBackedClassDef> dexClasses = dexContainer.getBase().getClasses();
+                        allDexClasses.addAll(dexClasses);
+                        for (DexBackedClassDef dexBackedClassDef : dexClasses) {
+                            String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor((dexBackedClassDef).getType()).getEscapedName();
                             SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
                             classes.add(c);
+                            registerArtifactClass(artifact, escapeClassName, dexContainer.getDexName());
                         }
                     }
                     System.out.println("Classes found in apk: " + allDexClasses.size());
@@ -156,7 +156,7 @@ public class AndroidSupport {
                 // are not ideal for analysis in Android, as they
                 // don't contain AndroidManifest.xml.
                 System.out.println("Android mode, input = " + appInput);
-                Main.addClasses(classesInApplicationJar, classes, scene);
+                addSootClasses(classesInApplicationJars, classes, scene);
             }
         }
     }
@@ -209,13 +209,13 @@ public class AndroidSupport {
     // The extra sensitive controls are given as a String
     // "id1,type1,parentId1,id2,type2,parentId2,...".
     void writeExtraSensitiveControls(FactWriter writer) {
-        if (extraSensitiveControls.equals("")) {
+        if (sootParameters.extraSensitiveControls.equals("")) {
             return;
         }
-        String[] parts = extraSensitiveControls.split(",");
+        String[] parts = sootParameters.extraSensitiveControls.split(",");
         int partsLen = parts.length;
         if (partsLen % 3 != 0) {
-            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + extraSensitiveControls + "\"");
+            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + sootParameters.extraSensitiveControls + "\"");
             return;
         }
         for (int i = 0; i < partsLen; i += 3) {

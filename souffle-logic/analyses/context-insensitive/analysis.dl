@@ -57,7 +57,7 @@
     ?hctx = UNIQUE_HCONTEXT,
     InitHContextRequest(?s).
 
-  #ifdef HEAPDL
+  #ifdef HEAPDLS
     DynamicContextToHContext(?hctx, ?dynCtx) :-
       isDynamicContext(?dynCtx),
       isImmutableHContext(?hctx).

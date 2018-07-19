@@ -1,21 +1,25 @@
 package org.clyze.doop.input
 
+import groovy.transform.TupleConstructor
 import org.clyze.analysis.InputType
 import org.clyze.utils.FileOps
 
 /**
  * Resolves the input as a local file.
  */
+@TupleConstructor
 class FileResolver implements InputResolver {
 
-    @Override
-    String name() {
-        return "file"
-    }
+	File dir
 
-    @Override
-    void resolve(String input, InputResolutionContext ctx, InputType inputType) {
-        def file = FileOps.findFileOrThrow(input, "Not a file input: $input")
-        ctx.set(input, file, inputType)
-    }
+	String name() { "file (${dir?.absolutePath})" }
+
+	void resolve(String input, InputResolutionContext ctx, InputType inputType) {
+		if (dir && input.contains(".."))
+			throw new RuntimeException("Not a valid file: $input")
+
+		def inputFile = dir ? new File(dir, input) : new File(input)
+		def file = FileOps.findFileOrThrow(inputFile, "Not a file input: $inputFile.name")
+		ctx.set(input, file, inputType)
+	}
 }

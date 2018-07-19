@@ -1,0 +1,312 @@
+.type NumConstant
+.decl isNumConstant(?n:NumConstant)
+
+.type Type
+.type PrimitiveType = Type
+.type ClassType = Type
+
+.decl isType(?t:Type)
+.decl isPrimitiveType(?t:PrimitiveType)
+.decl isClassType(?t:ClassType)
+
+.decl ApplicationClass(?ref:ClassType)
+
+// Inheritance and Subtyping
+
+.decl DirectSuperclass(?class:ClassType, ?superclass:ClassType)
+
+.decl Type_boolean(?t:PrimitiveType)
+.decl Type_int(?t:PrimitiveType)
+.decl Type_long(?t:PrimitiveType)
+.decl Type_float(?t:PrimitiveType)
+.decl Type_complex(?t:PrimitiveType)
+.decl Type_string(?t:PrimitiveType)
+.decl Type_none(?t:PrimitiveType)
+
+//-----------------------------------------------------------------------------
+
+.type Field
+.decl isField(?field:Field)
+
+.decl Field_DeclaringType(?field:Field, ?declaringClass:ClassType)
+.decl Field_SimpleName(?field:Field, ?simpleName:symbol)
+
+//-----------------------------------------------------------------------------
+
+.type Method
+.decl isMethod(?m:Method)
+
+
+.decl Method_DeclaringType(?method:Method, ?declaringType:ClassType)
+.decl Method_SimpleName(?method:Method, ?simpleName:symbol)
+.decl Method_Arity(?method:Method, ?arity:number)
+
+.decl FormalParam(?index:number, ?method:Method, ?var:Var)
+
+.decl ThisVar(?method:Method, ?var:Var)
+
+//-----------------------------------------------------------------------------
+
+.type Var
+.decl isVar(v:Var)
+
+.decl Var_DeclaringMethod(?var:Var, ?method:Method)
+
+.decl ApplicationVar(?var:Var)
+
+
+//-----------------------------------------------------------------------------
+// [Heap Allocation]
+//-----------------------------------------------------------------------------
+
+.type HeapAllocation
+.type NormalHeap           = HeapAllocation
+.type StringConstant       = HeapAllocation
+
+.decl isHeapAllocation(?h:HeapAllocation)
+.decl isNormalHeap(?h:NormalHeap)
+.decl isStringConstant(?h:StringConstant)
+.decl isStringRaw(?id:symbol)
+
+.decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
+.decl OriginalHeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
+
+//-----------------------------------------------------------------------------
+// [IR Instructions]
+//-----------------------------------------------------------------------------
+
+.type Instruction
+.decl isInstruction(?insn:Instruction)
+
+.decl Instruction_Index(?insn:Instruction, ?index:number)
+.decl Instruction_Line(?insn:Instruction, ?index:number)
+.decl Instruction_Method(?insn:Instruction, ?inMethod:Method)
+
+.type Throw_Insn                      = Instruction
+.type Goto_Insn                       = Instruction
+.type If_Insn                         = Instruction
+.type FieldInstruction                = Instruction
+.type LoadInstanceField_Insn          = FieldInstruction
+.type StoreInstanceField_Insn         = FieldInstruction
+
+.decl isThrow_Insn(?insn:Throw_Insn)
+.decl isGoto_Insn(?insn:Goto_Insn)
+.decl isIf_Insn(?insn:If_Insn)
+.decl isFieldInstruction(?insn:FieldInstruction)
+.decl isLoadInstanceField_Insn(?insn:LoadInstanceField_Insn)
+.decl isStoreInstanceField_Insn(?insn:StoreInstanceField_Insn)
+
+.type AssignInstruction               = Instruction
+.type AssignOper_Insn                 = AssignInstruction
+.type AssignBinop_Insn                = AssignOper_Insn
+.type AssignUnop_Insn                 = AssignOper_Insn
+.type AssignLocal_Insn                = AssignOper_Insn
+.type AssignNumConstant_Insn          = AssignInstruction
+.type AssignHeapAllocation_Insn       = AssignInstruction
+.type ReturnInstruction               = Instruction
+.type ReturnNone_Insn                 = ReturnInstruction
+.type ReturnNonNone_Insn              = ReturnInstruction
+
+.decl isAssignInstruction(?insn:AssignInstruction)
+.decl isAssignOper_Insn(?insn:AssignOper_Insn)
+.decl isAssignBinop_Insn(?insn:AssignBinop_Insn)
+.decl isAssignUnop_Insn(?insn:AssignUnop_Insn)
+.decl isAssignLocal_Insn(?insn:AssignLocal_Insn)
+.decl isAssignNumConstant_Insn(?insn:AssignNumConstant_Insn)
+.decl isAssignHeapAllocation_Insn(?insn:AssignHeapAllocation_Insn)
+.decl isReturnInstruction(?insn:ReturnInstruction)
+.decl isReturnNone_Insn(?insn:ReturnNone_Insn)
+.decl isReturnNonNone_Insn(?insn:ReturnNonNone_Insn)
+
+.type MethodInvocation                = Instruction
+.type VirtualMethodInvocation_Insn    = MethodInvocation
+.type StaticMethodInvocation_Insn     = MethodInvocation
+
+.decl isMethodInvocation(?insn:MethodInvocation)
+.decl isVirtualMethodInvocation_Insn(?insn:VirtualMethodInvocation_Insn)
+.decl isStaticMethodInvocation_Insn(?insn:StaticMethodInvocation_Insn)
+
+.type UnsupportedInstruction          = Instruction
+.type OpaqueInstruction               = Instruction
+
+.decl isUnsupportedInstruction(?insn:UnsupportedInstruction)
+.decl isOpaqueInstruction(?insn:OpaqueInstruction)
+
+//-----------------------------------------------------------------------------
+
+.decl If_Var(?insn:If_Insn, ?var:Var)
+.decl Throw_Var(?insn:Throw_Insn, ?var:Var)
+.decl Goto_Target(?insn:Goto_Insn, ?index:number)
+.decl If_Target(?insn:If_Insn, ?index:number)
+
+
+//-----------------------------------------------------------------------------
+// [Field Instructions]
+//-----------------------------------------------------------------------------
+
+// The associated *field* of this instruction. It applies to
+// all types of field instuctions.
+
+.decl FieldInstruction_SimpleName(?insn:FieldInstruction, ?sign:symbol)
+
+//------------------------------------------------
+// A LoadInstanceField instruction has the form:
+// x = y.f
+//
+// Its three components are:
+//   1. Base (y)
+//   2. Field (f)
+//   3. To (x)
+//------------------------------------------------
+
+.decl LoadInstanceField_Base(?insn:LoadInstanceField_Insn, ?var:Var)
+.decl LoadInstanceField_To(?insn:LoadInstanceField_Insn, ?var:Var)
+
+//------------------------------------------------
+// A StoreInstanceField instruction has the form:
+// x.f = y
+//
+// Its three components are:
+//   1. Base (x)
+//   2. Field (f)
+//   3. From (y)
+//------------------------------------------------
+
+.decl StoreInstanceField_From(?insn:StoreInstanceField_Insn, ?var:Var)
+.decl StoreInstanceField_Base(?insn:StoreInstanceField_Insn, ?var:Var)
+
+
+//-----------------------------------------------------------------------------
+// [Assign Instructions]
+//-----------------------------------------------------------------------------
+
+// The target of all assignment instructions
+.decl AssignInstruction_To(?insn:AssignInstruction, ?to:Var)
+
+// Assign numeric constant instruction
+.decl AssignNumConstant_Id(?insn:AssignNumConstant_Insn, ?const:NumConstant)
+
+// Assign local instruction
+.decl AssignLocal_From(?insn:AssignLocal_Insn, ?from:Var)
+
+// Assign expression vars
+.decl AssignOper_From(?insn:AssignOper_Insn, ?from:Var)
+
+// Assign Heap Allocation
+.decl AssignHeapAllocation_Heap(?insn:AssignHeapAllocation_Insn, ?heap:HeapAllocation)
+
+
+//-----------------------------------------------------------------------------
+// [Return Instructions]
+//-----------------------------------------------------------------------------
+
+.decl ReturnNonNone_Var(?return:ReturnNonNone_Insn, ?var:Var)
+
+
+//-----------------------------------------------------------------------------
+// [Invocation Instructions]
+//-----------------------------------------------------------------------------
+
+// The line number of a method invocation
+.decl MethodInvocation_Line(?invocation:MethodInvocation, ?line:number)
+
+.decl ApplicationMethod(?method:Method)
+.output ApplicationMethod
+
+// The (call-site) variable that holds the result of the invocation
+.decl AssignReturnValue(?invocation:MethodInvocation, ?to:Var)
+
+// The actual parameters of the invocation. Note: this does not
+// contain the receiver object (see MethodInvocation:Base predicates).
+.decl ActualPositionalParam(?index:number, ?invocation:MethodInvocation, ?var:Var)
+.decl ActualKeywordParam(?keyword:symbol, ?invocation:MethodInvocation, ?var:Var)
+
+.decl MethodInvocation_Base(?invocation:MethodInvocation, ?base:Var)
+
+// Virtual Method Invocation
+.decl VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
+.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
+
+//-----------------------------------------------------------------------------
+// [Exception Handlers]
+//-----------------------------------------------------------------------------
+
+.type ExceptionHandler
+.decl isExceptionHandler(?handler:ExceptionHandler)
+
+.decl ExceptionHandler_Method(?handler:ExceptionHandler, ?inmethod:Method)
+
+// Instruction index of handling code
+.decl ExceptionHandler_Index(?handler:ExceptionHandler, ?index:number)
+.decl ExceptionHandler_Type(?handler:ExceptionHandler, ?type:Type)
+
+// Variable to which caught exceptions are assigned
+.decl ExceptionHandler_FormalParam(?handler:ExceptionHandler, ?var:Var)
+
+// First index of the bytecodes covered by this handler
+.decl ExceptionHandler_Begin(?handler:ExceptionHandler, ?index:number)
+
+// Last index (excluding this index) of the bytecodes covered by this
+// handler
+.decl ExceptionHandler_End(?handler:ExceptionHandler, ?index:number)
+
+// Previous exception handler (handlers are ordered inside a method)
+.decl ExceptionHandler_Previous(?handler:ExceptionHandler, ?previous:ExceptionHandler)
+
+
+//-----------------------------------------------------------------------------
+// [Miscellaneous]
+//-----------------------------------------------------------------------------
+
+// Return variables of native methods (no instructions exist)
+.decl NativeReturnVar(?var:Var, ?method:Method)
+
+#ifndef X_STATS_NONE
+// Predicate to store analysis statistics
+.decl Stats_Metrics(order:symbol, msg:symbol, c:number)
+#endif
+
+
+//-----------------------------------------------------------------------------
+// [Flow-insensitive Schema Layer]
+//
+// The following section contains a slightly modified schema that hides the
+// underlying instruction entities, which are irrelevant to flow-insensitive
+// analyses.
+//
+// The basic pattern is that, for each instruction entity, we introduce another
+// predicate that joins all of its properties (encoded as functional
+// predicates) but does not contain the instruction itself.
+//
+// Note that this pattern applies only to a subset of instructions that is
+// important for flow-insensitive analysis.
+//-----------------------------------------------------------------------------
+
+.decl Throw(?insn:Throw_Insn, ?var:Var)
+
+.decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method)
+
+.decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inmethod:Method)
+
+.decl LoadStaticField(?sig:Field, ?to:Var, ?inmethod:Method)
+
+.decl StoreStaticField(?from:Var, ?signature:Field, ?inmethod:Method)
+
+.decl LoadArrayIndex(?base:Var, ?to:Var, ?inmethod:Method)
+
+.decl StoreArrayIndex(?from:Var, ?base:Var, ?inmethod:Method)
+
+.decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method)
+
+.decl AssignLocal(?from:Var, ?to:Var, ?inmethod:Method)
+
+.decl AssignNull(?to:Var, ?inmethod:Method)
+
+.decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method)
+
+// Note: a Jimple method can have multiple return variables
+.decl ReturnVar(?var:Var, ?method:Method)
+
+.decl VirtualMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
+
+.decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)

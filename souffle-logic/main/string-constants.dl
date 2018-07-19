@@ -71,12 +71,12 @@ AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) :-
 HeapIsMergedString(?heap) :-
   HeapRepresentative("<<string-constant>>", ?heap).
 // Rule split in two since it needs to be stratified differently
+.decl HeapIsMergedStringFactory(?heap:HeapAllocation)
+
 #ifndef NO_MERGES
 HeapAllocation_Merge(?heap, ?heapRepr) :-
   ?heapRepr = "<<string-constant>>",
   HeapRepresentative(?heapRepr, ?heap).
-
-.decl HeapIsMergedStringFactory(?heap:HeapAllocation)
 
 HeapIsMergedStringFactory(?heap) :-
   HeapRepresentative("<<string-buffer>>", ?heap);
@@ -86,6 +86,10 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
   (?heapRepr = "<<string-buffer>>",
    HeapRepresentative(?heapRepr, ?heap));
   (?heapRepr = "<<string-builder>>",
+   HeapRepresentative(?heapRepr, ?heap));
+  (?heapRepr = "<<pystring-object>>",
+   HeapRepresentative(?heapRepr, ?heap));
+  (?heapRepr = "<<class-metaobject>>",
    HeapRepresentative(?heapRepr, ?heap)).
 
 .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
@@ -120,6 +124,11 @@ HeapRepresentative(?constant, ?heap) :-
   ?constant = "<<string-constant>>",
   isHeapAllocation(?constant),
   !HeapAllocation_Keep(?heap).
+
+// HeapRepresentative("<<class-metaobject>>", ?heap) :-
+//   HeapAllocation_Type(?heap, "java.lang.Class"),
+//   !HeapAllocation_Keep(?heap).
+
 #endif
 #endif
 #endif // distinguish-no-string-constants mode
@@ -874,6 +883,10 @@ HeapRepresentative("<<string-buffer>>", ?heap) :-
 HeapRepresentative("<<string-builder>>", ?heap) :-
   HeapAllocation_Type(?heap, "java.lang.StringBuilder"),
   !HeapAllocation_Keep(?heap).
+
+HeapRepresentative("<<pystring-object>>", ?heap) :-
+  HeapAllocation_Type(?heap, "org.python.core.PyString"),
+  !HeapAllocation_Keep(?heap).
 #endif
 #endif
 #endif
@@ -1015,3 +1028,48 @@ ReflectionStringConstant("char").
 ReflectionStringConstant("long").
 ReflectionStringConstant("short").
 ReflectionStringConstant("void").
+
+
+/*************************************************************
+ * Suffix helper relations
+ *
+ * Needed for precise handling of Class.getPrimitiveClass().
+ *************************************************************/
+
+// Very silly we have to do this.
+.decl _StringIterationTrick(?pos:number)
+_StringIterationTrick(0).
+_StringIterationTrick(?pos + 1) :- _StringIterationTrick(?pos), ?pos < 256.
+
+.decl RelevantSuffixPosition(?typeName: symbol, ?pos:number)
+RelevantSuffixPosition(?typeName, ?pos) :-
+  isType(?typeName),
+  _StringIterationTrick(?pos), ?pos < strlen(?typeName).
+
+.decl Suffix(?type:Type, ?suffix:symbol, ?suffixLen:number)
+.output Suffix
+
+Suffix(?type, ?suffix, ?suffixLen) :-
+  RelevantSuffixPosition(?type, ?pos),
+  substr(?type, ?pos, 1) = ".",
+  ?suffixLen = strlen(?type) - ?pos - 1,
+  ?suffix = substr(?type, ?pos + 1, ?suffixLen).
+
+Suffix(?type, ?type, ?suffixLen) :-
+  isType(?type),
+  ?suffixLen = strlen(?type).
+
+.decl MinimalSuffixLen(?type:Type, ?suffixLen:number)
+.output MinimalSuffixLen
+
+MinimalSuffixLen(?type, ?suffixLen) :-
+  isType(?type),
+  ?suffixLen = min ?len : Suffix(?type, _, ?len).
+
+// Computes the suffix after the last dot of a type name.
+.decl MinimalSuffix(?type:Type, ?suffix:symbol)
+.output MinimalSuffix
+
+MinimalSuffix(?type, ?suffix) :-
+  MinimalSuffixLen(?type, ?suffixLen),
+  Suffix(?type, ?suffix, ?suffixLen).

@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 class Representation {
     private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
     private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
-    private List<String> jimpleKeywordList = Jimple.jimpleKeywordList();
+    private static List<String> jimpleKeywordList = Jimple.jimpleKeywordList();
     private Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
@@ -28,12 +28,16 @@ class Representation {
         return "<class " + c.getName() + ">";
     }
 
-    String classConstant(String className) {
+    static String classConstant(String className) {
         return "<class " + className + ">";
     }
 
     String classConstant(Type t) {
         return "<class " + t + ">";
+    }
+
+    String methodTypeConstant(String s) {
+        return s;
     }
 
     String signature(SootMethod m) {
@@ -55,37 +59,36 @@ class Representation {
     String simpleName(SootMethod m) {
         String result = methodNames.get(m);
         if (result == null) {
-            result = m.getName();
-            // Fix simple name if it is a special Jimple keyword.
-            if (!result.startsWith("'") && jimpleKeywordList.contains(result)) {
-                result = "'" + result + "'";
-                methodNames.put(m, result);
-            }
+            result = escapeSimpleName(m.getName());
+            methodNames.put(m, result);
         }
         return result;
+    }
+
+    // Fix simple name if it is a special Jimple keyword.
+    private static String escapeSimpleName(String n) {
+        boolean escape = (!n.startsWith("'") && jimpleKeywordList.contains(n));
+        return escape ? "'"+n+"'" : n;
+    }
+
+    private String simpleName(SootMethodRef m) {
+        return escapeSimpleName(m.name());
     }
 
     String simpleName(SootField m) {
         return m.getName();
     }
 
-    String descriptor(SootMethod m)
-    {
+    String params(SootMethod m) {
         StringBuilder builder = new StringBuilder();
-
-        builder.append(m.getReturnType().toString());
+        int count = m.getParameterCount();
         builder.append("(");
-        for(int i = 0; i < m.getParameterCount(); i++)
-        {
+        for(int i = 0; i < count; i++) {
             builder.append(m.getParameterType(i));
-
-            if(i != m.getParameterCount() - 1)
-            {
+            if (i != count - 1)
                 builder.append(",");
-            }
         }
         builder.append(")");
-
         return builder.toString();
     }
 
@@ -187,22 +190,22 @@ class Representation {
         return getMethodSignature(inMethod) + "/" + getKind(stmt) + "/instruction" + index;
     }
 
-    String invoke(SootMethod inMethod, InvokeExpr expr, Session session)
-    {
-        SootMethod exprMethod = expr.getMethod();
-        String defaultMid = exprMethod.getDeclaringClass() + "." + simpleName(exprMethod);
-        String midPart = (expr instanceof DynamicInvokeExpr)?
-            dynamicInvokeMiddlePart((DynamicInvokeExpr)expr, defaultMid) : defaultMid;
-
+    String invoke(SootMethod inMethod, InvokeExpr expr, Session session) {
+        String midPart = (expr instanceof DynamicInvokeExpr) ?
+            dynamicInvokeIdMiddle((DynamicInvokeExpr)expr) : invokeIdMiddle(expr);
         return getMethodSignature(inMethod) +
                "/" + midPart + "/" + session.nextNumber(midPart);
+    }
+
+    private String invokeIdMiddle(InvokeExpr expr) {
+        SootMethodRef exprMethodRef = expr.getMethodRef();
+        return exprMethodRef.declaringClass() + "." + simpleName(exprMethodRef);
     }
 
     // Create a middle part for invokedynamic ids. It currently
     // supports the LambdaMetafactory machinery, returning a default
     // value for other (or missing) bootstrap methods.
-    private String dynamicInvokeMiddlePart(DynamicInvokeExpr expr, String defaultResult) {
-
+    private String dynamicInvokeIdMiddle(DynamicInvokeExpr expr) {
         // The signatures of the two lambda metafactories we currently support.
         final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
         final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
@@ -228,7 +231,7 @@ class Representation {
         }
         else
             System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
-        return defaultResult;
+        return invokeIdMiddle(expr);
     }
 
 
@@ -263,7 +266,7 @@ class Representation {
         return getMethodSignature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
     }
 
-    String methodHandleConstant(String handleName) {
+    static String methodHandleConstant(String handleName) {
         return "<handle " + handleName + ">";
     }
 }

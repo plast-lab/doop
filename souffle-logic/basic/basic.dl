@@ -22,7 +22,6 @@ MainMethodDeclaration(?method) :-
    Method_Descriptor(?method, "void(java.lang.String[])"),
    Method_Modifier("public", ?method),
    Method_Modifier("static", ?method).
-
 }
 
 .init basic = Basic

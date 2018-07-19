@@ -2,7 +2,8 @@ MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
     MethodImplemented(?simplename, ?descriptor, ?type, ?method).
 
 MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
-    DirectSuperclass(?type, ?supertype),
+    (DirectSuperclass(?type, ?supertype) ;
+     DirectSuperinterface(?type, ?supertype)),
     MethodLookup(?simplename, ?descriptor, ?supertype, ?method),
     ! MethodImplemented(?simplename, ?descriptor, ?type, _).
 
@@ -144,6 +145,12 @@ MethodDeclaredOrInherited(?meth, ?class) :-
 MethodDeclaredOrInherited(?meth, ?class) :-
   MethodDeclaredOrInherited(?meth, ?superClass),
   DirectSuperclass(?class, ?superClass).
+
+// Inherit default methods from interfaces.
+MethodDeclaredOrInherited(?meth, ?class) :-
+  MethodDeclaredOrInherited(?meth, ?superInterface),
+  !Method_Modifier("abstract", ?meth),
+  DirectSuperinterface(?class, ?superInterface).
 
 // REVIEW: a little wasteful, but guessing it doesn't matter.
 .decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)

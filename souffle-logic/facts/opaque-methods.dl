@@ -1,0 +1,50 @@
+#ifdef REFLECTION
+
+.decl ClassLoaderMethod(?method:Method, ?argIdx:number)
+.output ClassLoaderMethod
+
+#define CLASS_LOADER_METHOD(method, idx) ClassLoaderMethod(?m, idx) :- isMethod(?m), ?m = method
+
+// dalvik.system.DexFile
+CLASS_LOADER_METHOD("<dalvik.system.DexFile: java.lang.Class defineClassNative(java.lang.String,java.lang.ClassLoader,java.lang.Object,dalvik.system.DexFile)>", 0).
+// java.lang.ClassLoader
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int,java.security.ProtectionDomain)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class defineClass(java.lang.String,java.nio.ByteBuffer,java.security.ProtectionDomain)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class findLoadedClass(java.lang.String)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class findSystemClass(java.lang.String)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class findBootstrapClassOrNull(java.lang.String)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class loadClass(java.lang.String)>", 0).
+CLASS_LOADER_METHOD("<java.lang.ClassLoader: java.lang.Class loadClass(java.lang.String,boolean)>", 0).
+// java.security.SecureClassLoader
+CLASS_LOADER_METHOD("<java.security.SecureClassLoader: java.lang.Class defineClass(java.lang.String,byte[],int,int,java.security.CodeSource)>", 0).
+CLASS_LOADER_METHOD("<java.security.SecureClassLoader: java.lang.Class defineClass(java.lang.String,java.nio.ByteBuffer,java.security.CodeSource)>", 0).
+// java.lang.VMClassLoader
+CLASS_LOADER_METHOD("<java.lang.VMClassLoader: java.lang.Class findLoadedClass(java.lang.ClassLoader,java.lang.String)>", 1).
+
+.decl MTEntryPoint(?id:number, ?invo:MethodInvocation, ?sig:Method)
+
+#define MTEP(id, sig) \
+MTEntryPoint(id, ?invo, ?signature) :- \
+   _StaticMethodInvocation(?invo, _, ?signature, _), \
+   ?signature = sig
+
+MTEP(1, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class)>").
+MTEP(2, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class)>").
+MTEP(3, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class,java.lang.Class[])>").
+MTEP(4, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class[])>").
+MTEP(5, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.invoke.MethodType)>").
+MTEP(6, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.util.List)>").
+
+isOpaqueMethod(?method) :- ClassLoaderMethod(?method, _).
+isOpaqueMethod(?method) :- MTEntryPoint(_, _, ?method).
+
+#define OPAQUE_METHOD(meth) isOpaqueMethod(m) :- isMethod(m), m = meth
+
+OPAQUE_METHOD("<java.lang.Class: java.lang.String getSimpleName()>").
+
+#ifdef ANDROID
+OPAQUE_METHOD("<java.lang.Class: java.lang.String getNameNative()>").
+#endif // ANDROID
+
+#endif // REFLECTION

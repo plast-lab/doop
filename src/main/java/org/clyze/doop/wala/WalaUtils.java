@@ -3,22 +3,45 @@ package org.clyze.doop.wala;
 import com.ibm.wala.analysis.typeInference.JavaPrimitiveType;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.ssa.IR;
-import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.TypeReference;
+
+import java.util.Iterator;
 
 public class WalaUtils {
 
-    public static int getNextNonNullInstruction(IR ir, int instructionIndex)
+    public static SSAInstruction getNextNonNullInstruction(IR ir, int instructionIndex)
     {
         SSAInstruction[] ssaInstructions = ir.getInstructions();
-        //ISSABasicBlock basicBlock = ir.getBasicBlockForInstruction(ssaInstructions[instructionIndex]);
-        for(int i = instructionIndex +1 ; i < ssaInstructions.length; i++)
-        {
-            if(ssaInstructions[i]!=null)
-                return i;
+        SSACFG cfg = ir.getControlFlowGraph();
+        ISSABasicBlock basicBlock = cfg.getBlockForInstruction(instructionIndex);
+        int bbNum = basicBlock.getNumber();
+        int lastbbNum = cfg.getMaxNumber();
+        int startIndex;
+        int endIndex;
+        for(int i=bbNum; i<=lastbbNum; i++){
+            ISSABasicBlock currBB = cfg.getBasicBlock(i);
+            if(i == bbNum){
+                startIndex = instructionIndex + 1;
+            }
+            else{
+                startIndex = currBB.getFirstInstructionIndex();
+                Iterator<SSAPhiInstruction> phis = currBB.iteratePhis();
+                if(phis.hasNext())
+                    return phis.next();
+            }
+            endIndex = currBB.getLastInstructionIndex();
+            for(int j = startIndex; j<= endIndex; j++){
+                if(ssaInstructions[j]!=null)
+                    return ssaInstructions[j];
+            }
         }
-        return -1;
+//        for(int i = instructionIndex +1 ; i < ssaInstructions.length; i++)
+//        {
+//            if(ssaInstructions[i]!= null)
+//                return ssaInstructions[i];
+//        }
+        return null;
     }
 
     public static Local createLocal(IR ir, SSAInstruction instruction, int varIndex, TypeInference typeInference) {
@@ -173,5 +196,85 @@ public class WalaUtils {
         if(ir.getSymbolTable().isConstant(varIndex) && ! ir.getSymbolTable().isNullConstant(varIndex))
             l.setValue(ir.getSymbolTable().getConstantValue(varIndex).toString());
         return l;
+    }
+
+    /*
+     * Getting methodType (the method descriptor in JVM format) and the name of a method returns the method signature
+     * example createMethodSignature("([DLjava/lang/Object;)V", "methName") returns "void methName(double[],java.lang.Object)"
+     * Non primitive types get followed by ';' while primitive types or (arrays of them) get followed by nothing
+     * After getting the return type we split the parameter types using ';' each of the split strings can contain
+     * many primitive types and one non primitive type
+     */
+    public static String createMethodSignature(String methodType, String methodName)
+    {
+        StringBuilder signature = new StringBuilder();
+        boolean first = true;
+        String[] splitType = methodType.substring(1).split("\\)");
+        String retType = splitType[1];
+        String paramTypes = splitType[0];
+        String[] splitParams = paramTypes.split(";");
+        int prevArray = 0;
+
+        signature.append(fixTypeString(retType.replace(";","")));
+        signature.append(" ");
+        signature.append(methodName);
+        signature.append("(");
+
+        for(String s: splitParams)
+        {
+            for(int i = 0; i < s.length();i++)
+            {
+                char ch = s.charAt(i);
+                if(ch == '[')
+                {
+                    prevArray++;
+                }
+                else {
+                    if(!first)
+                        signature.append(",");
+                    switch (ch) {
+                        case 'L':
+                            signature.append(fixTypeString(s.substring(i)));
+                            i = s.length();     //When we reach a non primitive type it can not be followed by anything
+                            break;
+                        case 'Z':
+                            signature.append("boolean");
+                            break;
+                        case 'I':
+                            signature.append("int");
+                            break;
+                        case 'V':
+                            signature.append("void");
+                            break;
+                        case 'B':
+                            signature.append("byte");
+                            break;
+                        case 'C':
+                            signature.append("char");
+                            break;
+                        case 'D':
+                            signature.append("double");
+                            break;
+                        case 'F':
+                            signature.append("float");
+                            break;
+                        case 'J':
+                            signature.append("long");
+                            break;
+                        case 'S':
+                            signature.append("short");
+                            break;
+                    }
+                    if(prevArray != 0)
+                        for(int j=0; j < prevArray; j++)
+                            signature.append("[]");
+                    prevArray=0;
+                    if(first)
+                        first = false;
+                }
+            }
+        }
+        signature.append(")");
+        return signature.toString();
     }
 }

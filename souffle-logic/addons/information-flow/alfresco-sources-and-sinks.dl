@@ -1,0 +1,21 @@
+#include "webapps-sources-and-sinks.dl"
+#include "macros.dl"
+
+mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to) :-
+  PossibleOpenProgramEntryPoint(_, ?meth),
+  FormalParam(_, ?meth, ?to),
+  mainAnalysis.ReachableContext(?ctx, ?meth),
+  Var_Type(?to, ?type),
+  ConcreteImplementations(?type, ?ctype).
+
+BaseToRetTaintTransferMethod(?dtoMeth),
+TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  PossibleOpenProgramEntryPoint(?declaringType, ?meth),
+  FormalParam(_, ?meth, ?to),
+  mainAnalysis.ReachableContext(?ctx, ?meth),
+  Var_Type(?to, ?type),
+  ConcreteImplementations(?type, ?ctype),
+  mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to),
+  mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx),
+  Method_DeclaringType(?dtoMeth, ?type).

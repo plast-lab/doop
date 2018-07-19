@@ -2,7 +2,11 @@ package org.clyze.doop.wala;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.*;
+import com.ibm.wala.dalvik.classLoader.DexIMethod;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
+import com.ibm.wala.shrikeCT.BootstrapMethodsReader;
+import com.ibm.wala.shrikeCT.ClassConstants;
+import com.ibm.wala.shrikeCT.ConstantPoolParser;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.ClassLoaderReference;
@@ -15,14 +19,14 @@ import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
+import soot.dexpler.DexMethod;
 
+import javax.sound.midi.SysexMessage;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.PredicateFile.*;
-import static org.clyze.doop.wala.WalaUtils.createLocal;
-import static org.clyze.doop.wala.WalaUtils.fixTypeString;
-import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
+import static org.clyze.doop.wala.WalaUtils.*;
 
 /**
  * FactWriter determines the format of a fact and adds it to a
@@ -37,6 +41,15 @@ public class WalaFactWriter {
     //Used in writeType()
     private Map<String, String> _typeMap;
 
+    //The Maps bellow are used as Sets in order not to put duplicate phantom* facts
+    private Map<String, String> _phantomType;
+
+    private Map<String, String> _phantomMethod;
+
+    private Map<String, String> _phantomBasedMethod;
+
+    private Map<String,List<String>> _signaturePolyMorphicMethods;
+
     //Used for logging various messages
     protected Log logger;
 
@@ -45,12 +58,35 @@ public class WalaFactWriter {
         _db = db;
         _rep = WalaRepresentation.getRepresentation();
         _typeMap = new ConcurrentHashMap<>();
+        _phantomType = new ConcurrentHashMap<>();
+        _phantomMethod = new ConcurrentHashMap<>();
+        _phantomBasedMethod = new ConcurrentHashMap<>();
         logger =  LogFactory.getLog(getClass());
+        _signaturePolyMorphicMethods = null;
+    }
 
+    public void setSignaturePolyMorphicMethods(Map<String,List<String>> signaturePolyMorphicMethods)
+    {
+        _signaturePolyMorphicMethods = signaturePolyMorphicMethods;
     }
 
     private String str(int i) {
         return String.valueOf(i);
+    }
+
+    int getNumberOfPhantomTypes()
+    {
+        return _phantomType.size();
+    }
+
+    int getNumberOfPhantomMethods()
+    {
+        return _phantomMethod.size();
+    }
+
+    int getNumberOfPhantomBasedMethods()
+    {
+        return _phantomBasedMethod.size();
     }
 
     private String writeStringConstant(String constant) {
@@ -79,9 +115,12 @@ public class WalaFactWriter {
     //This descriptor format is used by Soot only for Method.facts
     String writeMethod(IMethod m) {
         String result = _rep.signature(m);
+        String arity = Integer.toString(m.getNumberOfParameters() - 1);
+        if(m.isStatic())
+            arity = Integer.toString(m.getNumberOfParameters());
 
         _db.add(STRING_RAW, result, result);
-        _db.add(METHOD, result, _rep.simpleName(m.getReference()), _rep.descriptor(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
+        _db.add(METHOD, result, _rep.simpleName(m.getReference()), _rep.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         for (Annotation annotation : m.getAnnotations()) {
             _db.add(METHOD_ANNOTATION, result, fixTypeString(annotation.getType().toString()));
             //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
@@ -197,23 +236,35 @@ public class WalaFactWriter {
     }
 
     void writePhantomType(TypeReference t) {
-        _db.add(PHANTOM_TYPE, writeType(t));
+        String type = writeType(t);
+        if(_phantomType.get(type) == null) {
+            _db.add(PHANTOM_TYPE, type);
+            _phantomType.put(type,"");
+        }
     }
 
     void writePhantomMethod(MethodReference m) {
         String sig = _rep.signature(m);
-        System.out.println("Method " + sig + " is phantom.");
-        _db.add(PHANTOM_METHOD, sig);
-        _db.add(STRING_RAW, sig, sig);
-        _db.add(METHOD, sig, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
+        if(_phantomMethod.get(sig) == null) {
+            //System.out.println("Method " + sig + " is phantom.");
+            _phantomMethod.put(sig,"");
+            _db.add(PHANTOM_METHOD, sig);
+            _db.add(STRING_RAW, sig, sig);
+            String arity = Integer.toString(m.getNumberOfParameters());
+            _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        }
     }
 
     void writePhantomBasedMethod(MethodReference m) {
         String sig = _rep.signature(m);
-        System.out.println("Method signature " + sig + " contains phantom types.");
-        _db.add(PHANTOM_BASED_METHOD, sig);
-        _db.add(STRING_RAW, sig, sig);
-        _db.add(METHOD, sig, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
+        //System.out.println("Method signature " + sig + " contains phantom types.");
+        if(_phantomBasedMethod.get(sig) == null) {
+            _phantomBasedMethod.put(sig,"");
+            _db.add(PHANTOM_BASED_METHOD, sig);
+        }
+//        _db.add(STRING_RAW, sig, sig);
+//        String arity = Integer.toString(m.getNumberOfParameters());
+//        _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
     }
 
     void writeEnterMonitor(IMethod m, SSAMonitorInstruction instruction, Local var, Session session) {
@@ -371,7 +422,7 @@ public class WalaFactWriter {
         String constant = s.getValue().toString();
         String heapId = writeStringConstant(constant);
 
-        String insn = _rep.instruction(m, instruction, session, index);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(ir, instruction));
@@ -379,7 +430,7 @@ public class WalaFactWriter {
 
     private void writeAssignNull(IMethod m, SSAInstruction instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.instruction(m, instruction, session, index);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_NULL, insn, str(index), _rep.local(m, l), methodId);
@@ -387,25 +438,38 @@ public class WalaFactWriter {
 
     private void writeAssignNumConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.instruction(m, instruction, session, index);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, l), methodId);
+        _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
     }
-//
-//    private void writeAssignMethodHandleConstant(IMethod m, Stmt stmt, Local l, MethodHandle constant, Session session) {
-//        int index = session.calcInstructionNumber(stmt);
-//        String insn = _rep.instruction(m, stmt, session, index);
-//        String handleName = constant.getMethodRef().toString();
-//        String heap = _rep.methodHandleConstant(handleName);
-//        String methodId = writeMethod(m);
-//
-//        _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
-//        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
-//    }
+
+    private void writeAssignMethodTypeConstant(IMethod m, SSAInstruction instr, Local l, ConstantValue constant, Session session) {
+        int index = session.calcInstructionNumber(instr);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        //String handleName = constant.getMethodRef().toString();
+        String handleName =(String) constant.getValue();
+        String heap = _rep.methodTypeConstant(handleName);
+        String methodId = _rep.signature(m);
+
+        _db.add(METHOD_TYPE_CONSTANT, heap);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
+    }
+
+    private void writeAssignMethodHandleConstant(IMethod m, SSAInstruction instr, Local l, ConstantValue constant, Session session) {
+        int index = session.calcInstructionNumber(instr);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        //String handleName = constant.getMethodRef().toString();
+        String handleName =(String) constant.getValue();
+        String heap = _rep.methodHandleConstant(handleName);
+        String methodId = _rep.signature(m);
+
+        _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
+    }
 
     private void writeAssignClassConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
-        String s = constant.toString();
+        String s = constant.toString().substring(1);
         String heap;
         String actualType;
 
@@ -415,12 +479,19 @@ public class WalaFactWriter {
         else
             t = TypeReference.find(ClassLoaderReference.Primordial, s);
 
-        heap = _rep.classConstant(t);
-        actualType = fixTypeString(t.toString());
+        if(t == null) {
+            heap = "<class " + fixTypeString(s) + ">";
+            actualType = fixTypeString(s);
+        }
+        else {
+            heap = _rep.classConstant(t);
+            actualType = fixTypeString(t.toString());
+        }
+
 
         _db.add(CLASS_HEAP, heap, actualType);
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.instruction(m, instruction, session, index);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
@@ -528,6 +599,16 @@ public class WalaFactWriter {
 
             s = s.getSuperclass();
         }
+        if(cl.getAllImplementedInterfaces() != null) {
+            for (IClass interf : cl.getAllImplementedInterfaces()) {
+                try {
+                    Collection<IField> flds = interf.getDeclaredStaticFields();
+                    result.addAll(flds);
+                } catch (NullPointerException exc) {
+                    ;
+                }
+            }
+        }
         return result;
     }
 
@@ -535,8 +616,10 @@ public class WalaFactWriter {
     {
         IClass targetClass = cha.lookupClass(f.getDeclaringClass());
         TypeReference typeRef = f.getDeclaringClass();
-        if(targetClass == null)
-            System.out.println("Failed to find class: " + fixTypeString(f.getDeclaringClass().getName().toString()) + " in class hierarchy.");
+        if(targetClass == null) {
+            //System.out.println("Failed to find class: " + fixTypeString(f.getDeclaringClass().getName().toString()) + " in class hierarchy.");
+            writePhantomType(f.getDeclaringClass());
+        }
         else
         {
             //for(IField field: targetClass.getAllFields())
@@ -612,9 +695,7 @@ public class WalaFactWriter {
     }
 
     void writeGoto(IMethod m, SSAGotoInstruction instruction, SSAInstruction to, Session session) {
-        //session.calcInstructionNumber(instruction);
         int index = session.getInstructionNumber(instruction);
-        //session.calcInstructionNumber(to);
         int indexTo = session.getInstructionNumber(to);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
@@ -627,8 +708,7 @@ public class WalaFactWriter {
      */
     void writeIf(IMethod m, SSAConditionalBranchInstruction instruction, Local var1, Local var2, SSAInstruction to, Session session) {
         // index was already computed earlier
-        int index = session.getInstructionNumber(instruction);
-        //session.calcInstructionNumber(to);
+        int index = session.getMaxInstructionNumber(instruction);
         int indexTo = session.getInstructionNumber(to);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
@@ -667,8 +747,8 @@ public class WalaFactWriter {
 
 
     void writeLookupSwitch(IR ir,IMethod inMethod, SSASwitchInstruction instruction, Session session, Local switchVar) {
-        if(_android) //Currently disabled for android
-            return;
+//        if(inMethod instanceof DexIMethod) //Currently disabled for android
+//            return;
         int instrIndex = session.getInstructionNumber(instruction);
         int targetIndex, targetWALAIndex;
         int defaultIndex, defaultWALAIndex;
@@ -685,7 +765,7 @@ public class WalaFactWriter {
             int tgIndex = casesAndLabels[i];
             //session.calcInstructionNumber(instructions[casesAndLabels[i+1]]);
             targetWALAIndex = casesAndLabels[i+1];
-            if(_android) {
+            if(inMethod instanceof DexIMethod) {
                 try {
                     targetWALAIndex = bm.getInstructionIndex(targetWALAIndex);
                 } catch (InvalidClassFileException e) {
@@ -694,17 +774,19 @@ public class WalaFactWriter {
             }
             if(instructions[targetWALAIndex] == null)
             {
-                targetWALAIndex = getNextNonNullInstruction(ir,targetWALAIndex);
-                if(targetWALAIndex == -1)
-                    logger.error("Error: Next non-null instruction index = -1");
+                SSAInstruction correctInstr = getNextNonNullInstruction(ir,targetWALAIndex);
+                if(correctInstr == null)
+                    System.out.println("Error: Next non-null instruction index = -1");
+                targetIndex = session.getInstructionNumber(correctInstr);
             }
-            targetIndex = session.getInstructionNumber(instructions[targetWALAIndex]);
+            else
+                targetIndex = session.getInstructionNumber(instructions[targetWALAIndex]);
 
             _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(targetIndex));
         }
 
         defaultWALAIndex = instruction.getDefault();
-        if(_android) {
+        if(inMethod instanceof DexIMethod) {
             try {
                 defaultWALAIndex = bm.getInstructionIndex(defaultWALAIndex);
             } catch (InvalidClassFileException e) {
@@ -713,20 +795,21 @@ public class WalaFactWriter {
         }
         if(instructions[defaultWALAIndex] == null)
         {
-            defaultWALAIndex = getNextNonNullInstruction(ir,defaultWALAIndex);
-            if(defaultWALAIndex == -1)
-                logger.error("Error: Next non-null instruction index = -1");
+            SSAInstruction correctInstr = getNextNonNullInstruction(ir,defaultWALAIndex);
+            if(correctInstr == null)
+                System.out.println("Error: Next non-null instruction index = -1");
+            defaultIndex = session.getInstructionNumber(correctInstr);
         }
-        //session.calcInstructionNumber(instructions[defaultWALAIndex]);
-        defaultIndex = session.getInstructionNumber(instructions[defaultWALAIndex]);
+        else
+            defaultIndex = session.getInstructionNumber(instructions[defaultWALAIndex]);
 
 
         _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
     }
 
-    void writeUnsupported(IMethod m, SSAInstruction instruction, Session session) {
+    void writeUnsupported(IMethod m, IR ir, SSAInstruction instruction, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.unsupported(m, instruction, index);
+        String insn = _rep.unsupported(m, ir, instruction, index);
         String methodId = _rep.signature(m);
 
         _db.add(UNSUPPORTED_INSTRUCTION, insn, str(index), methodId);
@@ -760,7 +843,7 @@ public class WalaFactWriter {
         Iterator<TypeReference> prevTypes = previous.getCaughtExceptionTypes();
         int prevNumOfScopes = _rep.getHandlerNumOfScopes(m,prevCatch);
         while(prevTypes.hasNext())
-            prevType =prevTypes.next();
+            prevType = prevTypes.next();
 
         SSAGetCaughtExceptionInstruction currCatch = current.getCatchInstruction();
         TypeReference currType = current.getCaughtExceptionTypes().next();
@@ -776,7 +859,6 @@ public class WalaFactWriter {
             return;
         }
 
-        session.calcInstructionNumber(catchInstr);
         int handlerIndex = session.getInstructionNumber(catchInstr);
         Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
 
@@ -795,13 +877,11 @@ public class WalaFactWriter {
         for(int i=0; i < scopeArray.length; i+=2) {
             startInstr = instructions[scopeArray[i]];
             endInstr = instructions[scopeArray[i + 1]];
-            session.calcInstructionNumber(startInstr);
             int beginIndex = session.getInstructionNumber(startInstr);
-            session.calcInstructionNumber(endInstr);
-            int endIndex = session.getInstructionNumber(endInstr);
+            int endIndex = session.getMaxInstructionNumber(endInstr);
             Iterator<TypeReference> excTypes = handlerBlock.getCaughtExceptionTypes();
-//            if(m.getName().toString().equals("parseNetscapeCertChain") &&
-//                    m.getDeclaringClass().getName().toString().contains("PKCS7"))
+//            if(m.getName().toString().equals("initialize") &&
+//                    m.getDeclaringClass().getName().toString().contains("Lokhttp3/internal/cache/DiskLruCache"))
 //                System.out.println("WALA " + handlerBlock.getFirstInstructionIndex() +" ("+
 //                        scopeArray[i] + " - " + scopeArray[i + 1] + ") DOOP "+
 //                        handlerIndex +" ("+ beginIndex + " - " + endIndex + ")");
@@ -869,27 +949,38 @@ public class WalaFactWriter {
         writeAssignClassConstant(inMethod, instruction, l, constant, session);
     }
 
-//    private Local writeMethodHandleConstantExpression(IMethod inMethod, SSAInstruction instruction, ConstantValue constant, Session session) {
-//        // introduce a new temporary variable
+    private Local writeMethodHandleConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+        // introduce a new temporary variable
 //        String basename = "$mhandleconstant";
 //        String varname = basename + session.nextNumber(basename);
-//        Local l = new Local(varname, TypeReference.JavaLangInvokeMethodHandle);
-//        writeLocal(inMethod, l);
-//        //writeAssignMethodHandleConstant(inMethod, instruction, l, constant, session);
-//        return l;
-//    }
+//        Local l = new Local(varname,-1, TypeReference.JavaLangInvokeMethodHandle);
+        writeLocal(inMethod, l);
+        writeAssignMethodHandleConstant(inMethod, instruction, l, constant, session);
+        return l;
+    }
 
+    private Local writeMethodTypeConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+        // introduce a new temporary variable
+//        String basename = "$mhandleconstant";
+//        String varname = basename + session.nextNumber(basename);
+//        Local l = new Local(varname,-1, TypeReference.JavaLangInvokeMethodHandle);
+        writeLocal(inMethod, l);
+        writeAssignMethodTypeConstant(inMethod, instruction, l, constant, session);
+        return l;
+    }
 
 
     private void writeActualParams(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, String invokeExprRepr, Session session, TypeInference typeInference) {
         if (instruction.isStatic()) {
-            for (int i = 0; i < instruction.getNumberOfParameters(); i++) {
+            //for (int i = 0; i < instruction.getNumberOfParameters(); i++) {
+            for (int i = 0; i < instruction.getNumberOfPositionalParameters(); i++) {
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
                 _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
             }
         }
         else {
-            for (int i = 1; i < instruction.getNumberOfParameters(); i++) {
+            //for (int i = 1; i < instruction.getNumberOfParameters(); i++) {
+            for (int i = 1; i < instruction.getNumberOfPositionalParameters(); i++) {
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
                 _db.add(ACTUAL_PARAMETER, str(i-1), invokeExprRepr, _rep.local(inMethod, l));
             }
@@ -899,11 +990,87 @@ public class WalaFactWriter {
             for (int j = 0; j < ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentCount(); j++) {
                 int arg = ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentIndex(j);
 
-                Local l = createLocal(ir, instruction, arg); //TODO: TypeInference for bootstrap parameters??
+                //Local l = createLocal(ir, instruction, arg); //TODO: TypeInference for bootstrap parameters??
+                Local l = bootstrapParamHelper(ir, inMethod, (SSAInvokeDynamicInstruction)instruction, j, session);
                 _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, _rep.local(inMethod, l));
 
             }
         }
+    }
+
+    private Local bootstrapParamHelper(IR ir, IMethod m, SSAInvokeDynamicInstruction dynamicInvoke, int argNum, Session session)
+    {
+        Local param = null;
+        BootstrapMethodsReader.BootstrapMethod bootstrapMethod = dynamicInvoke.getBootstrap();
+        //Object argObj = bootstrapMethod.callArgument();
+        TypeReference argType = TypeReference.JavaLangObject;
+        String basename = "";
+        int argumentKind = bootstrapMethod.callArgumentKind(argNum);
+        ConstantPoolParser constantPool = bootstrapMethod.getCP();
+        int index = bootstrapMethod.callArgumentIndex(argNum);
+        String argValue = "<NOVALUE>";
+        try {
+            if (argumentKind == ClassConstants.CONSTANT_Utf8 || argumentKind == ClassConstants.CONSTANT_String) {
+                argType = TypeReference.JavaLangString;
+                basename = "$stringconstant";
+                if (argumentKind == ClassConstants.CONSTANT_Utf8)
+                    argValue = constantPool.getCPUtf8(index);
+                else
+                    argValue = constantPool.getCPString(index);
+            } else if (argumentKind == ClassConstants.CONSTANT_Class) {
+                argType = TypeReference.JavaLangClass;
+                basename = "$classconstant";
+                argValue = constantPool.getCPClass(index);
+            } else if (argumentKind == ClassConstants.CONSTANT_Integer) {
+                argType = TypeReference.JavaLangInteger;
+                basename = "$numconstant";
+                argValue = Integer.toString(constantPool.getCPInt(index));
+            } else if (argumentKind == ClassConstants.CONSTANT_Float) {
+                argType = TypeReference.JavaLangFloat;
+                basename = "$numconstant";
+                argValue = Float.toString(constantPool.getCPFloat(index));
+            } else if (argumentKind == ClassConstants.CONSTANT_Double) {
+                argType = TypeReference.JavaLangDouble;
+                basename = "$numconstant";
+                argValue = Double.toString(constantPool.getCPDouble(index));
+            } else if (argumentKind == ClassConstants.CONSTANT_Long) {
+                argType = TypeReference.JavaLangLong;
+                basename = "$numconstant";
+                argValue = Long.toString(constantPool.getCPLong(index));
+            } else if (argumentKind == ClassConstants.CONSTANT_MethodHandle) {
+                argType = TypeReference.JavaLangInvokeMethodHandle;
+                basename = "$mhandleconstant";
+                argValue ="<" + constantPool.getCPHandleClass(index).replace('/','.') + ": ";
+                //argValue +=constantPool.getCPHandleType(index) + " " + constantPool.getCPHandleName(index) +"()>" ;
+                argValue += createMethodSignature(constantPool.getCPHandleType(index), constantPool.getCPHandleName(index)) +">";
+            } else if (argumentKind == ClassConstants.CONSTANT_MethodType) {
+                argType = TypeReference.JavaLangInvokeMethodType;
+                basename = "$mtypeconstant";
+                argValue = constantPool.getCPMethodType(index);
+            }
+        }catch(InvalidClassFileException exc)
+        {
+            System.err.println("InvalidClassFile ");
+        }
+        ConstantValue val = new ConstantValue(argValue);
+        String varname = basename + session.nextNumber(basename);
+        Local l = new Local (varname, -1, argType);
+        if (argumentKind == ClassConstants.CONSTANT_Utf8 || argumentKind == ClassConstants.CONSTANT_String) {
+            this.writeStringConstantExpression(ir, m, dynamicInvoke, l, val, session);
+        }else if (argumentKind == ClassConstants.CONSTANT_Integer || argumentKind == ClassConstants.CONSTANT_Float
+                || argumentKind == ClassConstants.CONSTANT_Double || argumentKind == ClassConstants.CONSTANT_Long) {
+            this.writeNumConstantExpression(m, dynamicInvoke, l, val, session);
+        }else if (argumentKind == ClassConstants.CONSTANT_Class) {
+            System.out.println("CLASSCONST" + val.getValue());
+            this.writeClassConstantExpression(m, dynamicInvoke, l, val, session);
+        }else if (argumentKind == ClassConstants.CONSTANT_MethodHandle) {
+            this.writeMethodHandleConstantExpression(m, dynamicInvoke, l, val, session);
+        }else if (argumentKind == ClassConstants.CONSTANT_MethodType) {
+            this.writeMethodTypeConstantExpression(m, dynamicInvoke, l, val, session);
+        }
+
+
+        return l;
     }
 
     void writeInvoke(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
@@ -913,8 +1080,6 @@ public class WalaFactWriter {
     }
 
     private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
-        session.calcInstructionNumber(instruction);
-        int index = session.getInstructionNumber(instruction);
         String methodId = _rep.signature(inMethod);
 
         IBytecodeMethod method = (IBytecodeMethod)ir.getMethod();
@@ -958,42 +1123,69 @@ public class WalaFactWriter {
                     break;
                 }
             }
-            if(targetClass.isAbstract() && ! targetClass.isInterface() && !foundAtFirst)
-            {
-                Queue<IClass> classQueue = new LinkedList<>();
-                classQueue.addAll(targetClass.getDirectInterfaces());
-                if(!classQueue.isEmpty())
+            if(!foundAtFirst) {
+                String methRepr = fixTypeString(targetClass.getName().toString()) + ":" + targetRef.getName();
+                if(_signaturePolyMorphicMethods.get(methRepr) != null)
                 {
-                    boolean found = false;
-                    IClass currClass;
-                    while (!classQueue.isEmpty() && !found) {
-                        currClass = classQueue.remove();
-                        for(IMethod meth: currClass.getDeclaredMethods()) {
-                            if (meth.getName().toString().equals(targetRef.getName().toString())
-                                    && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
-                            {
-                                targetRef = meth.getReference();
-                                found = true;
-                                break;
-                            }
-                        }
-                        classQueue.addAll(currClass.getDirectInterfaces());
-                    }
-                    if(!found)
-                        writePhantomMethod(targetRef);
+                    addFactsForSignaturePolymorphic(targetRef, _signaturePolyMorphicMethods.get(methRepr));
                 }
+                if(targetClass.isAbstract() && ! targetClass.isInterface())
+                {
+                    Queue<IClass> classQueue = new LinkedList<>();
+                    classQueue.addAll(targetClass.getDirectInterfaces());
+                    if(!classQueue.isEmpty())
+                    {
+                        boolean found = false;
+                        IClass currClass;
+                        while (!classQueue.isEmpty() && !found) {
+                            currClass = classQueue.remove();
+                            for(IMethod meth: currClass.getDeclaredMethods()) {
+                                if (meth.getName().toString().equals(targetRef.getName().toString())
+                                        && meth.getDescriptor().toString().equals(targetRef.getDescriptor().toString()))
+                                {
+                                    targetRef = meth.getReference();
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            classQueue.addAll(currClass.getDirectInterfaces());
+                        }
+                        if(!found)
+                            writePhantomMethod(targetRef);
+                    }
+                }
+                else
+                    writePhantomMethod(targetRef);
             }
-            else if(!foundAtFirst)
-                writePhantomMethod(targetRef);
         }
 
-        String insn = _rep.invoke(inMethod, instruction, targetRef, session);
+
+        String insn = _rep.invoke(ir,inMethod, instruction, targetRef, session, typeInference);
         writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
+
+        int index = session.calcInstructionNumber(instruction);
 
         if(sourceLineNum != -1)
             _db.add(METHOD_INV_LINE, insn, str(sourceLineNum));
 
-        if (instruction.isStatic()) {
+        if (instruction instanceof SSAInvokeDynamicInstruction) { //Had to put these first because wala considers them static
+//            MethodReference dynInfo = instruction.getDeclaredTarget();
+            MethodReference dynInfo = targetRef;
+            String dynArity = String.valueOf(dynInfo.getNumberOfParameters());
+
+            StringBuilder parameterTypes = new StringBuilder();
+            for (int i = 0; i < dynInfo.getNumberOfParameters(); i++) {
+                if (i==0) {
+                    parameterTypes.append(fixTypeString(dynInfo.getParameterType(i).toString()));
+                }
+                else {
+                    parameterTypes.append(", ").append(fixTypeString(dynInfo.getParameterType(i).toString()));
+                }
+            }
+            String sig = getBootstrapSig(((SSAInvokeDynamicInstruction) instruction).getBootstrap(),inMethod.getClassHierarchy());
+            _db.add(DYNAMIC_METHOD_INV, insn, str(index), sig, dynInfo.getName().toString(), fixTypeString(dynInfo.getReturnType().toString()), dynArity, parameterTypes.toString(), methodId);
+        }
+        else if (instruction.isStatic()) {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
             //_db.add(STATIC_METHOD_INV, insn, _rep.signature(targetRef), methodId);
         }
@@ -1007,26 +1199,70 @@ public class WalaFactWriter {
             _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
             //_db.add(SPECIAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
         }
-        else if (instruction instanceof SSAInvokeDynamicInstruction) {
-            MethodReference dynInfo = instruction.getDeclaredTarget();
-            String dynArity = String.valueOf(dynInfo.getNumberOfParameters());
-
-            StringBuilder parameterTypes = new StringBuilder();
-            for (int i = 0; i < dynInfo.getNumberOfParameters(); i++) {
-                if (i==0) {
-                    parameterTypes.append(dynInfo.getParameterType(i));
-                }
-                else {
-                    parameterTypes.append(", ").append(dynInfo.getParameterType(i));
-                }
-            }
-            _db.add(DYNAMIC_METHOD_INV, insn, str(index), dynInfo.getSignature(), dynInfo.getName().toString(), dynInfo.getReturnType().toString(), dynArity, parameterTypes.toString(), methodId);
-        }
         else {
             throw new RuntimeException("Cannot handle invoke instruction: " + instruction);
         }
 
         return insn;
+    }
+
+    private void addFactsForSignaturePolymorphic(MethodReference m, List<String> declaredExceptions)
+    {
+        String sig = _rep.signature(m);
+        _db.add(STRING_RAW, sig, sig);
+        String arity = Integer.toString(m.getNumberOfParameters());
+        _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        //addMockExceptionThrows(m, declaredExceptions);
+    }
+
+    void addMockExceptionThrows(MethodReference mr, List<String> declaredExceptions)
+    {
+        int i = -2;
+        String varBase = "mockExc";
+        String methodSig = _rep.signature(mr);
+        String var;
+        String heap;
+        String newInstr;
+        String specInvInstr;
+        String throwInstr;
+        String targetRef;
+
+        for(String declaredExc : declaredExceptions)
+        {
+            i+=3;
+            var = methodSig + "/" + varBase + Integer.toString(i);
+            _db.add(VAR_TYPE, var, declaredExc);
+            _db.add(VAR_DECLARING_METHOD, var, methodSig);
+            heap = methodSig + "/new " + declaredExc + "/0";
+            _db.add(NORMAL_HEAP, heap, declaredExc);
+            newInstr = methodSig + "/assign/instruction" + str(i);
+            _db.add(ASSIGN_HEAP_ALLOC, newInstr, str(i), heap, var, methodSig, "0");
+            specInvInstr = methodSig +"/" + declaredExc +".<init>/0" ;
+            targetRef = "<" + declaredExc + ":  void <init>()>";
+            _db.add(SPECIAL_METHOD_INV, specInvInstr, str(i+1), targetRef, var, methodSig);
+            throwInstr = methodSig + "/throw " +varBase + Integer.toString(i) + "/0";
+            _db.add(THROW, throwInstr, str(i+2),var, methodSig);
+        }
+    }
+
+    private String getBootstrapSig(BootstrapMethodsReader.BootstrapMethod bootstrapMeth, IClassHierarchy cha) {
+//        if (cha.lookupClass()) {
+//            String bootstrapSig = bootstrapMeth.toString();
+//            System.out.println("Bootstrap method is phantom: " + bootstrapSig);
+//            _db.add(PHANTOM_METHOD, bootstrapSig);
+//            return bootstrapSig;
+//        } else
+//            return _rep.signature(bootstrapMeth.resolve());
+        String declaringClass = bootstrapMeth.methodClass().replace('/','.');
+        StringBuilder bootStrapSig = new StringBuilder("<");
+        bootStrapSig.append(declaringClass);
+        bootStrapSig.append(": ");
+        bootStrapSig.append(createMethodSignature(bootstrapMeth.methodType(),bootstrapMeth.methodName()));
+        bootStrapSig.append(">");
+
+
+        //System.out.println("\n\n\n\n\n\nBOOTSTRAP SIG " + bootStrapSig);
+        return bootStrapSig.toString();
     }
 
     //        private Value writeImmediate(IMethod inMethod, Stmt stmt, Value v, Session session) {

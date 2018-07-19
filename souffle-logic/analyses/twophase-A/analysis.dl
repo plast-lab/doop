@@ -12,14 +12,17 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   Value_Type(?value, ?valuetype),
   basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
-  !MethodToRefine(?tomethod),
+  (SpecialContextSensitivityMethod(?tomethod, "context-insensitive");
+   !MethodToRefine(?tomethod),
+   !SpecialContextSensitivityMethod(?tomethod, _)),
   isImmutableContext(?calleeCtx).
   
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   Value_Type(?value, ?valuetype),
   basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
-  MethodToRefine(?tomethod),
+  (MethodToRefine(?tomethod);
+   SpecialContextSensitivityMethod(?tomethod, "2-object-sensitive")),      
   ?hctx = [?hctxValue],
   ?calleeCtx = [?hctxValue, ?value].
 
@@ -27,27 +30,33 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   isSpecialMethodInvocation_Insn(?invo),
   MethodInvocation_Method(?invo, ?tomethod),
-  !MethodToRefine(?tomethod),
+  (SpecialContextSensitivityMethod(?tomethod, "context-insensitive");
+   !MethodToRefine(?tomethod),
+   !SpecialContextSensitivityMethod(?tomethod, _)),   
   isImmutableContext(?calleeCtx).
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
   isSpecialMethodInvocation_Insn(?invo),
   MethodInvocation_Method(?invo, ?tomethod),
-  MethodToRefine(?tomethod),  
+  (MethodToRefine(?tomethod);
+   SpecialContextSensitivityMethod(?tomethod, "2-object-sensitive")),
   ?hctx = [?hctxValue],
   ?calleeCtx = [?hctxValue, ?value].
 
 StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
    StaticContextRequest(?callerCtx, ?invo),
    MethodInvocation_Method(?invo, ?tomethod),
-   !MethodToRefine(?tomethod),
+   (SpecialContextSensitivityMethod(?tomethod, "context-insensitive");
+    !MethodToRefine(?tomethod),
+    !SpecialContextSensitivityMethod(?tomethod, _)),   
    isImmutableContext(?calleeCtx).
 
 StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
   StaticContextRequest(?callerCtx, ?invo),
   MethodInvocation_Method(?invo, ?tomethod),
-  MethodToRefine(?tomethod),
+  (MethodToRefine(?tomethod);
+   SpecialContextSensitivityMethod(?tomethod, "2-object-sensitive")),
   ?calleeCtx = ?callerCtx.
 
 RecordContextResponse(?ctx, ?value, ?arg, ?hctx) :-
@@ -86,9 +95,7 @@ InitHContextResponse(?value, ?hctx) :-
 .decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)
 MethodsOfSameOrSuperType(?method1, ?method2) :-
    !ThisPointsToTooManyValues(?method1),
-   !ArgPointsToTooManyValues(_, ?method1),
    !ThisPointsToTooManyValues(?method2),
-   !ArgPointsToTooManyValues(_, ?method2),
    basic.MethodsOfSameOrSuperType(?method1, ?method2).
    
 /** Utility rule: Value points to another value directly or indirectly **/
@@ -104,11 +111,11 @@ ValuePointsTo(?baseValue, ?value) :-
 //   preAnalysis.InstanceFieldPointsTo(_, ?value1, _, _, ?baseValue).
 
 // anantoni: These filters can be vital to achieving good scale
-.decl ArgPointsToTooManyValues(?arg:Var, ?method:Method)
-ArgPointsToTooManyValues(?arg, ?method) :-
-  FormalParam(_, ?method, ?arg),
-  VPTCountPerVar(?arg, ?n),
-  ?n > 10000.
+// .decl ArgPointsToTooManyValues(?arg:Var, ?method:Method)
+// ArgPointsToTooManyValues(?arg, ?method) :-
+//   FormalParam(_, ?method, ?arg),
+//   VPTCountPerVar(?arg, ?n),
+//   ?n > 10000.
 
 .decl ThisPointsToTooManyValues(?method:Method)
 ThisPointsToTooManyValues(?method) :-
@@ -244,16 +251,6 @@ InOutFlowPair(?inMethod, ?outMethod) :-
 // InOutFlowPerClass(?inMethod, ?outMethod, ?class) :-
 //   InOutFlowAnyTwoValuesPerClass(?inMethod, ?outMethod, ?class).
 
-.decl ClassToRefine(?class:Type)
-      
-// ClassToRefine(?class) :-
-//   InOutFlowPerClass(_, _, ?class).
-
-// ClassToRefine(?class) :-
-//   isType(?class),
-//   match("java\.util\..*", ?class).
-
-// .input ClassToRefine(IO="file", filename="/home/anantoni/Development/doop-nexgen/ClassToRefine.facts")
        
 .decl MethodToRefine(?method:Method)
 
@@ -261,70 +258,26 @@ MethodToRefine(?method) :-
   (InOutFlowPair(?method, _);
    InOutFlowPair(_, ?method);
    MethodTaintedByDirectFlow(?method);
-   MethodTaintedByWrappedFlow(?method);   
-   (Method_DeclaringType(?method, ?type),
-    match(?type, "java\.util\..*")),
-   !match(?method, "boolean equals.*"),
-   ?method != "<java.lang.Object: void <init>()>"
-  ).                            
+   MethodTaintedByWrappedFlow(?method)),
+  !SpecialContextSensitivityMethod(?method, _).
 
 .printsize isMethod
 .printsize MethodToRefine
-
 .output MethodToRefine
 
 
 .decl VPTCountPerVar(?var:Var, ?n:number)
 
-VPTCountPerVar(?var, Y) :- isVar(?var), Y =  count : preAnalysis.VarPointsTo(_, _, _, ?var), Y > 0.
+VPTCountPerVar(?var, Y) :- ThisVar(_, ?var), Y =  count : preAnalysis.VarPointsTo(_, _, _, ?var), Y > 0.
 
+.decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)
+.input SpecialContextSensitivityMethod(IO="file", filename="SpecialContextSensitivityMethod.facts", delimiter="\t")
 
+.decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)
 
-/** Direct in out flow:
- *
- *   arg -> value
- *   ret -> value
- */
-// .decl OutFlowDirectValue(?outMethod:Method, ?value:Value)
+SpecialContextSensitivityMethodConstraintViolated(?method) :-
+  SpecialContextSensitivityMethod(?method, _),
+  !isMethod(?method).
 
-// OutFlowDirectValue(?outMethod, ?value) :-
-//   basic.MethodsOfSameType(?inMethod, ?outMethod, _),      
-//   ThisPointsToTwoValues(?inMethod),
-//   ArgPointsTo(_, ?inMethod, ?value),    
-//   preAnalysis.Reachable(?outMethod),
-//   ReturnVar(?return, ?outMethod),
-//   preAnalysis.VarPointsTo(_, ?value, _, ?return).
-
-
-// .decl OutFlowDirectTwoValues(?outMethod:Method)
-      
-// OutFlowDirectTwoValues(?outMethod) :-
-//   OutFlowDirectValue(?outMethod, ?value1),
-//   OutFlowDirectValue(?outMethod, ?value2),
-//   ?value1 != ?value2.
-
-// MethodToRefine(?method) :-      
-//   ThisPointsToTwoValues(?method).
-
-// MethodToRefine(?method) :-
-//   MethodToRefine(?callingMethod),
-//   MethodInvocation_Method(?invo, ?callingMethod),
-//   preAnalysis.CallGraphEdge(_, ?invo, _, ?method).
-              
-// MethodToRefine(?method) :-
-//   preAnalysis.Reachable(?method),
-//   Method_DeclaringType(?method, ?class),                          
-//   match("java\.util\..*", ?class).                                                      
-
-// .output MethodToRefine
-// MethodToRefine(?method) :-
-//    OutFlowDirectTwoValues(?method).
-
-#ifdef SPECIAL_CONTEXT_SENSITIVITY_METHODS
-.decl SpecialContextSensitivityMethods(?method:Method, ?sensivity:symbol)
-.input SpecialContextSensitivityMethods(IO="file", filename="SPECIAL_CONTEXT_SENSITIVITY_METHODS", delimiter=",")
-
-.output SpecialContextSensitivityMethods
-#endif
-           
+.printsize SpecialContextSensitivityMethodConstraintViolated
 }

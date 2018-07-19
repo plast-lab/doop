@@ -1,0 +1,109 @@
+// ClassType
+
+.decl _ClassType(?class:symbol)
+.input _ClassType(IO="file", filename="ClassType.facts", delimiter="\t")
+
+isType(?class),
+isClassType(?class) :-
+  _ClassType(?class).
+
+
+// ActualParam
+
+.decl _ActualPositionalParam(?index:number, ?invocation:symbol, ?var:symbol)
+.input _ActualPositionalParam(IO="file", filename="ActualParam.facts", delimiter="\t")
+
+isInstruction(?invocation),
+isMethodInvocation(?invocation),
+isVar(?var),
+ActualPositionalParam(?index, ?invocation, ?var) :-
+  _ActualPositionalParam(?index, ?invocation, ?var).
+
+.decl _ActualKeywordParam(?keyword:symbol, ?invocation:symbol, ?var:symbol)
+.input _ActualKeywordParam(IO="file", filename="ActualParam.facts", delimiter="\t")
+
+isInstruction(?invocation),
+isMethodInvocation(?invocation),
+isVar(?var),
+ActualKeywordParam(?index, ?invocation, ?var) :-
+  _ActualKeywordParam(?index, ?invocation, ?var).
+
+
+// DirectSuperclass
+
+.decl _DirectSuperclass(?class:symbol, ?superclass:symbol)
+.input _DirectSuperclass(IO="file", filename="DirectSuperclass.facts", delimiter="\t")
+
+isType(?class),
+isClassType(?class),
+isType(?superclass),
+isClassType(?superclass),
+DirectSuperclass(?class, ?superclass) :-
+  _DirectSuperclass(?class, ?superclass).
+
+
+// FormalParam
+
+.decl _FormalParam(?index:number, ?method:symbol, ?var:symbol)
+.input _FormalParam(IO="file", filename="FormalParam.facts", delimiter="\t")
+
+isMethod(?method),
+isVar(?var),
+FormalParam(?index, ?method, ?var) :-
+  _FormalParam(?index, ?method, ?var).
+
+
+// NativeReturnVar
+
+.decl _NativeReturnVar(?var:symbol, ?method:symbol)
+.input _NativeReturnVar(IO="file", filename="NativeReturnVar.facts", delimiter="\t")
+
+isVar(?var),
+isMethod(?method),
+NativeReturnVar(?var, ?method) :-
+  _NativeReturnVar(?var, ?method).
+
+
+// ApplicationClass
+
+.decl _ApplicationClass(?type:symbol)
+.input _ApplicationClass(IO="file", filename="ApplicationClass.facts", delimiter="\t")
+
+isType(?type),
+ApplicationClass(?type) :-
+  _ApplicationClass(?type).
+
+
+// ThisVar
+
+.decl _ThisVar(?method:symbol, ?var:symbol)
+.input _ThisVar(IO="file", filename="ThisVar.facts", delimiter="\t")
+
+isMethod(?method),
+isVar(?var),
+ThisVar(?method, ?var) :-
+  _ThisVar(?method, ?var).
+
+
+// ExceptionHandler:Previous
+
+.decl _ExceptionHandler_Previous(?handler:symbol, ?previous:symbol)
+.input _ExceptionHandler_Previous(IO="file", filename="ExceptionHandler-Previous.facts", delimiter="\t")
+
+isExceptionHandler(?handler),
+isExceptionHandler(?previous),
+ExceptionHandler_Previous(?handler, ?previous) :-
+  _ExceptionHandler_Previous(?handler, ?previous).
+
+
+// AssignReturnValue
+
+.decl _AssignReturnValue(?invocation:symbol, ?to:symbol)
+.input _AssignReturnValue(IO="file", filename="AssignReturnValue.facts", delimiter="\t")
+
+isInstruction(?invocation),
+isMethodInvocation(?invocation),
+isVar(?to),
+AssignReturnValue(?invocation, ?to) :-
+  _AssignReturnValue(?invocation, ?to).
+

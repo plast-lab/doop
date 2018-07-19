@@ -23,16 +23,17 @@ publishing {
         if (!project.hasProperty('dir')) {
             logger.warn("No directory was given, using default: '" + libDirName + "'")
         }
-        def libDir = file("${gradleInvocationDir}/${libDirName}")
-        libDir.eachFile { File f ->
+        file("${gradleInvocationDir}/${libDirName}").eachFile { File f ->
             def initName = f.getName() - '.jar'
-            def index = initName.lastIndexOf('-')
+            def parts = initName.split('-')
             String namePart, versionPart
-            if (index != -1) {
-                namePart = initName.substring(0, index)
-                versionPart = initName.substring(index+1, initName.length())
-            }
-            else {
+            if (parts.size() > 1 && parts.last() == "SNAPSHOT") {
+                namePart = parts.dropRight(2).join('-')
+                versionPart = parts.takeRight(2).join('-')
+            } else if (parts.size() > 1) {
+                namePart = parts.dropRight(1).join('-')
+                versionPart = parts.last()
+            } else {
                 namePart = initName
                 versionPart = '1.' + new Date().getTime()
             }

@@ -77,10 +77,14 @@
 .type Method
 .decl isMethod(?m:Method)
 
+.decl isOpaqueMethod(?m:Method)
+
 .decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
 .decl Method_ReturnType(?method:Method, ?returnType:Type)
 .decl Method_SimpleName(?method:Method, ?simpleName:symbol)
+.decl Method_Params(?method:Method, ?params:symbol)
 .decl Method_Descriptor(?method:Method, ?descriptor:MethodDescriptor)
+.decl Method_Arity(?method:Method, ?arity:number)
 
 .type JVMDescriptor
 .decl isJVMDescriptor(?jvmd:JVMDescriptor)
@@ -119,12 +123,14 @@
 .type StringConstant       = HeapAllocation
 .type ClassHeap            = HeapAllocation
 .type MethodHandleConstant = HeapAllocation
+.type MethodTypeConstant   = HeapAllocation
 
 .decl isHeapAllocation(?h:HeapAllocation)
 .decl isNormalHeap(?h:NormalHeap)
 .decl isStringConstant(?h:StringConstant)
 .decl isClassHeap(?h:ClassHeap)
 .decl isMethodHandleConstant(?h:MethodHandleConstant)
+.decl isMethodTypeConstant(?h:MethodTypeConstant)
 .decl isStringRaw(?id:symbol)
 
 .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
@@ -235,10 +241,12 @@
 .type UnsupportedInstruction          = Instruction
 .type AssignPhantomInvoke             = UnsupportedInstruction
 .type BreakpointStmt                  = UnsupportedInstruction
+.type OpaqueInstruction               = Instruction
 
 .decl isUnsupportedInstruction(?insn:UnsupportedInstruction)
 .decl isAssignPhantomInvoke(?insn:AssignPhantomInvoke)
 .decl isBreakpointStmt(?insn:BreakpointStmt)
+.decl isOpaqueInstruction(?insn:OpaqueInstruction)
 
 //-----------------------------------------------------------------------------
 
@@ -455,11 +463,6 @@
 
 // Return variables of native methods (no instructions exist)
 .decl NativeReturnVar(?var:Var, ?method:Method)
-
-#ifdef DYNAMIC
-// Types potentially returned by a specific Class.forName invocation
-.decl Config_DynamicClass(?class:ReferenceType, ?invocation:MethodInvocation)
-#endif // DYNAMIC
 
 #ifndef X_STATS_NONE
 // Predicate to store analysis statistics

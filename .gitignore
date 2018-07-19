@@ -20,6 +20,9 @@ doop-nexgen.iml
 #netbeans files
 .nb-gradle
 
+#emacs files
+*~
+
 #souffle profiler html output dir
 profiler_html
 1o+h/

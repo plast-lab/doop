@@ -867,11 +867,6 @@ ClassOfDeadMethod(?method, ?class) :-
   MethodToRemove(?method),
   Method_DeclaringType(?method, ?class).
 
-// Very silly we have to do this.
-.decl _StringIterationTrick(?pos:number)
-_StringIterationTrick(0).
-_StringIterationTrick(?pos+1) :- _StringIterationTrick(?pos), ?pos < 256.
-
 .decl _RelevantStringPosition(?className: symbol, ?pos:number)
 _RelevantStringPosition(?className, ?pos) :-
   ClassNameWithSlashes(_, ?className),
@@ -895,15 +890,15 @@ ClassNameWithOnlySlashes(?className, ?classNameTransformed) :-
   ClassNameWithSlashes(?className, ?classNameTransformed),
   !contains(".", ?classNameTransformed).
 
-.decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol)
-DeadMethodWithJVMDescriptor(?jvmFullName) :-
+.decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol, ?method:symbol)
+DeadMethodWithJVMDescriptor(?jvmFullName, ?method) :-
   ClassOfDeadMethod(?method, ?class),
   ClassNameWithOnlySlashes(?class, ?className),
   Method_JVMDescriptor(?method, ?sig),
   Method_SimpleName(?method, ?simplename),
   ?jvmFullName = cat("L", cat(?className, cat(";:", cat(?simplename, ?sig)))).
 
-#define FILENAME_EXPECTED_BY_REDEX_PASS "methods_to_remove.txt"
+#define FILENAME_EXPECTED_BY_REDEX_PASS "methods_to_remove.csv"
 .output DeadMethodWithJVMDescriptor(IO="file", filename=FILENAME_EXPECTED_BY_REDEX_PASS, delimiter="\t")
 
 

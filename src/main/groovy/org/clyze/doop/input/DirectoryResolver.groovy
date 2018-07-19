@@ -8,19 +8,13 @@ import org.clyze.utils.FileOps
  */
 class DirectoryResolver implements InputResolver {
 
-    @Override
-    String name() {
-        return "directory"
-    }
+	String name() { "directory" }
 
-    @Override
-    void resolve(String input, InputResolutionContext ctx, InputType inputType) {
-        def dir = FileOps.findDirOrThrow(input, "Not a directory input: $input")
-        def filter = FileOps.extensionFilter("jar")
+	void resolve(String input, InputResolutionContext ctx, InputType inputType) {
+		def dir = FileOps.findDirOrThrow(input, "Not a directory input: $input")
+		def filter = FileOps.extensionFilter("jar")
 
-        List<File> filesInDir = []
-        dir.listFiles(filter).each { File file -> filesInDir.add(file) }
-
-        ctx.set(input, filesInDir.sort{ it.toString() }, inputType)
-    }
+		def filesInDir = dir.listFiles(filter).toList()
+		ctx.set(input, filesInDir.sort { it.toString() }, inputType)
+	}
 }

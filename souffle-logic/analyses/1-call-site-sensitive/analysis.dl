@@ -2,6 +2,7 @@
 
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
+#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
 
 .comp OneCallSiteSensitiveConfiguration : AbstractConfiguration {
 
@@ -20,8 +21,6 @@
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),
     ?calleeCtx = [?invo].
-
-  #define UNIQUE_HCONTEXT "<<unique-hcontext>>"
 
   RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
   RecordContextRequest(?ctx, ?value, ?var),      

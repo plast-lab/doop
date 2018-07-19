@@ -74,11 +74,6 @@ VarPointsTo(?hctxImmutable, ?proxyClassObj, ?ctx, ?ret) :-
    ReifiedClass(?proxyClass, ?proxyClassObj),
    ImmutableHContextFromContext(?ctx, ?hctxImmutable).
 
-// _OptVarPointsToForArray(?ctx, ?interfaces, ?hctx, ?interfacesValue) :-
-//    VarPointsTo(?hctx, ?arrayObj, ?ctx, ?arrayVar),
-//    Value_Heap[?arrayObj] = ?arrayHeap,
-//    ArrayType(HeapAllocation_Type[?arrayHeap]).
-
 // Create a new heap allocation per
 // (newProxyInstance call, interface type) pair.
 //// REVIEW_ ideally these should be allocated context sensitively, i.e.,
@@ -97,12 +92,39 @@ MethodOfInterface(?meth, ?iface) :-
    isInterfaceType(?iface),
    Method_DeclaringType(?meth, ?iface).
 
+//// From spec: if method has same name/signature as Object's
+//// hashCode(), equals(), or toString(), then the reified Method
+//// should be the one that comes from Object.
+.decl SpecialMethodFromObject(?method:Method, ?objMethod:Method)
+
+SpecialMethodFromObject(?method, ?objMethod) :-
+  isMethod(?method),
+  Method_DeclaringType(?method, ?intf),
+  isInterfaceType(?intf),
+  !Method_Modifier("static", ?method),
+  Method_SimpleName(?method, ?simple),
+  ((?simple = "hashCode", Method_ReturnType(?method, "int"),
+    Method_Params(?method, "()")) ;
+   (?simple = "equals", Method_ReturnType(?method, "boolean"),
+    Method_Params(?method, "(java.lang.Object)")) ;
+   (?simple = "toString", Method_ReturnType(?method, "java.lang.String"),
+    Method_Params(?method, "()"))),
+  Method_DeclaringType(?objMethod, "java.lang.Object"),
+  Method_SimpleName(?objMethod, ?simple).
+
 .decl ArgArrayOfProxyMethod(?meth:Method, ?invo:MethodInvocation, ?value:Value)
 
 MockValueConsMacro(cat(cat(cat(cat("<argument array for proxied method ", ?meth), " at "), ?invo), ">"), "java.lang.Object[]"),
 ArgArrayOfProxyMethod(?meth, ?invo, cat(cat(cat(cat("<argument array for proxied method ", ?meth), " at "), ?invo), ">")) :-
    ProxyClassInstance(?iface, ?invo, _),
    MethodOfInterface(?meth, ?iface).
+
+// Copy of rule above for special Object methods.
+MockValueConsMacro(cat(cat(cat(cat("<argument array for proxied method ", ?objMeth), " at "), ?invo), ">"), "java.lang.Object[]"),
+ArgArrayOfProxyMethod(?objMeth, ?invo, cat(cat(cat(cat("<argument array for proxied method ", ?objMeth), " at "), ?invo), ">")) :-
+   ProxyClassInstance(?iface, ?invo, _),
+   MethodOfInterface(?meth, ?iface),
+   SpecialMethodFromObject(?meth, ?objMeth).
 
 // JLS 5.1.7 (Java 8).
 // TODO Misses null-to-null boxing (is it useful for proxies?).
@@ -212,9 +234,6 @@ HandledProxy(?newProxyInstanceInvo, ?handlerType)
 
 #ifdef REFLECTION
 
-//// TODO From spec_ if method has same name/signature as Object's
-//// hashCode(), equals(), or toString(), then the reified Method
-//// always comes from Object.
 .decl ProxyCallArgArray(?invo:MethodInvocation, ?methSig:Method, ?argsArrValue:Value)
 
 VarPointsTo(?hctx, ?proxyValue, ?calleeCtx, ?proxyArg),
@@ -231,6 +250,23 @@ ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) :-
    ReifiedMethod(?methSig, ?methValue),
    ProxyObject_Invocation(?proxyValue, ?invocation),
    ArgArrayOfProxyMethod(?methSig, ?invocation, ?argsArrValue).
+
+// Copy of rule above for special Object methods.
+VarPointsTo(?hctx, ?proxyValue, ?calleeCtx, ?proxyArg),
+VarPointsTo(?hctx, ?objMethValue, ?calleeCtx, ?methArg),
+VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg),
+ProxyCallArgArray(?invo, ?objMethSig, ?argsArrValue) :-
+   ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
+   CallToMethodOfProxyObject(?proxyValue, ?callerCtx, ?invo),
+   FormalParam(0, ?handlerInvokeMeth, ?proxyArg),
+   FormalParam(1, ?handlerInvokeMeth, ?methArg),
+   FormalParam(2, ?handlerInvokeMeth, ?argsArg),
+   ImmutableHContextFromContext(?calleeCtx, ?hctx),
+   MethodInvocation_Method(?invo, ?methSig),
+   SpecialMethodFromObject(?methSig, ?objMethSig),
+   ReifiedMethod(?objMethSig, ?objMethValue),
+   ProxyObject_Invocation(?proxyValue, ?invocation),
+   ArgArrayOfProxyMethod(?objMethSig, ?invocation, ?argsArrValue).
 
 .decl ArgArrayAndActualArg(?argsArrValue:Value, ?methSig:Method, ?actual:Var)
 

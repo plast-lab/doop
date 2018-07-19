@@ -5,24 +5,15 @@ import org.clyze.doop.soot.android.AndroidSupport;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.Helper;
-import org.objectweb.asm.ClassReader;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
-import soot.SourceLocator;
-import soot.SourceLocator.FoundFile;
 import soot.options.Options;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarInputStream;
 import java.util.stream.Stream;
 
 public class Main {
@@ -43,12 +34,14 @@ public class Main {
 
     public static void main(String[] args) throws Throwable {
         SootParameters sootParameters = new SootParameters();
-        String extraSensitiveControls = "";
         try {
             if (args.length == 0) {
                 System.err.println("usage: [options] file...");
                 throw new DoopErrorCodeException(0);
             }
+
+            List<String> dependencies = new ArrayList<>();
+            List<String> platforms = new ArrayList<>();
 
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
@@ -63,7 +56,7 @@ public class Main {
                         i = shift(args, i);
                         sootParameters._outputDir = args[i];
                         break;
-                    case "--parseParamsAndRun":
+                    case "--main":
                         i = shift(args, i);
                         sootParameters._main = args[i];
                         break;
@@ -79,15 +72,19 @@ public class Main {
                         i = shift(args, i);
                         sootParameters._inputs.add(args[i]);
                         break;
+                    case "-ld":
+                        i = shift(args, i);
+                        dependencies.add(args[i]);
+                        break;
                     case "-l":
                         i = shift(args, i);
-                        sootParameters._libraries.add(args[i]);
+                        platforms.add(args[i]);
                         break;
                     case "-lsystem":
                         String javaHome = System.getProperty("java.home");
-                        sootParameters._libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
-                        sootParameters._libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
-                        sootParameters._libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
+                        platforms.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
+                        platforms.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
+                        platforms.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
                         break;
                     case "--deps":
                         i = shift(args, i);
@@ -102,7 +99,7 @@ public class Main {
                         }
                         for (File file : Objects.requireNonNull(f.listFiles())) {
                             if (file.isFile() && file.getName().endsWith(".jar")) {
-                                sootParameters._libraries.add(file.getCanonicalPath());
+                                dependencies.add(file.getCanonicalPath());
                             }
                         }
                         break;
@@ -116,8 +113,9 @@ public class Main {
                     case "--run-flowdroid":
                         sootParameters._runFlowdroid = true;
                         break;
-                    case "--only-application-classes-fact-gen":
-                        sootParameters._onlyApplicationClassesFactGen = true;
+                    case "--facts-subset":
+                        i = shift(args, i);
+                        sootParameters._factsSubSet = SootParameters.FactsSubSet.valueOf(args[i]);
                         break;
                     case "--generate-jimple":
                         sootParameters._generateJimple = true;
@@ -127,9 +125,6 @@ public class Main {
                         break;
                     case "--noFacts":
                         sootParameters._noFacts = true;
-                        break;
-                    case "--uniqueFacts":
-                        sootParameters._uniqueFacts = true;
                         break;
                     case "--fact-gen-cores":
                         i = shift(args, i);
@@ -148,27 +143,32 @@ public class Main {
                         break;
                     case "--extra-sensitive-controls":
                         i = shift(args, i);
-                        extraSensitiveControls = args[i];
+                        sootParameters.extraSensitiveControls = args[i];
                         break;
                     case "--seed":
                         i = shift(args, i);
                         sootParameters._seed = args[i];
+                        break;
+                    case "--special-cs-methods":
+                        i = shift(args, i);
+                        sootParameters._specialCSMethods = args[i];
                         break;
                     case "-h":
                     case "--help":
                     case "-help":
                         System.err.println("\nusage: [options] file");
                         System.err.println("options:");
-                        System.err.println("  --parseParamsAndRun <class>                        Specify the parseParamsAndRun name of the parseParamsAndRun class");
+                        System.err.println("  --main <class>                        Specify the name of the main class");
                         System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
                         System.err.println("  --full                                Generate facts by full transitive resolution");
                         System.err.println("  -d <directory>                        Specify where to generate csv fact files");
-                        System.err.println("  -l <archive>                          Find classes in jar/zip archive");
+                        System.err.println("  -l <archive>                          Find (library) classes in jar/zip archive");
+                        System.err.println("  -ld <archive>                         Find (dependency) classes in jar/zip archive");
                         System.err.println("  -lsystem                              Find classes in default system classes");
                         System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
-                        System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
+                        System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
+                        System.err.println("  --library-only-facts                  Generate facts only for library classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
-                        System.err.println("  --uniqueFacts                         Eliminate redundancy from facts");
                         System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
                         System.err.println("  --R-out-dir <directory>               Specify when to generate R code (when linking AAR inputs)");
                         System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
@@ -184,7 +184,7 @@ public class Main {
                         System.err.println("  -d <directory>                        Specify where to generate files");
                         System.err.println("  -l <archive>                          Find classes in jar/zip archive");
                         System.err.println("  -lsystem                              Find classes in default system classes");
-                        System.err.println("  --android-jars <archive>              The parseParamsAndRun android library jar (for android apks). The same jar should be provided in the -l option");
+                        System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
                         throw new DoopErrorCodeException(0);
                     default:
                         if (args[i].charAt(0) == '-') {
@@ -195,7 +195,15 @@ public class Main {
                 }
             }
 
-            if(sootParameters._mode == null) {
+            if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
+                sootParameters._dependencies = dependencies;
+                sootParameters._libraries = platforms;
+            } else {
+                sootParameters._libraries = platforms;
+                sootParameters._libraries.addAll(dependencies);
+            }
+
+            if (sootParameters._mode == null) {
                 sootParameters._mode = SootParameters.Mode.INPUTS;
             }
 
@@ -215,7 +223,8 @@ public class Main {
             else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
                 sootParameters._outputDir = System.getProperty("user.dir");
             }
-            produceFacts(sootParameters, extraSensitiveControls);
+
+            produceFacts(sootParameters);
         }
         catch(DoopErrorCodeException errCode) {
             System.err.println("Exiting with code " + errCode.getErrorCode());
@@ -227,7 +236,7 @@ public class Main {
         }
     }
 
-    private static void produceFacts(SootParameters sootParameters, String extraSensitiveControls) throws Exception {
+    private static void produceFacts(SootParameters sootParameters) throws Exception {
         Options.v().set_output_dir(sootParameters._outputDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
 
@@ -245,10 +254,9 @@ public class Main {
 
         PropertyProvider propertyProvider = new PropertyProvider();
         Set<SootClass> classes = new HashSet<>();
-        Set<String> classesInApplicationJars = new HashSet<>();
-        Map<String, Set<String>> classToArtifactMap = new HashMap<>();
+        Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
 
-        AndroidSupport android = null;
+        BasicJavaSupport java;
 
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
@@ -258,11 +266,13 @@ public class Main {
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
-            android = new AndroidSupport(rOutDir, sootParameters, extraSensitiveControls);
-            android.processInputs(propertyProvider, classesInApplicationJars, classToArtifactMap, sootParameters._androidJars, tmpDirs);
+            AndroidSupport android = new AndroidSupport(artifactToClassMap, propertyProvider, rOutDir, sootParameters);
+            android.processInputs(sootParameters._androidJars, tmpDirs);
+            java = android;
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
-            populateClassesInAppJar(sootParameters._inputs, sootParameters._libraries, classesInApplicationJars, classToArtifactMap, propertyProvider);
+            java = new BasicJavaSupport(artifactToClassMap, propertyProvider);
+            java.populateClassesInAppJar(sootParameters);
         }
 
         Scene scene = Scene.v();
@@ -271,8 +281,11 @@ public class Main {
             System.out.println("Adding " + inputFormat + ": "  + input);
 
             addToSootClassPath(scene, input);
-            if (sootParameters._android)
+            if (sootParameters._android) {
+                if (sootParameters._inputs.size() > 1)
+                    System.out.println("WARNING: skipping rest of inputs");
                 break;
+            }
         }
 
         for (String lib : AARUtils.toJars(sootParameters._libraries, false, tmpDirs)) {
@@ -280,30 +293,24 @@ public class Main {
             addToSootClassPath(scene, lib);
         }
 
-        if (sootParameters._main != null) {
+        if (sootParameters._main != null)
             Options.v().set_main_class(sootParameters._main);
-        }
 
-        if (sootParameters._mode == SootParameters.Mode.FULL) {
+        if (sootParameters._mode == SootParameters.Mode.FULL)
             Options.v().set_full_resolver(true);
-        }
 
-        if (sootParameters._allowPhantom) {
+        if (sootParameters._allowPhantom)
             Options.v().set_allow_phantom_refs(true);
-        }
 
-        if (sootParameters._android) {
-            if (android == null) {
-                System.err.println("Internal error when adding Android classes.");
-            } else {
-                android.addClasses(classesInApplicationJars, classes, scene);
-            }
-        } else {
-            addClasses(classesInApplicationJars, classes, scene);
-            addBasicClasses(scene);
-
-            System.out.println("Classes in input (application) jar(s): " + classesInApplicationJars.size());
-        }
+        if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP)
+            java.addAppClasses(classes, scene);
+        else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
+            java.addAppClasses(classes, scene);
+            java.addDepClasses(classes, scene);
+        } else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.PLATFORM)
+            java.addLibClasses(classes, scene);
+        else
+            java.addAppClasses(classes, scene);
 
         scene.loadNecessaryClasses();
 
@@ -317,9 +324,8 @@ public class Main {
 
         classes.stream().filter((klass) -> isApplicationClass(sootParameters, klass)).forEachOrdered(SootClass::setApplicationClass);
 
-        if (sootParameters._mode == SootParameters.Mode.FULL && !sootParameters._onlyApplicationClassesFactGen) {
+        if (sootParameters._mode == SootParameters.Mode.FULL && sootParameters._factsSubSet == null)
             classes = new HashSet<>(scene.getClasses());
-        }
 
         try {
             System.out.println("Total classes in Scene: " + classes.size());
@@ -329,28 +335,25 @@ public class Main {
         catch (Exception ex) {
             System.out.println("Not all bodies retrieved");
         }
-        Database db = new Database(new File(sootParameters._outputDir), sootParameters._uniqueFacts);
+        Database db = new Database(new File(sootParameters._outputDir));
         FactWriter writer = new FactWriter(db);
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
-        Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple, sootParameters._cores);
+        Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
 
-        writePreliminaryFacts(classes, propertyProvider, classToArtifactMap, writer);
-
+        writePreliminaryFacts(classes, propertyProvider, artifactToClassMap, writer);
         db.flush();
 
         if (sootParameters._android) {
-            if (android == null) {
-                System.err.println("Internal error in Android handling.");
+            AndroidSupport android = (AndroidSupport)java;
+            if (sootParameters._runFlowdroid) {
+                driver.doAndroidInSequentialOrder(android.getDummyMain(), classes, writer, sootParameters._ssa);
+                db.close();
+                return;
             } else {
-                if (sootParameters._runFlowdroid) {
-                    driver.doAndroidInSequentialOrder(android.getDummyMain(), classes, writer, sootParameters._ssa);
-                    db.close();
-                    return;
-                } else {
-                    android.writeComponents(writer);
-                }
+                android.writeComponents(writer);
             }
         }
+
         if (!sootParameters._noFacts) {
             scene.getOrMakeFastHierarchy();
             // avoids a concurrent modification exception, since we may
@@ -358,21 +361,29 @@ public class Main {
             driver.doInParallel(classes);
             if (sootParameters._generateJimple) {
                 Set<SootClass> jimpleClasses = new HashSet<>(classes);
-                List<String> allClassNames = new ArrayList<>();
-                for (String artifact : classToArtifactMap.keySet()) {
-//                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
-                        allClassNames.addAll(classToArtifactMap.get(artifact));
+                if (sootParameters._factsSubSet == null) {
+                    List<String> allClassNames = new ArrayList<>();
+                    for (String artifact : artifactToClassMap.keySet()) {
+        //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
+                        Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
+                        allClassNames.addAll(artEntries);
+                    }
+                    forceResolveClasses(allClassNames, jimpleClasses, scene);
+                    System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
                 }
-                forceResolveClasses(allClassNames, jimpleClasses, scene);
-                System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
                 driver.writeInParallel(jimpleClasses);
             }
-            driver.shutdown();
         }
 
         if (sootParameters._seed != null) {
             try (Stream<String> stream = Files.lines(Paths.get(sootParameters._seed))) {
                 stream.forEach(line -> processSeedFileLine(line, writer));
+            }
+        }
+
+        if (sootParameters._specialCSMethods != null) {
+            try (Stream<String> stream = Files.lines(Paths.get(sootParameters._specialCSMethods))) {
+                stream.forEach(line -> processSpecialSensitivityMethodFileLine(line, writer));
             }
         }
 
@@ -385,13 +396,14 @@ public class Main {
     private static void processSeedFileLine(String line, FactWriter factWriter) {
         if (line.contains("(")) {
             factWriter.writeAndroidKeepMethod(line);
-        }
-        else if (line.contains(":")) {
-
-        }
-        else {
+        } else if (!line.contains(":")) {
             factWriter.writeAndroidKeepClass(line);
         }
+    }
+
+    private static void processSpecialSensitivityMethodFileLine(String line, FactWriter factWriter) {
+        if (line.contains(", "))
+            factWriter.writeSpecialSensitivityMethod(line);
     }
 
     private static boolean sootClassPathFirstElement = true;
@@ -403,32 +415,6 @@ public class Main {
             scene.extendSootClassPath(input);
     }
 
-    private static void addCommonDynamicClass(Scene scene, String className) {
-        if (SourceLocator.v().getClassSource(className) != null) {
-            scene.addBasicClass(className);
-        }
-    }
-
-    private static void populateClassToArtifactMap(Map<String, Set<String>> classToArtifactMap, String libraryFilename, String className) {
-        Set<String> artifactClasses;
-        if (!classToArtifactMap.containsKey(libraryFilename)) {
-            artifactClasses = new HashSet<>();
-            artifactClasses.add(className);
-            classToArtifactMap.put(libraryFilename, artifactClasses);
-        }
-        else {
-            artifactClasses = classToArtifactMap.get(libraryFilename);
-            artifactClasses.add(className);
-        }
-    }
-
-    public static void addClasses(Collection<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
-        for (String className : classesToLoad) {
-            SootClass c = scene.loadClass(className, SootClass.BODIES);
-            loadedClasses.add(c);
-        }
-    }
-
     private static void forceResolveClasses(Collection<String> classesToResolve, Collection<SootClass> resolvedClasses, Scene scene) {
         for (String className : classesToResolve) {
             scene.forceResolve(className, SootClass.BODIES);
@@ -437,34 +423,7 @@ public class Main {
         }
     }
 
-    private static void addBasicClasses(Scene scene) {
-        /*
-         * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
-         * to 1 (HIERARCHY) before calling produceFacts(). The following line is necessary to avoid
-         * a runtime exception when running soot with java 1.8, however it leads to different
-         * input fact generation thus leading to different analysis results
-         */
-        scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", SootClass.HIERARCHY);
-        scene.addBasicClass("javax.crypto.extObjectInputStream");
-
-        /*
-         * For simulating the FileSystem class, we need the implementation
-         * of the FileSystem, but the classes are not loaded automatically
-         * due to the indirection via native code.
-         */
-        addCommonDynamicClass(scene, "java.io.UnixFileSystem");
-        addCommonDynamicClass(scene, "java.io.WinNTFileSystem");
-        addCommonDynamicClass(scene, "java.io.Win32FileSystem");
-
-        /* java.net.URL loads handlers dynamically */
-        addCommonDynamicClass(scene, "sun.net.www.protocol.file.Handler");
-        addCommonDynamicClass(scene, "sun.net.www.protocol.ftp.Handler");
-        addCommonDynamicClass(scene, "sun.net.www.protocol.http.Handler");
-        addCommonDynamicClass(scene, "sun.net.www.protocol.https.Handler");
-        addCommonDynamicClass(scene, "sun.net.www.protocol.jar.Handler");
-    }
-
-    private static void writePreliminaryFacts(Set<SootClass> classes, PropertyProvider propertyProvider, Map<String, Set<String>> classToArtifactMap, FactWriter writer) {
+    private static void writePreliminaryFacts(Set<SootClass> classes, PropertyProvider propertyProvider, Map<String, Set<ArtifactEntry>> artifactToClassMap, FactWriter writer) {
         classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
 
         // Read all stored properties files
@@ -478,82 +437,10 @@ public class Main {
             }
         }
 
-        System.out.println("Class-to-Artifact map size: " + classToArtifactMap.size());
-        for (String artifact : classToArtifactMap.keySet())
-            for (String className : classToArtifactMap.get(artifact))
-                writer.writeClassArtifact(artifact, className);
+        System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
+        for (String artifact : artifactToClassMap.keySet())
+            for (ArtifactEntry ae : artifactToClassMap.get(artifact))
+                writer.writeClassArtifact(artifact, ae.className, ae.subArtifact);
     }
 
-    /**
-     * Helper method to read classes and property files from JAR/AAR files.
-     *
-     * @param inputFilenames             the list of all input jar file names
-     * @param classesInApplicationJar  the set to populate
-     * @param propertyProvider         the provider to use for .properties files
-     *
-     * @return the name of the JAR file that was processed; this is
-     * either the original first parameter, or the locally saved
-     * classes.jar found in the .aar file (if such a file was given)
-     *
-     */
-    public static void populateClassesInAppJar(List<String> inputFilenames,
-                                               List<String> libraryFilenames,
-                                               Set<String> classesInApplicationJar,
-                                               Map<String, Set<String>> classToArtifactMap,
-                                               PropertyProvider propertyProvider) throws Exception {
-
-        for (String inputFilename : inputFilenames) {
-
-            JarEntry entry;
-
-            try (JarInputStream jin = new JarInputStream(new FileInputStream(inputFilename));
-                 JarFile jarFile = new JarFile(inputFilename))
-            {
-                System.out.println("Processing application JAR: " + inputFilename);
-
-                /* List all JAR entries */
-                while ((entry = jin.getNextJarEntry()) != null) {
-                    /* Skip directories */
-                    if (entry.isDirectory())
-                        continue;
-
-                    String entryName = entry.getName();
-                    if (entryName.endsWith(".class")) {
-                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                        String className = reader.getClassName().replace("/", ".");
-                        classesInApplicationJar.add(className);
-                        populateClassToArtifactMap(classToArtifactMap, inputFilename.substring(inputFilename.lastIndexOf('/') + 1, inputFilename.length()), className);
-                    } else if (entryName.endsWith(".properties")) {
-                        propertyProvider.addProperties((new FoundFile(inputFilename, entryName)));
-                    } /* Skip non-class files and non-property files */
-                }
-            }
-        }
-
-        for (String libraryFilename : libraryFilenames) {
-            JarEntry entry;
-
-            try (JarInputStream jin = new JarInputStream(new FileInputStream(libraryFilename));
-                 JarFile jarFile = new JarFile(libraryFilename)) {
-
-                System.out.println("Processing library JAR: " + libraryFilename);
-
-                /* List all JAR entries */
-                while ((entry = jin.getNextJarEntry()) != null) {
-                    /* Skip directories */
-                    if (entry.isDirectory())
-                        continue;
-
-                    String entryName = entry.getName();
-                    if (entryName.endsWith(".class")) {
-                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                        String className = reader.getClassName().replace("/", ".");
-                        populateClassToArtifactMap(classToArtifactMap, libraryFilename.substring(libraryFilename.lastIndexOf('/') + 1, libraryFilename.length()), className);
-                    } else if (entryName.endsWith(".properties")) {
-                        propertyProvider.addProperties((new FoundFile(libraryFilename, entryName)));
-                    } /* Skip non-class files and non-property files */
-                }
-            }
-        }
-    }
 }

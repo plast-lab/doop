@@ -1,19 +1,23 @@
 package org.clyze.doop.wala;
 
+import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.shrikeCT.BootstrapMethodsReader;
+import com.ibm.wala.shrikeCT.ClassConstants;
+import com.ibm.wala.shrikeCT.ConstantPoolParser;
+import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
-import soot.*;
-import soot.jimple.*;
+import org.clyze.persistent.model.doop.DynamicMethodInvocation;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.clyze.doop.wala.WalaUtils.createMethodSignature;
 import static org.clyze.doop.wala.WalaUtils.fixTypeString;
 
 class WalaRepresentation {
@@ -45,7 +49,7 @@ class WalaRepresentation {
         return "<class " + fixTypeString(c.getName().toString()) + ">";
     }
 
-    String classConstant(String className) {
+    static String classConstant(String className) {
         return "<class " + className + ">";
     }
 
@@ -54,6 +58,9 @@ class WalaRepresentation {
         return "<class " + fixTypeString(t.toString()) + ">";
     }
 
+    String methodTypeConstant(String s) {
+        return s;
+    }
 
     String signature(IMethod m) {
         return signature(m.getReference());
@@ -101,16 +108,16 @@ class WalaRepresentation {
 
     //Method descriptors using soot like format.
     //Should maybe cache these as well.
-    String descriptor(MethodReference methodReference)
+    String params(MethodReference methodReference)
     {
         StringBuilder builder = new StringBuilder();
-        builder.append(fixTypeString(methodReference.getReturnType().toString()));
+        int count = methodReference.getNumberOfParameters();
         builder.append("(");
-        for(int i = 0; i < methodReference.getNumberOfParameters(); i++)
+        for(int i = 0; i < count; i++)
         {
             builder.append(fixTypeString(methodReference.getParameterType(i).toString()));
 
-            if(i != methodReference.getNumberOfParameters() - 1)
+            if(i != count - 1)
             {
                 builder.append(",");
             }
@@ -130,7 +137,7 @@ class WalaRepresentation {
         return signature(m) + "/@native-return";
     }
 
-    String param(IMethod m, int i)//REVIEW:SIFIS:I believe parameters are normal vi variables, same for this. Will look into it.
+    String param(IMethod m, int i)
     {
         return signature(m) + "/v" + (i+1);
     }
@@ -142,8 +149,8 @@ class WalaRepresentation {
 
     String newLocalIntermediate(IMethod m, Local l, Session session)
     {
-        //String s = local(m, l);
-        return "/intermediate/";
+        String s = local(m, l);
+        return s + "/intermediate/" + session.nextNumber(s);
     }
 
     void putHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, int scopeIndex)
@@ -166,7 +173,7 @@ class WalaRepresentation {
 
     String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, Session session, int scopeIndex)
     {
-        String query = m.getSignature() + " v" + catchInstr.getDef()+ "-" + scopeIndex;
+        String query = m.getSignature() + fixTypeString(typeReference.toString()) + " v" + catchInstr.getDef()+ "-" + scopeIndex;
 
         String result = _catchRepr.get(query);
         if(result == null) {
@@ -200,16 +207,20 @@ class WalaRepresentation {
     private String getKind(SSAInstruction instruction)
     {
         String kind = "unknown";
-        if(instruction instanceof AssignStmt)//IMPORTANT:TODO: MAKE SURE WE COVER ALL ASSIGN CASES
+        if(instruction instanceof SSAInstanceofInstruction || instruction instanceof  SSANewInstruction)
             kind = "assign";
-        else if(instruction instanceof DefinitionStmt)
-            kind = "definition";
-        else if(instruction instanceof SSAInstanceofInstruction || instruction instanceof  SSANewInstruction || instruction instanceof SSAArrayLoadInstruction)
+        else if(instruction instanceof SSAArrayStoreInstruction || instruction instanceof SSAArrayLoadInstruction)
             kind = "assign";
         else if(instruction instanceof SSAConversionInstruction || instruction instanceof  SSACheckCastInstruction)
             kind = "assign";
-        else if(instruction instanceof SSABinaryOpInstruction || instruction instanceof  SSAUnaryOpInstruction)
+        else if(instruction instanceof SSABinaryOpInstruction || instruction instanceof  SSAUnaryOpInstruction || instruction instanceof SSAArrayLengthInstruction)
             kind = "assign";
+        else if(instruction instanceof  SSALoadMetadataInstruction)
+            kind = "assign";
+        else if(instruction instanceof  SSAGetInstruction || instruction instanceof SSAPutInstruction)
+            kind = "assign";
+        else if(instruction instanceof  SSAGetCaughtExceptionInstruction)
+            kind = "definition";
         else if(instruction instanceof SSAMonitorInstruction && ((SSAMonitorInstruction) instruction).isMonitorEnter())
             kind = "enter-monitor";
         else if(instruction instanceof SSAMonitorInstruction )
@@ -229,11 +240,11 @@ class WalaRepresentation {
         return kind;
     }
 
-    String unsupported(IMethod inMethod, SSAInstruction instruction, int index)
+    String unsupported(IMethod inMethod, IR ir, SSAInstruction instruction, int index)
     {
         return signature(inMethod) +
                 "/unsupported " + getKind(instruction) +
-                "/" +  instruction.toString() +
+                "/" +  instruction.toString(ir.getSymbolTable()).replace(" ", "") +
                 "/instruction" + index;
     }
 
@@ -244,13 +255,29 @@ class WalaRepresentation {
     {
         return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
-    String invoke(IMethod inMethod, SSAInvokeInstruction expr, MethodReference methRef, Session session)
+    String invoke(IR ir, IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, Session session, TypeInference typeInference)
     {
-        //MethodReference exprMethod = expr.getDeclaredTarget();
         String defaultMid = fixTypeString(methRef.getDeclaringClass().toString()) + "." + methRef.getName().toString();
-        String midPart = (expr instanceof SSAInvokeDynamicInstruction)? dynamicInvokeMiddlePart((SSAInvokeDynamicInstruction) expr, defaultMid) : defaultMid;
+        String midPart;
+        if (instr instanceof SSAInvokeDynamicInstruction)
+            midPart = dynamicInvokeMiddlePart((SSAInvokeDynamicInstruction) instr, defaultMid);
+        else
+            midPart = invokeIdMiddle(ir, instr, methRef, typeInference);
 
         return signature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
+    }
+
+    private String invokeIdMiddle(IR ir, SSAInvokeInstruction instr, MethodReference resolvedTargetRef, TypeInference typeInference) {
+        MethodReference defaultTargetRef = instr.getDeclaredTarget();
+
+        if (instr.isDispatch() || instr.isSpecial()) {
+            Local l = WalaUtils.createLocal(ir, instr,instr.getReceiver(), typeInference);
+            if(fixTypeString(l.getType().toString()).equals("java.lang.Object")) //Hack around faulty typeInference
+                return fixTypeString(defaultTargetRef.getDeclaringClass().toString())+ "." + simpleName(resolvedTargetRef);
+            else
+                return fixTypeString(l.getType().toString())+ "." + simpleName(resolvedTargetRef);
+        } else
+            return fixTypeString(resolvedTargetRef.getDeclaringClass().toString())+ "." + simpleName(resolvedTargetRef);
     }
 
     // Create a middle part for invokedynamic ids. It currently
@@ -262,22 +289,30 @@ class WalaRepresentation {
         final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
         final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
 
-        BootstrapMethodsReader.BootstrapMethod bootMethRef= instruction.getBootstrap();
+        BootstrapMethodsReader.BootstrapMethod bootMethRef = instruction.getBootstrap();
+        ConstantPoolParser constantPool = bootMethRef.getCP();
         if (bootMethRef != null) {
-            String bootMethName = bootMethRef.methodName();
             int bootArity = bootMethRef.callArgumentCount();
             if (bootArity > 1) {
-//                bootMethRef.callArgumentKind(1);
-//                Value val1 = instruction.(1);
-//                if ((val1 instanceof MethodHandle) &&
-//                    ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
-//                     (bootMethName.equals(ALT_L_METAFACTORY)))) {
-//                    IMethodRef smr = ((MethodHandle)val1).getMethodRef();
-//                    return DynamicMethodInvocation.genId(smr.declaringClass().toString(),
-//                            smr.name());
-//                }
-//                else
-//                    System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
+                int argType = bootMethRef.callArgumentKind(1);
+                int argIndex = bootMethRef.callArgumentIndex(1);
+
+                String bootMethName = "<" + bootMethRef.methodClass().replace('/','.') + ": ";
+                bootMethName += WalaUtils.createMethodSignature(bootMethRef.methodType(),bootMethRef.methodName()) + ">";
+                if ((argType == ClassConstants.CONSTANT_MethodHandle) &&
+                    ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
+                     (bootMethName.equals(ALT_L_METAFACTORY)))) {
+                    try {
+                        String declaringClass = constantPool.getCPHandleClass(argIndex).replace('/','.');
+                        String name = constantPool.getCPHandleName(argIndex);
+                        return DynamicMethodInvocation.genId(declaringClass, name);
+                    } catch (InvalidClassFileException e) {
+                        System.out.println("Representation: Unsupported invokedynamic, caught InvalidClassFileException returning default result.");
+                        return defaultResult;
+                    }
+                }
+                else
+                    System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
             }
             else
                 System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");
@@ -319,8 +354,7 @@ class WalaRepresentation {
 
     }
 
-    String methodHandleConstant(String handleName) {
+    static String methodHandleConstant(String handleName) {
         return "<handle " + handleName + ">";
     }
-
 }

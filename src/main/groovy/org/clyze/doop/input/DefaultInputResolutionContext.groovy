@@ -1,197 +1,115 @@
 package org.clyze.doop.input
 
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
-
+import groovy.util.logging.Log4j
 import org.clyze.analysis.InputType
 
 /**
  * The default implementation of the input resolution mechanism.
  */
+@Log4j
 class DefaultInputResolutionContext implements InputResolutionContext {
 
-    protected Log logger = LogFactory.getLog(getClass())
+	static final ChainResolver DEFAULT_RESOLVER = new ChainResolver(
+			// The order matters
+			new FileResolver(),
+			new DirectoryResolver(),
+			new URLResolver(),
+			IvyResolver.newInstance()
+	)
 
-    static final ChainResolver DEFAULT_RESOLVER = new ChainResolver(
-        //the order matters
-        new FileResolver(),
-        new DirectoryResolver(),
-        new URLResolver(),
-        IvyResolver.newInstance()
-    )
+	static final ChainResolver PYTHON_RESOLVER = new ChainResolver(
+			// The order matters
+			new FileResolver(),
+			new PythonDirectoryResolver()
+	)
 
-    //Always true, but this may change in the future
-    boolean transitive = true
+	// The input resolver
+	ChainResolver resolver
 
-    List<String> inputs = new LinkedList<>()
-    List<String> libraries = new LinkedList<>()
-    List<String> hprofs = new LinkedList<>()
+	// Always true, but this may change in the future
+	boolean transitive = true
 
-    //The set of resolved inputFiles
-    protected final Map<String, ResolvedInput> resolvedInputs = new LinkedHashMap<>()
-    protected final Map<String, ResolvedInput> resolvedLibraries = new LinkedHashMap<>()
-    protected final Map<String, ResolvedInput> resolvedHprofs = new LinkedHashMap<>()
+	Map<InputType, List<String>> files = [:].withDefault { [] }
+	Map<InputType, Map<String, ResolvedInput>> resolvedFiles = [:].withDefault { [:] }
 
-    //the input resolver
-    protected final ChainResolver resolver
+	DefaultInputResolutionContext(ChainResolver resolver = DEFAULT_RESOLVER) {
+		this.resolver = resolver
+	}
 
-    DefaultInputResolutionContext() {
-        this(DEFAULT_RESOLVER)
-    }
+	@Override
+	void add(String input, InputType inputType) { files[inputType] << input }
 
-    DefaultInputResolutionContext(ChainResolver resolver) {
-        this.resolver = resolver
-    }
+	@Override
+	void add(List<String> inputs, InputType inputType) { files[inputType] += inputs }
 
-    List targetList(InputType inputType) {
-        switch (inputType) {
-        case InputType.INPUT  : return this.inputs
-        case InputType.LIBRARY: return this.libraries
-        case InputType.HPROF  : return this.hprofs
-        default: throw new RuntimeException("Unknown inputType ${inputType}")
-        }
-    }
+	@Override
+	void set(String input, File file, InputType inputType) {
+		resolvedFiles[inputType][input] = new ResolvedInput(input, file)
+	}
 
-    Map<String, ResolvedInput> targetResolvedMap(InputType inputType) {
-        switch (inputType) {
-        case InputType.INPUT  : return this.resolvedInputs
-        case InputType.LIBRARY: return this.resolvedLibraries
-        case InputType.HPROF  : return this.resolvedHprofs
-        default: throw new RuntimeException("Unknown inputType ${inputType}")
-        }
-    }
+	@Override
+	void set(String input, List<File> files, InputType inputType) {
+		resolvedFiles[inputType][input] = new ResolvedInput(input, files)
+	}
 
-    @Override
-    void add(String input, InputType inputType) {
-        targetList(inputType).add(input)
-    }
+	@Override
+	Set<File> get(String input, InputType inputType) { resolvedFiles[inputType][input]?.files() ?: [] as Set }
 
-    @Override
-    void add(List<String> inputs, InputType inputType) {
-        targetList(inputType).addAll(inputs)
-    }
+	@Override
+	void resolve() {
+		files = files.asImmutable()
+		files.each { inputType, paths ->
+			paths.each { path ->
+				log.debug "Resolving $path ($inputType)"
+				def resolvedFile = resolvedFiles[inputType][path]
+				if (!resolvedFile)
+					resolver.resolve(path, this, inputType)
+			}
+		}
+	}
 
-    @Override
-    void set(String input, File file, InputType inputType) {
-        targetResolvedMap(inputType).put(input, new ResolvedInput(input, file))
-    }
+	@Override
+	List<String> inputs() { files[InputType.INPUT] }
 
-    @Override
-    void set(String input, List<File> files, InputType inputType) {
-        targetResolvedMap(inputType).put(input, new ResolvedInput(input, files))
-    }
+	@Override
+	List<String> libraries() { files[InputType.LIBRARY] }
 
-    @Override
-    Set<File> get(String input, InputType inputType) {
-        ResolvedInput resolvedInput = targetResolvedMap(inputType).get(input)
-        return resolvedInput ? resolvedInput.files() : Collections.emptySet()
-    }
+	@Override
+	List<String> platformFiles() { files[InputType.PLATFORM] }
 
-    @Override
-    void resolve() {
-        inputs.each { input ->
-            logger.debug "Resolving input $input"
-            ResolvedInput resolvedInput = resolvedInputs.get(input)
-            if (!resolvedInput)
-                resolver.resolve(input, this, InputType.INPUT)
-        }
+	@Override
+	List<String> heapDLs() { files[InputType.HEAPDL] }
 
-        libraries.each { input ->
-            logger.debug "Resolving library $input"
-            ResolvedInput resolvedInput = resolvedLibraries.get(input)
-            if (!resolvedInput)
-                resolver.resolve(input, this, InputType.LIBRARY)
-        }
+	private List<File> get0(InputType inputType) {
+		def resolvedList = []
+		files[inputType].each { path ->
+			log.debug "Getting $path ($inputType)"
+			def resolved = resolvedFiles[inputType][path]
+			if (resolved) {
+				log.debug "$path ($inputType) is resolved -> ${resolved.files()}"
+				resolvedList += resolved.files()
+			} else {
+				throw new RuntimeException("Unresolved $path ($inputType)")
+			}
+		}
+		resolvedList
+	}
 
-        hprofs.each { input ->
-            logger.debug "Resolving HPROF $input"
-            ResolvedInput resolvedInput = resolvedHprofs.get(input)
-            if (!resolvedInput)
-                resolver.resolve(input, this, InputType.HPROF)
-        }
-    }
+	@Override
+	List<File> getAllInputs() { get0(InputType.INPUT) }
 
+	@Override
+	List<File> getAllLibraries() { get0(InputType.LIBRARY) }
 
-    @Override
-    List<File> getAllInputs() {
-        def allFiles = new LinkedList<File>()
-        inputs.each { input ->
-            logger.debug "Getting input $input"
-            ResolvedInput resolvedInput = resolvedInputs.get(input)
-            if (resolvedInput) {
-                logger.debug "Input $input is resolved -> ${resolvedInput.files()}"
-                allFiles.addAll(resolvedInput.files())
-            }
-            else {
-                throw new RuntimeException("Unresolved input: $input")
-            }
-        }
+	@Override
+	List<File> getAllPlatformFiles() { get0(InputType.PLATFORM) }
 
-        return allFiles
-    }
+	@Override
+	List<File> getAllHeapDLs() { get0(InputType.HEAPDL) }
 
-    @Override
-    List<File> getAllLibraries() {
-        def allLibraryFiles = new LinkedList<File>()
-        libraries.each { library ->
-            logger.debug "Getting library $library"
-            ResolvedInput resolvedLibrary = resolvedLibraries.get(library)
-            if (resolvedLibrary) {
-                logger.debug "Library $library is resolved -> ${resolvedLibrary.files()}"
-                allLibraryFiles.addAll(resolvedLibrary.files())
-            }
-            else {
-                throw new RuntimeException("Unresolved library: $library")
-            }
-        }
+	@Override
+	List<File> getAll() { files.keySet().collect { inputType -> get0(inputType) }.flatten() as List<File> }
 
-        return allLibraryFiles
-    }
-
-    @Override
-    List<File> getAllHprofs() {
-        def allHprofFiles = new LinkedList<File>()
-        hprofs.each { hprof ->
-            logger.debug "Getting HPROF file ${hprof}"
-            ResolvedInput resolvedHprof = resolvedHprofs.get(hprof)
-            if (resolvedHprof) {
-                logger.debug "HPROF file ${hprof} is resolved -> ${resolvedHprof.files()}"
-                allHprofFiles.addAll(resolvedHprof.files())
-            }
-            else {
-                throw new RuntimeException("Unresolved HPROF file: ${hprof}")
-            }
-        }
-
-        return allHprofFiles
-    }
-
-    @Override
-    List<File> getAll() {
-        List<File> all = new LinkedList<>()
-        all.addAll(getAllInputs())
-        all.addAll(getAllLibraries())
-
-        return all
-    }
-
-    @Override
-    List<String> inputs() {
-        return inputs
-    }
-
-    @Override
-    List<String> libraries() {
-        return libraries
-    }
-
-    @Override
-    List<String> hprofs() {
-        return hprofs
-    }
-
-    @Override
-    String toString() {
-        return "Inputs: ${inputs()} Libraries: ${libraries()}"
-    }
+	@Override
+	String toString() { files.collect { inputType, paths -> "$inputType: $paths" }.join(", ") }
 }

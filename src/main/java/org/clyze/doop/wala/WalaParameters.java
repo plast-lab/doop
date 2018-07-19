@@ -11,10 +11,12 @@ public class WalaParameters {
     List<String> _platformLibraries = new ArrayList<>();
     String _javaPath = null;
     String _outputDir = null;
+    String _extraSensitiveControls = "";
     ClassFilter applicationClassFilter;
     String appRegex = "**";
     Integer _cores = null;
     boolean _android = false;
+    boolean _generateIR = false;
     String _androidJars = null;
 
     public void setInputs(List<String> inputs) {

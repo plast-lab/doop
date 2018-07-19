@@ -1,0 +1,13 @@
+#include "../souffle-logic/facts/flow-sensitive-schema.dl"
+#include "../souffle-logic/facts/flow-insensitive-schema.dl"
+#include "../souffle-logic/facts/import-entities.dl"
+#include "../souffle-logic/facts/import-facts.dl"
+#include "../souffle-logic/basic/subclass.dl"
+#include "../souffle-logic/basic/subclass-declarations.dl"
+#include "../souffle-logic/basic/superinterface.dl"
+#include "../souffle-logic/basic/superinterface-declarations.dl"
+#include "../souffle-logic/basic/type-hierarchy.dl"
+#include "../souffle-logic/basic/type-hierarchy-declarations.dl"
+
+.decl ClassConstructor(?method:Method, ?type:Type)
+.output SupertypeOf

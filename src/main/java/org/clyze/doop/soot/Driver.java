@@ -5,15 +5,11 @@ import soot.SootMethod;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class Driver {
     private ThreadFactory _factory;
-    private boolean _generateJimple;
+    private int _cores;
 
     private ExecutorService _executor;
     private int _classCounter;
@@ -21,16 +17,17 @@ public class Driver {
     private int _totalClasses;
     private int _classSplit = 80;
 
-    Driver(ThreadFactory factory, int totalClasses, boolean generateJimple,
-           Integer cores) {
+    Driver(ThreadFactory factory, int totalClasses, Integer cores) {
         _factory = factory;
-        _classCounter = 0;
-        _tmpClassGroup = new HashSet<>();
         _totalClasses = totalClasses;
-        _generateJimple = generateJimple;
-        int _cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
+        _cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
 
         System.out.println("Fact generation cores: " + _cores);
+    }
+
+    private void initExecutor() {
+        _classCounter = 0;
+        _tmpClassGroup = new HashSet<>();
 
         if (_cores > 2) {
             _executor = new ThreadPoolExecutor(_cores /2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
@@ -42,22 +39,25 @@ public class Driver {
         }
     }
 
-    void doInParallel(Set<SootClass> classesToProcess) {
+    void doInParallel(Set<SootClass> classesToProcess) throws DoopErrorCodeException {
+        initExecutor();
         classesToProcess.forEach(this::generate);
-
+        shutdownExecutor();
     }
 
-    void writeInParallel(Set<SootClass> classesToProcess) {
+    void writeInParallel(Set<SootClass> classesToProcess) throws DoopErrorCodeException {
+        initExecutor();
         classesToProcess.forEach(this::write);
-
+        shutdownExecutor();
     }
 
-    void shutdown() {
+    void shutdownExecutor() throws DoopErrorCodeException {
         _executor.shutdown();
         try {
             _executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         } catch (InterruptedException e) {
             System.err.println(e.getMessage());
+            throw new DoopErrorCodeException(10);
         }
     }
 

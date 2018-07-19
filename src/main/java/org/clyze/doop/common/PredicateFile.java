@@ -57,6 +57,7 @@ public enum PredicateFile
     EMPTY_ARRAY("EmptyArray"),
     CLASS_HEAP("ClassHeap"),
     METHOD_HANDLE_CONSTANT("MethodHandleConstant"),
+    METHOD_TYPE_CONSTANT("MethodTypeConstant"),
     STRING_CONST("StringConstant"),
     STRING_RAW("StringRaw"),
     FIELD_SIGNATURE("Field"),
@@ -99,7 +100,8 @@ public enum PredicateFile
     PHANTOM_TYPE("PhantomType"),
     BREAKPOINT_STMT("BreakpointStmt"),
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
-    CLASS_ARTIFACT("Class-Artifact");
+    CLASS_ARTIFACT("Class-Artifact"),
+    SPECIAL_CONTEXT_SENSITIVITY_METHOD("SpecialContextSensitivityMethod");
 
     private final String name;
 

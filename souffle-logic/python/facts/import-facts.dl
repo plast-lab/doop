@@ -1,0 +1,332 @@
+
+// NormalHeap
+
+.decl _NormalHeap(?id:symbol, ?type:symbol)
+.input _NormalHeap(IO="file", filename="NormalHeap.facts", delimiter="\t")
+
+isType(?type),
+isHeapAllocation(?id),
+isNormalHeap(?id),
+OriginalHeapAllocation_Type(?id, ?type),
+HeapAllocation_Type(?id, ?type) :-
+  _NormalHeap(?id, ?type).
+
+
+
+// StringConstant
+
+.decl _StringConstant(?id:symbol)
+.input _StringConstant(IO="file", filename="StringConstant.facts", delimiter="\t")
+
+isHeapAllocation(?id),
+isStringConstant(?id),
+OriginalHeapAllocation_Type(?id, "java.lang.String"),
+HeapAllocation_Type(?id, "java.lang.String") :-
+  _StringConstant(?id).
+
+
+// StringRaw
+
+.decl _StringRaw(?id:symbol, ?rawId:symbol)
+.input _StringRaw(IO="file", filename="StringRaw.facts", delimiter="\t")
+
+.decl String_toRaw(?id:symbol, ?rawId:symbol)
+
+isStringRaw(?id),
+String_toRaw(?id, ?rawId) :-
+  _StringRaw(?id, ?rawId).
+
+
+// AssignHeapAllocation
+
+.decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)
+.input _AssignHeapAllocation(IO="file", filename="AssignHeapAllocation.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+isAssignHeapAllocation_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Line(?instruction, ?linenumber),
+Instruction_Method(?instruction, ?method),
+AssignInstruction_To(?instruction, ?to),
+AssignHeapAllocation_Heap(?instruction, ?heap) :-
+  _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?method, ?linenumber).
+
+
+// AssignLocal
+
+.decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inmethod:symbol)
+.input _AssignLocal(IO="file", filename="AssignLocal.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+isAssignOper_Insn(?instruction),
+isAssignLocal_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+AssignLocal_From(?instruction, ?from),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignLocal(?instruction, ?index, ?from, ?to, ?method).
+
+
+// AssignBinop
+
+.decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
+.input _AssignBinop(IO="file", filename="AssignBinop.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+isAssignOper_Insn(?instruction),
+isAssignBinop_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignBinop(?instruction, ?index, ?to, ?method).
+
+
+// AssignUnop
+
+.decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
+.input _AssignUnop(IO="file", filename="AssignUnop.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+isAssignOper_Insn(?instruction),
+isAssignUnop_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignUnop(?instruction, ?index, ?to, ?method).
+
+
+// AssignOperFrom
+
+.decl _AssignOperFrom(?instruction:symbol, ?from:symbol)
+.input _AssignOperFrom(IO="file", filename="AssignOperFrom.facts", delimiter="\t")
+
+AssignOper_From(?instruction, ?from) :-
+  _AssignOperFrom(?instruction, ?from).
+
+
+// IfVar
+
+.decl _IfVar(?instruction:symbol, ?var:symbol)
+.input _IfVar(IO="file", filename="IfVar.facts", delimiter="\t")
+
+If_Var(?instruction, ?var) :-
+  _IfVar(?instruction, ?var).
+
+
+
+// AssignNumConstant
+
+.decl _AssignNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)
+.input _AssignNumConstant(IO="file", filename="AssignNumConstant.facts", delimiter="\t")
+
+isNumConstant(?const),
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+isAssignNumConstant_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+AssignNumConstant_Id(?instruction, ?const),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignNumConstant(?instruction, ?index, ?const, ?to, ?method).
+
+
+// Field
+
+.decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol)
+.input _Field(IO="file", filename="Field.facts", delimiter="\t")
+
+isField(?signature),
+Field_SimpleName(?signature, ?simplename) :-
+  _Field(?signature, ?declaringType, ?simplename).
+
+
+// Method Invocation line numbers
+
+.decl _MethodInvocation_Line(?instruction:symbol, line:number)
+.input _MethodInvocation_Line(IO="file", filename="MethodInvocation-Line.facts", delimiter="\t")
+
+isMethodInvocation(?instruction),
+MethodInvocation_Line(?instruction, ?line) :-
+  _MethodInvocation_Line(?instruction, ?line).
+
+
+
+// Static method invocation
+
+.decl _StaticMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?method:symbol)
+.input _StaticMethodInvocation(IO="file", filename="StaticMethodInvocation.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isStaticMethodInvocation_Insn(?instruction),
+isMethodInvocation(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method) :-
+  _StaticMethodInvocation(?instruction, ?index, _, ?method).
+
+
+// Virtual method invocation
+
+.decl _VirtualMethodInvocation(?instruction:symbol, ?index:number, ?base:symbol, ?method:symbol)
+.input _VirtualMethodInvocation(IO="file", filename="VirtualMethodInvocation.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isMethodInvocation(?instruction),
+isVirtualMethodInvocation_Insn(?instruction),
+VirtualMethodInvocation_Base(?instruction, ?base),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method) :-
+  _VirtualMethodInvocation(?instruction, ?index, ?base, ?method).
+
+
+// Throw
+
+.decl _Throw(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
+.input _Throw(IO="file", filename="Throw.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isThrow_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+Throw(?instruction, ?var),
+Throw_Var(?instruction, ?var) :-
+  _Throw(?instruction, ?index, ?var, ?method).
+
+
+// Exception handler
+
+.decl _ExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number)
+.input _ExceptionHandler(IO="file", filename="ExceptionHandler.facts", delimiter="\t")
+
+isExceptionHandler(?handler),
+ExceptionHandler_Method(?handler, ?method),
+ExceptionHandler_Index(?handler, ?index),
+ExceptionHandler_Type(?handler, ?type),
+ExceptionHandler_FormalParam(?handler, ?var),
+ExceptionHandler_Begin(?handler, ?begin),
+ExceptionHandler_End(?handler, ?end) :-
+  _ExceptionHandler(?handler, ?method, ?index, ?type, ?var, ?begin, ?end).
+
+
+// Method
+
+.decl _Method(?method:symbol, ?simplename:symbol, ?declaringType:symbol, ?arity:number)
+.input _Method(IO="file", filename="Method.facts", delimiter="\t")
+
+isMethod(?method),
+Method_SimpleName(?method, ?simplename),
+Method_Arity(?method, ?arity) :-
+  _Method(?method, ?simplename, ?declaringType, ?arity).
+
+
+// StoreInstanceField
+
+.decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?method:symbol)
+.input _StoreInstanceField(IO="file", filename="StoreInstanceField.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isFieldInstruction(?instruction),
+isStoreInstanceField_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+StoreInstanceField_Base(?instruction, ?base),
+StoreInstanceField_From(?instruction, ?from) :-
+  _StoreInstanceField(?instruction, ?index, ?from, ?base, ?method).
+
+
+// LoadInstanceField
+
+.decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?method:symbol)
+.input _LoadInstanceField(IO="file", filename="LoadInstanceField.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isFieldInstruction(?instruction),
+isLoadInstanceField_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+LoadInstanceField_Base(?instruction, ?base),
+LoadInstanceField_To(?instruction, ?to) :-
+  _LoadInstanceField(?instruction, ?index, ?to, ?base, ?method).
+
+
+// Goto
+
+.decl _Goto(?instruction:symbol, ?index:number, ?to:number, ?method:symbol)
+.input _Goto(IO="file", filename="Goto.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isGoto_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+Goto_Target(?instruction, ?to) :-
+  _Goto(?instruction, ?index, ?to, ?method).
+
+
+// If
+
+.decl _If(?instruction:symbol, ?index:number, ?to:number, ?method:symbol)
+.input _If(IO="file", filename="If.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isIf_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+If_Target(?instruction, ?to) :-
+  _If(?instruction, ?index, ?to, ?method).
+
+
+// ReturnNonNone
+
+.decl _Return(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
+.input _Return(IO="file", filename="Return.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isReturnInstruction(?instruction),
+isReturnNonNone_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+ReturnNonNone_Var(?instruction, ?var) :-
+  _Return(?instruction, ?index, ?var, ?method).
+
+
+// ReturnNone
+
+.decl _ReturnNone(?instruction:symbol, ?index:number, ?method:symbol)
+.input _ReturnNone(IO="file", filename="ReturnVoid.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isReturnInstruction(?instruction),
+isReturnNone_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method) :-
+  _ReturnNone(?instruction, ?index, ?method).
+
+
+
+// UnsupportedInstruction
+
+.decl _UnsupportedInstruction(?instruction:symbol, ?index:number, ?method:symbol)
+.input _UnsupportedInstruction(IO="file", filename="UnsupportedInstruction.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isUnsupportedInstruction(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method) :-
+  _UnsupportedInstruction(?instruction, ?index, ?method).
+
+
+
+// Basic Types as nullary functional-predicates
+
+isType(?t), isPrimitiveType(?t), Type_boolean(?t) :- ?t = "boolean".
+isType(?t), isPrimitiveType(?t), Type_int(?t)     :- ?t = "int".
+isType(?t), isPrimitiveType(?t), Type_long(?t)    :- ?t = "long".
+isType(?t), isPrimitiveType(?t), Type_float(?t)   :- ?t = "float".
+
+isType(?t), Type_none(?t) :- ?t = "None".
+
+//isType(?t), isClassType(?t), Type_object(?t) :- ?t = "object".
+

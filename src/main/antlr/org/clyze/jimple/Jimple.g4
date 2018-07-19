@@ -118,8 +118,9 @@ valueList
 bootValueList
 	: valueList;
 
+// Used to be 'if' instead of IDENTIFIER, but Uber has fields named `if`
 jumpStmt
-	: ('if' value ('==' | '!=' | '<' | '<=' | '>' | '>=') value)? 'goto' IDENTIFIER ;
+	: (IDENTIFIER value ('==' | '!=' | '<' | '<=' | '>' | '>=') value)? 'goto' IDENTIFIER ;
 
 switchStmt
 	: ('tableswitch'|'lookupswitch') '(' value ')' '{' caseStmt* '}' ;
@@ -183,6 +184,7 @@ STRING_CHAR
 fragment
 IDENTIFIER_BASE
 	: [$@a-zA-Z0-9_][$@a-zA-Z0-9_-]*
+	| '-'[$@a-zA-Z0-9_-]+ // Added for Uber that has class names starting with '-'
 	;
 
 fragment

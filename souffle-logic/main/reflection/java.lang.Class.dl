@@ -79,27 +79,20 @@ ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
    PreClassNameMatchingStringConstantExact_Type(?type, ?constantHeap)).
 
 
-#ifdef DYNAMIC
-/**
- * Class.forName invocations with user-configured dynamic classes
- */
-ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
-ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
-  java_lang_Class_forName(?invocation, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  Config_DynamicClass(?type, ?invocation).
-#endif // DYNAMIC
-
-
 /*************************************************************
- * java.lang.Class.getName
+ * java.lang.Class.getName and java.lang.Class.getCanonicalName
  *
  *   public String getName()
+ *   public String getCanonicalName()
+ *
+ * TODO: getCanonicalName() for local and anonymous classes
+ * TODO: primitive classes
  *************************************************************/
 
 VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   ImmutableHContextFromContext(?callerCtx, ?hctx),
-  java_lang_Class_getName(?to, ?from),
+  (java_lang_Class_getName(?to, ?from);
+   java_lang_Class_getCanonicalName(?to, ?from)),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?className, ?classValue),
   isStringConstant(?className),
@@ -110,6 +103,26 @@ VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   #ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5,6)
   #endif
+
+/*************************************************************
+ * java.lang.Class.getSimpleName
+ *
+ *   public String getSimpleName()
+ *************************************************************/
+
+// This is an opaque invocation, so we read its facts directly.
+VarPointsTo(?hctx, ?simpleName, ?ctx, ?return) :-
+  ReachableContext(?ctx, ?caller),
+  _VirtualMethodInvocation(?invocation, _, ?method, ?base, ?caller),
+  ?method = "<java.lang.Class: java.lang.String getSimpleName()>",
+  VarPointsTo(?hctx, ?classValue, ?ctx, ?base),
+  ReifiedClass(?className, ?classValue),
+  AssignReturnValue(?invocation, ?return),
+  MinimalSuffix(?className, ?simpleName).
+
+// TODO: getSimpleName() must return "" when the class is anonymous
+// (such as a lambda).
+
 
 // REVIEW: Note how unsound this rule is: it returns a string only
 // if the string exists in the input. 
@@ -548,24 +561,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   isType(?type),
   ?type = "java.lang.ClassLoader",
   ReflectiveAllocation(?invocation, ?type, ?value).
-  
-/*************************************************************
- * java.lang.ClassLoader.getResource
- *
- *   public URL getResource(java.lang.String)
- *
- * NOTE  
- * We just create a dummy value to represent the URL resource returned.
- *************************************************************/
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
-  java_lang_ClassLoader_getResource(?invocation, ?to, ?from),
-  Var_DeclaringMethod(?from, ?method),
-  ReachableContext(?ctx, ?method),
-  isType(?type),
-  ?type = "java.net.URL",
-  ReflectiveAllocation(?invocation, ?type, ?value).
-
 
 /*************************************************************
  * Auxiliaries

@@ -10,7 +10,7 @@ import java.util.Set;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
- * generate facts. The class FactGenerator is the parseParamsAndRun class
+ * generate facts. The class FactGenerator is the main class
  * controlling what facts are generated.
  */
 
@@ -250,21 +250,10 @@ class FactGenerator implements Runnable {
                 }
             } catch (RuntimeException ex) {
                 System.err.println("Fact generation failed for method " + m.getSignature() + ".");
-                handleFactGenException(ex);
+                ex.printStackTrace();
+                throw ex;
             }
         }
-    }
-
-    // Some errors are due to non-determinism; crash early
-    // and tell the user to rerun fact generation.
-    private void handleFactGenException(RuntimeException ex) {
-        String msg = ex.getMessage();
-        if ((ex instanceof java.lang.IllegalStateException) ||
-            ((msg != null) && (msg.equals("no active FastHierarchy present for scene")))) {
-            System.err.println("ERROR: fact generation should be repeated.");
-            throw ex;
-        } else
-            ex.printStackTrace();
     }
 
     private void generate(SootMethod m, Body b, Session session)

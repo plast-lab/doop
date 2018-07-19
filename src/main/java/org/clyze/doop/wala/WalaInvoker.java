@@ -9,20 +9,17 @@ import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
-import com.ibm.wala.util.ref.ReferenceCleanser;
+import com.ibm.wala.shrikeCT.InvalidClassFileException;
+import com.ibm.wala.types.TypeReference;
+import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.DoopErrorCodeException;
-import org.clyze.doop.soot.SootParameters;
-import org.clyze.doop.util.filter.GlobClassFilter;
-import soot.SootClass;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class WalaInvoker {
 
@@ -44,14 +41,13 @@ public class WalaInvoker {
     }
 
     private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
-        walaParameters.applicationClassFilter = new GlobClassFilter(walaParameters.appRegex);
-
-
+        //walaParameters.applicationClassFilter = new GlobClassFilter(walaParameters.appRegex);
         // Change package delimiter from "/" to "."
-        return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
+        //return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
+        return(klass.getClassLoader().getName().toString().equals("Application"));
     }
 
-    public void parseParamsAndRun(String[] args) throws IOException {
+    public void main(String[] args) throws IOException {
         WalaParameters walaParameters = new WalaParameters();
         try {
             if (args.length == 0) {
@@ -76,6 +72,9 @@ public class WalaInvoker {
                         i = shift(args, i);
                         walaParameters._appLibraries.add(args[i]);
                         break;
+                    case "--generate-ir":
+                        walaParameters._generateIR = true;
+                        break;
                     case "-el":
                         i = shift(args, i);
                         walaParameters._platformLibraries.add(args[i]);
@@ -91,6 +90,10 @@ public class WalaInvoker {
                     case "--application-regex":
                         i = shift(args, i);
                         walaParameters.appRegex = args[i];
+                        break;
+                    case "--extra-sensitive-controls":
+                        i = shift(args, i);
+                        walaParameters._extraSensitiveControls = args[i];
                         break;
                     case "--fact-gen-cores":
                         i = shift(args, i);
@@ -128,9 +131,9 @@ public class WalaInvoker {
                 classPath.append(":").append(walaParameters._inputs.get(i));
         }
 
-        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
-            classPath.append(":").append(walaParameters._appLibraries.get(i));
-        }
+//        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
+//            classPath.append(":").append(walaParameters._appLibraries.get(i));
+//        }
 
         System.out.println("WALA classpath:" + classPath);
         for (String lib : walaParameters.getPlatformLibraries())
@@ -141,9 +144,10 @@ public class WalaInvoker {
 
         AnalysisScope scope;
         if(walaParameters._android)
-            scope = WalaScopeReader.setUpAndroidAnalysisScope(classPath.toString(),"", walaParameters._platformLibraries, walaParameters._appLibraries);
+            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters._inputs, "", walaParameters._platformLibraries, walaParameters._appLibraries);
         else
-            scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
+            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters._inputs,"", walaParameters._platformLibraries, walaParameters._appLibraries);
+            //scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 
         ClassHierarchy cha = null;
         try {
@@ -154,10 +158,19 @@ public class WalaInvoker {
 
         assert cha != null;
         Iterator<IClass> classes = cha.iterator();
-        Database db = new Database(new File(walaParameters._outputDir), false);
+        Database db = new Database(new File(walaParameters._outputDir));
         WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
         WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //WARNING: This introduces a dependency to SOOT
+        //TODO: Find an alternative way to do this using WALA
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if(walaParameters._android)
+        {
+            WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters._inputs, walaFactWriter, walaParameters._extraSensitiveControls);
+            parser.writeComponents();
+        }
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
 
         IAnalysisCacheView cache;
@@ -168,25 +181,60 @@ public class WalaInvoker {
 
         IClass klass;
         Set<IClass> classesSet = new HashSet<>();
+        Map<String, List<String>> signaturePolymorphicMethods = new HashMap<>();
         while (classes.hasNext()) {
             klass = classes.next();
-            if (!walaParameters._android && isApplicationClass(walaParameters, klass)) {
-                walaFactWriter.writeApplicationClass(klass);
-            }
-            if (walaParameters._android && klass.getClassLoader().getName().toString().equals("Application")) {
+            if (isApplicationClass(walaParameters, klass)) {
                 walaFactWriter.writeApplicationClass(klass);
             }
             classesSet.add(klass);
-            for(IMethod m: klass.getDeclaredMethods())
-                cache.getIR(m);
-
+            for(IMethod m: klass.getDeclaredMethods()) {
+                addIfSignaturePolymorphic(m, signaturePolymorphicMethods);
+                //System.out.println(m.toString());
+                try {
+                    cache.getIR(m);
+                }catch (Throwable e){
+                    System.out.println("Error while creating IR for method: " + m.getReference() + "\n"+ e);
+                }
+            }
         }
+        walaFactWriter.setSignaturePolyMorphicMethods(signaturePolymorphicMethods);
 
         WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), false, walaParameters._cores, walaParameters._android, cache);
         driver.doInParallel(classesSet);
         driver.shutdown();
+
+        if(walaFactWriter.getNumberOfPhantomTypes() > 0)
+            System.out.println("WARNING: Input contains phantom types. \nNumber of phantom types:" + walaFactWriter.getNumberOfPhantomTypes());
+        if(walaFactWriter.getNumberOfPhantomMethods() > 0)
+            System.out.println("WARNING: Input contains phantom methods. \nNumber of phantom methods:" + walaFactWriter.getNumberOfPhantomMethods());
+        if(walaFactWriter.getNumberOfPhantomBasedMethods() > 0)
+            System.out.println("WARNING: Input contains phantom based methods. \nNumber of phantom based methods:" + walaFactWriter.getNumberOfPhantomBasedMethods());
         db.flush();
         db.close();
+    }
+
+    private void addIfSignaturePolymorphic(IMethod m, Map <String, List<String>> signaturePolymorphics)
+    {
+        Collection<Annotation> annotations = m.getAnnotations();
+        String className = WalaUtils.fixTypeString(m.getDeclaringClass().getName().toString());
+        for(Annotation ann: annotations)
+        {
+            if(ann.getType().getName().toString().equals("Ljava/lang/invoke/MethodHandle$PolymorphicSignature"))
+            {
+                List<String> declaredExceptions = new ArrayList<>();
+                try{
+                    TypeReference[] exceptions = m.getDeclaredExceptions();
+                    if(exceptions != null && exceptions.length > 0) {
+                        for(TypeReference exc: exceptions)
+                            declaredExceptions.add(WalaUtils.fixTypeString(exc.toString()));
+                    }
+                } catch (InvalidClassFileException e) {
+                    e.printStackTrace();
+                }
+                signaturePolymorphics.put(className + ":" + m.getName().toString(), declaredExceptions);
+            }
+        }
     }
 
 }

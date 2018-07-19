@@ -32,11 +32,11 @@ ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
       NativeReturnVar(?return, strMethod), \
       isHeapAllocation(strHeap). \
   \
-  SpecialMethodInvocation_Base(cat(strMethod, cat("/native", strConstructor)), ?return), \
-  Instruction_Method(cat(strMethod, cat("/native", strConstructor)), strMethod), \
-  MethodInvocation_Method(cat(strMethod, cat("/native", strConstructor)), strConstructor), \
-  PlusSpecialMethodInvocation(cat(strMethod, cat("/native", strConstructor))), \
-  Instruction_Index(cat(strMethod, cat("/native", strConstructor)), ?index) \
+  SpecialMethodInvocation_Base(cat(strMethod, cat("/native ", strConstructor)), ?return), \
+  Instruction_Method(cat(strMethod, cat("/native ", strConstructor)), strMethod), \
+  MethodInvocation_Method(cat(strMethod, cat("/native ", strConstructor)), strConstructor), \
+  PlusSpecialMethodInvocation(cat(strMethod, cat("/native ", strConstructor))), \
+  Instruction_Index(cat(strMethod, cat("/native ", strConstructor)), ?index) \
     :- \
       isMethod(strMethod), \
       NativeReturnVar(?return, strMethod), \

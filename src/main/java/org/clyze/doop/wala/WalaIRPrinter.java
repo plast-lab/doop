@@ -37,7 +37,7 @@ public class WalaIRPrinter {
 
 //        Collection<IField> fields = cl.getAllFields();
         Collection<IField> fields = WalaFactWriter.getAllFieldsOfClass(cl);
-        Collection<IMethod> methods = cl.getDeclaredMethods();
+        Collection<? extends IMethod> methods = cl.getDeclaredMethods();
         Collection<IClass> interfaces =  cl.getAllImplementedInterfaces();
         try {
             PrintWriter printWriter = new PrintWriter(file);
@@ -126,7 +126,7 @@ public class WalaIRPrinter {
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
         SymbolTable symbolTable = ir.getSymbolTable();
-        for (int i = 0; i <=cfg.getMaxNumber(); i++) {
+        for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             int start = basicBlock.getFirstInstructionIndex();
             int end = basicBlock.getLastInstructionIndex();

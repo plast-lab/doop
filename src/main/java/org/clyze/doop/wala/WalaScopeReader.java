@@ -38,28 +38,38 @@ public class WalaScopeReader {
 
     private static final ClassLoader MY_CLASSLOADER = WalaScopeReader.class.getClassLoader();
 
-    static AnalysisScope makeScope(String classPath, File exclusionsFile, String javaLibDir)
+    static AnalysisScope setupJavaAnalysisScope(List<String> inputJars, String exclusions, List<String> javaLibs, List<String> appLibs) throws IOException
     {
-        if (classPath == null) {
-            throw new IllegalArgumentException("classPath null");
-        }
         String myEnv = System.getenv("DOOP_HOME");
-        SCOPE_TEXT_FILE = myEnv + "/src/main/resources/WALAprimordial.txt";
         SCOPE_BIN_FILE = myEnv + "/src/main/resources/WALAprimordial.jar.model";
-        JAVA_LIB_DIR = javaLibDir;
-
         AnalysisScope scope = AnalysisScope.createJavaAnalysisScope();
-        try {
-            read(scope, SCOPE_TEXT_FILE, exclusionsFile, MY_CLASSLOADER);
-        } catch (IOException e) {
-            e.printStackTrace();
+
+        for(String javaLib : javaLibs) {
+            final JarFile jar = new JarFile(new File(javaLib));
+            scope.addToScope(ClassLoaderReference.Primordial, new JarFileModule(jar));
         }
-        ClassLoaderReference loader = scope.getLoader(AnalysisScope.APPLICATION);
-        addClassPathToScope(classPath, scope, loader);
+
+        Module M = (new FileProvider()).getJarFileModule(SCOPE_BIN_FILE, MY_CLASSLOADER);
+        scope.addToScope(ClassLoaderReference.Primordial, M);
+
+        for(String appLib : appLibs) {
+            final JarFile jar = new JarFile(new File(appLib));
+            scope.addToScope(ClassLoaderReference.Extension, new JarFileModule(jar));
+        }
+
+
+        for(String input : inputJars)
+        {
+            JarFile jar = new JarFile(input, false);
+            scope.addToScope(scope.getLoader(AnalysisScope.APPLICATION), jar);
+        }
+
+        //String[] inputJars = classPath.split(":");
+        //addClassPathToScope(classPath, scope, scope.getLoader(AnalysisScope.APPLICATION));
         return scope;
     }
 
-    public static AnalysisScope setUpAndroidAnalysisScope(String classpath, String exclusions, List<String> androidLibs, List<String> appLibs) throws IOException {
+    public static AnalysisScope setUpAndroidAnalysisScope(List<String> inputs, String exclusions, List<String> androidLibs, List<String> appLibs) throws IOException {
         AnalysisScope scope;
         scope = AnalysisScope.createJavaAnalysisScope();
 
@@ -96,13 +106,40 @@ public class WalaScopeReader {
         scope.setLoaderImpl(ClassLoaderReference.Application,
                 "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
 
-        scope.addToScope(ClassLoaderReference.Application, DexFileModule.make(new File(classpath)));
+        for(String input: inputs)
+            scope.addToScope(ClassLoaderReference.Application, DexFileModule.make(new File(input)));
 
+        return scope;
+    }
+
+    /*
+     * From this point on the code is alternative to setupJavaAnalysisScope()
+     * Leaving this for now as it may feature things we will eventually want to include
+     */
+    static AnalysisScope makeScope(String classPath, File exclusionsFile, String javaLibDir)
+    {
+        if (classPath == null) {
+            throw new IllegalArgumentException("classPath null");
+        }
+        String myEnv = System.getenv("DOOP_HOME");
+        SCOPE_TEXT_FILE = myEnv + "/src/main/resources/WALAprimordial.txt";
+        SCOPE_BIN_FILE = myEnv + "/src/main/resources/WALAprimordial.jar.model";
+        JAVA_LIB_DIR = javaLibDir;
+
+        AnalysisScope scope = AnalysisScope.createJavaAnalysisScope();
+        try {
+            read(scope, SCOPE_TEXT_FILE, exclusionsFile, MY_CLASSLOADER);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        ClassLoaderReference loader = scope.getLoader(AnalysisScope.APPLICATION);
+        addClassPathToScope(classPath, scope, loader);
         return scope;
     }
 
 
     //Method taken from com.ibm.wala.util.config.AnalysisScopeReader
+    //CURRENTLY UNUSED
     public static AnalysisScope read(AnalysisScope scope, String scopeFileName, File exclusionsFile, ClassLoader javaLoader) throws IOException {
         BufferedReader r = null;
         try {
@@ -148,6 +185,7 @@ public class WalaScopeReader {
     }
 
     //DOOP: We currently only need a fraction of these, but keeping the rest for reference to what it is capable of doing
+    //CURRENTLY UNUSED
     private static void processScopeDefLine(AnalysisScope scope, ClassLoader javaLoader, String line) throws IOException {
         if (line == null) {
             throw new IllegalArgumentException("null line");
@@ -199,6 +237,7 @@ public class WalaScopeReader {
     }
 
     //Method taken from com.ibm.wala.util.config.AnalysisScopeReader
+    //CURRENTLY UNUSED
     private static void addClassPathToScope(String classPath, AnalysisScope scope, ClassLoaderReference loader) {
         if (classPath == null) {
             throw new IllegalArgumentException("null classPath");

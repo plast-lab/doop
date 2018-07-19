@@ -183,35 +183,33 @@ Metrics_Value_AsReceiver_Count(?value, ?n) :-
   _ValueAsReceiver(?value, _),
   ?n = count:{_ValueAsReceiver(?value, _)}.
 
-.decl VPTCountPerMethod(?method:Method, ?n:number)
 
-VPTCountPerMethod(?method, Y) :-
-   isVar(?var),
-   Var_DeclaringMethod(?var, ?method),
-   Y =  count : {mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var),
+.decl PointsToCountPerType(?type:Type, Y:number)
+PointsToCountPerType(?type, Y) :-
+   isType(?type),
+   Y = count : {mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), mainAnalysis.Value_Type(?value, ?type),
    ?hctx = ?hctx,
    ?ctx = ?ctx,
-   ?value = ?value}.
+   ?var = ?var}.
 
-.decl NeighboringMethodsInCallGraph(?method:Method, ?neighbor:Method)
-
-NeighboringMethodsInCallGraph(?method, ?method) :-
-   VPTCountPerMethod(?method, _).
-
-NeighboringMethodsInCallGraph(?neigh, ?method),
-NeighboringMethodsInCallGraph(?method, ?neigh) :-
-   mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
-   Instruction_Method(?invo, ?neigh).
-
-.decl VPTImpact(?method:Method, ?n:number)
-
-VPTImpact(?method, Y) :-
-  isMethod(?method),
-  Y = sum ?n: { NeighboringMethodsInCallGraph(?method, ?neigh), VPTCountPerMethod(?neigh, ?n) }.
-  
-.output VPTCountPerMethod
-.output VPTImpact
+.output PointsToCountPerType
         
+.decl InstanceFieldPointsToCountPerType(?type:Type, Y:number)
+InstanceFieldPointsToCountPerType(?type, Y) :-
+  isType(?type),
+  Y = count : {mainAnalysis.InstanceFieldPointsTo(_, _, _, _, ?basevalue), mainAnalysis.Value_Type(?basevalue, ?type)}.
+
+.output InstanceFieldPointsToCountPerType
+
+.decl IFPTToVPTRatioPerType(?type:Type, ?n:number)
+IFPTToVPTRatioPerType(?type, ?n) :-
+  PointsToCountPerType(?type, ?n1),
+  InstanceFieldPointsToCountPerType(?type, ?n2),
+  ?n = ?n1/?n2,
+  ?n2 > 0.
+
+.output IFPTToVPTRatioPerType
+
 .decl ContextsPerMethod(?method:Method, ?n:number)
 
 ContextsPerMethod(?method, Y) :- isMethod(?method), Y = count: mainAnalysis.ReachableContext(_, ?method).        

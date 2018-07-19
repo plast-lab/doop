@@ -1,3 +1,5 @@
+#include "opaque-methods.dl"
+
 // MainClass
 .decl _MainClass(?class:symbol)
 .input _MainClass(IO="file", filename="MainClass.facts", delimiter="\t")
@@ -72,6 +74,17 @@ OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodHandle"),
 MethodHandleConstant_Method(?id, ?method),
 HeapAllocation_Type(?id, "java.lang.invoke.MethodHandle") :-
   _MethodHandleConstant(?id, ?method).
+
+// MethodTypeConstant
+
+.decl _MethodTypeConstant(?id:symbol)
+.input _MethodTypeConstant(IO="file", filename="MethodTypeConstant.facts", delimiter="\t")
+
+isHeapAllocation(?id),
+isMethodTypeConstant(?id),
+HeapAllocation_Type(?id, "java.lang.invoke.MethodType"),
+OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodType") :-
+  _MethodTypeConstant(?id).
 
 // EmptyArray
 
@@ -321,12 +334,14 @@ MethodInvocation_Base(?invocation, ?base) :-
 isMethod(?signature),
 isInstruction(?instruction),
 isMethodInvocation(?instruction),
-isStaticMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
 MethodInvocation_Method(?instruction, ?signature) :-
   _StaticMethodInvocation(?instruction, ?index, ?signature, ?method).
 
+isStaticMethodInvocation_Insn(?instruction) :-
+  _StaticMethodInvocation(?instruction, _, ?signature, _),
+  !isOpaqueMethod(?signature).
 
 // Special method invocation
 
@@ -336,13 +351,15 @@ MethodInvocation_Method(?instruction, ?signature) :-
 isMethod(?signature),
 isInstruction(?instruction),
 isMethodInvocation(?instruction),
-isSpecialMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
-SpecialMethodInvocation_Base(?instruction, ?base),
 MethodInvocation_Method(?instruction, ?signature) :-
   _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
+isSpecialMethodInvocation_Insn(?instruction),
+SpecialMethodInvocation_Base(?instruction, ?base) :-
+  _SpecialMethodInvocation(?instruction, _, ?signature, ?base, _),
+  !isOpaqueMethod(?signature).
 
 // Virtual method invocation
 
@@ -352,13 +369,15 @@ MethodInvocation_Method(?instruction, ?signature) :-
 isMethod(?signature),
 isInstruction(?instruction),
 isMethodInvocation(?instruction),
-isVirtualMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
-VirtualMethodInvocation_Base(?instruction, ?base),
 MethodInvocation_Method(?instruction, ?signature) :-
   _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
+isVirtualMethodInvocation_Insn(?instruction),
+VirtualMethodInvocation_Base(?instruction, ?base) :-
+  _VirtualMethodInvocation(?instruction, _, ?signature, ?base, ?method),
+  !isOpaqueMethod(?signature).
 
 // Dynamic method invocation
 
@@ -377,6 +396,14 @@ DynamicMethodInvocation_DynReturnType(?instruction, ?dynRetType),
 DynamicMethodInvocation_DynParamTypes(?instruction, ?dynParamTypes),
 DynamicMethodInvocation_DynArity(?instruction, ?dynArity) :-
   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?method).
+
+// Opaque method invocations
+
+isOpaqueInstruction(?instruction) :-
+  (_StaticMethodInvocation(?instruction, _, ?signature, _);
+   _SpecialMethodInvocation(?instruction, _, ?signature, _, _);
+   _VirtualMethodInvocation(?instruction, _, ?signature, _, _)),
+  isOpaqueMethod(?signature).
 
 
 // Throw
@@ -423,19 +450,24 @@ ExceptionHandler_End(?handler, ?end) :-
 
 // Method
 
-.decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol)
+.decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol, ?arity:number)
 .input _Method(IO="file", filename="Method.facts", delimiter="\t")
 
 isMethod(?method),
-isMethodDescriptor(?descriptor),
 isJVMDescriptor(?jvmDescriptor),
 Method_SimpleName(?method, ?simplename),
-Method_Descriptor(?method, ?descriptor),
+Method_Params(?method, ?params),
 Method_DeclaringType(?method, ?declaringType),
 Method_JVMDescriptor(?method, ?jvmDescriptor),
+Method_Arity(?method, ?arity),
 Method_ReturnType(?method, ?returnType) :-
-  _Method(?method, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescriptor).
+  _Method(?method, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor, ?arity).
 
+isMethodDescriptor(?descriptor),
+Method_Descriptor(?method, ?descriptor) :-
+  Method_ReturnType(?method, ?returnType),
+  Method_Params(?method, ?params),
+  ?descriptor = cat(?returnType, ?params).
 
 // StoreInstanceField
 

@@ -1,3 +1,6 @@
+// String constants are bare strings so we transform their ids for presentation.
+#define STRING_CONSTANT(x) cat("<string constant `", cat(x, "`>"))
+
 // Class-- //
 
 .decl _Valid_Type(?type:ReferenceType)
@@ -5,60 +8,59 @@ _Valid_Type(?type) :-
   isReferenceType(?type),
   !Type_null(?type),
   !isArrayType(?type),
-  Server_Class_Keep(?type).
-
+  _Server_Interesting_Type(?type).
 
 // ?class is implemented/extended by ?subClass
 .decl Server_Class_Subtype(?class:ReferenceType, ?subClass:ReferenceType)
-.decl Server_Class_Keep(?class:ReferenceType)
 // ?class has access to ?field (either it is declared in the class, or in a superclass)
-.decl Server_Class_ReachesField(?class:ClassType, ?fld:Field)
+.decl Server_Type_Can_Access_Field(?class:ClassType, ?fld:Field)
 .output Server_Class_Subtype
-.output Server_Class_Keep
-.output Server_Class_ReachesField
+.output Server_Type_Can_Access_Field
 
 Server_Class_Subtype(?class, ?subClass) :-
   basic.SubtypeOfDifferent(?subClass, ?class),
   _Valid_Type(?class),
   _Valid_Type(?subClass).
 
+.decl _Server_Interesting_Type(?class:ReferenceType)
+
 // All application types
-Server_Class_Keep(?class) :-
+_Server_Interesting_Type(?class) :-
   ApplicationClass(?class).
 
 // All classes with a reachable method
-Server_Class_Keep(?class) :-
+_Server_Interesting_Type(?class) :-
   Method_DeclaringType(?method, ?class),
   mainAnalysis.Reachable(?method).
 
 // Types of class heaps used
-Server_Class_Keep(?type) :-
+_Server_Interesting_Type(?type) :-
   mainAnalysis.VarPointsTo(_, ?classHeap, _, _),
   ClassHeap_InstanceType(?classHeap, ?type).
 
 #ifdef REFLECTION
 // Reified types used
-Server_Class_Keep(?type) :-
+_Server_Interesting_Type(?type) :-
   mainAnalysis.ReifiedClass(?type, ?value),
   mainAnalysis.VarPointsTo(_, ?value, _, _).
 #endif
 
 #ifdef REFLECTION_DYNAMIC_PROXIES
 // Proxied interfaces
-Server_Class_Keep(?interface) :-
+_Server_Interesting_Type(?interface) :-
   ProxyObject_Interface(_, ?interface).
 #endif
 
 // Transitively, everything up the hierarchy
-Server_Class_Keep(?interface) :-
-  Server_Class_Keep(?class),
+_Server_Interesting_Type(?interface) :-
+  _Server_Interesting_Type(?class),
   basic.SupertypeOf(?interface, ?class).
 
-Server_Class_ReachesField(?class, ?fld) :-
+Server_Type_Can_Access_Field(?class, ?fld) :-
   Field_DeclaringType(?fld, ?class),
-  Server_Class_Keep(?class).
+  _Server_Interesting_Type(?class).
 
-Server_Class_ReachesField(?class, ?fld) :-
+Server_Type_Can_Access_Field(?class, ?fld) :-
   Field_DeclaringType(?fld, ?supertype),
   Field_Modifier(?mod, ?fld),
   !Modifier_private(?mod),
@@ -113,7 +115,16 @@ Server_IField_Values(?baseValue, ?fld, ?value) :-
   Server_IField_Values_Count(?baseValue, ?fld, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD,
   mainAnalysis.isValue(?baseValue),
-  mainAnalysis.isValue(?value).
+  mainAnalysis.isValue(?value),
+  !isStringConstant(?value).
+
+Server_IField_Values(?baseValue, ?fld, STRING_CONSTANT(?value)) :-
+  _IFPT(?baseValue, ?fld, ?value),
+  Server_IField_Values_Count(?baseValue, ?fld, ?count),
+  ?count <= X_SERVER_LOGIC_THRESHOLD,
+  mainAnalysis.isValue(?baseValue),
+  mainAnalysis.isValue(?value),
+  isStringConstant(?value).
 
 Server_IField_Values(?baseValue, ?fld, "<<XL-pt-set>>") :-
   Server_IField_Values_Count(?baseValue, ?fld, ?count),
@@ -124,6 +135,14 @@ Server_SField_Values(?fld, ?value) :-
   _SFPT(?fld, ?value),
   _SFPT_Count(?fld, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD,
+  !isStringConstant(?value),
+  mainAnalysis.isValue(?value).
+
+Server_SField_Values(?fld, STRING_CONSTANT(?value)) :-
+  _SFPT(?fld, ?value),
+  _SFPT_Count(?fld, ?count),
+  ?count <= X_SERVER_LOGIC_THRESHOLD,
+  isStringConstant(?value),
   mainAnalysis.isValue(?value).
 
 Server_SField_Values(?fld, "<<XL-pt-set>>") :-
@@ -169,6 +188,14 @@ Server_Var_Values(?class, ?var, ?value) :-
   _VPT(?var, ?value),
   _VarUnderThreshold(?var),
 //  mainAnalysis.isValue(?value),
+  !isStringConstant(?value),
+  _VarDeclaringClass(?var, ?class).
+
+Server_Var_Values(?class, ?var, STRING_CONSTANT(?value)) :-
+  _VPT(?var, ?value),
+  _VarUnderThreshold(?var),
+//  mainAnalysis.isValue(?value),
+  isStringConstant(?value),
   _VarDeclaringClass(?var, ?class).
 
 Server_Var_Values(?class, ?var, "<<XL-pt-set>>") :-
@@ -177,8 +204,9 @@ Server_Var_Values(?class, ?var, "<<XL-pt-set>>") :-
   _VarDeclaringClass(?var, ?class).
 
 Server_Var_Return(?var, ?method) :-
-  ReturnVar(?var, ?method) ;
-  NativeReturnVar(?var, ?method).
+  (ReturnVar(?var, ?method) ;
+   NativeReturnVar(?var, ?method)),
+   _VPT(?var, _).
 
 // --Var //
 
@@ -310,42 +338,35 @@ Server_ClassCallsClass(?fromClass, ?toClass) :-
 
 .decl _AppVirtual(?invo:MethodInvocation)
 .decl _AppVirtual_Resolved(?invo:MethodInvocation)
-.decl _AppVirtual_Count(?n:number)
-.decl _AppVirtual_Resolved_Count(?n:number)
 .decl _AppReachable(?method:Method)
-.decl _AppMethod_Count(?n:number)
-.decl _AppReachable_Count(?n:number)
 
 _AppVirtual(?invo) :-
-  isVirtualMethodInvocation_Insn(?invo),
-  Instruction_Method(?invo, ?method),
+  // Use facts so that opaque method invocations are also recognized.
+  _VirtualMethodInvocation(?invo, _, _, _, ?method),
   ApplicationMethod(?method).
 
 _AppVirtual_Resolved(?invo) :-
   _AppVirtual(?invo),
   mainAnalysis.CallGraphEdge(_, ?invo, _, _).
 
-_AppVirtual_Count(?n) :-
-  ?n = count:{_AppVirtual(_)}.
-
-_AppVirtual_Resolved_Count(?n) :-
-  ?n = count:{_AppVirtual_Resolved(_)}.
-
 _AppReachable(?method) :-
   mainAnalysis.Reachable(?method),
   ApplicationMethod(?method).
 
-_AppMethod_Count(?n) :-
-  ?n = count:{ApplicationMethod(_)}.
+Server_Metrics("#AppVirtual (static)", ?n) :- ?n = count:{_AppVirtual(_)}.
+Server_Metrics("#AppVirtual (resolved)", ?n) :- ?n = count:{_AppVirtual_Resolved(_)}.
+Server_Metrics("#AppMethod (reachable)", ?n) :- ?n = count:{_AppReachable(_)}.
 
-_AppReachable_Count(?n) :-
-  ?n = count:{_AppReachable(_)}.
+.decl _ClassTypeUnion(?c:ReferenceType)
+_ClassTypeUnion(?c) :- isClassType(?c) ; isInterfaceType(?c).
 
-Server_Metrics("AppVirtual (static)", ?n) :- _AppVirtual_Count(?n).
-Server_Metrics("AppVirtual (resolved)", ?n) :- _AppVirtual_Resolved_Count(?n).
-//Server_Metrics("AppVirtual (%)", ?n) :- ?n = (1.0 * _AppVirtual_Resolved_Count(?c1)) / _AppVirtual_Count(?c2).
-Server_Metrics("AppMethod (static)", ?n) :- _AppMethod_Count(?n).
-Server_Metrics("AppMethod (reachable)", ?n) :- _AppReachable_Count(?n).
-//Server_Metrics("AppMethod (%)", ?n) :- ?n = (1.0 * _AppReachable_Count(?c1)) / _AppMethod_Count(?c2).
+Server_Metrics("#AppClass", ?n) :- ?n = count:{ApplicationClass(_)}.
+Server_Metrics("#Class", ?n) :- ?n = count:{_ClassTypeUnion(_)}.
+Server_Metrics("#AppMethod", ?n) :- ?n = count:{ApplicationMethod(_)}.
+Server_Metrics("#Method", ?n) :- ?n = count:{isMethod(_)}.
+Server_Metrics("#Field", ?n) :- ?n = count:{isField(_)}.
+Server_Metrics("#Var", ?n) :- ?n = count:{isVar(_)}.
+Server_Metrics("#HeapAllocation", ?n) :- ?n = count:{isHeapAllocation(_)}.
+Server_Metrics("#MethodInvocation", ?n) :- ?n = count:{isMethodInvocation(_)}.
 
 // --Metrics //

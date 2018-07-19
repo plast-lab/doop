@@ -1,0 +1,178 @@
+// Context-sensitive pointer analysis with context of 2 types and a
+// context-sensitive heap abstraction.
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
+.type ContextComponent = Type | mainAnalysis.Value
+                    
+.comp SpecialTwoTypeSensitivePlusHeapConfiguration : AbstractConfiguration {
+  // In this analysis, the real context is a pair of Types and the real heap
+  // context a single Type. The type is not always a class type, because of
+  // arrays currently being a non-class subtype of Object.
+  
+  .type Context  = [ type1:ContextComponent, type2:ContextComponent ]
+  .type HContext = [ type:ContextComponent ]
+
+  
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    Value_Type(?value, ?valuetype),
+    basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+    SpecialContextSensitivityMethod(?tomethod, "context-insensitive"),
+    isImmutableContext(?calleeCtx).
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    Value_Type(?value, ?valuetype),
+    basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),     
+    SpecialContextSensitivityMethod(?tomethod, "1-type-sensitive"),
+    Value_DeclaringType(?value, ?type),
+    ?calleeCtx = [?type, ?type].
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    Value_Type(?value, ?valuetype),
+    basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),     
+    (SpecialContextSensitivityMethod(?tomethod, "2-type-sensitive");
+     !SpecialContextSensitivityMethod(?tomethod, _)),      
+    ?hctx = [?hctxType],
+    Value_DeclaringType(?value, ?type),
+    ?calleeCtx = [?hctxType, ?type].
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    Value_Type(?value, ?valuetype),
+    basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),     
+    SpecialContextSensitivityMethod(?tomethod, "2-object-sensitive"),
+    ?hctx = [?hctxValue],
+    ?calleeCtx = [?hctxValue, ?value].
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    isSpecialMethodInvocation_Insn(?invo),
+    MethodInvocation_Method(?invo, ?tomethod),
+    SpecialContextSensitivityMethod(?tomethod, "context-insensitive"),
+    isImmutableContext(?calleeCtx).
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    isSpecialMethodInvocation_Insn(?invo),
+    MethodInvocation_Method(?invo, ?tomethod),
+    SpecialContextSensitivityMethod(?tomethod, "1-type-sensitive"),
+    Value_DeclaringType(?value, ?type),
+    ?calleeCtx = [?type, ?type].
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    isSpecialMethodInvocation_Insn(?invo),
+    MethodInvocation_Method(?invo, ?tomethod),
+    (SpecialContextSensitivityMethod(?tomethod, "2-type-sensitive");
+     !SpecialContextSensitivityMethod(?tomethod, _)),
+    ?hctx = [?hctxType],
+    Value_DeclaringType(?value, ?type),
+    ?calleeCtx = [?hctxType, ?type].
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    isSpecialMethodInvocation_Insn(?invo),
+    MethodInvocation_Method(?invo, ?tomethod),
+    SpecialContextSensitivityMethod(?tomethod, "2-object-sensitive"),
+    ?hctx = [?hctxValue],
+    ?calleeCtx = [?hctxValue, ?value].
+
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    MethodInvocation_Method(?invo, ?tomethod),
+    SpecialContextSensitivityMethod(?tomethod, "context-insensitive"),
+    isImmutableContext(?calleeCtx).
+
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    MethodInvocation_Method(?invo, ?tomethod),    
+    !SpecialContextSensitivityMethod(?tomethod, "context-insensitive"),
+    ?calleeCtx = ?callerCtx.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),      
+    ?ctx = [?ctxType1, ?ctxType2],
+    ?hctx = [?ctxType2],
+    ?ctxType1 = ?ctxType1.
+
+  // For this analysis the context of a method call corresponds to the
+  // invocation site of the method.
+
+  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+    ?hctx = [?hctxType],
+    Value_DeclaringType(?value, ?type),
+    ?newCtx = [?hctxType, ?type].
+
+  StartupContextResponse(?hctx, ?value, ?newCtx) :-
+    StartupContextRequest(?hctx, ?value),
+    ?hctx = [?hctxType],
+    Value_DeclaringType(?value, ?type),
+    ?newCtx = [?hctxType, ?type].
+
+  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+    ?callerCtx = [?ctxType1, ?ctxType2],
+    Value_DeclaringType(?value, ?type),
+    ?newCtx = [?ctxType2, ?type],
+    ?ctxType1 = ?ctxType1.
+
+  InitContextResponse(?value, ?ctx) :-
+    InitContextRequest(?value),
+    ?ctx = [?value, ?value].
+
+  InitHContextResponse(?value, ?hctx) :-
+     InitHContextRequest(?value),
+     ?hctx = [?value].
+
+#ifdef HEAPDLS
+DynamicContextToContext([?type1, ?type2], ?dynCtx) :-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   Value_byDynamicHeap(?heap1, ?value1),
+   Value_Type(?value1, ?type1),
+   DynamicContextHeap2(?heap2, ?dynCtx),
+   Value_byDynamicHeap(?heap2, ?value2),
+   Value_Type(?value2, ?type2).
+
+
+DynamicContextToContext([?type, ?any], ?dynCtx) :-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   Value_byDynamicHeap(?heap1, ?value),
+   Value_Type(?value, ?type),
+   !DynamicContextHeap2(_, ?dynCtx),
+   isContext([?type, ?any]).
+
+DynamicContextToContext(?ctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx),
+   isImmutableContext(?ctx).
+
+DynamicContextToHContext([?type], ?dynCtx) :-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   Value_byDynamicHeap(?heap1, ?value),
+   Value_Type(?value, ?type).
+
+DynamicContextToHContext(?hctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx),
+   isImmutableHContext(?hctx).
+#endif
+
+.decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)
+.input SpecialContextSensitivityMethod(IO="file", filename="SpecialContextSensitivityMethod.facts", delimiter="\t")
+
+.decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)
+
+SpecialContextSensitivityMethodConstraintViolated(?method) :-
+  SpecialContextSensitivityMethod(?method, _),
+  !isMethod(?method).
+
+.printsize SpecialContextSensitivityMethodConstraintViolated
+
+}
+
+      

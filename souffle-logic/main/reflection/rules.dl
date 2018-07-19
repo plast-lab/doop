@@ -27,6 +27,7 @@
 #include "java.lang.reflect.Constructor.dl"
 #include "java.lang.reflect.Field.dl"
 #include "java.lang.reflect.Method.dl"
+#include "classloading.dl"
 
 /*************************************************************
  * Give an arbitrary containing type for every reflection object,
@@ -104,6 +105,9 @@ java_lang_Class_forName(?invocation, ?inmethod) :-
 
 java_lang_Class_getName(?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.String getName()>").
+
+java_lang_Class_getCanonicalName(?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.String getCanonicalName()>").
 
 java_lang_Class_getComponentType(?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Class getComponentType()>").

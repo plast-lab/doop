@@ -12,9 +12,7 @@ import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.util.ref.ReferenceCleanser;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.DoopErrorCodeException;
-import org.clyze.doop.soot.SootParameters;
 import org.clyze.doop.util.filter.GlobClassFilter;
-import soot.SootClass;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,6 +64,9 @@ public class Main {
                     case "-l":
                         i = shift(args, i);
                         walaParameters._appLibraries.add(args[i]);
+                        break;
+                    case "--generate-ir":
+                        walaParameters._generateIR = true;
                         break;
                     case "-el":
                         i = shift(args, i);
@@ -138,7 +139,7 @@ public class Main {
         }
 
         Iterator<IClass> classes = cha.iterator();
-        Database db = new Database(new File(walaParameters._outputDir), false);
+        Database db = new Database(new File(walaParameters._outputDir));
         WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
         WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
 

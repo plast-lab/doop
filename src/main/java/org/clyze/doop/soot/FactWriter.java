@@ -63,9 +63,10 @@ public class FactWriter {
     String writeMethod(SootMethod m) {
         String methodRaw = _rep.signature(m);
         String result = hashMethodNameIfLong(methodRaw);
+        String arity = Integer.toString(m.getParameterCount());
 
         _db.add(STRING_RAW, result, methodRaw);
-        _db.add(METHOD, result, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()));
+        _db.add(METHOD, result, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
@@ -87,7 +88,9 @@ public class FactWriter {
         return result;
     }
 
-    void writeClassArtifact(String artifact, String className) { _db.add(CLASS_ARTIFACT, artifact, className); }
+    void writeClassArtifact(String artifact, String className, String subArtifact) {
+        _db.add(CLASS_ARTIFACT, artifact, className, subArtifact);
+    }
 
     void writeAndroidEntryPoint(SootMethod m) {
         _db.add(ANDROID_ENTRY_POINT, _rep.signature(m));
@@ -101,6 +104,14 @@ public class FactWriter {
         _db.add(ANDROID_KEEP_CLASS, className);
     }
 
+    void writeSpecialSensitivityMethod(String line) {
+        String[] linePieces = line.split(", ");
+        String method = linePieces[0].trim();
+        String sensitivity = linePieces[1].trim();
+
+        _db.add(SPECIAL_CONTEXT_SENSITIVITY_METHOD, method, sensitivity);
+    }
+
     void writeProperty(String path, String key, String value) {
         String pathId = writeStringConstant(path);
         String keyId = writeStringConstant(key);
@@ -110,12 +121,12 @@ public class FactWriter {
 
     void writeClassOrInterfaceType(SootClass c) {
         String classStr = c.getName();
-        if (c.isInterface()) {
-            _db.add(INTERFACE_TYPE, classStr);
+        boolean isInterface = c.isInterface();
+        if (isInterface && c.isPhantom()) {
+            System.out.println("Interface " + classStr + " is phantom.");
+            writePhantomType(c);
         }
-        else {
-            _db.add(CLASS_TYPE, classStr);
-        }
+        _db.add(isInterface ? INTERFACE_TYPE : CLASS_TYPE, classStr);
         _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
         if (c.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
@@ -163,6 +174,10 @@ public class FactWriter {
 
     void writePhantomType(Type t) {
         _db.add(PHANTOM_TYPE, writeType(t));
+    }
+
+    void writePhantomType(SootClass c) {
+        _db.add(PHANTOM_TYPE, writeType(c));
     }
 
     void writePhantomMethod(SootMethod m) {
@@ -386,20 +401,23 @@ public class FactWriter {
     void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstant constant, Session session) {
         String s = constant.getValue().replace('/', '.');
         String heap;
-        String actualType;
+        char first = s.charAt(0);
 
         /* There is some weirdness in class constants: normal Java class
            types seem to have been translated to a syntax with the initial
            L, but arrays are still represented as [, for example [C for
            char[] */
-        if (s.charAt(0) == '[' || (s.charAt(0) == 'L' && s.endsWith(";")) ) {
+        if (first == '[' || (first == 'L' && s.endsWith(";")) ) {
             // array type
             Type t = soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(s);
-
             heap = _rep.classConstant(t);
-            actualType = t.toString();
-        }
-        else {
+            String actualType = t.toString();
+            _db.add(CLASS_HEAP, heap, actualType);
+        } else if (first == '(') {
+            // method type constant (viewed by Soot as a class constant)
+            heap = _rep.methodTypeConstant(s);
+            _db.add(METHOD_TYPE_CONSTANT, heap);
+        } else {
 //            SootClass c = soot.Scene.v().getSootClass(s);
 //            if (c == null) {
 //                throw new RuntimeException("Unexpected class constant: " + constant);
@@ -414,10 +432,9 @@ public class FactWriter {
             // bug that adds a phantom class to the Scene's hierarchy, although
             // (based on their own comments) it shouldn't.
             heap = _rep.classConstant(s);
-            actualType = s;
+            String actualType = s;
+            _db.add(CLASS_HEAP, heap, actualType);
         }
-
-        _db.add(CLASS_HEAP, heap, actualType);
 
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
@@ -527,12 +544,10 @@ public class FactWriter {
 
     void writeClassModifier(SootClass c, String modifier) {
         String type = c.getName();
-        if (c.isInterface()) {
+        if (c.isInterface())
             _db.add(INTERFACE_TYPE, type);
-        }
-        else {
+        else
             _db.add(CLASS_TYPE, type);
-        }
         _db.add(CLASS_MODIFIER, modifier, type);
     }
 

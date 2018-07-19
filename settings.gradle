@@ -1,1 +1,7 @@
 rootProject.name = 'doop'
+
+// gradle.parent is null when current project is not part of a composite build
+if ((gradle.parent == null) && hasProperty("use_composite_builds") && use_composite_builds.toBoolean()) {
+	['../clue-common', '../panda']
+			.findAll { file(it).exists() }.each { includeBuild(it) }
+}
