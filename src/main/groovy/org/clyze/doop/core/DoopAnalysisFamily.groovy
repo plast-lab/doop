@@ -36,7 +36,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					optName: "a",
 					argName: "NAME",
 					description: "The name of the analysis.",
-					validValues: analysesNames(Doop.analysesPath),
+					validValues: analysesNames(Doop.souffleAnalysesPath),
 					isMandatory: true
 			),
 			new AnalysisOption<File>(
@@ -711,7 +711,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	]
 
 	private static List<String> analysesNames(String doopAnalysesDir) {
-		List<String> logicFiles = ["analysis.logic", "analysis.dl"]
+		List<String> logicFiles = ["analysis.dl"]
 		List<String> analyses = []
 		if (doopAnalysesDir)
 			new File(doopAnalysesDir).eachDir { File dir ->
