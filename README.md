@@ -5,17 +5,16 @@ This document contains instructions for invoking the main driver of Doop. For an
 ## Getting Started
 
 At its core, Doop is a collection of various analyses expressed in the form of Datalog rules. The framework has two versions of its rules:
-one for **LogiQL**, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/), and another for [Soufflé](http://souffle-lang.org/), an open-source Datalog engine for program analysis. 
-For a LogicBlox engine, you can use **PA-Datalog**, a port available for academic use, by following the instructions found on [this page](http://snf-705535.vm.okeanos.grnet.gr/agreement.html). 
+one for [Soufflé](http://souffle-lang.org/), an open-source Datalog engine for program analysis (which is the default engine used), and another for **LogiQL**, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). 
 In order to install an up-to-date version of Soufflé, the best practice is to clone the development Github [repo](https://github.com/souffle-lang/souffle) and follow the instructions found on [this page](http://souffle-lang.org/docs/build/). 
+For a LogicBlox engine, you can use **PA-Datalog**, a port available for academic use, by following the instructions found on [this page](http://snf-705535.vm.okeanos.grnet.gr/agreement.html). 
 
 For trouble-free configuration:
 
-* The `LOGICBLOX_HOME` environment variable **should** point to the `logicblox` directory of the engine.
-* The `DOOP_HOME` environment variable **should** point to the top-level directory of Doop.
 * The `DOOP_PLATFORMS_LIB` environment variable could point to your PLATFORM lib directory (optional, see below).
-* The `DOOP_OUT` environment variable could point to the output files directory (optional, defaults to `$DOOP_HOME/out`).
-* The `DOOP_CACHE` environment variable could point to the cached facts directory (optional, defaults to `$DOOP_HOME/cache`).
+* The `DOOP_OUT` environment variable could point to the output files directory (optional, defaults to `out`).
+* The `DOOP_CACHE` environment variable could point to the cached facts directory (optional, defaults to `cache`).
+* The `LOGICBLOX_HOME` environment variable **should** point to the `logicblox` directory of the engine, if you want to use LogicBlox.
 
 
 ## Benchmarks & Platform Lib
@@ -137,7 +136,15 @@ You can then inspect the analysis results by using the souffle-profile command a
 In order to use LogicBlox instead of the Soufflé engine you can provide the --lb argument. 
 
     $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id lb-antlr --lb
-   
+
+### Running doop in an offline mode
+
+Normally, on each invocation of Doop the underlying build system will check for newer versions of all dependency libraries.
+Sometimes, it might be desirable to invoke doop in an offline mode. There is an alternative script for this purpose.
+
+    $ ./doopOffline --platform java_7 -a context-insensitive -i com.example.some.jar
+
+
 ## License
 UPL (see [LICENSE](LICENSE)).
 
