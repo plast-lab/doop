@@ -33,24 +33,24 @@
 
 //-----------------------------------------------------------------------------
 
-.type Method
-.decl isMethod(?m:Method)
+.type Function
+.decl isMethod(?m:Function)
+.decl isFunction(?m:Function)
 
 
-.decl Method_DeclaringType(?method:Method, ?declaringType:ClassType)
-.decl Method_SimpleName(?method:Method, ?simpleName:symbol)
-.decl Method_Arity(?method:Method, ?arity:number)
+.decl Function_SimpleName(?function:Function, ?simpleName:symbol)
+.decl Function_Arity(?function:Function, ?arity:number)
 
-.decl FormalParam(?index:number, ?method:Method, ?var:Var)
+.decl FormalParam(?index:number, ?function:Function, ?var:Var)
 
-.decl ThisVar(?method:Method, ?var:Var)
+.decl ThisVar(?function:Function, ?var:Var)
 
 //-----------------------------------------------------------------------------
 
 .type Var
 .decl isVar(v:Var)
 
-.decl Var_DeclaringMethod(?var:Var, ?method:Method)
+.decl Var_DeclaringFunction(?var:Var, ?function:Function)
 
 .decl ApplicationVar(?var:Var)
 
@@ -79,8 +79,8 @@
 .decl isInstruction(?insn:Instruction)
 
 .decl Instruction_Index(?insn:Instruction, ?index:number)
-.decl Instruction_Line(?insn:Instruction, ?index:number)
-.decl Instruction_Method(?insn:Instruction, ?inMethod:Method)
+.decl Instruction_SourcePosition(?insn:Instruction, ?startLine:number, ?endLine:number, ?startColumn:number, ?endColumn:number)
+.decl Instruction_Function(?insn:Instruction, ?inFunction:Function)
 
 .type Throw_Insn                      = Instruction
 .type Goto_Insn                       = Instruction
@@ -118,13 +118,9 @@
 .decl isReturnNone_Insn(?insn:ReturnNone_Insn)
 .decl isReturnNonNone_Insn(?insn:ReturnNonNone_Insn)
 
-.type MethodInvocation                = Instruction
-.type VirtualMethodInvocation_Insn    = MethodInvocation
-.type StaticMethodInvocation_Insn     = MethodInvocation
+.type FunctionInvocation_Insn                = Instruction
 
-.decl isMethodInvocation(?insn:MethodInvocation)
-.decl isVirtualMethodInvocation_Insn(?insn:VirtualMethodInvocation_Insn)
-.decl isStaticMethodInvocation_Insn(?insn:StaticMethodInvocation_Insn)
+.decl isFunctionInvocation(?insn:FunctionInvocation_Insn)
 
 .type UnsupportedInstruction          = Instruction
 .type OpaqueInstruction               = Instruction
@@ -207,25 +203,19 @@
 // [Invocation Instructions]
 //-----------------------------------------------------------------------------
 
-// The line number of a method invocation
-.decl MethodInvocation_Line(?invocation:MethodInvocation, ?line:number)
-
-.decl ApplicationMethod(?method:Method)
-.output ApplicationMethod
+.decl ApplicationFunction(?function:Function)
+.output ApplicationFunction
 
 // The (call-site) variable that holds the result of the invocation
-.decl AssignReturnValue(?invocation:MethodInvocation, ?to:Var)
+.decl AssignReturnValue(?invocation:FunctionInvocation_Insn, ?to:Var)
 
 // The actual parameters of the invocation. Note: this does not
-// contain the receiver object (see MethodInvocation:Base predicates).
-.decl ActualPositionalParam(?index:number, ?invocation:MethodInvocation, ?var:Var)
-.decl ActualKeywordParam(?keyword:symbol, ?invocation:MethodInvocation, ?var:Var)
+// contain the receiver object (see FunctionInvocation_Insn:Base predicates).
+.decl ActualPositionalParam(?index:number, ?invocation:FunctionInvocation_Insn, ?var:Var)
+.decl ActualKeywordParam(?keyword:symbol, ?invocation:FunctionInvocation_Insn, ?var:Var)
 
-.decl MethodInvocation_Base(?invocation:MethodInvocation, ?base:Var)
-
-// Virtual Method Invocation
-.decl VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
-.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
+// Function Invocation
+.decl FunctionInvocation_Base(?invocation:FunctionInvocation_Insn, ?base:Var)
 
 //-----------------------------------------------------------------------------
 // [Exception Handlers]
@@ -234,7 +224,7 @@
 .type ExceptionHandler
 .decl isExceptionHandler(?handler:ExceptionHandler)
 
-.decl ExceptionHandler_Method(?handler:ExceptionHandler, ?inmethod:Method)
+.decl ExceptionHandler_Function(?handler:ExceptionHandler, ?inFunction:Function)
 
 // Instruction index of handling code
 .decl ExceptionHandler_Index(?handler:ExceptionHandler, ?index:number)
@@ -250,7 +240,7 @@
 // handler
 .decl ExceptionHandler_End(?handler:ExceptionHandler, ?index:number)
 
-// Previous exception handler (handlers are ordered inside a method)
+// Previous exception handler (handlers are ordered inside a function)
 .decl ExceptionHandler_Previous(?handler:ExceptionHandler, ?previous:ExceptionHandler)
 
 
@@ -258,8 +248,8 @@
 // [Miscellaneous]
 //-----------------------------------------------------------------------------
 
-// Return variables of native methods (no instructions exist)
-.decl NativeReturnVar(?var:Var, ?method:Method)
+// Return variables of native functions (no instructions exist)
+.decl NativeReturnVar(?var:Var, ?function:Function)
 
 #ifndef X_STATS_NONE
 // Predicate to store analysis statistics
@@ -284,29 +274,20 @@
 
 .decl Throw(?insn:Throw_Insn, ?var:Var)
 
-.decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method)
+.decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inFunction:Function)
 
-.decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inmethod:Method)
+.decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inFunction:Function)
 
-.decl LoadStaticField(?sig:Field, ?to:Var, ?inmethod:Method)
+.decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inFunction:Function)
 
-.decl StoreStaticField(?from:Var, ?signature:Field, ?inmethod:Method)
+.decl AssignLocal(?from:Var, ?to:Var, ?inFunction:Function)
 
-.decl LoadArrayIndex(?base:Var, ?to:Var, ?inmethod:Method)
+.decl AssignNull(?to:Var, ?inFunction:Function)
 
-.decl StoreArrayIndex(?from:Var, ?base:Var, ?inmethod:Method)
+.decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inFunction:Function)
 
-.decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method)
+// Note: a function can have multiple return variables
+.decl ReturnVar(?var:Var, ?function:Function)
 
-.decl AssignLocal(?from:Var, ?to:Var, ?inmethod:Method)
+.decl FunctionInvocation(?invocation:FunctionInvocation_Insn, ?inFunction:Function)
 
-.decl AssignNull(?to:Var, ?inmethod:Method)
-
-.decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method)
-
-// Note: a Jimple method can have multiple return variables
-.decl ReturnVar(?var:Var, ?method:Method)
-
-.decl VirtualMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
-
-.decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)

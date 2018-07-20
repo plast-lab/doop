@@ -3,6 +3,7 @@
 .decl _ClassType(?class:symbol)
 .input _ClassType(IO="file", filename="ClassType.facts", delimiter="\t")
 
+.output isClassType
 isType(?class),
 isClassType(?class) :-
   _ClassType(?class).
@@ -14,7 +15,7 @@ isClassType(?class) :-
 .input _ActualPositionalParam(IO="file", filename="ActualParam.facts", delimiter="\t")
 
 isInstruction(?invocation),
-isMethodInvocation(?invocation),
+isFunctionInvocation(?invocation),
 isVar(?var),
 ActualPositionalParam(?index, ?invocation, ?var) :-
   _ActualPositionalParam(?index, ?invocation, ?var).
@@ -23,7 +24,7 @@ ActualPositionalParam(?index, ?invocation, ?var) :-
 .input _ActualKeywordParam(IO="file", filename="ActualParam.facts", delimiter="\t")
 
 isInstruction(?invocation),
-isMethodInvocation(?invocation),
+isFunctionInvocation(?invocation),
 isVar(?var),
 ActualKeywordParam(?index, ?invocation, ?var) :-
   _ActualKeywordParam(?index, ?invocation, ?var).
@@ -44,24 +45,22 @@ DirectSuperclass(?class, ?superclass) :-
 
 // FormalParam
 
-.decl _FormalParam(?index:number, ?method:symbol, ?var:symbol)
+.decl _FormalParam(?index:number, ?function:symbol, ?var:symbol)
 .input _FormalParam(IO="file", filename="FormalParam.facts", delimiter="\t")
 
-isMethod(?method),
 isVar(?var),
-FormalParam(?index, ?method, ?var) :-
-  _FormalParam(?index, ?method, ?var).
+FormalParam(?index, ?function, ?var) :-
+  _FormalParam(?index, ?function, ?var).
 
 
 // NativeReturnVar
 
-.decl _NativeReturnVar(?var:symbol, ?method:symbol)
+.decl _NativeReturnVar(?var:symbol, ?function:symbol)
 .input _NativeReturnVar(IO="file", filename="NativeReturnVar.facts", delimiter="\t")
 
 isVar(?var),
-isMethod(?method),
-NativeReturnVar(?var, ?method) :-
-  _NativeReturnVar(?var, ?method).
+NativeReturnVar(?var, ?function) :-
+  _NativeReturnVar(?var, ?function).
 
 
 // ApplicationClass
@@ -76,13 +75,12 @@ ApplicationClass(?type) :-
 
 // ThisVar
 
-.decl _ThisVar(?method:symbol, ?var:symbol)
+.decl _ThisVar(?function:symbol, ?var:symbol)
 .input _ThisVar(IO="file", filename="ThisVar.facts", delimiter="\t")
 
-isMethod(?method),
 isVar(?var),
-ThisVar(?method, ?var) :-
-  _ThisVar(?method, ?var).
+ThisVar(?function, ?var) :-
+  _ThisVar(?function, ?var).
 
 
 // ExceptionHandler:Previous
@@ -102,7 +100,7 @@ ExceptionHandler_Previous(?handler, ?previous) :-
 .input _AssignReturnValue(IO="file", filename="AssignReturnValue.facts", delimiter="\t")
 
 isInstruction(?invocation),
-isMethodInvocation(?invocation),
+isFunctionInvocation(?invocation),
 isVar(?to),
 AssignReturnValue(?invocation, ?to) :-
   _AssignReturnValue(?invocation, ?to).

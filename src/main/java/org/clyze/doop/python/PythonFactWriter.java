@@ -106,7 +106,7 @@ public class PythonFactWriter {
         }
 
         _db.add(STRING_RAW, result, result);
-        _db.add(METHOD, result, _rep.simpleName(m), par, arity);
+        _db.add(FUNCTION, result, _rep.simpleName(m), par, arity);
         return result;
     }
 
@@ -179,27 +179,7 @@ public class PythonFactWriter {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(ir, instruction));
-    }
-
-    //Sifis: This information is not correct for StringConstants as we take the index of
-    // the instruction these constants are used in
-    private static int getLineNumberFromInstruction(IR ir, SSAInstruction instruction) {
-        if(instruction.iindex == -1)
-            return 0;
-        int sourceLineNum;
-        try {
-            IMethod.SourcePosition sourceInfo = ir.getMethod().getSourcePosition(instruction.iindex);
-            if(sourceInfo == null)
-                sourceLineNum = 0;
-            else{
-                sourceLineNum = sourceInfo.getFirstLine();
-            }
-        } catch (InvalidClassFileException e) {
-            sourceLineNum = 0;
-        }
-
-        return sourceLineNum;
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId);
     }
 
     private void writeAssignStringConstant(IR ir, IMethod m, SSAInstruction instruction, Local l, ConstantValue s, Session session) {
@@ -210,7 +190,7 @@ public class PythonFactWriter {
         String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(ir, instruction));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId);
     }
 
     private void writeAssignNull(IMethod m, SSAInstruction instruction, Local l, Session session) {
@@ -325,7 +305,7 @@ public class PythonFactWriter {
 
         String  var = _rep.nativeReturnVar(m);
         _db.add(NATIVE_RETURN_VAR, var, methodId);
-        _db.add(VAR_DECLARING_METHOD, var, methodId);
+        _db.add(VAR_DECLARING_FUNCTION, var, methodId);
     }
 
     void writeGoto(IMethod m, SSAGotoInstruction instruction, SSAInstruction to, Session session) {
@@ -387,14 +367,14 @@ public class PythonFactWriter {
         String thisVar = _rep.thisVar(m);
         _db.add(THIS_VAR, methodId, thisVar);
         //_db.add(VAR_TYPE, thisVar, writeType(m.getReference().getDeclaringClass()));
-        _db.add(VAR_DECLARING_METHOD, thisVar, methodId);
+        _db.add(VAR_DECLARING_FUNCTION, thisVar, methodId);
     }
 
     void writeFormalParam(IMethod m, IR ir, int paramIndex, int actualIndex) {
         String methodId = _rep.signature(m);
         String var = _rep.param(m, paramIndex);
         _db.add(FORMAL_PARAM, str(actualIndex), methodId, var);
-        _db.add(VAR_DECLARING_METHOD, var, methodId);
+        _db.add(VAR_DECLARING_FUNCTION, var, methodId);
         String[] names = null;
         names = ir.getLocalNames(0, paramIndex + 1);
         if(names.length > 0)
@@ -405,7 +385,7 @@ public class PythonFactWriter {
         String local = _rep.local(m, l);
         if(l.getSourceName() != null)
             _db.add(VAR_SOURCE_NAME, local, l.getSourceName());
-        _db.add(VAR_DECLARING_METHOD, local, _rep.signature(m));
+        _db.add(VAR_DECLARING_FUNCTION, local, _rep.signature(m));
     }
 
     void writeStringConstantExpression(IR ir, IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
@@ -487,30 +467,15 @@ public class PythonFactWriter {
     private String writePythonInvokeHelper(IMethod inMethod, IR ir, PythonInvokeInstruction instruction, Session session, TypeInference typeInference) {
         String methodId = _rep.signature(inMethod);
 
-        int sourceLineNum = getLineNumberFromInstruction(ir,instruction);
-
-
-        MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
-
-
-        String insn = _rep.invoke(ir,inMethod, instruction, targetRef, session, typeInference);
-        writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
+        String insn = _rep.functionInvoke(inMethod, session);
+        writeActualParams(inMethod, ir, instruction, insn, session, typeInference);
 
         int index = session.calcInstructionNumber(instruction);
 
-        if(sourceLineNum != -1)
-            _db.add(METHOD_INV_LINE, insn, str(sourceLineNum));
-
-        Local functionObject = createLocal(ir,instruction,instruction.getUse(0),typeInference);
+        Local functionObject = createLocal(ir,instruction,instruction.getUse(0), typeInference);
         if (instruction.isDispatch()) {
             //System.out.println("Virtual "+ instruction.toString(ir.getSymbolTable()));
-            _db.add(VIRTUAL_METHOD_INV, insn, str(index),_rep.local(inMethod, functionObject),methodId);
-        }
-        else if (instruction.isStatic()) {
-            throw new RuntimeException("Cannot handle Static invocation "+ instruction.toString(ir.getSymbolTable()));
-        }
-        else if (instruction.isSpecial()) {
-            throw new RuntimeException("Cannot handle Special invocation "+ instruction.toString(ir.getSymbolTable()));
+            _db.add(FUNCTION_INV, insn, str(index), _rep.local(inMethod, functionObject), methodId);
         }
         else {
             throw new RuntimeException("Cannot handle invoke instruction: " + instruction.toString(ir.getSymbolTable()));
@@ -527,46 +492,50 @@ public class PythonFactWriter {
 
     private String writeInvokeHelper(IMethod inMethod, IR ir, SSAAbstractInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
         String methodId = _rep.signature(inMethod);
-        int sourceLineNum = getLineNumberFromInstruction(ir,instruction);
 
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
-        String insn = _rep.invoke(ir,inMethod, instruction, targetRef, session, typeInference);
-        //writeActualParams(inMethod, ir, instruction, insn, session,typeInference);
+        //writeActualParams(inMethod, ir, instruction, insn, session,typeInference); //IF THIS EVER GETS COMMENTED OUT index sequence will break.
 
         int index = session.calcInstructionNumber(instruction);
-
-        if(sourceLineNum != -1)
-            _db.add(METHOD_INV_LINE, insn, str(sourceLineNum));
+        String insn = _rep.instruction(inMethod, instruction, session, index);
 
         if (instruction.isStatic()) {
-            _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
             if(targetRef.getName().toString().equals("import")){
-                String fileName = inMethod.getDeclaringClass().getSourceFileName();
                 String module = fixType(targetRef.getReturnType());
-                _db.add(IMPORT, fileName, _rep.local(inMethod,to), module);
+                _db.add(IMPORT, insn, str(index), module, _rep.local(inMethod,to), methodId);
             }
             else{
                 throw new RuntimeException("Unexpected invoke instruction(non-import static): " + instruction);
             }
             //_db.add(STATIC_METHOD_INV, insn, _rep.signature(targetRef), methodId);
         }
-        else if (instruction.isDispatch()) {
-            throw new RuntimeException("Unexpected invoke instruction(virtual): " + instruction);
-//            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
-//            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
-            //_db.add(VIRTUAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
-        }
-        else if (instruction.isSpecial()) {
-            throw new RuntimeException("Unexpected invoke instruction(special): " + instruction);
-//            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
-//            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
-            //_db.add(SPECIAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
-        }
         else {
-            throw new RuntimeException("Cannot handle invoke instruction: " + instruction);
+            throw new RuntimeException("Cannot handle invoke instruction: " + instruction.toString(ir.getSymbolTable()));
         }
 
         return insn;
+    }
+
+    void writeInstructionSourcePosition(IMethod inMethod, IR ir, SSAInstruction instruction, Session session)
+    {
+        int index = session.getMaxInstructionNumber(instruction);
+        String insn = _rep.instruction(inMethod,instruction, session, index);
+
+        int firstLine = 0, firstColumn =0 ,lastLine =0 ,lastColumn =0;
+        if(instruction.iindex != -1) {
+            try {
+                IMethod.SourcePosition sourceInfo = ir.getMethod().getSourcePosition(instruction.iindex);
+                if (sourceInfo != null) {
+                    firstLine = sourceInfo.getFirstLine();
+                    firstColumn = sourceInfo.getFirstCol();
+                    lastLine = sourceInfo.getLastLine();
+                    lastColumn = sourceInfo.getLastCol();
+                }
+            } catch (InvalidClassFileException e) {
+
+            }
+        }
+        _db.add(INSTRUCTION_SOURCE_POSITION, insn, str(firstLine),str(firstColumn),str(lastLine),str(lastColumn));
     }
 
     void writeError(PythonPredicateFile predFile, String fileName, String... args)
