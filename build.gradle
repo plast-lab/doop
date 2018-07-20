@@ -61,7 +61,7 @@ dependencies {
             "commons-io:commons-io:2.4",                        // File Utils
             "org.apache.ivy:ivy:2.3.0",                         // Apache Ivy (for downloading jars from maven repos)
             "org.ow2.asm:asm-debug-all:5.1",                    // Java Bytecode library
-            "org.smali:dexlib2:2.2b4",                          // Dexlib2: library for reading/modifying/writing Android dex files
+            "org.smali:dexlib2:2.2.4",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             /// Soot is a compile time dependency
@@ -94,7 +94,7 @@ dependencies {
     runtime "org.clyze:jphantom:1.2",
             "ext:herosclasses:1.1",
             "ext:axml:2.0",
-            "org.smali:util:2.2b4"                              // Dexlib2 utilities
+            "org.smali:util:2.2.4"                              // Dexlib2 utilities
 
     // JimpleParser
     antlr   "org.antlr:antlr4:4.5.1-1"
