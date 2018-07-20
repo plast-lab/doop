@@ -36,7 +36,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					optName: "a",
 					argName: "NAME",
 					description: "The name of the analysis.",
-					validValues: analysesNames(Doop.souffleAnalysesPath),
+					validValues: analysesNames(),
 					isMandatory: true
 			),
 			new AnalysisOption<File>(
@@ -710,17 +710,19 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 	]
 
-	private static List<String> analysesNames(String doopAnalysesDir) {
-		List<String> logicFiles = ["analysis.dl"]
-		List<String> analyses = []
-		if (doopAnalysesDir)
-			new File(doopAnalysesDir).eachDir { File dir ->
-				logicFiles.each { String fName ->
-					def f = new File(dir, fName)
-					if (f.exists() && f.isFile()) analyses << dir.name
-				}
+	private static List<String> analysesNames() {
+		def closure = { String path, String fileToLookFor ->
+			def analyses = []
+			new File(path).eachDir { File dir ->
+				def f = new File(dir, fileToLookFor)
+				if (f.exists() && f.isFile()) analyses << dir.name
 			}
-		return analyses.sort()
+			analyses.sort()
+		}
+
+		closure(Doop.souffleAnalysesPath, "analysis.dl") +
+		["----- (LB analyses) -----"] +
+		closure(Doop.analysesPath, "analysis.logic")
 	}
 
 	private static List<String> informationFlowPlatforms(String lbDir, String souffleDir) {
