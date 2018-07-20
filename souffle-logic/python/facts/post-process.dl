@@ -1,0 +1,13 @@
+
+.output isFunction
+.output isMethod
+isFunction(?function):-
+    _Function(?function, _, ?par, _),
+    isFunction(?par).
+
+isFunction(?function):-
+    _Function(?function, _, ?function, _).
+
+isMethod(?function):-
+    _Function(?function, _, ?par, _),
+    isClassType(?par).

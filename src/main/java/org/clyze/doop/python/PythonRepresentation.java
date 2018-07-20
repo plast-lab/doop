@@ -81,7 +81,7 @@ public class PythonRepresentation {
             declaringModule = "BUILTIN";
             className = classNameParts[0];
         }
-        return declaringModule + ":" + className;
+        return "<" + declaringModule + ":" + className + ">";
     }
 
     String methodTypeConstant(String s) {
@@ -289,8 +289,24 @@ public class PythonRepresentation {
      */
     String instruction(IMethod inMethod, SSAInstruction instruction, Session session, int index)
     {
+        if(instruction instanceof PythonInvokeInstruction)
+            return functionInvoke(inMethod, session);
+        else if(instruction instanceof SSAAbstractInvokeInstruction){
+            if(((SSAAbstractInvokeInstruction) instruction).isStatic() && ((SSAAbstractInvokeInstruction) instruction).getDeclaredTarget().getName().toString().equals("import"))
+            {
+                String module = fixType(((SSAAbstractInvokeInstruction) instruction).getDeclaredTarget().getReturnType());
+                return signature(inMethod) + "/import/" + module;
+            }
+        }
+
         return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
+
+    String functionInvoke(IMethod inMethod, Session session)
+    {
+        return signature(inMethod) + "/invoke/" + session.nextNumber("invoke");
+    }
+    //Will become obsolete
     String invoke(IR ir, IMethod inMethod, SSAAbstractInvokeInstruction instr, MethodReference methRef, Session session, TypeInference typeInference)
     {
         String defaultMid = fixType(methRef.getDeclaringClass()) + "." + methRef.getName().toString();

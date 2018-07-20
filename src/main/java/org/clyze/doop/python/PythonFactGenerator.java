@@ -207,6 +207,7 @@ public class PythonFactGenerator implements Runnable{
                     } else {
                         System.out.println("Unknown instruction: " +instructions[j].toString(ir.getSymbolTable()) + " of type: " + instructions[j].getClass().getName());
                     }
+                    _writer.writeInstructionSourcePosition(m, ir, instructions[j], session);
                 }
             }
 
@@ -233,7 +234,7 @@ public class PythonFactGenerator implements Runnable{
         for (int i = 0; i <= cfg.getMaxNumber(); i++) {
             SSACFG.BasicBlock basicBlock = cfg.getNode(i);
             if (basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock) {
-
+                _writer.writeInstructionSourcePosition(m, ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(), session);
             }
         }
     }
