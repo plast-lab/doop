@@ -141,6 +141,16 @@ task souffleScript(type: JavaExec) {
         args project.property("args").split()
 }
 
+task createEmptyProperties {
+    doLast {
+        def urls = sourceSets.main.runtimeClasspath.files.collect { it.toURI().toURL() } as URL[]
+        def classloader = new URLClassLoader(urls, null as ClassLoader)
+        Class
+            .forName("org.clyze.doop.CommandLineAnalysisFactory", true, classloader)
+            .createEmptyProperties(new File("empty.properties"))
+    }
+}
+
 compileJava {
     options.compilerArgs << '-Xlint:unchecked'
 }
@@ -185,7 +195,7 @@ if (project.hasProperty('artifactory_user')) {
                 from components.java
 
                 artifact logicFilesJar {
-	                classifier "logic-files"
+                    classifier "logic-files"
                 }
             }
         }
