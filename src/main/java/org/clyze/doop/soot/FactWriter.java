@@ -7,12 +7,10 @@ import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.typing.fast.BottomType;
-import soot.tagkit.AnnotationTag;
-import soot.tagkit.LineNumberTag;
-import soot.tagkit.VisibilityAnnotationTag;
-import soot.tagkit.VisibilityParameterAnnotationTag;
+import soot.tagkit.*;
 import soot.util.backend.ASMBackendUtils;
 
+import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
@@ -161,7 +159,7 @@ public class FactWriter {
             _db.add(COMPONENT_TYPE, result, writeType(componentType));
         }
         else if (t instanceof PrimType || t instanceof NullType ||
-                 t instanceof RefType || t instanceof VoidType || t instanceof BottomType) {
+                t instanceof RefType || t instanceof VoidType || t instanceof BottomType) {
             // taken care of by the standard facts
             ;
         }
@@ -827,23 +825,23 @@ public class FactWriter {
     }
 
     private Value writeActualParam(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session, Value v, int idx) {
-	if (v instanceof StringConstant)
-	    return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
-	else if (v instanceof ClassConstant)
-	    return writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
-	else if (v instanceof NumericConstant)
-	    return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
-	else if (v instanceof MethodHandle)
-	    return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
-	else if (v instanceof NullConstant) {
-	    // Giving the type of the formal argument to be used in the creation of
-	    // temporary var for the actual argument (whose value is null).
-	    Type argType = expr.getMethodRef().parameterType(idx);
-	    return writeNullExpression(inMethod, stmt, argType, session);
-	}
-	else if (v instanceof Constant)
-	    throw new RuntimeException("Value has unknown constant type: " + v);
-	return v;
+        if (v instanceof StringConstant)
+            return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
+        else if (v instanceof ClassConstant)
+            return writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
+        else if (v instanceof NumericConstant)
+            return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
+        else if (v instanceof MethodHandle)
+            return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
+        else if (v instanceof NullConstant) {
+            // Giving the type of the formal argument to be used in the creation of
+            // temporary var for the actual argument (whose value is null).
+            Type argType = expr.getMethodRef().parameterType(idx);
+            return writeNullExpression(inMethod, stmt, argType, session);
+        }
+        else if (v instanceof Constant)
+            throw new RuntimeException("Value has unknown constant type: " + v);
+        return v;
     }
 
     private void writeActualParams(SootMethod inMethod, Stmt stmt, InvokeExpr expr, String invokeExprRepr, Session session) {
@@ -1030,20 +1028,23 @@ public class FactWriter {
 
     void writeFieldInitialValue(SootField f) {
         String fieldId = _rep.signature(f);
-        String valueString = f.getInitialValueString();
-        if (valueString != null && !valueString.equals("")) {
-            int pos = valueString.indexOf('@');
-            if (pos < 0)
-                System.err.println("Unexpected format (no @) in initial field value");
-            else {
-                try {
-                    int value = (int) Long.parseLong(valueString.substring(pos+1), 16); // parse hex string, possibly negative int
-                    _db.add(FIELD_INITIAL_VALUE, fieldId, Integer.toString(value));
-                } catch (NumberFormatException e) {
-                    _db.add(FIELD_INITIAL_VALUE, fieldId, valueString.substring(pos+1));
-                    // if we failed to parse the value as a hex int, output it in full
-                }
+        List<Tag> tagList = f.getTags();
+        for (Tag tag : tagList) {
+            if (tag.getName().contains("ConstantValueTag")) {
+                String valueString = ((ConstantValueTag) tag).getConstant().toString();
+                int pos = valueString.indexOf('@');
+                if (pos >= 0)
+                    System.out.println(valueString);
+                    try {
+                        int value = (int) Long.parseLong(valueString.substring(pos+1), 16); // parse hex string, possibly negative int
+                        _db.add(FIELD_INITIAL_VALUE, fieldId, Integer.toString(value));
+                    } catch (NumberFormatException e) {
+                        _db.add(FIELD_INITIAL_VALUE, fieldId, valueString.substring(pos+1));
+                        // if we failed to parse the value as a hex int, output it in full
+                    }
             }
+
+
         }
     }
 }

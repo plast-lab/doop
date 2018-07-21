@@ -472,7 +472,7 @@
 //-----------------------------------------------------------------------------
 // [Android-related]
 //-----------------------------------------------------------------------------
-
+.decl FieldInitialValue(?fld:Field, ?valueString:symbol)
 #ifdef ANDROID
 
 .decl Activity(?x:Type)
@@ -484,7 +484,6 @@
 .decl LayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
 .decl SensitiveLayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)
 .decl SensitiveLayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
-.decl FieldInitialValue(?fld:Field, ?valueString:symbol)
 .decl AndroidEntryPoint(?m:Method)
 .decl AndroidKeepMethod(?m:Method)
 .decl AndroidKeepClass(?c:ClassType)
