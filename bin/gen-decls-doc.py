@@ -39,11 +39,11 @@ def listEnd(outDoc):
     outDoc.write("</ul>\n")
 
 def startDoc(outDoc):
-    outDoc.write("""<html><body>
-<h1>Doop rules</h2>
+    outDoc.write("""<html><body> <h1>Doop rules</h2>
 
-<p>This document lists all Datalog rules appearing in the Doop logic (Souffle).</p>
-    """)
+    <p>This document lists all Souffl&eacute;-Datalog rules appearing
+    in Doop logic. Note that some of these rules may be guarded by
+    macros and thus be disabled in particular Doop runs.</p> """)
 
 def endDoc(outDoc):
     outDoc.write("<p>Timestamp: " + str(datetime.datetime.now()) + "</p>")
