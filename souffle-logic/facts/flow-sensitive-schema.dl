@@ -472,9 +472,9 @@
 //-----------------------------------------------------------------------------
 // [Android-related]
 //-----------------------------------------------------------------------------
-.decl FieldInitialValue(?fld:Field, ?valueString:symbol)
 #ifdef ANDROID
 
+.decl FieldInitialValue(?fld:Field, ?valueString:symbol)
 .decl Activity(?x:Type)
 .decl Service(?x:Type)
 .decl ContentProvider(?x:Type)
