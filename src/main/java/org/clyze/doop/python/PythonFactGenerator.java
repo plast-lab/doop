@@ -200,6 +200,10 @@ public class PythonFactGenerator implements Runnable{
                         generate(m, ir, (SSANewInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAComparisonInstruction) {
                         generate(m, ir, (SSAComparisonInstruction) instructions[j], session, typeInference);
+                    } else if (instructions[j] instanceof AstEchoInstruction) {
+                        generate(m, ir, (AstEchoInstruction) instructions[j], session, typeInference);
+                    } else if (instructions[j] instanceof AstYieldInstruction) {
+                        generate(m, ir, (AstYieldInstruction) instructions[j], session, typeInference);
                     } else if (instructions[j] instanceof SSAGotoInstruction) {
                         session.calcInstructionNumber(instructions[j]);
                     } else if (instructions[j] instanceof SSAConditionalBranchInstruction) {
@@ -313,6 +317,16 @@ public class PythonFactGenerator implements Runnable{
         Local op2 = createLocal(ir, instruction, instruction.getUse(1), typeInference);
 
         _writer.writeAssignComparison(m, instruction, l, op1, op2, session);
+    }
+
+    private void generate(IMethod m, IR ir, AstEchoInstruction instruction, Session session, TypeInference typeInference)
+    {
+        _writer.writePrintStatement(m, ir, instruction, session);
+    }
+
+    private void generate(IMethod m, IR ir, AstYieldInstruction instruction, Session session, TypeInference typeInference)
+    {
+        _writer.writeYieldStatement(m, ir, instruction, session);
     }
 
     private void generate(IMethod inMethod, IR ir, SSAThrowInstruction instruction, Session session, TypeInference typeInference)
