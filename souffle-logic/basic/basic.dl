@@ -22,6 +22,15 @@ MainMethodDeclaration(?method) :-
    Method_Descriptor(?method, "void(java.lang.String[])"),
    Method_Modifier("public", ?method),
    Method_Modifier("static", ?method).
+
+#ifdef ANDROID
+// Android apps start by running ActivityThread.main().
+// TODO: this rule should only fire when analyzing an APK, not an AAR.
+MainMethodDeclaration(?method) :-
+  ?method = "<android.app.ActivityThread: void main(java.lang.String[])>",
+  isMethod(?method).
+#endif // ANDROID
+
 }
 
 .init basic = Basic
