@@ -321,8 +321,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			log.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
 		}
 
-		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value == true &&
-				options.DISTINGUISH_ALL_STRING_CONSTANTS.value == true) {
+		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value &&
+				options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
 			throw new RuntimeException("Error: options --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
 		}
 
