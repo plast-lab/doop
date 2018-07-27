@@ -51,13 +51,30 @@ CountObjectPointsToThroughField(?basevalue, ?basehctx, Y) :-
   mainAnalysis.isHContext(?basehctx),           
   Y = count : {mainAnalysis.InstanceFieldPointsTo(_, _, _, ?basehctx, ?basevalue)}.
 
+.decl MethodWritesToObjectField(?method:Method, ?basevalue:mainAnalysis.Value)
+
+MethodWritesToObjectField(?method, ?basevalue) :-
+  Var_DeclaringMethod(?var, ?method),
+  mainAnalysis.VarPointsTo(_, ?basevalue, _, ?var),
+  StoreInstanceField_Base(?insn, ?var),
+  Instruction_Method(?insn, ?method).
+
+.decl CountMethodsWriteToObjectField(?basevalue:mainAnalysis.Value, ?n:number)
+
+CountMethodsWriteToObjectField(?basevalue, Y) :-
+  mainAnalysis.isValue(?basevalue),
+  Y = count : {MethodWritesToObjectField(_, ?basevalue)}.
+
 .decl MethodIFPTImpact(?method:Method, ?n:number)
 
 MethodIFPTImpact(?method, Y) :-
-  isMethod(?method),    
+  isMethod(?method),
   Y = sum ?n : {Var_DeclaringMethod(?var, ?method),
   mainAnalysis.VarPointsTo(?basehctx, ?basevalue, _, ?var),
-  CountObjectPointsToThroughField(?basevalue, ?basehctx, ?n)}.  
+  CountObjectPointsToThroughField(?basevalue, ?basehctx, ?n1),
+  CountMethodsWriteToObjectField(?basevalue, ?n2),
+  ?n = ?n1/?n2,
+  ?n2 != 0}.  
 
 .decl NumberOfMethodsStoringToStaticField(?field:Field, ?n:number)
       
@@ -107,4 +124,12 @@ MethodWeight(?method, ?n) :-
 
 // TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight) :-
 //    NeighboringMethodsInCallGraph(?neigh, ?method, ?weight).
+.decl MethodImpacts(?method:Method, ?n1:number, ?n2:number, ?n3:number)
+
+MethodImpacts(?method, ?size1, ?size2, ?size3) :-
+  MethodVPTImpact(?method, ?size1),
+  MethodIFPTImpact(?method, ?size2),
+  MethodSFPTImpact(?method, ?size3).
+
 .output MethodWeight
+.output MethodImpacts
