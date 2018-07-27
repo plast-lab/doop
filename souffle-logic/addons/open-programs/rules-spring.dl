@@ -1,6 +1,7 @@
 #include "rules-servlets-only.dl"
 #include "../../commonMacros.dl"
 
+// Methods with these annotations are servlet entry points
 .decl ServletMethodEP(m: Method)
 ServletMethodEP(?meth) :-
     (Method_Annotation(?meth, "org.springframework.web.bind.annotation.RequestMapping");
@@ -11,13 +12,14 @@ ServletMethodEP(?meth) :-
      Method_Annotation(?meth, "javax.ws.rs.POST");
      Method_Annotation(?meth, "javax.ws.rs.PUT")).
 
-
+// Create a context for servlet EPs
 mainAnalysis.configuration.StartupContextRequest(?hctx, ?val) :-
     ServletMethodEP(?meth),
     ?val = cat("SERVLET ::: ", ?meth),
     mainAnalysis.isValue(?val),
     mainAnalysis.isImmutableHContext(?hctx).
 
+// Mark as entry points with above context
 PossibleOpenProgramEntryPoint(?className, ?meth),
 mainAnalysis.ReachableContext(?ctx, ?meth) :-
     ServletMethodEP(?meth),
@@ -25,11 +27,12 @@ mainAnalysis.ReachableContext(?ctx, ?meth) :-
     ?val = cat("SERVLET ::: ", ?meth),
     mainAnalysis.isValue(?val),
     mainAnalysis.isImmutableHContext(?hctx),
-    mainAnalysis.configuration.StartupContextRequest(?hctx, ?val),
     mainAnalysis.configuration.StartupContextResponse(?hctx, ?val, ?ctx).
 
+// Create mock object for the startup context
 mainAnalysis.isValue(cat("SERVLET ::: ", ?meth)) :- isMethod(?meth), ServletMethodEP(?meth).
 
+// Mock dependency injection through autowired fields
 mainAnalysis_MockValueConsMacro(cat(?fld, " :: AUTOWIRED"), ?type),
 mainAnalysis.InstanceFieldPointsTo(?hctx, cat(?fld, " :: AUTOWIRED"), ?fld, ?basehctx, ?basevalue) :-
   Field_Annotation(?fld, "org.springframework.beans.factory.annotation.Autowired"),
