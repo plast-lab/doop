@@ -190,6 +190,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   ParamTaintTransferredToRet(?type, ?to, ?ctx, ?from),
   mainAnalysis.isImmutableHContext(?hctx).
 
+// Rules for taint propagation through mock taint objects (without a concrete type)
 TaintObjTransfer(?ctx, ?param, ?ctx, ?to),
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
@@ -415,6 +416,7 @@ MaybeDeserializedValue(?value) :-
 AppTaintedVar(?var) :-
   TaintedVarPointsTo(_, _, ?var), ApplicationVar(?var).
 
+// Rules for tracking taint object flow (from/to var and context)
 TaintObjTransfer(?callerCtx, ?actual, ?calleeCtx, ?formal) :-
     mainAnalysis.OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual),
     TaintedVarPointsTo(_, ?callerCtx, ?actual).

@@ -11,6 +11,7 @@
     isMethod(method), \
     match(pattern, method)
 
+// Spring-specific sources-sinks-sanitizers
 LeakingSinkMethodPattern(0, "<javax.servlet.jsp.JspWriter: void print\(.*\)>").
 LeakingSinkMethodPattern(0, "<javax.servlet.jsp.JspWriter: void println\(.*\)>").
 LeakingSinkMethodPattern(0, "<java.io.Writer: void write\(.*\)>").
@@ -151,6 +152,7 @@ LeakingSinkMethodArg(?label, ?n, ?overriddenMethod) :-
    Method_SimpleName(?overriddenMethod, ?name),
    Method_Descriptor(?overriddenMethod, ?descriptor).
 
+// Params with these annotations introduce taint objects
 BaseToRetTaintTransferMethod(?dtoMeth),
 TaintedValueIntroduced(?declaringType, ?to, ?type, "default", ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
@@ -165,22 +167,25 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?c
   Method_DeclaringType(?meth, ?declaringType).
 
 #ifdef OPEN_PROGRAMS
+// Create context for entry point parameters
 mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to) :-
-  ServletMethodEP(?meth),
+  PossibleOpenProgramEntryPoint(_, ?meth),
   FormalParam(_, ?meth, ?to),
   mainAnalysis.ReachableContext(?ctx, ?meth),
   Var_Type(?to, ?type),
   ConcreteImplementations(?type, ?ctype).
 
+// Introduce concrete taint values for etnry point parameters
+// and mark their methods as taint transfer methods
 BaseToRetTaintTransferMethod(?dtoMeth),
 TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
-  ServletMethodEP(?meth),
+  PossibleOpenProgramEntryPoint(?declaringType, ?meth),
   FormalParam(_, ?meth, ?to),
   mainAnalysis.ReachableContext(?ctx, ?meth),
   Var_Type(?to, ?type),
   ConcreteImplementations(?type, ?ctype),
   mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx),
-  Method_DeclaringType(?dtoMeth, ?type),
-  Method_DeclaringType(?meth, ?declaringType).
+  Method_DeclaringType(?dtoMeth, ?type).
+
 #endif

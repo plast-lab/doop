@@ -2,27 +2,10 @@
 #include "webapps-sources-and-sinks.dl"
 #include "macros.dl"
 
-mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to) :-
-  PossibleOpenProgramEntryPoint(_, ?meth),
-  FormalParam(_, ?meth, ?to),
-  mainAnalysis.ReachableContext(?ctx, ?meth),
-  Var_Type(?to, ?type),
-  ConcreteImplementations(?type, ?ctype).
-
-BaseToRetTaintTransferMethod(?dtoMeth),
-TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
-mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
-  PossibleOpenProgramEntryPoint(?declaringType, ?meth),
-  FormalParam(_, ?meth, ?to),
-  mainAnalysis.ReachableContext(?ctx, ?meth),
-  Var_Type(?to, ?type),
-  ConcreteImplementations(?type, ?ctype),
-  mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to),
-  mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx),
-  Method_DeclaringType(?dtoMeth, ?type).
-
 ParamToRetTaintTransferMethod(?meth) :-
   basic.MethodOverridesOther(?meth, "<javax.faces.application.Application: javax.faces.el.ValueBinding createValueBinding(java.lang.String)>").
+
+// Taint transfer methods for mock taint objects (non-concrete types)
 MockBaseToRetTaintTransferMethod("<javax.faces.el.ValueBinding: java.lang.Object getValue(javax.faces.context.FacesContext)>").
 MockBaseToRetTaintTransferMethod("<javax.servlet.ServletResponse: java.io.PrintWriter getWriter()>").
 MockBaseToRetTaintTransferMethod("<java.lang.Object: java.lang.String toString()>").
