@@ -165,6 +165,13 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?c
   Method_DeclaringType(?meth, ?declaringType).
 
 #ifdef OPEN_PROGRAMS
+mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to) :-
+  ServletMethodEP(?meth),
+  FormalParam(_, ?meth, ?to),
+  mainAnalysis.ReachableContext(?ctx, ?meth),
+  Var_Type(?to, ?type),
+  ConcreteImplementations(?type, ?ctype).
+
 BaseToRetTaintTransferMethod(?dtoMeth),
 TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
@@ -173,7 +180,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?
   mainAnalysis.ReachableContext(?ctx, ?meth),
   Var_Type(?to, ?type),
   ConcreteImplementations(?type, ?ctype),
-  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx),
   Method_DeclaringType(?dtoMeth, ?type),
   Method_DeclaringType(?meth, ?declaringType).
 #endif

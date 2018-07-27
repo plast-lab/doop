@@ -1,15 +1,28 @@
-#include "rules-servlets-only.dl"
+#include "rules-spring.dl"
 
 ServletEntryMethodName("service").
+
+PossibleOpenProgramEntryPoint(?class, ?meth) :-
+  ServletClass(?class),
+  Method_DeclaringType(?meth, ?class),
+  Method_SimpleName(?meth, "init").
 
 .decl WebappMock(?v: mainAnalysis.Value)
 
 #define MOCK_WEBAPP_CTX(class)\
   cat(cat("<Mock webapp context ", class), ">")
 
+.decl MockCallReturnVal(?meth: Method)
+
+MockCallReturnVal("<org.springframework.web.context.support.WebApplicationContextUtils: org.springframework.web.context.WebApplicationContext getWebApplicationContext(javax.servlet.ServletContext)>").
+MockCallReturnVal("<javax.faces.FactoryFinder: java.lang.Object getFactory(java.lang.String)>").
+MockCallReturnVal(?meth) :-
+  basic.MethodOverridesOther(?meth, "<javax.faces.context.FacesContext: javax.faces.application.Application getApplication()>").
+
 mainAnalysis.configuration.RecordContextRequest(?ctx, MOCK_WEBAPP_CTX(?class), ?var) :-
-  mainAnalysis.ReachableContext(?ctx, "<org.springframework.web.context.support.WebApplicationContextUtils: org.springframework.web.context.WebApplicationContext getWebApplicationContext(javax.servlet.ServletContext)>"),
-  ReturnVar(?var, "<org.springframework.web.context.support.WebApplicationContextUtils: org.springframework.web.context.WebApplicationContext getWebApplicationContext(javax.servlet.ServletContext)>"),
+  mainAnalysis.ReachableContext(?ctx, ?meth),
+  MockCallReturnVal(?meth),
+  ReturnVar(?var, ?meth),
   Var_Type(?var, ?type),
   ConcreteImplementations(?type, ?class).
 
@@ -17,12 +30,21 @@ WebappMock(MOCK_WEBAPP_CTX(?class)),
 mainAnalysis_MockValueConsMacro(MOCK_WEBAPP_CTX(?class), ?class),
 mainAnalysis.VarPointsTo(?hctx, MOCK_WEBAPP_CTX(?class), ?ctx, ?var),
 MockObject(MOCK_WEBAPP_CTX(?class), ?class) :-
-  mainAnalysis.ReachableContext(?ctx, "<org.springframework.web.context.support.WebApplicationContextUtils: org.springframework.web.context.WebApplicationContext getWebApplicationContext(javax.servlet.ServletContext)>"),
-  ReturnVar(?var, "<org.springframework.web.context.support.WebApplicationContextUtils: org.springframework.web.context.WebApplicationContext getWebApplicationContext(javax.servlet.ServletContext)>"),
+  mainAnalysis.ReachableContext(?ctx, ?meth),
+  MockCallReturnVal(?meth),
+  ReturnVar(?var, ?meth),
   Var_Type(?var, ?type),
   ConcreteImplementations(?type, ?class),
   mainAnalysis.configuration.RecordContextRequest(?ctx, MOCK_WEBAPP_CTX(?class), ?var),
   mainAnalysis.configuration.RecordContextResponse(?ctx, MOCK_WEBAPP_CTX(?class), ?var, ?hctx).
+
+.decl MockedObjTypeContains(?part: symbol)
+MockedObjTypeContains("org.springframework.web.context.").
+MockedObjTypeContains("org.springframework.context.").
+MockedObjTypeContains("java.lang.Object").
+MockedObjTypeContains("org.alfresco.service.").
+MockedObjTypeContains("javax.faces.context.").
+MockedObjTypeContains("javax.faces.lifecycle.").
 
 WebappMock(MOCK_WEBAPP_CTX(?class)),
 mainAnalysis_MockValueConsMacro(MOCK_WEBAPP_CTX(?class), ?class),
@@ -31,25 +53,21 @@ mainAnalysis.VarPointsTo(?hctx, MOCK_WEBAPP_CTX(?class), ?ctx, ?to) :-
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?from),
   WebappMock(?value),
   mainAnalysis.OptAssignCast(?type, ?to, ?from),
-  (contains("org.springframework.web.context.", ?type) ;
-   contains("org.springframework.context.", ?type) ;
-   contains("java.lang.Object", ?type) ;
-   contains("org.alfresco.service.", ?type)),
-  ConcreteImplementations(?type, ?class).
-.plan 2: (3,1,2,4)
+  ConcreteImplementations(?type, ?class),
+  MockedObjTypeContains(?part),
+  contains(?part, ?type).
+.plan 2: (3,1,2,4,5)
 
 
 WebappMock(MOCK_WEBAPP_CTX(?class)),
 mainAnalysis_MockValueConsMacro(MOCK_WEBAPP_CTX(?class), ?class),
 MockObject(MOCK_WEBAPP_CTX(?class), ?class),
-mainAnalysis.VarPointsTo(?hctx, MOCK_WEBAPP_CTX(?class), ?ctx, ?ret) :-
-  ThisVar(?tomethod, ?this),
-  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?this),
+mainAnalysis.VarPointsTo(?hctx, MOCK_WEBAPP_CTX(?class), ?ctx, ?to) :-
+  VirtualMethodInvocation_Base(?invo, ?base),
+  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?base),
   WebappMock(?value),
-  ReturnVar(?ret, ?tomethod),
-  Var_Type(?ret, ?type),
-  (contains("org.springframework.web.context.", ?type) ;
-   contains("org.springframework.context.", ?type) ;
-   contains("java.lang.Object", ?type) ;
-   contains("org.alfresco.service.", ?type)),
+  AssignReturnValue(?invo, ?to),
+  Var_Type(?to, ?type),
+  MockedObjTypeContains(?part),
+  contains(?part, ?type),
   ConcreteImplementations(?type, ?class).

@@ -13,6 +13,7 @@ AnyMethodInvocation(?invocation, ?tomethod) :-
 VarUse(?from, ?insn) :-
   AssignOper_From(?insn, ?from).
 
+TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to),
 TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) :-
   VarIsTaintedFromVar(?type, ?toCtx, ?to, ?fromCtx, ?from),
   TaintedVarPointsTo(?value, ?fromCtx, ?from).
@@ -180,6 +181,7 @@ ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) :-
   ActualParam(_, ?invocation, ?param),
   TypeForReturnValue(?type, ?ret, ?invocation).
 
+TaintObjTransfer(?ctx, ?from, ?ctx, ?to),
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   SourceFromTaintedValue(?value, ?source),
@@ -188,6 +190,40 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   ParamTaintTransferredToRet(?type, ?to, ?ctx, ?from),
   mainAnalysis.isImmutableHContext(?hctx).
 
+TaintObjTransfer(?ctx, ?param, ?ctx, ?to),
+TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  TaintedVarPointsTo(?value, ?ctx, ?param),
+  ActualParam(_, ?invo, ?param),
+  MethodInvocation_Method(?invo, ?meth),
+  MockParamToRetTaintTransferMethod(?meth),
+  AssignReturnValue(?invo, ?to),
+  Var_Type(?to, ?type),
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType),
+  SourceFromTaintedValue(?value, ?source),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  TaintedValue(?value),
+  AssignCast(_, ?from, ?to, _),
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType),
+  SourceFromTaintedValue(?value, ?source),
+  Var_Type(?to, ?type).
+
+TaintObjTransfer(?ctx, ?base, ?ctx, ?to),
+TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  TaintedVarPointsTo(?value, ?ctx, ?base),
+  VirtualMethodInvocation_Base(?invo, ?base),
+  MethodInvocation_Method(?invo, ?meth),
+  MockBaseToRetTaintTransferMethod(?meth),
+  AssignReturnValue(?invo, ?to),
+  Var_Type(?to, ?type),
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType),
+  SourceFromTaintedValue(?value, ?source),
+  mainAnalysis.isImmutableHContext(?hctx).
 
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 .decl ValueTaintedFromValue(?v1:Value, ?v2:Value)
@@ -227,6 +263,7 @@ XYZ2(?type, ?value, ?ctx, ?param) :-
   mainAnalysis.Value_isHeap(?value),
   mainAnalysis.Value_Type(?value, ?type).
 
+TaintObjTransfer(?ctx, ?from, ?ctx, ?var),
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?var) :-
   XYZ2(?type, ?oldvalue, ?ctx, ?from),
@@ -377,3 +414,45 @@ MaybeDeserializedValue(?value) :-
 
 AppTaintedVar(?var) :-
   TaintedVarPointsTo(_, _, ?var), ApplicationVar(?var).
+
+TaintObjTransfer(?callerCtx, ?actual, ?calleeCtx, ?formal) :-
+    mainAnalysis.OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual),
+    TaintedVarPointsTo(_, ?callerCtx, ?actual).
+
+TaintObjTransfer(?callerCtx, ?return, ?calleeCtx, ?local) :-
+    mainAnalysis.CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+    AssignReturnValue(?invocation, ?local),
+    ReturnVar(?return, ?method),
+    TaintedVarPointsTo(_, ?calleeCtx, ?return).
+
+TaintObjTransfer(?ctx, ?base, ?calleeCtx, ?this) :-
+    TaintedVarPointsTo(_, ?ctx, ?base),
+    MethodInvocation_Base(?invo, ?base),
+    mainAnalysis.CallGraphEdge(?ctx, ?invo, ?calleeCtx, ?meth),
+    ThisVar(?meth, ?this).
+
+TaintObjTransfer(?ctx, ?param, ?ctx, ?base) :-
+    ParamTaintTransferredToBase(?param, ?ctx, ?base),
+    TaintedVarPointsTo(_, ?ctx, ?param).
+
+TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to) :-
+    mainAnalysis.LoadHeapInstanceField(?toCtx, ?to, ?sig, ?hctx, _),
+    mainAnalysis.StoreHeapInstanceField(?sig, ?hctx, _, ?fromCtx, ?from).
+
+TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to) :-
+  mainAnalysis.LoadHeapArrayIndex(?toCtx, ?to, ?basehctx, ?basevalue),
+  mainAnalysis.StoreHeapArrayIndex(?basehctx, ?basevalue, ?fromCtx, ?from).
+
+TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to) :-
+    LoadStaticField(?sig, ?to, _),
+    StoreStaticField(?from, ?sig, _),
+    TaintedVarPointsTo(_, ?toCtx, ?to),
+    TaintedVarPointsTo(_, ?fromCtx, ?from).
+
+TaintObjTransfer(?ctx, ?from, ?ctx, ?to) :-
+    TaintedVarPointsTo(_, ?ctx, ?from),
+    AssignCast(_, ?from, ?to, _).
+
+TaintObjTransfer(?ctx, ?from, ?ctx, ?to) :-
+    TaintedVarPointsTo(_, ?ctx, ?from),
+    AssignLocal(?from, ?to, _).

@@ -1,3 +1,4 @@
+#include "spring-sources-and-sinks.dl"
 #include "webapps-sources-and-sinks.dl"
 #include "macros.dl"
 
@@ -19,3 +20,13 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?
   mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to),
   mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx),
   Method_DeclaringType(?dtoMeth, ?type).
+
+ParamToRetTaintTransferMethod(?meth) :-
+  basic.MethodOverridesOther(?meth, "<javax.faces.application.Application: javax.faces.el.ValueBinding createValueBinding(java.lang.String)>").
+MockBaseToRetTaintTransferMethod("<javax.faces.el.ValueBinding: java.lang.Object getValue(javax.faces.context.FacesContext)>").
+MockBaseToRetTaintTransferMethod("<javax.servlet.ServletResponse: java.io.PrintWriter getWriter()>").
+MockBaseToRetTaintTransferMethod("<java.lang.Object: java.lang.String toString()>").
+MockParamToRetTaintTransferMethod("<org.alfresco.repo.model.filefolder.FileFolderServiceImpl: org.alfresco.service.cmr.repository.NodeRef searchSimple(org.alfresco.service.cmr.repository.NodeRef,java.lang.String)>").
+MockParamToRetTaintTransferMethod("<org.alfresco.repo.model.filefolder.FileFolderServiceImpl: org.alfresco.service.cmr.model.FileInfo getFileInfo(org.alfresco.service.cmr.repository.NodeRef)>").
+MockBaseToRetTaintTransferMethod("<org.alfresco.service.cmr.model.FileInfo: org.alfresco.service.cmr.repository.NodeRef getNodeRef()>").
+MockParamToRetTaintTransferMethod("<org.alfresco.service.cmr.repository.NodeService: java.io.Serializable getProperty(org.alfresco.service.cmr.repository.NodeRef,org.alfresco.service.namespace.QName)>").

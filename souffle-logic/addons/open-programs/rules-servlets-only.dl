@@ -60,8 +60,16 @@ MockOpenProgramEntryPoint(?class, ?entry) :-
   PossibleOpenProgramEntryPoint(?class, ?entry),
   isMethod(?entry).
 
-mainAnalysis.ImplicitReachable(?method) :-
-  MockOpenProgramEntryPoint(_, ?method).
+mainAnalysis.configuration.InitContextRequest(?value) :-
+  MockOpenProgramEntryPoint(_, ?method),
+  Method_DeclaringType(?method, ?class),
+  MockObject(?value, ?class).
+
+mainAnalysis.ReachableContext(?ctx, ?method) :-
+  MockOpenProgramEntryPoint(_, ?method),
+  Method_DeclaringType(?method, ?class),
+  MockObject(?value, ?class),
+  mainAnalysis.configuration.InitContextResponse(?value, ?ctx).
 
 // The following two rules were originally separated to stratify negation (no longer needed)
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?receiver) :-
