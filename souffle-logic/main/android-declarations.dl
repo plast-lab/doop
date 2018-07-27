@@ -27,7 +27,6 @@
 .decl ReifiedAndroidObjectValue(?value:Value, ?type:Type)
 .decl ReifiedLibraryObject(?type:Type, ?value:Value)
 .decl FormalOfForcedReachableContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)
-.decl ApplicationObjectFlowingToLibraryStaticType(?hctx:configuration.HContext, ?value:Value, ?possibleType:Type)
 .decl FragmentRetrievalByArg0MethodInvocation(?invo:MethodInvocation)
 .decl ViewRetrievalByArg0MethodInvocation(?invo:MethodInvocation)
 .decl VarsAtInvocationRetrievingLayoutControl(?ret:Var, ?var:Var)

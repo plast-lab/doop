@@ -123,7 +123,7 @@ public class PythonInvoker {
                         m.getName();
                         //System.out.println("\t" + m.getSignature());
                         IR ir = cache.getIR(m);
-                        //System.out.println(ir.toString());
+                        System.out.println(ir.toString());
                     }
                 }
                 PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
