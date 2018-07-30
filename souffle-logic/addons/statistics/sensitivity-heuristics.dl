@@ -36,14 +36,9 @@ NeighboringMethodsInCallGraph(?neigh, ?method, ?weight) :-
 .decl MethodVPTImpact(?method:Method, ?n:number)
       
 MethodVPTImpact(?method, Y) :-
-  isMethod(?method),      
-  Y = sum ?n * 100 / ?weight: { NeighboringMethodsInCallGraph(?neigh, ?method, ?weight), VPTCountPerMethod(?neigh, ?n) }.
+  mainAnalysis.Reachable(?method),      
+  Y = sum ?n * 10 / ?weight: { NeighboringMethodsInCallGraph(?neigh, ?method, ?weight), VPTCountPerMethod(?neigh, ?n) }.
 
-// .decl VarPointsToThroughInstanceField(?ctx:mainAnalysis.configuration.Context, ?var:Var, ?basevalueHctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?value:mainAnalysis.Value, ?valueHctx:mainAnalysis.configuration.HContext, ?sig:Field)
-
-// VarPointsToThroughInstanceField(?ctx, ?var, ?basevaluehctx, ?basevalue, ?value, ?valuehctx, ?sig) :-
-//   mainAnalysis.VarPointsTo(?basevaluehctx, ?basevalue, ?ctx, ?var),
-//   mainAnalysis.InstanceFieldPointsTo(?valuehctx, ?value, ?sig, ?basevaluehctx, ?basevalue).
 .decl CountObjectPointsToThroughField(?basevalue:mainAnalysis.Value, ?basehctx:mainAnalysis.configuration.HContext, ?n:number)
       
 CountObjectPointsToThroughField(?basevalue, ?basehctx, Y) :-
@@ -69,18 +64,25 @@ CountMethodsWriteToObjectField(?basevalue, Y) :-
 
 MethodIFPTImpact(?method, Y) :-
   isMethod(?method),
-  Y = sum ?n : {Var_DeclaringMethod(?var, ?method),
+  Y = sum ?n * 10 / ?weight : {NeighboringMethodsInCallGraph(?neigh, ?method, ?weight),
+  Var_DeclaringMethod(?var, ?neigh),
   mainAnalysis.VarPointsTo(?basehctx, ?basevalue, _, ?var),
   CountObjectPointsToThroughField(?basevalue, ?basehctx, ?n1),
   CountMethodsWriteToObjectField(?basevalue, ?n2),
   ?n = ?n1/?n2,
   ?n2 != 0}.  
 
+.decl ReachableStoreStaticField(?from:Var, ?field:Field, ?method:Method)
+
+ReachableStoreStaticField(?var, ?field, ?method) :-
+  StoreStaticField(?var, ?field, ?method),
+  mainAnalysis.Reachable(?method).
+
 .decl NumberOfMethodsStoringToStaticField(?field:Field, ?n:number)
       
 NumberOfMethodsStoringToStaticField(?field, Y) :-
   isField(?field),
-  Y = count : {StoreStaticField(_, ?field, _)}.
+  Y = count : {ReachableStoreStaticField(_, ?field, _)}.
 
 .decl SFPTCountPerStaticField(?field:Field, Y:number)
 
@@ -98,12 +100,13 @@ StaticFieldImpactPerMethod(?field, ?n) :-
 
 .decl MethodSFPTImpact(?method:Method, ?n:number)
                                          
-MethodSFPTImpact(?method, ?n) :-
+MethodSFPTImpact(?method, ?impact) :-
   StoreStaticField(_, ?field, ?method),
-  StaticFieldImpactPerMethod(?field, ?n).
+  StaticFieldImpactPerMethod(?field, ?n),
+  ?impact = ?n * 10.
 
 MethodSFPTImpact(?method, 0) :-
-  isMethod(?method),
+  mainAnalysis.Reachable(?method),
   !StoreStaticField(_, _, ?method).
 
 .decl MethodWeight(?method:Method, ?n:number)
@@ -133,3 +136,6 @@ MethodImpacts(?method, ?size1, ?size2, ?size3) :-
 
 .output MethodWeight
 .output MethodImpacts
+.output SFPTCountPerStaticField
+.output NumberOfMethodsStoringToStaticField
+.output StaticFieldImpactPerMethod
