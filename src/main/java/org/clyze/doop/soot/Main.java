@@ -329,7 +329,7 @@ public class Main {
 
         try {
             System.out.println("Total classes in Scene: " + classes.size());
-            PackManager.v().retrieveAllBodies();
+            PackManager.v().retrieveAllSceneClassesBodies();
             System.out.println("Retrieved all bodies");
         }
         catch (Exception ex) {
