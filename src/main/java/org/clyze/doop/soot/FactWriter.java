@@ -778,7 +778,7 @@ public class FactWriter {
         // introduce a new temporary variable
         String basename = "$stringconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"), -1, -1);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"));
         writeLocal(inMethod, l);
         writeAssignStringConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -788,7 +788,7 @@ public class FactWriter {
         // introduce a new temporary variable
         String basename = "$null";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, type, -1, -1);
+        Local l = new JimpleLocal(varname, type);
         writeLocal(inMethod, l);
         writeAssignNull(inMethod, stmt, l, session);
         return l;
@@ -798,7 +798,7 @@ public class FactWriter {
         // introduce a new temporary variable
         String basename = "$numconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, constant.getType(), -1, -1);
+        Local l = new JimpleLocal(varname, constant.getType());
         writeLocal(inMethod, l);
         writeAssignNumConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -808,7 +808,7 @@ public class FactWriter {
         // introduce a new temporary variable
         String basename = "$classconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"), -1, -1);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"));
         writeLocal(inMethod, l);
         writeAssignClassConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -818,7 +818,7 @@ public class FactWriter {
         // introduce a new temporary variable
         String basename = "$mhandleconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.invoke.MethodHandle"), -1, -1);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.invoke.MethodHandle"));
         writeLocal(inMethod, l);
         writeAssignMethodHandleConstant(inMethod, stmt, l, constant, session);
         return l;

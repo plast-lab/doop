@@ -233,8 +233,9 @@ class FactGenerator implements Runnable {
                 // This instruction is the bottleneck of
                 // soot-fact-generation.
                 // synchronized(Scene.v()) {
-                System.out.println("You should never see this anymore");
                 m.retrieveActiveBody();
+                System.err.println("Error in method body retrieval");
+                System.exit(-1);
                 // } // synchronizing so broadly = giving up on Soot's races
             }
 

@@ -1,12 +1,12 @@
 package org.clyze.doop.soot;
 
+import soot.FoundFile;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import static soot.SourceLocator.FoundFile;
 
 public class PropertyProvider {
     private Map<String, Properties> _properties;

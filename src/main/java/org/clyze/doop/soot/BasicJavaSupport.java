@@ -1,10 +1,10 @@
 package org.clyze.doop.soot;
 
 import org.objectweb.asm.ClassReader;
+import soot.FoundFile;
 import soot.Scene;
 import soot.SootClass;
 import soot.SourceLocator;
-import soot.SourceLocator.FoundFile;
 
 import java.io.File;
 import java.io.FileInputStream;
