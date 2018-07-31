@@ -66,7 +66,7 @@ dependencies {
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             /// Soot is a compile time dependency
             "ext:AXMLPrinter:2.0",
-            "ext:sootclasses:3.2.+",
+            "ext:sootclasses:3.2.7",
             "ext:soot-infoflow:1.2.+",
             "ext:soot-infoflow-android:1.2.+",
             /// WALA
