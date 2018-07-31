@@ -217,7 +217,6 @@ java_lang_ClassLoader_getResource(?invocation, ?to, ?from) :-
   ?type = "java.net.URL",
   isReferenceType(?type).
 
-#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
 // TODO Handle version for multiarray? If yes, add to ReifiedClass as well
 #ifdef REFLECTION_REFINED_OBJECTS
 CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat(cat(cat("<reflective ", ?invocation), "/new "), ?arrayType), ">")),
@@ -230,7 +229,6 @@ java_lang_reflect_Array_newInstance(?invocation, ?to, ?param) :-
   AssignReturnValue(?invocation, ?to),
   ActualParam(0, ?invocation, ?param),
   isArrayType(?arrayType).
-#endif // REFLECTION_HIGH_SOUNDNESS_MODE
 
 // TODO Better filtering of class types
 #ifdef REFLECTION_REFINED_OBJECTS

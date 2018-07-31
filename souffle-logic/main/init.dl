@@ -49,7 +49,7 @@ Value_DeclaringType(cat("num-constant-", ?const), ?className) :-
   isType(?className),
   contains(".R$", ?className),
   Type_int(?type).
-#endif
+#endif // ANDROID
 
 
 Value_isNonHeap(?value) :-

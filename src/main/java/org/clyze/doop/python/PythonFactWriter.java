@@ -436,6 +436,32 @@ public class PythonFactWriter {
 
     }
 
+    void writePrintStatement(IMethod m, IR ir, AstEchoInstruction instruction, Session session)
+    {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = _rep.signature(m);
+        _db.add(PRINT_STATEMENT, insn, str(index), methodId);
+
+        int uses = instruction.getNumberOfUses();
+        for(int i=0; i < uses; i++) {
+            Local l = createLocal(ir,instruction, instruction.getUse(i), null);
+            _db.add(PRINT_ARG, insn, _rep.local(m, l));
+        }
+    }
+
+    void writeYieldStatement(IMethod m, IR ir, AstYieldInstruction instruction, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.instruction(m, instruction, session, index);
+        String methodId = _rep.signature(m);
+        _db.add(YIELD_STATEMENT, insn, str(index), methodId);
+
+        int uses = instruction.getNumberOfUses();
+        for (int i = 0; i < uses; i++) {
+            Local l = createLocal(ir, instruction, instruction.getUse(i), null);
+            _db.add(YIELD_ARG, insn, _rep.local(m, l));
+        }
+    }
     void writeAssignBinop(IMethod m, SSABinaryOpInstruction instruction, Local left, Local op1, Local op2, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);

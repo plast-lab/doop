@@ -231,7 +231,7 @@ variable names).
 Example:
 ```
 #!bash
-$ ./bin/mkjar Example.java
+$ ./bin/mkjar Example.java 1.8
 added manifest
 adding: Dog.class(in = 292) (out= 210)(deflated 28%)
 adding: Animal.class(in = 434) (out= 280)(deflated 35%)

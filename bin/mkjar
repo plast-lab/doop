@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[[ $# != 1 ]] && echo "Must give exactly one argument (the .java file)..." && exit
+[[ $# != 2 ]] && echo "Usage: <File.java> <java version (e.g. 1.8)>" && exit
 
 filenameJava=$1
 filename=${filenameJava%.*}
@@ -13,7 +13,7 @@ tmpDir=$(mktemp -d)
 # to analyze anyway?
 jreDir=$DOOP_PLATFORMS_LIB/JREs
 if [ -d $jreDir ] ; then
-	jre="1.7"
+	jre=$2
 	javac $filenameJava -d $tmpDir -g -bootclasspath ${jreDir}/jre${jre}/lib/rt.jar -source $jre -target $jre
 else
 	javac $filenameJava -d $tmpDir -g

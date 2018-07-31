@@ -243,17 +243,15 @@ ReachableStoreStaticFieldFrom(?from) :-
   Reachable(?inmethod),
   StoreStaticField(?from, _, ?inmethod).
 
-/**
- * Store default value in static field (android-only!)
- *
- */
 #ifdef ANDROID
-
+/**
+ * Store default value in static field (Android-only!)
+ */
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   FieldInitialValue(?signature, ?const),
   Value_Num(?value, ?const),
   isImmutableHContext(?hctx).
-#endif
+#endif // ANDROID
 
 /**
  * Load array index

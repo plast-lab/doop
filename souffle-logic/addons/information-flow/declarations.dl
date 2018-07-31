@@ -48,6 +48,8 @@
 .decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
 .decl ParamIndexToBaseTaintTransferMethod(?index:number, ?method:Method)
 .decl ParamToRetTaintTransferMethod(?method:Method)
+.decl MockBaseToRetTaintTransferMethod(?meth: Method)
+.decl MockParamToRetTaintTransferMethod(?meth: Method)
 
 
 .decl TaintedVarPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
@@ -55,3 +57,5 @@
 .decl VarIsTaintedFromVarIndex(?base:Var, ?ctx1:mainAnalysis.configuration.Context, ?param:Var)
 .decl VarIsTaintedFromValueIndex(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value)
 
+.decl TaintObjTransfer(fromCtx: mainAnalysis.configuration.Context, from: Var, toCtx: mainAnalysis.configuration.Context, to: Var)
+.output TaintObjTransfer
