@@ -1,16 +1,15 @@
 package org.clyze.doop.utils
 
-import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.utils.AARUtils
 import org.clyze.utils.Helper
 
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
 import static soot.DexClassProvider.classesOfDex
+import soot.dexpler.DexFileProvider
+import soot.dexpler.DexFileProvider.DexContainer
 
 /** Computes the app-regex for JAR/APK/AAR inputs. */
 class PackageUtil {
@@ -34,16 +33,8 @@ class PackageUtil {
 
 	static Set<String> getPackagesForAPK(File apk) {
 		Set<String> classNames = []
-		def zip = new ZipFile(apk)
-		zip.entries().each { ZipEntry entry ->
-			if (entry.getName().endsWith(".dex")) {
-				def tmpDir = Files.createTempDirectory("apk").toString()
-				def tmpDex = "${tmpDir}/temp-classes.dex"
-				def is = zip.getInputStream(entry)
-				Files.copy(is, Paths.get(tmpDex))
-				classNames.addAll(classesOfDex(new File(tmpDex)))
-				FileUtils.deleteQuietly(new File(tmpDir))
-			}
+		for (DexFileProvider.DexContainer container : DexFileProvider.v().getDexFromSource(apk)) {
+			classNames.addAll(classesOfDex(container.getBase()))
 		}
 		return classNames.collect { getPackageFromDots(it) }
 	}
