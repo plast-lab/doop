@@ -1,0 +1,58 @@
+// Compute and output the relations that are needed by Scaler.
+
+.decl AllCallGraphEdge(?from:MethodInvocation, ?to:Method)
+.output AllCallGraphEdge(IO="file",filename="CALL_EDGE.csv",delimiter="\t")
+
+AllCallGraphEdge(?from, ?to) :- CallGraphEdge(_, ?from, _, ?to).
+
+#ifdef REFLECTION
+AllCallGraphEdge(?from, ?to) :- ReflectiveCallGraphEdge(_, ?from, _, ?to).
+#endif
+
+#ifdef TAMIFLEX
+AllCallGraphEdge(?from, ?to) :- TamiflexCallGraphEdge(_, ?from, _, ?to).
+#endif
+
+
+.decl CallSiteIn(?invo:MethodInvocation, ?method:Method)
+.output CallSiteIn(IO="file",filename="CALLSITEIN.csv",delimiter="\t")
+
+CallSiteIn(?invo, ?method) :-
+    Reachable(?method),
+    Instruction_Method(?invo, ?method),
+    isMethodInvocation(?invo).
+
+
+.output Value_DeclaringType(IO="file",filename="DECLARING_CLASS_ALLOCATION.csv",delimiter="\t")
+
+
+.decl Instance_Method(?method:Method)
+.output Instance_Method(IO="file",filename="INST_METHODS.csv",delimiter="\t")
+
+.decl This_Var(?method:Method, ?var:Var)
+.output This_Var(IO="file",filename="THIS_VAR.csv",delimiter="\t")
+
+This_Var(?method, ?this),
+Instance_Method(?method) :-
+    Reachable(?method),
+    ThisVar(?method, ?this).
+
+
+.decl Object_In(?object:Value, ?method:Method)
+.output Object_In(IO="file",filename="OBJECT_IN.csv",delimiter="\t")
+
+Object_In(?heap, ?method) :-
+    Reachable(?method),
+    Instruction_Method(?instruction, ?method),
+    AssignHeapAllocation_Heap(?instruction, ?heap).
+
+
+.output HeapAllocation_ContextInsensitive(IO="file",filename="SPECIAL_OBJECTS.csv",delimiter="\t")
+
+
+.decl Var_In(?var:Var, ?method:Method)
+.output Var_In(IO="file",filename="VAR_IN.csv",delimiter="\t")
+
+Var_In(?var, ?method) :-
+    Reachable(?method),
+    Var_DeclaringMethod(?var, ?method).

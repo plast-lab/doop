@@ -517,6 +517,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 
+			/* Start Scaler related options */
+			new BooleanAnalysisOption(
+					id: "SCALER_PRE_ANALYSIS",
+					name: "scaler-pre",
+					description: "Enable the analysis to be the pre-analysis of Scaler, and outputs the information required by Scaler.",
+					forPreprocessor: true
+			),
+			/* End Scaler related options */
+
 			/* Start LogicBlox related options */
 			new AnalysisOption<String>(
 					id: "LOGICBLOX_HOME",
