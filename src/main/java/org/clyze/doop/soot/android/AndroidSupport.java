@@ -1,6 +1,7 @@
 package org.clyze.doop.soot.android;
 
 import org.clyze.doop.soot.*;
+import org.clyze.doop.soot.android.resources.PossibleLayoutControl;
 import org.clyze.utils.AARUtils;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import soot.Scene;
@@ -9,7 +10,6 @@ import soot.SootMethod;
 import soot.coffi.Util;
 import soot.dexpler.DexFileProvider;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,6 +53,7 @@ public class AndroidSupport extends BasicJavaSupport {
                 // versions of FlowDroid):
                 // app.calculateSourcesSinksEntryPoints(filename);
                 throw new RuntimeException("FlowDroid interface missing");
+
             } catch (Exception ex) {
                 System.err.println("calculateSourcesSinksEntrypoints() failed:");
                 ex.printStackTrace();

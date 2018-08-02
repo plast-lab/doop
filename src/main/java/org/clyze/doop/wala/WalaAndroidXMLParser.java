@@ -1,7 +1,7 @@
 package org.clyze.doop.wala;
 
 import org.clyze.doop.soot.android.AndroidManifest;
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+import org.clyze.doop.soot.android.resources.PossibleLayoutControl;
 
 import java.io.IOException;
 import java.util.*;

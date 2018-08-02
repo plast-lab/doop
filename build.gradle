@@ -67,8 +67,8 @@ dependencies {
             /// Soot is a compile time dependency
             "ext:AXMLPrinter:2.0",
             "ext:sootclasses:3.2.+",
-            "ext:soot-infoflow:1.3.+",
-            "ext:soot-infoflow-android:1.3.+",
+            "ext:soot-infoflow:2.0.0",
+            "ext:soot-infoflow-android:2.0.0",
             /// WALA
             /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
             //"com.ibm.wala:com.ibm.wala.util:1.4.3",
