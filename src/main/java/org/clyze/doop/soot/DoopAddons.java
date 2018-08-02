@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
+import soot.SootField;
 import soot.SootMethod;
 import soot.options.Options;
 
@@ -16,6 +17,8 @@ import soot.options.Options;
  * This class gathers modified functionality that Doop needs from Soot.
  */
 public class DoopAddons {
+
+    private static boolean getInitialValueString_warned = false;
 
     public static void retrieveAllSceneClassesBodies() {
         // The old coffi front-end is not thread-safe
@@ -81,6 +84,23 @@ public class DoopAddons {
             System.err.println("Could not call Soot method writeClass(): ");
             ex.printStackTrace();
             throw new DoopErrorCodeException(12);
+        }
+    }
+
+    /**
+     * Calls the handler for field initial values (useful for Android
+     * apps), return null when this functionality is not available.
+     */
+    public static String getInitialValueString(SootField f) {
+        try {
+            Method gIVS = f.getClass().getDeclaredMethod("getInitialValueString", new Class[] { });
+            return (String) gIVS.invoke(f, new Object[] { });
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+            if (!getInitialValueString_warned) {
+                System.err.println("Warning: SootField method getInitialValueString() is not available.");
+                getInitialValueString_warned = true;
+            }
+            return null;
         }
     }
 }
