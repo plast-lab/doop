@@ -49,7 +49,10 @@ public class AndroidSupport extends BasicJavaSupport {
             app.getConfig().setCallbackAnalyzer(Fast);
             String filename = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
             try {
-                app.calculateSourcesSinksEntrypoints(filename);
+                // TODO: fix this method call (refactored in newer
+                // versions of FlowDroid):
+                // app.calculateSourcesSinksEntryPoints(filename);
+                throw new RuntimeException("FlowDroid interface missing");
             } catch (Exception ex) {
                 System.err.println("calculateSourcesSinksEntrypoints() failed:");
                 ex.printStackTrace();
