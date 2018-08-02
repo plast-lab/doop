@@ -60,9 +60,9 @@ public class DoopAddons {
     public static void retrieveAllBodies() throws DoopErrorCodeException {
         PackManager pm = PackManager.v();
         try {
-            Method rAB = pm.getClass().getMethod("retrieveAllBodies", new Class[] { });
+            Method rAB = pm.getClass().getDeclaredMethod("retrieveAllBodies", new Class[] { });
             rAB.setAccessible(true);
-            rAB.invoke(new Object[] { });
+            rAB.invoke(pm, new Object[] { });
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             System.err.println("Could not call Soot method retrieveAllBodies():");
             ex.printStackTrace();
@@ -74,9 +74,9 @@ public class DoopAddons {
     public static void writeClass(SootClass sootClass) throws DoopErrorCodeException {
         PackManager pm = PackManager.v();
         try {
-            Method wC = pm.getClass().getMethod("writeClass", new Class[] { SootClass.class });
+            Method wC = pm.getClass().getDeclaredMethod("writeClass", new Class[] { SootClass.class });
             wC.setAccessible(true);
-            wC.invoke(new Object[] { sootClass });
+            wC.invoke(pm, new Object[] { sootClass });
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             System.err.println("Could not call Soot method writeClass(): ");
             ex.printStackTrace();
