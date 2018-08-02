@@ -72,11 +72,15 @@ dependencies {
             "org.smali:dexlib2:2.2.4",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
-            /// Soot is a compile time dependency
+
+            // Soot
             "ext:AXMLPrinter:2.0",
+            // Upstream stable version, to be used instead of ext:sootclasses.
+            // "ca.mcgill.sable:soot:3.1.0",
             "ext:sootclasses:3.2.+",
             "ext:soot-infoflow:2.0.0",
             "ext:soot-infoflow-android:2.0.0",
+
             /// WALA
             /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
             //"com.ibm.wala:com.ibm.wala.util:1.4.3",
