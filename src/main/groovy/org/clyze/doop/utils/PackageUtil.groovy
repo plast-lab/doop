@@ -10,6 +10,7 @@ import java.util.zip.ZipFile
 import static soot.DexClassProvider.classesOfDex
 import soot.dexpler.DexFileProvider
 import soot.dexpler.DexFileProvider.DexContainer
+import soot.options.Options;
 
 /** Computes the app-regex for JAR/APK/AAR inputs. */
 class PackageUtil {
@@ -32,6 +33,7 @@ class PackageUtil {
 	}
 
 	static Set<String> getPackagesForAPK(File apk) {
+		Options.v().set_process_multiple_dex(true);
 		Set<String> classNames = []
 		for (DexFileProvider.DexContainer container : DexFileProvider.v().getDexFromSource(apk)) {
 			classNames.addAll(classesOfDex(container.getBase()))
