@@ -329,7 +329,8 @@ public class Main {
 
         try {
             System.out.println("Total classes in Scene: " + classes.size());
-            PackManager.v().retrieveAllSceneClassesBodies();
+            DoopAddons.retrieveAllSceneClassesBodies();
+            // DoopAddons.retrieveAllBodies();
             System.out.println("Retrieved all bodies");
         }
         catch (Exception ex) {
