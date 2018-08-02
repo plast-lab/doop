@@ -1,7 +1,7 @@
 package org.clyze.doop.soot.android;
 
-import org.clyze.doop.soot.android.resources.PossibleLayoutControl;
 import org.w3c.dom.*;
+import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;

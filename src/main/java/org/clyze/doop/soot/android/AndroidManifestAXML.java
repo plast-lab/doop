@@ -2,12 +2,11 @@
 
 package org.clyze.doop.soot.android;
 
-import org.clyze.doop.soot.android.axml.AXmlNode;
-import org.clyze.doop.soot.android.manifest.ProcessManifest;
-import org.clyze.doop.soot.android.resources.ARSCFileParser;
-import org.clyze.doop.soot.android.resources.DirectLayoutFileParser;
-import org.clyze.doop.soot.android.resources.PossibleLayoutControl;
-
+import soot.jimple.infoflow.android.axml.AXmlNode;
+import soot.jimple.infoflow.android.manifest.ProcessManifest;
+import soot.jimple.infoflow.android.resources.ARSCFileParser;
+import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
+import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import java.io.IOException;
 import java.util.HashSet;
