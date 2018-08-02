@@ -330,6 +330,7 @@ public class Main {
         try {
             System.out.println("Total classes in Scene: " + classes.size());
             DoopAddons.retrieveAllSceneClassesBodies();
+            // The call below has a problem (only retrieves app method bodies).
             // DoopAddons.retrieveAllBodies();
             System.out.println("Retrieved all bodies");
         }
