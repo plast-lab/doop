@@ -235,7 +235,7 @@ class FactGenerator implements Runnable {
                 // synchronized(Scene.v()) {
                 m.retrieveActiveBody();
                 // } // synchronizing so broadly = giving up on Soot's races
-                throw new RuntimeException("");
+                System.err.println("Found method without active body: " + m.getSignature());
             }
 
             Body b = m.getActiveBody();
