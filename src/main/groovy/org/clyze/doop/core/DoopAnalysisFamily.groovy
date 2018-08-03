@@ -576,11 +576,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argInputType: InputType.MISC
 			),
 			new BooleanAnalysisOption(
-					id: "X_STOP_AT_INIT",
-					name: "Xstop-at-init",
-					description: "Initialize database with facts and exit."
-			),
-			new BooleanAnalysisOption(
 					id: "X_STOP_AT_BASIC",
 					name: "Xstop-at-basic",
 					description: "Run the basic analysis and exit."

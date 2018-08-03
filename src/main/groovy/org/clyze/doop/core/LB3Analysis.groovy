@@ -37,23 +37,20 @@ class LB3Analysis extends DoopAnalysis {
 		if (options.X_STOP_AT_FACTS.value) return
 
 		initDatabase()
-		if (!options.X_STOP_AT_INIT.value) {
+		basicAnalysis()
+		if (!options.X_STOP_AT_BASIC.value) {
 
-			basicAnalysis()
-			if (!options.X_STOP_AT_BASIC.value) {
+			mainAnalysis()
 
-				mainAnalysis()
-
-				try {
-					FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
-					reanalyze()
-				}
-				catch (e) {
-					log.debug e.getMessage()
-				}
-
-				produceStats()
+			try {
+				FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+				reanalyze()
 			}
+			catch (e) {
+				log.debug e.getMessage()
+			}
+
+			produceStats()
 		}
 
 		log.info "\nAnalysis START"

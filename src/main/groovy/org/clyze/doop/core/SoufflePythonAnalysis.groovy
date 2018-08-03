@@ -26,12 +26,6 @@ class SoufflePythonAnalysis extends DoopAnalysis{
 
         if (options.X_STOP_AT_FACTS.value) return
 
-        // Souffle has no persistent database.
-        if (options.X_STOP_AT_INIT.value) {
-            log.info "Option ${options.X_STOP_AT_INIT.name} is equivalent to ${options.X_STOP_AT_FACTS.name} for Souffle-based analyses."
-            return
-        }
-
         analysis = new File(outDir, "${name}.dl")
         deleteQuietly(analysis)
         analysis.createNewFile()
