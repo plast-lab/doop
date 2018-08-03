@@ -1,5 +1,6 @@
 package org.clyze.doop.utils
 
+import groovy.transform.TupleConstructor
 import groovy.util.logging.Log4j
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.utils.CheckSum
@@ -12,15 +13,16 @@ import java.nio.file.StandardCopyOption
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 
+@TupleConstructor
 @Log4j
 class SouffleScript {
 
+	Executor executor
 	long compilationTime = 0L
 	long executionTime = 0L
 
-	def run(File origScriptFile, File inDir, File outDir, File cacheDir,
-	        Executor executor, int jobs, long monitoringInterval, Closure monitorClosure = null,
-	        boolean profile = false, boolean debug = false, boolean removeContext = false) {
+	File compile(File origScriptFile, File outDir, File cacheDir,
+	            boolean profile = false, boolean debug = false, boolean removeContext = false) {
 
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
@@ -76,12 +78,17 @@ class SouffleScript {
 		} else {
 			log.info "Using cached analysis executable $checksum from $cacheDir"
 		}
+		return cacheFile
+	}
+
+	def run(File cacheFile, File factsDir, File outDir,
+	        int jobs, long monitoringInterval, Closure monitorClosure = null, boolean profile = false) {
 
 		def db = new File(outDir, "database")
 		deleteQuietly(db)
 		db.mkdirs()
 
-		def executionCommand = "$cacheFile -j$jobs -F$inDir -D$db".split().toList()
+		def executionCommand = "$cacheFile -j$jobs -F$factsDir -D$db".split().toList()
 		if (profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 

@@ -121,7 +121,13 @@ public class WalaIRPrinter {
 
     private void printIR(IMethod m, PrintWriter writer)
     {
-        IR ir = _cache.getIR(m, Everywhere.EVERYWHERE);
+        IR ir = null;
+        try {
+            ir = _cache.getIR(m, Everywhere.EVERYWHERE);
+        }catch(Throwable t){
+            writer.write(" Error " + t +" creating IR for method " + m);
+            return;
+        }
         //printVars(ir,writer);
         SSAInstruction[] instructions = ir.getInstructions();
         SSACFG cfg = ir.getControlFlowGraph();
@@ -152,7 +158,23 @@ public class WalaIRPrinter {
             for (int j = start; j <= end; j++) {
                 if (instructions[j] != null) {
                     writer.write("\t\t"+j+"\t" + instructions[j].toString(symbolTable) + "\n");
-
+                    for(int k = 0; k < instructions[j].getNumberOfUses(); k++){
+                        int use = instructions[j].getUse(k);
+                        String[] names = ir.getLocalNames(instructions[j].iindex, use);
+                        if(names!= null && names.length!=0){
+                            writer.write("v"+use +" =[");
+                            for(int ii = 0; ii < names.length; ii++){
+                                if(names[ii] == null)
+                                    continue;
+                                writer.write(names[ii]);
+//                                if(m.getDeclaringClass().getClassLoader().getName().toString().equals("Application"))
+//                                    System.out.println(" name of v" + use + " is "+names[ii]);
+                                if(ii!= names.length -1)
+                                    writer.write(",");
+                            }
+                            writer.write("]");
+                        }
+                    }
                 }
             }
             Iterator<SSAPiInstruction> pis = basicBlock.iteratePis();

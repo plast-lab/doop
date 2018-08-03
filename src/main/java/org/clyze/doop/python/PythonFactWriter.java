@@ -26,6 +26,7 @@ import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -407,12 +408,17 @@ public class PythonFactWriter {
     }
 
     //TODO: This needs work for pythons positional params!!!!!!!!!!!!
-    private void writeActualParams(IMethod inMethod, IR ir, SSAAbstractInvokeInstruction instruction, String invokeExprRepr, Session session, TypeInference typeInference) {
+    private void writeActualParams(IMethod inMethod, IR ir, PythonInvokeInstruction instruction, String invokeExprRepr, Session session, TypeInference typeInference) {
         if (instruction.isStatic()) {
             //for (int i = 0; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 0; i < instruction.getNumberOfPositionalParameters(); i++) {
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
                 _db.add(ACTUAL_POSITIONAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
+            }
+            List<String> keywords = instruction.getKeywords();
+            for (int i = 0; i < instruction.getNumberOfKeywordParameters(); i++) {
+                Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+                _db.add(ACTUAL_KEYWORD_PARAMETER, str(i), invokeExprRepr,keywords.get(i), _rep.local(inMethod, l));
             }
         }
         else {
@@ -420,6 +426,11 @@ public class PythonFactWriter {
             for (int i = 1; i < instruction.getNumberOfPositionalParameters(); i++) {
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
                 _db.add(ACTUAL_POSITIONAL_PARAMETER, str(i-1), invokeExprRepr, _rep.local(inMethod, l));
+            }
+            List<String> keywords = instruction.getKeywords();
+            for (int i = 0; i < instruction.getNumberOfKeywordParameters(); i++) {
+                Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+                _db.add(ACTUAL_KEYWORD_PARAMETER, str(i-1), invokeExprRepr,keywords.get(i), _rep.local(inMethod, l));
             }
         }
     }

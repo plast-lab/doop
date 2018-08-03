@@ -26,12 +26,6 @@ class SoufflePythonAnalysis extends DoopAnalysis{
 
         if (options.X_STOP_AT_FACTS.value) return
 
-        // Souffle has no persistent database.
-        if (options.X_STOP_AT_INIT.value) {
-            log.info "Option ${options.X_STOP_AT_INIT.name} is equivalent to ${options.X_STOP_AT_FACTS.name} for Souffle-based analyses."
-            return
-        }
-
         analysis = new File(outDir, "${name}.dl")
         deleteQuietly(analysis)
         analysis.createNewFile()
@@ -45,14 +39,16 @@ class SoufflePythonAnalysis extends DoopAnalysis{
 
         def cacheDir = new File(Doop.souffleAnalysesCache, name)
         cacheDir.mkdirs()
-        def script = new SouffleScript()
-        script.run(analysis, factsDir, outDir, cacheDir,
-                executor, options.SOUFFLE_JOBS.value as int,
-                (options.X_MONITORING_INTERVAL.value as long) * 1000,
-                monitorClosure,
+        def script = new SouffleScript(executor)
+        def generatedFile = script.compile(analysis, outDir, cacheDir,
                 options.SOUFFLE_PROFILE.value as boolean,
                 options.SOUFFLE_DEBUG.value as boolean,
                 options.X_CONTEXT_REMOVER.value as boolean)
+
+        script.run(generatedFile, factsDir, outDir,
+                options.SOUFFLE_JOBS.value as int,
+                (options.X_MONITORING_INTERVAL.value as long) * 1000,
+                monitorClosure)
 
 
         int dbSize = (sizeOfDirectory(database) / 1024).intValue()

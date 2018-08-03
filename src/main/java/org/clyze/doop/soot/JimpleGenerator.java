@@ -18,7 +18,7 @@ public class JimpleGenerator implements Runnable {
     public void run() {
         for (SootClass sootClass : _sootClasses) {
             try {
-                PackManager.v().writeClass(sootClass);
+                DoopAddons.writeClass(sootClass);
             } catch (Exception ex) {
                 System.err.println("Error writing class " + sootClass.getName() + ":");
                 ex.printStackTrace();

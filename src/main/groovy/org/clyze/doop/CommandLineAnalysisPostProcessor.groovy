@@ -1,8 +1,8 @@
 package org.clyze.doop
 
 import groovy.util.logging.Log4j
-import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.FileUtils
+import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.AnalysisPostProcessor
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
@@ -14,7 +14,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
 	@Override
 	void process(DoopAnalysis analysis) {
-		if (!analysis.options.X_SERVER_LOGIC.value && !analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_INIT.value && !analysis.options.X_STOP_AT_BASIC.value)
+		if (!analysis.options.X_SERVER_LOGIC.value && !analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_BASIC.value)
 			printStats(analysis)
 		if (analysis.options.SANITY.value)
 			printSanityResults(analysis)

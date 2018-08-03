@@ -1028,7 +1028,7 @@ public class FactWriter {
 
     void writeFieldInitialValue(SootField f) {
         String fieldId = _rep.signature(f);
-        String valueString = f.getInitialValueString();
+        String valueString = DoopAddons.getInitialValueString(f);
         // Android R$ related fields
         if (valueString != null && !valueString.equals("")) {
             int pos = valueString.indexOf('@');

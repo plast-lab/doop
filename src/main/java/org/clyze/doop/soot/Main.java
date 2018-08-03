@@ -329,7 +329,9 @@ public class Main {
 
         try {
             System.out.println("Total classes in Scene: " + classes.size());
-            PackManager.v().retrieveAllSceneClassesBodies();
+            DoopAddons.retrieveAllSceneClassesBodies();
+            // The call below has a problem (only retrieves app method bodies).
+            // DoopAddons.retrieveAllBodies();
             System.out.println("Retrieved all bodies");
         }
         catch (Exception ex) {
