@@ -84,7 +84,7 @@ public class BasicJavaSupport {
                         System.err.println("-- Problematic .class file \"" + entryName + "\"");
                     }
                 } else if (entryName.endsWith(".properties")) {
-                    propertyProvider.addProperties((new SourceLocator.FoundFile(filename, entryName)));
+                    propertyProvider.addProperties(DoopAddons.newFoundFile(filename, entryName));
                 } /* Skip non-class files and non-property files */
             }
         }

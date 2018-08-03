@@ -1,8 +1,10 @@
 package org.clyze.doop.soot;
 
 import heros.solver.CountingThreadPoolExecutor;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +21,7 @@ import soot.options.Options;
 public class DoopAddons {
 
     private static boolean getInitialValueString_warned = false;
+    private static boolean foundFile_warned = false;
 
     public static void retrieveAllSceneClassesBodies() {
         // The old coffi front-end is not thread-safe
@@ -101,6 +104,66 @@ public class DoopAddons {
                 getInitialValueString_warned = true;
             }
             return null;
+        }
+    }
+
+    /**
+     * Creates an instance of class "FoundFile" (which may exist in different
+     * locations in the class hierarchy between our Soot fork and upstream).
+     */
+    public static FoundFile newFoundFile(String archivePath, String entryName) {
+        Class<?> foundFileClass;
+
+        // Resolve FoundFile class dynamically.
+        try {
+            foundFileClass = Class.forName("soot.FoundFile");
+        } catch (ClassNotFoundException ex1) {
+            try {
+                foundFileClass = Class.forName("soot.SourceLocator$FoundFile");
+            } catch (ClassNotFoundException ex2) {
+                System.out.println("Error: cannot find class FoundFile.");
+                return null;
+            }
+        }
+
+        if (!foundFile_warned) {
+            System.err.println("Using Soot class: " + foundFileClass.getName());
+            foundFile_warned = true;
+        }
+
+        // Construct an instance.
+        try {
+            Constructor<?> ctr = foundFileClass.getConstructor(new Class[] {String.class, String.class});
+            Object ff = ctr.newInstance(archivePath, entryName);
+            return new FoundFile(ff);
+        } catch (NoSuchMethodException | InstantiationException | InvocationTargetException | IllegalAccessException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    // The part of FoundFile that we wrap.
+    static class FoundFile {
+        Object ff;
+
+        public FoundFile(Object ff) { this.ff = ff; }
+
+        private Object nullaryCall(String mName) {
+            try {
+                Method m = ff.getClass().getDeclaredMethod(mName, new Class[] { });
+                return m.invoke(ff);
+            } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException ex) {
+                ex.printStackTrace();
+                return null;
+            }
+        }
+
+        InputStream inputStream() {
+            return (InputStream) nullaryCall("inputStream");
+        }
+
+        String getFilePath() {
+            return (String) nullaryCall("getFilePath");
         }
     }
 }
