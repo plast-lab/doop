@@ -51,6 +51,8 @@ class SouffleAnalysis extends DoopAnalysis {
 				new Callable<File>() {
 					@Override
 					File call() {
+						if (options.X_STOP_AT_FACTS.value) return
+
 						log.info "[Task COMPILE...]"
 						def generatedFile = script.compile(analysis, outDir, cacheDir,
 								options.SOUFFLE_PROFILE.value as boolean,
