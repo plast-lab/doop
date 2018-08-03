@@ -46,7 +46,9 @@ public class AndroidSupport extends BasicJavaSupport {
         if (sootParameters.getRunFlowdroid()) {
             String appInput = sootParameters.getInputs().get(0);
             SetupApplication app = new SetupApplication(androidJars, appInput);
-            app.getConfig().setCallbackAnalyzer(Fast);
+            // TODO: fix this method call (refactored in newer
+            // versions of FlowDroid):
+            //app.getConfig().setCallbackAnalyzer(Fast);
             String filename = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
             try {
                 // TODO: fix this method call (refactored in newer

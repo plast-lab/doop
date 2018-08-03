@@ -1,7 +1,6 @@
 package org.clyze.doop.soot;
 
 import org.objectweb.asm.ClassReader;
-import soot.FoundFile;
 import soot.Scene;
 import soot.SootClass;
 import soot.SourceLocator;
@@ -85,7 +84,7 @@ public class BasicJavaSupport {
                         System.err.println("-- Problematic .class file \"" + entryName + "\"");
                     }
                 } else if (entryName.endsWith(".properties")) {
-                    propertyProvider.addProperties((new FoundFile(filename, entryName)));
+                    propertyProvider.addProperties((new SourceLocator.FoundFile(filename, entryName)));
                 } /* Skip non-class files and non-property files */
             }
         }
