@@ -274,6 +274,26 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					cli: true
 			),
 			/* End Main options */
+
+			/* Start Scaler related options */
+			new BooleanAnalysisOption(
+					id: "SCALER_PRE_ANALYSIS",
+					name: "scaler-pre",
+					description: "Enable the analysis to be the pre-analysis of Scaler, and outputs the information required by Scaler.",
+					forPreprocessor: true
+			),
+			new AnalysisOption(
+					id: "SCALER",
+					name: "scaler",
+					description: "Use file with method context-sensitivity variants selected by Scaler.",
+					argName: "FILE",
+					argInputType: InputType.MISC,
+					forCacheID: true,
+					changesFacts: true,
+					forPreprocessor: true
+			),
+			/* End Scaler related options */
+
 			/* Start preprocessor normal flags */
 			new BooleanAnalysisOption(
 					id: "NO_MERGES",

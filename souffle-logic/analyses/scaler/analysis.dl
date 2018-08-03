@@ -1,0 +1,157 @@
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
+.comp ScalerConfiguration : AbstractConfiguration {
+
+    #define NO_CONTEXT_ELEMENT "<<immutable-context>>"
+
+    .type Context = [ c1:symbol, c2:symbol ]
+    .type HContext = [ c:symbol ]
+
+    .decl ScalerMethodContext(?method:Method, ?context:symbol)
+    .input ScalerMethodContext(IO="file", filename="ScalerMethodContext.facts", delimiter="\t")
+
+    // ToTypeString maps a (value or type) string to a string representation of a type.
+    // It is useful for generating 2-type-sensitive contexts.
+    .decl ToTypeString(valueOrType:symbol, type:symbol)
+
+    // If the given string already represents a type, then return it directly.
+    ToTypeString(?elem, ?type) :-
+        HContextElement(?elem),
+        isType(?elem),
+        ?type = ?elem.
+
+    // If the given string represents a heap object, then return the string
+    // of the type which declares the allocation site of the heap object.
+    ToTypeString(?elem, ?type) :-
+        HContextElement(?elem),
+        !isType(?elem),
+        !SpecialContextElement(?elem),
+        Value_DeclaringType(?elem, ?type).
+
+    // Handle special context objects.
+    ToTypeString(?elem, ?elem) :-
+        SpecialContextElement(?elem).
+
+    .decl HContextElement(elem:symbol)
+    HContextElement(?elem) :-
+        ContextRequest(_, ?hctx, _, _),
+        ?hctx = [?elem].
+
+    .decl SpecialContextElement(value:symbol)
+    SpecialContextElement("<<initial-context>>").
+    SpecialContextElement("<<jvm-startup-context>>").
+    SpecialContextElement("<<jvm-startup-hcontext>>").
+    SpecialContextElement("<<clinit-context>>").
+    SpecialContextElement("<<immutable-context>>").
+    SpecialContextElement("<<immutable-hcontext>>").
+
+    // 2-object
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+        Value_Type(?value, ?valuetype),
+        basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+        ScalerMethodContext(?tomethod, "2-object"),
+        ?hctx = [?hctxValue],
+        ?calleeCtx = [?hctxValue, ?value].
+
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+        isSpecialMethodInvocation_Insn(?invo),
+        MethodInvocation_Method(?invo, ?tomethod),
+        ScalerMethodContext(?tomethod, "2-object"),
+        ?hctx = [?hctxValue],
+        ?calleeCtx = [?hctxValue, ?value].
+    
+    // 2-type
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+        Value_Type(?value, ?valuetype),
+        basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+        ScalerMethodContext(?tomethod, "2-type"),
+        ?hctx = [?hctxValue],
+        ToTypeString(?hctxValue, ?type1),
+        Value_DeclaringType(?value, ?type2),
+        ?calleeCtx = [?type1, ?type2].
+    
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+        isSpecialMethodInvocation_Insn(?invo),
+        MethodInvocation_Method(?invo, ?tomethod),
+        ScalerMethodContext(?tomethod, "2-type"),
+        ?hctx = [?hctxValue],
+        ToTypeString(?hctxValue, ?type1),
+        Value_DeclaringType(?value, ?type2),
+        ?calleeCtx = [?type1, ?type2].
+
+    // 1-type
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+        Value_Type(?value, ?valuetype),
+        basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+        ScalerMethodContext(?tomethod, "1-type"),
+        Value_DeclaringType(?value, ?type),
+        ?calleeCtx = [NO_CONTEXT_ELEMENT, ?type].
+
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+        isSpecialMethodInvocation_Insn(?invo),
+        MethodInvocation_Method(?invo, ?tomethod),
+        ScalerMethodContext(?tomethod, "1-type"),
+        Value_DeclaringType(?value, ?type),
+        ?calleeCtx = [NO_CONTEXT_ELEMENT, ?type].
+    
+    // context-insensitive
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+        Value_Type(?value, ?valuetype),
+        basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+        ScalerMethodContext(?tomethod, "context-insensitive"),
+        isImmutableContext(?calleeCtx).
+    
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+        isSpecialMethodInvocation_Insn(?invo),
+        MethodInvocation_Method(?invo, ?tomethod),
+        ScalerMethodContext(?tomethod, "context-insensitive"),
+        isImmutableContext(?calleeCtx).
+
+
+    // Keep caller contexts for static invocations
+    StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+        StaticContextRequest(?callerCtx, ?invo),
+        ?calleeCtx = ?callerCtx.
+
+    // Pick last context elements of as heap context
+    RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+        RecordContextRequest(?ctx, ?value, ?var),      
+        ?ctx = [?ctxValue1, ?ctxValue2],
+        ?hctx = [?ctxValue2],
+        ?ctxValue1 = ?ctxValue1.
+
+    // Plain handling for special context requests
+    ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
+        ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
+        ?hctx = [?hctxValue],
+        ?newCtx = [?hctxValue, ?value].
+
+    StartupContextResponse(?hctx, ?value, ?newCtx) :-
+        StartupContextRequest(?hctx, ?value),
+        ?hctx = [?hctxValue],
+        ?newCtx = [?hctxValue, ?value].
+
+    FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
+        FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
+        ?callerCtx = [?callerCtxValue1, ?callerCtxValue2],
+        ?newCtx = [?callerCtxValue2, ?value],
+        ?callerCtxValue1 = ?callerCtxValue1.
+
+    InitContextResponse(?value, ?ctx) :-
+        InitContextRequest(?value),
+        ?ctx = [?value, ?value].
+
+    InitHContextResponse(?value, ?hctx) :-
+        InitHContextRequest(?value),
+        ?hctx = [?value].
+}
+

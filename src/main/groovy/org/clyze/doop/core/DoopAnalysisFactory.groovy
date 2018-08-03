@@ -28,6 +28,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
 	static final String HASH_ALGO = "SHA-256"
 	static final availableConfigurations = [
+			"scaler"                             : "ScalerConfiguration",
 			"twophase-A"                         : "TwoPhaseAConfiguration",
 			"twophase-B"                         : "TwoPhaseBConfiguration",
 			"context-insensitive"                : "ContextInsensitiveConfiguration",
