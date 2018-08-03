@@ -764,7 +764,7 @@ isMethod(?id) :-
 // FieldInitialValue
 .input FieldInitialValue(IO="file", filename="FieldInitialValue.facts", delimiter="\t")
 
-#endif
+#endif // ANDROID
 
 // Access Modifiers
 

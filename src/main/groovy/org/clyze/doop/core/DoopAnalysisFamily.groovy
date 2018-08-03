@@ -119,7 +119,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "MAIN_CLASS",
 					name: "main",
 					argName: "MAIN",
-					description: "Specify the main class(es)",
+					description: "Specify the main class(es) separated by spaces",
 					value: [],
 					multipleValues: true,
 					changesFacts: true

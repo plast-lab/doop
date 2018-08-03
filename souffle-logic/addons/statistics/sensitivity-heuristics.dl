@@ -33,17 +33,12 @@ NeighboringMethodsInCallGraph(?neigh, ?method, ?weight) :-
   Instruction_Method(?invo, ?method),
   CallerCountPerMethod(?neigh, ?weight).
                      
-.decl WeightedLocalVPTSize(?method:Method, ?n:number)
+.decl MethodVPTImpact(?method:Method, ?n:number)
       
-WeightedLocalVPTSize(?method, Y) :-
-  isMethod(?method),      
-  Y = sum ?n * 100 / ?weight: { NeighboringMethodsInCallGraph(?neigh, ?method, ?weight), VPTCountPerMethod(?neigh, ?n) }.
+MethodVPTImpact(?method, Y) :-
+  mainAnalysis.Reachable(?method),      
+  Y = sum ?n * 10 / ?weight: { NeighboringMethodsInCallGraph(?neigh, ?method, ?weight), VPTCountPerMethod(?neigh, ?n) }.
 
-// .decl VarPointsToThroughInstanceField(?ctx:mainAnalysis.configuration.Context, ?var:Var, ?basevalueHctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?value:mainAnalysis.Value, ?valueHctx:mainAnalysis.configuration.HContext, ?sig:Field)
-
-// VarPointsToThroughInstanceField(?ctx, ?var, ?basevaluehctx, ?basevalue, ?value, ?valuehctx, ?sig) :-
-//   mainAnalysis.VarPointsTo(?basevaluehctx, ?basevalue, ?ctx, ?var),
-//   mainAnalysis.InstanceFieldPointsTo(?valuehctx, ?value, ?sig, ?basevaluehctx, ?basevalue).
 .decl CountObjectPointsToThroughField(?basevalue:mainAnalysis.Value, ?basehctx:mainAnalysis.configuration.HContext, ?n:number)
       
 CountObjectPointsToThroughField(?basevalue, ?basehctx, Y) :-
@@ -51,25 +46,76 @@ CountObjectPointsToThroughField(?basevalue, ?basehctx, Y) :-
   mainAnalysis.isHContext(?basehctx),           
   Y = count : {mainAnalysis.InstanceFieldPointsTo(_, _, _, ?basehctx, ?basevalue)}.
 
-.decl LocalIFPTSize(?method:Method, ?n:number)
+.decl MethodWritesToObjectField(?method:Method, ?basevalue:mainAnalysis.Value)
 
-LocalIFPTSize(?method, Y) :-
-  isMethod(?method),    
-  Y = sum ?n : {Var_DeclaringMethod(?var, ?method),
+MethodWritesToObjectField(?method, ?basevalue) :-
+  Var_DeclaringMethod(?var, ?method),
+  mainAnalysis.VarPointsTo(_, ?basevalue, _, ?var),
+  StoreInstanceField_Base(?insn, ?var),
+  Instruction_Method(?insn, ?method).
+
+.decl CountMethodsWriteToObjectField(?basevalue:mainAnalysis.Value, ?n:number)
+
+CountMethodsWriteToObjectField(?basevalue, Y) :-
+  mainAnalysis.isValue(?basevalue),
+  Y = count : {MethodWritesToObjectField(_, ?basevalue)}.
+
+.decl MethodIFPTImpact(?method:Method, ?n:number)
+
+MethodIFPTImpact(?method, Y) :-
+  isMethod(?method),
+  Y = sum ?n * 10 / ?weight : {NeighboringMethodsInCallGraph(?neigh, ?method, ?weight),
+  Var_DeclaringMethod(?var, ?neigh),
   mainAnalysis.VarPointsTo(?basehctx, ?basevalue, _, ?var),
-  CountObjectPointsToThroughField(?basevalue, ?basehctx, ?n)}.  
+  CountObjectPointsToThroughField(?basevalue, ?basehctx, ?n1),
+  CountMethodsWriteToObjectField(?basevalue, ?n2),
+  ?n = ?n1/?n2,
+  ?n2 != 0}.  
+
+.decl ReachableStoreStaticField(?from:Var, ?field:Field, ?method:Method)
+
+ReachableStoreStaticField(?var, ?field, ?method) :-
+  StoreStaticField(?var, ?field, ?method),
+  mainAnalysis.Reachable(?method).
+
+.decl NumberOfMethodsStoringToStaticField(?field:Field, ?n:number)
+      
+NumberOfMethodsStoringToStaticField(?field, Y) :-
+  isField(?field),
+  Y = count : {ReachableStoreStaticField(_, ?field, _)}.
+
+.decl SFPTCountPerStaticField(?field:Field, Y:number)
+
+SFPTCountPerStaticField(?field, Y) :-
+  isField(?field),
+  Y =  count : {mainAnalysis.StaticFieldPointsTo(_, _, ?field)}.
+
+.decl StaticFieldImpactPerMethod(?field:Field, ?n:number)
+
+StaticFieldImpactPerMethod(?field, ?n) :-
+  SFPTCountPerStaticField(?field, ?sfptCount),
+  NumberOfMethodsStoringToStaticField(?field, ?numberOfMethods),
+  ?numberOfMethods != 0,
+  ?n = ?sfptCount/?numberOfMethods. 
+
+.decl MethodSFPTImpact(?method:Method, ?n:number)
+                                         
+MethodSFPTImpact(?method, ?impact) :-
+  StoreStaticField(_, ?field, ?method),
+  StaticFieldImpactPerMethod(?field, ?n),
+  ?impact = ?n * 10.
+
+MethodSFPTImpact(?method, 0) :-
+  mainAnalysis.Reachable(?method),
+  !StoreStaticField(_, _, ?method).
 
 .decl MethodWeight(?method:Method, ?n:number)
-
+           
 MethodWeight(?method, ?n) :-      
-  WeightedLocalVPTSize(?method, ?size1),
-  LocalIFPTSize(?method, ?size2),
-  ?n = ?size1 + ?size2.
-
-.output VPTCountPerMethod
-.output WeightedLocalVPTSize
-.output LocalIFPTSize
-.output MethodWeight
+  MethodVPTImpact(?method, ?size1),
+  MethodIFPTImpact(?method, ?size2),
+  MethodSFPTImpact(?method, ?size3),
+  ?n = ?size1 + ?size2 + ?size3.
 
 // .decl TwoLevelCallerMethodInCallGraph(?neighbor:Method, ?method:Method, ?weight:number)
 
@@ -81,3 +127,15 @@ MethodWeight(?method, ?n) :-
 
 // TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight) :-
 //    NeighboringMethodsInCallGraph(?neigh, ?method, ?weight).
+.decl MethodImpacts(?method:Method, ?n1:number, ?n2:number, ?n3:number)
+
+MethodImpacts(?method, ?size1, ?size2, ?size3) :-
+  MethodVPTImpact(?method, ?size1),
+  MethodIFPTImpact(?method, ?size2),
+  MethodSFPTImpact(?method, ?size3).
+
+.output MethodWeight
+.output MethodImpacts
+.output SFPTCountPerStaticField
+.output NumberOfMethodsStoringToStaticField
+.output StaticFieldImpactPerMethod
