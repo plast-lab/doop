@@ -13,10 +13,9 @@ env.putAll(System.getenv())
 
 Helper.initLogging("INFO", "$outDir/logs", true)
 
-def script = new SouffleScript()
-script.run(new File(scriptFilePath), new File(factsDirPath), outDir, cacheDir,
-		new Executor(outDir, env), jobs.toInteger(), 5000, null,
-		profile.toBoolean(), debug.toBoolean())
+def script = new SouffleScript(new Executor(outDir, env))
+def generatedFile = script.compile(new File(scriptFilePath), outDir, cacheDir, profile.toBoolean(), debug.toBoolean())
+script.run(generatedFile, new File(factsDirPath), outDir, jobs.toInteger(), 5000, null)
 
 println "Compilation time (sec)\t${script.compilationTime}\n"
 println "Execution time (sec)\t${script.executionTime}\n"

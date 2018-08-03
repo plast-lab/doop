@@ -6,6 +6,9 @@ import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
 import org.clyze.doop.utils.SouffleScript
 
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 
@@ -15,23 +18,10 @@ import static org.apache.commons.io.FileUtils.sizeOfDirectory
 @TypeChecked
 class SouffleAnalysis extends DoopAnalysis {
 
-	/**
-	 * The analysis logic file
-	 */
 	File analysis
 
 	@Override
 	void run() {
-		generateFacts()
-
-		if (options.X_STOP_AT_FACTS.value) return
-
-		// Souffle has no persistent database.
-		if (options.X_STOP_AT_INIT.value) {
-			log.info "Option ${options.X_STOP_AT_INIT.name} is equivalent to ${options.X_STOP_AT_FACTS.name} for Souffle-based analyses."
-			return
-		}
-
 		analysis = new File(outDir, "${name}.dl")
 		deleteQuietly(analysis)
 		analysis.createNewFile()
@@ -45,24 +35,53 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		def cacheDir = new File(Doop.souffleAnalysesCache, name)
 		cacheDir.mkdirs()
-		def script = new SouffleScript()
-		script.run(analysis, factsDir, outDir, cacheDir,
-				executor, options.SOUFFLE_JOBS.value as int,
-				(options.X_MONITORING_INTERVAL.value as long) * 1000,
-				monitorClosure,
-				options.SOUFFLE_PROFILE.value as boolean,
-				options.SOUFFLE_DEBUG.value as boolean,
-				options.X_CONTEXT_REMOVER.value as boolean)
+		def script = new SouffleScript(executor)
 
-		if (!options.X_SERVER_LOGIC.value) {
-			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
-			File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
-			runtimeMetricsFile.createNewFile()
-			runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
-			runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
-			runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
-			runtimeMetricsFile.append("soot-fact-generation time (sec)\t$sootTime\n")
+		def executorService = Executors.newFixedThreadPool(2)
+		def futures = executorService.invokeAll([
+				new Callable<File>() {
+					@Override
+					File call() {
+						log.info "[Task FACTS...]"
+						generateFacts()
+						log.info "[Task FACTS Done]"
+						null
+					}
+				},
+				new Callable<File>() {
+					@Override
+					File call() {
+						log.info "[Task COMPILE...]"
+						def generatedFile = script.compile(analysis, outDir, cacheDir,
+								options.SOUFFLE_PROFILE.value as boolean,
+								options.SOUFFLE_DEBUG.value as boolean,
+								options.X_CONTEXT_REMOVER.value as boolean)
+						log.info "[Task COMPILE Done]"
+						return generatedFile
+					}
+				}
+		])
+		executorService.shutdown()
+
+		if (options.X_STOP_AT_FACTS.value) return
+
+		// Souffle has no persistent database.
+		if (options.X_STOP_AT_INIT.value) {
+			log.info "Option ${options.X_STOP_AT_INIT.name} is equivalent to ${options.X_STOP_AT_FACTS.name} for Souffle-based analyses."
+			return
 		}
+
+		File generatedFile = futures[1].get()
+		script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+				(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
+
+		int dbSize = (sizeOfDirectory(database) / 1024).intValue()
+		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
+		runtimeMetricsFile.createNewFile()
+		runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
+		runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
+		runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
+		runtimeMetricsFile.append("soot-fact-generation time (sec)\t$sootTime\n")
 	}
 
 	void initDatabase() {
