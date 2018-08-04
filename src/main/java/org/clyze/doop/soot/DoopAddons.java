@@ -94,23 +94,6 @@ public class DoopAddons {
     }
 
     /**
-     * Calls the handler for field initial values (useful for Android
-     * apps), return null when this functionality is not available.
-     */
-    public static String getInitialValueString(SootField f) {
-        try {
-            Method gIVS = f.getClass().getDeclaredMethod("getInitialValueString", new Class[] { });
-            return (String) gIVS.invoke(f, new Object[] { });
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-            if (!getInitialValueString_warned) {
-                System.err.println("Warning: SootField method getInitialValueString() is not available.");
-                getInitialValueString_warned = true;
-            }
-            return null;
-        }
-    }
-
-    /**
      * Creates an instance of class "FoundFile" (which may exist in different
      * locations in the class hierarchy between our Soot fork and upstream).
      */
