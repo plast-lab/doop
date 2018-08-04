@@ -4,7 +4,10 @@ import heros.solver.CountingThreadPoolExecutor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.io.File;
 import java.io.InputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -164,6 +167,38 @@ public class DoopAddons {
 
         String getFilePath() {
             return (String) nullaryCall("getFilePath");
+        }
+    }
+
+    /**
+     * Upstream Soot does not structure generated Jimple by package, which is
+     * expected by the server.
+     */
+    public static void structureJimpleFiles(String outDir) {
+        boolean movedMsg = false;
+        String jimpleDirPath = outDir + File.separatorChar + "jimple";
+        File[] outDirFiles = new File(outDir).listFiles();
+
+        final String JIMPLE_EXT = ".shimple";
+
+        for (File f : outDirFiles) {
+            String fName = f.getName();
+            if (fName.endsWith(JIMPLE_EXT)) {
+                if (!movedMsg) {
+                    System.out.println("Moving " + JIMPLE_EXT + " files to structure under " + jimpleDirPath);
+                    movedMsg = true;
+                }
+                String base = fName.substring(0, fName.length() - JIMPLE_EXT.length()).replace('.', File.separatorChar);
+                fName = jimpleDirPath + File.separatorChar + base + JIMPLE_EXT;
+                File newFile = new File(fName);
+                newFile.getParentFile().mkdirs();
+                try {
+                    Files.move(f.toPath(), newFile.toPath());
+                } catch (IOException ex) {
+                    System.err.println("Error moving " + f);
+                    ex.printStackTrace();
+                }
+            }
         }
     }
 }
