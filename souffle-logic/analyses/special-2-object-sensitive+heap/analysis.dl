@@ -84,15 +84,19 @@
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),
-    MethodInvocation_Method(?invo, ?tomethod),
-    SpecialContextSensitivityMethod(?tomethod, "context-insensitive"),
-    isImmutableContext(?calleeCtx).
-
-  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
-    StaticContextRequest(?callerCtx, ?invo),
-    MethodInvocation_Method(?invo, ?tomethod),
-    !SpecialContextSensitivityMethod(?tomethod, "context-insensitive"),
     ?calleeCtx = ?callerCtx.
+
+  // StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+  //   StaticContextRequest(?callerCtx, ?invo),
+  //   MethodInvocation_Method(?invo, ?tomethod),
+  //   SpecialContextSensitivityMethod(?tomethod, "context-insensitive"),
+  //   isImmutableContext(?calleeCtx).
+
+  // StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+  //   StaticContextRequest(?callerCtx, ?invo),
+  //   MethodInvocation_Method(?invo, ?tomethod),
+  //   !SpecialContextSensitivityMethod(?tomethod, "context-insensitive"),
+  //   ?calleeCtx = ?callerCtx.
 
   RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
     RecordContextRequest(?ctx, ?value, ?var),      
