@@ -2,9 +2,8 @@ package org.clyze.jimple
 
 import static groovy.io.FileType.FILES
 
-if (!args) {
-    System.out.println("Usage: jimple2json jimple-directory");
-}
+if (!args)
+	println "Usage: jimple2json -Pargs=<jimple-directory>"
 
 args.each { dir ->
 	def f = new File(dir)
