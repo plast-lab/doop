@@ -48,9 +48,21 @@ def startDoc(outDoc):
 def endDoc(outDoc):
     outDoc.write("<p>Timestamp: " + str(datetime.datetime.now()) + "</p>")
     outDoc.write("</body></html>")
-    
-def genDocFromLogicDir(outDoc, logicDir):
+
+def writeDoc(outDoc, rules):
     startDoc(outDoc)
+    for logicFile in sorted(rules.iterkeys()):
+        decls = rules[logicFile]
+        decls.sort()
+        startNewFile(outDoc, logicFile)
+        listStart(outDoc)
+        for decl in decls:
+            printRule(outDoc, decl)
+        listEnd(outDoc)
+    endDoc(outDoc)
+
+def parseLogicDir(logicDir):
+    rules = dict()
     for root, subdirs, files in os.walk(logicDir):
         print("Processing directory: " + root)
         for fName in files:
@@ -68,20 +80,16 @@ def genDocFromLogicDir(outDoc, logicDir):
                     for decl in parseNextDeclGen(content):
                         decls.append(decl)
                     if len(decls) > 0:
-                        decls.sort()
-                        startNewFile(outDoc, path.replace('souffle-logic/', ''))
-                        listStart(outDoc)
-                        for decl in decls:
-                            printRule(outDoc, decl)
-                        listEnd(outDoc)
+                        rules[path.replace('souffle-logic/', '')] = decls
                 except IOError:
                     print("Ignoring " + fName + " due to error")
-    endDoc(outDoc)
+    return rules
 
 logicDir="souffle-logic"
 outDocName="docs/rules.html"
 ruleCount = 0
 
 with open(outDocName, "w") as outDoc:
-    genDocFromLogicDir(outDoc, logicDir)
+    rules = parseLogicDir(logicDir)
+    writeDoc(outDoc, rules)
 print("Found " + str(ruleCount) + " rules.")

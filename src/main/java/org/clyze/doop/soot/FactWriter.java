@@ -1028,33 +1028,11 @@ public class FactWriter {
 
     void writeFieldInitialValue(SootField f) {
         String fieldId = _rep.signature(f);
-        String valueString = DoopAddons.getInitialValueString(f);
-        // Android R$ related fields
-        if (valueString != null && !valueString.equals("")) {
-            int pos = valueString.indexOf('@');
-            if (pos < 0)
-                System.err.println("Unexpected format (no @) in initial field value");
-            else {
-                try {
-                    int value = (int) Long.parseLong(valueString.substring(pos+1), 16); // parse hex string, possibly negative int
-                    _db.add(FIELD_INITIAL_VALUE, fieldId, Integer.toString(value));
-                } catch (NumberFormatException e) {
-                    _db.add(FIELD_INITIAL_VALUE, fieldId, valueString.substring(pos+1));
-                    // if we failed to parse the value as a hex int, output it in full
-                }
-            }
-        }
-        // Other fields
         List<Tag> tagList = f.getTags();
-        for (Tag tag : tagList) {
-            if (tag.getName().contains("ConstantValueTag")) {
-                valueString = ((ConstantValueTag) tag).getConstant().toString();
-                int pos = valueString.indexOf('@');
-                if (pos < 0)
-                    _db.add(FIELD_INITIAL_VALUE, fieldId, valueString);
-                // if we failed to parse the value as a hex int, output it in full
-
+        for (Tag tag : tagList)
+            if (tag instanceof ConstantValueTag) {
+                String valueString = ((ConstantValueTag)tag).getConstant().toString();
+                _db.add(FIELD_INITIAL_VALUE, fieldId, valueString);
             }
-        }
     }
 }

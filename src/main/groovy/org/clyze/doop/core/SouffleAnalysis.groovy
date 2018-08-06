@@ -51,6 +51,8 @@ class SouffleAnalysis extends DoopAnalysis {
 				new Callable<File>() {
 					@Override
 					File call() {
+						if (options.X_STOP_AT_FACTS.value) return
+
 						log.info "[Task COMPILE...]"
 						def generatedFile = script.compile(analysis, outDir, cacheDir,
 								options.SOUFFLE_PROFILE.value as boolean,
@@ -168,8 +170,8 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
 		}
 
-		if (options.X_SENSITIVITY_HEURISTICS.value) {
-			cpp.includeAtEnd("$analysis", "${statsPath}/sensitivity-heuristics.dl")
+		if (options.X_ORACULAR_HEURISTICS.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
 		}
 
 		if (options.X_STATS_NONE.value) return

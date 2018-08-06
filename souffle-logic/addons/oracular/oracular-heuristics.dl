@@ -113,9 +113,9 @@ MethodSFPTImpact(?method, 0) :-
            
 MethodWeight(?method, ?n) :-      
   MethodVPTImpact(?method, ?size1),
-  MethodIFPTImpact(?method, ?size2),
-  MethodSFPTImpact(?method, ?size3),
-  ?n = ?size1 + ?size2 + ?size3.
+  // MethodIFPTImpact(?method, ?size2),
+  // MethodSFPTImpact(?method, ?size3),
+  ?n = ?size1.// + ?size2 + ?size3.
 
 // .decl TwoLevelCallerMethodInCallGraph(?neighbor:Method, ?method:Method, ?weight:number)
 
@@ -127,15 +127,15 @@ MethodWeight(?method, ?n) :-
 
 // TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight) :-
 //    NeighboringMethodsInCallGraph(?neigh, ?method, ?weight).
-.decl MethodImpacts(?method:Method, ?n1:number, ?n2:number, ?n3:number)
+// .decl MethodImpacts(?method:Method, ?n1:number, ?n2:number, ?n3:number)
 
-MethodImpacts(?method, ?size1, ?size2, ?size3) :-
-  MethodVPTImpact(?method, ?size1),
-  MethodIFPTImpact(?method, ?size2),
-  MethodSFPTImpact(?method, ?size3).
+// MethodImpacts(?method, ?size1, ?size2, ?size3) :-
+//   MethodVPTImpact(?method, ?size1),
+//   MethodIFPTImpact(?method, ?size2),
+//   MethodSFPTImpact(?method, ?size3).
 
 .output MethodWeight
-.output MethodImpacts
-.output SFPTCountPerStaticField
-.output NumberOfMethodsStoringToStaticField
-.output StaticFieldImpactPerMethod
+// .output MethodImpacts
+// .output SFPTCountPerStaticField
+// .output NumberOfMethodsStoringToStaticField
+// .output StaticFieldImpactPerMethod

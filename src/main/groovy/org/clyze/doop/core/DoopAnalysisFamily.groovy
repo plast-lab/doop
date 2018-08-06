@@ -618,8 +618,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: false
 			),
 			new BooleanAnalysisOption(
-					id: "X_SENSITIVITY_HEURISTICS",
-					name: "Xsensitivity-heuristics",
+					id: "X_ORACULAR_HEURISTICS",
+					name: "Xoracular-heuristics",
 					description: "Run sensitivity heuristics logic under addons/statistics",
 					forPreprocessor: false
 			),
