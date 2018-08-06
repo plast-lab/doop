@@ -2,52 +2,7 @@
 
     <p>This document lists all Souffl&eacute;-Datalog rules appearing
     in Doop logic. Note that some of these rules may be guarded by
-    macros and thus be disabled in particular Doop runs.</p> <h2> addons/sanity.dl </h2>
-<ul>
-<li> .decl ClassTypeIsInterfaceType(?type:Type)</li>
-<li> .decl HeapAllocationHasNoType(?heap:HeapAllocation)</li>
-<li> .decl InstructionIsNotConcreteInstruction(?insn:Instruction)</li>
-<li> .decl NotReachableVarPointsTo(?var:Var, ?method:Method)</li>
-<li> .decl PrimitiveTypeIsReferenceType(?type:Type)</li>
-<li> .decl Sanity(?n:symbol, ?s:symbol, ?c:number)</li>
-<li> .decl TypeIsNotConcreteType(?type:Type)</li>
-<li> .decl ValueHasNoDeclaringType(?value:mainAnalysis.Value)</li>
-<li> .decl ValueHasNoType(?value:mainAnalysis.Value)</li>
-<li> .decl ValueIsNeitherHeapNorNonHeap(?value:mainAnalysis.Value)</li>
-<li> .decl VarHasNoType(var:Var)</li>
-<li> .decl VarPointsToMergedHeap(?var:Var, ?value:mainAnalysis.Value)</li>
-<li> .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)</li>
-</ul>
-<h2> addons/tamiflex/fact-declarations.dl </h2>
-<ul>
-<li> .decl Tamiflex_ReflectionData(?classStr:symbol, ?methodStr:symbol, ?mapped:symbol, ?inClassStr:symbol, ?inMethodStr:symbol, ?lineNumber:number)</li>
-<li> .decl Tamiflex_ReflectionMap(?mapped:symbol, ?invocation:MethodInvocation)</li>
-</ul>
-<h2> addons/tamiflex/rules.dl </h2>
-<ul>
-<li> .decl OptForNameInvocation(?invocation:MethodInvocation, ?inmethod:Method)</li>
-<li> .decl TamiflexCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?callee:Method)</li>
-<li> .decl TamiflexConstructorCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?callee:Method)</li>
-<li> .decl TamiflexInvocationArgumentArrayValue(?calleeCtx:configuration.Context, ?formal:Var, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
-<li> .decl TamiflexInvocationFirstParam(?calleeCtx:configuration.Context, ?formal:Var, ?callerCtx:configuration.Context, ?argsParam:Var)</li>
-</ul>
-<h2> addons/tamiflex/import.dl </h2>
-<ul>
-<li> .decl _Tamiflex_ReflectionData(?classStr:symbol, ?methodStr:symbol, ?mapped:symbol, ?inClassStr:symbol, ?inMethodStr:symbol, ?lineNumber:number)</li>
-<li> .decl _Tamiflex_ToDoopFormat(?orig:symbol, ?formatted:symbol)</li>
-</ul>
-<h2> addons/tamiflex/declarations.dl </h2>
-<ul>
-<li> .decl Tamiflex_Array_NewInstance(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl Tamiflex_Class_NewInstance(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl Tamiflex_Constructor_NewInstance(?invocation:MethodInvocation, ?constructor:Method, ?value:Value)</li>
-<li> .decl Tamiflex_Invoke(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?method:Method)</li>
-<li> .decl Tamiflex_ReifiedField(?fld:Field, ?value:Value, ?invocation:MethodInvocation)</li>
-<li> .decl Tamiflex_ReifiedFieldArray(?type:Type, ?value:Value, ?invocation:MethodInvocation)</li>
-<li> .decl Tamiflex_ReifiedMethod(?method:Method, ?value:Value, ?invocation:MethodInvocation)</li>
-<li> .decl Tamiflex_ReifiedMethodArray(?type:Type, ?value:Value, ?invocation:MethodInvocation)</li>
-</ul>
-<h2> addons/cfg-analysis/analysis.dl </h2>
+    macros and thus be disabled in particular Doop runs.</p> <h2> addons/cfg-analysis/analysis.dl </h2>
 <ul>
 <li> .decl BBHeadInMethod(?insn:Instruction, ?method:Method)</li>
 <li> .decl CFGRoot(?insn:Instruction, ?method:Method)</li>
@@ -100,57 +55,248 @@
 <li> .decl PhiNodeHead(?insn:Instruction, ?headInsn:Instruction)</li>
 <li> .decl UnconditionalControlTransfer(?insn:Instruction)</li>
 </ul>
-<h2> addons/statistics/statistics-declarations.dl </h2>
+<h2> addons/dacapo/rules.dl </h2>
 <ul>
-<li> .decl Stats_ApplicationHeap(?heap:HeapAllocation)</li>
-<li> .decl Stats_ArrayCount(?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?n:number)</li>
-<li> .decl Stats_Arrays(?n:number)</li>
-<li> .decl Stats_FieldCount(?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?n:number)</li>
-<li> .decl Stats_Fields(?n:number)</li>
-<li> .decl Stats_InsensArrayCount(?basevalue:mainAnalysis.Value, ?n:number)</li>
-<li> .decl Stats_InsensArrays(?n:number)</li>
-<li> .decl Stats_InsensBaseValueArrayCount(?basevalue:mainAnalysis.Value, ?n:number)</li>
-<li> .decl Stats_InsensBaseValueArrayIndexPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?basevalue:mainAnalysis.Value)</li>
-<li> .decl Stats_InsensBaseValueFieldCount(?sig:Field, ?basevalue:mainAnalysis.Value, ?n:number)</li>
-<li> .decl Stats_InsensBaseValueInstanceFieldPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?sig:Field, ?basevalue:mainAnalysis.Value)</li>
-<li> .decl Stats_InsensBaseVarCount(?var:Var, ?n:number)</li>
-<li> .decl Stats_InsensBaseVarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?var:Var)</li>
-<li> .decl Stats_InsensFieldCount(?sig:Field, ?basevalue:mainAnalysis.Value, ?n:number)</li>
-<li> .decl Stats_InsensFields(?n:number)</li>
-<li> .decl Stats_InsensThrowPointsTo(?value:mainAnalysis.Value, ?method:Method)</li>
-<li> .decl Stats_InsensValueArrayCount(?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?n:number)</li>
-<li> .decl Stats_InsensValueArrayIndexPointsTo(?value:mainAnalysis.Value, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value)</li>
-<li> .decl Stats_InsensValueFieldCount(?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?n:number)</li>
-<li> .decl Stats_InsensValueInstanceFieldPointsTo(?value:mainAnalysis.Value, ?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value)</li>
-<li> .decl Stats_InsensValueThrowPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?method:Method)</li>
-<li> .decl Stats_InsensValueVarCount(?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number)</li>
-<li> .decl Stats_InsensValueVarPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
-<li> .decl Stats_InsensVarCount(?var:Var, ?n:number)</li>
-<li> .decl Stats_InsensVars(?n:number)</li>
-<li> .decl Stats_MethodContextCount(?method:Method, ?n:number)</li>
-<li> .decl Stats_Methods(?n:number)</li>
-<li> .decl Stats_VarCount(?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number)</li>
-<li> .decl Stats_Vars(?n:number)</li>
+<li> .decl Dacapo(?classNameHeap:StringConstant, method:Method)</li>
 </ul>
-<h2> addons/statistics/sensitivity-heuristics.dl </h2>
+<h2> addons/information-flow/android.dl </h2>
+<ul>
+<li> .decl PossibleLayoutGetText(?to:Var, ?invocation:MethodInvocation, ?ctx:mainAnalysis.configuration.Context, ?base:Var)</li>
+</ul>
+<h2> addons/information-flow/declarations.dl </h2>
+<ul>
+<li> .decl AnyMethodInvocation(?invocation:MethodInvocation, ?tomethod:Method)</li>
+<li> .decl BaseToParamTaintTransferMethod(?method:Method)</li>
+<li> .decl BaseToRetTaintTransferMethod(?method:Method)</li>
+<li> .decl CallTaintingMethod(?label:InformationLabel, ?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation)</li>
+<li> .decl LabelFromSource(?source:symbol, ?label:InformationLabel)</li>
+<li> .decl LeakingSinkMethod(?lable:InformationLabel, ?method:Method)</li>
+<li> .decl LeakingSinkMethodArg(?label:InformationLabel, ?index:number, ?method:Method)</li>
+<li> .decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
+<li> .decl LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?value:symbol)</li>
+<li> .decl MethodInvocationInContext(?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?tomethod:Method)</li>
+<li> .decl MethodInvocationInContextInApplication(?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?method:Method)</li>
+<li> .decl MethodInvocationInfo(?invocation:MethodInvocation, ?type:Type, ?var:Var)</li>
+<li> .decl MethodReturningStringFactory(?tomethod:Method)</li>
+<li> .decl MockBaseToRetTaintTransferMethod(?meth: Method)</li>
+<li> .decl MockParamToRetTaintTransferMethod(?meth: Method)</li>
+<li> .decl ParamIndexToBaseTaintTransferMethod(?index:number, ?method:Method)</li>
+<li> .decl ParamTaintTransferredToBase(?param:Var, ?ctx:mainAnalysis.configuration.Context, ?base:Var)</li>
+<li> .decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:mainAnalysis.configuration.Context, ?param:Var)</li>
+<li> .decl ParamToBaseTaintTransferMethod(?index:number, ?method:Method)</li>
+<li> .decl ParamToRetTaintTransferMethod(?method:Method)</li>
+<li> .decl SanitizationMethod(?method:Method)</li>
+<li> .decl SourceFromTaintedValue(?value:mainAnalysis.Value, ?id:symbol)</li>
+<li> .decl StringFactoryReturnInvocation(?invocation:MethodInvocation)</li>
+<li> .decl TaintObjTransfer(fromCtx: mainAnalysis.configuration.Context, from: Var, toCtx: mainAnalysis.configuration.Context, to: Var)</li>
+<li> .decl TaintSourceMethod(?label:InformationLabel, ?method:Method)</li>
+<li> .decl TaintTransferMethodInvocationInContext(?ctx:mainAnalysis.configuration.Context, ?index:number, ?invocation:MethodInvocation)</li>
+<li> .decl TaintedObjectSerialized(?declaringType: Type, ?source: symbol, ?type: Type, ?hctx: mainAnalysis.configuration.HContext, ?val: mainAnalysis.Value, ?ctx: mainAnalysis.configuration.Context, ?base: Var)</li>
+<li> .decl TaintedValue(?value:mainAnalysis.Value)</li>
+<li> .decl TaintedValueTransferred(?declaringType: Type, ?id: symbol, ?type: Type, ?value: mainAnalysis.Value)</li>
+<li> .decl TaintedVarPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
+<li> .decl TaintedVarTaintedFromVar(?toCtx:mainAnalysis.configuration.Context, ?to:Var, ?value:mainAnalysis.Value, ?type:Type)</li>
+<li> .decl TypeForReturnValue(?type:Type, ?ret:Var, ?invocation:MethodInvocation)</li>
+<li> .decl VarIsCast(?var:Var)</li>
+<li> .decl VarIsTaintedFromValue(?type:Type, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
+<li> .decl VarIsTaintedFromValueIndex(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value)</li>
+<li> .decl VarIsTaintedFromVar(?type:Type, ?ctx1:mainAnalysis.configuration.Context, ?var1:Var, ?ctx2:mainAnalysis.configuration.Context, ?var2:Var)</li>
+<li> .decl VarIsTaintedFromVarIndex(?base:Var, ?ctx1:mainAnalysis.configuration.Context, ?param:Var)</li>
+<li> .decl VarUse(?var:Var, ?inst:Instruction)</li>
+<li> .decl isInformationLabel(?id:symbol)</li>
+</ul>
+<h2> addons/information-flow/rules.dl </h2>
+<ul>
+<li> .decl AppTaintedVar(?var:Var)</li>
+<li> .decl AppendInvocation_Base(?invocation:MethodInvocation, ?base:Var)</li>
+<li> .decl AppendableType(?type:Type)</li>
+<li> .decl BaseValueTaintedFromParamValue(v1:Value, v2:Value)</li>
+<li> .decl MaybeDeserializedValue(?value:mainAnalysis.Value)</li>
+<li> .decl MethodInvocationInMethod(?tomethod:Method, ?invocation:MethodInvocation, ?inmethod:Method)</li>
+<li> .decl ObjectSerializedToBase(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?obj:mainAnalysis.Value)</li>
+<li> .decl OptDeserializeInvoke(?ret:Var)</li>
+<li> .decl SerializableValue(?obj:mainAnalysis.Value)</li>
+<li> .decl SerializableVar(?var:Var)</li>
+<li> .decl SerializeObjectInvocation(?base:Var, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
+<li> .decl ValueTaintedFromValue(?v1:Value, ?v2:Value)</li>
+<li> .decl XYZ(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)</li>
+<li> .decl XYZ2(?type:Type, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)</li>
+</ul>
+<h2> addons/information-flow/spring-sources-and-sinks.dl </h2>
+<ul>
+<li> .decl SanitizationMethodIffBaseUntainted(?meth: Method)</li>
+</ul>
+<h2> addons/open-programs/entry-points.dl </h2>
+<ul>
+<li> .decl ClassHasPossibleOpenProgramEntryPoint(?class:ReferenceType)</li>
+<li> .decl ClassIsAboveOtherInNamingHierarchy(?classAbove:ReferenceType, ?classBelow:ReferenceType)</li>
+<li> .decl ClassToConsider(?class:ReferenceType)</li>
+<li> .decl ClassWithTopLevelOpenProgramEntryPoint(?class:ReferenceType)</li>
+<li> .decl OpenProgramEntryPoint(?method:Method)</li>
+<li> .decl PossibleOpenProgramEntryPoint(?method:Method)</li>
+<li> .decl PrefixAbove(class:ReferenceType, str:symbol, ?len:number)</li>
+<li> .decl PrefixBelow(class:ReferenceType, str:symbol)</li>
+<li> .decl TopLevelApplicationClass(?class:ReferenceType)</li>
+<li> .decl TopLevelOpenProgramEntryPoint(?method:Method)</li>
+</ul>
+<h2> addons/open-programs/rules-alfresco.dl </h2>
+<ul>
+<li> .decl MockCallReturnVal(?meth: Method)</li>
+<li> .decl MockedObjTypeContains(?part: symbol)</li>
+<li> .decl WebappMock(?v: mainAnalysis.Value)</li>
+</ul>
+<h2> addons/open-programs/rules-beans.dl </h2>
+<ul>
+<li> .decl BeanClass(cls: Type)</li>
+<li> .decl BeanInit(cls: Type, simplemeth: symbol)</li>
+<li> .decl BeanIoCField(cls: Type, simplefld: symbol, heap: Type)</li>
+<li> .decl BeanReachable(cls: Type, simplemeth: symbol)</li>
+</ul>
+<h2> addons/open-programs/rules-concrete-types.dl </h2>
+<ul>
+<li> .decl AllConcreteImplementations(?class:ClassType, ?type:Type)</li>
+<li> .decl ConcreteImplementations(?staticType:Type, ?class:ClassType)</li>
+<li> .decl ConcreteType(?class:ClassType)</li>
+<li> .decl ContextForOpenProgramEntryPoint(?ctx:mainAnalysis.configuration.Context, ?method:Method)</li>
+<li> .decl FieldInformation(?signature:Field, ?fieldtype:Type, ?class:ReferenceType)</li>
+<li> .decl FieldTypeForMockObject(?signature:Field, ?basevalue:mainAnalysis.Value, ?fieldtype:Type)</li>
+<li> .decl FormalsForOpenProgramEntryPoints(?method:Method, ?formal:Var)</li>
+<li> .decl HContextForOpenProgramEntryPoint(?hctx:mainAnalysis.configuration.HContext, ?method:Method)</li>
+<li> .decl MockForFormal(?value:mainAnalysis.Value, ?formal:Var, ?type:ReferenceType, ?method:Method)</li>
+<li> .decl MockObjFromArray(?class:ReferenceType)</li>
+<li> .decl MockObjFromField(?fieldType:ReferenceType)</li>
+<li> .decl MockObjFromFormal(?type:ReferenceType)</li>
+<li> .decl MockObjFromOpenProgramEntryPoint(?class:ReferenceType)</li>
+<li> .decl MockObject(?value:mainAnalysis.Value, ?class:ReferenceType)</li>
+<li> .decl MockObjectContext(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?class:ReferenceType)</li>
+<li> .decl MockObjectForComponentType(?value:mainAnalysis.Value, ?arrayType:ArrayType)</li>
+<li> .decl MockObjectForType(?value:mainAnalysis.Value, ?staticType:Type)</li>
+<li> .decl ObjToMock(?class:ReferenceType)</li>
+<li> .decl ReceiverPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?class:ReferenceType, ?method:Method)</li>
+<li> .decl StaticToActualType(?class:ClassType, ?staticType:Type)</li>
+<li> .decl TypeForFormals(?formal:Var, ?method:Method, ?type:ReferenceType)</li>
+<li> .decl TypeToConcreteImplementationOrd(?staticType:Type, ?classOrd:number)</li>
+</ul>
+<h2> addons/open-programs/rules-servlets-only.dl </h2>
+<ul>
+<li> .decl AllConcreteImplementations(?type1:Type, ?type2:Type)</li>
+<li> .decl ConcreteImplementations(?staticType:Type, ?class:Type)</li>
+<li> .decl ConcreteImplementationsOrd(?staticType:Type, ?classOrd:number)</li>
+<li> .decl MockObjFromArray(?type:ReferenceType)</li>
+<li> .decl MockObjFromField(?type:ReferenceType)</li>
+<li> .decl MockObjFromFormal(?type:ReferenceType)</li>
+<li> .decl MockObjFromOpenProgramEntryPoint(?value:mainAnalysis.Value)</li>
+<li> .decl MockObject(?value:mainAnalysis.Value, ?type:Type)</li>
+<li> .decl MockOpenProgramEntryPoint(?class:Type, ?method:Method)</li>
+<li> .decl OpenProgramEntryPoint(?method:Method)</li>
+<li> .decl PossibleOpenProgramEntryPoint(?class:Type, ?method:Method)</li>
+<li> .decl ServletClass(?class:Type)</li>
+<li> .decl ServletEntryMethodName(?method:Method)</li>
+<li> .decl ValueForReceiverInContext(?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?value:mainAnalysis.Value)</li>
+</ul>
+<h2> addons/open-programs/rules-spring.dl </h2>
+<ul>
+<li> .decl ServletMethodEP(m: Method)</li>
+</ul>
+<h2> addons/oracular/method-classification.dl </h2>
+<ul>
+<li> .decl InsensitiveSum(?method:symbol, ?n:number)</li>
+<li> .decl MethodImpact(?method:symbol, ?n:number)</li>
+<li> .decl SensitiveSum(?method:symbol, ?n:number)</li>
+<li> .decl SpecialCSMethods(?method:symbol, ?sensitivity:symbol)</li>
+</ul>
+<h2> addons/oracular/oracular-heuristics.dl </h2>
 <ul>
 <li> .decl CalleeCountPerMethod(?method:Method, ?n:number)</li>
 <li> .decl CallerCountPerMethod(?method:Method, ?n:number)</li>
+<li> .decl CountMethodsWriteToObjectField(?basevalue:mainAnalysis.Value, ?n:number)</li>
 <li> .decl CountObjectPointsToThroughField(?basevalue:mainAnalysis.Value, ?basehctx:mainAnalysis.configuration.HContext, ?n:number)</li>
 <li> .decl MethodIFPTImpact(?method:Method, ?n:number)</li>
 <li> .decl MethodSFPTImpact(?method:Method, ?n:number)</li>
 <li> .decl MethodVPTImpact(?method:Method, ?n:number)</li>
 <li> .decl MethodWeight(?method:Method, ?n:number)</li>
+<li> .decl MethodWritesToObjectField(?method:Method, ?basevalue:mainAnalysis.Value)</li>
 <li> .decl NeighboringMethodsInCallGraph(?method:Method, ?neighbor:Method, ?weight:number)</li>
 <li> .decl NumberOfMethodsStoringToStaticField(?field:Field, ?n:number)</li>
+<li> .decl ReachableStoreStaticField(?from:Var, ?field:Field, ?method:Method)</li>
 <li> .decl SFPTCountPerStaticField(?field:Field, Y:number)</li>
 <li> .decl StaticFieldImpactPerMethod(?field:Field, ?n:number)</li>
 <li> .decl VPTCountPerMethod(?method:Method, ?n:number)</li>
 </ul>
-<h2> addons/statistics/statistics-simple.dl </h2>
+<h2> addons/proguard/keep.dl </h2>
 <ul>
-<li> .decl Stats_Simple_Application_DynamicCallGraphEdge(?invocation:Instruction, ?toMeth:Method)</li>
-<li> .decl Stats_Simple_Application_InsensCallGraphEdge(?invocation:Instruction, ?toMeth:Method)</li>
+<li> .decl KeepMethod(?m:Method)</li>
+</ul>
+<h2> addons/queries/classifyVPT.dl </h2>
+<ul>
+<li> .decl VPTAllocated(v:Var, o:Value)</li>
+<li> .decl VPTCI(v:Var, o:Value)</li>
+<li> .decl VPTCIandClass(v:Var, o:Value)</li>
+<li> .decl VPTCIandMerged(v:Var, o:Value)</li>
+<li> .decl VPTCIandMockVal(v:Var, o:Value)</li>
+<li> .decl VPTCIandNum(v:Var, o:Value)</li>
+<li> .decl VPTCIandStringConstant(v:Var, o:Value)</li>
+<li> .decl VPTCIandStringFactory(v:Var, o:Value)</li>
+<li> .decl VPTClassHeap(v:Var, o:Value)</li>
+<li> .decl VPTMerged(v:Var, o:Value)</li>
+<li> .decl VPTMockVal(v:Var, o:Value)</li>
+<li> .decl VPTNormal(v:Var, o:Value)</li>
+<li> .decl VPTNum(v:Var, o:Value)</li>
+<li> .decl VPTOpt(v:Var, o:Value)</li>
+<li> .decl VPTOther(v:Var, o:Value)</li>
+<li> .decl VPTStringConstant(v:Var, o:Value)</li>
+<li> .decl VPTStringFactory(v:Var, o:Value)</li>
+<li> .decl __AllocatedHeap(h:HeapAllocation)</li>
+<li> .decl __CIHeap(h:HeapAllocation)</li>
+<li> .decl __MergedHeap(h:HeapAllocation)</li>
+</ul>
+<h2> addons/sanity.dl </h2>
+<ul>
+<li> .decl ClassTypeIsInterfaceType(?type:Type)</li>
+<li> .decl HeapAllocationHasNoType(?heap:HeapAllocation)</li>
+<li> .decl InstructionIsNotConcreteInstruction(?insn:Instruction)</li>
+<li> .decl NotReachableVarPointsTo(?var:Var, ?method:Method)</li>
+<li> .decl PrimitiveTypeIsReferenceType(?type:Type)</li>
+<li> .decl Sanity(?n:symbol, ?s:symbol, ?c:number)</li>
+<li> .decl TypeIsNotConcreteType(?type:Type)</li>
+<li> .decl ValueHasNoDeclaringType(?value:mainAnalysis.Value)</li>
+<li> .decl ValueHasNoType(?value:mainAnalysis.Value)</li>
+<li> .decl ValueIsNeitherHeapNorNonHeap(?value:mainAnalysis.Value)</li>
+<li> .decl VarHasNoType(var:Var)</li>
+<li> .decl VarPointsToMergedHeap(?var:Var, ?value:mainAnalysis.Value)</li>
+<li> .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)</li>
+</ul>
+<h2> addons/server-logic/queries.dl </h2>
+<ul>
+<li> .decl Server_Array_Values(?arrayValue:mainAnalysis.Value, ?value:mainAnalysis.Value)</li>
+<li> .decl Server_ClassCallsClass(?fromClass:ClassType, ?toClass:ClassType)</li>
+<li> .decl Server_Class_Subtype(?class:ReferenceType, ?subClass:ReferenceType)</li>
+<li> .decl Server_Field_ShadowedBy(?fld:Field, ?shadowFld:Field)</li>
+<li> .decl Server_IField_Values(?baseValue:mainAnalysis.Value, ?fld:Field, ?value:mainAnalysis.Value)</li>
+<li> .decl Server_IField_Values_Count(?baseValue:mainAnalysis.Value, ?fld:Field, ?n:number)</li>
+<li> .decl Server_Invocation_Values(?fromMethod:Method, ?invo:MethodInvocation, ?toMethod:Method, ?isCHA:number)</li>
+<li> .decl Server_Method_Subtype(?method:Method, ?subMethod:Method)</li>
+<li> .decl Server_Metrics(?metric:symbol, ?n:number)</li>
+<li> .decl Server_SField_Values(?fld:Field, ?value:mainAnalysis.Value)</li>
+<li> .decl Server_Type_Can_Access_Field(?class:ClassType, ?fld:Field)</li>
+<li> .decl Server_Var_Return(?var:Var, ?method:Method)</li>
+<li> .decl Server_Var_Values(?class:ClassType, ?var:Var, ?value:mainAnalysis.Value)</li>
+<li> .decl _AIPT(?arrayValue:mainAnalysis.Value, ?value:mainAnalysis.Value)</li>
+<li> .decl _AIPT_Count(?arrayValue:mainAnalysis.Value, ?n:number)</li>
+<li> .decl _AppReachable(?method:Method)</li>
+<li> .decl _AppVirtual(?invo:MethodInvocation)</li>
+<li> .decl _AppVirtual_Resolved(?invo:MethodInvocation)</li>
+<li> .decl _ClassTypeUnion(?c:ReferenceType)</li>
+<li> .decl _IFPT(?baseValue:mainAnalysis.Value, ?fld:Field, ?value:mainAnalysis.Value)</li>
+<li> .decl _InterestingVar(?var:Var)</li>
+<li> .decl _SFPT(?fld:Field, ?value:mainAnalysis.Value)</li>
+<li> .decl _SFPT_Count(?fld:Field, ?n:number)</li>
+<li> .decl _Server_Interesting_Type(?class:ReferenceType)</li>
+<li> .decl _VPT(?var:Var, ?value:mainAnalysis.Value)</li>
+<li> .decl _VPT_Count(?var:Var, ?n:number)</li>
+<li> .decl _Valid_Type(?type:ReferenceType)</li>
+<li> .decl _VarDeclaringClass(?var:Var, ?class:Type)</li>
+<li> .decl _VarUnderThreshold(?var:Var)</li>
 </ul>
 <h2> addons/statistics/metrics.dl </h2>
 <ul>
@@ -182,6 +328,38 @@
 <li> .decl _MethodOutgoingMethod(?inMethod:Method, ?toMethod:Method)</li>
 <li> .decl _Metrics_InvoTargets(?invo:MethodInvocation, ?toMethod:Method)</li>
 <li> .decl _ValueAsReceiver(?value:mainAnalysis.Value, ?invo:VirtualMethodInvocation_Insn)</li>
+</ul>
+<h2> addons/statistics/statistics-declarations.dl </h2>
+<ul>
+<li> .decl Stats_ApplicationHeap(?heap:HeapAllocation)</li>
+<li> .decl Stats_ArrayCount(?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?n:number)</li>
+<li> .decl Stats_Arrays(?n:number)</li>
+<li> .decl Stats_FieldCount(?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?n:number)</li>
+<li> .decl Stats_Fields(?n:number)</li>
+<li> .decl Stats_InsensArrayCount(?basevalue:mainAnalysis.Value, ?n:number)</li>
+<li> .decl Stats_InsensArrays(?n:number)</li>
+<li> .decl Stats_InsensBaseValueArrayCount(?basevalue:mainAnalysis.Value, ?n:number)</li>
+<li> .decl Stats_InsensBaseValueArrayIndexPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?basevalue:mainAnalysis.Value)</li>
+<li> .decl Stats_InsensBaseValueFieldCount(?sig:Field, ?basevalue:mainAnalysis.Value, ?n:number)</li>
+<li> .decl Stats_InsensBaseValueInstanceFieldPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?sig:Field, ?basevalue:mainAnalysis.Value)</li>
+<li> .decl Stats_InsensBaseVarCount(?var:Var, ?n:number)</li>
+<li> .decl Stats_InsensBaseVarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?var:Var)</li>
+<li> .decl Stats_InsensFieldCount(?sig:Field, ?basevalue:mainAnalysis.Value, ?n:number)</li>
+<li> .decl Stats_InsensFields(?n:number)</li>
+<li> .decl Stats_InsensThrowPointsTo(?value:mainAnalysis.Value, ?method:Method)</li>
+<li> .decl Stats_InsensValueArrayCount(?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?n:number)</li>
+<li> .decl Stats_InsensValueArrayIndexPointsTo(?value:mainAnalysis.Value, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value)</li>
+<li> .decl Stats_InsensValueFieldCount(?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?n:number)</li>
+<li> .decl Stats_InsensValueInstanceFieldPointsTo(?value:mainAnalysis.Value, ?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value)</li>
+<li> .decl Stats_InsensValueThrowPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?method:Method)</li>
+<li> .decl Stats_InsensValueVarCount(?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number)</li>
+<li> .decl Stats_InsensValueVarPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
+<li> .decl Stats_InsensVarCount(?var:Var, ?n:number)</li>
+<li> .decl Stats_InsensVars(?n:number)</li>
+<li> .decl Stats_MethodContextCount(?method:Method, ?n:number)</li>
+<li> .decl Stats_Methods(?n:number)</li>
+<li> .decl Stats_VarCount(?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number)</li>
+<li> .decl Stats_Vars(?n:number)</li>
 </ul>
 <h2> addons/statistics/statistics-simple-declarations.dl </h2>
 <ul>
@@ -243,32 +421,39 @@
 <li> .decl Stats_Simple_VirtualTargets(?invocation:MethodInvocation, ?c:number)</li>
 <li> .decl Stats_Simple_forName(?invocation:MethodInvocation)</li>
 </ul>
-<h2> addons/proguard/keep.dl </h2>
+<h2> addons/statistics/statistics-simple.dl </h2>
 <ul>
-<li> .decl KeepMethod(?m:Method)</li>
+<li> .decl Stats_Simple_Application_DynamicCallGraphEdge(?invocation:Instruction, ?toMeth:Method)</li>
+<li> .decl Stats_Simple_Application_InsensCallGraphEdge(?invocation:Instruction, ?toMeth:Method)</li>
 </ul>
-<h2> addons/queries/classifyVPT.dl </h2>
+<h2> addons/tamiflex/declarations.dl </h2>
 <ul>
-<li> .decl VPTAllocated(v:Var, o:Value)</li>
-<li> .decl VPTCI(v:Var, o:Value)</li>
-<li> .decl VPTCIandClass(v:Var, o:Value)</li>
-<li> .decl VPTCIandMerged(v:Var, o:Value)</li>
-<li> .decl VPTCIandMockVal(v:Var, o:Value)</li>
-<li> .decl VPTCIandNum(v:Var, o:Value)</li>
-<li> .decl VPTCIandStringConstant(v:Var, o:Value)</li>
-<li> .decl VPTCIandStringFactory(v:Var, o:Value)</li>
-<li> .decl VPTClassHeap(v:Var, o:Value)</li>
-<li> .decl VPTMerged(v:Var, o:Value)</li>
-<li> .decl VPTMockVal(v:Var, o:Value)</li>
-<li> .decl VPTNormal(v:Var, o:Value)</li>
-<li> .decl VPTNum(v:Var, o:Value)</li>
-<li> .decl VPTOpt(v:Var, o:Value)</li>
-<li> .decl VPTOther(v:Var, o:Value)</li>
-<li> .decl VPTStringConstant(v:Var, o:Value)</li>
-<li> .decl VPTStringFactory(v:Var, o:Value)</li>
-<li> .decl __AllocatedHeap(h:HeapAllocation)</li>
-<li> .decl __CIHeap(h:HeapAllocation)</li>
-<li> .decl __MergedHeap(h:HeapAllocation)</li>
+<li> .decl Tamiflex_Array_NewInstance(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl Tamiflex_Class_NewInstance(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl Tamiflex_Constructor_NewInstance(?invocation:MethodInvocation, ?constructor:Method, ?value:Value)</li>
+<li> .decl Tamiflex_Invoke(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?method:Method)</li>
+<li> .decl Tamiflex_ReifiedField(?fld:Field, ?value:Value, ?invocation:MethodInvocation)</li>
+<li> .decl Tamiflex_ReifiedFieldArray(?type:Type, ?value:Value, ?invocation:MethodInvocation)</li>
+<li> .decl Tamiflex_ReifiedMethod(?method:Method, ?value:Value, ?invocation:MethodInvocation)</li>
+<li> .decl Tamiflex_ReifiedMethodArray(?type:Type, ?value:Value, ?invocation:MethodInvocation)</li>
+</ul>
+<h2> addons/tamiflex/fact-declarations.dl </h2>
+<ul>
+<li> .decl Tamiflex_ReflectionData(?classStr:symbol, ?methodStr:symbol, ?mapped:symbol, ?inClassStr:symbol, ?inMethodStr:symbol, ?lineNumber:number)</li>
+<li> .decl Tamiflex_ReflectionMap(?mapped:symbol, ?invocation:MethodInvocation)</li>
+</ul>
+<h2> addons/tamiflex/import.dl </h2>
+<ul>
+<li> .decl _Tamiflex_ReflectionData(?classStr:symbol, ?methodStr:symbol, ?mapped:symbol, ?inClassStr:symbol, ?inMethodStr:symbol, ?lineNumber:number)</li>
+<li> .decl _Tamiflex_ToDoopFormat(?orig:symbol, ?formatted:symbol)</li>
+</ul>
+<h2> addons/tamiflex/rules.dl </h2>
+<ul>
+<li> .decl OptForNameInvocation(?invocation:MethodInvocation, ?inmethod:Method)</li>
+<li> .decl TamiflexCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?callee:Method)</li>
+<li> .decl TamiflexConstructorCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?callee:Method)</li>
+<li> .decl TamiflexInvocationArgumentArrayValue(?calleeCtx:configuration.Context, ?formal:Var, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
+<li> .decl TamiflexInvocationFirstParam(?calleeCtx:configuration.Context, ?formal:Var, ?callerCtx:configuration.Context, ?argsParam:Var)</li>
 </ul>
 <h2> addons/testing/test-discovery.dl </h2>
 <ul>
@@ -279,312 +464,23 @@
 <li> .decl TestCase(?t:ClassType, ?tInstance:Value)</li>
 <li> .decl TestNGAnnotatedMethod(?m:Method)</li>
 </ul>
-<h2> addons/server-logic/queries.dl </h2>
+<h2> analyses/1-call-site-sensitive+heap/analysis.dl </h2>
 <ul>
-<li> .decl Server_Array_Values(?arrayValue:mainAnalysis.Value, ?value:mainAnalysis.Value)</li>
-<li> .decl Server_ClassCallsClass(?fromClass:ClassType, ?toClass:ClassType)</li>
-<li> .decl Server_Class_Subtype(?class:ReferenceType, ?subClass:ReferenceType)</li>
-<li> .decl Server_Field_ShadowedBy(?fld:Field, ?shadowFld:Field)</li>
-<li> .decl Server_IField_Values(?baseValue:mainAnalysis.Value, ?fld:Field, ?value:mainAnalysis.Value)</li>
-<li> .decl Server_IField_Values_Count(?baseValue:mainAnalysis.Value, ?fld:Field, ?n:number)</li>
-<li> .decl Server_Invocation_Values(?fromMethod:Method, ?invo:MethodInvocation, ?toMethod:Method, ?isCHA:number)</li>
-<li> .decl Server_Method_Subtype(?method:Method, ?subMethod:Method)</li>
-<li> .decl Server_Metrics(?metric:symbol, ?n:number)</li>
-<li> .decl Server_SField_Values(?fld:Field, ?value:mainAnalysis.Value)</li>
-<li> .decl Server_Type_Can_Access_Field(?class:ClassType, ?fld:Field)</li>
-<li> .decl Server_Var_Return(?var:Var, ?method:Method)</li>
-<li> .decl Server_Var_Values(?class:ClassType, ?var:Var, ?value:mainAnalysis.Value)</li>
-<li> .decl _AIPT(?arrayValue:mainAnalysis.Value, ?value:mainAnalysis.Value)</li>
-<li> .decl _AIPT_Count(?arrayValue:mainAnalysis.Value, ?n:number)</li>
-<li> .decl _AppReachable(?method:Method)</li>
-<li> .decl _AppVirtual(?invo:MethodInvocation)</li>
-<li> .decl _AppVirtual_Resolved(?invo:MethodInvocation)</li>
-<li> .decl _ClassTypeUnion(?c:ReferenceType)</li>
-<li> .decl _IFPT(?baseValue:mainAnalysis.Value, ?fld:Field, ?value:mainAnalysis.Value)</li>
-<li> .decl _InterestingVar(?var:Var)</li>
-<li> .decl _SFPT(?fld:Field, ?value:mainAnalysis.Value)</li>
-<li> .decl _SFPT_Count(?fld:Field, ?n:number)</li>
-<li> .decl _Server_Interesting_Type(?class:ReferenceType)</li>
-<li> .decl _VPT(?var:Var, ?value:mainAnalysis.Value)</li>
-<li> .decl _VPT_Count(?var:Var, ?n:number)</li>
-<li> .decl _Valid_Type(?type:ReferenceType)</li>
-<li> .decl _VarDeclaringClass(?var:Var, ?class:Type)</li>
-<li> .decl _VarUnderThreshold(?var:Var)</li>
+<li> .decl StartupInvocation(?invocation:MethodInvocation)</li>
 </ul>
-<h2> addons/dacapo/rules.dl </h2>
+<h2> analyses/1-call-site-sensitive/analysis.dl </h2>
 <ul>
-<li> .decl Dacapo(?classNameHeap:StringConstant, method:Method)</li>
+<li> .decl StartupInvocation(?invocation:MethodInvocation)</li>
 </ul>
-<h2> addons/information-flow/android.dl </h2>
+<h2> analyses/1-object-sensitive/analysis.dl </h2>
 <ul>
-<li> .decl PossibleLayoutGetText(?to:Var, ?invocation:MethodInvocation, ?ctx:mainAnalysis.configuration.Context, ?base:Var)</li>
-</ul>
-<h2> addons/information-flow/rules.dl </h2>
-<ul>
-<li> .decl AppTaintedVar(?var:Var)</li>
-<li> .decl AppendInvocation_Base(?invocation:MethodInvocation, ?base:Var)</li>
-<li> .decl AppendableType(?type:Type)</li>
-<li> .decl BaseValueTaintedFromParamValue(v1:Value, v2:Value)</li>
-<li> .decl MaybeDeserializedValue(?value:mainAnalysis.Value)</li>
-<li> .decl MethodInvocationInMethod(?tomethod:Method, ?invocation:MethodInvocation, ?inmethod:Method)</li>
-<li> .decl ObjectSerializedToBase(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?obj:mainAnalysis.Value)</li>
-<li> .decl OptDeserializeInvoke(?ret:Var)</li>
-<li> .decl SerializableValue(?obj:mainAnalysis.Value)</li>
-<li> .decl SerializableVar(?var:Var)</li>
-<li> .decl SerializeObjectInvocation(?base:Var, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
-<li> .decl ValueTaintedFromValue(?v1:Value, ?v2:Value)</li>
-<li> .decl XYZ(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)</li>
-<li> .decl XYZ2(?type:Type, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)</li>
-</ul>
-<h2> addons/information-flow/declarations.dl </h2>
-<ul>
-<li> .decl AnyMethodInvocation(?invocation:MethodInvocation, ?tomethod:Method)</li>
-<li> .decl BaseToParamTaintTransferMethod(?method:Method)</li>
-<li> .decl BaseToRetTaintTransferMethod(?method:Method)</li>
-<li> .decl CallTaintingMethod(?label:InformationLabel, ?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation)</li>
-<li> .decl LabelFromSource(?source:symbol, ?label:InformationLabel)</li>
-<li> .decl LeakingSinkMethod(?lable:InformationLabel, ?method:Method)</li>
-<li> .decl LeakingSinkMethodArg(?label:InformationLabel, ?index:number, ?method:Method)</li>
-<li> .decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
-<li> .decl LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?value:symbol)</li>
-<li> .decl MethodInvocationInContext(?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?tomethod:Method)</li>
-<li> .decl MethodInvocationInContextInApplication(?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?method:Method)</li>
-<li> .decl MethodInvocationInfo(?invocation:MethodInvocation, ?type:Type, ?var:Var)</li>
-<li> .decl MethodReturningStringFactory(?tomethod:Method)</li>
-<li> .decl ParamIndexToBaseTaintTransferMethod(?index:number, ?method:Method)</li>
-<li> .decl ParamTaintTransferredToBase(?param:Var, ?ctx:mainAnalysis.configuration.Context, ?base:Var)</li>
-<li> .decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:mainAnalysis.configuration.Context, ?param:Var)</li>
-<li> .decl ParamToBaseTaintTransferMethod(?index:number, ?method:Method)</li>
-<li> .decl ParamToRetTaintTransferMethod(?method:Method)</li>
-<li> .decl SanitizationMethod(?method:Method)</li>
-<li> .decl SourceFromTaintedValue(?value:mainAnalysis.Value, ?id:symbol)</li>
-<li> .decl StringFactoryReturnInvocation(?invocation:MethodInvocation)</li>
-<li> .decl TaintSourceMethod(?label:InformationLabel, ?method:Method)</li>
-<li> .decl TaintTransferMethodInvocationInContext(?ctx:mainAnalysis.configuration.Context, ?index:number, ?invocation:MethodInvocation)</li>
-<li> .decl TaintedObjectSerialized(?declaringType: Type, ?source: symbol, ?type: Type, ?hctx: mainAnalysis.configuration.HContext, ?val: mainAnalysis.Value, ?ctx: mainAnalysis.configuration.Context, ?base: Var)</li>
-<li> .decl TaintedValue(?value:mainAnalysis.Value)</li>
-<li> .decl TaintedValueTransferred(?declaringType: Type, ?id: symbol, ?type: Type, ?value: mainAnalysis.Value)</li>
-<li> .decl TaintedVarPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
-<li> .decl TaintedVarTaintedFromVar(?toCtx:mainAnalysis.configuration.Context, ?to:Var, ?value:mainAnalysis.Value, ?type:Type)</li>
-<li> .decl TypeForReturnValue(?type:Type, ?ret:Var, ?invocation:MethodInvocation)</li>
-<li> .decl VarIsCast(?var:Var)</li>
-<li> .decl VarIsTaintedFromValue(?type:Type, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
-<li> .decl VarIsTaintedFromValueIndex(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value)</li>
-<li> .decl VarIsTaintedFromVar(?type:Type, ?ctx1:mainAnalysis.configuration.Context, ?var1:Var, ?ctx2:mainAnalysis.configuration.Context, ?var2:Var)</li>
-<li> .decl VarIsTaintedFromVarIndex(?base:Var, ?ctx1:mainAnalysis.configuration.Context, ?param:Var)</li>
-<li> .decl VarUse(?var:Var, ?inst:Instruction)</li>
-<li> .decl isInformationLabel(?id:symbol)</li>
-</ul>
-<h2> addons/information-flow/spring-sources-and-sinks.dl </h2>
-<ul>
-<li> .decl SanitizationMethodIffBaseUntainted(?meth: Method)</li>
-</ul>
-<h2> addons/open-programs/rules-concrete-types.dl </h2>
-<ul>
-<li> .decl AllConcreteImplementations(?class:ClassType, ?type:Type)</li>
-<li> .decl ConcreteImplementations(?staticType:Type, ?class:ClassType)</li>
-<li> .decl ConcreteType(?class:ClassType)</li>
-<li> .decl ContextForOpenProgramEntryPoint(?ctx:mainAnalysis.configuration.Context, ?method:Method)</li>
-<li> .decl FieldInformation(?signature:Field, ?fieldtype:Type, ?class:ReferenceType)</li>
-<li> .decl FieldTypeForMockObject(?signature:Field, ?basevalue:mainAnalysis.Value, ?fieldtype:Type)</li>
-<li> .decl FormalsForOpenProgramEntryPoints(?method:Method, ?formal:Var)</li>
-<li> .decl HContextForOpenProgramEntryPoint(?hctx:mainAnalysis.configuration.HContext, ?method:Method)</li>
-<li> .decl MockForFormal(?value:mainAnalysis.Value, ?formal:Var, ?type:ReferenceType, ?method:Method)</li>
-<li> .decl MockObjFromArray(?class:ReferenceType)</li>
-<li> .decl MockObjFromField(?fieldType:ReferenceType)</li>
-<li> .decl MockObjFromFormal(?type:ReferenceType)</li>
-<li> .decl MockObjFromOpenProgramEntryPoint(?class:ReferenceType)</li>
-<li> .decl MockObject(?value:mainAnalysis.Value, ?class:ReferenceType)</li>
-<li> .decl MockObjectContext(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?class:ReferenceType)</li>
-<li> .decl MockObjectForComponentType(?value:mainAnalysis.Value, ?arrayType:ArrayType)</li>
-<li> .decl MockObjectForType(?value:mainAnalysis.Value, ?staticType:Type)</li>
-<li> .decl ObjToMock(?class:ReferenceType)</li>
-<li> .decl ReceiverPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?class:ReferenceType, ?method:Method)</li>
-<li> .decl StaticToActualType(?class:ClassType, ?staticType:Type)</li>
-<li> .decl TypeForFormals(?formal:Var, ?method:Method, ?type:ReferenceType)</li>
-<li> .decl TypeToConcreteImplementationOrd(?staticType:Type, ?classOrd:number)</li>
-</ul>
-<h2> addons/open-programs/rules-alfresco.dl </h2>
-<ul>
-<li> .decl WebappMock(?v: mainAnalysis.Value)</li>
-</ul>
-<h2> addons/open-programs/entry-points.dl </h2>
-<ul>
-<li> .decl ClassHasPossibleOpenProgramEntryPoint(?class:ReferenceType)</li>
-<li> .decl ClassIsAboveOtherInNamingHierarchy(?classAbove:ReferenceType, ?classBelow:ReferenceType)</li>
-<li> .decl ClassToConsider(?class:ReferenceType)</li>
-<li> .decl ClassWithTopLevelOpenProgramEntryPoint(?class:ReferenceType)</li>
-<li> .decl OpenProgramEntryPoint(?method:Method)</li>
-<li> .decl PossibleOpenProgramEntryPoint(?method:Method)</li>
-<li> .decl PrefixAbove(class:ReferenceType, str:symbol, ?len:number)</li>
-<li> .decl PrefixBelow(class:ReferenceType, str:symbol)</li>
-<li> .decl TopLevelApplicationClass(?class:ReferenceType)</li>
-<li> .decl TopLevelOpenProgramEntryPoint(?method:Method)</li>
-</ul>
-<h2> addons/open-programs/rules-beans.dl </h2>
-<ul>
-<li> .decl BeanClass(cls: Type)</li>
-<li> .decl BeanInit(cls: Type, simplemeth: symbol)</li>
-<li> .decl BeanIoCField(cls: Type, simplefld: symbol, heap: Type)</li>
-<li> .decl BeanReachable(cls: Type, simplemeth: symbol)</li>
-</ul>
-<h2> addons/open-programs/rules-servlets-only.dl </h2>
-<ul>
-<li> .decl AllConcreteImplementations(?type1:Type, ?type2:Type)</li>
-<li> .decl ConcreteImplementations(?staticType:Type, ?class:Type)</li>
-<li> .decl ConcreteImplementationsOrd(?staticType:Type, ?classOrd:number)</li>
-<li> .decl MockObjFromArray(?type:ReferenceType)</li>
-<li> .decl MockObjFromField(?type:ReferenceType)</li>
-<li> .decl MockObjFromFormal(?type:ReferenceType)</li>
-<li> .decl MockObjFromOpenProgramEntryPoint(?value:mainAnalysis.Value)</li>
-<li> .decl MockObject(?value:mainAnalysis.Value, ?type:Type)</li>
-<li> .decl MockOpenProgramEntryPoint(?class:Type, ?method:Method)</li>
-<li> .decl OpenProgramEntryPoint(?method:Method)</li>
-<li> .decl PossibleOpenProgramEntryPoint(?class:Type, ?method:Method)</li>
-<li> .decl ServletClass(?class:Type)</li>
-<li> .decl ServletEntryMethodName(?method:Method)</li>
-<li> .decl ValueForReceiverInContext(?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?value:mainAnalysis.Value)</li>
-</ul>
-<h2> addons/open-programs/rules-spring.dl </h2>
-<ul>
-<li> .decl ServletMethodEP(m: Method)</li>
-</ul>
-<h2> python/facts/schema.dl </h2>
-<ul>
-<li> .decl ActualKeywordParam(?keyword:symbol, ?invocation:FunctionInvocation_Insn, ?var:Var)</li>
-<li> .decl ActualPositionalParam(?index:number, ?invocation:FunctionInvocation_Insn, ?var:Var)</li>
-<li> .decl ApplicationClass(?ref:ClassType)</li>
-<li> .decl ApplicationFunction(?function:Function)</li>
-<li> .decl ApplicationVar(?var:Var)</li>
-<li> .decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inFunction:Function)</li>
-<li> .decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inFunction:Function)</li>
-<li> .decl AssignHeapAllocation_Heap(?insn:AssignHeapAllocation_Insn, ?heap:HeapAllocation)</li>
-<li> .decl AssignInstruction_To(?insn:AssignInstruction, ?to:Var)</li>
-<li> .decl AssignLocal(?from:Var, ?to:Var, ?inFunction:Function)</li>
-<li> .decl AssignLocal_From(?insn:AssignLocal_Insn, ?from:Var)</li>
-<li> .decl AssignNull(?to:Var, ?inFunction:Function)</li>
-<li> .decl AssignNumConstant_Id(?insn:AssignNumConstant_Insn, ?const:NumConstant)</li>
-<li> .decl AssignOper_From(?insn:AssignOper_Insn, ?from:Var)</li>
-<li> .decl AssignReturnValue(?invocation:FunctionInvocation_Insn, ?to:Var)</li>
-<li> .decl DirectSuperclass(?class:ClassType, ?superclass:ClassType)</li>
-<li> .decl ExceptionHandler_Begin(?handler:ExceptionHandler, ?index:number)</li>
-<li> .decl ExceptionHandler_End(?handler:ExceptionHandler, ?index:number)</li>
-<li> .decl ExceptionHandler_FormalParam(?handler:ExceptionHandler, ?var:Var)</li>
-<li> .decl ExceptionHandler_Function(?handler:ExceptionHandler, ?inFunction:Function)</li>
-<li> .decl ExceptionHandler_Index(?handler:ExceptionHandler, ?index:number)</li>
-<li> .decl ExceptionHandler_Previous(?handler:ExceptionHandler, ?previous:ExceptionHandler)</li>
-<li> .decl ExceptionHandler_Type(?handler:ExceptionHandler, ?type:Type)</li>
-<li> .decl FieldInstruction_SimpleName(?insn:FieldInstruction, ?sign:symbol)</li>
-<li> .decl Field_DeclaringType(?field:Field, ?declaringClass:ClassType)</li>
-<li> .decl Field_SimpleName(?field:Field, ?simpleName:symbol)</li>
-<li> .decl FormalParam(?index:number, ?function:Function, ?var:Var)</li>
-<li> .decl FunctionInvocation(?invocation:FunctionInvocation_Insn, ?inFunction:Function)</li>
-<li> .decl FunctionInvocation_Base(?invocation:FunctionInvocation_Insn, ?base:Var)</li>
-<li> .decl Function_Arity(?function:Function, ?arity:number)</li>
-<li> .decl Function_SimpleName(?function:Function, ?simpleName:symbol)</li>
-<li> .decl Goto_Target(?insn:Goto_Insn, ?index:number)</li>
-<li> .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)</li>
-<li> .decl If_Target(?insn:If_Insn, ?index:number)</li>
-<li> .decl If_Var(?insn:If_Insn, ?var:Var)</li>
-<li> .decl Instruction_Function(?insn:Instruction, ?inFunction:Function)</li>
-<li> .decl Instruction_Index(?insn:Instruction, ?index:number)</li>
-<li> .decl Instruction_SourcePosition(?insn:Instruction, ?startLine:number, ?endLine:number, ?startColumn:number, ?endColumn:number)</li>
-<li> .decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inFunction:Function)</li>
-<li> .decl LoadInstanceField_Base(?insn:LoadInstanceField_Insn, ?var:Var)</li>
-<li> .decl LoadInstanceField_To(?insn:LoadInstanceField_Insn, ?var:Var)</li>
-<li> .decl NativeReturnVar(?var:Var, ?function:Function)</li>
-<li> .decl OriginalHeapAllocation_Type(?heap:HeapAllocation, ?type:Type)</li>
-<li> .decl ReturnNonNone_Var(?return:ReturnNonNone_Insn, ?var:Var)</li>
-<li> .decl ReturnVar(?var:Var, ?function:Function)</li>
-<li> .decl Stats_Metrics(order:symbol, msg:symbol, c:number)</li>
-<li> .decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inFunction:Function)</li>
-<li> .decl StoreInstanceField_Base(?insn:StoreInstanceField_Insn, ?var:Var)</li>
-<li> .decl StoreInstanceField_From(?insn:StoreInstanceField_Insn, ?var:Var)</li>
-<li> .decl ThisVar(?function:Function, ?var:Var)</li>
-<li> .decl Throw(?insn:Throw_Insn, ?var:Var)</li>
-<li> .decl Throw_Var(?insn:Throw_Insn, ?var:Var)</li>
-<li> .decl Type_boolean(?t:PrimitiveType)</li>
-<li> .decl Type_complex(?t:PrimitiveType)</li>
-<li> .decl Type_float(?t:PrimitiveType)</li>
-<li> .decl Type_int(?t:PrimitiveType)</li>
-<li> .decl Type_long(?t:PrimitiveType)</li>
-<li> .decl Type_none(?t:PrimitiveType)</li>
-<li> .decl Type_string(?t:PrimitiveType)</li>
-<li> .decl Var_DeclaringFunction(?var:Var, ?function:Function)</li>
-<li> .decl isAssignBinop_Insn(?insn:AssignBinop_Insn)</li>
-<li> .decl isAssignHeapAllocation_Insn(?insn:AssignHeapAllocation_Insn)</li>
-<li> .decl isAssignInstruction(?insn:AssignInstruction)</li>
-<li> .decl isAssignLocal_Insn(?insn:AssignLocal_Insn)</li>
-<li> .decl isAssignNumConstant_Insn(?insn:AssignNumConstant_Insn)</li>
-<li> .decl isAssignOper_Insn(?insn:AssignOper_Insn)</li>
-<li> .decl isAssignUnop_Insn(?insn:AssignUnop_Insn)</li>
-<li> .decl isClassType(?t:ClassType)</li>
-<li> .decl isExceptionHandler(?handler:ExceptionHandler)</li>
-<li> .decl isField(?field:Field)</li>
-<li> .decl isFieldInstruction(?insn:FieldInstruction)</li>
-<li> .decl isFunction(?m:Function)</li>
-<li> .decl isFunctionInvocation(?insn:FunctionInvocation_Insn)</li>
-<li> .decl isGoto_Insn(?insn:Goto_Insn)</li>
-<li> .decl isHeapAllocation(?h:HeapAllocation)</li>
-<li> .decl isIf_Insn(?insn:If_Insn)</li>
-<li> .decl isInstruction(?insn:Instruction)</li>
-<li> .decl isLoadInstanceField_Insn(?insn:LoadInstanceField_Insn)</li>
-<li> .decl isMethod(?m:Function)</li>
-<li> .decl isNormalHeap(?h:NormalHeap)</li>
-<li> .decl isNumConstant(?n:NumConstant)</li>
-<li> .decl isOpaqueInstruction(?insn:OpaqueInstruction)</li>
-<li> .decl isPrimitiveType(?t:PrimitiveType)</li>
-<li> .decl isReturnInstruction(?insn:ReturnInstruction)</li>
-<li> .decl isReturnNonNone_Insn(?insn:ReturnNonNone_Insn)</li>
-<li> .decl isReturnNone_Insn(?insn:ReturnNone_Insn)</li>
-<li> .decl isStoreInstanceField_Insn(?insn:StoreInstanceField_Insn)</li>
-<li> .decl isStringConstant(?h:StringConstant)</li>
-<li> .decl isStringRaw(?id:symbol)</li>
-<li> .decl isThrow_Insn(?insn:Throw_Insn)</li>
-<li> .decl isType(?t:Type)</li>
-<li> .decl isUnsupportedInstruction(?insn:UnsupportedInstruction)</li>
-<li> .decl isVar(v:Var)</li>
-</ul>
-<h2> python/facts/import-entities.dl </h2>
-<ul>
-<li> .decl _ActualKeywordParam(?keyword:symbol, ?invocation:symbol, ?var:symbol)</li>
-<li> .decl _ActualPositionalParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
-<li> .decl _ApplicationClass(?type:symbol)</li>
-<li> .decl _AssignReturnValue(?invocation:symbol, ?to:symbol)</li>
-<li> .decl _ClassType(?class:symbol)</li>
-<li> .decl _DirectSuperclass(?class:symbol, ?superclass:symbol)</li>
-<li> .decl _ExceptionHandler_Previous(?handler:symbol, ?previous:symbol)</li>
-<li> .decl _FormalParam(?index:number, ?function:symbol, ?var:symbol)</li>
-<li> .decl _NativeReturnVar(?var:symbol, ?function:symbol)</li>
-<li> .decl _ThisVar(?function:symbol, ?var:symbol)</li>
-</ul>
-<h2> python/facts/import-facts.dl </h2>
-<ul>
-<li> .decl String_toRaw(?id:symbol, ?rawId:symbol)</li>
-<li> .decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?inFunction:symbol)</li>
-<li> .decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inFunction:symbol)</li>
-<li> .decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inFunction:symbol)</li>
-<li> .decl _AssignNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inFunction:symbol)</li>
-<li> .decl _AssignOperFrom(?instruction:symbol, ?from:symbol)</li>
-<li> .decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?inFunction:symbol)</li>
-<li> .decl _ExceptionHandler(?handler:symbol, ?function:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number)</li>
-<li> .decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol)</li>
-<li> .decl _Function(?function:symbol, ?simplename:symbol, ?declaringType:symbol, ?arity:number)</li>
-<li> .decl _FunctionInvocation(?instruction:symbol, ?index:number, ?base:symbol, ?function:symbol)</li>
-<li> .decl _Goto(?instruction:symbol, ?index:number, ?to:number, ?function:symbol)</li>
-<li> .decl _If(?instruction:symbol, ?index:number, ?to:number, ?function:symbol)</li>
-<li> .decl _IfVar(?instruction:symbol, ?var:symbol)</li>
-<li> .decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?function:symbol)</li>
-<li> .decl _NormalHeap(?id:symbol, ?type:symbol)</li>
-<li> .decl _Return(?instruction:symbol, ?index:number, ?var:symbol, ?function:symbol)</li>
-<li> .decl _ReturnNone(?instruction:symbol, ?index:number, ?function:symbol)</li>
-<li> .decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?function:symbol)</li>
-<li> .decl _StringConstant(?id:symbol)</li>
-<li> .decl _StringRaw(?id:symbol, ?rawId:symbol)</li>
-<li> .decl _Throw(?instruction:symbol, ?index:number, ?var:symbol, ?function:symbol)</li>
-<li> .decl _UnsupportedInstruction(?instruction:symbol, ?index:number, ?function:symbol)</li>
+<li> .decl ContextToHContext(?ctx:Context, ?hctx:HContext)</li>
 </ul>
 <h2> analyses/2-call-site-sensitive+2-heap/analysis.dl </h2>
+<ul>
+<li> .decl StartupInvocation(?startupInvocation:MethodInvocation)</li>
+</ul>
+<h2> analyses/2-call-site-sensitive+heap/analysis.dl </h2>
 <ul>
 <li> .decl StartupInvocation(?startupInvocation:MethodInvocation)</li>
 </ul>
@@ -599,63 +495,82 @@
 <li> .decl UContext(?ctx:UniqueContext)</li>
 <li> .decl UHContext(?hctx:UniqueHContext)</li>
 </ul>
-<h2> analyses/2-call-site-sensitive+heap/analysis.dl </h2>
+<h2> analyses/dependency-analysis/declarations.dl </h2>
 <ul>
-<li> .decl StartupInvocation(?startupInvocation:MethodInvocation)</li>
+<li> .decl AllCtxDependentStoreHeapFld(?fld: Field, ?hctx: HContext, ?value: Value)</li>
+<li> .decl CFGLeaf(?headInsn: Instruction, ?method: Method)</li>
+<li> .decl CallReturnDependency(?nextCtx: Context, ?next: Instruction, ?prevCtx: Context, ?prev: Instruction)</li>
+<li> .decl DependencySourceInstruction(?insn: Instruction)</li>
+<li> .decl DependentInstruction(?ctx: Context, ?insn: Instruction)</li>
+<li> .decl DoesNotPostDominate(?postDomCandidate: Instruction, ?insn: Instruction)</li>
+<li> .decl InstructionDefinesVar(?instruction: Instruction, ?var: Var)</li>
+<li> .decl InstructionUsesVar(?instruction: Instruction, ?var: Var)</li>
+<li> .decl IntraProceduralBlockControlDep(?nextBlock: Instruction, ?prev: Instruction)</li>
+<li> .decl IntraProceduralControlDep(?next: Instruction, ?prev: Instruction)</li>
+<li> .decl IntraProceduralDataDep(?next: Instruction, ?prev: Instruction)</li>
+<li> .decl IntraProceduralDependency(?prev: Instruction, ?next: Instruction)</li>
+<li> .decl IntraProceduralDependencyBase(?next: Instruction, ?prev: Instruction)</li>
+<li> .decl LoadArrayHeapInsn(?ctx: Context, ?insn: Instruction, ?hctx: HContext, ?value: Value)</li>
+<li> .decl LoadFldFrom(?insn: Instruction, ?base: Var, ?fld: Field)</li>
+<li> .decl PostDominates(?dominator: Instruction, ?insn: Instruction)</li>
+<li> .decl SecureInstruction(?insn: Instruction)</li>
+<li> .decl SecureMethod(?meth: Method)</li>
+<li> .decl StoreFldTo(?base: Var, ?fld: Field, ?insn: Instruction)</li>
+<li> .decl TaintedLoad(?ctx: Context, ?insn: Instruction)</li>
 </ul>
-<h2> analyses/twophase-A/analysis.dl </h2>
+<h2> analyses/micro/analysis.dl </h2>
 <ul>
-<li> .decl ArgPointsTo(?arg:Var, ?method:Method, ?value:Value)</li>
-<li> .decl InOutFlowDirectTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)</li>
-<li> .decl InOutFlowDirectValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)</li>
-<li> .decl InOutFlowPair(?inMethod:Method, ?outMethod:Method)</li>
-<li> .decl InOutFlowUnwrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method)</li>
-<li> .decl InOutFlowUnwrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)</li>
-<li> .decl InOutFlowWrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)</li>
-<li> .decl InOutFlowWrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)</li>
-<li> .decl LocalPointsTo(?local:Var, ?method:Method, ?value:Value)</li>
-<li> .decl MethodTaintedByDirectFlow(?method:Method)</li>
-<li> .decl MethodTaintedByWrappedFlow(?method:Method)</li>
-<li> .decl MethodToRefine(?method:Method)</li>
-<li> .decl MethodValuePair(?inMethod:Method, ?argValue:Value, ?outMethod:Method, ?retValue:Value)</li>
-<li> .decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)</li>
-<li> .decl RetPointsTo(?ret:Var, ?method:Method, ?value:Value)</li>
-<li> .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)</li>
-<li> .decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)</li>
-<li> .decl ThisPointsToTooManyValues(?method:Method)</li>
-<li> .decl VPTCountPerVar(?var:Var, ?n:number)</li>
-<li> .decl ValuePointsTo(?baseValue:Value, ?value:Value)</li>
+<li> .decl ArrayIndexPointsTo(?baseheap:HeapAllocation, ?heap:HeapAllocation)</li>
+<li> .decl Assign(?to:Var, ?from:Var)</li>
+<li> .decl CallGraphEdge(?invocation:MethodInvocation, ?meth:Method)</li>
+<li> .decl InstanceFieldPointsTo(?heap:HeapAllocation , ?fld:Field, ?baseheap:HeapAllocation)</li>
+<li> .decl Reachable(?method:Method)</li>
+<li> .decl StaticFieldPointsTo(?heap:HeapAllocation, ?fld:Field)</li>
+<li> .decl VarPointsTo(?heap:HeapAllocation, ?var:Var)</li>
 </ul>
-<h2> analyses/special-2-object-sensitive+heap/analysis.dl </h2>
+<h2> analyses/partitioned-2-object-sensitive+heap/analysis.dl </h2>
 <ul>
-<li> .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)</li>
-<li> .decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)</li>
+<li> .decl CachedMerge(invo: Instruction, hctx: HContext, value: Value, calleeCtx: Context)</li>
+<li> .decl CachedMergeStatic(callerCtx: Context, invo: Instruction, calleeCtx: Context)</li>
+<li> .decl CachedRecord(ctx: Context, value: Value, hctx: HContext)</li>
+<li> .decl CollapsedVarPointsTo(hctx: HContext, heap: Value, ctx: Context, var: Var)</li>
+<li> .decl MatchingMethodForInvocationAndType(type: Type, invocation: Instruction, method: Method)</li>
+<li> .decl MergeBasis(callerCtx: Context, invo: Instruction, hctx: HContext, value: Value)</li>
+<li> .decl MergeStaticBasis(ctx: Context, invo: Instruction)</li>
+<li> .decl MethodInAllPartitions(method: Method)</li>
+<li> .decl MyMergeBasis(invo: Instruction, hctx: HContext, value: Value)</li>
+<li> .decl MyRecordBasis(ctx: Context, value: Value)</li>
+<li> .decl NotTypeInAllPartitions(type: Type)</li>
+<li> .decl NotValueInAllPartitions(value: Value)</li>
+<li> .decl PartitionForInvocation(invo: Instruction, partition: Partition)</li>
+<li> .decl PartitionForMethod(method: Method, partition: Partition)</li>
+<li> .decl PartitionForResolvedInvocation(type: Type, invo: Instruction, partition: Partition)</li>
+<li> .decl PartitionForValue(value: Value, partition: Partition)</li>
+<li> .decl RecordBasis(var: Var, ctx: Context, value: Value)</li>
+<li> .decl TypeInAllPartitions(type: Type)</li>
+<li> .decl ValueInAllPartitions(value: Value)</li>
+<li> .decl _ValidCtxVar(ctx: Context, var: Var)</li>
 </ul>
-<h2> analyses/sound-may-point-to/must-point-to.dl </h2>
+<h2> analyses/partitioned-2-object-sensitive+heap/partitioning.dl </h2>
 <ul>
-<li> .decl AllCallee_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?calleeCtx:MayContext, ?meth:Method)</li>
-<li> .decl AllCallee_ReturnMustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?calleeCtx:MayContext, ?meth:Method)</li>
-<li> .decl AllReturn_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?method:Method)</li>
-<li> .decl AllReturn_MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?method:Method)</li>
-<li> .decl Before_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)</li>
-<li> .decl Before_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)</li>
-<li> .decl FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)</li>
-<li> .decl FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)</li>
-<li> .decl MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?var:Var)</li>
-<li> .decl MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?var:Var)</li>
-<li> .decl MustPointToUpToPhiInstruction(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?lastInsn:Instruction)</li>
-<li> .decl UpToCalleeFieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?meth:Method)</li>
-<li> .decl UpToCalleeReturnMustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?calleeCtx:MayContext, ?meth:Method)</li>
-<li> .decl UpToReturnFieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)</li>
-<li> .decl UpToReturnMustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?return:Instruction)</li>
-<li> .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext)</li>
-<li> .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext)</li>
-<li> .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)</li>
-<li> .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)</li>
-<li> .decl VarMustAliasRepresentative(?var:Var, ?varRepr:Var, ?ctx:MayContext)</li>
-<li> .decl VarMustAliasRepresentative(?var:Var, ?varRepr:Var, ?ctx:MayContext)</li>
-<li> .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)</li>
-<li> .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)</li>
+<li> .decl CountOfTypesPerSCC(id: Partition, cnt: number)</li>
+<li> .decl IdTypeOfGenericPartition(id: Partition)</li>
+<li> .decl NumberOfRelevantTypes(cnt: number)</li>
+<li> .decl PartitionedType(type: Type)</li>
+<li> .decl TypeInGenericPartition(type: Type)</li>
+<li> .decl TypeRefersToOther(typeFrom: Type, typeTo: Type)</li>
+<li> .decl TypeToPartitionId(type: Type, id: Partition)</li>
+<li> .decl TypeToSCCId(type: Type, id: Partition)</li>
+<li> .decl TypeTransitivelyRefersToOther(typeFrom: Type, typeTo: Type)</li>
+<li> .decl TypesInSameSCC(type1: Type, type2: Type)</li>
+<li> .decl isPartition(partition: Partition)</li>
+</ul>
+<h2> analyses/scaler/analysis.dl </h2>
+<ul>
+<li> .decl HContextElement(elem:symbol)</li>
+<li> .decl ScalerMethodContext(?method:Method, ?context:symbol)</li>
+<li> .decl SpecialContextElement(value:symbol)</li>
+<li> .decl ToTypeString(valueOrType:symbol, type:symbol)</li>
 </ul>
 <h2> analyses/sound-may-point-to/analysis.dl </h2>
 <ul>
@@ -829,38 +744,64 @@
 <li> .decl MustAliasBaseInvalidated(?ap1:AccessPath, ?ap2:AccessPath, ?insn:Instruction)</li>
 <li> .decl MustAliasUpToRelevantPredecessor(?pred:Instruction, ?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)</li>
 </ul>
-<h2> analyses/dependency-analysis/declarations.dl </h2>
+<h2> analyses/sound-may-point-to/must-point-to.dl </h2>
 <ul>
-<li> .decl AllCtxDependentStoreHeapFld(?fld: Field, ?hctx: HContext, ?value: Value)</li>
-<li> .decl CFGLeaf(?headInsn: Instruction, ?method: Method)</li>
-<li> .decl CallReturnDependency(?nextCtx: Context, ?next: Instruction, ?prevCtx: Context, ?prev: Instruction)</li>
-<li> .decl DependencySourceInstruction(?insn: Instruction)</li>
-<li> .decl DependentInstruction(?ctx: Context, ?insn: Instruction)</li>
-<li> .decl DoesNotPostDominate(?postDomCandidate: Instruction, ?insn: Instruction)</li>
-<li> .decl InstructionDefinesVar(?instruction: Instruction, ?var: Var)</li>
-<li> .decl InstructionUsesVar(?instruction: Instruction, ?var: Var)</li>
-<li> .decl IntraProceduralBlockControlDep(?nextBlock: Instruction, ?prev: Instruction)</li>
-<li> .decl IntraProceduralControlDep(?next: Instruction, ?prev: Instruction)</li>
-<li> .decl IntraProceduralDataDep(?next: Instruction, ?prev: Instruction)</li>
-<li> .decl IntraProceduralDependency(?prev: Instruction, ?next: Instruction)</li>
-<li> .decl IntraProceduralDependencyBase(?next: Instruction, ?prev: Instruction)</li>
-<li> .decl LoadArrayHeapInsn(?ctx: Context, ?insn: Instruction, ?hctx: HContext, ?value: Value)</li>
-<li> .decl LoadFldFrom(?insn: Instruction, ?base: Var, ?fld: Field)</li>
-<li> .decl PostDominates(?dominator: Instruction, ?insn: Instruction)</li>
-<li> .decl SecureInstruction(?insn: Instruction)</li>
-<li> .decl SecureMethod(?meth: Method)</li>
-<li> .decl StoreFldTo(?base: Var, ?fld: Field, ?insn: Instruction)</li>
-<li> .decl TaintedLoad(?ctx: Context, ?insn: Instruction)</li>
+<li> .decl AllCallee_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?calleeCtx:MayContext, ?meth:Method)</li>
+<li> .decl AllCallee_ReturnMustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?calleeCtx:MayContext, ?meth:Method)</li>
+<li> .decl AllReturn_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?method:Method)</li>
+<li> .decl AllReturn_MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?method:Method)</li>
+<li> .decl Before_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)</li>
+<li> .decl Before_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)</li>
+<li> .decl FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)</li>
+<li> .decl FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)</li>
+<li> .decl MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?var:Var)</li>
+<li> .decl MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?var:Var)</li>
+<li> .decl MustPointToUpToPhiInstruction(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?lastInsn:Instruction)</li>
+<li> .decl UpToCalleeFieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?meth:Method)</li>
+<li> .decl UpToCalleeReturnMustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?calleeCtx:MayContext, ?meth:Method)</li>
+<li> .decl UpToReturnFieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)</li>
+<li> .decl UpToReturnMustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?return:Instruction)</li>
+<li> .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext)</li>
+<li> .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext)</li>
+<li> .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)</li>
+<li> .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)</li>
+<li> .decl VarMustAliasRepresentative(?var:Var, ?varRepr:Var, ?ctx:MayContext)</li>
+<li> .decl VarMustAliasRepresentative(?var:Var, ?varRepr:Var, ?ctx:MayContext)</li>
+<li> .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)</li>
+<li> .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)</li>
 </ul>
-<h2> analyses/micro/analysis.dl </h2>
+<h2> analyses/special-2-object-sensitive+heap/analysis.dl </h2>
 <ul>
-<li> .decl ArrayIndexPointsTo(?baseheap:HeapAllocation, ?heap:HeapAllocation)</li>
-<li> .decl Assign(?to:Var, ?from:Var)</li>
-<li> .decl CallGraphEdge(?invocation:MethodInvocation, ?meth:Method)</li>
-<li> .decl InstanceFieldPointsTo(?heap:HeapAllocation , ?fld:Field, ?baseheap:HeapAllocation)</li>
-<li> .decl Reachable(?method:Method)</li>
-<li> .decl StaticFieldPointsTo(?heap:HeapAllocation, ?fld:Field)</li>
-<li> .decl VarPointsTo(?heap:HeapAllocation, ?var:Var)</li>
+<li> .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)</li>
+<li> .decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)</li>
+</ul>
+<h2> analyses/special-2-type-sensitive+heap/analysis.dl </h2>
+<ul>
+<li> .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)</li>
+<li> .decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)</li>
+</ul>
+<h2> analyses/twophase-A/analysis.dl </h2>
+<ul>
+<li> .decl ArgPointsTo(?arg:Var, ?method:Method, ?value:Value)</li>
+<li> .decl InOutFlowDirectTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)</li>
+<li> .decl InOutFlowDirectValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)</li>
+<li> .decl InOutFlowPair(?inMethod:Method, ?outMethod:Method)</li>
+<li> .decl InOutFlowUnwrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method)</li>
+<li> .decl InOutFlowUnwrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)</li>
+<li> .decl InOutFlowWrappedTwoValuesPerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)</li>
+<li> .decl InOutFlowWrappedValuePerClass(?inMethod:Method, ?outMethod:Method, ?value:Value)</li>
+<li> .decl LocalPointsTo(?local:Var, ?method:Method, ?value:Value)</li>
+<li> .decl MethodTaintedByDirectFlow(?method:Method)</li>
+<li> .decl MethodTaintedByWrappedFlow(?method:Method)</li>
+<li> .decl MethodToRefine(?method:Method)</li>
+<li> .decl MethodValuePair(?inMethod:Method, ?argValue:Value, ?outMethod:Method, ?retValue:Value)</li>
+<li> .decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)</li>
+<li> .decl RetPointsTo(?ret:Var, ?method:Method, ?value:Value)</li>
+<li> .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)</li>
+<li> .decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)</li>
+<li> .decl ThisPointsToTooManyValues(?method:Method)</li>
+<li> .decl VPTCountPerVar(?var:Var, ?n:number)</li>
+<li> .decl ValuePointsTo(?baseValue:Value, ?value:Value)</li>
 </ul>
 <h2> analyses/twophase-B/analysis.dl </h2>
 <ul>
@@ -885,59 +826,9 @@
 <li> .decl VPTCountPerVar(?var:Var, ?n:number)</li>
 <li> .decl ValuePointsTo(?baseValue:Value, ?value:Value)</li>
 </ul>
-<h2> analyses/1-object-sensitive/analysis.dl </h2>
+<h2> basic/basic-declarations.dl </h2>
 <ul>
-<li> .decl ContextToHContext(?ctx:Context, ?hctx:HContext)</li>
-</ul>
-<h2> analyses/special-2-type-sensitive+heap/analysis.dl </h2>
-<ul>
-<li> .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)</li>
-<li> .decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)</li>
-</ul>
-<h2> analyses/1-call-site-sensitive+heap/analysis.dl </h2>
-<ul>
-<li> .decl StartupInvocation(?invocation:MethodInvocation)</li>
-</ul>
-<h2> analyses/1-call-site-sensitive/analysis.dl </h2>
-<ul>
-<li> .decl StartupInvocation(?invocation:MethodInvocation)</li>
-</ul>
-<h2> analyses/partitioned-2-object-sensitive+heap/partitioning.dl </h2>
-<ul>
-<li> .decl CountOfTypesPerSCC(id: Partition, cnt: number)</li>
-<li> .decl IdTypeOfGenericPartition(id: Partition)</li>
-<li> .decl NumberOfRelevantTypes(cnt: number)</li>
-<li> .decl PartitionedType(type: Type)</li>
-<li> .decl TypeInGenericPartition(type: Type)</li>
-<li> .decl TypeRefersToOther(typeFrom: Type, typeTo: Type)</li>
-<li> .decl TypeToPartitionId(type: Type, id: Partition)</li>
-<li> .decl TypeToSCCId(type: Type, id: Partition)</li>
-<li> .decl TypeTransitivelyRefersToOther(typeFrom: Type, typeTo: Type)</li>
-<li> .decl TypesInSameSCC(type1: Type, type2: Type)</li>
-<li> .decl isPartition(partition: Partition)</li>
-</ul>
-<h2> analyses/partitioned-2-object-sensitive+heap/analysis.dl </h2>
-<ul>
-<li> .decl CachedMerge(invo: Instruction, hctx: HContext, value: Value, calleeCtx: Context)</li>
-<li> .decl CachedMergeStatic(callerCtx: Context, invo: Instruction, calleeCtx: Context)</li>
-<li> .decl CachedRecord(ctx: Context, value: Value, hctx: HContext)</li>
-<li> .decl CollapsedVarPointsTo(hctx: HContext, heap: Value, ctx: Context, var: Var)</li>
-<li> .decl MatchingMethodForInvocationAndType(type: Type, invocation: Instruction, method: Method)</li>
-<li> .decl MergeBasis(callerCtx: Context, invo: Instruction, hctx: HContext, value: Value)</li>
-<li> .decl MergeStaticBasis(ctx: Context, invo: Instruction)</li>
-<li> .decl MethodInAllPartitions(method: Method)</li>
-<li> .decl MyMergeBasis(invo: Instruction, hctx: HContext, value: Value)</li>
-<li> .decl MyRecordBasis(ctx: Context, value: Value)</li>
-<li> .decl NotTypeInAllPartitions(type: Type)</li>
-<li> .decl NotValueInAllPartitions(value: Value)</li>
-<li> .decl PartitionForInvocation(invo: Instruction, partition: Partition)</li>
-<li> .decl PartitionForMethod(method: Method, partition: Partition)</li>
-<li> .decl PartitionForResolvedInvocation(type: Type, invo: Instruction, partition: Partition)</li>
-<li> .decl PartitionForValue(value: Value, partition: Partition)</li>
-<li> .decl RecordBasis(var: Var, ctx: Context, value: Value)</li>
-<li> .decl TypeInAllPartitions(type: Type)</li>
-<li> .decl ValueInAllPartitions(value: Value)</li>
-<li> .decl _ValidCtxVar(ctx: Context, var: Var)</li>
+<li> .decl MainMethodDeclaration(?method:Method)</li>
 </ul>
 <h2> basic/finalization-declarations.dl </h2>
 <ul>
@@ -951,14 +842,6 @@
 <li> .decl MethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)</li>
 <li> .decl OverridableMethod(?type:Type, ?method:Method)</li>
 <li> .decl ResolveInvocation(?type:Type, ?invocation:MethodInvocation, ?tomethod:Method)</li>
-</ul>
-<h2> basic/type-hierarchy-declarations.dl </h2>
-<ul>
-<li> .decl Subclassable(?type:Type)</li>
-<li> .decl SubtypeOf(?subtype:Type, ?type:Type)</li>
-<li> .decl SubtypeOfDifferent(?subtype:Type, ?type:Type)</li>
-<li> .decl SupertypeOf(?supertype:Type, ?type:Type)</li>
-<li> .decl Unsubclassable(?type:Type)</li>
 </ul>
 <h2> basic/method-resolution.dl </h2>
 <ul>
@@ -981,714 +864,30 @@
 <ul>
 <li> .decl Superinterface(?k:Type, ?c:Type)</li>
 </ul>
-<h2> basic/basic-declarations.dl </h2>
+<h2> basic/type-hierarchy-declarations.dl </h2>
 <ul>
-<li> .decl MainMethodDeclaration(?method:Method)</li>
+<li> .decl Subclassable(?type:Type)</li>
+<li> .decl SubtypeOf(?subtype:Type, ?type:Type)</li>
+<li> .decl SubtypeOfDifferent(?subtype:Type, ?type:Type)</li>
+<li> .decl SupertypeOf(?supertype:Type, ?type:Type)</li>
+<li> .decl Unsubclassable(?type:Type)</li>
 </ul>
-<h2> main/threads-declarations.dl </h2>
+<h2> facts/flow-insensitive-schema.dl </h2>
 <ul>
-<li> .decl ReachableCurrentThreadInvocation(?callerCtx:configuration.Context, ?local:Var)</li>
-<li> .decl RunningThread(?hctx:configuration.HContext, ?value:Value)</li>
-</ul>
-<h2> main/configuration.dl </h2>
-<ul>
-<li> .decl ContextRequest(?ctx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?value:Value)</li>
-<li> .decl ContextResponse(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?value:Value, ?calleeCtx:Context)</li>
-<li> .decl FinalizerRegisterContextRequest(?callerCtx:configuration.Context, ?inmethod:Method, ?value:Value)</li>
-<li> .decl FinalizerRegisterContextResponse(?callerCtx:configuration.Context, ?inmethod:Method, ?value:Value, ?newCtx:Context)</li>
-<li> .decl InitContextRequest(?symbol:symbol)</li>
-<li> .decl InitContextResponse(?symbol:symbol, ?context:Context)</li>
-<li> .decl InitHContextRequest(?symbol:symbol)</li>
-<li> .decl InitHContextResponse(?symbol:symbol, ?hcontext:HContext)</li>
-<li> .decl RecordContextRequest(?callerCtx:configuration.Context, ?value:Value, ?var:Var)</li>
-<li> .decl RecordContextResponse(?callerCtx:configuration.Context, ?value:Value, ?var:Var, ?hctx:configuration.HContext)</li>
-<li> .decl StartupContextRequest(?hctx:configuration.HContext, ?value:Value)</li>
-<li> .decl StartupContextResponse(?hctx:configuration.HContext, ?value:Value, ?calleeCtx:Context)</li>
-<li> .decl StaticContextRequest(?ctx:configuration.Context, ?invo:MethodInvocation)</li>
-<li> .decl StaticContextResponse(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:Context)</li>
-<li> .decl ThreadStartContextRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?value:Value)</li>
-<li> .decl ThreadStartContextResponse(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?value:Value, ?calleeCtx:Context)</li>
-</ul>
-<h2> main/method-handles.dl </h2>
-<ul>
-<li> .decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method, ?invo:MethodInvocation)</li>
-<li> .decl ConstantMethodHandleLambda(?value:Value, ?dynName:symbol, ?dynRet:Type, ?realMethod:Method)</li>
-<li> .decl ConstructorReference(?var:Var, ?value:Value, ?i:MethodInvocation, ?realMethod:Method)</li>
-<li> .decl Descriptor_Arity(?descriptor:symbol, ?arity:number)</li>
-<li> .decl FindStatic(?invo:MethodInvocation)</li>
-<li> .decl FindVirtual(?invo:MethodInvocation)</li>
-<li> .decl InvokedynamicBootstrap(?invo:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)</li>
-<li> .decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method)</li>
-<li> .decl Lambda_Method(?value:Value, ?realMethod:Method)</li>
-<li> .decl MHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method)</li>
-<li> .decl MTCallMatchesDescriptor(?invo:MethodInvocation, ?descriptor:symbol)</li>
-<li> .decl MTReturnTypeMatchesDescriptor(?invo:MethodInvocation, ?descriptor:symbol)</li>
-<li> .decl MTValue_Descriptor(?mt:Value, ?descriptor:symbol)</li>
-<li> .decl MT_ParamValue(?invo:MethodInvocation, ?index:number, ?classValue:Value)</li>
-<li> .decl MT_ReturnType(?invo:MethodInvocation, ?type:Type)</li>
-<li> .decl MethodFinder(?invo:MethodInvocation, ?ret:Var)</li>
-<li> .decl MethodHandle_Method(?mh: Value, ?method: Method)</li>
-<li> .decl MethodType_ParamType(?descriptor:symbol, ?index:number, ?pType:Type)</li>
-<li> .decl MethodType_ReturnType(?descriptor:symbol, ?declType:Type, ?rType:Type)</li>
-<li> .decl ReachableMethodTypeN(?invo:MethodInvocation, ?caller:Method, ?callerCtx:configuration.Context)</li>
-<li> .decl UnhandledInvokedynamic(?i:DynamicMethodInvocation_Insn, ?bootMethodId:symbol)</li>
-<li> .decl isMethodHandle(?mh:Value)</li>
-</ul>
-<h2> main/android.dl </h2>
-<ul>
-<li> .decl ActivityVarInType(?var:Var, ?ctx:configuration.Context, ?type:Type)</li>
-<li> .decl AndroidApplicationPackableClass(?class:ClassType)</li>
-<li> .decl AndroidPackableType(?type:Type)</li>
-<li> .decl AppClassSubtypesLibClass(?type:Type, ?libType:Type)</li>
-<li> .decl AppInvoReturningLibraryPackable(?invo:Instruction, ?retType:Type)</li>
-<li> .decl ArgToAddJavascriptInterface(?var:Var)</li>
-<li> .decl AsynchTaskExecute(?param:Var, ?base:Var)</li>
-<li> .decl BindFragment(?activityThis:Var, ?fragmentParam:Var)</li>
-<li> .decl ClassNameWithOnlySlashes(?className:ClassType, ?classNameTransformed:symbol)</li>
-<li> .decl ClassNameWithSlashes(?className:ClassType, ?classNameWithSlash:symbol)</li>
-<li> .decl ClassOfDeadMethod(?method:Method, ?class:ClassType)</li>
-<li> .decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol, ?method:symbol)</li>
-<li> .decl LibraryMethodReturningPackable(?method:Method, ?retType:Type)</li>
-<li> .decl LibraryReachableAppPackableClass(?class:ClassType)</li>
-<li> .decl ListenerClassConstantValue(?classHeap:Value, ?type:Type)</li>
-<li> .decl LookupReturnsAppMethod(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)</li>
-<li> .decl MethodToRemove(?method:Method)</li>
-<li> .decl NonPrivateConcreteMethodOfComponent(?meth:Method)</li>
-<li> .decl ObfuscationOn()</li>
-<li> .decl ReachableAppPackableMethodOverridingLib(?methConcrete:Method)</li>
-<li> .decl RegisterBroadCastReceiverVar(?var:Var)</li>
-<li> .decl ReifiedApplicationAndCompatibleVar(?value:Value, ?var:Var)</li>
-<li> .decl SpecialMissingPackableValue(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl UnobfuscatedApplicationClass(?class:ClassType)</li>
-<li> .decl UnobfuscatedMethod(?meth:Method)</li>
-<li> .decl _ActivityVar(?var:Var)</li>
-<li> .decl _AndroidApplicationValue(?value:Value, ?ofType:Type)</li>
-<li> .decl _AndroidLibraryVar(?var:Var)</li>
-<li> .decl _ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)</li>
-<li> .decl _NotMostRefinedType(?type:Type)</li>
-<li> .decl _OnEventMethod(?meth:Method)</li>
-<li> .decl _RelevantStringPosition(?className: symbol, ?pos:number)</li>
-</ul>
-<h2> main/context-sensitivity.dl </h2>
-<ul>
-<li> .decl ConstructorVar(?var:Var)</li>
-<li> .decl NoInformationOnSignature(?signature: Field)</li>
-<li> .decl NotEmptyArrayValue(?value:Value)</li>
-<li> .decl OptAssignCast(?type:Type, ?to:Var, ?from:Var)</li>
-<li> .decl OptLoadHeapArrayIndex(?var:Var, ?value:Value)</li>
-<li> .decl OptSpecialMethodInvocationBase(?invocation:MethodInvocation, ?base:Var)</li>
-<li> .decl OptStoreIntoArray(?hctx:configuration.HContext, ?value:Value, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
-<li> .decl OptVirtualMethodInvocationBase(?invocation:MethodInvocation, ?base:Var)</li>
-<li> .decl ReachableLoadArrayIndexBase(?base:Var)</li>
-<li> .decl ReachableStoreArrayIndexBase(?base:Var)</li>
-<li> .decl ReachableStoreStaticFieldFrom(?from:Var)</li>
-<li> .decl Temp1(?value:Value, ?var:Var)</li>
-<li> .decl Temp2(?ctx:configuration.Context, ?var:Var, ?hctx:configuration.HContext, ?value:Value)</li>
-</ul>
-<h2> main/dynamicanalysis.dl </h2>
-<ul>
-<li> .decl AllDynamicallyReachableMethod(?method:Method)</li>
-<li> .decl DynamicContextToContext(?ctx:configuration.Context, ?dctx:DynamicContext)</li>
-<li> .decl DynamicContextToHContext(?hctx:configuration.HContext, ?dctx:DynamicContext)</li>
-<li> .decl ForcedImplicitReachable(?method:Method)</li>
-<li> .decl FromDynamicHeapObject(?hctx:configuration.HContext, ?value:Value, ?dctx:DynamicContext, ?dheap:HeapAllocation)</li>
-<li> .decl HeapDLInstanceFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
-<li> .decl HighConfidenceLoadFromDynamicInference(?value:Value, ?inmethod:Method)</li>
-<li> .decl ImpreciseDynamicCallGraphEdge(?DCTX:DynamicContext, ?toMethod:Method, ?invocation:Instruction, ?DCTX2:DynamicContext, ?fromMethod:Method)</li>
-<li> .decl ImpreciseDynamicInstanceFieldPointsTo(?fld:Field, ?immutableDCTX1:DynamicContext,  ?heap:HeapAllocation, ?immutableDCTX2:DynamicContext, ?baseHeap:HeapAllocation)</li>
-<li> .decl ImpreciseDynamicStaticFieldPointsTo(?signature:Field, ?immutableDCTX:DynamicContext, ?heap:HeapAllocation)</li>
-<li> .decl InsArrayIndexPointsToFromDynamic(?value:Value, ?baseValue:Value)</li>
-<li> .decl InsInstanceFieldPointsToFromDynamic(?value:Value, ?fld:Field, ?baseValue:Value)</li>
-<li> .decl InsStaticFieldPointsToFromDynamic(?value:Value, ?signature:Field)</li>
-<li> .decl MostPreciseDynamicArrayIndexPointsTo(?dctx:DynamicContext, ?heap:HeapAllocation, ?baseDCtx:DynamicContext, ?baseHeap:HeapAllocation)</li>
-<li> .decl MostPreciseDynamicCallGraphEdge(?DCTX:DynamicContext, ?toMethod:Method, ?invocation:Instruction, ?DCTX2:DynamicContext, ?fromMethod:Method)</li>
-<li> .decl MostPreciseDynamicInstanceFieldPointsTo( ?fld:Field, ?dctx:DynamicContext, ?heap:HeapAllocation, ?baseDCtx:DynamicContext, ?baseHeap:HeapAllocation )</li>
-<li> .decl MostPreciseDynamicStaticFieldPointsTo(?signature:Field, ?immutableDCTX:DynamicContext, ?heap:HeapAllocation)</li>
-<li> .decl ProbablyReachable(?method:Method)</li>
-<li> .decl SanitizedDynamicCallGraphEdge(?DCTX:DynamicContext, ?toMethod:Method, ?invocation:Instruction, ?DCTX2:DynamicContext, ?fromMethod:Method)</li>
-<li> .decl SingletonDynamicHeapObject(?type:Type, ?value:Value)</li>
-<li> .decl TamiflexDynamicallyReachableMethod(?inmethod:Method)</li>
-<li> .decl Value_byDynamicHeap(?heap:HeapAllocation, ?value:Value)</li>
-<li> .decl isImmutableDCTX(?dctx:DynamicContext)</li>
-</ul>
-<h2> main/phantom-dead.dl </h2>
-<ul>
-<li> .decl DeadInstruction(?i:Instruction)</li>
-<li> .decl DeadMethod(?m:Method)</li>
-<li> .decl DeadType(?type:Type)</li>
-<li> .decl PhantomInvoke(?instruction:Instruction)</li>
-<li> .decl RemovedMethod(?method:Method)</li>
-</ul>
-<h2> main/android-declarations.dl </h2>
-<ul>
-<li> .decl AndroidAppComponent(?type:symbol)</li>
-<li> .decl AndroidApplicationClass(?class:ClassType)</li>
-<li> .decl AndroidApplicationListenerClass(?class:ClassType)</li>
-<li> .decl AndroidLibraryListenerType(?type:Type)</li>
-<li> .decl AndroidLibraryType(?type:Type)</li>
-<li> .decl AndroidOriginalAppComponent(?type:symbol)</li>
-<li> .decl AndroidViewType(?type:Type)</li>
-<li> .decl AppMethodOverridesAndroidLibraryMethod(?meth:Method, ?concreteMeth:Method)</li>
-<li> .decl ApplicationObjectFlowingToLibrary(?hctx:configuration.HContext, ?value:Value, ?ofType:Type)</li>
-<li> .decl ApplicationObjectFlowingToLibraryStaticType(?hctx:configuration.HContext, ?value:Value, ?possibleType:Type)</li>
-<li> .decl ForcedReachableAndroidContext(?ctx:configuration.Context, ?meth:Method)</li>
-<li> .decl FormalOfForcedReachableContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)</li>
-<li> .decl FragmentRetrievalByArg0MethodInvocation(?invo:MethodInvocation)</li>
-<li> .decl ImplicitlyInstantiatedLibraryType(?type:Type)</li>
-<li> .decl LayoutControlObjectValueFromId(?controlValue:Value, ?numId:NumConstant)</li>
-<li> .decl LibraryReachableAppListenerType(?type:Type)</li>
-<li> .decl ListenerType(?type:Type)</li>
-<li> .decl MultiDimensionalArrayTemp(?value:Value, ?invocation:MethodInvocation, ?type:Type, ?ctx:configuration.Context, ?from:Var)</li>
-<li> .decl OverridingProtectedMethodOfComponent(?meth:Method)</li>
-<li> .decl OverridingProtectedOnMethodOfLayoutControl(?meth:Method)</li>
-<li> .decl OverridingProtectedOnMethodOfReachableListener(?meth:Method)</li>
-<li> .decl ProtectedMethodOfComponent(?meth:Method)</li>
-<li> .decl ProtectedOnMethodOfLayoutControl(?meth:Method)</li>
-<li> .decl ProtectedOnMethodOfReachableListener(?meth:Method)</li>
-<li> .decl PublicMethodOfComponent(?meth:Method)</li>
-<li> .decl PublicOnMethodOfLayoutControl(?meth:Method)</li>
-<li> .decl PublicOnMethodOfReachableListener(?meth:Method)</li>
-<li> .decl ReachableApplicationObjectOfType(?hctx:configuration.HContext, ?value:Value, ?type:Type)</li>
-<li> .decl ReifiedAndroidObjectValue(?value:Value, ?type:Type)</li>
-<li> .decl ReifiedComponent(?type:Type, ?value:Value)</li>
-<li> .decl ReifiedLayoutControl(?type:Type, ?id:NumConstant, ?value:Value)</li>
-<li> .decl ReifiedLibraryObject(?type:Type, ?value:Value)</li>
-<li> .decl SensitiveLayoutControlValue(?value:Value)</li>
-<li> .decl UninitialisedArray(?hctx:configuration.HContext, ?value:Value, ?invocation:MethodInvocation, ?type:Type)</li>
-<li> .decl VarsAtInvocationRetrievingLayoutControl(?ret:Var, ?var:Var)</li>
-<li> .decl ViewRetrievalByArg0MethodInvocation(?invo:MethodInvocation)</li>
-<li> .decl WebClientType(?type:Type)</li>
-</ul>
-<h2> main/special-library.dl </h2>
-<ul>
-<li> .decl CollectionLibraryClass(?class:Type)</li>
-<li> .decl SpecialLibraryClass(?class:Type)</li>
-<li> .decl SpecialLibraryMethod(?method:Method)</li>
-<li> .decl SpecialLibraryObject(?heap:HeapAllocation)</li>
-</ul>
-<h2> main/in-out-flow.dl </h2>
-<ul>
-<li> .decl InFlowTo(?index:number, ?var:Var)</li>
-<li> .decl InFlowToReturn(?index:number, ?method:Method)</li>
-<li> .decl InOutFlowMethod(?index:number, ?method:Method)</li>
-<li> .decl IsInOutFlowMethod(?method:Method)</li>
-<li> .decl LocalVarFlow(?to:Var, ?from:Var)</li>
-<li> .decl ReturnFlowMethodInvocationParam(?param:Var, ?invo:MethodInvocation)</li>
-<li> .decl StoreFlowThroughHeap(?to:Var, from:Var)</li>
-</ul>
-<h2> main/exceptions-declarations.dl </h2>
-<ul>
-<li> .decl ExceptionHandler_Before(?before:ExceptionHandler, ?handler:ExceptionHandler)</li>
-<li> .decl ExceptionHandler_Impossible(?type:Type, ?h2:ExceptionHandler, ?insn:Instruction)</li>
-<li> .decl ExceptionHandler_InRange(?handler:ExceptionHandler, ?instruction:Instruction)</li>
-<li> .decl ExceptionHandler_SameBlock_PartialOrder(?repr:ExceptionHandler, ?handler:ExceptionHandler)</li>
-<li> .decl ExceptionHandler_SameBlock_Repr(?handler:ExceptionHandler, ?repr:ExceptionHandler)</li>
-<li> .decl ExceptionHandler_SameInsn_PartialOrder(?h1:ExceptionHandler, ?h2:ExceptionHandler, ?insn:Instruction)</li>
-<li> .decl ExceptionHandler_SameInsn_Repr(?insn:Instruction, ?repr:ExceptionHandler)</li>
-<li> .decl ExceptionHandler_TypeIsCaught(?type:Type, ?block:ExceptionHandler)</li>
-<li> .decl Instruction_Throws(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?insn:Instruction)</li>
-<li> .decl ThrowPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?method:Method)</li>
-</ul>
-<h2> main/context-sensitivity-declarations.dl </h2>
-<ul>
-<li> .decl ArrayIndexPointsTo(?hctx:configuration.HContext, ?value:Value, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
-<li> .decl CallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?method:Method)</li>
-<li> .decl HeapInterproceduralAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)</li>
-<li> .decl ImmutableContextFromContext(?ctx1:configuration.Context, ?ctx2:configuration.Context)</li>
-<li> .decl ImmutableContextFromHContext(?hctx:configuration.HContext, ?ctx:configuration.Context)</li>
-<li> .decl ImmutableHContextFromContext(?ctx:configuration.Context, ?hctx:configuration.HContext)</li>
-<li> .decl InstanceFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
-<li> .decl LoadHeapArrayIndex(?ctx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
-<li> .decl LoadHeapInstanceField(?ctx:configuration.Context, ?to:Var, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
-<li> .decl MainThread(?hctx:configuration.HContext, ?value:Value)</li>
-<li> .decl MainThreadGroup(?hctx:configuration.HContext, ?value:Value)</li>
-<li> .decl OptArgAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)</li>
-<li> .decl OptArgVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)</li>
-<li> .decl OptInterproceduralAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)</li>
-<li> .decl OptLoadArrayIndex(?to:Var, ?base:Var)</li>
-<li> .decl OptRetVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)</li>
-<li> .decl OptReturnAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)</li>
-<li> .decl OptStoreArrayIndex(?from:Var, ?base:Var)</li>
-<li> .decl Reachable(?method:Method)</li>
-<li> .decl ReachableContext(?ctx:configuration.Context, ?method:Method)</li>
-<li> .decl StaticFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field)</li>
-<li> .decl StoreHeapArrayIndex(?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)</li>
-<li> .decl StoreHeapInstanceField(?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)</li>
-<li> .decl SystemThreadGroup(?hctx:configuration.HContext, ?value:Value)</li>
-<li> .decl VarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)</li>
-<li> .decl isClinitContext(?ctx:configuration.Context)</li>
-<li> .decl isContext(?ctx:configuration.Context)</li>
-<li> .decl isHContext(?hctx:configuration.HContext)</li>
-<li> .decl isImmutableContext(?ctx:configuration.Context)</li>
-<li> .decl isImmutableHContext(?hctx:configuration.HContext)</li>
-<li> .decl isInitialContext(?ctx:configuration.Context)</li>
-<li> .decl isJVMStartupContext(?ctx:configuration.Context)</li>
-<li> .decl isJVMStartupHContext(?hctx:configuration.HContext)</li>
-</ul>
-<h2> main/string-constants.dl </h2>
-<ul>
-<li> .decl AllocationShouldBeMergedGlobally(?heaptype:Type)</li>
-<li> .decl AllocationShouldBeMergedPerClass(?heaptype:Type, ?class:Type)</li>
-<li> .decl AllocationShouldBeMergedPerMethod(?heaptype:Type, ?meth:Method)</li>
-<li> .decl AllocationShouldBeMergedPerPackage(?heaptype:Type, ?packageName:symbol)</li>
-<li> .decl AllocationsPerClassAndType(?type:Type, ?class:ClassType, ?n:number)</li>
-<li> .decl AllocationsPerMethodAndType(?type:Type, ?meth:Method, ?n:number)</li>
-<li> .decl AllocationsPerPackageAndType(?type:Type, ?packageName:symbol, ?n:number)</li>
-<li> .decl AllocationsPerType(?type:Type, ?n:number)</li>
-<li> .decl AssignContextInsensitiveHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)</li>
-<li> .decl AssignNormalHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)</li>
-<li> .decl ClassAndTypeToHeap(?heap:HeapAllocation, ?heaptype:Type, ?class:ClassType)</li>
-<li> .decl ClassAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?class:Type)</li>
-<li> .decl ClassAndTypeToRepresentative(?type:Type, ?class:Type, ?reprHeap:HeapAllocation)</li>
-<li> .decl ClassIterationTrick(?length:number)</li>
-<li> .decl ClassNameMatchingStringConstant_Type(?type:Type, ?heap:HeapAllocation)</li>
-<li> .decl ClassNameSuffix(?suffix:symbol, ?classname:ReferenceType)</li>
-<li> .decl ExceptionHeapTypeRepresentativeOrdinal(?type:Type, ?reprHeapOrd:number)</li>
-<li> .decl ExceptionType(?type:Type)</li>
-<li> .decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)</li>
-<li> .decl FieldNameMatchingStringConstant_Signature(?sig:Field, ?heap:HeapAllocation)</li>
-<li> .decl FieldNamePrefix(?prefix:symbol, ?sig:Field)</li>
-<li> .decl FieldNameSuffix(?suffix:symbol, ?sig:Field)</li>
-<li> .decl FieldOfClassMatchesString(?heap:HeapAllocation, ?type:Type)</li>
-<li> .decl HeapAllocation_ContextInsensitive(?heap:HeapAllocation)</li>
-<li> .decl HeapAllocation_Keep(?heap:HeapAllocation)</li>
-<li> .decl HeapAllocation_Merge(?heap:HeapAllocation, ?mergeHeap:HeapAllocation)</li>
-<li> .decl HeapIsMergedString(?heap:HeapAllocation)</li>
-<li> .decl HeapIsMergedStringFactory(?heap:HeapAllocation)</li>
-<li> .decl HeapRepresentative(?heap:HeapAllocation, ?heapRepr:symbol)</li>
-<li> .decl MemberPrefixIterationTrick(?length:number)</li>
-<li> .decl MemberSuffixIterationTrick(?length:number)</li>
-<li> .decl MethodAllocationMergeThreshold(?t:number)</li>
-<li> .decl MethodAndTypeToHeap(?heap:HeapAllocation, ?heapType:Type, ?method:Method)</li>
-<li> .decl MethodAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?meth:Method)</li>
-<li> .decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation)</li>
-<li> .decl MethodNameMatchingStringConstant_Signature(?sig:Method, ?heap:HeapAllocation)</li>
-<li> .decl MethodNamePrefix(?prefix:symbol, ?sig:Method)</li>
-<li> .decl MethodNameSuffix(?suffix:symbol, ?sig:Method)</li>
-<li> .decl MethodOfClassMatchesString(?heap:HeapAllocation, ?type:Type)</li>
-<li> .decl MinHeapOrdinalPerClassAndType(?minHeapOrd:number, ?type:Type, ?class:Type)</li>
-<li> .decl MinHeapOrdinalPerMethodAndType(?ord:number, ?type:Type, ?meth:Method)</li>
-<li> .decl MinHeapOrdinalPerPackageAndType(?minHeapOrd:number, ?type:Type, ?packageName:symbol)</li>
-<li> .decl MinHeapOrdinalPerType(?minHeapOrd:number, ?type:Type)</li>
-<li> .decl MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd:number, ?heap:HeapAllocation)</li>
-<li> .decl MinStringFactoryHeapOrdinalPerPackageAndType(?minHeapOrd:number, ?type:Type, packageName:symbol)</li>
-<li> .decl MinStringOrdinalForColor(?color:number, ?minHeapOrd:number)</li>
-<li> .decl MinStringOrdinalGreaterThanOtherInSameClass(?heap:HeapAllocation, ?heapGreaterOrd:number, ?type:Type)</li>
-<li> .decl MinimalSuffix(?type:Type, ?suffix:symbol)</li>
-<li> .decl MinimalSuffixLen(?type:Type, ?suffixLen:number)</li>
-<li> .decl NonTrivialStringConstant(?heap:HeapAllocation)</li>
-<li> .decl ObjectMultipleAllocated(?heap:HeapAllocation)</li>
-<li> .decl OptAssignHeapAllocation(?inmethod:Method, ?heap:HeapAllocation)</li>
-<li> .decl PackageAndTypeToHeap(?heap:HeapAllocation, ?heaptype:Type, ?packageName:symbol)</li>
-<li> .decl PackageAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?packageName:symbol)</li>
-<li> .decl PackageAndTypeToRepresentative(?type:Type, ?packageName:symbol, ?representativeHeap:HeapAllocation)</li>
-<li> .decl PackageAndTypeToStringFactoryHeap(?heap:HeapAllocation, ?type:Type, ?packageName:symbol)</li>
-<li> .decl PackageAndTypeToStringFactoryRepresentative(?type:Type, ?packageName:symbol, ?representativeHeap:HeapAllocation)</li>
-<li> .decl PreClassNameMatchingStringConstant(?heap:HeapAllocation)</li>
-<li> .decl PreClassNameMatchingStringConstantExact_Type(?type:Type, ?heap:HeapAllocation)</li>
-<li> .decl PreClassNameMatchingStringConstantInexact_Type(?type:Type, ?heap:HeapAllocation)</li>
-<li> .decl PreClassNameMatchingStringConstant_Type(?type:Type, ?heap:HeapAllocation)</li>
-<li> .decl PreFieldNameMatchingStringConstant(?heap:HeapAllocation)</li>
-<li> .decl PreFieldNameMatchingStringConstantExact_Signature(?sig:Field, ?heap:HeapAllocation)</li>
-<li> .decl PreFieldNameMatchingStringConstantInexact_Signature(?sig:Field, ?heap:HeapAllocation)</li>
-<li> .decl PreFieldNameMatchingStringConstant_Signature(?sig:Field, ?heap:HeapAllocation)</li>
-<li> .decl PreMethodNameMatchingStringConstant(?heap:HeapAllocation)</li>
-<li> .decl PreMethodNameMatchingStringConstantExact_Signature(?sig:Method, ?heap:HeapAllocation)</li>
-<li> .decl PreMethodNameMatchingStringConstantInexact_Signature(?sig:Method, ?heap:HeapAllocation)</li>
-<li> .decl PreMethodNameMatchingStringConstant_Signature(?sig:Method, ?heap:HeapAllocation)</li>
-<li> .decl ReflectionStringConstant(?heap:HeapAllocation)</li>
-<li> .decl ReflectionSubstringObject(?heap:HeapAllocation)</li>
-<li> .decl RelevantSuffixPosition(?typeName: symbol, ?pos:number)</li>
-<li> .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)</li>
-<li> .decl StringColorForHeap(?heap:HeapAllocation, ?color:number)</li>
-<li> .decl StringColorGreaterThan(?num:number, ?heap:HeapAllocation)</li>
-<li> .decl StringFactoryHeap(?heap:HeapAllocation)</li>
-<li> .decl StringFactoryType(?type:Type)</li>
-<li> .decl StringFactoryVar(?var:Var)</li>
-<li> .decl StringGreaterThanOtherInSameClass(?heap1:HeapAllocation, ?heap2:HeapAllocation, ?type:Type)</li>
-<li> .decl StringImmediatelyGreaterThanOtherInSomeClass(?heapGreater:HeapAllocation, ?heap:HeapAllocation)</li>
-<li> .decl StringImmediatelyLessThanOtherInClass(?heap:HeapAllocation, ?type:Type, ?heapGreater:HeapAllocation)</li>
-<li> .decl StringRepresentativeForColor(?color:number, ?heap:HeapAllocation)</li>
-<li> .decl Suffix(?type:Type, ?suffix:symbol, ?suffixLen:number)</li>
-<li> .decl TypeToHeap(?heap:HeapAllocation, ?heaptype:Type)</li>
-<li> .decl TypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type)</li>
-<li> .decl TypeToRepresentative(?type:Type, ?representativeHeap:HeapAllocation)</li>
-<li> .decl Type_DeclaresReferenceField(?type:Type)</li>
-<li> .decl Type_HasNoReferenceField(?type:Type)</li>
-<li> .decl _StringIterationTrick(?pos:number)</li>
-<li> .decl string_upper(s1:symbol, s2:symbol)</li>
-</ul>
-<h2> main/exceptions.dl </h2>
-<ul>
-<li> .decl ProxyNullInvokeResult(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context)</li>
-<li> .decl isProxyCCE(?value:Value)</li>
-<li> .decl isProxyNPE(?value:Value)</li>
-<li> .decl isProxyUTE(?value:Value)</li>
-</ul>
-<h2> main/main.dl </h2>
-<ul>
-<li> .decl FakeInvocation_RegisterFinalize(?value:Value, ?invo:MethodInvocation)</li>
-<li> .decl FakeInvocation_RegisterFinalize0(?heap:HeapAllocation, ?invo:MethodInvocation)</li>
-<li> .decl NotSpecialObject(?value:Value)</li>
-<li> .decl Value_DeclaringType(?value:Value, ?type:Type)</li>
-<li> .decl Value_Null(?null:Value)</li>
-<li> .decl Value_Num(?value:Value, ?const:NumConstant)</li>
-<li> .decl Value_Type(?value:Value, ?type:Type)</li>
-<li> .decl Value_isHeap(?value:Value)</li>
-<li> .decl Value_isMock(?value:Value)</li>
-<li> .decl Value_isNonHeap(?value:Value)</li>
-<li> .decl isValue(?value:Value)</li>
-</ul>
-<h2> main/class-initialization-declarations.dl </h2>
-<ul>
-<li> .decl ClassInitializer(?type:Type, ?method:Method)</li>
-<li> .decl InitializedClass(?classOrInterface:Type)</li>
-</ul>
-<h2> main/native.dl </h2>
-<ul>
-<li> .decl LoadFromReference(?ctx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
-<li> .decl LoadFromReferenceArgs(?base:Var, ?to:Var)</li>
-<li> .decl NativeMethodReturningValue(?m:Method, ?t:Type, ?return:Var, ?v:Value)</li>
-<li> .decl ReachableNativeMethodInvocation(?ctx:configuration.Context, ?invo:MethodInvocation, ?nativeMethod:Method)</li>
-<li> .decl StoreIntoWeakReference(?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)</li>
-<li> .decl StoreIntoWeakReferenceArgs(?from:Var, ?base:Var)</li>
-<li> .decl _NativeMethodInvocation(?invo:MethodInvocation, ?nativeMethod:Method)</li>
-</ul>
-<h2> main/implicit-reachable-declarations.dl </h2>
-<ul>
-<li> .decl ApplicationEntryPoint(?meth:Method)</li>
-<li> .decl ImplicitReachable(?sig:Method)</li>
-</ul>
-<h2> main/string-concat.dl </h2>
-<ul>
-<li> .decl ReflectionStringConstantFlowsIntoStringFactory(?hctx:configuration.HContext, ?value:Value, ?factoryHctx:configuration.HContext, ?factoryValue:Value)</li>
-<li> .decl ReflectionStringConstantVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)</li>
-<li> .decl StringFactoryVarPointsTo(?factoryHctx:configuration.HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)</li>
-<li> .decl VarAssignedFromStringFactoryVar(?ret:Var, ?base:Var)</li>
-<li> .decl VarAssignedToStringFactoryVar(?param:Var, ?base:Var)</li>
-<li> .decl VarFlowsFromStringFactory(?ctx:configuration.Context, ?var:Var, ?factoryHctx:configuration.HContext, ?factoryValue:Value)</li>
-<li> .decl VarFlowsIntoStringFactory(?factoryHctx:configuration.HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)</li>
-<li> .decl VarOfReflectionInterest(?ctx:configuration.Context, ?var:Var)</li>
-</ul>
-<h2> main/package-heuristic.dl </h2>
-<ul>
-<li> .decl ClassNameIndexes(?pos:number, ?type:ClassType)</li>
-<li> .decl Class_PackageHack(?type:ClassType, ?packageName:symbol)</li>
-<li> .decl DotsInClassName(?type:ClassType, ?pos:number)</li>
-<li> .decl LastDot(?type:ClassType, ?pos:number)</li>
-<li> .decl NotLastDot(?pos:number, ?type:ClassType)</li>
-<li> .decl NotSecondLastDot(?pos:number, ?type:ClassType)</li>
-<li> .decl SecondLastDot(?type:ClassType, ?pos:number)</li>
-</ul>
-<h2> main/reflection/dynamic-proxies.dl </h2>
-<ul>
-<li> .decl ArgArrayAndActualArg(?argsArrValue:Value, ?methSig:Method, ?actual:Var)</li>
-<li> .decl ArgArrayOfProxyMethod(?meth:Method, ?invo:MethodInvocation, ?value:Value)</li>
-<li> .decl ArrayContentsPointToInterface(?iface:ClassType, ?hctx:configuration.HContext, ?arrayValue:Value)</li>
-<li> .decl BoxAllocationOfPrimitiveFormal(?formal:Var, ?value:Value)</li>
-<li> .decl CallToMethodOfProxyObject(?value:Value, ?ctx:configuration.Context, ?invo:MethodInvocation)</li>
-<li> .decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)</li>
-<li> .decl MethodOfInterface(?meth:Method, ?iface:InterfaceType)</li>
-<li> .decl PrimitiveFormalOfInterface(?meth:Method, ?formal:Var, ?formalType:PrimitiveType)</li>
-<li> .decl PrimitiveType_Boxed(?type:Type, ?boxedType:Type)</li>
-<li> .decl ProxyCallArgArray(?invo:MethodInvocation, ?methSig:Method, ?argsArrValue:Value)</li>
-<li> .decl ProxyCallGraphEdge(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerInvokeMeth:Method)</li>
-<li> .decl ProxyClass(?class:ClassType)</li>
-<li> .decl ProxyClassInstance(?iface:InterfaceType, ?invo:MethodInvocation, ?value:Value)</li>
-<li> .decl ProxyClassOfInterface(?iface:InterfaceType, ?class:ClassType)</li>
-<li> .decl ProxyInvokeResult(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerReturnVar:Var)</li>
-<li> .decl ProxyObject_Handler(?handlerObj:Value, ?value:Value)</li>
-<li> .decl ProxyObject_HandlerHctx(?hctxHandler:configuration.HContext, ?value:Value)</li>
-<li> .decl ProxyObject_Interface(?value:Value, ?iface:InterfaceType)</li>
-<li> .decl ProxyObject_Invocation(?value:Value, ?invo:MethodInvocation)</li>
-<li> .decl SpecialMethodFromObject(?method:Method, ?objMethod:Method)</li>
-<li> .decl java_lang_reflect_Proxy_getProxyClass(?invo:MethodInvocation, ?ret:Var, ?interfaces:Var)</li>
-<li> .decl java_lang_reflect_Proxy_newProxyInstance(?invo:MethodInvocation, ?ret:Var, ?handler:Var, ?interfaces:Var)</li>
-</ul>
-<h2> main/reflection/classloading.dl </h2>
-<ul>
-<li> .decl DalvikMethodInvocation(?var:Var, ?m:Method, ?ctx:configuration.Context, ?hctx:configuration.HContext)</li>
-</ul>
-<h2> main/reflection/light-reflection-glue.dl </h2>
-<ul>
-<li> .decl ReflectiveMethodCall(?m:Method, ?callerCtx:configuration.Context, ?calleeCtx:configuration.Context, ?this:Var, ?args:Var, ?invocation:MethodInvocation)</li>
-<li> .decl ReflectiveMethodCall_Candidate(?methodVar:Var, ?methName:symbol, ?callerCtx:configuration.Context, ?type:Type)</li>
-<li> .decl java_lang_Class_getConstructor(?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getMethod(?to:Var, ?param:Var, ?from:Var)</li>
-<li> .decl java_lang_reflect_Constructor_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_reflect_Method_invoke(?invocation:MethodInvocation, ?methodVar:Var)</li>
-</ul>
-<h2> main/reflection/java.lang.reflect.Method.dl </h2>
-<ul>
-<li> .decl ReflectiveActualParams(?invocation:MethodInvocation, ?argsParam:Var)</li>
-<li> .decl ReflectiveAssignReturnValue(?invocation:MethodInvocation, ?var:Var)</li>
-<li> .decl ReflectiveBaseVar(?invocation:MethodInvocation, ?base:Var)</li>
-<li> .decl ReflectiveMethodInvocation(?ctx:configuration.Context, ?invocation:MethodInvocation, ?signature:Method)</li>
-</ul>
-<h2> main/reflection/rules.dl </h2>
-<ul>
-<li> .decl BackwardHighConfidenceReflectiveAssignClassConstant(?invocation:MethodInvocation, ?type:Type)</li>
-<li> .decl BackwardHighConfidenceReflectiveAssignFieldConstant(?to:Var, ?signature:Field)</li>
-<li> .decl BackwardHighConfidenceReflectiveAssignMethodConstant(?to:Var, ?signature:Method)</li>
-<li> .decl BackwardReflectiveAssignClassConstant(?invocation:MethodInvocation, ?type:Type)</li>
-<li> .decl BackwardReflectiveAssignFieldConstant(?to:Var, ?signature:Field)</li>
-<li> .decl BackwardReflectiveAssignMethodConstant(?to:Var, ?signature:Method)</li>
-<li> .decl ClassSubtype(?subType:ClassType, ?type:ClassType)</li>
-<li> .decl FairlyInformativeFieldName(?constant:Value)</li>
-<li> .decl FairlyInformativeMethodName(?constant:Value)</li>
-<li> .decl InferredTypesPrecisionThreshold(?t:number)</li>
-<li> .decl InvokeArgLoadArrayIndex(?calleeCtx:configuration.Context, ?to:Var, ?callerCtx:configuration.Context, ?base:Var)</li>
-<li> .decl LoadReflectiveValueArrayIndex(?calleeCtx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
-<li> .decl MarkerReflectiveObject(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl NumberOfClassSubtypes(?type:ClassType, ?count:number)</li>
-<li> .decl NumberOfTypesMatchingFieldName(?constant:HeapAllocation, ?n:number)</li>
-<li> .decl NumberOfTypesMatchingMethod(?constant:HeapAllocation, ?n:number)</li>
-<li> .decl Opt2AssignCast(?inmethod:Method, ?supertype:Type, ?to:Var, ?from:Var)</li>
-<li> .decl Opt2SpecialGetValueCast(?type:Type, ?getFieldInvocation:MethodInvocation)</li>
-<li> .decl Opt2SpecialInvokeValueCast(?type:Type, ?getMethodInvocation:MethodInvocation)</li>
-<li> .decl OptFieldObjectFromGet(?fieldValue:Value, ?return:Var)</li>
-<li> .decl OptFieldType(?type:Type, ?signature:Field, ?declaringClassType:Type)</li>
-<li> .decl OptForNameFromGetConstructors(?forNameInvocation:MethodInvocation, ?ctx:configuration.Context, ?to:Var)</li>
-<li> .decl OptGetFieldsClass(?type:Type, ?getFieldsInvocation:MethodInvocation)</li>
-<li> .decl OptGetMethodsClass(?type:Type, ?getMethodsInvocation:MethodInvocation)</li>
-<li> .decl OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation:MethodInvocation, ?ctx:configuration.Context, ?invocation:MethodInvocation)</li>
-<li> .decl OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation:MethodInvocation, ?ctx:configuration.Context, ?invocation:MethodInvocation)</li>
-<li> .decl OptMarkerReflectiveObject(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl OptMethodObjectFromInvoke(?methodValue:Value, ?return:Var)</li>
-<li> .decl OptSpecialGetValueCast(?type:Type, ?getFieldsInvocation:MethodInvocation)</li>
-<li> .decl OptSpecialInvokeValueCast(?type:Type, ?getMethodsInvocation:MethodInvocation)</li>
-<li> .decl ReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)</li>
-<li> .decl ReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)</li>
-<li> .decl ReflectiveAssignMethodConstant(?ctx:configuration.Context, ?to:Var, ?signature:Method)</li>
-<li> .decl ReflectiveCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?callee:Method)</li>
-<li> .decl ReflectiveHeapInterproceduralAssign(?sig:Field, ?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)</li>
-<li> .decl ReflectiveLoadHeapInstanceField(?toCtx:configuration.Context, ?to:Var, ?signature:Field, ?basehctx:configuration.HContext, ?base:Value)</li>
-<li> .decl ReflectiveReachable(?m:Method)</li>
-<li> .decl ReflectiveStaticMethodInvocation(?ctx:configuration.Context, ?invocation:MethodInvocation, ?signature:Method)</li>
-<li> .decl ReflectiveStoreHeapInstanceField(?signature:Field, ?basehctx:configuration.HContext, ?basevalue:Value, ?fromCtx:configuration.Context, ?from:Var)</li>
-<li> .decl ReflectiveVirtualMethodInvocation(?signature:Method, ?invocation:MethodInvocation, ?ctx:configuration.Context, ?base:Var)</li>
-<li> .decl SpecialMissingForNameValue(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl SpecialMissingForNameValueFlowsToGetField(?forNameInvocation:MethodInvocation, ?type:Type, ?constant:Value, ?inMethod:Method)</li>
-<li> .decl SpecialMissingForNameValueFlowsToGetMethod(?forNameInvocation:MethodInvocation, ?type:Type, ?constant:Value, ?inMethod:Method)</li>
-<li> .decl SpecialMissingGetConstructorValue(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl SpecialMissingGetFieldValue(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl SpecialMissingGetFieldsValue(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl SpecialMissingGetMethodValue(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl SpecialMissingGetMethodsValue(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl SpecialMissingGetValueFromGetField(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl SpecialMissingGetValueFromGetFields(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl SpecialMissingInvokeValueFromGetMethod(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl SpecialMissingInvokeValueFromGetMethods(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl SpecialMissingNewInstanceValue(?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation:MethodInvocation, ?type:Type, ?inMethod:Method)</li>
-<li> .decl TypeHasHeap(?type:Type)</li>
-<li> .decl TypeMatchingFieldName(?type:Type, ?constant:HeapAllocation)</li>
-<li> .decl TypeMatchingMethod(?type:Type, ?constant:HeapAllocation)</li>
-<li> .decl UnknownReflectiveObject(?type:Type, ?invocation:MethodInvocation, ?value:Value)</li>
-<li> .decl _OptMethodWithVarCast(?subtype:Type, ?inMethod:Method, ?from:Var)</li>
-</ul>
-<h2> main/reflection/java.lang.Class.dl </h2>
-<ul>
-<li> .decl AssignReflectiveAllocation(?invocation:MethodInvocation, ?type:Type, ?ctx:configuration.Context, ?to:Var)</li>
-<li> .decl FillArray_Constructors(?hctx:configuration.HContext, ?arrayValue:Value, ?classValue:Value)</li>
-<li> .decl FillArray_Fields(?hctx:configuration.HContext, ?arrayValue:Value, ?type:Type)</li>
-<li> .decl FillArray_Interfaces(?hctx:configuration.HContext, ?arrayValue:Value, ?type:Type)</li>
-<li> .decl FillArray_Methods(?hctx:configuration.HContext, ?arrayValue:Value, ?type:Type)</li>
-<li> .decl FillArray_PublicConstructors(?hctx:configuration.HContext, ?arrayValue:Value, ?classValue:Value)</li>
-<li> .decl FillArray_PublicFields(?hctx:configuration.HContext, ?arrayValue:Value, ?type:Type)</li>
-<li> .decl FillArray_PublicMethods(?hctx:configuration.HContext, ?arrayValue:Value, ?type:Type)</li>
-<li> .decl ForwardHighConfidenceReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)</li>
-<li> .decl ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)</li>
-<li> .decl ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx:configuration.Context, ?to:Var, ?signature:Method)</li>
-<li> .decl ForwardReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)</li>
-<li> .decl ForwardReflectiveAssignClassConstantString(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type, ?constantHeap:Value)</li>
-<li> .decl ForwardReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)</li>
-<li> .decl ForwardReflectiveAssignFieldConstantString(?ctx:configuration.Context, ?to:Var, ?signature:Field, ?constantHeap:Value)</li>
-<li> .decl ForwardReflectiveAssignMethodConstant(?ctx:configuration.Context, ?to:Var, ?signature:Method)</li>
-<li> .decl ForwardReflectiveAssignMethodConstantString(?ctx:configuration.Context, ?to:Var, ?signature:Method, ?constantHeap:Value)</li>
-<li> .decl FromGetSuperClassType(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?type:Type, ?to:Var)</li>
-<li> .decl HighConfidenceAssign(?value:Value, ?inmethod:Method)</li>
-<li> .decl NumberOfClassesMatchingConstant(?constant:StringConstant, ?n:number)</li>
-<li> .decl NumberOfFieldsMatchingConstant(?constant:StringConstant, ?n:number)</li>
-<li> .decl NumberOfMethodsMatchingConstant(?constant:StringConstant, ?n:number)</li>
-<li> .decl OptClassToConstructor(?constructor:Method, ?classValue:Value)</li>
-<li> .decl OptGetFieldFromClass(?to:Var, ?ctx:configuration.Context, ?param:Var, ?type:Type)</li>
-<li> .decl OptGetMethodFromClass(?to:Var, ?ctx:configuration.Context, ?param:Var, ?type:Type)</li>
-<li> .decl OptTypeContainsPublicField(?type:Type, ?signature:Field)</li>
-<li> .decl OptTypeContainsPublicMethod(?type:Type, ?signature:Method)</li>
-<li> .decl ReflectiveSpecialMethodInvocation(?invocation:MethodInvocation, ?constructor:Method, ?ctx:configuration.Context, ?to:Var)</li>
-</ul>
-<h2> main/reflection/java.lang.reflect.Field.dl </h2>
-<ul>
-<li> .decl ReflectiveLoadField(?invocation:MethodInvocation, ?ctx:configuration.Context, ?to:Var, ?signature:Field)</li>
-<li> .decl ReflectiveLoadInstanceField(?ctx1:configuration.Context, ?to:Var, ?signature:Field, ?ctx2:configuration.Context, ?base:Var)</li>
-<li> .decl ReflectiveLoadStaticField(?ctx:configuration.Context, ?to:Var, ?signature:Field)</li>
-<li> .decl ReflectiveStoreField(?invocation:MethodInvocation, ?signature:Field, ?ctx:configuration.Context, ?from:Var)</li>
-<li> .decl ReflectiveStoreInstanceField(?ctx1:configuration.Context, ?from:Var, ?signature:Field, ?ctx2:configuration.Context, ?base:Var)</li>
-<li> .decl ReflectiveStoreStaticField(?signature:Field, ?ctx:configuration.Context, ?from:Var)</li>
-</ul>
-<h2> main/reflection/declarations.dl </h2>
-<ul>
-<li> .decl ReflectiveAllocation(?instruction:Instruction, ?type:ReferenceType, ?value:Value)</li>
-<li> .decl ReflectiveValue(?value:Value)</li>
-<li> .decl ReifiedClass(?type:symbol, ?value:Value)</li>
-<li> .decl ReifiedConstructor(?constructor:Method, ?value:Value)</li>
-<li> .decl ReifiedField(?field:Field, ?value:Value)</li>
-<li> .decl ReifiedMethod(?method:Method, ?value:Value)</li>
-<li> .decl StringPrecisionThreshold(?t:number)</li>
-<li> .decl java_lang_ClassLoader_getResource(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_forName(?invocation:MethodInvocation, ?inmethod:Method)</li>
-<li> .decl java_lang_Class_getCanonicalName(?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getClassLoader(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getComponentType(?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getConstructor(?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getConstructors(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getDeclaredConstructor(?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getDeclaredConstructors(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getDeclaredField(?to:Var, ?param:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getDeclaredFields(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getDeclaredMethod(?to:Var, ?param:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getDeclaredMethods(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getField(?to:Var, ?param:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getFields(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getInterfaces(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getMethod(?to:Var, ?param:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getMethods(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getName(?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_getPrimitiveClass(?invocation:MethodInvocation, ?to:Var, ?name:Var)</li>
-<li> .decl java_lang_Class_getSuperclass(?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Class_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_Object_getClass(?to:Var, ?from:Var)</li>
-<li> .decl java_lang_reflect_Array_newInstance(?invocation:MethodInvocation, ?to:Var, ?param:Var)</li>
-<li> .decl java_lang_reflect_Constructor_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
-<li> .decl java_lang_reflect_Field_get(?invocation:MethodInvocation, ?to:Var, ?field:Var)</li>
-<li> .decl java_lang_reflect_Field_get_base(?invocation:MethodInvocation, ?base:Var)</li>
-<li> .decl java_lang_reflect_Field_set(?invocation:MethodInvocation, ?from:Var, ?field:Var)</li>
-<li> .decl java_lang_reflect_Field_set_base(?invocation:MethodInvocation, ?base:Var)</li>
-<li> .decl java_lang_reflect_Method_invoke(?invocation:MethodInvocation, ?method:Var)</li>
-</ul>
-<h2> main/reflection/light-Class-forName.dl </h2>
-<ul>
-<li> .decl ReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)</li>
-<li> .decl ReifiedClass(?type:symbol, ?value:Value)</li>
-<li> .decl java_lang_Class_forName(?invocation:MethodInvocation, ?inmethod:Method)</li>
-</ul>
-<h2> facts/import-entities.dl </h2>
-<ul>
-<li> .decl _ActualParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
-<li> .decl _ApplicationClass(?type:symbol)</li>
-<li> .decl _ArrayType(?arrayType:symbol)</li>
-<li> .decl _AssignReturnValue(?invocation:symbol, ?to:symbol)</li>
-<li> .decl _BootstrapParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
-<li> .decl _ClassModifier(?class:symbol, ?modifier:symbol)</li>
-<li> .decl _ClassType(?class:symbol)</li>
-<li> .decl _ComponentType(?arrayType:symbol, ?componentType:symbol)</li>
-<li> .decl _DirectSuperclass(?class:symbol, ?superclass:symbol)</li>
-<li> .decl _DirectSuperinterface(?class:symbol, ?interface:symbol)</li>
-<li> .decl _ExceptionHandler_Previous(?handler:symbol, ?previous:symbol)</li>
-<li> .decl _Field_Modifier(?modifier:symbol, ?field:symbol)</li>
-<li> .decl _FormalParam(?index:number, ?method:symbol, ?var:symbol)</li>
-<li> .decl _InterfaceType(?interface:symbol)</li>
-<li> .decl _Method_DeclaresException(?exceptionType:symbol, ?method:symbol)</li>
-<li> .decl _Method_Modifier(?mod:symbol, ?method:symbol)</li>
-<li> .decl _NativeReturnVar(?var:symbol, ?method:symbol)</li>
-<li> .decl _Properties(?path:symbol, ?key:symbol, ?value:symbol)</li>
-<li> .decl _ThisVar(?method:symbol, ?var:symbol)</li>
-<li> .decl _Var_DeclaringMethod(?var:symbol, ?method:symbol)</li>
-<li> .decl _Var_Type(?var:symbol, ?type:symbol)</li>
-</ul>
-<h2> facts/import-facts.dl </h2>
-<ul>
-<li> .decl PhantomBasedMethod(?m:Method)</li>
-<li> .decl PhantomMethod(?m:Method)</li>
-<li> .decl PhantomType(?t:Type)</li>
-<li> .decl String_toRaw(?id:symbol, ?rawId:symbol)</li>
-<li> .decl _ArrayInsnIndex(?instruction:symbol, ?index:symbol)</li>
-<li> .decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)</li>
-<li> .decl _AssignCast(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)</li>
-<li> .decl _AssignCastNull(?instruction:symbol, ?index:number, ?to:symbol, ?type:symbol, ?method:symbol)</li>
-<li> .decl _AssignCastNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)</li>
-<li> .decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)</li>
-<li> .decl _AssignInstanceOf(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)</li>
-<li> .decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inmethod:symbol)</li>
-<li> .decl _AssignNull(?instruction:symbol, ?index:number, ?to:symbol, ?method:symbol)</li>
-<li> .decl _AssignNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)</li>
-<li> .decl _AssignOperFrom(?instruction:symbol, ?from:symbol)</li>
-<li> .decl _AssignPhantomInvoke(?instruction:symbol, ?index:number, ?method:symbol)</li>
-<li> .decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)</li>
-<li> .decl _BreakpointStmt(?instruction:symbol, ?index:number, ?method:symbol)</li>
-<li> .decl _ClassHeap(?id:symbol, ?instanceType:symbol)</li>
-<li> .decl _DynamicMethodInvocation(?instruction:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?method:symbol)</li>
-<li> .decl _EmptyArray(?id:symbol)</li>
-<li> .decl _EnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
-<li> .decl _ExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number)</li>
-<li> .decl _ExitMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
-<li> .decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol)</li>
-<li> .decl _Goto(?instruction:symbol, ?index:number, ?to:number, ?method:symbol)</li>
-<li> .decl _If(?instruction:symbol, ?index:number, ?to:number, ?method:symbol)</li>
-<li> .decl _IfVar(?instruction:symbol, ?var:symbol)</li>
-<li> .decl _LoadArrayIndex(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?method:symbol)</li>
-<li> .decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)</li>
-<li> .decl _LoadStaticField(?instruction:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)</li>
-<li> .decl _LookupSwitch(?instruction:symbol, ?index:number, ?key:symbol, ?method:symbol)</li>
-<li> .decl _LookupSwitch_DefaultTarget(?instruction:symbol, ?target:number)</li>
-<li> .decl _LookupSwitch_Target(?instruction:symbol, ?value:number, ?target:number)</li>
-<li> .decl _MainClass(?class:symbol)</li>
-<li> .decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol, ?arity:number)</li>
-<li> .decl _MethodHandleConstant(?id:symbol, ?method:symbol)</li>
-<li> .decl _MethodInvocation_Line(?instruction:symbol, line:number)</li>
-<li> .decl _MethodTypeConstant(?id:symbol)</li>
-<li> .decl _NormalHeap(?id:symbol, ?type:symbol)</li>
-<li> .decl _Return(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
-<li> .decl _ReturnVoid(?instruction:symbol, ?index:number, ?method:symbol)</li>
-<li> .decl _SpecialMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)</li>
-<li> .decl _StaticMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?method:symbol)</li>
-<li> .decl _StoreArrayIndex(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?method:symbol)</li>
-<li> .decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)</li>
-<li> .decl _StoreStaticField(?instruction:symbol, ?index:number, ?from:symbol, ?signature:symbol, ?method:symbol)</li>
-<li> .decl _StringConstant(?id:symbol)</li>
-<li> .decl _StringRaw(?id:symbol, ?rawId:symbol)</li>
-<li> .decl _TableSwitch(?instruction:symbol, ?index:number, ?key:symbol, ?method:symbol)</li>
-<li> .decl _TableSwitch_DefaultTarget(?instruction:symbol, ?target:number)</li>
-<li> .decl _TableSwitch_Target(?instruction:symbol, ?value:number, ?target:number)</li>
-<li> .decl _Throw(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
-<li> .decl _ThrowNull(?instruction:symbol, ?index:number, ?method:symbol)</li>
-<li> .decl _UnsupportedInstruction(?instruction:symbol, ?index:number, ?method:symbol)</li>
-<li> .decl _VirtualMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)</li>
-</ul>
-<h2> facts/import-dynamic-facts.dl </h2>
-<ul>
-<li> .decl DynamicArrayIndexPointsTo(?ctx:DynamicContext, ?heap:HeapAllocation, ?baseCtx:DynamicContext, ?baseHeap:HeapAllocation)</li>
-<li> .decl DynamicCallGraphEdge(?ctxTo:DynamicContext, ?toMethod:Method, ?invocation:Instruction, ?ctxFrom:DynamicContext, ?fromMethod:Method)</li>
-<li> .decl DynamicContextHeap1(?heap:HeapAllocation, ?ctx:DynamicContext)</li>
-<li> .decl DynamicContextHeap2(?heap:HeapAllocation, ?ctx:DynamicContext)</li>
-<li> .decl DynamicHeapAllocation(?representation:symbol, ?heap:HeapAllocation)</li>
-<li> .decl DynamicHeapObject(?representation:symbol, ?heap:HeapAllocation, ?dynamicContext:DynamicContext)</li>
-<li> .decl DynamicInstanceFieldPointsTo(?fld:Field, ?ctx:DynamicContext, ?heap:HeapAllocation, ?baseCtx:DynamicContext, ?baseHeap:HeapAllocation)</li>
-<li> .decl DynamicReachableMethod(?method:Method)</li>
-<li> .decl DynamicStaticFieldPointsTo(?fld:Field, ?dynamicContext:DynamicContext, ?heap:HeapAllocation)</li>
-<li> .decl DynamicVarPointsTo(?hctx: mainAnalysis.configuration.HContext, ?heap: HeapAllocation, ?ctx: DynamicContext, ?var: Var)</li>
-<li> .decl NotSingletonDynamicHeapAllocation(?param4:symbol)</li>
-<li> .decl ReconstructedUnmatchedDynamicHeapAllocation(?representation:symbol, ?heap:HeapAllocation)</li>
-<li> .decl UnmatchedDynamicNormalHeapAllocation(?type:Type, ?representation:symbol, ?linenumber:number, ?inMethod:Method)</li>
-<li> .decl UnmatchedDynamicReachableMethod(?param:symbol)</li>
-<li> .decl UnmatchedStaticNormalHeapAllocation(?method:Method, ?lineNumber:number, ?type:Type)</li>
-<li> .decl _DynamicArrayIndexPointsTo(?param1:symbol, ?param2:symbol)</li>
-<li> .decl _DynamicCallGraphEdge(?param1:symbol, ?param2:number, ?param3:symbol, ?param4:symbol, ?param5:symbol)</li>
-<li> .decl _DynamicContext(?representation:symbol, ?heap1rep:symbol, ?heap2rep:symbol, ?site1inMeth:symbol, ?site1line:number, ?site2inMeth:symbol, ?site2line:number)</li>
-<li> .decl _DynamicInstanceFieldPointsTo(?param1:symbol, ?param2:symbol, ?param3:symbol, ?param4:symbol)</li>
-<li> .decl _DynamicNormalHeapAllocation(?param1:number, ?param2:symbol, ?param3:symbol, ?param4:symbol)</li>
-<li> .decl _DynamicNormalHeapObject(?param1:symbol, ?param2:symbol, ?param3:symbol)</li>
-<li> .decl _DynamicReachableMethod(?param1:symbol)</li>
-<li> .decl _DynamicStaticFieldPointsTo(?param1:symbol, ?param2:symbol, ?param3:symbol)</li>
-<li> .decl _DynamicVarPointsTo(?hctx: symbol, ?heap: symbol, ?ctx: symbol, ?var: symbol)</li>
-<li> .decl _HeapAllocationInformation(?lineNumber:number, ?method:Method, ?type:Type, ?heap:HeapAllocation)</li>
-<li> .decl _InvocationMethodAndLine(?lineNumber:number, ?name:symbol, ?invocation:Instruction, ?fromMethod:Method)</li>
-<li> .decl _MatchedHeapAllocation0(?representation:symbol, ?heap:HeapAllocation)</li>
-<li> .decl _MatchedHeapAllocation1(?representation:symbol, ?heap:HeapAllocation)</li>
-<li> .decl _MatchedHeapAllocation2(?representation:symbol, ?heap:HeapAllocation)</li>
-<li> .decl _UnmatchedDynamicNormalHeapAllocation1(?inMethod:Method, ?type:Type, ?representation:symbol)</li>
-<li> .decl isDynamicContext(?ctx:DynamicContext)</li>
+<li> .decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method)</li>
+<li> .decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method)</li>
+<li> .decl AssignLocal(?from:Var, ?to:Var, ?inmethod:Method)</li>
+<li> .decl AssignNull(?to:Var, ?inmethod:Method)</li>
+<li> .decl LoadArrayIndex(?base:Var, ?to:Var, ?inmethod:Method)</li>
+<li> .decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method)</li>
+<li> .decl LoadStaticField(?sig:Field, ?to:Var, ?inmethod:Method)</li>
+<li> .decl ReturnVar(?var:Var, ?method:Method)</li>
+<li> .decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)</li>
+<li> .decl StoreArrayIndex(?from:Var, ?base:Var, ?inmethod:Method)</li>
+<li> .decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inmethod:Method)</li>
+<li> .decl StoreStaticField(?from:Var, ?signature:Field, ?inmethod:Method)</li>
+<li> .decl Throw(?insn:Throw_Insn, ?var:Var)</li>
+<li> .decl VirtualMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)</li>
 </ul>
 <h2> facts/flow-sensitive-schema.dl </h2>
 <ul>
@@ -1892,30 +1091,861 @@
 <li> .decl isVar(v:Var)</li>
 <li> .decl isVirtualMethodInvocation_Insn(?insn:VirtualMethodInvocation_Insn)</li>
 </ul>
+<h2> facts/import-dynamic-facts.dl </h2>
+<ul>
+<li> .decl DynamicArrayIndexPointsTo(?ctx:DynamicContext, ?heap:HeapAllocation, ?baseCtx:DynamicContext, ?baseHeap:HeapAllocation)</li>
+<li> .decl DynamicCallGraphEdge(?ctxTo:DynamicContext, ?toMethod:Method, ?invocation:Instruction, ?ctxFrom:DynamicContext, ?fromMethod:Method)</li>
+<li> .decl DynamicContextHeap1(?heap:HeapAllocation, ?ctx:DynamicContext)</li>
+<li> .decl DynamicContextHeap2(?heap:HeapAllocation, ?ctx:DynamicContext)</li>
+<li> .decl DynamicHeapAllocation(?representation:symbol, ?heap:HeapAllocation)</li>
+<li> .decl DynamicHeapObject(?representation:symbol, ?heap:HeapAllocation, ?dynamicContext:DynamicContext)</li>
+<li> .decl DynamicInstanceFieldPointsTo(?fld:Field, ?ctx:DynamicContext, ?heap:HeapAllocation, ?baseCtx:DynamicContext, ?baseHeap:HeapAllocation)</li>
+<li> .decl DynamicReachableMethod(?method:Method)</li>
+<li> .decl DynamicStaticFieldPointsTo(?fld:Field, ?dynamicContext:DynamicContext, ?heap:HeapAllocation)</li>
+<li> .decl DynamicVarPointsTo(?hctx: mainAnalysis.configuration.HContext, ?heap: HeapAllocation, ?ctx: DynamicContext, ?var: Var)</li>
+<li> .decl NotSingletonDynamicHeapAllocation(?param4:symbol)</li>
+<li> .decl ReconstructedUnmatchedDynamicHeapAllocation(?representation:symbol, ?heap:HeapAllocation)</li>
+<li> .decl UnmatchedDynamicNormalHeapAllocation(?type:Type, ?representation:symbol, ?linenumber:number, ?inMethod:Method)</li>
+<li> .decl UnmatchedDynamicReachableMethod(?param:symbol)</li>
+<li> .decl UnmatchedStaticNormalHeapAllocation(?method:Method, ?lineNumber:number, ?type:Type)</li>
+<li> .decl _DynamicArrayIndexPointsTo(?param1:symbol, ?param2:symbol)</li>
+<li> .decl _DynamicCallGraphEdge(?param1:symbol, ?param2:number, ?param3:symbol, ?param4:symbol, ?param5:symbol)</li>
+<li> .decl _DynamicContext(?representation:symbol, ?heap1rep:symbol, ?heap2rep:symbol, ?site1inMeth:symbol, ?site1line:number, ?site2inMeth:symbol, ?site2line:number)</li>
+<li> .decl _DynamicInstanceFieldPointsTo(?param1:symbol, ?param2:symbol, ?param3:symbol, ?param4:symbol)</li>
+<li> .decl _DynamicNormalHeapAllocation(?param1:number, ?param2:symbol, ?param3:symbol, ?param4:symbol)</li>
+<li> .decl _DynamicNormalHeapObject(?param1:symbol, ?param2:symbol, ?param3:symbol)</li>
+<li> .decl _DynamicReachableMethod(?param1:symbol)</li>
+<li> .decl _DynamicStaticFieldPointsTo(?param1:symbol, ?param2:symbol, ?param3:symbol)</li>
+<li> .decl _DynamicVarPointsTo(?hctx: symbol, ?heap: symbol, ?ctx: symbol, ?var: symbol)</li>
+<li> .decl _HeapAllocationInformation(?lineNumber:number, ?method:Method, ?type:Type, ?heap:HeapAllocation)</li>
+<li> .decl _InvocationMethodAndLine(?lineNumber:number, ?name:symbol, ?invocation:Instruction, ?fromMethod:Method)</li>
+<li> .decl _MatchedHeapAllocation0(?representation:symbol, ?heap:HeapAllocation)</li>
+<li> .decl _MatchedHeapAllocation1(?representation:symbol, ?heap:HeapAllocation)</li>
+<li> .decl _MatchedHeapAllocation2(?representation:symbol, ?heap:HeapAllocation)</li>
+<li> .decl _UnmatchedDynamicNormalHeapAllocation1(?inMethod:Method, ?type:Type, ?representation:symbol)</li>
+<li> .decl isDynamicContext(?ctx:DynamicContext)</li>
+</ul>
+<h2> facts/import-entities.dl </h2>
+<ul>
+<li> .decl _ActualParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
+<li> .decl _ApplicationClass(?type:symbol)</li>
+<li> .decl _ArrayType(?arrayType:symbol)</li>
+<li> .decl _AssignReturnValue(?invocation:symbol, ?to:symbol)</li>
+<li> .decl _BootstrapParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
+<li> .decl _ClassModifier(?class:symbol, ?modifier:symbol)</li>
+<li> .decl _ClassType(?class:symbol)</li>
+<li> .decl _ComponentType(?arrayType:symbol, ?componentType:symbol)</li>
+<li> .decl _DirectSuperclass(?class:symbol, ?superclass:symbol)</li>
+<li> .decl _DirectSuperinterface(?class:symbol, ?interface:symbol)</li>
+<li> .decl _ExceptionHandler_Previous(?handler:symbol, ?previous:symbol)</li>
+<li> .decl _Field_Modifier(?modifier:symbol, ?field:symbol)</li>
+<li> .decl _FormalParam(?index:number, ?method:symbol, ?var:symbol)</li>
+<li> .decl _InterfaceType(?interface:symbol)</li>
+<li> .decl _Method_DeclaresException(?exceptionType:symbol, ?method:symbol)</li>
+<li> .decl _Method_Modifier(?mod:symbol, ?method:symbol)</li>
+<li> .decl _NativeReturnVar(?var:symbol, ?method:symbol)</li>
+<li> .decl _Properties(?path:symbol, ?key:symbol, ?value:symbol)</li>
+<li> .decl _ThisVar(?method:symbol, ?var:symbol)</li>
+<li> .decl _Var_DeclaringMethod(?var:symbol, ?method:symbol)</li>
+<li> .decl _Var_Type(?var:symbol, ?type:symbol)</li>
+</ul>
+<h2> facts/import-facts.dl </h2>
+<ul>
+<li> .decl PhantomBasedMethod(?m:Method)</li>
+<li> .decl PhantomMethod(?m:Method)</li>
+<li> .decl PhantomType(?t:Type)</li>
+<li> .decl String_toRaw(?id:symbol, ?rawId:symbol)</li>
+<li> .decl _ArrayInsnIndex(?instruction:symbol, ?index:symbol)</li>
+<li> .decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)</li>
+<li> .decl _AssignCast(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)</li>
+<li> .decl _AssignCastNull(?instruction:symbol, ?index:number, ?to:symbol, ?type:symbol, ?method:symbol)</li>
+<li> .decl _AssignCastNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)</li>
+<li> .decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)</li>
+<li> .decl _AssignInstanceOf(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)</li>
+<li> .decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inmethod:symbol)</li>
+<li> .decl _AssignNull(?instruction:symbol, ?index:number, ?to:symbol, ?method:symbol)</li>
+<li> .decl _AssignNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)</li>
+<li> .decl _AssignOperFrom(?instruction:symbol, ?from:symbol)</li>
+<li> .decl _AssignPhantomInvoke(?instruction:symbol, ?index:number, ?method:symbol)</li>
+<li> .decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)</li>
+<li> .decl _BreakpointStmt(?instruction:symbol, ?index:number, ?method:symbol)</li>
+<li> .decl _ClassHeap(?id:symbol, ?instanceType:symbol)</li>
+<li> .decl _DynamicMethodInvocation(?instruction:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?method:symbol)</li>
+<li> .decl _EmptyArray(?id:symbol)</li>
+<li> .decl _EnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
+<li> .decl _ExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number)</li>
+<li> .decl _ExitMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
+<li> .decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol)</li>
+<li> .decl _Goto(?instruction:symbol, ?index:number, ?to:number, ?method:symbol)</li>
+<li> .decl _If(?instruction:symbol, ?index:number, ?to:number, ?method:symbol)</li>
+<li> .decl _IfVar(?instruction:symbol, ?var:symbol)</li>
+<li> .decl _LoadArrayIndex(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?method:symbol)</li>
+<li> .decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)</li>
+<li> .decl _LoadStaticField(?instruction:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)</li>
+<li> .decl _LookupSwitch(?instruction:symbol, ?index:number, ?key:symbol, ?method:symbol)</li>
+<li> .decl _LookupSwitch_DefaultTarget(?instruction:symbol, ?target:number)</li>
+<li> .decl _LookupSwitch_Target(?instruction:symbol, ?value:number, ?target:number)</li>
+<li> .decl _MainClass(?class:symbol)</li>
+<li> .decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol, ?arity:number)</li>
+<li> .decl _MethodHandleConstant(?id:symbol, ?method:symbol)</li>
+<li> .decl _MethodInvocation_Line(?instruction:symbol, line:number)</li>
+<li> .decl _MethodTypeConstant(?id:symbol)</li>
+<li> .decl _NormalHeap(?id:symbol, ?type:symbol)</li>
+<li> .decl _Return(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
+<li> .decl _ReturnVoid(?instruction:symbol, ?index:number, ?method:symbol)</li>
+<li> .decl _SpecialMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)</li>
+<li> .decl _StaticMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?method:symbol)</li>
+<li> .decl _StoreArrayIndex(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?method:symbol)</li>
+<li> .decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)</li>
+<li> .decl _StoreStaticField(?instruction:symbol, ?index:number, ?from:symbol, ?signature:symbol, ?method:symbol)</li>
+<li> .decl _StringConstant(?id:symbol)</li>
+<li> .decl _StringRaw(?id:symbol, ?rawId:symbol)</li>
+<li> .decl _TableSwitch(?instruction:symbol, ?index:number, ?key:symbol, ?method:symbol)</li>
+<li> .decl _TableSwitch_DefaultTarget(?instruction:symbol, ?target:number)</li>
+<li> .decl _TableSwitch_Target(?instruction:symbol, ?value:number, ?target:number)</li>
+<li> .decl _Throw(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
+<li> .decl _ThrowNull(?instruction:symbol, ?index:number, ?method:symbol)</li>
+<li> .decl _UnsupportedInstruction(?instruction:symbol, ?index:number, ?method:symbol)</li>
+<li> .decl _VirtualMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)</li>
+</ul>
 <h2> facts/opaque-methods.dl </h2>
 <ul>
 <li> .decl ClassLoaderMethod(?method:Method, ?argIdx:number)</li>
 <li> .decl MTEntryPoint(?id:number, ?invo:MethodInvocation, ?sig:Method)</li>
 </ul>
-<h2> facts/flow-insensitive-schema.dl </h2>
-<ul>
-<li> .decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method)</li>
-<li> .decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method)</li>
-<li> .decl AssignLocal(?from:Var, ?to:Var, ?inmethod:Method)</li>
-<li> .decl AssignNull(?to:Var, ?inmethod:Method)</li>
-<li> .decl LoadArrayIndex(?base:Var, ?to:Var, ?inmethod:Method)</li>
-<li> .decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method)</li>
-<li> .decl LoadStaticField(?sig:Field, ?to:Var, ?inmethod:Method)</li>
-<li> .decl ReturnVar(?var:Var, ?method:Method)</li>
-<li> .decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)</li>
-<li> .decl StoreArrayIndex(?from:Var, ?base:Var, ?inmethod:Method)</li>
-<li> .decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inmethod:Method)</li>
-<li> .decl StoreStaticField(?from:Var, ?signature:Field, ?inmethod:Method)</li>
-<li> .decl Throw(?insn:Throw_Insn, ?var:Var)</li>
-<li> .decl VirtualMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)</li>
-</ul>
 <h2> facts/post-process.dl </h2>
 <ul>
 <li> .decl MethodInvocation_SimpleName(?invocation:Instruction, ?simpleName:symbol)</li>
 </ul>
-<p>Timestamp: 2018-07-22 02:40:36.477656</p></body></html>
+<h2> main/android-declarations.dl </h2>
+<ul>
+<li> .decl AndroidAppComponent(?type:symbol)</li>
+<li> .decl AndroidApplicationClass(?class:ClassType)</li>
+<li> .decl AndroidApplicationListenerClass(?class:ClassType)</li>
+<li> .decl AndroidLibraryListenerType(?type:Type)</li>
+<li> .decl AndroidLibraryType(?type:Type)</li>
+<li> .decl AndroidOriginalAppComponent(?type:symbol)</li>
+<li> .decl AndroidViewType(?type:Type)</li>
+<li> .decl AppMethodOverridesAndroidLibraryMethod(?meth:Method, ?concreteMeth:Method)</li>
+<li> .decl ApplicationObjectFlowingToLibrary(?hctx:configuration.HContext, ?value:Value, ?ofType:Type)</li>
+<li> .decl ForcedReachableAndroidContext(?ctx:configuration.Context, ?meth:Method)</li>
+<li> .decl FormalOfForcedReachableContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)</li>
+<li> .decl FragmentRetrievalByArg0MethodInvocation(?invo:MethodInvocation)</li>
+<li> .decl ImplicitlyInstantiatedLibraryType(?type:Type)</li>
+<li> .decl LayoutControlObjectValueFromId(?controlValue:Value, ?numId:NumConstant)</li>
+<li> .decl LibraryReachableAppListenerType(?type:Type)</li>
+<li> .decl ListenerType(?type:Type)</li>
+<li> .decl MultiDimensionalArrayTemp(?value:Value, ?invocation:MethodInvocation, ?type:Type, ?ctx:configuration.Context, ?from:Var)</li>
+<li> .decl OverridingProtectedMethodOfComponent(?meth:Method)</li>
+<li> .decl OverridingProtectedOnMethodOfLayoutControl(?meth:Method)</li>
+<li> .decl OverridingProtectedOnMethodOfReachableListener(?meth:Method)</li>
+<li> .decl ProtectedMethodOfComponent(?meth:Method)</li>
+<li> .decl ProtectedOnMethodOfLayoutControl(?meth:Method)</li>
+<li> .decl ProtectedOnMethodOfReachableListener(?meth:Method)</li>
+<li> .decl PublicMethodOfComponent(?meth:Method)</li>
+<li> .decl PublicOnMethodOfLayoutControl(?meth:Method)</li>
+<li> .decl PublicOnMethodOfReachableListener(?meth:Method)</li>
+<li> .decl ReachableApplicationObjectOfType(?hctx:configuration.HContext, ?value:Value, ?type:Type)</li>
+<li> .decl ReifiedAndroidObjectValue(?value:Value, ?type:Type)</li>
+<li> .decl ReifiedComponent(?type:Type, ?value:Value)</li>
+<li> .decl ReifiedLayoutControl(?type:Type, ?id:NumConstant, ?value:Value)</li>
+<li> .decl ReifiedLibraryObject(?type:Type, ?value:Value)</li>
+<li> .decl SensitiveLayoutControlValue(?value:Value)</li>
+<li> .decl UninitialisedArray(?hctx:configuration.HContext, ?value:Value, ?invocation:MethodInvocation, ?type:Type)</li>
+<li> .decl VarsAtInvocationRetrievingLayoutControl(?ret:Var, ?var:Var)</li>
+<li> .decl ViewRetrievalByArg0MethodInvocation(?invo:MethodInvocation)</li>
+<li> .decl WebClientType(?type:Type)</li>
+</ul>
+<h2> main/android.dl </h2>
+<ul>
+<li> .decl ActivityVarInType(?var:Var, ?ctx:configuration.Context, ?type:Type)</li>
+<li> .decl AndroidApplicationPackableClass(?class:ClassType)</li>
+<li> .decl AndroidPackableType(?type:Type)</li>
+<li> .decl AppClassSubtypesLibClass(?type:Type, ?libType:Type)</li>
+<li> .decl AppInvoReturningLibraryPackable(?invo:Instruction, ?retType:Type)</li>
+<li> .decl ArgToAddJavascriptInterface(?var:Var)</li>
+<li> .decl AsynchTaskExecute(?param:Var, ?base:Var)</li>
+<li> .decl BindFragment(?activityThis:Var, ?fragmentParam:Var)</li>
+<li> .decl ClassNameWithOnlySlashes(?className:ClassType, ?classNameTransformed:symbol)</li>
+<li> .decl ClassNameWithSlashes(?className:ClassType, ?classNameWithSlash:symbol)</li>
+<li> .decl ClassOfDeadMethod(?method:Method, ?class:ClassType)</li>
+<li> .decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol, ?method:symbol)</li>
+<li> .decl LibraryMethodReturningPackable(?method:Method, ?retType:Type)</li>
+<li> .decl LibraryReachableAppPackableClass(?class:ClassType)</li>
+<li> .decl ListenerClassConstantValue(?classHeap:Value, ?type:Type)</li>
+<li> .decl LookupReturnsAppMethod(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)</li>
+<li> .decl MethodToRemove(?method:Method)</li>
+<li> .decl NonPrivateConcreteMethodOfComponent(?meth:Method)</li>
+<li> .decl ObfuscationOn()</li>
+<li> .decl ReachableAppPackableMethodOverridingLib(?methConcrete:Method)</li>
+<li> .decl RegisterBroadCastReceiverVar(?var:Var)</li>
+<li> .decl ReifiedApplicationAndCompatibleVar(?value:Value, ?var:Var)</li>
+<li> .decl SpecialMissingPackableValue(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl UnobfuscatedApplicationClass(?class:ClassType)</li>
+<li> .decl UnobfuscatedMethod(?meth:Method)</li>
+<li> .decl _ActivityVar(?var:Var)</li>
+<li> .decl _AndroidApplicationValue(?value:Value, ?ofType:Type)</li>
+<li> .decl _AndroidLibraryVar(?var:Var)</li>
+<li> .decl _ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)</li>
+<li> .decl _NotMostRefinedType(?type:Type)</li>
+<li> .decl _OnEventMethod(?meth:Method)</li>
+<li> .decl _RelevantStringPosition(?className: symbol, ?pos:number)</li>
+</ul>
+<h2> main/class-initialization-declarations.dl </h2>
+<ul>
+<li> .decl ClassInitializer(?type:Type, ?method:Method)</li>
+<li> .decl InitializedClass(?classOrInterface:Type)</li>
+</ul>
+<h2> main/configuration.dl </h2>
+<ul>
+<li> .decl ContextRequest(?ctx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?value:Value)</li>
+<li> .decl ContextResponse(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?value:Value, ?calleeCtx:Context)</li>
+<li> .decl FinalizerRegisterContextRequest(?callerCtx:configuration.Context, ?inmethod:Method, ?value:Value)</li>
+<li> .decl FinalizerRegisterContextResponse(?callerCtx:configuration.Context, ?inmethod:Method, ?value:Value, ?newCtx:Context)</li>
+<li> .decl InitContextRequest(?symbol:symbol)</li>
+<li> .decl InitContextResponse(?symbol:symbol, ?context:Context)</li>
+<li> .decl InitHContextRequest(?symbol:symbol)</li>
+<li> .decl InitHContextResponse(?symbol:symbol, ?hcontext:HContext)</li>
+<li> .decl RecordContextRequest(?callerCtx:configuration.Context, ?value:Value, ?var:Var)</li>
+<li> .decl RecordContextResponse(?callerCtx:configuration.Context, ?value:Value, ?var:Var, ?hctx:configuration.HContext)</li>
+<li> .decl StartupContextRequest(?hctx:configuration.HContext, ?value:Value)</li>
+<li> .decl StartupContextResponse(?hctx:configuration.HContext, ?value:Value, ?calleeCtx:Context)</li>
+<li> .decl StaticContextRequest(?ctx:configuration.Context, ?invo:MethodInvocation)</li>
+<li> .decl StaticContextResponse(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:Context)</li>
+<li> .decl ThreadStartContextRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?value:Value)</li>
+<li> .decl ThreadStartContextResponse(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?value:Value, ?calleeCtx:Context)</li>
+</ul>
+<h2> main/context-sensitivity-declarations.dl </h2>
+<ul>
+<li> .decl ArrayIndexPointsTo(?hctx:configuration.HContext, ?value:Value, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
+<li> .decl CallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?method:Method)</li>
+<li> .decl HeapInterproceduralAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)</li>
+<li> .decl ImmutableContextFromContext(?ctx1:configuration.Context, ?ctx2:configuration.Context)</li>
+<li> .decl ImmutableContextFromHContext(?hctx:configuration.HContext, ?ctx:configuration.Context)</li>
+<li> .decl ImmutableHContextFromContext(?ctx:configuration.Context, ?hctx:configuration.HContext)</li>
+<li> .decl InstanceFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
+<li> .decl LoadHeapArrayIndex(?ctx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
+<li> .decl LoadHeapInstanceField(?ctx:configuration.Context, ?to:Var, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
+<li> .decl MainThread(?hctx:configuration.HContext, ?value:Value)</li>
+<li> .decl MainThreadGroup(?hctx:configuration.HContext, ?value:Value)</li>
+<li> .decl OptArgAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)</li>
+<li> .decl OptArgVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)</li>
+<li> .decl OptInterproceduralAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)</li>
+<li> .decl OptLoadArrayIndex(?to:Var, ?base:Var)</li>
+<li> .decl OptRetVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)</li>
+<li> .decl OptReturnAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)</li>
+<li> .decl OptStoreArrayIndex(?from:Var, ?base:Var)</li>
+<li> .decl Reachable(?method:Method)</li>
+<li> .decl ReachableContext(?ctx:configuration.Context, ?method:Method)</li>
+<li> .decl StaticFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field)</li>
+<li> .decl StoreHeapArrayIndex(?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)</li>
+<li> .decl StoreHeapInstanceField(?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)</li>
+<li> .decl SystemThreadGroup(?hctx:configuration.HContext, ?value:Value)</li>
+<li> .decl VarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)</li>
+<li> .decl isClinitContext(?ctx:configuration.Context)</li>
+<li> .decl isContext(?ctx:configuration.Context)</li>
+<li> .decl isHContext(?hctx:configuration.HContext)</li>
+<li> .decl isImmutableContext(?ctx:configuration.Context)</li>
+<li> .decl isImmutableHContext(?hctx:configuration.HContext)</li>
+<li> .decl isInitialContext(?ctx:configuration.Context)</li>
+<li> .decl isJVMStartupContext(?ctx:configuration.Context)</li>
+<li> .decl isJVMStartupHContext(?hctx:configuration.HContext)</li>
+</ul>
+<h2> main/context-sensitivity.dl </h2>
+<ul>
+<li> .decl ConstructorVar(?var:Var)</li>
+<li> .decl NoInformationOnSignature(?signature: Field)</li>
+<li> .decl NotEmptyArrayValue(?value:Value)</li>
+<li> .decl OptAssignCast(?type:Type, ?to:Var, ?from:Var)</li>
+<li> .decl OptLoadHeapArrayIndex(?var:Var, ?value:Value)</li>
+<li> .decl OptSpecialMethodInvocationBase(?invocation:MethodInvocation, ?base:Var)</li>
+<li> .decl OptStoreIntoArray(?hctx:configuration.HContext, ?value:Value, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
+<li> .decl OptVirtualMethodInvocationBase(?invocation:MethodInvocation, ?base:Var)</li>
+<li> .decl ReachableLoadArrayIndexBase(?base:Var)</li>
+<li> .decl ReachableStoreArrayIndexBase(?base:Var)</li>
+<li> .decl ReachableStoreStaticFieldFrom(?from:Var)</li>
+<li> .decl Temp1(?value:Value, ?var:Var)</li>
+<li> .decl Temp2(?ctx:configuration.Context, ?var:Var, ?hctx:configuration.HContext, ?value:Value)</li>
+</ul>
+<h2> main/dynamicanalysis.dl </h2>
+<ul>
+<li> .decl AllDynamicallyReachableMethod(?method:Method)</li>
+<li> .decl DynamicContextToContext(?ctx:configuration.Context, ?dctx:DynamicContext)</li>
+<li> .decl DynamicContextToHContext(?hctx:configuration.HContext, ?dctx:DynamicContext)</li>
+<li> .decl ForcedImplicitReachable(?method:Method)</li>
+<li> .decl FromDynamicHeapObject(?hctx:configuration.HContext, ?value:Value, ?dctx:DynamicContext, ?dheap:HeapAllocation)</li>
+<li> .decl HeapDLInstanceFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
+<li> .decl HighConfidenceLoadFromDynamicInference(?value:Value, ?inmethod:Method)</li>
+<li> .decl ImpreciseDynamicCallGraphEdge(?DCTX:DynamicContext, ?toMethod:Method, ?invocation:Instruction, ?DCTX2:DynamicContext, ?fromMethod:Method)</li>
+<li> .decl ImpreciseDynamicInstanceFieldPointsTo(?fld:Field, ?immutableDCTX1:DynamicContext,  ?heap:HeapAllocation, ?immutableDCTX2:DynamicContext, ?baseHeap:HeapAllocation)</li>
+<li> .decl ImpreciseDynamicStaticFieldPointsTo(?signature:Field, ?immutableDCTX:DynamicContext, ?heap:HeapAllocation)</li>
+<li> .decl InsArrayIndexPointsToFromDynamic(?value:Value, ?baseValue:Value)</li>
+<li> .decl InsInstanceFieldPointsToFromDynamic(?value:Value, ?fld:Field, ?baseValue:Value)</li>
+<li> .decl InsStaticFieldPointsToFromDynamic(?value:Value, ?signature:Field)</li>
+<li> .decl MostPreciseDynamicArrayIndexPointsTo(?dctx:DynamicContext, ?heap:HeapAllocation, ?baseDCtx:DynamicContext, ?baseHeap:HeapAllocation)</li>
+<li> .decl MostPreciseDynamicCallGraphEdge(?DCTX:DynamicContext, ?toMethod:Method, ?invocation:Instruction, ?DCTX2:DynamicContext, ?fromMethod:Method)</li>
+<li> .decl MostPreciseDynamicInstanceFieldPointsTo( ?fld:Field, ?dctx:DynamicContext, ?heap:HeapAllocation, ?baseDCtx:DynamicContext, ?baseHeap:HeapAllocation )</li>
+<li> .decl MostPreciseDynamicStaticFieldPointsTo(?signature:Field, ?immutableDCTX:DynamicContext, ?heap:HeapAllocation)</li>
+<li> .decl ProbablyReachable(?method:Method)</li>
+<li> .decl SanitizedDynamicCallGraphEdge(?DCTX:DynamicContext, ?toMethod:Method, ?invocation:Instruction, ?DCTX2:DynamicContext, ?fromMethod:Method)</li>
+<li> .decl SingletonDynamicHeapObject(?type:Type, ?value:Value)</li>
+<li> .decl TamiflexDynamicallyReachableMethod(?inmethod:Method)</li>
+<li> .decl Value_byDynamicHeap(?heap:HeapAllocation, ?value:Value)</li>
+<li> .decl isImmutableDCTX(?dctx:DynamicContext)</li>
+</ul>
+<h2> main/exceptions-declarations.dl </h2>
+<ul>
+<li> .decl ExceptionHandler_Before(?before:ExceptionHandler, ?handler:ExceptionHandler)</li>
+<li> .decl ExceptionHandler_Impossible(?type:Type, ?h2:ExceptionHandler, ?insn:Instruction)</li>
+<li> .decl ExceptionHandler_InRange(?handler:ExceptionHandler, ?instruction:Instruction)</li>
+<li> .decl ExceptionHandler_SameBlock_PartialOrder(?repr:ExceptionHandler, ?handler:ExceptionHandler)</li>
+<li> .decl ExceptionHandler_SameBlock_Repr(?handler:ExceptionHandler, ?repr:ExceptionHandler)</li>
+<li> .decl ExceptionHandler_SameInsn_PartialOrder(?h1:ExceptionHandler, ?h2:ExceptionHandler, ?insn:Instruction)</li>
+<li> .decl ExceptionHandler_SameInsn_Repr(?insn:Instruction, ?repr:ExceptionHandler)</li>
+<li> .decl ExceptionHandler_TypeIsCaught(?type:Type, ?block:ExceptionHandler)</li>
+<li> .decl Instruction_Throws(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?insn:Instruction)</li>
+<li> .decl ThrowPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?method:Method)</li>
+</ul>
+<h2> main/exceptions.dl </h2>
+<ul>
+<li> .decl ProxyNullInvokeResult(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context)</li>
+<li> .decl isProxyCCE(?value:Value)</li>
+<li> .decl isProxyNPE(?value:Value)</li>
+<li> .decl isProxyUTE(?value:Value)</li>
+</ul>
+<h2> main/implicit-reachable-declarations.dl </h2>
+<ul>
+<li> .decl ApplicationEntryPoint(?meth:Method)</li>
+<li> .decl ImplicitReachable(?sig:Method)</li>
+</ul>
+<h2> main/in-out-flow.dl </h2>
+<ul>
+<li> .decl InFlowTo(?index:number, ?var:Var)</li>
+<li> .decl InFlowToReturn(?index:number, ?method:Method)</li>
+<li> .decl InOutFlowMethod(?index:number, ?method:Method)</li>
+<li> .decl IsInOutFlowMethod(?method:Method)</li>
+<li> .decl LocalVarFlow(?to:Var, ?from:Var)</li>
+<li> .decl ReturnFlowMethodInvocationParam(?param:Var, ?invo:MethodInvocation)</li>
+<li> .decl StoreFlowThroughHeap(?to:Var, from:Var)</li>
+</ul>
+<h2> main/main.dl </h2>
+<ul>
+<li> .decl FakeInvocation_RegisterFinalize(?value:Value, ?invo:MethodInvocation)</li>
+<li> .decl FakeInvocation_RegisterFinalize0(?heap:HeapAllocation, ?invo:MethodInvocation)</li>
+<li> .decl NotSpecialObject(?value:Value)</li>
+<li> .decl Value_DeclaringType(?value:Value, ?type:Type)</li>
+<li> .decl Value_Null(?null:Value)</li>
+<li> .decl Value_Num(?value:Value, ?const:NumConstant)</li>
+<li> .decl Value_Type(?value:Value, ?type:Type)</li>
+<li> .decl Value_isHeap(?value:Value)</li>
+<li> .decl Value_isMock(?value:Value)</li>
+<li> .decl Value_isNonHeap(?value:Value)</li>
+<li> .decl isValue(?value:Value)</li>
+</ul>
+<h2> main/method-handles.dl </h2>
+<ul>
+<li> .decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method, ?invo:MethodInvocation)</li>
+<li> .decl ConstantMethodHandleLambda(?value:Value, ?dynName:symbol, ?dynRet:Type, ?realMethod:Method)</li>
+<li> .decl ConstructorReference(?var:Var, ?value:Value, ?i:MethodInvocation, ?realMethod:Method)</li>
+<li> .decl Descriptor_Arity(?descriptor:symbol, ?arity:number)</li>
+<li> .decl FindStatic(?invo:MethodInvocation)</li>
+<li> .decl FindVirtual(?invo:MethodInvocation)</li>
+<li> .decl InvokedynamicBootstrap(?invo:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)</li>
+<li> .decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method)</li>
+<li> .decl Lambda_Method(?value:Value, ?realMethod:Method)</li>
+<li> .decl MHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method)</li>
+<li> .decl MTCallMatchesDescriptor(?invo:MethodInvocation, ?descriptor:symbol)</li>
+<li> .decl MTReturnTypeMatchesDescriptor(?invo:MethodInvocation, ?descriptor:symbol)</li>
+<li> .decl MTValue_Descriptor(?mt:Value, ?descriptor:symbol)</li>
+<li> .decl MT_ParamValue(?invo:MethodInvocation, ?index:number, ?classValue:Value)</li>
+<li> .decl MT_ReturnType(?invo:MethodInvocation, ?type:Type)</li>
+<li> .decl MethodFinder(?invo:MethodInvocation, ?ret:Var)</li>
+<li> .decl MethodHandle_Method(?mh: Value, ?method: Method)</li>
+<li> .decl MethodType_ParamType(?descriptor:symbol, ?index:number, ?pType:Type)</li>
+<li> .decl MethodType_ReturnType(?descriptor:symbol, ?declType:Type, ?rType:Type)</li>
+<li> .decl ReachableMethodTypeN(?invo:MethodInvocation, ?caller:Method, ?callerCtx:configuration.Context)</li>
+<li> .decl UnhandledInvokedynamic(?i:DynamicMethodInvocation_Insn, ?bootMethodId:symbol)</li>
+<li> .decl isMethodHandle(?mh:Value)</li>
+</ul>
+<h2> main/native.dl </h2>
+<ul>
+<li> .decl LoadFromReference(?ctx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
+<li> .decl LoadFromReferenceArgs(?base:Var, ?to:Var)</li>
+<li> .decl NativeMethodReturningValue(?m:Method, ?t:Type, ?return:Var, ?v:Value)</li>
+<li> .decl ReachableNativeMethodInvocation(?ctx:configuration.Context, ?invo:MethodInvocation, ?nativeMethod:Method)</li>
+<li> .decl StoreIntoWeakReference(?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)</li>
+<li> .decl StoreIntoWeakReferenceArgs(?from:Var, ?base:Var)</li>
+<li> .decl _NativeMethodInvocation(?invo:MethodInvocation, ?nativeMethod:Method)</li>
+</ul>
+<h2> main/package-heuristic.dl </h2>
+<ul>
+<li> .decl ClassNameIndexes(?pos:number, ?type:ClassType)</li>
+<li> .decl Class_PackageHack(?type:ClassType, ?packageName:symbol)</li>
+<li> .decl DotsInClassName(?type:ClassType, ?pos:number)</li>
+<li> .decl LastDot(?type:ClassType, ?pos:number)</li>
+<li> .decl NotLastDot(?pos:number, ?type:ClassType)</li>
+<li> .decl NotSecondLastDot(?pos:number, ?type:ClassType)</li>
+<li> .decl SecondLastDot(?type:ClassType, ?pos:number)</li>
+</ul>
+<h2> main/phantom-dead.dl </h2>
+<ul>
+<li> .decl DeadInstruction(?i:Instruction)</li>
+<li> .decl DeadMethod(?m:Method)</li>
+<li> .decl DeadType(?type:Type)</li>
+<li> .decl PhantomInvoke(?instruction:Instruction)</li>
+<li> .decl RemovedMethod(?method:Method)</li>
+</ul>
+<h2> main/reflection/classloading.dl </h2>
+<ul>
+<li> .decl DalvikMethodInvocation(?var:Var, ?m:Method, ?ctx:configuration.Context, ?hctx:configuration.HContext)</li>
+</ul>
+<h2> main/reflection/declarations.dl </h2>
+<ul>
+<li> .decl ReflectiveAllocation(?instruction:Instruction, ?type:ReferenceType, ?value:Value)</li>
+<li> .decl ReflectiveValue(?value:Value)</li>
+<li> .decl ReifiedClass(?type:symbol, ?value:Value)</li>
+<li> .decl ReifiedConstructor(?constructor:Method, ?value:Value)</li>
+<li> .decl ReifiedField(?field:Field, ?value:Value)</li>
+<li> .decl ReifiedMethod(?method:Method, ?value:Value)</li>
+<li> .decl StringPrecisionThreshold(?t:number)</li>
+<li> .decl java_lang_ClassLoader_getResource(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_forName(?invocation:MethodInvocation, ?inmethod:Method)</li>
+<li> .decl java_lang_Class_getCanonicalName(?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getClassLoader(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getComponentType(?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getConstructor(?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getConstructors(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getDeclaredConstructor(?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getDeclaredConstructors(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getDeclaredField(?to:Var, ?param:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getDeclaredFields(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getDeclaredMethod(?to:Var, ?param:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getDeclaredMethods(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getField(?to:Var, ?param:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getFields(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getInterfaces(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getMethod(?to:Var, ?param:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getMethods(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getName(?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getPrimitiveClass(?invocation:MethodInvocation, ?to:Var, ?name:Var)</li>
+<li> .decl java_lang_Class_getSuperclass(?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Object_getClass(?to:Var, ?from:Var)</li>
+<li> .decl java_lang_reflect_Array_newInstance(?invocation:MethodInvocation, ?to:Var, ?param:Var)</li>
+<li> .decl java_lang_reflect_Constructor_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_reflect_Field_get(?invocation:MethodInvocation, ?to:Var, ?field:Var)</li>
+<li> .decl java_lang_reflect_Field_get_base(?invocation:MethodInvocation, ?base:Var)</li>
+<li> .decl java_lang_reflect_Field_set(?invocation:MethodInvocation, ?from:Var, ?field:Var)</li>
+<li> .decl java_lang_reflect_Field_set_base(?invocation:MethodInvocation, ?base:Var)</li>
+<li> .decl java_lang_reflect_Method_invoke(?invocation:MethodInvocation, ?method:Var)</li>
+</ul>
+<h2> main/reflection/dynamic-proxies.dl </h2>
+<ul>
+<li> .decl ArgArrayAndActualArg(?argsArrValue:Value, ?methSig:Method, ?actual:Var)</li>
+<li> .decl ArgArrayOfProxyMethod(?meth:Method, ?invo:MethodInvocation, ?value:Value)</li>
+<li> .decl ArrayContentsPointToInterface(?iface:ClassType, ?hctx:configuration.HContext, ?arrayValue:Value)</li>
+<li> .decl BoxAllocationOfPrimitiveFormal(?formal:Var, ?value:Value)</li>
+<li> .decl CallToMethodOfProxyObject(?value:Value, ?ctx:configuration.Context, ?invo:MethodInvocation)</li>
+<li> .decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)</li>
+<li> .decl MethodOfInterface(?meth:Method, ?iface:InterfaceType)</li>
+<li> .decl PrimitiveFormalOfInterface(?meth:Method, ?formal:Var, ?formalType:PrimitiveType)</li>
+<li> .decl PrimitiveType_Boxed(?type:Type, ?boxedType:Type)</li>
+<li> .decl ProxyCallArgArray(?invo:MethodInvocation, ?methSig:Method, ?argsArrValue:Value)</li>
+<li> .decl ProxyCallGraphEdge(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerInvokeMeth:Method)</li>
+<li> .decl ProxyClass(?class:ClassType)</li>
+<li> .decl ProxyClassInstance(?iface:InterfaceType, ?invo:MethodInvocation, ?value:Value)</li>
+<li> .decl ProxyClassOfInterface(?iface:InterfaceType, ?class:ClassType)</li>
+<li> .decl ProxyInvokeResult(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerReturnVar:Var)</li>
+<li> .decl ProxyObject_Handler(?handlerObj:Value, ?value:Value)</li>
+<li> .decl ProxyObject_HandlerHctx(?hctxHandler:configuration.HContext, ?value:Value)</li>
+<li> .decl ProxyObject_Interface(?value:Value, ?iface:InterfaceType)</li>
+<li> .decl ProxyObject_Invocation(?value:Value, ?invo:MethodInvocation)</li>
+<li> .decl SpecialMethodFromObject(?method:Method, ?objMethod:Method)</li>
+<li> .decl java_lang_reflect_Proxy_getProxyClass(?invo:MethodInvocation, ?ret:Var, ?interfaces:Var)</li>
+<li> .decl java_lang_reflect_Proxy_newProxyInstance(?invo:MethodInvocation, ?ret:Var, ?handler:Var, ?interfaces:Var)</li>
+</ul>
+<h2> main/reflection/java.lang.Class.dl </h2>
+<ul>
+<li> .decl AssignReflectiveAllocation(?invocation:MethodInvocation, ?type:Type, ?ctx:configuration.Context, ?to:Var)</li>
+<li> .decl FillArray_Constructors(?hctx:configuration.HContext, ?arrayValue:Value, ?classValue:Value)</li>
+<li> .decl FillArray_Fields(?hctx:configuration.HContext, ?arrayValue:Value, ?type:Type)</li>
+<li> .decl FillArray_Interfaces(?hctx:configuration.HContext, ?arrayValue:Value, ?type:Type)</li>
+<li> .decl FillArray_Methods(?hctx:configuration.HContext, ?arrayValue:Value, ?type:Type)</li>
+<li> .decl FillArray_PublicConstructors(?hctx:configuration.HContext, ?arrayValue:Value, ?classValue:Value)</li>
+<li> .decl FillArray_PublicFields(?hctx:configuration.HContext, ?arrayValue:Value, ?type:Type)</li>
+<li> .decl FillArray_PublicMethods(?hctx:configuration.HContext, ?arrayValue:Value, ?type:Type)</li>
+<li> .decl ForwardHighConfidenceReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)</li>
+<li> .decl ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)</li>
+<li> .decl ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx:configuration.Context, ?to:Var, ?signature:Method)</li>
+<li> .decl ForwardReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)</li>
+<li> .decl ForwardReflectiveAssignClassConstantString(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type, ?constantHeap:Value)</li>
+<li> .decl ForwardReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)</li>
+<li> .decl ForwardReflectiveAssignFieldConstantString(?ctx:configuration.Context, ?to:Var, ?signature:Field, ?constantHeap:Value)</li>
+<li> .decl ForwardReflectiveAssignMethodConstant(?ctx:configuration.Context, ?to:Var, ?signature:Method)</li>
+<li> .decl ForwardReflectiveAssignMethodConstantString(?ctx:configuration.Context, ?to:Var, ?signature:Method, ?constantHeap:Value)</li>
+<li> .decl FromGetSuperClassType(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?type:Type, ?to:Var)</li>
+<li> .decl HighConfidenceAssign(?value:Value, ?inmethod:Method)</li>
+<li> .decl NumberOfClassesMatchingConstant(?constant:StringConstant, ?n:number)</li>
+<li> .decl NumberOfFieldsMatchingConstant(?constant:StringConstant, ?n:number)</li>
+<li> .decl NumberOfMethodsMatchingConstant(?constant:StringConstant, ?n:number)</li>
+<li> .decl OptClassToConstructor(?constructor:Method, ?classValue:Value)</li>
+<li> .decl OptGetFieldFromClass(?to:Var, ?ctx:configuration.Context, ?param:Var, ?type:Type)</li>
+<li> .decl OptGetMethodFromClass(?to:Var, ?ctx:configuration.Context, ?param:Var, ?type:Type)</li>
+<li> .decl OptTypeContainsPublicField(?type:Type, ?signature:Field)</li>
+<li> .decl OptTypeContainsPublicMethod(?type:Type, ?signature:Method)</li>
+<li> .decl ReflectiveSpecialMethodInvocation(?invocation:MethodInvocation, ?constructor:Method, ?ctx:configuration.Context, ?to:Var)</li>
+</ul>
+<h2> main/reflection/java.lang.reflect.Field.dl </h2>
+<ul>
+<li> .decl ReflectiveLoadField(?invocation:MethodInvocation, ?ctx:configuration.Context, ?to:Var, ?signature:Field)</li>
+<li> .decl ReflectiveLoadInstanceField(?ctx1:configuration.Context, ?to:Var, ?signature:Field, ?ctx2:configuration.Context, ?base:Var)</li>
+<li> .decl ReflectiveLoadStaticField(?ctx:configuration.Context, ?to:Var, ?signature:Field)</li>
+<li> .decl ReflectiveStoreField(?invocation:MethodInvocation, ?signature:Field, ?ctx:configuration.Context, ?from:Var)</li>
+<li> .decl ReflectiveStoreInstanceField(?ctx1:configuration.Context, ?from:Var, ?signature:Field, ?ctx2:configuration.Context, ?base:Var)</li>
+<li> .decl ReflectiveStoreStaticField(?signature:Field, ?ctx:configuration.Context, ?from:Var)</li>
+</ul>
+<h2> main/reflection/java.lang.reflect.Method.dl </h2>
+<ul>
+<li> .decl ReflectiveActualParams(?invocation:MethodInvocation, ?argsParam:Var)</li>
+<li> .decl ReflectiveAssignReturnValue(?invocation:MethodInvocation, ?var:Var)</li>
+<li> .decl ReflectiveBaseVar(?invocation:MethodInvocation, ?base:Var)</li>
+<li> .decl ReflectiveMethodInvocation(?ctx:configuration.Context, ?invocation:MethodInvocation, ?signature:Method)</li>
+</ul>
+<h2> main/reflection/light-Class-forName.dl </h2>
+<ul>
+<li> .decl ReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)</li>
+<li> .decl ReifiedClass(?type:symbol, ?value:Value)</li>
+<li> .decl java_lang_Class_forName(?invocation:MethodInvocation, ?inmethod:Method)</li>
+</ul>
+<h2> main/reflection/light-reflection-glue.dl </h2>
+<ul>
+<li> .decl ReflectiveMethodCall(?m:Method, ?callerCtx:configuration.Context, ?calleeCtx:configuration.Context, ?this:Var, ?args:Var, ?invocation:MethodInvocation)</li>
+<li> .decl ReflectiveMethodCall_Candidate(?methodVar:Var, ?methName:symbol, ?callerCtx:configuration.Context, ?type:Type)</li>
+<li> .decl java_lang_Class_getConstructor(?to:Var, ?from:Var)</li>
+<li> .decl java_lang_Class_getMethod(?to:Var, ?param:Var, ?from:Var)</li>
+<li> .decl java_lang_reflect_Constructor_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)</li>
+<li> .decl java_lang_reflect_Method_invoke(?invocation:MethodInvocation, ?methodVar:Var)</li>
+</ul>
+<h2> main/reflection/rules.dl </h2>
+<ul>
+<li> .decl BackwardHighConfidenceReflectiveAssignClassConstant(?invocation:MethodInvocation, ?type:Type)</li>
+<li> .decl BackwardHighConfidenceReflectiveAssignFieldConstant(?to:Var, ?signature:Field)</li>
+<li> .decl BackwardHighConfidenceReflectiveAssignMethodConstant(?to:Var, ?signature:Method)</li>
+<li> .decl BackwardReflectiveAssignClassConstant(?invocation:MethodInvocation, ?type:Type)</li>
+<li> .decl BackwardReflectiveAssignFieldConstant(?to:Var, ?signature:Field)</li>
+<li> .decl BackwardReflectiveAssignMethodConstant(?to:Var, ?signature:Method)</li>
+<li> .decl ClassSubtype(?subType:ClassType, ?type:ClassType)</li>
+<li> .decl FairlyInformativeFieldName(?constant:Value)</li>
+<li> .decl FairlyInformativeMethodName(?constant:Value)</li>
+<li> .decl InferredTypesPrecisionThreshold(?t:number)</li>
+<li> .decl InvokeArgLoadArrayIndex(?calleeCtx:configuration.Context, ?to:Var, ?callerCtx:configuration.Context, ?base:Var)</li>
+<li> .decl LoadReflectiveValueArrayIndex(?calleeCtx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
+<li> .decl MarkerReflectiveObject(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl NumberOfClassSubtypes(?type:ClassType, ?count:number)</li>
+<li> .decl NumberOfTypesMatchingFieldName(?constant:HeapAllocation, ?n:number)</li>
+<li> .decl NumberOfTypesMatchingMethod(?constant:HeapAllocation, ?n:number)</li>
+<li> .decl Opt2AssignCast(?inmethod:Method, ?supertype:Type, ?to:Var, ?from:Var)</li>
+<li> .decl Opt2SpecialGetValueCast(?type:Type, ?getFieldInvocation:MethodInvocation)</li>
+<li> .decl Opt2SpecialInvokeValueCast(?type:Type, ?getMethodInvocation:MethodInvocation)</li>
+<li> .decl OptFieldObjectFromGet(?fieldValue:Value, ?return:Var)</li>
+<li> .decl OptFieldType(?type:Type, ?signature:Field, ?declaringClassType:Type)</li>
+<li> .decl OptForNameFromGetConstructors(?forNameInvocation:MethodInvocation, ?ctx:configuration.Context, ?to:Var)</li>
+<li> .decl OptGetFieldsClass(?type:Type, ?getFieldsInvocation:MethodInvocation)</li>
+<li> .decl OptGetMethodsClass(?type:Type, ?getMethodsInvocation:MethodInvocation)</li>
+<li> .decl OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation:MethodInvocation, ?ctx:configuration.Context, ?invocation:MethodInvocation)</li>
+<li> .decl OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation:MethodInvocation, ?ctx:configuration.Context, ?invocation:MethodInvocation)</li>
+<li> .decl OptMarkerReflectiveObject(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl OptMethodObjectFromInvoke(?methodValue:Value, ?return:Var)</li>
+<li> .decl OptSpecialGetValueCast(?type:Type, ?getFieldsInvocation:MethodInvocation)</li>
+<li> .decl OptSpecialInvokeValueCast(?type:Type, ?getMethodsInvocation:MethodInvocation)</li>
+<li> .decl ReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)</li>
+<li> .decl ReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)</li>
+<li> .decl ReflectiveAssignMethodConstant(?ctx:configuration.Context, ?to:Var, ?signature:Method)</li>
+<li> .decl ReflectiveCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?callee:Method)</li>
+<li> .decl ReflectiveHeapInterproceduralAssign(?sig:Field, ?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)</li>
+<li> .decl ReflectiveLoadHeapInstanceField(?toCtx:configuration.Context, ?to:Var, ?signature:Field, ?basehctx:configuration.HContext, ?base:Value)</li>
+<li> .decl ReflectiveReachable(?m:Method)</li>
+<li> .decl ReflectiveStaticMethodInvocation(?ctx:configuration.Context, ?invocation:MethodInvocation, ?signature:Method)</li>
+<li> .decl ReflectiveStoreHeapInstanceField(?signature:Field, ?basehctx:configuration.HContext, ?basevalue:Value, ?fromCtx:configuration.Context, ?from:Var)</li>
+<li> .decl ReflectiveVirtualMethodInvocation(?signature:Method, ?invocation:MethodInvocation, ?ctx:configuration.Context, ?base:Var)</li>
+<li> .decl SpecialMissingForNameValue(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl SpecialMissingForNameValueFlowsToGetField(?forNameInvocation:MethodInvocation, ?type:Type, ?constant:Value, ?inMethod:Method)</li>
+<li> .decl SpecialMissingForNameValueFlowsToGetMethod(?forNameInvocation:MethodInvocation, ?type:Type, ?constant:Value, ?inMethod:Method)</li>
+<li> .decl SpecialMissingGetConstructorValue(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl SpecialMissingGetFieldValue(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl SpecialMissingGetFieldsValue(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl SpecialMissingGetMethodValue(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl SpecialMissingGetMethodsValue(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl SpecialMissingGetValueFromGetField(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl SpecialMissingGetValueFromGetFields(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl SpecialMissingInvokeValueFromGetMethod(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl SpecialMissingInvokeValueFromGetMethods(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl SpecialMissingNewInstanceValue(?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation:MethodInvocation, ?type:Type, ?inMethod:Method)</li>
+<li> .decl TypeHasHeap(?type:Type)</li>
+<li> .decl TypeMatchingFieldName(?type:Type, ?constant:HeapAllocation)</li>
+<li> .decl TypeMatchingMethod(?type:Type, ?constant:HeapAllocation)</li>
+<li> .decl UnknownReflectiveObject(?type:Type, ?invocation:MethodInvocation, ?value:Value)</li>
+<li> .decl _OptMethodWithVarCast(?subtype:Type, ?inMethod:Method, ?from:Var)</li>
+</ul>
+<h2> main/scaler-pre-analysis.dl </h2>
+<ul>
+<li> .decl AllCallGraphEdge(?from:MethodInvocation, ?to:Method)</li>
+<li> .decl CallSiteIn(?invo:MethodInvocation, ?method:Method)</li>
+<li> .decl Instance_Method(?method:Method)</li>
+<li> .decl Object_In(?object:Value, ?method:Method)</li>
+<li> .decl This_Var(?method:Method, ?var:Var)</li>
+<li> .decl Var_In(?var:Var, ?method:Method)</li>
+</ul>
+<h2> main/special-library.dl </h2>
+<ul>
+<li> .decl CollectionLibraryClass(?class:Type)</li>
+<li> .decl SpecialLibraryClass(?class:Type)</li>
+<li> .decl SpecialLibraryMethod(?method:Method)</li>
+<li> .decl SpecialLibraryObject(?heap:HeapAllocation)</li>
+</ul>
+<h2> main/string-concat.dl </h2>
+<ul>
+<li> .decl ReflectionStringConstantFlowsIntoStringFactory(?hctx:configuration.HContext, ?value:Value, ?factoryHctx:configuration.HContext, ?factoryValue:Value)</li>
+<li> .decl ReflectionStringConstantVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)</li>
+<li> .decl StringFactoryVarPointsTo(?factoryHctx:configuration.HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)</li>
+<li> .decl VarAssignedFromStringFactoryVar(?ret:Var, ?base:Var)</li>
+<li> .decl VarAssignedToStringFactoryVar(?param:Var, ?base:Var)</li>
+<li> .decl VarFlowsFromStringFactory(?ctx:configuration.Context, ?var:Var, ?factoryHctx:configuration.HContext, ?factoryValue:Value)</li>
+<li> .decl VarFlowsIntoStringFactory(?factoryHctx:configuration.HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)</li>
+<li> .decl VarOfReflectionInterest(?ctx:configuration.Context, ?var:Var)</li>
+</ul>
+<h2> main/string-constants.dl </h2>
+<ul>
+<li> .decl AllocationShouldBeMergedGlobally(?heaptype:Type)</li>
+<li> .decl AllocationShouldBeMergedPerClass(?heaptype:Type, ?class:Type)</li>
+<li> .decl AllocationShouldBeMergedPerMethod(?heaptype:Type, ?meth:Method)</li>
+<li> .decl AllocationShouldBeMergedPerPackage(?heaptype:Type, ?packageName:symbol)</li>
+<li> .decl AllocationsPerClassAndType(?type:Type, ?class:ClassType, ?n:number)</li>
+<li> .decl AllocationsPerMethodAndType(?type:Type, ?meth:Method, ?n:number)</li>
+<li> .decl AllocationsPerPackageAndType(?type:Type, ?packageName:symbol, ?n:number)</li>
+<li> .decl AllocationsPerType(?type:Type, ?n:number)</li>
+<li> .decl AssignContextInsensitiveHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)</li>
+<li> .decl AssignNormalHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)</li>
+<li> .decl ClassAndTypeToHeap(?heap:HeapAllocation, ?heaptype:Type, ?class:ClassType)</li>
+<li> .decl ClassAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?class:Type)</li>
+<li> .decl ClassAndTypeToRepresentative(?type:Type, ?class:Type, ?reprHeap:HeapAllocation)</li>
+<li> .decl ClassIterationTrick(?length:number)</li>
+<li> .decl ClassNameMatchingStringConstant_Type(?type:Type, ?heap:HeapAllocation)</li>
+<li> .decl ClassNameSuffix(?suffix:symbol, ?classname:ReferenceType)</li>
+<li> .decl ExceptionHeapTypeRepresentativeOrdinal(?type:Type, ?reprHeapOrd:number)</li>
+<li> .decl ExceptionType(?type:Type)</li>
+<li> .decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)</li>
+<li> .decl FieldNameMatchingStringConstant_Signature(?sig:Field, ?heap:HeapAllocation)</li>
+<li> .decl FieldNamePrefix(?prefix:symbol, ?sig:Field)</li>
+<li> .decl FieldNameSuffix(?suffix:symbol, ?sig:Field)</li>
+<li> .decl FieldOfClassMatchesString(?heap:HeapAllocation, ?type:Type)</li>
+<li> .decl HeapAllocation_ContextInsensitive(?heap:HeapAllocation)</li>
+<li> .decl HeapAllocation_Keep(?heap:HeapAllocation)</li>
+<li> .decl HeapAllocation_Merge(?heap:HeapAllocation, ?mergeHeap:HeapAllocation)</li>
+<li> .decl HeapIsMergedString(?heap:HeapAllocation)</li>
+<li> .decl HeapIsMergedStringFactory(?heap:HeapAllocation)</li>
+<li> .decl HeapRepresentative(?heap:HeapAllocation, ?heapRepr:symbol)</li>
+<li> .decl MemberPrefixIterationTrick(?length:number)</li>
+<li> .decl MemberSuffixIterationTrick(?length:number)</li>
+<li> .decl MethodAllocationMergeThreshold(?t:number)</li>
+<li> .decl MethodAndTypeToHeap(?heap:HeapAllocation, ?heapType:Type, ?method:Method)</li>
+<li> .decl MethodAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?meth:Method)</li>
+<li> .decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation)</li>
+<li> .decl MethodNameMatchingStringConstant_Signature(?sig:Method, ?heap:HeapAllocation)</li>
+<li> .decl MethodNamePrefix(?prefix:symbol, ?sig:Method)</li>
+<li> .decl MethodNameSuffix(?suffix:symbol, ?sig:Method)</li>
+<li> .decl MethodOfClassMatchesString(?heap:HeapAllocation, ?type:Type)</li>
+<li> .decl MinHeapOrdinalPerClassAndType(?minHeapOrd:number, ?type:Type, ?class:Type)</li>
+<li> .decl MinHeapOrdinalPerMethodAndType(?ord:number, ?type:Type, ?meth:Method)</li>
+<li> .decl MinHeapOrdinalPerPackageAndType(?minHeapOrd:number, ?type:Type, ?packageName:symbol)</li>
+<li> .decl MinHeapOrdinalPerType(?minHeapOrd:number, ?type:Type)</li>
+<li> .decl MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd:number, ?heap:HeapAllocation)</li>
+<li> .decl MinStringFactoryHeapOrdinalPerPackageAndType(?minHeapOrd:number, ?type:Type, packageName:symbol)</li>
+<li> .decl MinStringOrdinalForColor(?color:number, ?minHeapOrd:number)</li>
+<li> .decl MinStringOrdinalGreaterThanOtherInSameClass(?heap:HeapAllocation, ?heapGreaterOrd:number, ?type:Type)</li>
+<li> .decl MinimalSuffix(?type:Type, ?suffix:symbol)</li>
+<li> .decl MinimalSuffixLen(?type:Type, ?suffixLen:number)</li>
+<li> .decl NonTrivialStringConstant(?heap:HeapAllocation)</li>
+<li> .decl ObjectMultipleAllocated(?heap:HeapAllocation)</li>
+<li> .decl OptAssignHeapAllocation(?inmethod:Method, ?heap:HeapAllocation)</li>
+<li> .decl PackageAndTypeToHeap(?heap:HeapAllocation, ?heaptype:Type, ?packageName:symbol)</li>
+<li> .decl PackageAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?packageName:symbol)</li>
+<li> .decl PackageAndTypeToRepresentative(?type:Type, ?packageName:symbol, ?representativeHeap:HeapAllocation)</li>
+<li> .decl PackageAndTypeToStringFactoryHeap(?heap:HeapAllocation, ?type:Type, ?packageName:symbol)</li>
+<li> .decl PackageAndTypeToStringFactoryRepresentative(?type:Type, ?packageName:symbol, ?representativeHeap:HeapAllocation)</li>
+<li> .decl PreClassNameMatchingStringConstant(?heap:HeapAllocation)</li>
+<li> .decl PreClassNameMatchingStringConstantExact_Type(?type:Type, ?heap:HeapAllocation)</li>
+<li> .decl PreClassNameMatchingStringConstantInexact_Type(?type:Type, ?heap:HeapAllocation)</li>
+<li> .decl PreClassNameMatchingStringConstant_Type(?type:Type, ?heap:HeapAllocation)</li>
+<li> .decl PreFieldNameMatchingStringConstant(?heap:HeapAllocation)</li>
+<li> .decl PreFieldNameMatchingStringConstantExact_Signature(?sig:Field, ?heap:HeapAllocation)</li>
+<li> .decl PreFieldNameMatchingStringConstantInexact_Signature(?sig:Field, ?heap:HeapAllocation)</li>
+<li> .decl PreFieldNameMatchingStringConstant_Signature(?sig:Field, ?heap:HeapAllocation)</li>
+<li> .decl PreMethodNameMatchingStringConstant(?heap:HeapAllocation)</li>
+<li> .decl PreMethodNameMatchingStringConstantExact_Signature(?sig:Method, ?heap:HeapAllocation)</li>
+<li> .decl PreMethodNameMatchingStringConstantInexact_Signature(?sig:Method, ?heap:HeapAllocation)</li>
+<li> .decl PreMethodNameMatchingStringConstant_Signature(?sig:Method, ?heap:HeapAllocation)</li>
+<li> .decl ReflectionStringConstant(?heap:HeapAllocation)</li>
+<li> .decl ReflectionSubstringObject(?heap:HeapAllocation)</li>
+<li> .decl RelevantSuffixPosition(?typeName: symbol, ?pos:number)</li>
+<li> .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)</li>
+<li> .decl StringColorForHeap(?heap:HeapAllocation, ?color:number)</li>
+<li> .decl StringColorGreaterThan(?num:number, ?heap:HeapAllocation)</li>
+<li> .decl StringFactoryHeap(?heap:HeapAllocation)</li>
+<li> .decl StringFactoryType(?type:Type)</li>
+<li> .decl StringFactoryVar(?var:Var)</li>
+<li> .decl StringGreaterThanOtherInSameClass(?heap1:HeapAllocation, ?heap2:HeapAllocation, ?type:Type)</li>
+<li> .decl StringImmediatelyGreaterThanOtherInSomeClass(?heapGreater:HeapAllocation, ?heap:HeapAllocation)</li>
+<li> .decl StringImmediatelyLessThanOtherInClass(?heap:HeapAllocation, ?type:Type, ?heapGreater:HeapAllocation)</li>
+<li> .decl StringRepresentativeForColor(?color:number, ?heap:HeapAllocation)</li>
+<li> .decl Suffix(?type:Type, ?suffix:symbol, ?suffixLen:number)</li>
+<li> .decl TypeToHeap(?heap:HeapAllocation, ?heaptype:Type)</li>
+<li> .decl TypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type)</li>
+<li> .decl TypeToRepresentative(?type:Type, ?representativeHeap:HeapAllocation)</li>
+<li> .decl Type_DeclaresReferenceField(?type:Type)</li>
+<li> .decl Type_HasNoReferenceField(?type:Type)</li>
+<li> .decl _StringIterationTrick(?pos:number)</li>
+<li> .decl string_upper(s1:symbol, s2:symbol)</li>
+</ul>
+<h2> main/threads-declarations.dl </h2>
+<ul>
+<li> .decl ReachableCurrentThreadInvocation(?callerCtx:configuration.Context, ?local:Var)</li>
+<li> .decl RunningThread(?hctx:configuration.HContext, ?value:Value)</li>
+</ul>
+<h2> python/facts/import-entities.dl </h2>
+<ul>
+<li> .decl _ActualKeywordParam(?keyword:symbol, ?invocation:symbol, ?var:symbol)</li>
+<li> .decl _ActualPositionalParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
+<li> .decl _ApplicationClass(?type:symbol)</li>
+<li> .decl _AssignReturnValue(?invocation:symbol, ?to:symbol)</li>
+<li> .decl _ClassType(?class:symbol)</li>
+<li> .decl _DirectSuperclass(?class:symbol, ?superclass:symbol)</li>
+<li> .decl _ExceptionHandler_Previous(?handler:symbol, ?previous:symbol)</li>
+<li> .decl _FormalParam(?index:number, ?function:symbol, ?var:symbol)</li>
+<li> .decl _NativeReturnVar(?var:symbol, ?function:symbol)</li>
+<li> .decl _ThisVar(?function:symbol, ?var:symbol)</li>
+</ul>
+<h2> python/facts/import-facts.dl </h2>
+<ul>
+<li> .decl String_toRaw(?id:symbol, ?rawId:symbol)</li>
+<li> .decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?inFunction:symbol)</li>
+<li> .decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inFunction:symbol)</li>
+<li> .decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inFunction:symbol)</li>
+<li> .decl _AssignNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inFunction:symbol)</li>
+<li> .decl _AssignOperFrom(?instruction:symbol, ?from:symbol)</li>
+<li> .decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?inFunction:symbol)</li>
+<li> .decl _ExceptionHandler(?handler:symbol, ?function:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number)</li>
+<li> .decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol)</li>
+<li> .decl _Function(?function:symbol, ?simplename:symbol, ?declaringType:symbol, ?arity:number)</li>
+<li> .decl _FunctionInvocation(?instruction:symbol, ?index:number, ?base:symbol, ?function:symbol)</li>
+<li> .decl _Goto(?instruction:symbol, ?index:number, ?to:number, ?function:symbol)</li>
+<li> .decl _If(?instruction:symbol, ?index:number, ?to:number, ?function:symbol)</li>
+<li> .decl _IfVar(?instruction:symbol, ?var:symbol)</li>
+<li> .decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?function:symbol)</li>
+<li> .decl _NormalHeap(?id:symbola, ?type:symbol)</li>
+<li> .decl _Return(?instruction:symbol, ?index:number, ?var:symbol, ?function:symbol)</li>
+<li> .decl _ReturnNone(?instruction:symbol, ?index:number, ?function:symbol)</li>
+<li> .decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?function:symbol)</li>
+<li> .decl _StringConstant(?id:symbol)</li>
+<li> .decl _StringRaw(?id:symbol, ?rawId:symbol)</li>
+<li> .decl _Throw(?instruction:symbol, ?index:number, ?var:symbol, ?function:symbol)</li>
+<li> .decl _UnsupportedInstruction(?instruction:symbol, ?index:number, ?function:symbol)</li>
+</ul>
+<h2> python/facts/schema.dl </h2>
+<ul>
+<li> .decl ActualKeywordParam(?keyword:symbol, ?invocation:FunctionInvocation_Insn, ?var:Var)</li>
+<li> .decl ActualPositionalParam(?index:number, ?invocation:FunctionInvocation_Insn, ?var:Var)</li>
+<li> .decl ApplicationClass(?ref:ClassType)</li>
+<li> .decl ApplicationFunction(?function:Function)</li>
+<li> .decl ApplicationVar(?var:Var)</li>
+<li> .decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inFunction:Function)</li>
+<li> .decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inFunction:Function)</li>
+<li> .decl AssignHeapAllocation_Heap(?insn:AssignHeapAllocation_Insn, ?heap:HeapAllocation)</li>
+<li> .decl AssignInstruction_To(?insn:AssignInstruction, ?to:Var)</li>
+<li> .decl AssignLocal(?from:Var, ?to:Var, ?inFunction:Function)</li>
+<li> .decl AssignLocal_From(?insn:AssignLocal_Insn, ?from:Var)</li>
+<li> .decl AssignNull(?to:Var, ?inFunction:Function)</li>
+<li> .decl AssignNumConstant_Id(?insn:AssignNumConstant_Insn, ?const:NumConstant)</li>
+<li> .decl AssignOper_From(?insn:AssignOper_Insn, ?from:Var)</li>
+<li> .decl AssignReturnValue(?invocation:FunctionInvocation_Insn, ?to:Var)</li>
+<li> .decl DirectSuperclass(?class:ClassType, ?superclass:ClassType)</li>
+<li> .decl ExceptionHandler_Begin(?handler:ExceptionHandler, ?index:number)</li>
+<li> .decl ExceptionHandler_End(?handler:ExceptionHandler, ?index:number)</li>
+<li> .decl ExceptionHandler_FormalParam(?handler:ExceptionHandler, ?var:Var)</li>
+<li> .decl ExceptionHandler_Function(?handler:ExceptionHandler, ?inFunction:Function)</li>
+<li> .decl ExceptionHandler_Index(?handler:ExceptionHandler, ?index:number)</li>
+<li> .decl ExceptionHandler_Previous(?handler:ExceptionHandler, ?previous:ExceptionHandler)</li>
+<li> .decl ExceptionHandler_Type(?handler:ExceptionHandler, ?type:Type)</li>
+<li> .decl FieldInstruction_SimpleName(?insn:FieldInstruction, ?sign:symbol)</li>
+<li> .decl Field_DeclaringType(?field:Field, ?declaringClass:ClassType)</li>
+<li> .decl Field_SimpleName(?field:Field, ?simpleName:symbol)</li>
+<li> .decl FormalParam(?index:number, ?function:Function, ?var:Var)</li>
+<li> .decl FunctionInvocation(?invocation:FunctionInvocation_Insn, ?inFunction:Function)</li>
+<li> .decl FunctionInvocation_Base(?invocation:FunctionInvocation_Insn, ?base:Var)</li>
+<li> .decl Function_Arity(?function:Function, ?arity:number)</li>
+<li> .decl Function_SimpleName(?function:Function, ?simpleName:symbol)</li>
+<li> .decl Goto_Target(?insn:Goto_Insn, ?index:number)</li>
+<li> .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)</li>
+<li> .decl If_Target(?insn:If_Insn, ?index:number)</li>
+<li> .decl If_Var(?insn:If_Insn, ?var:Var)</li>
+<li> .decl Instruction_Function(?insn:Instruction, ?inFunction:Function)</li>
+<li> .decl Instruction_Index(?insn:Instruction, ?index:number)</li>
+<li> .decl Instruction_SourcePosition(?insn:Instruction, ?startLine:number, ?endLine:number, ?startColumn:number, ?endColumn:number)</li>
+<li> .decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inFunction:Function)</li>
+<li> .decl LoadInstanceField_Base(?insn:LoadInstanceField_Insn, ?var:Var)</li>
+<li> .decl LoadInstanceField_To(?insn:LoadInstanceField_Insn, ?var:Var)</li>
+<li> .decl NativeReturnVar(?var:Var, ?function:Function)</li>
+<li> .decl OriginalHeapAllocation_Type(?heap:HeapAllocation, ?type:Type)</li>
+<li> .decl ReturnNonNone_Var(?return:ReturnNonNone_Insn, ?var:Var)</li>
+<li> .decl ReturnVar(?var:Var, ?function:Function)</li>
+<li> .decl Stats_Metrics(order:symbol, msg:symbol, c:number)</li>
+<li> .decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inFunction:Function)</li>
+<li> .decl StoreInstanceField_Base(?insn:StoreInstanceField_Insn, ?var:Var)</li>
+<li> .decl StoreInstanceField_From(?insn:StoreInstanceField_Insn, ?var:Var)</li>
+<li> .decl ThisVar(?function:Function, ?var:Var)</li>
+<li> .decl Throw(?insn:Throw_Insn, ?var:Var)</li>
+<li> .decl Throw_Var(?insn:Throw_Insn, ?var:Var)</li>
+<li> .decl Type_boolean(?t:PrimitiveType)</li>
+<li> .decl Type_complex(?t:PrimitiveType)</li>
+<li> .decl Type_float(?t:PrimitiveType)</li>
+<li> .decl Type_int(?t:PrimitiveType)</li>
+<li> .decl Type_long(?t:PrimitiveType)</li>
+<li> .decl Type_none(?t:PrimitiveType)</li>
+<li> .decl Type_string(?t:PrimitiveType)</li>
+<li> .decl Var_DeclaringFunction(?var:Var, ?function:Function)</li>
+<li> .decl isAssignBinop_Insn(?insn:AssignBinop_Insn)</li>
+<li> .decl isAssignHeapAllocation_Insn(?insn:AssignHeapAllocation_Insn)</li>
+<li> .decl isAssignInstruction(?insn:AssignInstruction)</li>
+<li> .decl isAssignLocal_Insn(?insn:AssignLocal_Insn)</li>
+<li> .decl isAssignNumConstant_Insn(?insn:AssignNumConstant_Insn)</li>
+<li> .decl isAssignOper_Insn(?insn:AssignOper_Insn)</li>
+<li> .decl isAssignUnop_Insn(?insn:AssignUnop_Insn)</li>
+<li> .decl isClassType(?t:ClassType)</li>
+<li> .decl isExceptionHandler(?handler:ExceptionHandler)</li>
+<li> .decl isField(?field:Field)</li>
+<li> .decl isFieldInstruction(?insn:FieldInstruction)</li>
+<li> .decl isFunction(?m:Function)</li>
+<li> .decl isFunctionInvocation(?insn:FunctionInvocation_Insn)</li>
+<li> .decl isGoto_Insn(?insn:Goto_Insn)</li>
+<li> .decl isHeapAllocation(?h:HeapAllocation)</li>
+<li> .decl isIf_Insn(?insn:If_Insn)</li>
+<li> .decl isInstruction(?insn:Instruction)</li>
+<li> .decl isLoadInstanceField_Insn(?insn:LoadInstanceField_Insn)</li>
+<li> .decl isMethod(?m:Function)</li>
+<li> .decl isNormalHeap(?h:NormalHeap)</li>
+<li> .decl isNumConstant(?n:NumConstant)</li>
+<li> .decl isOpaqueInstruction(?insn:OpaqueInstruction)</li>
+<li> .decl isPrimitiveType(?t:PrimitiveType)</li>
+<li> .decl isReturnInstruction(?insn:ReturnInstruction)</li>
+<li> .decl isReturnNonNone_Insn(?insn:ReturnNonNone_Insn)</li>
+<li> .decl isReturnNone_Insn(?insn:ReturnNone_Insn)</li>
+<li> .decl isStoreInstanceField_Insn(?insn:StoreInstanceField_Insn)</li>
+<li> .decl isStringConstant(?h:StringConstant)</li>
+<li> .decl isStringRaw(?id:symbol)</li>
+<li> .decl isThrow_Insn(?insn:Throw_Insn)</li>
+<li> .decl isType(?t:Type)</li>
+<li> .decl isUnsupportedInstruction(?insn:UnsupportedInstruction)</li>
+<li> .decl isVar(v:Var)</li>
+</ul>
+<p>Timestamp: 2018-08-06 11:35:32.498098</p></body></html>
