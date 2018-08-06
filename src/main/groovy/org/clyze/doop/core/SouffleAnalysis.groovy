@@ -171,7 +171,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 
 		if (options.X_ORACULAR_HEURISTICS.value) {
-			cpp.includeAtEnd("$analysis", "${statsPath}/oracular-heuristics.dl")
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
 		}
 
 		if (options.X_STATS_NONE.value) return
