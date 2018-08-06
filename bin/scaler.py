@@ -57,14 +57,12 @@ def dumpRequiredDoopResults(app, db_dir, dump_dir):
         dumpDoopResults(db_dir, dump_dir, app, query)
 
 def runScaler(app, cache_dir, out_dir):
-    cmd = 'java -Xmx48g '
-    cmd += ' -cp %s ' % SCALER_CP
-    cmd += SCALER_MAIN
+    cmd = './gradlew scaler -Pargs="'
     cmd += ' -sep %s ' % SEP
     cmd += ' -app %s ' % app
     cmd += ' -cache %s ' % cache_dir
     cmd += ' -out %s ' % out_dir
-    cmd += ' -tst %d ' % SCALER_TST
+    cmd += ' -tst %d"' % SCALER_TST
     # print cmd
     os.system(cmd)
 

@@ -106,7 +106,9 @@ dependencies {
     runtime "org.clyze:jphantom:1.2",
             "ext:herosclasses:1.1",
             "ext:axml:2.0",
-            "org.smali:util:2.2.4"                              // Dexlib2 utilities
+            "org.smali:util:2.2.4",                              // Dexlib2 utilities
+            "com.google.guava:guava:23.0",
+            "ext:scaler:1.0"
 
     // JimpleParser
     antlr   "org.antlr:antlr4:4.5.1-1"
@@ -144,6 +146,15 @@ task jimple2json(type: JavaExec) {
         args project.property("args").split()
 }
 
+task scaler(type: JavaExec) {
+    description 'Run Scaler'
+    group = 'Other'
+    main = 'ptatoolkit.scaler.doop.Main'
+    classpath = sourceSets.main.runtimeClasspath
+    if (project.hasProperty("args"))
+        args project.property("args").split()
+    jvmArgs '-Xmx=48g'
+}
 task souffleScript(type: JavaExec) {
     description 'Run a custom Souffle Script'
     group = 'Other'
@@ -151,6 +162,7 @@ task souffleScript(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("args"))
         args project.property("args").split()
+
 }
 
 task createEmptyProperties {
