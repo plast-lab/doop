@@ -12,7 +12,7 @@ MAIN_ANALYSIS = 'scaler'
 DATABASE = 'last-analysis'
 
 APP = 'temp'
-SEP = '"\t"'
+SEP = '\\t'
 
 SCALER_CP = ':'.join(['scaler/lib/scaler.jar', 'scaler/lib/guava-23.0.jar'])
 SCALER_MAIN = 'ptatoolkit.scaler.doop.Main'
@@ -57,13 +57,13 @@ def dumpRequiredDoopResults(app, db_dir, dump_dir):
         dumpDoopResults(db_dir, dump_dir, app, query)
 
 def runScaler(app, cache_dir, out_dir):
-    cmd = './gradlew scaler -Pargs="'
+    cmd = './gradlew scaler -Pargs=\''
     cmd += ' -sep %s ' % SEP
     cmd += ' -app %s ' % app
     cmd += ' -cache %s ' % cache_dir
     cmd += ' -out %s ' % out_dir
-    cmd += ' -tst %d"' % SCALER_TST
-    # print cmd
+    cmd += ' -tst %d\'' % SCALER_TST
+    print cmd
     os.system(cmd)
 
     scaler_file = os.path.join(out_dir, \
@@ -80,6 +80,8 @@ def runMainAnalysis(args, scaler_file):
     os.system(cmd)
 
 def run(args):
+    if not os.path.exists("scaler"):
+        os.mkdir("scaler")
     runPreAnalysis(args)
     dumpRequiredDoopResults(APP, DATABASE, SCALER_CACHE)
     scaler_file = runScaler(APP, SCALER_CACHE, SCALER_OUT)
