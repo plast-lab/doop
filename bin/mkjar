@@ -13,7 +13,7 @@ tmpDir=$(mktemp -d)
 # to analyze anyway?
 jreDir=$DOOP_PLATFORMS_LIB/JREs
 if [ -d $jreDir ] ; then
-	jre="1.7"
+	jre="1.8"
 	javac $filenameJava -d $tmpDir -g -bootclasspath ${jreDir}/jre${jre}/lib/rt.jar -source $jre -target $jre
 else
 	javac $filenameJava -d $tmpDir -g
