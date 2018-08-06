@@ -221,6 +221,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				}
 			}
 
+			if (options.SCALER.value) {
+				File origScalerFile = new File(options.SCALER.value.toString())
+				File destScalerFile = new File(factsDir, "ScalerMethodContext.facts")
+				Files.copy(origScalerFile.toPath(), destScalerFile.toPath());
+			}
+
 			if (!options.X_START_AFTER_FACTS.value) {
 				if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
 					runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
@@ -339,7 +345,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			ClassLoader loader = sootClassLoader()
 			def success = Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
 			if (!success)
-				throw new RuntimeException("Soot fact generation Error")
+				throw new RuntimeException("Soot fact generation error")
 		}
 		log.info "Soot fact generation time: ${sootTime}"
 	}

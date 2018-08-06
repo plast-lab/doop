@@ -4,7 +4,6 @@ import org.objectweb.asm.ClassReader;
 import soot.Scene;
 import soot.SootClass;
 import soot.SourceLocator;
-import soot.SourceLocator.FoundFile;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -85,7 +84,7 @@ public class BasicJavaSupport {
                         System.err.println("-- Problematic .class file \"" + entryName + "\"");
                     }
                 } else if (entryName.endsWith(".properties")) {
-                    propertyProvider.addProperties((new FoundFile(filename, entryName)));
+                    propertyProvider.addProperties(DoopAddons.newFoundFile(filename, entryName));
                 } /* Skip non-class files and non-property files */
             }
         }

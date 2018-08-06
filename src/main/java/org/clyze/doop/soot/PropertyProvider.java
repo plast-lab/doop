@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static soot.SourceLocator.FoundFile;
-
 public class PropertyProvider {
     private Map<String, Properties> _properties;
 
@@ -18,7 +16,7 @@ public class PropertyProvider {
     /**
      * Adds a properties file from a resource.
      */
-    public void addProperties(FoundFile foundFile)
+    public void addProperties(DoopAddons.FoundFile foundFile)
         throws IOException
     {
         Properties properties = new Properties();

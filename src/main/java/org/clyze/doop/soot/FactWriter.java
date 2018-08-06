@@ -7,12 +7,10 @@ import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.typing.fast.BottomType;
-import soot.tagkit.AnnotationTag;
-import soot.tagkit.LineNumberTag;
-import soot.tagkit.VisibilityAnnotationTag;
-import soot.tagkit.VisibilityParameterAnnotationTag;
+import soot.tagkit.*;
 import soot.util.backend.ASMBackendUtils;
 
+import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
@@ -161,7 +159,7 @@ public class FactWriter {
             _db.add(COMPONENT_TYPE, result, writeType(componentType));
         }
         else if (t instanceof PrimType || t instanceof NullType ||
-                 t instanceof RefType || t instanceof VoidType || t instanceof BottomType) {
+                t instanceof RefType || t instanceof VoidType || t instanceof BottomType) {
             // taken care of by the standard facts
             ;
         }
@@ -780,7 +778,7 @@ public class FactWriter {
         // introduce a new temporary variable
         String basename = "$stringconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"), -1, -1);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"));
         writeLocal(inMethod, l);
         writeAssignStringConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -790,7 +788,7 @@ public class FactWriter {
         // introduce a new temporary variable
         String basename = "$null";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, type, -1, -1);
+        Local l = new JimpleLocal(varname, type);
         writeLocal(inMethod, l);
         writeAssignNull(inMethod, stmt, l, session);
         return l;
@@ -800,7 +798,7 @@ public class FactWriter {
         // introduce a new temporary variable
         String basename = "$numconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, constant.getType(), -1, -1);
+        Local l = new JimpleLocal(varname, constant.getType());
         writeLocal(inMethod, l);
         writeAssignNumConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -810,7 +808,7 @@ public class FactWriter {
         // introduce a new temporary variable
         String basename = "$classconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"), -1, -1);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"));
         writeLocal(inMethod, l);
         writeAssignClassConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -820,30 +818,30 @@ public class FactWriter {
         // introduce a new temporary variable
         String basename = "$mhandleconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.invoke.MethodHandle"), -1, -1);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.invoke.MethodHandle"));
         writeLocal(inMethod, l);
         writeAssignMethodHandleConstant(inMethod, stmt, l, constant, session);
         return l;
     }
 
     private Value writeActualParam(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session, Value v, int idx) {
-	if (v instanceof StringConstant)
-	    return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
-	else if (v instanceof ClassConstant)
-	    return writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
-	else if (v instanceof NumericConstant)
-	    return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
-	else if (v instanceof MethodHandle)
-	    return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
-	else if (v instanceof NullConstant) {
-	    // Giving the type of the formal argument to be used in the creation of
-	    // temporary var for the actual argument (whose value is null).
-	    Type argType = expr.getMethodRef().parameterType(idx);
-	    return writeNullExpression(inMethod, stmt, argType, session);
-	}
-	else if (v instanceof Constant)
-	    throw new RuntimeException("Value has unknown constant type: " + v);
-	return v;
+        if (v instanceof StringConstant)
+            return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
+        else if (v instanceof ClassConstant)
+            return writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
+        else if (v instanceof NumericConstant)
+            return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
+        else if (v instanceof MethodHandle)
+            return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
+        else if (v instanceof NullConstant) {
+            // Giving the type of the formal argument to be used in the creation of
+            // temporary var for the actual argument (whose value is null).
+            Type argType = expr.getMethodRef().parameterType(idx);
+            return writeNullExpression(inMethod, stmt, argType, session);
+        }
+        else if (v instanceof Constant)
+            throw new RuntimeException("Value has unknown constant type: " + v);
+        return v;
     }
 
     private void writeActualParams(SootMethod inMethod, Stmt stmt, InvokeExpr expr, String invokeExprRepr, Session session) {
@@ -1030,20 +1028,11 @@ public class FactWriter {
 
     void writeFieldInitialValue(SootField f) {
         String fieldId = _rep.signature(f);
-        String valueString = f.getInitialValueString();
-        if (valueString != null && !valueString.equals("")) {
-            int pos = valueString.indexOf('@');
-            if (pos < 0)
-                System.err.println("Unexpected format (no @) in initial field value");
-            else {
-                try {
-                    int value = (int) Long.parseLong(valueString.substring(pos+1), 16); // parse hex string, possibly negative int
-                    _db.add(FIELD_INITIAL_VALUE, fieldId, Integer.toString(value));
-                } catch (NumberFormatException e) {
-                    _db.add(FIELD_INITIAL_VALUE, fieldId, valueString.substring(pos+1));
-                    // if we failed to parse the value as a hex int, output it in full
-                }
+        List<Tag> tagList = f.getTags();
+        for (Tag tag : tagList)
+            if (tag instanceof ConstantValueTag) {
+                String valueString = ((ConstantValueTag)tag).getConstant().toString();
+                _db.add(FIELD_INITIAL_VALUE, fieldId, valueString);
             }
-        }
     }
 }

@@ -119,7 +119,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "MAIN_CLASS",
 					name: "main",
 					argName: "MAIN",
-					description: "Specify the main class(es)",
+					description: "Specify the main class(es) separated by spaces",
 					value: [],
 					multipleValues: true,
 					changesFacts: true
@@ -274,6 +274,26 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					cli: true
 			),
 			/* End Main options */
+
+			/* Start Scaler related options */
+			new BooleanAnalysisOption(
+					id: "SCALER_PRE_ANALYSIS",
+					name: "scaler-pre",
+					description: "Enable the analysis to be the pre-analysis of Scaler, and outputs the information required by Scaler.",
+					forPreprocessor: true
+			),
+			new AnalysisOption(
+					id: "SCALER",
+					name: "scaler",
+					description: "Use file with method context-sensitivity variants selected by Scaler.",
+					argName: "FILE",
+					argInputType: InputType.MISC,
+					forCacheID: true,
+					changesFacts: true,
+					forPreprocessor: true
+			),
+			/* End Scaler related options */
+
 			/* Start preprocessor normal flags */
 			new BooleanAnalysisOption(
 					id: "NO_MERGES",
@@ -576,11 +596,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argInputType: InputType.MISC
 			),
 			new BooleanAnalysisOption(
-					id: "X_STOP_AT_INIT",
-					name: "Xstop-at-init",
-					description: "Initialize database with facts and exit."
-			),
-			new BooleanAnalysisOption(
 					id: "X_STOP_AT_BASIC",
 					name: "Xstop-at-basic",
 					description: "Run the basic analysis and exit."
@@ -603,8 +618,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: false
 			),
 			new BooleanAnalysisOption(
-					id: "X_SENSITIVITY_HEURISTICS",
-					name: "Xsensitivity-heuristics",
+					id: "X_ORACULAR_HEURISTICS",
+					name: "Xoracular-heuristics",
 					description: "Run sensitivity heuristics logic under addons/statistics",
 					forPreprocessor: false
 			),

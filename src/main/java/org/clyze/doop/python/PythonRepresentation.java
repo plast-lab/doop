@@ -1,6 +1,8 @@
 package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
+import com.ibm.wala.cast.ir.ssa.AstEchoInstruction;
+import com.ibm.wala.cast.ir.ssa.AstYieldInstruction;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
@@ -273,6 +275,10 @@ public class PythonRepresentation {
             kind = "ret";
         else if(instruction instanceof SSAThrowInstruction)
             kind = "throw";
+        else if(instruction instanceof AstEchoInstruction)
+            kind = "print";
+        else if(instruction instanceof AstYieldInstruction)
+            kind = "yield";
         return kind;
     }
 

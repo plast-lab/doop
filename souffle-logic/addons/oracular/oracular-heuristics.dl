@@ -1,0 +1,141 @@
+.decl VPTCountPerMethod(?method:Method, ?n:number)
+
+VPTCountPerMethod(?method, Y) :-
+   Var_DeclaringMethod(?var, ?method),
+   Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
+
+.decl CalleeCountPerMethod(?method:Method, ?n:number)
+
+CalleeCountPerMethod(?method, Y) :-
+  isMethod(?method),      
+  Y =  count : {Stats_Simple_InsensCallGraphEdge(?invo, _),
+  Instruction_Method(?invo, ?method)}.
+
+.decl CallerCountPerMethod(?method:Method, ?n:number)
+
+CallerCountPerMethod(?tomethod, Y) :-
+  isMethod(?tomethod),      
+  Y = count : {Stats_Simple_InsensCallGraphEdge(?invo, ?tomethod),
+  Instruction_Method(?invo, _)}.
+                             
+.decl NeighboringMethodsInCallGraph(?method:Method, ?neighbor:Method, ?weight:number)
+
+NeighboringMethodsInCallGraph(?method, ?method, 1) :-
+   VPTCountPerMethod(?method, _).
+
+NeighboringMethodsInCallGraph(?method, ?neigh, ?weight) :-
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
+  Instruction_Method(?invo, ?neigh),
+  CalleeCountPerMethod(?neigh, ?weight).
+
+NeighboringMethodsInCallGraph(?neigh, ?method, ?weight) :-
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?neigh),
+  Instruction_Method(?invo, ?method),
+  CallerCountPerMethod(?neigh, ?weight).
+                     
+.decl MethodVPTImpact(?method:Method, ?n:number)
+      
+MethodVPTImpact(?method, Y) :-
+  mainAnalysis.Reachable(?method),      
+  Y = sum ?n * 10 / ?weight: { NeighboringMethodsInCallGraph(?neigh, ?method, ?weight), VPTCountPerMethod(?neigh, ?n) }.
+
+.decl CountObjectPointsToThroughField(?basevalue:mainAnalysis.Value, ?basehctx:mainAnalysis.configuration.HContext, ?n:number)
+      
+CountObjectPointsToThroughField(?basevalue, ?basehctx, Y) :-
+  mainAnalysis.isValue(?basevalue),
+  mainAnalysis.isHContext(?basehctx),           
+  Y = count : {mainAnalysis.InstanceFieldPointsTo(_, _, _, ?basehctx, ?basevalue)}.
+
+.decl MethodWritesToObjectField(?method:Method, ?basevalue:mainAnalysis.Value)
+
+MethodWritesToObjectField(?method, ?basevalue) :-
+  Var_DeclaringMethod(?var, ?method),
+  mainAnalysis.VarPointsTo(_, ?basevalue, _, ?var),
+  StoreInstanceField_Base(?insn, ?var),
+  Instruction_Method(?insn, ?method).
+
+.decl CountMethodsWriteToObjectField(?basevalue:mainAnalysis.Value, ?n:number)
+
+CountMethodsWriteToObjectField(?basevalue, Y) :-
+  mainAnalysis.isValue(?basevalue),
+  Y = count : {MethodWritesToObjectField(_, ?basevalue)}.
+
+.decl MethodIFPTImpact(?method:Method, ?n:number)
+
+MethodIFPTImpact(?method, Y) :-
+  isMethod(?method),
+  Y = sum ?n * 10 / ?weight : {NeighboringMethodsInCallGraph(?neigh, ?method, ?weight),
+  Var_DeclaringMethod(?var, ?neigh),
+  mainAnalysis.VarPointsTo(?basehctx, ?basevalue, _, ?var),
+  CountObjectPointsToThroughField(?basevalue, ?basehctx, ?n1),
+  CountMethodsWriteToObjectField(?basevalue, ?n2),
+  ?n = ?n1/?n2,
+  ?n2 != 0}.  
+
+.decl ReachableStoreStaticField(?from:Var, ?field:Field, ?method:Method)
+
+ReachableStoreStaticField(?var, ?field, ?method) :-
+  StoreStaticField(?var, ?field, ?method),
+  mainAnalysis.Reachable(?method).
+
+.decl NumberOfMethodsStoringToStaticField(?field:Field, ?n:number)
+      
+NumberOfMethodsStoringToStaticField(?field, Y) :-
+  isField(?field),
+  Y = count : {ReachableStoreStaticField(_, ?field, _)}.
+
+.decl SFPTCountPerStaticField(?field:Field, Y:number)
+
+SFPTCountPerStaticField(?field, Y) :-
+  isField(?field),
+  Y =  count : {mainAnalysis.StaticFieldPointsTo(_, _, ?field)}.
+
+.decl StaticFieldImpactPerMethod(?field:Field, ?n:number)
+
+StaticFieldImpactPerMethod(?field, ?n) :-
+  SFPTCountPerStaticField(?field, ?sfptCount),
+  NumberOfMethodsStoringToStaticField(?field, ?numberOfMethods),
+  ?numberOfMethods != 0,
+  ?n = ?sfptCount/?numberOfMethods. 
+
+.decl MethodSFPTImpact(?method:Method, ?n:number)
+                                         
+MethodSFPTImpact(?method, ?impact) :-
+  StoreStaticField(_, ?field, ?method),
+  StaticFieldImpactPerMethod(?field, ?n),
+  ?impact = ?n * 10.
+
+MethodSFPTImpact(?method, 0) :-
+  mainAnalysis.Reachable(?method),
+  !StoreStaticField(_, _, ?method).
+
+.decl MethodWeight(?method:Method, ?n:number)
+           
+MethodWeight(?method, ?n) :-      
+  MethodVPTImpact(?method, ?size1),
+  // MethodIFPTImpact(?method, ?size2),
+  // MethodSFPTImpact(?method, ?size3),
+  ?n = ?size1.// + ?size2 + ?size3.
+
+// .decl TwoLevelCallerMethodInCallGraph(?neighbor:Method, ?method:Method, ?weight:number)
+
+// TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight) :-
+//   NeighboringMethodsInCallGraph(?intermediatemethod, ?method, _),
+//   mainAnalysis.CallGraphEdge(_, ?invo, _, ?intermediatemethod),
+//   Instruction_Method(?invo, ?neigh),
+//   CalleeCountPerMethod(?neigh, ?weight).
+
+// TwoLevelCallerMethodInCallGraph(?neigh, ?method, ?weight) :-
+//    NeighboringMethodsInCallGraph(?neigh, ?method, ?weight).
+// .decl MethodImpacts(?method:Method, ?n1:number, ?n2:number, ?n3:number)
+
+// MethodImpacts(?method, ?size1, ?size2, ?size3) :-
+//   MethodVPTImpact(?method, ?size1),
+//   MethodIFPTImpact(?method, ?size2),
+//   MethodSFPTImpact(?method, ?size3).
+
+.output MethodWeight
+// .output MethodImpacts
+// .output SFPTCountPerStaticField
+// .output NumberOfMethodsStoringToStaticField
+// .output StaticFieldImpactPerMethod

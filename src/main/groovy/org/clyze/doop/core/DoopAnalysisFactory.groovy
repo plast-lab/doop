@@ -28,6 +28,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
 	static final String HASH_ALGO = "SHA-256"
 	static final availableConfigurations = [
+			"scaler"                             : "ScalerConfiguration",
 			"twophase-A"                         : "TwoPhaseAConfiguration",
 			"twophase-B"                         : "TwoPhaseBConfiguration",
 			"context-insensitive"                : "ContextInsensitiveConfiguration",
@@ -46,7 +47,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			"2-type-sensitive+heap"              : "TwoTypeSensitivePlusHeapConfiguration",
 			"2-object-sensitive"                 : "TwoObjectSensitiveConfiguration",
 			"2-object-sensitive+heap"            : "TwoObjectSensitivePlusHeapConfiguration",
-			"special-2-object-sensitive+heap"    : "SpecialTwoObjectSensitivePlusHeapConfiguration",
+			"oracular"                           : "OracularConfiguration",
 			"special-2-type-sensitive+heap"      : "SpecialTwoTypeSensitivePlusHeapConfiguration",
 			"2-object-sensitive+2-heap"          : "TwoObjectSensitivePlusTwoHeapConfiguration",
 			"3-object-sensitive+3-heap"          : "ThreeObjectSensitivePlusThreeHeapConfiguration",
@@ -323,7 +324,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value &&
 				options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-			throw new RuntimeException("Error: options " + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + " and " + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
+			throw new RuntimeException("Error: options --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
 		}
 
 		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
@@ -338,7 +339,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (options.REFLECTION_CLASSIC.value) {
 			if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-				throw new RuntimeException("Error: options " + options.REFLECTION_CLASSIC.name + " and " + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
+				throw new RuntimeException("Error: options --" + options.REFLECTION_CLASSIC.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
 			}
 			options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false
 			options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true

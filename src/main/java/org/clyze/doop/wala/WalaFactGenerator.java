@@ -203,8 +203,12 @@ class WalaFactGenerator implements Runnable {
 
         if(!(m.isAbstract() || m.isNative()))
         {
-            IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
-            generate(m, ir, session);
+            try {
+                IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
+                generate(m, ir, session);
+            }catch (Throwable t){
+                return;
+            }
         }
     }
 

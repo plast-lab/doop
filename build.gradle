@@ -31,14 +31,22 @@ def heapDLVersion = "1.0.2"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
-task wrapper(type: Wrapper) {
-    gradleVersion = "4.7"
+wrapper {
+    gradleVersion = "4.9"
 }
 
 repositories {
     mavenLocal()
     maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
     maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+    maven {
+        name "soot-snapshot"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
+    }
+    maven {
+        name "soot-release"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
+    }
     if (heapDLVersion == "master-SNAPSHOT")
         maven { url 'https://jitpack.io' }
 }
@@ -64,11 +72,15 @@ dependencies {
             "org.smali:dexlib2:2.2.4",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
-            /// Soot is a compile time dependency
+
+            // Soot
             "ext:AXMLPrinter:2.0",
-            "ext:sootclasses:3.2.+",
-            "ext:soot-infoflow:1.2.+",
-            "ext:soot-infoflow-android:1.2.+",
+            // Upstream stable version, to be used instead of ext:sootclasses.
+            // "ca.mcgill.sable:soot:3.1.0",
+            "ext:sootclasses:3.2.7",
+            "ext:soot-infoflow:2.5.1",
+            "ext:soot-infoflow-android:2.5.1",
+
             /// WALA
             /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
             //"com.ibm.wala:com.ibm.wala.util:1.4.3",
@@ -94,7 +106,9 @@ dependencies {
     runtime "org.clyze:jphantom:1.2",
             "ext:herosclasses:1.1",
             "ext:axml:2.0",
-            "org.smali:util:2.2.4"                              // Dexlib2 utilities
+            "org.smali:util:2.2.4",                              // Dexlib2 utilities
+            "com.google.guava:guava:23.0",
+            "ext:scaler:1.0"
 
     // JimpleParser
     antlr   "org.antlr:antlr4:4.5.1-1"
@@ -132,6 +146,15 @@ task jimple2json(type: JavaExec) {
         args project.property("args").split()
 }
 
+task scaler(type: JavaExec) {
+    description 'Run Scaler'
+    group = 'Other'
+    main = 'ptatoolkit.scaler.doop.Main'
+    classpath = sourceSets.main.runtimeClasspath
+    if (project.hasProperty("args"))
+        args project.property("args").split()
+    //jvmArgs = ['-Xmx=48g']
+}
 task souffleScript(type: JavaExec) {
     description 'Run a custom Souffle Script'
     group = 'Other'
@@ -139,6 +162,7 @@ task souffleScript(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("args"))
         args project.property("args").split()
+
 }
 
 task createEmptyProperties {

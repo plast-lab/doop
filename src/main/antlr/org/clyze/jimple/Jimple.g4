@@ -189,7 +189,7 @@ IDENTIFIER_BASE
 
 fragment
 IDENTIFIER_SUF
-	: '#_' [0-9]+ ;
+	: ['#''_'0-9]+ ;
 
 fragment
 PACKAGE_PART

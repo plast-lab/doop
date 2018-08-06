@@ -32,10 +32,10 @@ public class WalaInvoker {
         logger =  LogFactory.getLog(getClass());
     }
 
-    private static int shift(String[] args, int index) {
+    private static int shift(String[] args, int index) throws DoopErrorCodeException {
         if(args.length == index + 1) {
             System.err.println("error: option " + args[index] + " requires an argument");
-            System.exit(1);
+            throw new DoopErrorCodeException(9);
         }
         return index + 1;
     }

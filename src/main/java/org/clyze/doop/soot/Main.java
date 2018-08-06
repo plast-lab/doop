@@ -217,7 +217,7 @@ public class Main {
             }
             else if ((sootParameters._inputs.stream().filter(s -> s.endsWith(".apk") || s.endsWith(".aar")).count() > 0) &&
                     (!sootParameters._android)) {
-                System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs");
+                System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
                 throw new DoopErrorCodeException(3);
             }
             else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
@@ -329,7 +329,9 @@ public class Main {
 
         try {
             System.out.println("Total classes in Scene: " + classes.size());
-            PackManager.v().retrieveAllSceneClassesBodies();
+            DoopAddons.retrieveAllSceneClassesBodies();
+            // The call below has a problem (only retrieves app method bodies).
+            // DoopAddons.retrieveAllBodies();
             System.out.println("Retrieved all bodies");
         }
         catch (Exception ex) {
@@ -372,6 +374,7 @@ public class Main {
                     System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
                 }
                 driver.writeInParallel(jimpleClasses);
+                DoopAddons.structureJimpleFiles(sootParameters._outputDir);
             }
         }
 

@@ -1,0 +1,43 @@
+#define CI_LIMIT 100
+#define ONE_TYPE_LIMIT 60
+#define TWO_TYPE_LIMIT 10
+
+.decl SensitiveSum(?method:symbol, ?n:number)
+.input SensitiveSum
+
+.decl InsensitiveSum(?method:symbol, ?n:number)
+.input InsensitiveSum
+
+.decl SpecialCSMethods(?method:symbol, ?sensitivity:symbol)
+
+SpecialCSMethods(?method, "context-insensitive") :-
+  MethodImpact(?method, ?n),
+  ?n >= CI_LIMIT.
+
+SpecialCSMethods(?method, "1-type-sensitive") :-
+  MethodImpact(?method, ?n),
+  ?n < CI_LIMIT,
+  ?n >= ONE_TYPE_LIMIT.
+
+SpecialCSMethods(?method, "2-type-sensitive") :-
+  MethodImpact(?method, ?n),
+  ?n < ONE_TYPE_LIMIT,
+  ?n >= TWO_TYPE_LIMIT.
+
+.decl MethodImpact(?method:symbol, ?n:number)
+
+MethodImpact(?method, ?n) :-
+  SensitiveSum(?method, ?n1), 
+  InsensitiveSum(?method, ?n2),
+  ?n = ?n1/?n2,
+  ?n2 != 0.
+
+
+MethodImpact(?method, ?n) :-
+  SensitiveSum(?method, ?n1), 
+  InsensitiveSum(?method, ?n2),
+  ?n = ?n1,
+  ?n2 = 0.
+
+.output SpecialCSMethods(IO="file", filename="SpecialCSMethods.csv", delimiter=", ")
+.output MethodImpact
