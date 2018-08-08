@@ -71,4 +71,10 @@ public class JavaFactWriter {
     protected void writeMethodHandleConstant(String heap, String handleName) {
         _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
     }
+
+    protected void writeFormalParam(String methodId, String var, String type, int i) {
+        _db.add(FORMAL_PARAM, str(i), methodId, var);
+        _db.add(VAR_TYPE, var, type);
+        _db.add(VAR_DECLARING_METHOD, var, methodId);
+    }
 }

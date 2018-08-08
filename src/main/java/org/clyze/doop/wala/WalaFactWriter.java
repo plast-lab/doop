@@ -879,9 +879,8 @@ public class WalaFactWriter extends JavaFactWriter {
     void writeFormalParam(IMethod m, int paramIndex, int actualIndex) {
         String methodId = _rep.signature(m);
         String var = _rep.param(m, paramIndex);
-        _db.add(FORMAL_PARAM, str(actualIndex), methodId, var);
-        _db.add(VAR_TYPE, var, writeType(m.getParameterType(paramIndex)));
-        _db.add(VAR_DECLARING_METHOD, var, methodId);
+        String type = writeType(m.getParameterType(paramIndex));
+        writeFormalParam(methodId, var, type, actualIndex);
     }
 
     void writeLocal(IMethod m, Local l) {

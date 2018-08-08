@@ -701,9 +701,8 @@ public class FactWriter extends JavaFactWriter {
     void writeFormalParam(SootMethod m, int i) {
         String methodId = writeMethod(m);
         String var = _rep.param(m, i);
-        _db.add(FORMAL_PARAM, str(i), methodId, var);
-        _db.add(VAR_TYPE, var, writeType(m.getParameterType(i)));
-        _db.add(VAR_DECLARING_METHOD, var, methodId);
+        String type = writeType(m.getParameterType(i));
+        writeFormalParam(methodId, var, type, i);
     }
 
     void writeLocal(SootMethod m, Local l) {
