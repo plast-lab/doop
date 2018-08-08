@@ -106,7 +106,7 @@ class WalaRepresentation {
         return f.getName().toString();
     }
 
-    //Method descriptors using soot like format.
+    //Method descriptors using Soot-like format.
     //Should maybe cache these as well.
     String params(MethodReference methodReference)
     {
@@ -191,7 +191,7 @@ class WalaRepresentation {
     }
 
     //This method takes a MethodReference as a parameter and it does not include "this" as an argument
-    //Had the parameter been an IMethod it would include "this" but soot Signatures don't have it so we keep it this way.
+    //Had the parameter been an IMethod it would include "this" but Soot signatures don't have it so we keep it this way.
     private String createMethodSignature(MethodReference m)
     {
         StringBuilder DoopSig = new StringBuilder("<" + fixTypeString(m.getDeclaringClass().toString()) + ": " + fixTypeString(m.getReturnType().toString()) + " " + m.getName() + "(");
