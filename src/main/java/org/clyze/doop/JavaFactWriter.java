@@ -77,4 +77,11 @@ public class JavaFactWriter {
         _db.add(VAR_TYPE, var, type);
         _db.add(VAR_DECLARING_METHOD, var, methodId);
     }
+
+    protected void writeThisVar(String methodId, String thisVar, String type) {
+        _db.add(THIS_VAR, methodId, thisVar);
+        _db.add(VAR_TYPE, thisVar, type);
+        _db.add(VAR_DECLARING_METHOD, thisVar, methodId);
+    }
+
 }

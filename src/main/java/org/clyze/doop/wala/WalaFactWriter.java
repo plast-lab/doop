@@ -867,9 +867,8 @@ public class WalaFactWriter extends JavaFactWriter {
     void writeThisVar(IMethod m) {
         String methodId = _rep.signature(m);
         String thisVar = _rep.thisVar(m);
-        _db.add(THIS_VAR, methodId, thisVar);
-        _db.add(VAR_TYPE, thisVar, writeType(m.getReference().getDeclaringClass()));
-        _db.add(VAR_DECLARING_METHOD, thisVar, methodId);
+        String type = writeType(m.getReference().getDeclaringClass());
+        writeThisVar(methodId, thisVar, type);
     }
 
     void writeMethodDeclaresException(IMethod m, TypeReference exception) {

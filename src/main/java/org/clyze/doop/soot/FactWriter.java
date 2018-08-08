@@ -690,9 +690,8 @@ public class FactWriter extends JavaFactWriter {
     void writeThisVar(SootMethod m) {
         String methodId = writeMethod(m);
         String thisVar = _rep.thisVar(m);
-        _db.add(THIS_VAR, methodId, thisVar);
-        _db.add(VAR_TYPE, thisVar, writeType(m.getDeclaringClass()));
-        _db.add(VAR_DECLARING_METHOD, thisVar, methodId);
+        String type = writeType(m.getDeclaringClass());
+        writeThisVar(methodId, thisVar, type);
     }
 
     void writeMethodDeclaresException(SootMethod m, SootClass exception) {
