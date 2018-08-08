@@ -66,7 +66,7 @@ public class WalaInvoker {
                         break;
                     case "-i":
                         i = shift(args, i);
-                        walaParameters._inputs.add(args[i]);
+                        walaParameters.getInputs().add(args[i]);
                         break;
                     case "-l":
                         i = shift(args, i);
@@ -85,7 +85,7 @@ public class WalaInvoker {
                         break;
                     case "-d":
                         i = shift(args, i);
-                        walaParameters._outputDir = args[i];
+                        walaParameters.setOutputDir(args[i]);
                         break;
                     case "--application-regex":
                         i = shift(args, i);
@@ -124,11 +124,12 @@ public class WalaInvoker {
 
     public void run(WalaParameters walaParameters) throws IOException {
         StringBuilder classPath = new StringBuilder();
-        for (int i = 0; i < walaParameters._inputs.size(); i++) {
+        List<String> inputs = walaParameters.getInputs();
+        for (int i = 0; i < inputs.size(); i++) {
             if (i == 0)
-                classPath.append(walaParameters._inputs.get(i));
+                classPath.append(inputs.get(i));
             else
-                classPath.append(":").append(walaParameters._inputs.get(i));
+                classPath.append(":").append(inputs.get(i));
         }
 
 //        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
@@ -144,9 +145,9 @@ public class WalaInvoker {
 
         AnalysisScope scope;
         if(walaParameters._android)
-            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters._inputs, "", walaParameters._platformLibraries, walaParameters._appLibraries);
+            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters._platformLibraries, walaParameters._appLibraries);
         else
-            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters._inputs,"", walaParameters._platformLibraries, walaParameters._appLibraries);
+            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters._platformLibraries, walaParameters._appLibraries);
             //scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 
         ClassHierarchy cha = null;
@@ -158,9 +159,10 @@ public class WalaInvoker {
 
         assert cha != null;
         Iterator<IClass> classes = cha.iterator();
-        Database db = new Database(new File(walaParameters._outputDir));
+        String outputDir = walaParameters.getOutputDir();
+        Database db = new Database(new File(outputDir));
         WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
-        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
+        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         //WARNING: This introduces a dependency to SOOT
@@ -168,7 +170,7 @@ public class WalaInvoker {
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if(walaParameters._android)
         {
-            WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters._inputs, walaFactWriter, walaParameters._extraSensitiveControls);
+            WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters.getInputs(), walaFactWriter, walaParameters._extraSensitiveControls);
             parser.writeComponents();
         }
         System.out.println("Number of classes: " + cha.getNumberOfClasses());

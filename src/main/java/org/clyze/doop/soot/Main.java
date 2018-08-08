@@ -54,7 +54,7 @@ public class Main {
                         break;
                     case "-d":
                         i = shift(args, i);
-                        sootParameters._outputDir = args[i];
+                        sootParameters.setOutputDir(args[i]);
                         break;
                     case "--main":
                         i = shift(args, i);
@@ -70,7 +70,7 @@ public class Main {
                         break;
                     case "-i":
                         i = shift(args, i);
-                        sootParameters._inputs.add(args[i]);
+                        sootParameters.getInputs().add(args[i]);
                         break;
                     case "-ld":
                         i = shift(args, i);
@@ -143,7 +143,7 @@ public class Main {
                         break;
                     case "--extra-sensitive-controls":
                         i = shift(args, i);
-                        sootParameters.extraSensitiveControls = args[i];
+                        sootParameters._extraSensitiveControls = args[i];
                         break;
                     case "--seed":
                         i = shift(args, i);
@@ -211,17 +211,17 @@ public class Main {
                 System.err.println("error: --stdout must be used with --generate-jimple");
                 throw new DoopErrorCodeException(7);
             }
-            if (sootParameters._toStdout && sootParameters._outputDir != null) {
+            if (sootParameters._toStdout && sootParameters.getOutputDir() != null) {
                 System.err.println("error: --stdout and -d options are not compatible");
                 throw new DoopErrorCodeException(2);
             }
-            else if ((sootParameters._inputs.stream().filter(s -> s.endsWith(".apk") || s.endsWith(".aar")).count() > 0) &&
+            else if ((sootParameters.getInputs().stream().filter(s -> s.endsWith(".apk") || s.endsWith(".aar")).count() > 0) &&
                     (!sootParameters._android)) {
                 System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
                 throw new DoopErrorCodeException(3);
             }
-            else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
-                sootParameters._outputDir = System.getProperty("user.dir");
+            else if (!sootParameters._toStdout && sootParameters.getOutputDir() == null) {
+                sootParameters.setOutputDir(System.getProperty("user.dir"));
             }
 
             produceFacts(sootParameters);
@@ -237,7 +237,7 @@ public class Main {
     }
 
     private static void produceFacts(SootParameters sootParameters) throws Exception {
-        Options.v().set_output_dir(sootParameters._outputDir);
+        Options.v().set_output_dir(sootParameters.getOutputDir());
         Options.v().setPhaseOption("jb", "use-original-names:true");
 
         if (sootParameters._ignoreWrongStaticness)
@@ -261,8 +261,8 @@ public class Main {
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
         if (sootParameters._android) {
-            if (sootParameters._inputs.size() > 1)
-                System.err.println("\nWARNING -- Android mode: all inputs will be preprocessed but only " + sootParameters._inputs.get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
+            if (sootParameters.getInputs().size() > 1)
+                System.err.println("\nWARNING -- Android mode: all inputs will be preprocessed but only " + sootParameters.getInputs().get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
@@ -276,13 +276,13 @@ public class Main {
         }
 
         Scene scene = Scene.v();
-        for (String input : sootParameters._inputs) {
+        for (String input : sootParameters.getInputs()) {
             String inputFormat = input.endsWith(".jar")? "archive" : "file";
             System.out.println("Adding " + inputFormat + ": "  + input);
 
             addToSootClassPath(scene, input);
             if (sootParameters._android) {
-                if (sootParameters._inputs.size() > 1)
+                if (sootParameters.getInputs().size() > 1)
                     System.out.println("WARNING: skipping rest of inputs");
                 break;
             }
@@ -337,7 +337,7 @@ public class Main {
         catch (Exception ex) {
             System.out.println("Not all bodies retrieved");
         }
-        Database db = new Database(new File(sootParameters._outputDir));
+        Database db = new Database(new File(sootParameters.getOutputDir()));
         FactWriter writer = new FactWriter(db);
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
         Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
@@ -374,7 +374,7 @@ public class Main {
                     System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
                 }
                 driver.writeInParallel(jimpleClasses);
-                DoopAddons.structureJimpleFiles(sootParameters._outputDir);
+                DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
             }
         }
 

@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 public class Main {
@@ -59,7 +60,7 @@ public class Main {
                         break;
                     case "-i":
                         i = shift(args, i);
-                        walaParameters._inputs.add(args[i]);
+                        walaParameters.getInputs().add(args[i]);
                         break;
                     case "-l":
                         i = shift(args, i);
@@ -78,7 +79,7 @@ public class Main {
                         break;
                     case "-d":
                         i = shift(args, i);
-                        walaParameters._outputDir = args[i];
+                        walaParameters.setOutputDir(args[i]);
                         break;
                     case "--application-regex":
                         i = shift(args, i);
@@ -114,11 +115,12 @@ public class Main {
 
     public static void run(WalaParameters walaParameters) throws IOException {
         String classPath = "";
-        for (int i = 0; i < walaParameters._inputs.size(); i++) {
+        List<String> inputs = walaParameters.getInputs();
+        for (int i = 0; i < inputs.size(); i++) {
             if (i == 0)
-                classPath += walaParameters._inputs.get(i);
+                classPath += inputs.get(i);
             else
-                classPath += ":" + walaParameters._inputs.get(i);
+                classPath += ":" + inputs.get(i);
         }
 
         for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
@@ -139,9 +141,10 @@ public class Main {
         }
 
         Iterator<IClass> classes = cha.iterator();
-        Database db = new Database(new File(walaParameters._outputDir));
+        String outputDir = walaParameters.getOutputDir();
+        Database db = new Database(new File(outputDir));
         WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
-        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
+        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
 

@@ -1,31 +1,17 @@
 package org.clyze.doop.wala;
 
+import org.clyze.doop.Parameters;
 import org.clyze.doop.util.filter.ClassFilter;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class WalaParameters {
-    List<String> _inputs = new ArrayList<>();
+public class WalaParameters extends Parameters {
     List<String> _appLibraries = new ArrayList<>();
     List<String> _platformLibraries = new ArrayList<>();
     String _javaPath = null;
-    String _outputDir = null;
-    String _extraSensitiveControls = "";
-    ClassFilter applicationClassFilter;
     String appRegex = "**";
-    Integer _cores = null;
-    boolean _android = false;
     boolean _generateIR = false;
-    String _androidJars = null;
-
-    public void setInputs(List<String> inputs) {
-        this._inputs = inputs;
-    }
-
-    public List<String> getInputs() {
-        return this._inputs;
-    }
 
     public void setAppLibraries(List<String> libraries) {
         this._appLibraries = libraries;

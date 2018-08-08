@@ -43,7 +43,7 @@ public class BasicJavaSupport {
      *
      */
     public void populateClassesInAppJar(SootParameters sootParameters) throws IOException {
-        for (String filename : sootParameters._inputs) {
+        for (String filename : sootParameters.getInputs()) {
             System.out.println("Processing application JAR: " + filename);
             processJar(classesInApplicationJars, filename);
         }
