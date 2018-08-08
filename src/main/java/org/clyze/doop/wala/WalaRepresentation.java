@@ -12,6 +12,7 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
+import org.clyze.doop.JavaRepresentation;
 import org.clyze.doop.SessionCounter;
 import org.clyze.persistent.model.doop.DynamicMethodInvocation;
 
@@ -21,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.clyze.doop.wala.WalaUtils.createMethodSignature;
 import static org.clyze.doop.wala.WalaUtils.fixTypeString;
 
-class WalaRepresentation {
+class WalaRepresentation extends JavaRepresentation {
     private Map<String, String> _methodSigRepr = new ConcurrentHashMap<>();
 
     /*
@@ -50,17 +51,8 @@ class WalaRepresentation {
         return "<class " + fixTypeString(c.getName().toString()) + ">";
     }
 
-    static String classConstant(String className) {
-        return "<class " + className + ">";
-    }
-
-
     String classConstant(TypeReference t) {
         return "<class " + fixTypeString(t.toString()) + ">";
-    }
-
-    String methodTypeConstant(String s) {
-        return s;
     }
 
     String signature(IMethod m) {
@@ -135,7 +127,7 @@ class WalaRepresentation {
 
     String nativeReturnVar(IMethod m)
     {
-        return signature(m) + "/@native-return";
+        return nativeReturnVarOfMethod(signature(m));
     }
 
     String param(IMethod m, int i)
@@ -145,13 +137,12 @@ class WalaRepresentation {
 
     String local(IMethod m, Local local)
     {
-        return signature(m) + "/" + local.getName();
+        return localId(signature(m), local.getName());
     }
 
     String newLocalIntermediate(IMethod m, Local l, SessionCounter counter)
     {
-        String s = local(m, l);
-        return s + "/intermediate/" + counter.nextNumber(s);
+        return newLocalIntermediateId(local(m, l), counter);
     }
 
     void putHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, int scopeIndex)
@@ -243,18 +234,14 @@ class WalaRepresentation {
 
     String unsupported(IMethod inMethod, IR ir, SSAInstruction instruction, int index)
     {
-        return signature(inMethod) +
-                "/unsupported " + getKind(instruction) +
-                "/" +  instruction.toString(ir.getSymbolTable()).replace(" ", "") +
-                "/instruction" + index;
+        return unsupportedId(signature(inMethod), getKind(instruction), instruction.toString(ir.getSymbolTable()).replace(" ", ""), index);
     }
 
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(IMethod inMethod, SSAInstruction instruction, Session session, int index)
-    {
-        return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
+    String instruction(IMethod inMethod, SSAInstruction instruction, Session session, int index) {
+        return instructionId(signature(inMethod), getKind(instruction), index);
     }
 
     String invoke(IR ir, IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, SessionCounter counter, TypeInference typeInference)
@@ -266,7 +253,7 @@ class WalaRepresentation {
         else
             midPart = invokeIdMiddle(ir, instr, methRef, typeInference);
 
-        return signature(inMethod) + "/" + midPart + "/" + counter.nextNumber(midPart);
+        return invokeId(signature(inMethod), midPart, counter);
     }
 
     private String invokeIdMiddle(IR ir, SSAInvokeInstruction instr, MethodReference resolvedTargetRef, TypeInference typeInference) {
@@ -349,7 +336,4 @@ class WalaRepresentation {
 
     }
 
-    static String methodHandleConstant(String handleName) {
-        return "<handle " + handleName + ">";
-    }
 }

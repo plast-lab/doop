@@ -1,5 +1,7 @@
 package org.clyze.doop.soot;
 
+import org.clyze.doop.JavaRepresentation;
+import org.clyze.doop.SessionCounter;
 import org.clyze.persistent.model.doop.DynamicMethodInvocation;
 import soot.*;
 import soot.jimple.*;
@@ -8,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-class Representation {
+class Representation extends JavaRepresentation {
     private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
     private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
     private static List<String> jimpleKeywordList = Jimple.jimpleKeywordList();
@@ -28,16 +30,8 @@ class Representation {
         return "<class " + c.getName() + ">";
     }
 
-    static String classConstant(String className) {
-        return "<class " + className + ">";
-    }
-
     String classConstant(Type t) {
         return "<class " + t + ">";
-    }
-
-    String methodTypeConstant(String s) {
-        return s;
     }
 
     String signature(SootMethod m) {
@@ -99,7 +93,7 @@ class Representation {
 
     String nativeReturnVar(SootMethod m)
     {
-        return getMethodSignature(m) + "/@native-return";
+        return nativeReturnVarOfMethod(getMethodSignature(m));
     }
 
     String param(SootMethod m, int i)
@@ -109,13 +103,12 @@ class Representation {
 
     String local(SootMethod m, Local l)
     {
-        return getMethodSignature(m) + "/" + l.getName();
+        return localId(getMethodSignature(m), l.getName());
     }
 
-    String newLocalIntermediate(SootMethod m, Local l, Session session)
+    String newLocalIntermediate(SootMethod m, Local l, SessionCounter counter)
     {
-        String s = local(m, l);
-        return s + "/intermediate/" +  session.nextNumber(s);
+        return newLocalIntermediateId(local(m, l), counter);
     }
 
     String handler(SootMethod m, Trap trap, Session session)
@@ -174,27 +167,21 @@ class Representation {
         return kind;
     }
 
-    String unsupported(SootMethod inMethod, Stmt stmt, int index)
-    {
-        return getMethodSignature(inMethod) +
-            "/unsupported " + getKind(stmt) +
-            "/" +  stmt.toString() +
-            "/instruction" + index;
+    String unsupported(SootMethod inMethod, Stmt stmt, int index) {
+        return unsupportedId(getMethodSignature(inMethod), getKind(stmt), stmt.toString(), index);
     }
 
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(SootMethod inMethod, Stmt stmt, Session session, int index)
-    {
-        return getMethodSignature(inMethod) + "/" + getKind(stmt) + "/instruction" + index;
+    String instruction(SootMethod inMethod, Stmt stmt, Session session, int index) {
+        return instructionId(getMethodSignature(inMethod), getKind(stmt), index);
     }
 
-    String invoke(SootMethod inMethod, InvokeExpr expr, Session session) {
+    String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
         String midPart = (expr instanceof DynamicInvokeExpr) ?
             dynamicInvokeIdMiddle((DynamicInvokeExpr)expr) : invokeIdMiddle(expr);
-        return getMethodSignature(inMethod) +
-               "/" + midPart + "/" + session.nextNumber(midPart);
+        return invokeId(getMethodSignature(inMethod), midPart, counter);
     }
 
     private String invokeIdMiddle(InvokeExpr expr) {
@@ -255,18 +242,14 @@ class Representation {
     }
 
 
-    String heapMultiArrayAlloc(SootMethod inMethod, NewMultiArrayExpr expr, ArrayType type, Session session)
+    String heapMultiArrayAlloc(SootMethod inMethod, NewMultiArrayExpr expr, ArrayType type, SessionCounter counter)
     {
-        return heapAlloc(inMethod, type, session);
+        return heapAlloc(inMethod, type, counter);
     }
 
-    private String heapAlloc(SootMethod inMethod, Type type, Session session)
+    private String heapAlloc(SootMethod inMethod, Type type, SessionCounter counter)
     {
         String s = type.toString();
-        return getMethodSignature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
-    }
-
-    static String methodHandleConstant(String handleName) {
-        return "<handle " + handleName + ">";
+        return heapAllocId(getMethodSignature(inMethod), type.toString(), counter);
     }
 }
