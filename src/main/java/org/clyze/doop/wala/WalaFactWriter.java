@@ -430,7 +430,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String heap = methodHandleConstant(handleName);
         String methodId = _rep.signature(m);
 
-        _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
+        writeMethodHandleConstant(heap, handleName);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
     }
 

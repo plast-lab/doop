@@ -68,4 +68,7 @@ public class JavaFactWriter {
         _db.add(SPECIAL_CONTEXT_SENSITIVITY_METHOD, method, sensitivity);
     }
 
+    protected void writeMethodHandleConstant(String heap, String handleName) {
+        _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
+    }
 }
