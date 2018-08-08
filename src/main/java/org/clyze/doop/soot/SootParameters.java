@@ -25,8 +25,6 @@ public class SootParameters extends Parameters {
      boolean _generateJimple = false;
      boolean _toStdout = false;
      boolean _ignoreWrongStaticness = false;
-     String _seed = null;
-     String _specialCSMethods = null;
 
      public void setLibraries(List<String> libraries) {
           this._libraries = libraries;

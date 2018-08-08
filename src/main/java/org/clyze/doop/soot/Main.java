@@ -11,10 +11,7 @@ import soot.SootClass;
 import soot.options.Options;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Stream;
 
 public class Main {
 
@@ -378,35 +375,13 @@ public class Main {
             }
         }
 
-        if (sootParameters._seed != null) {
-            try (Stream<String> stream = Files.lines(Paths.get(sootParameters._seed))) {
-                stream.forEach(line -> processSeedFileLine(line, writer));
-            }
-        }
-
-        if (sootParameters._specialCSMethods != null) {
-            try (Stream<String> stream = Files.lines(Paths.get(sootParameters._specialCSMethods))) {
-                stream.forEach(line -> processSpecialSensitivityMethodFileLine(line, writer));
-            }
-        }
+        sootParameters.processSeeds(writer);
+        sootParameters.processSpecialCSMethods(writer);
 
         db.close();
 
         // Clean up any temporary directories used for AAR extraction.
         Helper.cleanUp(tmpDirs);
-    }
-
-    private static void processSeedFileLine(String line, FactWriter factWriter) {
-        if (line.contains("(")) {
-            factWriter.writeAndroidKeepMethod(line);
-        } else if (!line.contains(":")) {
-            factWriter.writeAndroidKeepClass(line);
-        }
-    }
-
-    private static void processSpecialSensitivityMethodFileLine(String line, FactWriter factWriter) {
-        if (line.contains(", "))
-            factWriter.writeSpecialSensitivityMethod(line);
     }
 
     private static boolean sootClassPathFirstElement = true;
