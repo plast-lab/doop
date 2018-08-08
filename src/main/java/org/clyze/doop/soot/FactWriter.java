@@ -1,7 +1,6 @@
 package org.clyze.doop.soot;
 
 import org.clyze.doop.common.Database;
-import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
 import soot.*;
 import soot.jimple.*;
@@ -15,47 +14,21 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.clyze.doop.JavaFactWriter;
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**
  * FactWriter determines the format of a fact and adds it to a
  * database.
  */
-public class FactWriter {
-    private Database _db;
+public class FactWriter extends JavaFactWriter {
     private Representation _rep;
     private Map<String, Type> _varTypeMap;
 
     FactWriter(Database db) {
-        _db = db;
+        super(db);
         _rep = Representation.getRepresentation();
         _varTypeMap = new ConcurrentHashMap<>();
-    }
-
-    private String str(int i) {
-        return String.valueOf(i);
-    }
-
-    private String writeStringConstant(String constant) {
-        String raw = FactEncoders.encodeStringConstant(constant);
-
-        String result;
-        if(raw.length() <= 256)
-            result = raw;
-        else
-            result = "<<HASH:" + raw.hashCode() + ">>";
-
-        _db.add(STRING_RAW, result, raw);
-        _db.add(STRING_CONST, result);
-
-        return result;
-    }
-
-    private String hashMethodNameIfLong(String methodRaw) {
-        if (methodRaw.length() <= 1024)
-            return methodRaw;
-        else
-            return "<<METHOD HASH:" + methodRaw.hashCode() + ">>";
     }
 
     String writeMethod(SootMethod m) {
@@ -86,35 +59,8 @@ public class FactWriter {
         return result;
     }
 
-    void writeClassArtifact(String artifact, String className, String subArtifact) {
-        _db.add(CLASS_ARTIFACT, artifact, className, subArtifact);
-    }
-
     void writeAndroidEntryPoint(SootMethod m) {
         _db.add(ANDROID_ENTRY_POINT, _rep.signature(m));
-    }
-
-    void writeAndroidKeepMethod(String methodSig) {
-        _db.add(ANDROID_KEEP_METHOD, "<" + methodSig + ">");
-    }
-
-    void writeAndroidKeepClass(String className) {
-        _db.add(ANDROID_KEEP_CLASS, className);
-    }
-
-    void writeSpecialSensitivityMethod(String line) {
-        String[] linePieces = line.split(", ");
-        String method = linePieces[0].trim();
-        String sensitivity = linePieces[1].trim();
-
-        _db.add(SPECIAL_CONTEXT_SENSITIVITY_METHOD, method, sensitivity);
-    }
-
-    void writeProperty(String path, String key, String value) {
-        String pathId = writeStringConstant(path);
-        String keyId = writeStringConstant(key);
-        String valueId = writeStringConstant(value);
-        _db.add(PROPERTIES, pathId, keyId, valueId);
     }
 
     void writeClassOrInterfaceType(SootClass c) {

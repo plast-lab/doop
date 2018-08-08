@@ -17,7 +17,6 @@ import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
-import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.PredicateFile;
 import soot.dexpler.DexMethod;
 
@@ -25,6 +24,7 @@ import javax.sound.midi.SysexMessage;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.clyze.doop.JavaFactWriter;
 import static org.clyze.doop.common.PredicateFile.*;
 import static org.clyze.doop.wala.WalaUtils.*;
 
@@ -32,9 +32,8 @@ import static org.clyze.doop.wala.WalaUtils.*;
  * FactWriter determines the format of a fact and adds it to a
  * database.
  */
-public class WalaFactWriter {
+public class WalaFactWriter extends JavaFactWriter {
     private boolean _android;
-    private Database _db;
     private WalaRepresentation _rep;
 
     //Map from WALA's JVM like type string to our format
@@ -54,8 +53,8 @@ public class WalaFactWriter {
     protected Log logger;
 
     WalaFactWriter(Database db, boolean android) {
+        super(db);
         _android = android;
-        _db = db;
         _rep = WalaRepresentation.getRepresentation();
         _typeMap = new ConcurrentHashMap<>();
         _phantomType = new ConcurrentHashMap<>();
@@ -68,10 +67,6 @@ public class WalaFactWriter {
     public void setSignaturePolyMorphicMethods(Map<String,List<String>> signaturePolyMorphicMethods)
     {
         _signaturePolyMorphicMethods = signaturePolyMorphicMethods;
-    }
-
-    private String str(int i) {
-        return String.valueOf(i);
     }
 
     int getNumberOfPhantomTypes()
@@ -87,28 +82,6 @@ public class WalaFactWriter {
     int getNumberOfPhantomBasedMethods()
     {
         return _phantomBasedMethod.size();
-    }
-
-    private String writeStringConstant(String constant) {
-        String raw = FactEncoders.encodeStringConstant(constant);
-
-        String result;
-        if(raw.length() <= 256)
-            result = raw;
-        else
-            result = "<<HASH:" + raw.hashCode() + ">>";
-
-        _db.add(STRING_RAW, result, raw);
-        _db.add(STRING_CONST, result);
-
-        return result;
-    }
-
-    private String hashMethodNameIfLong(String methodRaw) {
-        if (methodRaw.length() <= 1024)
-            return methodRaw;
-        else
-            return "<<METHOD HASH:" + methodRaw.hashCode() + ">>";
     }
 
     //The final argument is not translated to Soot's descriptor format but keeps WALAs JVM-like format as Soot is also using it.
@@ -158,17 +131,8 @@ public class WalaFactWriter {
         return result;
     }
 
-    void writeClassArtifact(String artifact, String className) { _db.add(CLASS_ARTIFACT, artifact, className); }
-
     void writeAndroidEntryPoint(IMethod m) {
         _db.add(ANDROID_ENTRY_POINT, _rep.signature(m));
-    }
-
-    void writeProperty(String path, String key, String value) {
-        String pathId = writeStringConstant(path);
-        String keyId = writeStringConstant(key);
-        String valueId = writeStringConstant(value);
-        _db.add(PROPERTIES, pathId, keyId, valueId);
     }
 
     void writeClassOrInterfaceType(IClass c) {
