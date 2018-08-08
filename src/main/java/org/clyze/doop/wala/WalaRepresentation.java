@@ -12,6 +12,7 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
+import org.clyze.doop.SessionCounter;
 import org.clyze.persistent.model.doop.DynamicMethodInvocation;
 
 import java.util.Map;
@@ -147,10 +148,10 @@ class WalaRepresentation {
         return signature(m) + "/" + local.getName();
     }
 
-    String newLocalIntermediate(IMethod m, Local l, Session session)
+    String newLocalIntermediate(IMethod m, Local l, SessionCounter counter)
     {
         String s = local(m, l);
-        return s + "/intermediate/" + session.nextNumber(s);
+        return s + "/intermediate/" + counter.nextNumber(s);
     }
 
     void putHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, int scopeIndex)
@@ -171,23 +172,23 @@ class WalaRepresentation {
             return numOfScopes;
     }
 
-    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, Session session, int scopeIndex)
+    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, SessionCounter counter, int scopeIndex)
     {
         String query = m.getSignature() + fixTypeString(typeReference.toString()) + " v" + catchInstr.getDef()+ "-" + scopeIndex;
 
         String result = _catchRepr.get(query);
         if(result == null) {
             String name = "catch " + fixTypeString(typeReference.toString());
-            result = signature(m) + "/" + name + "/" + session.nextNumber(name);
+            result = signature(m) + "/" + name + "/" + counter.nextNumber(name);
             _catchRepr.put(query,result);
         }
         return result;
     }
 
-    String throwLocal(IMethod m, Local l, Session session)
+    String throwLocal(IMethod m, Local l, SessionCounter counter)
     {
         String name = "throw " + l.getName();
-        return signature(m) + "/" + name + "/" + session.nextNumber(name);
+        return signature(m) + "/" + name + "/" + counter.nextNumber(name);
     }
 
     //This method takes a MethodReference as a parameter and it does not include "this" as an argument
@@ -255,7 +256,8 @@ class WalaRepresentation {
     {
         return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
-    String invoke(IR ir, IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, Session session, TypeInference typeInference)
+
+    String invoke(IR ir, IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, SessionCounter counter, TypeInference typeInference)
     {
         String defaultMid = fixTypeString(methRef.getDeclaringClass().toString()) + "." + methRef.getName().toString();
         String midPart;
@@ -264,7 +266,7 @@ class WalaRepresentation {
         else
             midPart = invokeIdMiddle(ir, instr, methRef, typeInference);
 
-        return signature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
+        return signature(inMethod) + "/" + midPart + "/" + counter.nextNumber(midPart);
     }
 
     private String invokeIdMiddle(IR ir, SSAInvokeInstruction instr, MethodReference resolvedTargetRef, TypeInference typeInference) {
@@ -323,33 +325,26 @@ class WalaRepresentation {
     }
 
 
-    String heapAlloc(IMethod inMethod, SSANewInstruction instruction, Session session)
+    String heapAlloc(IMethod inMethod, SSANewInstruction instruction, SessionCounter counter)
     {
         int newParams = instruction.getNumberOfUses();
-        if(newParams == 0 || newParams == 1) //
-        {
-            return heapAlloc(inMethod, instruction.getConcreteType(), session);
-        }
-        else if(newParams > 1)
-        {
-            return heapAlloc(inMethod, instruction.getConcreteType(), session);
-        }
-        else
-        {
+        if(newParams == 0 || newParams == 1) {
+            return heapAlloc(inMethod, instruction.getConcreteType(), counter);
+        } else if(newParams > 1) {
+            return heapAlloc(inMethod, instruction.getConcreteType(), counter);
+        } else {
             throw new RuntimeException("Cannot handle new expression: " + instruction);
         }
     }
 
 
-    String heapMultiArrayAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, Session session)
-    {
-        return heapAlloc(inMethod, type, session);
+    String heapMultiArrayAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, SessionCounter counter) {
+        return heapAlloc(inMethod, type, counter);
     }
 
-    private String heapAlloc(IMethod inMethod, TypeReference type, Session session)
-    {
+    private String heapAlloc(IMethod inMethod, TypeReference type, SessionCounter counter) {
         String s = fixTypeString(type.toString());
-        return signature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
+        return signature(inMethod) + "/new " + s + "/" +  counter.nextNumber(s);
 
 
     }

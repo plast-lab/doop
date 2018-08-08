@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.clyze.doop.JavaFactWriter;
+import org.clyze.doop.SessionCounter;
 import static org.clyze.doop.common.PredicateFile.*;
 import static org.clyze.doop.wala.WalaUtils.*;
 
@@ -801,7 +802,7 @@ public class WalaFactWriter extends JavaFactWriter {
         _db.add(THROW_NULL, insn, str(index), methodId);
     }
 
-    void writeExceptionHandlerPrevious(IMethod m, SSACFG.ExceptionHandlerBasicBlock current, SSACFG.ExceptionHandlerBasicBlock previous, Session session) {
+    void writeExceptionHandlerPrevious(IMethod m, SSACFG.ExceptionHandlerBasicBlock current, SSACFG.ExceptionHandlerBasicBlock previous, SessionCounter counter) {
         TypeReference prevType = null;
         SSAGetCaughtExceptionInstruction prevCatch = previous.getCatchInstruction();
         Iterator<TypeReference> prevTypes = previous.getCaughtExceptionTypes();
@@ -812,7 +813,7 @@ public class WalaFactWriter extends JavaFactWriter {
         SSAGetCaughtExceptionInstruction currCatch = current.getCatchInstruction();
         TypeReference currType = current.getCaughtExceptionTypes().next();
 
-        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, currCatch, currType, session,0), _rep.handler(m, prevCatch, prevType, session, prevNumOfScopes));
+        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, currCatch, currType, counter, 0), _rep.handler(m, prevCatch, prevType, counter, prevNumOfScopes));
     }
 
     void writeExceptionHandler(IR ir, IMethod m, SSACFG.ExceptionHandlerBasicBlock handlerBlock, Session session, TypeInference typeInference, WalaExceptionHelper exceptionHelper) {
