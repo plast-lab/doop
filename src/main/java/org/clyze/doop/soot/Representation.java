@@ -111,14 +111,14 @@ class Representation extends JavaRepresentation {
         return newLocalIntermediateId(local(m, l), counter);
     }
 
-    String handler(SootMethod m, Trap trap, Session session)
+    String handler(SootMethod m, Trap trap, SessionCounter counter)
     {
         String result = _trapRepr.get(trap);
 
         if(result == null)
         {
             String name = "catch " + trap.getException().getName();
-            result = getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
+            result = getMethodSignature(m) + "/" + name + "/" + counter.nextNumber(name);
 
             _trapRepr.put(trap, result);
         }

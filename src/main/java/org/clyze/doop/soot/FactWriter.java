@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.clyze.doop.JavaFactWriter;
+import org.clyze.doop.SessionCounter;
 import static org.clyze.doop.JavaRepresentation.*;
 import static org.clyze.doop.common.PredicateFile.*;
 
@@ -655,8 +656,8 @@ public class FactWriter extends JavaFactWriter {
         _db.add(THROW_NULL, insn, str(index), methodId);
     }
 
-    void writeExceptionHandlerPrevious(SootMethod m, Trap current, Trap previous, Session session) {
-        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, current, session), _rep.handler(m, previous, session));
+    void writeExceptionHandlerPrevious(SootMethod m, Trap current, Trap previous, SessionCounter counter) {
+        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, current, counter), _rep.handler(m, previous, counter));
     }
 
     void writeExceptionHandler(SootMethod m, Trap handler, Session session) {
