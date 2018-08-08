@@ -15,7 +15,7 @@ public class JavaFactWriter {
         this._db = db;
     }
 
-    protected String str(int i) {
+    public static String str(int i) {
         return String.valueOf(i);
     }
 
