@@ -69,7 +69,7 @@ public class DoopAddons {
     public static void retrieveAllBodies() throws DoopErrorCodeException {
         PackManager pm = PackManager.v();
         try {
-            Method rAB = pm.getClass().getDeclaredMethod("retrieveAllBodies", new Class[] { });
+            Method rAB = pm.getClass().getDeclaredMethod("retrieveAllBodies", new Class<?>[] { });
             rAB.setAccessible(true);
             rAB.invoke(pm, new Object[] { });
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
@@ -83,7 +83,7 @@ public class DoopAddons {
     public static void writeClass(SootClass sootClass) throws DoopErrorCodeException {
         PackManager pm = PackManager.v();
         try {
-            Method wC = pm.getClass().getDeclaredMethod("writeClass", new Class[] { SootClass.class });
+            Method wC = pm.getClass().getDeclaredMethod("writeClass", new Class<?>[] { SootClass.class });
             wC.setAccessible(true);
             wC.invoke(pm, new Object[] { sootClass });
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
@@ -119,7 +119,7 @@ public class DoopAddons {
 
         // Construct an instance.
         try {
-            Constructor<?> ctr = foundFileClass.getConstructor(new Class[] {String.class, String.class});
+            Constructor<?> ctr = foundFileClass.getConstructor(new Class<?>[] {String.class, String.class});
             Object ff = ctr.newInstance(archivePath, entryName);
             return new FoundFile(ff);
         } catch (NoSuchMethodException | InstantiationException | InvocationTargetException | IllegalAccessException ex) {
@@ -136,7 +136,7 @@ public class DoopAddons {
 
         private Object nullaryCall(String mName) {
             try {
-                Method m = ff.getClass().getDeclaredMethod(mName, new Class[] { });
+                Method m = ff.getClass().getDeclaredMethod(mName, new Class<?>[] { });
                 return m.invoke(ff);
             } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException ex) {
                 ex.printStackTrace();

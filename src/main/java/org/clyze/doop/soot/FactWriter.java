@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.clyze.doop.JavaFactWriter;
+import static org.clyze.doop.JavaRepresentation.*;
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**
@@ -335,7 +336,7 @@ public class FactWriter extends JavaFactWriter {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String handleName = constant.getMethodRef().toString();
-        String heap = _rep.methodHandleConstant(handleName);
+        String heap = methodHandleConstant(handleName);
         String methodId = writeMethod(m);
 
         _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
@@ -359,7 +360,7 @@ public class FactWriter extends JavaFactWriter {
             _db.add(CLASS_HEAP, heap, actualType);
         } else if (first == '(') {
             // method type constant (viewed by Soot as a class constant)
-            heap = _rep.methodTypeConstant(s);
+            heap = methodTypeConstant(s);
             _db.add(METHOD_TYPE_CONSTANT, heap);
         } else {
 //            SootClass c = soot.Scene.v().getSootClass(s);
@@ -375,7 +376,7 @@ public class FactWriter extends JavaFactWriter {
             // but the above causes a concurrent modification exception due to a Soot
             // bug that adds a phantom class to the Scene's hierarchy, although
             // (based on their own comments) it shouldn't.
-            heap = _rep.classConstant(s);
+            heap = classConstant(s);
             String actualType = s;
             _db.add(CLASS_HEAP, heap, actualType);
         }
@@ -555,7 +556,7 @@ public class FactWriter extends JavaFactWriter {
 
         _db.add(IF, insn, str(index), str(indexTo), methodId);
 
-        Value condStmt = ((IfStmt) stmt).getCondition();
+        Value condStmt = stmt.getCondition();
         if (condStmt instanceof ConditionExpr) {
             ConditionExpr condition = (ConditionExpr) condStmt;
             if (condition.getOp1() instanceof Local) {
@@ -807,7 +808,7 @@ public class FactWriter extends JavaFactWriter {
             for (int j = 0; j < di.getBootstrapArgCount(); j++) {
                 Value v = di.getBootstrapArg(j);
                 if (v instanceof Constant) {
-                    Value vConst = writeActualParam(inMethod, stmt, expr, session, (Value)v, j);
+                    Value vConst = writeActualParam(inMethod, stmt, expr, session, v, j);
                     if (vConst instanceof Local) {
                         Local l = (Local) vConst;
                         _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, _rep.local(inMethod, l));

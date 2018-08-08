@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.clyze.doop.JavaFactWriter;
 import org.clyze.doop.SessionCounter;
+import static org.clyze.doop.JavaRepresentation.*;
 import static org.clyze.doop.common.PredicateFile.*;
 import static org.clyze.doop.wala.WalaUtils.*;
 
@@ -188,7 +189,7 @@ public class WalaFactWriter extends JavaFactWriter {
             _db.add(ARRAY_TYPE, typeName);
             TypeReference componentType = t.getArrayElementType();
             _db.add(COMPONENT_TYPE, typeName, writeType(componentType));
-            _db.add(CLASS_HEAP, _rep.classConstant(typeName), typeName);
+            _db.add(CLASS_HEAP, classConstant(typeName), typeName);
         }
         else if (t.isPrimitiveType() || t.isReferenceType() || t.isClassType()) {
 
@@ -414,7 +415,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         //String handleName = constant.getMethodRef().toString();
         String handleName =(String) constant.getValue();
-        String heap = _rep.methodTypeConstant(handleName);
+        String heap = methodTypeConstant(handleName);
         String methodId = _rep.signature(m);
 
         _db.add(METHOD_TYPE_CONSTANT, heap);
@@ -426,7 +427,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         //String handleName = constant.getMethodRef().toString();
         String handleName =(String) constant.getValue();
-        String heap = _rep.methodHandleConstant(handleName);
+        String heap = methodHandleConstant(handleName);
         String methodId = _rep.signature(m);
 
         _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
