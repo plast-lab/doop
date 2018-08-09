@@ -174,7 +174,7 @@ class Representation extends JavaRepresentation {
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(SootMethod inMethod, Stmt stmt, Session session, int index) {
+    String instruction(SootMethod inMethod, Stmt stmt, int index) {
         return instructionId(getMethodSignature(inMethod), getKind(stmt), index);
     }
 

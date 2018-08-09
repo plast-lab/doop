@@ -240,7 +240,7 @@ class WalaRepresentation extends JavaRepresentation {
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(IMethod inMethod, SSAInstruction instruction, Session session, int index) {
+    String instruction(IMethod inMethod, SSAInstruction instruction, int index) {
         return instructionId(signature(inMethod), getKind(instruction), index);
     }
 
