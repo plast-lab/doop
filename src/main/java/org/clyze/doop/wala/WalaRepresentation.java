@@ -48,11 +48,11 @@ class WalaRepresentation extends JavaRepresentation {
     }
 
     String classConstant(IClass c) {
-        return "<class " + fixTypeString(c.getName().toString()) + ">";
+        return JavaRepresentation.classConstant(fixTypeString(c.getName().toString()));
     }
 
     String classConstant(TypeReference t) {
-        return "<class " + fixTypeString(t.toString()) + ">";
+        return JavaRepresentation.classConstant(fixTypeString(t.toString()));
     }
 
     String signature(IMethod m) {

@@ -27,11 +27,11 @@ class Representation extends JavaRepresentation {
     }
 
     String classConstant(SootClass c) {
-        return "<class " + c.getName() + ">";
+        return JavaRepresentation.classConstant(c.getName());
     }
 
     String classConstant(Type t) {
-        return "<class " + t + ">";
+        return JavaRepresentation.classConstant(t.toString());
     }
 
     String signature(SootMethod m) {
