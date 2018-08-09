@@ -18,7 +18,7 @@ public class JavaRepresentation {
         return m + "/@native-return";
     }
 
-    protected static String instructionId(String m, String kind, int index) {
+    public static String instructionId(String m, String kind, int index) {
         return m + "/" + kind + "/instruction" + index;
     }
 
