@@ -25,6 +25,9 @@
   #ifdef SCALER_PRE_ANALYSIS
     #include "scaler-pre-analysis.dl"
   #endif
+  #ifdef ZIPPER_PRE_ANALYSIS
+    #include "zipper-pre-analysis.dl"
+  #endif
 
   .decl FakeInvocation_RegisterFinalize0(?heap:HeapAllocation, ?invo:MethodInvocation)
 

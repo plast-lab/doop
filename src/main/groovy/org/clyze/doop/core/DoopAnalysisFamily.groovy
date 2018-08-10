@@ -294,6 +294,16 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			/* End Scaler related options */
 
+			/* Start Zipper related options */
+			new BooleanAnalysisOption(
+					id: "ZIPPER_PRE_ANALYSIS",
+					name: "zipper-pre",
+					description: "Enable the analysis to be the pre-analysis of Scaler, and outputs the information required by Zipper.",
+					forPreprocessor: true
+			),
+
+			/* End Zipper related options */
+
 			/* Start preprocessor normal flags */
 			new BooleanAnalysisOption(
 					id: "NO_MERGES",
