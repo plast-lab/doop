@@ -222,23 +222,14 @@ class Representation extends JavaRepresentation {
     }
 
 
-    String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
-    {
+    String heapAlloc(SootMethod inMethod, AnyNewExpr expr, SessionCounter counter) {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
-        {
-            return heapAlloc(inMethod, expr.getType(), session);
-        }
-        else if(expr instanceof NewMultiArrayExpr)
-        {
-            return heapAlloc(inMethod, expr.getType(), session);
+            return heapAlloc(inMethod, expr.getType(), counter);
+	else if(expr instanceof NewMultiArrayExpr)
+            return heapAlloc(inMethod, expr.getType(), counter);
             //      return getMethodSignature(inMethod) + "/" + type + "/" +  session.nextNumber(type);
-
-
-        }
-        else
-        {
+	else
             throw new RuntimeException("Cannot handle new expression: " + expr);
-        }
     }
 
 
