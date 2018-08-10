@@ -22,7 +22,7 @@ public class JavaRepresentation {
         return m + "/" + kind + "/instruction" + index;
     }
 
-    protected static String invokeId(String pre, String mid, SessionCounter c) {
+    public static String invokeId(String pre, String mid, SessionCounter c) {
         return pre + "/" + mid + "/" + c.nextNumber(mid);
     }
 
@@ -38,7 +38,8 @@ public class JavaRepresentation {
         return s + "/intermediate/" + c.nextNumber(s);
     }
 
-    protected static String heapAllocId(String m, String s, SessionCounter c) {
+    public static String heapAllocId(String m, String s, SessionCounter c) {
         return m + "/new " + s + "/" +  c.nextNumber(s);
     }
+
 }
