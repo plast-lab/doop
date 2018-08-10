@@ -17,16 +17,16 @@ import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
+import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
+import org.clyze.doop.common.SessionCounter;
 import soot.dexpler.DexMethod;
 
 import javax.sound.midi.SysexMessage;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.clyze.doop.JavaFactWriter;
-import org.clyze.doop.SessionCounter;
-import static org.clyze.doop.JavaRepresentation.*;
+import static org.clyze.doop.common.JavaRepresentation.*;
 import static org.clyze.doop.common.PredicateFile.*;
 import static org.clyze.doop.wala.WalaUtils.*;
 

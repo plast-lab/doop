@@ -1,4 +1,4 @@
-package org.clyze.doop;
+package org.clyze.doop.common;
 
 import java.io.IOException;
 import java.nio.file.Files;

@@ -5,7 +5,7 @@ import soot.Unit;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.clyze.doop.SessionCounter;
+import org.clyze.doop.common.SessionCounter;
 
 public class Session extends SessionCounter {
 

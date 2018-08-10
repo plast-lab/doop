@@ -1,4 +1,4 @@
-package org.clyze.doop;
+package org.clyze.doop.common;
 
 public class JavaRepresentation {
 

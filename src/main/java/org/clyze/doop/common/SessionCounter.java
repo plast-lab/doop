@@ -1,4 +1,4 @@
-package org.clyze.doop;
+package org.clyze.doop.common;
 
 import java.util.HashMap;
 import java.util.Map;

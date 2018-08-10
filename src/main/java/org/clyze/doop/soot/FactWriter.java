@@ -1,7 +1,9 @@
 package org.clyze.doop.soot;
 
 import org.clyze.doop.common.Database;
+import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
+import org.clyze.doop.common.SessionCounter;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
@@ -14,9 +16,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.clyze.doop.JavaFactWriter;
-import org.clyze.doop.SessionCounter;
-import static org.clyze.doop.JavaRepresentation.*;
+import static org.clyze.doop.common.JavaRepresentation.*;
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**

@@ -11,7 +11,7 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
-import org.clyze.doop.SessionCounter;
+import org.clyze.doop.common.SessionCounter;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 

@@ -1,4 +1,4 @@
-package org.clyze.doop;
+package org.clyze.doop.common;
 
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
