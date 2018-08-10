@@ -439,13 +439,13 @@ public class FactWriter extends JavaFactWriter {
         writeStaticField(m, stmt, f, to, session, LOAD_STATIC_FIELD);
     }
 
-    private void writeStaticField(SootMethod m, Stmt stmt, SootField f, Local var, Session session, PredicateFile loadStaticField) {
+    private void writeStaticField(SootMethod m, Stmt stmt, SootField f, Local var, Session session, PredicateFile staticFieldFacts) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         String fieldId = writeField(f);
-        _db.add(loadStaticField, insn, str(index), _rep.local(m, var), fieldId, methodId);
+        _db.add(staticFieldFacts, insn, str(index), _rep.local(m, var), fieldId, methodId);
     }
 
     void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, Local arrIndex, Session session) {
