@@ -6,9 +6,9 @@ import heapdl.core.MemoryAnalyser
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
+import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
-import org.clyze.doop.soot.DoopErrorCodeException
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils

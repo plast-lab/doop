@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import org.clyze.doop.common.DoopErrorCodeException;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;

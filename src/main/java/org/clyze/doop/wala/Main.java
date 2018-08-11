@@ -11,7 +11,7 @@ import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.util.ref.ReferenceCleanser;
 import org.clyze.doop.common.Database;
-import org.clyze.doop.soot.DoopErrorCodeException;
+import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.util.filter.GlobClassFilter;
 
 import java.io.File;

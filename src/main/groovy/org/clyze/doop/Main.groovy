@@ -4,9 +4,9 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
+import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
-import org.clyze.doop.soot.DoopErrorCodeException
 import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
 import org.codehaus.groovy.runtime.StackTraceUtils

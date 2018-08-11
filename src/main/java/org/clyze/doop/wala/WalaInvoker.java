@@ -16,7 +16,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.soot.ArtifactEntry;
-import org.clyze.doop.soot.DoopErrorCodeException;
+import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.soot.PropertyProvider;
 
 import java.io.File;

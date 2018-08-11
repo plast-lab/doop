@@ -7,9 +7,9 @@ import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.ssa.IR;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.python.utils.PythonDatabase;
 import org.clyze.doop.python.utils.PythonPredicateFile;
-import org.clyze.doop.soot.DoopErrorCodeException;
 
 import java.io.File;
 import java.io.IOException;

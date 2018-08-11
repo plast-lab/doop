@@ -1,5 +1,6 @@
 package org.clyze.doop.soot;
 
+import org.clyze.doop.common.DoopErrorCodeException;
 import soot.SootClass;
 import soot.SootMethod;
 

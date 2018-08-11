@@ -1,4 +1,4 @@
-package org.clyze.doop.soot;
+package org.clyze.doop.common;
 
 // An exception that terminates execution with an error code. Used
 // instead of System.exit() to allow use of Doop as a library.
