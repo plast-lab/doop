@@ -449,14 +449,14 @@ public class FactWriter extends JavaFactWriter {
     }
 
     void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, Local arrIndex, Session session) {
-        writeFieldOrIndex(m, stmt, base, to, arrIndex, session, LOAD_ARRAY_INDEX);
+        writeLoadOrStoreArrayIndex(m, stmt, base, to, arrIndex, session, LOAD_ARRAY_INDEX);
     }
 
     void writeStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local from, Local arrIndex, Session session) {
-        writeFieldOrIndex(m, stmt, base, from, arrIndex, session, STORE_ARRAY_INDEX);
+        writeLoadOrStoreArrayIndex(m, stmt, base, from, arrIndex, session, STORE_ARRAY_INDEX);
     }
 
-    private void writeFieldOrIndex(SootMethod m, Stmt stmt, Local base, Local var, Local arrIndex, Session session, PredicateFile predicateFile) {
+    private void writeLoadOrStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local var, Local arrIndex, Session session, PredicateFile predicateFile) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, index);
         String methodId = writeMethod(m);

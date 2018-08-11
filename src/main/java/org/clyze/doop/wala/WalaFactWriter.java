@@ -526,14 +526,14 @@ public class WalaFactWriter extends JavaFactWriter {
     }
 
     void writeLoadArrayIndex(IMethod m, SSAInstruction  instruction, Local base, Local to, Local arrIndex, Session session) {
-        writeFieldOrIndex(m, instruction, base, to, arrIndex, session, LOAD_ARRAY_INDEX);
+        writeLoadOrStoreArrayIndex(m, instruction, base, to, arrIndex, session, LOAD_ARRAY_INDEX);
     }
 
     void writeStoreArrayIndex(IMethod m, SSAInstruction instruction, Local base, Local from, Local arrIndex, Session session) {
-        writeFieldOrIndex(m, instruction, base, from, arrIndex, session, STORE_ARRAY_INDEX);
+        writeLoadOrStoreArrayIndex(m, instruction, base, from, arrIndex, session, STORE_ARRAY_INDEX);
     }
 
-    private void writeFieldOrIndex(IMethod m, SSAInstruction instruction, Local base, Local var, Local arrIndex, Session session, PredicateFile predicateFile) {
+    private void writeLoadOrStoreArrayIndex(IMethod m, SSAInstruction instruction, Local base, Local var, Local arrIndex, Session session, PredicateFile predicateFile) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
