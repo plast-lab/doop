@@ -1,6 +1,7 @@
 package org.clyze.doop.soot.android;
 
 import org.clyze.doop.common.ArtifactEntry;
+import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
 import org.clyze.doop.soot.*;
 import org.clyze.utils.AARUtils;
@@ -24,7 +25,7 @@ import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.Callback
 public class AndroidSupport extends BasicJavaSupport {
 
     private String rOutDir;
-    private SootParameters sootParameters;
+    private Parameters parameters;
     private SootMethod dummyMain;
 
     protected Set<String> appServices = new HashSet<>();
@@ -34,10 +35,10 @@ public class AndroidSupport extends BasicJavaSupport {
     protected Set<String> appCallbackMethods = new HashSet<>();
     protected Set<PossibleLayoutControl> appUserControls = new HashSet<>();
 
-    public AndroidSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider, String rOutDir, SootParameters sootParameters) {
+    public AndroidSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider, String rOutDir, Parameters parameters) {
         super(artifactToClassMap, propertyProvider);
         this.rOutDir = rOutDir;
-        this.sootParameters = sootParameters;
+        this.parameters = parameters;
     }
 
     public SootMethod getDummyMain() {
@@ -45,8 +46,9 @@ public class AndroidSupport extends BasicJavaSupport {
     }
 
     public void processInputs(String androidJars, Set<String> tmpDirs) throws Exception {
-        if (sootParameters.getRunFlowdroid()) {
-            String appInput = sootParameters.getInputs().get(0);
+        if ((parameters instanceof SootParameters) &&
+	    ((SootParameters)parameters).getRunFlowdroid()) {
+            String appInput = parameters.getInputs().get(0);
             SetupApplication app = new SetupApplication(androidJars, appInput);
             // TODO: fix this method call (refactored in newer
             // versions of FlowDroid):
@@ -66,7 +68,7 @@ public class AndroidSupport extends BasicJavaSupport {
                 throw new RuntimeException("Dummy main null");
             }
         } else {
-            List<String> inputsAndLibs = sootParameters.getInputsAndLibraries();
+            List<String> inputsAndLibs = parameters.getInputsAndLibraries();
             // Map AAR files to their package name.
             Map<String, String> pkgs = new HashMap<>();
 
@@ -87,6 +89,7 @@ public class AndroidSupport extends BasicJavaSupport {
 
             printCollectedComponents();
 
+            SootParameters sootParameters = (SootParameters)parameters;
             // Produce a JAR of the missing R classes.
             String generatedR = rLinker.linkRs(rOutDir, tmpDirs);
             if (generatedR != null) {
@@ -95,10 +98,10 @@ public class AndroidSupport extends BasicJavaSupport {
             }
 
             // If inputs are in AAR format, extract and use their JAR entries.
-            sootParameters.setInputs(AARUtils.toJars(sootParameters.getInputs(), false, tmpDirs));
+            parameters.setInputs(AARUtils.toJars(parameters.getInputs(), false, tmpDirs));
             sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs));
 
-            sootParameters.getInputs().subList(1, sootParameters.getInputs().size()).clear();
+            parameters.getInputs().subList(1, parameters.getInputs().size()).clear();
             populateClassesInAppJar(sootParameters);
         }
     }
@@ -142,7 +145,7 @@ public class AndroidSupport extends BasicJavaSupport {
 
     @Override
     public void addAppClasses(Set<SootClass> classes, Scene scene) {
-        for (String appInput : sootParameters.getInputs()) {
+        for (String appInput : parameters.getInputs()) {
             if (appInput.endsWith(".apk")) {
                 File apk = new File(appInput);
                 System.out.println("Android mode, APK = " + appInput);
@@ -176,7 +179,7 @@ public class AndroidSupport extends BasicJavaSupport {
         }
     }
 
-    public void writeComponents(FactWriter writer, Parameters parameters) {
+    public void writeComponents(JavaFactWriter writer, Parameters parameters) {
         for (String appInput : parameters.getInputs()) {
             AndroidManifest processMan;
             try {
@@ -230,7 +233,7 @@ public class AndroidSupport extends BasicJavaSupport {
 
     // The extra sensitive controls are given as a String
     // "id1,type1,parentId1,id2,type2,parentId2,...".
-    void writeExtraSensitiveControls(FactWriter writer, Parameters parameters) {
+    void writeExtraSensitiveControls(JavaFactWriter writer, Parameters parameters) {
         if (parameters._extraSensitiveControls.equals("")) {
             return;
         }
