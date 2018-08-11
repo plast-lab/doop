@@ -56,11 +56,11 @@ public interface AndroidManifest {
 
     // Parses Android manifests. Supports binary and plain-text XML
     // files (found in .apk and .aar files respectively).
-    static AndroidManifest getAndroidManifest(String archiveLocation) {
+    static AndroidManifest getAndroidManifest(String archiveLocation) throws Exception {
         try {
             return new AndroidManifestAXML(archiveLocation);
         } catch (Exception ex) {
-            return new AndroidManifestXML(archiveLocation);
+            return AndroidManifestXML.fromArchive(archiveLocation);
         }
     }
 

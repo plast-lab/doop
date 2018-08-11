@@ -43,7 +43,14 @@ public class WalaAndroidXMLParser {
             if (i.endsWith(".apk") || i.endsWith(".aar")) {
                 System.out.println("Processing manifest in " + i);
 
-                AndroidManifest processMan = getAndroidManifest(i);
+                AndroidManifest processMan;
+                try {
+                    processMan = getAndroidManifest(i);
+                } catch (Exception ex) {
+                    System.err.println("Error processing manifest in: " + i);
+                    ex.printStackTrace();
+                    continue;
+                }
                 String appPackageName = processMan.getPackageName();
                 pkgs.put(i, appPackageName);
 
@@ -72,7 +79,14 @@ public class WalaAndroidXMLParser {
 
     public void writeComponents() {
         for (String appInput : inputs) {
-            AndroidManifest processMan = getAndroidManifest(appInput);
+            AndroidManifest processMan;
+            try {
+                processMan = getAndroidManifest(appInput);
+            } catch (Exception ex) {
+                System.err.println("Error processing manifest in: " + appInput);
+                ex.printStackTrace();
+                continue;
+            }
 
             if (processMan.getApplicationName() != null)
                 factWriter.writeApplication(processMan.expandClassName(processMan.getApplicationName()));

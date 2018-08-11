@@ -168,7 +168,14 @@ public class AndroidSupport extends BasicJavaSupport {
 
     public void writeComponents(FactWriter writer) {
         for (String appInput : sootParameters.getInputs()) {
-            AndroidManifest processMan = getAndroidManifest(appInput);
+            AndroidManifest processMan;
+            try {
+                processMan = getAndroidManifest(appInput);
+            } catch (Exception ex) {
+                System.err.println("Error processing manifest in: " + appInput);
+                ex.printStackTrace();
+                continue;
+            }
 
             if (processMan.getApplicationName() != null)
                 writer.writeApplication(processMan.expandClassName(processMan.getApplicationName()));
