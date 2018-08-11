@@ -1,5 +1,6 @@
 package org.clyze.doop.soot.android;
 
+import org.clyze.doop.common.Parameters;
 import org.clyze.doop.soot.*;
 import org.clyze.utils.AARUtils;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
@@ -77,28 +78,9 @@ public class AndroidSupport extends BasicJavaSupport {
             for (String i : inputsAndLibs) {
                 if (i.endsWith(".apk") || i.endsWith(".aar")) {
                     System.out.println("Processing manifest in " + i);
-
-                    AndroidManifest processMan = getAndroidManifest(i);
-                    String appPackageName = processMan.getPackageName();
-                    pkgs.put(i, appPackageName);
-
-                    appServices.addAll(processMan.getServices());
-                    appActivities.addAll(processMan.getActivities());
-                    appContentProviders.addAll(processMan.getProviders());
-                    appBroadcastReceivers.addAll(processMan.getReceivers());
-                    try {
-                        appCallbackMethods.addAll(processMan.getCallbackMethods());
-                    } catch (IOException ex) {
-                        System.err.println("Error while reading callbacks:");
-                        ex.printStackTrace();
-                    }
-
-                    // Read R ids and then read controls. The
-                    // order is important (controls read R ids).
-                    rLinker.readRConstants(i, pkgs.get(i));
-                    appUserControls.addAll(processMan.getUserControls());
-
-                    processMan.printManifestHeader();
+                    AndroidManifest manifest = getAndroidManifest(i);
+                    processManifest(i, manifest, pkgs, rLinker);
+                    manifest.printManifestHeader();
                 }
             }
 
@@ -120,7 +102,34 @@ public class AndroidSupport extends BasicJavaSupport {
         }
     }
 
-    private void printCollectedComponents() {
+    public void processManifest(String input, AndroidManifest manifest, Map<String, String> pkgs, RLinker rLinker) {
+        String appPackageName = manifest.getPackageName();
+        pkgs.put(input, appPackageName);
+
+        appServices.addAll(manifest.getServices());
+        appActivities.addAll(manifest.getActivities());
+        appContentProviders.addAll(manifest.getProviders());
+        appBroadcastReceivers.addAll(manifest.getReceivers());
+        try {
+            appCallbackMethods.addAll(manifest.getCallbackMethods());
+        } catch (IOException ex) {
+            System.err.println("Error while reading callbacks:");
+            ex.printStackTrace();
+        }
+
+        // Read R ids and then read controls. The
+        // order is important (controls read R ids).
+        if (rLinker != null)
+            rLinker.readRConstants(input, pkgs.get(input));
+
+        try {
+            appUserControls.addAll(manifest.getUserControls());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void printCollectedComponents() {
         System.out.println("Collected components:");
         System.out.println("activities: " + appActivities);
         System.out.println("content providers: " + appContentProviders);
@@ -166,8 +175,8 @@ public class AndroidSupport extends BasicJavaSupport {
         }
     }
 
-    public void writeComponents(FactWriter writer) {
-        for (String appInput : sootParameters.getInputs()) {
+    public void writeComponents(FactWriter writer, Parameters parameters) {
+        for (String appInput : parameters.getInputs()) {
             AndroidManifest processMan;
             try {
                 processMan = getAndroidManifest(appInput);
@@ -214,20 +223,20 @@ public class AndroidSupport extends BasicJavaSupport {
                     writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
                 }
             }
-            writeExtraSensitiveControls(writer);
+            writeExtraSensitiveControls(writer, parameters);
         }
     }
 
     // The extra sensitive controls are given as a String
     // "id1,type1,parentId1,id2,type2,parentId2,...".
-    void writeExtraSensitiveControls(FactWriter writer) {
-        if (sootParameters._extraSensitiveControls.equals("")) {
+    void writeExtraSensitiveControls(FactWriter writer, Parameters parameters) {
+        if (parameters._extraSensitiveControls.equals("")) {
             return;
         }
-        String[] parts = sootParameters._extraSensitiveControls.split(",");
+        String[] parts = parameters._extraSensitiveControls.split(",");
         int partsLen = parts.length;
         if (partsLen % 3 != 0) {
-            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + sootParameters._extraSensitiveControls + "\"");
+            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + parameters._extraSensitiveControls + "\"");
             return;
         }
         for (int i = 0; i < partsLen; i += 3) {

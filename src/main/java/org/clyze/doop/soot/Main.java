@@ -347,7 +347,7 @@ public class Main {
                 db.close();
                 return;
             } else {
-                android.writeComponents(writer);
+                android.writeComponents(writer, sootParameters);
             }
         }
 
