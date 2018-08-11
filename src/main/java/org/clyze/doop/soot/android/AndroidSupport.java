@@ -1,5 +1,6 @@
 package org.clyze.doop.soot.android;
 
+import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.Parameters;
 import org.clyze.doop.soot.*;
 import org.clyze.utils.AARUtils;

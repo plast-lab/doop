@@ -1,6 +1,6 @@
 package org.clyze.doop.wala;
 
-import org.clyze.doop.soot.ArtifactEntry;
+import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.soot.PropertyProvider;
 import org.clyze.doop.soot.android.AndroidManifest;
 import org.clyze.doop.soot.android.AndroidSupport;
