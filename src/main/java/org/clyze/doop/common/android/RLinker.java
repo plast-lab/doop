@@ -1,4 +1,4 @@
-package org.clyze.doop.soot.android;
+package org.clyze.doop.common.android;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;

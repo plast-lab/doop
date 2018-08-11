@@ -1,4 +1,4 @@
-package org.clyze.doop.soot.android;
+package org.clyze.doop.common.android;
 
 import java.io.File;
 import java.io.FileInputStream;

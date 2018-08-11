@@ -1,15 +1,15 @@
 package org.clyze.doop.wala;
 
 import org.clyze.doop.common.ArtifactEntry;
+import org.clyze.doop.common.android.AndroidManifest;
 import org.clyze.doop.soot.PropertyProvider;
-import org.clyze.doop.soot.android.AndroidManifest;
 import org.clyze.doop.soot.android.AndroidSupport;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import java.io.IOException;
 import java.util.*;
 
-import static org.clyze.doop.soot.android.AndroidManifest.getAndroidManifest;
+import static org.clyze.doop.common.android.AndroidManifest.getAndroidManifest;
 
 /*
  * Parses all the XML files of each input file to find all the information we want about

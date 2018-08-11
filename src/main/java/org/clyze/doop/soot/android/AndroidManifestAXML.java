@@ -2,6 +2,7 @@
 
 package org.clyze.doop.soot.android;
 
+import org.clyze.doop.common.android.AndroidManifest;
 import soot.jimple.infoflow.android.axml.AXmlNode;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;

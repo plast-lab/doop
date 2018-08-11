@@ -3,6 +3,8 @@ package org.clyze.doop.soot.android;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
+import org.clyze.doop.common.android.AndroidManifest;
+import org.clyze.doop.common.android.RLinker;
 import org.clyze.doop.soot.*;
 import org.clyze.utils.AARUtils;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
@@ -18,7 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static org.clyze.doop.soot.android.AndroidManifest.getAndroidManifest;
+import static org.clyze.doop.common.android.AndroidManifest.getAndroidManifest;
 import static soot.dexpler.DexFileProvider.DexContainer;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 

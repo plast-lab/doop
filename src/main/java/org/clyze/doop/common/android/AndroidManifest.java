@@ -1,7 +1,8 @@
 // An Android manifest, with the information needed by Doop.
 
-package org.clyze.doop.soot.android;
+package org.clyze.doop.common.android;
 
+import org.clyze.doop.soot.android.AndroidManifestAXML;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import java.io.IOException;
