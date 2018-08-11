@@ -1307,36 +1307,6 @@ public class WalaFactWriter extends JavaFactWriter {
 ////        _db.add(BREAKPOINT_STMT, insn, str(index), methodId);
 //    }
 
-    public void writeApplication(String applicationName) { _db.add(ANDROID_APPLICATION, applicationName); }
-
-    public void writeActivity(String activity) {
-        _db.add(ACTIVITY, activity);
-    }
-
-    public void writeService(String service) {
-        _db.add(SERVICE, service);
-    }
-
-    public void writeContentProvider(String contentProvider) {
-        _db.add(CONTENT_PROVIDER, contentProvider);
-    }
-
-    public void writeBroadcastReceiver(String broadcastReceiver) {
-        _db.add(BROADCAST_RECEIVER, broadcastReceiver);
-    }
-
-    public void writeCallbackMethod(String callbackMethod) {
-        _db.add(CALLBACK_METHOD, callbackMethod);
-    }
-
-    public void writeLayoutControl(Integer id, String layoutControl, Integer parentID) {
-        _db.add(LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
-    }
-
-    public void writeSensitiveLayoutControl(Integer id, String layoutControl, Integer parentID) {
-        _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
-    }
-
     void writeFieldInitialValue(IField f) {
         String fieldId = _rep.signature(f);
 //        String valueString = f.getInitialValueString();
