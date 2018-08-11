@@ -26,12 +26,12 @@ public class AndroidSupport extends BasicJavaSupport {
     private SootParameters sootParameters;
     private SootMethod dummyMain;
 
-    private Set<String> appServices = new HashSet<>();
-    private Set<String> appActivities = new HashSet<>();
-    private Set<String> appContentProviders = new HashSet<>();
-    private Set<String> appBroadcastReceivers = new HashSet<>();
-    private Set<String> appCallbackMethods = new HashSet<>();
-    private Set<PossibleLayoutControl> appUserControls = new HashSet<>();
+    protected Set<String> appServices = new HashSet<>();
+    protected Set<String> appActivities = new HashSet<>();
+    protected Set<String> appContentProviders = new HashSet<>();
+    protected Set<String> appBroadcastReceivers = new HashSet<>();
+    protected Set<String> appCallbackMethods = new HashSet<>();
+    protected Set<PossibleLayoutControl> appUserControls = new HashSet<>();
 
     public AndroidSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider, String rOutDir, SootParameters sootParameters) {
         super(artifactToClassMap, propertyProvider);

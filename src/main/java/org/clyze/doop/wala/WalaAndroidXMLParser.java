@@ -1,6 +1,9 @@
 package org.clyze.doop.wala;
 
+import org.clyze.doop.soot.ArtifactEntry;
+import org.clyze.doop.soot.PropertyProvider;
 import org.clyze.doop.soot.android.AndroidManifest;
+import org.clyze.doop.soot.android.AndroidSupport;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import java.io.IOException;
@@ -13,20 +16,14 @@ import static org.clyze.doop.soot.android.AndroidManifest.getAndroidManifest;
  * Android Components and LayoutControls
  * WARNING: It uses the soot implementation, need to find alternative
  */
-public class WalaAndroidXMLParser {
+public class WalaAndroidXMLParser extends AndroidSupport {
     private List<String> inputs;
     private WalaFactWriter factWriter;
     private String extraSensitiveControls;
 
-    private Set<String> appServices = new HashSet<>();
-    private Set<String> appActivities = new HashSet<>();
-    private Set<String> appContentProviders = new HashSet<>();
-    private Set<String> appBroadcastReceivers = new HashSet<>();
-    private Set<String> appCallbackMethods = new HashSet<>();
-    private Set<PossibleLayoutControl> appUserControls = new HashSet<>();
-
-    WalaAndroidXMLParser(List<String> inputFiles, WalaFactWriter writer, String _extraSensitiveControls)
+    WalaAndroidXMLParser(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider, List<String> inputFiles, WalaFactWriter writer, String _extraSensitiveControls)
     {
+        super(artifactToClassMap, propertyProvider, null, null);
         inputs = inputFiles;
         factWriter = writer;
         extraSensitiveControls = _extraSensitiveControls;
@@ -42,37 +39,15 @@ public class WalaAndroidXMLParser {
         for (String i : inputs) {
             if (i.endsWith(".apk") || i.endsWith(".aar")) {
                 System.out.println("Processing manifest in " + i);
-
-                AndroidManifest processMan;
                 try {
-                    processMan = getAndroidManifest(i);
+                    AndroidManifest manifest = getAndroidManifest(i);
+                    processManifest(i, manifest, pkgs, null);
+                    manifest.printManifestHeader();
                 } catch (Exception ex) {
                     System.err.println("Error processing manifest in: " + i);
                     ex.printStackTrace();
                     continue;
                 }
-                String appPackageName = processMan.getPackageName();
-                pkgs.put(i, appPackageName);
-
-                appServices.addAll(processMan.getServices());
-                appActivities.addAll(processMan.getActivities());
-                appContentProviders.addAll(processMan.getProviders());
-                appBroadcastReceivers.addAll(processMan.getReceivers());
-                try {
-                    appCallbackMethods.addAll(processMan.getCallbackMethods());
-                } catch (IOException ex) {
-                    System.err.println("Error while reading callbacks:");
-                    ex.printStackTrace();
-                }
-
-                try {
-                    appUserControls.addAll(processMan.getUserControls());
-                } catch (IOException e) {
-                    System.err.println("Error while reading layout controls:");
-                    e.printStackTrace();
-                }
-
-                processMan.printManifestHeader();
             }
         }
     }

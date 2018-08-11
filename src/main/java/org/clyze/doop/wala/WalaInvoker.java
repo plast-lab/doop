@@ -15,7 +15,9 @@ import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
+import org.clyze.doop.soot.ArtifactEntry;
 import org.clyze.doop.soot.DoopErrorCodeException;
+import org.clyze.doop.soot.PropertyProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -170,7 +172,9 @@ public class WalaInvoker {
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if(walaParameters._android)
         {
-            WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters.getInputs(), walaFactWriter, walaParameters._extraSensitiveControls);
+            Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
+            PropertyProvider propertyProvider = new PropertyProvider();
+            WalaAndroidXMLParser parser = new WalaAndroidXMLParser(artifactToClassMap, propertyProvider, walaParameters.getInputs(), walaFactWriter, walaParameters._extraSensitiveControls);
             parser.writeComponents();
         }
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
