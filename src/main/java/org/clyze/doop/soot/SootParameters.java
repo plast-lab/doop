@@ -18,7 +18,6 @@ public class SootParameters extends Parameters {
      boolean _ssa = false;
      boolean _allowPhantom = false;
      FactsSubSet _factsSubSet = null;
-     String appRegex = "**";
      boolean _runFlowdroid = false;
      boolean _noFacts = false;
      String _rOutDir = null;

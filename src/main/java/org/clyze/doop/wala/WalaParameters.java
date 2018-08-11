@@ -10,7 +10,6 @@ public class WalaParameters extends Parameters {
     List<String> _appLibraries = new ArrayList<>();
     List<String> _platformLibraries = new ArrayList<>();
     String _javaPath = null;
-    String appRegex = "**";
     boolean _generateIR = false;
 
     public void setAppLibraries(List<String> libraries) {

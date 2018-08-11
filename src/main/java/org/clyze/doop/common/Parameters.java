@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.clyze.doop.util.filter.ClassFilter;
+import org.clyze.doop.util.filter.GlobClassFilter;
 
 /**
  * This class contains common parameters for Doop Java front-ends.
@@ -15,12 +16,22 @@ public abstract class Parameters {
     protected List<String> _inputs = new ArrayList<>();
     protected String _outputDir = null;
     public String _extraSensitiveControls = "";
+    private String appRegex;
     public ClassFilter applicationClassFilter;
     public boolean _android = false;
     public Integer _cores = null;
     public String _androidJars = null;
     public String _seed = null;
     public String _specialCSMethods = null;
+
+    public Parameters() {
+	setAppRegex("**");
+    }
+
+    public void setAppRegex(String regex) {
+        this.appRegex = regex;
+        this.applicationClassFilter = new GlobClassFilter(this.appRegex);
+    }
 
     public void setInputs(List<String> inputs) {
         this._inputs = inputs;

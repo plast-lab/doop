@@ -35,9 +35,6 @@ public class Main {
     }
 
     private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
-        walaParameters.applicationClassFilter = new GlobClassFilter(walaParameters.appRegex);
-
-
         // Change package delimiter from "/" to "."
         return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
     }
@@ -83,7 +80,7 @@ public class Main {
                         break;
                     case "--application-regex":
                         i = shift(args, i);
-                        walaParameters.appRegex = args[i];
+                        walaParameters.setAppRegex(args[i]);
                         break;
                     case "--fact-gen-cores":
                         i = shift(args, i);

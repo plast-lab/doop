@@ -89,7 +89,7 @@ public class WalaInvoker {
                         break;
                     case "--application-regex":
                         i = shift(args, i);
-                        walaParameters.appRegex = args[i];
+                        walaParameters.setAppRegex(args[i]);
                         break;
                     case "--extra-sensitive-controls":
                         i = shift(args, i);

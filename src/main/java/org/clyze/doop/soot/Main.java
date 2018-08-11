@@ -24,8 +24,6 @@ public class Main {
     }
 
     private static boolean isApplicationClass(SootParameters sootParameters, SootClass klass) {
-        sootParameters.applicationClassFilter = new GlobClassFilter(sootParameters.appRegex);
-
         return sootParameters.applicationClassFilter.matches(klass.getName());
     }
 
@@ -102,7 +100,7 @@ public class Main {
                         break;
                     case "--application-regex":
                         i = shift(args, i);
-                        sootParameters.appRegex = args[i];
+                        sootParameters.setAppRegex(args[i]);
                         break;
                     case "--allow-phantom":
                         sootParameters._allowPhantom = true;
