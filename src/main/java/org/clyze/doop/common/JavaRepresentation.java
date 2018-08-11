@@ -14,7 +14,7 @@ public class JavaRepresentation {
         return "<handle " + handleName + ">";
     }
 
-    protected static String nativeReturnVarOfMethod(String m) {
+    public static String nativeReturnVarOfMethod(String m) {
         return m + "/@native-return";
     }
 
