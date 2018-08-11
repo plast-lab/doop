@@ -36,7 +36,7 @@ public class Main {
 
     private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
         // Change package delimiter from "/" to "."
-        return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
+        return walaParameters.isApplicationClass(WalaUtils.fixTypeString(klass.getName().toString()));
     }
 
     public static void main(String[] args) throws IOException {

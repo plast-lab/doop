@@ -24,7 +24,7 @@ public class Main {
     }
 
     private static boolean isApplicationClass(SootParameters sootParameters, SootClass klass) {
-        return sootParameters.applicationClassFilter.matches(klass.getName());
+        return sootParameters.isApplicationClass(klass.getName());
     }
 
     public static void main(String[] args) throws Throwable {

@@ -76,4 +76,7 @@ public abstract class Parameters {
             writer.writeSpecialSensitivityMethod(line);
     }
 
+    public boolean isApplicationClass(String className) {
+        return applicationClassFilter.matches(className);
+    }
 }
