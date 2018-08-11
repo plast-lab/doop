@@ -33,6 +33,7 @@ public class SootParameters extends Parameters {
           return this._libraries;
      }
 
+     @Override
      public List<String> getInputsAndLibraries() {
           List<String> ret = new ArrayList<>();
           ret.addAll(this._inputs);

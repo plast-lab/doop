@@ -79,4 +79,7 @@ public abstract class Parameters {
     public boolean isApplicationClass(String className) {
         return applicationClassFilter.matches(className);
     }
+
+    public abstract List<String> getInputsAndLibraries();
+
 }
