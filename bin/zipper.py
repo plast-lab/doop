@@ -13,11 +13,11 @@ DATABASE = 'last-analysis'
 APP = 'temp'
 SEP = '"\t"'
 
-#ZIPPER_CP = ':'.join(['zipper/lib/zipper.jar', 'zipper/lib/guava-23.0.jar'])
-ZIPPER_CP = ':'.join(['zipper/bin', 'zipper/lib/guava-23.0.jar'])
+ZIPPER_CP = ':'.join(['zipper/lib/zipper.jar', 'zipper/lib/guava-23.0.jar'])
 ZIPPER_MAIN = 'ptatoolkit.zipper.doop.Main'
 ZIPPER_CACHE = 'zipper/cache'
 ZIPPER_OUT = 'zipper/out'
+THREAD = 16 # use multithreading to accelerate Zipper
 ONLY_LIB = True
 # ---------------------------------------------------------
 
@@ -25,8 +25,13 @@ RESET = '\033[0m'
 YELLOW = '\033[33m'
 BOLD = '\033[1m'
 
-def runPreAnalysis(args):
-    # TODO: filter out the -a option here
+def runPreAnalysis(initArgs):
+    args = list(initArgs)
+    for opt in ['-a', '--analysis']:
+        if opt in args:
+            i = args.index(opt)
+            del args[i] # delete '-a' or '--analysis'
+            del args[i] # delete the analysis argument
     args = [DOOP] + args
     args = args + ['-a', PRE_ANALYSIS]
     args = args + ['--zipper-pre']
@@ -59,7 +64,7 @@ def dumpRequiredDoopResults(app, db_dir, dump_dir):
             os.mkdir(dump_dir)
         shutil.copyfile(from_path, dump_path)
     
-    print 'Dumping doop analysis results %s...' % app
+    print 'Dumping doop analysis results %s ...' % app
     for query in REQUIRED_INPUT:
         dumpDoopResults(db_dir, dump_dir, app, query)
 
@@ -71,6 +76,7 @@ def runZipper(app, cache_dir, out_dir):
     cmd += ' -app %s ' % app
     cmd += ' -cache %s ' % cache_dir
     cmd += ' -out %s ' % out_dir
+    cmd += ' -thread %d ' % THREAD
     if ONLY_LIB:
         cmd += ' -only-lib '
     # print cmd
@@ -85,8 +91,8 @@ def runMainAnalysis(args, zipper_file):
     args = args + ['--zipper', zipper_file]
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running main (Zipper-guided) analysis ...' + RESET
-    print cmd
-    # os.system(cmd)
+    # print cmd
+    os.system(cmd)
 
 def run(args):
     runPreAnalysis(args)
