@@ -2,7 +2,6 @@ package org.clyze.doop.wala;
 
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
-import soot.SootClass;
 
 import java.util.Iterator;
 import java.util.Set;
