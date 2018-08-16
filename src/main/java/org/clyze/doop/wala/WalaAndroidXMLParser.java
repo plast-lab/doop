@@ -148,9 +148,4 @@ public class WalaAndroidXMLParser extends AndroidSupport {
             }
         }
     }
-
-    @Override
-    protected void registerPropertyFile(String filename, String entryName) throws IOException {
-        System.err.println("TODO: implement registerPropertyFile()");
-    }
 }

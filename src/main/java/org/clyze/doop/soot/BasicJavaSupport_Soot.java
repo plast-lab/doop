@@ -13,11 +13,8 @@ import soot.SourceLocator;
 
 public class BasicJavaSupport_Soot extends BasicJavaSupport {
 
-    private PropertyProvider propertyProvider;
-
     public BasicJavaSupport_Soot(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider) {
-        super(artifactToClassMap);
-        this.propertyProvider = propertyProvider;
+        super(artifactToClassMap, propertyProvider);
     }
 
     /**
@@ -100,10 +97,5 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport {
         if (SourceLocator.v().getClassSource(className) != null) {
             scene.addBasicClass(className);
         }
-    }
-
-    @Override
-    protected void registerPropertyFile(String filename, String entryName) throws IOException {
-        propertyProvider.addProperties(DoopAddons.newFoundFile(filename, entryName));
     }
 }

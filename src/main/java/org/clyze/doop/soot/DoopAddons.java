@@ -12,7 +12,6 @@ import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.clyze.doop.common.DoopErrorCodeException;
-import org.clyze.doop.common.FoundFile;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
@@ -92,66 +91,6 @@ public class DoopAddons {
             System.err.println("Could not call Soot method writeClass(): ");
             ex.printStackTrace();
             throw new DoopErrorCodeException(12);
-        }
-    }
-
-    /**
-     * Creates an instance of class "FoundFile" (which may exist in different
-     * locations in the class hierarchy between our Soot fork and upstream).
-     */
-    public static FoundFile newFoundFile(String archivePath, String entryName) {
-        Class<?> foundFileClass;
-
-        // Resolve FoundFile class dynamically.
-        try {
-            foundFileClass = Class.forName("soot.FoundFile");
-        } catch (ClassNotFoundException ex1) {
-            try {
-                foundFileClass = Class.forName("soot.SourceLocator$FoundFile");
-            } catch (ClassNotFoundException ex2) {
-                System.out.println("Error: cannot find class FoundFile.");
-                return null;
-            }
-        }
-
-        if (!foundFile_warned) {
-            System.err.println("Using Soot class: " + foundFileClass.getName());
-            foundFile_warned = true;
-        }
-
-        // Construct an instance.
-        try {
-            Constructor<?> ctr = foundFileClass.getConstructor(new Class<?>[] {String.class, String.class});
-            Object ff = ctr.newInstance(archivePath, entryName);
-            return new SootFoundFile(ff);
-        } catch (NoSuchMethodException | InstantiationException | InvocationTargetException | IllegalAccessException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-    }
-
-    // The part of FoundFile that we wrap.
-    static class SootFoundFile implements FoundFile {
-        Object ff;
-
-        public SootFoundFile(Object ff) { this.ff = ff; }
-
-        private Object nullaryCall(String mName) {
-            try {
-                Method m = ff.getClass().getDeclaredMethod(mName, new Class<?>[] { });
-                return m.invoke(ff);
-            } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException ex) {
-                ex.printStackTrace();
-                return null;
-            }
-        }
-
-        public InputStream inputStream() {
-            return (InputStream) nullaryCall("inputStream");
-        }
-
-        public String getFilePath() {
-            return (String) nullaryCall("getFilePath");
         }
     }
 

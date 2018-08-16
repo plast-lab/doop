@@ -14,13 +14,14 @@ public class PropertyProvider {
     }
 
     /**
-     * Adds a properties file from a resource.
+     * Adds a properties file from a properties entry inside an archive.
+     *
+     * @param stream     the InputStream of the properties entry
+     * @param filePath   the path of the archive containing the
+     *                   properties file
      */
-    public void addProperties(FoundFile foundFile)
-        throws IOException
-    {
+    public void addProperties(InputStream stream, String filePath) throws IOException {
         Properties properties = new Properties();
-        InputStream stream = foundFile.inputStream();
 
         try {
             properties.load(stream);
@@ -34,7 +35,7 @@ public class PropertyProvider {
                 stream.close();
         }
 
-        _properties.put(foundFile.getFilePath(), properties);
+        _properties.put(filePath, properties);
     }
 
     public Map<String, Properties> getProperties() {

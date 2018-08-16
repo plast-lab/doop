@@ -20,12 +20,14 @@ public abstract class BasicJavaSupport {
     protected Set<String> classesInLibraryJars;
     protected Set<String> classesInDependencyJars;
     private Map<String, Set<ArtifactEntry>> artifactToClassMap;
+    private PropertyProvider propertyProvider;
 
-    public BasicJavaSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap) {
+    public BasicJavaSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider) {
         this.classesInApplicationJars = new HashSet<>();
         this.classesInLibraryJars = new HashSet<>();
         this.classesInDependencyJars = new HashSet<>();
         this.artifactToClassMap = artifactToClassMap;
+        this.propertyProvider = propertyProvider;
     }
 
     /**
@@ -55,13 +57,11 @@ public abstract class BasicJavaSupport {
                         System.err.println("-- Problematic .class file \"" + entryName + "\"");
                     }
                 } else if (entryName.endsWith(".properties")) {
-                    registerPropertyFile(filename, entryName);
+                    propertyProvider.addProperties(jarFile.getInputStream(entry), filename);
                 } /* Skip non-class files and non-property files */
             }
         }
     }
-
-    protected abstract void registerPropertyFile(String filename, String entryName) throws IOException;
 
     /**
      * Registers a class with its container artifact.
