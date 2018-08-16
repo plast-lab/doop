@@ -3,8 +3,8 @@ package org.clyze.doop.wala;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.PropertyProvider;
 import org.clyze.doop.common.android.AndroidManifest;
+import org.clyze.doop.common.android.LayoutControl;
 import org.clyze.doop.soot.android.AndroidSupport;
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import java.io.IOException;
 import java.util.*;
@@ -104,7 +104,7 @@ public class WalaAndroidXMLParser extends AndroidSupport {
                 }
             }
 
-            Set<PossibleLayoutControl> layoutControls = null;
+            Set<LayoutControl> layoutControls = null;
             try {
                 layoutControls = processMan.getUserControls();
             } catch (IOException e) {
@@ -112,7 +112,7 @@ public class WalaAndroidXMLParser extends AndroidSupport {
                 e.printStackTrace();
             }
             if(layoutControls != null) {
-                for (PossibleLayoutControl possibleLayoutControl : layoutControls) {
+                for (LayoutControl possibleLayoutControl : layoutControls) {
                     factWriter.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
                     if (possibleLayoutControl.isSensitive()) {
                         factWriter.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());

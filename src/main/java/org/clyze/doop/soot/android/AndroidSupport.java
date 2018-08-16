@@ -5,6 +5,7 @@ import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
 import org.clyze.doop.common.PropertyProvider;
 import org.clyze.doop.common.android.AndroidManifest;
+import org.clyze.doop.common.android.LayoutControl;
 import org.clyze.doop.common.android.RLinker;
 import org.clyze.doop.soot.*;
 import org.clyze.utils.AARUtils;
@@ -15,7 +16,6 @@ import soot.SootMethod;
 import soot.coffi.Util;
 import soot.dexpler.DexFileProvider;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,7 +36,7 @@ public class AndroidSupport extends BasicJavaSupport_Soot {
     protected Set<String> appContentProviders = new HashSet<>();
     protected Set<String> appBroadcastReceivers = new HashSet<>();
     protected Set<String> appCallbackMethods = new HashSet<>();
-    protected Set<PossibleLayoutControl> appUserControls = new HashSet<>();
+    protected Set<LayoutControl> appUserControls = new HashSet<>();
 
     public AndroidSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider, String rOutDir, Parameters parameters) {
         super(artifactToClassMap, propertyProvider);
@@ -224,7 +224,7 @@ public class AndroidSupport extends BasicJavaSupport_Soot {
                 writer.writeCallbackMethod(callbackMethod);
             }
 
-            for (PossibleLayoutControl possibleLayoutControl : appUserControls) {
+            for (LayoutControl possibleLayoutControl : appUserControls) {
                 writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
                 if (possibleLayoutControl.isSensitive()) {
                     writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());

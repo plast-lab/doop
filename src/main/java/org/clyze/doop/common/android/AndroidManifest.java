@@ -2,11 +2,9 @@
 
 package org.clyze.doop.common.android;
 
-import org.clyze.doop.soot.android.AndroidManifestAXML;
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
-
 import java.io.IOException;
 import java.util.Set;
+import org.clyze.doop.soot.android.AndroidManifestAXML;
 
 public interface AndroidManifest {
     String getApplicationName();
@@ -16,7 +14,7 @@ public interface AndroidManifest {
     Set<String> getProviders();
     Set<String> getReceivers();
     Set<String> getCallbackMethods() throws IOException;
-    Set<PossibleLayoutControl> getUserControls() throws IOException;
+    Set<LayoutControl> getUserControls() throws IOException;
 
     // Adapted from Soot's ProcessManifest.
     default String expandClassName(String className) {

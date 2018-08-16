@@ -3,6 +3,7 @@
 package org.clyze.doop.soot.android;
 
 import org.clyze.doop.common.android.AndroidManifest;
+import org.clyze.doop.common.android.LayoutControl;
 import soot.jimple.infoflow.android.axml.AXmlNode;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
@@ -11,6 +12,7 @@ import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class AndroidManifestAXML implements AndroidManifest {
@@ -78,15 +80,33 @@ public class AndroidManifestAXML implements AndroidManifest {
         return ret;
     }
 
-    public Set<PossibleLayoutControl> getUserControls() throws IOException {
+    public Set<LayoutControl> getUserControls() throws IOException {
         if (lfp == null)
             initLayoutFileParser();
 
         // Collect results.
-        Set<PossibleLayoutControl> ret = new HashSet<>();
+        Set<LayoutControl> ret = new HashSet<>();
         for (Set<PossibleLayoutControl> possibleLayoutControls : lfp.getUserControls().values()) {
-            ret.addAll(possibleLayoutControls);
+            for (PossibleLayoutControl plc : possibleLayoutControls)
+                ret.add(new SootLayoutControl(plc));
         }
         return ret;
+    }
+
+    /**
+     * Thin wrapper over Soot's PossibleLayoutControl.
+     */
+    private class SootLayoutControl extends LayoutControl {
+        private PossibleLayoutControl plc;
+        public SootLayoutControl(PossibleLayoutControl plc) {
+            this.plc = plc;
+        }
+        public int getID() { return plc.getID(); }
+        public boolean isSensitive() { return plc.isSensitive(); }
+        public String getViewClassName() { return plc.getViewClassName(); }
+        public int getParentID() { return plc.getParentID(); }
+        public Map<String, Object> getAdditionalAttributes() {
+            return plc.getAdditionalAttributes();
+        }
     }
 }
