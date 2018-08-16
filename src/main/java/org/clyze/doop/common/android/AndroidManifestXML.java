@@ -26,13 +26,13 @@ public class AndroidManifestXML implements AndroidManifest {
     private Set<String> services   = new HashSet<>();
 
     public static AndroidManifestXML fromArchive(String archiveLocation) throws IOException, ParserConfigurationException, SAXException {
-	File ar = new File(archiveLocation);
-	return new AndroidManifestXML(getZipEntryInputStream(ar, MANIFEST), ar);
+        File ar = new File(archiveLocation);
+        return new AndroidManifestXML(getZipEntryInputStream(ar, MANIFEST), ar);
     }
 
     public static AndroidManifestXML fromDir(String dir) throws IOException, ParserConfigurationException, SAXException {
-	File ar = new File(dir + File.separator + MANIFEST);
-	return new AndroidManifestXML(new FileInputStream(ar), ar);
+        File ar = new File(dir + File.separator + MANIFEST);
+        return new AndroidManifestXML(new FileInputStream(ar), ar);
     }
 
     private AndroidManifestXML(InputStream is, File ar) throws IOException, ParserConfigurationException, SAXException {
