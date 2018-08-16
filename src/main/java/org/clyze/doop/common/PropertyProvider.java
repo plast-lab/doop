@@ -1,4 +1,4 @@
-package org.clyze.doop.soot;
+package org.clyze.doop.common;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +16,7 @@ public class PropertyProvider {
     /**
      * Adds a properties file from a resource.
      */
-    public void addProperties(DoopAddons.FoundFile foundFile)
+    public void addProperties(FoundFile foundFile)
         throws IOException
     {
         Properties properties = new Properties();

@@ -3,6 +3,7 @@ package org.clyze.doop.soot.android;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
+import org.clyze.doop.common.PropertyProvider;
 import org.clyze.doop.common.android.AndroidManifest;
 import org.clyze.doop.common.android.RLinker;
 import org.clyze.doop.soot.*;

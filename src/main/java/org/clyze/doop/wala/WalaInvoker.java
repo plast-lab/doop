@@ -14,10 +14,10 @@ import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.clyze.doop.common.Database;
 import org.clyze.doop.common.ArtifactEntry;
+import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
-import org.clyze.doop.soot.PropertyProvider;
+import org.clyze.doop.common.PropertyProvider;
 
 import java.io.File;
 import java.io.IOException;

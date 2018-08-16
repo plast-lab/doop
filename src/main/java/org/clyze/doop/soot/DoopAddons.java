@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.FoundFile;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
@@ -122,7 +123,7 @@ public class DoopAddons {
         try {
             Constructor<?> ctr = foundFileClass.getConstructor(new Class<?>[] {String.class, String.class});
             Object ff = ctr.newInstance(archivePath, entryName);
-            return new FoundFile(ff);
+            return new SootFoundFile(ff);
         } catch (NoSuchMethodException | InstantiationException | InvocationTargetException | IllegalAccessException ex) {
             ex.printStackTrace();
             return null;
@@ -130,10 +131,10 @@ public class DoopAddons {
     }
 
     // The part of FoundFile that we wrap.
-    static class FoundFile {
+    static class SootFoundFile implements FoundFile {
         Object ff;
 
-        public FoundFile(Object ff) { this.ff = ff; }
+        public SootFoundFile(Object ff) { this.ff = ff; }
 
         private Object nullaryCall(String mName) {
             try {
@@ -145,11 +146,11 @@ public class DoopAddons {
             }
         }
 
-        InputStream inputStream() {
+        public InputStream inputStream() {
             return (InputStream) nullaryCall("inputStream");
         }
 
-        String getFilePath() {
+        public String getFilePath() {
             return (String) nullaryCall("getFilePath");
         }
     }

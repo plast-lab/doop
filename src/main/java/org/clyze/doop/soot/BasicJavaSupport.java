@@ -1,6 +1,7 @@
 package org.clyze.doop.soot;
 
 import org.clyze.doop.common.ArtifactEntry;
+import org.clyze.doop.common.PropertyProvider;
 import org.objectweb.asm.ClassReader;
 import soot.Scene;
 import soot.SootClass;
