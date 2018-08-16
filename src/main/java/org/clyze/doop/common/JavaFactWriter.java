@@ -136,4 +136,29 @@ public class JavaFactWriter {
                 writeClassArtifact(artifact, ae.className, ae.subArtifact);
     }
 
+    // The extra sensitive controls are given as a String
+    // "id1,type1,parentId1,id2,type2,parentId2,...".
+    public void writeExtraSensitiveControls(Parameters parameters) {
+        if (parameters._extraSensitiveControls.equals("")) {
+            return;
+        }
+        String[] parts = parameters._extraSensitiveControls.split(",");
+        int partsLen = parts.length;
+        if (partsLen % 3 != 0) {
+            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + parameters._extraSensitiveControls + "\"");
+            return;
+        }
+        for (int i = 0; i < partsLen; i += 3) {
+            String control = parts[i] + "," + parts[i+1] + "," + parts[i+2];
+            try {
+                int controlId = Integer.parseInt(parts[i]);
+                String typeId = parts[i+1].trim();
+                int parentId  = Integer.parseInt(parts[i+2]);
+                System.out.println("Adding sensitive layout control: " + control);
+                writeSensitiveLayoutControl(controlId, typeId, parentId);
+            } catch (Exception ex) {
+                System.err.println("Ignoring control: " + control);
+            }
+        }
+    }
 }
