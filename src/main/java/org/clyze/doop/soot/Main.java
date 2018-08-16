@@ -254,7 +254,7 @@ public class Main {
         Set<SootClass> classes = new HashSet<>();
         Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
 
-        BasicJavaSupport java;
+        BasicJavaSupport_Soot java;
 
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
@@ -269,7 +269,7 @@ public class Main {
             java = android;
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
-            java = new BasicJavaSupport(artifactToClassMap, propertyProvider);
+            java = new BasicJavaSupport_Soot(artifactToClassMap, propertyProvider);
             java.populateClassesInAppJar(sootParameters);
         }
 

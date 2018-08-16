@@ -25,7 +25,7 @@ import static org.clyze.doop.common.android.AndroidManifest.getAndroidManifest;
 import static soot.dexpler.DexFileProvider.DexContainer;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
-public class AndroidSupport extends BasicJavaSupport {
+public class AndroidSupport extends BasicJavaSupport_Soot {
 
     private String rOutDir;
     private Parameters parameters;
