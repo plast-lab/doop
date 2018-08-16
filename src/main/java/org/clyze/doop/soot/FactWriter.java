@@ -1,8 +1,10 @@
 package org.clyze.doop.soot;
 
+import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
+import org.clyze.doop.common.PropertyProvider;
 import org.clyze.doop.common.SessionCounter;
 import soot.*;
 import soot.jimple.*;
@@ -11,9 +13,11 @@ import soot.jimple.toolkits.typing.fast.BottomType;
 import soot.tagkit.*;
 import soot.util.backend.ASMBackendUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.JavaRepresentation.*;
@@ -951,4 +955,10 @@ public class FactWriter extends JavaFactWriter {
                 _db.add(FIELD_INITIAL_VALUE, fieldId, valueString);
             }
     }
+
+    public void writePreliminaryFacts(Set<SootClass> classes, PropertyProvider propertyProvider, Map<String, Set<ArtifactEntry>> artifactToClassMap) {
+        classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(this::writeApplicationClass);
+        writePreliminaryFacts(propertyProvider, artifactToClassMap);
+    }
+
 }

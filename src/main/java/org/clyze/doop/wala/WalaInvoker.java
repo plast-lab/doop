@@ -166,14 +166,12 @@ public class WalaInvoker {
         WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
         WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //WARNING: This introduces a dependency to SOOT
-        //TODO: Find an alternative way to do this using WALA
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // TODO: fill in propertyProvider/artifactToClassMap
+        PropertyProvider propertyProvider = new PropertyProvider();
+        Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
+
         if(walaParameters._android)
         {
-            Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
-            PropertyProvider propertyProvider = new PropertyProvider();
             WalaAndroidXMLParser parser = new WalaAndroidXMLParser(artifactToClassMap, propertyProvider, walaParameters.getInputs(), walaFactWriter, walaParameters._extraSensitiveControls);
             parser.writeComponents();
         }
@@ -184,6 +182,8 @@ public class WalaInvoker {
             cache = new AnalysisCacheImpl(new DexIRFactory());
         else
             cache = new AnalysisCacheImpl();
+
+        walaFactWriter.writePreliminaryFacts(propertyProvider, artifactToClassMap);
 
         IClass klass;
         Set<IClass> classesSet = new HashSet<>();

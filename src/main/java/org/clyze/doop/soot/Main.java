@@ -340,7 +340,7 @@ public class Main {
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
         Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
 
-        writePreliminaryFacts(classes, propertyProvider, artifactToClassMap, writer);
+        writer.writePreliminaryFacts(classes, propertyProvider, artifactToClassMap);
         db.flush();
 
         if (sootParameters._android) {
@@ -400,26 +400,6 @@ public class Main {
             SootClass c = scene.loadClass(className, SootClass.BODIES);
             resolvedClasses.add(c);
         }
-    }
-
-    private static void writePreliminaryFacts(Set<SootClass> classes, PropertyProvider propertyProvider, Map<String, Set<ArtifactEntry>> artifactToClassMap, FactWriter writer) {
-        classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
-
-        // Read all stored properties files
-        for (Map.Entry<String, Properties> entry : propertyProvider.getProperties().entrySet()) {
-            String path = entry.getKey();
-            Properties properties = entry.getValue();
-
-            for (String propertyName : properties.stringPropertyNames()) {
-                String propertyValue = properties.getProperty(propertyName);
-                writer.writeProperty(path, propertyName, propertyValue);
-            }
-        }
-
-        System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
-        for (String artifact : artifactToClassMap.keySet())
-            for (ArtifactEntry ae : artifactToClassMap.get(artifact))
-                writer.writeClassArtifact(artifact, ae.className, ae.subArtifact);
     }
 
 }

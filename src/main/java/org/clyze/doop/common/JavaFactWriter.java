@@ -1,5 +1,8 @@
 package org.clyze.doop.common;
 
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**
@@ -112,6 +115,25 @@ public class JavaFactWriter {
 
     public void writeSensitiveLayoutControl(Integer id, String layoutControl, Integer parentID) {
         _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
+    }
+
+    public void writePreliminaryFacts(PropertyProvider propertyProvider, Map<String, Set<ArtifactEntry>> artifactToClassMap) {
+
+        // Read all stored properties files
+        for (Map.Entry<String, Properties> entry : propertyProvider.getProperties().entrySet()) {
+            String path = entry.getKey();
+            Properties properties = entry.getValue();
+
+            for (String propertyName : properties.stringPropertyNames()) {
+                String propertyValue = properties.getProperty(propertyName);
+                writeProperty(path, propertyName, propertyValue);
+            }
+        }
+
+        System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
+        for (String artifact : artifactToClassMap.keySet())
+            for (ArtifactEntry ae : artifactToClassMap.get(artifact))
+                writeClassArtifact(artifact, ae.className, ae.subArtifact);
     }
 
 }
