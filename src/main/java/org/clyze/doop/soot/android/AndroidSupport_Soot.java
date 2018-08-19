@@ -3,8 +3,11 @@ package org.clyze.doop.soot.android;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import org.clyze.doop.common.android.AndroidManifest;
+import org.clyze.doop.common.android.AndroidManifestXML;
 import org.clyze.doop.common.android.AndroidSupport;
 import org.clyze.doop.soot.*;
+import org.clyze.doop.soot.android.AndroidManifestAXML;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import soot.Scene;
 import soot.SootClass;
@@ -109,4 +112,20 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
     public void addDepClasses(Set<SootClass> classes, Scene scene) {
         throw new RuntimeException("Not implemented: addDepClasses()");
     }
+
+    // Parses Android manifests. Supports binary and plain-text XML
+    // files (found in .apk and .aar files respectively).
+    public static AndroidManifest newAndroidManifest(String archiveLocation) throws Exception {
+        try {
+            return new AndroidManifestAXML(archiveLocation);
+        } catch (Exception ex) {
+            return AndroidManifestXML.fromArchive(archiveLocation);
+        }
+    }
+
+    @Override
+    public AndroidManifest getAndroidManifest(String archiveLocation) throws Exception {
+        return newAndroidManifest(archiveLocation);
+    }
+
 }

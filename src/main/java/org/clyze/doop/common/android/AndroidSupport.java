@@ -4,16 +4,14 @@ import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
 import org.clyze.doop.common.android.AndroidManifest;
-import org.clyze.doop.common.android.AndroidManifestXML;
 import org.clyze.doop.common.android.LayoutControl;
 import org.clyze.doop.common.android.RLinker;
-import org.clyze.doop.soot.android.AndroidManifestAXML;
 import org.clyze.utils.AARUtils;
 
 import java.io.IOException;
 import java.util.*;
 
-public class AndroidSupport {
+public abstract class AndroidSupport {
 
     private String rOutDir;
     protected Parameters parameters;
@@ -149,14 +147,6 @@ public class AndroidSupport {
         }
     }
 
-    // Parses Android manifests. Supports binary and plain-text XML
-    // files (found in .apk and .aar files respectively).
-    public static AndroidManifest getAndroidManifest(String archiveLocation) throws Exception {
-        try {
-            return new AndroidManifestAXML(archiveLocation);
-        } catch (Exception ex) {
-            return AndroidManifestXML.fromArchive(archiveLocation);
-        }
-    }
+    public abstract AndroidManifest getAndroidManifest(String archiveLocation) throws Exception;
 
 }

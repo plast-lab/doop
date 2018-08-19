@@ -8,7 +8,7 @@ import org.clyze.doop.common.android.LayoutControl;
 import java.io.IOException;
 import java.util.*;
 
-import static org.clyze.doop.common.android.AndroidSupport.getAndroidManifest;
+import static org.clyze.doop.soot.android.AndroidSupport_Soot.newAndroidManifest;
 
 /*
  * Parses all the XML files of each input file to find all the information we want about
@@ -146,5 +146,10 @@ public class WalaAndroidXMLParser extends AndroidSupport {
                 System.err.println("Ignoring control: " + control);
             }
         }
+    }
+
+    @Override
+    public AndroidManifest getAndroidManifest(String archiveLocation) throws Exception {
+        return newAndroidManifest(archiveLocation);
     }
 }
