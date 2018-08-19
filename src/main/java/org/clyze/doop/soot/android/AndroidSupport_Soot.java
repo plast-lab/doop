@@ -38,7 +38,6 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
             throw new RuntimeException("Internal error: field type != SootParameters");
     }
 
-    @Override
     public void processInputs(String androidJars, Set<String> tmpDirs) throws Exception {
         SootParameters sootParameters = getSootParameters();
         if (sootParameters.getRunFlowdroid()) {
@@ -62,7 +61,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
                 throw new RuntimeException("Dummy main null");
             }
         } else {
-            super.processInputs(androidJars, tmpDirs);
+            super.processInputs(tmpDirs);
             ((BasicJavaSupport_Soot)java).populateClassesInAppJar(sootParameters);
         }
     }

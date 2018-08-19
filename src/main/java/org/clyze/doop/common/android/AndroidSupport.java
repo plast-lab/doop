@@ -30,7 +30,7 @@ public abstract class AndroidSupport {
         this.java = java;
     }
 
-    public void processInputs(String androidJars, Set<String> tmpDirs) throws Exception {
+    public void processInputs(Set<String> tmpDirs) throws Exception {
         List<String> inputsAndLibs = parameters.getInputsAndLibraries();
         // Map AAR files to their package name.
         Map<String, String> pkgs = new HashMap<>();
