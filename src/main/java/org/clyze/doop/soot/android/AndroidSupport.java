@@ -5,6 +5,7 @@ import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
 import org.clyze.doop.common.PropertyProvider;
 import org.clyze.doop.common.android.AndroidManifest;
+import org.clyze.doop.common.android.AndroidManifestXML;
 import org.clyze.doop.common.android.LayoutControl;
 import org.clyze.doop.common.android.RLinker;
 import org.clyze.doop.soot.*;
@@ -21,7 +22,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static org.clyze.doop.common.android.AndroidManifest.getAndroidManifest;
 import static soot.dexpler.DexFileProvider.DexContainer;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
@@ -233,4 +233,15 @@ public class AndroidSupport extends BasicJavaSupport_Soot {
             writer.writeExtraSensitiveControls(parameters);
         }
     }
+
+    // Parses Android manifests. Supports binary and plain-text XML
+    // files (found in .apk and .aar files respectively).
+    public static AndroidManifest getAndroidManifest(String archiveLocation) throws Exception {
+        try {
+            return new AndroidManifestAXML(archiveLocation);
+        } catch (Exception ex) {
+            return AndroidManifestXML.fromArchive(archiveLocation);
+        }
+    }
+
 }

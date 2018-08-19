@@ -9,7 +9,7 @@ import org.clyze.doop.soot.android.AndroidSupport;
 import java.io.IOException;
 import java.util.*;
 
-import static org.clyze.doop.common.android.AndroidManifest.getAndroidManifest;
+import static org.clyze.doop.soot.android.AndroidSupport.getAndroidManifest;
 
 /*
  * Parses all the XML files of each input file to find all the information we want about
