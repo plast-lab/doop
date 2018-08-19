@@ -4,7 +4,7 @@ import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.PropertyProvider;
-import org.clyze.doop.soot.android.AndroidSupport;
+import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.Helper;
@@ -254,7 +254,8 @@ public class Main {
         Set<SootClass> classes = new HashSet<>();
         Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
 
-        BasicJavaSupport_Soot java;
+        BasicJavaSupport_Soot java = new BasicJavaSupport_Soot(artifactToClassMap, propertyProvider);
+        AndroidSupport_Soot android = null;
 
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
@@ -264,12 +265,10 @@ public class Main {
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
-            AndroidSupport android = new AndroidSupport(artifactToClassMap, propertyProvider, rOutDir, sootParameters);
+            android = new AndroidSupport_Soot(rOutDir, sootParameters, java);
             android.processInputs(sootParameters._androidJars, tmpDirs);
-            java = android;
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
-            java = new BasicJavaSupport_Soot(artifactToClassMap, propertyProvider);
             java.populateClassesInAppJar(sootParameters);
         }
 
@@ -300,15 +299,16 @@ public class Main {
         if (sootParameters._allowPhantom)
             Options.v().set_allow_phantom_refs(true);
 
+        ClassAdder classAdder = (android != null) ? android : java;
         if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP)
-            java.addAppClasses(classes, scene);
+            classAdder.addAppClasses(classes, scene);
         else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
-            java.addAppClasses(classes, scene);
-            java.addDepClasses(classes, scene);
+            classAdder.addAppClasses(classes, scene);
+            classAdder.addDepClasses(classes, scene);
         } else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.PLATFORM)
-            java.addLibClasses(classes, scene);
+            classAdder.addLibClasses(classes, scene);
         else
-            java.addAppClasses(classes, scene);
+            classAdder.addAppClasses(classes, scene);
 
         scene.loadNecessaryClasses();
 
@@ -344,8 +344,7 @@ public class Main {
         db.flush();
 
         if (sootParameters._android) {
-            AndroidSupport android = (AndroidSupport)java;
-            if (sootParameters._runFlowdroid) {
+            if (sootParameters.getRunFlowdroid()) {
                 driver.doAndroidInSequentialOrder(android.getDummyMain(), classes, writer, sootParameters._ssa);
                 db.close();
                 return;

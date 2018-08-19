@@ -1,15 +1,14 @@
 package org.clyze.doop.wala;
 
-import org.clyze.doop.common.ArtifactEntry;
-import org.clyze.doop.common.PropertyProvider;
+import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.android.AndroidManifest;
+import org.clyze.doop.common.android.AndroidSupport;
 import org.clyze.doop.common.android.LayoutControl;
-import org.clyze.doop.soot.android.AndroidSupport;
 
 import java.io.IOException;
 import java.util.*;
 
-import static org.clyze.doop.soot.android.AndroidSupport.getAndroidManifest;
+import static org.clyze.doop.common.android.AndroidSupport.getAndroidManifest;
 
 /*
  * Parses all the XML files of each input file to find all the information we want about
@@ -21,9 +20,9 @@ public class WalaAndroidXMLParser extends AndroidSupport {
     private WalaFactWriter factWriter;
     private String extraSensitiveControls;
 
-    WalaAndroidXMLParser(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider, List<String> inputFiles, WalaFactWriter writer, String _extraSensitiveControls)
+    WalaAndroidXMLParser(List<String> inputFiles, WalaFactWriter writer, String _extraSensitiveControls, BasicJavaSupport java)
     {
-        super(artifactToClassMap, propertyProvider, null, null);
+        super(null, null, java);
         inputs = inputFiles;
         factWriter = writer;
         extraSensitiveControls = _extraSensitiveControls;

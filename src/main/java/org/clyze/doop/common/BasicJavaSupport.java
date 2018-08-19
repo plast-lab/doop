@@ -69,7 +69,7 @@ public abstract class BasicJavaSupport {
      * @param className    the name of the class
      * @param subArtifact  the sub-artifact (such as "classes.dex" for APKs)
      */
-    protected void registerArtifactClass(String artifact, String className, String subArtifact) {
+    public void registerArtifactClass(String artifact, String className, String subArtifact) {
         ArtifactEntry ae = new ArtifactEntry(className, subArtifact);
         if (!artifactToClassMap.containsKey(artifact)) {
             Set<ArtifactEntry> artifactClasses = new HashSet<>();
@@ -79,4 +79,7 @@ public abstract class BasicJavaSupport {
             artifactToClassMap.get(artifact).add(ae);
     }
 
+    public Set<String> getClassesInApplicationJars() {
+        return classesInApplicationJars;
+    }
 }

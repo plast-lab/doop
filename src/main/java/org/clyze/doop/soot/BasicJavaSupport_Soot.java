@@ -11,7 +11,7 @@ import soot.Scene;
 import soot.SootClass;
 import soot.SourceLocator;
 
-public class BasicJavaSupport_Soot extends BasicJavaSupport {
+public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdder {
 
     public BasicJavaSupport_Soot(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider) {
         super(artifactToClassMap, propertyProvider);
@@ -42,25 +42,28 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport {
         }
     }
 
-    protected void addSootClasses(Collection<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
+    public void addSootClasses(Collection<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
         for (String className : classesToLoad) {
             SootClass c = scene.loadClass(className, SootClass.BODIES);
             loadedClasses.add(c);
         }
     }
 
+    @Override
     public void addAppClasses(Set<SootClass> classes, Scene scene) {
         addSootClasses(classesInApplicationJars, classes, scene);
         addBasicClasses(scene);
         System.out.println("Classes in input (application) jar(s): " + classesInApplicationJars.size());
     }
 
+    @Override
     public void addLibClasses(Set<SootClass> classes, Scene scene) {
         addSootClasses(classesInLibraryJars, classes, scene);
         addBasicClasses(scene);
         System.out.println("Classes in library jar(s): " + classesInLibraryJars.size());
     }
 
+    @Override
     public void addDepClasses(Set<SootClass> classes, Scene scene) {
         addSootClasses(classesInDependencyJars, classes, scene);
         System.out.println("Classes in dependency jar(s): " + classesInDependencyJars.size());
@@ -98,4 +101,5 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport {
             scene.addBasicClass(className);
         }
     }
+
 }
