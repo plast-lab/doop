@@ -195,10 +195,10 @@ public class Main {
 
             if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
                 sootParameters._dependencies = dependencies;
-                sootParameters._libraries = platforms;
+                sootParameters.setLibraries(platforms);
             } else {
-                sootParameters._libraries = platforms;
-                sootParameters._libraries.addAll(dependencies);
+                sootParameters.setLibraries(platforms);
+                sootParameters.getLibraries().addAll(dependencies);
             }
 
             if (sootParameters._mode == null) {
@@ -286,7 +286,7 @@ public class Main {
             }
         }
 
-        for (String lib : AARUtils.toJars(sootParameters._libraries, false, tmpDirs)) {
+        for (String lib : AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs)) {
             System.out.println("Adding archive for resolving: " + lib);
             addToSootClassPath(scene, lib);
         }

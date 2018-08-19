@@ -32,7 +32,7 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport {
             System.out.println("Processing application JAR: " + filename);
             processJar(classesInApplicationJars, filename);
         }
-        for (String filename :  sootParameters._libraries) {
+        for (String filename :  sootParameters.getLibraries()) {
             System.out.println("Processing library JAR: " + filename);
             processJar(classesInLibraryJars, filename);
         }

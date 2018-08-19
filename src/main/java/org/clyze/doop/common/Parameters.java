@@ -14,6 +14,7 @@ import org.clyze.doop.util.filter.GlobClassFilter;
  */
 public abstract class Parameters {
     protected List<String> _inputs = new ArrayList<>();
+    protected List<String> _libraries = new ArrayList<>();
     protected String _outputDir = null;
     public String _extraSensitiveControls = "";
     private String appRegex;
@@ -39,6 +40,14 @@ public abstract class Parameters {
 
     public List<String> getInputs() {
         return this._inputs;
+    }
+
+    public void setLibraries(List<String> libraries) {
+        this._libraries = libraries;
+    }
+
+    public List<String> getLibraries() {
+        return this._libraries;
     }
 
     public void setOutputDir(String outputDir) {

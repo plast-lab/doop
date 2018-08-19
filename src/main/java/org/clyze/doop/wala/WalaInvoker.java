@@ -72,7 +72,7 @@ public class WalaInvoker {
                         break;
                     case "-l":
                         i = shift(args, i);
-                        walaParameters._appLibraries.add(args[i]);
+                        walaParameters.getLibraries().add(args[i]);
                         break;
                     case "--generate-ir":
                         walaParameters._generateIR = true;
@@ -134,22 +134,22 @@ public class WalaInvoker {
                 classPath.append(":").append(inputs.get(i));
         }
 
-//        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
-//            classPath.append(":").append(walaParameters._appLibraries.get(i));
+//        for (int i = 0; i < walaParameters.getLibraries().size(); i++) {
+//            classPath.append(":").append(walaParameters.getLibraries().get(i));
 //        }
 
         System.out.println("WALA classpath:" + classPath);
         for (String lib : walaParameters.getPlatformLibraries())
             System.out.println("Platform Library: " + lib);
 
-        for (String lib : walaParameters.getAppLibraries())
+        for (String lib : walaParameters.getLibraries())
             System.out.println("Application Library: " + lib);
 
         AnalysisScope scope;
         if(walaParameters._android)
-            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters._platformLibraries, walaParameters._appLibraries);
+            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters._platformLibraries, walaParameters.getLibraries());
         else
-            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters._platformLibraries, walaParameters._appLibraries);
+            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters._platformLibraries, walaParameters.getLibraries());
             //scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 
         ClassHierarchy cha = null;

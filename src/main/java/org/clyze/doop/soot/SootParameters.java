@@ -12,7 +12,6 @@ public class SootParameters extends Parameters {
      public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
      Mode _mode = null;
-     List<String> _libraries = new ArrayList<>();
      List<String> _dependencies = new ArrayList<>();
      String _main = null;
      boolean _ssa = false;
@@ -24,14 +23,6 @@ public class SootParameters extends Parameters {
      boolean _generateJimple = false;
      boolean _toStdout = false;
      boolean _ignoreWrongStaticness = false;
-
-     public void setLibraries(List<String> libraries) {
-          this._libraries = libraries;
-     }
-
-     public List<String> getLibraries() {
-          return this._libraries;
-     }
 
      @Override
      public List<String> getInputsAndLibraries() {
