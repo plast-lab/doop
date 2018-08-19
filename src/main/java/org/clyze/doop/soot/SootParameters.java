@@ -19,7 +19,6 @@ public class SootParameters extends Parameters {
      FactsSubSet _factsSubSet = null;
      boolean _runFlowdroid = false;
      boolean _noFacts = false;
-     String _rOutDir = null;
      boolean _generateJimple = false;
      boolean _toStdout = false;
      boolean _ignoreWrongStaticness = false;

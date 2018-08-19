@@ -261,8 +261,7 @@ public class Main {
                 System.err.println("\nWARNING -- Android mode: all inputs will be preprocessed but only " + sootParameters.getInputs().get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
-            String rOutDir = sootParameters._rOutDir;
-            android = new AndroidSupport_Soot(rOutDir, sootParameters, java);
+            android = new AndroidSupport_Soot(sootParameters, java);
             android.processInputs(sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);

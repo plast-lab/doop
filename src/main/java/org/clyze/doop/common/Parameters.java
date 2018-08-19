@@ -24,6 +24,7 @@ public abstract class Parameters {
     public String _androidJars = null;
     public String _seed = null;
     public String _specialCSMethods = null;
+    public String _rOutDir = null;
 
     public Parameters() {
 	setAppRegex("**");

@@ -23,8 +23,8 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
 
     private SootMethod dummyMain;
 
-    public AndroidSupport_Soot(String rOutDir, SootParameters sootParameters, BasicJavaSupport_Soot java) {
-        super(rOutDir, sootParameters, java);
+    public AndroidSupport_Soot(SootParameters sootParameters, BasicJavaSupport_Soot java) {
+        super(sootParameters, java);
     }
 
     public SootMethod getDummyMain() {

@@ -16,13 +16,11 @@ import static org.clyze.doop.soot.android.AndroidSupport_Soot.newAndroidManifest
  * WARNING: It uses the soot implementation, need to find alternative
  */
 public class WalaAndroidXMLParser extends AndroidSupport {
-    private WalaParameters walaParameters;
     private WalaFactWriter factWriter;
 
     WalaAndroidXMLParser(WalaParameters parameters, WalaFactWriter writer, BasicJavaSupport java)
     {
-        super(null, null, java);
-        this.walaParameters = parameters;
+        super(parameters, java);
         this.factWriter = writer;
     }
 
@@ -33,7 +31,7 @@ public class WalaAndroidXMLParser extends AndroidSupport {
         // We merge the information from all manifests, not just
         // the application's. There are Android apps that use
         // components (e.g. activities) from AAR libraries.
-        for (String i : walaParameters.getInputs()) {
+        for (String i : parameters.getInputs()) {
             if (i.endsWith(".apk") || i.endsWith(".aar")) {
                 System.out.println("Processing manifest in " + i);
                 try {
@@ -50,7 +48,7 @@ public class WalaAndroidXMLParser extends AndroidSupport {
     }
 
     public void writeComponents() {
-        super.writeComponents(factWriter, walaParameters);
+        super.writeComponents(factWriter, parameters);
     }
 
     @Override

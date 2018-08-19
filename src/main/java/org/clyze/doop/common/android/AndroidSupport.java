@@ -13,7 +13,6 @@ import java.util.*;
 
 public abstract class AndroidSupport {
 
-    private String rOutDir;
     protected Parameters parameters;
     protected BasicJavaSupport java;
 
@@ -24,8 +23,7 @@ public abstract class AndroidSupport {
     protected Set<String> appCallbackMethods = new HashSet<>();
     protected Set<LayoutControl> appUserControls = new HashSet<>();
 
-    public AndroidSupport(String rOutDir, Parameters parameters, BasicJavaSupport java) {
-        this.rOutDir = rOutDir;
+    public AndroidSupport(Parameters parameters, BasicJavaSupport java) {
         this.parameters = parameters;
         this.java = java;
     }
@@ -53,7 +51,7 @@ public abstract class AndroidSupport {
         printCollectedComponents();
 
         // Produce a JAR of the missing R classes.
-        String generatedR = rLinker.linkRs(rOutDir, tmpDirs);
+        String generatedR = rLinker.linkRs(parameters._rOutDir, tmpDirs);
         if (generatedR != null) {
             System.out.println("Adding " + generatedR + "...");
             parameters.getLibraries().add(generatedR);
