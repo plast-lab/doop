@@ -26,6 +26,8 @@ public abstract class Parameters {
     public String _specialCSMethods = null;
     public String _rOutDir = null;
 
+    public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
+
     public Parameters() {
 	setAppRegex("**");
     }

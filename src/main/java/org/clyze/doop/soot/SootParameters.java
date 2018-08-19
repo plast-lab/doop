@@ -9,8 +9,6 @@ import java.util.List;
 public class SootParameters extends Parameters {
      enum Mode { INPUTS, FULL }
 
-     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
-
      Mode _mode = null;
      List<String> _dependencies = new ArrayList<>();
      String _main = null;
