@@ -19,10 +19,10 @@ public class WalaAndroidXMLParser extends AndroidSupport {
     private WalaParameters walaParameters;
     private WalaFactWriter factWriter;
 
-    WalaAndroidXMLParser(WalaParameters walaParameters, WalaFactWriter writer, BasicJavaSupport java)
+    WalaAndroidXMLParser(WalaParameters parameters, WalaFactWriter writer, BasicJavaSupport java)
     {
         super(null, null, java);
-        this.walaParameters = walaParameters;
+        this.walaParameters = parameters;
         this.factWriter = writer;
     }
 
@@ -50,74 +50,7 @@ public class WalaAndroidXMLParser extends AndroidSupport {
     }
 
     public void writeComponents() {
-        for (String appInput : walaParameters.getInputs()) {
-            AndroidManifest processMan;
-            try {
-                processMan = getAndroidManifest(appInput);
-            } catch (Exception ex) {
-                System.err.println("Error processing manifest in: " + appInput);
-                ex.printStackTrace();
-                continue;
-            }
-
-            if (processMan.getApplicationName() != null)
-                factWriter.writeApplication(processMan.expandClassName(processMan.getApplicationName()));
-            else {
-                // If no application name, use Android's Application:
-                // "The fully qualified name of an Application subclass
-                // implemented for the application. ... In the absence of a
-                // subclass, Android uses an instance of the base
-                // Application class."
-                // https://developer.android.com/guide/topics/manifest/application-element.html
-                factWriter.writeApplication("android.app.Application");
-            }
-
-            for (String s : processMan.getActivities()) {
-                factWriter.writeActivity(processMan.expandClassName(s));
-            }
-
-            for (String s : processMan.getServices()) {
-                factWriter.writeService(processMan.expandClassName(s));
-            }
-
-            for (String s : processMan.getProviders()) {
-                factWriter.writeContentProvider(processMan.expandClassName(s));
-            }
-
-            for (String s : processMan.getReceivers()) {
-                factWriter.writeBroadcastReceiver(processMan.expandClassName(s));
-            }
-
-            Set<String> callBackMethods = null;
-            try {
-                callBackMethods = processMan.getCallbackMethods();
-            } catch (IOException ex) {
-                System.err.println("Error while reading callbacks:");
-                ex.printStackTrace();
-            }
-            if(callBackMethods != null) {
-                for (String callbackMethod : callBackMethods) {
-                    factWriter.writeCallbackMethod(callbackMethod);
-                }
-            }
-
-            Set<LayoutControl> layoutControls = null;
-            try {
-                layoutControls = processMan.getUserControls();
-            } catch (IOException e) {
-                System.err.println("Error while reading layout controls:");
-                e.printStackTrace();
-            }
-            if(layoutControls != null) {
-                for (LayoutControl possibleLayoutControl : layoutControls) {
-                    factWriter.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
-                    if (possibleLayoutControl.isSensitive()) {
-                        factWriter.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
-                    }
-                }
-            }
-            factWriter.writeExtraSensitiveControls(walaParameters);
-        }
+        super.writeComponents(factWriter, walaParameters);
     }
 
     @Override
