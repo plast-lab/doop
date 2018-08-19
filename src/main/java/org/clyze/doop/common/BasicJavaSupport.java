@@ -15,7 +15,7 @@ import org.objectweb.asm.ClassReader;
 /**
  * This class gathers Java-specific code (such as JAR handling).
  */
-public abstract class BasicJavaSupport {
+public class BasicJavaSupport {
 
     protected Set<String> classesInApplicationJars;
     protected Set<String> classesInLibraryJars;
