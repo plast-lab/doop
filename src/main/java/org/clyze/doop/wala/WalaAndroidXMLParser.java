@@ -16,16 +16,14 @@ import static org.clyze.doop.soot.android.AndroidSupport_Soot.newAndroidManifest
  * WARNING: It uses the soot implementation, need to find alternative
  */
 public class WalaAndroidXMLParser extends AndroidSupport {
-    private List<String> inputs;
+    private WalaParameters walaParameters;
     private WalaFactWriter factWriter;
-    private String extraSensitiveControls;
 
-    WalaAndroidXMLParser(List<String> inputFiles, WalaFactWriter writer, String _extraSensitiveControls, BasicJavaSupport java)
+    WalaAndroidXMLParser(WalaParameters walaParameters, WalaFactWriter writer, BasicJavaSupport java)
     {
         super(null, null, java);
-        inputs = inputFiles;
-        factWriter = writer;
-        extraSensitiveControls = _extraSensitiveControls;
+        this.walaParameters = walaParameters;
+        this.factWriter = writer;
     }
 
     void parseXMLFiles()
@@ -35,7 +33,7 @@ public class WalaAndroidXMLParser extends AndroidSupport {
         // We merge the information from all manifests, not just
         // the application's. There are Android apps that use
         // components (e.g. activities) from AAR libraries.
-        for (String i : inputs) {
+        for (String i : walaParameters.getInputs()) {
             if (i.endsWith(".apk") || i.endsWith(".aar")) {
                 System.out.println("Processing manifest in " + i);
                 try {
@@ -52,7 +50,7 @@ public class WalaAndroidXMLParser extends AndroidSupport {
     }
 
     public void writeComponents() {
-        for (String appInput : inputs) {
+        for (String appInput : walaParameters.getInputs()) {
             AndroidManifest processMan;
             try {
                 processMan = getAndroidManifest(appInput);
@@ -118,33 +116,7 @@ public class WalaAndroidXMLParser extends AndroidSupport {
                     }
                 }
             }
-            writeExtraSensitiveControls();
-        }
-    }
-
-    // The extra sensitive controls are given as a String
-    // "id1,type1,parentId1,id2,type2,parentId2,...".
-    private void writeExtraSensitiveControls() {
-        if (extraSensitiveControls.equals("")) {
-            return;
-        }
-        String[] parts = extraSensitiveControls.split(",");
-        int partsLen = parts.length;
-        if (partsLen % 3 != 0) {
-            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + extraSensitiveControls + "\"");
-            return;
-        }
-        for (int i = 0; i < partsLen; i += 3) {
-            String control = parts[i] + "," + parts[i+1] + "," + parts[i+2];
-            try {
-                int controlId = Integer.parseInt(parts[i]);
-                String typeId = parts[i+1].trim();
-                int parentId  = Integer.parseInt(parts[i+2]);
-                System.out.println("Adding sensitive layout control: " + control);
-                factWriter.writeSensitiveLayoutControl(controlId, typeId, parentId);
-            } catch (Exception ex) {
-                System.err.println("Ignoring control: " + control);
-            }
+            factWriter.writeExtraSensitiveControls(walaParameters);
         }
     }
 

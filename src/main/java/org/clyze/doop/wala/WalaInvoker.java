@@ -174,7 +174,7 @@ public class WalaInvoker {
 
         if(walaParameters._android)
         {
-            WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters.getInputs(), walaFactWriter, walaParameters._extraSensitiveControls, java);
+            WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);
             parser.writeComponents();
         }
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
