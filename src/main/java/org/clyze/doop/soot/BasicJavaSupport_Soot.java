@@ -13,8 +13,8 @@ import soot.SourceLocator;
 
 public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdder {
 
-    public BasicJavaSupport_Soot(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider) {
-        super(artifactToClassMap, propertyProvider);
+    public BasicJavaSupport_Soot(Map<String, Set<ArtifactEntry>> artifactToClassMap) {
+        super(artifactToClassMap);
     }
 
     /**

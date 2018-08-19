@@ -250,11 +250,10 @@ public class Main {
         //soot.options.Options.v().set_drop_bodies_after_load(true);
         Options.v().set_keep_line_number(true);
 
-        PropertyProvider propertyProvider = new PropertyProvider();
         Set<SootClass> classes = new HashSet<>();
         Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
 
-        BasicJavaSupport_Soot java = new BasicJavaSupport_Soot(artifactToClassMap, propertyProvider);
+        BasicJavaSupport_Soot java = new BasicJavaSupport_Soot(artifactToClassMap);
         AndroidSupport_Soot android = null;
 
         // Set of temporary directories to be cleaned up after analysis ends.
@@ -340,7 +339,7 @@ public class Main {
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
         Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
 
-        writer.writePreliminaryFacts(classes, propertyProvider, artifactToClassMap);
+        writer.writePreliminaryFacts(classes, java.getPropertyProvider(), artifactToClassMap);
         db.flush();
 
         if (sootParameters._android) {

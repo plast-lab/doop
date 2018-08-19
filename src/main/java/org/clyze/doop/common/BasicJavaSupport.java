@@ -22,12 +22,12 @@ public abstract class BasicJavaSupport {
     private Map<String, Set<ArtifactEntry>> artifactToClassMap;
     private PropertyProvider propertyProvider;
 
-    public BasicJavaSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider) {
+    public BasicJavaSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap) {
         this.classesInApplicationJars = new HashSet<>();
         this.classesInLibraryJars = new HashSet<>();
         this.classesInDependencyJars = new HashSet<>();
+        this.propertyProvider = new PropertyProvider();
         this.artifactToClassMap = artifactToClassMap;
-        this.propertyProvider = propertyProvider;
     }
 
     /**
@@ -61,6 +61,10 @@ public abstract class BasicJavaSupport {
                 } /* Skip non-class files and non-property files */
             }
         }
+    }
+
+    public PropertyProvider getPropertyProvider() {
+        return propertyProvider;
     }
 
     /**
