@@ -4,18 +4,12 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.BasicJavaSupport;
-import org.clyze.doop.common.PropertyProvider;
 import soot.Scene;
 import soot.SootClass;
 import soot.SourceLocator;
 
 public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdder {
-
-    public BasicJavaSupport_Soot(Map<String, Set<ArtifactEntry>> artifactToClassMap) {
-        super(artifactToClassMap);
-    }
 
     /**
      * Helper method to read classes and property files from JAR/AAR files.

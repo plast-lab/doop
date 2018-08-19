@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -22,12 +23,12 @@ public abstract class BasicJavaSupport {
     private Map<String, Set<ArtifactEntry>> artifactToClassMap;
     private PropertyProvider propertyProvider;
 
-    public BasicJavaSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap) {
+    public BasicJavaSupport() {
         this.classesInApplicationJars = new HashSet<>();
         this.classesInLibraryJars = new HashSet<>();
         this.classesInDependencyJars = new HashSet<>();
         this.propertyProvider = new PropertyProvider();
-        this.artifactToClassMap = artifactToClassMap;
+        this.artifactToClassMap = new HashMap<>();
     }
 
     /**
@@ -65,6 +66,10 @@ public abstract class BasicJavaSupport {
 
     public PropertyProvider getPropertyProvider() {
         return propertyProvider;
+    }
+
+    public Map<String, Set<ArtifactEntry>> getArtifactToClassMap() {
+        return artifactToClassMap;
     }
 
     /**

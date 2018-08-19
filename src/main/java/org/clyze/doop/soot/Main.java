@@ -251,9 +251,7 @@ public class Main {
         Options.v().set_keep_line_number(true);
 
         Set<SootClass> classes = new HashSet<>();
-        Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
-
-        BasicJavaSupport_Soot java = new BasicJavaSupport_Soot(artifactToClassMap);
+        BasicJavaSupport_Soot java = new BasicJavaSupport_Soot();
         AndroidSupport_Soot android = null;
 
         // Set of temporary directories to be cleaned up after analysis ends.
@@ -339,7 +337,7 @@ public class Main {
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
         Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
 
-        writer.writePreliminaryFacts(classes, java.getPropertyProvider(), artifactToClassMap);
+        writer.writePreliminaryFacts(classes, java.getPropertyProvider(), java.getArtifactToClassMap());
         db.flush();
 
         if (sootParameters._android) {
@@ -361,6 +359,7 @@ public class Main {
                 Set<SootClass> jimpleClasses = new HashSet<>(classes);
                 if (sootParameters._factsSubSet == null) {
                     List<String> allClassNames = new ArrayList<>();
+                    Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
                     for (String artifact : artifactToClassMap.keySet()) {
         //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
                         Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
