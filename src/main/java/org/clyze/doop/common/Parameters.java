@@ -89,6 +89,11 @@ public abstract class Parameters {
         return applicationClassFilter.matches(className);
     }
 
-    public abstract List<String> getInputsAndLibraries();
+    public List<String> getInputsAndLibraries() {
+        List<String> ret = new ArrayList<>();
+        ret.addAll(this._inputs);
+        ret.addAll(this._libraries);
+        return ret;
+    }
 
 }

@@ -19,13 +19,4 @@ public class WalaParameters extends Parameters {
         return this._platformLibraries;
     }
 
-    @Override
-    public List<String> getInputsAndLibraries() {
-        List<String> ret = new ArrayList<>();
-        ret.addAll(this._inputs);
-        ret.addAll(this._libraries);
-        ret.addAll(this._platformLibraries);
-        return ret;
-    }
-
 }
