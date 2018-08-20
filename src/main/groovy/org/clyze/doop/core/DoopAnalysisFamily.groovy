@@ -294,6 +294,25 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			/* End Scaler related options */
 
+			/* Start Zipper related options */
+			new BooleanAnalysisOption(
+					id: "ZIPPER_PRE_ANALYSIS",
+					name: "zipper-pre",
+					description: "Enable the analysis to be the pre-analysis of Zipper, and outputs the information required by Zipper.",
+					forPreprocessor: true
+			),
+			new AnalysisOption(
+					id: "ZIPPER",
+					name: "zipper",
+					description: "Use file with precision-critical methods selected by Zipper, these methods are analyzed context-sensitively",
+					argName: "FILE",
+					argInputType: InputType.MISC,
+					forCacheID: true,
+					changesFacts: true,
+					forPreprocessor: true
+			),
+			/* End Zipper related options */
+
 			/* Start preprocessor normal flags */
 			new BooleanAnalysisOption(
 					id: "NO_MERGES",

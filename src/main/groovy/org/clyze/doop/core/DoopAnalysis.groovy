@@ -224,7 +224,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			if (options.SCALER.value) {
 				File origScalerFile = new File(options.SCALER.value.toString())
 				File destScalerFile = new File(factsDir, "ScalerMethodContext.facts")
-				Files.copy(origScalerFile.toPath(), destScalerFile.toPath());
+				Files.copy(origScalerFile.toPath(), destScalerFile.toPath())
+			}
+
+			if (options.ZIPPER.value) {
+				File origZipperFile = new File(options.ZIPPER.value.toString())
+				File destZipperFile = new File(factsDir, "ZipperPrecisionCriticalMethod.facts")
+				Files.copy(origZipperFile.toPath(), destZipperFile.toPath())
 			}
 
 			if (!options.X_START_AFTER_FACTS.value) {
