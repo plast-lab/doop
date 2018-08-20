@@ -11,13 +11,14 @@ import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.util.ref.ReferenceCleanser;
 import org.clyze.doop.common.Database;
-import org.clyze.doop.soot.DoopErrorCodeException;
+import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.util.filter.GlobClassFilter;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 public class Main {
@@ -34,11 +35,8 @@ public class Main {
     }
 
     private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
-        walaParameters.applicationClassFilter = new GlobClassFilter(walaParameters.appRegex);
-
-
         // Change package delimiter from "/" to "."
-        return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
+        return walaParameters.isApplicationClass(WalaUtils.fixTypeString(klass.getName().toString()));
     }
 
     public static void main(String[] args) throws IOException {
@@ -59,11 +57,11 @@ public class Main {
                         break;
                     case "-i":
                         i = shift(args, i);
-                        walaParameters._inputs.add(args[i]);
+                        walaParameters.getInputs().add(args[i]);
                         break;
                     case "-l":
                         i = shift(args, i);
-                        walaParameters._appLibraries.add(args[i]);
+                        walaParameters.getLibraries().add(args[i]);
                         break;
                     case "--generate-ir":
                         walaParameters._generateIR = true;
@@ -78,11 +76,11 @@ public class Main {
                         break;
                     case "-d":
                         i = shift(args, i);
-                        walaParameters._outputDir = args[i];
+                        walaParameters.setOutputDir(args[i]);
                         break;
                     case "--application-regex":
                         i = shift(args, i);
-                        walaParameters.appRegex = args[i];
+                        walaParameters.setAppRegex(args[i]);
                         break;
                     case "--fact-gen-cores":
                         i = shift(args, i);
@@ -114,15 +112,16 @@ public class Main {
 
     public static void run(WalaParameters walaParameters) throws IOException {
         String classPath = "";
-        for (int i = 0; i < walaParameters._inputs.size(); i++) {
+        List<String> inputs = walaParameters.getInputs();
+        for (int i = 0; i < inputs.size(); i++) {
             if (i == 0)
-                classPath += walaParameters._inputs.get(i);
+                classPath += inputs.get(i);
             else
-                classPath += ":" + walaParameters._inputs.get(i);
+                classPath += ":" + inputs.get(i);
         }
 
-        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
-            classPath += ":" + walaParameters._appLibraries.get(i);
+        for (int i = 0; i < walaParameters.getLibraries().size(); i++) {
+            classPath += ":" + walaParameters.getLibraries().get(i);
         }
 
         System.out.println("WALA classpath:" + classPath);
@@ -139,9 +138,10 @@ public class Main {
         }
 
         Iterator<IClass> classes = cha.iterator();
-        Database db = new Database(new File(walaParameters._outputDir));
+        String outputDir = walaParameters.getOutputDir();
+        Database db = new Database(new File(outputDir));
         WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
-        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
+        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
 

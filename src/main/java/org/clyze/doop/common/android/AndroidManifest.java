@@ -1,8 +1,6 @@
 // An Android manifest, with the information needed by Doop.
 
-package org.clyze.doop.soot.android;
-
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+package org.clyze.doop.common.android;
 
 import java.io.IOException;
 import java.util.Set;
@@ -15,7 +13,7 @@ public interface AndroidManifest {
     Set<String> getProviders();
     Set<String> getReceivers();
     Set<String> getCallbackMethods() throws IOException;
-    Set<PossibleLayoutControl> getUserControls() throws IOException;
+    Set<LayoutControl> getUserControls() throws IOException;
 
     // Adapted from Soot's ProcessManifest.
     default String expandClassName(String className) {
@@ -52,16 +50,6 @@ public interface AndroidManifest {
     default void printManifestHeader() {
         System.out.println("application name: " + getApplicationName() +
                            " (package name: " + getPackageName() + ")");
-    }
-
-    // Parses Android manifests. Supports binary and plain-text XML
-    // files (found in .apk and .aar files respectively).
-    static AndroidManifest getAndroidManifest(String archiveLocation) {
-        try {
-            return new AndroidManifestAXML(archiveLocation);
-        } catch (Exception ex) {
-            return new AndroidManifestXML(archiveLocation);
-        }
     }
 
 }

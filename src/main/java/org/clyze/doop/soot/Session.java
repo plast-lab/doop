@@ -5,24 +5,9 @@ import soot.Unit;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Session
-{
-  /** keeps the current count of temporary vars of a certain kind, identified by base name. */
-  private Map<String, Integer> _tempVarMap = new HashMap<String, Integer>();
+import org.clyze.doop.common.SessionCounter;
 
-  public int nextNumber(String s)
-  {
-    Integer x = _tempVarMap.get(s);
-
-    if(x == null)
-    {
-      x = 0;
-    }
-
-    _tempVarMap.put(s, x + 1);
-
-    return x;
-  }
+public class Session extends SessionCounter {
 
   /** keeps the unique index of an instruction in the method. This cannot be computed up front,
       because temporary variables (and assignments to them from constants) will be inserted

@@ -528,6 +528,10 @@ class FactGenerator implements Runnable {
         {
             rightLocal = _writer.writeClassConstantExpression(inMethod, stmt, (ClassConstant) right, session);
         }
+        else if(right instanceof MethodHandle)
+        {
+            rightLocal = _writer.writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) right, session);
+        }
         else
         {
             throw new RuntimeException("Cannot handle rhs: " + stmt + " (right: " + right.getClass() + ")");
@@ -628,6 +632,11 @@ class FactGenerator implements Runnable {
         else if(v instanceof NumericConstant)
         {
             Local tmp = _writer.writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
+            _writer.writeReturn(inMethod, stmt, tmp, session);
+        }
+        else if(v instanceof MethodHandle)
+        {
+            Local tmp = _writer.writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
             _writer.writeReturn(inMethod, stmt, tmp, session);
         }
         else if(v instanceof NullConstant)

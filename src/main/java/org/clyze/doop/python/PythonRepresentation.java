@@ -11,6 +11,7 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
+import org.clyze.doop.common.SessionCounter;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
@@ -185,10 +186,10 @@ public class PythonRepresentation {
         return signature(m) + "/" + local.getName();
     }
 
-    String newLocalIntermediate(IMethod m, Local l, Session session)
+    String newLocalIntermediate(IMethod m, Local l, SessionCounter counter)
     {
         String s = local(m, l);
-        return s + "/intermediate/" + session.nextNumber(s);
+        return s + "/intermediate/" + counter.nextNumber(s);
     }
 
     void putHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, int scopeIndex)
@@ -209,23 +210,23 @@ public class PythonRepresentation {
             return numOfScopes;
     }
 
-    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, Session session, int scopeIndex)
+    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, SessionCounter counter, int scopeIndex)
     {
         String query = m.getSignature() + fixType(typeReference) + " v" + catchInstr.getDef()+ "-" + scopeIndex;
 
         String result = _catchRepr.get(query);
         if(result == null) {
             String name = "catch " + fixType(typeReference);
-            result = signature(m) + "/" + name + "/" + session.nextNumber(name);
+            result = signature(m) + "/" + name + "/" + counter.nextNumber(name);
             _catchRepr.put(query,result);
         }
         return result;
     }
 
-    String throwLocal(IMethod m, Local l, Session session)
+    String throwLocal(IMethod m, Local l, SessionCounter counter)
     {
         String name = "throw " + l.getName();
-        return signature(m) + "/" + name + "/" + session.nextNumber(name);
+        return signature(m) + "/" + name + "/" + counter.nextNumber(name);
     }
 
     //This method takes a MethodReference as a parameter and it does not include "this" as an argument
@@ -293,10 +294,10 @@ public class PythonRepresentation {
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(IMethod inMethod, SSAInstruction instruction, Session session, int index)
+    String instruction(IMethod inMethod, SSAInstruction instruction, SessionCounter counter, int index)
     {
         if(instruction instanceof PythonInvokeInstruction)
-            return functionInvoke(inMethod, session);
+            return functionInvoke(inMethod, counter);
         else if(instruction instanceof SSAAbstractInvokeInstruction){
             if(((SSAAbstractInvokeInstruction) instruction).isStatic() && ((SSAAbstractInvokeInstruction) instruction).getDeclaredTarget().getName().toString().equals("import"))
             {
@@ -308,12 +309,13 @@ public class PythonRepresentation {
         return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
 
-    String functionInvoke(IMethod inMethod, Session session)
+    String functionInvoke(IMethod inMethod, SessionCounter counter)
     {
-        return signature(inMethod) + "/invoke/" + session.nextNumber("invoke");
+        return signature(inMethod) + "/invoke/" + counter.nextNumber("invoke");
     }
+
     //Will become obsolete
-    String invoke(IR ir, IMethod inMethod, SSAAbstractInvokeInstruction instr, MethodReference methRef, Session session, TypeInference typeInference)
+    String invoke(IR ir, IMethod inMethod, SSAAbstractInvokeInstruction instr, MethodReference methRef, SessionCounter counter, TypeInference typeInference)
     {
         String defaultMid = fixType(methRef.getDeclaringClass()) + "." + methRef.getName().toString();
         String midPart;
@@ -322,33 +324,29 @@ public class PythonRepresentation {
         else
             midPart = defaultMid;
 
-        return signature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
+        return signature(inMethod) + "/" + midPart + "/" + counter.nextNumber(midPart);
     }
 
-    String heapAlloc(IMethod inMethod, SSANewInstruction instruction, Session session)
-    {
+    String heapAlloc(IMethod inMethod, SSANewInstruction instruction, SessionCounter counter) {
         int newParams = instruction.getNumberOfUses();
-        if(newParams == 0 || newParams == 1) //
-        {
-            return heapAlloc(inMethod, instruction, instruction.getConcreteType(), session);
-        }
-        else
-        {
+        if(newParams == 0 || newParams == 1) {
+            return heapAlloc(inMethod, instruction, instruction.getConcreteType(), counter);
+        } else {
             throw new RuntimeException("Cannot handle new expression: " + instruction);
         }
     }
 
 
-    String heapMultiArrayAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, Session session)
+    String heapMultiArrayAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, SessionCounter counter)
     {
-        return heapAlloc(inMethod, instruction, type, session);
+        return heapAlloc(inMethod, instruction, type, counter);
     }
 
-    private String heapAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, Session session)
+    private String heapAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, SessionCounter counter)
     {
         String s = fixNewType(inMethod, instruction, type);
 
-        return signature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
+        return signature(inMethod) + "/new " + s + "/" +  counter.nextNumber(s);
 
 
     }

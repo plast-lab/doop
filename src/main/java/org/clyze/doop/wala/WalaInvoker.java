@@ -14,8 +14,11 @@ import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.clyze.doop.common.ArtifactEntry;
+import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
-import org.clyze.doop.soot.DoopErrorCodeException;
+import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.PropertyProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,11 +69,11 @@ public class WalaInvoker {
                         break;
                     case "-i":
                         i = shift(args, i);
-                        walaParameters._inputs.add(args[i]);
+                        walaParameters.getInputs().add(args[i]);
                         break;
                     case "-l":
                         i = shift(args, i);
-                        walaParameters._appLibraries.add(args[i]);
+                        walaParameters.getLibraries().add(args[i]);
                         break;
                     case "--generate-ir":
                         walaParameters._generateIR = true;
@@ -85,11 +88,11 @@ public class WalaInvoker {
                         break;
                     case "-d":
                         i = shift(args, i);
-                        walaParameters._outputDir = args[i];
+                        walaParameters.setOutputDir(args[i]);
                         break;
                     case "--application-regex":
                         i = shift(args, i);
-                        walaParameters.appRegex = args[i];
+                        walaParameters.setAppRegex(args[i]);
                         break;
                     case "--extra-sensitive-controls":
                         i = shift(args, i);
@@ -124,29 +127,30 @@ public class WalaInvoker {
 
     public void run(WalaParameters walaParameters) throws IOException {
         StringBuilder classPath = new StringBuilder();
-        for (int i = 0; i < walaParameters._inputs.size(); i++) {
+        List<String> inputs = walaParameters.getInputs();
+        for (int i = 0; i < inputs.size(); i++) {
             if (i == 0)
-                classPath.append(walaParameters._inputs.get(i));
+                classPath.append(inputs.get(i));
             else
-                classPath.append(":").append(walaParameters._inputs.get(i));
+                classPath.append(":").append(inputs.get(i));
         }
 
-//        for (int i = 0; i < walaParameters._appLibraries.size(); i++) {
-//            classPath.append(":").append(walaParameters._appLibraries.get(i));
+//        for (int i = 0; i < walaParameters.getLibraries().size(); i++) {
+//            classPath.append(":").append(walaParameters.getLibraries().get(i));
 //        }
 
         System.out.println("WALA classpath:" + classPath);
         for (String lib : walaParameters.getPlatformLibraries())
             System.out.println("Platform Library: " + lib);
 
-        for (String lib : walaParameters.getAppLibraries())
+        for (String lib : walaParameters.getLibraries())
             System.out.println("Application Library: " + lib);
 
         AnalysisScope scope;
         if(walaParameters._android)
-            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters._inputs, "", walaParameters._platformLibraries, walaParameters._appLibraries);
+            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters._platformLibraries, walaParameters.getLibraries());
         else
-            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters._inputs,"", walaParameters._platformLibraries, walaParameters._appLibraries);
+            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters._platformLibraries, walaParameters.getLibraries());
             //scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 
         ClassHierarchy cha = null;
@@ -158,17 +162,19 @@ public class WalaInvoker {
 
         assert cha != null;
         Iterator<IClass> classes = cha.iterator();
-        Database db = new Database(new File(walaParameters._outputDir));
+        String outputDir = walaParameters.getOutputDir();
+        Database db = new Database(new File(outputDir));
         WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
-        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, walaParameters._outputDir, walaParameters._android);
+        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //WARNING: This introduces a dependency to SOOT
-        //TODO: Find an alternative way to do this using WALA
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // TODO: fill in propertyProvider/artifactToClassMap/java
+        PropertyProvider propertyProvider = new PropertyProvider();
+        Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
+        BasicJavaSupport java = null;
+
         if(walaParameters._android)
         {
-            WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters._inputs, walaFactWriter, walaParameters._extraSensitiveControls);
+            WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);
             parser.writeComponents();
         }
         System.out.println("Number of classes: " + cha.getNumberOfClasses());
@@ -178,6 +184,8 @@ public class WalaInvoker {
             cache = new AnalysisCacheImpl(new DexIRFactory());
         else
             cache = new AnalysisCacheImpl();
+
+        walaFactWriter.writePreliminaryFacts(propertyProvider, artifactToClassMap);
 
         IClass klass;
         Set<IClass> classesSet = new HashSet<>();

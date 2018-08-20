@@ -1,16 +1,13 @@
 package org.clyze.doop.utils
 
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import org.apache.commons.io.FilenameUtils
 import org.clyze.utils.AARUtils
 import org.clyze.utils.Helper
-
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
-
-import static soot.DexClassProvider.classesOfDex
-import soot.dexpler.DexFileProvider
-import soot.dexpler.DexFileProvider.DexContainer
-import soot.options.Options;
+import org.jf.dexlib2.dexbacked.DexBackedClassDef
+import org.jf.dexlib2.iface.MultiDexContainer
+import static org.jf.dexlib2.DexFileFactory.loadDexContainer
 
 /** Computes the app-regex for JAR/APK/AAR inputs. */
 class PackageUtil {
@@ -33,12 +30,26 @@ class PackageUtil {
 	}
 
 	static Set<String> getPackagesForAPK(File apk) {
-		Options.v().set_process_multiple_dex(true);
-		Set<String> classNames = []
-		for (DexFileProvider.DexContainer container : DexFileProvider.v().getDexFromSource(apk)) {
-			classNames.addAll(classesOfDex(container.getBase()))
+		Set<String> pkgs = []
+		MultiDexContainer multiDex = loadDexContainer(apk, null)
+		for (String dex : multiDex.getDexEntryNames()) {
+			def dexFile = multiDex.getEntry(dex)
+			for (DexBackedClassDef dexClass : dexFile.getClasses()) {
+				String className = dexClass.toString()
+				if (!className.startsWith("L") || !className.endsWith(";")) {
+					System.err.println("getPackagesForAPK: bad class " + className)
+				} else {
+					pkgs << getPackageFromSlashes(className[1..className.size()-1])
+				}
+			}
 		}
-		return classNames.collect { getPackageFromDots(it) }
+		return pkgs
+	}
+
+	static String getPackageFromSlashes(String s) {
+		def idx = s.lastIndexOf('/')
+		String ret = idx == -1 ? s : s.substring(0, idx)
+		return ret.replaceAll("/", ".") + '.*'
 	}
 
 	static String getPackageFromDots(String s) {

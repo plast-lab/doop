@@ -1,7 +1,7 @@
 package org.clyze.doop.core
 
 import org.clyze.analysis.*
-import org.clyze.doop.soot.SootParameters
+import org.clyze.doop.common.Parameters
 
 import static DoopAnalysis.INFORMATION_FLOW_SUFFIX
 import static org.apache.commons.io.FilenameUtils.getExtension
@@ -683,7 +683,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xfacts-subset",
 					description: "Produce facts only for a subset of the given classes",
 					argName: "SUBSET",
-					validValues: SootParameters.FactsSubSet.values().collect { it as String },
+					validValues: Parameters.FactsSubSet.values().collect { it as String },
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(

@@ -12,6 +12,8 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
+import org.clyze.doop.common.JavaRepresentation;
+import org.clyze.doop.common.SessionCounter;
 import org.clyze.persistent.model.doop.DynamicMethodInvocation;
 
 import java.util.Map;
@@ -20,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.clyze.doop.wala.WalaUtils.createMethodSignature;
 import static org.clyze.doop.wala.WalaUtils.fixTypeString;
 
-class WalaRepresentation {
+class WalaRepresentation extends JavaRepresentation {
     private Map<String, String> _methodSigRepr = new ConcurrentHashMap<>();
 
     /*
@@ -46,20 +48,11 @@ class WalaRepresentation {
     }
 
     String classConstant(IClass c) {
-        return "<class " + fixTypeString(c.getName().toString()) + ">";
+        return JavaRepresentation.classConstant(fixTypeString(c.getName().toString()));
     }
-
-    static String classConstant(String className) {
-        return "<class " + className + ">";
-    }
-
 
     String classConstant(TypeReference t) {
-        return "<class " + fixTypeString(t.toString()) + ">";
-    }
-
-    String methodTypeConstant(String s) {
-        return s;
+        return JavaRepresentation.classConstant(fixTypeString(t.toString()));
     }
 
     String signature(IMethod m) {
@@ -106,7 +99,7 @@ class WalaRepresentation {
         return f.getName().toString();
     }
 
-    //Method descriptors using soot like format.
+    //Method descriptors using Soot-like format.
     //Should maybe cache these as well.
     String params(MethodReference methodReference)
     {
@@ -134,7 +127,7 @@ class WalaRepresentation {
 
     String nativeReturnVar(IMethod m)
     {
-        return signature(m) + "/@native-return";
+        return nativeReturnVarOfMethod(signature(m));
     }
 
     String param(IMethod m, int i)
@@ -144,13 +137,12 @@ class WalaRepresentation {
 
     String local(IMethod m, Local local)
     {
-        return signature(m) + "/" + local.getName();
+        return localId(signature(m), local.getName());
     }
 
-    String newLocalIntermediate(IMethod m, Local l, Session session)
+    String newLocalIntermediate(IMethod m, Local l, SessionCounter counter)
     {
-        String s = local(m, l);
-        return s + "/intermediate/" + session.nextNumber(s);
+        return newLocalIntermediateId(local(m, l), counter);
     }
 
     void putHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, int scopeIndex)
@@ -171,27 +163,27 @@ class WalaRepresentation {
             return numOfScopes;
     }
 
-    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, Session session, int scopeIndex)
+    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, SessionCounter counter, int scopeIndex)
     {
         String query = m.getSignature() + fixTypeString(typeReference.toString()) + " v" + catchInstr.getDef()+ "-" + scopeIndex;
 
         String result = _catchRepr.get(query);
         if(result == null) {
             String name = "catch " + fixTypeString(typeReference.toString());
-            result = signature(m) + "/" + name + "/" + session.nextNumber(name);
+            result = signature(m) + "/" + name + "/" + counter.nextNumber(name);
             _catchRepr.put(query,result);
         }
         return result;
     }
 
-    String throwLocal(IMethod m, Local l, Session session)
+    String throwLocal(IMethod m, Local l, SessionCounter counter)
     {
         String name = "throw " + l.getName();
-        return signature(m) + "/" + name + "/" + session.nextNumber(name);
+        return signature(m) + "/" + name + "/" + counter.nextNumber(name);
     }
 
     //This method takes a MethodReference as a parameter and it does not include "this" as an argument
-    //Had the parameter been an IMethod it would include "this" but soot Signatures don't have it so we keep it this way.
+    //Had the parameter been an IMethod it would include "this" but Soot signatures don't have it so we keep it this way.
     private String createMethodSignature(MethodReference m)
     {
         StringBuilder DoopSig = new StringBuilder("<" + fixTypeString(m.getDeclaringClass().toString()) + ": " + fixTypeString(m.getReturnType().toString()) + " " + m.getName() + "(");
@@ -242,20 +234,17 @@ class WalaRepresentation {
 
     String unsupported(IMethod inMethod, IR ir, SSAInstruction instruction, int index)
     {
-        return signature(inMethod) +
-                "/unsupported " + getKind(instruction) +
-                "/" +  instruction.toString(ir.getSymbolTable()).replace(" ", "") +
-                "/instruction" + index;
+        return unsupportedId(signature(inMethod), getKind(instruction), instruction.toString(ir.getSymbolTable()).replace(" ", ""), index);
     }
 
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(IMethod inMethod, SSAInstruction instruction, Session session, int index)
-    {
-        return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
+    String instruction(IMethod inMethod, SSAInstruction instruction, int index) {
+        return instructionId(signature(inMethod), getKind(instruction), index);
     }
-    String invoke(IR ir, IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, Session session, TypeInference typeInference)
+
+    String invoke(IR ir, IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, SessionCounter counter, TypeInference typeInference)
     {
         String defaultMid = fixTypeString(methRef.getDeclaringClass().toString()) + "." + methRef.getName().toString();
         String midPart;
@@ -264,7 +253,7 @@ class WalaRepresentation {
         else
             midPart = invokeIdMiddle(ir, instr, methRef, typeInference);
 
-        return signature(inMethod) + "/" + midPart + "/" + session.nextNumber(midPart);
+        return invokeId(signature(inMethod), midPart, counter);
     }
 
     private String invokeIdMiddle(IR ir, SSAInvokeInstruction instr, MethodReference resolvedTargetRef, TypeInference typeInference) {
@@ -323,38 +312,28 @@ class WalaRepresentation {
     }
 
 
-    String heapAlloc(IMethod inMethod, SSANewInstruction instruction, Session session)
+    String heapAlloc(IMethod inMethod, SSANewInstruction instruction, SessionCounter counter)
     {
         int newParams = instruction.getNumberOfUses();
-        if(newParams == 0 || newParams == 1) //
-        {
-            return heapAlloc(inMethod, instruction.getConcreteType(), session);
-        }
-        else if(newParams > 1)
-        {
-            return heapAlloc(inMethod, instruction.getConcreteType(), session);
-        }
-        else
-        {
+        if(newParams == 0 || newParams == 1) {
+            return heapAlloc(inMethod, instruction.getConcreteType(), counter);
+        } else if(newParams > 1) {
+            return heapAlloc(inMethod, instruction.getConcreteType(), counter);
+        } else {
             throw new RuntimeException("Cannot handle new expression: " + instruction);
         }
     }
 
 
-    String heapMultiArrayAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, Session session)
-    {
-        return heapAlloc(inMethod, type, session);
+    String heapMultiArrayAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, SessionCounter counter) {
+        return heapAlloc(inMethod, type, counter);
     }
 
-    private String heapAlloc(IMethod inMethod, TypeReference type, Session session)
-    {
+    private String heapAlloc(IMethod inMethod, TypeReference type, SessionCounter counter) {
         String s = fixTypeString(type.toString());
-        return signature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
+        return signature(inMethod) + "/new " + s + "/" +  counter.nextNumber(s);
 
 
     }
 
-    static String methodHandleConstant(String handleName) {
-        return "<handle " + handleName + ">";
-    }
 }

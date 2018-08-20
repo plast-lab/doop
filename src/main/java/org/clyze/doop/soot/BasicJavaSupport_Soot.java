@@ -1,36 +1,15 @@
 package org.clyze.doop.soot;
 
-import org.objectweb.asm.ClassReader;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import org.clyze.doop.common.BasicJavaSupport;
 import soot.Scene;
 import soot.SootClass;
 import soot.SourceLocator;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.*;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarInputStream;
-
-/**
- * This class gathers Java-specific code (such as JAR handling).
- */
-public class BasicJavaSupport {
-
-    protected Set<String> classesInApplicationJars;
-    protected Set<String> classesInLibraryJars;
-    protected Set<String> classesInDependencyJars;
-    private Map<String, Set<ArtifactEntry>> artifactToClassMap;
-    private PropertyProvider propertyProvider;
-
-    public BasicJavaSupport(Map<String, Set<ArtifactEntry>> artifactToClassMap, PropertyProvider propertyProvider) {
-        this.classesInApplicationJars = new HashSet<>();
-        this.classesInLibraryJars = new HashSet<>();
-        this.classesInDependencyJars = new HashSet<>();
-        this.artifactToClassMap = artifactToClassMap;
-        this.propertyProvider = propertyProvider;
-    }
+public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdder {
 
     /**
      * Helper method to read classes and property files from JAR/AAR files.
@@ -43,11 +22,11 @@ public class BasicJavaSupport {
      *
      */
     public void populateClassesInAppJar(SootParameters sootParameters) throws IOException {
-        for (String filename : sootParameters._inputs) {
+        for (String filename : sootParameters.getInputs()) {
             System.out.println("Processing application JAR: " + filename);
             processJar(classesInApplicationJars, filename);
         }
-        for (String filename :  sootParameters._libraries) {
+        for (String filename :  sootParameters.getLibraries()) {
             System.out.println("Processing library JAR: " + filename);
             processJar(classesInLibraryJars, filename);
         }
@@ -57,74 +36,28 @@ public class BasicJavaSupport {
         }
     }
 
-    /**
-     * Process a JAR input.
-     * @param classSet   appropriate set to add class names
-     * @param filename   the JAR filename
-     */
-    private void processJar(Set<String> classSet, String filename) throws IOException {
-        JarEntry entry;
-        try (JarInputStream jin = new JarInputStream(new FileInputStream(filename));
-             JarFile jarFile = new JarFile(filename)) {
-            /* List all JAR entries */
-            while ((entry = jin.getNextJarEntry()) != null) {
-                /* Skip directories */
-                if (entry.isDirectory())
-                    continue;
-
-                String entryName = entry.getName();
-                if (entryName.endsWith(".class")) {
-                    try {
-                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                        String className = reader.getClassName().replace("/", ".");
-                        classSet.add(className);
-                        String artifact = (new File(jarFile.getName())).getName();
-                        registerArtifactClass(artifact, className, "-");
-                    } catch (IllegalArgumentException e) {
-                        System.err.println("-- Problematic .class file \"" + entryName + "\"");
-                    }
-                } else if (entryName.endsWith(".properties")) {
-                    propertyProvider.addProperties(DoopAddons.newFoundFile(filename, entryName));
-                } /* Skip non-class files and non-property files */
-            }
-        }
-    }
-
-    /**
-     * Registers a class with its container artifact.
-     * @param artifact     the file name of the artifact containing the class
-     * @param className    the name of the class
-     * @param subArtifact  the sub-artifact (such as "classes.dex" for APKs)
-     */
-    protected void registerArtifactClass(String artifact, String className, String subArtifact) {
-        ArtifactEntry ae = new ArtifactEntry(className, subArtifact);
-        if (!artifactToClassMap.containsKey(artifact)) {
-            Set<ArtifactEntry> artifactClasses = new HashSet<>();
-            artifactClasses.add(ae);
-            artifactToClassMap.put(artifact, artifactClasses);
-        } else
-            artifactToClassMap.get(artifact).add(ae);
-    }
-
-    protected void addSootClasses(Collection<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
+    public void addSootClasses(Collection<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
         for (String className : classesToLoad) {
             SootClass c = scene.loadClass(className, SootClass.BODIES);
             loadedClasses.add(c);
         }
     }
 
+    @Override
     public void addAppClasses(Set<SootClass> classes, Scene scene) {
         addSootClasses(classesInApplicationJars, classes, scene);
         addBasicClasses(scene);
         System.out.println("Classes in input (application) jar(s): " + classesInApplicationJars.size());
     }
 
+    @Override
     public void addLibClasses(Set<SootClass> classes, Scene scene) {
         addSootClasses(classesInLibraryJars, classes, scene);
         addBasicClasses(scene);
         System.out.println("Classes in library jar(s): " + classesInLibraryJars.size());
     }
 
+    @Override
     public void addDepClasses(Set<SootClass> classes, Scene scene) {
         addSootClasses(classesInDependencyJars, classes, scene);
         System.out.println("Classes in dependency jar(s): " + classesInDependencyJars.size());
@@ -162,4 +95,5 @@ public class BasicJavaSupport {
             scene.addBasicClass(className);
         }
     }
+
 }

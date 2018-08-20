@@ -19,6 +19,7 @@ import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.clyze.doop.common.SessionCounter;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.python.utils.PythonDatabase;
 import org.clyze.doop.python.utils.PythonPredicateFile;
