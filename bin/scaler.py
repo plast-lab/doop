@@ -14,7 +14,6 @@ DATABASE = 'last-analysis'
 APP = 'temp'
 SEP = '\\t'
 
-SCALER_CP = ':'.join(['scaler/lib/scaler.jar', 'scaler/lib/guava-23.0.jar'])
 SCALER_MAIN = 'ptatoolkit.scaler.doop.Main'
 SCALER_CACHE = 'scaler/cache'
 SCALER_OUT = 'scaler/out'
