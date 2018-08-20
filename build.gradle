@@ -108,7 +108,8 @@ dependencies {
             "ext:axml:2.0",
             "org.smali:util:2.2.4",                              // Dexlib2 utilities
             "com.google.guava:guava:23.0",
-            "ext:scaler:1.0"
+            "ext:scaler:1.0",
+            "ext:zipper:1.0"
 
     // JimpleParser
     antlr   "org.antlr:antlr4:4.5.1-1"
@@ -150,11 +151,28 @@ task scaler(type: JavaExec) {
     description 'Run Scaler'
     group = 'Other'
     main = 'ptatoolkit.scaler.doop.Main'
-    classpath = sourceSets.main.runtimeClasspath
+    classpath = sourceSets.main.runtimeClasspath.filter {
+        !it.name.startsWith("zipper")
+    }
     if (project.hasProperty("args"))
         args project.property("args").split()
     //jvmArgs = ['-Xmx=48g']
 }
+
+task zipper(type: JavaExec) {
+    description 'Run Zipper'
+    group = 'Other'
+    main = 'ptatoolkit.zipper.doop.Main'
+    classpath = sourceSets.main.runtimeClasspath.filter {
+        !it.name.startsWith("scaler")
+    }
+    if (project.hasProperty("args"))
+        args project.property("args").split()
+    //jvmArgs = ['-Xmx=48g']
+}
+
+
+
 task souffleScript(type: JavaExec) {
     description 'Run a custom Souffle Script'
     group = 'Other'

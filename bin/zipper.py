@@ -11,10 +11,8 @@ PRE_ANALYSIS = 'context-insensitive'
 DATABASE = 'last-analysis'
 
 APP = 'temp'
-SEP = '"\t"'
+SEP = '\\t'
 
-ZIPPER_CP = ':'.join(['zipper/lib/zipper.jar', 'zipper/lib/guava-23.0.jar'])
-ZIPPER_MAIN = 'ptatoolkit.zipper.doop.Main'
 ZIPPER_CACHE = 'zipper/cache'
 ZIPPER_OUT = 'zipper/out'
 THREAD = 16 # use multithreading to accelerate Zipper
@@ -69,9 +67,7 @@ def dumpRequiredDoopResults(app, db_dir, dump_dir):
         dumpDoopResults(db_dir, dump_dir, app, query)
 
 def runZipper(app, cache_dir, out_dir):
-    cmd = 'java -Xmx48g '
-    cmd += ' -cp %s ' % ZIPPER_CP
-    cmd += ZIPPER_MAIN
+    cmd = './gradlew zipper -Pargs=\''
     cmd += ' -sep %s ' % SEP
     cmd += ' -app %s ' % app
     cmd += ' -cache %s ' % cache_dir
@@ -79,7 +75,8 @@ def runZipper(app, cache_dir, out_dir):
     cmd += ' -thread %d ' % THREAD
     if ONLY_LIB:
         cmd += ' -only-lib '
-    # print cmd
+    cmd += '\''
+    print cmd
     os.system(cmd)
 
     zipper_file = os.path.join(out_dir, \
@@ -95,6 +92,8 @@ def runMainAnalysis(args, zipper_file):
     os.system(cmd)
 
 def run(args):
+    if not os.path.exists("zipper"):
+        os.mkdir("zipper")
     runPreAnalysis(args)
     dumpRequiredDoopResults(APP, DATABASE, ZIPPER_CACHE)
     zipper_file = runZipper(APP, ZIPPER_CACHE, ZIPPER_OUT)
