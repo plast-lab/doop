@@ -167,10 +167,10 @@ public class WalaInvoker {
         WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
         WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
-        // TODO: fill in propertyProvider/artifactToClassMap/java
+        // TODO: fill in propertyProvider/artifactToClassMap
         PropertyProvider propertyProvider = new PropertyProvider();
         Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
-        BasicJavaSupport java = null;
+        BasicJavaSupport java = new BasicJavaSupport();
 
         if(walaParameters._android)
         {
