@@ -265,8 +265,8 @@ public class Main {
             android.processInputs(sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
-            java.populateClassesInAppJar(sootParameters);
         }
+        java.preprocessInputs(sootParameters);
 
         Scene scene = Scene.v();
         for (String input : sootParameters.getInputs()) {

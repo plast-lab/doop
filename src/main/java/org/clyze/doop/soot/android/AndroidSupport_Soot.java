@@ -60,10 +60,8 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
             if (dummyMain == null) {
                 throw new RuntimeException("Dummy main null");
             }
-        } else {
+        } else
             super.processInputs(tmpDirs);
-            ((BasicJavaSupport_Soot)java).populateClassesInAppJar(sootParameters);
-        }
     }
 
     @Override

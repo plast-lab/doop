@@ -15,6 +15,7 @@ import org.clyze.doop.util.filter.GlobClassFilter;
 public abstract class Parameters {
     protected List<String> _inputs = new ArrayList<>();
     protected List<String> _libraries = new ArrayList<>();
+    public List<String> _dependencies = new ArrayList<>();
     protected String _outputDir = null;
     public String _extraSensitiveControls = "";
     private String appRegex;

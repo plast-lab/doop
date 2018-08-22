@@ -32,6 +32,30 @@ public class BasicJavaSupport {
     }
 
     /**
+     * Helper method to read classes and property files from JAR/AAR files.
+     *
+     * @param parameters the list of all the given parameters
+     *
+     * @return the name of the JAR file that was processed; this is
+     * either the original first parameter, or the locally saved
+     * classes.jar found in the .aar file (if such a file was given)
+     */
+    public void preprocessInputs(Parameters parameters) throws IOException {
+        for (String filename : parameters.getInputs()) {
+            System.out.println("Processing application JAR: " + filename);
+            processJar(classesInApplicationJars, filename);
+        }
+        for (String filename : parameters.getLibraries()) {
+            System.out.println("Processing library JAR: " + filename);
+            processJar(classesInLibraryJars, filename);
+        }
+        for (String filename : parameters._dependencies) {
+            System.out.println("Processing dependency JAR: " + filename);
+            processJar(classesInDependencyJars, filename);
+        }
+    }
+
+    /**
      * Process a JAR input.
      * @param classSet   appropriate set to add class names
      * @param filename   the JAR filename

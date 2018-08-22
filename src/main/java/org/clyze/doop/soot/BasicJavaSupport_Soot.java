@@ -11,31 +11,6 @@ import soot.SourceLocator;
 
 public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdder {
 
-    /**
-     * Helper method to read classes and property files from JAR/AAR files.
-     *
-     * @param sootParameters the list of all the given soot parameters
-     *
-     * @return the name of the JAR file that was processed; this is
-     * either the original first parameter, or the locally saved
-     * classes.jar found in the .aar file (if such a file was given)
-     *
-     */
-    public void populateClassesInAppJar(SootParameters sootParameters) throws IOException {
-        for (String filename : sootParameters.getInputs()) {
-            System.out.println("Processing application JAR: " + filename);
-            processJar(classesInApplicationJars, filename);
-        }
-        for (String filename :  sootParameters.getLibraries()) {
-            System.out.println("Processing library JAR: " + filename);
-            processJar(classesInLibraryJars, filename);
-        }
-        for (String filename :  sootParameters._dependencies) {
-            System.out.println("Processing dependency JAR: " + filename);
-            processJar(classesInDependencyJars, filename);
-        }
-    }
-
     public void addSootClasses(Collection<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
         for (String className : classesToLoad) {
             SootClass c = scene.loadClass(className, SootClass.BODIES);

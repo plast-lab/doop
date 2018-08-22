@@ -10,7 +10,6 @@ public class SootParameters extends Parameters {
      enum Mode { INPUTS, FULL }
 
      Mode _mode = null;
-     List<String> _dependencies = new ArrayList<>();
      String _main = null;
      boolean _ssa = false;
      boolean _allowPhantom = false;
