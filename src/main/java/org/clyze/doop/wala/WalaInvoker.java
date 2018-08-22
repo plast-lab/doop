@@ -185,7 +185,8 @@ public class WalaInvoker {
         else
             cache = new AnalysisCacheImpl();
 
-        walaFactWriter.writePreliminaryFacts(propertyProvider, artifactToClassMap);
+        walaFactWriter.writePreliminaryFacts(java);
+        db.flush();
 
         IClass klass;
         Set<IClass> classesSet = new HashSet<>();

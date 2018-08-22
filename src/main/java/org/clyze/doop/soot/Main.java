@@ -336,7 +336,7 @@ public class Main {
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
         Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
 
-        writer.writePreliminaryFacts(classes, java.getPropertyProvider(), java.getArtifactToClassMap());
+        writer.writePreliminaryFacts(classes, java);
         db.flush();
 
         if (sootParameters._android) {

@@ -117,7 +117,10 @@ public class JavaFactWriter {
         _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
     }
 
-    public void writePreliminaryFacts(PropertyProvider propertyProvider, Map<String, Set<ArtifactEntry>> artifactToClassMap) {
+    public void writePreliminaryFacts(BasicJavaSupport java) {
+
+        PropertyProvider propertyProvider = java.getPropertyProvider();
+        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
 
         // Read all stored properties files
         for (Map.Entry<String, Properties> entry : propertyProvider.getProperties().entrySet()) {

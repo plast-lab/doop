@@ -1,10 +1,9 @@
 package org.clyze.doop.soot;
 
-import org.clyze.doop.common.ArtifactEntry;
+import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
-import org.clyze.doop.common.PropertyProvider;
 import org.clyze.doop.common.SessionCounter;
 import soot.*;
 import soot.jimple.*;
@@ -956,9 +955,9 @@ public class FactWriter extends JavaFactWriter {
             }
     }
 
-    public void writePreliminaryFacts(Set<SootClass> classes, PropertyProvider propertyProvider, Map<String, Set<ArtifactEntry>> artifactToClassMap) {
+    public void writePreliminaryFacts(Set<SootClass> classes, BasicJavaSupport java) {
         classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(this::writeApplicationClass);
-        writePreliminaryFacts(propertyProvider, artifactToClassMap);
+        writePreliminaryFacts(java);
     }
 
 }
