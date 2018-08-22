@@ -39,25 +39,26 @@ public class BasicJavaSupport {
      */
     public void preprocessInputs(Parameters parameters) throws IOException {
         for (String filename : parameters.getInputs()) {
-            System.out.println("Processing application JAR: " + filename);
-            processJar(classesInApplicationJars, filename);
+            System.out.println("Preprocessing application JAR: " + filename);
+            preprocessJar(classesInApplicationJars, filename);
         }
         for (String filename : parameters.getLibraries()) {
-            System.out.println("Processing library JAR: " + filename);
-            processJar(classesInLibraryJars, filename);
+            System.out.println("Preprocessing library JAR: " + filename);
+            preprocessJar(classesInLibraryJars, filename);
         }
         for (String filename : parameters._dependencies) {
-            System.out.println("Processing dependency JAR: " + filename);
-            processJar(classesInDependencyJars, filename);
+            System.out.println("Preprocessing dependency JAR: " + filename);
+            preprocessJar(classesInDependencyJars, filename);
         }
     }
 
     /**
-     * Process a JAR input.
+     * Preprocess a JAR input.
+     *
      * @param classSet   appropriate set to add class names
      * @param filename   the JAR filename
      */
-    protected void processJar(Set<String> classSet, String filename) throws IOException {
+    protected void preprocessJar(Set<String> classSet, String filename) throws IOException {
         JarEntry entry;
         try (JarInputStream jin = new JarInputStream(new FileInputStream(filename));
              JarFile jarFile = new JarFile(filename)) {
