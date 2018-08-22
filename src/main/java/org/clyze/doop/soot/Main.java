@@ -251,6 +251,8 @@ public class Main {
         Options.v().set_keep_line_number(true);
 
         BasicJavaSupport_Soot java = new BasicJavaSupport_Soot();
+        java.preprocessInputs(sootParameters);
+
         AndroidSupport_Soot android = null;
 
         // Set of temporary directories to be cleaned up after analysis ends.
@@ -265,7 +267,6 @@ public class Main {
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
         }
-        java.preprocessInputs(sootParameters);
 
         Scene scene = Scene.v();
         for (String input : sootParameters.getInputs()) {
