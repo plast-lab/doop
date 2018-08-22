@@ -36,9 +36,6 @@ public class BasicJavaSupport {
      *
      * @param parameters the list of all the given parameters
      *
-     * @return the name of the JAR file that was processed; this is
-     * either the original first parameter, or the locally saved
-     * classes.jar found in the .aar file (if such a file was given)
      */
     public void preprocessInputs(Parameters parameters) throws IOException {
         for (String filename : parameters.getInputs()) {
