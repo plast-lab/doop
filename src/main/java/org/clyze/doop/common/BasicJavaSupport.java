@@ -32,31 +32,31 @@ public class BasicJavaSupport {
     }
 
     /**
-     * Helper method to read classes and property files from JAR/AAR files.
+     * Helper method to read classes and property files from input archives.
      *
      * @param parameters the list of all the given parameters
      *
      */
     public void preprocessInputs(Parameters parameters) throws IOException {
         for (String filename : parameters.getInputs()) {
-            System.out.println("Preprocessing application JAR: " + filename);
+            System.out.println("Preprocessing application: " + filename);
             preprocessJar(classesInApplicationJars, filename);
         }
         for (String filename : parameters.getLibraries()) {
-            System.out.println("Preprocessing library JAR: " + filename);
+            System.out.println("Preprocessing library: " + filename);
             preprocessJar(classesInLibraryJars, filename);
         }
         for (String filename : parameters._dependencies) {
-            System.out.println("Preprocessing dependency JAR: " + filename);
+            System.out.println("Preprocessing dependency: " + filename);
             preprocessJar(classesInDependencyJars, filename);
         }
     }
 
     /**
-     * Preprocess a JAR input.
+     * Preprocess an input archive.
      *
      * @param classSet   appropriate set to add class names
-     * @param filename   the JAR filename
+     * @param filename   the input filename
      */
     protected void preprocessJar(Set<String> classSet, String filename) throws IOException {
         JarEntry entry;
