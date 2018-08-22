@@ -250,7 +250,6 @@ public class Main {
         //soot.options.Options.v().set_drop_bodies_after_load(true);
         Options.v().set_keep_line_number(true);
 
-        Set<SootClass> classes = new HashSet<>();
         BasicJavaSupport_Soot java = new BasicJavaSupport_Soot();
         AndroidSupport_Soot android = null;
 
@@ -295,6 +294,7 @@ public class Main {
         if (sootParameters._allowPhantom)
             Options.v().set_allow_phantom_refs(true);
 
+        Set<SootClass> classes = new HashSet<>();
         ClassAdder classAdder = (android != null) ? android : java;
         if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP)
             classAdder.addAppClasses(classes, scene);
