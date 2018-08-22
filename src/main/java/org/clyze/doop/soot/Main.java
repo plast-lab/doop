@@ -337,7 +337,7 @@ public class Main {
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
         Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
 
-        writer.writePreliminaryFacts(classes, java);
+        writer.writePreliminaryFacts(classes, java, sootParameters);
         db.flush();
 
         if (sootParameters._android) {
@@ -372,9 +372,6 @@ public class Main {
                 DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
             }
         }
-
-        sootParameters.processSeeds(writer);
-        sootParameters.processSpecialCSMethods(writer);
 
         db.close();
 

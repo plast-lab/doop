@@ -1,8 +1,12 @@
 package org.clyze.doop.common;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Stream;
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**
@@ -117,7 +121,7 @@ public class JavaFactWriter {
         _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
     }
 
-    public void writePreliminaryFacts(BasicJavaSupport java) {
+    public void writePreliminaryFacts(BasicJavaSupport java, Parameters params) {
 
         PropertyProvider propertyProvider = java.getPropertyProvider();
         Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
@@ -137,6 +141,13 @@ public class JavaFactWriter {
         for (String artifact : artifactToClassMap.keySet())
             for (ArtifactEntry ae : artifactToClassMap.get(artifact))
                 writeClassArtifact(artifact, ae.className, ae.subArtifact);
+
+        try {
+            processSeeds(params._seed);
+            processSpecialCSMethods(params._specialCSMethods);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
     // The extra sensitive controls are given as a String
@@ -164,4 +175,35 @@ public class JavaFactWriter {
             }
         }
     }
+
+    public void processSeeds(String seed) throws IOException {
+        if (seed != null) {
+            System.out.println("Reading seeds from: " + seed);
+            try (Stream<String> stream = Files.lines(Paths.get(seed))) {
+                stream.forEach(line -> processSeedFileLine(line));
+            }
+        }
+    }
+
+    private void processSeedFileLine(String line) {
+        if (line.contains("("))
+            writeAndroidKeepMethod(line);
+        else if (!line.contains(":"))
+            writeAndroidKeepClass(line);
+    }
+
+    public void processSpecialCSMethods(String csMethods) throws IOException {
+        if (csMethods != null) {
+            System.out.println("Reading special methods from: " + csMethods);
+            try (Stream<String> stream = Files.lines(Paths.get(csMethods))) {
+                stream.forEach(line -> processSpecialSensitivityMethodFileLine(line));
+            }
+        }
+    }
+
+    private void processSpecialSensitivityMethodFileLine(String line) {
+        if (line.contains(", "))
+            writeSpecialSensitivityMethod(line);
+    }
+
 }

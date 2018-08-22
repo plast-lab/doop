@@ -1,11 +1,7 @@
 package org.clyze.doop.common;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 
@@ -60,33 +56,6 @@ public abstract class Parameters {
 
     public String getOutputDir() {
         return _outputDir;
-    }
-
-    public void processSeeds(JavaFactWriter writer) throws IOException {
-        if (_seed != null) {
-            try (Stream<String> stream = Files.lines(Paths.get(_seed))) {
-                stream.forEach(line -> processSeedFileLine(line, writer));
-            }
-        }
-    }
-
-    private static void processSeedFileLine(String line, JavaFactWriter writer) {
-        if (line.contains("("))
-            writer.writeAndroidKeepMethod(line);
-        else if (!line.contains(":"))
-            writer.writeAndroidKeepClass(line);
-    }
-
-    public void processSpecialCSMethods(JavaFactWriter writer) throws IOException {
-        if (_specialCSMethods != null)
-            try (Stream<String> stream = Files.lines(Paths.get(_specialCSMethods))) {
-                stream.forEach(line -> processSpecialSensitivityMethodFileLine(line, writer));
-            }
-    }
-
-    private static void processSpecialSensitivityMethodFileLine(String line, JavaFactWriter writer) {
-        if (line.contains(", "))
-            writer.writeSpecialSensitivityMethod(line);
     }
 
     public boolean isApplicationClass(String className) {

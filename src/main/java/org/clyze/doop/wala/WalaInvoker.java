@@ -186,7 +186,7 @@ public class WalaInvoker {
             cache = new AnalysisCacheImpl();
 
         java.preprocessInputs(walaParameters);
-        walaFactWriter.writePreliminaryFacts(java);
+        walaFactWriter.writePreliminaryFacts(java, walaParameters);
         db.flush();
 
         IClass klass;
