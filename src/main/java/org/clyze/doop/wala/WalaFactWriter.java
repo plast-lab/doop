@@ -34,7 +34,6 @@ import static org.clyze.doop.wala.WalaUtils.*;
  * database.
  */
 public class WalaFactWriter extends JavaFactWriter {
-    private boolean _android;
     private WalaRepresentation _rep;
 
     //Map from WALA's JVM like type string to our format
@@ -53,9 +52,8 @@ public class WalaFactWriter extends JavaFactWriter {
     //Used for logging various messages
     protected Log logger;
 
-    WalaFactWriter(Database db, boolean android) {
+    WalaFactWriter(Database db) {
         super(db);
-        _android = android;
         _rep = WalaRepresentation.getRepresentation();
         _typeMap = new ConcurrentHashMap<>();
         _phantomType = new ConcurrentHashMap<>();

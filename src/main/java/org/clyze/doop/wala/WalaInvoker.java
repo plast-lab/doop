@@ -162,7 +162,7 @@ public class WalaInvoker {
         Iterator<IClass> classes = cha.iterator();
         String outputDir = walaParameters.getOutputDir();
         Database db = new Database(new File(outputDir));
-        WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
+        WalaFactWriter walaFactWriter = new WalaFactWriter(db);
         WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
         BasicJavaSupport java = new BasicJavaSupport();
