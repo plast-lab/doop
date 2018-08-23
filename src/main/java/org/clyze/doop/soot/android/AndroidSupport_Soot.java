@@ -64,37 +64,48 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
             super.processInputs(tmpDirs);
     }
 
+    /**
+     * Find all classes inside an APK archive and add them to a Soot scene.
+     *
+     * @param classes   a set of Soot classes to receive the new classes
+     * @param scene     the Soot Scene object
+     * @param inputApk  the filename of the APK
+     */
+    private void addClasses(Set<SootClass> classes, Scene scene, String inputApk) {
+        File apk = new File(inputApk);
+        System.out.println("Android mode, APK = " + inputApk);
+        String artifact = apk.getName();
+        try {
+            List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
+            Set<Object> allDexClasses = new HashSet<>();
+            for (DexContainer dexContainer : listContainers) {
+                Set<? extends DexBackedClassDef> dexClasses = dexContainer.getBase().getClasses();
+                allDexClasses.addAll(dexClasses);
+                for (DexBackedClassDef dexBackedClassDef : dexClasses) {
+                    String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor((dexBackedClassDef).getType()).getEscapedName();
+                    SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
+                    classes.add(c);
+                    java.registerArtifactClass(artifact, escapeClassName, dexContainer.getDexName());
+                }
+            }
+            System.out.println("Classes found in apk: " + allDexClasses.size());
+        } catch (IOException ex) {
+            System.err.println("Could not read dex classes in " + apk);
+            ex.printStackTrace();
+            return;
+        }
+    }
+
     @Override
     public void addAppClasses(Set<SootClass> classes, Scene scene) {
-        for (String appInput : parameters.getInputs()) {
-            if (appInput.endsWith(".apk")) {
-                File apk = new File(appInput);
-                System.out.println("Android mode, APK = " + appInput);
-                String artifact = apk.getName();
-                try {
-                    List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
-                    Set<Object> allDexClasses = new HashSet<>();
-                    for (DexContainer dexContainer : listContainers) {
-                        Set<? extends DexBackedClassDef> dexClasses = dexContainer.getBase().getClasses();
-                        allDexClasses.addAll(dexClasses);
-                        for (DexBackedClassDef dexBackedClassDef : dexClasses) {
-                            String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor((dexBackedClassDef).getType()).getEscapedName();
-                            SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
-                            classes.add(c);
-                            java.registerArtifactClass(artifact, escapeClassName, dexContainer.getDexName());
-                        }
-                    }
-                    System.out.println("Classes found in apk: " + allDexClasses.size());
-                } catch (IOException ex) {
-                    System.err.println("Could not read dex classes in " + apk);
-                    ex.printStackTrace();
-                    return;
-                }
+        for (String inputApk : parameters.getInputs()) {
+            if (inputApk.endsWith(".apk")) {
+                addClasses(classes, scene, inputApk);
             } else {
                 // We support both AAR and JAR inputs, although JARs
                 // are not ideal for analysis in Android, as they
                 // don't contain AndroidManifest.xml.
-                System.out.println("Android mode, input = " + appInput);
+                System.out.println("Android mode, input = " + inputApk);
                 ((BasicJavaSupport_Soot)java).addSootClasses(java.getClassesInApplicationJars(), classes, scene);
             }
         }
