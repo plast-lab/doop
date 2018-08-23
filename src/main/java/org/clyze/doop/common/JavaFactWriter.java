@@ -153,13 +153,13 @@ public class JavaFactWriter {
     // The extra sensitive controls are given as a String
     // "id1,type1,parentId1,id2,type2,parentId2,...".
     public void writeExtraSensitiveControls(Parameters parameters) {
-        if (parameters._extraSensitiveControls.equals("")) {
+        if (parameters.getExtraSensitiveControls().equals("")) {
             return;
         }
-        String[] parts = parameters._extraSensitiveControls.split(",");
+        String[] parts = parameters.getExtraSensitiveControls().split(",");
         int partsLen = parts.length;
         if (partsLen % 3 != 0) {
-            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + parameters._extraSensitiveControls + "\"");
+            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + parameters.getExtraSensitiveControls() + "\"");
             return;
         }
         for (int i = 0; i < partsLen; i += 3) {

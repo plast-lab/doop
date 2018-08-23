@@ -94,7 +94,7 @@ public class WalaInvoker {
                         break;
                     case "--extra-sensitive-controls":
                         i = shift(args, i);
-                        walaParameters._extraSensitiveControls = args[i];
+                        walaParameters.setExtraSensitiveControls(args[i]);
                         break;
                     case "--fact-gen-cores":
                         i = shift(args, i);

@@ -15,7 +15,6 @@ public class SootParameters extends Parameters {
      boolean _allowPhantom = false;
      FactsSubSet _factsSubSet = null;
      boolean _runFlowdroid = false;
-     boolean _noFacts = false;
      boolean _generateJimple = false;
      boolean _toStdout = false;
      boolean _ignoreWrongStaticness = false;

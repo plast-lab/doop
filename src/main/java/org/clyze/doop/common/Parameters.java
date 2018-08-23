@@ -11,9 +11,9 @@ import org.clyze.doop.util.filter.GlobClassFilter;
 public abstract class Parameters {
     protected List<String> _inputs = new ArrayList<>();
     protected List<String> _libraries = new ArrayList<>();
-    public List<String> _dependencies = new ArrayList<>();
+    private List<String> _dependencies = new ArrayList<>();
     protected String _outputDir = null;
-    public String _extraSensitiveControls = "";
+    private String _extraSensitiveControls = "";
     private String appRegex;
     public ClassFilter applicationClassFilter;
     public boolean _android = false;
@@ -22,6 +22,7 @@ public abstract class Parameters {
     public String _seed = null;
     public String _specialCSMethods = null;
     public String _rOutDir = null;
+    private boolean _noFacts = false;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
@@ -68,5 +69,30 @@ public abstract class Parameters {
         ret.addAll(this._libraries);
         return ret;
     }
+
+    public void setNoFacts(boolean b) {
+        this._noFacts = b;
+    }
+
+    public boolean noFacts() {
+        return _noFacts;
+    }
+
+    public void setExtraSensitiveControls(String s) {
+        this._extraSensitiveControls = s;
+    }
+
+    public String getExtraSensitiveControls() {
+        return _extraSensitiveControls;
+    }
+
+    public List<String> getDependencies() {
+        return _dependencies;
+    }
+
+    public void setDependencies(List<String> deps) {
+        this._dependencies = deps;
+    }
+
 
 }

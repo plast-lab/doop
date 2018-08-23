@@ -46,7 +46,7 @@ public class BasicJavaSupport {
             System.out.println("Preprocessing library: " + filename);
             preprocessInput(classesInLibraryJars, filename);
         }
-        for (String filename : parameters._dependencies) {
+        for (String filename : parameters.getDependencies()) {
             System.out.println("Preprocessing dependency: " + filename);
             preprocessInput(classesInDependencyJars, filename);
         }

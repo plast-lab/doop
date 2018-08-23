@@ -122,7 +122,7 @@ public class Main {
                         sootParameters._toStdout = true;
                         break;
                     case "--noFacts":
-                        sootParameters._noFacts = true;
+                        sootParameters.setNoFacts(true);
                         break;
                     case "--fact-gen-cores":
                         i = shift(args, i);
@@ -141,7 +141,7 @@ public class Main {
                         break;
                     case "--extra-sensitive-controls":
                         i = shift(args, i);
-                        sootParameters._extraSensitiveControls = args[i];
+                        sootParameters.setExtraSensitiveControls(args[i]);
                         break;
                     case "--seed":
                         i = shift(args, i);
@@ -194,7 +194,7 @@ public class Main {
             }
 
             if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
-                sootParameters._dependencies = dependencies;
+                sootParameters.setDependencies(dependencies);
                 sootParameters.setLibraries(platforms);
             } else {
                 sootParameters.setLibraries(platforms);
@@ -350,7 +350,7 @@ public class Main {
             }
         }
 
-        if (!sootParameters._noFacts) {
+        if (!sootParameters.noFacts()) {
             scene.getOrMakeFastHierarchy();
             // avoids a concurrent modification exception, since we may
             // later be asking soot to add phantom classes to the scene's hierarchy
