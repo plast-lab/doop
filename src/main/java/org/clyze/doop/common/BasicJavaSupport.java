@@ -40,15 +40,15 @@ public class BasicJavaSupport {
     public void preprocessInputs(Parameters parameters) throws IOException {
         for (String filename : parameters.getInputs()) {
             System.out.println("Preprocessing application: " + filename);
-            preprocessJar(classesInApplicationJars, filename);
+            preprocessInput(classesInApplicationJars, filename);
         }
         for (String filename : parameters.getLibraries()) {
             System.out.println("Preprocessing library: " + filename);
-            preprocessJar(classesInLibraryJars, filename);
+            preprocessInput(classesInLibraryJars, filename);
         }
         for (String filename : parameters._dependencies) {
             System.out.println("Preprocessing dependency: " + filename);
-            preprocessJar(classesInDependencyJars, filename);
+            preprocessInput(classesInDependencyJars, filename);
         }
     }
 
@@ -58,7 +58,7 @@ public class BasicJavaSupport {
      * @param classSet   appropriate set to add class names
      * @param filename   the input filename
      */
-    protected void preprocessJar(Set<String> classSet, String filename) throws IOException {
+    protected void preprocessInput(Set<String> classSet, String filename) throws IOException {
         JarEntry entry;
         try (JarInputStream jin = new JarInputStream(new FileInputStream(filename));
              JarFile jarFile = new JarFile(filename)) {
