@@ -95,5 +95,74 @@ public abstract class Parameters {
         this._dependencies = deps;
     }
 
+    public static int shift(String[] args, int index) throws DoopErrorCodeException {
+        if(args.length == index + 1) {
+            System.err.println("error: option " + args[index] + " requires an argument");
+            throw new DoopErrorCodeException(9);
+        }
+        return index + 1;
+    }
+
+    /**
+     * Process next command line argument and update parameters.
+     *
+     * @param args        the command line arguments
+     * @param i           the index of the next argument to read
+     *
+     * @return  -1 if the next argument was not recognized, otherwise
+     *          the index of the last argument processed
+     */
+    public int processNextArg(String[] args, int i) throws DoopErrorCodeException {
+        switch (args[i]) {
+        case "--android-jars":
+            i = shift(args, i);
+            this._android = true;
+            this._androidJars = args[i];
+            break;
+        case "-i":
+            i = shift(args, i);
+            this.getInputs().add(args[i]);
+            break;
+        case "-d":
+            i = shift(args, i);
+            this.setOutputDir(args[i]);
+            break;
+        case "--application-regex":
+            i = shift(args, i);
+            this.setAppRegex(args[i]);
+            break;
+        case "--fact-gen-cores":
+            i = shift(args, i);
+            try {
+                this._cores = new Integer(args[i]);
+            } catch (NumberFormatException nfe) {
+                System.out.println("Invalid cores argument: " + args[i]);
+            }
+            break;
+        case "--facts-subset":
+            i = shift(args, i);
+            this._factsSubSet = Parameters.FactsSubSet.valueOf(args[i]);
+            break;
+        case "--R-out-dir":
+            i = shift(args, i);
+            this._rOutDir = args[i];
+            break;
+        case "--extra-sensitive-controls":
+            i = shift(args, i);
+            this.setExtraSensitiveControls(args[i]);
+            break;
+        case "--seed":
+            i = shift(args, i);
+            this._seed = args[i];
+            break;
+        case "--special-cs-methods":
+            i = shift(args, i);
+            this._specialCSMethods = args[i];
+            break;
+        default:
+            return -1;
+        }
+        return i;
+    }
 
 }

@@ -15,15 +15,9 @@ import soot.options.Options;
 import java.io.File;
 import java.util.*;
 
-public class Main {
+import static org.clyze.doop.common.Parameters.*;
 
-    private static int shift(String[] args, int index) throws DoopErrorCodeException {
-        if(args.length == index + 1) {
-            System.err.println("error: option " + args[index] + " requires an argument");
-            throw new DoopErrorCodeException(9);
-        }
-        return index + 1;
-    }
+public class Main {
 
     private static boolean isApplicationClass(SootParameters sootParameters, SootClass klass) {
         return sootParameters.isApplicationClass(klass.getName());
@@ -41,6 +35,11 @@ public class Main {
             List<String> platforms = new ArrayList<>();
 
             for (int i = 0; i < args.length; i++) {
+                int next_i = sootParameters.processNextArg(args, i);
+                if (next_i != -1) {
+                    i = next_i;
+                    continue;
+                }
                 switch (args[i]) {
                     case "--full":
                         if (sootParameters._mode != null) {
@@ -49,25 +48,12 @@ public class Main {
                         }
                         sootParameters._mode = SootParameters.Mode.FULL;
                         break;
-                    case "-d":
-                        i = shift(args, i);
-                        sootParameters.setOutputDir(args[i]);
-                        break;
                     case "--main":
                         i = shift(args, i);
                         sootParameters._main = args[i];
                         break;
                     case "--ssa":
                         sootParameters._ssa = true;
-                        break;
-                    case "--android-jars":
-                        i = shift(args, i);
-                        sootParameters._android = true;
-                        sootParameters._androidJars = args[i];
-                        break;
-                    case "-i":
-                        i = shift(args, i);
-                        sootParameters.getInputs().add(args[i]);
                         break;
                     case "-ld":
                         i = shift(args, i);
@@ -100,19 +86,11 @@ public class Main {
                             }
                         }
                         break;
-                    case "--application-regex":
-                        i = shift(args, i);
-                        sootParameters.setAppRegex(args[i]);
-                        break;
                     case "--allow-phantom":
                         sootParameters._allowPhantom = true;
                         break;
                     case "--run-flowdroid":
                         sootParameters._runFlowdroid = true;
-                        break;
-                    case "--facts-subset":
-                        i = shift(args, i);
-                        sootParameters._factsSubSet = SootParameters.FactsSubSet.valueOf(args[i]);
                         break;
                     case "--generate-jimple":
                         sootParameters._generateJimple = true;
@@ -123,32 +101,8 @@ public class Main {
                     case "--noFacts":
                         sootParameters.setNoFacts(true);
                         break;
-                    case "--fact-gen-cores":
-                        i = shift(args, i);
-                        try {
-                            sootParameters._cores = new Integer(args[i]);
-                        } catch (NumberFormatException nfe) {
-                            System.out.println("Invalid cores argument: " + args[i]);
-                        }
-                        break;
                     case "--ignoreWrongStaticness":
                         sootParameters._ignoreWrongStaticness = true;
-                        break;
-                    case "--R-out-dir":
-                        i = shift(args, i);
-                        sootParameters._rOutDir = args[i];
-                        break;
-                    case "--extra-sensitive-controls":
-                        i = shift(args, i);
-                        sootParameters.setExtraSensitiveControls(args[i]);
-                        break;
-                    case "--seed":
-                        i = shift(args, i);
-                        sootParameters._seed = args[i];
-                        break;
-                    case "--special-cs-methods":
-                        i = shift(args, i);
-                        sootParameters._specialCSMethods = args[i];
                         break;
                     case "-h":
                     case "--help":

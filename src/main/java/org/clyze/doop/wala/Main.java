@@ -21,18 +21,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import static org.clyze.doop.common.Parameters.*;
+
 public class Main {
 
     private final static int WIPE_SOFT_CACHE_INTERVAL = 2500;
     private static int wipeCount = 0;
-
-    private static int shift(String[] args, int index) throws DoopErrorCodeException {
-        if(args.length == index + 1) {
-            System.err.println("error: option " + args[index] + " requires an argument");
-            throw new DoopErrorCodeException(9);
-        }
-        return index + 1;
-    }
 
     private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
         // Change package delimiter from "/" to "."
@@ -48,17 +42,12 @@ public class Main {
             }
 
             for (int i = 0; i < args.length; i++) {
+                int next_i = walaParameters.processNextArg(args, i);
+                if (next_i != -1) {
+                    i = next_i;
+                    continue;
+                }
                 switch (args[i]) {
-                    case "--android-jars":
-                        i = shift(args, i);
-                        //walaParameters._allowPhantom = true;
-                        walaParameters._android = true;
-                        walaParameters._androidJars = args[i];
-                        break;
-                    case "-i":
-                        i = shift(args, i);
-                        walaParameters.getInputs().add(args[i]);
-                        break;
                     case "-l":
                         i = shift(args, i);
                         walaParameters.getLibraries().add(args[i]);
@@ -73,22 +62,6 @@ public class Main {
                     case "-p":
                         i = shift(args, i);
                         walaParameters._javaPath = args[i];
-                        break;
-                    case "-d":
-                        i = shift(args, i);
-                        walaParameters.setOutputDir(args[i]);
-                        break;
-                    case "--application-regex":
-                        i = shift(args, i);
-                        walaParameters.setAppRegex(args[i]);
-                        break;
-                    case "--fact-gen-cores":
-                        i = shift(args, i);
-                        try {
-                            walaParameters._cores = new Integer(args[i]);
-                        } catch (NumberFormatException nfe) {
-                            System.out.println("Invalid cores argument: " + args[i]);
-                        }
                         break;
                     default:
                         if (args[i].charAt(0) == '-') {
