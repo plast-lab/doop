@@ -175,7 +175,7 @@ mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, 
   Var_Type(?to, ?type),
   ConcreteImplementations(?type, ?ctype).
 
-// Introduce concrete taint values for etnry point parameters
+// Introduce concrete taint values for entry point parameters
 // and mark their methods as taint transfer methods
 BaseToRetTaintTransferMethod(?dtoMeth),
 TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
