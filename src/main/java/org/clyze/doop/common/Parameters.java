@@ -79,10 +79,6 @@ public abstract class Parameters {
         return _noFacts;
     }
 
-    public void setExtraSensitiveControls(String s) {
-        this._extraSensitiveControls = s;
-    }
-
     public String getExtraSensitiveControls() {
         return _extraSensitiveControls;
     }
@@ -149,7 +145,7 @@ public abstract class Parameters {
             break;
         case "--extra-sensitive-controls":
             i = shift(args, i);
-            this.setExtraSensitiveControls(args[i]);
+            this._extraSensitiveControls = args[i];
             break;
         case "--seed":
             i = shift(args, i);
