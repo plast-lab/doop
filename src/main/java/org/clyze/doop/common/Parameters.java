@@ -22,6 +22,7 @@ public abstract class Parameters {
     public String _seed = null;
     public String _specialCSMethods = null;
     public String _rOutDir = null;
+    public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
