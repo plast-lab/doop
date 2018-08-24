@@ -3,7 +3,6 @@ package org.clyze.doop.soot;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
-import org.clyze.doop.common.PropertyProvider;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import org.clyze.utils.AARUtils;
