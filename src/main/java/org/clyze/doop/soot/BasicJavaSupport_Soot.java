@@ -1,8 +1,6 @@
 package org.clyze.doop.soot;
 
-import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 import org.clyze.doop.common.BasicJavaSupport;
 import soot.Scene;

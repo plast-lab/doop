@@ -3,7 +3,6 @@ package org.clyze.doop.wala;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 
-import java.util.Iterator;
 import java.util.Set;
 
 public class WalaThreadFactory {

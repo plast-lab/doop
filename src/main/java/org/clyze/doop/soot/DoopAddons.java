@@ -1,11 +1,10 @@
 package org.clyze.doop.soot;
 
 import heros.solver.CountingThreadPoolExecutor;
-import java.lang.reflect.Constructor;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.io.File;
-import java.io.InputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Iterator;
@@ -15,7 +14,6 @@ import org.clyze.doop.common.DoopErrorCodeException;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
-import soot.SootField;
 import soot.SootMethod;
 import soot.options.Options;
 

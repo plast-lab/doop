@@ -1,7 +1,6 @@
 package org.clyze.doop.wala;
 
 import org.clyze.doop.common.Parameters;
-import org.clyze.doop.util.filter.ClassFilter;
 
 import java.util.ArrayList;
 import java.util.List;

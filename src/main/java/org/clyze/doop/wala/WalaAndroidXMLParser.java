@@ -3,9 +3,7 @@ package org.clyze.doop.wala;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.android.AndroidManifest;
 import org.clyze.doop.common.android.AndroidSupport;
-import org.clyze.doop.common.android.LayoutControl;
 
-import java.io.IOException;
 import java.util.*;
 
 import static org.clyze.doop.soot.android.AndroidSupport_Soot.newAndroidManifest;
