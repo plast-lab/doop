@@ -39,7 +39,6 @@ public class WalaAndroidXMLParser extends AndroidSupport {
                 } catch (Exception ex) {
                     System.err.println("Error processing manifest in: " + i);
                     ex.printStackTrace();
-                    continue;
                 }
             }
         }

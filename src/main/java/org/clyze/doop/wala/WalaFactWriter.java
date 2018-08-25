@@ -557,7 +557,6 @@ public class WalaFactWriter extends JavaFactWriter {
                 Collection<IField> flds = s.getDeclaredStaticFields();
                 result.addAll(flds);
             }catch (NullPointerException exc){
-                ;
             }
 
             s = s.getSuperclass();
@@ -568,7 +567,6 @@ public class WalaFactWriter extends JavaFactWriter {
                     Collection<IField> flds = interf.getDeclaredStaticFields();
                     result.addAll(flds);
                 } catch (NullPointerException exc) {
-                    ;
                 }
             }
         }

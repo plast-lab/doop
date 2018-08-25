@@ -164,7 +164,7 @@ public class Main {
                 System.err.println("error: --stdout and -d options are not compatible");
                 throw new DoopErrorCodeException(2);
             }
-            else if ((sootParameters.getInputs().stream().filter(s -> s.endsWith(".apk") || s.endsWith(".aar")).count() > 0) &&
+            else if ((sootParameters.getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
                     (!sootParameters._android)) {
                 System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
                 throw new DoopErrorCodeException(3);

@@ -111,7 +111,6 @@ public class FactWriter extends JavaFactWriter {
         else if (t instanceof PrimType || t instanceof NullType ||
                 t instanceof RefType || t instanceof VoidType || t instanceof BottomType) {
             // taken care of by the standard facts
-            ;
         }
         else {
             throw new RuntimeException("Don't know what to do with type " + t);

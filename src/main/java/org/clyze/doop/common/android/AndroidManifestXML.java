@@ -142,7 +142,7 @@ public class AndroidManifestXML implements AndroidManifest {
         // 'android:onClick' attributes in XML files under /res.
 
         Set<String> ret = new HashSet<>();
-        ZipInputStream zin = null;
+        ZipInputStream zin;
         try {
             zin = new ZipInputStream(new FileInputStream(archive));
         } catch (Exception ex) {

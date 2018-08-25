@@ -504,7 +504,7 @@ class FactGenerator implements Runnable {
         Value right = stmt.getRightOp();
 
         // first make sure we have local variable for the right-hand-side.
-        Local rightLocal = null;
+        Local rightLocal;
 
         if(right instanceof Local)
         {
@@ -592,7 +592,6 @@ class FactGenerator implements Runnable {
                TODO Would be good to check more carefully that a caught
                exception does not occur anywhere else.
             */
-            return;
         }
         else if(left instanceof Local && right instanceof ThisRef)
         {

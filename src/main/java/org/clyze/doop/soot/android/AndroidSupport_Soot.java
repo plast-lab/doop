@@ -92,7 +92,6 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
         } catch (IOException ex) {
             System.err.println("Could not read dex classes in " + apk);
             ex.printStackTrace();
-            return;
         }
     }
 

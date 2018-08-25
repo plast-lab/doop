@@ -147,7 +147,7 @@ public class RLinker {
             newParts[0] = parts[0];
             newParts[1] = parts[2];
             newParts[2] = "=";
-            for (int i = 3; i < parts.length; i++) { newParts[i] = parts[i]; }
+            System.arraycopy(parts, 3, newParts, 3, parts.length - 3);
 
             // Remember int constants.
             if (newParts[0].equals("int") && (newParts.length > 3)) {

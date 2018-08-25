@@ -36,7 +36,7 @@ public class PythonFactGenerator implements Runnable{
     //The classes that are in the class hierarchy by default
     //Useful on our current one-classhierarchy-per-file approach
     private static final String[] DEFAULT_CLASSES = new String[]{"list", "Root", "Exception", "object", "CodeBody", "trampoline"};
-    private static final Set<String> defaultClasses = new HashSet<>(Arrays.asList(DEFAULT_CLASSES));;
+    private static final Set<String> defaultClasses = new HashSet<>(Arrays.asList(DEFAULT_CLASSES));
 
     PythonFactGenerator(PythonFactWriter writer, Set<IClass> iClasses, String outDir, IAnalysisCacheView analysisCache)
     {
@@ -489,7 +489,7 @@ public class PythonFactGenerator implements Runnable{
         if (instruction.hasDef()) {
             for (int i = 0; i < instruction.getNumberOfDefs(); i++) {
                 int def = instruction.getDef(i);
-                String[] names = null;
+                String[] names;
                 Local l = createLocal(ir, instruction, def, typeInference);
                 if(instruction.iindex > -1) {
                     names = ir.getLocalNames(instruction.iindex, def);
