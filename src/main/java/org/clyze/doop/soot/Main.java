@@ -39,20 +39,6 @@ public class Main {
                     continue;
                 }
                 switch (args[i]) {
-                    case "--full":
-                        if (sootParameters._mode != null) {
-                            System.err.println("error: duplicate mode argument");
-                            throw new DoopErrorCodeException(1);
-                        }
-                        sootParameters._mode = SootParameters.Mode.FULL;
-                        break;
-                    case "--main":
-                        i = shift(args, i);
-                        sootParameters._main = args[i];
-                        break;
-                    case "--ssa":
-                        sootParameters._ssa = true;
-                        break;
                     case "-ld":
                         i = shift(args, i);
                         dependencies.add(args[i]);
@@ -83,24 +69,6 @@ public class Main {
                                 dependencies.add(file.getCanonicalPath());
                             }
                         }
-                        break;
-                    case "--allow-phantom":
-                        sootParameters._allowPhantom = true;
-                        break;
-                    case "--run-flowdroid":
-                        sootParameters._runFlowdroid = true;
-                        break;
-                    case "--generate-jimple":
-                        sootParameters._generateJimple = true;
-                        break;
-                    case "--stdout":
-                        sootParameters._toStdout = true;
-                        break;
-                    case "--noFacts":
-                        sootParameters.setNoFacts(true);
-                        break;
-                    case "--ignoreWrongStaticness":
-                        sootParameters._ignoreWrongStaticness = true;
                         break;
                     case "-h":
                     case "--help":

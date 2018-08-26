@@ -71,10 +71,6 @@ public abstract class Parameters {
         return ret;
     }
 
-    public void setNoFacts(boolean b) {
-        this._noFacts = b;
-    }
-
     public boolean noFacts() {
         return _noFacts;
     }
@@ -154,6 +150,9 @@ public abstract class Parameters {
         case "--special-cs-methods":
             i = shift(args, i);
             this._specialCSMethods = args[i];
+            break;
+        case "--noFacts":
+            this._noFacts = true;
             break;
         default:
             return -1;
