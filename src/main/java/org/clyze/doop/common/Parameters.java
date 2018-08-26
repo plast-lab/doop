@@ -28,7 +28,7 @@ public abstract class Parameters {
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
     public Parameters() {
-	setAppRegex("**");
+        setAppRegex("**");
     }
 
     public void setAppRegex(String regex) {
