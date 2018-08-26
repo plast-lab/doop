@@ -113,12 +113,12 @@ public class JavaFactWriter {
         _db.add(CALLBACK_METHOD, callbackMethod);
     }
 
-    public void writeLayoutControl(Integer id, String layoutControl, Integer parentID) {
-        _db.add(LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
+    public void writeLayoutControl(Integer id, String viewClassName, Integer parentID) {
+        _db.add(LAYOUT_CONTROL, id.toString(), viewClassName, parentID.toString());
     }
 
-    public void writeSensitiveLayoutControl(Integer id, String layoutControl, Integer parentID) {
-        _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
+    public void writeSensitiveLayoutControl(Integer id, String viewClassName, Integer parentID) {
+        _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), viewClassName, parentID.toString());
     }
 
     public void writePreliminaryFacts(BasicJavaSupport java, Parameters params) {
