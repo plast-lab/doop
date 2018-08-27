@@ -111,41 +111,41 @@ public class Main {
 
         Iterator<IClass> classes = cha.iterator();
         String outputDir = walaParameters.getOutputDir();
-        Database db = new Database(new File(outputDir));
-        WalaFactWriter walaFactWriter = new WalaFactWriter(db);
-        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
-        System.out.println("Number of classes: " + cha.getNumberOfClasses());
+        try (Database db = new Database(new File(outputDir))) {
+            WalaFactWriter walaFactWriter = new WalaFactWriter(db);
+            WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
-        IAnalysisCacheView cache;
-        if(walaParameters._android)
-            cache = new AnalysisCacheImpl(new DexIRFactory());
-        else
-            cache = new AnalysisCacheImpl();
+            System.out.println("Number of classes: " + cha.getNumberOfClasses());
 
-        IClass klass;
-        int totalClasses = 0;
-        Set<IClass> classesSet = new HashSet<>();
-        while (classes.hasNext()) {
-            klass = classes.next();
-            if (isApplicationClass(walaParameters, klass)) {
-                walaFactWriter.writeApplicationClass(klass);
+            IAnalysisCacheView cache;
+            if (walaParameters._android)
+                cache = new AnalysisCacheImpl(new DexIRFactory());
+            else
+                cache = new AnalysisCacheImpl();
+
+            IClass klass;
+            int totalClasses = 0;
+            Set<IClass> classesSet = new HashSet<>();
+            while (classes.hasNext()) {
+                klass = classes.next();
+                if (isApplicationClass(walaParameters, klass)) {
+                    walaFactWriter.writeApplicationClass(klass);
+                }
+                totalClasses++;
+                classesSet.add(klass);
+                for (IMethod m : klass.getDeclaredMethods()) {
+                    cache.getIR(m);
+                    wipeSoftCaches();
+                }
             }
-            totalClasses++;
-            classesSet.add(klass);
-            for(IMethod m: klass.getDeclaredMethods()) {
-                cache.getIR(m);
-                wipeSoftCaches();
-            }
+
+            WalaDriver driver = new WalaDriver(walaThreadFactory, totalClasses, false, walaParameters._cores, walaParameters._android, cache);
+
+            driver.doInParallel(classesSet);
+            driver.shutdown();
+            db.flush();
         }
-
-        WalaDriver driver = new WalaDriver(walaThreadFactory, totalClasses, false, walaParameters._cores, walaParameters._android, cache);
-
-        driver.doInParallel(classesSet);
-        driver.shutdown();
-        db.flush();
-        db.close();
-
     }
 
     private static void wipeSoftCaches() {

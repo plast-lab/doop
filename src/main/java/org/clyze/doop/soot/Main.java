@@ -251,53 +251,52 @@ public class Main {
         catch (Exception ex) {
             System.out.println("Not all bodies retrieved");
         }
-        Database db = new Database(new File(sootParameters.getOutputDir()));
-        FactWriter writer = new FactWriter(db);
-        ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
-        Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
 
-        writer.writePreliminaryFacts(classes, java, sootParameters);
-        db.flush();
+        try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
+            FactWriter writer = new FactWriter(db);
+            ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
+            Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
 
-        if (sootParameters._android) {
-            if (sootParameters.getRunFlowdroid()) {
-                driver.doAndroidInSequentialOrder(android.getDummyMain(), classes, writer, sootParameters._ssa);
-                db.close();
-                return;
-            } else {
-                android.writeComponents(writer, sootParameters);
-            }
-        }
+            writer.writePreliminaryFacts(classes, java, sootParameters);
+            db.flush();
 
-        if (!sootParameters.noFacts()) {
-            scene.getOrMakeFastHierarchy();
-            // avoids a concurrent modification exception, since we may
-            // later be asking soot to add phantom classes to the scene's hierarchy
-            driver.doInParallel(classes);
-            if (sootParameters._generateJimple) {
-                Set<SootClass> jimpleClasses = new HashSet<>(classes);
-                if (sootParameters._factsSubSet == null) {
-                    List<String> allClassNames = new ArrayList<>();
-                    Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
-                    for (String artifact : artifactToClassMap.keySet()) {
-        //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
-                        Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
-                        allClassNames.addAll(artEntries);
-                    }
-                    forceResolveClasses(allClassNames, jimpleClasses, scene);
-                    System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
+            if (sootParameters._android) {
+                if (sootParameters.getRunFlowdroid()) {
+                    driver.doAndroidInSequentialOrder(android.getDummyMain(), classes, writer, sootParameters._ssa);
+                    return;
+                } else {
+                    android.writeComponents(writer, sootParameters);
                 }
-                driver.writeInParallel(jimpleClasses);
-                DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
             }
+
+            if (!sootParameters.noFacts()) {
+                scene.getOrMakeFastHierarchy();
+                // avoids a concurrent modification exception, since we may
+                // later be asking soot to add phantom classes to the scene's hierarchy
+                driver.doInParallel(classes);
+                if (sootParameters._generateJimple) {
+                    Set<SootClass> jimpleClasses = new HashSet<>(classes);
+                    if (sootParameters._factsSubSet == null) {
+                        List<String> allClassNames = new ArrayList<>();
+                        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
+                        for (String artifact : artifactToClassMap.keySet()) {
+                            //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
+                            Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
+                            allClassNames.addAll(artEntries);
+                        }
+                        forceResolveClasses(allClassNames, jimpleClasses, scene);
+                        System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
+                    }
+                    driver.writeInParallel(jimpleClasses);
+                    DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
+                }
+            }
+
+            writer.writeLastFacts(java);
+        } finally {
+            // Clean up any temporary directories used for AAR extraction.
+            Helper.cleanUp(tmpDirs);
         }
-
-        writer.writeLastFacts(java);
-
-        db.close();
-
-        // Clean up any temporary directories used for AAR extraction.
-        Helper.cleanUp(tmpDirs);
     }
 
     private static boolean sootClassPathFirstElement = true;
