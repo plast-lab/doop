@@ -2,6 +2,7 @@ package org.clyze.doop.common.android;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -25,7 +26,8 @@ public class AppResourcesXML implements AppResources {
     private Set<String> providers  = new HashSet<>();
     private Set<String> receivers  = new HashSet<>();
     private Set<String> services   = new HashSet<>();
-    private boolean verbose = false;
+    private static boolean verbose = false;
+    static final Map<String, String> replaceMap = new ConcurrentHashMap<>();
     private int failures = 0;
 
     public static AppResourcesXML fromAAR(String archiveLocation)
@@ -123,7 +125,7 @@ public class AppResourcesXML implements AppResources {
             for (String v : altLayouts ) {
                 String l = entry.replaceAll("res/layout/", "res/layout-"+v+"/");
                 try {
-                    return isApk? getXML(l) : getZipEntryInputStream(l);
+                    return getXML(l);
                 } catch (Exception ex0) { }
             }
         }
@@ -145,11 +147,26 @@ public class AppResourcesXML implements AppResources {
         }
     }
 
+    static void registerReplacement(String a, String b) {
+        replaceMap.put(" " + a + ":", " " + b + ":");
+    }
+
+    // This initializes the namespace-prefix replacement map. This replacement fixes
+    // parsing of the XML given to us by apk-parser (which expands namespace URLs).
+    static {
+        registerReplacement("http://schemas.android.com/apk/res-auto", "res-auto");
+        registerReplacement("http://schemas.android.com/apk/res/android", "android");
+    }
+
     private InputStream getBinaryXML(String entry) throws IOException {
+        final String namespace = "http://schemas.android.com/apk/res/android:";
         try (ApkFile apkFile = new ApkFile(archive)) {
             String xml = apkFile.transBinaryXml(entry);
+            // Handle expanded Android namespaces
+            for (Map.Entry<String, String> e : replaceMap.entrySet())
+                xml = xml.replace(e.getKey(), e.getValue());
             if (verbose)
-                System.out.println("xml: " + xml);
+                System.out.println("xml [" + entry + "]: " + xml);
             return new ByteArrayInputStream(xml.getBytes());
         }
     }
@@ -200,8 +217,6 @@ public class AppResourcesXML implements AppResources {
         // Parse each XML to find possible callbacks.
         for (String resXML : resXMLs) {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            if (verbose)
-                System.out.println("Reading resXML: " + resXML);
             InputStream is = getXML(resXML);
             try {
                 Document doc = dbf.newDocumentBuilder().parse(is);
@@ -223,14 +238,14 @@ public class AppResourcesXML implements AppResources {
                 if (name.startsWith("res/layout") && name.endsWith(".xml"))
                     layoutFiles.add(name);
             }
-            if (verbose)
-                System.out.println("layoutFiles size: " + layoutFiles.size() + ", failures = " + failures);
             for (String layoutFile : layoutFiles)
                 try {
                     getUserControlsForLayoutFile(layoutFile, -1, controls);
                 } catch (Exception ex) {
                     handleException(ex);
                 }
+            if (verbose)
+                System.out.println("layoutFiles size: " + layoutFiles.size() + ", failures = " + failures);
         } catch (IOException ex) {
             System.err.println("Error while reading user controls in : " + archive);
             handleException(ex);
