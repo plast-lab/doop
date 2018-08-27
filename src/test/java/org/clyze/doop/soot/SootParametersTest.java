@@ -32,9 +32,9 @@ public class SootParametersTest {
         assertEquals(2, sootParameters._cores.intValue());
 
         assertEquals(6, i4);
-        assertEquals(true, sootParameters._ignoreWrongStaticness);
+        assertTrue(sootParameters._ignoreWrongStaticness);
 
         assertEquals(7, i5);
-        assertEquals(true, sootParameters._generateJimple);
+        assertTrue(sootParameters._generateJimple);
     }
 }
