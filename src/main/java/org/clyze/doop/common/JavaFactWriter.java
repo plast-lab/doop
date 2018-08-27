@@ -122,9 +122,7 @@ public class JavaFactWriter {
     }
 
     public void writePreliminaryFacts(BasicJavaSupport java, Parameters params) {
-
         PropertyProvider propertyProvider = java.getPropertyProvider();
-        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
 
         // Read all stored properties files
         for (Map.Entry<String, Properties> entry : propertyProvider.getProperties().entrySet()) {
@@ -137,17 +135,26 @@ public class JavaFactWriter {
             }
         }
 
-        System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
-        for (String artifact : artifactToClassMap.keySet())
-            for (ArtifactEntry ae : artifactToClassMap.get(artifact))
-                writeClassArtifact(artifact, ae.className, ae.subArtifact);
-
         try {
             processSeeds(params._seed);
             processSpecialCSMethods(params._specialCSMethods);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+
+    /**
+     * Last step of writing facts, after all classes have been processed.
+     *
+     * @param java  the object supporting basic Java functionality
+     */
+    public void writeLastFacts(BasicJavaSupport java) {
+        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
+
+        System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
+        for (String artifact : artifactToClassMap.keySet())
+            for (ArtifactEntry ae : artifactToClassMap.get(artifact))
+                writeClassArtifact(artifact, ae.className, ae.subArtifact);
     }
 
     // The extra sensitive controls are given as a String

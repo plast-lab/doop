@@ -292,6 +292,8 @@ public class Main {
             }
         }
 
+        writer.writeLastFacts(java);
+
         db.close();
 
         // Clean up any temporary directories used for AAR extraction.
