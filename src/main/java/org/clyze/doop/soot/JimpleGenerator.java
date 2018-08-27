@@ -1,6 +1,5 @@
 package org.clyze.doop.soot;
 
-import soot.PackManager;
 import soot.SootClass;
 import soot.SootMethod;
 
