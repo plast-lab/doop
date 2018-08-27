@@ -548,8 +548,7 @@ public class WalaFactWriter extends JavaFactWriter {
     //To be used instead of IClass.getAllFields()to avoid NullPointerExceptions in Android
     static Collection <IField> getAllFieldsOfClass(IClass cl)
     {
-        Collection <IField> result = new LinkedList<>();
-        result.addAll(cl.getAllInstanceFields());
+        Collection<IField> result = new LinkedList<>(cl.getAllInstanceFields());
 
         IClass s = cl;
         while (s != null) {
@@ -1090,8 +1089,7 @@ public class WalaFactWriter extends JavaFactWriter {
                 }
                 if(targetClass.isAbstract() && ! targetClass.isInterface())
                 {
-                    Queue<IClass> classQueue = new LinkedList<>();
-                    classQueue.addAll(targetClass.getDirectInterfaces());
+                    Queue<IClass> classQueue = new LinkedList<>(targetClass.getDirectInterfaces());
                     if(!classQueue.isEmpty())
                     {
                         boolean found = false;
