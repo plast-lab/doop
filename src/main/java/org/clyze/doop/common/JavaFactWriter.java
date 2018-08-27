@@ -46,7 +46,7 @@ public class JavaFactWriter {
             return "<<METHOD HASH:" + methodRaw.hashCode() + ">>";
     }
 
-    public void writeClassArtifact(String artifact, String className, String subArtifact) {
+    private void writeClassArtifact(String artifact, String className, String subArtifact) {
         _db.add(CLASS_ARTIFACT, artifact, className, subArtifact);
     }
 
