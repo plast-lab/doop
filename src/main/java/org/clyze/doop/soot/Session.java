@@ -12,7 +12,7 @@ public class Session extends SessionCounter {
   /** keeps the unique index of an instruction in the method. This cannot be computed up front,
       because temporary variables (and assignments to them from constants) will be inserted
       while the Jimple code is being processed. */
-  private Map<Unit, Integer> _units = new HashMap<Unit, Integer>();
+  private Map<Unit, Integer> _units = new HashMap<>();
   private int index = 0;
 
   public int calcUnitNumber(Unit u)

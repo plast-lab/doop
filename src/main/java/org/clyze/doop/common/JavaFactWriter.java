@@ -187,7 +187,7 @@ public class JavaFactWriter {
         if (seed != null) {
             System.out.println("Reading seeds from: " + seed);
             try (Stream<String> stream = Files.lines(Paths.get(seed))) {
-                stream.forEach(line -> processSeedFileLine(line));
+                stream.forEach(this::processSeedFileLine);
             }
         }
     }
@@ -203,7 +203,7 @@ public class JavaFactWriter {
         if (csMethods != null) {
             System.out.println("Reading special methods from: " + csMethods);
             try (Stream<String> stream = Files.lines(Paths.get(csMethods))) {
-                stream.forEach(line -> processSpecialSensitivityMethodFileLine(line));
+                stream.forEach(this::processSpecialSensitivityMethodFileLine);
             }
         }
     }

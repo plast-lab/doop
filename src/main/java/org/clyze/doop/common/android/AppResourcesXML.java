@@ -299,7 +299,7 @@ public class AppResourcesXML implements AppResources {
             System.out.println("id = " + id);
             if (id.startsWith("@+"))
                 id = id.substring(2);
-            if (id.indexOf("/") != -1) {
+            if (id.contains("/")) {
                 String[] parts = id.split("/");
                 Integer c = RLinker.getInstance().lookupConst(packageName, parts[0], parts[1]);
                 if (c != null)
@@ -307,7 +307,7 @@ public class AppResourcesXML implements AppResources {
             }
 
             // Add a layout control with empty attributes.
-            Map<String, Object> attrs = new HashMap<String, Object>();
+            Map<String, Object> attrs = new HashMap<>();
             controls.add(new AndroidLayoutControl(intId, name, isSensitive(node), attrs, parentId));
 
             // Heuristic: if the name is unqualified, it comes from

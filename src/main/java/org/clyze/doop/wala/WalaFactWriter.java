@@ -548,7 +548,7 @@ public class WalaFactWriter extends JavaFactWriter {
     //To be used instead of IClass.getAllFields()to avoid NullPointerExceptions in Android
     static Collection <IField> getAllFieldsOfClass(IClass cl)
     {
-        Collection <IField> result = new LinkedList<IField>();
+        Collection <IField> result = new LinkedList<>();
         result.addAll(cl.getAllInstanceFields());
 
         IClass s = cl;

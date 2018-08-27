@@ -159,7 +159,7 @@ public class RLinker {
             }
 
             // Generate Java code.
-            Map<String, Set<String>> pkgEntry = rs.getOrDefault(pkg, new HashMap<String, Set<String>>());
+            Map<String, Set<String>> pkgEntry = rs.getOrDefault(pkg, new HashMap<>());
             Set<String> set = pkgEntry.getOrDefault(nestedR, new HashSet<>());
             set.add("        public static " + String.join(delim, newParts) + ";");
             pkgEntry.put(nestedR, set);

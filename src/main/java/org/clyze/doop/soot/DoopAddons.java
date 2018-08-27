@@ -41,12 +41,7 @@ public class DoopAddons {
             while (methodIt.hasNext()) {
                 final SootMethod m = methodIt.next();
                 if( m.isConcrete() ) {
-                    executor.execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                m.retrieveActiveBody();
-                            }
-                        });
+                    executor.execute(m::retrieveActiveBody);
                 }
             }
         }
