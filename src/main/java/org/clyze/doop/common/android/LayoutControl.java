@@ -11,6 +11,8 @@ public abstract class LayoutControl {
     abstract public boolean isSensitive();
     abstract public String getViewClassName();
     abstract public int getParentID();
+    abstract public String getAppRId();
+    abstract public String getAndroidRId();
     abstract public Map<String, Object> getAdditionalAttributes();
 
     @Override

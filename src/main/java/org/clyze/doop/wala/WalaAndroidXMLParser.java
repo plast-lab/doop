@@ -1,12 +1,10 @@
 package org.clyze.doop.wala;
 
 import org.clyze.doop.common.BasicJavaSupport;
-import org.clyze.doop.common.android.AndroidManifest;
+import org.clyze.doop.common.android.AppResources;
 import org.clyze.doop.common.android.AndroidSupport;
 
 import java.util.*;
-
-import static org.clyze.doop.soot.android.AndroidSupport_Soot.newAndroidManifest;
 
 /*
  * Parses all the XML files of each input file to find all the information we want about
@@ -31,11 +29,11 @@ public class WalaAndroidXMLParser extends AndroidSupport {
         // components (e.g. activities) from AAR libraries.
         for (String i : parameters.getInputs()) {
             if (i.endsWith(".apk") || i.endsWith(".aar")) {
-                System.out.println("Processing manifest in " + i);
+                System.out.println("Processing resources in " + i);
                 try {
-                    AndroidManifest manifest = getAndroidManifest(i);
-                    processManifest(i, manifest, pkgs, null);
-                    manifest.printManifestHeader();
+                    AppResources resources = processAppResources(i);
+                    processAppResources(i, resources, pkgs, null);
+                    resources.printManifestHeader();
                 } catch (Exception ex) {
                     System.err.println("Error processing manifest in: " + i);
                     ex.printStackTrace();
@@ -46,10 +44,5 @@ public class WalaAndroidXMLParser extends AndroidSupport {
 
     public void writeComponents() {
         super.writeComponents(factWriter, parameters);
-    }
-
-    @Override
-    public AndroidManifest getAndroidManifest(String archiveLocation) throws Exception {
-        return newAndroidManifest(archiveLocation);
     }
 }

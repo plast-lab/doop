@@ -2,7 +2,7 @@
 
 package org.clyze.doop.soot.android;
 
-import org.clyze.doop.common.android.AndroidManifest;
+import org.clyze.doop.common.android.AppResources;
 import org.clyze.doop.common.android.LayoutControl;
 import soot.jimple.infoflow.android.axml.AXmlNode;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
@@ -15,13 +15,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class AndroidManifestAXML implements AndroidManifest {
+public class AppResourcesAXML implements AppResources {
     private ProcessManifest pm;
     private DirectLayoutFileParser lfp;
     private ARSCFileParser resParser;
     private String apkLocation;
 
-    public AndroidManifestAXML(String apkLocation) throws IOException, org.xmlpull.v1.XmlPullParserException {
+    public AppResourcesAXML(String apkLocation) throws IOException, org.xmlpull.v1.XmlPullParserException {
         this.apkLocation = apkLocation;
         this.pm = new ProcessManifest(apkLocation);
     }
@@ -105,6 +105,8 @@ public class AndroidManifestAXML implements AndroidManifest {
         public boolean isSensitive() { return plc.isSensitive(); }
         public String getViewClassName() { return plc.getViewClassName(); }
         public int getParentID() { return plc.getParentID(); }
+        public String getAppRId() { return ""; }
+        public String getAndroidRId() { return ""; }
         public Map<String, Object> getAdditionalAttributes() {
             return plc.getAdditionalAttributes();
         }

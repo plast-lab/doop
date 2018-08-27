@@ -3,9 +3,6 @@ package org.clyze.doop.common.android;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
-import org.clyze.doop.common.android.AndroidManifest;
-import org.clyze.doop.common.android.LayoutControl;
-import org.clyze.doop.common.android.RLinker;
 import org.clyze.utils.AARUtils;
 
 import java.io.IOException;
@@ -36,15 +33,15 @@ public abstract class AndroidSupport {
         // R class linker used for AAR inputs.
         RLinker rLinker = RLinker.getInstance();
 
-        // We merge the information from all manifests, not just
+        // We merge the information from all resource files, not just
         // the application's. There are Android apps that use
         // components (e.g. activities) from AAR libraries.
         for (String i : inputsAndLibs) {
             if (i.endsWith(".apk") || i.endsWith(".aar")) {
-                System.out.println("Processing manifest in " + i);
-                AndroidManifest manifest = getAndroidManifest(i);
-                processManifest(i, manifest, pkgs, rLinker);
-                manifest.printManifestHeader();
+                System.out.println("Processing application resources in " + i);
+                AppResources resources = processAppResources(i);
+                processAppResources(i, resources, pkgs, rLinker);
+                resources.printManifestHeader();
             }
         }
 
@@ -64,7 +61,7 @@ public abstract class AndroidSupport {
         parameters.getInputs().subList(1, parameters.getInputs().size()).clear();
     }
 
-    public void processManifest(String input, AndroidManifest manifest, Map<String, String> pkgs, RLinker rLinker) {
+    public void processAppResources(String input, AppResources manifest, Map<String, String> pkgs, RLinker rLinker) {
         String appPackageName = manifest.getPackageName();
         pkgs.put(input, appPackageName);
 
@@ -103,9 +100,9 @@ public abstract class AndroidSupport {
 
     public void writeComponents(JavaFactWriter writer, Parameters parameters) {
         for (String appInput : parameters.getInputs()) {
-            AndroidManifest processMan;
+            AppResources processMan;
             try {
-                processMan = getAndroidManifest(appInput);
+                processMan = processAppResources(appInput);
             } catch (Exception ex) {
                 System.err.println("Error processing manifest in: " + appInput);
                 ex.printStackTrace();
@@ -135,16 +132,27 @@ public abstract class AndroidSupport {
             for (String callbackMethod : appCallbackMethods)
                 writer.writeCallbackMethod(callbackMethod);
 
-            for (LayoutControl possibleLayoutControl : appUserControls) {
-                writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
-                if (possibleLayoutControl.isSensitive()) {
-                    writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
+            for (LayoutControl control : appUserControls) {
+                writer.writeLayoutControl(control.getID(), control.getViewClassName(), control.getParentID(), control.getAppRId(), control.getAndroidRId());
+                if (control.isSensitive()) {
+                    writer.writeSensitiveLayoutControl(control.getID(), control.getViewClassName(), control.getParentID());
                 }
             }
             writer.writeExtraSensitiveControls(parameters);
         }
     }
 
-    public abstract AndroidManifest getAndroidManifest(String archiveLocation) throws Exception;
+    // Parses Android manifests. Supports binary and plain-text XML
+    // files (found in .apk and .aar files respectively).
+    public AppResources processAppResources(String archiveLocation) throws Exception {
+        String path = archiveLocation.toLowerCase();
+        if (path.endsWith(".apk"))
+            return AppResourcesXML.fromAPK(archiveLocation);
+        else if (path.endsWith(".aar"))
+            return AppResourcesXML.fromAAR(archiveLocation);
+        else
+            throw new RuntimeException("Unknown archive format: " + archiveLocation);
+
+    }
 
 }

@@ -113,7 +113,7 @@ public class JavaFactWriter {
         _db.add(CALLBACK_METHOD, callbackMethod);
     }
 
-    public void writeLayoutControl(Integer id, String viewClassName, Integer parentID) {
+    public void writeLayoutControl(Integer id, String viewClassName, Integer parentID, String appRId, String androidRId) {
         _db.add(LAYOUT_CONTROL, id.toString(), viewClassName, parentID.toString());
     }
 
