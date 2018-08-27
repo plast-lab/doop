@@ -119,7 +119,7 @@ public class AppResourcesXML implements AppResources {
 
     private InputStream getLayout(String entry) {
         try {
-            return getZipEntryInputStream(entry);
+            return getXML(entry);
         } catch (Exception ex) {
             final String[] altLayouts = { "v11", "v16", "v17", "v21", "v22" };
             for (String v : altLayouts ) {
