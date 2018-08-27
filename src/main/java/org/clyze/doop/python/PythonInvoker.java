@@ -15,20 +15,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import static org.clyze.doop.common.Parameters.shift;
+
 public class PythonInvoker {
 
     protected Log logger;
 
     public PythonInvoker() {
         logger =  LogFactory.getLog(getClass());
-    }
-
-    private static int shift(String[] args, int index) throws DoopErrorCodeException {
-        if(args.length == index + 1) {
-            System.err.println("error: option " + args[index] + " requires an argument");
-            throw new DoopErrorCodeException(9);
-        }
-        return index + 1;
     }
 
     public void main(String[] args) throws IOException {
