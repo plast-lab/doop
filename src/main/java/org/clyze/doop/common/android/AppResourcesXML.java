@@ -159,7 +159,6 @@ public class AppResourcesXML implements AppResources {
     }
 
     private InputStream getBinaryXML(String entry) throws IOException {
-        final String namespace = "http://schemas.android.com/apk/res/android:";
         try (ApkFile apkFile = new ApkFile(archive)) {
             String xml = apkFile.transBinaryXml(entry);
             // Handle expanded Android namespaces
