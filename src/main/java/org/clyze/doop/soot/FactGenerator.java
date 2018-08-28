@@ -19,7 +19,6 @@ class FactGenerator implements Runnable {
     private FactWriter _writer;
     private boolean _ssa;
     private Set<SootClass> _sootClasses;
-    private final int maxRetries = 10;
 
     FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses)
     {
@@ -83,6 +82,7 @@ class FactGenerator implements Runnable {
                     }
                 } catch (Exception exc) {
                     numRetries++;
+                    int maxRetries = 10;
                     if (numRetries > maxRetries) {
                         System.err.println("\nGiving up...\n");
                         throw exc;

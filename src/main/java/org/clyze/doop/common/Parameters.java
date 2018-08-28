@@ -14,7 +14,6 @@ public abstract class Parameters {
     private List<String> _dependencies = new ArrayList<>();
     protected String _outputDir = null;
     private String _extraSensitiveControls = "";
-    private String appRegex;
     public ClassFilter applicationClassFilter;
     public boolean _android = false;
     public Integer _cores = null;
@@ -32,8 +31,8 @@ public abstract class Parameters {
     }
 
     public void setAppRegex(String regex) {
-        this.appRegex = regex;
-        this.applicationClassFilter = new GlobClassFilter(this.appRegex);
+        String appRegex = regex;
+        this.applicationClassFilter = new GlobClassFilter(appRegex);
     }
 
     public void setInputs(List<String> inputs) {
