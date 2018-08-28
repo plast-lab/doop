@@ -85,14 +85,12 @@ public class RLinker {
             // Compile JAR and optionally copy to output directory.
             String tmpJarName = tmpDir + "/" + Constants.R_AUTOGEN_JAR;
             runProcess("jar cf " + tmpJarName + " -C " + tmpDir + " .");
-            if (rDir != null) {
-                String outJarName = rDir + "/" + Constants.R_AUTOGEN_JAR;
-                try {
-                    FileUtils.copyFile(new File(tmpJarName), new File(outJarName));
-                    return outJarName;
-                } catch (IOException ex) {
-                    System.err.println("Failed to copy " + tmpJarName + " to " + outJarName + " : " + ex.getMessage());
-                }
+            String outJarName = rDir + "/" + Constants.R_AUTOGEN_JAR;
+            try {
+                FileUtils.copyFile(new File(tmpJarName), new File(outJarName));
+                return outJarName;
+            } catch (IOException ex) {
+                System.err.println("Failed to copy " + tmpJarName + " to " + outJarName + " : " + ex.getMessage());
             }
 
             return tmpJarName;
