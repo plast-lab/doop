@@ -27,7 +27,7 @@ public class AppResourcesXML implements AppResources {
     private final Set<String> receivers  = new HashSet<>();
     private final Set<String> services   = new HashSet<>();
     private static final boolean verbose = false;
-    static final Map<String, String> replaceMap = new ConcurrentHashMap<>();
+    private static final Map<String, String> replaceMap = new ConcurrentHashMap<>();
     private int failures = 0;
 
     public static AppResourcesXML fromAAR(String archiveLocation)
