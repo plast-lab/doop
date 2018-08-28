@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class AppResourcesAXML implements AppResources {
-    private ProcessManifest pm;
+    private final ProcessManifest pm;
     private DirectLayoutFileParser lfp;
     private ARSCFileParser resParser;
     private final String apkLocation;
