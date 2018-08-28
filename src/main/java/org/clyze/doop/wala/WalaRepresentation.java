@@ -19,7 +19,6 @@ import org.clyze.persistent.model.doop.DynamicMethodInvocation;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.clyze.doop.wala.WalaUtils.createMethodSignature;
 import static org.clyze.doop.wala.WalaUtils.fixTypeString;
 
 class WalaRepresentation extends JavaRepresentation {
