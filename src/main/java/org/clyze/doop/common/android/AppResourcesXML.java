@@ -281,6 +281,8 @@ public class AppResourcesXML implements AppResources {
                 if (includedLayout.startsWith("@layout/")) {
                     String layoutFile = "res/" + includedLayout.substring(1);
                     getUserControlsForLayoutFile(layoutFile, parentId, controls);
+                } else if (includedLayout.startsWith("res/layout/")) {
+                    getUserControlsForLayoutFile(includedLayout, parentId, controls);
                 } else {
                     System.err.println("unsupported include: " + includedLayout);
                 }
