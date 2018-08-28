@@ -22,9 +22,6 @@ import soot.options.Options;
  */
 class DoopAddons {
 
-    private static boolean getInitialValueString_warned = false;
-    private static boolean foundFile_warned = false;
-
     public static void retrieveAllSceneClassesBodies() {
         // The old coffi front-end is not thread-safe
         int threadNum = Options.v().coffi() ? 1 : Runtime.getRuntime().availableProcessors();
