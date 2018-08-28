@@ -265,7 +265,7 @@ public class Main {
                     driver.doAndroidInSequentialOrder(android.getDummyMain(), classes, writer, sootParameters._ssa);
                     return;
                 } else {
-                    android.writeComponents(writer, sootParameters);
+                    Objects.requireNonNull(android).writeComponents(writer, sootParameters);
                 }
             }
 
