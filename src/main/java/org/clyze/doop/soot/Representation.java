@@ -240,7 +240,6 @@ class Representation extends JavaRepresentation {
 
     private String heapAlloc(SootMethod inMethod, Type type, SessionCounter counter)
     {
-        String s = type.toString();
         return heapAllocId(getMethodSignature(inMethod), type.toString(), counter);
     }
 }
