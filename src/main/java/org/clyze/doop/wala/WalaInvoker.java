@@ -36,10 +36,8 @@ public class WalaInvoker {
     }
 
     private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
-        //walaParameters.applicationClassFilter = new GlobClassFilter(walaParameters.appRegex);
         // Change package delimiter from "/" to "."
-        //return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
-        return(klass.getClassLoader().getName().toString().equals("Application"));
+        return walaParameters.isApplicationClass(WalaUtils.fixTypeString(klass.getName().toString()));
     }
 
     public void main(String[] args) throws IOException {
