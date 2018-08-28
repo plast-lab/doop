@@ -822,8 +822,8 @@ public class WalaFactWriter extends JavaFactWriter {
         Local caught = createLocal(ir, catchInstr, catchInstr.getDef(),typeInference);
 
         SSAInstruction[] instructions = ir.getInstructions();
-        SSAInstruction startInstr = null;
-        SSAInstruction endInstr = null;
+        SSAInstruction startInstr;
+        SSAInstruction endInstr;
 
         Integer[] scopeArray = exceptionHelper.computeScopeForExceptionHandler(handlerBlock.getFirstInstructionIndex());
         if(scopeArray.length == 0)
@@ -1126,20 +1126,19 @@ public class WalaFactWriter extends JavaFactWriter {
 
         if (instruction instanceof SSAInvokeDynamicInstruction) { //Had to put these first because wala considers them static
 //            MethodReference dynInfo = instruction.getDeclaredTarget();
-            MethodReference dynInfo = targetRef;
-            String dynArity = String.valueOf(dynInfo.getNumberOfParameters());
+            String dynArity = String.valueOf(targetRef.getNumberOfParameters());
 
             StringBuilder parameterTypes = new StringBuilder();
-            for (int i = 0; i < dynInfo.getNumberOfParameters(); i++) {
+            for (int i = 0; i < targetRef.getNumberOfParameters(); i++) {
                 if (i==0) {
-                    parameterTypes.append(fixTypeString(dynInfo.getParameterType(i).toString()));
+                    parameterTypes.append(fixTypeString(targetRef.getParameterType(i).toString()));
                 }
                 else {
-                    parameterTypes.append(", ").append(fixTypeString(dynInfo.getParameterType(i).toString()));
+                    parameterTypes.append(", ").append(fixTypeString(targetRef.getParameterType(i).toString()));
                 }
             }
             String sig = getBootstrapSig(((SSAInvokeDynamicInstruction) instruction).getBootstrap(),inMethod.getClassHierarchy());
-            _db.add(DYNAMIC_METHOD_INV, insn, str(index), sig, dynInfo.getName().toString(), fixTypeString(dynInfo.getReturnType().toString()), dynArity, parameterTypes.toString(), methodId);
+            _db.add(DYNAMIC_METHOD_INV, insn, str(index), sig, targetRef.getName().toString(), fixTypeString(targetRef.getReturnType().toString()), dynArity, parameterTypes.toString(), methodId);
         }
         else if (instruction.isStatic()) {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
