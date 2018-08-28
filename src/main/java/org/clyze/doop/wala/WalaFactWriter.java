@@ -21,7 +21,6 @@ import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
 import org.clyze.doop.common.SessionCounter;
 
-import javax.sound.midi.SysexMessage;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
