@@ -81,7 +81,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
                 Set<? extends DexBackedClassDef> dexClasses = dexContainer.getBase().getClasses();
                 allDexClasses.addAll(dexClasses);
                 for (DexBackedClassDef dexBackedClassDef : dexClasses) {
-                    String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor((dexBackedClassDef).getType()).getEscapedName();
+                    String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor((dexBackedClassDef).getType()).toQuotedString();
                     SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
                     classes.add(c);
                     java.registerArtifactClass(artifact, escapeClassName, dexContainer.getDexName());
