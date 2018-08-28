@@ -10,15 +10,15 @@ import java.util.*;
 
 public abstract class AndroidSupport {
 
-    protected Parameters parameters;
-    protected BasicJavaSupport java;
+    protected final Parameters parameters;
+    protected final BasicJavaSupport java;
 
-    protected Set<String> appServices = new HashSet<>();
-    protected Set<String> appActivities = new HashSet<>();
-    protected Set<String> appContentProviders = new HashSet<>();
-    protected Set<String> appBroadcastReceivers = new HashSet<>();
-    protected Set<String> appCallbackMethods = new HashSet<>();
-    protected Set<LayoutControl> appUserControls = new HashSet<>();
+    protected final Set<String> appServices = new HashSet<>();
+    protected final Set<String> appActivities = new HashSet<>();
+    protected final Set<String> appContentProviders = new HashSet<>();
+    protected final Set<String> appBroadcastReceivers = new HashSet<>();
+    protected final Set<String> appCallbackMethods = new HashSet<>();
+    protected final Set<LayoutControl> appUserControls = new HashSet<>();
 
     public AndroidSupport(Parameters parameters, BasicJavaSupport java) {
         this.parameters = parameters;

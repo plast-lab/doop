@@ -19,7 +19,7 @@ public class AppResourcesAXML implements AppResources {
     private ProcessManifest pm;
     private DirectLayoutFileParser lfp;
     private ARSCFileParser resParser;
-    private String apkLocation;
+    private final String apkLocation;
 
     public AppResourcesAXML(String apkLocation) throws IOException, org.xmlpull.v1.XmlPullParserException {
         this.apkLocation = apkLocation;
@@ -97,7 +97,7 @@ public class AppResourcesAXML implements AppResources {
      * Thin wrapper over Soot's PossibleLayoutControl.
      */
     private class SootLayoutControl extends LayoutControl {
-        private PossibleLayoutControl plc;
+        private final PossibleLayoutControl plc;
         SootLayoutControl(PossibleLayoutControl plc) {
             this.plc = plc;
         }

@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Properties;
 
 public class PropertyProvider {
-    private Map<String, Properties> _properties;
+    private final Map<String, Properties> _properties;
 
     public PropertyProvider() {
         _properties = new HashMap<>();

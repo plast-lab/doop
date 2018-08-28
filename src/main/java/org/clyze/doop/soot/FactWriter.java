@@ -26,8 +26,8 @@ import static org.clyze.doop.common.PredicateFile.*;
  * database.
  */
 public class FactWriter extends JavaFactWriter {
-    private Representation _rep;
-    private Map<String, Type> _varTypeMap;
+    private final Representation _rep;
+    private final Map<String, Type> _varTypeMap;
 
     FactWriter(Database db) {
         super(db);

@@ -22,10 +22,10 @@ public class AppResourcesXML implements AppResources {
     private File archive;
     private boolean isApk;
     private String applicationName, packageName;
-    private Set<String> activities = new HashSet<>();
-    private Set<String> providers  = new HashSet<>();
-    private Set<String> receivers  = new HashSet<>();
-    private Set<String> services   = new HashSet<>();
+    private final Set<String> activities = new HashSet<>();
+    private final Set<String> providers  = new HashSet<>();
+    private final Set<String> receivers  = new HashSet<>();
+    private final Set<String> services   = new HashSet<>();
     private static boolean verbose = false;
     static final Map<String, String> replaceMap = new ConcurrentHashMap<>();
     private int failures = 0;
@@ -354,13 +354,13 @@ public class AppResourcesXML implements AppResources {
     }
 
     private static class AndroidLayoutControl extends LayoutControl {
-        private int id;
-        private String viewClass;
-        private boolean sensitive;
-        private Map<String, Object> attrs;
-        private int parentId;
-        private String appRId = "";
-        private String androidRId = "";
+        private final int id;
+        private final String viewClass;
+        private final boolean sensitive;
+        private final Map<String, Object> attrs;
+        private final int parentId;
+        private final String appRId = "";
+        private final String androidRId = "";
 
         public AndroidLayoutControl(int id, String viewClass, boolean sensitive, Map<String, Object> attrs, int parentId) {
             this.id = id;

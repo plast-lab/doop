@@ -5,9 +5,9 @@ import java.util.Set;
 
 public class ArtifactEntry {
     // Class name inside an artifact.
-    public String className;
+    public final String className;
     // Sub artifact (such as "classes.dex" in an APK or "classes.jar" in an AAR).
-    public String subArtifact;
+    public final String subArtifact;
 
     public ArtifactEntry(String className, String subArtifact) {
         this.className = className;

@@ -14,7 +14,7 @@ import static org.clyze.doop.common.PredicateFile.*;
  */
 public class JavaFactWriter {
 
-    protected Database _db;
+    protected final Database _db;
 
     public JavaFactWriter(Database db) {
         this._db = db;

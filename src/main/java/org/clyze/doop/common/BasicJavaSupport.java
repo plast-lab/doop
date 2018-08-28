@@ -17,11 +17,11 @@ import org.objectweb.asm.ClassReader;
  */
 public class BasicJavaSupport {
 
-    protected Set<String> classesInApplicationJars;
-    protected Set<String> classesInLibraryJars;
-    protected Set<String> classesInDependencyJars;
-    private Map<String, Set<ArtifactEntry>> artifactToClassMap;
-    private PropertyProvider propertyProvider;
+    protected final Set<String> classesInApplicationJars;
+    protected final Set<String> classesInLibraryJars;
+    protected final Set<String> classesInDependencyJars;
+    private final Map<String, Set<ArtifactEntry>> artifactToClassMap;
+    private final PropertyProvider propertyProvider;
 
     public BasicJavaSupport() {
         this.classesInApplicationJars = new HashSet<>();
