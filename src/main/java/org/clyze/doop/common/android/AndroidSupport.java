@@ -20,7 +20,7 @@ public abstract class AndroidSupport {
     private final Set<String> appCallbackMethods = new HashSet<>();
     private final Set<LayoutControl> appUserControls = new HashSet<>();
 
-    public AndroidSupport(Parameters parameters, BasicJavaSupport java) {
+    protected AndroidSupport(Parameters parameters, BasicJavaSupport java) {
         this.parameters = parameters;
         this.java = java;
     }

@@ -26,7 +26,7 @@ public class AppResourcesXML implements AppResources {
     private final Set<String> providers  = new HashSet<>();
     private final Set<String> receivers  = new HashSet<>();
     private final Set<String> services   = new HashSet<>();
-    private static boolean verbose = false;
+    private static final boolean verbose = false;
     static final Map<String, String> replaceMap = new ConcurrentHashMap<>();
     private int failures = 0;
 
@@ -147,7 +147,7 @@ public class AppResourcesXML implements AppResources {
         }
     }
 
-    static void registerReplacement(String a, String b) {
+    private static void registerReplacement(String a, String b) {
         replaceMap.put(" " + a + ":", " " + b + ":");
     }
 
@@ -362,7 +362,7 @@ public class AppResourcesXML implements AppResources {
         private final String appRId = "";
         private final String androidRId = "";
 
-        public AndroidLayoutControl(int id, String viewClass, boolean sensitive, Map<String, Object> attrs, int parentId) {
+        AndroidLayoutControl(int id, String viewClass, boolean sensitive, Map<String, Object> attrs, int parentId) {
             this.id = id;
             this.viewClass = viewClass;
             this.sensitive = sensitive;
