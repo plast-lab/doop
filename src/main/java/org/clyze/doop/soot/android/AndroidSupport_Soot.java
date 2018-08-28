@@ -42,9 +42,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
         if (sootParameters.getRunFlowdroid()) {
             String appInput = parameters.getInputs().get(0);
             SetupApplication app = new SetupApplication(androidJars, appInput);
-            // TODO: fix this method call (refactored in newer
-            // versions of FlowDroid):
-            //app.getConfig().setCallbackAnalyzer(Fast);
+            app.getConfig().getCallbackConfig().setCallbackAnalyzer(Fast);
             String filename = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
             try {
                 // TODO: fix this method call (refactored in newer
