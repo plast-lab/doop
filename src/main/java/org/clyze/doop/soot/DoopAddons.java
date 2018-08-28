@@ -34,13 +34,9 @@ class DoopAddons {
             //note: the following is a snapshot iterator;
             //this is necessary because it can happen that phantom methods
             //are added during resolution
-            Iterator<SootMethod> methodIt = cl.getMethods().iterator();
-            while (methodIt.hasNext()) {
-                final SootMethod m = methodIt.next();
-                if( m.isConcrete() ) {
+            for (SootMethod m : cl.getMethods())
+                if (m.isConcrete())
                     executor.execute(m::retrieveActiveBody);
-                }
-            }
         }
         // Wait till all method bodies have been loaded
         try {
