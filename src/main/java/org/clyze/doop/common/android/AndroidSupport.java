@@ -13,12 +13,12 @@ public abstract class AndroidSupport {
     protected final Parameters parameters;
     protected final BasicJavaSupport java;
 
-    protected final Set<String> appServices = new HashSet<>();
-    protected final Set<String> appActivities = new HashSet<>();
-    protected final Set<String> appContentProviders = new HashSet<>();
-    protected final Set<String> appBroadcastReceivers = new HashSet<>();
-    protected final Set<String> appCallbackMethods = new HashSet<>();
-    protected final Set<LayoutControl> appUserControls = new HashSet<>();
+    private final Set<String> appServices = new HashSet<>();
+    private final Set<String> appActivities = new HashSet<>();
+    private final Set<String> appContentProviders = new HashSet<>();
+    private final Set<String> appBroadcastReceivers = new HashSet<>();
+    private final Set<String> appCallbackMethods = new HashSet<>();
+    private final Set<LayoutControl> appUserControls = new HashSet<>();
 
     public AndroidSupport(Parameters parameters, BasicJavaSupport java) {
         this.parameters = parameters;
@@ -144,7 +144,7 @@ public abstract class AndroidSupport {
 
     // Parses Android manifests. Supports binary and plain-text XML
     // files (found in .apk and .aar files respectively).
-    public AppResources processAppResources(String archiveLocation) throws Exception {
+    protected AppResources processAppResources(String archiveLocation) throws Exception {
         String path = archiveLocation.toLowerCase();
         if (path.endsWith(".apk"))
             return AppResourcesXML.fromAPK(archiveLocation);

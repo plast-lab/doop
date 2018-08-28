@@ -11,7 +11,7 @@ import java.util.*;
  * Android Components and LayoutControls
  * WARNING: It uses the soot implementation, need to find alternative
  */
-public class WalaAndroidXMLParser extends AndroidSupport {
+class WalaAndroidXMLParser extends AndroidSupport {
     private WalaFactWriter factWriter;
 
     WalaAndroidXMLParser(WalaParameters parameters, WalaFactWriter writer, BasicJavaSupport java)

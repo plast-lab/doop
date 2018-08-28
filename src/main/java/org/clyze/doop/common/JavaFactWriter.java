@@ -16,11 +16,11 @@ public class JavaFactWriter {
 
     protected final Database _db;
 
-    public JavaFactWriter(Database db) {
+    protected JavaFactWriter(Database db) {
         this._db = db;
     }
 
-    public static String str(int i) {
+    protected static String str(int i) {
         return String.valueOf(i);
     }
 
@@ -50,22 +50,22 @@ public class JavaFactWriter {
         _db.add(CLASS_ARTIFACT, artifact, className, subArtifact);
     }
 
-    public void writeAndroidKeepMethod(String methodSig) {
+    private void writeAndroidKeepMethod(String methodSig) {
         _db.add(ANDROID_KEEP_METHOD, "<" + methodSig + ">");
     }
 
-    public void writeAndroidKeepClass(String className) {
+    private void writeAndroidKeepClass(String className) {
         _db.add(ANDROID_KEEP_CLASS, className);
     }
 
-    public void writeProperty(String path, String key, String value) {
+    private void writeProperty(String path, String key, String value) {
         String pathId = writeStringConstant(path);
         String keyId = writeStringConstant(key);
         String valueId = writeStringConstant(value);
         _db.add(PROPERTIES, pathId, keyId, valueId);
     }
 
-    public void writeSpecialSensitivityMethod(String line) {
+    private void writeSpecialSensitivityMethod(String line) {
         String[] linePieces = line.split(", ");
         String method = linePieces[0].trim();
         String sensitivity = linePieces[1].trim();
@@ -183,7 +183,7 @@ public class JavaFactWriter {
         }
     }
 
-    public void processSeeds(String seed) throws IOException {
+    private void processSeeds(String seed) throws IOException {
         if (seed != null) {
             System.out.println("Reading seeds from: " + seed);
             try (Stream<String> stream = Files.lines(Paths.get(seed))) {
@@ -199,7 +199,7 @@ public class JavaFactWriter {
             writeAndroidKeepClass(line);
     }
 
-    public void processSpecialCSMethods(String csMethods) throws IOException {
+    private void processSpecialCSMethods(String csMethods) throws IOException {
         if (csMethods != null) {
             System.out.println("Reading special methods from: " + csMethods);
             try (Stream<String> stream = Files.lines(Paths.get(csMethods))) {

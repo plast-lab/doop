@@ -205,7 +205,7 @@ public class WalaFactWriter extends JavaFactWriter {
         }
     }
 
-    void writePhantomMethod(MethodReference m) {
+    private void writePhantomMethod(MethodReference m) {
         String sig = _rep.signature(m);
         if(_phantomMethod.get(sig) == null) {
             //System.out.println("Method " + sig + " is phantom.");
