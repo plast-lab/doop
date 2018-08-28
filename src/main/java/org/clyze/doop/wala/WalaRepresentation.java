@@ -278,8 +278,8 @@ class WalaRepresentation extends JavaRepresentation {
         final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
 
         BootstrapMethodsReader.BootstrapMethod bootMethRef = instruction.getBootstrap();
-        ConstantPoolParser constantPool = bootMethRef.getCP();
         if (bootMethRef != null) {
+            ConstantPoolParser constantPool = bootMethRef.getCP();
             int bootArity = bootMethRef.callArgumentCount();
             if (bootArity > 1) {
                 int argType = bootMethRef.callArgumentKind(1);
