@@ -31,8 +31,7 @@ public abstract class Parameters {
     }
 
     private void setAppRegex(String regex) {
-        String appRegex = regex;
-        this.applicationClassFilter = new GlobClassFilter(appRegex);
+        this.applicationClassFilter = new GlobClassFilter(regex);
     }
 
     public void setInputs(List<String> inputs) {

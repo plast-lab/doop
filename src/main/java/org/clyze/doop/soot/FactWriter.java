@@ -93,11 +93,10 @@ public class FactWriter extends JavaFactWriter {
     }
 
     private String writeType(SootClass c) {
-        String classStr = c.getName();
         // The type itself is already taken care of by writing the
         // SootClass declaration, so we don't actually write the type
         // here, and just return the string.
-        return classStr;
+        return c.getName();
     }
 
     private String writeType(Type t) {
@@ -379,8 +378,7 @@ public class FactWriter extends JavaFactWriter {
             // bug that adds a phantom class to the Scene's hierarchy, although
             // (based on their own comments) it shouldn't.
             heap = classConstant(s);
-            String actualType = s;
-            _db.add(CLASS_HEAP, heap, actualType);
+            _db.add(CLASS_HEAP, heap, s);
         }
 
         int index = session.calcUnitNumber(stmt);
