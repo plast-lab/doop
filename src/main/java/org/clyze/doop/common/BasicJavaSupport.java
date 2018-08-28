@@ -58,7 +58,7 @@ public class BasicJavaSupport {
      * @param classSet   appropriate set to add class names
      * @param filename   the input filename
      */
-    protected void preprocessInput(Set<String> classSet, String filename) throws IOException {
+    private void preprocessInput(Set<String> classSet, String filename) throws IOException {
         JarEntry entry;
         try (JarInputStream jin = new JarInputStream(new FileInputStream(filename));
              JarFile jarFile = new JarFile(filename)) {

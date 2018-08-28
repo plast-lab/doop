@@ -5,7 +5,7 @@ import org.clyze.doop.common.Parameters;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WalaParameters extends Parameters {
+class WalaParameters extends Parameters {
     List<String> _platformLibraries = new ArrayList<>();
     String _javaPath = null;
     boolean _generateIR = false;

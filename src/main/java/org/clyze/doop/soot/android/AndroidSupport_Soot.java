@@ -30,7 +30,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
         return dummyMain;
     }
 
-    protected SootParameters getSootParameters() {
+    private SootParameters getSootParameters() {
         if (parameters instanceof SootParameters)
             return (SootParameters)parameters;
         else

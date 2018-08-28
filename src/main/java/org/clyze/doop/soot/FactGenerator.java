@@ -145,7 +145,7 @@ class FactGenerator implements Runnable {
     }
 
     /* Check for phantom classes in a method signature. */
-    public boolean isPhantomBased(SootMethod m) {
+    private boolean isPhantomBased(SootMethod m) {
         for (SootClass clazz: m.getExceptions())
             if (isPhantom(clazz.getType())) {
                 System.out.println("Exception " + clazz.getName() + " is phantom.");
@@ -360,7 +360,7 @@ class FactGenerator implements Runnable {
     /**
      * Assignment statement
      */
-    public void generate(SootMethod inMethod, AssignStmt stmt, Session session)
+    private void generate(SootMethod inMethod, AssignStmt stmt, Session session)
     {
         Value left = stmt.getLeftOp();
 

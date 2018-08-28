@@ -13,7 +13,7 @@ public abstract class LayoutControl {
     abstract public int getParentID();
     abstract public String getAppRId();
     abstract public String getAndroidRId();
-    abstract public Map<String, Object> getAdditionalAttributes();
+    protected abstract Map<String, Object> getAdditionalAttributes();
 
     @Override
     public int hashCode() {

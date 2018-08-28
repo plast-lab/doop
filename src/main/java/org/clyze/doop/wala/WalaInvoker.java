@@ -89,7 +89,7 @@ public class WalaInvoker {
         run(walaParameters);
     }
 
-    public void run(WalaParameters walaParameters) throws IOException {
+    private void run(WalaParameters walaParameters) throws IOException {
         StringBuilder classPath = new StringBuilder();
         List<String> inputs = walaParameters.getInputs();
         for (int i = 0; i < inputs.size(); i++) {

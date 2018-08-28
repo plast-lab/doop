@@ -10,7 +10,7 @@ public class SootParameters extends Parameters {
      String _main = null;
      boolean _ssa = false;
      boolean _allowPhantom = false;
-     boolean _runFlowdroid = false;
+     private boolean _runFlowdroid = false;
      boolean _generateJimple = false;
      boolean _toStdout = false;
      boolean _ignoreWrongStaticness = false;

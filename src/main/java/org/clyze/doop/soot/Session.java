@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.clyze.doop.common.SessionCounter;
 
-public class Session extends SessionCounter {
+class Session extends SessionCounter {
 
   /** keeps the unique index of an instruction in the method. This cannot be computed up front,
       because temporary variables (and assignments to them from constants) will be inserted

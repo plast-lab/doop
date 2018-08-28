@@ -20,7 +20,7 @@ import soot.options.Options;
 /**
  * This class gathers modified functionality that Doop needs from Soot.
  */
-public class DoopAddons {
+class DoopAddons {
 
     private static boolean getInitialValueString_warned = false;
     private static boolean foundFile_warned = false;

@@ -468,7 +468,7 @@ public class FactWriter extends JavaFactWriter {
             _db.add(ARRAY_INSN_INDEX, insn, _rep.local(m, arrIndex));
     }
 
-    void writeApplicationClass(SootClass application) {
+    private void writeApplicationClass(SootClass application) {
         _db.add(APP_CLASS, writeType(application));
     }
 

@@ -98,7 +98,7 @@ public class AppResourcesAXML implements AppResources {
      */
     private class SootLayoutControl extends LayoutControl {
         private PossibleLayoutControl plc;
-        public SootLayoutControl(PossibleLayoutControl plc) {
+        SootLayoutControl(PossibleLayoutControl plc) {
             this.plc = plc;
         }
         public int getID() { return plc.getID(); }

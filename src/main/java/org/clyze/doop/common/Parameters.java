@@ -9,12 +9,12 @@ import org.clyze.doop.util.filter.GlobClassFilter;
  * This class contains common parameters for Doop Java front-ends.
  */
 public abstract class Parameters {
-    protected List<String> _inputs = new ArrayList<>();
-    protected List<String> _libraries = new ArrayList<>();
+    private List<String> _inputs = new ArrayList<>();
+    private List<String> _libraries = new ArrayList<>();
     private List<String> _dependencies = new ArrayList<>();
-    protected String _outputDir = null;
+    private String _outputDir = null;
     private String _extraSensitiveControls = "";
-    public ClassFilter applicationClassFilter;
+    private ClassFilter applicationClassFilter;
     public boolean _android = false;
     public Integer _cores = null;
     public String _androidJars = null;
@@ -26,11 +26,11 @@ public abstract class Parameters {
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
-    public Parameters() {
+    protected Parameters() {
         setAppRegex("**");
     }
 
-    public void setAppRegex(String regex) {
+    private void setAppRegex(String regex) {
         String appRegex = regex;
         this.applicationClassFilter = new GlobClassFilter(appRegex);
     }

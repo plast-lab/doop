@@ -94,7 +94,7 @@ class WalaRepresentation extends JavaRepresentation {
         return simpleName(f.getReference());
     }
 
-    String simpleName(FieldReference f) {
+    private String simpleName(FieldReference f) {
         return f.getName().toString();
     }
 
