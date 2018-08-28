@@ -34,7 +34,7 @@ public class PythonDatabase implements Closeable, Flushable {
     }
 
 
-    private String addColumn(String column) throws IOException {
+    private String addColumn(String column) {
         // Quote some special characters.
         // TODO: is this worth optimizing?
         String data = column
