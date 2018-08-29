@@ -210,7 +210,7 @@ public class WalaFactWriter extends JavaFactWriter {
         if(_phantomMethod.get(sig) == null) {
             //System.out.println("Method " + sig + " is phantom.");
             _phantomMethod.put(sig,"");
-            _db.add(PHANTOM_METHOD, sig);
+            writePhantomMethod(sig);
             _db.add(STRING_RAW, sig, sig);
             String arity = Integer.toString(m.getNumberOfParameters());
             _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);

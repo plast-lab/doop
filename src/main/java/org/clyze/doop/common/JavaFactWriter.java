@@ -220,4 +220,9 @@ public class JavaFactWriter {
     protected void writePhantomType(String t) {
         _db.add(PHANTOM_TYPE, t);
     }
+
+    protected void writePhantomMethod(String sig) {
+        _db.add(PHANTOM_METHOD, sig);
+    }
+
 }
