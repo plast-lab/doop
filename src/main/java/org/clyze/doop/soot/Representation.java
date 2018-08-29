@@ -162,6 +162,8 @@ class Representation extends JavaRepresentation {
             kind = "return-void";
         else if(stmt instanceof ReturnStmt)
             kind = "return";
+        else if(stmt instanceof SwitchStmt)
+            kind = "switch";
         else if(stmt instanceof ThrowStmt)
             kind = "throw";
         return kind;
