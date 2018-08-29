@@ -119,11 +119,11 @@ public class FactWriter extends JavaFactWriter {
     }
 
     void writePhantomType(Type t) {
-        _db.add(PHANTOM_TYPE, writeType(t));
+        writePhantomType(writeType(t));
     }
 
     void writePhantomType(SootClass c) {
-        _db.add(PHANTOM_TYPE, writeType(c));
+        writePhantomType(writeType(c));
     }
 
     void writePhantomMethod(SootMethod m) {
@@ -694,7 +694,7 @@ public class FactWriter extends JavaFactWriter {
     }
 
     void writeMethodDeclaresException(SootMethod m, SootClass exception) {
-        _db.add(METHOD_DECL_EXCEPTION, writeType(exception), writeMethod(m));
+        writeMethodDeclaresException(writeMethod(m), writeType(exception));
     }
 
     void writeFormalParam(SootMethod m, int i) {

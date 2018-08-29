@@ -213,4 +213,11 @@ public class JavaFactWriter {
             writeSpecialSensitivityMethod(line);
     }
 
+    protected void writeMethodDeclaresException(String methodId, String exceptionType) {
+        _db.add(METHOD_DECL_EXCEPTION, exceptionType, methodId);
+    }
+
+    protected void writePhantomType(String t) {
+        _db.add(PHANTOM_TYPE, t);
+    }
 }

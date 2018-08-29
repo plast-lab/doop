@@ -200,7 +200,7 @@ public class WalaFactWriter extends JavaFactWriter {
     void writePhantomType(TypeReference t) {
         String type = writeType(t);
         if(_phantomType.get(type) == null) {
-            _db.add(PHANTOM_TYPE, type);
+            writePhantomType(type);
             _phantomType.put(type,"");
         }
     }
@@ -865,7 +865,7 @@ public class WalaFactWriter extends JavaFactWriter {
     }
 
     void writeMethodDeclaresException(IMethod m, TypeReference exception) {
-        _db.add(METHOD_DECL_EXCEPTION, writeType(exception), _rep.signature(m));
+        writeMethodDeclaresException(_rep.signature(m), writeType(exception));
     }
 
     void writeFormalParam(IMethod m, int paramIndex, int actualIndex) {
