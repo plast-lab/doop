@@ -15,7 +15,7 @@ import java.util.Iterator;
 
 import static org.clyze.doop.wala.WalaUtils.fixTypeString;
 
-public class WalaIRPrinter {
+class WalaIRPrinter {
 
     private final IAnalysisCacheView _cache;
     private final String _outputDir;

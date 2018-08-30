@@ -5,9 +5,9 @@ import com.ibm.wala.types.TypeReference;
 public class Local {
     private final String name;
     private String sourceCodeName;
-    TypeReference type;
-    String value;
-    int varIndex;
+    private TypeReference type;
+    private String value;
+    private final int varIndex;
 
     public Local(String name, int varIndex, TypeReference type) {
         this(name, varIndex, null, type);

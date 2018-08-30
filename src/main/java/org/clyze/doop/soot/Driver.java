@@ -52,7 +52,7 @@ public class Driver {
         shutdownExecutor();
     }
 
-    void shutdownExecutor() throws DoopErrorCodeException {
+    private void shutdownExecutor() throws DoopErrorCodeException {
         _executor.shutdown();
         try {
             _executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);

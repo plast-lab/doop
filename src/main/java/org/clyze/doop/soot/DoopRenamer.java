@@ -7,8 +7,8 @@ import soot.shimple.Shimple;
 import java.util.HashSet;
 import java.util.Set;
 
-public class DoopRenamer {
-    static protected void transform(Body body) {
+class DoopRenamer {
+    static void transform(Body body) {
         Set<Local> transformedLocals = new HashSet<>();
         int linenumber = 0;
 
