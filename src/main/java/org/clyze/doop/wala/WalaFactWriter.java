@@ -328,8 +328,7 @@ public class WalaFactWriter extends JavaFactWriter {
             String storeInsn = _rep.instruction(m, instruction, storeInsnIndex);
 
             _db.add(STORE_ARRAY_INDEX, storeInsn, str(storeInsnIndex), childAssignTo, assignTo, methodId);
-            _db.add(VAR_TYPE, childAssignTo, writeType(componentType));
-            _db.add(VAR_DECLARING_METHOD, childAssignTo, methodId);
+            writeLocal(childAssignTo, writeType(componentType), methodId);
         }
     }
 
@@ -649,8 +648,7 @@ public class WalaFactWriter extends JavaFactWriter {
 
         String  var = _rep.nativeReturnVar(m);
         _db.add(NATIVE_RETURN_VAR, var, methodId);
-        _db.add(VAR_TYPE, var, writeType(m.getReturnType()));
-        _db.add(VAR_DECLARING_METHOD, var, methodId);
+        writeLocal(var, writeType(m.getReturnType()), methodId);
     }
 
     void writeGoto(IMethod m, SSAGotoInstruction instruction, SSAInstruction to, Session session) {
@@ -877,9 +875,7 @@ public class WalaFactWriter extends JavaFactWriter {
 
     void writeLocal(IMethod m, Local l) {
         String local = _rep.local(m, l);
-
-        _db.add(VAR_TYPE, local, writeType(l.getType()));
-        _db.add(VAR_DECLARING_METHOD, local, _rep.signature(m));
+        writeLocal(local, writeType(l.getType()), _rep.signature(m));
     }
 
     void writeStringConstantExpression(IR ir, IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
@@ -1186,8 +1182,7 @@ public class WalaFactWriter extends JavaFactWriter {
         {
             i+=3;
             var = methodSig + "/" + varBase + Integer.toString(i);
-            _db.add(VAR_TYPE, var, declaredExc);
-            _db.add(VAR_DECLARING_METHOD, var, methodSig);
+            writeLocal(var, declaredExc, methodSig);
             heap = methodSig + "/new " + declaredExc + "/0";
             _db.add(NORMAL_HEAP, heap, declaredExc);
             newInstr = methodSig + "/assign/instruction" + str(i);

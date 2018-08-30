@@ -254,8 +254,7 @@ public class FactWriter extends JavaFactWriter {
             String storeInsn = _rep.instruction(m, stmt, storeInsnIndex);
 
             _db.add(STORE_ARRAY_INDEX, storeInsn, str(storeInsnIndex), childAssignTo, assignTo, methodId);
-            _db.add(VAR_TYPE, childAssignTo, writeType(componentType));
-            _db.add(VAR_DECLARING_METHOD, childAssignTo, methodId);
+            writeLocal(childAssignTo, writeType(componentType), methodId);
         }
     }
 
@@ -525,8 +524,7 @@ public class FactWriter extends JavaFactWriter {
         if (!(m.getReturnType() instanceof VoidType)) {
             String  var = _rep.nativeReturnVar(m);
             _db.add(NATIVE_RETURN_VAR, var, methodId);
-            _db.add(VAR_TYPE, var, writeType(m.getReturnType()));
-            _db.add(VAR_DECLARING_METHOD, var, methodId);
+            writeLocal(var, writeType(m.getReturnType()), methodId);
         }
     }
 
@@ -715,8 +713,7 @@ public class FactWriter extends JavaFactWriter {
             _varTypeMap.put(local, type);
         }
 
-        _db.add(VAR_TYPE, local, writeType(type));
-        _db.add(VAR_DECLARING_METHOD, local, writeMethod(m));
+        writeLocal(local, writeType(type), writeMethod(m));
     }
 
     Local writeStringConstantExpression(SootMethod inMethod, Stmt stmt, StringConstant constant, Session session) {

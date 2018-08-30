@@ -225,4 +225,9 @@ public class JavaFactWriter {
         _db.add(PHANTOM_METHOD, sig);
     }
 
+    protected void writeLocal(String local, String type, String method) {
+        _db.add(VAR_TYPE, local, type);
+        _db.add(VAR_DECLARING_METHOD, local, method);
+    }
+
 }
