@@ -16,9 +16,9 @@ import java.util.Set;
 
 class FactGenerator implements Runnable {
 
-    private FactWriter _writer;
-    private boolean _ssa;
-    private Set<SootClass> _sootClasses;
+    private final FactWriter _writer;
+    private final boolean _ssa;
+    private final Set<SootClass> _sootClasses;
 
     FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses)
     {

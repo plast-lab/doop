@@ -30,12 +30,12 @@ class WalaFactGenerator implements Runnable {
 
     protected Log logger;
 
-    private WalaFactWriter _writer;
-    private Set<IClass> _iClasses;
+    private final WalaFactWriter _writer;
+    private final Set<IClass> _iClasses;
     private AnalysisOptions options;
-    private boolean _android;
-    private IAnalysisCacheView cache;
-    private WalaIRPrinter IRPrinter;
+    private final boolean _android;
+    private final IAnalysisCacheView cache;
+    private final WalaIRPrinter IRPrinter;
 
     WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir, boolean androidAnalysis, IAnalysisCacheView analysisCache)
     {

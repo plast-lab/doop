@@ -4,7 +4,7 @@ package org.clyze.doop.common;
 // instead of System.exit() to allow use of Doop as a library.
 public class DoopErrorCodeException extends Exception {
 
-    private int errCode;
+    private final int errCode;
 
     public DoopErrorCodeException(int errCode) {
         super("Doop exception with error code " + errCode);

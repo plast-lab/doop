@@ -3,7 +3,7 @@ package org.clyze.doop.wala;
 import com.ibm.wala.types.TypeReference;
 
 public class Local {
-    private String name;
+    private final String name;
     private String sourceCodeName;
     TypeReference type;
     String value;

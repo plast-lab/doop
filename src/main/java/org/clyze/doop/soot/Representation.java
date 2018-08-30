@@ -11,10 +11,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 class Representation extends JavaRepresentation {
-    private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
-    private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
-    private static List<String> jimpleKeywordList = Jimple.jimpleKeywordList();
-    private Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
+    private final Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
+    private final Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
+    private static final List<String> jimpleKeywordList = Jimple.jimpleKeywordList();
+    private final Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
     private static Representation _repr;

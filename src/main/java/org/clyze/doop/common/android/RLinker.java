@@ -31,11 +31,11 @@ public class RLinker {
 
     // A map from package names -> nested class -> field -> element
     // ids. Used by lookupConst() and XML parsing for layout controls.
-    private Map<String, Map<String, Map<String, Integer> > > constants;
+    private final Map<String, Map<String, Map<String, Integer> > > constants;
 
     // A map from package names -> nested class -> set of text
     // entries. Used for code generation.
-    private Map<String, Map<String, Set<String> > > rs;
+    private final Map<String, Map<String, Set<String> > > rs;
 
     // Singleton instance.
     private static RLinker instance;
