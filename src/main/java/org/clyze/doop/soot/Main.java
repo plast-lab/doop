@@ -205,7 +205,7 @@ public class Main {
             writer.writePreliminaryFacts(classes, java, sootParameters);
             db.flush();
 
-            if (sootParameters._android) {
+            if (sootParameters._android && (android != null)) {
                 if (sootParameters.getRunFlowdroid()) {
                     SootMethod dummyMain = android.getDummyMain();
                     if (dummyMain == null)
