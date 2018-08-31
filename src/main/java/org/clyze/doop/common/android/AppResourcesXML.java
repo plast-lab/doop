@@ -46,7 +46,6 @@ public class AppResourcesXML implements AppResources {
         this.archive = ar;
         this.isApk = isApk;
 
-        // new FileInputStream(ar),
         InputStream is = isApk ? getApkManifest() : getZipEntryInputStream(MANIFEST);
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
