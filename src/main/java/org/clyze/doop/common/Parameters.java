@@ -9,9 +9,9 @@ import org.clyze.doop.util.filter.GlobClassFilter;
  * This class contains common parameters for Doop Java front-ends.
  */
 public abstract class Parameters {
-    private List<String> _inputs = new ArrayList<>();
-    private List<String> _libraries = new ArrayList<>();
-    private List<String> _dependencies = new ArrayList<>();
+    public List<String> _inputs = new ArrayList<>();
+    public List<String> _libraries = new ArrayList<>();
+    public List<String> _dependencies = new ArrayList<>();
     private String _outputDir = null;
     private String _extraSensitiveControls = "";
     private ClassFilter applicationClassFilter;

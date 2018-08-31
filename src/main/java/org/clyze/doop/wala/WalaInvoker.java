@@ -55,14 +55,14 @@ public class WalaInvoker {
                     continue;
                 }
                 switch (args[i]) {
-                    case "-l":
+                    case "-ld":
                         i = shift(args, i);
-                        walaParameters.getLibraries().add(args[i]);
+                        walaParameters._dependencies.add(args[i]);
                         break;
                     case "--generate-ir":
                         walaParameters._generateIR = true;
                         break;
-                    case "-el":
+                    case "-l":
                         i = shift(args, i);
                         walaParameters._platformLibraries.add(args[i]);
                         break;
