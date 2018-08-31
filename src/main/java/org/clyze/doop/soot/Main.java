@@ -53,23 +53,6 @@ public class Main {
                         platforms.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
                         platforms.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
                         break;
-                    case "--deps":
-                        i = shift(args, i);
-                        String folderName = args[i];
-                        File f = new File(folderName);
-                        if (!f.exists()) {
-                            System.err.println("Dependency folder " + folderName + " does not exist");
-                            throw new DoopErrorCodeException(4);
-                        } else if (!f.isDirectory()) {
-                            System.err.println("Dependency folder " + folderName + " is not a directory");
-                            throw new DoopErrorCodeException(5);
-                        }
-                        for (File file : Objects.requireNonNull(f.listFiles())) {
-                            if (file.isFile() && file.getName().endsWith(".jar")) {
-                                dependencies.add(file.getCanonicalPath());
-                            }
-                        }
-                        break;
                     case "-h":
                     case "--help":
                     case "-help":
