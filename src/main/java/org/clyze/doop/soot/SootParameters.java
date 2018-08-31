@@ -61,4 +61,24 @@ public class SootParameters extends Parameters {
         return i;
     }
 
+    /**
+     * Check parameters (e.g., for incompatible or missing options).
+     * @throws DoopErrorCodeException
+     */
+    public void check() throws DoopErrorCodeException {
+        if (_toStdout && !_generateJimple) {
+            System.err.println("error: --stdout must be used with --generate-jimple");
+            throw new DoopErrorCodeException(7);
+        }
+        else if (_toStdout && getOutputDir() != null) {
+            System.err.println("error: --stdout and -d options are not compatible");
+            throw new DoopErrorCodeException(2);
+        }
+        else if ((getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
+                (!_android)) {
+            System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
+            throw new DoopErrorCodeException(3);
+        }
+    }
+
 }
