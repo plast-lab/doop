@@ -113,4 +113,12 @@ public class BasicJavaSupport {
     public Set<String> getClassesInApplicationJars() {
         return classesInApplicationJars;
     }
+
+    public Set<String> getClassesInLibraryJars() {
+        return classesInLibraryJars;
+    }
+
+    public Set<String> getClassesInDependencyJars() {
+        return classesInDependencyJars;
+    }
 }
