@@ -101,16 +101,7 @@ public class Main {
             else
                 sootParameters.getLibraries().addAll(dependencies);
 
-            if (sootParameters._mode == null) {
-                sootParameters._mode = SootParameters.Mode.INPUTS;
-            }
-
-            sootParameters.check();
-
-            if (!sootParameters._toStdout && sootParameters.getOutputDir() == null) {
-                sootParameters.setOutputDir(System.getProperty("user.dir"));
-            }
-
+            sootParameters.finishArgProcessing();
             produceFacts(sootParameters);
         }
         catch(DoopErrorCodeException errCode) {
