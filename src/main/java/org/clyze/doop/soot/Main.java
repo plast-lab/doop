@@ -95,13 +95,11 @@ public class Main {
                 }
             }
 
-            if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
+            sootParameters.setLibraries(platforms);
+            if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS)
                 sootParameters.setDependencies(dependencies);
-                sootParameters.setLibraries(platforms);
-            } else {
-                sootParameters.setLibraries(platforms);
+            else
                 sootParameters.getLibraries().addAll(dependencies);
-            }
 
             if (sootParameters._mode == null) {
                 sootParameters._mode = SootParameters.Mode.INPUTS;
