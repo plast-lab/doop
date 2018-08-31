@@ -32,15 +32,15 @@ public abstract class Parameters {
     }
 
     private void setAppRegex(String regex) {
-        this.applicationClassFilter = new GlobClassFilter(regex);
+        applicationClassFilter = new GlobClassFilter(regex);
     }
 
     public void setInputs(List<String> inputs) {
-        this._inputs = inputs;
+        _inputs = inputs;
     }
 
     public List<String> getInputs() {
-        return this._inputs;
+        return _inputs;
     }
 
     public List<String> getPlatformLibs() {
@@ -48,7 +48,7 @@ public abstract class Parameters {
     }
 
     public void setOutputDir(String outputDir) {
-        this._outputDir = outputDir;
+        _outputDir = outputDir;
     }
 
     public String getOutputDir() {
@@ -60,9 +60,8 @@ public abstract class Parameters {
     }
 
     public List<String> getInputsAndDependencies() {
-        List<String> ret = new ArrayList<>();
-        ret.addAll(this._inputs);
-        ret.addAll(this._dependencies);
+        List<String> ret = new ArrayList<>(_inputs);
+        ret.addAll(_dependencies);
         return ret;
     }
 
@@ -92,7 +91,7 @@ public abstract class Parameters {
     }
 
     public void setDependencies(List<String> deps) {
-        this._dependencies = deps;
+        _dependencies = deps;
     }
 
     public static int shift(String[] args, int index) throws DoopErrorCodeException {
@@ -116,12 +115,12 @@ public abstract class Parameters {
         switch (args[i]) {
         case "--android-jars":
             i = shift(args, i);
-            this._android = true;
-            this._androidJars = args[i];
+            _android = true;
+            _androidJars = args[i];
             break;
         case "-i":
             i = shift(args, i);
-            this.getInputs().add(args[i]);
+            _inputs.add(args[i]);
             break;
         case "-l":
             i = shift(args, i);
@@ -139,42 +138,42 @@ public abstract class Parameters {
             break;
         case "-d":
             i = shift(args, i);
-            this.setOutputDir(args[i]);
+            setOutputDir(args[i]);
             break;
         case "--application-regex":
             i = shift(args, i);
-            this.setAppRegex(args[i]);
+            setAppRegex(args[i]);
             break;
         case "--fact-gen-cores":
             i = shift(args, i);
             try {
-                this._cores = new Integer(args[i]);
+                _cores = new Integer(args[i]);
             } catch (NumberFormatException nfe) {
                 System.out.println("Invalid cores argument: " + args[i]);
             }
             break;
         case "--facts-subset":
             i = shift(args, i);
-            this._factsSubSet = Parameters.FactsSubSet.valueOf(args[i]);
+            _factsSubSet = Parameters.FactsSubSet.valueOf(args[i]);
             break;
         case "--R-out-dir":
             i = shift(args, i);
-            this._rOutDir = args[i];
+            _rOutDir = args[i];
             break;
         case "--extra-sensitive-controls":
             i = shift(args, i);
-            this._extraSensitiveControls = args[i];
+            _extraSensitiveControls = args[i];
             break;
         case "--seed":
             i = shift(args, i);
-            this._seed = args[i];
+            _seed = args[i];
             break;
         case "--special-cs-methods":
             i = shift(args, i);
-            this._specialCSMethods = args[i];
+            _specialCSMethods = args[i];
             break;
         case "--noFacts":
-            this._noFacts = true;
+            _noFacts = true;
             break;
         default:
             return -1;
