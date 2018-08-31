@@ -14,8 +14,6 @@ import soot.options.Options;
 import java.io.File;
 import java.util.*;
 
-import static org.clyze.doop.common.Parameters.*;
-
 public class Main {
 
     private static boolean isApplicationClass(SootParameters sootParameters, SootClass klass) {
@@ -30,9 +28,6 @@ public class Main {
                 throw new DoopErrorCodeException(0);
             }
 
-            List<String> dependencies = new ArrayList<>();
-            List<String> platforms = new ArrayList<>();
-
             for (int i = 0; i < args.length; i++) {
                 int next_i = sootParameters.processNextArg(args, i);
                 if (next_i != -1) {
@@ -40,20 +35,6 @@ public class Main {
                     continue;
                 }
                 switch (args[i]) {
-                    case "-ld":
-                        i = shift(args, i);
-                        dependencies.add(args[i]);
-                        break;
-                    case "-l":
-                        i = shift(args, i);
-                        platforms.add(args[i]);
-                        break;
-                    case "-lsystem":
-                        String javaHome = System.getProperty("java.home");
-                        platforms.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
-                        platforms.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
-                        platforms.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
-                        break;
                     case "-h":
                     case "--help":
                     case "-help":
@@ -96,11 +77,11 @@ public class Main {
                 }
             }
 
-            sootParameters.setLibraries(platforms);
-            if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS)
-                sootParameters.setDependencies(dependencies);
-            else
-                sootParameters.getLibraries().addAll(dependencies);
+            // TODO
+//            if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS)
+//                sootParameters.setDependencies(dependencies);
+//            else
+//                sootParameters.getLibraries().addAll(dependencies);
 
             sootParameters.finishArgProcessing();
             produceFacts(sootParameters);
@@ -150,19 +131,21 @@ public class Main {
         }
 
         Scene scene = Scene.v();
-        for (String input : sootParameters.getInputs()) {
+        List<String> inputs = sootParameters.getInputs();
+        for (String input : inputs) {
             String inputFormat = input.endsWith(".jar")? "archive" : "file";
             System.out.println("Adding " + inputFormat + ": "  + input);
 
             addToSootClassPath(scene, input);
             if (sootParameters._android) {
-                if (sootParameters.getInputs().size() > 1)
+                if (inputs.size() > 1)
                     System.out.println("WARNING: skipping rest of inputs");
                 break;
             }
         }
 
-        for (String lib : AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs)) {
+        List<String> allLibs = sootParameters.getDependenciesAndPlatformLibs();
+        for (String lib : AARUtils.toJars(allLibs, false, tmpDirs)) {
             System.out.println("Adding archive for resolving: " + lib);
             addToSootClassPath(scene, lib);
         }

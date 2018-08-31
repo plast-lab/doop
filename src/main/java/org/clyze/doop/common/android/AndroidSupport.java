@@ -26,7 +26,7 @@ public abstract class AndroidSupport {
     }
 
     public void processInputs(Set<String> tmpDirs) throws Exception {
-        List<String> inputsAndLibs = parameters.getInputsAndLibraries();
+        List<String> allInputs = parameters.getAllInputs();
         // Map AAR files to their package name.
         Map<String, String> pkgs = new HashMap<>();
 
@@ -36,7 +36,7 @@ public abstract class AndroidSupport {
         // We merge the information from all resource files, not just
         // the application's. There are Android apps that use
         // components (e.g. activities) from AAR libraries.
-        for (String i : inputsAndLibs) {
+        for (String i : allInputs) {
             if (i.endsWith(".apk") || i.endsWith(".aar")) {
                 System.out.println("Processing application resources in " + i);
                 AppResources resources = processAppResources(i);
@@ -51,12 +51,12 @@ public abstract class AndroidSupport {
         String generatedR = rLinker.linkRs(parameters._rOutDir, tmpDirs);
         if (generatedR != null) {
             System.out.println("Adding " + generatedR + "...");
-            parameters.getLibraries().add(generatedR);
+            parameters.getDependencies().add(generatedR);
         }
 
         // If inputs are in AAR format, extract and use their JAR entries.
         parameters.setInputs(AARUtils.toJars(parameters.getInputs(), false, tmpDirs));
-        parameters.setLibraries(AARUtils.toJars(parameters.getLibraries(), false, tmpDirs));
+        parameters.setDependencies(AARUtils.toJars(parameters.getDependencies(), false, tmpDirs));
 
         parameters.getInputs().subList(1, parameters.getInputs().size()).clear();
     }

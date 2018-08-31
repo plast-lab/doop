@@ -113,7 +113,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
 
     @Override
     public void addLibClasses(Set<SootClass> classes, Scene scene) {
-        addClasses(parameters.getLibraries(), classes, scene, java.getClassesInLibraryJars());
+        addClasses(parameters.getPlatformLibs(), classes, scene, java.getClassesInLibraryJars());
     }
 
     @Override

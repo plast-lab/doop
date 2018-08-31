@@ -55,16 +55,8 @@ public class WalaInvoker {
                     continue;
                 }
                 switch (args[i]) {
-                    case "-ld":
-                        i = shift(args, i);
-                        walaParameters._dependencies.add(args[i]);
-                        break;
                     case "--generate-ir":
                         walaParameters._generateIR = true;
-                        break;
-                    case "-l":
-                        i = shift(args, i);
-                        walaParameters._platformLibraries.add(args[i]);
                         break;
                     case "-p":
                         i = shift(args, i);
@@ -104,17 +96,17 @@ public class WalaInvoker {
 //        }
 
         System.out.println("WALA classpath:" + classPath);
-        for (String lib : walaParameters.getPlatformLibraries())
+        for (String lib : walaParameters.getPlatformLibs())
             System.out.println("Platform Library: " + lib);
 
-        for (String lib : walaParameters.getLibraries())
+        for (String lib : walaParameters.getDependencies())
             System.out.println("Application Library: " + lib);
 
         AnalysisScope scope;
         if(walaParameters._android)
-            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters._platformLibraries, walaParameters.getLibraries());
+            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
         else
-            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters._platformLibraries, walaParameters.getLibraries());
+            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
             //scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 
         ClassHierarchy cha = null;

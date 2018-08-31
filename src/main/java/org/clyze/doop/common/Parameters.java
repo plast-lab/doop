@@ -1,5 +1,6 @@
 package org.clyze.doop.common;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.clyze.doop.util.filter.ClassFilter;
@@ -9,9 +10,9 @@ import org.clyze.doop.util.filter.GlobClassFilter;
  * This class contains common parameters for Doop Java front-ends.
  */
 public abstract class Parameters {
-    public List<String> _inputs = new ArrayList<>();
-    public List<String> _libraries = new ArrayList<>();
-    public List<String> _dependencies = new ArrayList<>();
+    private List<String> _inputs = new ArrayList<>();
+    private List<String> _dependencies = new ArrayList<>();
+    private final List<String> _platformLibs = new ArrayList<>();
     private String _outputDir = null;
     private String _extraSensitiveControls = "";
     private ClassFilter applicationClassFilter;
@@ -42,12 +43,8 @@ public abstract class Parameters {
         return this._inputs;
     }
 
-    public void setLibraries(List<String> libraries) {
-        this._libraries = libraries;
-    }
-
-    public List<String> getLibraries() {
-        return this._libraries;
+    public List<String> getPlatformLibs() {
+        return _platformLibs;
     }
 
     public void setOutputDir(String outputDir) {
@@ -62,10 +59,23 @@ public abstract class Parameters {
         return applicationClassFilter.matches(className);
     }
 
-    public List<String> getInputsAndLibraries() {
+    public List<String> getInputsAndDependencies() {
         List<String> ret = new ArrayList<>();
         ret.addAll(this._inputs);
-        ret.addAll(this._libraries);
+        ret.addAll(this._dependencies);
+        return ret;
+    }
+
+    public List<String> getDependenciesAndPlatformLibs() {
+        List<String> ret = new ArrayList<>(_dependencies);
+        ret.addAll(_platformLibs);
+        return ret;
+    }
+
+    public List<String> getAllInputs() {
+        List<String> ret = new ArrayList<>(_inputs);
+        ret.addAll(_dependencies);
+        ret.addAll(_platformLibs);
         return ret;
     }
 
@@ -112,6 +122,20 @@ public abstract class Parameters {
         case "-i":
             i = shift(args, i);
             this.getInputs().add(args[i]);
+            break;
+        case "-l":
+            i = shift(args, i);
+            _platformLibs.add(args[i]);
+            break;
+        case "-lsystem":
+            String javaHome = System.getProperty("java.home");
+            _platformLibs.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
+            _platformLibs.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
+            _platformLibs.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
+            break;
+        case "-ld":
+            i = shift(args, i);
+            _dependencies.add(args[i]);
             break;
         case "-d":
             i = shift(args, i);

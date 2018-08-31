@@ -12,7 +12,7 @@ public class SootParameters extends Parameters {
      boolean _allowPhantom = false;
      private boolean _runFlowdroid = false;
      boolean _generateJimple = false;
-     boolean _toStdout = false;
+     private boolean _toStdout = false;
      boolean _ignoreWrongStaticness = false;
 
      public boolean getRunFlowdroid() {

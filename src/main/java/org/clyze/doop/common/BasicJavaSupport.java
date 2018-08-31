@@ -42,8 +42,8 @@ public class BasicJavaSupport {
             System.out.println("Preprocessing application: " + filename);
             preprocessInput(classesInApplicationJars, filename);
         }
-        for (String filename : parameters.getLibraries()) {
-            System.out.println("Preprocessing library: " + filename);
+        for (String filename : parameters.getPlatformLibs()) {
+            System.out.println("Preprocessing platform library: " + filename);
             preprocessInput(classesInLibraryJars, filename);
         }
         for (String filename : parameters.getDependencies()) {
