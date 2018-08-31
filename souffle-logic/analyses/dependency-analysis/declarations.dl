@@ -12,7 +12,7 @@
  * ?hctx        The heap context
  * ?value       The value containing the field
  */
-.decl AllCtxDependentStoreHeapFld(?fld: Field, ?hctx: HContext, ?value: Value)
+.decl AllCtxDependentStoreHeapFld(?fld: Field, ?hctx: mainAnalysis.configuration.HContext, ?value: mainAnalysis.Value)
 
 /**
  * LoadArrayHeapInsn(?ctx, ?insn, ?value)
@@ -24,7 +24,7 @@
  * ?hctx        The heap context
  * ?value       The value that can be loaded
  */
-.decl LoadArrayHeapInsn(?ctx: Context, ?insn: Instruction, ?hctx: HContext, ?value: Value)
+.decl LoadArrayHeapInsn(?ctx: mainAnalysis.configuration.Context, ?insn: Instruction, ?hctx: mainAnalysis.configuration.HContext, ?value: mainAnalysis.Value)
 
 /**
  * Load instruction that loads dependent data
@@ -32,7 +32,7 @@
  * ?ctx         The calling context in which the instruction is dependent
  * ?insn        The dependent instruction
  */
-.decl TaintedLoad(?ctx: Context, ?insn: Instruction)
+.decl TaintedLoad(?ctx: mainAnalysis.configuration.Context, ?insn: Instruction)
 .output TaintedLoad
 
 /**
@@ -47,7 +47,7 @@
  * ?prevCtx     Calling context of the source instruction
  * ?prev        Data source instruction
  */
-.decl CallReturnDependency(?nextCtx: Context, ?next: Instruction, ?prevCtx: Context, ?prev: Instruction)
+.decl CallReturnDependency(?nextCtx: mainAnalysis.configuration.Context, ?next: Instruction, ?prevCtx: mainAnalysis.configuration.Context, ?prev: Instruction)
 
 
 /**
@@ -56,7 +56,7 @@
  * ?ctx         The calling context of the dependent instruction
  * ?insn        The dependent instruction
  */
-.decl DependentInstruction(?ctx: Context, ?insn: Instruction)
+.decl DependentInstruction(?ctx: mainAnalysis.configuration.Context, ?insn: Instruction)
 .output DependentInstruction
 
 /**

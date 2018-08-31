@@ -5,30 +5,30 @@
 AllCtxDependentStoreHeapFld(?fld, ?hctx, ?value) :-
     DependentInstruction(?ctx, ?dependent),
     StoreFldTo(?var, ?fld, ?dependent),
-    VarPointsTo(?hctx, ?value, ?ctx, ?var).
+    mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
 /* An instruction that loads a field that a dependent instruction wrote to */
 TaintedLoad(?ctx, ?insn) :-
     AllCtxDependentStoreHeapFld(?fld, ?hctx, ?value),
     LoadFldFrom(?insn, ?var2, ?fld),
-    VarPointsTo(?hctx, ?value, ?ctx, ?var2).
+    mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var2).
 
 /* Made for optimizing TaintedLoad */
 LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?value) :-
     LoadArrayIndex_Base(?insn, ?var),
-    VarPointsTo(?hctx, ?value, ?ctx, ?var).
+    mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
 /* An instruction that loads data from an array that a dependent instruction wrote to */
 TaintedLoad(?loadCtx, ?insn) :-
     DependentInstruction(?storeCtx, ?dependent),
     StoreArrayIndex_Base(?dependent, ?var1),
-    VarPointsTo(?hctx, ?value, ?storeCtx, ?var1),
+    mainAnalysis.VarPointsTo(?hctx, ?value, ?storeCtx, ?var1),
     LoadArrayHeapInsn(?loadCtx, ?insn, ?hctx, ?value).
 
 
 /* Data dependency between the formal and actual param */
 CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) :-
-    CallGraphEdge(?prevCtx, ?callsite, ?nextCtx, ?meth),
+    mainAnalysis.CallGraphEdge(?prevCtx, ?callsite, ?nextCtx, ?meth),
     ActualParam(?paramIndex, ?callsite, ?actParam),
     FormalParam(?paramIndex, ?meth, ?formalParam),
     InstructionDefinesVar(?prevInsn, ?actParam),
@@ -39,14 +39,14 @@ CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) :-
 CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) :-
     isReturnNonvoid_Insn(?prevInsn),
     Instruction_Method(?prevInsn, ?meth),
-    CallGraphEdge(?nextCtx, ?nextInsn, ?prevCtx, ?meth).
+    mainAnalysis.CallGraphEdge(?nextCtx, ?nextInsn, ?prevCtx, ?meth).
 
 
 /* Dependency source */
 DependentInstruction(?ctx, ?insn) :-
     DependencySourceInstruction(?insn),
     Instruction_Method(?insn, ?meth),
-    ReachableContext(?ctx, ?meth).
+    mainAnalysis.ReachableContext(?ctx, ?meth).
 
 /* All kinds of intra-procedural dependency */
 DependentInstruction(?ctx, ?insn)  :-
@@ -76,7 +76,7 @@ DependentInstruction(?ctx, ?insn) :-
 DependentInstruction(?ctx, ?insn) :-
     DependentInstruction(?prevCtx, ?prevInsnControlDep),
     IntraProceduralControlDep(?prevInsn, ?prevInsnControlDep),
-    CallGraphEdge(?prevCtx, ?prevInsn, ?ctx, ?meth),
+    mainAnalysis.CallGraphEdge(?prevCtx, ?prevInsn, ?ctx, ?meth),
     Instruction_Method(?insn, ?meth).
 
 /* Insn stores to base.fld */
