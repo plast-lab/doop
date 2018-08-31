@@ -50,7 +50,7 @@ public class Main {
                         System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
                         System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
-                        System.err.println("  --R-out-dir <directory>               Specify when to generate R code (when linking AAR inputs)");
+                        System.err.println("  --R-out-dir <directory>               Specify where to generate R code (when linking AAR inputs)");
                         System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
