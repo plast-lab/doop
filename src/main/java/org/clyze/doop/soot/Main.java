@@ -8,6 +8,7 @@ import org.clyze.utils.AARUtils;
 import org.clyze.utils.Helper;
 import soot.Scene;
 import soot.SootClass;
+import soot.SootMethod;
 import soot.options.Options;
 
 import java.io.File;
@@ -223,7 +224,10 @@ public class Main {
 
             if (sootParameters._android) {
                 if (sootParameters.getRunFlowdroid()) {
-                    driver.doAndroidInSequentialOrder(android.getDummyMain(), classes, writer, sootParameters._ssa);
+                    SootMethod dummyMain = android.getDummyMain();
+                    if (dummyMain == null)
+                        throw new RuntimeException("Internal error: FlowDroid returned null dummy main()")
+                    driver.doAndroidInSequentialOrder(dummyMain, classes, writer, sootParameters._ssa);
                     return;
                 } else {
                     Objects.requireNonNull(android).writeComponents(writer, sootParameters);
