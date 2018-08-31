@@ -1,10 +1,9 @@
 package org.clyze.doop.soot;
 
-import org.clyze.doop.common.ArtifactEntry;
+import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
-import org.clyze.doop.common.PropertyProvider;
 import org.clyze.doop.common.SessionCounter;
 import soot.*;
 import soot.jimple.*;
@@ -16,7 +15,6 @@ import soot.util.backend.ASMBackendUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,8 +26,8 @@ import static org.clyze.doop.common.PredicateFile.*;
  * database.
  */
 public class FactWriter extends JavaFactWriter {
-    private Representation _rep;
-    private Map<String, Type> _varTypeMap;
+    private final Representation _rep;
+    private final Map<String, Type> _varTypeMap;
 
     FactWriter(Database db) {
         super(db);
@@ -47,7 +45,7 @@ public class FactWriter extends JavaFactWriter {
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
-                _db.add(METHOD_ANNOTATION, result, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
+                _db.add(METHOD_ANNOTATION, result, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
             }
         }
         if (m.getTag("VisibilityParameterAnnotationTag") != null) {
@@ -57,7 +55,7 @@ public class FactWriter extends JavaFactWriter {
             for (int i = 0; i < annList.size(); i++) {
                 if (annList.get(i) != null) {
                     for (AnnotationTag aTag : annList.get(i).getAnnotations()) {
-                        _db.add(PARAM_ANNOTATION, result, str(i), soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
+                        _db.add(PARAM_ANNOTATION, result, str(i), soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
                     }
                 }
             }
@@ -81,7 +79,7 @@ public class FactWriter extends JavaFactWriter {
         if (c.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
-                _db.add(CLASS_ANNOTATION, classStr, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
+                _db.add(CLASS_ANNOTATION, classStr, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
             }
         }
     }
@@ -95,11 +93,10 @@ public class FactWriter extends JavaFactWriter {
     }
 
     private String writeType(SootClass c) {
-        String classStr = c.getName();
         // The type itself is already taken care of by writing the
         // SootClass declaration, so we don't actually write the type
         // here, and just return the string.
-        return classStr;
+        return c.getName();
     }
 
     private String writeType(Type t) {
@@ -113,7 +110,6 @@ public class FactWriter extends JavaFactWriter {
         else if (t instanceof PrimType || t instanceof NullType ||
                 t instanceof RefType || t instanceof VoidType || t instanceof BottomType) {
             // taken care of by the standard facts
-            ;
         }
         else {
             throw new RuntimeException("Don't know what to do with type " + t);
@@ -123,17 +119,17 @@ public class FactWriter extends JavaFactWriter {
     }
 
     void writePhantomType(Type t) {
-        _db.add(PHANTOM_TYPE, writeType(t));
+        writePhantomType(writeType(t));
     }
 
     void writePhantomType(SootClass c) {
-        _db.add(PHANTOM_TYPE, writeType(c));
+        writePhantomType(writeType(c));
     }
 
     void writePhantomMethod(SootMethod m) {
         String sig = writeMethod(m);
         System.out.println("Method " + sig + " is phantom.");
-        _db.add(PHANTOM_METHOD, sig);
+        writePhantomMethod(sig);
     }
 
     void writePhantomBasedMethod(SootMethod m) {
@@ -258,8 +254,7 @@ public class FactWriter extends JavaFactWriter {
             String storeInsn = _rep.instruction(m, stmt, storeInsnIndex);
 
             _db.add(STORE_ARRAY_INDEX, storeInsn, str(storeInsnIndex), childAssignTo, assignTo, methodId);
-            _db.add(VAR_TYPE, childAssignTo, writeType(componentType));
-            _db.add(VAR_DECLARING_METHOD, childAssignTo, methodId);
+            writeLocal(childAssignTo, writeType(componentType), methodId);
         }
     }
 
@@ -382,8 +377,7 @@ public class FactWriter extends JavaFactWriter {
             // bug that adds a phantom class to the Scene's hierarchy, although
             // (based on their own comments) it shouldn't.
             heap = classConstant(s);
-            String actualType = s;
-            _db.add(CLASS_HEAP, heap, actualType);
+            _db.add(CLASS_HEAP, heap, s);
         }
 
         int index = session.calcUnitNumber(stmt);
@@ -471,7 +465,7 @@ public class FactWriter extends JavaFactWriter {
             _db.add(ARRAY_INSN_INDEX, insn, _rep.local(m, arrIndex));
     }
 
-    void writeApplicationClass(SootClass application) {
+    private void writeApplicationClass(SootClass application) {
         _db.add(APP_CLASS, writeType(application));
     }
 
@@ -481,7 +475,7 @@ public class FactWriter extends JavaFactWriter {
         if (f.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) f.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
-                _db.add(FIELD_ANNOTATION, fieldId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
+                _db.add(FIELD_ANNOTATION, fieldId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
             }
         }
         return fieldId;
@@ -530,8 +524,7 @@ public class FactWriter extends JavaFactWriter {
         if (!(m.getReturnType() instanceof VoidType)) {
             String  var = _rep.nativeReturnVar(m);
             _db.add(NATIVE_RETURN_VAR, var, methodId);
-            _db.add(VAR_TYPE, var, writeType(m.getReturnType()));
-            _db.add(VAR_DECLARING_METHOD, var, methodId);
+            writeLocal(var, writeType(m.getReturnType()), methodId);
         }
     }
 
@@ -699,7 +692,7 @@ public class FactWriter extends JavaFactWriter {
     }
 
     void writeMethodDeclaresException(SootMethod m, SootClass exception) {
-        _db.add(METHOD_DECL_EXCEPTION, writeType(exception), writeMethod(m));
+        writeMethodDeclaresException(writeMethod(m), writeType(exception));
     }
 
     void writeFormalParam(SootMethod m, int i) {
@@ -720,8 +713,7 @@ public class FactWriter extends JavaFactWriter {
             _varTypeMap.put(local, type);
         }
 
-        _db.add(VAR_TYPE, local, writeType(type));
-        _db.add(VAR_DECLARING_METHOD, local, writeMethod(m));
+        writeLocal(local, writeType(type), writeMethod(m));
     }
 
     Local writeStringConstantExpression(SootMethod inMethod, Stmt stmt, StringConstant constant, Session session) {
@@ -956,9 +948,9 @@ public class FactWriter extends JavaFactWriter {
             }
     }
 
-    public void writePreliminaryFacts(Set<SootClass> classes, PropertyProvider propertyProvider, Map<String, Set<ArtifactEntry>> artifactToClassMap) {
+    public void writePreliminaryFacts(Set<SootClass> classes, BasicJavaSupport java, SootParameters sootParameters) {
         classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(this::writeApplicationClass);
-        writePreliminaryFacts(propertyProvider, artifactToClassMap);
+        writePreliminaryFacts(java, sootParameters);
     }
 
 }

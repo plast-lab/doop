@@ -85,7 +85,6 @@ class WalaFactGenerator implements Runnable {
                 iClass.getDeclaredStaticFields().forEach(this::generate);
             }catch (NullPointerException exc) //For some reason in DexClasses .getDeclaredStaticFields() can throw a NullPointerException
             {
-                ;
             }
 
 
@@ -207,7 +206,6 @@ class WalaFactGenerator implements Runnable {
                 IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
                 generate(m, ir, session);
             }catch (Throwable t){
-                return;
             }
         }
     }
@@ -509,8 +507,8 @@ class WalaFactGenerator implements Runnable {
 
     public void generate(IMethod m, IR ir, SSALoadMetadataInstruction instruction, Session session, TypeInference typeInference) {
         Local l =  createLocal(ir,instruction,instruction.getDef(),typeInference);
-        Value v = new ConstantValue(instruction.getToken());
-        _writer.writeClassConstantExpression(m, instruction, l, (ConstantValue) v, session);
+        ConstantValue v = new ConstantValue(instruction.getToken());
+        _writer.writeClassConstantExpression(m, instruction, l, v, session);
     }
 
     public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session, TypeInference typeInference) {

@@ -9,14 +9,14 @@ import java.util.Set;
 import java.util.concurrent.*;
 
 public class Driver {
-    private ThreadFactory _factory;
-    private int _cores;
+    private final ThreadFactory _factory;
+    private final int _cores;
 
     private ExecutorService _executor;
     private int _classCounter;
     private Set<SootClass> _tmpClassGroup;
-    private int _totalClasses;
-    private int _classSplit = 80;
+    private final int _totalClasses;
+    private final int _classSplit = 80;
 
     Driver(ThreadFactory factory, int totalClasses, Integer cores) {
         _factory = factory;

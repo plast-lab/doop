@@ -323,7 +323,7 @@ class LB3Analysis extends DoopAnalysis {
 	}
 
 	void produceStats() {
-		if (options.X_STATS_NONE.value) return;
+		if (options.X_STATS_NONE.value) return
 
 		if (options.X_STATS_AROUND.value) {
 			lbBuilder.include(options.X_STATS_AROUND.value as String)

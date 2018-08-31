@@ -19,14 +19,12 @@ import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.clyze.doop.common.SessionCounter;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.python.utils.PythonDatabase;
 import org.clyze.doop.python.utils.PythonPredicateFile;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

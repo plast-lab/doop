@@ -72,6 +72,7 @@ dependencies {
             "org.smali:dexlib2:2.2.4",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
+            "net.dongliu:apk-parser:2.6.2",                     // needed for reading binary XML entries from APK inputs
 
             // Soot
             "ext:AXMLPrinter:2.0",

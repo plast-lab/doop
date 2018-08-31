@@ -14,6 +14,9 @@
                                 ?invocation:MethodInvocation, ?value:symbol)
 .output LeakingTaintedInformation                                
 
+.decl LeakingTaintedInformationVars(?fromCtx: mainAnalysis.configuration.Context, ?from: Var, ?toCtx: mainAnalysis.configuration.Context, ?to: Var)
+.output LeakingTaintedInformationVars
+
 .decl VarIsCast(?var:Var)
 .decl VarUse(?var:Var, ?inst:Instruction)
 

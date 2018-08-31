@@ -17,6 +17,8 @@ PossibleOpenProgramEntryPoint(?class, ?meth) :-
 // These methods introduce webapp context mock objects
 MockCallReturnVal("<org.springframework.web.context.support.WebApplicationContextUtils: org.springframework.web.context.WebApplicationContext getWebApplicationContext(javax.servlet.ServletContext)>").
 MockCallReturnVal("<javax.faces.FactoryFinder: java.lang.Object getFactory(java.lang.String)>").
+MockCallReturnVal("<org.alfresco.web.app.servlet.FacesHelper: java.lang.Object getManagedBean(javax.faces.context.FacesContext,java.lang.String)>").
+
 MockCallReturnVal(?meth) :-
   basic.MethodOverridesOther(?meth, "<javax.faces.context.FacesContext: javax.faces.application.Application getApplication()>").
 
@@ -47,6 +49,7 @@ MockedObjTypeContains("org.springframework.web.context.").
 MockedObjTypeContains("org.springframework.context.").
 MockedObjTypeContains("java.lang.Object").
 MockedObjTypeContains("org.alfresco.service.").
+MockedObjTypeContains("org.alfresco.web.bean.").
 MockedObjTypeContains("javax.faces.context.").
 MockedObjTypeContains("javax.faces.lifecycle.").
 

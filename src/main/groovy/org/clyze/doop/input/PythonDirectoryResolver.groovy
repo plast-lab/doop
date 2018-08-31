@@ -16,7 +16,7 @@ class PythonDirectoryResolver implements InputResolver {
         def q = [dir] as Queue
         subDirs.add(dir)
         while(!q.isEmpty()) {
-            File ddir = q.remove();
+            File ddir = q.remove()
             allFiles.addAll(ddir.listFiles(filter).toList())
             println"Trying for dir " + ddir
             ddir.eachDir { subDir -> subDirs.add(subDir); q.add(subDir) }

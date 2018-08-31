@@ -121,7 +121,7 @@ public class WalaIRPrinter {
 
     private void printIR(IMethod m, PrintWriter writer)
     {
-        IR ir = null;
+        IR ir;
         try {
             ir = _cache.getIR(m, Everywhere.EVERYWHERE);
         }catch(Throwable t){

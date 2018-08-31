@@ -3,12 +3,9 @@ package org.clyze.doop.soot;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
-import org.clyze.doop.common.PropertyProvider;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
-import org.clyze.doop.util.filter.GlobClassFilter;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.Helper;
-import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
 import soot.options.Options;
@@ -16,15 +13,9 @@ import soot.options.Options;
 import java.io.File;
 import java.util.*;
 
-public class Main {
+import static org.clyze.doop.common.Parameters.*;
 
-    private static int shift(String[] args, int index) throws DoopErrorCodeException {
-        if(args.length == index + 1) {
-            System.err.println("error: option " + args[index] + " requires an argument");
-            throw new DoopErrorCodeException(9);
-        }
-        return index + 1;
-    }
+public class Main {
 
     private static boolean isApplicationClass(SootParameters sootParameters, SootClass klass) {
         return sootParameters.isApplicationClass(klass.getName());
@@ -42,34 +33,12 @@ public class Main {
             List<String> platforms = new ArrayList<>();
 
             for (int i = 0; i < args.length; i++) {
+                int next_i = sootParameters.processNextArg(args, i);
+                if (next_i != -1) {
+                    i = next_i;
+                    continue;
+                }
                 switch (args[i]) {
-                    case "--full":
-                        if (sootParameters._mode != null) {
-                            System.err.println("error: duplicate mode argument");
-                            throw new DoopErrorCodeException(1);
-                        }
-                        sootParameters._mode = SootParameters.Mode.FULL;
-                        break;
-                    case "-d":
-                        i = shift(args, i);
-                        sootParameters.setOutputDir(args[i]);
-                        break;
-                    case "--main":
-                        i = shift(args, i);
-                        sootParameters._main = args[i];
-                        break;
-                    case "--ssa":
-                        sootParameters._ssa = true;
-                        break;
-                    case "--android-jars":
-                        i = shift(args, i);
-                        sootParameters._android = true;
-                        sootParameters._androidJars = args[i];
-                        break;
-                    case "-i":
-                        i = shift(args, i);
-                        sootParameters.getInputs().add(args[i]);
-                        break;
                     case "-ld":
                         i = shift(args, i);
                         dependencies.add(args[i]);
@@ -100,56 +69,6 @@ public class Main {
                                 dependencies.add(file.getCanonicalPath());
                             }
                         }
-                        break;
-                    case "--application-regex":
-                        i = shift(args, i);
-                        sootParameters.setAppRegex(args[i]);
-                        break;
-                    case "--allow-phantom":
-                        sootParameters._allowPhantom = true;
-                        break;
-                    case "--run-flowdroid":
-                        sootParameters._runFlowdroid = true;
-                        break;
-                    case "--facts-subset":
-                        i = shift(args, i);
-                        sootParameters._factsSubSet = SootParameters.FactsSubSet.valueOf(args[i]);
-                        break;
-                    case "--generate-jimple":
-                        sootParameters._generateJimple = true;
-                        break;
-                    case "--stdout":
-                        sootParameters._toStdout = true;
-                        break;
-                    case "--noFacts":
-                        sootParameters._noFacts = true;
-                        break;
-                    case "--fact-gen-cores":
-                        i = shift(args, i);
-                        try {
-                            sootParameters._cores = new Integer(args[i]);
-                        } catch (NumberFormatException nfe) {
-                            System.out.println("Invalid cores argument: " + args[i]);
-                        }
-                        break;
-                    case "--ignoreWrongStaticness":
-                        sootParameters._ignoreWrongStaticness = true;
-                        break;
-                    case "--R-out-dir":
-                        i = shift(args, i);
-                        sootParameters._rOutDir = args[i];
-                        break;
-                    case "--extra-sensitive-controls":
-                        i = shift(args, i);
-                        sootParameters._extraSensitiveControls = args[i];
-                        break;
-                    case "--seed":
-                        i = shift(args, i);
-                        sootParameters._seed = args[i];
-                        break;
-                    case "--special-cs-methods":
-                        i = shift(args, i);
-                        sootParameters._specialCSMethods = args[i];
                         break;
                     case "-h":
                     case "--help":
@@ -194,7 +113,7 @@ public class Main {
             }
 
             if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
-                sootParameters._dependencies = dependencies;
+                sootParameters.setDependencies(dependencies);
                 sootParameters.setLibraries(platforms);
             } else {
                 sootParameters.setLibraries(platforms);
@@ -213,7 +132,7 @@ public class Main {
                 System.err.println("error: --stdout and -d options are not compatible");
                 throw new DoopErrorCodeException(2);
             }
-            else if ((sootParameters.getInputs().stream().filter(s -> s.endsWith(".apk") || s.endsWith(".aar")).count() > 0) &&
+            else if ((sootParameters.getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
                     (!sootParameters._android)) {
                 System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
                 throw new DoopErrorCodeException(3);
@@ -250,8 +169,9 @@ public class Main {
         //soot.options.Options.v().set_drop_bodies_after_load(true);
         Options.v().set_keep_line_number(true);
 
-        Set<SootClass> classes = new HashSet<>();
         BasicJavaSupport_Soot java = new BasicJavaSupport_Soot();
+        java.preprocessInputs(sootParameters);
+
         AndroidSupport_Soot android = null;
 
         // Set of temporary directories to be cleaned up after analysis ends.
@@ -265,7 +185,6 @@ public class Main {
             android.processInputs(sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
-            java.populateClassesInAppJar(sootParameters);
         }
 
         Scene scene = Scene.v();
@@ -295,6 +214,7 @@ public class Main {
         if (sootParameters._allowPhantom)
             Options.v().set_allow_phantom_refs(true);
 
+        Set<SootClass> classes = new HashSet<>();
         ClassAdder classAdder = (android != null) ? android : java;
         if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP)
             classAdder.addAppClasses(classes, scene);
@@ -331,54 +251,52 @@ public class Main {
         catch (Exception ex) {
             System.out.println("Not all bodies retrieved");
         }
-        Database db = new Database(new File(sootParameters.getOutputDir()));
-        FactWriter writer = new FactWriter(db);
-        ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
-        Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
 
-        writer.writePreliminaryFacts(classes, java.getPropertyProvider(), java.getArtifactToClassMap());
-        db.flush();
+        try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
+            FactWriter writer = new FactWriter(db);
+            ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
+            Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
 
-        if (sootParameters._android) {
-            if (sootParameters.getRunFlowdroid()) {
-                driver.doAndroidInSequentialOrder(android.getDummyMain(), classes, writer, sootParameters._ssa);
-                db.close();
-                return;
-            } else {
-                android.writeComponents(writer, sootParameters);
-            }
-        }
+            writer.writePreliminaryFacts(classes, java, sootParameters);
+            db.flush();
 
-        if (!sootParameters._noFacts) {
-            scene.getOrMakeFastHierarchy();
-            // avoids a concurrent modification exception, since we may
-            // later be asking soot to add phantom classes to the scene's hierarchy
-            driver.doInParallel(classes);
-            if (sootParameters._generateJimple) {
-                Set<SootClass> jimpleClasses = new HashSet<>(classes);
-                if (sootParameters._factsSubSet == null) {
-                    List<String> allClassNames = new ArrayList<>();
-                    Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
-                    for (String artifact : artifactToClassMap.keySet()) {
-        //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
-                        Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
-                        allClassNames.addAll(artEntries);
-                    }
-                    forceResolveClasses(allClassNames, jimpleClasses, scene);
-                    System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
+            if (sootParameters._android) {
+                if (sootParameters.getRunFlowdroid()) {
+                    driver.doAndroidInSequentialOrder(android.getDummyMain(), classes, writer, sootParameters._ssa);
+                    return;
+                } else {
+                    Objects.requireNonNull(android).writeComponents(writer, sootParameters);
                 }
-                driver.writeInParallel(jimpleClasses);
-                DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
             }
+
+            if (!sootParameters.noFacts()) {
+                scene.getOrMakeFastHierarchy();
+                // avoids a concurrent modification exception, since we may
+                // later be asking soot to add phantom classes to the scene's hierarchy
+                driver.doInParallel(classes);
+                if (sootParameters._generateJimple) {
+                    Set<SootClass> jimpleClasses = new HashSet<>(classes);
+                    if (sootParameters._factsSubSet == null) {
+                        List<String> allClassNames = new ArrayList<>();
+                        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
+                        for (String artifact : artifactToClassMap.keySet()) {
+                            //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
+                            Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
+                            allClassNames.addAll(artEntries);
+                        }
+                        forceResolveClasses(allClassNames, jimpleClasses, scene);
+                        System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
+                    }
+                    driver.writeInParallel(jimpleClasses);
+                    DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
+                }
+            }
+
+            writer.writeLastFacts(java);
+        } finally {
+            // Clean up any temporary directories used for AAR extraction.
+            Helper.cleanUp(tmpDirs);
         }
-
-        sootParameters.processSeeds(writer);
-        sootParameters.processSpecialCSMethods(writer);
-
-        db.close();
-
-        // Clean up any temporary directories used for AAR extraction.
-        Helper.cleanUp(tmpDirs);
     }
 
     private static boolean sootClassPathFirstElement = true;

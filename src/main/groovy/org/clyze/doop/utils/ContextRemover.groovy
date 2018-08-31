@@ -164,7 +164,7 @@ class ContextRemover {
 	// Find next ')' that doesn't match a prepending '('.
 	static int matchingRParen(String s, int startIdx) {
 		def parens = 1
-		def cs = s.toCharArray();
+		def cs = s.toCharArray()
 		for (int idx = startIdx; idx < s.size(); idx++) {
 			if (cs[idx] == '(') {
 				parens += 1

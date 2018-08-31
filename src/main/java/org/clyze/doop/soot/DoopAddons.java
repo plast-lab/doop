@@ -1,11 +1,10 @@
 package org.clyze.doop.soot;
 
 import heros.solver.CountingThreadPoolExecutor;
-import java.lang.reflect.Constructor;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.io.File;
-import java.io.InputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Iterator;
@@ -15,17 +14,13 @@ import org.clyze.doop.common.DoopErrorCodeException;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
-import soot.SootField;
 import soot.SootMethod;
 import soot.options.Options;
 
 /**
  * This class gathers modified functionality that Doop needs from Soot.
  */
-public class DoopAddons {
-
-    private static boolean getInitialValueString_warned = false;
-    private static boolean foundFile_warned = false;
+class DoopAddons {
 
     public static void retrieveAllSceneClassesBodies() {
         // The old coffi front-end is not thread-safe
@@ -39,18 +34,9 @@ public class DoopAddons {
             //note: the following is a snapshot iterator;
             //this is necessary because it can happen that phantom methods
             //are added during resolution
-            Iterator<SootMethod> methodIt = cl.getMethods().iterator();
-            while (methodIt.hasNext()) {
-                final SootMethod m = methodIt.next();
-                if( m.isConcrete() ) {
-                    executor.execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                m.retrieveActiveBody();
-                            }
-                        });
-                }
-            }
+            for (SootMethod m : cl.getMethods())
+                if (m.isConcrete())
+                    executor.execute(m::retrieveActiveBody);
         }
         // Wait till all method bodies have been loaded
         try {
@@ -70,9 +56,9 @@ public class DoopAddons {
     public static void retrieveAllBodies() throws DoopErrorCodeException {
         PackManager pm = PackManager.v();
         try {
-            Method rAB = pm.getClass().getDeclaredMethod("retrieveAllBodies", new Class<?>[] { });
+            Method rAB = pm.getClass().getDeclaredMethod("retrieveAllBodies");
             rAB.setAccessible(true);
-            rAB.invoke(pm, new Object[] { });
+            rAB.invoke(pm);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             System.err.println("Could not call Soot method retrieveAllBodies():");
             ex.printStackTrace();
@@ -84,9 +70,9 @@ public class DoopAddons {
     public static void writeClass(SootClass sootClass) throws DoopErrorCodeException {
         PackManager pm = PackManager.v();
         try {
-            Method wC = pm.getClass().getDeclaredMethod("writeClass", new Class<?>[] { SootClass.class });
+            Method wC = pm.getClass().getDeclaredMethod("writeClass", SootClass.class);
             wC.setAccessible(true);
-            wC.invoke(pm, new Object[] { sootClass });
+            wC.invoke(pm, sootClass);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             System.err.println("Could not call Soot method writeClass(): ");
             ex.printStackTrace();

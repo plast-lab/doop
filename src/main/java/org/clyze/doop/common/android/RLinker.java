@@ -85,14 +85,12 @@ public class RLinker {
             // Compile JAR and optionally copy to output directory.
             String tmpJarName = tmpDir + "/" + Constants.R_AUTOGEN_JAR;
             runProcess("jar cf " + tmpJarName + " -C " + tmpDir + " .");
-            if (rDir != null) {
-                String outJarName = rDir + "/" + Constants.R_AUTOGEN_JAR;
-                try {
-                    FileUtils.copyFile(new File(tmpJarName), new File(outJarName));
-                    return outJarName;
-                } catch (IOException ex) {
-                    System.err.println("Failed to copy " + tmpJarName + " to " + outJarName + " : " + ex.getMessage());
-                }
+            String outJarName = rDir + "/" + Constants.R_AUTOGEN_JAR;
+            try {
+                FileUtils.copyFile(new File(tmpJarName), new File(outJarName));
+                return outJarName;
+            } catch (IOException ex) {
+                System.err.println("Failed to copy " + tmpJarName + " to " + outJarName + " : " + ex.getMessage());
             }
 
             return tmpJarName;
@@ -147,7 +145,7 @@ public class RLinker {
             newParts[0] = parts[0];
             newParts[1] = parts[2];
             newParts[2] = "=";
-            for (int i = 3; i < parts.length; i++) { newParts[i] = parts[i]; }
+            System.arraycopy(parts, 3, newParts, 3, parts.length - 3);
 
             // Remember int constants.
             if (newParts[0].equals("int") && (newParts.length > 3)) {
@@ -159,7 +157,7 @@ public class RLinker {
             }
 
             // Generate Java code.
-            Map<String, Set<String>> pkgEntry = rs.getOrDefault(pkg, new HashMap<String, Set<String>>());
+            Map<String, Set<String>> pkgEntry = rs.getOrDefault(pkg, new HashMap<>());
             Set<String> set = pkgEntry.getOrDefault(nestedR, new HashSet<>());
             set.add("        public static " + String.join(delim, newParts) + ";");
             pkgEntry.put(nestedR, set);

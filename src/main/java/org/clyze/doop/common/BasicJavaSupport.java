@@ -17,11 +17,11 @@ import org.objectweb.asm.ClassReader;
  */
 public class BasicJavaSupport {
 
-    protected Set<String> classesInApplicationJars;
-    protected Set<String> classesInLibraryJars;
-    protected Set<String> classesInDependencyJars;
-    private Map<String, Set<ArtifactEntry>> artifactToClassMap;
-    private PropertyProvider propertyProvider;
+    protected final Set<String> classesInApplicationJars;
+    protected final Set<String> classesInLibraryJars;
+    protected final Set<String> classesInDependencyJars;
+    private final Map<String, Set<ArtifactEntry>> artifactToClassMap;
+    private final PropertyProvider propertyProvider;
 
     public BasicJavaSupport() {
         this.classesInApplicationJars = new HashSet<>();
@@ -32,11 +32,33 @@ public class BasicJavaSupport {
     }
 
     /**
-     * Process a JAR input.
-     * @param classSet   appropriate set to add class names
-     * @param filename   the JAR filename
+     * Helper method to read classes and property files from input archives.
+     *
+     * @param parameters the list of all the given parameters
+     *
      */
-    protected void processJar(Set<String> classSet, String filename) throws IOException {
+    public void preprocessInputs(Parameters parameters) throws IOException {
+        for (String filename : parameters.getInputs()) {
+            System.out.println("Preprocessing application: " + filename);
+            preprocessInput(classesInApplicationJars, filename);
+        }
+        for (String filename : parameters.getLibraries()) {
+            System.out.println("Preprocessing library: " + filename);
+            preprocessInput(classesInLibraryJars, filename);
+        }
+        for (String filename : parameters.getDependencies()) {
+            System.out.println("Preprocessing dependency: " + filename);
+            preprocessInput(classesInDependencyJars, filename);
+        }
+    }
+
+    /**
+     * Preprocess an input archive.
+     *
+     * @param classSet   appropriate set to add class names
+     * @param filename   the input filename
+     */
+    private void preprocessInput(Set<String> classSet, String filename) throws IOException {
         JarEntry entry;
         try (JarInputStream jin = new JarInputStream(new FileInputStream(filename));
              JarFile jarFile = new JarFile(filename)) {

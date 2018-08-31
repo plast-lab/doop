@@ -5,7 +5,11 @@ package org.clyze.doop.common.android;
 import java.io.IOException;
 import java.util.Set;
 
-public interface AndroidManifest {
+/**
+ * The non-code information that Doop needs from an Android app,
+ * e.g., resources found in AndroidManifest.xml or other .xml files.
+ */
+public interface AppResources {
     String getApplicationName();
     String getPackageName();
     Set<String> getServices();

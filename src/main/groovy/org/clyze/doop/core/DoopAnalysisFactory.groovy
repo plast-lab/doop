@@ -31,6 +31,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			"scaler"                             : "ScalerConfiguration",
 			"twophase-A"                         : "TwoPhaseAConfiguration",
 			"twophase-B"                         : "TwoPhaseBConfiguration",
+			"dependency-analysis"                : "TwoObjectSensitivePlusHeapConfiguration",
 			"context-insensitive"                : "ContextInsensitiveConfiguration",
 			"context-insensitive-plus"           : "ContextInsensitivePlusConfiguration",
 			"context-insensitive-plusplus"       : "ContextInsensitivePlusPlusConfiguration",

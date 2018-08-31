@@ -11,7 +11,6 @@ import java.util.concurrent.*;
 class WalaDriver {
 
     private WalaThreadFactory _factory;
-    private boolean _generateJimple;
     private boolean _android;
 
     private ExecutorService _executor;
@@ -20,13 +19,12 @@ class WalaDriver {
     private int _totalClasses;
     private IAnalysisCacheView _cache;
 
-    WalaDriver(WalaThreadFactory factory, int totalClasses, boolean generateJimple,
+    WalaDriver(WalaThreadFactory factory, int totalClasses,
            Integer cores, boolean android, IAnalysisCacheView cache) {
         _factory = factory;
         _classCounter = 0;
         _tmpClassGroup = new HashSet<>();
         _totalClasses = totalClasses;
-        _generateJimple = generateJimple;
         _android = android;
         _cache = cache;
         int _cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;

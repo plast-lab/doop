@@ -15,6 +15,7 @@ import com.ibm.wala.util.io.FileProvider;
 import com.ibm.wala.util.strings.Atom;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.jar.JarFile;
@@ -153,7 +154,7 @@ public class WalaScopeReader {
             // assume the scope file is UTF-8 encoded; ASCII files will also be handled properly
             // TODO allow specifying encoding as a parameter?
             if (scopeFile.exists()) {
-                r = new BufferedReader(new InputStreamReader(new FileInputStream(scopeFile), "UTF-8"));
+                r = new BufferedReader(new InputStreamReader(new FileInputStream(scopeFile), StandardCharsets.UTF_8));
             } else {
                 // try to read from jar
                 InputStream inFromJar = javaLoader.getResourceAsStream(scopeFileName);
@@ -270,9 +271,7 @@ public class WalaScopeReader {
                     }
                 }
             }
-        } catch (IOException e) {
-            Assertions.UNREACHABLE(e.toString());
-        } catch (InvalidClassFileException e) {
+        } catch (IOException | InvalidClassFileException e) {
             Assertions.UNREACHABLE(e.toString());
         }
     }

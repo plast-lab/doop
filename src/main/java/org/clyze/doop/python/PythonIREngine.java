@@ -72,18 +72,17 @@ public class PythonIREngine {
                 if(f.isDirectory()) {
                     File[] listOfFiles = f.listFiles();
 
-                    for (int i = 0; i < listOfFiles.length; i++) {
-                        String absPath = listOfFiles[i].getAbsolutePath();
+                    for (File listOfFile : listOfFiles) {
+                        String absPath = listOfFile.getAbsolutePath();
                         Path absolutePath = Paths.get(absPath).normalize();
-                        if(absolutePath.toString().endsWith(".py")) {
+                        if (absolutePath.toString().endsWith(".py")) {
                             try {
                                 modules.add(new SourceURLModule(new URL("file://" + absolutePath)));
                                 System.out.println("Added file " + absolutePath);
                             } catch (MalformedURLException ex) {
                                 System.err.println("Failed to create module for file " + absolutePath + "\nexception:" + ex);
                             }
-                        }
-                        else{
+                        } else {
                             //Maybe do something with .c or .h files at some point
                         }
                     }

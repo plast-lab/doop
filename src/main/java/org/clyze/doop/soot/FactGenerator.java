@@ -19,7 +19,6 @@ class FactGenerator implements Runnable {
     private FactWriter _writer;
     private boolean _ssa;
     private Set<SootClass> _sootClasses;
-    private final int maxRetries = 10;
 
     FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses)
     {
@@ -83,6 +82,7 @@ class FactGenerator implements Runnable {
                     }
                 } catch (Exception exc) {
                     numRetries++;
+                    int maxRetries = 10;
                     if (numRetries > maxRetries) {
                         System.err.println("\nGiving up...\n");
                         throw exc;
@@ -145,7 +145,7 @@ class FactGenerator implements Runnable {
     }
 
     /* Check for phantom classes in a method signature. */
-    public boolean isPhantomBased(SootMethod m) {
+    private boolean isPhantomBased(SootMethod m) {
         for (SootClass clazz: m.getExceptions())
             if (isPhantom(clazz.getType())) {
                 System.out.println("Exception " + clazz.getName() + " is phantom.");
@@ -360,7 +360,7 @@ class FactGenerator implements Runnable {
     /**
      * Assignment statement
      */
-    public void generate(SootMethod inMethod, AssignStmt stmt, Session session)
+    private void generate(SootMethod inMethod, AssignStmt stmt, Session session)
     {
         Value left = stmt.getLeftOp();
 
@@ -504,7 +504,7 @@ class FactGenerator implements Runnable {
         Value right = stmt.getRightOp();
 
         // first make sure we have local variable for the right-hand-side.
-        Local rightLocal = null;
+        Local rightLocal;
 
         if(right instanceof Local)
         {
@@ -592,7 +592,6 @@ class FactGenerator implements Runnable {
                TODO Would be good to check more carefully that a caught
                exception does not occur anywhere else.
             */
-            return;
         }
         else if(left instanceof Local && right instanceof ThisRef)
         {

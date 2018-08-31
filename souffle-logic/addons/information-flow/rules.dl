@@ -203,15 +203,17 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   SourceFromTaintedValue(?value, ?source),
   mainAnalysis.isImmutableHContext(?hctx).
+.plan 1:(7,1,2,3,4,5,6,8,9),2:(8,1,2,3,4,5,6,7,9)
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
-  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  TaintedValue(?value),
+  TaintedVarPointsTo(?value, ?ctx, ?from),
   AssignCast(_, ?from, ?to, _),
   mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   SourceFromTaintedValue(?value, ?source),
-  Var_Type(?to, ?type).
+  Var_Type(?to, ?type),
+  mainAnalysis.isImmutableHContext(?hctx).
+.plan 1:(3,1,2,4,5,6),2:(4,1,2,3,5,6)
 
 TaintObjTransfer(?ctx, ?base, ?ctx, ?to),
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
@@ -225,6 +227,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   SourceFromTaintedValue(?value, ?source),
   mainAnalysis.isImmutableHContext(?hctx).
+.plan 1:(7,1,2,3,4,5,6,8,9),2:(8,1,2,3,4,5,6,7,9)
 
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 .decl ValueTaintedFromValue(?v1:Value, ?v2:Value)
@@ -312,6 +315,21 @@ LeakingTaintedInformation(?sourceLabel, ?destLabel, ?ctx, ?invocation, ?source) 
   LabelFromSource(?source, ?sourceLabel),
   TaintedVarPointsTo(?value, ?ctx, ?var),
   LeakingSinkVariable(?destLabel, ?invocation, ?ctx, ?var).
+
+LeakingTaintedInformationVars(?fromCtx, ?from, ?toCtx, ?to) :-
+  TaintedVarPointsTo(?value, ?toCtx, ?to),
+  LeakingSinkVariable(_, _, ?toCtx, ?to),
+  SourceFromTaintedValue(?value, ?from),
+  Var_DeclaringMethod(?from, ?meth),
+  mainAnalysis.ReachableContext(?fromCtx, ?meth).
+
+LeakingTaintedInformationVars(?fromCtx, ?from, ?toCtx, ?to) :-
+  TaintedVarPointsTo(?value, ?toCtx, ?to),
+  LeakingSinkVariable(_, _, ?toCtx, ?to),
+  SourceFromTaintedValue(?value, ?source),
+  AssignReturnValue(?source, ?from),
+  TaintedVarPointsTo(?fromVal, ?fromCtx, ?from),
+  SourceFromTaintedValue(?fromVal, ?source).
 
 /**
  * Special Heap allocation on function call
@@ -432,24 +450,32 @@ TaintObjTransfer(?ctx, ?base, ?calleeCtx, ?this) :-
     MethodInvocation_Base(?invo, ?base),
     mainAnalysis.CallGraphEdge(?ctx, ?invo, ?calleeCtx, ?meth),
     ThisVar(?meth, ?this).
+.plan 1:(3,2,1,4)
 
 TaintObjTransfer(?ctx, ?param, ?ctx, ?base) :-
     ParamTaintTransferredToBase(?param, ?ctx, ?base),
     TaintedVarPointsTo(_, ?ctx, ?param).
 
 TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to) :-
-    mainAnalysis.LoadHeapInstanceField(?toCtx, ?to, ?sig, ?hctx, _),
-    mainAnalysis.StoreHeapInstanceField(?sig, ?hctx, _, ?fromCtx, ?from).
+    TaintedVarPointsTo(?value, ?fromCtx, ?from),
+    mainAnalysis.StoreHeapInstanceField(?sig, ?hctx, ?baseval, ?fromCtx, ?from),
+    mainAnalysis.LoadHeapInstanceField(?toCtx, ?to, ?sig, ?hctx, ?baseval),
+    TaintedVarPointsTo(?value, ?toCtx, ?to).
+.plan 1:(2,1,4,3),2:(3,4,1,2),3:(4,3,2,1)
 
 TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to) :-
-  mainAnalysis.LoadHeapArrayIndex(?toCtx, ?to, ?basehctx, ?basevalue),
-  mainAnalysis.StoreHeapArrayIndex(?basehctx, ?basevalue, ?fromCtx, ?from).
+    TaintedVarPointsTo(?value, ?fromCtx, ?from),
+    mainAnalysis.StoreHeapArrayIndex(?basehctx, ?basevalue, ?fromCtx, ?from),
+    mainAnalysis.LoadHeapArrayIndex(?toCtx, ?to, ?basehctx, ?basevalue),
+    TaintedVarPointsTo(?value, ?toCtx, ?to).
+.plan 1:(2,1,4,3),2:(3,4,1,2),3:(4,3,2,1)
 
 TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to) :-
+    TaintedVarPointsTo(?val, ?toCtx, ?to),
     LoadStaticField(?sig, ?to, _),
     StoreStaticField(?from, ?sig, _),
-    TaintedVarPointsTo(_, ?toCtx, ?to),
-    TaintedVarPointsTo(_, ?fromCtx, ?from).
+    TaintedVarPointsTo(?val, ?fromCtx, ?from).
+.plan 1:(4,3,2,1)
 
 TaintObjTransfer(?ctx, ?from, ?ctx, ?to) :-
     TaintedVarPointsTo(_, ?ctx, ?from),

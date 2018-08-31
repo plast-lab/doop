@@ -9,7 +9,7 @@ public class SessionCounter {
      * Keep the current count of temporary vars of a certain kind,
      * identified by base name.
      */
-    private Map<String, Integer> _tempVarMap = new HashMap<>();
+    private final Map<String, Integer> _tempVarMap = new HashMap<>();
 
     public int nextNumber(String s) {
         Integer x = _tempVarMap.get(s);

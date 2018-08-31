@@ -1,6 +1,5 @@
 package org.clyze.doop.soot;
 
-import soot.PackManager;
 import soot.SootClass;
 import soot.SootMethod;
 
@@ -8,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Set;
 
 public class JimpleGenerator implements Runnable {
-    private Set<SootClass> _sootClasses;
+    private final Set<SootClass> _sootClasses;
 
     public JimpleGenerator(Set<SootClass> sootClasses) {
         this._sootClasses = sootClasses;

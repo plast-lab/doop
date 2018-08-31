@@ -1,8 +1,12 @@
 package org.clyze.doop.common;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Stream;
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**
@@ -10,13 +14,13 @@ import static org.clyze.doop.common.PredicateFile.*;
  */
 public class JavaFactWriter {
 
-    protected Database _db;
+    protected final Database _db;
 
-    public JavaFactWriter(Database db) {
+    protected JavaFactWriter(Database db) {
         this._db = db;
     }
 
-    public static String str(int i) {
+    protected static String str(int i) {
         return String.valueOf(i);
     }
 
@@ -42,26 +46,26 @@ public class JavaFactWriter {
             return "<<METHOD HASH:" + methodRaw.hashCode() + ">>";
     }
 
-    public void writeClassArtifact(String artifact, String className, String subArtifact) {
+    private void writeClassArtifact(String artifact, String className, String subArtifact) {
         _db.add(CLASS_ARTIFACT, artifact, className, subArtifact);
     }
 
-    public void writeAndroidKeepMethod(String methodSig) {
+    private void writeAndroidKeepMethod(String methodSig) {
         _db.add(ANDROID_KEEP_METHOD, "<" + methodSig + ">");
     }
 
-    public void writeAndroidKeepClass(String className) {
+    private void writeAndroidKeepClass(String className) {
         _db.add(ANDROID_KEEP_CLASS, className);
     }
 
-    public void writeProperty(String path, String key, String value) {
+    private void writeProperty(String path, String key, String value) {
         String pathId = writeStringConstant(path);
         String keyId = writeStringConstant(key);
         String valueId = writeStringConstant(value);
         _db.add(PROPERTIES, pathId, keyId, valueId);
     }
 
-    public void writeSpecialSensitivityMethod(String line) {
+    private void writeSpecialSensitivityMethod(String line) {
         String[] linePieces = line.split(", ");
         String method = linePieces[0].trim();
         String sensitivity = linePieces[1].trim();
@@ -109,15 +113,16 @@ public class JavaFactWriter {
         _db.add(CALLBACK_METHOD, callbackMethod);
     }
 
-    public void writeLayoutControl(Integer id, String layoutControl, Integer parentID) {
-        _db.add(LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
+    public void writeLayoutControl(Integer id, String viewClassName, Integer parentID, String appRId, String androidRId) {
+        _db.add(LAYOUT_CONTROL, id.toString(), viewClassName, parentID.toString());
     }
 
-    public void writeSensitiveLayoutControl(Integer id, String layoutControl, Integer parentID) {
-        _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
+    public void writeSensitiveLayoutControl(Integer id, String viewClassName, Integer parentID) {
+        _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), viewClassName, parentID.toString());
     }
 
-    public void writePreliminaryFacts(PropertyProvider propertyProvider, Map<String, Set<ArtifactEntry>> artifactToClassMap) {
+    public void writePreliminaryFacts(BasicJavaSupport java, Parameters params) {
+        PropertyProvider propertyProvider = java.getPropertyProvider();
 
         // Read all stored properties files
         for (Map.Entry<String, Properties> entry : propertyProvider.getProperties().entrySet()) {
@@ -130,6 +135,22 @@ public class JavaFactWriter {
             }
         }
 
+        try {
+            processSeeds(params._seed);
+            processSpecialCSMethods(params._specialCSMethods);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Last step of writing facts, after all classes have been processed.
+     *
+     * @param java  the object supporting basic Java functionality
+     */
+    public void writeLastFacts(BasicJavaSupport java) {
+        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
+
         System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
         for (String artifact : artifactToClassMap.keySet())
             for (ArtifactEntry ae : artifactToClassMap.get(artifact))
@@ -139,13 +160,13 @@ public class JavaFactWriter {
     // The extra sensitive controls are given as a String
     // "id1,type1,parentId1,id2,type2,parentId2,...".
     public void writeExtraSensitiveControls(Parameters parameters) {
-        if (parameters._extraSensitiveControls.equals("")) {
+        if (parameters.getExtraSensitiveControls().equals("")) {
             return;
         }
-        String[] parts = parameters._extraSensitiveControls.split(",");
+        String[] parts = parameters.getExtraSensitiveControls().split(",");
         int partsLen = parts.length;
         if (partsLen % 3 != 0) {
-            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + parameters._extraSensitiveControls + "\"");
+            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + parameters.getExtraSensitiveControls() + "\"");
             return;
         }
         for (int i = 0; i < partsLen; i += 3) {
@@ -161,4 +182,52 @@ public class JavaFactWriter {
             }
         }
     }
+
+    private void processSeeds(String seed) throws IOException {
+        if (seed != null) {
+            System.out.println("Reading seeds from: " + seed);
+            try (Stream<String> stream = Files.lines(Paths.get(seed))) {
+                stream.forEach(this::processSeedFileLine);
+            }
+        }
+    }
+
+    private void processSeedFileLine(String line) {
+        if (line.contains("("))
+            writeAndroidKeepMethod(line);
+        else if (!line.contains(":"))
+            writeAndroidKeepClass(line);
+    }
+
+    private void processSpecialCSMethods(String csMethods) throws IOException {
+        if (csMethods != null) {
+            System.out.println("Reading special methods from: " + csMethods);
+            try (Stream<String> stream = Files.lines(Paths.get(csMethods))) {
+                stream.forEach(this::processSpecialSensitivityMethodFileLine);
+            }
+        }
+    }
+
+    private void processSpecialSensitivityMethodFileLine(String line) {
+        if (line.contains(", "))
+            writeSpecialSensitivityMethod(line);
+    }
+
+    protected void writeMethodDeclaresException(String methodId, String exceptionType) {
+        _db.add(METHOD_DECL_EXCEPTION, exceptionType, methodId);
+    }
+
+    protected void writePhantomType(String t) {
+        _db.add(PHANTOM_TYPE, t);
+    }
+
+    protected void writePhantomMethod(String sig) {
+        _db.add(PHANTOM_METHOD, sig);
+    }
+
+    protected void writeLocal(String local, String type, String method) {
+        _db.add(VAR_TYPE, local, type);
+        _db.add(VAR_DECLARING_METHOD, local, method);
+    }
+
 }

@@ -14,15 +14,15 @@ import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
-import org.clyze.doop.common.PropertyProvider;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+
+import static org.clyze.doop.common.Parameters.shift;
 
 public class WalaInvoker {
 
@@ -35,19 +35,9 @@ public class WalaInvoker {
         logger =  LogFactory.getLog(getClass());
     }
 
-    private static int shift(String[] args, int index) throws DoopErrorCodeException {
-        if(args.length == index + 1) {
-            System.err.println("error: option " + args[index] + " requires an argument");
-            throw new DoopErrorCodeException(9);
-        }
-        return index + 1;
-    }
-
     private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
-        //walaParameters.applicationClassFilter = new GlobClassFilter(walaParameters.appRegex);
         // Change package delimiter from "/" to "."
-        //return walaParameters.applicationClassFilter.matches(WalaUtils.fixTypeString(klass.getName().toString()));
-        return(klass.getClassLoader().getName().toString().equals("Application"));
+        return walaParameters.isApplicationClass(WalaUtils.fixTypeString(klass.getName().toString()));
     }
 
     public void main(String[] args) throws IOException {
@@ -59,18 +49,12 @@ public class WalaInvoker {
             }
 
             for (int i = 0; i < args.length; i++) {
+                int next_i = walaParameters.processNextArg(args, i);
+                if (next_i != -1) {
+                    i = next_i;
+                    continue;
+                }
                 switch (args[i]) {
-                    case "--android-jars":
-                        i = shift(args, i);
-                        //walaParameters._allowPhantom = true;
-                        walaParameters._android = true;
-                        walaParameters._androidJars = args[i];
-                        System.out.println("WALA ANDROID JARS " + walaParameters._androidJars);
-                        break;
-                    case "-i":
-                        i = shift(args, i);
-                        walaParameters.getInputs().add(args[i]);
-                        break;
                     case "-l":
                         i = shift(args, i);
                         walaParameters.getLibraries().add(args[i]);
@@ -85,26 +69,6 @@ public class WalaInvoker {
                     case "-p":
                         i = shift(args, i);
                         walaParameters._javaPath = args[i];
-                        break;
-                    case "-d":
-                        i = shift(args, i);
-                        walaParameters.setOutputDir(args[i]);
-                        break;
-                    case "--application-regex":
-                        i = shift(args, i);
-                        walaParameters.setAppRegex(args[i]);
-                        break;
-                    case "--extra-sensitive-controls":
-                        i = shift(args, i);
-                        walaParameters._extraSensitiveControls = args[i];
-                        break;
-                    case "--fact-gen-cores":
-                        i = shift(args, i);
-                        try {
-                            walaParameters._cores = new Integer(args[i]);
-                        } catch (NumberFormatException nfe) {
-                            System.out.println("Invalid cores argument: " + args[i]);
-                        }
                         break;
                     default:
                         if (args[i].charAt(0) == '-') {
@@ -125,7 +89,7 @@ public class WalaInvoker {
         run(walaParameters);
     }
 
-    public void run(WalaParameters walaParameters) throws IOException {
+    private void run(WalaParameters walaParameters) throws IOException {
         StringBuilder classPath = new StringBuilder();
         List<String> inputs = walaParameters.getInputs();
         for (int i = 0; i < inputs.size(); i++) {
@@ -163,63 +127,62 @@ public class WalaInvoker {
         assert cha != null;
         Iterator<IClass> classes = cha.iterator();
         String outputDir = walaParameters.getOutputDir();
-        Database db = new Database(new File(outputDir));
-        WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._android);
-        WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
-        // TODO: fill in propertyProvider/artifactToClassMap/java
-        PropertyProvider propertyProvider = new PropertyProvider();
-        Map<String, Set<ArtifactEntry>> artifactToClassMap = new HashMap<>();
-        BasicJavaSupport java = null;
+        try (Database db = new Database(new File(outputDir))) {
+            WalaFactWriter walaFactWriter = new WalaFactWriter(db);
+            WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
-        if(walaParameters._android)
-        {
-            WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);
-            parser.writeComponents();
-        }
-        System.out.println("Number of classes: " + cha.getNumberOfClasses());
+            BasicJavaSupport java = new BasicJavaSupport();
 
-        IAnalysisCacheView cache;
-        if(walaParameters._android)
-            cache = new AnalysisCacheImpl(new DexIRFactory());
-        else
-            cache = new AnalysisCacheImpl();
-
-        walaFactWriter.writePreliminaryFacts(propertyProvider, artifactToClassMap);
-
-        IClass klass;
-        Set<IClass> classesSet = new HashSet<>();
-        Map<String, List<String>> signaturePolymorphicMethods = new HashMap<>();
-        while (classes.hasNext()) {
-            klass = classes.next();
-            if (isApplicationClass(walaParameters, klass)) {
-                walaFactWriter.writeApplicationClass(klass);
+            if (walaParameters._android) {
+                WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);
+                parser.writeComponents();
             }
-            classesSet.add(klass);
-            for(IMethod m: klass.getDeclaredMethods()) {
-                addIfSignaturePolymorphic(m, signaturePolymorphicMethods);
-                //System.out.println(m.toString());
-                try {
-                    cache.getIR(m);
-                }catch (Throwable e){
-                    System.out.println("Error while creating IR for method: " + m.getReference() + "\n"+ e);
+            System.out.println("Number of classes: " + cha.getNumberOfClasses());
+
+            IAnalysisCacheView cache;
+            if (walaParameters._android)
+                cache = new AnalysisCacheImpl(new DexIRFactory());
+            else
+                cache = new AnalysisCacheImpl();
+
+            java.preprocessInputs(walaParameters);
+            walaFactWriter.writePreliminaryFacts(java, walaParameters);
+            db.flush();
+
+            IClass klass;
+            Set<IClass> classesSet = new HashSet<>();
+            Map<String, List<String>> signaturePolymorphicMethods = new HashMap<>();
+            while (classes.hasNext()) {
+                klass = classes.next();
+                if (isApplicationClass(walaParameters, klass)) {
+                    walaFactWriter.writeApplicationClass(klass);
+                }
+                classesSet.add(klass);
+                for (IMethod m : klass.getDeclaredMethods()) {
+                    addIfSignaturePolymorphic(m, signaturePolymorphicMethods);
+                    //System.out.println(m.toString());
+                    try {
+                        cache.getIR(m);
+                    } catch (Throwable e) {
+                        System.out.println("Error while creating IR for method: " + m.getReference() + "\n" + e);
+                    }
                 }
             }
+            walaFactWriter.setSignaturePolyMorphicMethods(signaturePolymorphicMethods);
+
+            WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), walaParameters._cores, walaParameters._android, cache);
+            driver.doInParallel(classesSet);
+            driver.shutdown();
+
+            if (walaFactWriter.getNumberOfPhantomTypes() > 0)
+                System.out.println("WARNING: Input contains phantom types. \nNumber of phantom types:" + walaFactWriter.getNumberOfPhantomTypes());
+            if (walaFactWriter.getNumberOfPhantomMethods() > 0)
+                System.out.println("WARNING: Input contains phantom methods. \nNumber of phantom methods:" + walaFactWriter.getNumberOfPhantomMethods());
+            if (walaFactWriter.getNumberOfPhantomBasedMethods() > 0)
+                System.out.println("WARNING: Input contains phantom based methods. \nNumber of phantom based methods:" + walaFactWriter.getNumberOfPhantomBasedMethods());
+            db.flush();
         }
-        walaFactWriter.setSignaturePolyMorphicMethods(signaturePolymorphicMethods);
-
-        WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), false, walaParameters._cores, walaParameters._android, cache);
-        driver.doInParallel(classesSet);
-        driver.shutdown();
-
-        if(walaFactWriter.getNumberOfPhantomTypes() > 0)
-            System.out.println("WARNING: Input contains phantom types. \nNumber of phantom types:" + walaFactWriter.getNumberOfPhantomTypes());
-        if(walaFactWriter.getNumberOfPhantomMethods() > 0)
-            System.out.println("WARNING: Input contains phantom methods. \nNumber of phantom methods:" + walaFactWriter.getNumberOfPhantomMethods());
-        if(walaFactWriter.getNumberOfPhantomBasedMethods() > 0)
-            System.out.println("WARNING: Input contains phantom based methods. \nNumber of phantom based methods:" + walaFactWriter.getNumberOfPhantomBasedMethods());
-        db.flush();
-        db.close();
     }
 
     private void addIfSignaturePolymorphic(IMethod m, Map <String, List<String>> signaturePolymorphics)

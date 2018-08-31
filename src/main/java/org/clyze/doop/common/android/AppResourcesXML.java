@@ -1,44 +1,56 @@
 package org.clyze.doop.common.android;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
+import net.dongliu.apk.parser.ApkFile;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
-public class AndroidManifestXML implements AndroidManifest {
+/**
+ * This is the standard implementation of AppResources.
+ * It parses both plaintext and binary .xml files found in
+ * an input archive (usually .aar or .apk respectively).
+ */
+public class AppResourcesXML implements AppResources {
     private static final String MANIFEST = "AndroidManifest.xml";
     private File archive;
+    private boolean isApk;
     private String applicationName, packageName;
-    private Set<String> activities = new HashSet<>();
-    private Set<String> providers  = new HashSet<>();
-    private Set<String> receivers  = new HashSet<>();
-    private Set<String> services   = new HashSet<>();
+    private final Set<String> activities = new HashSet<>();
+    private final Set<String> providers  = new HashSet<>();
+    private final Set<String> receivers  = new HashSet<>();
+    private final Set<String> services   = new HashSet<>();
+    private static final boolean verbose = false;
+    private static final Map<String, String> replaceMap = new ConcurrentHashMap<>();
+    private int failures = 0;
 
-    public static AndroidManifestXML fromArchive(String archiveLocation) throws IOException, ParserConfigurationException, SAXException {
+    public static AppResourcesXML fromAAR(String archiveLocation)
+            throws IOException, ParserConfigurationException, SAXException {
         File ar = new File(archiveLocation);
-        return new AndroidManifestXML(getZipEntryInputStream(ar, MANIFEST), ar);
+        return new AppResourcesXML(ar, false);
     }
 
-    public static AndroidManifestXML fromDir(String dir) throws IOException, ParserConfigurationException, SAXException {
-        File ar = new File(dir + File.separator + MANIFEST);
-        return new AndroidManifestXML(new FileInputStream(ar), ar);
+    public static AppResourcesXML fromAPK(String apkLocation)
+            throws IOException, ParserConfigurationException, SAXException {
+        return new AppResourcesXML(new File(apkLocation), true);
     }
 
-    private AndroidManifestXML(InputStream is, File ar) throws IOException, ParserConfigurationException, SAXException {
-	this.archive = ar;
+    private AppResourcesXML(File ar, boolean isApk)
+            throws IOException, ParserConfigurationException, SAXException {
+        this.archive = ar;
+        this.isApk = isApk;
 
-	DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-	Document doc = dbf.newDocumentBuilder().parse(is);
+        // new FileInputStream(ar),
+        InputStream is = isApk ? getApkManifest() : getZipEntryInputStream(MANIFEST);
+
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        Document doc = dbf.newDocumentBuilder().parse(is);
 
         Element docElem = doc.getDocumentElement();
         if (!docElem.getNodeName().equals("manifest"))
@@ -82,14 +94,19 @@ public class AndroidManifestXML implements AndroidManifest {
         Node n = attrs.getNamedItem("android:name");
         if (n == null)
             return;
-        if (appElem.getNodeName().equals("activity")) {
-            activities.add(n.getNodeValue());
-        } else if (appElem.getNodeName().equals("provider")) {
-            providers.add(n.getNodeValue());
-        } else if (appElem.getNodeName().equals("receiver")) {
-            receivers.add(n.getNodeValue());
-        } else if (appElem.getNodeName().equals("service")) {
-            services.add(n.getNodeValue());
+        switch (appElem.getNodeName()) {
+            case "activity":
+                activities.add(n.getNodeValue());
+                break;
+            case "provider":
+                providers.add(n.getNodeValue());
+                break;
+            case "receiver":
+                receivers.add(n.getNodeValue());
+                break;
+            case "service":
+                services.add(n.getNodeValue());
+                break;
         }
     }
 
@@ -100,27 +117,64 @@ public class AndroidManifestXML implements AndroidManifest {
     public Set<String> getProviders()  { return providers;       }
     public Set<String> getReceivers()  { return receivers;       }
 
-    private static InputStream getZipEntryInputStreamLayout(File ar, String entry) {
+    private InputStream getLayout(String entry) {
         try {
-            return getZipEntryInputStream(ar, entry);
+            return getXML(entry);
         } catch (Exception ex) {
             final String[] altLayouts = { "v11", "v16", "v17", "v21", "v22" };
             for (String v : altLayouts ) {
                 String l = entry.replaceAll("res/layout/", "res/layout-"+v+"/");
                 try {
-                    return getZipEntryInputStream(ar, l);
+                    return getXML(l);
                 } catch (Exception ex0) { }
             }
         }
         throw new RuntimeException("Cannot find layout " + entry);
     }
 
-    private static InputStream getZipEntryInputStream(File ar, String entry) throws IOException {
-        ZipInputStream zin = new ZipInputStream(new FileInputStream(ar));
+    private InputStream getXML(String entry) throws IOException {
+        if (isApk)
+            return getBinaryXML(entry);
+        else
+            return getZipEntryInputStream(entry);
+    }
+
+    private InputStream getApkManifest() throws IOException {
+        try (ApkFile apkFile = new ApkFile(archive)) {
+            apkFile.setPreferredLocale(Locale.getDefault());
+            String manifestXml = apkFile.getManifestXml();
+            return new ByteArrayInputStream(manifestXml.getBytes());
+        }
+    }
+
+    private static void registerReplacement(String a, String b) {
+        replaceMap.put(" " + a + ":", " " + b + ":");
+    }
+
+    // This initializes the namespace-prefix replacement map. This replacement fixes
+    // parsing of the XML given to us by apk-parser (which expands namespace URLs).
+    static {
+        registerReplacement("http://schemas.android.com/apk/res-auto", "res-auto");
+        registerReplacement("http://schemas.android.com/apk/res/android", "android");
+    }
+
+    private InputStream getBinaryXML(String entry) throws IOException {
+        try (ApkFile apkFile = new ApkFile(archive)) {
+            String xml = apkFile.transBinaryXml(entry);
+            // Handle expanded Android namespaces
+            for (Map.Entry<String, String> e : replaceMap.entrySet())
+                xml = xml.replace(e.getKey(), e.getValue());
+            if (verbose)
+                System.out.println("xml [" + entry + "]: " + xml);
+            return new ByteArrayInputStream(xml.getBytes());
+        }
+    }
+
+    private InputStream getZipEntryInputStream(String entry) throws IOException {
+        ZipInputStream zin = new ZipInputStream(new FileInputStream(archive));
         for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
-            if (e.getName().equals(entry) || e.getName().equals(entry + ".xml")) {
+            if (e.getName().equals(entry) || e.getName().equals(entry + ".xml"))
                 return zin;
-            }
         }
         throw new RuntimeException("Cannot find " + entry);
     }
@@ -142,11 +196,11 @@ public class AndroidManifestXML implements AndroidManifest {
         // 'android:onClick' attributes in XML files under /res.
 
         Set<String> ret = new HashSet<>();
-        ZipInputStream zin = null;
+        ZipInputStream zin;
         try {
             zin = new ZipInputStream(new FileInputStream(archive));
         } catch (Exception ex) {
-            ex.printStackTrace();
+            handleException(ex);
             return ret;
         }
 
@@ -160,15 +214,15 @@ public class AndroidManifestXML implements AndroidManifest {
         }
 
         // Parse each XML to find possible callbacks.
-        try {
-            for (String resXML : resXMLs) {
-                DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-                InputStream is = getZipEntryInputStream(archive, resXML);
+        for (String resXML : resXMLs) {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            InputStream is = getXML(resXML);
+            try {
                 Document doc = dbf.newDocumentBuilder().parse(is);
                 findOnClickHandlers(doc.getDocumentElement(), ret);
+            } catch (SAXException | ParserConfigurationException ex) {
+                handleException(ex);
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
         return ret;
     }
@@ -184,17 +238,25 @@ public class AndroidManifestXML implements AndroidManifest {
                     layoutFiles.add(name);
             }
             for (String layoutFile : layoutFiles)
-                getUserControlsForLayoutFile(layoutFile, -1, controls);
-        } catch (Exception ex) {
-            System.err.println("Error while reading user controls:");
-            ex.printStackTrace();
+                try {
+                    getUserControlsForLayoutFile(layoutFile, -1, controls);
+                } catch (Exception ex) {
+                    handleException(ex);
+                }
+            if (verbose)
+                System.out.println("layoutFiles size: " + layoutFiles.size() + ", failures = " + failures);
+        } catch (IOException ex) {
+            System.err.println("Error while reading user controls in : " + archive);
+            handleException(ex);
         }
         return controls;
     }
 
-    void getUserControlsForLayoutFile(String layoutFile, int parentId,
-                                      Set<LayoutControl> controls) throws Exception {
-        InputStream is = getZipEntryInputStreamLayout(archive, layoutFile);
+    private void getUserControlsForLayoutFile(String layoutFile, int parentId,
+                                              Set<LayoutControl> controls) throws Exception {
+        if (verbose)
+            System.out.println("Processing user controls in layout file: " + layoutFile);
+        InputStream is = getLayout(layoutFile);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         Document doc = dbf.newDocumentBuilder().parse(is);
         Element docElem = doc.getDocumentElement();
@@ -209,6 +271,8 @@ public class AndroidManifestXML implements AndroidManifest {
     private void getUserControlsForNode(Node node, int parentId,
                                         Set<LayoutControl> controls) throws Exception {
         String name = node.getNodeName();
+        if (verbose)
+            System.out.println("Processing user controls in node: " + name);
         if (name.equals("dummy") || name.equals("#comment") || name.equals("#text")) {
             return;
         } else if (name.equals("include")) {
@@ -217,6 +281,8 @@ public class AndroidManifestXML implements AndroidManifest {
                 if (includedLayout.startsWith("@layout/")) {
                     String layoutFile = "res/" + includedLayout.substring(1);
                     getUserControlsForLayoutFile(layoutFile, parentId, controls);
+                } else if (includedLayout.startsWith("res/layout/")) {
+                    getUserControlsForLayoutFile(includedLayout, parentId, controls);
                 } else {
                     System.err.println("unsupported include: " + includedLayout);
                 }
@@ -231,9 +297,10 @@ public class AndroidManifestXML implements AndroidManifest {
             if (name.equals("fragment"))
                 name = attrOrDefault(node, "android:name", "-1");
             String id = attrOrDefault(node, "android:id", "-1");
+            System.out.println("id = " + id);
             if (id.startsWith("@+"))
                 id = id.substring(2);
-            if (id.indexOf("/") != -1) {
+            if (id.contains("/")) {
                 String[] parts = id.split("/");
                 Integer c = RLinker.getInstance().lookupConst(packageName, parts[0], parts[1]);
                 if (c != null)
@@ -241,7 +308,7 @@ public class AndroidManifestXML implements AndroidManifest {
             }
 
             // Add a layout control with empty attributes.
-            Map<String, Object> attrs = new HashMap<String, Object>();
+            Map<String, Object> attrs = new HashMap<>();
             controls.add(new AndroidLayoutControl(intId, name, isSensitive(node), attrs, parentId));
 
             // Heuristic: if the name is unqualified, it comes from
@@ -280,14 +347,22 @@ public class AndroidManifestXML implements AndroidManifest {
         return val;
     }
 
-    private static class AndroidLayoutControl extends LayoutControl {
-        private int id;
-        private String viewClass;
-        private boolean sensitive;
-        private Map<String, Object> attrs;
-        private int parentId;
+    private void handleException(Exception ex) {
+        failures++;
+        if (verbose)
+            ex.printStackTrace();
+    }
 
-        public AndroidLayoutControl(int id, String viewClass, boolean sensitive, Map<String, Object> attrs, int parentId) {
+    private static class AndroidLayoutControl extends LayoutControl {
+        private final int id;
+        private final String viewClass;
+        private final boolean sensitive;
+        private final Map<String, Object> attrs;
+        private final int parentId;
+        private final String appRId = "";
+        private final String androidRId = "";
+
+        AndroidLayoutControl(int id, String viewClass, boolean sensitive, Map<String, Object> attrs, int parentId) {
             this.id = id;
             this.viewClass = viewClass;
             this.sensitive = sensitive;
@@ -299,6 +374,8 @@ public class AndroidManifestXML implements AndroidManifest {
         public boolean isSensitive() { return sensitive; }
         public String getViewClassName() { return viewClass; }
         public int getParentID() { return parentId; }
+        public String getAppRId() { return appRId; }
+        public String getAndroidRId() { return androidRId; }
         public Map<String, Object> getAdditionalAttributes() { return attrs; }
     }
 }

@@ -172,7 +172,7 @@ SpecialContextSensitivityMethodConstraintViolated(?method) :-
   !isMethod(?method).
 
 .printsize SpecialContextSensitivityMethodConstraintViolated
-
+.output SpecialContextSensitivityMethodConstraintViolated
 }
 
       
