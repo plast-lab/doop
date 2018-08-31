@@ -64,7 +64,7 @@ public class SootParameters extends Parameters {
     /**
      * Finishes command-line argument processing (e.g., checks for incompatible
      * or missing options or sets defaults).
-     * @throws DoopErrorCodeException
+     * @throws DoopErrorCodeException    exception containing error code
      */
     public void finishArgProcessing() throws DoopErrorCodeException {
         if (_mode == null)
