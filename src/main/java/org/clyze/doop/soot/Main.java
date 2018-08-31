@@ -226,7 +226,7 @@ public class Main {
                 if (sootParameters.getRunFlowdroid()) {
                     SootMethod dummyMain = android.getDummyMain();
                     if (dummyMain == null)
-                        throw new RuntimeException("Internal error: FlowDroid returned null dummy main()")
+                        throw new RuntimeException("Internal error: FlowDroid returned null dummy main()");
                     driver.doAndroidInSequentialOrder(dummyMain, classes, writer, sootParameters._ssa);
                     return;
                 } else {
