@@ -5,7 +5,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
-import org.clyze.utils.Helper;
+import org.clyze.utils.JHelper;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
@@ -241,7 +241,7 @@ public class Main {
             writer.writeLastFacts(java);
         } finally {
             // Clean up any temporary directories used for AAR extraction.
-            Helper.cleanUp(tmpDirs);
+            JHelper.cleanUp(tmpDirs);
         }
     }
 
