@@ -171,7 +171,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				log.info all
 				throw new DoopErrorCodeException(8)
 			} finally {
-				Helper.cleanUp(tmpDirs)
+				JHelper.cleanUp(tmpDirs)
 			}
 
 			if (options.X_UNIQUE_FACTS.value) {
