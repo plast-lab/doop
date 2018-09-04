@@ -110,9 +110,8 @@ public class FactWriter extends JavaFactWriter {
                 t instanceof RefType || t instanceof VoidType || t instanceof BottomType) {
             // taken care of by the standard facts
         }
-        else {
+        else
             throw new RuntimeException("Don't know what to do with type " + t);
-        }
 
         return result;
     }
@@ -121,7 +120,7 @@ public class FactWriter extends JavaFactWriter {
         writePhantomType(writeType(t));
     }
 
-    void writePhantomType(SootClass c) {
+    private void writePhantomType(SootClass c) {
         writePhantomType(writeType(c));
     }
 
@@ -210,12 +209,7 @@ public class FactWriter extends JavaFactWriter {
 
     private static int getLineNumberFromStmt(Stmt stmt) {
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
-        String lineNumber;
-        if (tag == null) {
-            return  0;
-        } else {
-            return tag.getLineNumber();
-        }
+        return tag == null ? 0 : tag.getLineNumber();
     }
 
     private Type getComponentType(ArrayType type) {
