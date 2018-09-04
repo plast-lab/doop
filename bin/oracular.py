@@ -53,7 +53,7 @@ def run_pre_analyses(init_args):
     shutil.copyfile(from_path, dump_path)
 
     from_path = os.path.join(DATABASE, 'MethodVPTCost.csv')
-    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "InsensMethodVPTCost.facts")
+    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "InsensMethodCost.facts")
     shutil.copyfile(from_path, dump_path)
 
     print YELLOW + BOLD + 'Running pre-analyses #2 ' + PRE_ANALYSIS_2 + RESET
@@ -63,20 +63,20 @@ def run_pre_analyses(init_args):
     cmd = ' '.join(args)
     os.system(cmd)
     from_path = os.path.join(DATABASE, 'MethodWeight.csv')
-    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "SensitivemethodWeight.facts")
+    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "SensMethodWeight.facts")
     shutil.copyfile(from_path, dump_path)
 
     from_path = os.path.join(DATABASE, 'MethodVPTCost.csv')
-    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "SensMethodVPTCost.facts")
+    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "SensMethodCost.facts")
     shutil.copyfile(from_path, dump_path)
 
 
 def run_oracular_analysis_classification():
     print YELLOW + BOLD + 'Running Oracular classification ' + RESET
     insens_weight_file = open(ORACULAR_CACHE + "/InsensMethodWeight.facts", 'r')
-    sens_weight_file = open(ORACULAR_CACHE + "/SensitivemethodWeight.facts", 'r')
+    sens_weight_file = open(ORACULAR_CACHE + "/SensMethodWeight.facts", 'r')
     insens_cost_file = open(ORACULAR_CACHE + "/InsensMethodCost.facts", 'r')
-    sens_cost_file = open(ORACULAR_CACHE + "/SensitivemethodCost.facts", 'r')
+    sens_cost_file = open(ORACULAR_CACHE + "/SensMethodCost.facts", 'r')
 
     for line in insens_weight_file:
         pieces = line.split('\t')
@@ -205,7 +205,7 @@ def run_main_analysis(args, oracular_file):
 
 
 def run(args):
-    # runPreAnalyses(args)
+    run_pre_analyses(args)
     run_oracular_analysis_classification()
     run_main_analysis(args, ORACULAR_CACHE + "/SpecialCSMethods.csv")
 
