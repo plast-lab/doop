@@ -47,7 +47,7 @@ public abstract class Parameters {
         return _platformLibs;
     }
 
-    public void setOutputDir(String outputDir) {
+    protected void setOutputDir(String outputDir) {
         _outputDir = outputDir;
     }
 

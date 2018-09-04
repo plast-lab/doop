@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.*;
 
-public class Driver {
+class Driver {
     private final ThreadFactory _factory;
     private final int _cores;
 
