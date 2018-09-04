@@ -232,4 +232,8 @@ public class JavaFactWriter {
         _db.add(VAR_DECLARING_METHOD, local, method);
     }
 
+    protected void writeArrayTypes(String arrayType, String componentType) {
+        _db.add(ARRAY_TYPE, arrayType);
+        _db.add(COMPONENT_TYPE, arrayType, componentType);
+    }
 }

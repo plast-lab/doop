@@ -182,9 +182,8 @@ public class WalaFactWriter extends JavaFactWriter {
 
         //If its an ArrayType and it was not on the typeMap, add the appropriate facts
         if (t.isArrayType() && inMap == null) {
-            _db.add(ARRAY_TYPE, typeName);
             TypeReference componentType = t.getArrayElementType();
-            _db.add(COMPONENT_TYPE, typeName, writeType(componentType));
+            writeArrayTypes(typeName, writeType(componentType));
             _db.add(CLASS_HEAP, classConstant(typeName), typeName);
         }
         else if (t.isPrimitiveType() || t.isReferenceType() || t.isClassType()) {

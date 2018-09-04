@@ -103,9 +103,8 @@ public class FactWriter extends JavaFactWriter {
         String result = t.toString();
 
         if (t instanceof ArrayType) {
-            _db.add(ARRAY_TYPE, result);
             Type componentType = ((ArrayType) t).getElementType();
-            _db.add(COMPONENT_TYPE, result, writeType(componentType));
+            writeArrayTypes(result, writeType(componentType));
         }
         else if (t instanceof PrimType || t instanceof NullType ||
                 t instanceof RefType || t instanceof VoidType || t instanceof BottomType) {
