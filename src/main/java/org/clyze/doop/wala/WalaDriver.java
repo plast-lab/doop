@@ -10,14 +10,14 @@ import java.util.concurrent.*;
 
 class WalaDriver {
 
-    private WalaThreadFactory _factory;
-    private boolean _android;
+    private final WalaThreadFactory _factory;
+    private final boolean _android;
 
-    private ExecutorService _executor;
+    private final ExecutorService _executor;
     private int _classCounter;
     private Set<IClass> _tmpClassGroup;
-    private int _totalClasses;
-    private IAnalysisCacheView _cache;
+    private final int _totalClasses;
+    private final IAnalysisCacheView _cache;
 
     WalaDriver(WalaThreadFactory factory, int totalClasses,
            Integer cores, boolean android, IAnalysisCacheView cache) {
