@@ -49,7 +49,11 @@ def run_pre_analyses(init_args):
     # print cmd
     os.system(cmd)
     from_path = os.path.join(DATABASE, 'MethodWeight.csv')
-    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "InsensitiveSum.facts")
+    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "InsensMethodWeight.facts")
+    shutil.copyfile(from_path, dump_path)
+
+    from_path = os.path.join(DATABASE, 'MethodVPTCost.csv')
+    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "InsensMethodVPTCost.facts")
     shutil.copyfile(from_path, dump_path)
 
     print YELLOW + BOLD + 'Running pre-analyses #2 ' + PRE_ANALYSIS_2 + RESET
@@ -59,32 +63,54 @@ def run_pre_analyses(init_args):
     cmd = ' '.join(args)
     os.system(cmd)
     from_path = os.path.join(DATABASE, 'MethodWeight.csv')
-    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "SensitiveSum.facts")
+    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "SensitivemethodWeight.facts")
+    shutil.copyfile(from_path, dump_path)
+
+    from_path = os.path.join(DATABASE, 'MethodVPTCost.csv')
+    dump_path = os.path.join(ORACULAR_CACHE, '%s' % "SensMethodVPTCost.facts")
     shutil.copyfile(from_path, dump_path)
 
 
 def run_oracular_analysis_classification():
     print YELLOW + BOLD + 'Running Oracular classification ' + RESET
-    insens_file = open(ORACULAR_CACHE + "/InsensitiveSum.facts", 'r')
-    sens_file = open(ORACULAR_CACHE + "/SensitiveSum.facts", 'r')
+    insens_weight_file = open(ORACULAR_CACHE + "/InsensMethodWeight.facts", 'r')
+    sens_weight_file = open(ORACULAR_CACHE + "/SensitivemethodWeight.facts", 'r')
+    insens_cost_file = open(ORACULAR_CACHE + "/InsensMethodCost.facts", 'r')
+    sens_cost_file = open(ORACULAR_CACHE + "/SensitivemethodCost.facts", 'r')
 
-    for line in insens_file:
+    for line in insens_weight_file:
         pieces = line.split('\t')
         method = pieces[0]
         weight = int(pieces[1])
         insens_method_weight_dict.update({method: weight})
 
     print YELLOW + BOLD + 'INSENS methods ' + str(len(insens_method_weight_dict.keys())) + RESET
-    insens_file.close()
+    insens_weight_file.close()
 
-    for line in sens_file:
+    for line in sens_weight_file:
         pieces = line.split('\t')
         method = pieces[0]
         weight = int(pieces[1])
         sens_method_weight_dict.update({method: weight})
 
     print YELLOW + BOLD + 'SENS methods ' + str(len(sens_method_weight_dict.keys())) + RESET
-    sens_file.close()
+    sens_weight_file.close()
+
+    for line in insens_cost_file:
+        pieces = line.split('\t')
+        method = pieces[0]
+        cost = int(pieces[1])
+        insens_method_cost_dict.update({method: cost})
+
+    insens_cost_file.close()
+
+    for line in sens_cost_file:
+        pieces = line.split('\t')
+        method = pieces[0]
+        cost = int(pieces[1])
+        sens_method_cost_dict.update({method: cost})
+
+    sens_cost_file.close()
 
     missing_methods = 0
     special_cs_file = open(ORACULAR_CACHE + "/SpecialCSMethods.csv", "w")
