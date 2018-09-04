@@ -211,6 +211,8 @@ public class JavaFactWriter {
     private void processSpecialSensitivityMethodFileLine(String line) {
         if (line.contains(", "))
             writeSpecialSensitivityMethod(line);
+        else
+            System.err.println("Ignoring malformed special sensitivity method: " + line);
     }
 
     protected void writeMethodDeclaresException(String methodId, String exceptionType) {
