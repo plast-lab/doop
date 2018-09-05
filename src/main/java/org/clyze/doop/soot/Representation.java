@@ -140,7 +140,7 @@ class Representation extends JavaRepresentation {
     private String getKind(Stmt stmt)
     {
         String kind = "unknown";
-        if(stmt instanceof AssignStmt)
+        if ((stmt instanceof AssignStmt) || (stmt instanceof IdentityStmt))
             kind = "assign";
         else if(stmt instanceof DefinitionStmt)
             kind = "definition";
@@ -150,8 +150,6 @@ class Representation extends JavaRepresentation {
             kind = "exit-monitor";
         else if(stmt instanceof GotoStmt)
             kind = "goto";
-        else if(stmt instanceof IdentityStmt)
-            kind = "assign";
         else if(stmt instanceof IfStmt)
             kind = "if";
         else if(stmt instanceof InvokeStmt)
