@@ -11,3 +11,9 @@ isFunction(?function):-
 isMethod(?function):-
     _Function(?function, _, ?par, _),
     isClassType(?par).
+
+.decl FormalParamName(?var:symbol, ?name:symbol)
+.output FormalParamName
+FormalParamName(?var, ?name):-
+    _FormalParam(_,_,?var),
+    VarSourceName(?var,?name).

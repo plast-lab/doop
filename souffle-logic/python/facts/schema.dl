@@ -212,7 +212,7 @@
 // The actual parameters of the invocation. Note: this does not
 // contain the receiver object (see FunctionInvocation_Insn:Base predicates).
 .decl ActualPositionalParam(?index:number, ?invocation:FunctionInvocation_Insn, ?var:Var)
-.decl ActualKeywordParam(?keyword:symbol, ?invocation:FunctionInvocation_Insn, ?var:Var)
+.decl ActualKeywordParam(?index:number, ?invocation:FunctionInvocation_Insn, ?keyword:symbol, ?var:Var)
 
 // Function Invocation
 .decl FunctionInvocation_Base(?invocation:FunctionInvocation_Insn, ?base:Var)

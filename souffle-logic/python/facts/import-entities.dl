@@ -12,7 +12,7 @@ isClassType(?class) :-
 // ActualParam
 
 .decl _ActualPositionalParam(?index:number, ?invocation:symbol, ?var:symbol)
-.input _ActualPositionalParam(IO="file", filename="ActualParam.facts", delimiter="\t")
+.input _ActualPositionalParam(IO="file", filename="ActualPositionalParam.facts", delimiter="\t")
 
 isInstruction(?invocation),
 isFunctionInvocation(?invocation),
@@ -20,14 +20,14 @@ isVar(?var),
 ActualPositionalParam(?index, ?invocation, ?var) :-
   _ActualPositionalParam(?index, ?invocation, ?var).
 
-.decl _ActualKeywordParam(?keyword:symbol, ?invocation:symbol, ?var:symbol)
-.input _ActualKeywordParam(IO="file", filename="ActualParam.facts", delimiter="\t")
+.decl _ActualKeywordParam(?index:number, ?invocation:symbol, ?keyword:symbol, ?var:symbol)
+.input _ActualKeywordParam(IO="file", filename="ActualKeywordParam.facts", delimiter="\t")
 
 isInstruction(?invocation),
 isFunctionInvocation(?invocation),
 isVar(?var),
-ActualKeywordParam(?index, ?invocation, ?var) :-
-  _ActualKeywordParam(?index, ?invocation, ?var).
+ActualKeywordParam(?index, ?invocation, ?keyword, ?var) :-
+  _ActualKeywordParam(?index, ?invocation, ?keyword, ?var).
 
 
 // DirectSuperclass
