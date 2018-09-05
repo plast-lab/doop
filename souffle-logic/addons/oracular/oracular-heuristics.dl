@@ -1,20 +1,26 @@
-.decl MethodVPTCost(?method:Method, ?n:number)
+.decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
 
-MethodVPTCost(?method, Y) :-
+VPTCountPerMethodVariable(?method, ?var, Y) :-
    Var_DeclaringMethod(?var, ?method),
    Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
+
+.decl MethodVPTCost(?method:Method, Y:number)
+
+MethodVPTCost(?method, Y) :-
+  mainAnalysis.Reachable(?method),
+  Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
 
 .decl CalleeCountPerMethod(?method:Method, ?n:number)
 
 CalleeCountPerMethod(?method, Y) :-
-  isMethod(?method),      
+  mainAnalysis.Reachable(?method),
   Y =  count : {Stats_Simple_InsensCallGraphEdge(?invo, _),
   Instruction_Method(?invo, ?method)}.
 
 .decl CallerCountPerMethod(?method:Method, ?n:number)
 
 CallerCountPerMethod(?tomethod, Y) :-
-  isMethod(?tomethod),      
+  mainAnalysis.Reachable(?tomethod),
   Y = count : {Stats_Simple_InsensCallGraphEdge(?invo, ?tomethod),
   Instruction_Method(?invo, _)}.
                              
