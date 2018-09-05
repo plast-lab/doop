@@ -1,5 +1,7 @@
 package org.clyze.doop.common.android;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
@@ -20,9 +22,12 @@ public abstract class AndroidSupport {
     private final Set<String> appCallbackMethods = new HashSet<>();
     private final Set<LayoutControl> appUserControls = new HashSet<>();
 
+    private final Log logger;
+
     protected AndroidSupport(Parameters parameters, BasicJavaSupport java) {
         this.parameters = parameters;
         this.java = java;
+        this.logger = LogFactory.getLog(getClass());
     }
 
     public void processInputs(Set<String> tmpDirs) throws Exception {
@@ -145,6 +150,7 @@ public abstract class AndroidSupport {
     // Parses Android manifests. Supports binary and plain-text XML
     // files (found in .apk and .aar files respectively).
     protected AppResources processAppResources(String archiveLocation) throws Exception {
+        logger.debug("Processing app resources in " + archiveLocation);
         String path = archiveLocation.toLowerCase();
         if (path.endsWith(".apk"))
             return AppResourcesXML.fromAPK(archiveLocation);
