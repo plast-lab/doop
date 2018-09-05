@@ -22,11 +22,4 @@ class ThreadFactory {
         return new JimpleGenerator(sootClasses);
     }
 
-    public FactWriter get_factWriter() {
-        return _factWriter;
-    }
-
-    public boolean getSSA() {
-        return _ssa;
-    }
 }
