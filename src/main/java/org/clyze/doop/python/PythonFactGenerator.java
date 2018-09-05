@@ -528,7 +528,7 @@ public class PythonFactGenerator implements Runnable{
         } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
             l.setType(PythonTypes.object);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
-        } else if (symbolTable.isFloatConstant(l.getVarIndex())) {
+        } else if (symbolTable.isFloatConstant(l.getVarIndex()) || symbolTable.isDoubleConstant(l.getVarIndex())) {
             l.setType(PythonTypes.object);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isBooleanConstant(l.getVarIndex())) {
