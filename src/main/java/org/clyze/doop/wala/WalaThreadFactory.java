@@ -5,10 +5,10 @@ import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 
 import java.util.Set;
 
-public class WalaThreadFactory {
-    WalaFactWriter _factWriter;
-    String _outDir;
-    boolean _android;
+class WalaThreadFactory {
+    private WalaFactWriter _factWriter;
+    private String _outDir;
+    private boolean _android;
 
     WalaThreadFactory(WalaFactWriter factWriter, String outDir, boolean isAndroidAnalysis) {
         _factWriter = factWriter;

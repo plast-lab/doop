@@ -11,15 +11,15 @@ import java.util.function.Consumer;
  * @param <F>    thread factory type that generates Runnable objects
  */
 public abstract class Driver<C, F> {
-    protected ExecutorService _executor;
+    private ExecutorService _executor;
     protected final F _factory;
-    protected final int _cores;
+    private final int _cores;
     protected Set<C> _tmpClassGroup;
-    protected int _classCounter;
+    private int _classCounter;
     private final int _totalClasses;
     private final int _classSplit = 80;
 
-    public Driver(F factory, int totalClasses, Integer cores) {
+    protected Driver(F factory, int totalClasses, Integer cores) {
         this._factory = factory;
         this._totalClasses = totalClasses;
         this._cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
@@ -43,7 +43,7 @@ public abstract class Driver<C, F> {
         }
     }
 
-    protected void doInParallel(Set<C> classesToProcess, Consumer<? super C> action) throws DoopErrorCodeException {
+    private void doInParallel(Set<C> classesToProcess, Consumer<? super C> action) throws DoopErrorCodeException {
         initExecutor();
         classesToProcess.forEach(action);
         shutdownExecutor();
@@ -68,7 +68,7 @@ public abstract class Driver<C, F> {
         doInParallel(classesToProcess, this::write);
     }
 
-    protected void generate(C curClass) {
+    private void generate(C curClass) {
         _classCounter++;
         _tmpClassGroup.add(curClass);
 

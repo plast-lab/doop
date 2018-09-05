@@ -25,7 +25,7 @@ import static org.clyze.doop.common.PredicateFile.*;
  * FactWriter determines the format of a fact and adds it to a
  * database.
  */
-public class FactWriter extends JavaFactWriter {
+class FactWriter extends JavaFactWriter {
     private final Representation _rep;
     private final Map<String, Type> _varTypeMap;
 
