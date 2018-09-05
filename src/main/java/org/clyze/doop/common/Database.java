@@ -33,12 +33,22 @@ public class Database implements Closeable, Flushable {
 
     private String addColumn(String column) {
         // Quote some special characters.
-        // TODO: is this worth optimizing?
-        String data = column
-            .replaceAll("\"", "\\\\\"")
-            .replaceAll("\n", "\\\\n")
-            .replaceAll("\t", "\\\\t");
-        return data;
+        StringBuilder sb = new StringBuilder();
+        for (char c : column.toCharArray())
+            switch (c) {
+                case '\"':
+                    sb.append("\\\\\"");
+                    break;
+                case '\n':
+                    sb.append("\\\\n");
+                    break;
+                case '\t':
+                    sb.append("\\\\t");
+                    break;
+                default:
+                    sb.append(c);
+            }
+        return sb.toString();
     }
 
     public void add(PredicateFile predicateFile, String arg, String... args) {
