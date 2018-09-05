@@ -1,27 +1,30 @@
-package org.clyze.doop.soot;
-
-import org.clyze.doop.common.DoopErrorCodeException;
-import soot.SootClass;
-import soot.SootMethod;
+package org.clyze.doop.common;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 
-class Driver {
-    private final ThreadFactory _factory;
-    private final int _cores;
-
-    private ExecutorService _executor;
-    private int _classCounter;
-    private Set<SootClass> _tmpClassGroup;
+/**
+ * A driver for parallel fact generation.
+ * @param <C>    class type
+ * @param <F>    thread factory type that generates Runnable objects
+ */
+public abstract class Driver<C, F> {
+    protected ExecutorService _executor;
+    protected final F _factory;
+    protected final int _cores;
+    protected Set<C> _tmpClassGroup;
+    protected int _classCounter;
     private final int _totalClasses;
     private final int _classSplit = 80;
 
-    Driver(ThreadFactory factory, int totalClasses, Integer cores) {
-        _factory = factory;
-        _totalClasses = totalClasses;
-        _cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
+    public Driver(F factory, int totalClasses, Integer cores) {
+        this._factory = factory;
+        this._totalClasses = totalClasses;
+        this._cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
+        this._classCounter = 0;
+        this._tmpClassGroup = new HashSet<>();
 
         System.out.println("Fact generation cores: " + _cores);
     }
@@ -40,15 +43,9 @@ class Driver {
         }
     }
 
-    void doInParallel(Set<SootClass> classesToProcess) throws DoopErrorCodeException {
+    protected void doInParallel(Set<C> classesToProcess, Consumer<? super C> action) throws DoopErrorCodeException {
         initExecutor();
-        classesToProcess.forEach(this::generate);
-        shutdownExecutor();
-    }
-
-    void writeInParallel(Set<SootClass> classesToProcess) throws DoopErrorCodeException {
-        initExecutor();
-        classesToProcess.forEach(this::write);
+        classesToProcess.forEach(action);
         shutdownExecutor();
     }
 
@@ -62,33 +59,35 @@ class Driver {
         }
     }
 
-    void doAndroidInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
-        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses);
-        factGenerator.generate(dummyMain, new Session());
-        writer.writeAndroidEntryPoint(dummyMain);
-        factGenerator.run();
+    public void generateInParallel(Set<C> classesToProcess) throws DoopErrorCodeException {
+        doInParallel(classesToProcess, this::generate);
     }
 
-    private void generate(SootClass curClass) {
+
+    public void writeInParallel(Set<C> classesToProcess) throws DoopErrorCodeException {
+        doInParallel(classesToProcess, this::write);
+    }
+
+    protected void generate(C curClass) {
         _classCounter++;
         _tmpClassGroup.add(curClass);
 
         if ((_classCounter % _classSplit == 0) || (_classCounter == _totalClasses)) {
-            Runnable runnable = _factory.newFactGenRunnable(_tmpClassGroup);
-            _executor.execute(runnable);
+            _executor.execute(getFactGenRunnable());
             _tmpClassGroup = new HashSet<>();
         }
     }
 
-    private void write(SootClass curClass) {
+    private void write(C curClass) {
         _classCounter++;
         _tmpClassGroup.add(curClass);
 
         if ((_classCounter % _classSplit == 0) || (_classCounter == _totalClasses)) {
-            Runnable runnable = _factory.newJimpleGenRunnable(_tmpClassGroup);
-            _executor.execute(runnable);
+            _executor.execute(getIRGenRunnable());
             _tmpClassGroup = new HashSet<>();
         }
     }
 
+    protected abstract Runnable getFactGenRunnable();
+    protected abstract Runnable getIRGenRunnable();
 }

@@ -198,7 +198,7 @@ public class Main {
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
             FactWriter writer = new FactWriter(db);
             ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
-            Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
+            SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores);
 
             writer.writePreliminaryFacts(classes, java, sootParameters);
             db.flush();
@@ -219,7 +219,7 @@ public class Main {
                 scene.getOrMakeFastHierarchy();
                 // avoids a concurrent modification exception, since we may
                 // later be asking soot to add phantom classes to the scene's hierarchy
-                driver.doInParallel(classes);
+                driver.generateInParallel(classes);
                 if (sootParameters._generateJimple) {
                     Set<SootClass> jimpleClasses = new HashSet<>(classes);
                     if (sootParameters._factsSubSet == null) {

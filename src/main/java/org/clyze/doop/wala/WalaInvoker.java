@@ -40,7 +40,7 @@ public class WalaInvoker {
         return walaParameters.isApplicationClass(WalaUtils.fixTypeString(klass.getName().toString()));
     }
 
-    public void main(String[] args) throws IOException {
+    public void main(String[] args) throws IOException, DoopErrorCodeException {
         WalaParameters walaParameters = new WalaParameters();
         try {
             if (args.length == 0) {
@@ -81,7 +81,7 @@ public class WalaInvoker {
         run(walaParameters);
     }
 
-    private void run(WalaParameters walaParameters) throws IOException {
+    private void run(WalaParameters walaParameters) throws IOException, DoopErrorCodeException {
         StringBuilder classPath = new StringBuilder();
         List<String> inputs = walaParameters.getInputs();
         for (int i = 0; i < inputs.size(); i++) {
@@ -165,8 +165,7 @@ public class WalaInvoker {
             walaFactWriter.setSignaturePolyMorphicMethods(signaturePolymorphicMethods);
 
             WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), walaParameters._cores, walaParameters._android, cache);
-            driver.doInParallel(classesSet);
-            driver.shutdown();
+            driver.generateInParallel(classesSet);
 
             if (walaFactWriter.getNumberOfPhantomTypes() > 0)
                 System.out.println("WARNING: Input contains phantom types. \nNumber of phantom types:" + walaFactWriter.getNumberOfPhantomTypes());
