@@ -4,9 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -28,7 +29,7 @@ public class BasicJavaSupport {
         this.classesInLibraryJars = new HashSet<>();
         this.classesInDependencyJars = new HashSet<>();
         this.propertyProvider = new PropertyProvider();
-        this.artifactToClassMap = new HashMap<>();
+        this.artifactToClassMap = new ConcurrentHashMap<>();
     }
 
     /**
@@ -102,12 +103,7 @@ public class BasicJavaSupport {
      */
     public void registerArtifactClass(String artifact, String className, String subArtifact) {
         ArtifactEntry ae = new ArtifactEntry(className, subArtifact);
-        if (!artifactToClassMap.containsKey(artifact)) {
-            Set<ArtifactEntry> artifactClasses = new HashSet<>();
-            artifactClasses.add(ae);
-            artifactToClassMap.put(artifact, artifactClasses);
-        } else
-            artifactToClassMap.get(artifact).add(ae);
+        artifactToClassMap.computeIfAbsent(artifact, x -> new CopyOnWriteArraySet<>()).add(ae);
     }
 
     public Set<String> getClassesInApplicationJars() {
