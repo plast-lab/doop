@@ -4,11 +4,16 @@ VPTCountPerMethodVariable(?method, ?var, Y) :-
    Var_DeclaringMethod(?var, ?method),
    Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
 
+
 .decl MethodVPTCost(?method:Method, Y:number)
 
 MethodVPTCost(?method, Y) :-
   mainAnalysis.Reachable(?method),
   Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
+
+MethodVPTCost(?method, 0) :-
+  mainAnalysis.Reachable(?method),
+  !Var_DeclaringMethod(_, ?method).
 
 .decl CalleeCountPerMethod(?method:Method, ?n:number)
 

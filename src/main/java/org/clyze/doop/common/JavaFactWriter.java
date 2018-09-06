@@ -66,7 +66,7 @@ public class JavaFactWriter {
     }
 
     private void writeSpecialSensitivityMethod(String line) {
-        String[] linePieces = line.split(", ");
+        String[] linePieces = line.split("\t");
         String method = linePieces[0].trim();
         String sensitivity = linePieces[1].trim();
 
@@ -209,7 +209,7 @@ public class JavaFactWriter {
     }
 
     private void processSpecialSensitivityMethodFileLine(String line) {
-        if (line.contains(", "))
+        if (line.contains("\t"))
             writeSpecialSensitivityMethod(line);
         else
             System.err.println("Ignoring malformed special sensitivity method: " + line);

@@ -118,15 +118,22 @@ def run_oracular_analysis_classification():
         ci_analysis_weight += method_cost
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Fixes in oracular logic
     two_obj_analysis_weight = 0
     for method_cost in sens_method_cost_dict.values():
         two_obj_analysis_weight += method_cost
 
+<<<<<<< HEAD
     print YELLOW + BOLD + "context insensitive analysis weight: " + str(ci_analysis_weight) + RESET
     print YELLOW + BOLD + "2 object sensitive analysis weight: " + str(two_obj_analysis_weight) + RESET
 
 =======
+=======
+>>>>>>> Fixes in oracular logic
     print YELLOW + BOLD + "context insensitive analysis weight: " + str(ci_analysis_weight) + RESET
+    print YELLOW + BOLD + "2 object sensitive analysis weight: " + str(two_obj_analysis_weight) + RESET
 
     missing_methods = 0
 >>>>>>> Fixes in oracular heuristics
@@ -139,8 +146,11 @@ def run_oracular_analysis_classification():
 
     sorted_ratios_list = [e[1] for e in sorted_method_ratio_list]
     optimal_ratio_threshold = binary_search_threshold(sorted_ratios_list)
+<<<<<<< HEAD
 
     print YELLOW + BOLD + "optimal ratio threshold: " + str(optimal_ratio_threshold) + RESET
+=======
+>>>>>>> Fixes in oracular logic
 
     print YELLOW + BOLD + "optimal ratio threshold: " + str(optimal_ratio_threshold) + RESET
 
@@ -211,6 +221,7 @@ def binary_search_threshold(threshold_list):
     while low <= high:
         mid = low + (high - low) / 2
         loop_count += 1
+
         if value < float(calculate_analysis_threshold(threshold_list[mid]))/float(ci_analysis_weight):
             high = mid - 1
         elif value > float(calculate_analysis_threshold(threshold_list[mid]))/float(ci_analysis_weight):
@@ -218,7 +229,6 @@ def binary_search_threshold(threshold_list):
         else:
             print YELLOW + BOLD + "Optimal threshold found after " + str(loop_count) + " steps" + RESET
             return threshold_list[mid]
-
 
     print YELLOW + BOLD + "Optimal threshold found after " + str(loop_count) + " steps" + RESET
     print YELLOW + BOLD + "low 2-obj cost " + str(calculate_analysis_threshold(threshold_list[low])) + RESET
