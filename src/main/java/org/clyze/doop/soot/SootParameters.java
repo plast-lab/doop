@@ -67,6 +67,8 @@ public class SootParameters extends Parameters {
      * @throws DoopErrorCodeException    exception containing error code
      */
     public void finishArgProcessing() throws DoopErrorCodeException {
+        super.finishArgProcessing();
+
         if (_mode == null)
             _mode = SootParameters.Mode.INPUTS;
 

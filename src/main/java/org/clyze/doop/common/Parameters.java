@@ -181,4 +181,21 @@ public abstract class Parameters {
         return i;
     }
 
+    public void finishArgProcessing() throws DoopErrorCodeException {
+        // For some facts-subset values, some options will be ignored (cleared).
+        if (_factsSubSet == null)
+            return;
+        else if (_factsSubSet == FactsSubSet.APP) {
+            getDependencies().clear();
+            getPlatformLibs().clear();
+        } else if (_factsSubSet == FactsSubSet.APP_N_DEPS)
+            getPlatformLibs().clear();
+        else if (_factsSubSet == FactsSubSet.PLATFORM) {
+            getInputs().clear();
+            getDependencies().clear();
+        } else {
+            System.err.println("Illegal facts subset option: " + _factsSubSet);
+            throw new DoopErrorCodeException(4);
+        }
+    }
 }

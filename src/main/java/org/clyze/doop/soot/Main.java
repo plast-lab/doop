@@ -75,12 +75,6 @@ public class Main {
                 }
             }
 
-            // TODO
-//            if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS)
-//                sootParameters.setDependencies(dependencies);
-//            else
-//                sootParameters.getLibraries().addAll(dependencies);
-
             sootParameters.finishArgProcessing();
             produceFacts(sootParameters);
         }

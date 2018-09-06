@@ -63,7 +63,10 @@ public abstract class AndroidSupport {
         parameters.setInputs(AARUtils.toJars(parameters.getInputs(), false, tmpDirs));
         parameters.setDependencies(AARUtils.toJars(parameters.getDependencies(), false, tmpDirs));
 
-        parameters.getInputs().subList(1, parameters.getInputs().size()).clear();
+        List<String> inputs = parameters.getInputs();
+        int inputsSize = inputs.size();
+        if (inputsSize > 0)
+            inputs.subList(1, inputsSize).clear();
     }
 
     public void processAppResources(String input, AppResources manifest, Map<String, String> pkgs, RLinker rLinker) {
