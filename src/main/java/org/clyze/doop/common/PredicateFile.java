@@ -21,6 +21,7 @@ public enum PredicateFile
     LAYOUT_CONTROL("LayoutControl"),
     SENSITIVE_LAYOUT_CONTROL("SensitiveLayoutControl"),
     FIELD_INITIAL_VALUE("FieldInitialValue"),
+    ARRAY_INITIAL_VALUE("ArrayInitialValue"),
     CLASS_ANNOTATION("Class-Annotation"),
     CLASS_TYPE("ClassType"),
     CLASS_MODIFIER("ClassModifier"),
