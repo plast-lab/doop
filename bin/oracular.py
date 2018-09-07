@@ -10,7 +10,8 @@ sens_method_weight_dict = {}
 method_ratio_dict = {}
 insens_method_cost_dict = {}
 sens_method_cost_dict = {}
-sorted_method_ratio_dict = {}
+sorted_method_ratio_list = {}
+ci_analysis_weight = 0
 
 # ----------------- configuration -------------------------
 DOOP = './doop'  # './doopOffline'
@@ -112,9 +113,62 @@ def run_oracular_analysis_classification():
 
     sens_cost_file.close()
 
-    missing_methods = 0
+    global ci_analysis_weight
+    for method_cost in insens_method_cost_dict.values():
+        ci_analysis_weight += method_cost
+
+    two_obj_analysis_weight = 0
+    for method_cost in sens_method_cost_dict.values():
+        two_obj_analysis_weight += method_cost
+
+    print YELLOW + BOLD + "context insensitive analysis weight: " + str(ci_analysis_weight) + RESET
+    print YELLOW + BOLD + "2 object sensitive analysis weight: " + str(two_obj_analysis_weight) + RESET
+
     special_cs_file = open(ORACULAR_CACHE + "/SpecialCSMethods.csv", "w")
 
+    calculate_method_ratios(insens_method_cost_dict, sens_method_cost_dict, special_cs_file)
+
+    global sorted_method_ratio_list
+    sorted_method_ratio_list = sorted(method_ratio_dict.items(), key=lambda x: x[1])
+
+    sorted_ratios_list = [e[1] for e in sorted_method_ratio_list]
+    optimal_ratio_threshold = binary_search_threshold(sorted_ratios_list)
+
+    print YELLOW + BOLD + "optimal ratio threshold: " + str(optimal_ratio_threshold) + RESET
+
+    two_object_sensitive_methods = 0
+    context_insensitive_methods = 0
+    for method, ratio in sorted_method_ratio_list:
+
+        if ratio <= optimal_ratio_threshold:
+            special_cs_file.write(method + "\t" "2-object\n")
+            two_object_sensitive_methods += 1
+        else:
+            special_cs_file.write(method + "\t" + "context-insensitive\n")
+            context_insensitive_methods += 1
+
+    special_cs_file.close()
+
+    print YELLOW + BOLD + "2-object methods: " + str(two_object_sensitive_methods) + RESET
+    print YELLOW + BOLD + "context-insensitive methods: " + str(context_insensitive_methods) + RESET
+
+
+def calculate_analysis_threshold(ratio_threshold):
+    analysis_weight = 0
+    for method, ratio in sorted_method_ratio_list:
+        if ratio <= ratio_threshold:
+            if sens_method_cost_dict.__contains__(method):
+                analysis_weight += sens_method_cost_dict.get(method)
+        else:
+            if insens_method_cost_dict.__contains__(method):
+                analysis_weight += insens_method_cost_dict.get(method)
+            else:
+                print YELLOW + BOLD + "Reachable method missing from insensitive: " + method + RESET
+    return analysis_weight
+
+
+def calculate_method_ratios(insens_method_weight_dict, sens_method_weight_dict, special_cs_file):
+    missing_methods = 0
     for method in insens_method_weight_dict.keys():
         if insens_method_weight_dict.get(method) == 0:
             method_ratio_dict.update({method: 0.0})
@@ -124,71 +178,43 @@ def run_oracular_analysis_classification():
                 sens_weight = sens_method_weight_dict.get(method)
                 ratio = float(sens_weight) / float(insens_weight)
                 method_ratio_dict.update({method: ratio})
-            else:
-                special_cs_file.write(method + "\t" "2-object\n")
-                missing_methods += 1
-
-    sorted_method_ratio_dict = sorted(method_ratio_dict.items(), key=lambda x: x[1])
-
-    optimal_ratio_threshold = binary_search_threshold(method_ratio_dict.values())
-
-    two_object_sensitive_methods = 0
-    two_type_sensitive_methods = 0
-    one_type_sensitive_methods = 0
-    context_insensitive_methods = 0
-    for method, ratio in sorted_method_ratio_dict:
-
-        if ratio <= optimal_ratio_threshold:
-            special_cs_file.write(method + "\t" "2-object\n")
-            two_object_sensitive_methods += 1
-        # elif method_ratio_average <= TWO_TYPE_THRESHOLD:
-        #     special_cs_file.write(method + "\t" + "2-type\n")
-        #     two_type_sensitive_methods += 1
-        # elif method_ratio_average <= ONE_TYPE_THRESHOLD:
-        #     special_cs_file.write(method + "\t" + "1-type\n")
-        #     one_type_sensitive_methods += 1
-        else:
-            special_cs_file.write(method + "\t" + "context-insensitive\n")
-            context_insensitive_methods += 1
-
-    special_cs_file.close()
-
-    print YELLOW + BOLD + "2-object methods: " + str(two_object_sensitive_methods) + RESET
-    print YELLOW + BOLD + "2-type methods: " + str(two_type_sensitive_methods) + RESET
-    print YELLOW + BOLD + "1-type methods: " + str(one_type_sensitive_methods) + RESET
-    print YELLOW + BOLD + "context-insensitive methods: " + str(context_insensitive_methods) + RESET
-
-
-def calculate_analysis_threshold(ratio_threshold):
-    analysis_weight = 0
-    for method, ratio in sorted_method_ratio_dict:
-        if ratio <= ratio_threshold:
-            analysis_weight += sens_method_cost_dict.get(method)
-        else:
-            analysis_weight += insens_method_cost_dict.get(method)
-    return analysis_weight
+            # else:
+            #     special_cs_file.write(method + "\t" "2-object\n")
+            #     missing_methods += 1
 
 
 def binary_search_threshold(threshold_list):
-    if 2 < calculate_analysis_threshold(threshold_list[0]):
+    loop_count = 0
+    value = 37
+
+    if value < float(calculate_analysis_threshold(threshold_list[0]))/float(ci_analysis_weight):
+        print float(calculate_analysis_threshold(threshold_list[0]))
+        print YELLOW + BOLD + "Optimal threshold found after " + str(loop_count) + " steps" + RESET
         return threshold_list[0]
-    if 2 > calculate_analysis_threshold(threshold_list[len(threshold_list) - 1]):
+    if value > float(calculate_analysis_threshold(threshold_list[len(threshold_list) - 1]))/float(ci_analysis_weight):
+        print float(calculate_analysis_threshold(threshold_list[len(threshold_list) - 1]))
+        print YELLOW + BOLD + "Optimal threshold found after " + str(loop_count) + " steps" + RESET
         return threshold_list[len(threshold_list)-1]
 
     low = 0
     high = len(threshold_list) - 1
 
-    while low >= high:
+    while low <= high:
         mid = low + (high - low) / 2
-
-        if 2 < calculate_analysis_threshold(threshold_list[mid]):
+        loop_count += 1
+        if value < float(calculate_analysis_threshold(threshold_list[mid]))/float(ci_analysis_weight):
             high = mid - 1
-        elif 2 > calculate_analysis_threshold(threshold_list[mid]):
+        elif value > float(calculate_analysis_threshold(threshold_list[mid]))/float(ci_analysis_weight):
             low = mid + 1
         else:
+            print YELLOW + BOLD + "Optimal threshold found after " + str(loop_count) + " steps" + RESET
             return threshold_list[mid]
 
-    if (calculate_analysis_threshold(threshold_list[low]) - 2) < (2 - calculate_analysis_threshold(threshold_list[high])):
+    print YELLOW + BOLD + "Optimal threshold found after " + str(loop_count) + " steps" + RESET
+    print YELLOW + BOLD + "low 2-obj cost " + str(calculate_analysis_threshold(threshold_list[low])) + RESET
+    print YELLOW + BOLD + "high 2-obj cost " + str(calculate_analysis_threshold(threshold_list[high])) + RESET
+
+    if (float(calculate_analysis_threshold(threshold_list[low]))/float(ci_analysis_weight) - value) < (value - float(calculate_analysis_threshold(threshold_list[high]))/float(ci_analysis_weight)):
         return threshold_list[low]
     else:
         return threshold_list[high]
@@ -205,7 +231,7 @@ def run_main_analysis(args, oracular_file):
 
 
 def run(args):
-    run_pre_analyses(args)
+    #run_pre_analyses(args)
     run_oracular_analysis_classification()
     run_main_analysis(args, ORACULAR_CACHE + "/SpecialCSMethods.csv")
 
