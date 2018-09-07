@@ -117,26 +117,19 @@ def run_oracular_analysis_classification():
     for method_cost in insens_method_cost_dict.values():
         ci_analysis_weight += method_cost
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Fixes in oracular logic
+
     two_obj_analysis_weight = 0
     for method_cost in sens_method_cost_dict.values():
         two_obj_analysis_weight += method_cost
 
-<<<<<<< HEAD
     print YELLOW + BOLD + "context insensitive analysis weight: " + str(ci_analysis_weight) + RESET
     print YELLOW + BOLD + "2 object sensitive analysis weight: " + str(two_obj_analysis_weight) + RESET
 
-=======
-=======
->>>>>>> Fixes in oracular logic
+
     print YELLOW + BOLD + "context insensitive analysis weight: " + str(ci_analysis_weight) + RESET
     print YELLOW + BOLD + "2 object sensitive analysis weight: " + str(two_obj_analysis_weight) + RESET
 
     missing_methods = 0
->>>>>>> Fixes in oracular heuristics
     special_cs_file = open(ORACULAR_CACHE + "/SpecialCSMethods.csv", "w")
 
     calculate_method_ratios(insens_method_cost_dict, sens_method_cost_dict, special_cs_file)
@@ -146,11 +139,9 @@ def run_oracular_analysis_classification():
 
     sorted_ratios_list = [e[1] for e in sorted_method_ratio_list]
     optimal_ratio_threshold = binary_search_threshold(sorted_ratios_list)
-<<<<<<< HEAD
 
     print YELLOW + BOLD + "optimal ratio threshold: " + str(optimal_ratio_threshold) + RESET
-=======
->>>>>>> Fixes in oracular logic
+
 
     print YELLOW + BOLD + "optimal ratio threshold: " + str(optimal_ratio_threshold) + RESET
 
