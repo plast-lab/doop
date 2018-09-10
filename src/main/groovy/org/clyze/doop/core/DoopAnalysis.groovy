@@ -55,7 +55,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	/**
 	 * Total time for the soot invocation
 	 */
-	protected long sootTime
+	protected long factGenTime
 
 	/**
 	 * The suffix of information flow platforms.
@@ -354,7 +354,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 		log.debug "Params of soot: ${params.join(' ')}"
 
-		sootTime = Helper.timing {
+		factGenTime = Helper.timing {
 			//We invoke soot reflectively using a separate class-loader to be able
 			//to support multiple soot invocations in the same JVM @ server-side.
 			//TODO: Investigate whether this approach may lead to memory leaks,
@@ -366,7 +366,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			if (!success)
 				throw new RuntimeException("Soot fact generation error")
 		}
-		log.info "Soot fact generation time: ${sootTime}"
+		log.info "Soot fact generation time: ${factGenTime}"
 	}
 
 	protected void runWala(String platform, Collection<String> inputArgs, Collection<String> deps, List<File> platforms, Collection<String> params) {
@@ -399,7 +399,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		log.debug "Params of wala: ${params.join(' ')}"
 
 		try {
-			sootTime = Helper.timing {
+			factGenTime = Helper.timing {
 				//We invoke soot reflectively using a separate class-loader to be able
 				//to support multiple soot invocations in the same JVM @ server-side.
 				//TODO: Investigate whether this approach may lead to memory leaks,
@@ -412,7 +412,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		} catch(walaError){
 			throw new RuntimeException("Wala fact generation Error: $walaError", walaError)
 		}
-		log.info "Wala fact generation time: ${sootTime}"
+		log.info "Wala fact generation time: ${factGenTime}"
 	}
 
 	protected void runPython(Set<String> tmpDirs) {
@@ -436,7 +436,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		log.debug "Params of wala: ${params.join(' ')}"
 
 		try {
-			sootTime = Helper.timing {
+			factGenTime = Helper.timing {
 				PythonInvoker wala = new PythonInvoker()
 				wala.main(params.toArray(new String[params.size()]))
 			}
@@ -444,7 +444,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			walaError.printStackTrace()
 			throw new RuntimeException("Wala fact generation Error: $walaError", walaError)
 		}
-		log.info "Wala fact generation time: ${sootTime}"
+		log.info "Wala fact generation time: ${factGenTime}"
 	}
 
 	protected void runJPhantom() {
