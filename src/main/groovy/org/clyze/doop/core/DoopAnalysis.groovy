@@ -7,6 +7,7 @@ import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.DoopErrorCodeException
+import org.clyze.doop.common.FrontEnd
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.wala.WalaInvoker
@@ -164,8 +165,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			Set<String> tmpDirs = [] as Set
 			try {
 				if (options.PYTHON.value) runPython(tmpDirs)
-				else if (options.WALA_FACT_GEN.value) runWala(tmpDirs)
-				else runSoot(tmpDirs)
+				else if (options.WALA_FACT_GEN.value) runFrontEnd(tmpDirs, FrontEnd.WALA)
+				else runFrontEnd(tmpDirs, FrontEnd.SOOT)
 			} catch (all) {
 				all = StackTraceUtils.deepSanitize all
 				log.info all
@@ -266,22 +267,63 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		return AARUtils.toJars(deps as List<String>, false, tmpDirs)
 	}
 
-	protected void runSoot(Set<String> tmpDirs) {
+	protected void runFrontEnd(Set<String> tmpDirs, FrontEnd frontEnd) {
 		def platform = options.PLATFORM.value.toString().tokenize("_")[0]
 		if (platform != "android" && platform != "java")
 			throw new RuntimeException("Unsupported platform: ${platform}")
 
 		def inputArgs = getInputArgsJars(tmpDirs)
-
 		def deps = getDepsJars(tmpDirs)
 		List<File> platforms = options.PLATFORMS.value as List<File>
 		if (!platforms) {
 			throw new RuntimeException("internal option '${options.PLATFORMS.name}' is empty")
 		}
 
+		Collection<String> params = ["--application-regex", options.APP_REGEX.value.toString()]
+
+		if (options.FACT_GEN_CORES.value) {
+			params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
+		}
+
+		if (options.X_FACTS_SUBSET.value) {
+			params += ["--facts-subset", options.X_FACTS_SUBSET.value.toString()]
+		}
+
+		if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
+			params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
+		}
+
+		if (options.SEED.value) {
+			params += ["--seed", options.SEED.value.toString()]
+		}
+
+		if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
+			params += ["--special-cs-methods", options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString()]
+		}
+
+		if (options.X_DRY_RUN.value) {
+			params += ["--noFacts"]
+		}
+
+		if (options.X_R_OUT_DIR.value) {
+			params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
+		}
+
+		params = params + ["-d", factsDir.toString()]
+
+		if (frontEnd == FrontEnd.SOOT) {
+			runSoot(platform, inputArgs, deps, platforms, params)
+		} else if (frontEnd == FrontEnd.WALA) {
+			runWala(platform, inputArgs, deps, platforms, params)
+		} else {
+			println("Unknown front-end: " + frontEnd)
+		}
+	}
+
+	protected void runSoot(String platform, Collection<String> inputArgs, Collection<String> deps, List<File> platforms, Collection<String> params) {
 		Collection<String> depArgs = (platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 
-		Collection<String> params = ["--application-regex", options.APP_REGEX.value.toString(), "--full"] + inputArgs + depArgs
+		params += [ "--full" ] + inputArgs + depArgs
 
 		if (platform == "android") {
 			// This uses all platformLibs.
@@ -306,38 +348,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--generate-jimple"]
 		}
 
-		if (options.X_DRY_RUN.value) {
-			params += ["--noFacts"]
-		}
-
-		if (options.FACT_GEN_CORES.value) {
-			params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
-		}
-
-		if (options.X_R_OUT_DIR.value) {
-			params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
-		}
-
 		if (options.X_IGNORE_WRONG_STATICNESS.value) {
 			params += ["--ignoreWrongStaticness"]
 		}
-
-		if (options.X_FACTS_SUBSET.value) {
-			params += ["--facts-subset", options.X_FACTS_SUBSET.value.toString()]
-		}
-
-		if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
-			params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
-		}
-
-		if (options.SEED.value) {
-			params += ["--seed", options.SEED.value.toString()]
-		}
-
-		if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
-			params += ["--special-cs-methods", options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString()]
-		}
-		params = params + ["-d", factsDir.toString()]
 
 		log.debug "Params of soot: ${params.join(' ')}"
 
@@ -356,39 +369,27 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		log.info "Soot fact generation time: ${sootTime}"
 	}
 
-	protected void runWala(Set<String> tmpDirs) {
+	protected void runWala(String platform, Collection<String> inputArgs, Collection<String> deps, List<File> platforms, Collection<String> params) {
 		Collection<String> depArgs
-		def inputArgs = getInputArgsJars(tmpDirs)
-		def deps = getDepsJars(tmpDirs)
-
-		def platform = options.PLATFORM.value.toString().tokenize("_")[0]
-		if (platform != "android" && platform != "java")
-			throw new RuntimeException("Unsupported platform: ${platform}")
-
-		def platformFiles = options.PLATFORMS.value as List<File>
-		Collection<String> params = ["--application-regex", options.APP_REGEX.value.toString()]
 
 		switch (platform) {
 			case "java":
 				depArgs = deps
 				depArgs.add("-p")
-				depArgs.add(platformFiles.first().absolutePath.toString().replace("/rt.jar", ""))
-				depArgs = (platformFiles.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + depArgs
+				depArgs.add(platforms.first().absolutePath.toString().replace("/rt.jar", ""))
+				depArgs = (platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + depArgs
 				break
 			case "android":
 				// This uses all platformLibs.
 				// params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
 				// This uses just platformLibs[0], assumed to be android.jar.
-				depArgs = (platformFiles.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-				params.addAll(["--android-jars"] + [platformFiles.first().absolutePath])
+				depArgs = (platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
+				params.addAll(["--android-jars"] + [platforms.first().absolutePath])
 				break
 			default:
 				throw new RuntimeException("Unsupported platform")
 		}
 
-		if (options.FACT_GEN_CORES.value) {
-			params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
-		}
 		if (options.GENERATE_JIMPLE.value) {
 			params += ["--generate-ir"]
 		}
