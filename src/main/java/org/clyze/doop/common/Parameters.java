@@ -186,13 +186,13 @@ public abstract class Parameters {
         if (_factsSubSet == null)
             return;
         else if (_factsSubSet == FactsSubSet.APP) {
-            getDependencies().clear();
-            getPlatformLibs().clear();
+            _dependencies.clear();
+            _platformLibs.clear();
         } else if (_factsSubSet == FactsSubSet.APP_N_DEPS)
-            getPlatformLibs().clear();
+            _platformLibs.clear();
         else if (_factsSubSet == FactsSubSet.PLATFORM) {
-            getInputs().clear();
-            getDependencies().clear();
+            _inputs.clear();
+            _dependencies.clear();
         } else {
             System.err.println("Illegal facts subset option: " + _factsSubSet);
             throw new DoopErrorCodeException(4);
