@@ -309,21 +309,21 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
 		}
 
-		params = params + ["-d", factsDir.toString()]
+		params = params + ["-d", factsDir.toString()] + inputArgs
 
 		if (frontEnd == FrontEnd.SOOT) {
-			runSoot(platform, inputArgs, deps, platforms, params)
+			runSoot(platform, deps, platforms, params)
 		} else if (frontEnd == FrontEnd.WALA) {
-			runWala(platform, inputArgs, deps, platforms, params)
+			runWala(platform, deps, platforms, params)
 		} else {
 			println("Unknown front-end: " + frontEnd)
 		}
 	}
 
-	protected void runSoot(String platform, Collection<String> inputArgs, Collection<String> deps, List<File> platforms, Collection<String> params) {
+	protected void runSoot(String platform, Collection<String> deps, List<File> platforms, Collection<String> params) {
 		Collection<String> depArgs = (platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 
-		params += [ "--full" ] + inputArgs + depArgs
+		params += [ "--full" ] + depArgs
 
 		if (platform == "android") {
 			// This uses all platformLibs.
@@ -369,7 +369,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		log.info "Soot fact generation time: ${factGenTime}"
 	}
 
-	protected void runWala(String platform, Collection<String> inputArgs, Collection<String> deps, List<File> platforms, Collection<String> params) {
+	protected void runWala(String platform, Collection<String> deps, List<File> platforms, Collection<String> params) {
 		Collection<String> depArgs
 
 		switch (platform) {
@@ -394,7 +394,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--generate-ir"]
 		}
 		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-		params = params + inputArgs + depArgs
+		params = params + depArgs
 
 		log.debug "Params of wala: ${params.join(' ')}"
 
