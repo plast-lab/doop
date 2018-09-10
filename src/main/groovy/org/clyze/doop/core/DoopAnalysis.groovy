@@ -394,7 +394,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--generate-ir"]
 		}
 		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-		params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
+		params = params + inputArgs + depArgs
 
 		log.debug "Params of wala: ${params.join(' ')}"
 
