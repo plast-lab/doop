@@ -949,7 +949,7 @@ class FactWriter extends JavaFactWriter {
                         val = val.substring(0, len-1);
                     _db.add(NUM_CONSTANT_RAW, val);
                 } else if (tag instanceof StringConstantValueTag) {
-                    _db.add(STRING_RAW, val);
+                    writeStringConstant(val);
                 } else
                     System.err.println("Unsupported field tag " + tag.getClass());
             }
