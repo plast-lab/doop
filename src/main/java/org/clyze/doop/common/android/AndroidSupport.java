@@ -146,8 +146,8 @@ public abstract class AndroidSupport {
                     writer.writeSensitiveLayoutControl(control.getID(), control.getViewClassName(), control.getParentID());
                 }
             }
-            writer.writeExtraSensitiveControls(parameters);
         }
+        writer.writeExtraSensitiveControls(parameters);
     }
 
     // Parses Android manifests. Supports binary and plain-text XML
