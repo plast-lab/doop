@@ -62,6 +62,7 @@ public enum PredicateFile
     METHOD_TYPE_CONSTANT("MethodTypeConstant"),
     STRING_CONST("StringConstant"),
     STRING_RAW("StringRaw"),
+    NUM_CONSTANT_RAW("NumConstantRaw"),
     FIELD_SIGNATURE("Field"),
     ENTER_MONITOR("EnterMonitor"),
     EXIT_MONITOR("ExitMonitor"),

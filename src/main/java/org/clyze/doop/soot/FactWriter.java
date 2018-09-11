@@ -936,8 +936,22 @@ class FactWriter extends JavaFactWriter {
         List<Tag> tagList = f.getTags();
         for (Tag tag : tagList)
             if (tag instanceof ConstantValueTag) {
-                String valueString = ((ConstantValueTag)tag).getConstant().toString();
-                _db.add(FIELD_INITIAL_VALUE, fieldId, valueString);
+                String val = ((ConstantValueTag)tag).getConstant().toString();
+                _db.add(FIELD_INITIAL_VALUE, fieldId, val);
+                // Put constant in appropriate "raw" input facts.
+                if ((tag instanceof IntegerConstantValueTag) ||
+                    (tag instanceof DoubleConstantValueTag) ||
+                    (tag instanceof LongConstantValueTag) ||
+                    (tag instanceof FloatConstantValueTag)) {
+                    // Trim last non-digit qualifier (e.g. 'L' in long constants).
+                    int len = val.length();
+                    if (!Character.isDigit(val.charAt(len-1)))
+                        val = val.substring(0, len-1);
+                    _db.add(NUM_CONSTANT_RAW, val);
+                } else if (tag instanceof StringConstantValueTag) {
+                    _db.add(STRING_RAW, val);
+                } else
+                    System.err.println("Unsupported field tag " + tag.getClass());
             }
     }
 
