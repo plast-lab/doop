@@ -21,6 +21,7 @@ public abstract class AndroidSupport {
     private final Set<String> appBroadcastReceivers = new HashSet<>();
     private final Set<String> appCallbackMethods = new HashSet<>();
     private final Set<LayoutControl> appUserControls = new HashSet<>();
+    private final Map<String, AppResources> computedResources = new HashMap<>();
 
     private final Log logger;
 
@@ -44,9 +45,14 @@ public abstract class AndroidSupport {
         for (String i : allInputs) {
             if (i.endsWith(".apk") || i.endsWith(".aar")) {
                 System.out.println("Processing application resources in " + i);
-                AppResources resources = processAppResources(i);
-                processAppResources(i, resources, pkgs, rLinker);
-                resources.printManifestHeader();
+                try {
+                    AppResources resources = processAppResources(i);
+                    computedResources.put(i, resources);
+                    processAppResources(i, resources, pkgs, rLinker);
+                    resources.printManifestHeader();
+                } catch (Exception ex) {
+                    System.err.println("Resource processing failed: " + ex.getMessage());
+                }
             }
         }
 
@@ -108,12 +114,9 @@ public abstract class AndroidSupport {
 
     public void writeComponents(JavaFactWriter writer, Parameters parameters) {
         for (String appInput : parameters.getInputs()) {
-            AppResources processMan;
-            try {
-                processMan = processAppResources(appInput);
-            } catch (Exception ex) {
-                System.err.println("Error processing manifest in: " + appInput);
-                ex.printStackTrace();
+            AppResources processMan = computedResources.get(appInput);
+            if (processMan == null) {
+                System.err.println("Warning: missing resources for " + appInput);
                 continue;
             }
 
