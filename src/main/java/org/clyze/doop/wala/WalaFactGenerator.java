@@ -30,12 +30,12 @@ class WalaFactGenerator implements Runnable {
 
     protected Log logger;
 
-    private WalaFactWriter _writer;
-    private Set<IClass> _iClasses;
+    private final WalaFactWriter _writer;
+    private final Set<IClass> _iClasses;
     private AnalysisOptions options;
-    private boolean _android;
-    private IAnalysisCacheView cache;
-    private WalaIRPrinter IRPrinter;
+    private final boolean _android;
+    private final IAnalysisCacheView cache;
+    private final WalaIRPrinter IRPrinter;
 
     WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir, boolean androidAnalysis, IAnalysisCacheView analysisCache)
     {
@@ -406,7 +406,7 @@ class WalaFactGenerator implements Runnable {
     }
 
     /* Check for phantom classes in a method signature. */
-    public boolean isPhantomBased(IMethod m) {
+    private boolean isPhantomBased(IMethod m) {
         IClassHierarchy cha = m.getClassHierarchy();
         try {
             TypeReference[] exceptions = m.getDeclaredExceptions();
@@ -439,13 +439,13 @@ class WalaFactGenerator implements Runnable {
      * This transformation takes place in com.ibm.wala.shrikeBT.Decoder.java
      * In constrast soot has both LookUp Switches and Table Switches
      */
-    public void generate(IMethod m, IR ir, SSASwitchInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSASwitchInstruction instruction, Session session, TypeInference typeInference) {
         //Switch instructions have only one use
         Local switchVar = createLocal(ir,instruction,instruction.getUse(0),typeInference);
         _writer.writeLookupSwitch(ir, m, instruction, session, switchVar);
 
     }
-    public void generate(IMethod m, IR ir, SSAConditionalBranchInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAConditionalBranchInstruction instruction, Session session, TypeInference typeInference) {
         SSAInstruction[] ssaInstructions = ir.getInstructions();
         SSAInstruction targetInstr;
         // Conditional branch instructions have two uses (op1 and op2, the compared variables) and no defs
@@ -476,7 +476,7 @@ class WalaFactGenerator implements Runnable {
     }
 
 
-    public void generate(IMethod m, IR ir, SSAPhiInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAPhiInstruction instruction, Session session, TypeInference typeInference) {
         // Phi instructions have a single def (to) and a number uses that represent the alternative values
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
         Local alternative;
@@ -492,7 +492,7 @@ class WalaFactGenerator implements Runnable {
         }
     }
 
-    public void generate(IMethod m, IR ir, SSANewInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSANewInstruction instruction, Session session, TypeInference typeInference) {
         Local l = createLocal(ir,instruction,instruction.getDef(),typeInference);
         int numOfUses = instruction.getNumberOfUses();
         if(numOfUses < 2)
@@ -505,13 +505,13 @@ class WalaFactGenerator implements Runnable {
         }
     }
 
-    public void generate(IMethod m, IR ir, SSALoadMetadataInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSALoadMetadataInstruction instruction, Session session, TypeInference typeInference) {
         Local l =  createLocal(ir,instruction,instruction.getDef(),typeInference);
         ConstantValue v = new ConstantValue(instruction.getToken());
         _writer.writeClassConstantExpression(m, instruction, l, v, session);
     }
 
-    public void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAArrayLoadInstruction instruction, Session session, TypeInference typeInference) {
         // Load array instructions have a single def (to) and two uses (base and index);
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
         Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
@@ -520,7 +520,7 @@ class WalaFactGenerator implements Runnable {
         _writer.writeLoadArrayIndex(m, instruction, base, to, index, session);
     }
 
-    public void generate(IMethod m, IR ir, SSAArrayStoreInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAArrayStoreInstruction instruction, Session session, TypeInference typeInference) {
         // Store arra instructions have three uses (base, index and from) and no defs
         Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);
         Local index = createLocal(ir, instruction, instruction.getUse(1), typeInference);
@@ -529,7 +529,7 @@ class WalaFactGenerator implements Runnable {
         _writer.writeStoreArrayIndex(m, instruction, base, from, index, session);
     }
 
-    public void generate(IMethod m, IR ir, SSAGetInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAGetInstruction instruction, Session session, TypeInference typeInference) {
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
 
         if (instruction.isStatic()) {
@@ -543,7 +543,7 @@ class WalaFactGenerator implements Runnable {
         }
     }
 
-    public void generate(IMethod m, IR ir, SSAPutInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAPutInstruction instruction, Session session, TypeInference typeInference) {
 
         if (instruction.isStatic()) {
             //Put static field has a single use (from) and no defs
@@ -558,7 +558,7 @@ class WalaFactGenerator implements Runnable {
         }
     }
 
-    public void generate(IMethod m, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
         // For invoke instructions the number of uses is equal to the number of parameters
 
         Local l;
@@ -569,7 +569,7 @@ class WalaFactGenerator implements Runnable {
         _writer.writeInvoke(m, ir, instruction, l, session,typeInference);
     }
 
-    public void generate(IMethod m, IR ir, SSAInstanceofInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAInstanceofInstruction instruction, Session session, TypeInference typeInference) {
         // For invoke instructions the number of uses is equal to the number of parameters
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
         Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
@@ -577,7 +577,7 @@ class WalaFactGenerator implements Runnable {
     }
 
     //SSACheckCastInstruction is for non primitive types
-    public void generate(IMethod m, IR ir, SSACheckCastInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSACheckCastInstruction instruction, Session session, TypeInference typeInference) {
         // For invoke instructions the number of uses is equal to the number of parameters
         Local to =createLocal(ir, instruction, instruction.getDef(), typeInference);
         Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
@@ -597,7 +597,7 @@ class WalaFactGenerator implements Runnable {
     }
 
     //SSAConversion Instruction is only for primitive types
-    public void generate(IMethod m, IR ir, SSAConversionInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAConversionInstruction instruction, Session session, TypeInference typeInference) {
         // For invoke instructions the number of uses is equal to the number of parameters
         Local to =createLocal(ir, instruction, instruction.getDef(), typeInference);
         Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
@@ -608,7 +608,7 @@ class WalaFactGenerator implements Runnable {
             _writer.writeAssignCast(m, instruction, to, from , instruction.getToType(), session);
     }
 
-    public void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
+    private void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
         // Go to instructions have no uses and no defs
         SSAInstruction[] ssaInstructions = ir.getInstructions();
         SSAInstruction targetInstr;
@@ -637,7 +637,7 @@ class WalaFactGenerator implements Runnable {
         _writer.writeGoto(m, instruction,targetInstr , session);
     }
 
-    public void generate(IMethod m, IR ir, SSAMonitorInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAMonitorInstruction instruction, Session session, TypeInference typeInference) {
         // Monitor instructions have a single use and no defs
         int use = instruction.getUse(0);
         Local l = createLocal(ir, instruction, use, typeInference);
@@ -649,7 +649,7 @@ class WalaFactGenerator implements Runnable {
         }
     }
 
-    public void generate(IMethod m, IR ir, SSAUnaryOpInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAUnaryOpInstruction instruction, Session session, TypeInference typeInference) {
         // Unary op instructions have a single def (to) and a single use (from)
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
         Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
@@ -657,7 +657,7 @@ class WalaFactGenerator implements Runnable {
         _writer.writeAssignUnop(m, instruction, to, from, session);
     }
 
-    public void generate(IMethod m, IR ir, SSAArrayLengthInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAArrayLengthInstruction instruction, Session session, TypeInference typeInference) {
         // Array length instruction have a single use (base) and a def (to)
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
         Local base = createLocal(ir, instruction, instruction.getUse(0), typeInference);

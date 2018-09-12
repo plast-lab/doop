@@ -764,6 +764,14 @@ isMethod(?id) :-
 // FieldInitialValue
 .input FieldInitialValue(IO="file", filename="FieldInitialValue.facts", delimiter="\t")
 
+// NumConstantRaw
+
+.decl NumConstantRaw(?const:symbol)
+.input NumConstantRaw(IO="file", filename="NumConstantRaw.facts", delimiter="\t")
+
+isNumConstant(?const) :-
+  NumConstantRaw(?const).
+
 #endif // ANDROID
 
 // Access Modifiers

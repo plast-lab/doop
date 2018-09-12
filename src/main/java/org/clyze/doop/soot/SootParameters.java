@@ -12,7 +12,7 @@ public class SootParameters extends Parameters {
      boolean _allowPhantom = false;
      private boolean _runFlowdroid = false;
      boolean _generateJimple = false;
-     boolean _toStdout = false;
+     private boolean _toStdout = false;
      boolean _ignoreWrongStaticness = false;
 
      public boolean getRunFlowdroid() {
@@ -59,6 +59,35 @@ public class SootParameters extends Parameters {
             return -1;
         }
         return i;
+    }
+
+    /**
+     * Finishes command-line argument processing (e.g., checks for incompatible
+     * or missing options or sets defaults).
+     * @throws DoopErrorCodeException    exception containing error code
+     */
+    public void finishArgProcessing() throws DoopErrorCodeException {
+        super.finishArgProcessing();
+
+        if (_mode == null)
+            _mode = SootParameters.Mode.INPUTS;
+
+        if (_toStdout && !_generateJimple) {
+            System.err.println("error: --stdout must be used with --generate-jimple");
+            throw new DoopErrorCodeException(7);
+        }
+        else if (_toStdout && getOutputDir() != null) {
+            System.err.println("error: --stdout and -d options are not compatible");
+            throw new DoopErrorCodeException(2);
+        }
+        else if ((getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
+                (!_android)) {
+            System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
+            throw new DoopErrorCodeException(3);
+        }
+
+        if (!_toStdout && getOutputDir() == null)
+            setOutputDir(System.getProperty("user.dir"));
     }
 
 }

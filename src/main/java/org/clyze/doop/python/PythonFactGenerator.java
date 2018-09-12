@@ -28,10 +28,10 @@ import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 public class PythonFactGenerator implements Runnable{
     protected Log logger;
 
-    private PythonFactWriter _writer;
-    private IAnalysisCacheView cache;
-    private PythonIRPrinter IRPrinter;
-    private Set<IClass> _iClasses;
+    private final PythonFactWriter _writer;
+    private final IAnalysisCacheView cache;
+    private final PythonIRPrinter IRPrinter;
+    private final Set<IClass> _iClasses;
 
     //The classes that are in the class hierarchy by default
     //Useful on our current one-classhierarchy-per-file approach
@@ -528,7 +528,7 @@ public class PythonFactGenerator implements Runnable{
         } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
             l.setType(PythonTypes.object);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
-        } else if (symbolTable.isFloatConstant(l.getVarIndex())) {
+        } else if (symbolTable.isFloatConstant(l.getVarIndex()) || symbolTable.isDoubleConstant(l.getVarIndex())) {
             l.setType(PythonTypes.object);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isBooleanConstant(l.getVarIndex())) {

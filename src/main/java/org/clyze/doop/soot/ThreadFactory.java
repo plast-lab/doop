@@ -4,10 +4,10 @@ import soot.SootClass;
 
 import java.util.Set;
 
-public class ThreadFactory {
-    FactWriter _factWriter;
+class ThreadFactory {
+    final FactWriter _factWriter;
 
-    private boolean _ssa;
+    private final boolean _ssa;
 
     ThreadFactory(FactWriter factWriter, boolean ssa) {
         _factWriter = factWriter;
@@ -22,11 +22,4 @@ public class ThreadFactory {
         return new JimpleGenerator(sootClasses);
     }
 
-    public FactWriter get_factWriter() {
-        return _factWriter;
-    }
-
-    public boolean getSSA() {
-        return _ssa;
-    }
 }

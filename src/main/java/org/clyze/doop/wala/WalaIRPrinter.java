@@ -15,10 +15,10 @@ import java.util.Iterator;
 
 import static org.clyze.doop.wala.WalaUtils.fixTypeString;
 
-public class WalaIRPrinter {
+class WalaIRPrinter {
 
-    private IAnalysisCacheView _cache;
-    private String _outputDir;
+    private final IAnalysisCacheView _cache;
+    private final String _outputDir;
 
     WalaIRPrinter(IAnalysisCacheView cache, String outputDir)
     {

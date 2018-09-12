@@ -8,12 +8,11 @@ import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
 import soot.Scene;
 import soot.SootClass;
+import soot.SootMethod;
 import soot.options.Options;
 
 import java.io.File;
 import java.util.*;
-
-import static org.clyze.doop.common.Parameters.*;
 
 public class Main {
 
@@ -29,9 +28,6 @@ public class Main {
                 throw new DoopErrorCodeException(0);
             }
 
-            List<String> dependencies = new ArrayList<>();
-            List<String> platforms = new ArrayList<>();
-
             for (int i = 0; i < args.length; i++) {
                 int next_i = sootParameters.processNextArg(args, i);
                 if (next_i != -1) {
@@ -39,37 +35,6 @@ public class Main {
                     continue;
                 }
                 switch (args[i]) {
-                    case "-ld":
-                        i = shift(args, i);
-                        dependencies.add(args[i]);
-                        break;
-                    case "-l":
-                        i = shift(args, i);
-                        platforms.add(args[i]);
-                        break;
-                    case "-lsystem":
-                        String javaHome = System.getProperty("java.home");
-                        platforms.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
-                        platforms.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
-                        platforms.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
-                        break;
-                    case "--deps":
-                        i = shift(args, i);
-                        String folderName = args[i];
-                        File f = new File(folderName);
-                        if (!f.exists()) {
-                            System.err.println("Dependency folder " + folderName + " does not exist");
-                            throw new DoopErrorCodeException(4);
-                        } else if (!f.isDirectory()) {
-                            System.err.println("Dependency folder " + folderName + " is not a directory");
-                            throw new DoopErrorCodeException(5);
-                        }
-                        for (File file : Objects.requireNonNull(f.listFiles())) {
-                            if (file.isFile() && file.getName().endsWith(".jar")) {
-                                dependencies.add(file.getCanonicalPath());
-                            }
-                        }
-                        break;
                     case "-h":
                     case "--help":
                     case "-help":
@@ -82,12 +47,10 @@ public class Main {
                         System.err.println("  -l <archive>                          Find (library) classes in jar/zip archive");
                         System.err.println("  -ld <archive>                         Find (dependency) classes in jar/zip archive");
                         System.err.println("  -lsystem                              Find classes in default system classes");
-                        System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
                         System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
-                        System.err.println("  --library-only-facts                  Generate facts only for library classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
                         System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
-                        System.err.println("  --R-out-dir <directory>               Specify when to generate R code (when linking AAR inputs)");
+                        System.err.println("  --R-out-dir <directory>               Specify where to generate R code (when linking AAR inputs)");
                         System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
@@ -112,35 +75,7 @@ public class Main {
                 }
             }
 
-            if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
-                sootParameters.setDependencies(dependencies);
-                sootParameters.setLibraries(platforms);
-            } else {
-                sootParameters.setLibraries(platforms);
-                sootParameters.getLibraries().addAll(dependencies);
-            }
-
-            if (sootParameters._mode == null) {
-                sootParameters._mode = SootParameters.Mode.INPUTS;
-            }
-
-            if (sootParameters._toStdout && !sootParameters._generateJimple) {
-                System.err.println("error: --stdout must be used with --generate-jimple");
-                throw new DoopErrorCodeException(7);
-            }
-            if (sootParameters._toStdout && sootParameters.getOutputDir() != null) {
-                System.err.println("error: --stdout and -d options are not compatible");
-                throw new DoopErrorCodeException(2);
-            }
-            else if ((sootParameters.getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
-                    (!sootParameters._android)) {
-                System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
-                throw new DoopErrorCodeException(3);
-            }
-            else if (!sootParameters._toStdout && sootParameters.getOutputDir() == null) {
-                sootParameters.setOutputDir(System.getProperty("user.dir"));
-            }
-
+            sootParameters.finishArgProcessing();
             produceFacts(sootParameters);
         }
         catch(DoopErrorCodeException errCode) {
@@ -188,19 +123,21 @@ public class Main {
         }
 
         Scene scene = Scene.v();
-        for (String input : sootParameters.getInputs()) {
+        List<String> inputs = sootParameters.getInputs();
+        for (String input : inputs) {
             String inputFormat = input.endsWith(".jar")? "archive" : "file";
             System.out.println("Adding " + inputFormat + ": "  + input);
 
             addToSootClassPath(scene, input);
             if (sootParameters._android) {
-                if (sootParameters.getInputs().size() > 1)
+                if (inputs.size() > 1)
                     System.out.println("WARNING: skipping rest of inputs");
                 break;
             }
         }
 
-        for (String lib : AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs)) {
+        List<String> allLibs = sootParameters.getDependenciesAndPlatformLibs();
+        for (String lib : AARUtils.toJars(allLibs, false, tmpDirs)) {
             System.out.println("Adding archive for resolving: " + lib);
             addToSootClassPath(scene, lib);
         }
@@ -255,14 +192,17 @@ public class Main {
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
             FactWriter writer = new FactWriter(db);
             ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
-            Driver driver = new Driver(factory, classes.size(), sootParameters._cores);
+            SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores);
 
             writer.writePreliminaryFacts(classes, java, sootParameters);
             db.flush();
 
-            if (sootParameters._android) {
+            if (sootParameters._android && (android != null)) {
                 if (sootParameters.getRunFlowdroid()) {
-                    driver.doAndroidInSequentialOrder(android.getDummyMain(), classes, writer, sootParameters._ssa);
+                    SootMethod dummyMain = android.getDummyMain();
+                    if (dummyMain == null)
+                        throw new RuntimeException("Internal error: FlowDroid returned null dummy main()");
+                    driver.doAndroidInSequentialOrder(dummyMain, classes, writer, sootParameters._ssa);
                     return;
                 } else {
                     Objects.requireNonNull(android).writeComponents(writer, sootParameters);
@@ -273,7 +213,7 @@ public class Main {
                 scene.getOrMakeFastHierarchy();
                 // avoids a concurrent modification exception, since we may
                 // later be asking soot to add phantom classes to the scene's hierarchy
-                driver.doInParallel(classes);
+                driver.generateInParallel(classes);
                 if (sootParameters._generateJimple) {
                     Set<SootClass> jimpleClasses = new HashSet<>(classes);
                     if (sootParameters._factsSubSet == null) {

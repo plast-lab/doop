@@ -25,7 +25,7 @@ import static org.clyze.doop.common.PredicateFile.*;
  * FactWriter determines the format of a fact and adds it to a
  * database.
  */
-public class FactWriter extends JavaFactWriter {
+class FactWriter extends JavaFactWriter {
     private final Representation _rep;
     private final Map<String, Type> _varTypeMap;
 
@@ -103,17 +103,15 @@ public class FactWriter extends JavaFactWriter {
         String result = t.toString();
 
         if (t instanceof ArrayType) {
-            _db.add(ARRAY_TYPE, result);
             Type componentType = ((ArrayType) t).getElementType();
-            _db.add(COMPONENT_TYPE, result, writeType(componentType));
+            writeArrayTypes(result, writeType(componentType));
         }
         else if (t instanceof PrimType || t instanceof NullType ||
                 t instanceof RefType || t instanceof VoidType || t instanceof BottomType) {
             // taken care of by the standard facts
         }
-        else {
+        else
             throw new RuntimeException("Don't know what to do with type " + t);
-        }
 
         return result;
     }
@@ -122,7 +120,7 @@ public class FactWriter extends JavaFactWriter {
         writePhantomType(writeType(t));
     }
 
-    void writePhantomType(SootClass c) {
+    private void writePhantomType(SootClass c) {
         writePhantomType(writeType(c));
     }
 
@@ -211,12 +209,7 @@ public class FactWriter extends JavaFactWriter {
 
     private static int getLineNumberFromStmt(Stmt stmt) {
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
-        String lineNumber;
-        if (tag == null) {
-            return  0;
-        } else {
-            return tag.getLineNumber();
-        }
+        return tag == null ? 0 : tag.getLineNumber();
     }
 
     private Type getComponentType(ArrayType type) {
@@ -943,8 +936,22 @@ public class FactWriter extends JavaFactWriter {
         List<Tag> tagList = f.getTags();
         for (Tag tag : tagList)
             if (tag instanceof ConstantValueTag) {
-                String valueString = ((ConstantValueTag)tag).getConstant().toString();
-                _db.add(FIELD_INITIAL_VALUE, fieldId, valueString);
+                String val = ((ConstantValueTag)tag).getConstant().toString();
+                _db.add(FIELD_INITIAL_VALUE, fieldId, val);
+                // Put constant in appropriate "raw" input facts.
+                if ((tag instanceof IntegerConstantValueTag) ||
+                    (tag instanceof DoubleConstantValueTag) ||
+                    (tag instanceof LongConstantValueTag) ||
+                    (tag instanceof FloatConstantValueTag)) {
+                    // Trim last non-digit qualifier (e.g. 'L' in long constants).
+                    int len = val.length();
+                    if (!Character.isDigit(val.charAt(len-1)))
+                        val = val.substring(0, len-1);
+                    _db.add(NUM_CONSTANT_RAW, val);
+                } else if (tag instanceof StringConstantValueTag) {
+                    writeStringConstant(val);
+                } else
+                    System.err.println("Unsupported field tag " + tag.getClass());
             }
     }
 

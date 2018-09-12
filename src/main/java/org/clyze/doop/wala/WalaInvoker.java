@@ -40,7 +40,7 @@ public class WalaInvoker {
         return walaParameters.isApplicationClass(WalaUtils.fixTypeString(klass.getName().toString()));
     }
 
-    public void main(String[] args) throws IOException {
+    public void main(String[] args) throws IOException, DoopErrorCodeException {
         WalaParameters walaParameters = new WalaParameters();
         try {
             if (args.length == 0) {
@@ -55,16 +55,8 @@ public class WalaInvoker {
                     continue;
                 }
                 switch (args[i]) {
-                    case "-ld":
-                        i = shift(args, i);
-                        walaParameters._dependencies.add(args[i]);
-                        break;
                     case "--generate-ir":
                         walaParameters._generateIR = true;
-                        break;
-                    case "-l":
-                        i = shift(args, i);
-                        walaParameters._platformLibraries.add(args[i]);
                         break;
                     case "-p":
                         i = shift(args, i);
@@ -89,7 +81,7 @@ public class WalaInvoker {
         run(walaParameters);
     }
 
-    private void run(WalaParameters walaParameters) throws IOException {
+    private void run(WalaParameters walaParameters) throws IOException, DoopErrorCodeException {
         StringBuilder classPath = new StringBuilder();
         List<String> inputs = walaParameters.getInputs();
         for (int i = 0; i < inputs.size(); i++) {
@@ -104,17 +96,17 @@ public class WalaInvoker {
 //        }
 
         System.out.println("WALA classpath:" + classPath);
-        for (String lib : walaParameters.getPlatformLibraries())
+        for (String lib : walaParameters.getPlatformLibs())
             System.out.println("Platform Library: " + lib);
 
-        for (String lib : walaParameters.getLibraries())
+        for (String lib : walaParameters.getDependencies())
             System.out.println("Application Library: " + lib);
 
         AnalysisScope scope;
         if(walaParameters._android)
-            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters._platformLibraries, walaParameters.getLibraries());
+            scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
         else
-            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters._platformLibraries, walaParameters.getLibraries());
+            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
             //scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 
         ClassHierarchy cha = null;
@@ -136,6 +128,7 @@ public class WalaInvoker {
 
             if (walaParameters._android) {
                 WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);
+                parser.parseXMLFiles();
                 parser.writeComponents();
             }
             System.out.println("Number of classes: " + cha.getNumberOfClasses());
@@ -172,8 +165,7 @@ public class WalaInvoker {
             walaFactWriter.setSignaturePolyMorphicMethods(signaturePolymorphicMethods);
 
             WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), walaParameters._cores, walaParameters._android, cache);
-            driver.doInParallel(classesSet);
-            driver.shutdown();
+            driver.generateInParallel(classesSet);
 
             if (walaFactWriter.getNumberOfPhantomTypes() > 0)
                 System.out.println("WARNING: Input contains phantom types. \nNumber of phantom types:" + walaFactWriter.getNumberOfPhantomTypes());

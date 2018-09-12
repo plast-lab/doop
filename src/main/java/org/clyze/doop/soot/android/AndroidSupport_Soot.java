@@ -92,29 +92,33 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
         }
     }
 
-    @Override
-    public void addAppClasses(Set<SootClass> classes, Scene scene) {
-        for (String inputApk : parameters.getInputs()) {
-            if (inputApk.endsWith(".apk")) {
-                addClasses(classes, scene, inputApk);
+    private void addClasses(List<String> inputs, Set<SootClass> classes, Scene scene, Set<String> target) {
+        for (String input : inputs) {
+            if (input.endsWith(".apk")) {
+                addClasses(classes, scene, input);
             } else {
                 // We support both AAR and JAR inputs, although JARs
                 // are not ideal for analysis in Android, as they
                 // don't contain AppResources.xml.
-                System.out.println("Android mode, input = " + inputApk);
-                ((BasicJavaSupport_Soot)java).addSootClasses(java.getClassesInApplicationJars(), classes, scene);
+                System.out.println("Android mode, input = " + input);
+                ((BasicJavaSupport_Soot)java).addSootClasses(target, classes, scene);
             }
         }
     }
 
     @Override
+    public void addAppClasses(Set<SootClass> classes, Scene scene) {
+        addClasses(parameters.getInputs(), classes, scene, java.getClassesInApplicationJars());
+    }
+
+    @Override
     public void addLibClasses(Set<SootClass> classes, Scene scene) {
-        throw new RuntimeException("Not implemented: addLibClasses()");
+        addClasses(parameters.getPlatformLibs(), classes, scene, java.getClassesInLibraryJars());
     }
 
     @Override
     public void addDepClasses(Set<SootClass> classes, Scene scene) {
-        throw new RuntimeException("Not implemented: addDepClasses()");
+        addClasses(parameters.getDependencies(), classes, scene, java.getClassesInDependencyJars());
     }
 
     // Parses Android manifests. Supports binary and plain-text XML

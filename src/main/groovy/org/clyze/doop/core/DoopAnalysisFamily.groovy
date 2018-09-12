@@ -10,6 +10,8 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 @Singleton
 class DoopAnalysisFamily implements AnalysisFamily {
 
+	private static final String DEFAULT_JAVA_PLATFORM = "java_7";
+
 	@Override
 	String getName() { "doop" }
 
@@ -101,8 +103,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "PLATFORM",
 					name: "platform",
 					argName: "PLATFORM",
-					description: "The platform on which to perform the analysis. For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). default: java_7",
-					value: "java_7",
+					description: "The platform on which to perform the analysis. For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). Default: ${DEFAULT_JAVA_PLATFORM}.",
+					value: DEFAULT_JAVA_PLATFORM,
 					validValues: DoopAnalysisFactory.availablePlatforms,
 					forCacheID: true,
 					forPreprocessor: true
@@ -700,7 +702,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "X_FACTS_SUBSET",
 					name: "Xfacts-subset",
-					description: "Produce facts only for a subset of the given classes",
+					description: "Produce facts only for a subset of the given classes.",
 					argName: "SUBSET",
 					validValues: Parameters.FactsSubSet.values().collect { it as String },
 					forCacheID: true

@@ -133,6 +133,10 @@ AssignInstruction_To(?instruction, ?to) :-
   _AssignNumConstant(?instruction, ?index, ?const, ?to, ?function).
 
 
+//Var-SourceName
+
+.decl VarSourceName(?var:symbol, ?name:symbol)
+.input VarSourceName(IO="file", filename="Var-SourceName.facts", delimiter="\t")
 // Field
 
 .decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol)

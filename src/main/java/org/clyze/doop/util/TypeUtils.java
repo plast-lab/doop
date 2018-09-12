@@ -11,7 +11,7 @@ public class TypeUtils implements Opcodes
         throw new AssertionError();
     }
 
-    public static String getClassName(Type classType)
+    private static String getClassName(Type classType)
     {
         return classType.getClassName();
     }

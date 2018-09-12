@@ -66,7 +66,7 @@ public class JavaFactWriter {
     }
 
     private void writeSpecialSensitivityMethod(String line) {
-        String[] linePieces = line.split(", ");
+        String[] linePieces = line.split("\t");
         String method = linePieces[0].trim();
         String sensitivity = linePieces[1].trim();
 
@@ -209,8 +209,10 @@ public class JavaFactWriter {
     }
 
     private void processSpecialSensitivityMethodFileLine(String line) {
-        if (line.contains(", "))
+        if (line.contains("\t"))
             writeSpecialSensitivityMethod(line);
+        else
+            System.err.println("Ignoring malformed special sensitivity method: " + line);
     }
 
     protected void writeMethodDeclaresException(String methodId, String exceptionType) {
@@ -230,4 +232,8 @@ public class JavaFactWriter {
         _db.add(VAR_DECLARING_METHOD, local, method);
     }
 
+    protected void writeArrayTypes(String arrayType, String componentType) {
+        _db.add(ARRAY_TYPE, arrayType);
+        _db.add(COMPONENT_TYPE, arrayType, componentType);
+    }
 }

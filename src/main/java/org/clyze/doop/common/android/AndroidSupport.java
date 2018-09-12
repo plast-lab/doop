@@ -1,5 +1,7 @@
 package org.clyze.doop.common.android;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
@@ -19,14 +21,18 @@ public abstract class AndroidSupport {
     private final Set<String> appBroadcastReceivers = new HashSet<>();
     private final Set<String> appCallbackMethods = new HashSet<>();
     private final Set<LayoutControl> appUserControls = new HashSet<>();
+    private final Map<String, AppResources> computedResources = new HashMap<>();
+
+    private final Log logger;
 
     protected AndroidSupport(Parameters parameters, BasicJavaSupport java) {
         this.parameters = parameters;
         this.java = java;
+        this.logger = LogFactory.getLog(getClass());
     }
 
     public void processInputs(Set<String> tmpDirs) throws Exception {
-        List<String> inputsAndLibs = parameters.getInputsAndLibraries();
+        List<String> allInputs = parameters.getAllInputs();
         // Map AAR files to their package name.
         Map<String, String> pkgs = new HashMap<>();
 
@@ -36,12 +42,17 @@ public abstract class AndroidSupport {
         // We merge the information from all resource files, not just
         // the application's. There are Android apps that use
         // components (e.g. activities) from AAR libraries.
-        for (String i : inputsAndLibs) {
+        for (String i : allInputs) {
             if (i.endsWith(".apk") || i.endsWith(".aar")) {
                 System.out.println("Processing application resources in " + i);
-                AppResources resources = processAppResources(i);
-                processAppResources(i, resources, pkgs, rLinker);
-                resources.printManifestHeader();
+                try {
+                    AppResources resources = processAppResources(i);
+                    computedResources.put(i, resources);
+                    processAppResources(i, resources, pkgs, rLinker);
+                    resources.printManifestHeader();
+                } catch (Exception ex) {
+                    System.err.println("Resource processing failed: " + ex.getMessage());
+                }
             }
         }
 
@@ -51,14 +62,17 @@ public abstract class AndroidSupport {
         String generatedR = rLinker.linkRs(parameters._rOutDir, tmpDirs);
         if (generatedR != null) {
             System.out.println("Adding " + generatedR + "...");
-            parameters.getLibraries().add(generatedR);
+            parameters.getDependencies().add(generatedR);
         }
 
         // If inputs are in AAR format, extract and use their JAR entries.
         parameters.setInputs(AARUtils.toJars(parameters.getInputs(), false, tmpDirs));
-        parameters.setLibraries(AARUtils.toJars(parameters.getLibraries(), false, tmpDirs));
+        parameters.setDependencies(AARUtils.toJars(parameters.getDependencies(), false, tmpDirs));
 
-        parameters.getInputs().subList(1, parameters.getInputs().size()).clear();
+        List<String> inputs = parameters.getInputs();
+        int inputsSize = inputs.size();
+        if (inputsSize > 0)
+            inputs.subList(1, inputsSize).clear();
     }
 
     public void processAppResources(String input, AppResources manifest, Map<String, String> pkgs, RLinker rLinker) {
@@ -100,12 +114,9 @@ public abstract class AndroidSupport {
 
     public void writeComponents(JavaFactWriter writer, Parameters parameters) {
         for (String appInput : parameters.getInputs()) {
-            AppResources processMan;
-            try {
-                processMan = processAppResources(appInput);
-            } catch (Exception ex) {
-                System.err.println("Error processing manifest in: " + appInput);
-                ex.printStackTrace();
+            AppResources processMan = computedResources.get(appInput);
+            if (processMan == null) {
+                System.err.println("Warning: missing resources for " + appInput);
                 continue;
             }
 
@@ -138,13 +149,14 @@ public abstract class AndroidSupport {
                     writer.writeSensitiveLayoutControl(control.getID(), control.getViewClassName(), control.getParentID());
                 }
             }
-            writer.writeExtraSensitiveControls(parameters);
         }
+        writer.writeExtraSensitiveControls(parameters);
     }
 
     // Parses Android manifests. Supports binary and plain-text XML
     // files (found in .apk and .aar files respectively).
     protected AppResources processAppResources(String archiveLocation) throws Exception {
+        logger.debug("Processing app resources in " + archiveLocation);
         String path = archiveLocation.toLowerCase();
         if (path.endsWith(".apk"))
             return AppResourcesXML.fromAPK(archiveLocation);

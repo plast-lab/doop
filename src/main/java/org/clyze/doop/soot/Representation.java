@@ -11,10 +11,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 class Representation extends JavaRepresentation {
-    private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
-    private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
-    private static List<String> jimpleKeywordList = Jimple.jimpleKeywordList();
-    private Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
+    private final Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
+    private final Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
+    private static final List<String> jimpleKeywordList = Jimple.jimpleKeywordList();
+    private final Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
     private static Representation _repr;
@@ -140,7 +140,7 @@ class Representation extends JavaRepresentation {
     private String getKind(Stmt stmt)
     {
         String kind = "unknown";
-        if(stmt instanceof AssignStmt)
+        if ((stmt instanceof AssignStmt) || (stmt instanceof IdentityStmt))
             kind = "assign";
         else if(stmt instanceof DefinitionStmt)
             kind = "definition";
@@ -150,8 +150,6 @@ class Representation extends JavaRepresentation {
             kind = "exit-monitor";
         else if(stmt instanceof GotoStmt)
             kind = "goto";
-        else if(stmt instanceof IdentityStmt)
-            kind = "assign";
         else if(stmt instanceof IfStmt)
             kind = "if";
         else if(stmt instanceof InvokeStmt)

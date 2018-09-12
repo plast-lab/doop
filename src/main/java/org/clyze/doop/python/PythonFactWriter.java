@@ -379,6 +379,9 @@ public class PythonFactWriter {
         names = ir.getLocalNames(0, paramIndex + 1);
         if(names.length > 0)
             _db.add(VAR_SOURCE_NAME, var, names[0]);
+        else{
+            System.out.println("This shouldn't(?) ever happen.");
+        }
     }
 
     void writeLocal(IMethod m, Local l) {
@@ -416,7 +419,7 @@ public class PythonFactWriter {
             }
             List<String> keywords = instruction.getKeywords();
             for (int i = 0; i < instruction.getNumberOfKeywordParameters(); i++) {
-                Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+                Local l = createLocal(ir, instruction, instruction.getUse(i + instruction.getNumberOfPositionalParameters()), typeInference);
                 _db.add(ACTUAL_KEYWORD_PARAMETER, str(i), invokeExprRepr,keywords.get(i), _rep.local(inMethod, l));
             }
         }
@@ -428,7 +431,7 @@ public class PythonFactWriter {
             }
             List<String> keywords = instruction.getKeywords();
             for (int i = 0; i < instruction.getNumberOfKeywordParameters(); i++) {
-                Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
+                Local l = createLocal(ir, instruction, instruction.getUse(i + instruction.getNumberOfPositionalParameters()), typeInference);
                 _db.add(ACTUAL_KEYWORD_PARAMETER, str(i-1), invokeExprRepr,keywords.get(i), _rep.local(inMethod, l));
             }
         }

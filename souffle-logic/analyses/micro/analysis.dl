@@ -1,20 +1,7 @@
-#include "../../facts/flow-insensitive-schema.dl"
-#include "../../facts/flow-sensitive-schema.dl"
-#include "../../facts/to-flow-sensitive.dl"
-#include "../../facts/import-entities.dl"
-#include "../../facts/import-facts.dl"
-#include "../../facts/post-process.dl"
-#include "../../basic/basic.dl"
-#include "../../basic/finalization.dl"
-#include "../../basic/method-resolution.dl"
-#include "../../basic/subclass.dl"
-#include "../../basic/superinterface.dl"
-#include "../../basic/type-hierarchy.dl"
-#include "../../main/exceptions.dl"
-#include "../../main/implicit-reachable.dl"
 #include "../../main/implicit-reachable-declarations.dl"
-#include "../../main/class-initialization.dl"
+#include "../../main/implicit-reachable.dl"
 #include "../../main/class-initialization-declarations.dl"
+#include "../../main/class-initialization.dl"
 
 /////////
 // IDB //
@@ -71,7 +58,7 @@ VarPointsTo(?heap, ?to) :-
 VarPointsTo(?heap, ?to) :-
     Reachable(?method),
     AssignCast(?type, ?from, ?to, ?method),
-    SupertypeOf(?type, ?heaptype),
+    basic.SupertypeOf(?type, ?heaptype),
     HeapAllocation_Type(?heap, ?heaptype),
     VarPointsTo(?heap, ?from).
 
@@ -88,7 +75,7 @@ ArrayIndexPointsTo(?baseheap, ?heap) :-
    HeapAllocation_Type(?heap, ?heaptype),
    HeapAllocation_Type(?baseheap, ?baseheaptype),
    ComponentType(?baseheaptype, ?componenttype),
-   SupertypeOf(?componenttype, ?heaptype).
+   basic.SupertypeOf(?componenttype, ?heaptype).
 
 VarPointsTo(?heap, ?to) :-
    Reachable(?inmethod),
@@ -98,7 +85,7 @@ VarPointsTo(?heap, ?to) :-
    Var_Type(?to, ?type),
    HeapAllocation_Type(?baseheap, ?baseheaptype),
    ComponentType(?baseheaptype, ?basecomponenttype),
-   SupertypeOf(?type, ?basecomponenttype).
+   basic.SupertypeOf(?type, ?basecomponenttype).
 
 /**
  * Load instance fields
@@ -192,7 +179,7 @@ Reachable(?method) :-
  * Reachable methods. Main method, for sure.
  */
 Reachable(?method) :-
-   MainMethodDeclaration(?method).
+   basic.MainMethodDeclaration(?method).
 
 /**
  * If a class needs to be initialized, then its class initializer is

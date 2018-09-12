@@ -33,18 +33,18 @@ import static org.clyze.doop.wala.WalaUtils.*;
  * database.
  */
 public class WalaFactWriter extends JavaFactWriter {
-    private WalaRepresentation _rep;
+    private final WalaRepresentation _rep;
 
     //Map from WALA's JVM like type string to our format
     //Used in writeType()
-    private Map<String, String> _typeMap;
+    private final Map<String, String> _typeMap;
 
     //The Maps bellow are used as Sets in order not to put duplicate phantom* facts
-    private Map<String, String> _phantomType;
+    private final Map<String, String> _phantomType;
 
-    private Map<String, String> _phantomMethod;
+    private final Map<String, String> _phantomMethod;
 
-    private Map<String, String> _phantomBasedMethod;
+    private final Map<String, String> _phantomBasedMethod;
 
     private Map<String,List<String>> _signaturePolyMorphicMethods;
 
@@ -182,9 +182,8 @@ public class WalaFactWriter extends JavaFactWriter {
 
         //If its an ArrayType and it was not on the typeMap, add the appropriate facts
         if (t.isArrayType() && inMap == null) {
-            _db.add(ARRAY_TYPE, typeName);
             TypeReference componentType = t.getArrayElementType();
-            _db.add(COMPONENT_TYPE, typeName, writeType(componentType));
+            writeArrayTypes(typeName, writeType(componentType));
             _db.add(CLASS_HEAP, classConstant(typeName), typeName);
         }
         else if (t.isPrimitiveType() || t.isReferenceType() || t.isClassType()) {
