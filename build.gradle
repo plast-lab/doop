@@ -69,7 +69,7 @@ dependencies {
             "commons-io:commons-io:2.4",                        // File Utils
             "org.apache.ivy:ivy:2.3.0",                         // Apache Ivy (for downloading jars from maven repos)
             "org.ow2.asm:asm-debug-all:5.1",                    // Java Bytecode library
-            "org.smali:dexlib2:2.2.4",                          // Dexlib2: library for reading/modifying/writing Android dex files
+            "org.smali:dexlib2:2.2.5",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             "net.dongliu:apk-parser:2.6.2",                     // needed for reading binary XML entries from APK inputs
@@ -85,18 +85,18 @@ dependencies {
             /// WALA
             /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
             //"com.ibm.wala:com.ibm.wala.util:1.4.3",
-            "ext:com.ibm.wala.util:1.5.0-SNAPSHOT",
+            "ext:com.ibm.wala.util:1.5.1-SNAPSHOT",
             /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.core
             //"com.ibm.wala:com.ibm.wala.core:1.4.3",
-            "ext:com.ibm.wala.core:1.5.0-SNAPSHOT",
+            "ext:com.ibm.wala.core:1.5.1-SNAPSHOT",
             /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.shrike
             //"com.ibm.wala:com.ibm.wala.shrike:1.4.3",
-            "ext:com.ibm.wala.shrike:1.5.0-SNAPSHOT",
+            "ext:com.ibm.wala.shrike:1.5.1-SNAPSHOT",
             /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.dalvik
             //"com.ibm.wala:com.ibm.wala.dalvik:1.4.3"
-            "ext:com.ibm.wala.dalvik:1.5.0-SNAPSHOT",
-            "ext:com.ibm.wala.cast:1.5.0-SNAPSHOT",
-            "ext:com.ibm.wala.cast.java:1.5.0-SNAPSHOT",
+            "ext:com.ibm.wala.dalvik:1.5.1-SNAPSHOT",
+            "ext:com.ibm.wala.cast:1.5.1-SNAPSHOT",
+            "ext:com.ibm.wala.cast.java:1.5.1-SNAPSHOT",
             "ext:com.ibm.wala.cast.python:0.0.1-SNAPSHOT",
             "ext:com.ibm.wala.cast.lsp:0.0.1-SNAPSHOT",
             "org.python:jython:2.7.1b3",
@@ -107,7 +107,7 @@ dependencies {
     runtime "org.clyze:jphantom:1.2",
             "ext:herosclasses:1.1",
             "ext:axml:2.0",
-            "org.smali:util:2.2.4",                              // Dexlib2 utilities
+            "org.smali:util:2.2.5",                              // Dexlib2 utilities
             "com.google.guava:guava:23.0",
             "ext:scaler:1.0",
             "ext:zipper:1.0"
