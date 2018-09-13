@@ -252,7 +252,6 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   Value_Num(?value, ?const),
   isImmutableHContext(?hctx).
 
-// Use isNumConstant/NumConstantRaw (with help from the front-end)?
 VarPointsTo(?hctx, ?baseHeap, ?ctx, ?to),
 ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
   ArrayInitialValueFromConst(_, ?to, _, ?const, ?baseHeap),
