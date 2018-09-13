@@ -19,6 +19,7 @@
 .decl MainClass(?class:ClassType)
 .input MainClass(IO="file", filename="MainClass.facts", delimiter="\t")
 .type Field
+.decl Field_DeclaringType(?field:Field, ?declaringClass:ReferenceType)
 .type MethodDescriptor
 .type Method
 .decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
@@ -40,7 +41,6 @@
 .decl MainMethodArgArray(?heap:HeapAllocation)
 .decl MainMethodArgArrayContent(?heap:HeapAllocation)
 .type Instruction
-.decl Instruction_Line(?insn:Instruction, ?index:number)
 .decl Instruction_Method(?insn:Instruction, ?inMethod:Method)
 .type FieldInstruction = Instruction
 .type LoadInstanceField_Insn = FieldInstruction
@@ -92,17 +92,17 @@
 .decl MethodInvocation_Base(?invocation:MethodInvocation, ?base:Var)
 
 // Fat schema
-.decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method)
-.decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inmethod:Method)
-.decl LoadStaticField(?sig:Field, ?to:Var, ?inmethod:Method)
-.decl StoreStaticField(?from:Var, ?signature:Field, ?inmethod:Method)
-.decl LoadArrayIndex(?base:Var, ?to:Var, ?inmethod:Method)
-.decl StoreArrayIndex(?from:Var, ?base:Var, ?inmethod:Method)
-.decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method)
-.decl AssignLocal(?from:Var, ?to:Var, ?inmethod:Method)
-.decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method)
-.decl ReturnVar(?var:Var, ?method:Method)
-.decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
+.decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method) 
+.decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inmethod:Method) 
+.decl LoadStaticField(?sig:Field, ?to:Var, ?inmethod:Method) 
+.decl StoreStaticField(?from:Var, ?signature:Field, ?inmethod:Method) 
+.decl LoadArrayIndex(?base:Var, ?to:Var, ?inmethod:Method) 
+.decl StoreArrayIndex(?from:Var, ?base:Var, ?inmethod:Method) 
+.decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method) 
+.decl AssignLocal(?from:Var, ?to:Var, ?inmethod:Method) 
+.decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method) 
+.decl ReturnVar(?var:Var, ?method:Method) 
+.decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method) 
 
 // imports
 .decl _ClassType(?class:symbol)
@@ -137,9 +137,17 @@ ApplicationClass(?type) :-
 .input _ThisVar(IO="file", filename="ThisVar.facts", delimiter="\t")
 ThisVar(?method, ?var) :-
   _ThisVar(?method, ?var).
+.decl _NormalHeap(?id:symbol, ?type:symbol)
+.input _NormalHeap(IO="file", filename="NormalHeap.facts", delimiter="\t")
+isType(?type),
+HeapAllocation_Type(?id, ?type) :-
+  _NormalHeap(?id, ?type).
+.decl _StringConstant(?id:symbol)
+.input _StringConstant(IO="file", filename="StringConstant.facts", delimiter="\t")
+HeapAllocation_Type(?id, "java.lang.String") :-
+  _StringConstant(?id).
 .decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)
 .input _AssignHeapAllocation(IO="file", filename="AssignHeapAllocation.facts", delimiter="\t")
-Instruction_Line(?instruction, ?linenumber),
 Instruction_Method(?instruction, ?method),
 AssignInstruction_To(?instruction, ?to),
 AssignHeapAllocation_Heap(?instruction, ?heap) :-
@@ -157,6 +165,10 @@ AssignCast_Type(?instruction, ?type),
 AssignCast_From(?instruction, ?from),
 AssignInstruction_To(?instruction, ?to) :-
   _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?method).
+.decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol)
+.input _Field(IO="file", filename="Field.facts", delimiter="\t")
+Field_DeclaringType(?signature, ?declaringType) :-
+  _Field(?signature, ?declaringType, _, _).
 MethodInvocation_Base(?invocation, ?base) :-
   VirtualMethodInvocation_Base(?invocation, ?base) ;
   SpecialMethodInvocation_Base(?invocation, ?base).
@@ -393,6 +405,42 @@ MainMethodDeclaration(?method) :-
 }
 .init basic = Basic
 
+// class initialization
+.decl ClassInitializer(?type:Type, ?method:Method)
+.decl InitializedClass(?classOrInterface:Type)
+ClassInitializer(?type, ?method) :-
+   basic.MethodImplemented("<clinit>", "void()", ?type, ?method).
+InitializedClass(?superclass) :-
+   InitializedClass(?class),
+   DirectSuperclass(?class, ?superclass).
+InitializedClass(?superinterface) :-
+   InitializedClass(?classOrInterface),
+   DirectSuperinterface(?classOrInterface, ?superinterface).
+InitializedClass(?class) :-
+   basic.MainMethodDeclaration(?method),
+   Method_DeclaringType(?method, ?class).
+InitializedClass(?class) :-
+   Reachable(?inmethod),
+   AssignHeapAllocation(?heap, _, ?inmethod),
+   HeapAllocation_Type(?heap, ?class).
+InitializedClass(?class) :-
+   Reachable(?inmethod),
+   Instruction_Method(?invocation, ?inmethod),
+   isStaticMethodInvocation_Insn(?invocation),
+   MethodInvocation_Method(?invocation, ?signature),
+   Method_DeclaringType(?signature, ?class).
+InitializedClass(?classOrInterface) :-
+   Reachable(?inmethod),
+   StoreStaticField(_, ?signature, ?inmethod),
+   Field_DeclaringType(?signature, ?classOrInterface).
+InitializedClass(?classOrInterface) :-
+   Reachable(?inmethod),
+   LoadStaticField(?signature, _, ?inmethod),
+   Field_DeclaringType(?signature, ?classOrInterface).
+Reachable(?clinit) :-
+   InitializedClass(?class),
+   ClassInitializer(?class, ?clinit).
+
 // Main (value-based) analysis
 .decl Assign(?to:Var, ?from:Var) output
 .decl VarPointsTo(?heap:HeapAllocation, ?var:Var) output
@@ -400,7 +448,7 @@ MainMethodDeclaration(?method) :-
 .decl StaticFieldPointsTo(?heap:HeapAllocation, ?fld:Field) output
 .decl CallGraphEdge(?invocation:MethodInvocation, ?meth:Method) output
 .decl ArrayIndexPointsTo(?baseheap:HeapAllocation, ?heap:HeapAllocation) output
-.decl Reachable(?method:Method)
+.decl Reachable(?method:Method) output
 Assign(?actual, ?formal) :-
   CallGraphEdge(?invocation, ?method),
   FormalParam(?index, ?method, ?formal),
