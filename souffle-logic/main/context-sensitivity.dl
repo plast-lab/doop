@@ -252,6 +252,9 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   Value_Num(?value, ?const),
   isImmutableHContext(?hctx).
 
+/**
+ * Array elements initialized by constants (Dalvik array payloads).
+ */
 VarPointsTo(?hctx, ?baseHeap, ?ctx, ?to),
 ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
   ArrayInitialValueFromConst(_, ?to, _, ?const, ?baseHeap),
