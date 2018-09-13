@@ -748,6 +748,10 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static List<String> analysesNames() {
 		def closure = { String path, String fileToLookFor ->
+			if (!path) {
+				println "Error: Doop was not initialized correctly, could not read analyses names."
+				return []
+			}
 			def analyses = []
 			new File(path).eachDir { File dir ->
 				def f = new File(dir, fileToLookFor)
