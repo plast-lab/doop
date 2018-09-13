@@ -13,6 +13,10 @@ import com.ibm.wala.util.config.FileOfClasses;
 import com.ibm.wala.util.debug.Assertions;
 import com.ibm.wala.util.io.FileProvider;
 import com.ibm.wala.util.strings.Atom;
+import org.jf.dexlib2.DexFileFactory;
+import org.jf.dexlib2.Opcodes;
+import org.jf.dexlib2.dexbacked.DexBackedDexFile;
+import org.jf.dexlib2.iface.MultiDexContainer;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -104,8 +108,28 @@ public class WalaScopeReader {
                 "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
 
         for(String input: inputs)
-            scope.addToScope(ClassLoaderReference.Application, DexFileModule.make(new File(input)));
+            addAPKtoScope(ClassLoaderReference.Application, scope, input);
+            //scope.addToScope(ClassLoaderReference.Application, DexFileModule.make(new File(input)));
 
         return scope;
+    }
+
+    private static void addAPKtoScope(ClassLoaderReference loader, AnalysisScope scope, String fileName){
+        File apkFile = new File(fileName);
+        MultiDexContainer<? extends DexBackedDexFile> multiDex = null;
+        try {
+            multiDex = DexFileFactory.loadDexContainer(apkFile, Opcodes.forApi(24));
+        } catch (IOException e) {
+            System.err.println("Failed to open " +fileName + " as multidex container.\n" + e);
+        }
+
+        try{
+            for (String dexEntry : multiDex.getDexEntryNames()) {
+                System.out.println("Adding dex file: " +dexEntry + " of file:" + fileName);
+                scope.addToScope(loader, new DexFileModule(apkFile, dexEntry,24));
+            }
+        }catch (IOException e){
+            System.err.println("Failed to open " +fileName + " as multidex container.\n" + e);
+        }
     }
 }
