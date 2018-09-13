@@ -251,6 +251,27 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   FieldInitialValue(?signature, ?const),
   Value_Num(?value, ?const),
   isImmutableHContext(?hctx).
+
+/**
+ * Array elements initialized by local variables (Dalvik filled-new-array*).
+ */
+VarPointsTo(?baseHctx, ?baseHeap, ?ctx, ?to),
+ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseHeap) :-
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  ArrayInitialValueFromLocal(_, ?to, _, ?from, ?baseHeap),
+  isImmutableContext(?ctx),
+  isImmutableHContext(?baseHctx).
+
+/**
+ * Array elements initialized by constants (Dalvik array payloads).
+ */
+VarPointsTo(?hctx, ?baseHeap, ?ctx, ?to),
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
+  ArrayInitialValueFromConst(_, ?to, _, ?const, ?baseHeap),
+  Value_Num(?value, ?const),
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
+
 #endif // ANDROID
 
 /**
