@@ -778,6 +778,9 @@ isNumConstant(?const) :-
 isNumConstant(?const) :-
   ArrayInitialValueFromConst(_, _, _, ?const, _).
 
+.decl ArrayInitialValueFromLocal(?instruction:symbol, ?to:symbol, ?index:number, ?from:symbol, ?baseHeap:symbol)
+.input ArrayInitialValueFromLocal(IO="file", filename="ArrayInitialValueFromLocal.facts", delimiter="\t")
+
 #endif // ANDROID
 
 // Access Modifiers
