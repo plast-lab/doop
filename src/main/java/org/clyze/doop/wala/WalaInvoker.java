@@ -159,6 +159,7 @@ public class WalaInvoker {
                         cache.getIR(m);
                     } catch (Throwable e) {
                         System.out.println("Error while creating IR for method: " + m.getReference() + "\n" + e);
+                        e.printStackTrace();
                     }
                 }
             }

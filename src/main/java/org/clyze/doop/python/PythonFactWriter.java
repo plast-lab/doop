@@ -193,12 +193,12 @@ public class PythonFactWriter {
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId);
     }
 
-    private void writeAssignNull(IMethod m, SSAInstruction instruction, Local l, Session session) {
+    private void writeAssignNone(IMethod m, SSAInstruction instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_NULL, insn, str(index), _rep.local(m, l), methodId);
+        _db.add(ASSIGN_NONE, insn, str(index), _rep.local(m, l), methodId);
     }
 
     private void writeAssignNumConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
@@ -397,10 +397,10 @@ public class PythonFactWriter {
         writeAssignStringConstant(ir, inMethod, instruction, l, constant, session);
     }
 
-    void writeNullExpression(IMethod inMethod, SSAInstruction instruction, Local l, Session session) {
+    void writeNoneExpression(IMethod inMethod, SSAInstruction instruction, Local l, Session session) {
         // introduce a new temporary variable
         writeLocal(inMethod, l);
-        writeAssignNull(inMethod, instruction, l,session);
+        writeAssignNone(inMethod, instruction, l,session);
     }
 
     void writeNumConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {

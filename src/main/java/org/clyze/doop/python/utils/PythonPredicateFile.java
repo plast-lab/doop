@@ -38,7 +38,7 @@ public enum PythonPredicateFile
     ASSIGN_LOCAL("AssignLocal"),
     ASSIGN_HEAP_ALLOC("AssignHeapAllocation"),
     ASSIGN_NUM_CONST("AssignNumConstant"),
-    ASSIGN_NULL("AssignNull"),
+    ASSIGN_NONE("AssignNone"),
     NORMAL_HEAP("NormalHeap"),
     STRING_CONST("StringConstant"),
     STRING_RAW("StringRaw"),

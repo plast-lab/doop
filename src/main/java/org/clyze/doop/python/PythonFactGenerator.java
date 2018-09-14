@@ -258,8 +258,6 @@ public class PythonFactGenerator implements Runnable{
             brachTarget = 0;
         }
 
-        if(brachTarget == -1) //In Android conditional branches can have -1 as target
-            brachTarget =0;
         if(ssaInstructions[brachTarget] == null) {
             targetInstr = getNextNonNullInstruction(ir,brachTarget);
             if(targetInstr == null)
@@ -524,7 +522,7 @@ public class PythonFactGenerator implements Runnable{
             l.setType(PythonTypes.object);
             _writer.writeStringConstantExpression(ir, m, instruction, l, (ConstantValue) v, session);
         } else if (v.isNullConstant()) {
-            _writer.writeNullExpression(m, instruction, l, session);
+            _writer.writeNoneExpression(m, instruction, l, session);
         } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
             l.setType(PythonTypes.object);
             _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
