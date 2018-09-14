@@ -20,7 +20,7 @@ public class JavaFactWriter {
         this._db = db;
     }
 
-    protected static String str(int i) {
+    public static String str(int i) {
         return String.valueOf(i);
     }
 
