@@ -1254,8 +1254,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), methodId);
-
+        writeAssignUnop(insn, index, _rep.local(m, to), methodId);
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, from));
     }
 

@@ -899,7 +899,7 @@ class FactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, left), methodId);
+        writeAssignUnop(insn, index, _rep.local(m, left), methodId);
 
         if (right.getOp() instanceof Local) {
             Local op = (Local) right.getOp();

@@ -236,4 +236,8 @@ public class JavaFactWriter {
         _db.add(ARRAY_TYPE, arrayType);
         _db.add(COMPONENT_TYPE, arrayType, componentType);
     }
+
+    protected void writeAssignUnop(String insn, int index, String local, String methId) {
+        _db.add(ASSIGN_UNOP, insn, str(index), local, methId);
+    }
 }
