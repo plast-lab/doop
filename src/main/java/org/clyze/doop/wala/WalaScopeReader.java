@@ -117,18 +117,14 @@ public class WalaScopeReader {
     private static void addAPKtoScope(ClassLoaderReference loader, AnalysisScope scope, String fileName){
         File apkFile = new File(fileName);
         MultiDexContainer<? extends DexBackedDexFile> multiDex = null;
+        final int API = 24;
         try {
-            multiDex = DexFileFactory.loadDexContainer(apkFile, Opcodes.forApi(24));
-        } catch (IOException e) {
-            System.err.println("Failed to open " +fileName + " as multidex container.\n" + e);
-        }
-
-        try{
+            multiDex = DexFileFactory.loadDexContainer(apkFile, Opcodes.forApi(API));
             for (String dexEntry : multiDex.getDexEntryNames()) {
                 System.out.println("Adding dex file: " +dexEntry + " of file:" + fileName);
-                scope.addToScope(loader, new DexFileModule(apkFile, dexEntry,24));
+                scope.addToScope(loader, new DexFileModule(apkFile, dexEntry, API));
             }
-        }catch (IOException e){
+        } catch (IOException e){
             System.err.println("Failed to open " +fileName + " as multidex container.\n" + e);
         }
     }
