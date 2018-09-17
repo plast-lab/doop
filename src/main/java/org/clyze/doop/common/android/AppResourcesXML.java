@@ -296,14 +296,25 @@ public class AppResourcesXML implements AppResources {
             if (name.equals("fragment"))
                 name = attrOrDefault(node, "android:name", "-1");
             String id = attrOrDefault(node, "android:id", "-1");
-            System.out.println("id = " + id);
-            if (id.startsWith("@+"))
-                id = id.substring(2);
-            if (id.contains("/")) {
-                String[] parts = id.split("/");
-                Integer c = RLinker.getInstance().lookupConst(packageName, parts[0], parts[1]);
-                if (c != null)
-                    intId = c;
+            System.out.println("name = " + name + ", id = " + id + ", parentId = " + parentId);
+            final String RESOURCE_ID = "resourceId:";
+            if (id.startsWith(RESOURCE_ID)) {
+                String strId = id.substring(RESOURCE_ID.length());
+                if (strId.startsWith("0x"))
+                    intId = Integer.parseInt(strId.substring(2), 16);
+                else {
+                    System.err.println("Warning: non-hex resource id found: " + strId);
+                    intId = Integer.parseInt(strId);
+                }
+            } else {
+                if (id.startsWith("@+"))
+                    id = id.substring(2);
+                if (id.contains("/")) {
+                    String[] parts = id.split("/");
+                    Integer c = RLinker.getInstance().lookupConst(packageName, parts[0], parts[1]);
+                    if (c != null)
+                        intId = c;
+                }
             }
 
             // Add a layout control with empty attributes.
