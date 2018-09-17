@@ -26,7 +26,8 @@ VarPointsTo(?hctx, ?classValue, ?callerCtx, ?classResultVar) :-
   ReachableContext(?callerCtx, ?caller),
   (_StaticMethodInvocation(?invocation, _, ?method, ?caller);
    _SpecialMethodInvocation(?invocation, _, ?method, _, ?caller);
-   _VirtualMethodInvocation(?invocation, _, ?method, _, ?caller)),
+   _VirtualMethodInvocation(?invocation, _, ?method, _, ?caller);
+   _SuperMethodInvocation(?invocation, _, ?method, _, ?caller)),
   ClassLoaderMethod(?method, ?argIdx),
   ActualParam(?argIdx, ?invocation, ?arg),
   VarPointsTo(_, ?className, _, ?arg),

@@ -540,6 +540,21 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
 #endif // #ifdef ZIPPER
 
 /**
+ * Super method invocations
+ */
+
+.decl OptSuperMethodInvocationBase(?invocation:MethodInvocation, ?base:Var)
+
+OptSuperMethodInvocationBase(?invocation, ?base) :-
+  Reachable(?inmethod),
+  Instruction_Method(?invocation, ?inmethod),
+  SuperMethodInvocation_Base(?invocation, ?base).
+
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value) :-
+  OptSuperMethodInvocationBase(?invocation, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
+
+/**
  * Special method invocations
  */
 

@@ -40,4 +40,6 @@
 
 .decl VirtualMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
 
+.decl SuperMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
+
 .decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)

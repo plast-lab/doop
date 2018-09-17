@@ -230,12 +230,14 @@
 .type VirtualMethodInvocation_Insn    = MethodInvocation
 .type SpecialMethodInvocation_Insn    = MethodInvocation
 .type StaticMethodInvocation_Insn     = MethodInvocation
+.type SuperMethodInvocation_Insn    = MethodInvocation
 .type DynamicMethodInvocation_Insn    = MethodInvocation
 
 .decl isMethodInvocation(?insn:MethodInvocation)
 .decl isVirtualMethodInvocation_Insn(?insn:VirtualMethodInvocation_Insn)
 .decl isSpecialMethodInvocation_Insn(?insn:SpecialMethodInvocation_Insn)
 .decl isStaticMethodInvocation_Insn(?insn:StaticMethodInvocation_Insn)
+.decl isSuperMethodInvocation_Insn(?insn:SuperMethodInvocation_Insn)
 .decl isDynamicMethodInvocation_Insn(?insn:DynamicMethodInvocation_Insn)
 
 .type UnsupportedInstruction          = Instruction
@@ -400,6 +402,11 @@
 .decl VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
 .decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
 .decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
+
+// Super Method Invocation
+.decl SuperMethodInvocation_Base(?invocation:SuperMethodInvocation_Insn, ?base:Var)
+.decl SuperMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
+.decl SuperMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
 
 // Dynamic Method Invocation
 .decl DynamicMethodInvocation_Bootstrap(?invocation:DynamicMethodInvocation_Insn, ?bootSignature:Method)
