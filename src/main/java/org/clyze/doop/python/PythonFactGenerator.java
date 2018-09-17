@@ -523,15 +523,15 @@ public class PythonFactGenerator implements Runnable{
             _writer.writeStringConstantExpression(ir, m, instruction, l, (ConstantValue) v, session);
         } else if (v.isNullConstant()) {
             _writer.writeNoneExpression(m, instruction, l, session);
-        } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
+        } else if (symbolTable.isIntegerConstant(l.getVarIndex()) || symbolTable.isLongConstant(l.getVarIndex())) {
             l.setType(PythonTypes.object);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+            _writer.writeIntConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isFloatConstant(l.getVarIndex()) || symbolTable.isDoubleConstant(l.getVarIndex())) {
             l.setType(PythonTypes.object);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+            _writer.writeFloatConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isBooleanConstant(l.getVarIndex())) {
             l.setType(PythonTypes.object);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+            _writer.writeBoolConstantExpression(m, instruction, l, (ConstantValue) v, session);
         }
     }
 

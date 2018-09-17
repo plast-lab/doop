@@ -201,12 +201,28 @@ public class PythonFactWriter {
         _db.add(ASSIGN_NONE, insn, str(index), _rep.local(m, l), methodId);
     }
 
-    private void writeAssignNumConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+    private void writeAssignBoolConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
+        _db.add(ASSIGN_BOOL_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
+    }
+
+    private void writeAssignIntConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String methodId = _rep.signature(m);
+
+        _db.add(ASSIGN_INT_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
+    }
+
+    private void writeAssignFloatConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String methodId = _rep.signature(m);
+
+        _db.add(ASSIGN_FLOAT_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
     }
 
     void writeStoreInstanceField(IMethod m, SSAInstruction instruction, FieldReference f, Local base, Local from, Session session) {
@@ -403,10 +419,22 @@ public class PythonFactWriter {
         writeAssignNone(inMethod, instruction, l,session);
     }
 
-    void writeNumConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+    void writeIntConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         // introduce a new temporary variable
         writeLocal(inMethod, l);
-        writeAssignNumConstant(inMethod, instruction, l, constant, session);
+        writeAssignIntConstant(inMethod, instruction, l, constant, session);
+    }
+
+    void writeBoolConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+        // introduce a new temporary variable
+        writeLocal(inMethod, l);
+        writeAssignBoolConstant(inMethod, instruction, l, constant, session);
+    }
+
+    void writeFloatConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+        // introduce a new temporary variable
+        writeLocal(inMethod, l);
+        writeAssignFloatConstant(inMethod, instruction, l, constant, session);
     }
 
     //TODO: This needs work for pythons positional params!!!!!!!!!!!!

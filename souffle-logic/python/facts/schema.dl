@@ -1,5 +1,9 @@
-.type NumConstant
-.decl isNumConstant(?n:NumConstant)
+.type BoolConstant
+.decl isBoolConstant(?n:BoolConstant)
+.type IntConstant = number
+.decl isIntConstant(?n:IntConstant)
+.type FloatConstant
+.decl isFloatConstant(?n:FloatConstant)
 
 .type Type
 .type PrimitiveType = Type
@@ -101,7 +105,9 @@
 .type AssignBinop_Insn                = AssignOper_Insn
 .type AssignUnop_Insn                 = AssignOper_Insn
 .type AssignLocal_Insn                = AssignOper_Insn
-.type AssignNumConstant_Insn          = AssignInstruction
+.type AssignIntConstant_Insn          = AssignInstruction
+.type AssignFloatConstant_Insn          = AssignInstruction
+.type AssignBoolConstant_Insn          = AssignInstruction
 .type AssignNone_Insn                 = AssignInstruction
 .type AssignHeapAllocation_Insn       = AssignInstruction
 .type ReturnInstruction               = Instruction
@@ -113,7 +119,9 @@
 .decl isAssignBinop_Insn(?insn:AssignBinop_Insn)
 .decl isAssignUnop_Insn(?insn:AssignUnop_Insn)
 .decl isAssignLocal_Insn(?insn:AssignLocal_Insn)
-.decl isAssignNumConstant_Insn(?insn:AssignNumConstant_Insn)
+.decl isAssignIntConstant_Insn(?insn:AssignIntConstant_Insn)
+.decl isAssignFloatConstant_Insn(?insn:AssignFloatConstant_Insn)
+.decl isAssignBoolConstant_Insn(?insn:AssignBoolConstant_Insn)
 .decl isAssignNone_Insn(?insn:AssignNone_Insn)
 .decl isAssignHeapAllocation_Insn(?insn:AssignHeapAllocation_Insn)
 .decl isReturnInstruction(?insn:ReturnInstruction)
@@ -182,7 +190,9 @@
 .decl AssignInstruction_To(?insn:AssignInstruction, ?to:Var)
 
 // Assign numeric constant instruction
-.decl AssignNumConstant_Id(?insn:AssignNumConstant_Insn, ?const:NumConstant)
+.decl AssignIntConstant_Id(?insn:AssignIntConstant_Insn, ?const:IntConstant)
+.decl AssignFloatConstant_Id(?insn:AssignFloatConstant_Insn, ?const:FloatConstant)
+.decl AssignBoolConstant_Id(?insn:AssignBoolConstant_Insn, ?const:BoolConstant)
 
 // Assign local instruction
 .decl AssignLocal_From(?insn:AssignLocal_Insn, ?from:Var)

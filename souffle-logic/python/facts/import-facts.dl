@@ -119,20 +119,50 @@ If_Var(?instruction, ?var) :-
 
 
 
-// AssignNumConstant
+// AssignIntConstant
 
-.decl _AssignNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inFunction:symbol)
-.input _AssignNumConstant(IO="file", filename="AssignNumConstant.facts", delimiter="\t")
+.decl _AssignIntConstant(?instruction:symbol, ?index:number, ?const:number, ?to:symbol, ?inFunction:symbol)
+.input _AssignIntConstant(IO="file", filename="AssignIntConstant.facts", delimiter="\t")
 
-isNumConstant(?const),
+isIntConstant(?const),
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
-isAssignNumConstant_Insn(?instruction),
+isAssignIntConstant_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Function(?instruction, ?function),
-AssignNumConstant_Id(?instruction, ?const),
+AssignIntConstant_Id(?instruction, ?const),
 AssignInstruction_To(?instruction, ?to) :-
-  _AssignNumConstant(?instruction, ?index, ?const, ?to, ?function).
+  _AssignIntConstant(?instruction, ?index, ?const, ?to, ?function).
+
+// AssignFloatConstant
+
+.decl _AssignFloatConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inFunction:symbol)
+.input _AssignFloatConstant(IO="file", filename="AssignFloatConstant.facts", delimiter="\t")
+
+isFloatConstant(?const),
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+isAssignFloatConstant_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Function(?instruction, ?function),
+AssignFloatConstant_Id(?instruction, ?const),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignFloatConstant(?instruction, ?index, ?const, ?to, ?function).
+
+// AssignBoolConstant
+
+.decl _AssignBoolConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inFunction:symbol)
+.input _AssignBoolConstant(IO="file", filename="AssignBoolConstant.facts", delimiter="\t")
+
+isBoolConstant(?const),
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+isAssignBoolConstant_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Function(?instruction, ?function),
+AssignBoolConstant_Id(?instruction, ?const),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignBoolConstant(?instruction, ?index, ?const, ?to, ?function).
 
 
 .decl _AssignNone(?instruction:symbol, ?index:number, ?to:symbol, ?inFunction:symbol)
