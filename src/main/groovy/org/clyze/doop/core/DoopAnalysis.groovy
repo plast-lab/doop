@@ -344,10 +344,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--run-flowdroid"]
 		}
 
-		if (options.GENERATE_JIMPLE.value) {
-			params += ["--generate-jimple"]
-		}
-
 		if (options.X_IGNORE_WRONG_STATICNESS.value) {
 			params += ["--ignoreWrongStaticness"]
 		}
@@ -429,6 +425,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		}
 		if (options.GENERATE_JIMPLE.value) {
 			params += ["--generate-ir"]
+		}
+		if (options.GENERATE_JIMPLE.value) {
+			params += ["--generate-ir"]
+		}
+		if (options.SINGLE_FILE_ANALYSIS.value) {
+			params += ["--single-file-analysis"]
 		}
 		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 		params = params + inputArgs + depArgs + ["-d", factsDir.toString()]

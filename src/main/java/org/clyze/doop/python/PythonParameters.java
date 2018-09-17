@@ -9,4 +9,5 @@ class PythonParameters {
         String _outputDir = null;
         Integer _cores = null;
         boolean _generateIR = false;
+        boolean _singleFileAnalysis = false;
 }

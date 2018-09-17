@@ -315,6 +315,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			/* End Zipper related options */
 
+			/* Start Python related options */
+			new BooleanAnalysisOption(
+					id: "SINGLE_FILE_ANALYSIS",
+					name: "single-file-analysis",
+					description: "Flag to be passed to WALAs IR translator to produce IR that makes the analysis of a single script file easier.",
+					forCacheID: true
+			),
+			/* End Python related options */
+
 			/* Start preprocessor normal flags */
 			new BooleanAnalysisOption(
 					id: "NO_MERGES",
