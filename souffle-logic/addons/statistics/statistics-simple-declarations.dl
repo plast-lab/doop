@@ -8,11 +8,11 @@ OUTPUT_STATS_DEFAULT(Stats_Simple_InsensVarPointsTo)
 .decl Stats_Simple_AssignedVariable(?var:Var)
 OUTPUT_STATS(Stats_Simple_AssignedVariable)
 
-.decl Stats_Simple_Application_InsensVarPointsTo(?value:mainAnalysis.Value, ?var:Var)
-OUTPUT_STATS(Stats_Simple_Application_InsensVarPointsTo)
+// .decl Stats_Simple_Application_InsensVarPointsTo(?value:mainAnalysis.Value, ?var:Var)
+// OUTPUT_STATS(Stats_Simple_Application_InsensVarPointsTo)
 
-.decl Stats_Simple_Application_VarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
-OUTPUT_STATS(Stats_Simple_Application_VarPointsTo)
+// .decl Stats_Simple_Application_VarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
+// OUTPUT_STATS(Stats_Simple_Application_VarPointsTo)
 
 .decl Stats_Simple_InsensReachableVar(?var:Var)
 OUTPUT_STATS(Stats_Simple_InsensReachableVar)
