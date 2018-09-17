@@ -296,7 +296,7 @@ public class AppResourcesXML implements AppResources {
             if (name.equals("fragment"))
                 name = attrOrDefault(node, "android:name", "-1");
             String id = attrOrDefault(node, "android:id", "-1");
-            System.out.println("name = " + name + ", id = " + id + ", parentId = " + parentId);
+            // System.out.println("name = " + name + ", id = " + id + ", parentId = " + parentId);
             final String RESOURCE_ID = "resourceId:";
             if (id.startsWith(RESOURCE_ID)) {
                 String strId = id.substring(RESOURCE_ID.length());
