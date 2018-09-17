@@ -31,7 +31,7 @@ class WalaAndroidXMLParser extends AndroidSupport {
     {
         parseXMLFiles();
         populateArtifactsRelation();
-        writeComponents();
+        writeComponents(factWriter, parameters);
     }
 
     void parseXMLFiles()
@@ -54,10 +54,6 @@ class WalaAndroidXMLParser extends AndroidSupport {
                 }
             }
         }
-    }
-
-    public void writeComponents() {
-        super.writeComponents(factWriter, parameters);
     }
 
     private void populateArtifactsRelation() {
