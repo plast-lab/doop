@@ -128,8 +128,7 @@ public class WalaInvoker {
 
             if (walaParameters._android) {
                 WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);
-                parser.parseXMLFiles();
-                parser.writeComponents();
+                parser.process();
             }
             System.out.println("Number of classes: " + cha.getNumberOfClasses());
 
@@ -174,6 +173,9 @@ public class WalaInvoker {
                 System.out.println("WARNING: Input contains phantom methods. \nNumber of phantom methods:" + walaFactWriter.getNumberOfPhantomMethods());
             if (walaFactWriter.getNumberOfPhantomBasedMethods() > 0)
                 System.out.println("WARNING: Input contains phantom based methods. \nNumber of phantom based methods:" + walaFactWriter.getNumberOfPhantomBasedMethods());
+
+            walaFactWriter.writeLastFacts(java);
+
             db.flush();
         }
     }
