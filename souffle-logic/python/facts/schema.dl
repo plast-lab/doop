@@ -102,6 +102,7 @@
 .type AssignUnop_Insn                 = AssignOper_Insn
 .type AssignLocal_Insn                = AssignOper_Insn
 .type AssignNumConstant_Insn          = AssignInstruction
+.type AssignNone_Insn                 = AssignInstruction
 .type AssignHeapAllocation_Insn       = AssignInstruction
 .type ReturnInstruction               = Instruction
 .type ReturnNone_Insn                 = ReturnInstruction
@@ -113,6 +114,7 @@
 .decl isAssignUnop_Insn(?insn:AssignUnop_Insn)
 .decl isAssignLocal_Insn(?insn:AssignLocal_Insn)
 .decl isAssignNumConstant_Insn(?insn:AssignNumConstant_Insn)
+.decl isAssignNone_Insn(?insn:AssignNone_Insn)
 .decl isAssignHeapAllocation_Insn(?insn:AssignHeapAllocation_Insn)
 .decl isReturnInstruction(?insn:ReturnInstruction)
 .decl isReturnNone_Insn(?insn:ReturnNone_Insn)
@@ -187,6 +189,9 @@
 
 // Assign expression vars
 .decl AssignOper_From(?insn:AssignOper_Insn, ?from:Var)
+
+// Assign operation
+.decl Assign_Operation(?insn:AssignOper_Insn, ?oper:symbol)
 
 // Assign Heap Allocation
 .decl AssignHeapAllocation_Heap(?insn:AssignHeapAllocation_Insn, ?heap:HeapAllocation)

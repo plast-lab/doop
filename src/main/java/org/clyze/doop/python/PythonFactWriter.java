@@ -442,7 +442,7 @@ public class PythonFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
+        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), instruction.getOperator().toString(), methodId);
 
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
@@ -480,7 +480,7 @@ public class PythonFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
+        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), instruction.getOperator().toString(), methodId);
 
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
@@ -492,7 +492,7 @@ public class PythonFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), methodId);
+        _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), instruction.getOpcode().toString(), methodId);
 
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, from));
     }

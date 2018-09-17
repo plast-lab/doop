@@ -70,32 +70,34 @@ AssignInstruction_To(?instruction, ?to) :-
 
 // AssignBinop
 
-.decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?inFunction:symbol)
+.decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?oper:symbol, ?inFunction:symbol)
 .input _AssignBinop(IO="file", filename="AssignBinop.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
 isAssignOper_Insn(?instruction),
 isAssignBinop_Insn(?instruction),
+Assign_Operation(?instruction, ?oper),
 Instruction_Index(?instruction, ?index),
 Instruction_Function(?instruction, ?function),
 AssignInstruction_To(?instruction, ?to) :-
-  _AssignBinop(?instruction, ?index, ?to, ?function).
+  _AssignBinop(?instruction, ?index, ?to, ?oper, ?function).
 
 
 // AssignUnop
 
-.decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?inFunction:symbol)
+.decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?oper:symbol, ?inFunction:symbol)
 .input _AssignUnop(IO="file", filename="AssignUnop.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
 isAssignOper_Insn(?instruction),
 isAssignUnop_Insn(?instruction),
+Assign_Operation(?instruction, ?oper),
 Instruction_Index(?instruction, ?index),
 Instruction_Function(?instruction, ?function),
 AssignInstruction_To(?instruction, ?to) :-
-  _AssignUnop(?instruction, ?index, ?to, ?function).
+  _AssignUnop(?instruction, ?index, ?to, ?oper, ?function).
 
 
 // AssignOperFrom
@@ -131,6 +133,18 @@ Instruction_Function(?instruction, ?function),
 AssignNumConstant_Id(?instruction, ?const),
 AssignInstruction_To(?instruction, ?to) :-
   _AssignNumConstant(?instruction, ?index, ?const, ?to, ?function).
+
+
+.decl _AssignNone(?instruction:symbol, ?index:number, ?to:symbol, ?inFunction:symbol)
+.input _AssignNone(IO="file", filename="AssignNone.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+Instruction_Index(?instruction, ?index),
+isAssignNone_Insn(?instruction),
+Instruction_Function(?instruction, ?function),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignNone(?instruction, ?index, ?to, ?function).
 
 
 //Var-SourceName
