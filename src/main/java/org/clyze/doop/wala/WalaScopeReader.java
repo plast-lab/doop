@@ -19,9 +19,6 @@ import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.MultiDexContainer;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.StringTokenizer;
 import java.util.jar.JarFile;
 
 /*
