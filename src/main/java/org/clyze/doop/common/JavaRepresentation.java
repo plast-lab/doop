@@ -42,4 +42,11 @@ public class JavaRepresentation {
         return m + "/new " + s + "/" +  c.nextNumber(s);
     }
 
+    public static String handlerMid(String excType) {
+        return "catch " + excType;
+    }
+
+    public static String throwLocalId(String name) {
+        return "throw " + name;
+    }
 }
