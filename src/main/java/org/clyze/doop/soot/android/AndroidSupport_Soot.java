@@ -68,7 +68,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
      * @param scene     the Soot Scene object
      * @param inputApk  the filename of the APK
      */
-    private void addClasses(Set<SootClass> classes, Scene scene, String inputApk) {
+    private void addClasses(Collection<SootClass> classes, Scene scene, String inputApk) {
         File apk = new File(inputApk);
         System.out.println("Android mode, APK = " + inputApk);
         String artifact = apk.getName();
@@ -92,7 +92,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
         }
     }
 
-    private void addClasses(List<String> inputs, Set<SootClass> classes, Scene scene, Set<String> target) {
+    private void addClasses(Iterable<String> inputs, Collection<SootClass> classes, Scene scene, Collection<String> target) {
         for (String input : inputs) {
             if (input.endsWith(".apk")) {
                 addClasses(classes, scene, input);

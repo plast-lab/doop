@@ -1165,7 +1165,7 @@ public class WalaFactWriter extends JavaFactWriter {
         //addMockExceptionThrows(m, declaredExceptions);
     }
 
-    void addMockExceptionThrows(MethodReference mr, List<String> declaredExceptions)
+    void addMockExceptionThrows(MethodReference mr, Iterable<String> declaredExceptions)
     {
         int i = -2;
         String varBase = "mockExc";

@@ -217,7 +217,7 @@ public class Main {
                 if (sootParameters._generateJimple) {
                     Set<SootClass> jimpleClasses = new HashSet<>(classes);
                     if (sootParameters._factsSubSet == null) {
-                        List<String> allClassNames = new ArrayList<>();
+                        Collection<String> allClassNames = new ArrayList<>();
                         Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
                         for (String artifact : artifactToClassMap.keySet()) {
                             //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
@@ -248,7 +248,7 @@ public class Main {
             scene.extendSootClassPath(input);
     }
 
-    private static void forceResolveClasses(Collection<String> classesToResolve, Collection<SootClass> resolvedClasses, Scene scene) {
+    private static void forceResolveClasses(Iterable<String> classesToResolve, Collection<SootClass> resolvedClasses, Scene scene) {
         for (String className : classesToResolve) {
             scene.forceResolve(className, SootClass.BODIES);
             SootClass c = scene.loadClass(className, SootClass.BODIES);

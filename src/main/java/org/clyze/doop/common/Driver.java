@@ -43,7 +43,7 @@ public abstract class Driver<C, F> {
         }
     }
 
-    private void doInParallel(Set<? extends C> classesToProcess, Consumer<? super C> action) throws DoopErrorCodeException {
+    private void doInParallel(Iterable<? extends C> classesToProcess, Consumer<? super C> action) throws DoopErrorCodeException {
         initExecutor();
         classesToProcess.forEach(action);
         shutdownExecutor();

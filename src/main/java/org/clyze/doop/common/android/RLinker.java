@@ -220,8 +220,8 @@ public class RLinker {
         return rFile;
     }
 
-    private static void genNestedR(String nestedName, Set<String> data,
-                                   List<String> lines) {
+    private static void genNestedR(String nestedName, Collection<String> data,
+                                   Collection<String> lines) {
         lines.add("    public static final class " + nestedName + " {\n");
         lines.addAll(data);
         lines.add("    }\n");

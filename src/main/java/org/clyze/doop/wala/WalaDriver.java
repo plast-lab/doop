@@ -22,7 +22,7 @@ class WalaDriver extends Driver<IClass, WalaThreadFactory> {
             _tmpClassGroup.add(iClasses.next());
         }
 
-        WalaFactGenerator factGenerator = new WalaFactGenerator(writer, _tmpClassGroup, outDir, _android, _cache);
+        Runnable factGenerator = new WalaFactGenerator(writer, _tmpClassGroup, outDir, _android, _cache);
         //factGenerator.generate(dummyMain, new Session());
         //writer.writeAndroidEntryPoint(dummyMain);
         factGenerator.run();

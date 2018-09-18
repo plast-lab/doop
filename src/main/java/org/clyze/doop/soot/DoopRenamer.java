@@ -4,12 +4,13 @@ import soot.*;
 import soot.jimple.DefinitionStmt;
 import soot.shimple.Shimple;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 class DoopRenamer {
     static void transform(Body body) {
-        Set<Local> transformedLocals = new HashSet<>();
+        Collection<Local> transformedLocals = new HashSet<>();
         int linenumber = 0;
 
         // For all statements, see whether they def a var.

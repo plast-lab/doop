@@ -39,7 +39,7 @@ public class WalaScopeReader {
 
     private static final ClassLoader MY_CLASSLOADER = WalaScopeReader.class.getClassLoader();
 
-    static AnalysisScope setupJavaAnalysisScope(List<String> inputJars, String exclusions, List<String> javaLibs, List<String> appLibs) throws IOException
+    static AnalysisScope setupJavaAnalysisScope(Iterable<String> inputJars, String exclusions, Iterable<String> javaLibs, Iterable<String> appLibs) throws IOException
     {
         String myEnv = System.getenv("DOOP_HOME");
         SCOPE_BIN_FILE = myEnv + "/src/main/resources/WALAprimordial.jar.model";
@@ -70,7 +70,7 @@ public class WalaScopeReader {
         return scope;
     }
 
-    public static AnalysisScope setUpAndroidAnalysisScope(List<String> inputs, String exclusions, List<String> androidLibs, List<String> appLibs) throws IOException {
+    public static AnalysisScope setUpAndroidAnalysisScope(Iterable<String> inputs, String exclusions, Iterable<String> androidLibs, Iterable<String> appLibs) throws IOException {
         AnalysisScope scope;
         scope = AnalysisScope.createJavaAnalysisScope();
 

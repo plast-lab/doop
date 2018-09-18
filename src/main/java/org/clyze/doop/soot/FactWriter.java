@@ -12,10 +12,7 @@ import soot.jimple.toolkits.typing.fast.BottomType;
 import soot.tagkit.*;
 import soot.util.backend.ASMBackendUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.JavaRepresentation.*;
@@ -955,7 +952,7 @@ class FactWriter extends JavaFactWriter {
             }
     }
 
-    public void writePreliminaryFacts(Set<SootClass> classes, BasicJavaSupport java, SootParameters sootParameters) {
+    public void writePreliminaryFacts(Collection<SootClass> classes, BasicJavaSupport java, SootParameters sootParameters) {
         classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(this::writeApplicationClass);
         writePreliminaryFacts(java, sootParameters);
     }
