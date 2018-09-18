@@ -5,7 +5,9 @@ import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.util.TypeUtils;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.dexbacked.*;
+import org.jf.dexlib2.iface.Annotation;
 import org.jf.dexlib2.iface.ClassDef;
+import org.jf.dexlib2.iface.Field;
 import org.jf.dexlib2.iface.value.*;
 
 import java.util.Collection;
@@ -28,7 +30,7 @@ class DexClassFactWriter extends JavaFactWriter {
         super(db);
     }
 
-    public void generateFacts(ClassDef dexClass, String className,
+    public void generateFacts(DexBackedClassDef dexClass, String className,
                               DexParameters dexParams, Map<String, MethodSig> cachedMethodDescriptors) {
         if (dexParams.isApplicationClass(className))
             _db.add(APP_CLASS, className);
@@ -66,7 +68,7 @@ class DexClassFactWriter extends JavaFactWriter {
             _db.add(DIRECT_SUPER_IFACE, className, TypeUtils.raiseTypeId(intf));
     }
 
-    private void writeField(DexBackedField fieldRef) {
+    private void writeField(Field fieldRef) {
         FieldInfo fi = new FieldInfo(fieldRef);
         String fieldId = fi.getFieldId();
         _db.add(FIELD_SIGNATURE, fieldId, fi.definingClass, fi.name, fi.type);
@@ -87,7 +89,7 @@ class DexClassFactWriter extends JavaFactWriter {
         for (AccessFlags f : flags)
             _db.add(FIELD_MODIFIER, f.toString(), fieldId);
 
-        for (DexBackedAnnotation annotation : fieldRef.getAnnotations())
+        for (Annotation annotation : fieldRef.getAnnotations())
             _db.add(FIELD_ANNOTATION, fieldId, TypeUtils.raiseTypeId(annotation.getType()));
 
         definedFields.add(fi);

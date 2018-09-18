@@ -30,7 +30,7 @@ class MethodSig {
      * Convert a Dex method reference to a MethodSig.
      * @param methodRef  the Dex method reference
      */
-    MethodSig(MethodReference methodRef) {
+    MethodSig(DexBackedMethodReference methodRef) {
         this.declClass = TypeUtils.raiseTypeId(methodRef.getDefiningClass());
         this.name = methodRef.getName();
         this.retType = TypeUtils.raiseTypeId(methodRef.getReturnType());
