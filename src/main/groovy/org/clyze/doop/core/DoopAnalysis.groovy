@@ -321,7 +321,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			if (options.X_STOP_AT_FACTS.value) {
 				runDexFactGen(platform, deps, platforms, params, tmpDirs)
 			} else {
-				System.err.println("Option --${options.DEX_FACT<_GEN.name} only works with --${options.X_STOP_AT_FACTS.name}")
+				System.err.println("Option --${options.DEX_FACT_GEN.name} only works with --${options.X_STOP_AT_FACTS.name}")
 				throw new DoopErrorCodeException(15)
 			}
 		} else {
