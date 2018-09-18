@@ -17,10 +17,7 @@ import org.clyze.doop.python.utils.PythonIRPrinter;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 import static org.clyze.doop.python.utils.PythonUtils.createLocal;
 import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
@@ -36,7 +33,7 @@ public class PythonFactGenerator implements Runnable{
     //The classes that are in the class hierarchy by default
     //Useful on our current one-classhierarchy-per-file approach
     private static final String[] DEFAULT_CLASSES = new String[]{"list", "Root", "Exception", "object", "CodeBody", "trampoline"};
-    private static final Set<String> defaultClasses = new HashSet<>(Arrays.asList(DEFAULT_CLASSES));
+    private static final Collection<String> defaultClasses = new HashSet<>(Arrays.asList(DEFAULT_CLASSES));
 
     PythonFactGenerator(PythonFactWriter writer, Set<IClass> iClasses, String outDir, IAnalysisCacheView analysisCache)
     {

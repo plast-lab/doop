@@ -121,7 +121,7 @@ public class PythonInvoker {
                         System.out.println(ir.toString());
                     }
                 }
-                PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
+                Runnable pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
                 pythonFactGenerator.run();
                 if(numOfClassesInCha == 6) {
                     numOfEmptyCha++;

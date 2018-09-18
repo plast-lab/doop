@@ -92,7 +92,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
         }
     }
 
-    private void addClasses(Iterable<String> inputs, Collection<SootClass> classes, Scene scene, Collection<String> target) {
+    private void addClasses(Iterable<String> inputs, Collection<SootClass> classes, Scene scene, Iterable<String> target) {
         for (String input : inputs) {
             if (input.endsWith(".apk")) {
                 addClasses(classes, scene, input);

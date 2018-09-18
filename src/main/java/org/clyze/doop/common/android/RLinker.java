@@ -203,7 +203,7 @@ public class RLinker {
         new File(subdir).mkdirs();
         String rFile = subdir + "/R.java";
         System.out.println("Generating " + rFile);
-        List<String> lines = new ArrayList<>();
+        Collection<String> lines = new ArrayList<>();
         lines.add("// Auto-generated R.java by Doop.\n");
         lines.add("package " + pkg + ";\n");
         lines.add("public final class R {");

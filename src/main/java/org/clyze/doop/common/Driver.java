@@ -59,11 +59,11 @@ public abstract class Driver<C, F> {
         }
     }
 
-    public void generateInParallel(Set<? extends C> classesToProcess) throws DoopErrorCodeException {
+    public void generateInParallel(Iterable<? extends C> classesToProcess) throws DoopErrorCodeException {
         doInParallel(classesToProcess, this::generate);
     }
 
-    public void writeInParallel(Set<? extends C> classesToProcess) throws DoopErrorCodeException {
+    public void writeInParallel(Iterable<? extends C> classesToProcess) throws DoopErrorCodeException {
         doInParallel(classesToProcess, this::write);
     }
 
