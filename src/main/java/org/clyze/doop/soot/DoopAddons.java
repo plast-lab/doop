@@ -103,7 +103,8 @@ class DoopAddons {
                 String base = fName.substring(0, fName.length() - JIMPLE_EXT.length()).replace('.', File.separatorChar);
                 fName = jimpleDirPath + File.separatorChar + base + JIMPLE_EXT;
                 File newFile = new File(fName);
-                newFile.getParentFile().mkdirs();
+                if (newFile.getParentFile().mkdirs())
+                    System.out.println("Created directory for " + fName);
                 try {
                     Files.move(f.toPath(), newFile.toPath());
                 } catch (IOException ex) {
