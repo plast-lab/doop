@@ -1203,15 +1203,10 @@ public class WalaFactWriter extends JavaFactWriter {
 //        } else
 //            return _rep.signature(bootstrapMeth.resolve());
         String declaringClass = bootstrapMeth.methodClass().replace('/','.');
-        StringBuilder bootStrapSig = new StringBuilder("<");
-        bootStrapSig.append(declaringClass);
-        bootStrapSig.append(": ");
-        bootStrapSig.append(createMethodSignature(bootstrapMeth.methodType(),bootstrapMeth.methodName()));
-        bootStrapSig.append(">");
 
 
         //System.out.println("\n\n\n\n\n\nBOOTSTRAP SIG " + bootStrapSig);
-        return bootStrapSig.toString();
+        return "<" + declaringClass + ": " + createMethodSignature(bootstrapMeth.methodType(), bootstrapMeth.methodName()) + ">";
     }
 
     //        private Value writeImmediate(IMethod inMethod, Stmt stmt, Value v, Session session) {
