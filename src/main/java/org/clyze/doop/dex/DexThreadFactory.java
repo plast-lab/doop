@@ -6,7 +6,6 @@ import org.clyze.doop.util.TypeUtils;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 
 import java.util.Map;
-import java.util.Set;
 
 class DexThreadFactory {
     private final Database db;
