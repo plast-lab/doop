@@ -268,8 +268,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 ImmutableLineNumber lineNo = ((ImmutableLineNumber) di);
                 lineNumbers.put(lineNo.getCodeAddress(), lineNo.getLineNumber());
             } else if (di instanceof ImmutablePrologueEnd) {
-                ImmutablePrologueEnd pEnd = (ImmutablePrologueEnd) di;
-                int addr = pEnd.getCodeAddress();
+                int addr = di.getCodeAddress();
                 if (addr != 0) {
                     this.currentInstrAddr = addr;
                     System.out.println(methId + ", prologue end: " + addr + " != 0");
