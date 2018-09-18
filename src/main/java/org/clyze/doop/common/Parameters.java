@@ -59,12 +59,6 @@ public abstract class Parameters {
         return applicationClassFilter.matches(className);
     }
 
-    public List<String> getInputsAndDependencies() {
-        List<String> ret = new ArrayList<>(_inputs);
-        ret.addAll(_dependencies);
-        return ret;
-    }
-
     public List<String> getDependenciesAndPlatformLibs() {
         List<String> ret = new ArrayList<>(_dependencies);
         ret.addAll(_platformLibs);
