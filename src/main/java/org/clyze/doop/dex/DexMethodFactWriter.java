@@ -55,7 +55,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private final SessionCounter counter = new SessionCounter();
     private final MethodFacts mf = new MethodFacts();
     private final String methId;
-    private final TreeMap<Integer, Integer> lineNumbers = new TreeMap<>();
+    private final NavigableMap<Integer, Integer> lineNumbers = new TreeMap<>();
 
     private final int localRegCount;
     private final AccessFlags[] flags;
