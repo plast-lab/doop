@@ -1,0 +1,50 @@
+.decl VarHasConstValue(?var:Var, ?numVal:number, ?val:symbol)
+.output VarHasConstValue
+
+VarHasConstValue(?var, ?numVal, ?val):-
+  AssignIntConstant_Id(?instr, ?numVal),
+  AssignInstruction_To(?instr, ?var),
+  IntConstToString(?numVal, ?numStr),
+  ?val = cat(cat("<int-constant:", ?numStr),">").
+
+VarHasConstValue(?var, ?res, ?val):-
+  AssignInstruction_To(?instr, ?var),
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
+  BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res),
+  IntConstToString(?res, ?numStr),
+  ?val = cat(cat("<int-constant:", ?numStr),">").
+
+.decl BinaryIntOp(?instr:Instruction, ?var1:Var, ?var2:Var, ?op:symbol, ?res:number)
+.output BinaryIntOp
+
+isIntConstant(?res),
+BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
+  VarHasConstValue(?var1, ?numVal1, _),
+  VarHasConstValue(?var2, ?numVal2, _),
+  ?op = "add",
+  ?res = ?numVal1 + ?numVal2.
+
+isIntConstant(?res),
+BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
+  VarHasConstValue(?var1, ?numVal1, _),
+  VarHasConstValue(?var2, ?numVal2, _),
+  ?op = "sub",
+  ?res = ?numVal1 - ?numVal2.
+
+isIntConstant(?res),
+BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
+  VarHasConstValue(?var1, ?numVal1, _),
+  VarHasConstValue(?var2, ?numVal2, _),
+  ?op = "mul",
+  ?res = ?numVal1 * ?numVal2.
+
+isIntConstant(?res),
+BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
+  VarHasConstValue(?var1, ?numVal1, _),
+  VarHasConstValue(?var2, ?numVal2, _),
+  ?op = "div",
+  ?res = ?numVal1 / ?numVal2.

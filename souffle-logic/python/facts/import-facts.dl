@@ -12,6 +12,9 @@ HeapAllocation_Type(?id, ?type) :-
   _NormalHeap(?id, ?type).
 
 
+//IntConstToStr
+
+.input IntConstToString(IO="file", filename="IntConstToStr.facts", delimeter="\t")
 
 // StringConstant
 
@@ -102,11 +105,11 @@ AssignInstruction_To(?instruction, ?to) :-
 
 // AssignOperFrom
 
-.decl _AssignOperFrom(?instruction:symbol, ?from:symbol)
+.decl _AssignOperFrom(?instruction:symbol, ?operNum:number, ?from:symbol)
 .input _AssignOperFrom(IO="file", filename="AssignOperFrom.facts", delimiter="\t")
 
-AssignOper_From(?instruction, ?from) :-
-  _AssignOperFrom(?instruction, ?from).
+AssignOper_From(?instruction, ?operNum, ?from) :-
+  _AssignOperFrom(?instruction, ?operNum, ?from).
 
 
 // IfVar

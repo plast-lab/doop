@@ -5,6 +5,8 @@
 .type FloatConstant
 .decl isFloatConstant(?n:FloatConstant)
 
+.decl IntConstToString(?n:IntConstant, ?str:symbol)
+
 .type Type
 .type PrimitiveType = Type
 .type ClassType = Type
@@ -198,7 +200,7 @@
 .decl AssignLocal_From(?insn:AssignLocal_Insn, ?from:Var)
 
 // Assign expression vars
-.decl AssignOper_From(?insn:AssignOper_Insn, ?from:Var)
+.decl AssignOper_From(?insn:AssignOper_Insn, ?operNum:number, ?from:Var)
 
 // Assign operation
 .decl Assign_Operation(?insn:AssignOper_Insn, ?oper:symbol)

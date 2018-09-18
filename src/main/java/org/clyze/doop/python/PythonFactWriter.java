@@ -472,8 +472,8 @@ public class PythonFactWriter {
 
         _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), instruction.getOperator().toString(), methodId);
 
-        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
-        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
+        _db.add(ASSIGN_OPER_FROM, insn, "1", _rep.local(m, op1));
+        _db.add(ASSIGN_OPER_FROM, insn, "2", _rep.local(m, op2));
 
     }
 
@@ -510,8 +510,8 @@ public class PythonFactWriter {
 
         _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), instruction.getOperator().toString(), methodId);
 
-        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
-        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
+        _db.add(ASSIGN_OPER_FROM, insn, "1", _rep.local(m, op1));
+        _db.add(ASSIGN_OPER_FROM, insn, "2", _rep.local(m, op2));
 
     }
     //
@@ -522,7 +522,7 @@ public class PythonFactWriter {
 
         _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), instruction.getOpcode().toString(), methodId);
 
-        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, from));
+        _db.add(ASSIGN_OPER_FROM, insn, "1", _rep.local(m, from));
     }
 
     void writePythonInvoke(IMethod inMethod, IR ir, PythonInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
@@ -608,5 +608,11 @@ public class PythonFactWriter {
     void writeError(PythonPredicateFile predFile, String fileName, String... args)
     {
         _db.add(predFile, fileName, args);
+    }
+
+    void writeIntConsts()
+    {
+        for(long i = -100000; i < 100000; i++)
+            _db.add(INT_CONST_TO_STR, Long.toString(i), Long.toString(i));
     }
 }
