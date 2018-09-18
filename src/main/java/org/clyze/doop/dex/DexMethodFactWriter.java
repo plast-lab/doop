@@ -274,8 +274,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                     System.out.println(methId + ", prologue end: " + addr + " != 0");
                 }
             } else if (di instanceof ImmutableEpilogueBegin) {
-                ImmutableEpilogueBegin eBeg = (ImmutableEpilogueBegin)di;
-                int addr = eBeg.getCodeAddress();
+                int addr = di.getCodeAddress();
                 if (addr != 0)
                     System.err.println("(UNUSED) Epilogue begin: " + addr + " != 0");
             } else
