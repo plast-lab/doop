@@ -75,7 +75,7 @@ public abstract class AndroidSupport {
             inputs.subList(1, inputsSize).clear();
     }
 
-    public void processAppResources(String input, AppResources manifest, Map<String, String> pkgs, RLinker rLinker) {
+    protected void processAppResources(String input, AppResources manifest, Map<String, String> pkgs, RLinker rLinker) {
         String appPackageName = manifest.getPackageName();
         pkgs.put(input, appPackageName);
 

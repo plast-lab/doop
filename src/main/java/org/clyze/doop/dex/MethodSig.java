@@ -2,6 +2,8 @@ package org.clyze.doop.dex;
 
 import org.clyze.doop.util.TypeUtils;
 import org.jf.dexlib2.dexbacked.reference.DexBackedMethodReference;
+import org.jf.dexlib2.iface.reference.MethodReference;
+
 import java.util.List;
 
 class MethodSig {
@@ -28,7 +30,7 @@ class MethodSig {
      * Convert a Dex method reference to a MethodSig.
      * @param methodRef  the Dex method reference
      */
-    MethodSig(DexBackedMethodReference methodRef) {
+    MethodSig(MethodReference methodRef) {
         this.declClass = TypeUtils.raiseTypeId(methodRef.getDefiningClass());
         this.name = methodRef.getName();
         this.retType = TypeUtils.raiseTypeId(methodRef.getReturnType());

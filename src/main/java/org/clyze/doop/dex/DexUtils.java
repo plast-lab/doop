@@ -1,8 +1,8 @@
 package org.clyze.doop.dex;
 
 import org.jf.dexlib2.dexbacked.value.DexBackedArrayEncodedValue;
-import org.jf.dexlib2.iface.Annotation;
 import org.jf.dexlib2.iface.AnnotationElement;
+import org.jf.dexlib2.iface.BasicAnnotation;
 import org.jf.dexlib2.iface.instruction.FiveRegisterInstruction;
 import org.jf.dexlib2.iface.instruction.Instruction;
 import org.jf.dexlib2.iface.instruction.ReferenceInstruction;
@@ -93,8 +93,8 @@ enum DexUtils {
      * @param conv          a lambda that converts values to strings
      * @return              the list of string values
      */
-    static List<String> getAnnotationValues(Annotation annotation,
-                                                    Function<EncodedValue, String> conv) {
+    static List<String> getAnnotationValues(BasicAnnotation annotation,
+                                            Function<EncodedValue, String> conv) {
         List<String> ret = new ArrayList<>();
         for (AnnotationElement elem : annotation.getElements()) {
             ArrayEncodedValue evs = (DexBackedArrayEncodedValue) elem.getValue();

@@ -28,7 +28,7 @@ class DexClassFactWriter extends JavaFactWriter {
         super(db);
     }
 
-    public void generateFacts(DexBackedClassDef dexClass, String className,
+    public void generateFacts(ClassDef dexClass, String className,
                               DexParameters dexParams, Map<String, MethodSig> cachedMethodDescriptors) {
         if (dexParams.isApplicationClass(className))
             _db.add(APP_CLASS, className);

@@ -19,7 +19,7 @@ import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
  * WARNING: It uses the soot implementation, need to find alternative
  */
 class WalaAndroidXMLParser extends AndroidSupport {
-    private WalaFactWriter factWriter;
+    private final WalaFactWriter factWriter;
 
     WalaAndroidXMLParser(WalaParameters parameters, WalaFactWriter writer, BasicJavaSupport java)
     {
@@ -34,7 +34,7 @@ class WalaAndroidXMLParser extends AndroidSupport {
         writeComponents(factWriter, parameters);
     }
 
-    void parseXMLFiles()
+    private void parseXMLFiles()
     {
         Map<String, String> pkgs = new HashMap<>();
 

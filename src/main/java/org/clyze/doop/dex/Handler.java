@@ -1,5 +1,6 @@
 package org.clyze.doop.dex;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,7 +39,7 @@ class Handler {
         return index;
     }
 
-    static List<Handler> findHandlerStartingAt(List<Handler> handlers, int addr) {
+    static List<Handler> findHandlerStartingAt(Collection<Handler> handlers, int addr) {
         return handlers.stream().filter((Handler hi) -> hi.handlerAddr == addr).collect(Collectors.toList());
     }
 

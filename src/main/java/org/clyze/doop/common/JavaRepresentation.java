@@ -46,7 +46,7 @@ public class JavaRepresentation {
         return "catch " + excType;
     }
 
-    public static String throwLocalId(String name) {
+    protected static String throwLocalId(String name) {
         return "throw " + name;
     }
 }

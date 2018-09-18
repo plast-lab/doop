@@ -42,7 +42,7 @@ class DexThreadFactory {
         this.cha = cha;
     }
 
-    public Runnable newFactGenRunnable(Set<DexBackedClassDef> classes) {
+    public Runnable newFactGenRunnable(Iterable<DexBackedClassDef> classes) {
         return () -> {
             for (DexBackedClassDef dexClass : classes) {
                 String className = TypeUtils.raiseTypeId(dexClass.getType());

@@ -49,7 +49,7 @@ public class WalaFactWriter extends JavaFactWriter {
     private Map<String,List<String>> _signaturePolyMorphicMethods;
 
     //Used for logging various messages
-    protected Log logger;
+    private final Log logger;
 
     WalaFactWriter(Database db) {
         super(db);

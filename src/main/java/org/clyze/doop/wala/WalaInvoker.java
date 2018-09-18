@@ -29,7 +29,7 @@ public class WalaInvoker {
     /**
      * Used for logging various messages
      */
-    protected Log logger;
+    private final Log logger;
 
     public WalaInvoker() {
         logger =  LogFactory.getLog(getClass());

@@ -95,7 +95,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     // * SPARSE_SWITCH + SPARSE_SWITCH_PAYLOAD
     private final PatternManager<FirstInstructionEntry> pendingSwitchInfo = new PatternManager<>();
 
-    private final List<MoveExceptionInfo> exceptionMoves = new LinkedList<>();
+    private final Collection<MoveExceptionInfo> exceptionMoves = new LinkedList<>();
 
     DexMethodFactWriter(DexBackedMethod dexMethod, Database _db,
                         Map<String, MethodSig> cachedMethodDescriptors) {
@@ -184,7 +184,7 @@ class DexMethodFactWriter extends JavaFactWriter {
      *
      * @param tryBlocks    the try-block Dex information
      */
-    private void processTryBlocks(List<? extends DexBackedTryBlock> tryBlocks) {
+    private void processTryBlocks(Iterable<? extends DexBackedTryBlock> tryBlocks) {
         List<Handler> handlers = new LinkedList<>();
         Map<Handler, Handler> previousHandlers = new HashMap<>();
 
@@ -916,7 +916,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         int regDest = tri.getRegisterA();
         int regSize = tri.getRegisterB();
         ReferenceInstruction ri = (ReferenceInstruction)instr;
-        DexBackedTypeReference typeRef = (DexBackedTypeReference)ri.getReference();
+        TypeReference typeRef = (DexBackedTypeReference)ri.getReference();
         String arrayType = raiseTypeId(typeRef.getType());
         boolean isEmpty = arraySizeIsZero(regSize, index);
         String[] heapIdBox = new String[1];

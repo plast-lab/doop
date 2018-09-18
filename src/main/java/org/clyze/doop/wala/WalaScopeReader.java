@@ -29,7 +29,7 @@ import java.util.jar.JarFile;
  * unless specified in a specific file, not existing in the jar)
  *
  */
-public class WalaScopeReader {
+class WalaScopeReader {
     //The location of WALAprimordial.jar.model in our resources folder -- file taken from wala's repo
     //Don't understand what this does but it is needed for some reason
     private static String SCOPE_BIN_FILE;
