@@ -88,6 +88,8 @@ class DoopAddons {
         boolean movedMsg = false;
         String jimpleDirPath = outDir + File.separatorChar + "jimple";
         File[] outDirFiles = new File(outDir).listFiles();
+        if (outDirFiles == null)
+            return;
 
         final String JIMPLE_EXT = ".shimple";
 
