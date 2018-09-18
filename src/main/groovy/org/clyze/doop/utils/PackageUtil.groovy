@@ -17,7 +17,7 @@ class PackageUtil {
 	 * Any classes that are not included in packages are also retrieved.
 	 */
 	static Set<String> getPackages(File archive) {
-		String name = archive.getName().toLowerCase()
+		String name = archive.name.toLowerCase()
 		if (name.endsWith(".jar") || name.endsWith(".zip")) {
 			return getPackagesForJAR(archive)
 		} else if (name.endsWith(".apk")) {

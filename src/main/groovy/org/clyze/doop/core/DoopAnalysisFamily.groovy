@@ -10,7 +10,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 @Singleton
 class DoopAnalysisFamily implements AnalysisFamily {
 
-	private static final String DEFAULT_JAVA_PLATFORM = "java_7";
+	private static final String DEFAULT_JAVA_PLATFORM = "java_7"
 
 	@Override
 	String getName() { "doop" }
@@ -797,7 +797,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					int platformEndIdx = base.lastIndexOf(INFORMATION_FLOW_SUFFIX)
 					if (platformEndIdx != -1) {
 						String ext = getExtension(n)
-						if (ext.equals("logic")) {
+						if (ext == "logic") {
 							platforms_LB << base.substring(0, platformEndIdx)
 						} else if (ext.equals("dl")) {
 							platforms_Souffle << base.substring(0, platformEndIdx)
