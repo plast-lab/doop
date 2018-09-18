@@ -185,7 +185,7 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param tryBlocks    the try-block Dex information
      */
     private void processTryBlocks(Iterable<? extends DexBackedTryBlock> tryBlocks) {
-        List<Handler> handlers = new LinkedList<>();
+        Collection<Handler> handlers = new LinkedList<>();
         Map<Handler, Handler> previousHandlers = new HashMap<>();
 
         // Step 1: read all try blocks and record exception handler information.

@@ -143,7 +143,7 @@ public class WalaInvoker {
             db.flush();
 
             IClass klass;
-            Set<IClass> classesSet = new HashSet<>();
+            Collection<IClass> classesSet = new HashSet<>();
             Map<String, List<String>> signaturePolymorphicMethods = new HashMap<>();
             while (classes.hasNext()) {
                 klass = classes.next();
