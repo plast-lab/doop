@@ -118,8 +118,7 @@ class Representation extends JavaRepresentation {
         if(result == null)
         {
             String name = "catch " + trap.getException().getName();
-            result = getMethodSignature(m) + "/" + name + "/" + counter.nextNumber(name);
-
+            result = JavaRepresentation.numberedInstructionId(getMethodSignature(m), name, counter);
             _trapRepr.put(trap, result);
         }
 
@@ -181,7 +180,7 @@ class Representation extends JavaRepresentation {
     String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
         String midPart = (expr instanceof DynamicInvokeExpr) ?
             dynamicInvokeIdMiddle((DynamicInvokeExpr)expr) : invokeIdMiddle(expr);
-        return invokeId(getMethodSignature(inMethod), midPart, counter);
+        return numberedInstructionId(getMethodSignature(inMethod), midPart, counter);
     }
 
     private String invokeIdMiddle(InvokeExpr expr) {

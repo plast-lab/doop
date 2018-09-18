@@ -169,7 +169,7 @@ class WalaRepresentation extends JavaRepresentation {
         String result = _catchRepr.get(query);
         if(result == null) {
             String name = "catch " + fixTypeString(typeReference.toString());
-            result = signature(m) + "/" + name + "/" + counter.nextNumber(name);
+            result = JavaRepresentation.numberedInstructionId(signature(m), name, counter);
             _catchRepr.put(query,result);
         }
         return result;
@@ -178,7 +178,7 @@ class WalaRepresentation extends JavaRepresentation {
     String throwLocal(IMethod m, Local l, SessionCounter counter)
     {
         String name = "throw " + l.getName();
-        return signature(m) + "/" + name + "/" + counter.nextNumber(name);
+        return JavaRepresentation.numberedInstructionId(signature(m), name, counter);
     }
 
     //This method takes a MethodReference as a parameter and it does not include "this" as an argument
@@ -252,7 +252,7 @@ class WalaRepresentation extends JavaRepresentation {
         else
             midPart = invokeIdMiddle(ir, instr, methRef, typeInference);
 
-        return invokeId(signature(inMethod), midPart, counter);
+        return numberedInstructionId(signature(inMethod), midPart, counter);
     }
 
     private String invokeIdMiddle(IR ir, SSAInvokeInstruction instr, MethodReference resolvedTargetRef, TypeInference typeInference) {
@@ -330,9 +330,7 @@ class WalaRepresentation extends JavaRepresentation {
 
     private String heapAlloc(IMethod inMethod, TypeReference type, SessionCounter counter) {
         String s = fixTypeString(type.toString());
-        return signature(inMethod) + "/new " + s + "/" +  counter.nextNumber(s);
-
-
+        return JavaRepresentation.heapAllocId(signature(inMethod), s, counter);
     }
 
 }
