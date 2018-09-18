@@ -199,8 +199,9 @@ public class RLinker {
 
     private static String genR(String tmpDir, String pkg,
                                Map<String, Set<String>> rData) {
-        String subdir = tmpDir + "/" + pkg.replaceAll("\\.", "/");
-        new File(subdir).mkdirs();
+        String subdir = tmpDir + File.separator + pkg.replaceAll("\\.", File.separator);
+        if (new File(subdir).mkdirs())
+            System.out.println("Created directory: " + subdir);
         String rFile = subdir + "/R.java";
         System.out.println("Generating " + rFile);
         Collection<String> lines = new ArrayList<>();
