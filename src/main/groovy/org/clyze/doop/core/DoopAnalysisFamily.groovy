@@ -799,7 +799,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						String ext = getExtension(n)
 						if (ext == "logic") {
 							platforms_LB << base.substring(0, platformEndIdx)
-						} else if (ext.equals("dl")) {
+						} else if (ext == "dl") {
 							platforms_Souffle << base.substring(0, platformEndIdx)
 						}
 					}
