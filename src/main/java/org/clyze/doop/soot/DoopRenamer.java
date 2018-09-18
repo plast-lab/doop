@@ -6,7 +6,6 @@ import soot.shimple.Shimple;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 class DoopRenamer {
     static void transform(Body body) {
