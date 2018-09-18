@@ -76,13 +76,9 @@ class WalaRepresentation extends JavaRepresentation {
 
 
     String signature(FieldReference f, TypeReference declaringClass) {
-        String DoopSig = "<" + fixTypeString(declaringClass.toString()) +
-                ": " +
-                fixTypeString(f.getFieldType().toString()) +
-                " " +
-                f.getName().toString() +
-                ">";
-        return DoopSig;
+        return "<" + fixTypeString(declaringClass.toString()) + ": " +
+                fixTypeString(f.getFieldType().toString()) + " " +
+                f.getName().toString() + ">";
     }
 
     String simpleName(MethodReference mr) {
