@@ -236,6 +236,18 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
+					id: "DEX_FACT_GEN",
+					name: "dex",
+					description: "Use custom front-end to generate facts for .apk inputs, using Soot for other inputs.",
+					forCacheID: true
+			),
+			new AnalysisOption<String>(
+					id: "APK_DECOMPRESS_DIR",
+					name: "apk-decompress-dir",
+					argName: "DIR",
+					description: "Target directory to use for decompressing .apk inputs."
+			),
+			new BooleanAnalysisOption(
 					id: "PYTHON",
 					name: "python",
 					forCacheID: true

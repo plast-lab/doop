@@ -8,6 +8,7 @@ import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.common.FrontEnd
+import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.wala.WalaInvoker
@@ -166,6 +167,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			try {
 				if (options.PYTHON.value) runPython(tmpDirs)
 				else if (options.WALA_FACT_GEN.value) runFrontEnd(tmpDirs, FrontEnd.WALA)
+				else if (options.DEX_FACT_GEN.value) runFrontEnd(tmpDirs, FrontEnd.DEX)
 				else runFrontEnd(tmpDirs, FrontEnd.SOOT)
 			} catch (all) {
 				all = StackTraceUtils.deepSanitize all
@@ -315,6 +317,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			runSoot(platform, deps, platforms, params)
 		} else if (frontEnd == FrontEnd.WALA) {
 			runWala(platform, deps, platforms, params)
+		} else if (frontEnd == FrontEnd.DEX) {
+			if (options.X_STOP_AT_FACTS.value) {
+				runDexFactGen(platform, deps, platforms, params, tmpDirs)
+			} else {
+				System.err.println("Option --${options.DEX_FACT<_GEN.name} only works with --${options.X_STOP_AT_FACTS.name}")
+				throw new DoopErrorCodeException(15)
+			}
 		} else {
 			println("Unknown front-end: " + frontEnd)
 		}
@@ -409,6 +418,23 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			throw new RuntimeException("Wala fact generation Error: $walaError", walaError)
 		}
 		log.info "Wala fact generation time: ${factGenTime}"
+	}
+
+	protected void runDexFactGen(String platform, Collection<String> deps, List<File> platforms, Collection<String> params, Set<String> tmpDirs) {
+
+		// params += [ "--print-phantoms" ]
+
+		if (options.APK_DECOMPRESS_DIR.value) {
+			params += ["--apk-decompress-dir", options.APK_DECOMPRESS_DIR.value.toString()]
+		}
+
+		log.debug "Params of dex front-end: ${params.join(' ')}"
+
+		try {
+			DexInvoker.main(params.toArray(new String[params.size()]))
+		} catch (Exception ex) {
+			ex.printStackTrace()
+		}
 	}
 
 	protected void runPython(Set<String> tmpDirs) {
