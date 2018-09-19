@@ -32,6 +32,8 @@ public abstract class AndroidSupport {
     }
 
     public void processInputs(Set<String> tmpDirs) throws Exception {
+        logger.debug("Processing inputs...");
+
         List<String> allInputs = parameters.getAllInputs();
         // Map AAR files to their package name.
         Map<String, String> pkgs = new HashMap<>();

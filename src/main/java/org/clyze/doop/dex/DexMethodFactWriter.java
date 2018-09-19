@@ -1,5 +1,7 @@
 package org.clyze.doop.dex;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.JavaRepresentation;
 import org.clyze.doop.common.SessionCounter;
@@ -46,8 +48,10 @@ import static org.clyze.doop.util.TypeUtils.raiseTypeId;
  * Writes facts for a single method found in a .dex class.
  */
 class DexMethodFactWriter extends JavaFactWriter {
-    private static final boolean debug = false;
     private static final boolean extractRegisterTypes = true;
+
+    private static final boolean debug = false;
+    private static final Log logger = debug ? LogFactory.getLog(DexMethodFactWriter.class) : null;
 
     // The following fields are needed to process the current method.
     private final DexBackedMethod m;
@@ -128,7 +132,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 if (debug) {
                     for (String sig : getAnnotationValues(annotation, (ev -> ((DexBackedStringEncodedValue) ev).getValue())))
                         if (!sig.equals(mf.jvmSig))
-                            System.out.println("Ignored supplied method signature: " + sig + " != " + mf.jvmSig);
+                            logger.debug("Ignored supplied method signature: " + sig + " != " + mf.jvmSig);
                 }
             }
             _db.add(METHOD_ANNOTATION, methId, annotType);
@@ -203,7 +207,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 if (t == null) {
                     excType = "java.lang.Throwable";
                     if (debug)
-                        System.out.println("Warning: no exception type found for handler in " + methId + ", using " + excType);
+                        logger.debug("Warning: no exception type found for handler in " + methId + ", using " + excType);
                 } else
                     excType = raiseTypeId(t);
                 Handler current = new Handler(startAddr, endAddr, handlerAddr, excType);
@@ -300,7 +304,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                                   Collection<FieldOp> fieldOps) {
         Opcode op = instr.getOpcode();
         if (debug)
-            System.err.println("Opcode " + op.name + " | Instruction class: " + instr.getClass());
+            logger.debug("Opcode " + op.name + " | Instruction class: " + instr.getClass());
         switch (op) {
             case CONST_4:
             case CONST_16:
@@ -714,7 +718,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         }
 
         if (debug)
-            System.out.println("Consuming object return info: " + objReturnInfo);
+            logger.debug("Consuming object return info: " + objReturnInfo);
 
         int regDest = ((OneRegisterInstruction) instr).getRegisterA();
         switch (objReturnInfo.op) {
