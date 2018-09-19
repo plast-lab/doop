@@ -357,6 +357,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--ignoreWrongStaticness"]
 		}
 
+		if (options.GENERATE_JIMPLE.value) {
+			params += ["--generate-jimple"]
+		}
+
 		log.debug "Params of soot: ${params.join(' ')}"
 
 		factGenTime = Helper.timing {
@@ -395,9 +399,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				throw new RuntimeException("Unsupported platform")
 		}
 
-		if (options.GENERATE_JIMPLE.value) {
-			params += ["--generate-ir"]
-		}
 		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 		params = params + depArgs
 
@@ -448,9 +449,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 		if (options.FACT_GEN_CORES.value) {
 			params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
-		}
-		if (options.GENERATE_JIMPLE.value) {
-			params += ["--generate-ir"]
 		}
 		if (options.GENERATE_JIMPLE.value) {
 			params += ["--generate-ir"]

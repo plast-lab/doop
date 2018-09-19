@@ -41,44 +41,11 @@ public class WalaInvoker {
     }
 
     public void main(String[] args) throws IOException, DoopErrorCodeException {
-        WalaParameters walaParameters = new WalaParameters();
-        try {
-            if (args.length == 0) {
-                System.err.println("usage: [options] file...");
-                throw new DoopErrorCodeException(0);
-            }
-
-            for (int i = 0; i < args.length; i++) {
-                int next_i = walaParameters.processNextArg(args, i);
-                if (next_i != -1) {
-                    i = next_i;
-                    continue;
-                }
-                switch (args[i]) {
-                    case "--generate-ir":
-                        walaParameters._generateIR = true;
-                        break;
-                    case "-p":
-                        i = shift(args, i);
-                        walaParameters._javaPath = args[i];
-                        break;
-                    default:
-                        if (args[i].charAt(0) == '-') {
-                            System.err.println("error: unrecognized option: " + args[i]);
-                            throw new DoopErrorCodeException(6);
-                        }
-                        break;
-                }
-            }
-        } catch(DoopErrorCodeException errCode) {
-            int n = errCode.getErrorCode();
-            if (n != 0)
-                System.err.println("Exiting with code " + n);
+        if (args.length == 0) {
+            System.err.println("usage: [options] file...");
+            throw new DoopErrorCodeException(0);
         }
-        catch(Exception exc) {
-            exc.printStackTrace();
-        }
-        run(walaParameters);
+        run(new WalaParameters(args));
     }
 
     private void run(WalaParameters walaParameters) throws IOException, DoopErrorCodeException {

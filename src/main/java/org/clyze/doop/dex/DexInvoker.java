@@ -22,15 +22,7 @@ class DexInvoker {
     private static final String APKTOOL_HOME_ENV_VAR = "APKTOOL_HOME";
 
     public static void main(String[] args) throws DoopErrorCodeException {
-        DexParameters dexParams = new DexParameters();
-
-        int i = 0, last_i;
-        while (i < args.length) {
-            last_i = dexParams.processNextArg(args, i);
-            if (last_i == -1)
-                throw new RuntimeException("Bad argument: " + args[i]);
-            i = last_i + 1;
-        }
+        DexParameters dexParams = new DexParameters(args);
 
         try (Database db = new Database(new File(dexParams.getOutputDir()))) {
             CHA cha = new CHA();

@@ -7,6 +7,10 @@ class DexParameters extends Parameters {
     private boolean printPhantoms;
     private String decompressDir;
 
+    public DexParameters(String[] args) throws DoopErrorCodeException {
+        super(args);
+    }
+
     public boolean printPhantoms() {
         return printPhantoms;
     }

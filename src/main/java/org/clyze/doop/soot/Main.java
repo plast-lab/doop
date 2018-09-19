@@ -20,69 +20,14 @@ public class Main {
         return sootParameters.isApplicationClass(klass.getName());
     }
 
-    public static void main(String[] args) throws Throwable {
-        SootParameters sootParameters = new SootParameters();
+    public static void main(String[] args) throws Exception {
         try {
             if (args.length == 0) {
                 System.err.println("usage: [options] file...");
                 throw new DoopErrorCodeException(0);
             }
-
-            for (int i = 0; i < args.length; i++) {
-                int next_i = sootParameters.processNextArg(args, i);
-                if (next_i != -1) {
-                    i = next_i;
-                    continue;
-                }
-                switch (args[i]) {
-                    case "-h":
-                    case "--help":
-                    case "-help":
-                        System.err.println("\nusage: [options] file");
-                        System.err.println("options:");
-                        System.err.println("  --main <class>                        Specify the name of the main class");
-                        System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
-                        System.err.println("  --full                                Generate facts by full transitive resolution");
-                        System.err.println("  -d <directory>                        Specify where to generate csv fact files");
-                        System.err.println("  -l <archive>                          Find (library) classes in jar/zip archive");
-                        System.err.println("  -ld <archive>                         Find (dependency) classes in jar/zip archive");
-                        System.err.println("  -lsystem                              Find classes in default system classes");
-                        System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
-                        System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
-                        System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
-                        System.err.println("  --R-out-dir <directory>               Specify where to generate R code (when linking AAR inputs)");
-                        System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
-                        System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
-                        System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
-                        throw new DoopErrorCodeException(0);
-                    case "--generate-jimple-help":
-                        System.err.println("\nusage: [options] file");
-                        System.err.println("options:");
-                        System.err.println("  --ssa                                 Generate Shimple files (use SSA for variables)");
-                        System.err.println("  --full                                Generate Jimple/Shimple files by full transitive resolution");
-                        System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-                        System.err.println("  -d <directory>                        Specify where to generate files");
-                        System.err.println("  -l <archive>                          Find classes in jar/zip archive");
-                        System.err.println("  -lsystem                              Find classes in default system classes");
-                        System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
-                        throw new DoopErrorCodeException(0);
-                    default:
-                        if (args[i].charAt(0) == '-') {
-                            System.err.println("error: unrecognized option: " + args[i]);
-                            throw new DoopErrorCodeException(6);
-                        }
-                        break;
-                }
-            }
-
-            sootParameters.finishArgProcessing();
-            produceFacts(sootParameters);
-        }
-        catch(DoopErrorCodeException errCode) {
-            System.err.println("Exiting with code " + errCode.getErrorCode());
-            throw errCode;
-        }
-        catch(Exception exc) {
+            produceFacts(new SootParameters(args));
+        } catch(Exception exc) {
             exc.printStackTrace();
             throw exc;
         }
