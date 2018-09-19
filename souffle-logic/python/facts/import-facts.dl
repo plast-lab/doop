@@ -247,7 +247,7 @@ Function_Arity(?function, ?arity) :-
 
 // StoreInstanceField
 
-.decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?function:symbol)
+.decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?fieldName:symbol, ?function:symbol)
 .input _StoreInstanceField(IO="file", filename="StoreInstanceField.facts", delimiter="\t")
 
 isInstruction(?instruction),
@@ -255,14 +255,15 @@ isFieldInstruction(?instruction),
 isStoreInstanceField_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Function(?instruction, ?function),
+FieldInstruction_FieldName(?instruction, ?fieldName),
 StoreInstanceField_Base(?instruction, ?base),
 StoreInstanceField_From(?instruction, ?from) :-
-  _StoreInstanceField(?instruction, ?index, ?from, ?base, ?function).
+  _StoreInstanceField(?instruction, ?index, ?from, ?base, ?fieldName, ?function).
 
 
 // LoadInstanceField
 
-.decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?function:symbol)
+.decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?fieldName:symbol, ?function:symbol)
 .input _LoadInstanceField(IO="file", filename="LoadInstanceField.facts", delimiter="\t")
 
 isInstruction(?instruction),
@@ -270,9 +271,10 @@ isFieldInstruction(?instruction),
 isLoadInstanceField_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Function(?instruction, ?function),
+FieldInstruction_FieldName(?instruction, ?fieldName),
 LoadInstanceField_Base(?instruction, ?base),
 LoadInstanceField_To(?instruction, ?to) :-
-  _LoadInstanceField(?instruction, ?index, ?to, ?base, ?function).
+  _LoadInstanceField(?instruction, ?index, ?to, ?base, ?fieldName, ?function).
 
 
 // Goto

@@ -158,7 +158,7 @@
 // The associated *field* of this instruction. It applies to
 // all types of field instuctions.
 
-.decl FieldInstruction_SimpleName(?insn:FieldInstruction, ?sign:symbol)
+.decl FieldInstruction_FieldName(?insn:FieldInstruction, ?fieldName:symbol)
 
 //------------------------------------------------
 // A LoadInstanceField instruction has the form:

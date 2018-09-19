@@ -1,6 +1,27 @@
-.decl ListOfConsts(?var:Var)
 .decl IsPyList(?var:Var)
+.decl ListOfConsts(?var:Var)
 .decl ListHasNonConstantVal(?var:Var)
+
+.decl ListOfConsts_Content(?var:Var, ?size:number, ?index:number, ?val: Value)
+.decl ListOfConsts_Size(?var:Var, ?size:number)
+
+.output ListOfConsts_Content
+ListOfConsts_Content(?var, ?size, ?index, ?val):-
+  ListOfConsts_Size(?var,?size),
+  StoreInstanceField_Base(?instr, ?var),
+  FieldInstruction_FieldName(?instr, ?fieldName),
+  ?index = to_number(?fieldName),
+  StoreInstanceField_From(?instr, ?from),
+  VarHasConstValue(?from, ?val).
+
+.output ListOfConsts_Size
+ListOfConsts_Size(?var,?size):-
+  ListOfConsts(?var),
+  ?size = 1 + max ?index: {
+    StoreInstanceField_Base(?instr, ?var),
+    FieldInstruction_FieldName(?instr, ?fieldName),
+    ?index = to_number(?fieldName)
+  }.
 
 .output ListOfConsts
 ListOfConsts(?var):-
