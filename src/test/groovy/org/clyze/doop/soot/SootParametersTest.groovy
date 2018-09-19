@@ -5,7 +5,6 @@ import spock.lang.Specification
 class SootParametersTest extends Specification {
     def "SootParameters parsing"() {
         given:
-        SootParameters sootParameters = new SootParameters()
         String[] args = [
             "--application-regex", "XYZ",
             "--main", "Main",
@@ -20,38 +19,24 @@ class SootParametersTest extends Specification {
             "-l", "path/to/layoutlib.jar",
             "-l", "jce.jar",
             "--android-jars", "android.jar",
-            "--ssa"
+            "--ssa",
+            "-d", "out-dir"
         ] as String[]
+        SootParameters sootParameters = new SootParameters()
 
         when:
-        int i1 = sootParameters.processNextArg(args, 0)
-        int i2 = sootParameters.processNextArg(args, i1 + 1)
-        int i3 = sootParameters.processNextArg(args, i2 + 1)
-        int i4 = sootParameters.processNextArg(args, i3 + 1)
-        int i5 = sootParameters.processNextArg(args, i4 + 1)
-        int i6 = sootParameters.processNextArg(args, i5 + 1)
-        int i7 = sootParameters.processNextArg(args, i6 + 1)
-        for (int i = i7 + 1; i < args.length; i++) {
-            int next_i = sootParameters.processNextArg(args, i);
-            i = next_i;
-        }
+        sootParameters.initFromArgs(args)
 
         then:
-        1 == i1
 
-        3 == i2
         "Main".equals(sootParameters._main)
 
-        5 == i3
         2 == sootParameters._cores.intValue()
 
-        6 == i4
         true == sootParameters._ignoreWrongStaticness
 
-        7 == i5
         true == sootParameters._generateJimple
 
-        9 == i6
         2 == sootParameters.getInputs().size()
         "a.jar".equals(sootParameters.getInputs().get(0))
         "b.aar".equals(sootParameters.getInputs().get(1))
@@ -69,5 +54,7 @@ class SootParametersTest extends Specification {
 
         true == sootParameters._android
         "android.jar".equals(sootParameters._androidJars)
+
+        "out-dir".equals(sootParameters.getOutputDir())
     }
 }
