@@ -546,9 +546,10 @@ OptSuperMethodInvocationBase(?invocation, ?base) :-
   Instruction_Method(?invocation, ?inmethod),
   SuperMethodInvocation_Base(?invocation, ?base).
 
-configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod) :-
   OptSuperMethodInvocationBase(?invocation, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  MethodInvocation_Method(?invocation, ?tomethod).
 
 /**
  * Special method invocations
