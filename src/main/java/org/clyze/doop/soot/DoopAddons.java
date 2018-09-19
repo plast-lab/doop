@@ -22,9 +22,10 @@ import soot.options.Options;
  */
 class DoopAddons {
 
-    public static void retrieveAllSceneClassesBodies() {
+    public static void retrieveAllSceneClassesBodies(Integer _cores) {
         // The old coffi front-end is not thread-safe
-        int threadNum = Options.v().coffi() ? 1 : Runtime.getRuntime().availableProcessors();
+        boolean runSeq = (_cores == null) || Options.v().coffi();
+        int threadNum = runSeq ? 1 : _cores;
         CountingThreadPoolExecutor executor =  new CountingThreadPoolExecutor(threadNum,
                                                                               threadNum, 30, TimeUnit.SECONDS,
                                                                               new LinkedBlockingQueue<>());

@@ -125,13 +125,13 @@ public class Main {
 
         try {
             System.out.println("Total classes in Scene: " + classes.size());
-            DoopAddons.retrieveAllSceneClassesBodies();
+            DoopAddons.retrieveAllSceneClassesBodies(sootParameters._cores);
             // The call below has a problem (only retrieves app method bodies).
             // DoopAddons.retrieveAllBodies();
-            System.out.println("Retrieved all bodies");
+            System.out.println("Retrieved all bodies.");
         }
         catch (Exception ex) {
-            System.out.println("Not all bodies retrieved");
+            System.err.println("Error: not all bodies retrieved.");
         }
 
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
