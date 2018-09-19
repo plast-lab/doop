@@ -133,8 +133,9 @@ public class Main {
         }
 
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
-            FactWriter writer = new FactWriter(db);
-            ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
+            boolean reportPhantoms = sootParameters._reportPhantoms;
+            FactWriter writer = new FactWriter(db, reportPhantoms);
+            ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, reportPhantoms);
             SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores);
 
             writer.writePreliminaryFacts(classes, java, sootParameters);
@@ -145,7 +146,7 @@ public class Main {
                     SootMethod dummyMain = android.getDummyMain();
                     if (dummyMain == null)
                         throw new RuntimeException("Internal error: FlowDroid returned null dummy main()");
-                    driver.doAndroidInSequentialOrder(dummyMain, classes, writer, sootParameters._ssa);
+                    driver.doAndroidInSequentialOrder(dummyMain, classes, writer, sootParameters._ssa, reportPhantoms);
                     return;
                 } else {
                     Objects.requireNonNull(android).writeComponents(writer, sootParameters);

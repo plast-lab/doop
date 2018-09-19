@@ -207,6 +207,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
+					id: "DONT_REPORT_PHANTOMS",
+					name: "dont-report-phantoms",
+					description: "Do not report phantom methods/types during fact generation.",
+					value: false
+			),
+			new BooleanAnalysisOption(
 					id: "GENERATE_JIMPLE",
 					name: "generate-jimple",
 					description: "Generate Jimple/Shimple files along with .facts files.",

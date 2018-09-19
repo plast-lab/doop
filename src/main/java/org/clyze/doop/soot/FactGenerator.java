@@ -19,12 +19,14 @@ class FactGenerator implements Runnable {
     private final FactWriter _writer;
     private final boolean _ssa;
     private final Set<SootClass> _sootClasses;
+    private final boolean _reportPhantoms;
 
-    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses)
+    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses, boolean reportPhantoms)
     {
         this._writer = writer;
         this._ssa = ssa;
         this._sootClasses = sootClasses;
+        this._reportPhantoms = reportPhantoms;
     }
 
     @Override
@@ -148,18 +150,21 @@ class FactGenerator implements Runnable {
     private boolean isPhantomBased(SootMethod m) {
         for (SootClass clazz: m.getExceptions())
             if (isPhantom(clazz.getType())) {
-                System.out.println("Exception " + clazz.getName() + " is phantom.");
+                if (_reportPhantoms)
+                    System.out.println("Exception " + clazz.getName() + " is phantom.");
                 return true;
             }
 
         for (int i = 0 ; i < m.getParameterCount(); i++)
             if(isPhantom(m.getParameterType(i))) {
-                System.out.println("Parameter type " + m.getParameterType(i) + " of " + m.getSignature() + " is phantom.");
+                if (_reportPhantoms)
+                    System.out.println("Parameter type " + m.getParameterType(i) + " of " + m.getSignature() + " is phantom.");
                 return true;
             }
 
         if (isPhantom(m.getReturnType())) {
-            System.out.println("Return type " + m.getReturnType() + " of " + m.getSignature() + " is phantom.");
+            if (_reportPhantoms)
+                System.out.println("Return type " + m.getReturnType() + " of " + m.getSignature() + " is phantom.");
             return true;
         }
 
@@ -346,11 +351,13 @@ class FactGenerator implements Runnable {
     private void generatePhantom(Object cause) {
         if (cause instanceof SootClass) {
             Type t = ((SootClass)cause).getType();
-            System.out.println("Type " + t + " is phantom.");
+            if (_reportPhantoms)
+                System.out.println("Type " + t + " is phantom.");
             _writer.writePhantomType(t);
         } else if (cause instanceof SootMethod) {
             SootMethod meth = (SootMethod)cause;
-            System.out.println("Method " + meth.getSignature() + " is phantom.");
+            if (_reportPhantoms)
+                System.out.println("Method " + meth.getSignature() + " is phantom.");
             _writer.writePhantomMethod(meth);
         }
         else

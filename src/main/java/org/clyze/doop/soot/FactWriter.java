@@ -25,11 +25,13 @@ import static org.clyze.doop.common.PredicateFile.*;
 class FactWriter extends JavaFactWriter {
     private final Representation _rep;
     private final Map<String, Type> _varTypeMap;
+    private final boolean _reportPhantoms;
 
-    FactWriter(Database db) {
+    FactWriter(Database db, boolean reportPhantoms) {
         super(db);
         _rep = Representation.getRepresentation();
         _varTypeMap = new ConcurrentHashMap<>();
+        _reportPhantoms = reportPhantoms;
     }
 
     String writeMethod(SootMethod m) {
@@ -68,7 +70,8 @@ class FactWriter extends JavaFactWriter {
         String classStr = c.getName();
         boolean isInterface = c.isInterface();
         if (isInterface && c.isPhantom()) {
-            System.out.println("Interface " + classStr + " is phantom.");
+            if (_reportPhantoms)
+                System.out.println("Interface " + classStr + " is phantom.");
             writePhantomType(c);
         }
         _db.add(isInterface ? INTERFACE_TYPE : CLASS_TYPE, classStr);
@@ -123,13 +126,15 @@ class FactWriter extends JavaFactWriter {
 
     void writePhantomMethod(SootMethod m) {
         String sig = writeMethod(m);
-        System.out.println("Method " + sig + " is phantom.");
+        if (_reportPhantoms)
+            System.out.println("Method " + sig + " is phantom.");
         writePhantomMethod(sig);
     }
 
     void writePhantomBasedMethod(SootMethod m) {
         String sig = writeMethod(m);
-        System.out.println("Method signature " + sig + " contains phantom types.");
+        if (_reportPhantoms)
+            System.out.println("Method signature " + sig + " contains phantom types.");
         _db.add(PHANTOM_BASED_METHOD, sig);
     }
 
@@ -849,7 +854,8 @@ class FactWriter extends JavaFactWriter {
         SootMethodRef bootstrapMeth = di.getBootstrapMethodRef();
         if (bootstrapMeth.declaringClass().isPhantom()) {
             String bootstrapSig = bootstrapMeth.toString();
-            System.out.println("Bootstrap method is phantom: " + bootstrapSig);
+            if (_reportPhantoms)
+                System.out.println("Bootstrap method is phantom: " + bootstrapSig);
             _db.add(PHANTOM_METHOD, bootstrapSig);
             return bootstrapSig;
         } else

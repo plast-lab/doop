@@ -11,8 +11,8 @@ class SootDriver extends Driver<SootClass, ThreadFactory> {
         super(factory, totalClasses, cores);
     }
 
-    void doAndroidInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
-        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses);
+    void doAndroidInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa, boolean reportPhantoms) {
+        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses, reportPhantoms);
         factGenerator.generate(dummyMain, new Session());
         writer.writeAndroidEntryPoint(dummyMain);
         factGenerator.run();

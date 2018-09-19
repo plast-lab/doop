@@ -14,6 +14,7 @@ public class SootParameters extends Parameters {
     boolean _generateJimple = false;
     private boolean _toStdout = false;
     boolean _ignoreWrongStaticness = false;
+    boolean _reportPhantoms = true;
 
     public boolean getRunFlowdroid() {
       return this._runFlowdroid;
@@ -50,6 +51,9 @@ public class SootParameters extends Parameters {
             break;
         case "--ignoreWrongStaticness":
             this._ignoreWrongStaticness = true;
+            break;
+        case "--dont-report-phantoms":
+            this._reportPhantoms = false;
             break;
         case "-h":
         case "--help":
