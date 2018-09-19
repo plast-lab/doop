@@ -25,10 +25,6 @@ public class SootParameters extends Parameters {
 
     @Override
     public int processNextArg(String[] args, int i) throws DoopErrorCodeException {
-        int next_i = super.processNextArg(args, i);
-        if (next_i != -1)
-            return next_i;
-
         switch (args[i]) {
         case "--full":
             if (this._mode != null) {
@@ -91,7 +87,7 @@ public class SootParameters extends Parameters {
             System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
             throw new DoopErrorCodeException(0);
         default:
-            return -1;
+            return super.processNextArg(args, i);
         }
         return i;
     }
