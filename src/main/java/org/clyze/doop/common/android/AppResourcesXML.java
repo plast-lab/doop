@@ -195,21 +195,18 @@ public class AppResourcesXML implements AppResources {
         // 'android:onClick' attributes in XML files under /res.
 
         Set<String> ret = new HashSet<>();
-        ZipInputStream zin;
-        try {
-            zin = new ZipInputStream(new FileInputStream(archive));
+        // Find all xml files under /res in the archive.
+        Collection<String> resXMLs = new HashSet<>();
+        try (ZipInputStream zin = new ZipInputStream(new FileInputStream(archive))) {
+            for (ZipEntry e; (e = zin.getNextEntry()) != null; ) {
+                String name = e.getName();
+                if (name.startsWith("res/") &&
+                        (name.endsWith(".xml") || name.endsWith(".XML")))
+                    resXMLs.add(name);
+            }
         } catch (Exception ex) {
             handleException(ex);
             return ret;
-        }
-
-        // Find all xml files under /res in the archive.
-        Set<String> resXMLs = new HashSet<>();
-        for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
-            String name = e.getName();
-            if (name.startsWith("res/") &&
-                (name.endsWith(".xml") || name.endsWith(".XML")))
-                resXMLs.add(name);
         }
 
         // Parse each XML to find possible callbacks.
@@ -229,8 +226,7 @@ public class AppResourcesXML implements AppResources {
     public Set<LayoutControl> getUserControls() {
         Set<String> layoutFiles = new HashSet<>();
         Set<LayoutControl> controls = new HashSet<>();
-        try {
-            ZipInputStream zin = new ZipInputStream(new FileInputStream(archive));
+        try (ZipInputStream zin = new ZipInputStream(new FileInputStream(archive))) {
             for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
                 String name = e.getName();
                 if (name.startsWith("res/layout") && name.endsWith(".xml"))

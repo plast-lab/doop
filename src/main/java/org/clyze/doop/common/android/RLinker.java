@@ -76,7 +76,7 @@ public class RLinker {
      * @param tmpDirs  The temporary directory will be added to this set.
      */
     public String linkRs(String rDir, Set<String> tmpDirs) {
-        if ((rDir == null) || (rs == null) || rs.isEmpty()) {
+        if ((rDir == null) || rs.isEmpty()) {
             return null;
         } else {
             final String tmpDir = AARUtils.createTmpDir(tmpDirs);
@@ -199,11 +199,12 @@ public class RLinker {
 
     private static String genR(String tmpDir, String pkg,
                                Map<String, Set<String>> rData) {
-        String subdir = tmpDir + "/" + pkg.replaceAll("\\.", "/");
-        new File(subdir).mkdirs();
+        String subdir = tmpDir + File.separator + pkg.replaceAll("\\.", File.separator);
+        if (new File(subdir).mkdirs())
+            System.out.println("Created directory: " + subdir);
         String rFile = subdir + "/R.java";
         System.out.println("Generating " + rFile);
-        List<String> lines = new ArrayList<>();
+        Collection<String> lines = new ArrayList<>();
         lines.add("// Auto-generated R.java by Doop.\n");
         lines.add("package " + pkg + ";\n");
         lines.add("public final class R {");
@@ -220,8 +221,8 @@ public class RLinker {
         return rFile;
     }
 
-    private static void genNestedR(String nestedName, Set<String> data,
-                                   List<String> lines) {
+    private static void genNestedR(String nestedName, Collection<String> data,
+                                   Collection<String> lines) {
         lines.add("    public static final class " + nestedName + " {\n");
         lines.addAll(data);
         lines.add("    }\n");

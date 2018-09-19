@@ -4,6 +4,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
+import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.utils.SouffleScript
 
 import java.util.concurrent.Callable
@@ -39,12 +40,17 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		def executorService = Executors.newFixedThreadPool(2)
 		def futures = executorService.invokeAll([
-				new Callable<File>() {
+				new Callable<Object>() {
 					@Override
-					File call() {
+					Object call() {
 						log.info "[Task FACTS...]"
-						generateFacts()
-						log.info "[Task FACTS Done]"
+						try {
+							generateFacts()
+							log.info "[Task FACTS Done]"
+						} catch (DoopErrorCodeException ex) {
+							log.info "[Task FACTS Failed (code: ${ex.errorCode})]"
+							return ex
+						}
 						null
 					}
 				},
@@ -64,6 +70,11 @@ class SouffleAnalysis extends DoopAnalysis {
 				}
 		])
 		executorService.shutdown()
+
+		// If fact generation failed, propagate its exception.
+		def factsResult = futures[0].get()
+		if (factsResult instanceof DoopErrorCodeException)
+			throw factsResult
 
 		if (options.X_STOP_AT_FACTS.value) return
 

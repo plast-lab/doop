@@ -3,11 +3,12 @@ package org.clyze.doop.common;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 
 /**
- * This class contains common parameters for Doop Java front-ends.
+ * This class handles common parameters for Doop Java front-ends.
  */
 public abstract class Parameters {
     private List<String> _inputs = new ArrayList<>();
@@ -27,8 +28,18 @@ public abstract class Parameters {
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
-    protected Parameters() {
+    protected Parameters(String[] args) throws DoopErrorCodeException {
         setAppRegex("**");
+
+        int i = 0, last_i;
+        while (i < args.length) {
+            last_i = processNextArg(args, i);
+            if (last_i == -1)
+                throw new RuntimeException("Bad argument: " + args[i]);
+            i = last_i + 1;
+        }
+
+        finishArgProcessing();
     }
 
     private void setAppRegex(String regex) {
@@ -57,12 +68,6 @@ public abstract class Parameters {
 
     public boolean isApplicationClass(String className) {
         return applicationClassFilter.matches(className);
-    }
-
-    public List<String> getInputsAndDependencies() {
-        List<String> ret = new ArrayList<>(_inputs);
-        ret.addAll(_dependencies);
-        return ret;
     }
 
     public List<String> getDependenciesAndPlatformLibs() {
@@ -181,11 +186,9 @@ public abstract class Parameters {
         return i;
     }
 
-    public void finishArgProcessing() throws DoopErrorCodeException {
+    protected void finishArgProcessing() throws DoopErrorCodeException {
         // For some facts-subset values, some options will be ignored (cleared).
-        if (_factsSubSet == null)
-            return;
-        else if (_factsSubSet == FactsSubSet.APP) {
+        if (_factsSubSet == FactsSubSet.APP) {
             _dependencies.clear();
             _platformLibs.clear();
         } else if (_factsSubSet == FactsSubSet.APP_N_DEPS)
@@ -193,7 +196,7 @@ public abstract class Parameters {
         else if (_factsSubSet == FactsSubSet.PLATFORM) {
             _inputs.clear();
             _dependencies.clear();
-        } else {
+        } else if (_factsSubSet != null) {
             System.err.println("Illegal facts subset option: " + _factsSubSet);
             throw new DoopErrorCodeException(4);
         }

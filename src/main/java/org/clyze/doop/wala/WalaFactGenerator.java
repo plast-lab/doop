@@ -28,7 +28,7 @@ import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 
 class WalaFactGenerator implements Runnable {
 
-    protected Log logger;
+    private final Log logger;
 
     private final WalaFactWriter _writer;
     private final Set<IClass> _iClasses;

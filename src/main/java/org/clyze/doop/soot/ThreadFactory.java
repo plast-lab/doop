@@ -5,7 +5,7 @@ import soot.SootClass;
 import java.util.Set;
 
 class ThreadFactory {
-    final FactWriter _factWriter;
+    private final FactWriter _factWriter;
 
     private final boolean _ssa;
 

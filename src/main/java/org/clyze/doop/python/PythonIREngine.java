@@ -22,6 +22,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -52,7 +53,7 @@ public class PythonIREngine {
         return cache;
     }
 
-    PythonIREngine(List<String> fileNames)
+    PythonIREngine(Collection<String> fileNames)
     {
         modules = new ArrayList<>(fileNames.size());
         loader = new PythonLoaderFactory();

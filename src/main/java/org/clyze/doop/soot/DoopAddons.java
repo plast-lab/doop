@@ -88,6 +88,8 @@ class DoopAddons {
         boolean movedMsg = false;
         String jimpleDirPath = outDir + File.separatorChar + "jimple";
         File[] outDirFiles = new File(outDir).listFiles();
+        if (outDirFiles == null)
+            return;
 
         final String JIMPLE_EXT = ".shimple";
 
@@ -101,7 +103,8 @@ class DoopAddons {
                 String base = fName.substring(0, fName.length() - JIMPLE_EXT.length()).replace('.', File.separatorChar);
                 fName = jimpleDirPath + File.separatorChar + base + JIMPLE_EXT;
                 File newFile = new File(fName);
-                newFile.getParentFile().mkdirs();
+                if (newFile.getParentFile().mkdirs())
+                    System.out.println("Created directory for " + fName);
                 try {
                     Files.move(f.toPath(), newFile.toPath());
                 } catch (IOException ex) {

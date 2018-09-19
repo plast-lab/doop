@@ -24,7 +24,7 @@ class ChainResolver implements InputResolver {
 				return
 			}
 			catch (e) {
-				logger.debug e.getMessage()
+				logger.debug e.message
 				//logger.warn Helper.stackTraceToString(e)
 			}
 		}

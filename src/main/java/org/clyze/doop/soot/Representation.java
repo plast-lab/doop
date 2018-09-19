@@ -27,11 +27,11 @@ class Representation extends JavaRepresentation {
     }
 
     String classConstant(SootClass c) {
-        return JavaRepresentation.classConstant(c.getName());
+        return classConstant(c.getName());
     }
 
     String classConstant(Type t) {
-        return JavaRepresentation.classConstant(t.toString());
+        return classConstant(t.toString());
     }
 
     String signature(SootMethod m) {
@@ -117,19 +117,18 @@ class Representation extends JavaRepresentation {
 
         if(result == null)
         {
-            String name = "catch " + trap.getException().getName();
-            result = getMethodSignature(m) + "/" + name + "/" + counter.nextNumber(name);
-
+            String name = handlerMid(trap.getException().getName());
+            result = numberedInstructionId(getMethodSignature(m), name, counter);
             _trapRepr.put(trap, result);
         }
 
         return result;
     }
 
-    String throwLocal(SootMethod m, Local l, Session session)
+    String throwLocal(SootMethod m, Local l, SessionCounter counter)
     {
-        String name = "throw " + l.getName();
-        return getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
+        String name = throwLocalId(l.getName());
+        return numberedInstructionId(getMethodSignature(m), name, counter);
     }
 
     private String getMethodSignature(SootMethod m)
@@ -181,7 +180,7 @@ class Representation extends JavaRepresentation {
     String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
         String midPart = (expr instanceof DynamicInvokeExpr) ?
             dynamicInvokeIdMiddle((DynamicInvokeExpr)expr) : invokeIdMiddle(expr);
-        return invokeId(getMethodSignature(inMethod), midPart, counter);
+        return numberedInstructionId(getMethodSignature(inMethod), midPart, counter);
     }
 
     private String invokeIdMiddle(InvokeExpr expr) {

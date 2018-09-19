@@ -6,9 +6,9 @@ import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import java.util.Set;
 
 class WalaThreadFactory {
-    private WalaFactWriter _factWriter;
-    private String _outDir;
-    private boolean _android;
+    private final WalaFactWriter _factWriter;
+    private final String _outDir;
+    private final boolean _android;
 
     WalaThreadFactory(WalaFactWriter factWriter, String outDir, boolean isAndroidAnalysis) {
         _factWriter = factWriter;
