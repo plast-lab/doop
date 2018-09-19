@@ -45,7 +45,6 @@ public class PythonFactGenerator implements Runnable{
         this._iClasses = iClasses;
         cache = analysisCache;
         IRPrinter = new PythonIRPrinter(cache, outDir);
-        writer.writeIntConsts();
     }
 
     @Override

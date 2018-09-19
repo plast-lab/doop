@@ -1,11 +1,14 @@
 .type BoolConstant
 .decl isBoolConstant(?n:BoolConstant)
-.type IntConstant = number
-.decl isIntConstant(?n:IntConstant)
-.type FloatConstant
-.decl isFloatConstant(?n:FloatConstant)
 
-.decl IntConstToString(?n:IntConstant, ?str:symbol)
+.type NumConstant
+.decl isNumConstant(?n:NumConstant)
+
+.type IntConstant = NumConstant
+.decl isIntConstant(?n:IntConstant)
+
+.type FloatConstant = NumConstant
+.decl isFloatConstant(?n:FloatConstant)
 
 .type Type
 .type PrimitiveType = Type

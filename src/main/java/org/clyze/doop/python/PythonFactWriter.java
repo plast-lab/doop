@@ -609,10 +609,4 @@ public class PythonFactWriter {
     {
         _db.add(predFile, fileName, args);
     }
-
-    void writeIntConsts()
-    {
-        for(long i = -100000; i < 100000; i++)
-            _db.add(INT_CONST_TO_STR, Long.toString(i), Long.toString(i));
-    }
 }

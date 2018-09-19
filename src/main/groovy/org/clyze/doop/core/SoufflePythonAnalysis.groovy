@@ -68,7 +68,9 @@ class SoufflePythonAnalysis extends DoopAnalysis{
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/post-process.dl")
 
 
+        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/main.dl")
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/const-int.dl")
+        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/lists.dl")
     }
 
     void basicAnalysis() {

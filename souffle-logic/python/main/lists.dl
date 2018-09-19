@@ -1,0 +1,22 @@
+.decl ListOfConsts(?var:Var)
+.decl IsPyList(?var:Var)
+.decl ListHasNonConstantVal(?var:Var)
+
+.output ListOfConsts
+ListOfConsts(?var):-
+  IsPyList(?var),
+  !(ListHasNonConstantVal(?var)).
+
+.output IsPyList
+IsPyList(?var):-
+  AssignInstruction_To(?instr, ?var),
+  AssignHeapAllocation_Heap(?instr, ?heap),
+  HeapAllocation_Type(?heap, ?type),
+  ?type = "list".
+
+.output ListHasNonConstantVal
+ListHasNonConstantVal(?var):-
+  IsPyList(?var),
+  StoreInstanceField_Base(?instr, ?var),
+  StoreInstanceField_From(?instr, ?from),
+  !(VarHasConstValue(?from,_)).

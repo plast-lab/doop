@@ -12,10 +12,6 @@ HeapAllocation_Type(?id, ?type) :-
   _NormalHeap(?id, ?type).
 
 
-//IntConstToStr
-
-.input IntConstToString(IO="file", filename="IntConstToStr.facts", delimeter="\t")
-
 // StringConstant
 
 .decl _StringConstant(?id:symbol)
@@ -124,10 +120,11 @@ If_Var(?instruction, ?var) :-
 
 // AssignIntConstant
 
-.decl _AssignIntConstant(?instruction:symbol, ?index:number, ?const:number, ?to:symbol, ?inFunction:symbol)
+.decl _AssignIntConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inFunction:symbol)
 .input _AssignIntConstant(IO="file", filename="AssignIntConstant.facts", delimiter="\t")
 
 isIntConstant(?const),
+isNumConstant(?const),
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
 isAssignIntConstant_Insn(?instruction),
@@ -143,6 +140,7 @@ AssignInstruction_To(?instruction, ?to) :-
 .input _AssignFloatConstant(IO="file", filename="AssignFloatConstant.facts", delimiter="\t")
 
 isFloatConstant(?const),
+isNumConstant(?const),
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
 isAssignFloatConstant_Insn(?instruction),
