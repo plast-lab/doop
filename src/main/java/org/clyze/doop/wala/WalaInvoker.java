@@ -45,7 +45,9 @@ public class WalaInvoker {
             System.err.println("usage: [options] file...");
             throw new DoopErrorCodeException(0);
         }
-        run(new WalaParameters(args));
+        WalaParameters walaParameters = new WalaParameters();
+        walaParameters.initFromArgs(args);
+        run(walaParameters);
     }
 
     private void run(WalaParameters walaParameters) throws IOException, DoopErrorCodeException {

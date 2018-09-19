@@ -15,16 +15,12 @@ public class SootParameters extends Parameters {
     private boolean _toStdout = false;
     boolean _ignoreWrongStaticness = false;
 
-    SootParameters(String[] args) throws DoopErrorCodeException {
-        super(args);
-    }
-
     public boolean getRunFlowdroid() {
       return this._runFlowdroid;
     }
 
     @Override
-    public int processNextArg(String[] args, int i) throws DoopErrorCodeException {
+    protected int processNextArg(String[] args, int i) throws DoopErrorCodeException {
         switch (args[i]) {
         case "--full":
             if (this._mode != null) {
@@ -121,5 +117,4 @@ public class SootParameters extends Parameters {
         if (!_toStdout && getOutputDir() == null)
             setOutputDir(System.getProperty("user.dir"));
     }
-
 }

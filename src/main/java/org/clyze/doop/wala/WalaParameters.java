@@ -6,10 +6,6 @@ import org.clyze.doop.common.Parameters;
 class WalaParameters extends Parameters {
     String _javaPath = null;
 
-    WalaParameters(String[] args) throws DoopErrorCodeException {
-        super(args);
-    }
-
     @Override
     public int processNextArg(String[] args, int i) throws DoopErrorCodeException {
         if ("-p".equals(args[i])) {

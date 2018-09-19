@@ -28,9 +28,11 @@ public abstract class Parameters {
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
-    protected Parameters(String[] args) throws DoopErrorCodeException {
+    protected Parameters() {
         setAppRegex("**");
+    }
 
+    public void initFromArgs(String[] args) throws DoopErrorCodeException {
         int i = 0, last_i;
         while (i < args.length) {
             last_i = processNextArg(args, i);
@@ -116,7 +118,7 @@ public abstract class Parameters {
      * @return  -1 if the next argument was not recognized, otherwise
      *          the index of the last argument processed
      */
-    public int processNextArg(String[] args, int i) throws DoopErrorCodeException {
+    protected int processNextArg(String[] args, int i) throws DoopErrorCodeException {
         switch (args[i]) {
         case "--android-jars":
             i = shift(args, i);

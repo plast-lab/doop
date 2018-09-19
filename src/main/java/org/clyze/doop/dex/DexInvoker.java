@@ -25,7 +25,9 @@ class DexInvoker {
     private static final String APKTOOL_HOME_ENV_VAR = "APKTOOL_HOME";
 
     public static void main(String[] args) throws DoopErrorCodeException {
-        DexParameters dexParams = new DexParameters(args);
+        DexParameters dexParams = new DexParameters();
+        dexParams.initFromArgs(args);
+
         String outDir = dexParams.getOutputDir();
         try {
             Helper.initLogging("DEBUG", outDir + File.separator + "logs", true);

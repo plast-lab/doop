@@ -21,16 +21,14 @@ public class Main {
     }
 
     public static void main(String[] args) throws Exception {
-        try {
-            if (args.length == 0) {
-                System.err.println("usage: [options] file...");
-                throw new DoopErrorCodeException(0);
-            }
-            produceFacts(new SootParameters(args));
-        } catch(Exception exc) {
-            exc.printStackTrace();
-            throw exc;
+        if (args.length == 0) {
+            System.err.println("usage: [options] file...");
+            throw new DoopErrorCodeException(0);
         }
+
+        SootParameters sootParameters = new SootParameters();
+        sootParameters.initFromArgs(args);
+        produceFacts(sootParameters);
     }
 
     private static void produceFacts(SootParameters sootParameters) throws Exception {
