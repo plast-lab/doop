@@ -1,6 +1,8 @@
 package org.clyze.doop.dex;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
@@ -31,6 +33,9 @@ class DexInvoker {
             System.err.println("Warning: could not initialize logging");
             throw new DoopErrorCodeException(15);
         }
+
+        Log logger = LogFactory.getLog(DexInvoker.class);
+        logger.debug("Using output directory: " + outDir);
 
         try (Database db = new Database(new File(outDir))) {
             CHA cha = new CHA();
