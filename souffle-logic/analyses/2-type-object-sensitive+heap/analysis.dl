@@ -11,10 +11,11 @@
 // .decl CachedMergeStatic(?callerCtx:Context, ?invo:MethodInvocation, ?calleeCtx:Context)
 
 ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
+  ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
   ?hctx = [?hctxValue],
   Value_DeclaringType(?hctxValue, ?type), 
-  ?calleeCtx = [?type, ?value].
+  ?calleeCtx = [?type, ?value],
+  ?tomethod = ?tomethod.
 /*
  * The above gives us an upper bound of the receiver allocator's allocator's dynamic type!
  * Another option is the exact dynamic type of the allocator object. In that case we have:

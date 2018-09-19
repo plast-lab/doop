@@ -35,7 +35,7 @@
 
     .decl HContextElement(elem:symbol)
     HContextElement(?elem) :-
-        ContextRequest(_, ?hctx, _, _),
+        ContextRequest(_, ?hctx, _, _, _),
         ?hctx = [?elem].
 
     .decl SpecialContextElement(value:symbol)
@@ -48,74 +48,32 @@
 
     // 2-object
     ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-        Value_Type(?value, ?valuetype),
-        basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
         ScalerMethodContext(?tomethod, "2-object"),
         ?hctx = [?hctxValue],
         ?calleeCtx = [?hctxValue, ?value].
 
-    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-        isSpecialMethodInvocation_Insn(?invo),
-        MethodInvocation_Method(?invo, ?tomethod),
-        ScalerMethodContext(?tomethod, "2-object"),
-        ?hctx = [?hctxValue],
-        ?calleeCtx = [?hctxValue, ?value].
-    
     // 2-type
     ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-        Value_Type(?value, ?valuetype),
-        basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
         ScalerMethodContext(?tomethod, "2-type"),
         ?hctx = [?hctxValue],
         ToTypeString(?hctxValue, ?type1),
         Value_DeclaringType(?value, ?type2),
         ?calleeCtx = [?type1, ?type2].
-    
-    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-        isSpecialMethodInvocation_Insn(?invo),
-        MethodInvocation_Method(?invo, ?tomethod),
-        ScalerMethodContext(?tomethod, "2-type"),
-        ?hctx = [?hctxValue],
-        ToTypeString(?hctxValue, ?type1),
-        Value_DeclaringType(?value, ?type2),
-        ?calleeCtx = [?type1, ?type2].
-
+   
     // 1-type
     ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-        Value_Type(?value, ?valuetype),
-        basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
         ScalerMethodContext(?tomethod, "1-type"),
         Value_DeclaringType(?value, ?type),
         ?calleeCtx = [NO_CONTEXT_ELEMENT, ?type].
 
-    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-        isSpecialMethodInvocation_Insn(?invo),
-        MethodInvocation_Method(?invo, ?tomethod),
-        ScalerMethodContext(?tomethod, "1-type"),
-        Value_DeclaringType(?value, ?type),
-        ?calleeCtx = [NO_CONTEXT_ELEMENT, ?type].
-    
     // context-insensitive
     ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-        Value_Type(?value, ?valuetype),
-        basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
         ScalerMethodContext(?tomethod, "context-insensitive"),
         isImmutableContext(?calleeCtx).
-    
-    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-        isSpecialMethodInvocation_Insn(?invo),
-        MethodInvocation_Method(?invo, ?tomethod),
-        ScalerMethodContext(?tomethod, "context-insensitive"),
-        isImmutableContext(?calleeCtx).
-
 
     // Keep caller contexts for static invocations
     StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-

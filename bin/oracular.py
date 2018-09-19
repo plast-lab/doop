@@ -40,6 +40,7 @@ def run_pre_analyses(init_args):
     args = [DOOP] + init_args
     args = args + ['-a', PRE_ANALYSIS_1]
     args = args + ['--Xoracular-heuristics']
+    args = args + ['-Ldebug']
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running pre-analyses #1 ' + PRE_ANALYSIS_1 + RESET
     # print cmd
@@ -169,7 +170,9 @@ def calculate_method_ratios(insens_method_weight_dict, sens_method_weight_dict, 
             if sens_method_weight_dict.__contains__(method):
                 method_ratio_dict.update({method: 0.0})
             else:
-                print 'Possibly non-reachable method: ' + method
+                special_cs_file.write(method + '\t' '2-object\n')
+                print YELLOW + BOLD + 'Possibly non-reachable method in high precision given, 2-obj context: ' + method + RESET
+                missing_methods += 1
         else:
             if sens_method_weight_dict.__contains__(method):
                 insens_weight = insens_method_weight_dict.get(method)
@@ -178,13 +181,15 @@ def calculate_method_ratios(insens_method_weight_dict, sens_method_weight_dict, 
                 method_ratio_dict.update({method: ratio})
             else:
                 special_cs_file.write(method + '\t' '2-object\n')
+                print YELLOW + BOLD + 'Possibly non-reachable method in high precision given, 2-obj context: ' + method + RESET
                 missing_methods += 1
+    print YELLOW + BOLD +  'Total methods possibly unreachable in high precision: ' + str(missing_methods) + RESET
 
 
 def binary_search_threshold(threshold_list):
 
     loop_count = 0
-    value = 1.5
+    value = 2
 
     if value < float(calculate_analysis_threshold(threshold_list[0]))/float(ci_analysis_weight):
         print float(calculate_analysis_threshold(threshold_list[0]))

@@ -9,33 +9,13 @@
 .type HContext = [ value:Type ]
                     
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
   !MethodToRefine(?tomethod),
   isImmutableContext(?calleeCtx).
   
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
   MethodToRefine(?tomethod),
-  ?hctx = [?hctxValue],
-  Value_DeclaringType(?value, ?type),
-  ?calleeCtx = [?hctxValue, ?type].
-
-ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  isSpecialMethodInvocation_Insn(?invo),
-  MethodInvocation_Method(?invo, ?tomethod),
-  !MethodToRefine(?tomethod),
-  isImmutableContext(?calleeCtx).
-
-ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  isSpecialMethodInvocation_Insn(?invo),
-  MethodInvocation_Method(?invo, ?tomethod),
-  MethodToRefine(?tomethod),  
   ?hctx = [?hctxValue],
   Value_DeclaringType(?value, ?type),
   ?calleeCtx = [?hctxValue, ?type].

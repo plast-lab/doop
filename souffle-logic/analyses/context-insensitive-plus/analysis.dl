@@ -28,28 +28,11 @@ _InOutFlowMethod(?method) :-
   InOutFlowMethod(_, ?method).
   
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?invo) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
   _InOutFlowMethod(?tomethod).
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
-  !_InOutFlowMethod(?tomethod),
-  UContext(?calleeCtx).
-
-ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?invo) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  isSpecialMethodInvocation_Insn(?invo),
-  MethodInvocation_Method(?invo, ?tomethod),
-  _InOutFlowMethod(?tomethod).
-
-ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  isSpecialMethodInvocation_Insn(?invo),
-  MethodInvocation_Method(?invo, ?tomethod),
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
   !_InOutFlowMethod(?tomethod),
   UContext(?calleeCtx).
 

@@ -17,7 +17,7 @@ SEP = '\\t'
 SCALER_MAIN = 'ptatoolkit.scaler.doop.Main'
 SCALER_CACHE = 'scaler/cache'
 SCALER_OUT = 'scaler/out'
-SCALER_TST = 90000000
+SCALER_TST = 900000000
 # ---------------------------------------------------------
 
 RESET = '\033[0m'

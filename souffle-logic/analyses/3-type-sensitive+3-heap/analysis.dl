@@ -12,11 +12,12 @@
   .type HContext = [ type1:Type, type2:Type, type3:Type ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
     ?hctx = [?hctxType1, ?hctxType2, ?hctxType3],
     Value_DeclaringType(?value, ?type),
     ?calleeCtx = [?hctxType2, ?hctxType3, ?type],
-    ?hctxType1 = ?hctxType1.
+    ?hctxType1 = ?hctxType1,
+    ?tomethod = ?tomethod.
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

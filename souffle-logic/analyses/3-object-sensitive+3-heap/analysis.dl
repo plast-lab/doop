@@ -14,10 +14,11 @@
   .type HContext = [ value1:mainAnalysis.Value, value2:mainAnalysis.Value, value3:mainAnalysis.Value ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
     ?hctx = [?hctxValue1, ?hctxValue2, ?hctxValue3],
     ?calleeCtx = [?hctxValue2, ?hctxValue3, ?value],
-    ?hctxValue1 = ?hctxValue1.
+    ?hctxValue1 = ?hctxValue1,
+    ?tomethod = ?tomethod.                 
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

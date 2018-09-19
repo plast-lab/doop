@@ -9,38 +9,16 @@
 .type HContext = [ value:mainAnalysis.Value ]
                     
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
   (SpecialContextSensitivityMethod(?tomethod, "context-insensitive");
    !MethodToRefine(?tomethod),
    !SpecialContextSensitivityMethod(?tomethod, _)),
   isImmutableContext(?calleeCtx).
   
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invo, ?tomethod),
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
   (MethodToRefine(?tomethod);
    SpecialContextSensitivityMethod(?tomethod, "2-object-sensitive")),      
-  ?hctx = [?hctxValue],
-  ?calleeCtx = [?hctxValue, ?value].
-
-ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  isSpecialMethodInvocation_Insn(?invo),
-  MethodInvocation_Method(?invo, ?tomethod),
-  (SpecialContextSensitivityMethod(?tomethod, "context-insensitive");
-   !MethodToRefine(?tomethod),
-   !SpecialContextSensitivityMethod(?tomethod, _)),   
-  isImmutableContext(?calleeCtx).
-
-ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
-  isSpecialMethodInvocation_Insn(?invo),
-  MethodInvocation_Method(?invo, ?tomethod),
-  (MethodToRefine(?tomethod);
-   SpecialContextSensitivityMethod(?tomethod, "2-object-sensitive")),
   ?hctx = [?hctxValue],
   ?calleeCtx = [?hctxValue, ?value].
 

@@ -1,6 +1,6 @@
 .comp AbstractConfiguration {
 
-  .decl ContextRequest(?ctx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?value:Value)
+  .decl ContextRequest(?ctx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?value:Value, ?method:Method)
   .decl StaticContextRequest(?ctx:configuration.Context, ?invo:MethodInvocation)
 
   .decl ContextResponse(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?value:Value, ?calleeCtx:Context)
