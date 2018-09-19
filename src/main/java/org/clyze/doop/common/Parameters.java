@@ -199,6 +199,9 @@ public abstract class Parameters {
         } else if (_factsSubSet != null) {
             System.err.println("Illegal facts subset option: " + _factsSubSet);
             throw new DoopErrorCodeException(4);
+        } else if (getOutputDir() == null) {
+            System.err.println("Error: no output facts directory.");
+            throw new DoopErrorCodeException(16);
         }
     }
 }
