@@ -589,7 +589,7 @@ public class WalaFactWriter extends JavaFactWriter {
         return typeRef;
     }
 
-    public String writeField(IField f) {
+    public void writeField(IField f) {
         String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
         if(f instanceof FieldImpl) { //Currently annotations do not work on android and are disabled
@@ -600,7 +600,6 @@ public class WalaFactWriter extends JavaFactWriter {
                 }
             }
         }
-        return fieldId;
     }
 
 
@@ -897,24 +896,22 @@ public class WalaFactWriter extends JavaFactWriter {
         writeAssignClassConstant(inMethod, instruction, l, constant, session);
     }
 
-    private Local writeMethodHandleConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+    private void writeMethodHandleConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         // introduce a new temporary variable
 //        String basename = "$mhandleconstant";
 //        String varname = basename + session.nextNumber(basename);
 //        Local l = new Local(varname,-1, TypeReference.JavaLangInvokeMethodHandle);
         writeLocal(inMethod, l);
         writeAssignMethodHandleConstant(inMethod, instruction, l, constant, session);
-        return l;
     }
 
-    private Local writeMethodTypeConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+    private void writeMethodTypeConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         // introduce a new temporary variable
 //        String basename = "$mhandleconstant";
 //        String varname = basename + session.nextNumber(basename);
 //        Local l = new Local(varname,-1, TypeReference.JavaLangInvokeMethodHandle);
         writeLocal(inMethod, l);
         writeAssignMethodTypeConstant(inMethod, instruction, l, constant, session);
-        return l;
     }
 
 
