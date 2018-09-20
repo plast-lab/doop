@@ -43,24 +43,23 @@ class WalaScopeReader {
         AnalysisScope scope = AnalysisScope.createJavaAnalysisScope();
 
         for(String javaLib : javaLibs) {
-            try (final JarFile jar = new JarFile(new File(javaLib))) {
-                scope.addToScope(ClassLoaderReference.Primordial, new JarFileModule(jar));
-            }
+            final JarFile jar = new JarFile(new File(javaLib));
+            scope.addToScope(ClassLoaderReference.Primordial, new JarFileModule(jar));
         }
 
         Module M = (new FileProvider()).getJarFileModule(SCOPE_BIN_FILE, MY_CLASSLOADER);
         scope.addToScope(ClassLoaderReference.Primordial, M);
 
         for(String appLib : appLibs) {
-            try (final JarFile jar = new JarFile(new File(appLib))) {
-                scope.addToScope(ClassLoaderReference.Extension, new JarFileModule(jar));
-            }
+            final JarFile jar = new JarFile(new File(appLib));
+            scope.addToScope(ClassLoaderReference.Extension, new JarFileModule(jar));
         }
 
-        for(String input : inputJars) {
-            try (JarFile jar = new JarFile(input, false)) {
-                scope.addToScope(scope.getLoader(AnalysisScope.APPLICATION), jar);
-            }
+
+        for(String input : inputJars)
+        {
+            JarFile jar = new JarFile(input, false);
+            scope.addToScope(scope.getLoader(AnalysisScope.APPLICATION), jar);
         }
 
         //String[] inputJars = classPath.split(":");
@@ -80,24 +79,27 @@ class WalaScopeReader {
         scope.setLoaderImpl(ClassLoaderReference.Primordial,
                 "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
 
-        for(String androidLib : androidLibs)
-            if (androidLib.endsWith(".apk"))
+        for(String androidLib : androidLibs) {
+            if (androidLib.endsWith(".apk")) {
                 scope.addToScope(ClassLoaderReference.Primordial, DexFileModule.make(new File(androidLib)));
-            else
-                try (final JarFile jar = new JarFile(new File(androidLib))) {
-                    scope.addToScope(ClassLoaderReference.Primordial, new JarFileModule(jar));
-                }
+            } else {
+                final JarFile jar = new JarFile(new File(androidLib));
+                scope.addToScope(ClassLoaderReference.Primordial, new JarFileModule(jar));
+            }
+        }
 
         scope.setLoaderImpl(ClassLoaderReference.Extension,
                 "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
 
-        for(String appLib : appLibs)
-            if (appLib.endsWith(".apk"))
+        for(String appLib : appLibs) {
+            if (appLib.endsWith(".apk")) {
                 scope.addToScope(ClassLoaderReference.Extension, DexFileModule.make(new File(appLib)));
-            else
-                try (final JarFile jar = new JarFile(new File(appLib))) {
-                    scope.addToScope(ClassLoaderReference.Extension, new JarFileModule(jar));
-                }
+            } else {
+                final JarFile jar = new JarFile(new File(appLib));
+                scope.addToScope(ClassLoaderReference.Extension, new JarFileModule(jar));
+            }
+        }
+
 
         scope.setLoaderImpl(ClassLoaderReference.Application,
                 "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
