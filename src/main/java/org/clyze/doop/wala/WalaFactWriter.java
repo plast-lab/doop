@@ -48,9 +48,6 @@ public class WalaFactWriter extends JavaFactWriter {
 
     private Map<String,List<String>> _signaturePolyMorphicMethods;
 
-    //Used for logging various messages
-    private final Log logger;
-
     WalaFactWriter(Database db) {
         super(db);
         _rep = WalaRepresentation.getRepresentation();
@@ -58,7 +55,6 @@ public class WalaFactWriter extends JavaFactWriter {
         _phantomType = new ConcurrentHashMap<>();
         _phantomMethod = new ConcurrentHashMap<>();
         _phantomBasedMethod = new ConcurrentHashMap<>();
-        logger =  LogFactory.getLog(getClass());
         _signaturePolyMorphicMethods = null;
     }
 

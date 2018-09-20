@@ -27,15 +27,6 @@ import static org.clyze.doop.common.Parameters.shift;
 
 public class WalaInvoker {
 
-    /**
-     * Used for logging various messages
-     */
-    private final Log logger;
-
-    public WalaInvoker() {
-        logger =  LogFactory.getLog(getClass());
-    }
-
     private static boolean isApplicationClass(Parameters walaParameters, IClass klass) {
         // Change package delimiter from "/" to "."
         return walaParameters.isApplicationClass(WalaUtils.fixTypeString(klass.getName().toString()));
