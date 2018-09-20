@@ -32,8 +32,8 @@ class WalaIRPrinter {
         BytecodeClass bytecodeClass = (BytecodeClass) cl;
         String fileName = _outputDir + "/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
         File file = new File(fileName);
-        file.getParentFile().getParentFile().mkdirs();
-        file.getParentFile().mkdirs();
+        if (file.getParentFile().mkdirs())
+            System.out.println("Created directory " + file.getParentFile());
 
 //        Collection<IField> fields = cl.getAllFields();
         Collection<IField> fields = WalaFactWriter.getAllFieldsOfClass(cl);
