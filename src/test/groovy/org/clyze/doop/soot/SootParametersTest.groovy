@@ -29,7 +29,7 @@ class SootParametersTest extends Specification {
 
         then:
 
-        "Main".equals(sootParameters._main)
+        "Main" == sootParameters._main
 
         2 == sootParameters._cores.intValue()
 
@@ -37,24 +37,24 @@ class SootParametersTest extends Specification {
 
         true == sootParameters._generateJimple
 
-        2 == sootParameters.getInputs().size()
-        "a.jar".equals(sootParameters.getInputs().get(0))
-        "b.aar".equals(sootParameters.getInputs().get(1))
+        2 == sootParameters.inputs.size()
+        "a.jar" == sootParameters.inputs.get(0)
+        "b.aar" == sootParameters.inputs.get(1)
 
-        2 == sootParameters.getDependencies().size()
-        "d1.jar".equals(sootParameters.getDependencies().get(0))
-        "d2.apk".equals(sootParameters.getDependencies().get(1))
+        2 == sootParameters.dependencies.size()
+        "d1.jar" == sootParameters.dependencies.get(0)
+        "d2.apk" == sootParameters.dependencies.get(1)
 
-        3 == sootParameters.getPlatformLibs().size()
-        "android.jar".equals(sootParameters.getPlatformLibs().get(0))
-        "path/to/layoutlib.jar".equals(sootParameters.getPlatformLibs().get(1))
-        "jce.jar".equals(sootParameters.getPlatformLibs().get(2))
+        3 == sootParameters.platformLibs.size()
+        "android.jar" == sootParameters.platformLibs.get(0)
+        "path/to/layoutlib.jar" == sootParameters.platformLibs.get(1)
+        "jce.jar" == sootParameters.platformLibs.get(2)
 
         true == sootParameters._ssa
 
         true == sootParameters._android
-        "android.jar".equals(sootParameters._androidJars)
+        "android.jar" == sootParameters._androidJars
 
-        "out-dir".equals(sootParameters.getOutputDir())
+        "out-dir" == sootParameters.outputDir
     }
 }
