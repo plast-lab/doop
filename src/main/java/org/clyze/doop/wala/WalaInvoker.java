@@ -23,8 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static org.clyze.doop.common.Parameters.shift;
-
 public class WalaInvoker {
 
     private static boolean isApplicationClass(Parameters walaParameters, IClass klass) {
