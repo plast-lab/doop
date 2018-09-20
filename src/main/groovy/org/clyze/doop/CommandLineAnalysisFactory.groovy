@@ -73,8 +73,13 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	}
 
 	private static List<String> getFromProperties(File propsBaseDir, Properties props, String what) {
+		def prop = props.getProperty(what)
+
+		if (!prop)
+			return [] as List
+
 		// Files, if relative, are being resolved via the propsBaseDir or later if they are URLs
-		return props.getProperty(what).split().collect {
+		return prop.split().collect {
 			try {
 				it.trim()
 				// If it is not a valid URL an exception is thrown
