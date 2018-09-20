@@ -568,7 +568,7 @@ public class PythonFactWriter {
 
         if (instruction.isStatic()) {
             if(targetRef.getName().toString().equals("import")){
-                String module = fixType(targetRef.getReturnType());
+                String module = fixType(targetRef.getReturnType()).replace('/','.');
                 _db.add(IMPORT, insn, str(index), module, _rep.local(inMethod,to), methodId);
             }
             else{

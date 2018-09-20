@@ -9,6 +9,7 @@
 ListOfConsts_Content(?var, ?size, ?index, ?val):-
   ListOfConsts_Size(?var,?size),
   StoreInstanceField_Base(?instr, ?var),
+  isIntConstant(?fieldName),
   FieldInstruction_FieldName(?instr, ?fieldName),
   ?index = to_number(?fieldName),
   StoreInstanceField_From(?instr, ?from),
@@ -19,6 +20,7 @@ ListOfConsts_Size(?var,?size):-
   ListOfConsts(?var),
   ?size = 1 + max ?index: {
     StoreInstanceField_Base(?instr, ?var),
+    isIntConstant(?fieldName),
     FieldInstruction_FieldName(?instr, ?fieldName),
     ?index = to_number(?fieldName)
   }.
