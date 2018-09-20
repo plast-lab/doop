@@ -143,7 +143,7 @@ class Main {
 			if (timeout <= 0) throw new Exception()
 			return timeout
 		} catch (all) {
-			log.info "Invalid user supplied timeout: `$userTimeout` - fallback to default."
+			log.info "Invalid user supplied timeout: `${userTimeout}` - fallback to default (${defaultTimeout})."
 			return defaultTimeout
 		}
 	}
