@@ -17,6 +17,7 @@ import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.Parameters;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +36,7 @@ public class WalaInvoker {
         logger =  LogFactory.getLog(getClass());
     }
 
-    private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
+    private static boolean isApplicationClass(Parameters walaParameters, IClass klass) {
         // Change package delimiter from "/" to "."
         return walaParameters.isApplicationClass(WalaUtils.fixTypeString(klass.getName().toString()));
     }
@@ -45,12 +46,12 @@ public class WalaInvoker {
             System.err.println("usage: [options] file...");
             throw new DoopErrorCodeException(0);
         }
-        WalaParameters walaParameters = new WalaParameters();
+        Parameters walaParameters = new Parameters();
         walaParameters.initFromArgs(args);
         run(walaParameters);
     }
 
-    private void run(WalaParameters walaParameters) throws IOException, DoopErrorCodeException {
+    private void run(Parameters walaParameters) throws IOException, DoopErrorCodeException {
         StringBuilder classPath = new StringBuilder();
         List<String> inputs = walaParameters.getInputs();
         for (int i = 0; i < inputs.size(); i++) {
@@ -76,7 +77,6 @@ public class WalaInvoker {
             scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
         else
             scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
-            //scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 
         ClassHierarchy cha = null;
         try {

@@ -10,7 +10,7 @@ import org.clyze.doop.util.filter.GlobClassFilter;
 /**
  * This class handles common parameters for Doop Java front-ends.
  */
-public abstract class Parameters {
+public class Parameters {
     private List<String> _inputs = new ArrayList<>();
     private List<String> _dependencies = new ArrayList<>();
     private final List<String> _platformLibs = new ArrayList<>();
@@ -28,7 +28,7 @@ public abstract class Parameters {
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
-    protected Parameters() {
+    public Parameters() {
         setAppRegex("**");
     }
 

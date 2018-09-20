@@ -3,6 +3,7 @@ package org.clyze.doop.wala;
 import java.io.File;
 import java.util.*;
 import org.clyze.doop.common.BasicJavaSupport;
+import org.clyze.doop.common.Parameters;
 import org.clyze.doop.common.android.AppResources;
 import org.clyze.doop.common.android.AndroidSupport;
 import org.clyze.doop.util.TypeUtils;
@@ -21,7 +22,7 @@ import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
 class WalaAndroidXMLParser extends AndroidSupport {
     private final WalaFactWriter factWriter;
 
-    WalaAndroidXMLParser(WalaParameters parameters, WalaFactWriter writer, BasicJavaSupport java)
+    WalaAndroidXMLParser(Parameters parameters, WalaFactWriter writer, BasicJavaSupport java)
     {
         super(parameters, java);
         this.factWriter = writer;
