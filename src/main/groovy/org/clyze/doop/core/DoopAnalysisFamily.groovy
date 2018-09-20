@@ -203,7 +203,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "RUN_FLOWDROID",
 					name: "run-flowdroid",
-					description: "Run soot-infoflow-android to generate dummy main method.",
+					description: "Run FlowDroid to generate dummy main method.",
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(

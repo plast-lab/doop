@@ -8,6 +8,7 @@ import org.clyze.doop.common.android.AppResourcesXML;
 import org.clyze.doop.common.android.AndroidSupport;
 import org.clyze.doop.soot.*;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
+import org.xmlpull.v1.XmlPullParserException;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
@@ -45,12 +46,9 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
             app.getConfig().getCallbackConfig().setCallbackAnalyzer(Fast);
             String filename = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
             try {
-                // TODO: fix this method call (refactored in newer
-                // versions of FlowDroid):
-                // app.calculateSourcesSinksEntryPoints(filename);
-                throw new RuntimeException("FlowDroid interface missing");
-            } catch (Exception ex) {
-                System.err.println("calculateSourcesSinksEntrypoints() failed:");
+                app.runInfoflow(filename);
+            } catch (IOException | XmlPullParserException ex) {
+                System.err.println("FlowDroid failed:");
                 ex.printStackTrace();
             }
             dummyMain = app.getDummyMainMethod();
