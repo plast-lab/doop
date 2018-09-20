@@ -38,7 +38,7 @@ class WalaIRPrinter {
 //        Collection<IField> fields = cl.getAllFields();
         Collection<IField> fields = WalaFactWriter.getAllFieldsOfClass(cl);
         Collection<? extends IMethod> methods = cl.getDeclaredMethods();
-        Collection<IClass> interfaces =  cl.getAllImplementedInterfaces();
+        Collection<IClass> interfaces = cl.getAllImplementedInterfaces();
         try {
             PrintWriter printWriter = new PrintWriter(file);
             if(bytecodeClass.isPublic())
