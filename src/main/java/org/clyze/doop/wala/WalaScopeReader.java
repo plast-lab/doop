@@ -30,16 +30,15 @@ import java.util.jar.JarFile;
  *
  */
 class WalaScopeReader {
-    //The location of WALAprimordial.jar.model in our resources folder -- file taken from wala's repo
-    //Don't understand what this does but it is needed for some reason
-    private static String SCOPE_BIN_FILE;
 
     private static final ClassLoader MY_CLASSLOADER = WalaScopeReader.class.getClassLoader();
 
     static AnalysisScope setupJavaAnalysisScope(Iterable<String> inputJars, String exclusions, Iterable<String> javaLibs, Iterable<String> appLibs) throws IOException
     {
         String myEnv = System.getenv("DOOP_HOME");
-        SCOPE_BIN_FILE = myEnv + "/src/main/resources/WALAprimordial.jar.model";
+        //The location of WALAprimordial.jar.model in our resources folder -- file taken from wala's repo
+        //Don't understand what this does but it is needed for some reason
+        String SCOPE_BIN_FILE = myEnv + "/src/main/resources/WALAprimordial.jar.model";
         AnalysisScope scope = AnalysisScope.createJavaAnalysisScope();
 
         for(String javaLib : javaLibs) {
