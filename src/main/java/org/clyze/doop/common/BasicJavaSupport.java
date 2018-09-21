@@ -78,8 +78,8 @@ public class BasicJavaSupport {
                         classSet.add(className);
                         String artifact = (new File(jarFile.getName())).getName();
                         registerArtifactClass(artifact, className, "-");
-                    } catch (IllegalArgumentException e) {
-                        System.err.println("-- Problematic .class file \"" + entryName + "\"");
+                    } catch (Exception e) {
+                        System.err.println("Error while preprocessing entry \"" + entryName + "\", it will be ignored.");
                     }
                 } else if (entryName.endsWith(".properties")) {
                     propertyProvider.addProperties(jarFile.getInputStream(entry), filename);
