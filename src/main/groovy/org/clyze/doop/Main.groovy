@@ -28,7 +28,12 @@ class Main {
 	static void main(String[] args) {
 
 		Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"))
-		Helper.initLogging("INFO", "${Doop.doopHome}/build/logs", true)
+		try {
+			Helper.tryInitLogging("INFO", "${Doop.doopHome}/build/logs", true)
+		} catch (IOException ex) {
+			System.err.println("Warning: could not initialize logging");
+			throw new DoopErrorCodeException(15);
+		}
 
 		try {
 			// The builder for displaying usage and parging the arguments

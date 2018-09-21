@@ -30,8 +30,7 @@ class DexInvoker {
 
         String outDir = dexParams.getOutputDir();
         try {
-            if (Helper.shouldInitializeLogging())
-                Helper.initLogging("DEBUG", outDir + File.separator + "logs", true);
+            Helper.tryInitLogging("DEBUG", outDir + File.separator + "logs", true);
         } catch (IOException ex) {
             System.err.println("Warning: could not initialize logging");
             throw new DoopErrorCodeException(15);
