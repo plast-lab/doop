@@ -387,3 +387,20 @@ SingleInvocationTarget(?invocation, ?target) :-
   mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target).
 
 .output SingleInvocationTarget
+
+// Helper relation: virtual invocation sites that call multiple methods.
+.decl MultiInvocationTarget(?invocation:MethodInvocation, ?target:Method)
+MultiInvocationTarget(?invocation, ?target) :-
+  InvocationTarget_Count(?invocation, ?n),
+  ?n > 1,
+  mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target).
+
+// Reachable methods that are only the target of invocations that can be
+// devirtualized. We can thus convert them to static and remove the virtual version.
+.decl ReachableMethodOnlyUsedInSingleInvocationTarget(?method:Method)
+
+ReachableMethodOnlyUsedInSingleInvocationTarget(?method) :-
+  SingleInvocationTarget(_, ?method),
+  !MultiInvocationTarget(_, ?method).
+
+.output ReachableMethodOnlyUsedInSingleInvocationTarget
