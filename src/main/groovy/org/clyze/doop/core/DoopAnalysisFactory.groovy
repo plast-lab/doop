@@ -308,8 +308,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
-			def tamFile = options.TAMIFLEX.value as String
-			FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
+			def tamiflexArg = options.TAMIFLEX.value as String
+			options.TAMIFLEX.value = resolveAsInput(tamiflexArg)
+			log.info "Using TAMIFLEX information from ${tamiflexArg}"
 		}
 
 		if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
