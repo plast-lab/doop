@@ -224,8 +224,8 @@ public class Main {
         SetupApplication app = new SetupApplication(androidJars, appInput);
         InfoflowAndroidConfiguration config = app.getConfig();
         config.setMergeDexFiles(true);
-        // config.getCallbackConfig().setCallbackAnalyzer(Fast);
-        // config.setImplicitFlowMode(ImplicitFlowMode.AllImplicitFlows)
+        config.getCallbackConfig().setCallbackAnalyzer(Fast);
+        // config.setImplicitFlowMode(ImplicitFlowMode.AllImplicitFlows);
         config.setImplicitFlowMode(ImplicitFlowMode.NoImplicitFlows);
         config.getSourceSinkConfig().setLayoutMatchingMode(LayoutMatchingMode.MatchAll);
 
