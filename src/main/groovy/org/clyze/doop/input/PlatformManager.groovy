@@ -45,8 +45,8 @@ class PlatformManager {
 			// Android-Robolectric
 			"android_26_robolectric": ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
 			                           "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
-			//Python
-			"python_2"                : [],
+			// Python
+			"python_2"              : [],
 	]
 
 	String platformsLib
