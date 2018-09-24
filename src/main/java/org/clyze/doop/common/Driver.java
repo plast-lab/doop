@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 public abstract class Driver<C, F> {
     private ExecutorService _executor;
     protected final F _factory;
-    private final int _cores;
+    protected final int _cores;
     protected Set<C> _tmpClassGroup;
     private int _classCounter;
     private final int _totalClasses;

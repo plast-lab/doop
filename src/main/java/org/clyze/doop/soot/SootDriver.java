@@ -1,5 +1,6 @@
 package org.clyze.doop.soot;
 
+import java.util.HashSet;
 import java.util.Set;
 import org.clyze.doop.common.Driver;
 import soot.SootClass;
@@ -11,7 +12,13 @@ class SootDriver extends Driver<SootClass, ThreadFactory> {
         super(factory, totalClasses, cores);
     }
 
-    void doAndroidInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa, boolean reportPhantoms) {
+    void generateMethod(SootMethod dummyMain, FactWriter writer, boolean ssa, boolean reportPhantoms) {
+
+        if (_cores != 1)
+            System.err.println("WARNING: ignoring option cores = " + _cores);
+
+        Set<SootClass> sootClasses = new HashSet<>();
+        sootClasses.add(dummyMain.getDeclaringClass());
         FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses, reportPhantoms);
         factGenerator.generate(dummyMain, new Session());
         writer.writeAndroidEntryPoint(dummyMain);

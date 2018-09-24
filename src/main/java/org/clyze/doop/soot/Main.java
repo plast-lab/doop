@@ -1,18 +1,26 @@
 package org.clyze.doop.soot;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
+import org.xmlpull.v1.XmlPullParserException;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.jimple.infoflow.InfoflowConfiguration.ImplicitFlowMode;
+import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
+import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.LayoutMatchingMode;
+import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
 
-import java.io.File;
-import java.util.*;
+import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
 public class Main {
 
@@ -60,7 +68,7 @@ public class Main {
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             android = new AndroidSupport_Soot(sootParameters, java);
-            android.processInputs(sootParameters._androidJars, tmpDirs);
+            android.processInputs(tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
         }
@@ -141,20 +149,20 @@ public class Main {
             writer.writePreliminaryFacts(classes, java, sootParameters);
             db.flush();
 
-            if (sootParameters._android && (android != null)) {
-                if (sootParameters.getRunFlowdroid()) {
-                    SootMethod dummyMain = android.getDummyMain();
-                    if (dummyMain == null)
-                        throw new RuntimeException("Internal error: FlowDroid returned null dummy main()");
-                    driver.doAndroidInSequentialOrder(dummyMain, classes, writer, sootParameters._ssa, reportPhantoms);
-                    return;
-                } else {
-                    Objects.requireNonNull(android).writeComponents(writer, sootParameters);
-                }
-            }
+            if (android != null)
+                android.writeComponents(writer, sootParameters);
 
             if (!sootParameters.noFacts()) {
                 scene.getOrMakeFastHierarchy();
+
+                if (sootParameters._android && sootParameters.getRunFlowdroid()) {
+                    SootMethod dummyMain = getDummyMain(sootParameters.getInputs().get(0), sootParameters._androidJars);
+                    if (dummyMain == null)
+                        throw new RuntimeException("Internal error: could not compute dummy main() with FlowDroid");
+                    System.out.println("Generated dummy main method " + dummyMain.getName() + "()");
+                    driver.generateMethod(dummyMain, writer, sootParameters._ssa, reportPhantoms);
+                }
+
                 // avoids a concurrent modification exception, since we may
                 // later be asking soot to add phantom classes to the scene's hierarchy
                 driver.generateInParallel(classes);
@@ -198,6 +206,37 @@ public class Main {
             SootClass c = scene.loadClass(className, SootClass.BODIES);
             resolvedClasses.add(c);
         }
+    }
+
+    /**
+     * Call FlowDroid to calculate a dummy main method.
+     */
+    private static SootMethod getDummyMain(String appInput, String androidJars) {
+        if (!DoopAddons.usingUpstream())
+            System.err.println("WARNING: FlowDroid is only supported when using upstream Soot (see build.gradle).");
+
+        Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
+
+        SetupApplication app = new SetupApplication(androidJars, appInput);
+        InfoflowAndroidConfiguration config = app.getConfig();
+        config.setMergeDexFiles(true);
+        // config.getCallbackConfig().setCallbackAnalyzer(Fast);
+        // config.setImplicitFlowMode(ImplicitFlowMode.AllImplicitFlows)
+        config.setImplicitFlowMode(ImplicitFlowMode.NoImplicitFlows);
+        config.getSourceSinkConfig().setLayoutMatchingMode(LayoutMatchingMode.MatchAll);
+
+        String filename = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
+        String taintWrapper = Objects.requireNonNull(Main.class.getClassLoader().getResource("EasyTaintWrapperSource.txt")).getFile();
+        try {
+            app.setTaintWrapper(new EasyTaintWrapper(new File(taintWrapper)));
+            // app.constructCallgraph();
+            app.runInfoflow(filename);
+            return app.getDummyMainMethod();
+        } catch (IOException | XmlPullParserException ex) {
+            System.err.println("FlowDroid failed:");
+            ex.printStackTrace();
+        }
+        return null;
     }
 
 }

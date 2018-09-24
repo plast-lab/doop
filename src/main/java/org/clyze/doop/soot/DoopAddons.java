@@ -115,4 +115,16 @@ class DoopAddons {
             }
         }
     }
+
+    /**
+     * Returns true if Doop uses the upstream version of Soot, false if it uses the fork.
+     */
+    public static boolean usingUpstream() {
+        try {
+            Class c = Class.forName("soot.jimple.toolkits.scalar.DoopRenamer");
+            return false;
+        } catch (ClassNotFoundException ex) {
+            return true;
+        }
+    }
 }
