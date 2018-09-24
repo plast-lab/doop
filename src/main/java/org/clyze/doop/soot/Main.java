@@ -49,9 +49,9 @@ public class Main {
         if (sootParameters._ssa) {
             Options.v().set_via_shimple(true);
             Options.v().set_output_format(Options.output_format_shimple);
-        } else {
+        } else
             Options.v().set_output_format(Options.output_format_jimple);
-        }
+
         //soot.options.Options.v().set_drop_bodies_after_load(true);
         Options.v().set_keep_line_number(true);
 
@@ -69,9 +69,8 @@ public class Main {
             Options.v().set_src_prec(Options.src_prec_apk);
             android = new AndroidSupport_Soot(sootParameters, java);
             android.processInputs(tmpDirs);
-        } else {
+        } else
             Options.v().set_src_prec(Options.src_prec_class);
-        }
 
         Scene scene = Scene.v();
         List<String> inputs = sootParameters.getInputs();
