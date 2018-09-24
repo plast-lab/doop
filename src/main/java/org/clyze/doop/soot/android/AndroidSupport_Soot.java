@@ -44,6 +44,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
             String appInput = parameters.getInputs().get(0);
             SetupApplication app = new SetupApplication(androidJars, appInput);
             app.getConfig().getCallbackConfig().setCallbackAnalyzer(Fast);
+            app.getConfig().setMergeDexFiles(true);
             String filename = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
             try {
                 app.runInfoflow(filename);
