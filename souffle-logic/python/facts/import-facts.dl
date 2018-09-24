@@ -108,6 +108,52 @@ AssignOper_From(?instruction, ?operNum, ?from) :-
   _AssignOperFrom(?instruction, ?operNum, ?from).
 
 
+//Import
+
+.decl _Import(?instruction:symbol, ?index: number, ?name:symbol, ?to:symbol, ?inFunct:symbol)
+.input _Import(IO="file", filename="Import.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isImportInstruction(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Function(?instruction, ?inFunct),
+AssignInstruction_To(?instruction, ?to),
+ImportInsn_ModuleName(?instruction, ?name):-
+  _Import(?instruction, ?index, ?name, ?to, ?inFunct).
+
+//LexicalRead
+
+.decl _LexicalRead(?instruction:symbol, ?index: number, ?to:symbol, ?name:symbol, ?scope:symbol, ?inFunct:symbol)
+.input _LexicalRead(IO="file", filename="LexicalRead.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+isLexicalAccess_Insn(?instruction),
+isLexicalRead_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Function(?instruction, ?inFunct),
+AssignInstruction_To(?instruction, ?to),
+LexicalAccessInsn_VarName(?instruction, ?name),
+LexicalAccessInsn_VarScope(?instruction, ?scope):-
+  _LexicalRead(?instruction, ?index, ?to, ?name, ?scope, ?inFunct).
+
+
+//LexicalWrite
+
+.decl _LexicalWrite(?instruction:symbol, ?index: number, ?name:symbol, ?scope:symbol, ?from:symbol, ?inFunct:symbol)
+.input _LexicalWrite(IO="file", filename="LexicalWrite.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+isLexicalWrite_Insn(?instruction),
+isLexicalAccess_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Function(?instruction, ?inFunct),
+LexicalAccessInsn_VarName(?instruction, ?name),
+LexicalAccessInsn_VarScope(?instruction, ?scope),
+LexicalWriteInsn_From(?instruction, ?from):-
+  _LexicalWrite(?instruction, ?index, ?name, ?scope, ?from, ?inFunct).
+
 // IfVar
 
 .decl _IfVar(?instruction:symbol, ?var:symbol)

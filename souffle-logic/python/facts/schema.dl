@@ -111,13 +111,18 @@
 .type AssignUnop_Insn                 = AssignOper_Insn
 .type AssignLocal_Insn                = AssignOper_Insn
 .type AssignIntConstant_Insn          = AssignInstruction
-.type AssignFloatConstant_Insn          = AssignInstruction
-.type AssignBoolConstant_Insn          = AssignInstruction
+.type AssignFloatConstant_Insn        = AssignInstruction
+.type AssignBoolConstant_Insn         = AssignInstruction
 .type AssignNone_Insn                 = AssignInstruction
 .type AssignHeapAllocation_Insn       = AssignInstruction
 .type ReturnInstruction               = Instruction
 .type ReturnNone_Insn                 = ReturnInstruction
 .type ReturnNonNone_Insn              = ReturnInstruction
+.type ImportInstruction               = AssignInstruction
+.type FunctionInvocation_Insn         = Instruction
+.type LexicalAccess_Insn              = AssignInstruction
+.type LexicalRead_Insn                = LexicalAccess_Insn
+.type LexicalWrite_Insn               = LexicalAccess_Insn
 
 .decl isAssignInstruction(?insn:AssignInstruction)
 .decl isAssignOper_Insn(?insn:AssignOper_Insn)
@@ -132,8 +137,10 @@
 .decl isReturnInstruction(?insn:ReturnInstruction)
 .decl isReturnNone_Insn(?insn:ReturnNone_Insn)
 .decl isReturnNonNone_Insn(?insn:ReturnNonNone_Insn)
-
-.type FunctionInvocation_Insn                = Instruction
+.decl isImportInstruction(?insn: ImportInstruction)
+.decl isLexicalAccess_Insn(?insn: LexicalAccess_Insn)
+.decl isLexicalRead_Insn(?insn: LexicalRead_Insn)
+.decl isLexicalWrite_Insn(?insn: LexicalWrite_Insn)
 
 .decl isFunctionInvocation(?insn:FunctionInvocation_Insn)
 
@@ -236,6 +243,18 @@
 
 // Function Invocation
 .decl FunctionInvocation_Base(?invocation:FunctionInvocation_Insn, ?base:Var)
+
+//-----------------------------------------------------------------------------
+// [Import]
+//-----------------------------------------------------------------------------
+.decl ImportInsn_ModuleName(?insn: ImportInstruction, ?name:symbol)
+
+//-----------------------------------------------------------------------------
+// [LexicalAccess (LexicalRead, LexicalWrite) ]
+//-----------------------------------------------------------------------------
+.decl LexicalAccessInsn_VarName(?insn: LexicalAccess_Insn, ?name:symbol)
+.decl LexicalAccessInsn_VarScope(?insn: LexicalAccess_Insn, ?scope:Function)
+.decl LexicalWriteInsn_From(?insn: LexicalAccess_Insn, ?from:Var)
 
 //-----------------------------------------------------------------------------
 // [Exception Handlers]

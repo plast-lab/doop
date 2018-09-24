@@ -1,0 +1,10 @@
+isModule("<tensorflow>").
+
+ModuleSubmodule("<tensorflow>", "<tensorflow.layers>").
+isModule("<tensorflow.layers>").
+
+ModuleSubmodule("<tensorflow>", "<tensorflow.nn>").
+isModule("<tensorflow.nn>").
+
+Function_Module("<tensorflow.reshape>", "<tensorflow>").
+isFunction("<tensorflow.reshape>").

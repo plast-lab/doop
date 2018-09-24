@@ -47,6 +47,13 @@ public class PythonFactGenerator implements Runnable{
     @Override
     public void run() {
 
+        //Write all the methods in the beginning to populate the method name -> signature map in the representation
+        for (IClass iClass : _iClasses) {
+            for (IMethod m : iClass.getDeclaredMethods()) {
+                _writer.writeMethod(m);
+            }
+        }
+
         for (IClass iClass : _iClasses) {
             String cName = iClass.getName().toString().substring(1);
             String[] classNameParts = cName.split("/");
@@ -105,7 +112,7 @@ public class PythonFactGenerator implements Runnable{
     }
 
     private void generate(IMethod m, Session session) {
-        _writer.writeMethod(m);
+        //_writer.writeMethod(m); //COMMENTED OUT FROM HERE FOR NOW.
         int paramIndex = 0;
 
 

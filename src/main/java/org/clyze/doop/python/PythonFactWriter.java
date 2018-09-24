@@ -260,10 +260,11 @@ public class PythonFactWriter {
         String methodId = _rep.signature(m);
         String varName = instruction.getAccess(0).variableName;
         String varDefiner = instruction.getAccess(0).variableDefiner.substring(1);
+        String definerFunctRepr = _rep.getSigByName(varDefiner);
         if(instruction instanceof AstLexicalWrite){
-            _db.add(LEXICAL_WRITE, insn, str(index), varName, varDefiner, _rep.local(m, l), methodId);
+            _db.add(LEXICAL_WRITE, insn, str(index), varName, definerFunctRepr, _rep.local(m, l), methodId);
         }else if(instruction instanceof AstLexicalRead){
-            _db.add(LEXICAL_READ, insn, str(index), _rep.local(m, l), varName, varDefiner, methodId);
+            _db.add(LEXICAL_READ, insn, str(index), _rep.local(m, l), varName, definerFunctRepr, methodId);
         }else{
             throw new RuntimeException("Unexpected AstLexicalAccess subclass of type: "+ instruction.getClass().getName());
         }

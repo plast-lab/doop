@@ -8,7 +8,7 @@
 
   //.type NoneConstantValue
 
-  .type Value = HeapAllocation | NumConstantValue | BoolConstantValue
+  .type Value = HeapAllocation | NumConstantValue | BoolConstantValue | Function | Module
 
   //.decl isValue(?value:Value)
 
@@ -26,3 +26,25 @@
 
   // [Miscellaneous]
   //.decl Value_None(?none:Value)
+
+
+
+  .output VarPointsTo
+  .decl VarPointsTo(?var:Var, ?val:Value)
+
+  .output LexicalAccessInsn_VarName
+  .output LexicalAccessInsn_VarScope
+  .output isLexicalRead_Insn
+  .output isLexicalWrite_Insn
+
+  VarPointsTo(?var, ?val):-
+    isLexicalRead_Insn(?insn),
+    AssignInstruction_To(?insn, ?var),
+    LexicalAccessInsn_VarName(?insn, ?name),
+    LexicalAccessInsn_VarScope(?insn, ?scope),
+    isLexicalWrite_Insn(?writeInstr),
+    LexicalAccessInsn_VarName(?writeInstr, ?name),
+    LexicalAccessInsn_VarScope(?writeInstr, ?scope),
+    LexicalWriteInsn_From(?writeInstr, ?from),
+    VarPointsTo(?from, ?val).
+
