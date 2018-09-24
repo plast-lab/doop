@@ -229,12 +229,11 @@ public class Main {
         config.setImplicitFlowMode(ImplicitFlowMode.NoImplicitFlows);
         config.getSourceSinkConfig().setLayoutMatchingMode(LayoutMatchingMode.MatchAll);
 
-        String filename = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
+        String sourcesAndSinks = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
         String taintWrapper = Objects.requireNonNull(Main.class.getClassLoader().getResource("EasyTaintWrapperSource.txt")).getFile();
         try {
             app.setTaintWrapper(new EasyTaintWrapper(new File(taintWrapper)));
-            // app.constructCallgraph();
-            app.runInfoflow(filename);
+            app.runInfoflow(sourcesAndSinks);
             return app.getDummyMainMethod();
         } catch (IOException | XmlPullParserException ex) {
             System.err.println("FlowDroid failed:");
