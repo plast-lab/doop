@@ -36,7 +36,12 @@ public class Main {
 
         SootParameters sootParameters = new SootParameters();
         sootParameters.initFromArgs(args);
-        produceFacts(sootParameters);
+        try {
+            produceFacts(sootParameters);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw ex;
+        }
     }
 
     private static void produceFacts(SootParameters sootParameters) throws Exception {
