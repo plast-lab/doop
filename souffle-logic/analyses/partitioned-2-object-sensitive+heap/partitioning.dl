@@ -18,7 +18,7 @@ PartitionedType(type) :-
 
 TypeRefersToOther(typeFrom, typeTo) :-
   PartitionedType(typeFrom), PartitionedType(typeTo),
-  DirectSubclass(typeFrom, typeTo).
+  basic.DirectSubclass(typeFrom, typeTo).
 
 TypeRefersToOther(typeFrom, typeTo) :-
   PartitionedType(typeFrom), PartitionedType(typeTo),

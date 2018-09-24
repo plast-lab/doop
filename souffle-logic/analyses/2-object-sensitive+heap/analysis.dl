@@ -54,8 +54,8 @@
     ?ctx = [?value, ?value].
 
   InitHContextResponse(?value, ?hctx) :-
-     InitHContextRequest(?value),
-     ?hctx = [?value].
+    InitHContextRequest(?value),
+    ?hctx = [?value].
 
 #ifdef HEAPDLS
   DynamicContextToContext([?value1, ?value2], ?dynCtx) :-

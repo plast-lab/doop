@@ -31,7 +31,7 @@ ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
   ?calleeCtx = [?value].
 
 ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+  ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
   !InOutFlowMethod(_, ?tomethod),
   UContext(?calleeCtxComp),
   ?calleeCtx = [?calleeCtxComp].
