@@ -13,10 +13,6 @@ class SootDriver extends Driver<SootClass, ThreadFactory> {
     }
 
     void generateMethod(SootMethod dummyMain, FactWriter writer, boolean ssa, boolean reportPhantoms) {
-
-        if (_cores != 1)
-            System.err.println("WARNING: ignoring option cores = " + _cores);
-
         Set<SootClass> sootClasses = new HashSet<>();
         sootClasses.add(dummyMain.getDeclaringClass());
         FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses, reportPhantoms);
