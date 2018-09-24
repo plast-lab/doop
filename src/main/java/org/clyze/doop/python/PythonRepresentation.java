@@ -103,8 +103,6 @@ public class PythonRepresentation {
 
     String getSigByName(String name){
         String methSig = _methodSigRepr.get(name);
-
-        System.out.println("got " + name + " - " + methSig);
         if(methSig == null)
             return name;
         return methSig;
