@@ -654,6 +654,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Do a dry run of the analysis."
 			),
 			new BooleanAnalysisOption(
+					id: "X_FORCE_RECOMPILE",
+					name: "Xforce-recompile",
+					description: "Force recompilation of Souffle logic."
+			),
+			new BooleanAnalysisOption(
 					id: "X_SERVER_LOGIC",
 					name: "Xserver-logic",
 					description: "Run server queries under addons/server-logic",

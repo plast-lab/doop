@@ -22,7 +22,8 @@ class SouffleScript {
 	long executionTime = 0L
 
 	File compile(File origScriptFile, File outDir, File cacheDir,
-	            boolean profile = false, boolean debug = false, boolean removeContext = false) {
+                 boolean profile = false, boolean debug = false,
+                 boolean forceRecompile = true, boolean removeContext = false) {
 
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
@@ -32,7 +33,7 @@ class SouffleScript {
 		def checksum = CheckSum.checksum(c2, DoopAnalysisFactory.HASH_ALGO)
 		def cacheFile = new File(cacheDir, checksum)
 
-		if (!cacheFile.exists() || debug) {
+		if (!cacheFile.exists() || debug || forceRecompile) {
 
 			if (removeContext) {
 				def backupFile = new File("${scriptFile}.backup")
