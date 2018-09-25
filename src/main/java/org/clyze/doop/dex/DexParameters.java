@@ -27,4 +27,11 @@ class DexParameters extends Parameters {
     public String getDecompressDir() {
         return decompressDir;
     }
+
+    @Override
+    protected void finishArgProcessing() throws DoopErrorCodeException {
+        if (!_android)
+            System.err.println("Warning: Android mode is disabled.");
+        super.finishArgProcessing();
+    }
 }
