@@ -17,17 +17,6 @@ class WalaDriver extends Driver<IClass, WalaThreadFactory> {
         _cache = cache;
     }
 
-    void generateSequentially(Iterator<IClass> iClasses, WalaFactWriter writer, String outDir) {
-        while (iClasses.hasNext()) {
-            _tmpClassGroup.add(iClasses.next());
-        }
-
-        Runnable factGenerator = new WalaFactGenerator(writer, _tmpClassGroup, outDir, _android, _cache);
-        //factGenerator.generate(dummyMain, new Session());
-        //writer.writeAndroidEntryPoint(dummyMain);
-        factGenerator.run();
-    }
-
     @Override
     protected Runnable getFactGenRunnable() {
         return _factory.newFactGenRunnable(_tmpClassGroup, _cache);
