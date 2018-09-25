@@ -22,7 +22,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	List<AnalysisOption> supportedOptions() { calcSupportedOptions() }
 
 	@Override
-	Map<String, AnalysisOption> supportedOptionsAsMap() { calcSuportedOptions().collectEntries { [(it.id): it] } }
+	Map<String, AnalysisOption> supportedOptionsAsMap() { calcSupportedOptions().collectEntries { [(it.id): it] } }
 
 	/**
 	 * Calculates the options supported by Doop. This needs Doop to be
