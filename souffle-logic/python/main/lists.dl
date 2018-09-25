@@ -35,6 +35,7 @@ isListOfConsts(?heap):-
 
 .output IsPyList
 IsPyList(?heap),
+VarPointsTo(?var, ?heap),
 VarPointsToList(?var, ?heap) :-
   AssignInstruction_To(?instr, ?var),
   AssignHeapAllocation_Heap(?instr, ?heap),
@@ -47,3 +48,45 @@ ListHasNonConstantVal(?heap):-
   StoreInstanceField_Base(?instr, ?var),
   StoreInstanceField_From(?instr, ?from),
   !(VarHasConstValue(?from,_)).
+
+.decl ConstListMultAll(?heap:HeapAllocation, ?res:number)
+.decl ConstListMultAllInner(?heap:HeapAllocation, ?index:number, ?res:number)
+
+.output ConstListMultAll
+
+ConstListMultAll(?heapList, ?res):-
+  ConstListMultAllInner(?heapList, 0, ?res).
+
+ConstListMultAllInner(?heapList, ?index, ?res):-
+  ConstListDimensions(?heapList, ?dims),
+  ?index = ?dims - 1,
+  ConstListContents(?heapList, ?index, ?val),
+  Value_Num(?val,?num),
+  ?res = to_number(?num).
+
+ConstListMultAllInner(?heapList, ?index, ?res):-
+  ConstListDimensions(?heapList, ?dims),
+  ConstListContents(?heapList, ?index, ?val),
+  ?index < ?dims - 1,
+  Value_Num(?val,?numStr),
+  ?num = to_number(?numStr),
+  ?num > 0,
+  ConstListMultAllInner(?heapList, ?index + 1, ?prevRes),
+  ?res = ?num * ?prevRes.
+
+ConstListMultAllInner(?heapList, ?index, ?res):-
+  ConstListDimensions(?heapList, ?dims),
+  ConstListContents(?heapList, ?index, ?val),
+  ?index < ?dims - 1,
+  Value_Num(?val,?numStr),
+  -1 = to_number(?numStr),
+  ConstListMultAllInner(?heapList, ?index + 1, ?prevRes),
+  ?res = ?prevRes.
+
+ConstListMultAllInner(?heapList, ?index, ?res):-
+  ConstListDimensions(?heapList, ?dims),
+  ConstListContents(?heapList, ?index, ?val),
+  ?index < ?dims - 1,
+  ?val = "<None>",
+  ConstListMultAllInner(?heapList, ?index + 1, ?prevRes),
+  ?res = ?prevRes.

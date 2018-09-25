@@ -241,15 +241,16 @@ Field_SimpleName(?signature, ?simplename) :-
 
 // Function invocation
 
-.decl _FunctionInvocation(?instruction:symbol, ?index:number, ?base:symbol, ?function:symbol)
+.decl _FunctionInvocation(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?function:symbol)
 .input _FunctionInvocation(IO="file", filename="FunctionInvocation.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isFunctionInvocation(?instruction),
 FunctionInvocation_Base(?instruction, ?base),
 Instruction_Index(?instruction, ?index),
+AssignInstruction_To(?instruction, ?to),
 Instruction_Function(?instruction, ?function) :-
-  _FunctionInvocation(?instruction, ?index, ?base, ?function).
+  _FunctionInvocation(?instruction, ?index, ?to, ?base, ?function).
 
 
 // Throw
@@ -366,7 +367,7 @@ ReturnNonNone_Var(?instruction, ?var) :-
 // ReturnNone
 
 .decl _ReturnNone(?instruction:symbol, ?index:number, ?function:symbol)
-.input _ReturnNone(IO="file", filename="ReturnVoid.facts", delimiter="\t")
+.input _ReturnNone(IO="file", filename="ReturnNone.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isReturnInstruction(?instruction),

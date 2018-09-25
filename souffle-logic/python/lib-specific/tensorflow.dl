@@ -1,5 +1,67 @@
 isModule("<tensorflow>").
 
+//------------------------------------------------------
+//                    TENSOR DATA TYPES
+//------------------------------------------------------
+
+.type TensorDataType
+
+.decl isTensorDataType(?type: TensorDataType)
+Name_Module("<tensorflow.float16>", "<tensorflow>").
+isTensorDataType("<tensorflow.float16>").
+Name_Module("<tensorflow.float32>", "<tensorflow>").
+isTensorDataType("<tensorflow.float32>").
+Name_Module("<tensorflow.float64>", "<tensorflow>").
+isTensorDataType("<tensorflow.float64>").
+Name_Module("<tensorflow.bfloat16>", "<tensorflow>").
+isTensorDataType("<tensorflow.bfloat16>").
+Name_Module("<tensorflow.complex64>", "<tensorflow>").
+isTensorDataType("<tensorflow.complex64>").
+Name_Module("<tensorflow.complex128>", "<tensorflow>").
+isTensorDataType("<tensorflow.complex128>").
+Name_Module("<tensorflow.int8>", "<tensorflow>").
+isTensorDataType("<tensorflow.int8>").
+Name_Module("<tensorflow.uint8>", "<tensorflow>").
+isTensorDataType("<tensorflow.uint8>").
+Name_Module("<tensorflow.uint16>", "<tensorflow>").
+isTensorDataType("<tensorflow.uint16>").
+Name_Module("<tensorflow.uint32>", "<tensorflow>").
+isTensorDataType("<tensorflow.uint32>").
+Name_Module("<tensorflow.uint64>", "<tensorflow>").
+isTensorDataType("<tensorflow.uint64>").
+Name_Module("<tensorflow.int16>", "<tensorflow>").
+isTensorDataType("<tensorflow.int16>").
+Name_Module("<tensorflow.int32>", "<tensorflow>").
+isTensorDataType("<tensorflow.int32>").
+Name_Module("<tensorflow.int64>", "<tensorflow>").
+isTensorDataType("<tensorflow.int64>").
+Name_Module("<tensorflow.bool>", "<tensorflow>").
+isTensorDataType("<tensorflow.bool>").
+Name_Module("<tensorflow.string>", "<tensorflow>").
+isTensorDataType("<tensorflow.string>").
+Name_Module("<tensorflow.qint8>", "<tensorflow>").
+isTensorDataType("<tensorflow.qint8>").
+Name_Module("<tensorflow.quint8>", "<tensorflow>").
+isTensorDataType("<tensorflow.quint8>").
+Name_Module("<tensorflow.qint16>", "<tensorflow>").
+isTensorDataType("<tensorflow.qint16>").
+Name_Module("<tensorflow.quint16>", "<tensorflow>").
+isTensorDataType("<tensorflow.quint16>").
+Name_Module("<tensorflow.qint32>", "<tensorflow>").
+isTensorDataType("<tensorflow.qint32>").
+Name_Module("<tensorflow.resource>", "<tensorflow>").
+isTensorDataType("<tensorflow.resource>").
+Name_Module("<tensorflow.variant>", "<tensorflow>").
+isTensorDataType("<tensorflow.variant>").
+
+.decl TensorShapeListSize(?val:Value, ?size:number)
+.decl TensorShapeListContent(?val:Value, ?index:number, ?indexValue:Value)
+.output TensorShapeListSize
+.output TensorShapeListContent
+
+isClassType("<tensorflow.Tensor>").
+isType("<tensorflow.Tensor>").
+
 ModuleSubmodule("<tensorflow>", "<tensorflow.layers>").
 isModule("<tensorflow.layers>").
 
@@ -8,3 +70,111 @@ isModule("<tensorflow.nn>").
 
 Function_Module("<tensorflow.reshape>", "<tensorflow>").
 isFunction("<tensorflow.reshape>").
+
+Function_Module("<tensorflow.constant>", "<tensorflow>").
+isFunction("<tensorflow.constant>").
+
+Function_Module("<tensorflow.placeholder>", "<tensorflow>").
+isFunction("<tensorflow.placeholder>").
+
+.decl FunctionInv_ResolvesTo(?insn:FunctionInvocation_Insn, ?fun:Function)
+.output FunctionInv_ResolvesTo
+
+FunctionInv_ResolvesTo(?insn, ?fun):-
+  FunctionInvocation_Base(?insn, ?callBase),
+  VarPointsTo(?callBase, ?fun).
+
+.decl TensorOperationShapeListArg(?insn:FunctionInvocation_Insn, ?listVar:Var)
+.output TensorOperationShapeListArg
+
+.decl TensorOperationTensorArg(?insn:FunctionInvocation_Insn, ?tensorVar:Var)
+.output TensorOperationTensorArg
+
+//------------------------------------------------------
+//                    PLACEHOLDER INVOC
+//------------------------------------------------------
+
+.decl isValidTensorPlaceHolderInvocation(?insn:FunctionInvocation_Insn)
+.output isValidTensorPlaceHolderInvocation
+
+TensorOperationShapeListArg(?insn, ?dimListVar),
+isValidTensorPlaceHolderInvocation(?insn):-
+  FunctionInv_ResolvesTo(?insn, "<tensorflow.placeholder>"),
+  ActualPositionalParam(0, ?insn, ?typeVar),
+  VarPointsTo(?typeVar, ?typeVal),
+  isTensorDataType(?typeVal),
+  (
+    ActualPositionalParam(1, ?insn, ?dimListVar);
+    ActualKeywordParam(_, ?insn, "shape", ?dimListVar)
+  ),
+  VarPointsToList(?dimListVar, ?dimListVal),
+  isListOfConsts(?dimListVal).
+
+TensorShapeListSize(?tensorVal, ?size),
+TensorShapeListContent(?tensorVal, ?index, ?indexValue):-
+  isValidTensorPlaceHolderInvocation(?insn),
+  AssignInstruction_To(?insn, ?tensorAssignVar),
+  VarPointsTo(?tensorAssignVar, ?tensorVal),
+  TensorOperationShapeListArg(?insn, ?dimListVar),
+  VarPointsToList(?dimListVar, ?dimListVal),
+  ConstListDimensions(?dimListVal, ?size),
+  ConstListContents(?dimListVal, ?index, ?indexValue).
+
+
+ConstListDimensions(?tensorVal, ?size),
+ConstListContents(?tensorVal, ?index, ?indexValue):-
+  TensorShapeListSize(?tensorVal, ?size),
+  TensorShapeListContent(?tensorVal, ?index, ?indexValue).
+
+VarPointsTo(?var, ?value),
+Value_Type(?value, "<tensorflow.Tensor>"):-
+  isValidTensorPlaceHolderInvocation(?insn),
+  AssignInstruction_To(?insn, ?var),
+  Instruction_Index(?insn, ?index),
+  Instruction_Function(?insn, ?function),
+  ?value = cat(?function, cat("/placeholderTensor", to_string(?index))).
+
+//------------------------------------------------------
+//              RESHAPE OP
+//------------------------------------------------------
+
+.decl isValidTensorReshapeInvocationClass1(?insn:FunctionInvocation_Insn)
+.output isValidTensorReshapeInvocationClass1
+
+.decl isValidTensorReshapeInvocationLevel1(?insn:FunctionInvocation_Insn)
+.output isValidTensorReshapeInvocationLevel1
+
+TensorOperationShapeListArg(?insn, ?dimListVar),
+TensorOperationTensorArg(?insn, ?tensorVar),
+isValidTensorReshapeInvocationLevel1(?insn):-
+  FunctionInv_ResolvesTo(?insn, "<tensorflow.reshape>"),
+  ActualPositionalParam(0, ?insn, ?tensorVar),
+  VarPointsTo(?tensorVar, ?tensorVal),
+  Value_Type(?tensorVal, "<tensorflow.Tensor>"),
+  (
+    ActualPositionalParam(1, ?insn, ?dimListVar);
+    ActualKeywordParam(_, ?insn, "shape", ?dimListVar)
+  ),
+  VarPointsToList(?dimListVar, ?dimListVal),
+  isListOfConsts(?dimListVal).
+
+isValidTensorReshapeInvocationClass1(?insn):-
+  isValidTensorReshapeInvocationLevel1(?insn),
+  TensorOperationShapeListArg(?insn, ?dimListVar),
+  TensorOperationTensorArg(?insn, ?tensorVar),
+  VarPointsTo(?tensorVar, ?tensorVal),
+  VarPointsToList(?dimListVar, ?dimListVal),
+  ConstListContents(?tensorVal, ?pos, "<None>"),
+  ConstListContents(?dimListVal, ?pos, "<num-constant(int):-1>"),
+  ConstListMultAll(?tensorVal,?tensorRes),
+  ConstListMultAll(?dimListVal,?dimListRes),
+  ?tensorRes = ?dimListRes.
+
+
+VarPointsTo(?var, ?value),
+Value_Type(?value, "<tensorflow.Tensor>"):-
+  isValidTensorReshapeInvocationClass1(?insn),
+  AssignInstruction_To(?insn, ?var),
+  Instruction_Index(?insn, ?index),
+  Instruction_Function(?insn, ?function),
+  ?value = cat(?function, cat("/reshapeTensor", to_string(?index))).

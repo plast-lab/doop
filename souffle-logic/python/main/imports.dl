@@ -6,6 +6,7 @@
 
 .decl ModuleSubmodule(?module: Module, ?submodule: Module)
 .decl Function_Module(?function:Function, ?module: Module)
+.decl Name_Module(?name:symbol, ?module: Module)
 
 .decl VarPointsToModule(?var:Var, ?module:Module)
 
@@ -18,7 +19,7 @@
 VarPointsToModule(?var, ?module):-
   VarPointsTo(?var, ?module),
   isModule(?module).
-  
+
 VarPointsTo(?var, ?module),
 VarPointsToModule(?var, ?module):-
   isImportInstruction(?insn),
@@ -37,6 +38,11 @@ VarPointsToModule(?var, ?module):-
   ?module = cat(cat(cat(substr(?parModule, 0, strlen(?parModule) -1), "."), ?fieldName),">"),
   isModule(?module).
 
+
+VarPointsToFunction(?var, ?function):-
+  VarPointsTo(?var, ?function),
+  isFunction(?function).
+
 VarPointsTo(?var, ?function),
 VarPointsToFunction(?var, ?function):-
   isLoadInstanceField_Insn(?insn),
@@ -47,10 +53,19 @@ VarPointsToFunction(?var, ?function):-
   ?function = cat(cat(cat(substr(?parModule, 0, strlen(?parModule) -1), "."), ?fieldName),">"),
   isFunction(?function).
 
+VarPointsTo(?var, ?val):-
+  isLoadInstanceField_Insn(?insn),
+  FieldInstruction_FieldName(?insn, ?fieldName),
+  LoadInstanceField_Base(?insn, ?base),
+  LoadInstanceField_To(?insn, ?var),
+  VarPointsToModule(?base, ?declModule),
+  ?val = cat(cat(cat(substr(?declModule, 0, strlen(?declModule) -1), "."), ?fieldName),">"),
+  Name_Module(?val, ?declModule).
 
 //One thing to be considered in the future is the difference between:
 //1) from file import var
 //   var = 5
+//
 //2) import file
 //   file.var = 5
 //

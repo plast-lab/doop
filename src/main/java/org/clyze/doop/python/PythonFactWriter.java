@@ -539,11 +539,11 @@ public class PythonFactWriter {
         writeActualParams(inMethod, ir, instruction, insn, session, typeInference);
 
         int index = session.calcInstructionNumber(instruction);
-
+        Local toVar = createLocal(ir,instruction,instruction.getDef(), typeInference);
         Local functionObject = createLocal(ir,instruction,instruction.getUse(0), typeInference);
         if (instruction.isDispatch()) {
             //System.out.println("Virtual "+ instruction.toString(ir.getSymbolTable()));
-            _db.add(FUNCTION_INV, insn, str(index), _rep.local(inMethod, functionObject), methodId);
+            _db.add(FUNCTION_INV, insn, str(index), _rep.local(inMethod,toVar), _rep.local(inMethod, functionObject), methodId);
         }
         else {
             throw new RuntimeException("Cannot handle invoke instruction: " + instruction.toString(ir.getSymbolTable()));
