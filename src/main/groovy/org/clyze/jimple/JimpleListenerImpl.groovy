@@ -353,7 +353,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		)
 
 		if (varTypes[v.doopId])
-			v.setType(varTypes[v.doopId] as String)
+			v.type = varTypes[v.doopId] as String
 		else
 			pending.push(v)
 		return v

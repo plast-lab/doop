@@ -219,12 +219,12 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 		options.collect { AnalysisOption option ->
 			if (option.multipleValues) {
 				def o = new Option(option.optName, option.name, true, desc(option))
-				o.setArgs(Option.UNLIMITED_VALUES)
-				o.setArgName(option.argName)
+				o.args = Option.UNLIMITED_VALUES
+				o.argName = option.argName
 				return o
 			} else if (option.argName) {
 				def o = new Option(option.optName, option.name, true, desc(option))
-				o.setArgName(option.argName)
+				o.argName = option.argName
 				return o
 			} else {
 				return new Option(option.optName, option.name, false, desc(option))

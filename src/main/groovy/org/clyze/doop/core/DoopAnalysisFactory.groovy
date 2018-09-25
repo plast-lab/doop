@@ -261,7 +261,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				if (!(deps in libraryPaths)) {
 					libraryPaths << deps
 					context.resolve()
-					options.LIBRARIES.value = context.getAllLibraries()
+					options.LIBRARIES.value = context.allLibraries
 				}
 
 				if (!options.TAMIFLEX.value)

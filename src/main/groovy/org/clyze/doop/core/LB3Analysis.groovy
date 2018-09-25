@@ -47,7 +47,7 @@ class LB3Analysis extends DoopAnalysis {
 				reanalyze()
 			}
 			catch (e) {
-				log.debug e.getMessage()
+				log.debug e.message
 			}
 
 			produceStats()
@@ -77,7 +77,7 @@ class LB3Analysis extends DoopAnalysis {
 		cpp.preprocess("${outDir}/mock-heap.logic", "${Doop.factsPath}/mock-heap.logic", commonMacros)
 
 		lbBuilder
-				.createDB(database.getName())
+				.createDB(database.name)
 				.timedTransaction("-- Init DB (import) --")
 				.addBlockFile("flow-sensitive-schema.logic")
 				.addBlockFile("flow-insensitive-schema.logic")
@@ -169,7 +169,7 @@ class LB3Analysis extends DoopAnalysis {
 			isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
 		}
 		catch (e) {
-			log.debug e.getMessage()
+			log.debug e.message
 		}
 		if (isContextSensitive) {
 			cpp.preprocessIfExists("${outDir}/${name}-declarations.logic", "${analysisPath}/declarations.logic",

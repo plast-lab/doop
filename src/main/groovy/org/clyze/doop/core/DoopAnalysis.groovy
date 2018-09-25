@@ -127,7 +127,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	protected void linkOrCopyFacts(File fromDir) {
 		if (options.X_SYMLINK_CACHED_FACTS.value) {
 			try {
-				Path fromDirPath = FileSystems.getDefault().getPath(fromDir.canonicalPath)
+				Path fromDirPath = FileSystems.default.getPath(fromDir.canonicalPath)
 				Files.createSymbolicLink(factsDir.toPath(), fromDirPath)
 				return
 			} catch (UnsupportedOperationException x) {
@@ -506,8 +506,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	protected ClassLoader sootClassLoader() { copyOfCurrentClasspath() }
 
 	protected ClassLoader copyOfCurrentClasspath() {
-		URLClassLoader loader = this.getClass().getClassLoader() as URLClassLoader
-		URL[] classpath = loader.getURLs()
+		URLClassLoader loader = this.class.classLoader as URLClassLoader
+		URL[] classpath = loader.URLs
 		return new URLClassLoader(classpath, null as ClassLoader)
 	}
 

@@ -809,7 +809,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		Closure scan = { ifDir ->
 			if (ifDir) {
 				new File("${ifDir}/information-flow")?.eachFile { File f ->
-					String n = f.getName()
+					String n = f.name
 					String base = removeExtension(n)
 					int platformEndIdx = base.lastIndexOf(INFORMATION_FLOW_SUFFIX)
 					if (platformEndIdx != -1) {

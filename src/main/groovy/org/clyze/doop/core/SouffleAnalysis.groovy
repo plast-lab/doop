@@ -54,7 +54,7 @@ class SouffleAnalysis extends DoopAnalysis {
 						null
 					}
 				},
-				new Callable<File>() {
+				new Callable<Object>() {
 					@Override
 					File call() {
 						if (options.X_STOP_AT_FACTS.value) return
@@ -79,7 +79,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		if (options.X_STOP_AT_FACTS.value) return
 
-		File generatedFile = futures[1].get()
+		File generatedFile = (File)futures[1].get()
 		script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
 				(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
 

@@ -31,7 +31,7 @@ class Main {
 		try {
 			Helper.tryInitLogging("INFO", "${Doop.doopHome}/build/logs", true)
 		} catch (IOException ex) {
-			System.err.println("Warning: could not initialize logging");
+			System.err.println("Warning: could not initialize logging")
 			throw new DoopErrorCodeException(15);
 		}
 
@@ -118,7 +118,7 @@ class Main {
 				executorService.shutdownNow()
 			}
 		} catch (e) {
-			e = (e.getCause() ?: e)
+			e = (e.cause ?: e)
 			e = StackTraceUtils.deepSanitize e
 			log.error(e.message, e)
 		}
