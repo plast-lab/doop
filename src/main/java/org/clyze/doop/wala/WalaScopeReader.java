@@ -1,18 +1,12 @@
 package org.clyze.doop.wala;
 
-import com.ibm.wala.classLoader.BinaryDirectoryTreeModule;
 import com.ibm.wala.classLoader.JarFileModule;
 import com.ibm.wala.classLoader.Module;
-import com.ibm.wala.classLoader.SourceDirectoryTreeModule;
 import com.ibm.wala.dalvik.classLoader.DexFileModule;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
-import com.ibm.wala.properties.WalaProperties;
-import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.util.config.FileOfClasses;
-import com.ibm.wala.util.debug.Assertions;
 import com.ibm.wala.util.io.FileProvider;
-import com.ibm.wala.util.strings.Atom;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
