@@ -31,7 +31,7 @@ public abstract class AndroidSupport {
         this.logger = LogFactory.getLog(getClass());
     }
 
-    public void processInputs(Set<String> tmpDirs) throws Exception {
+    public void processInputs(Set<String> tmpDirs) {
         logger.debug("Processing inputs...");
 
         List<String> allInputs = parameters.getAllInputs();
