@@ -7,7 +7,7 @@ import spock.lang.Unroll
 /**
  * Test micro analysis.
  */
-class CrudeMicroSpec extends Specification {
+class CrudeMicroTest extends Specification {
 
 	Analysis analysis
 

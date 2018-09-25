@@ -7,7 +7,7 @@ import spock.lang.Unroll
 /**
  * Test the legacy LB mode.
  */
-class CrudeLBSpec extends Specification {
+class CrudeLBTest extends Specification {
 
 	Analysis analysis
 
