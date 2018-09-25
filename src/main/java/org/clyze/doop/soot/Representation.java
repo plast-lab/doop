@@ -232,7 +232,7 @@ class Representation extends JavaRepresentation {
     }
 
 
-    String heapMultiArrayAlloc(SootMethod inMethod, NewMultiArrayExpr expr, ArrayType type, SessionCounter counter)
+    String heapMultiArrayAlloc(SootMethod inMethod, /* NewMultiArrayExpr expr, */ ArrayType type, SessionCounter counter)
     {
         return heapAlloc(inMethod, type, counter);
     }

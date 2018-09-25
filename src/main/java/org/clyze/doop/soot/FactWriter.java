@@ -231,7 +231,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     private void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session) {
-        String heap = _rep.heapMultiArrayAlloc(m, expr, arrayType, session);
+        String heap = _rep.heapMultiArrayAlloc(m, /* expr, */ arrayType, session);
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, index);
 
