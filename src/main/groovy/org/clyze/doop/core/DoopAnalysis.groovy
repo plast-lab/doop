@@ -311,7 +311,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
 		}
 
-		params = params + ["-d", factsDir.toString()] + inputArgs
+		params.addAll(["-d", factsDir.toString()] + inputArgs)
+		deps.addAll(platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>)
 
 		if (frontEnd == FrontEnd.SOOT) {
 			runSoot(platform, deps, platforms, params)
@@ -330,9 +331,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	}
 
 	protected void runSoot(String platform, Collection<String> deps, List<File> platforms, Collection<String> params) {
-		Collection<String> depArgs = (platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-
-		params += [ "--full" ] + depArgs
+		params += [ "--full" ] + deps
 
 		if (platform == "android") {
 			// This uses all platformLibs.
@@ -383,28 +382,16 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	}
 
 	protected void runWala(String platform, Collection<String> deps, List<File> platforms, Collection<String> params) {
-		Collection<String> depArgs
-
-		switch (platform) {
-			case "java":
-				depArgs = deps
-				depArgs.add("-p")
-				depArgs.add(platforms.first().absolutePath.toString().replace("/rt.jar", ""))
-				depArgs = (platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + depArgs
-				break
-			case "android":
-				// This uses all platformLibs.
-				// params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-				// This uses just platformLibs[0], assumed to be android.jar.
-				depArgs = (platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-				params.addAll(["--android-jars"] + [platforms.first().absolutePath])
-				break
-			default:
-				throw new RuntimeException("Unsupported platform")
+		if (platform == "android") {
+			// This uses all platformLibs.
+			// params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+			// This uses just platformLibs[0], assumed to be android.jar.
+			params.addAll(["--android-jars", platforms.first().absolutePath])
+		} else if (platform != "java") {
+			throw new RuntimeException("Unsupported platform: ${platform}")
 		}
 
-		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-		params = params + depArgs
+		params = params + deps
 
 		log.debug "Params of wala: ${params.join(' ')}"
 
