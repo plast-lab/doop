@@ -17,6 +17,8 @@ import static org.apache.commons.io.FileUtils.deleteQuietly
 @Log4j
 class SouffleScript {
 
+	static final String EXE_NAME = "exe"
+
 	Executor executor
 	long compilationTime = 0L
 	long executionTime = 0L
@@ -41,7 +43,7 @@ class SouffleScript {
 				ContextRemover.removeContexts(backupFile, scriptFile)
 			}
 
-			def executable = new File(outDir, "exe")
+			def executable = new File(outDir, EXE_NAME)
 			def compilationCommand = "souffle -c -o $executable $scriptFile".split().toList()
 			if (profile)
 				compilationCommand << ("-p${outDir}/profile.txt" as String)
