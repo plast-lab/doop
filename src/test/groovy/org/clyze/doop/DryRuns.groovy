@@ -5,6 +5,7 @@ import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysisFamily
 import spock.lang.Specification
 import spock.lang.Unroll
+import static org.clyze.doop.TestUtils.*
 
 /**
  * Test that all analyses compile.
