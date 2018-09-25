@@ -123,10 +123,6 @@ public class WalaFactWriter extends JavaFactWriter {
         return result;
     }
 
-    void writeAndroidEntryPoint(IMethod m) {
-        _db.add(ANDROID_ENTRY_POINT, _rep.signature(m));
-    }
-
     void writeClassOrInterfaceType(IClass c) {
         String classStr = fixTypeString(c.getName().toString());
         if (c.isInterface()) {
