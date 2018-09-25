@@ -56,46 +56,27 @@ class FactGenerator implements Runnable {
 
             _sootClass.getFields().forEach(this::generate);
 
-            boolean success;
-            int numRetries = 0;
-            do {
-                success = true;
+            for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
+                Session session = new Session();
                 try {
-                    for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
-                        Session session = new Session();
-                        try {
-                            generate(m, session);
-                        }
-                        catch (Exception exc) {
-                            // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
-                            // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
-                            //     Thread key = i.next();
-                            //     System.err.println("Thread " + key.getName());
-                            //     StackTraceElement[] trace = liveThreads.getLibrary(key);
-                            //     for (int j = 0; j < trace.length; j++) {
-                            //         System.err.println("\tat " + trace[j]);
-                            //     }
-                            // }
-
-                            System.err.println("Error while processing method: " + m);
-                            exc.printStackTrace();
-                            throw exc;
-                        }
-                    }
-                } catch (Exception exc) {
-                    numRetries++;
-                    int maxRetries = 10;
-                    if (numRetries > maxRetries) {
-                        System.err.println("\nGiving up...\n");
-                        throw exc;
-                    }
-                    else {
-                        System.err.println("\nRETRYING\n");
-                    }
-                    success = false;
+                    generate(m, session);
                 }
-            } while (!success);
-
+                catch (Throwable t) {
+                    // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
+                    // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
+                    //     Thread key = i.next();
+                    //     System.err.println("Thread " + key.getName());
+                    //     StackTraceElement[] trace = liveThreads.getLibrary(key);
+                    //     for (int j = 0; j < trace.length; j++) {
+                    //         System.err.println("\tat " + trace[j]);
+                    //     }
+                    // }
+                    String msg = "Error while processing method: " + m;
+                    System.err.println(msg);
+                    t.printStackTrace();
+                    throw new RuntimeException(msg, t);
+                }
+            }
         }
     }
 
