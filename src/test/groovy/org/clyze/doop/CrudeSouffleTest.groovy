@@ -3,6 +3,7 @@ package org.clyze.doop
 import org.clyze.analysis.Analysis
 import spock.lang.Specification
 import spock.lang.Unroll
+import static org.clyze.doop.TestUtils.*
 
 /**
  * Test Souffle analysis mode.
@@ -19,19 +20,19 @@ class CrudeSouffleTest extends Specification {
 		analysis = Main.analysis
 
 		then:
-		equals("var points-to (SENS)", vpt)
-		equals("instance field points-to (INS)", fpt)
-		equals("call graph edges (INS)", cge)
-		equals("polymorphic virtual call sites", pCalls)
-		equals("reachable casts that may fail", fCasts)
-		equals("app reachable casts", aRCasts)
-		equals("reachable variables (INS)", rVarsINS)
-		equals("reachable variables (SENS)", rVarsSENS)
-		equals("reachable methods (INS)", rMethodsINS)
-		equals("reachable methods (SENS)", rMethodsSENS)
-		equals("app virtual call sites (statically)", aVCS)
-		equals("app reachable virtual call sites", aRVCS)
-		equals("non-reachable app concrete methods", nRACM)
+		metricIsApprox(analysis, "var points-to (SENS)", vpt)
+		metricIsApprox(analysis, "instance field points-to (INS)", fpt)
+		metricIsApprox(analysis, "call graph edges (INS)", cge)
+		metricIsApprox(analysis, "polymorphic virtual call sites", pCalls)
+		metricIsApprox(analysis, "reachable casts that may fail", fCasts)
+		metricIsApprox(analysis, "app reachable casts", aRCasts)
+		metricIsApprox(analysis, "reachable variables (INS)", rVarsINS)
+		metricIsApprox(analysis, "reachable variables (SENS)", rVarsSENS)
+		metricIsApprox(analysis, "reachable methods (INS)", rMethodsINS)
+		metricIsApprox(analysis, "reachable methods (SENS)", rMethodsSENS)
+		metricIsApprox(analysis, "app virtual call sites (statically)", aVCS)
+		metricIsApprox(analysis, "app reachable virtual call sites", aRVCS)
+		metricIsApprox(analysis, "non-reachable app concrete methods", nRACM)
 
 		where:
 		scenario                                  | vpt      | fpt     | cge    | pCalls | fCasts | aRCasts | rVarsINS | rVarsSENS | rMethodsINS | rMethodsSENS | aVCS    | aRVCS | nRACM
@@ -39,20 +40,5 @@ class CrudeSouffleTest extends Specification {
 		"antlr-1call-tamiflex.properties"         | 10458878 | 192361  | 55859  | 1887   | 954    | 322     | 89115    | 373940    | 8316        | 56017        | 19625   | 16855 | 964
 		"antlr-1objH-tamiflex.properties"         | 6003045  | 104251  | 54545  | 1811   | 926    | 322     | 88348    | 371868    | 8224        | 56017        | 19625   | 16855 | 965
 		"antlr-insensitive-reflection.properties" | 8376198  | 1111250 | 56606  | 1814   | 1456   | 15      | 97936    | 97936     | 10724       | 10724        | 19625   | 480   | 2328
-	}
-
-	void equals(String metric, long expectedVal) {
-		long actualVal = -1
-
-		String metrics = "${analysis.database}/Stats_Metrics.csv"
-		(new File(metrics)).eachLine { line ->
-			String[] values = line.split('\t')
-			if ((values.size() == 3) && (values[1] == metric)) {
-				actualVal = values[2] as long
-			}
-		}
-		// We expect numbers to deviate by 10%.
-		assert actualVal > (expectedVal * 0.9)
-		assert actualVal < (expectedVal * 1.1)
 	}
 }

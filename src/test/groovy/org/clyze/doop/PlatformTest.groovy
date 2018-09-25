@@ -4,6 +4,7 @@ import org.clyze.analysis.Analysis
 import org.clyze.doop.input.PlatformManager
 import spock.lang.Specification
 import spock.lang.Unroll
+import static org.clyze.doop.TestUtils.*
 
 /**
  * Test that all platforms can be selected without crashing Doop.
@@ -23,15 +24,10 @@ class PlatformTest extends Specification {
         analysis = Main.analysis
 
         then:
-        someFileExists()
+        metaExists(analysis)
 
         where:
         platform << PlatformManager.ARTIFACTS_FOR_PLATFORM.keySet().findAll { !(it.contains("python")) }
-    }
-
-    // Trivial check.
-    void someFileExists() {
-        assert true == (new File("${analysis.outDir}/meta")).exists()
     }
 
 }
