@@ -7,7 +7,7 @@ import spock.lang.Unroll
 /**
  * Test Souffle analysis mode.
  */
-class CrudeSouffleSpec extends Specification {
+class CrudeSouffleTest extends Specification {
 
 	Analysis analysis
 
@@ -38,7 +38,7 @@ class CrudeSouffleSpec extends Specification {
 		"antlr-insensitive-tamiflex.properties"   | 2595458  | 271819  | 57869  | 1957   | 1123   | 322     | 89730    | 89730     | 8405        | 8405         | 19625   | 16855 | 964
 		"antlr-1call-tamiflex.properties"         | 10458878 | 192361  | 55859  | 1887   | 954    | 322     | 89115    | 373940    | 8316        | 56017        | 19625   | 16855 | 964
 		"antlr-1objH-tamiflex.properties"         | 6003045  | 104251  | 54545  | 1811   | 926    | 322     | 88348    | 371868    | 8224        | 56017        | 19625   | 16855 | 965
-		// "antlr-insensitive-reflection.properties" | 6290756  | 1111250 | 56606  | 2499   | 1619   | 15      | 97936    | 97936     | 10724       | 10724        | 19625   | 480   | 2328
+		"antlr-insensitive-reflection.properties" | 8376198  | 1111250 | 56606  | 1814   | 1456   | 15      | 97936    | 97936     | 10724       | 10724        | 19625   | 480   | 2328
 	}
 
 	void equals(String metric, long expectedVal) {
