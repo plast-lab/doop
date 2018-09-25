@@ -5,7 +5,7 @@ import spock.lang.Specification
 class TypeUtilsTest extends Specification {
     def "RaiseTypeId"(String arg, String res) {
         expect:
-            TypeUtils.raiseTypeId(arg).equals(res)
+        TypeUtils.raiseTypeId(arg) == res
         where:
             arg                                                 | res
             "I"                                                 | "int"

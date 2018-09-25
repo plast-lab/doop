@@ -16,7 +16,7 @@ try {
     Helper.tryInitLogging("INFO", "$outDir/logs", true)
 } catch (IOException ex) {
     System.err.println("Warning: could not initialize logging")
-    throw new DoopErrorCodeException(15);
+    throw new DoopErrorCodeException(15)
 }
 
 def script = new SouffleScript(new Executor(outDir, env))

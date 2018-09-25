@@ -412,7 +412,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	static TerminalNode findToken(ParserRuleContext ctx, String token) {
-		for (def i = 0; i < ctx.getChildCount(); i++)
+		for (def i = 0; i < ctx.childCount; i++)
 			if (ctx.getChild(i) instanceof TerminalNode && (ctx.getChild(i) as TerminalNode).text == token)
 				return ctx.getChild(i) as TerminalNode
 		return null

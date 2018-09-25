@@ -32,7 +32,7 @@ class Main {
 			Helper.tryInitLogging("INFO", "${Doop.doopHome}/build/logs", true)
 		} catch (IOException ex) {
 			System.err.println("Warning: could not initialize logging")
-			throw new DoopErrorCodeException(15);
+			throw new DoopErrorCodeException(15)
 		}
 
 		try {
@@ -128,13 +128,13 @@ class Main {
 		if (logLevel) {
 			switch (logLevel) {
 				case "debug":
-					Logger.getRootLogger().setLevel(Level.DEBUG)
+					Logger.rootLogger.level = Level.DEBUG
 					break
 				case "info":
-					Logger.getRootLogger().setLevel(Level.INFO)
+					Logger.rootLogger.level = Level.INFO
 					break
 				case "error":
-					Logger.getRootLogger().setLevel(Level.ERROR)
+					Logger.rootLogger.level = Level.ERROR
 					break
 				default:
 					log.info "Invalid log level: $logLevel - using default (info)"
