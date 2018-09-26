@@ -69,7 +69,7 @@ $ ./doop -i ./lib/asm-debug-all-4.1.jar      [local file]
 ```
 
 #### PLATFORM (--platform)
-Optional --- default: java_7. The platform to use for the analysis. The possible Java options are java_N where N is the java version (3, 4, 5, 6, 7 etc.). Java 8 is currently not supported. The android options are android_N where N is the Android version (20, 21, 22, 23, 24 etc.)
+Optional --- default: java_7. The platform to use for the analysis. The possible Java options are java_N where N is the java version (3, 4, 5, 6, 7 etc.). Java 8 is currently not supported. The android options are android_N_V where N is the Android version (20, 21, 22, 23, 24, 25 etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom built platforms).
 
 Example:
 
@@ -137,17 +137,34 @@ In order to use LogicBlox instead of the Soufflé engine you can provide the --l
 
     $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id lb-antlr --lb
 
-### Running doop in an offline mode
+### Running Doop in offline mode
 
 Normally, on each invocation of Doop the underlying build system will check for newer versions of all dependency libraries.
 Sometimes, it might be desirable to invoke doop in an offline mode. There is an alternative script for this purpose.
 
     $ ./doopOffline --platform java_7 -a context-insensitive -i com.example.some.jar
 
+### Building Doop distribution
+
+Optionally, Doop can be built as a binary distribution with the
+following command:
+
+```
+#!bash
+$ ./gradlew distZip                  # or distTar
+```
+
+The resulting distribution archive can be found under
+build/distributions and can be decompressed to a directory. Doop is
+invoked in that directory with "./bin/doop" instead of "./doop",
+bypassing Gradle (and its dependency resolution) on each Doop
+run. This can help with dependency resolution issues due to network
+connectivity or to avoid Gradle overhead when running Doop in batch
+mode.
 
 ## License
 UPL (see [LICENSE](LICENSE)).
 
 
 ## Development on Doop
-The `doop` command is a script for gradle build tasks. If you want to see all available tasks (e.g., how to build stand-alone packages of Doop for offline use), try `./gradlew tasks`. Generally, for development and integration instructions, please consult the [Doop Developer Guide](docs/documentation.md).
+The `doop` command is a script for Gradle build tasks. If you want to see all available tasks (e.g., how to build stand-alone packages of Doop for offline use), try `./gradlew tasks`. Generally, for development and integration instructions, please consult the [Doop Developer Guide](docs/documentation.md).
