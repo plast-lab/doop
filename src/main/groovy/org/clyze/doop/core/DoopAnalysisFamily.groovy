@@ -653,8 +653,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xstop-at-basic",
 					description: "Run the basic analysis and exit. Possible strategies: default, classes-scc (outputs the classes in SCC), partitioning (outputs the classes in partitions)",
                                         argName: "PARTITIONING_STRATEGY",
-                                        argInputType: InputType.MISC,
-                                        value: "NONE"
+                                        argInputType: InputType.MISC
 			),
 			new BooleanAnalysisOption(
 					id: "X_DRY_RUN",
