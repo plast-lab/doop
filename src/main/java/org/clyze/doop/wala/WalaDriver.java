@@ -4,8 +4,6 @@ import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import org.clyze.doop.common.Driver;
 
-import java.util.Iterator;
-
 class WalaDriver extends Driver<IClass, WalaThreadFactory> {
     private final IAnalysisCacheView _cache;
 
