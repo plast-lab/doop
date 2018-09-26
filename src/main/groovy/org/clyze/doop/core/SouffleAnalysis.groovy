@@ -123,6 +123,15 @@ class SouffleAnalysis extends DoopAnalysis {
 			def cfgAnalysisPath = "${Doop.souffleAddonsPath}/cfg-analysis"
 			cpp.includeAtEnd("$analysis", "${cfgAnalysisPath}/analysis.dl", "${cfgAnalysisPath}/declarations.dl")
 		}
+                if (options.X_STOP_AT_BASIC.value) {
+                   if (options.X_STOP_AT_BASIC.value == 'classes-scc') {
+                        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/classes-scc.dl")
+                   }
+
+                   if (options.X_STOP_AT_BASIC.value == 'partitioning') {
+                        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/partitioning.dl")
+                   }
+                }
 	}
 
 	void mainAnalysis() {

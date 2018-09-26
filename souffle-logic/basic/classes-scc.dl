@@ -1,0 +1,149 @@
+// Define a straightforward SCC decomposition of classes, based on
+// constant-pool information.
+
+// REVIEW: this is very similar to the partitioning logic, yet with
+// important differences. There is no distinction between application
+// and library classes, no special classes (collections, etc.). In the
+// future, we should try to merge the two.
+
+.decl TypeRefersToOther(typeFrom: Type, typeTo: Type)
+.decl TypeTransitivelyRefersToOther(typeFrom: Type, typeTo: Type)
+.decl SCCType(?type:Type)
+.decl SCCTypesInSameSCC(?type:Type, ?type:Type)
+.decl TypeToSCCId(?type:Type, ?idType:number)
+.decl CountOfTypesPerSCC(?idType:number, ?num:number)      
+.decl SCCPerCountOfTypes(?idType:number, ?num:number)
+.decl MaxCountOfTypesPerSCC(?maxNum:number)
+.decl SCCWithMaxCountOfTypes(?idType:number)
+.decl NumberOfRelevantTypes(?num:number)
+.decl TypeToPartitionId(?inClass:Type, ?sccId:number)
+.decl SCCRefersToType(?typeTo:Type, ?sccidFrom:number, ?scciTo:number)
+.decl CountOfReferencesBetweenSCCs(?sccFrom:number, ?sccTo:number, ?cnt:number)
+.decl SCCKnowsAboutOther(?sccFrom:number, ?sccTo:number)
+.decl SCCTransitivelyKnowsAboutOther(?sccFrom:number, ?sccTo:number)
+.decl SCCTransitivelyKnowsAboutApplicationClass(?class:ClassType, ?sccFrom:number)
+.decl CountOfApplicationClassesTransitivelyKnownBySCC(?idType:number, ?num:number)
+.decl MaxCountOfApplicationClassesTransitivelyKnownBySCC(?maxNum:number)
+.decl SCCWithMaxCountOfTransitivelyKnownApplicationClasses(?idType:number)
+.decl SpecialLibrary(?class:ClassType)
+
+.output TypeRefersToOther
+.output TypeToSCCId
+        
+TypeRefersToOther(?typeFrom, ?typeTo) :-
+  DirectSubclass(?typeFrom, ?typeTo).
+
+TypeRefersToOther(?typeFrom, ?typeTo) :-
+  DirectSuperinterface(?typeFrom, ?typeTo).
+
+TypeRefersToOther(?typeFrom, ?typeTo) :-
+  Field_Type(?field, ?typeTo),
+  Field_DeclaringType(?field, ?typeFrom).
+
+TypeRefersToOther(?typeFrom, ?typeTo) :-
+  MethodInvocation_Method(?invo, ?method),
+  Instruction_Method(?invo, ?fromMethod),
+  Method_DeclaringType(?method, ?typeTo),
+  Method_DeclaringType(?fromMethod, ?typeFrom).
+
+TypeRefersToOther(?typeFrom, ?typeTo) :-
+  Var_Type(?var, ?typeTo),
+  Var_DeclaringMethod(?var, ?method),
+  Method_DeclaringType(?method, ?typeFrom).
+
+TypeRefersToOther(?typeFrom, ?typeTo) :-
+  ExceptionHandler_Method(?handler, ?inmethod),
+  ExceptionHandler_Type(?handler, ?typeTo),
+  Method_DeclaringType(?inmethod, ?typeFrom).
+
+// Now reflexively-transitively close it.
+TypeTransitivelyRefersToOther(?typeFrom, ?typeTo) :-
+  TypeRefersToOther(?typeFrom, ?typeTo).
+
+TypeTransitivelyRefersToOther(?typeFrom, ?typeTo) :-
+  TypeTransitivelyRefersToOther(?typeFrom, ?typeInterm),
+  TypeRefersToOther(?typeInterm, ?typeTo).
+
+SCCType(?type) :-
+  ClassType(?type).
+
+SCCTypesInSameSCC(?type1, ?type2) :-
+  TypeTransitivelyRefersToOther(?type1, ?type2),
+  TypeTransitivelyRefersToOther(?type2, ?type1).
+
+SCCTypesInSameSCC(?type, ?type) :-
+  SCCType(?type).
+
+TypeToSCCId(?type, ?idType) :-
+  SCCTypesInSameSCC(?type, ?t),
+  idType = min ord(?t): (SCCTypesInSameSCC(?type, ?t).
+
+CountOfTypesPerSCC(?idType, ?num) :-
+  TypeToSCCId(_, ?idType),
+  ?num = count : TypeToSCCId(_, ?idType).
+
+SCCPerCountOfTypes(?idType, ?num) :-
+  CountOfTypesPerSCC(?idType, ?num).
+
+MaxCountOfTypesPerSCC(?maxNum) :-
+  CountOfTypesPerSCC(_, ?num),
+  ?maxNum = max(?num) : CountOfTypesPerSCC(_, ?num).
+
+SCCWithMaxCountOfTypes(?idType) :-
+  MaxCountOfTypesPerSCC(?max),
+  SCCPerCountOfTypes(?idType, ?max).
+
+NumberOfRelevantTypes(?num) :-
+  ?num = count : SCCType(_).
+  
+TypeToPartitionId(?inClass, ?sccId) :-
+  TypeToSCCId(?inClass, ?sccId).
+
+SCCRefersToType(?typeTo, ?sccidFrom, ?scciTo) :-
+  TypeRefersToOther(?typeFrom, ?typeTo),
+  TypeToSCCId(?typeFrom, ?sccidFrom),
+  TypeToSCCId(?typeTo, ?scciTo).
+
+CountOfReferencesBetweenSCCs(?sccFrom, ?sccTo, ?cnt) :-
+  SCCRefersToType(_, ?sccFrom, ?sccTo),
+  ?cnt = count : {SCCRefersToType(_, ?sccFrom, ?sccTo), ?sccFrom != ?sccTo}.
+
+SCCKnowsAboutOther(?sccFrom, ?sccTo) :-
+  CountOfReferencesBetweenSCCs(?sccFrom, ?sccTo, ?cntForward),
+  CountOfReferencesBetweenSCCs(?sccTo, ?sccFrom, ?cntReverse),
+  ?cntForward > ?cntReverse.
+
+SCCKnowsAboutOther(?sccFrom, ?sccTo) :-
+  CountOfReferencesBetweenSCCs(?sccFrom, ?sccTo, _),
+  !CountOfReferencesBetweenSCCs(?sccTo, ?sccFrom, _).
+   
+SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccTo) :-
+  SCCKnowsAboutOther(?sccInter, ?sccTo),
+  SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccInter).
+
+SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccTo) :-
+  SCCKnowsAboutOther(?sccFrom, ?sccTo).
+
+SCCTransitivelyKnowsAboutApplicationClass(?class, ?sccFrom) :-
+  ApplicationClass(?class),
+  TypeToSCCId(?class, ?sccTo),
+  SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccTo),
+  CountOfTypesPerSCC(?sccFrom, ?n),
+  ?n > 10.
+
+CountOfApplicationClassesTransitivelyKnownBySCC(?idType, ?num) :-
+  SCCTransitivelyKnowsAboutApplicationClass(_, ?idType),
+  ?num = count : SCCTransitivelyKnowsAboutApplicationClass(_, ?idType).
+
+MaxCountOfApplicationClassesTransitivelyKnownBySCC(?maxNum) :-
+  CountOfApplicationClassesTransitivelyKnownBySCC(_, ?num),
+  ?maxNum = max(?num) : CountOfApplicationClassesTransitivelyKnownBySCC(_, ?num).
+
+SCCWithMaxCountOfTransitivelyKnownApplicationClasses(?idType) :-
+  MaxCountOfApplicationClassesTransitivelyKnownBySCC(?max),                                                 
+  CountOfApplicationClassesTransitivelyKnownBySCC(?idType, ?max).
+
+SpecialLibrary(?class) :-
+  !SCCWithMaxCountOfTransitivelyKnownApplicationClasses(?idType),
+  !CollectionLibraryClass(?class),
+  TypeToSCCId(?class, ?idType).
