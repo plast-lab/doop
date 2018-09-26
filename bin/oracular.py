@@ -17,7 +17,7 @@ ci_analysis_weight = 0
 DOOP = './doop'  # './doopOffline'
 PRE_ANALYSIS_1 = 'context-insensitive'
 PRE_ANALYSIS_2 = '2-object-sensitive+heap'
-MAIN_ANALYSIS = 'oracular'
+MAIN_ANALYSIS = 'fully-guided-context-sensitive'
 DATABASE = 'last-analysis'
 SOUFFLE = 'souffle'
 
