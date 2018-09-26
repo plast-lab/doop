@@ -86,6 +86,7 @@ def runZipper(app, cache_dir, out_dir):
 def runMainAnalysis(args, zipper_file):
     args = [DOOP] + args
     args = args + ['--zipper', zipper_file]
+    args = args + ['--Xstart-after-facts', 'last-analysis/../facts']
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running main (Zipper-guided) analysis ...' + RESET
     # print cmd

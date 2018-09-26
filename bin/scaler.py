@@ -73,6 +73,7 @@ def runMainAnalysis(args, scaler_file):
     args = [DOOP] + args
     args = args + ['-a', MAIN_ANALYSIS]
     args = args + ['--scaler', scaler_file]
+    args = args + ['--Xstart-after-facts', 'last-analysis/../facts']
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running main (Scaler-guided) analysis ...' + RESET
     # print cmd
