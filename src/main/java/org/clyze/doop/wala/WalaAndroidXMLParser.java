@@ -66,10 +66,13 @@ class WalaAndroidXMLParser extends AndroidSupport {
                     MultiDexContainer<? extends DexBackedDexFile> multiDex = loadDexContainer(apk, opcodes);
                     for (String dexEntry : multiDex.getDexEntryNames()) {
                         DexBackedDexFile dex = multiDex.getEntry(dexEntry);
-                        for (DexBackedClassDef dexClass : dex.getClasses()) {
-                            String className = TypeUtils.raiseTypeId(dexClass.getType());
-                            java.registerArtifactClass(apk.getName(), className, dexEntry);
-                        }
+                        if (dex == null)
+                            System.err.println("No .dex entry for " + dexEntry);
+                        else
+                            for (DexBackedClassDef dexClass : dex.getClasses()) {
+                                String className = TypeUtils.raiseTypeId(dexClass.getType());
+                                java.registerArtifactClass(apk.getName(), className, dexEntry);
+                            }
                     }
                 } catch (Exception ex) {
                     System.err.println("Error while calculating artifacts on Android: " + ex.getMessage());
