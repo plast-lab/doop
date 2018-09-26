@@ -48,7 +48,7 @@ class WalaAndroidXMLParser extends AndroidSupport {
                 try {
                     AppResources resources = processAppResources(i);
                     processAppResources(i, resources, pkgs, null);
-                    resources.printManifestHeader();
+                    resources.printManifestInfo();
                 } catch (Exception ex) {
                     System.err.println("Error processing manifest in: " + i);
                     ex.printStackTrace();

@@ -51,7 +51,7 @@ public abstract class AndroidSupport {
                     AppResources resources = processAppResources(i);
                     computedResources.put(i, resources);
                     processAppResources(i, resources, pkgs, rLinker);
-                    resources.printManifestHeader();
+                    resources.printManifestInfo();
                 } catch (Exception ex) {
                     System.err.println("Resource processing failed: " + ex.getMessage());
                 }
