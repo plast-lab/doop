@@ -3,7 +3,6 @@ package org.clyze.doop.util;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 
 public enum TypeUtils implements Opcodes  {
     ;
@@ -29,29 +28,11 @@ public enum TypeUtils implements Opcodes  {
 
     private static final Map<String, String> cachedRaisedTypes = new ConcurrentHashMap<>();
 
-    private static String getClassName(Type classType)
-    {
-        return classType.getClassName();
-    }
-
-    public static String getPackageName(Type classType)
-    {
-        return getPackageName(getClassName(classType));
-    }
-
     public static String getPackageName(String className)
     {
         int index = className.lastIndexOf('.');
 
         return (index < 0) ? "" : className.substring(0, index);
-    }
-
-    public static boolean isPublic(int access) {
-        return (access & ACC_PUBLIC) != 0;
-    }
-
-    public static boolean isSynthetic(int access) {
-        return (access & ACC_SYNTHETIC) != 0;
     }
 
     /**
