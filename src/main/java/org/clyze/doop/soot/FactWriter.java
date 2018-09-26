@@ -162,7 +162,7 @@ class FactWriter extends JavaFactWriter {
         _db.add(ASSIGN_LOCAL, insn, str(index), _rep.local(m, from), _rep.local(m, to), methodId);
     }
 
-    void writeAssignLocal(SootMethod m, Stmt stmt, Local to, ThisRef ref, Session session) {
+    void writeAssignLocal(SootMethod m, Stmt stmt, Local to, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, index);
         String methodId = writeMethod(m);

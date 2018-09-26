@@ -7,13 +7,11 @@ import org.clyze.doop.common.Driver;
 import java.util.Iterator;
 
 class WalaDriver extends Driver<IClass, WalaThreadFactory> {
-    private final boolean _android;
     private final IAnalysisCacheView _cache;
 
     WalaDriver(WalaThreadFactory factory, int totalClasses,
-           Integer cores, boolean android, IAnalysisCacheView cache) {
+               Integer cores, IAnalysisCacheView cache) {
         super(factory, totalClasses, cores);
-        _android = android;
         _cache = cache;
     }
 

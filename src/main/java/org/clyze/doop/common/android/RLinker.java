@@ -51,7 +51,7 @@ public class RLinker {
         return instance;
     }
 
-    public Integer lookupConst(String packageName, String nestedName, String fld) {
+    Integer lookupConst(String packageName, String nestedName, String fld) {
         Map<String, Map<String, Integer> > pkgEntry = constants.get(packageName);
         if (pkgEntry != null) {
             Map<String, Integer> fieldEntry = pkgEntry.get(nestedName);
@@ -75,7 +75,7 @@ public class RLinker {
      *
      * @param tmpDirs  The temporary directory will be added to this set.
      */
-    public String linkRs(String rDir, Set<String> tmpDirs) {
+    String linkRs(String rDir, Set<String> tmpDirs) {
         if ((rDir == null) || rs.isEmpty()) {
             return null;
         } else {
@@ -140,7 +140,7 @@ public class RLinker {
 
             // Extract information from the line text.
             String nestedR = parts[1];
-            String rName = pkg + "." + "R$" + nestedR;
+            // String rName = pkg + "." + "R$" + nestedR;
             String[] newParts = new String[parts.length];
             newParts[0] = parts[0];
             newParts[1] = parts[2];

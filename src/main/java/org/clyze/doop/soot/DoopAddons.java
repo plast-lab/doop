@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.clyze.doop.common.DoopErrorCodeException;
@@ -121,7 +122,7 @@ class DoopAddons {
      */
     public static boolean usingUpstream() {
         try {
-            Class c = Class.forName("soot.jimple.toolkits.scalar.DoopRenamer");
+            Objects.requireNonNull(Class.forName("soot.jimple.toolkits.scalar.DoopRenamer"));
             return false;
         } catch (ClassNotFoundException ex) {
             return true;
