@@ -303,8 +303,8 @@ SimulateNativeAllocation(
 
 // REVIEW: does this need more handling, e.g., ReferenceQueue?
 
-.decl StoreIntoWeakReference(?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?from:Var)
-.decl LoadFromReference(?ctx:mainAnalysis.configuration.Context, ?to:Var, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value)
+.decl StoreIntoWeakReference(?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)
+.decl LoadFromReference(?ctx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)
 
 .decl StoreIntoWeakReferenceArgs(?from:Var, ?base:Var)
 StoreIntoWeakReferenceArgs(?from, ?base) :-
@@ -342,7 +342,7 @@ HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
 // but we cannot model all of them in practice as the type hierarchy under
 // C can be big (for example when C=java.lang.Object).
 
-.decl ReachableNativeMethodInvocation(?ctx:mainAnalysis.configuration.Context, ?invo:MethodInvocation, ?nativeMethod:Method)
+.decl ReachableNativeMethodInvocation(?ctx:configuration.Context, ?invo:MethodInvocation, ?nativeMethod:Method)
 .output ReachableNativeMethodInvocation
 
 .decl _NativeMethodInvocation(?invo:MethodInvocation, ?nativeMethod:Method)
