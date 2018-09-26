@@ -18,6 +18,7 @@ public abstract class Driver<C, F> {
     private int _classCounter;
     private final int _totalClasses;
     private final int _classSplit = 80;
+    private int errors;
 
     protected Driver(F factory, int totalClasses, Integer cores) {
         this._factory = factory;
@@ -29,9 +30,18 @@ public abstract class Driver<C, F> {
         System.out.println("Fact generation cores: " + _cores);
     }
 
+    public synchronized void markError() {
+        errors++;
+    }
+
+    public synchronized boolean errorsExist() {
+        return (errors > 0);
+    }
+
     private void initExecutor() {
         _classCounter = 0;
         _tmpClassGroup = new HashSet<>();
+        errors = 0;
 
         if (_cores > 2) {
             _executor = new ThreadPoolExecutor(_cores /2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
@@ -57,6 +67,11 @@ public abstract class Driver<C, F> {
             System.err.println(e.getMessage());
             throw new DoopErrorCodeException(10);
         }
+        if (errorsExist()) {
+            System.err.println("Fact generation failed (" + errors + " errors).");
+            throw new DoopErrorCodeException(5);
+        }
+        errors = 0;
     }
 
     public void generateInParallel(Iterable<? extends C> classesToProcess) throws DoopErrorCodeException {

@@ -172,7 +172,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			} catch (all) {
 				all = StackTraceUtils.deepSanitize all
 				log.info all
-				throw new DoopErrorCodeException(8)
+				throw new DoopErrorCodeException(8, all)
 			} finally {
 				JHelper.cleanUp(tmpDirs)
 			}

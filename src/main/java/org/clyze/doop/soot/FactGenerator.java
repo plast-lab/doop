@@ -1,12 +1,12 @@
 package org.clyze.doop.soot;
 
+import java.util.ArrayList;
+import java.util.Set;
+import org.clyze.doop.common.Driver;
 import soot.*;
 import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
-
-import java.util.ArrayList;
-import java.util.Set;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -20,17 +20,21 @@ class FactGenerator implements Runnable {
     private final boolean _ssa;
     private final Set<SootClass> _sootClasses;
     private final boolean _reportPhantoms;
+    private final Driver driver;
 
-    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses, boolean reportPhantoms)
+    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses, boolean reportPhantoms, Driver driver)
     {
         this._writer = writer;
         this._ssa = ssa;
         this._sootClasses = sootClasses;
         this._reportPhantoms = reportPhantoms;
+        this.driver = driver;
     }
 
     @Override
     public void run() {
+        if (driver.errorsExist())
+            return;
 
         for (SootClass _sootClass : _sootClasses) {
             _writer.writeClassOrInterfaceType(_sootClass);
@@ -60,8 +64,7 @@ class FactGenerator implements Runnable {
                 Session session = new Session();
                 try {
                     generate(m, session);
-                }
-                catch (Throwable t) {
+                } catch (Throwable t) {
                     // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
                     // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
                     //     Thread key = i.next();
@@ -71,10 +74,13 @@ class FactGenerator implements Runnable {
                     //         System.err.println("\tat " + trace[j]);
                     //     }
                     // }
-                    String msg = "Error while processing method: " + m;
+                    String msg = "Error while processing method: " + m + ": " + t.getMessage();
                     System.err.println(msg);
-                    t.printStackTrace();
-                    throw new RuntimeException(msg, t);
+                    // Inform the driver. This is safer than throwing an
+                    // exception, since it could be lost due to the executor
+                    // service running this class.
+                    driver.markError();
+                    return;
                 }
             }
         }

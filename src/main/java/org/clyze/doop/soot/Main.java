@@ -149,6 +149,7 @@ public class Main {
             FactWriter writer = new FactWriter(db, reportPhantoms);
             ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, reportPhantoms);
             SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores);
+            factory.setDriver(driver);
 
             writer.writePreliminaryFacts(classes, java, sootParameters);
             db.flush();

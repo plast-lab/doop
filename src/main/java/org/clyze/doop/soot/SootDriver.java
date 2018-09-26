@@ -15,7 +15,7 @@ class SootDriver extends Driver<SootClass, ThreadFactory> {
     void generateMethod(SootMethod dummyMain, FactWriter writer, boolean ssa, boolean reportPhantoms) {
         Set<SootClass> sootClasses = new HashSet<>();
         sootClasses.add(dummyMain.getDeclaringClass());
-        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses, reportPhantoms);
+        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses, reportPhantoms, this);
         factGenerator.generate(dummyMain, new Session());
         writer.writeAndroidEntryPoint(dummyMain);
         factGenerator.run();
