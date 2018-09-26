@@ -629,8 +629,8 @@ class FactWriter extends JavaFactWriter {
     /**
      * Throw statement
      */
-    void writeThrow(SootMethod m, Stmt stmt, Local l, Session session) {
-        int index = session.calcUnitNumber(stmt);
+    void writeThrow(SootMethod m, Unit unit, Local l, Session session) {
+        int index = session.calcUnitNumber(unit);
         String insn = _rep.throwLocal(m, l, session);
         String methodId = writeMethod(m);
 
