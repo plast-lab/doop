@@ -542,7 +542,8 @@ public class WalaFactWriter extends JavaFactWriter {
             try {
                 Collection<IField> flds = s.getDeclaredStaticFields();
                 result.addAll(flds);
-            }catch (NullPointerException exc){
+            } catch (NullPointerException exc) {
+                System.err.println("Ignoring null pointer exception when reading static fields of " + fixTypeString(cl.getName().toString()));
             }
 
             s = s.getSuperclass();
@@ -553,6 +554,7 @@ public class WalaFactWriter extends JavaFactWriter {
                     Collection<IField> flds = interf.getDeclaredStaticFields();
                     result.addAll(flds);
                 } catch (NullPointerException exc) {
+                    System.err.println("Ignoring null pointer exception when reading interfaces of " + fixTypeString(cl.getName().toString()));
                 }
             }
         }
