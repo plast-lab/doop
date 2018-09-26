@@ -8,8 +8,6 @@ import sys
 # ----------------- configuration -------------------------
 DOOP = './doop'  # './doopOffline'
 PRE_ANALYSIS = 'context-insensitive'
-DATABASE = 'last-analysis'
-
 APP = 'temp'
 SEP = '\\t'
 
@@ -19,11 +17,9 @@ THREAD = 16  # use multithreading to accelerate Zipper
 ONLY_LIB = True
 DOOP_OUT = 'out'
 # ---------------------------------------------------------
-
 RESET = '\033[0m'
 YELLOW = '\033[33m'
 BOLD = '\033[1m'
-
 
 def run_pre_analysis(initArgs):
     args = list(initArgs)
@@ -111,6 +107,11 @@ def run_main_analysis(args, zipper_file):
     os.system(cmd)
 
 
+def run_cached(args):
+    zipper_file = run_zipper(APP, os.path.join(ZIPPER_CACHE, APP), os.path.join(ZIPPER_OUT, APP))
+    run_main_analysis(args, zipper_file)
+
+
 def run(args):
     if not os.path.exists("zipper"):
         os.mkdir("zipper")
@@ -122,5 +123,9 @@ def run(args):
 
 
 if __name__ == '__main__':
-    APP = sys.argv[-1]
-    run(sys.argv[1:-1])
+    if sys.argv[-1] == 'cache':
+        APP = sys.argv[-2]
+        run(sys.argv[1:-2])
+    else:
+        APP = sys.argv[-1]
+        run(sys.argv[1:-1])

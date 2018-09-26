@@ -269,7 +269,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 				def benchmark = FilenameUtils.getBaseName(inputJarName)
 				log.info "Running ${options.DACAPO.value ? "dacapo" : "dacapo-bach"} benchmark: $benchmark"
-			} else {}
+			} else {
+                               if (!options.TAMIFLEX.value)
+                                  options.TAMIFLEX.value = "dummy"
+                        }
 		}
 
 		if (!options.PYTHON.value) {

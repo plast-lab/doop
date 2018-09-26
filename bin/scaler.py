@@ -9,19 +9,14 @@ import sys
 DOOP = './doop'  # './doopOffline'
 PRE_ANALYSIS = 'context-insensitive'
 MAIN_ANALYSIS = 'fully-guided-context-sensitive'
-DATABASE = 'last-analysis'
-
-APP = 'temp'
 SEP = '\\t'
 
 SCALER_MAIN = 'ptatoolkit.scaler.doop.Main'
 SCALER_CACHE = 'scaler/cache'
 SCALER_OUT = 'scaler/out'
-SCALER_TST = 30000000
+#SCALER_TST = 30000000
 DOOP_OUT = 'out'
-
 # ---------------------------------------------------------
-
 RESET = '\033[0m'
 YELLOW = '\033[33m'
 BOLD = '\033[1m'
@@ -31,8 +26,8 @@ def run_pre_analysis(args):
     args = [DOOP] + args
     args = args + ['-a', PRE_ANALYSIS]
     args = args + ['--scaler-pre']
-    args = args + ['--cache']
     args = args + ['--id', APP + "-scaler-ci"]
+    args = args + ['--cache']
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running pre-analysis ...' + RESET
     # print cmd
@@ -40,11 +35,9 @@ def run_pre_analysis(args):
     ci_analysis_facts = os.path.join(DOOP_OUT, 'context-insensitive', APP + '-scaler-ci', 'facts')
 
     cache_facts_dir = os.path.join(SCALER_CACHE, APP, 'facts')
-    if not os.path.exists(cache_facts_dir):
-        shutil.copytree(ci_analysis_facts, cache_facts_dir)
-    else:
+    if os.path.exists(cache_facts_dir):
         shutil.rmtree(cache_facts_dir)
-        shutil.copytree(ci_analysis_facts, cache_facts_dir)
+    shutil.copytree(ci_analysis_facts, cache_facts_dir)
         
 
 def dump_required_doop_results(app, db_dir, dump_dir):
@@ -88,11 +81,11 @@ def run_scaler(app, cache_dir, out_dir):
 
 
 def run_main_analysis(args, scaler_file):
-
     args = [DOOP] + args
     args = args + ['-a', MAIN_ANALYSIS]
     args = args + ['--special-cs-methods', scaler_file]
     args = args + ['--Xstart-after-facts', os.path.join(SCALER_CACHE, APP, 'facts')]
+    args = args + ['--id', APP + '-scaler-fully-guided']
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running main (Scaler-guided) analysis ...' + RESET
     # print cmd
@@ -113,7 +106,19 @@ def run(args):
     run_main_analysis(args, scaler_file)
 
 
+def run_cached(args):
+    scaler_file = run_scaler(APP, os.path.join(SCALER_CACHE, APP), os.path.join(SCALER_OUT, APP))
+    run_main_analysis(args, scaler_file)
+
+
 if __name__ == '__main__':
-    SCALER_TST = int(sys.argv[-1])
-    APP = sys.argv[-2]
-    run(sys.argv[1:-2])
+    global SCALER_TST
+    global APP
+    if sys.argv[-1] == 'cache':
+        SCALER_TST = int(sys.argv[-2])
+        APP = sys.argv[-3]
+        run_cached(sys.argv[1:-3])
+    else:
+        SCALER_TST = int(sys.argv[-1])
+        APP = sys.argv[-2]
+        run(sys.argv[1:-2])

@@ -129,14 +129,14 @@
 .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)
 .input SpecialContextSensitivityMethod(IO="file", filename="SpecialContextSensitivityMethod.facts", delimiter="\t")
 
-.decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)
+.decl SpecialContextSensitivityMethodNotPresentViolation(?method:Method)
 
-SpecialContextSensitivityMethodConstraintViolated(?method) :-
+SpecialContextSensitivityMethodNotPresentViolation(?method) :-
   SpecialContextSensitivityMethod(?method, _),
   !isMethod(?method).
 
-.printsize SpecialContextSensitivityMethodConstraintViolated
-.output SpecialContextSensitivityMethodConstraintViolated
+.printsize SpecialContextSensitivityMethodNotPresentViolation
+.output SpecialContextSensitivityMethodNotPresentViolation
 
 .decl NoSensitivityViolation(?method:Method)
 
