@@ -8,7 +8,11 @@ import org.clyze.doop.utils.SouffleScript
  */
 class TestUtils {
 	static void relationHasApproxSize(Analysis analysis, String relation, int expectedSize) {
-		int actualSize = new File("${analysis.database}/${relation}.csv").readLines().size()
+		int actualSize = 0
+		File file = new File("${analysis.database}/${relation}.csv")
+		BufferedReader br = new BufferedReader(new FileReader(file))
+		br.withCloseable { while (it.readLine() != null) { actualSize++ } }
+
 		// We expect numbers to deviate by 10%.
 		assert actualSize > (expectedSize * 0.9)
 		assert actualSize < (expectedSize * 1.1)
