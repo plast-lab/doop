@@ -24,7 +24,7 @@ publishing {
             logger.warn("No directory was given, using default: '" + libDirName + "'")
         }
         file("${gradleInvocationDir}/${libDirName}").eachFile { File f ->
-            def initName = f.getName() - '.jar'
+            def initName = f.name - '.jar'
             def parts = initName.split('-')
             String namePart, versionPart
             if (parts.size() > 1 && parts.last() == "SNAPSHOT") {
@@ -35,7 +35,7 @@ publishing {
                 versionPart = parts.last()
             } else {
                 namePart = initName
-                versionPart = '1.' + new Date().getTime()
+                versionPart = '1.' + new Date().time
             }
             create(initName, MavenPublication) {
                 groupId 'ext'
