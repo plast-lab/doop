@@ -39,9 +39,13 @@ def run_pre_analysis(args):
     os.system(cmd)
     ci_analysis_facts = os.path.join(DOOP_OUT, 'context-insensitive', APP + '-scaler-ci', 'facts')
 
-    if not os.path.exists(os.path.join(SCALER_CACHE, APP, 'facts')):
-        shutil.copytree(ci_analysis_facts, os.path.join(SCALER_CACHE, APP, 'facts'))
-
+    cache_facts_dir = os.path.join(SCALER_CACHE, APP, 'facts')
+    if not os.path.exists(cache_facts_dir):
+        shutil.copytree(ci_analysis_facts, cache_facts_dir)
+    else:
+        shutil.rmtree(cache_facts_dir)
+        shutil.copytree(ci_analysis_facts, cache_facts_dir)
+        
 
 def dump_required_doop_results(app, db_dir, dump_dir):
     INPUT = {
