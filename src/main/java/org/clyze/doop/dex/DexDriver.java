@@ -5,8 +5,8 @@ import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 
 class DexDriver extends Driver<DexBackedClassDef, DexThreadFactory> {
 
-    DexDriver(DexThreadFactory factory, int totalClasses, Integer cores) {
-        super(factory, totalClasses, cores);
+    DexDriver(DexThreadFactory factory, int totalClasses, Integer cores, boolean ignoreFactGenErrors) {
+        super(factory, totalClasses, cores, ignoreFactGenErrors);
     }
 
     @Override

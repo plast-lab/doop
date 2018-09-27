@@ -364,6 +364,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--generate-jimple"]
 		}
 
+		if (options.X_IGNORE_FACTGEN_ERRORS.value) {
+			params += ["--ignore-factgen-errors"]
+		}
+
 		log.debug "Params of soot: ${params.join(' ')}"
 
 		factGenTime = Helper.timing {

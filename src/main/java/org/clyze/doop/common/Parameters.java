@@ -25,6 +25,7 @@ public class Parameters {
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
+    public boolean _ignoreFactGenErrors = false;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
@@ -181,6 +182,9 @@ public class Parameters {
             break;
         case "--noFacts":
             _noFacts = true;
+            break;
+        case "--ignore-factgen-errors":
+            _ignoreFactGenErrors = true;
             break;
         default:
             return -1;

@@ -34,7 +34,7 @@ class DexFactWriter extends JavaFactWriter {
             throws DoopErrorCodeException {
         DexThreadFactory factory = new DexThreadFactory(_db, dexParams, dexEntry, apkName, cha, java, cachedMethodDescriptors);
         int totalClasses = dex.getClassCount();
-        DexDriver driver = new DexDriver(factory, totalClasses, dexParams._cores);
+        DexDriver driver = new DexDriver(factory, totalClasses, dexParams._cores, false);
         driver.generateInParallel(dex.getClasses());
 
         // Register all field/type/method references found, to find phantoms later.

@@ -148,7 +148,7 @@ public class Main {
             boolean reportPhantoms = sootParameters._reportPhantoms;
             FactWriter writer = new FactWriter(db, reportPhantoms);
             ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, reportPhantoms);
-            SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores);
+            SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors);
             factory.setDriver(driver);
 
             writer.writePreliminaryFacts(classes, java, sootParameters);

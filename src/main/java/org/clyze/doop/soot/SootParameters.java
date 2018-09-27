@@ -68,6 +68,7 @@ public class SootParameters extends Parameters {
             System.err.println("  -ld <archive>                         Find (dependency) classes in jar/zip archive");
             System.err.println("  -lsystem                              Find classes in default system classes");
             System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
+            System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails");
             System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
             System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
             System.err.println("  --R-out-dir <directory>               Specify where to generate R code (when linking AAR inputs)");

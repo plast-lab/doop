@@ -8,8 +8,8 @@ import soot.SootMethod;
 
 class SootDriver extends Driver<SootClass, ThreadFactory> {
 
-    SootDriver(ThreadFactory factory, int totalClasses, Integer cores) {
-        super(factory, totalClasses, cores);
+    SootDriver(ThreadFactory factory, int totalClasses, Integer cores, boolean ignoreFactGenErrors) {
+        super(factory, totalClasses, cores, ignoreFactGenErrors);
     }
 
     void generateMethod(SootMethod dummyMain, FactWriter writer, boolean ssa, boolean reportPhantoms) {

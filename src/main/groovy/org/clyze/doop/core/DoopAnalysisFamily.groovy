@@ -731,6 +731,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xignore-wrong-staticness",
 					description: "Ignore 'wrong static-ness' errors in Soot."
 			),
+			new BooleanAnalysisOption(
+					id: "X_IGNORE_FACTGEN_ERRORS",
+					name: "Xignore-factgen-errors",
+					description: "Continue with analysis despite fact generation errors."
+			),
 			new IntegerAnalysisOption(
 					id: "X_MONITORING_INTERVAL",
 					name: "Xmonitoring-interval",

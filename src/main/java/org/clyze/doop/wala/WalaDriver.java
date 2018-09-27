@@ -8,8 +8,9 @@ class WalaDriver extends Driver<IClass, WalaThreadFactory> {
     private final IAnalysisCacheView _cache;
 
     WalaDriver(WalaThreadFactory factory, int totalClasses,
-               Integer cores, IAnalysisCacheView cache) {
-        super(factory, totalClasses, cores);
+               Integer cores, IAnalysisCacheView cache,
+               boolean ignoreFactGenErrors) {
+        super(factory, totalClasses, cores, ignoreFactGenErrors);
         _cache = cache;
     }
 

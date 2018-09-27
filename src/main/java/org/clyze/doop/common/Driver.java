@@ -19,13 +19,15 @@ public abstract class Driver<C, F> {
     private final int _totalClasses;
     private final int _classSplit = 80;
     private int errors;
+    private final boolean _ignoreFactGenErrors;
 
-    protected Driver(F factory, int totalClasses, Integer cores) {
+    protected Driver(F factory, int totalClasses, Integer cores, boolean ignoreFactGenErrors) {
         this._factory = factory;
         this._totalClasses = totalClasses;
         this._cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
         this._classCounter = 0;
         this._tmpClassGroup = new HashSet<>();
+        this._ignoreFactGenErrors = ignoreFactGenErrors;
 
         System.out.println("Fact generation cores: " + _cores);
     }
@@ -69,7 +71,8 @@ public abstract class Driver<C, F> {
         }
         if (errorsExist()) {
             System.err.println("Fact generation failed (" + errors + " errors).");
-            throw new DoopErrorCodeException(5);
+            if (!_ignoreFactGenErrors)
+                throw new DoopErrorCodeException(5);
         }
         errors = 0;
     }
