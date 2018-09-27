@@ -19,7 +19,7 @@ public abstract class Driver<C, F> {
     private final int _totalClasses;
     private final int _classSplit = 80;
     private int errors;
-    private final boolean _ignoreFactGenErrors;
+    public final boolean _ignoreFactGenErrors;
 
     protected Driver(F factory, int totalClasses, Integer cores, boolean ignoreFactGenErrors) {
         this._factory = factory;

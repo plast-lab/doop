@@ -20,7 +20,7 @@ class FactGenerator implements Runnable {
     private final boolean _ssa;
     private final Set<SootClass> _sootClasses;
     private final boolean _reportPhantoms;
-    private final Driver driver;
+    private final Driver _driver;
 
     FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses, boolean reportPhantoms, Driver driver)
     {
@@ -28,12 +28,14 @@ class FactGenerator implements Runnable {
         this._ssa = ssa;
         this._sootClasses = sootClasses;
         this._reportPhantoms = reportPhantoms;
-        this.driver = driver;
+        this._driver = driver;
     }
 
     @Override
     public void run() {
-        if (driver.errorsExist())
+        final boolean ignoreErrors = _driver._ignoreFactGenErrors;
+
+        if (!ignoreErrors && _driver.errorsExist())
             return;
 
         for (SootClass _sootClass : _sootClasses) {
@@ -76,11 +78,13 @@ class FactGenerator implements Runnable {
                     // }
                     String msg = "Error while processing method: " + m + ": " + t.getMessage();
                     System.err.println(msg);
-                    // Inform the driver. This is safer than throwing an
-                    // exception, since it could be lost due to the executor
-                    // service running this class.
-                    driver.markError();
-                    return;
+                    if (!ignoreErrors) {
+                        // Inform the driver. This is safer than throwing an
+                        // exception, since it could be lost due to the executor
+                        // service running this class.
+                        _driver.markError();
+                        return;
+                    }
                 }
             }
         }
