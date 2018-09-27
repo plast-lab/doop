@@ -94,11 +94,12 @@ FunctionInv_ResolvesTo(?insn, ?fun):-
 //                    PLACEHOLDER INVOC
 //------------------------------------------------------
 
-.decl isValidTensorPlaceHolderInvocation(?insn:FunctionInvocation_Insn)
+#define TensorValueMacro(op,fun,val1, val2) cat("<tensor ", cat(fun, cat("/", cat(op, cat(val1, cat("+", cat(val2,">")))))))
+
+.decl isValidTensorPlaceHolderInvocation(?insn:FunctionInvocation_Insn, ?typeArgVal:Value, ?dimListVal:Value)
 .output isValidTensorPlaceHolderInvocation
 
-TensorOperationShapeListArg(?insn, ?dimListVar),
-isValidTensorPlaceHolderInvocation(?insn):-
+isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal):-
   FunctionInv_ResolvesTo(?insn, "<tensorflow.placeholder>"),
   ActualPositionalParam(0, ?insn, ?typeVar),
   VarPointsTo(?typeVar, ?typeVal),
@@ -112,10 +113,9 @@ isValidTensorPlaceHolderInvocation(?insn):-
 
 TensorShapeListSize(?tensorVal, ?size),
 TensorShapeListContent(?tensorVal, ?index, ?indexValue):-
-  isValidTensorPlaceHolderInvocation(?insn),
+  isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal),
   AssignInstruction_To(?insn, ?tensorAssignVar),
   VarPointsTo(?tensorAssignVar, ?tensorVal),
-  TensorOperationShapeListArg(?insn, ?dimListVar),
   VarPointsToList(?dimListVar, ?dimListVal),
   ConstListDimensions(?dimListVal, ?size),
   ConstListContents(?dimListVal, ?index, ?indexValue).
@@ -128,53 +128,45 @@ ConstListContents(?tensorVal, ?index, ?indexValue):-
 
 VarPointsTo(?var, ?value),
 Value_Type(?value, "<tensorflow.Tensor>"):-
-  isValidTensorPlaceHolderInvocation(?insn),
+  isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal),
   AssignInstruction_To(?insn, ?var),
-  Instruction_Index(?insn, ?index),
   Instruction_Function(?insn, ?function),
-  ?value = cat(?function, cat("/placeholderTensor", to_string(?index))).
+  ?value = TensorValueMacro("placeholder",?function, ?typeVal, ?dimListVal).
 
 //------------------------------------------------------
 //              RESHAPE OP
 //------------------------------------------------------
 
-.decl isValidTensorReshapeInvocationClass1(?insn:FunctionInvocation_Insn)
+.decl isValidTensorReshapeInvocationClass1(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)
 .output isValidTensorReshapeInvocationClass1
 
-.decl isValidTensorReshapeInvocationLevel1(?insn:FunctionInvocation_Insn)
+.decl isValidTensorReshapeInvocationLevel1(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)
 .output isValidTensorReshapeInvocationLevel1
 
-TensorOperationShapeListArg(?insn, ?dimListVar),
-TensorOperationTensorArg(?insn, ?tensorVar),
-isValidTensorReshapeInvocationLevel1(?insn):-
+isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal):-
   FunctionInv_ResolvesTo(?insn, "<tensorflow.reshape>"),
-  ActualPositionalParam(0, ?insn, ?tensorVar),
-  VarPointsTo(?tensorVar, ?tensorVal),
-  Value_Type(?tensorVal, "<tensorflow.Tensor>"),
+  ActualPositionalParam(0, ?insn, ?tensorArgVar),
+  VarPointsTo(?tensorArgVar, ?tensorArgVal),
+  Value_Type(?tensorArgVal, "<tensorflow.Tensor>"),
   (
-    ActualPositionalParam(1, ?insn, ?dimListVar);
-    ActualKeywordParam(_, ?insn, "shape", ?dimListVar)
+    ActualPositionalParam(1, ?insn, ?dimListArgVar);
+    ActualKeywordParam(_, ?insn, "shape", ?dimListArgVar)
   ),
-  VarPointsToList(?dimListVar, ?dimListVal),
-  isListOfConsts(?dimListVal).
+  VarPointsToList(?dimListArgVar, ?dimListArgVal),
+  isListOfConsts(?dimListArgVal).
 
-isValidTensorReshapeInvocationClass1(?insn):-
-  isValidTensorReshapeInvocationLevel1(?insn),
-  TensorOperationShapeListArg(?insn, ?dimListVar),
-  TensorOperationTensorArg(?insn, ?tensorVar),
-  VarPointsTo(?tensorVar, ?tensorVal),
-  VarPointsToList(?dimListVar, ?dimListVal),
-  ConstListContents(?tensorVal, ?pos, "<None>"),
-  ConstListContents(?dimListVal, ?pos, "<num-constant(int):-1>"),
-  ConstListMultAll(?tensorVal,?tensorRes),
-  ConstListMultAll(?dimListVal,?dimListRes),
+isValidTensorReshapeInvocationClass1(?insn, ?tensorArgVal, ?dimListArgVal):-
+  isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
+  ConstListContents(?tensorArgVal, ?pos, "<None>"),
+  ConstListContents(?dimListArgVal, ?pos, "<num-constant(int):-1>"),
+  ConstListMultAll(?tensorArgVal,?tensorRes),
+  ConstListMultAll(?dimListArgVal,?dimListRes),
   ?tensorRes = ?dimListRes.
 
 
 VarPointsTo(?var, ?value),
 Value_Type(?value, "<tensorflow.Tensor>"):-
-  isValidTensorReshapeInvocationClass1(?insn),
+  isValidTensorReshapeInvocationClass1(?insn, ?tensorArgVal, ?dimListArgVal),
   AssignInstruction_To(?insn, ?var),
-  Instruction_Index(?insn, ?index),
   Instruction_Function(?insn, ?function),
-  ?value = cat(?function, cat("/reshapeTensor", to_string(?index))).
+  ?value = TensorValueMacro("reshape",?function, ?tensorArgVal, ?dimListArgVal).
