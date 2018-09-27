@@ -106,7 +106,7 @@ public class PythonFactWriter {
         }
 
         _db.add(STRING_RAW, result, result);
-        _db.add(FUNCTION, result, _rep.simpleName(m), par, arity);
+        _db.add(FUNCTION, result, _rep.simpleName(m), par, arity, _rep.sourceFileName(m));
         return result;
     }
 

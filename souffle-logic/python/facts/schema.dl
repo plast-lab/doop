@@ -42,13 +42,22 @@
 
 //-----------------------------------------------------------------------------
 
-.type Function
+.type File
+.decl isFile(file:File)
+
+//-----------------------------------------------------------------------------
+
+.type Scope = File | Function | Module
+
+//-----------------------------------------------------------------------------
+.type Function = Type
 .decl isMethod(?m:Function)
 .decl isFunction(?m:Function)
 
 
 .decl Function_SimpleName(?function:Function, ?simpleName:symbol)
 .decl Function_Arity(?function:Function, ?arity:number)
+.decl Function_DeclaredInFile(?function:Function, ?file:File)
 
 .decl FormalParam(?index:number, ?function:Function, ?var:Var)
 
@@ -60,6 +69,7 @@
 .decl isVar(v:Var)
 
 .decl Var_DeclaringFunction(?var:Var, ?function:Function)
+.decl Var_SourceName(?var:Var, ?name:symbol)
 
 .decl ApplicationVar(?var:Var)
 
@@ -123,6 +133,9 @@
 .type LexicalAccess_Insn              = AssignInstruction
 .type LexicalRead_Insn                = LexicalAccess_Insn
 .type LexicalWrite_Insn               = LexicalAccess_Insn
+.type GlobalAccess_Insn               = AssignInstruction
+.type GlobalRead_Insn                 = GlobalAccess_Insn
+.type GlobalWrite_Insn                = GlobalAccess_Insn
 
 .decl isAssignInstruction(?insn:AssignInstruction)
 .decl isAssignOper_Insn(?insn:AssignOper_Insn)
@@ -141,6 +154,9 @@
 .decl isLexicalAccess_Insn(?insn: LexicalAccess_Insn)
 .decl isLexicalRead_Insn(?insn: LexicalRead_Insn)
 .decl isLexicalWrite_Insn(?insn: LexicalWrite_Insn)
+.decl isGlobalAccess_Insn(?insn: GlobalAccess_Insn)
+.decl isGlobalRead_Insn(?insn: GlobalRead_Insn)
+.decl isGlobalWrite_Insn(?insn: GlobalWrite_Insn)
 
 .decl isFunctionInvocation(?insn:FunctionInvocation_Insn)
 
@@ -252,9 +268,16 @@
 //-----------------------------------------------------------------------------
 // [LexicalAccess (LexicalRead, LexicalWrite) ]
 //-----------------------------------------------------------------------------
-.decl LexicalAccessInsn_VarName(?insn: LexicalAccess_Insn, ?name:symbol)
+.decl LexicalAccessInsn_Name(?insn: LexicalAccess_Insn, ?name:symbol)
 .decl LexicalAccessInsn_VarScope(?insn: LexicalAccess_Insn, ?scope:Function)
 .decl LexicalWriteInsn_From(?insn: LexicalAccess_Insn, ?from:Var)
+
+//-----------------------------------------------------------------------------
+// [GlobalAccess (GlobalRead, GlobalWrite) ]
+//-----------------------------------------------------------------------------
+.decl GlobalAccessInsn_Name(?insn: GlobalAccess_Insn, ?name:symbol)
+.decl GlobalAccessInsn_Scope(?insn: GlobalAccess_Insn, ?scope:Scope)
+.decl GlobalWriteInsn_From(?insn: GlobalAccess_Insn, ?from:Var)
 
 //-----------------------------------------------------------------------------
 // [Exception Handlers]

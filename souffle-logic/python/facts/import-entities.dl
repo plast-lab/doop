@@ -53,6 +53,15 @@ FormalParam(?index, ?function, ?var) :-
   _FormalParam(?index, ?function, ?var).
 
 
+// Var:DeclaringMethod
+
+.decl _Var_DeclaringFunction(?var:symbol, ?method:symbol)
+.input _Var_DeclaringFunction(IO="file", filename="Var-DeclaringFunction.facts", delimiter="\t")
+
+isVar(?var),
+Var_DeclaringFunction(?var, ?function) :-
+  _Var_DeclaringFunction(?var, ?function).
+
 // NativeReturnVar
 
 .decl _NativeReturnVar(?var:symbol, ?function:symbol)

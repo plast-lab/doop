@@ -25,7 +25,7 @@ public class PythonUtils {
             String scriptName = typeString.substring(0, typeString.indexOf('/'));
             String sourceFileName = inMethod.getDeclaringClass().getSourceFileName();
             if(sourceFileName.contains(scriptName)){
-                typeString = sourceFileName.concat(typeString.substring(typeString.indexOf('/')).replace("/",":"));
+                typeString = "<" + sourceFileName.concat(typeString.substring(typeString.indexOf('/')).replace("/",":")) + ">";
             }else{
                 throw new RuntimeException("Unexpected new "+ instruction);
             }

@@ -133,7 +133,7 @@ isLexicalRead_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Function(?instruction, ?inFunct),
 AssignInstruction_To(?instruction, ?to),
-LexicalAccessInsn_VarName(?instruction, ?name),
+LexicalAccessInsn_Name(?instruction, ?name),
 LexicalAccessInsn_VarScope(?instruction, ?scope):-
   _LexicalRead(?instruction, ?index, ?to, ?name, ?scope, ?inFunct).
 
@@ -149,10 +149,42 @@ isLexicalWrite_Insn(?instruction),
 isLexicalAccess_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Function(?instruction, ?inFunct),
-LexicalAccessInsn_VarName(?instruction, ?name),
+LexicalAccessInsn_Name(?instruction, ?name),
 LexicalAccessInsn_VarScope(?instruction, ?scope),
 LexicalWriteInsn_From(?instruction, ?from):-
   _LexicalWrite(?instruction, ?index, ?name, ?scope, ?from, ?inFunct).
+
+
+//GlobalRead
+
+.decl _GlobalRead(?instruction:symbol, ?index: number, ?to:symbol, ?name:symbol, ?inFunct:symbol)
+.input _GlobalRead(IO="file", filename="GlobalRead.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+isGlobalAccess_Insn(?instruction),
+isGlobalRead_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Function(?instruction, ?inFunct),
+AssignInstruction_To(?instruction, ?to),
+GlobalAccessInsn_Name(?instruction, ?name):-
+  _GlobalRead(?instruction, ?index, ?to, ?name, ?inFunct).
+
+
+//GlobalWrite
+
+.decl _GlobalWrite(?instruction:symbol, ?index: number, ?name:symbol, ?from:symbol, ?inFunct:symbol)
+.input _GlobalWrite(IO="file", filename="GlobalWrite.facts", delimiter="\t")
+
+isInstruction(?instruction),
+isAssignInstruction(?instruction),
+isGlobalWrite_Insn(?instruction),
+isGlobalAccess_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Function(?instruction, ?inFunct),
+GlobalAccessInsn_Name(?instruction, ?name),
+GlobalWriteInsn_From(?instruction, ?from):-
+  _GlobalWrite(?instruction, ?index, ?name, ?from, ?inFunct).
 
 // IfVar
 
@@ -226,8 +258,12 @@ AssignInstruction_To(?instruction, ?to) :-
 
 //Var-SourceName
 
-.decl VarSourceName(?var:symbol, ?name:symbol)
-.input VarSourceName(IO="file", filename="Var-SourceName.facts", delimiter="\t")
+.decl _Var_SourceName(?var:symbol, ?name:symbol)
+.input _Var_SourceName(IO="file", filename="Var-SourceName.facts", delimiter="\t")
+
+Var_SourceName(?var, ?name):-
+  _Var_SourceName(?var, ?name).
+
 // Field
 
 .decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol)
@@ -284,12 +320,14 @@ ExceptionHandler_End(?handler, ?end) :-
 
 // Function
 
-.decl _Function(?function:symbol, ?simplename:symbol, ?declaringType:symbol, ?arity:number)
+.decl _Function(?function:symbol, ?simplename:symbol, ?declaringType:symbol, ?arity:number, ?declaredInFile: File)
 .input _Function(IO="file", filename="Function.facts", delimiter="\t")
 
 Function_SimpleName(?function, ?simplename),
-Function_Arity(?function, ?arity) :-
-  _Function(?function, ?simplename, ?declaringType, ?arity).
+Function_Arity(?function, ?arity),
+isFile(?file),
+Function_DeclaredInFile(?function, ?file):-
+  _Function(?function, ?simplename, ?declaringType, ?arity, ?file).
 
 
 // StoreInstanceField

@@ -32,19 +32,58 @@
   .output VarPointsTo
   .decl VarPointsTo(?var:Var, ?val:Value)
 
-  .output LexicalAccessInsn_VarName
+  .decl GlobalNamePointsTo(?scope:Scope, ?name:symbol, ?val:Value)
+  .output GlobalNamePointsTo
+
+  GlobalNamePointsTo(?scope, ?name, ?val):-
+    isGlobalWrite_Insn(?insn),
+    GlobalAccessInsn_Name(?insn, ?name),
+    GlobalAccessInsn_Scope(?insn, ?scope),
+    GlobalWriteInsn_From(?insn, ?fromVar),
+    VarPointsTo(?fromVar, ?val).
+
+  VarPointsTo(?var, ?val):-
+    isGlobalRead_Insn(?insn),
+    GlobalAccessInsn_Name(?insn, ?name),
+    GlobalAccessInsn_Scope(?insn, ?scope),
+    AssignInstruction_To(?insn, ?var),
+    GlobalNamePointsTo(?scope, ?name, ?val).
+
+
+  .output LexicalAccessInsn_Name
   .output LexicalAccessInsn_VarScope
   .output isLexicalRead_Insn
   .output isLexicalWrite_Insn
 
+  //This rule is probably redundant
   VarPointsTo(?var, ?val):-
     isLexicalRead_Insn(?insn),
     AssignInstruction_To(?insn, ?var),
-    LexicalAccessInsn_VarName(?insn, ?name),
+    LexicalAccessInsn_Name(?insn, ?name),
     LexicalAccessInsn_VarScope(?insn, ?scope),
     isLexicalWrite_Insn(?writeInstr),
-    LexicalAccessInsn_VarName(?writeInstr, ?name),
+    LexicalAccessInsn_Name(?writeInstr, ?name),
     LexicalAccessInsn_VarScope(?writeInstr, ?scope),
     LexicalWriteInsn_From(?writeInstr, ?from),
     VarPointsTo(?from, ?val).
+
+
+  VarPointsTo(?var, ?val):-
+      isLexicalRead_Insn(?insn),
+      AssignInstruction_To(?insn, ?var),
+      LexicalAccessInsn_Name(?insn, ?name),
+      LexicalAccessInsn_VarScope(?insn, ?scope),
+      Var_DeclaringFunction(?fromVar, ?scope),
+      Var_SourceName(?fromVar, ?name),
+      VarPointsTo(?fromVar, ?val).
+
+
+  VarPointsTo(?var, ?val):-
+    AssignHeapAllocation_Heap(?insn, ?val),
+    AssignInstruction_To(?insn, ?var).
+
+  VarPointsToFunction(?var, ?val):-
+    VarPointsTo(?var,?val),
+    HeapAllocation_Type(?val, ?type),
+    isFunction(?type).
 

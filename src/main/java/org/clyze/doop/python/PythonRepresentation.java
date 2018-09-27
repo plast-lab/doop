@@ -91,6 +91,14 @@ public class PythonRepresentation {
         return s;
     }
 
+    String sourceFileName(IClass klass){
+        return "<" + klass.getSourceFileName() + ">";
+    }
+
+    String sourceFileName(IMethod m){
+        return sourceFileName(m.getDeclaringClass());
+    }
+
     String signature(IMethod m) {
         //return signature(m.getReference());
         String sourceFileName = m.getDeclaringClass().getSourceFileName();

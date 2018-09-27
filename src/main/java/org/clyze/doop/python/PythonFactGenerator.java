@@ -401,6 +401,8 @@ public class PythonFactGenerator implements Runnable{
         String globalName = instruction.getGlobalName();
         if(globalName.startsWith("global "))
             globalName = globalName.substring(7);
+        if(globalName.contains("/"))
+            globalName = globalName.substring(globalName.indexOf("/") + 1);
         _writer.writeGlobalRead(m, instruction, to, globalName, session);
 
     }
@@ -425,6 +427,8 @@ public class PythonFactGenerator implements Runnable{
         String globalName = instruction.getGlobalName();
         if(globalName.startsWith("global "))
             globalName = globalName.substring(7);
+        if(globalName.contains("/"))
+            globalName = globalName.substring(globalName.indexOf("/") + 1);
         _writer.writeGlobalWrite(m, instruction, from, globalName, session);
 
     }

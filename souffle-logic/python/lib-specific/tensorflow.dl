@@ -82,13 +82,14 @@ isFunction("<tensorflow.placeholder>").
 
 FunctionInv_ResolvesTo(?insn, ?fun):-
   FunctionInvocation_Base(?insn, ?callBase),
-  VarPointsTo(?callBase, ?fun).
+  VarPointsTo(?callBase, ?fun),
+  isFunction(?fun).
 
-.decl TensorOperationShapeListArg(?insn:FunctionInvocation_Insn, ?listVar:Var)
-.output TensorOperationShapeListArg
-
-.decl TensorOperationTensorArg(?insn:FunctionInvocation_Insn, ?tensorVar:Var)
-.output TensorOperationTensorArg
+FunctionInv_ResolvesTo(?insn, ?fun):-
+  FunctionInvocation_Base(?insn, ?callBase),
+  VarPointsTo(?callBase, ?heap),
+  HeapAllocation_Type(?heap, ?fun),
+  isFunction(?fun).
 
 //------------------------------------------------------
 //                    PLACEHOLDER INVOC

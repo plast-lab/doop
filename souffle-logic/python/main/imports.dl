@@ -10,7 +10,7 @@
 
 .decl VarPointsToModule(?var:Var, ?module:Module)
 
-.decl VarPointsToFunction(?var:Var, ?function: Function)
+.decl VarPointsToFunction(?var:Var, ?val: Value)
 .output VarPointsToFunction
 .output isFunction
 
