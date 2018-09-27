@@ -9,13 +9,24 @@ import org.clyze.doop.utils.SouffleScript
 class TestUtils {
 	static void relationHasApproxSize(Analysis analysis, String relation, int expectedSize) {
 		int actualSize = 0
-		File file = new File("${analysis.database}/${relation}.csv")
-		BufferedReader br = new BufferedReader(new FileReader(file))
-		br.withCloseable { while (it.readLine() != null) { actualSize++ } }
+
+		forEachLineIn("${analysis.database}/${relation}.csv", { actualSize++ })
 
 		// We expect numbers to deviate by 10%.
 		assert actualSize > (expectedSize * 0.9)
 		assert actualSize < (expectedSize * 1.1)
+	}
+
+	/**
+	 * Replacement of Groovy's eachLine(), to work with large files.
+	 */
+	static void forEachLineIn(String path, Closure cl) {
+		File file = new File(path)
+		BufferedReader br = new BufferedReader(new FileReader(file))
+		br.withCloseable {
+			String line
+			while ((line = it.readLine()) != null) { cl(line) }
+		}
 	}
 
 	static void metricIsApprox(Analysis analysis, String metric, long expectedVal) {
@@ -41,5 +52,22 @@ class TestUtils {
 	// Trivial check.
 	static void metaExists(Analysis analysis) {
 		assert true == (new File("${analysis.outDir}/meta")).exists()
+	}
+
+	// Check that a local variable points to a heap allocation.
+	static void varPointsTo(Analysis analysis, String local, String heap) {
+		boolean found = false
+		forEachLineIn("${analysis.database}/VarPointsTo.csv",
+					  { line ->
+						  if (line) {
+							  String[] values = line.split('\t')
+							  String l = values[3]
+							  String h = values[1]
+							  if ((l == local) && (h == heap)) {
+								  found = true
+							  }
+						  }
+					  })
+		assert found == true
 	}
 }

@@ -1,0 +1,42 @@
+package org.clyze.doop
+
+import org.clyze.analysis.Analysis
+import spock.lang.Specification
+import spock.lang.Unroll
+import static org.clyze.doop.TestUtils.*
+
+/**
+ * Test programs from the server-analysis-tests repo.
+ */
+class ServerAnalysisTests extends Specification {
+
+	final static String SERVER_ANALYSIS_TESTS_DIR = "SERVER_ANALYSIS_TESTS_DIR"
+	static String serverAnalysisTestsDir
+	Analysis analysis
+
+	def setupSpec() {
+		serverAnalysisTestsDir = System.getenv(SERVER_ANALYSIS_TESTS_DIR)
+		if (!serverAnalysisTestsDir) {
+			System.err.println("Error: environment variable ${SERVER_ANALYSIS_TESTS_DIR} not set, cannot run server analysis tests")
+		}
+		assert null != serverAnalysisTestsDir
+	}
+
+	@Unroll
+	def "Server analysis test 104"() {
+		when:
+		String test = "104-method-references"
+		String jar = "104-method-references-1.2.jar"
+		Main.main((String[])["-i", "${serverAnalysisTestsDir}/${test}/build/libs/${jar}",
+							 "-a", "context-insensitive", // "--Xserver-logic",
+							 "--id", "test-${test}",
+							 "--platform", "java_8", "--Xstats-full"])
+		analysis = Main.analysis
+
+		then:
+		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/c1#_15", "<java.lang.invoke.InnerClassLambdaMetafactory: java.lang.invoke.CallSite buildCallSite()>/new java.lang.invoke.ConstantCallSite/0")
+		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/c1#_15", "<Main: void main(java.lang.String[])>/invokedynamic_A::meth1234/0::: java.util.function.Consumer::: (Mock)::: reference A::meth1234 from <A: void meth1234(java.lang.Integer)> wrapped as java.util.function.Consumer.accept")
+		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/c3#_52", "<java.lang.invoke.InnerClassLambdaMetafactory: java.lang.invoke.CallSite buildCallSite()>/new java.lang.invoke.ConstantCallSite/0")
+		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/c3#_52", "<Main: void main(java.lang.String[])>/invokedynamic_A::meth99/0::: java.util.function.Function::: (Mock)::: reference A::meth99 from <A: java.lang.Integer meth99(java.lang.Integer)> wrapped as java.util.function.Function.apply")
+	}
+}
