@@ -44,7 +44,10 @@ def run_pre_analyses(init_args, app):
     args = args + ['-a', PRE_ANALYSIS_1]
     args = args + ['--Xoracular-heuristics']
     args = args + ['--cache']
+    args = args + ['--Xstart-after-facts', app+"-facts"]
     args = args + ['--id', app+"-ci"]
+    args = args + ['--Xsymlink-cached-facts']
+
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running pre-analyses #1 ' + PRE_ANALYSIS_1 + RESET
     # print cmd
@@ -64,8 +67,10 @@ def run_pre_analyses(init_args, app):
     args = [DOOP] + init_args
     args = args + ['-a', PRE_ANALYSIS_2]
     args = args + ['--Xoracular-heuristics']
-    args = args + ['--Xstart-after-facts', ci_analysis_facts]
+    args = args + ['--Xstart-after-facts', app+"-facts"]
     args = args + ['--id', app+'-2obj']
+    args = args + ['--Xsymlink-cached-facts']
+
     cmd = ' '.join(args)
     print cmd
     os.system(cmd)
@@ -78,8 +83,8 @@ def run_pre_analyses(init_args, app):
     from_path = os.path.join(two_obj_analysis_database, 'MethodVPTCost.csv')
     dump_path = os.path.join(ORACULAR_CACHE, app, '%s' % 'SensMethodCost.facts')
     shutil.copyfile(from_path, dump_path) 
-    if not os.path.exists(os.path.join(ORACULAR_CACHE, app, 'facts')):
-        shutil.copytree(two_obj_analysis_facts, os.path.join(ORACULAR_CACHE, app, 'facts')) 
+    # if not os.path.exists(os.path.join(ORACULAR_CACHE, app, 'facts')):
+    #     shutil.copytree(two_obj_analysis_facts, os.path.join(ORACULAR_CACHE, app, 'facts'))
 
 
 def run_oracular_analysis_classification(app, slowdown):
@@ -245,8 +250,10 @@ def run_main_analysis(args, app, oracular_file):
     args = [DOOP] + args
     args = args + ['-a', MAIN_ANALYSIS]
     args = args + ['--special-cs-methods', oracular_file]
-    args = args + ['--Xstart-after-facts', os.path.join(ORACULAR_CACHE, app, 'facts')]
+    args = args + ['--Xstart-after-facts', app+"-facts"]
     args = args + ['--id', app+'-oracular']
+    args = args + ['--Xsymlink-cached-facts']
+
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running main (Oracular-guided) analysis ...' + RESET
     # print cmd

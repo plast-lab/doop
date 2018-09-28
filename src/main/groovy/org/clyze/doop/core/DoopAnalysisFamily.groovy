@@ -307,16 +307,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Enable the analysis to be the pre-analysis of Scaler, and outputs the information required by Scaler.",
 					forPreprocessor: true
 			),
-			new AnalysisOption(
-					id: "SCALER",
-					name: "scaler",
-					description: "Use file with method context-sensitivity variants selected by Scaler.",
-					argName: "FILE",
-					argInputType: InputType.MISC,
-					forCacheID: true,
-					changesFacts: true,
-					forPreprocessor: true
-			),
 			/* End Scaler related options */
 
 			/* Start Zipper related options */

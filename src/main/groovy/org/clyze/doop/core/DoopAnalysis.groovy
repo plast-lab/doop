@@ -18,6 +18,7 @@ import org.codehaus.groovy.runtime.StackTraceUtils
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 
 import static org.apache.commons.io.FileUtils.*
 
@@ -224,18 +225,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				}
 			}
 
-			if (options.SCALER.value) {
-				File origScalerFile = new File(options.SCALER.value.toString())
-				File destScalerFile = new File(factsDir, "ScalerMethodContext.facts")
-				Files.copy(origScalerFile.toPath(), destScalerFile.toPath())
-			}
-
-			if (options.ZIPPER.value) {
-				File origZipperFile = new File(options.ZIPPER.value.toString())
-				File destZipperFile = new File(factsDir, "ZipperPrecisionCriticalMethod.facts")
-				Files.copy(origZipperFile.toPath(), destZipperFile.toPath())
-			}
-
 			if (!options.X_START_AFTER_FACTS.value) {
 				if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
 					runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
@@ -257,6 +246,19 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				options.MAIN_CLASS.value.each { w.writeLine(it as String) }
 			}
 		}
+
+		if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
+			File origSpecialCSMethodsFile = new File(options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString())
+			File destSpecialCSMethodsFile = new File(factsDir, "SpecialContextSensitivityMethod.facts")
+			Files.copy(origSpecialCSMethodsFile.toPath(), destSpecialCSMethodsFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+		}
+
+		if (options.ZIPPER.value) {
+			File origZipperFile = new File(options.ZIPPER.value.toString())
+			File destZipperFile = new File(factsDir, "ZipperPrecisionCriticalMethod.facts")
+			Files.copy(origZipperFile.toPath(), destZipperFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+		}
+
 	}
 
 	private List<String> getInputArgsJars(Set<String> tmpDirs) {

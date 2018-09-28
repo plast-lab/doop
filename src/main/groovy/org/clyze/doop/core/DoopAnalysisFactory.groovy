@@ -270,9 +270,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				def benchmark = FilenameUtils.getBaseName(inputJarName)
 				log.info "Running ${options.DACAPO.value ? "dacapo" : "dacapo-bach"} benchmark: $benchmark"
 			} else {
-                               if (!options.TAMIFLEX.value)
-                                  options.TAMIFLEX.value = "dummy"
-                        }
+				if (!options.TAMIFLEX.value)
+					options.TAMIFLEX.value = "dummy"
+			}
 		}
 
 		if (!options.PYTHON.value) {
@@ -382,11 +382,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 			// Also test the server logic if the analysis supports it.
 			switch (options.ANALYSIS.value) {
-			case "sound-may-point-to":
-			case "micro":
-				break
-			default:
-				options.X_SERVER_LOGIC.value = true
+				case "sound-may-point-to":
+				case "micro":
+					break
+				default:
+					options.X_SERVER_LOGIC.value = true
 			}
 
 			if (options.CACHE.value) {
