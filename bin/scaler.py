@@ -27,18 +27,13 @@ def run_pre_analysis(args):
     args = args + ['-a', PRE_ANALYSIS]
     args = args + ['--scaler-pre']
     args = args + ['--id', APP + "-scaler-ci"]
-    args = args + ['--cache']
+    args = args + ['--Xstart-after-facts', app+"-facts"]
+    args = args + ['--Xsymlink-cached-facts']
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running pre-analysis ...' + RESET
     # print cmd
     os.system(cmd)
-    ci_analysis_facts = os.path.join(DOOP_OUT, 'context-insensitive', APP + '-scaler-ci', 'facts')
-
-    cache_facts_dir = os.path.join(SCALER_CACHE, APP, 'facts')
-    if os.path.exists(cache_facts_dir):
-        shutil.rmtree(cache_facts_dir)
-    shutil.copytree(ci_analysis_facts, cache_facts_dir)
-        
+       
 
 def dump_required_doop_results(app, db_dir, dump_dir):
     INPUT = {
@@ -75,7 +70,7 @@ def run_scaler(app, cache_dir, out_dir):
 
     scaler_file = os.path.join(SCALER_OUT, app, '%s-ScalerMethodContext-TST%d.facts' % (app, SCALER_TST))
     from_path = os.path.join(SCALER_OUT, app, '%s-ScalerMethodContext-TST%d.facts' % (app, SCALER_TST))
-    dump_path = os.path.join(os.path.join(SCALER_CACHE, app, 'facts', 'SpecialContextSensitivityMethod.facts'))
+    dump_path = os.path.join(os.path.join(SCALER_CACHE, app, 'SpecialContextSensitivityMethod.facts'))
     shutil.copyfile(from_path, dump_path)
     return scaler_file
 
@@ -84,8 +79,10 @@ def run_main_analysis(args, scaler_file):
     args = [DOOP] + args
     args = args + ['-a', MAIN_ANALYSIS]
     args = args + ['--special-cs-methods', scaler_file]
-    args = args + ['--Xstart-after-facts', os.path.join(SCALER_CACHE, APP, 'facts')]
     args = args + ['--id', APP + '-scaler-fully-guided']
+    args = args + ['--Xstart-after-facts', app+"-facts"]
+    args = args + ['--Xsymlink-cached-facts']
+    
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running main (Scaler-guided) analysis ...' + RESET
     # print cmd

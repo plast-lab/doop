@@ -43,7 +43,6 @@ def run_pre_analyses(init_args, app):
     args = [DOOP] + init_args
     args = args + ['-a', PRE_ANALYSIS_1]
     args = args + ['--Xoracular-heuristics']
-    args = args + ['--cache']
     args = args + ['--Xstart-after-facts', app+"-facts"]
     args = args + ['--id', app+"-ci"]
     args = args + ['--Xsymlink-cached-facts']
@@ -165,10 +164,6 @@ def run_oracular_analysis_classification(app, slowdown):
 
     print YELLOW + BOLD + '2-object methods: ' + str(two_object_sensitive_methods) + RESET
     print YELLOW + BOLD + 'context-insensitive methods: ' + str(context_insensitive_methods) + RESET
-    from_path = os.path.join(ORACULAR_CACHE, app, 'SpecialCSMethods.csv')
-    print from_path
-    dump_path = os.path.join(os.path.join(ORACULAR_CACHE, app, 'facts', 'SpecialContextSensitivityMethod.facts'))
-    shutil.copyfile(from_path, dump_path)
 
 def calculate_analysis_threshold(ratio_threshold):
     analysis_weight = 0
