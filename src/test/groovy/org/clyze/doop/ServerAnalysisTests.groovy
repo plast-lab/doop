@@ -1,6 +1,7 @@
 package org.clyze.doop
 
 import org.clyze.analysis.Analysis
+import org.clyze.doop.core.Doop
 import spock.lang.Specification
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
@@ -15,6 +16,8 @@ class ServerAnalysisTests extends Specification {
 	Analysis analysis
 
 	def setupSpec() {
+		Doop.initDoopFromEnv()
+
 		serverAnalysisTestsDir = System.getenv(SERVER_ANALYSIS_TESTS_DIR)
 		if (!serverAnalysisTestsDir) {
 			System.err.println("Error: environment variable ${SERVER_ANALYSIS_TESTS_DIR} not set, cannot run server analysis tests")
@@ -30,6 +33,15 @@ class ServerAnalysisTests extends Specification {
 		then:
 		varPointsTo(analysis, '<HelloJNI: void main(java.lang.String[])>/obj#_34', '<native java.lang.Object value allocated in <HelloJNI: java.lang.Object newJNIObj()>>')
 		varPointsTo(analysis, '<HelloJNI: void main(java.lang.String[])>/list#_43', '<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0')
+	}
+
+	@Unroll
+	def "Server analysis test 012 (interface fields)"() {
+		when:
+		analyzeTest("012-interface-fields", ["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
+
+		then:
+		staticFieldPointsTo(analysis, '<Y: Y fooooooooo>', '<Y: void <clinit>()>/new Y$1/0')
 	}
 
 	@Unroll

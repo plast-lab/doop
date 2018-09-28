@@ -54,16 +54,26 @@ class TestUtils {
 		assert true == (new File("${analysis.outDir}/meta")).exists()
 	}
 
-	// Check that a local variable points to a heap allocation.
-	static void varPointsTo(Analysis analysis, String local, String heap) {
+	// Check that a local variable points to a value.
+	static void varPointsTo(Analysis analysis, String local, String value) {
+		findPair(analysis, "VarPointsTo", local, 3, value, 1)
+	}
+
+	// Check that a static field points to a value.
+	static void staticFieldPointsTo(Analysis analysis, String fld, String value) {
+		findPair(analysis, "mainAnalysis-StaticFieldPointsTo", fld, 2, value, 1)
+	}
+
+	static void findPair(Analysis analysis, String relation,
+						 String s1, int idx1, String s2, int idx2) {
 		boolean found = false
-		forEachLineIn("${analysis.database}/VarPointsTo.csv",
+		forEachLineIn("${analysis.database}/${relation}.csv",
 					  { line ->
 						  if (line) {
 							  String[] values = line.split('\t')
-							  String l = values[3]
-							  String h = values[1]
-							  if ((l == local) && (h == heap)) {
+							  String a = values[idx1]
+							  String b = values[idx2]
+							  if ((a == s1) && (b == s2)) {
 								  found = true
 							  }
 						  }
