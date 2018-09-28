@@ -43,7 +43,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					optName: "a",
 					argName: "NAME",
 					description: "The name of the analysis.",
-					validValues: analysesNames(),
+					validValues: analysesSouffle() + ["----- (LB analyses) -----"] + analysesLB(),
 					isMandatory: true
 			),
 			new AnalysisOption<File>(
@@ -791,23 +791,25 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		]
 	}
 
-	private static List<String> analysesNames() {
-		def closure = { String path, String fileToLookFor ->
-			if (!path) {
-				println "Error: Doop was not initialized correctly, could not read analyses names."
-				return []
-			}
-			def analyses = []
-			new File(path).eachDir { File dir ->
-				def f = new File(dir, fileToLookFor)
-				if (f.exists() && f.isFile()) analyses << dir.name
-			}
-			analyses.sort()
+	private static List<String> analysesFor(String path, String fileToLookFor) {
+		if (!path) {
+			println "Error: Doop was not initialized correctly, could not read analyses names."
+			return []
 		}
+		def analyses = []
+		new File(path).eachDir { File dir ->
+			def f = new File(dir, fileToLookFor)
+			if (f.exists() && f.isFile()) analyses << dir.name
+		}
+		analyses.sort()
+	}
 
-		closure(Doop.souffleAnalysesPath, "analysis.dl") +
-		["----- (LB analyses) -----"] +
-		closure(Doop.analysesPath, "analysis.logic")
+	private static List<String> analysesSouffle() {
+		analysesFor(Doop.souffleAnalysesPath, "analysis.dl")
+	}
+
+	private static List<String> analysesLB() {
+		analysesFor(Doop.analysesPath, "analysis.logic")
 	}
 
 	private static List<String> informationFlowPlatforms(String lbDir, String souffleDir) {

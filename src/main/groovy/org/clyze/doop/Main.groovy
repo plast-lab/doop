@@ -27,7 +27,7 @@ class Main {
 
 	static void main(String[] args) {
 
-		Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"))
+		Doop.initDoopFromEnv()
 		try {
 			Helper.tryInitLogging("INFO", "${Doop.doopHome}/build/logs", true)
 		} catch (IOException ex) {

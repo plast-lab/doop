@@ -69,6 +69,13 @@ class Doop {
 	}
 
 	/**
+	 * Initializes Doop using the default environment variables.
+	 */
+	static void initDoopFromEnv() {
+		Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"))
+	}
+
+	/**
 	 * Creates the default analysis options.
 	 * @return Map < String , AnalysisOptions > .
 	 */
