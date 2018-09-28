@@ -86,6 +86,7 @@
 .decl isNormalHeap(?h:NormalHeap)
 .decl isStringConstant(?h:StringConstant)
 .decl isStringRaw(?id:symbol)
+.decl isClassInstanceAllocation(?h: HeapAllocation)
 
 .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
 .decl OriginalHeapAllocation_Type(?heap:HeapAllocation, ?type:Type)

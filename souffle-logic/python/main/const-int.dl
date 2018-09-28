@@ -3,11 +3,24 @@
 .decl VarHasConstNoneValue(?var:Var, ?val:Value)
 .output VarHasConstNoneValue
 
+VarPointsTo(?var, ?val):-
+  VarHasConstValue(?var, ?val).
+
 VarHasConstValue(?var, ?val),
 VarHasConstNoneValue(?var, ?val):-
   isAssignNone_Insn(?instr),
   AssignInstruction_To(?instr, ?var),
   ?val = "<None>".
+
+.decl VarHasConstFloatValue(?var:Var, ?numVal:IntConstant, ?val:NumConstantValue)
+.output VarHasConstFloatValue
+
+VarHasConstValue(?var, ?val),
+Value_Num(?val,?num),
+VarHasConstFloatValue(?var, ?num, ?val):-
+  AssignFloatConstant_Id(?instr, ?num),
+  AssignInstruction_To(?instr, ?var),
+  ?val = cat(cat("<num-constant(float):", ?num),">").
 
 .decl VarHasConstIntValue(?var:Var, ?numVal:IntConstant, ?val:NumConstantValue)
 .output VarHasConstIntValue

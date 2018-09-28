@@ -19,8 +19,8 @@ HeapAllocation_Type(?id, ?type) :-
 
 isHeapAllocation(?id),
 isStringConstant(?id),
-OriginalHeapAllocation_Type(?id, "java.lang.String"),
-HeapAllocation_Type(?id, "java.lang.String") :-
+OriginalHeapAllocation_Type(?id, "string"),
+HeapAllocation_Type(?id, "string") :-
   _StringConstant(?id).
 
 

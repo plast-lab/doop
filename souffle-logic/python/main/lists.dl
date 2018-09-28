@@ -39,7 +39,7 @@ VarPointsTo(?var, ?heap),
 VarPointsToList(?var, ?heap) :-
   AssignInstruction_To(?instr, ?var),
   AssignHeapAllocation_Heap(?instr, ?heap),
-  HeapAllocation_Type(?heap, ?type),
+  OriginalHeapAllocation_Type(?heap, ?type),
   ?type = "list".
 
 .output ListHasNonConstantVal
