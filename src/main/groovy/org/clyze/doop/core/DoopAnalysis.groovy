@@ -379,8 +379,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			//separate process.
 			ClassLoader loader = sootClassLoader()
 			def success = Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
-			if (!success)
+			if (!success) {
+				if (!(options.X_IGNORE_FACTGEN_ERRORS.value)) {
+					log.info "An error occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
+				}
 				throw new RuntimeException("Soot fact generation error")
+			}
 		}
 		log.info "Soot fact generation time: ${factGenTime}"
 	}
