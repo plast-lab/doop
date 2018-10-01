@@ -89,14 +89,27 @@
       Var_SourceName(?fromVar, ?name),
       VarPointsTo(?fromVar, ?val).
 
-
+  .output isFunctionObjectAllocation
+  isFunctionObjectAllocation(?val),
   VarPointsTo(?var, ?val):-
     AssignHeapAllocation_Heap(?insn, ?val),
     isNormalHeap(?val),
     AssignInstruction_To(?insn, ?var),
     HeapAllocation_Type(?val, ?type),
     ?type != "list",
-    ?type != "object".
+    ?type != "object",
+    isFunction(?type).
+
+  .output isClassObjectAllocation
+  isClassObjectAllocation(?val),
+  VarPointsTo(?var, ?val):-
+    AssignHeapAllocation_Heap(?insn, ?val),
+    isNormalHeap(?val),
+    AssignInstruction_To(?insn, ?var),
+    HeapAllocation_Type(?val, ?type),
+    ?type != "list",
+    ?type != "object",
+    isClassType(?type).
 
 
   VarPointsTo(?var, ?val):-

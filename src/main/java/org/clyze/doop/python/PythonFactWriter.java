@@ -390,15 +390,18 @@ public class PythonFactWriter {
     void writeFormalParam(IMethod m, IR ir, int paramIndex, int actualIndex) {
         String methodId = _rep.signature(m);
         String var = _rep.param(m, paramIndex);
-        _db.add(FORMAL_PARAM, str(actualIndex), methodId, var);
+        String paramName = "__NONAME__";
         _db.add(VAR_DECLARING_FUNCTION, var, methodId);
         String[] names = null;
         names = ir.getLocalNames(0, paramIndex + 1);
-        if(names.length > 0)
+        if(names.length > 0) {
             _db.add(VAR_SOURCE_NAME, var, names[0]);
+            paramName = names[0];
+        }
         else{
             System.out.println("This shouldn't(?) ever happen.");
         }
+        _db.add(FORMAL_PARAM, str(actualIndex), paramName, methodId, var);
     }
 
     void writeLocal(IMethod m, Local l) {

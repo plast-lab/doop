@@ -15,12 +15,6 @@ isMethod(?function):-
     _Function(?function, _, ?par, _ ,_),
     isClassType(?par).
 
-.decl FormalParamName(?var:symbol, ?name:symbol)
-.output FormalParamName
-FormalParamName(?var, ?name):-
-    _FormalParam(_,_,?var),
-    Var_SourceName(?var,?name).
-
   GlobalAccessInsn_Scope(?insn, ?scope):-
     isGlobalAccess_Insn(?insn),
     Instruction_Function(?insn, ?fun),

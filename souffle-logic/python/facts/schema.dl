@@ -59,7 +59,7 @@
 .decl Function_Arity(?function:Function, ?arity:number)
 .decl Function_DeclaredInFile(?function:Function, ?file:File)
 
-.decl FormalParam(?index:number, ?function:Function, ?var:Var)
+.decl FormalParam(?index:number, ?paramName:symbol, ?function:Function, ?var:Var)
 
 .decl ThisVar(?function:Function, ?var:Var)
 
@@ -79,14 +79,19 @@
 //-----------------------------------------------------------------------------
 
 .type HeapAllocation
-.type NormalHeap           = HeapAllocation
-.type StringConstant       = HeapAllocation
+.type NormalHeap                = HeapAllocation
+.type StringConstant            = HeapAllocation
+.type ClassInstanceAllocation   = HeapAllocation
+.type ClassObjectAllocation     = HeapAllocation
+.type FunctionObjectAllocation  = HeapAllocation
 
 .decl isHeapAllocation(?h:HeapAllocation)
 .decl isNormalHeap(?h:NormalHeap)
 .decl isStringConstant(?h:StringConstant)
 .decl isStringRaw(?id:symbol)
-.decl isClassInstanceAllocation(?h: HeapAllocation)
+.decl isClassInstanceAllocation(?h: ClassInstanceAllocation)
+.decl isClassObjectAllocation(?h: ClassObjectAllocation)
+.decl isFunctionObjectAllocation(?h: FunctionObjectAllocation)
 
 .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
 .decl OriginalHeapAllocation_Type(?heap:HeapAllocation, ?type:Type)

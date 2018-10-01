@@ -5,6 +5,7 @@
 
 isFunction(?function),
 isHeapAllocation(?mockVal),
+isFunctionObjectAllocation(?mockVal),
 HeapAllocation_Type(?mockVal, ?function),
 Function_Module(?function, ?declModule),
 GlobalNamePointsTo(?declModule, ?name, ?mockVal):-
@@ -19,6 +20,7 @@ GlobalNamePointsTo(?declModule, ?name, ?module):-
 isClassType(?class),
 isType(?class),
 isHeapAllocation(?mockVal),
+isClassObjectAllocation(?mockVal),
 HeapAllocation_Type(?mockVal, ?class),
 ClassType_Module(?class, ?declModule),
 GlobalNamePointsTo(?declModule, ?name, ?mockVal):-

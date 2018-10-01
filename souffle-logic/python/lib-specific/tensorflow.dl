@@ -65,17 +65,17 @@ ModeledModule("<tensorflow.layers>", "layers", "<tensorflow>").
 ModeledModule("<tensorflow.nn>", "nn", "<tensorflow>").
 
 ModeledFunction("<tensorflow.reshape>", "reshape", "<tensorflow>").
+FormalParam( 0, "tensor", "<tensorflow.reshape>", "<tensorflow.reshape>/mockParam1").
+FormalParam( 1, "shape", "<tensorflow.reshape>",  "<tensorflow.reshape>/mockParam2").
+FormalParam( 2, "name", "<tensorflow.reshape>",   "<tensorflow.reshape>/mockParam3").
+
 ModeledFunction("<tensorflow.constant>", "constant", "<tensorflow>").
+
+
 ModeledFunction("<tensorflow.placeholder>", "placeholder", "<tensorflow>").
-
-.decl FunctionInv_ResolvesTo(?insn:FunctionInvocation_Insn, ?fun:Function)
-.output FunctionInv_ResolvesTo
-
-FunctionInv_ResolvesTo(?insn, ?fun):-
-  FunctionInvocation_Base(?insn, ?callBase),
-  VarPointsTo(?callBase, ?heap),
-  HeapAllocation_Type(?heap, ?fun),
-  isFunction(?fun).
+FormalParam( 0, "dtype", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam1").
+FormalParam( 1, "shape", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam2").
+FormalParam( 2, "name", "<tensorflow.placeholder>",  "<tensorflow.placeholder>/mockParam3").
 
 //------------------------------------------------------
 //                    PLACEHOLDER INVOC
@@ -87,16 +87,11 @@ FunctionInv_ResolvesTo(?insn, ?fun):-
 .output isValidTensorPlaceHolderInvocation
 
 isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal):-
-  FunctionInv_ResolvesTo(?insn, "<tensorflow.placeholder>"),
-  ActualPositionalParam(0, ?insn, ?typeVar),
-  VarPointsTo(?typeVar, ?typeVal),
+  FunctionInvResolvesTo(?insn, ?baseVal, "<tensorflow.placeholder>"),
+  ResolvedActualParams(?insn, ?baseVal, 0, "dtype", ?typeVal),
   HeapAllocation_Type(?typeVal, ?typeValType),
   isTensorDataType(?typeValType),
-  (
-    ActualPositionalParam(1, ?insn, ?dimListVar);
-    ActualKeywordParam(_, ?insn, "shape", ?dimListVar)
-  ),
-  VarPointsToList(?dimListVar, ?dimListVal),
+  ResolvedActualParams(?insn, ?baseVal, 1, "shape", ?dimListVal),
   isListOfConsts(?dimListVal).
 
 TensorShapeListSize(?tensorVal, ?size),
@@ -132,15 +127,10 @@ Value_Type(?value, "<tensorflow.Tensor>"):-
 .output isValidTensorReshapeInvocationLevel1
 
 isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal):-
-  FunctionInv_ResolvesTo(?insn, "<tensorflow.reshape>"),
-  ActualPositionalParam(0, ?insn, ?tensorArgVar),
-  VarPointsTo(?tensorArgVar, ?tensorArgVal),
+  FunctionInvResolvesTo(?insn, ?baseVal, "<tensorflow.reshape>"),
+  ResolvedActualParams(?insn, ?baseVal, 0, "tensor", ?tensorArgVal),
   Value_Type(?tensorArgVal, "<tensorflow.Tensor>"),
-  (
-    ActualPositionalParam(1, ?insn, ?dimListArgVar);
-    ActualKeywordParam(_, ?insn, "shape", ?dimListArgVar)
-  ),
-  VarPointsToList(?dimListArgVar, ?dimListArgVal),
+  ResolvedActualParams(?insn, ?baseVal, 1, "shape", ?dimListArgVal),
   isListOfConsts(?dimListArgVal).
 
 isValidTensorReshapeInvocationClass1(?insn, ?tensorArgVal, ?dimListArgVal):-

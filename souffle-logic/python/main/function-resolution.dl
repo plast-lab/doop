@@ -1,0 +1,21 @@
+.decl FunctionInvResolvesTo(?insn:FunctionInvocation_Insn, ?val:Value, ?fun:Function)
+.output FunctionInvResolvesTo
+
+FunctionInvResolvesTo(?insn, ?heap, ?fun):-
+  FunctionInvocation_Base(?insn, ?callBase),
+  VarPointsTo(?callBase, ?heap),
+  HeapAllocation_Type(?heap, ?fun),
+  isFunction(?fun).
+
+.decl ResolvedActualParams(?insn:Instruction, ?baseValue:Value, ?paramIndex:number, ?paramName:symbol, ?paramValue:Value)
+.output ResolvedActualParams
+
+VarPointsTo(?var, ?paramValue),
+ResolvedActualParams(?insn, ?baseValue, ?paramIndex, ?paramName, ?paramValue):-
+  FunctionInvResolvesTo(?insn, ?baseValue, ?function),
+  FormalParam(?paramIndex, ?paramName, ?function, ?var),
+  (
+    ActualPositionalParam(?paramIndex, ?insn, ?actualParamVar);
+    ActualKeywordParam(_, ?insn, ?paramName, ?actualParamVar)
+  ),
+  VarPointsTo(?actualParamVar, ?paramValue).
