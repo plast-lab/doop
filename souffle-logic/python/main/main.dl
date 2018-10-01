@@ -8,7 +8,7 @@
 
   //.type NoneConstantValue
 
-  .type Value = HeapAllocation | NumConstantValue | BoolConstantValue | Function | Module | TensorDataType
+  .type Value = HeapAllocation | NumConstantValue | BoolConstantValue | Module
 
   //.decl isValue(?value:Value)
 

@@ -1,12 +1,10 @@
 .type Module
-.type Package = Module
 
 .decl isModule(?module:Module)
-.decl isPackage(?package: Package)
 
-.decl ModuleSubmodule(?module: Module, ?submodule: Module)
+.decl Module_DeclaringModule(?module: Module, ?declModule: Module)
 .decl Function_Module(?function:Function, ?module: Module)
-.decl Name_Module(?name:symbol, ?module: Module)
+.decl ClassType_Module(?class:ClassType, ?module: Module)
 
 .decl VarPointsToModule(?var:Var, ?module:Module)
 
@@ -20,47 +18,20 @@ VarPointsToModule(?var, ?module):-
   VarPointsTo(?var, ?module),
   isModule(?module).
 
-VarPointsTo(?var, ?module),
-VarPointsToModule(?var, ?module):-
+VarPointsTo(?var, ?module):-
   isImportInstruction(?insn),
   ImportInsn_ModuleName(?insn, ?name),
   AssignInstruction_To(?insn, ?var),
   ?module = cat(cat("<",?name),">"),
   isModule(?module).
 
-VarPointsTo(?var, ?module),
-VarPointsToModule(?var, ?module):-
+VarPointsTo(?var, ?heap):-
   isLoadInstanceField_Insn(?insn),
   FieldInstruction_FieldName(?insn, ?fieldName),
   LoadInstanceField_Base(?insn, ?base),
   LoadInstanceField_To(?insn, ?var),
   VarPointsToModule(?base, ?parModule),
-  ?module = cat(cat(cat(substr(?parModule, 0, strlen(?parModule) -1), "."), ?fieldName),">"),
-  isModule(?module).
-
-
-VarPointsToFunction(?var, ?function):-
-  VarPointsTo(?var, ?function),
-  isFunction(?function).
-
-VarPointsTo(?var, ?function),
-VarPointsToFunction(?var, ?function):-
-  isLoadInstanceField_Insn(?insn),
-  FieldInstruction_FieldName(?insn, ?fieldName),
-  LoadInstanceField_Base(?insn, ?base),
-  LoadInstanceField_To(?insn, ?var),
-  VarPointsToModule(?base, ?parModule),
-  ?function = cat(cat(cat(substr(?parModule, 0, strlen(?parModule) -1), "."), ?fieldName),">"),
-  isFunction(?function).
-
-VarPointsTo(?var, ?val):-
-  isLoadInstanceField_Insn(?insn),
-  FieldInstruction_FieldName(?insn, ?fieldName),
-  LoadInstanceField_Base(?insn, ?base),
-  LoadInstanceField_To(?insn, ?var),
-  VarPointsToModule(?base, ?declModule),
-  ?val = cat(cat(cat(substr(?declModule, 0, strlen(?declModule) -1), "."), ?fieldName),">"),
-  Name_Module(?val, ?declModule).
+  GlobalNamePointsTo(?parModule, ?fieldName, ?heap).
 
 //One thing to be considered in the future is the difference between:
 //1) from file import var

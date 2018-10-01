@@ -4,54 +4,54 @@ isModule("<tensorflow>").
 //                    TENSOR DATA TYPES
 //------------------------------------------------------
 
-.type TensorDataType
+.type TensorDataType = ClassType
 
 .decl isTensorDataType(?type: TensorDataType)
-Name_Module("<tensorflow.float16>", "<tensorflow>").
+ModeledClass("<tensorflow.float16>", "float16", "<tensorflow>").
 isTensorDataType("<tensorflow.float16>").
-Name_Module("<tensorflow.float32>", "<tensorflow>").
+ModeledClass("<tensorflow.float32>", "float32", "<tensorflow>").
 isTensorDataType("<tensorflow.float32>").
-Name_Module("<tensorflow.float64>", "<tensorflow>").
+ModeledClass("<tensorflow.float64>", "float64", "<tensorflow>").
 isTensorDataType("<tensorflow.float64>").
-Name_Module("<tensorflow.bfloat16>", "<tensorflow>").
+ModeledClass("<tensorflow.bfloat16>", "bfloat16", "<tensorflow>").
 isTensorDataType("<tensorflow.bfloat16>").
-Name_Module("<tensorflow.complex64>", "<tensorflow>").
+ModeledClass("<tensorflow.complex64>", "complex64", "<tensorflow>").
 isTensorDataType("<tensorflow.complex64>").
-Name_Module("<tensorflow.complex128>", "<tensorflow>").
+ModeledClass("<tensorflow.complex128>", "complex128", "<tensorflow>").
 isTensorDataType("<tensorflow.complex128>").
-Name_Module("<tensorflow.int8>", "<tensorflow>").
+ModeledClass("<tensorflow.int8>", "int8", "<tensorflow>").
 isTensorDataType("<tensorflow.int8>").
-Name_Module("<tensorflow.uint8>", "<tensorflow>").
+ModeledClass("<tensorflow.uint8>", "uint8", "<tensorflow>").
 isTensorDataType("<tensorflow.uint8>").
-Name_Module("<tensorflow.uint16>", "<tensorflow>").
+ModeledClass("<tensorflow.uint16>", "uint16", "<tensorflow>").
 isTensorDataType("<tensorflow.uint16>").
-Name_Module("<tensorflow.uint32>", "<tensorflow>").
+ModeledClass("<tensorflow.uint32>", "uint32", "<tensorflow>").
 isTensorDataType("<tensorflow.uint32>").
-Name_Module("<tensorflow.uint64>", "<tensorflow>").
+ModeledClass("<tensorflow.uint64>", "uint64", "<tensorflow>").
 isTensorDataType("<tensorflow.uint64>").
-Name_Module("<tensorflow.int16>", "<tensorflow>").
+ModeledClass("<tensorflow.int16>", "int16", "<tensorflow>").
 isTensorDataType("<tensorflow.int16>").
-Name_Module("<tensorflow.int32>", "<tensorflow>").
+ModeledClass("<tensorflow.int32>", "int32", "<tensorflow>").
 isTensorDataType("<tensorflow.int32>").
-Name_Module("<tensorflow.int64>", "<tensorflow>").
+ModeledClass("<tensorflow.int64>", "int64", "<tensorflow>").
 isTensorDataType("<tensorflow.int64>").
-Name_Module("<tensorflow.bool>", "<tensorflow>").
+ModeledClass("<tensorflow.bool>", "bool", "<tensorflow>").
 isTensorDataType("<tensorflow.bool>").
-Name_Module("<tensorflow.string>", "<tensorflow>").
+ModeledClass("<tensorflow.string>", "string", "<tensorflow>").
 isTensorDataType("<tensorflow.string>").
-Name_Module("<tensorflow.qint8>", "<tensorflow>").
+ModeledClass("<tensorflow.qint8>", "qint8", "<tensorflow>").
 isTensorDataType("<tensorflow.qint8>").
-Name_Module("<tensorflow.quint8>", "<tensorflow>").
+ModeledClass("<tensorflow.quint8>", "quint8", "<tensorflow>").
 isTensorDataType("<tensorflow.quint8>").
-Name_Module("<tensorflow.qint16>", "<tensorflow>").
+ModeledClass("<tensorflow.qint16>", "qint16", "<tensorflow>").
 isTensorDataType("<tensorflow.qint16>").
-Name_Module("<tensorflow.quint16>", "<tensorflow>").
+ModeledClass("<tensorflow.quint16>", "quint16", "<tensorflow>").
 isTensorDataType("<tensorflow.quint16>").
-Name_Module("<tensorflow.qint32>", "<tensorflow>").
+ModeledClass("<tensorflow.qint32>", "qint32", "<tensorflow>").
 isTensorDataType("<tensorflow.qint32>").
-Name_Module("<tensorflow.resource>", "<tensorflow>").
+ModeledClass("<tensorflow.resource>", "resource", "<tensorflow>").
 isTensorDataType("<tensorflow.resource>").
-Name_Module("<tensorflow.variant>", "<tensorflow>").
+ModeledClass("<tensorflow.variant>", "variant", "<tensorflow>").
 isTensorDataType("<tensorflow.variant>").
 
 .decl TensorShapeListSize(?val:Value, ?size:number)
@@ -59,31 +59,17 @@ isTensorDataType("<tensorflow.variant>").
 .output TensorShapeListSize
 .output TensorShapeListContent
 
-isClassType("<tensorflow.Tensor>").
-isType("<tensorflow.Tensor>").
+ModeledClass("<tensorflow.Tensor>", "Tensor", "<tensorflow>").
 
-ModuleSubmodule("<tensorflow>", "<tensorflow.layers>").
-isModule("<tensorflow.layers>").
+ModeledModule("<tensorflow.layers>", "layers", "<tensorflow>").
+ModeledModule("<tensorflow.nn>", "nn", "<tensorflow>").
 
-ModuleSubmodule("<tensorflow>", "<tensorflow.nn>").
-isModule("<tensorflow.nn>").
-
-Function_Module("<tensorflow.reshape>", "<tensorflow>").
-isFunction("<tensorflow.reshape>").
-
-Function_Module("<tensorflow.constant>", "<tensorflow>").
-isFunction("<tensorflow.constant>").
-
-Function_Module("<tensorflow.placeholder>", "<tensorflow>").
-isFunction("<tensorflow.placeholder>").
+ModeledFunction("<tensorflow.reshape>", "reshape", "<tensorflow>").
+ModeledFunction("<tensorflow.constant>", "constant", "<tensorflow>").
+ModeledFunction("<tensorflow.placeholder>", "placeholder", "<tensorflow>").
 
 .decl FunctionInv_ResolvesTo(?insn:FunctionInvocation_Insn, ?fun:Function)
 .output FunctionInv_ResolvesTo
-
-FunctionInv_ResolvesTo(?insn, ?fun):-
-  FunctionInvocation_Base(?insn, ?callBase),
-  VarPointsTo(?callBase, ?fun),
-  isFunction(?fun).
 
 FunctionInv_ResolvesTo(?insn, ?fun):-
   FunctionInvocation_Base(?insn, ?callBase),
@@ -104,7 +90,8 @@ isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal):-
   FunctionInv_ResolvesTo(?insn, "<tensorflow.placeholder>"),
   ActualPositionalParam(0, ?insn, ?typeVar),
   VarPointsTo(?typeVar, ?typeVal),
-  isTensorDataType(?typeVal),
+  HeapAllocation_Type(?typeVal, ?typeValType),
+  isTensorDataType(?typeValType),
   (
     ActualPositionalParam(1, ?insn, ?dimListVar);
     ActualKeywordParam(_, ?insn, "shape", ?dimListVar)

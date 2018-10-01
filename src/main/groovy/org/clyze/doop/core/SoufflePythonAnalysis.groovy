@@ -75,6 +75,7 @@ class SoufflePythonAnalysis extends DoopAnalysis{
 
 
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/lib-specific/tensorflow.dl")
+        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/lib-specific/modeled.dl")
     }
 
     void basicAnalysis() {

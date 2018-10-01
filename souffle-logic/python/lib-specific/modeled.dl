@@ -1,0 +1,26 @@
+.decl ModeledFunction(?function:Function, ?name:symbol, ?declaringModule: Module)
+.decl ModeledModule(?module:Module, ?name:symbol, ?declaringModule: Module)
+.decl ModeledClass(?class:ClassType, ?name:symbol, ?declaringModule: Module)
+
+
+isFunction(?function),
+isHeapAllocation(?mockVal),
+HeapAllocation_Type(?mockVal, ?function),
+Function_Module(?function, ?declModule),
+GlobalNamePointsTo(?declModule, ?name, ?mockVal):-
+  ModeledFunction(?function, ?name, ?declModule),
+  ?mockVal = cat(?declModule, cat("/new ",cat(?function, "/0"))).
+
+isModule(?module),
+Module_DeclaringModule(?module, ?declModule),
+GlobalNamePointsTo(?declModule, ?name, ?module):-
+  ModeledModule(?module, ?name, ?declModule).
+
+isClassType(?class),
+isType(?class),
+isHeapAllocation(?mockVal),
+HeapAllocation_Type(?mockVal, ?class),
+ClassType_Module(?class, ?declModule),
+GlobalNamePointsTo(?declModule, ?name, ?mockVal):-
+  ModeledClass(?class, ?name, ?declModule),
+  ?mockVal = cat(?declModule, cat("/new ",cat(?class, "/0"))).
