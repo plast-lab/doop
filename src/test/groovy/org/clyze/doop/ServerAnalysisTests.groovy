@@ -76,7 +76,7 @@ class ServerAnalysisTests extends Specification {
 	String analyzeTest(String test, List<String> extraArgs) {
 		List args = ["-i", "${serverAnalysisTestsDir}/${test}/build/libs/${test}.jar",
 					 "-a", "context-insensitive", // "--Xserver-logic",
-					 "--id", "test-${test}",
+					 "--id", "test-${test}", "--generate-jimple",
 					 "--platform", "java_8", "--Xstats-full"] + extraArgs
 		Main.main((String[])args)
 		analysis = Main.analysis
