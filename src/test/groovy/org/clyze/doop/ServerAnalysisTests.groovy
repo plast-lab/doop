@@ -67,10 +67,10 @@ class ServerAnalysisTests extends Specification {
 		analyzeTest("104-method-references", [])
 
 		then:
-		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/c1#_15", "<java.lang.invoke.InnerClassLambdaMetafactory: java.lang.invoke.CallSite buildCallSite()>/new java.lang.invoke.ConstantCallSite/0")
-		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/c1#_15", "<Main: void main(java.lang.String[])>/invokedynamic_A::meth1234/0::: java.util.function.Consumer::: (Mock)::: reference A::meth1234 from <A: void meth1234(java.lang.Integer)> wrapped as java.util.function.Consumer.accept")
-		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/c3#_52", "<java.lang.invoke.InnerClassLambdaMetafactory: java.lang.invoke.CallSite buildCallSite()>/new java.lang.invoke.ConstantCallSite/0")
-		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/c3#_52", "<Main: void main(java.lang.String[])>/invokedynamic_A::meth99/0::: java.util.function.Function::: (Mock)::: reference A::meth99 from <A: java.lang.Integer meth99(java.lang.Integer)> wrapped as java.util.function.Function.apply")
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/c1#_15', '<java.lang.invoke.InnerClassLambdaMetafactory: java.lang.invoke.CallSite buildCallSite()>/new java.lang.invoke.ConstantCallSite/0')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/c1#_15', '<Main: void main(java.lang.String[])>/invokedynamic_A::meth1234/0::: java.util.function.Consumer::: (Mock)::: reference A::meth1234 from <A: void meth1234(java.lang.Integer)> wrapped as java.util.function.Consumer.accept')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/c3#_52', '<java.lang.invoke.InnerClassLambdaMetafactory: java.lang.invoke.CallSite buildCallSite()>/new java.lang.invoke.ConstantCallSite/0')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/c3#_52', '<Main: void main(java.lang.String[])>/invokedynamic_A::meth99/0::: java.util.function.Function::: (Mock)::: reference A::meth99 from <A: java.lang.Integer meth99(java.lang.Integer)> wrapped as java.util.function.Function.apply')
 	}
 
 	String analyzeTest(String test, List<String> extraArgs) {
