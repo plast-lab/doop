@@ -54,14 +54,31 @@ class TestUtils {
 		assert true == (new File("${analysis.outDir}/meta")).exists()
 	}
 
-	// Check that a local variable points to a value.
+	/*
+	 * Check that a local variable points to a value.
+	 *
+	 * @param analysis	  the analysis object
+	 * @param local		  the name of the local
+	 * @param value		  the value
+	 * @param qualified	  if true, qualify relation name
+	 */
+	static void varPointsTo(Analysis analysis, String local, String value, boolean qualified) {
+		String rel = qualified ? "mainAnalysis-VarPointsTo" : "VarPointsTo"
+		findPair(analysis, rel, local, 3, value, 1)
+	}
+	// Simpler overloaded version.
 	static void varPointsTo(Analysis analysis, String local, String value) {
-		findPair(analysis, "VarPointsTo", local, 3, value, 1)
+		varPointsTo(analysis, local, value, false)
 	}
 
 	// Check that a static field points to a value.
 	static void staticFieldPointsTo(Analysis analysis, String fld, String value) {
 		findPair(analysis, "mainAnalysis-StaticFieldPointsTo", fld, 2, value, 1)
+	}
+
+	// Check that an instance field points to a value.
+	static void instanceFieldPointsTo(Analysis analysis, String fld, String value) {
+		findPair(analysis, "mainAnalysis-InstanceFieldPointsTo", fld, 2, value, 1)
 	}
 
 	// Check that a method is reachable.
