@@ -27,7 +27,7 @@ def run_pre_analysis(args):
     args = args + ['-a', PRE_ANALYSIS]
     args = args + ['--scaler-pre']
     args = args + ['--id', APP + "-scaler-ci"]
-    args = args + ['--Xstart-after-facts', app+"-facts"]
+    args = args + ['--Xstart-after-facts', APP+"-facts"]
     args = args + ['--Xsymlink-cached-facts']
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running pre-analysis ...' + RESET
@@ -80,7 +80,7 @@ def run_main_analysis(args, scaler_file):
     args = args + ['-a', MAIN_ANALYSIS]
     args = args + ['--special-cs-methods', scaler_file]
     args = args + ['--id', APP + '-scaler-fully-guided']
-    args = args + ['--Xstart-after-facts', app+"-facts"]
+    args = args + ['--Xstart-after-facts', APP+"-facts"]
     args = args + ['--Xsymlink-cached-facts']
     
     cmd = ' '.join(args)
