@@ -25,7 +25,6 @@ class AndroidTests extends Specification {
 		assert null != doopBenchmarksDir
 	}
 
-	// @spock.lang.Ignore
 	@Unroll
 	def "Android analysis test androidterm"() {
 		when:
