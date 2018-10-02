@@ -253,10 +253,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new AnalysisOption<String>(
-					id: "APK_DECOMPRESS_DIR",
-					name: "apk-decompress-dir",
-					argName: "DIR",
-					description: "Target directory to use for decompressing .apk inputs."
+					id: "DECODE_APK",
+					name: "decode-apk",
+					description: "Decode .apk inputs to facts directory."
 			),
 			new BooleanAnalysisOption(
 					id: "PYTHON",

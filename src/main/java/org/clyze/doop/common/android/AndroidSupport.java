@@ -1,16 +1,21 @@
 package org.clyze.doop.common.android;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
+import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
 import org.clyze.utils.AARUtils;
-
-import java.io.IOException;
-import java.util.*;
+import org.clyze.utils.JHelper;
 
 public abstract class AndroidSupport {
+
+    private static final String APKTOOL_HOME_ENV_VAR = "APKTOOL_HOME";
 
     protected final Parameters parameters;
     protected final BasicJavaSupport java;
@@ -45,8 +50,13 @@ public abstract class AndroidSupport {
         // the application's. There are Android apps that use
         // components (e.g. activities) from AAR libraries.
         for (String i : allInputs) {
-            if (i.endsWith(".apk") || i.endsWith(".aar")) {
+            boolean isApk = i.endsWith(".apk");
+            if (isApk || i.endsWith(".aar")) {
                 System.out.println("Processing application resources in " + i);
+                if (isApk && parameters.getDecodeApk()) {
+                    System.out.println("Decoding...");
+                    decodeApk(new File(i), parameters.getOutputDir() + File.separator + "decoded");
+                }
                 try {
                     AppResources resources = processAppResources(i);
                     computedResources.put(i, resources);
@@ -169,4 +179,44 @@ public abstract class AndroidSupport {
 
     }
 
+    /**
+     * Decode an APK input using apktool. Needs environment variable
+     * set (name found in constant APKTOOL_HOME_ENV_VAR).
+     *
+     * @param apk                        the APK
+     * @param decodeDir                  the target directory to use as root
+     * @throws DoopErrorCodeException    an exception that Doop must handle
+     */
+    private static void decodeApk(File apk, String decodeDir) {
+        if (new File(decodeDir).mkdirs())
+            System.out.println("Created " + decodeDir);
+
+        String apktoolHome = System.getenv(APKTOOL_HOME_ENV_VAR);
+        if (apktoolHome == null) {
+            System.err.println("Cannot decode APK, environment variable missing: " + APKTOOL_HOME_ENV_VAR);
+            return;
+        }
+        try {
+            String apkPath = apk.getCanonicalPath();
+            String outDir = decodeDir + File.separator + apkBaseName(apk.getName());
+            // Don't use "-f" option of apktool, delete manually.
+            FileUtils.deleteDirectory(new File(outDir));
+            String[] cmd = {
+                    apktoolHome + File.separator + "apktool",
+                    "d", apkPath,
+                    "-o", outDir
+            };
+            System.out.println("Decoding " + apkPath + " using apktool...");
+            System.out.println("Command: " + String.join(" ", cmd));
+            JHelper.runWithOutput(cmd, "APKTOOL");
+        } catch (IOException ex) {
+            System.err.println("Error: could not run apktool (" + APKTOOL_HOME_ENV_VAR + " = " + apktoolHome + ").");
+        }
+    }
+
+    private static String apkBaseName(String apkName) {
+        if (!apkName.endsWith(".apk"))
+            throw new RuntimeException("Cannot find base name of " + apkName);
+         return apkName.substring(0, apkName.length()-4);
+    }
 }

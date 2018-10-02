@@ -26,6 +26,7 @@ public class Parameters {
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
     public boolean _ignoreFactGenErrors = false;
+    private boolean _decodeApk = false;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
@@ -100,6 +101,10 @@ public class Parameters {
 
     public void setDependencies(List<String> deps) {
         _dependencies = deps;
+    }
+
+    public boolean getDecodeApk() {
+        return _decodeApk;
     }
 
     public static int shift(String[] args, int index) throws DoopErrorCodeException {
@@ -185,6 +190,9 @@ public class Parameters {
             break;
         case "--ignore-factgen-errors":
             _ignoreFactGenErrors = true;
+            break;
+        case "--decode-apk":
+            _decodeApk = true;
             break;
         default:
             return -1;

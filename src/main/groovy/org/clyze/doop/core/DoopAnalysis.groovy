@@ -313,6 +313,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
 		}
 
+		if (options.DECODE_APK.value) {
+			params += ["--decode-apk"]
+		}
+
 		params.addAll(["-d", factsDir.toString()] + inputArgs)
 		deps.addAll(platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>)
 
@@ -426,10 +430,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	protected void runDexFactGen(String platform, Collection<String> deps, List<File> platforms, Collection<String> params, Set<String> tmpDirs) {
 
 		// params += [ "--print-phantoms" ]
-
-		if (options.APK_DECOMPRESS_DIR.value) {
-			params += ["--apk-decompress-dir", options.APK_DECOMPRESS_DIR.value.toString()]
-		}
 
 		log.debug "Params of dex front-end: ${params.join(' ')}"
 

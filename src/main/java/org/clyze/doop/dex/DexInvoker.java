@@ -22,8 +22,6 @@ import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
 
 class DexInvoker {
 
-    private static final String APKTOOL_HOME_ENV_VAR = "APKTOOL_HOME";
-
     public static void main(String[] args) throws DoopErrorCodeException {
         DexParameters dexParams = new DexParameters();
         dexParams.initFromArgs(args);
@@ -67,8 +65,6 @@ class DexInvoker {
                 if (!apk.exists())
                     throw new RuntimeException("APK does not exist: " + apkName);
 
-                decompressApk(apk, dexParams.getDecompressDir());
-
                 try {
                     Opcodes opcodes = Opcodes.getDefault();
                     MultiDexContainer<? extends DexBackedDexFile> multiDex = loadDexContainer(apk, opcodes);
@@ -95,50 +91,5 @@ class DexInvoker {
             ex.printStackTrace();
             throw new DoopErrorCodeException(5, ex);
         }
-    }
-
-    /**
-     * Decompress an APK input using apktool. Needs environment variable set
-     * (name found in constant APKTOOL_HOME_ENV_VAR).
-     *
-     * @param apk                        the APK
-     * @param decompressDir              the target directory to use as root
-     * @throws DoopErrorCodeException    an exception that Doop must handle
-     */
-    private static void decompressApk(File apk, String decompressDir) throws DoopErrorCodeException {
-        if (decompressDir == null)
-            return;
-
-        if (new File(decompressDir).mkdirs())
-            System.out.println("Created " + decompressDir);
-
-        String apktoolHome = System.getenv(APKTOOL_HOME_ENV_VAR);
-        if (apktoolHome == null) {
-            System.err.println("Cannot decompress APK, environment variable missing: " + APKTOOL_HOME_ENV_VAR);
-            throw new DoopErrorCodeException(13);
-        }
-        try {
-            String apkPath = apk.getCanonicalPath();
-            String outDir = decompressDir + File.separator + apkBaseName(apk.getName());
-            // Don't use "-f" option of apktool, delete manually.
-            FileUtils.deleteDirectory(new File(outDir));
-            String[] cmd = {
-                    apktoolHome + File.separator + "apktool",
-                    "d", apkPath,
-                    "-o", outDir
-            };
-            System.out.println("Decompressing " + apkPath + " using apktool...");
-            System.out.println("Command: " + String.join(" ", cmd));
-            JHelper.runWithOutput(cmd, "APKTOOL");
-        } catch (IOException ex) {
-            System.err.println("Error: could not run apktool (" + APKTOOL_HOME_ENV_VAR + " = " + apktoolHome + ").");
-            throw new DoopErrorCodeException(14, ex);
-        }
-    }
-
-    private static String apkBaseName(String apkName) {
-        if (!apkName.endsWith(".apk"))
-            throw new RuntimeException("Cannot find base name of " + apkName);
-         return apkName.substring(0, apkName.length()-4);
     }
 }

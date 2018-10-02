@@ -1,5 +1,6 @@
 package org.clyze.doop.soot;
 
+import java.io.File;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Parameters;
 
@@ -86,6 +87,7 @@ public class SootParameters extends Parameters {
             System.err.println("  -l <archive>                          Find classes in jar/zip archive");
             System.err.println("  -lsystem                              Find classes in default system classes");
             System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
+            System.err.println("  --decode-apk                          Decompress .apk input in facts directory.");
             throw new DoopErrorCodeException(0);
         default:
             return super.processNextArg(args, i);
