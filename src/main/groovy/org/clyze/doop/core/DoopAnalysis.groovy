@@ -14,7 +14,6 @@ import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
-
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -522,13 +521,31 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	}
 
 	protected void runHeapDL(List<String> filenames) {
+
+		// Support compressed formats: decompress
+		List<String> tmpFiles = []
+		List<String> processed = filenames.collect { String heapdl ->
+			if (heapdl.toLowerCase().endsWith(".gz")) {
+				String tmpPath = Files.createTempFile("gzip-", ".hprof").toString()
+				log.debug "Decompressing ${heapdl} to ${tmpPath}..."
+				FileOps.decompressGzipFile(heapdl, tmpPath)
+				tmpFiles << tmpPath
+				return tmpPath
+			} else {
+				return heapdl
+			}
+		}
+
 		try {
-			MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filenames, options.HEAPDL_NOSTRINGS.value ? false : true)
+			MemoryAnalyser memoryAnalyser = new MemoryAnalyser(processed, options.HEAPDL_NOSTRINGS.value ? false : true)
 			int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
 			log.info("Generated " + n + " addditional facts from memory dump")
 		} catch (Exception e) {
 			e.printStackTrace()
 		}
+
+		// Delete any temporary files created.
+		tmpFiles.each { deleteQuietly(new File(it)) }
 	}
 
 	protected final void handleImportDynamicFacts() {
