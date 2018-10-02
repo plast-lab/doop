@@ -77,6 +77,10 @@ FormalParam( 0, "dtype", "<tensorflow.placeholder>", "<tensorflow.placeholder>/m
 FormalParam( 1, "shape", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam2").
 FormalParam( 2, "name", "<tensorflow.placeholder>",  "<tensorflow.placeholder>/mockParam3").
 
+
+.decl TensorHasConcreteDimensions(?tensorVal:Value)
+.output TensorHasConcreteDimensions
+
 //------------------------------------------------------
 //                    PLACEHOLDER INVOC
 //------------------------------------------------------
@@ -97,7 +101,9 @@ isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal):-
 TensorShapeListSize(?tensorVal, ?size),
 TensorShapeListContent(?tensorVal, ?index, ?indexValue):-
   isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal),
+  Instruction_Function(?insn, ?function),
   AssignInstruction_To(?insn, ?tensorAssignVar),
+  ?tensorVal = TensorValueMacro("placeholder",?function, ?typeVal, ?dimListVal),
   VarPointsTo(?tensorAssignVar, ?tensorVal),
   VarPointsToList(?dimListVar, ?dimListVal),
   ConstListDimensions(?dimListVal, ?size),
@@ -116,17 +122,26 @@ Value_Type(?value, "<tensorflow.Tensor>"):-
   Instruction_Function(?insn, ?function),
   ?value = TensorValueMacro("placeholder",?function, ?typeVal, ?dimListVal).
 
+TensorHasConcreteDimensions(?tensorVal):-
+  isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal),
+  Instruction_Function(?insn, ?function),
+  AssignInstruction_To(?insn, ?tensorAssignVar),
+  ?tensorVal = TensorValueMacro("placeholder",?function, ?typeVal, ?dimListVal),
+  VarPointsTo(?tensorAssignVar, ?tensorVal),
+  isListOfIntConsts(?dimListVal).
+
 //------------------------------------------------------
 //              RESHAPE OP
 //------------------------------------------------------
-.decl TensorHasConcreteDimensions(?tensorVal:Value)
-.output TensorHasConcreteDimensions
 
 .decl TensorReshapeInvocationProducesOutput(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)
 .output TensorReshapeInvocationProducesOutput
 
 .decl isValidTensorReshapeInvocationClass1(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)
 .output isValidTensorReshapeInvocationClass1
+
+.decl isValidTensorReshapeInvocationClass2(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)
+.output isValidTensorReshapeInvocationClass2
 
 .decl isPossibleMisalignedTensorReshapeInvocation(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)
 .output isPossibleMisalignedTensorReshapeInvocation
@@ -143,9 +158,6 @@ Value_Type(?value, "<tensorflow.Tensor>"):-
 .decl ValidTensorReshape_ReplaceMinus1WithVal(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value, ?replaceVal:Value)
 .output ValidTensorReshape_ReplaceMinus1WithVal
 
-TensorHasConcreteDimensions(?tensorVal):-
-  Value_Type(?tensorVal, "<tensorflow.Tensor>"),
-  !(TensorShapeListContent(?tensorVal, _, "<None>")).
 
 isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal):-
   FunctionInvResolvesTo(?insn, ?baseVal, "<tensorflow.reshape>"),
@@ -167,11 +179,11 @@ isNotValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal):-
   ?tensorRes != ?dimListRes.
 
 
-//TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
-//isValidTensorReshapeInvocationClass1(?insn, ?tensorArgVal, ?dimListArgVal):-
-  //isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
-  //isValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
-  //TensorHasConcreteDimensions(?tensorArgVal).
+TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
+isValidTensorReshapeInvocationClass2(?insn, ?tensorArgVal, ?dimListArgVal):-
+  isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
+  isValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
+  TensorHasConcreteDimensions(?tensorArgVal).
 
 
 ValidTensorReshape_ReplaceMinus1WithVal(?insn, ?tensorArgVal, ?dimListArgVal, "<None>"),
@@ -217,4 +229,13 @@ Value_Type(?value, "<tensorflow.Tensor>"):-
   TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
   AssignInstruction_To(?insn, ?var),
   Instruction_Function(?insn, ?function),
+  ?value = TensorValueMacro("reshape",?function, ?tensorArgVal, ?dimListArgVal).
+
+TensorHasConcreteDimensions(?value),
+VarPointsTo(?var, ?value),
+Value_Type(?value, "<tensorflow.Tensor>"):-
+  isValidTensorReshapeInvocationClass2(?insn, ?tensorArgVal, ?dimListArgVal),
+  AssignInstruction_To(?insn, ?var),
+  Instruction_Function(?insn, ?function),
+  TensorHasConcreteDimensions(?tensorArgVal),
   ?value = TensorValueMacro("reshape",?function, ?tensorArgVal, ?dimListArgVal).
