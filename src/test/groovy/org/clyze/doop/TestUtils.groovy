@@ -64,6 +64,11 @@ class TestUtils {
 		findPair(analysis, "mainAnalysis-StaticFieldPointsTo", fld, 2, value, 1)
 	}
 
+	// Check that a method is reachable.
+	static void methodIsReachable(Analysis analysis, String meth) {
+		assert true == find(analysis, "Reachable", meth, true)
+	}
+
 	static void findPair(Analysis analysis, String relation,
 						 String s1, int idx1, String s2, int idx2) {
 		boolean found = false
@@ -79,5 +84,22 @@ class TestUtils {
 						  }
 					  })
 		assert found == true
+	}
+
+	/**
+	 * Finds a line in a relation. Useful for single-column relations.
+	 *
+	 * @param analysis	 the analysis object
+	 * @param relation	 the relation name
+	 * @param val		 the string to match against each line
+	 * @param db		 true for database relations, false for facts
+	 * @return			 true if the value was found, false otherwise
+	 */
+	static boolean find(Analysis analysis, String relation,
+						String val, boolean db) {
+		boolean found = false
+		String rel = db ? "${analysis.database}/${relation}.csv" : "${analysis.factsDir}/${relation}.facts"
+		forEachLineIn(rel, { if (it && (it == val)) { found = true }})
+		return found
 	}
 }

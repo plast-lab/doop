@@ -25,6 +25,7 @@ class ServerAnalysisTests extends Specification {
 		assert null != serverAnalysisTestsDir
 	}
 
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 009 (native code)"() {
 		when:
@@ -35,6 +36,7 @@ class ServerAnalysisTests extends Specification {
 		varPointsTo(analysis, '<HelloJNI: void main(java.lang.String[])>/list#_43', '<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0')
 	}
 
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 012 (interface fields)"() {
 		when:
@@ -44,6 +46,7 @@ class ServerAnalysisTests extends Specification {
 		staticFieldPointsTo(analysis, '<Y: Y fooooooooo>', '<Y: void <clinit>()>/new Y$1/0')
 	}
 
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 016 (reflection)"() {
 		when:
@@ -61,6 +64,70 @@ class ServerAnalysisTests extends Specification {
 		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/bFieldValB#_47', '<A: void <init>()>/new B/0')
 	}
 
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test DefaultImplementation"() {
+		when:
+		analyzeTest("doop-bug-report-2018-07-20-DefaultImplementation", [])
+
+		then:
+		methodIsReachable(analysis, '<Foo: void meh()>')
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test Flatten"() {
+		when:
+		analyzeTest("doop-bug-report-2018-07-20-Flatten", ["--reflection-classic"])
+
+		then:
+		methodIsReachable(analysis, '<Flatten: void flatten()>')
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test ForkJoinProblem"() {
+		when:
+		analyzeTest("doop-bug-report-2018-07-20-ForkJoinProblem", [])
+
+		then:
+		methodIsReachable(analysis, '<ForkJoinProblem$Something: void compute()>')
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test ListCompare"() {
+		when:
+		analyzeTest("doop-bug-report-2018-07-20-ListCompare", [])
+
+		then:
+		methodIsReachable(analysis, '<ListCompare$1: int compare(java.lang.Integer,java.lang.Integer)>')
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test PQueueCompare"() {
+		when:
+		analyzeTest("doop-bug-report-2018-07-20-PQueueCompare", [])
+
+		then:
+		methodIsReachable(analysis, '<Compare: int compare(java.lang.Object,java.lang.Object)>')
+		// Also check that an "unresolved compilation error" did not
+		// affect the generation of the PriorityQueue constructor.
+		assert false == find(analysis, "StringRaw", 'Unresolved compilation error: Method <java.util.PriorityQueue: void <init>(java.util.Comparator)> does not exist', false)
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test TimeProblem"() {
+		when:
+		analyzeTest("doop-bug-report-2018-07-20-TimeProblem", [])
+
+		then:
+		methodIsReachable(analysis, '<TimeProblem: void printTime(java.time.LocalTime)>')
+	}
+
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 104 (method references)"() {
 		when:
