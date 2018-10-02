@@ -795,10 +795,16 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	}
 
 	private static List<String> analysesSouffle() {
+		if (!Doop.souffleAnalysesPath) {
+			Doop.initDoopFromEnv()
+		}
 		analysesFor(Doop.souffleAnalysesPath, "analysis.dl")
 	}
 
 	private static List<String> analysesLB() {
+		if (!Doop.analysesPath) {
+			Doop.initDoopFromEnv()
+		}
 		analysesFor(Doop.analysesPath, "analysis.logic")
 	}
 
