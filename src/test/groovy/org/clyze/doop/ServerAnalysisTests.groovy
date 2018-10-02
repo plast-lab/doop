@@ -47,16 +47,18 @@ class ServerAnalysisTests extends Specification {
 	@Unroll
 	def "Server analysis test 016 (reflection)"() {
 		when:
-		   analyzeTest("016-reflection", ["--reflection-classic"])
+		analyzeTest("016-reflection", ["--reflection-classic"])
 
 		then:
-		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/cA#_27", "<class A>")
-		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/cA_2#_35", "<class A>")
-		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/constr#_28", "<<reified constructor <A: void <init>()>>>")
-		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/constr2#_36", "<<reified constructor <A: void <init>(java.lang.Integer,B)>>>")
-		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/a3#_29", "<reflective Class.newInstance/new A>")
-		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/a3_2#_31", "<reflective Constructor.newInstance/new A>")
-		varPointsTo(analysis, "<Main: void main(java.lang.String[])>/iField#_40", "<<reified field <A: java.lang.Integer i>>>")
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/cA#_27', '<class A>')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/cA_2#_35', '<class A>')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/constr#_28', '<<reified constructor <A: void <init>()>>>')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/constr2#_36', '<<reified constructor <A: void <init>(java.lang.Integer,B)>>>')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/a3#_29', '<reflective Class.newInstance/new A>')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/a3_2#_31', '<reflective Constructor.newInstance/new A>')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/iField#_40', '<<reified field <A: java.lang.Integer i>>>')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/bFieldVal#_46', '<A: void <init>()>/new B/0')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/bFieldValB#_47', '<A: void <init>()>/new B/0')
 	}
 
 	@Unroll
