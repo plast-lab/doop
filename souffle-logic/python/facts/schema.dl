@@ -6,6 +6,7 @@
 
 .type IntConstant = NumConstant
 .decl isIntConstant(?n:IntConstant)
+.decl isOriginalIntConstant(?n:IntConstant)
 
 .type FloatConstant = NumConstant
 .decl isFloatConstant(?n:FloatConstant)

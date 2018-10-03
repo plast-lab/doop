@@ -96,7 +96,9 @@ isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal):-
   HeapAllocation_Type(?typeVal, ?typeValType),
   isTensorDataType(?typeValType),
   ResolvedActualParams(?insn, ?baseVal, 1, "shape", ?dimListVal),
-  isListOfConsts(?dimListVal).
+  isListOfConsts(?dimListVal),
+  PyConstListSpecialValueCount(?dimListVal, "<None>", ?specialValueCount),
+  ?specialValueCount < 2.
 
 TensorShapeListSize(?tensorVal, ?size),
 TensorShapeListContent(?tensorVal, ?index, ?indexValue):-
@@ -134,6 +136,9 @@ TensorHasConcreteDimensions(?tensorVal):-
 //              RESHAPE OP
 //------------------------------------------------------
 
+.decl TensorReshapeInvocationProducesOutput_Value(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value, ?outputVal:Value)
+.output TensorReshapeInvocationProducesOutput_Value
+
 .decl TensorReshapeInvocationProducesOutput(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)
 .output TensorReshapeInvocationProducesOutput
 
@@ -145,6 +150,9 @@ TensorHasConcreteDimensions(?tensorVal):-
 
 .decl isPossibleMisalignedTensorReshapeInvocation(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)
 .output isPossibleMisalignedTensorReshapeInvocation
+
+.decl isInvalidTensorReshapeInvocation(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)
+.output isInvalidTensorReshapeInvocation
 
 .decl isValidTensorReshapeInvocationLevel1(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)
 .output isValidTensorReshapeInvocationLevel1
@@ -159,31 +167,85 @@ TensorHasConcreteDimensions(?tensorVal):-
 .output ValidTensorReshape_ReplaceMinus1WithVal
 
 
+
+//Checks if the required args are given and their values have correct values
 isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal):-
   FunctionInvResolvesTo(?insn, ?baseVal, "<tensorflow.reshape>"),
   ResolvedActualParams(?insn, ?baseVal, 0, "tensor", ?tensorArgVal),
   Value_Type(?tensorArgVal, "<tensorflow.Tensor>"),
   ResolvedActualParams(?insn, ?baseVal, 1, "shape", ?dimListArgVal),
-  isListOfConsts(?dimListArgVal).
+  isListOfConsts(?dimListArgVal),
+  PyConstListSpecialValueCount(?dimListArgVal, "<num-constant(int):-1>", ?specialValueCount),
+  ?specialValueCount < 2.
 
+// Checks if, for the two list arguments --the shape list of the tensor value, and the reshape shape list--
+// the multiplication of all the elements(excluding -1 and None) has the same results
 isValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal):-
   isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
   ConstListMultAll(?tensorArgVal,?tensorRes),
   ConstListMultAll(?dimListArgVal,?dimListRes),
   ?tensorRes = ?dimListRes.
 
+// The opposite of the previous rule
 isNotValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal):-
   isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
   ConstListMultAll(?tensorArgVal,?tensorRes),
   ConstListMultAll(?dimListArgVal,?dimListRes),
   ?tensorRes != ?dimListRes.
 
-
+//All the input tensors dims are known
+//The shape of the dimension list does not contain -1
 TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
 isValidTensorReshapeInvocationClass2(?insn, ?tensorArgVal, ?dimListArgVal):-
   isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
   isValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
-  TensorHasConcreteDimensions(?tensorArgVal).
+  TensorHasConcreteDimensions(?tensorArgVal),
+  PyConstListSpecialValueCount(?dimListArgVal, "<num-constant(int):-1>", 0).
+
+//All the input tensors dims are known
+//The shape of the dimension list contains -1  but it is 1
+ValidTensorReshape_ReplaceMinus1WithVal(?insn, ?tensorArgVal, ?dimListArgVal, "<num-constant(int):1>"),
+TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
+isValidTensorReshapeInvocationClass2(?insn, ?tensorArgVal, ?dimListArgVal):-
+  isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
+  isValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
+  TensorHasConcreteDimensions(?tensorArgVal),
+  PyConstListSpecialValueCount(?dimListArgVal, "<num-constant(int):-1>", 1).
+
+//All the input tensors dims are known
+//MAYBE GENERALISE THIS TO COVER THE ABOVE CASE AS WELL
+isIntConstant(?replaceNumStr),
+Value_Num(?replaceNumVal, ?replaceNumStr),
+ValidTensorReshape_ReplaceMinus1WithVal(?insn, ?tensorArgVal, ?dimListArgVal, ?replaceNumVal),
+TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
+isValidTensorReshapeInvocationClass2(?insn, ?tensorArgVal, ?dimListArgVal):-
+  isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
+  isNotValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
+  ConstListContents(?dimListArgVal, _, "<num-constant(int):-1>"),
+  TensorHasConcreteDimensions(?tensorArgVal),
+  ConstListMultAll(?tensorArgVal,?tensorMultRes),
+  ConstListMultAll(?dimListArgVal,?dimListMultRes),
+  ?tensorMultRes % ?dimListMultRes = 0,
+  ?replaceNumStr = to_string(?tensorMultRes / ?dimListMultRes),
+  ?replaceNumVal = cat("<num-constant(int):",cat(?replaceNumStr,">")).
+
+isInvalidTensorReshapeInvocation(?insn, ?tensorArgVal, ?dimListArgVal):-
+  isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
+  isNotValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
+  ConstListContents(?dimListArgVal, _, "<num-constant(int):-1>"),
+  TensorHasConcreteDimensions(?tensorArgVal),
+  ConstListMultAll(?tensorArgVal,?tensorMultRes),
+  ConstListMultAll(?dimListArgVal,?dimListMultRes),
+  ?tensorMultRes % ?dimListMultRes != 0.
+
+//RECHECK THIS!
+isInvalidTensorReshapeInvocation(?insn, ?tensorArgVal, ?dimListArgVal):-
+  isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
+  isNotValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
+  TensorHasConcreteDimensions(?tensorArgVal),
+  PyConstListSpecialValueCount(?dimListArgVal, "<num-constant(int):-1>", 0).
+
+
 
 
 ValidTensorReshape_ReplaceMinus1WithVal(?insn, ?tensorArgVal, ?dimListArgVal, "<None>"),
@@ -203,39 +265,35 @@ isPossibleMisalignedTensorReshapeInvocation(?insn, ?tensorArgVal, ?dimListArgVal
   ConstListContents(?dimListArgVal, ?pos2, "<num-constant(int):-1>"),
   ?pos1 != ?pos2.
 
-TensorShapeListSize(?tensorVal, ?size),
-TensorShapeListContent(?tensorVal, ?index, ?indexValue):-
-  TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
-  AssignInstruction_To(?insn, ?tensorAssignVar),
-  VarPointsTo(?tensorAssignVar, ?tensorVal),
-  VarPointsToList(?dimListArgVar, ?dimListArgVal),
+TensorShapeListSize(?outVal, ?size),
+TensorShapeListContent(?outVal, ?index, ?indexValue):-
+  TensorReshapeInvocationProducesOutput_Value(?insn, ?tensorArgVal, ?dimListArgVal, ?outVal),
   ConstListDimensions(?dimListArgVal, ?size),
   ConstListContents(?dimListArgVal, ?index, ?indexValue),
   ?indexValue != "<num-constant(int):-1>".
 
-TensorShapeListSize(?tensorVal, ?size),
-TensorShapeListContent(?tensorVal, ?index, ?newValue):-
-  TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
-  AssignInstruction_To(?insn, ?tensorAssignVar),
-  VarPointsTo(?tensorAssignVar, ?tensorVal),
-  VarPointsToList(?dimListArgVar, ?dimListArgVal),
+TensorShapeListSize(?outVal, ?size),
+TensorShapeListContent(?outVal, ?index, ?newValue):-
+  TensorReshapeInvocationProducesOutput_Value(?insn, ?tensorArgVal, ?dimListArgVal, ?outVal),
   ConstListDimensions(?dimListArgVal, ?size),
   ConstListContents(?dimListArgVal, ?index, "<num-constant(int):-1>"),
   ValidTensorReshape_ReplaceMinus1WithVal(?insn, ?tensorArgVal, ?dimListArgVal, ?newValue).
 
-
-VarPointsTo(?var, ?value),
-Value_Type(?value, "<tensorflow.Tensor>"):-
+TensorReshapeInvocationProducesOutput_Value(?insn, ?tensorArgVal, ?dimListArgVal, ?outVal):-
   TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
-  AssignInstruction_To(?insn, ?var),
   Instruction_Function(?insn, ?function),
-  ?value = TensorValueMacro("reshape",?function, ?tensorArgVal, ?dimListArgVal).
+  ?outVal = TensorValueMacro("reshape",?function, ?tensorArgVal, ?dimListArgVal).
 
-TensorHasConcreteDimensions(?value),
-VarPointsTo(?var, ?value),
-Value_Type(?value, "<tensorflow.Tensor>"):-
+
+VarPointsTo(?var, ?outVal),
+Value_Type(?outVal, "<tensorflow.Tensor>"):-
+  TensorReshapeInvocationProducesOutput_Value(?insn, ?tensorArgVal, ?dimListArgVal, ?outVal),
+  AssignInstruction_To(?insn, ?var).
+
+TensorHasConcreteDimensions(?outVal),
+VarPointsTo(?var, ?outVal),
+Value_Type(?outVal, "<tensorflow.Tensor>"):-
   isValidTensorReshapeInvocationClass2(?insn, ?tensorArgVal, ?dimListArgVal),
+  TensorReshapeInvocationProducesOutput_Value(?insn, ?tensorArgVal, ?dimListArgVal, ?outVal),
   AssignInstruction_To(?insn, ?var),
-  Instruction_Function(?insn, ?function),
-  TensorHasConcreteDimensions(?tensorArgVal),
-  ?value = TensorValueMacro("reshape",?function, ?tensorArgVal, ?dimListArgVal).
+  TensorHasConcreteDimensions(?tensorArgVal).

@@ -296,6 +296,12 @@ public class PythonFactWriter {
         TypeReference declaringClass = f.getDeclaringClass();
         //String fieldId = _rep.signature(f, declaringClass);
         String fieldId = _rep.simpleName(f);
+        try{
+            Integer.parseInt(fieldId);
+            _db.add(ORIGINAL_INT_CONSTANT, fieldId);
+        }catch(Throwable t){
+
+        }
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
     }
 

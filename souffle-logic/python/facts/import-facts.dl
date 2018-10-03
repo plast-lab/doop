@@ -195,6 +195,11 @@ If_Var(?instruction, ?var) :-
   _IfVar(?instruction, ?var).
 
 
+.decl _OriginalIntConstant(?intConst:symbol)
+.input _OriginalIntConstant(IO="file", filename="OriginalIntConstant.facts", delimiter="\t")
+
+isOriginalIntConstant(?num):-
+  _OriginalIntConstant(?num).
 
 // AssignIntConstant
 
@@ -202,6 +207,7 @@ If_Var(?instruction, ?var) :-
 .input _AssignIntConstant(IO="file", filename="AssignIntConstant.facts", delimiter="\t")
 
 isIntConstant(?const),
+isOriginalIntConstant(?const),
 isNumConstant(?const),
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
