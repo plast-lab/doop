@@ -2,6 +2,7 @@ package org.clyze.doop.common.android;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -180,37 +181,49 @@ public abstract class AndroidSupport {
     }
 
     /**
-     * Decode an APK input using apktool. Needs environment variable
-     * set (name found in constant APKTOOL_HOME_ENV_VAR).
+     * Decode an APK input using apktool. The tool may either be found
+     * in environment variable (see constant APKTOOL_HOME_ENV_VAR) or
+     * a default version of apktool may be provided as a build dependency.
      *
      * @param apk                        the APK
      * @param decodeDir                  the target directory to use as root
-     * @throws DoopErrorCodeException    an exception that Doop must handle
      */
     private static void decodeApk(File apk, String decodeDir) {
         if (new File(decodeDir).mkdirs())
             System.out.println("Created " + decodeDir);
 
         String apktoolHome = System.getenv(APKTOOL_HOME_ENV_VAR);
-        if (apktoolHome == null) {
-            System.err.println("Cannot decode APK, environment variable missing: " + APKTOOL_HOME_ENV_VAR);
-            return;
-        }
+        String apkPath;
+        String[] cmdArgs;
         try {
-            String apkPath = apk.getCanonicalPath();
+            apkPath = apk.getCanonicalPath();
             String outDir = decodeDir + File.separator + apkBaseName(apk.getName());
             // Don't use "-f" option of apktool, delete manually.
             FileUtils.deleteDirectory(new File(outDir));
-            String[] cmd = {
-                    apktoolHome + File.separator + "apktool",
-                    "d", apkPath,
-                    "-o", outDir
-            };
-            System.out.println("Decoding " + apkPath + " using apktool...");
-            System.out.println("Command: " + String.join(" ", cmd));
-            JHelper.runWithOutput(cmd, "APKTOOL");
+            cmdArgs = new String[] { "d", apkPath, "-o", outDir };
         } catch (IOException ex) {
-            System.err.println("Error: could not run apktool (" + APKTOOL_HOME_ENV_VAR + " = " + apktoolHome + ").");
+            System.err.println("Error: could not initialize inputs for apktool: " + ex.getMessage());
+            return;
+        }
+
+        System.out.println("Decoding " + apkPath + " using apktool...");
+        if (apktoolHome == null || (!(new File(apktoolHome)).exists())) {
+            System.err.println("Invalid environment variable: " + APKTOOL_HOME_ENV_VAR + "=" + apktoolHome + ", using default apktool...");
+            try {
+                Class.forName("brut.apktool.Main").getDeclaredMethod("main").invoke(cmdArgs);
+            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+                System.err.println("Error: could not find default apktool.");
+            }
+        } else {
+            String[] cmd = new String[cmdArgs.length + 1];
+            cmd[0] = apktoolHome + File.separator + "apktool";
+            System.arraycopy(cmdArgs, 0, cmd, 1, cmdArgs.length);
+            System.out.println("Command: " + String.join(" ", cmd));
+            try {
+                JHelper.runWithOutput(cmd, "APKTOOL");
+            } catch (IOException ex) {
+                System.err.println("Error: could not run apktool (" + APKTOOL_HOME_ENV_VAR + " = " + apktoolHome + ").");
+            }
         }
     }
 
