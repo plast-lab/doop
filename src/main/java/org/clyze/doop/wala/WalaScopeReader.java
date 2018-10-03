@@ -1,23 +1,18 @@
 package org.clyze.doop.wala;
 
-import com.ibm.wala.classLoader.BinaryDirectoryTreeModule;
 import com.ibm.wala.classLoader.JarFileModule;
 import com.ibm.wala.classLoader.Module;
-import com.ibm.wala.classLoader.SourceDirectoryTreeModule;
 import com.ibm.wala.dalvik.classLoader.DexFileModule;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
-import com.ibm.wala.properties.WalaProperties;
-import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.util.config.FileOfClasses;
-import com.ibm.wala.util.debug.Assertions;
 import com.ibm.wala.util.io.FileProvider;
-import com.ibm.wala.util.strings.Atom;
+import org.jf.dexlib2.DexFileFactory;
+import org.jf.dexlib2.Opcodes;
+import org.jf.dexlib2.dexbacked.DexBackedDexFile;
+import org.jf.dexlib2.iface.MultiDexContainer;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.StringTokenizer;
 import java.util.jar.JarFile;
 
 /*
@@ -28,17 +23,16 @@ import java.util.jar.JarFile;
  * unless specified in a specific file, not existing in the jar)
  *
  */
-public class WalaScopeReader {
-    //The location of WALAprimordial.jar.model in our resources folder -- file taken from wala's repo
-    //Don't understand what this does but it is needed for some reason
-    private static String SCOPE_BIN_FILE;
+class WalaScopeReader {
 
     private static final ClassLoader MY_CLASSLOADER = WalaScopeReader.class.getClassLoader();
 
-    static AnalysisScope setupJavaAnalysisScope(List<String> inputJars, String exclusions, List<String> javaLibs, List<String> appLibs) throws IOException
+    static AnalysisScope setupJavaAnalysisScope(Iterable<String> inputJars, String exclusions, Iterable<String> javaLibs, Iterable<String> appLibs) throws IOException
     {
         String myEnv = System.getenv("DOOP_HOME");
-        SCOPE_BIN_FILE = myEnv + "/src/main/resources/WALAprimordial.jar.model";
+        //The location of WALAprimordial.jar.model in our resources folder -- file taken from wala's repo
+        //Don't understand what this does but it is needed for some reason
+        String SCOPE_BIN_FILE = myEnv + "/src/main/resources/WALAprimordial.jar.model";
         AnalysisScope scope = AnalysisScope.createJavaAnalysisScope();
 
         for(String javaLib : javaLibs) {
@@ -66,7 +60,7 @@ public class WalaScopeReader {
         return scope;
     }
 
-    public static AnalysisScope setUpAndroidAnalysisScope(List<String> inputs, String exclusions, List<String> androidLibs, List<String> appLibs) throws IOException {
+    public static AnalysisScope setUpAndroidAnalysisScope(Iterable<String> inputs, String exclusions, Iterable<String> androidLibs, Iterable<String> appLibs) throws IOException {
         AnalysisScope scope;
         scope = AnalysisScope.createJavaAnalysisScope();
 
@@ -104,8 +98,24 @@ public class WalaScopeReader {
                 "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
 
         for(String input: inputs)
-            scope.addToScope(ClassLoaderReference.Application, DexFileModule.make(new File(input)));
+            addAPKtoScope(ClassLoaderReference.Application, scope, input);
+            //scope.addToScope(ClassLoaderReference.Application, DexFileModule.make(new File(input)));
 
         return scope;
+    }
+
+    private static void addAPKtoScope(ClassLoaderReference loader, AnalysisScope scope, String fileName){
+        File apkFile = new File(fileName);
+        MultiDexContainer<? extends DexBackedDexFile> multiDex = null;
+        final int API = 24;
+        try {
+            multiDex = DexFileFactory.loadDexContainer(apkFile, Opcodes.forApi(API));
+            for (String dexEntry : multiDex.getDexEntryNames()) {
+                System.out.println("Adding dex file: " +dexEntry + " of file:" + fileName);
+                scope.addToScope(loader, new DexFileModule(apkFile, dexEntry, API));
+            }
+        } catch (IOException e){
+            System.err.println("Failed to open " +fileName + " as multidex container.\n" + e);
+        }
     }
 }

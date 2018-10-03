@@ -379,6 +379,21 @@ VirtualMethodInvocation_Base(?instruction, ?base) :-
   _VirtualMethodInvocation(?instruction, _, ?signature, ?base, ?method),
   !isOpaqueMethod(?signature).
 
+// Super method invocation
+
+.decl _SuperMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
+.input _SuperMethodInvocation(IO="file", filename="SuperMethodInvocation.facts", delimiter="\t")
+
+isMethod(?signature),
+isInstruction(?instruction),
+isMethodInvocation(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+MethodInvocation_Method(?instruction, ?signature),
+isSuperMethodInvocation_Insn(?instruction),
+SuperMethodInvocation_Base(?instruction, ?base) :-
+  _SuperMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+
 // Dynamic method invocation
 
 .decl _DynamicMethodInvocation(?instruction:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?method:symbol)
@@ -771,6 +786,15 @@ isMethod(?id) :-
 
 isNumConstant(?const) :-
   NumConstantRaw(?const).
+
+.decl ArrayInitialValueFromConst(?instruction:symbol, ?to:symbol, ?index:number, ?const:symbol, ?baseHeap:symbol)
+.input ArrayInitialValueFromConst(IO="file", filename="ArrayInitialValueFromConst.facts", delimiter="\t")
+
+isNumConstant(?const) :-
+  ArrayInitialValueFromConst(_, _, _, ?const, _).
+
+.decl ArrayInitialValueFromLocal(?instruction:symbol, ?to:symbol, ?index:number, ?from:symbol, ?baseHeap:symbol)
+.input ArrayInitialValueFromLocal(IO="file", filename="ArrayInitialValueFromLocal.facts", delimiter="\t")
 
 #endif // ANDROID
 

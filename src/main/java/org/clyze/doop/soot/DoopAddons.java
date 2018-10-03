@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.clyze.doop.common.DoopErrorCodeException;
@@ -22,9 +23,10 @@ import soot.options.Options;
  */
 class DoopAddons {
 
-    public static void retrieveAllSceneClassesBodies() {
+    public static void retrieveAllSceneClassesBodies(Integer _cores) {
         // The old coffi front-end is not thread-safe
-        int threadNum = Options.v().coffi() ? 1 : Runtime.getRuntime().availableProcessors();
+        boolean runSeq = (_cores == null) || Options.v().coffi();
+        int threadNum = runSeq ? 1 : _cores;
         CountingThreadPoolExecutor executor =  new CountingThreadPoolExecutor(threadNum,
                                                                               threadNum, 30, TimeUnit.SECONDS,
                                                                               new LinkedBlockingQueue<>());
@@ -88,9 +90,12 @@ class DoopAddons {
         boolean movedMsg = false;
         String jimpleDirPath = outDir + File.separatorChar + "jimple";
         File[] outDirFiles = new File(outDir).listFiles();
+        if (outDirFiles == null)
+            return;
 
         final String JIMPLE_EXT = ".shimple";
 
+        int dirsCreated = 0;
         for (File f : outDirFiles) {
             String fName = f.getName();
             if (fName.endsWith(JIMPLE_EXT)) {
@@ -101,7 +106,8 @@ class DoopAddons {
                 String base = fName.substring(0, fName.length() - JIMPLE_EXT.length()).replace('.', File.separatorChar);
                 fName = jimpleDirPath + File.separatorChar + base + JIMPLE_EXT;
                 File newFile = new File(fName);
-                newFile.getParentFile().mkdirs();
+                if (newFile.getParentFile().mkdirs())
+                    dirsCreated++;
                 try {
                     Files.move(f.toPath(), newFile.toPath());
                 } catch (IOException ex) {
@@ -109,6 +115,20 @@ class DoopAddons {
                     ex.printStackTrace();
                 }
             }
+        }
+        if (dirsCreated > 0)
+            System.out.println("Jimple output restructured, created " + dirsCreated + " directories.");
+    }
+
+    /**
+     * Returns true if Doop uses the upstream version of Soot, false if it uses the fork.
+     */
+    public static boolean usingUpstream() {
+        try {
+            Objects.requireNonNull(Class.forName("soot.jimple.toolkits.scalar.DoopRenamer"));
+            return false;
+        } catch (ClassNotFoundException ex) {
+            return true;
         }
     }
 }

@@ -59,7 +59,7 @@ class LBBuilder {
 	}
 
 	void include(String filePath) {
-		def inDir = new File(filePath).getParentFile()
+		def inDir = new File(filePath).parentFile
 		def tmpFile = File.createTempFile("tmp", ".lb", outDir)
 		cpp.preprocess(tmpFile.toString(), filePath)
 		tmpFile.eachLine { line ->

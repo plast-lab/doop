@@ -10,7 +10,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 @Singleton
 class DoopAnalysisFamily implements AnalysisFamily {
 
-	private static final String DEFAULT_JAVA_PLATFORM = "java_7";
+	private static final String DEFAULT_JAVA_PLATFORM = "java_7"
 
 	@Override
 	String getName() { "doop" }
@@ -19,12 +19,17 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	void init() {}
 
 	@Override
-	List<AnalysisOption> supportedOptions() { SUPPORTED_OPTIONS }
+	List<AnalysisOption> supportedOptions() { calcSupportedOptions() }
 
 	@Override
-	Map<String, AnalysisOption> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
+	Map<String, AnalysisOption> supportedOptionsAsMap() { calcSupportedOptions().collectEntries { [(it.id): it] } }
 
-	private static List<AnalysisOption> SUPPORTED_OPTIONS = [
+	/**
+	 * Calculates the options supported by Doop. This needs Doop to be
+	 * initialized first (e.g., to find analysis names).
+	 */
+	private static List<AnalysisOption> calcSupportedOptions() {
+		[
 			/* Start Main options */
 			new AnalysisOption<String>(
 					id: "USER_SUPPLIED_ID",
@@ -38,7 +43,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					optName: "a",
 					argName: "NAME",
 					description: "The name of the analysis.",
-					validValues: analysesNames(),
+					validValues: analysesSouffle() + ["----- (LB analyses) -----"] + analysesLB(),
 					isMandatory: true
 			),
 			new AnalysisOption<File>(
@@ -203,8 +208,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "RUN_FLOWDROID",
 					name: "run-flowdroid",
-					description: "Run soot-infoflow-android to generate dummy main method.",
+					description: "Run FlowDroid to generate dummy main method.",
 					forCacheID: true
+			),
+			new BooleanAnalysisOption(
+					id: "DONT_REPORT_PHANTOMS",
+					name: "dont-report-phantoms",
+					description: "Do not report phantom methods/types during fact generation.",
+					value: false
 			),
 			new BooleanAnalysisOption(
 					id: "GENERATE_JIMPLE",
@@ -234,6 +245,17 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "WALA_FACT_GEN",
 					name: "wala-fact-gen",
 					forCacheID: true
+			),
+			new BooleanAnalysisOption(
+					id: "DEX_FACT_GEN",
+					name: "dex",
+					description: "Use custom front-end to generate facts for .apk inputs, using Soot for other inputs.",
+					forCacheID: true
+			),
+			new AnalysisOption<String>(
+					id: "DECODE_APK",
+					name: "decode-apk",
+					description: "Decode .apk inputs to facts directory."
 			),
 			new BooleanAnalysisOption(
 					id: "PYTHON",
@@ -284,16 +306,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Enable the analysis to be the pre-analysis of Scaler, and outputs the information required by Scaler.",
 					forPreprocessor: true
 			),
-			new AnalysisOption(
-					id: "SCALER",
-					name: "scaler",
-					description: "Use file with method context-sensitivity variants selected by Scaler.",
-					argName: "FILE",
-					argInputType: InputType.MISC,
-					forCacheID: true,
-					changesFacts: true,
-					forPreprocessor: true
-			),
 			/* End Scaler related options */
 
 			/* Start Zipper related options */
@@ -314,6 +326,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			/* End Zipper related options */
+
+			/* Start Python related options */
+			new BooleanAnalysisOption(
+					id: "SINGLE_FILE_ANALYSIS",
+					name: "single-file-analysis",
+					description: "Flag to be passed to WALAs IR translator to produce IR that makes the analysis of a single script file easier.",
+					forCacheID: true
+			),
+			/* End Python related options */
 
 			/* Start preprocessor normal flags */
 			new BooleanAnalysisOption(
@@ -616,15 +637,22 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "OUT_DIR",
 					argInputType: InputType.MISC
 			),
-			new BooleanAnalysisOption(
+			new AnalysisOption<String>(
 					id: "X_STOP_AT_BASIC",
 					name: "Xstop-at-basic",
-					description: "Run the basic analysis and exit."
+					description: "Run the basic analysis and exit. Possible strategies: default, classes-scc (outputs the classes in SCC), partitioning (outputs the classes in partitions)",
+                                        argName: "PARTITIONING_STRATEGY",
+                                        argInputType: InputType.MISC
 			),
 			new BooleanAnalysisOption(
 					id: "X_DRY_RUN",
 					name: "Xdry-run",
 					description: "Do a dry run of the analysis."
+			),
+			new BooleanAnalysisOption(
+					id: "X_FORCE_RECOMPILE",
+					name: "Xforce-recompile",
+					description: "Force recompilation of Souffle logic."
 			),
 			new BooleanAnalysisOption(
 					id: "X_SERVER_LOGIC",
@@ -692,6 +720,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xignore-wrong-staticness",
 					description: "Ignore 'wrong static-ness' errors in Soot."
 			),
+			new BooleanAnalysisOption(
+					id: "X_IGNORE_FACTGEN_ERRORS",
+					name: "Xignore-factgen-errors",
+					description: "Continue with analysis despite fact generation errors."
+			),
 			new IntegerAnalysisOption(
 					id: "X_MONITORING_INTERVAL",
 					name: "Xmonitoring-interval",
@@ -744,21 +777,34 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "REFINE",
 					cli: false
 			),
-	]
+		]
+	}
 
-	private static List<String> analysesNames() {
-		def closure = { String path, String fileToLookFor ->
-			def analyses = []
-			new File(path).eachDir { File dir ->
-				def f = new File(dir, fileToLookFor)
-				if (f.exists() && f.isFile()) analyses << dir.name
-			}
-			analyses.sort()
+	private static List<String> analysesFor(String path, String fileToLookFor) {
+		if (!path) {
+			println "Error: Doop was not initialized correctly, could not read analyses names."
+			return []
 		}
+		def analyses = []
+		new File(path).eachDir { File dir ->
+			def f = new File(dir, fileToLookFor)
+			if (f.exists() && f.isFile()) analyses << dir.name
+		}
+		analyses.sort()
+	}
 
-		closure(Doop.souffleAnalysesPath, "analysis.dl") +
-		["----- (LB analyses) -----"] +
-		closure(Doop.analysesPath, "analysis.logic")
+	private static List<String> analysesSouffle() {
+		if (!Doop.souffleAnalysesPath) {
+			Doop.initDoopFromEnv()
+		}
+		analysesFor(Doop.souffleAnalysesPath, "analysis.dl")
+	}
+
+	private static List<String> analysesLB() {
+		if (!Doop.analysesPath) {
+			Doop.initDoopFromEnv()
+		}
+		analysesFor(Doop.analysesPath, "analysis.logic")
 	}
 
 	private static List<String> informationFlowPlatforms(String lbDir, String souffleDir) {
@@ -767,14 +813,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		Closure scan = { ifDir ->
 			if (ifDir) {
 				new File("${ifDir}/information-flow")?.eachFile { File f ->
-					String n = f.getName()
+					String n = f.name
 					String base = removeExtension(n)
 					int platformEndIdx = base.lastIndexOf(INFORMATION_FLOW_SUFFIX)
 					if (platformEndIdx != -1) {
 						String ext = getExtension(n)
-						if (ext.equals("logic")) {
+						if (ext == "logic") {
 							platforms_LB << base.substring(0, platformEndIdx)
-						} else if (ext.equals("dl")) {
+						} else if (ext == "dl") {
 							platforms_Souffle << base.substring(0, platformEndIdx)
 						}
 					}

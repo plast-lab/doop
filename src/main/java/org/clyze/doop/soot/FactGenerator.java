@@ -1,12 +1,12 @@
 package org.clyze.doop.soot;
 
+import java.util.ArrayList;
+import java.util.Set;
+import org.clyze.doop.common.Driver;
 import soot.*;
 import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
-
-import java.util.ArrayList;
-import java.util.Set;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -19,16 +19,24 @@ class FactGenerator implements Runnable {
     private final FactWriter _writer;
     private final boolean _ssa;
     private final Set<SootClass> _sootClasses;
+    private final boolean _reportPhantoms;
+    private final Driver _driver;
 
-    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses)
+    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses, boolean reportPhantoms, Driver driver)
     {
         this._writer = writer;
         this._ssa = ssa;
         this._sootClasses = sootClasses;
+        this._reportPhantoms = reportPhantoms;
+        this._driver = driver;
     }
 
     @Override
     public void run() {
+        final boolean ignoreErrors = _driver._ignoreFactGenErrors;
+
+        if (!ignoreErrors && _driver.errorsExist())
+            return;
 
         for (SootClass _sootClass : _sootClasses) {
             _writer.writeClassOrInterfaceType(_sootClass);
@@ -54,46 +62,31 @@ class FactGenerator implements Runnable {
 
             _sootClass.getFields().forEach(this::generate);
 
-            boolean success;
-            int numRetries = 0;
-            do {
-                success = true;
+            for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
+                Session session = new Session();
                 try {
-                    for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
-                        Session session = new Session();
-                        try {
-                            generate(m, session);
-                        }
-                        catch (Exception exc) {
-                            // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
-                            // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
-                            //     Thread key = i.next();
-                            //     System.err.println("Thread " + key.getName());
-                            //     StackTraceElement[] trace = liveThreads.getLibrary(key);
-                            //     for (int j = 0; j < trace.length; j++) {
-                            //         System.err.println("\tat " + trace[j]);
-                            //     }
-                            // }
-
-                            System.err.println("Error while processing method: " + m);
-                            exc.printStackTrace();
-                            throw exc;
-                        }
+                    generate(m, session);
+                } catch (Throwable t) {
+                    // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
+                    // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
+                    //     Thread key = i.next();
+                    //     System.err.println("Thread " + key.getName());
+                    //     StackTraceElement[] trace = liveThreads.getLibrary(key);
+                    //     for (int j = 0; j < trace.length; j++) {
+                    //         System.err.println("\tat " + trace[j]);
+                    //     }
+                    // }
+                    String msg = "Error while processing method: " + m + ": " + t.getMessage();
+                    System.err.println(msg);
+                    if (!ignoreErrors) {
+                        // Inform the driver. This is safer than throwing an
+                        // exception, since it could be lost due to the executor
+                        // service running this class.
+                        _driver.markError();
+                        return;
                     }
-                } catch (Exception exc) {
-                    numRetries++;
-                    int maxRetries = 10;
-                    if (numRetries > maxRetries) {
-                        System.err.println("\nGiving up...\n");
-                        throw exc;
-                    }
-                    else {
-                        System.err.println("\nRETRYING\n");
-                    }
-                    success = false;
                 }
-            } while (!success);
-
+            }
         }
     }
 
@@ -148,18 +141,21 @@ class FactGenerator implements Runnable {
     private boolean isPhantomBased(SootMethod m) {
         for (SootClass clazz: m.getExceptions())
             if (isPhantom(clazz.getType())) {
-                System.out.println("Exception " + clazz.getName() + " is phantom.");
+                if (_reportPhantoms)
+                    System.out.println("Exception " + clazz.getName() + " is phantom.");
                 return true;
             }
 
         for (int i = 0 ; i < m.getParameterCount(); i++)
             if(isPhantom(m.getParameterType(i))) {
-                System.out.println("Parameter type " + m.getParameterType(i) + " of " + m.getSignature() + " is phantom.");
+                if (_reportPhantoms)
+                    System.out.println("Parameter type " + m.getParameterType(i) + " of " + m.getSignature() + " is phantom.");
                 return true;
             }
 
         if (isPhantom(m.getReturnType())) {
-            System.out.println("Return type " + m.getReturnType() + " of " + m.getSignature() + " is phantom.");
+            if (_reportPhantoms)
+                System.out.println("Return type " + m.getReturnType() + " of " + m.getSignature() + " is phantom.");
             return true;
         }
 
@@ -346,11 +342,13 @@ class FactGenerator implements Runnable {
     private void generatePhantom(Object cause) {
         if (cause instanceof SootClass) {
             Type t = ((SootClass)cause).getType();
-            System.out.println("Type " + t + " is phantom.");
+            if (_reportPhantoms)
+                System.out.println("Type " + t + " is phantom.");
             _writer.writePhantomType(t);
         } else if (cause instanceof SootMethod) {
             SootMethod meth = (SootMethod)cause;
-            System.out.println("Method " + meth.getSignature() + " is phantom.");
+            if (_reportPhantoms)
+                System.out.println("Method " + meth.getSignature() + " is phantom.");
             _writer.writePhantomMethod(meth);
         }
         else
@@ -595,7 +593,7 @@ class FactGenerator implements Runnable {
         }
         else if(left instanceof Local && right instanceof ThisRef)
         {
-            _writer.writeAssignLocal(inMethod, stmt, (Local) left, (ThisRef) right, session);
+            _writer.writeAssignLocal(inMethod, stmt, (Local) left, session);
         }
         else if(left instanceof Local && right instanceof ParameterRef)
         {

@@ -3,6 +3,7 @@ package org.clyze.doop.common;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
@@ -59,7 +60,7 @@ public class BasicJavaSupport {
      * @param classSet   appropriate set to add class names
      * @param filename   the input filename
      */
-    private void preprocessInput(Set<String> classSet, String filename) throws IOException {
+    private void preprocessInput(Collection<String> classSet, String filename) throws IOException {
         JarEntry entry;
         try (JarInputStream jin = new JarInputStream(new FileInputStream(filename));
              JarFile jarFile = new JarFile(filename)) {
@@ -77,8 +78,8 @@ public class BasicJavaSupport {
                         classSet.add(className);
                         String artifact = (new File(jarFile.getName())).getName();
                         registerArtifactClass(artifact, className, "-");
-                    } catch (IllegalArgumentException e) {
-                        System.err.println("-- Problematic .class file \"" + entryName + "\"");
+                    } catch (Exception e) {
+                        System.err.println("Error while preprocessing entry \"" + entryName + "\", it will be ignored.");
                     }
                 } else if (entryName.endsWith(".properties")) {
                     propertyProvider.addProperties(jarFile.getInputStream(entry), filename);

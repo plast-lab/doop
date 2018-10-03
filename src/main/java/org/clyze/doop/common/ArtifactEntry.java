@@ -14,7 +14,7 @@ public class ArtifactEntry {
         this.subArtifact = subArtifact;
     }
 
-    public static Set<String> toClassNames(Set<ArtifactEntry> s) {
+    public static Set<String> toClassNames(Iterable<ArtifactEntry> s) {
         Set<String> ret = new HashSet<>();
         for (ArtifactEntry ae : s)
             ret.add(ae.className);

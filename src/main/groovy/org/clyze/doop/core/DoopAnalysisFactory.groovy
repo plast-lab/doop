@@ -48,16 +48,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			"2-type-sensitive+heap"              : "TwoTypeSensitivePlusHeapConfiguration",
 			"2-object-sensitive"                 : "TwoObjectSensitiveConfiguration",
 			"2-object-sensitive+heap"            : "TwoObjectSensitivePlusHeapConfiguration",
-			"oracular"                           : "OracularConfiguration",
+			"fully-guided-context-sensitive"     : "FullyGuidedContextSensitiveConfiguration",
 			"special-2-type-sensitive+heap"      : "SpecialTwoTypeSensitivePlusHeapConfiguration",
 			"2-object-sensitive+2-heap"          : "TwoObjectSensitivePlusTwoHeapConfiguration",
 			"3-object-sensitive+3-heap"          : "ThreeObjectSensitivePlusThreeHeapConfiguration",
-			"2-type-object-sensitive+heap"       : "TwoObjectSensitivePlusHeapConfiguration",
-			"2-type-object-sensitive+2-heap"     : "TwoObjectSensitivePlusTwoHeapConfiguration",
+			"2-type-object-sensitive+heap"       : "TwoTypeObjectSensitivePlusHeapConfiguration",
+			"2-type-object-sensitive+2-heap"     : "TwoTypeObjectSensitivePlusTwoHeapConfiguration",
 			"3-type-sensitive+2-heap"            : "ThreeTypeSensitivePlusTwoHeapConfiguration",
 			"3-type-sensitive+3-heap"            : "ThreeTypeSensitivePlusThreeHeapConfiguration",
 			"selective-2-object-sensitive+heap"  : "SelectiveTwoObjectSensitivePlusHeapConfiguration",
-			"partitioned-2-object-sensitive_heap": "PartitionedTwoObjectSensitivePlusHeapConfiguration",
+			"partitioned-2-object-sensitive+heap": "PartitionedTwoObjectSensitivePlusHeapConfiguration",
 	]
 
 	/**
@@ -261,16 +261,17 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				if (!(deps in libraryPaths)) {
 					libraryPaths << deps
 					context.resolve()
-					options.LIBRARIES.value = context.getAllLibraries()
+					options.LIBRARIES.value = context.allLibraries
 				}
 
-				if (!options.REFLECTION.value && !options.TAMIFLEX.value)
+				if (!options.TAMIFLEX.value)
 					options.TAMIFLEX.value = resolveAsInput(inputJarName.replace(".jar", "-tamiflex.log"))
 
 				def benchmark = FilenameUtils.getBaseName(inputJarName)
 				log.info "Running ${options.DACAPO.value ? "dacapo" : "dacapo-bach"} benchmark: $benchmark"
 			} else {
-				options.TAMIFLEX.value = "dummy"
+				if (!options.TAMIFLEX.value)
+					options.TAMIFLEX.value = "dummy"
 			}
 		}
 
@@ -306,8 +307,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
-			def tamFile = options.TAMIFLEX.value as String
-			FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
+			def tamiflexArg = options.TAMIFLEX.value as String
+			options.TAMIFLEX.value = resolveAsInput(tamiflexArg)
+			log.info "Using TAMIFLEX information from ${tamiflexArg}"
 		}
 
 		if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
@@ -377,7 +379,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (options.X_DRY_RUN.value) {
 			options.X_STATS_NONE.value = true
-			options.X_SERVER_LOGIC.value = true
+
+			// Also test the server logic if the analysis supports it.
+			switch (options.ANALYSIS.value) {
+				case "sound-may-point-to":
+				case "micro":
+					break
+				default:
+					options.X_SERVER_LOGIC.value = true
+			}
+
 			if (options.CACHE.value) {
 				log.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
 			}

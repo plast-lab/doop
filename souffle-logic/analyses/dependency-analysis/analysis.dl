@@ -97,6 +97,7 @@ InstructionUsesVar(?instruction, ?var) :-
     AssignInstanceOf_From(?instruction, ?var) ;
     If_Var(?instruction, ?var) ;
     VirtualMethodInvocation_Base(?instruction, ?var) ;
+    SuperMethodInvocation_Base(?instruction, ?var) ;
     Switch_Key(?instruction, ?var) ;
     ActualParam(_, ?instruction, ?var) ;
     ReturnNonvoid_Var(?instruction, ?var) ;

@@ -81,3 +81,8 @@ StaticMethodInvocation(?invocation, ?signature, ?inmethod) :-
   isStaticMethodInvocation_Insn(?invocation),
   Instruction_Method(?invocation, ?inmethod),
   MethodInvocation_Method(?invocation, ?signature).
+
+SuperMethodInvocation(?invocation, ?signature, ?inmethod) :-
+  isSuperMethodInvocation_Insn(?invocation),
+  Instruction_Method(?invocation, ?inmethod),
+  MethodInvocation_Method(?invocation, ?signature).

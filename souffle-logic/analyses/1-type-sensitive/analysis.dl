@@ -21,9 +21,10 @@
   // Only used for arrays. Maps each context to a *potential* hcontext.
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
     Value_DeclaringType(?value, ?type), 
-    ?calleeCtx = [?type].
+    ?calleeCtx = [?type],
+    ?tomethod = ?tomethod.
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

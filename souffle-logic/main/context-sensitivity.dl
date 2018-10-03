@@ -251,6 +251,27 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   FieldInitialValue(?signature, ?const),
   Value_Num(?value, ?const),
   isImmutableHContext(?hctx).
+
+/**
+ * Array elements initialized by local variables (Dalvik filled-new-array*).
+ */
+VarPointsTo(?baseHctx, ?baseHeap, ?ctx, ?to),
+ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseHeap) :-
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  ArrayInitialValueFromLocal(_, ?to, _, ?from, ?baseHeap),
+  isImmutableContext(?ctx),
+  isImmutableHContext(?baseHctx).
+
+/**
+ * Array elements initialized by constants (Dalvik array payloads).
+ */
+VarPointsTo(?hctx, ?baseHeap, ?ctx, ?to),
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
+  ArrayInitialValueFromConst(_, ?to, _, ?const, ?baseHeap),
+  Value_Num(?value, ?const),
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
+
 #endif // ANDROID
 
 /**
@@ -474,19 +495,19 @@ OptVirtualMethodInvocationBase(?invocation, ?base) :-
 // new context objects by employing arbitrary logic, and communicates
 // back to the main analysis the results of context creation using
 // ContextResponse.
-configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod) :-
   OptVirtualMethodInvocationBase(?invocation, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  Value_Type(?value, ?valuetype),
+  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod).
 
 // The main analysis is merely looking up the previously created
 // context objects.
 #ifdef ZIPPER
 
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
   ThisVar(?tomethod, ?this),
   ZipperPrecisionCriticalMethod(?tomethod).
 #ifndef X_CONTEXT_REMOVER
@@ -494,10 +515,8 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
 #endif
 
 VarPointsTo(?hctx, ?value, ?immCtx, ?this) :-
-  configuration.ContextRequest(_, ?hctx, ?invocation, ?value),
+  configuration.ContextRequest(_, ?hctx, ?invocation, ?value, ?tomethod),
   isImmutableContext(?immCtx),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
   ThisVar(?tomethod, ?this),
   !ZipperPrecisionCriticalMethod(?tomethod).
 #ifndef X_CONTEXT_REMOVER
@@ -507,16 +526,30 @@ VarPointsTo(?hctx, ?value, ?immCtx, ?this) :-
 #else
 
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
   ThisVar(?tomethod, ?this).
 #ifndef X_CONTEXT_REMOVER
- .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5)
+ .plan 1:(2,1,3)
 #endif
 
 #endif // #ifdef ZIPPER
+
+/**
+ * Super method invocations
+ */
+
+.decl OptSuperMethodInvocationBase(?invocation:MethodInvocation, ?base:Var)
+
+OptSuperMethodInvocationBase(?invocation, ?base) :-
+  Reachable(?inmethod),
+  Instruction_Method(?invocation, ?inmethod),
+  SuperMethodInvocation_Base(?invocation, ?base).
+
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod) :-
+  OptSuperMethodInvocationBase(?invocation, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  MethodInvocation_Method(?invocation, ?tomethod).
 
 /**
  * Special method invocations
@@ -529,44 +562,39 @@ OptSpecialMethodInvocationBase(?invocation, ?base) :-
   Instruction_Method(?invocation, ?inmethod),
   SpecialMethodInvocation_Base(?invocation, ?base).
 
-configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod) :-
   OptSpecialMethodInvocationBase(?invocation, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  MethodInvocation_Method(?invocation, ?tomethod).
 
 #ifdef ZIPPER
 
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
-  MethodInvocation_Method(?invocation, ?tomethod),
   ThisVar(?tomethod, ?this),
-  isSpecialMethodInvocation_Insn(?invocation),
   ZipperPrecisionCriticalMethod(?tomethod).
 #ifndef X_CONTEXT_REMOVER
 //  .plan 1:(2,1,3,4,5)
 #endif
 
 VarPointsTo(?hctx, ?value, ?immCtx, ?this) :-
-  configuration.ContextRequest(_, ?hctx, ?invocation, ?value),
+  configuration.ContextRequest(_, ?hctx, ?invocation, ?value, ?tomethod),
   isImmutableContext(?immCtx),
-  MethodInvocation_Method(?invocation, ?tomethod),
   ThisVar(?tomethod, ?this),
-  isSpecialMethodInvocation_Insn(?invocation),
   !ZipperPrecisionCriticalMethod(?tomethod).
 #ifndef X_CONTEXT_REMOVER
-// .plan 1:(2,1,3,4,5)
+// .plan 1:(2,1,3)
 #endif
 
 #else
 
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
-  MethodInvocation_Method(?invocation, ?tomethod),
-  ThisVar(?tomethod, ?this),
-  isSpecialMethodInvocation_Insn(?invocation).
+  ThisVar(?tomethod, ?this).
 #ifndef X_CONTEXT_REMOVER
-  .plan 1:(2,1,3,4,5)
+  .plan 1:(2,1,3)
 #endif
 
 #endif // #ifdef ZIPPER

@@ -1,19 +1,29 @@
 
 .output isFunction
 .output isMethod
+
+
 isFunction(?function):-
-    _Function(?function, _, ?par, _),
+    _Function(?function, _, ?par, _, _),
     isFunction(?par).
 
 isFunction(?function):-
-    _Function(?function, _, ?function, _).
+    _Function(?function, _, ?function, _, _).
 
+isFunction(?function), //TODO: Think about this again. Methods are functions, functions are not methods.
 isMethod(?function):-
-    _Function(?function, _, ?par, _),
+    _Function(?function, _, ?par, _ ,_),
     isClassType(?par).
 
-.decl FormalParamName(?var:symbol, ?name:symbol)
-.output FormalParamName
-FormalParamName(?var, ?name):-
-    _FormalParam(_,_,?var),
-    VarSourceName(?var,?name).
+  GlobalAccessInsn_Scope(?insn, ?scope):-
+    isGlobalAccess_Insn(?insn),
+    Instruction_Function(?insn, ?fun),
+    Function_DeclaredInFile(?fun, ?scope).
+
+.decl AssignBinOper_Info(?instr:Instruction, ?op:symbol, ?var1:Var, ?var2:Var)
+
+AssignBinOper_Info(?instr, ?op, ?var1, ?var2):-
+  isAssignBinop_Insn(?instr),
+  Assign_Operation(?instr, ?op),
+  AssignOper_From(?instr, 1, ?var1),
+  AssignOper_From(?instr, 2, ?var2).

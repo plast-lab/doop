@@ -61,6 +61,7 @@ ReturnFlowMethodInvocationParam(?param, ?invo) :-
 
 ReturnFlowMethodInvocationParam(?param, ?invo) :-
   (SpecialMethodInvocation_Base(?invo, ?param);
+   SuperMethodInvocation_Base(?invo, ?param);
    VirtualMethodInvocation_Base(?invo, ?param)),
   MethodInvocation_Method(?invo, ?toMeth),
   InOutFlowMethod(7, ?toMeth).
@@ -100,7 +101,8 @@ LocalVarFlow(?to, ?from) :-
 
 // HeapFlowMethodInvocationParam(?param, ?indexBase, ?invo) <-
 //   (SpecialMethodInvocation:Base[?invo] = ?param;
-//    VirtualMethodInvocation:Base[?invo] = ?param),
+//    VirtualMethodInvocation:Base[?invo] = ?param;
+//    SuperMethodInvocation_Base(?invo, ?param)),
 //   MethodInvocation:Method[?invo] = ?toMeth,
 //   ParamIndex:Id(?index:7),
 //   InFlowToOtherArgsHeap(?index, ?indexBase, ?toMeth).
@@ -111,7 +113,8 @@ LocalVarFlow(?to, ?from) :-
 
 // StoreFlowThroughHeap(?to, ?from) <-
 //   (SpecialMethodInvocation:Base[?invo] = ?to;
-//    VirtualMethodInvocation:Base[?invo] = ?to),
+//    VirtualMethodInvocation:Base[?invo] = ?to;
+//    SuperMethodInvocation_Base(?invo, ?param)),
 //   HeapFlowMethodInvocationParam(?from, ?indexBase, ?invo),
 //   ParamIndex:Id(?indexBase:7).
 */

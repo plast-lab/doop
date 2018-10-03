@@ -1,5 +1,6 @@
 package org.clyze.doop.python;
 
+import com.ibm.wala.cast.python.ir.PythonCAstToIRTranslator;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
@@ -47,10 +48,9 @@ public class PythonInvoker {
                     case "--generate-ir":
                         parameters._generateIR = true;
                         break;
-//                    case "-el":
-//                        i = shift(args, i);
-//                        parameters._platformLibraries.add(args[i]);
-//                        break;
+                    case "--single-file-analysis":
+                        parameters._singleFileAnalysis = true;
+                        break;
                     case "-d":
                         i = shift(args, i);
                         parameters._outputDir = args[i];
@@ -88,6 +88,7 @@ public class PythonInvoker {
         PythonFactWriter factWriter = new PythonFactWriter(db);
         int numOfFailures = 0;
         int numOfEmptyCha = 0;
+        PythonCAstToIRTranslator.setSingleFileAnalysis(parameters._singleFileAnalysis);
         for(String inputFile: parameters._inputs) {
             try{
                 int numOfClassesInCha = 0;
@@ -120,7 +121,7 @@ public class PythonInvoker {
                         System.out.println(ir.toString());
                     }
                 }
-                PythonFactGenerator pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
+                Runnable pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
                 pythonFactGenerator.run();
                 if(numOfClassesInCha == 6) {
                     numOfEmptyCha++;

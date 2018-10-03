@@ -21,8 +21,7 @@ class PlatformManager {
 			"java_8_debug"          : ["rt.jar", "jce.jar", "jsse.jar"],
 			"java_8_mini"           : ["rt.jar", "jce.jar", "jsse.jar"],
 			// Android compiled from sources
-			"android_22_fulljars"   : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
-			                           "optional/org.apache.http.legacy.jar"],
+			"android_22_fulljars"   : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
 			"android_25_fulljars"   : ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
 			                           "optional/org.apache.http.legacy.jar"],
 			// Android API stubs (from the SDK)
@@ -34,9 +33,8 @@ class PlatformManager {
 			"android_19_stubs"      : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
 			"android_20_stubs"      : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
 			"android_21_stubs"      : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
-			"android_22_stubs"      : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
-			                           "optional/org.apache.http.legacy.jar"],
-			"android_23_stubs"      : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
+			"android_22_stubs"      : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
+			"android_23_stubs"      : ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
 			                           "optional/org.apache.http.legacy.jar"],
 			"android_24_stubs"      : ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
 			                           "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
@@ -47,8 +45,8 @@ class PlatformManager {
 			// Android-Robolectric
 			"android_26_robolectric": ["android.jar", "data/layoutlib.jar", "uiautomator.jar",
 			                           "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
-			//Python
-			"python_2"                : [],
+			// Python
+			"python_2"              : [],
 	]
 
 	String platformsLib

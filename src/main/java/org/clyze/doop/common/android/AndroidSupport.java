@@ -1,25 +1,31 @@
 package org.clyze.doop.common.android;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
+import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
 import org.clyze.utils.AARUtils;
-
-import java.io.IOException;
-import java.util.*;
+import org.clyze.utils.JHelper;
 
 public abstract class AndroidSupport {
+
+    private static final String APKTOOL_HOME_ENV_VAR = "APKTOOL_HOME";
 
     protected final Parameters parameters;
     protected final BasicJavaSupport java;
 
-    private final Set<String> appServices = new HashSet<>();
-    private final Set<String> appActivities = new HashSet<>();
-    private final Set<String> appContentProviders = new HashSet<>();
-    private final Set<String> appBroadcastReceivers = new HashSet<>();
-    private final Set<String> appCallbackMethods = new HashSet<>();
+    private final Collection<String> appServices = new HashSet<>();
+    private final Collection<String> appActivities = new HashSet<>();
+    private final Collection<String> appContentProviders = new HashSet<>();
+    private final Collection<String> appBroadcastReceivers = new HashSet<>();
+    private final Collection<String> appCallbackMethods = new HashSet<>();
     private final Set<LayoutControl> appUserControls = new HashSet<>();
     private final Map<String, AppResources> computedResources = new HashMap<>();
 
@@ -31,7 +37,9 @@ public abstract class AndroidSupport {
         this.logger = LogFactory.getLog(getClass());
     }
 
-    public void processInputs(Set<String> tmpDirs) throws Exception {
+    public void processInputs(Set<String> tmpDirs) {
+        logger.debug("Processing inputs...");
+
         List<String> allInputs = parameters.getAllInputs();
         // Map AAR files to their package name.
         Map<String, String> pkgs = new HashMap<>();
@@ -43,13 +51,18 @@ public abstract class AndroidSupport {
         // the application's. There are Android apps that use
         // components (e.g. activities) from AAR libraries.
         for (String i : allInputs) {
-            if (i.endsWith(".apk") || i.endsWith(".aar")) {
+            boolean isApk = i.endsWith(".apk");
+            if (isApk || i.endsWith(".aar")) {
                 System.out.println("Processing application resources in " + i);
+                if (isApk && parameters.getDecodeApk()) {
+                    System.out.println("Decoding...");
+                    decodeApk(new File(i), parameters.getOutputDir() + File.separator + "decoded");
+                }
                 try {
                     AppResources resources = processAppResources(i);
                     computedResources.put(i, resources);
                     processAppResources(i, resources, pkgs, rLinker);
-                    resources.printManifestHeader();
+                    resources.printManifestInfo();
                 } catch (Exception ex) {
                     System.err.println("Resource processing failed: " + ex.getMessage());
                 }
@@ -75,7 +88,7 @@ public abstract class AndroidSupport {
             inputs.subList(1, inputsSize).clear();
     }
 
-    public void processAppResources(String input, AppResources manifest, Map<String, String> pkgs, RLinker rLinker) {
+    protected void processAppResources(String input, AppResources manifest, Map<String, String> pkgs, RLinker rLinker) {
         String appPackageName = manifest.getPackageName();
         pkgs.put(input, appPackageName);
 
@@ -167,4 +180,56 @@ public abstract class AndroidSupport {
 
     }
 
+    /**
+     * Decode an APK input using apktool. The tool may either be found
+     * in environment variable (see constant APKTOOL_HOME_ENV_VAR) or
+     * a default version of apktool may be provided as a build dependency.
+     *
+     * @param apk                        the APK
+     * @param decodeDir                  the target directory to use as root
+     */
+    private static void decodeApk(File apk, String decodeDir) {
+        if (new File(decodeDir).mkdirs())
+            System.out.println("Created " + decodeDir);
+
+        String apktoolHome = System.getenv(APKTOOL_HOME_ENV_VAR);
+        String apkPath;
+        String[] cmdArgs;
+        try {
+            apkPath = apk.getCanonicalPath();
+            String outDir = decodeDir + File.separator + apkBaseName(apk.getName());
+            // Don't use "-f" option of apktool, delete manually.
+            FileUtils.deleteDirectory(new File(outDir));
+            cmdArgs = new String[] { "d", apkPath, "-o", outDir };
+        } catch (IOException ex) {
+            System.err.println("Error: could not initialize inputs for apktool: " + ex.getMessage());
+            return;
+        }
+
+        System.out.println("Decoding " + apkPath + " using apktool...");
+        if (apktoolHome == null || (!(new File(apktoolHome)).exists())) {
+            System.err.println("Invalid environment variable: " + APKTOOL_HOME_ENV_VAR + "=" + apktoolHome + ", using default apktool...");
+            try {
+                Class.forName("brut.apktool.Main").getDeclaredMethod("main").invoke(cmdArgs);
+            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+                System.err.println("Error: could not find default apktool.");
+            }
+        } else {
+            String[] cmd = new String[cmdArgs.length + 1];
+            cmd[0] = apktoolHome + File.separator + "apktool";
+            System.arraycopy(cmdArgs, 0, cmd, 1, cmdArgs.length);
+            System.out.println("Command: " + String.join(" ", cmd));
+            try {
+                JHelper.runWithOutput(cmd, "APKTOOL");
+            } catch (IOException ex) {
+                System.err.println("Error: could not run apktool (" + APKTOOL_HOME_ENV_VAR + " = " + apktoolHome + ").");
+            }
+        }
+    }
+
+    private static String apkBaseName(String apkName) {
+        if (!apkName.endsWith(".apk"))
+            throw new RuntimeException("Cannot find base name of " + apkName);
+         return apkName.substring(0, apkName.length()-4);
+    }
 }

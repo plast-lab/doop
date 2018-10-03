@@ -1,5 +1,6 @@
 package org.clyze.doop.utils
 
+import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.utils.Executor
 import org.clyze.utils.Helper
 
@@ -11,7 +12,12 @@ cacheDir.mkdirs()
 def env = [:]
 env.putAll(System.getenv())
 
-Helper.initLogging("INFO", "$outDir/logs", true)
+try {
+    Helper.tryInitLogging("INFO", "$outDir/logs", true)
+} catch (IOException ex) {
+    System.err.println("Warning: could not initialize logging")
+    throw new DoopErrorCodeException(15)
+}
 
 def script = new SouffleScript(new Executor(outDir, env))
 def generatedFile = script.compile(new File(scriptFilePath), outDir, cacheDir, profile.toBoolean(), debug.toBoolean())

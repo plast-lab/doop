@@ -1,0 +1,147 @@
+  //-----------------------------------------------------------------------------
+  // [Value]
+  //-----------------------------------------------------------------------------
+
+  .type NumConstantValue
+
+  .type BoolConstantValue
+
+  //.type NoneConstantValue
+
+  .type Value = HeapAllocation | NumConstantValue | BoolConstantValue | Module
+
+  //.decl isValue(?value:Value)
+
+  //.decl Value_isHeap(?value:Value)
+
+  // Value_Num maps each numeric constant to a value while
+  // also prepending it with *num-constant-* to distinguish it
+  // from heap allocations that share the same string value.
+  .decl Value_Num(?value:NumConstantValue, ?const:NumConstant)
+
+  //.decl Value_isNonHeap(?value:Value)
+
+  .decl Value_Type(?value:Value, ?type:Type)
+  //.decl Value_DeclaringType(?value:Value, ?type:Type)
+
+  // [Miscellaneous]
+  //.decl Value_None(?none:Value)
+
+
+
+  .output VarPointsTo
+  .decl VarPointsTo(?var:Var, ?val:Value)
+
+  .decl GlobalNamePointsTo(?scope:Scope, ?name:symbol, ?val:Value)
+  .output GlobalNamePointsTo
+
+  .decl FieldPointsTo(?object:HeapAllocation, ?fieldName:symbol, ?fieldVal:Value)
+  .output FieldPointsTo
+
+  FieldPointsTo(?heap, ?fieldName, ?fieldVal):-
+    StoreInstanceField_Base(?instr, ?var),
+    VarPointsTo(?var, ?heap),
+    StoreInstanceField_From(?instr, ?from),
+    FieldInstruction_FieldName(?instr, ?fieldName),
+    VarPointsTo(?from, ?fieldVal).
+
+  
+  VarPointsTo(?var, ?val):-
+    LoadInstanceField_Base(?insn, ?base),
+    VarPointsTo(?base, ?heap),
+    LoadInstanceField_To(?insn, ?var),
+    FieldInstruction_FieldName(?insn, ?fieldName),
+    FieldPointsTo(?heap, ?fieldName, ?val).
+
+  GlobalNamePointsTo(?scope, ?name, ?val):-
+    isGlobalWrite_Insn(?insn),
+    GlobalAccessInsn_Name(?insn, ?name),
+    GlobalAccessInsn_Scope(?insn, ?scope),
+    GlobalWriteInsn_From(?insn, ?fromVar),
+    VarPointsTo(?fromVar, ?val).
+
+  VarPointsTo(?var, ?val):-
+    isGlobalRead_Insn(?insn),
+    GlobalAccessInsn_Name(?insn, ?name),
+    GlobalAccessInsn_Scope(?insn, ?scope),
+    AssignInstruction_To(?insn, ?var),
+    GlobalNamePointsTo(?scope, ?name, ?val).
+
+  //This rule is probably redundant
+  VarPointsTo(?var, ?val):-
+    isLexicalRead_Insn(?insn),
+    AssignInstruction_To(?insn, ?var),
+    LexicalAccessInsn_Name(?insn, ?name),
+    LexicalAccessInsn_VarScope(?insn, ?scope),
+    isLexicalWrite_Insn(?writeInstr),
+    LexicalAccessInsn_Name(?writeInstr, ?name),
+    LexicalAccessInsn_VarScope(?writeInstr, ?scope),
+    LexicalWriteInsn_From(?writeInstr, ?from),
+    VarPointsTo(?from, ?val).
+
+
+  VarPointsTo(?var, ?val):-
+      isLexicalRead_Insn(?insn),
+      AssignInstruction_To(?insn, ?var),
+      LexicalAccessInsn_Name(?insn, ?name),
+      LexicalAccessInsn_VarScope(?insn, ?scope),
+      Var_DeclaringFunction(?fromVar, ?scope),
+      Var_SourceName(?fromVar, ?name),
+      VarPointsTo(?fromVar, ?val).
+
+  .output isFunctionObjectAllocation
+  isFunctionObjectAllocation(?val),
+  VarPointsTo(?var, ?val):-
+    AssignHeapAllocation_Heap(?insn, ?val),
+    isNormalHeap(?val),
+    AssignInstruction_To(?insn, ?var),
+    HeapAllocation_Type(?val, ?type),
+    ?type != "list",
+    ?type != "object",
+    isFunction(?type).
+
+  .output isClassObjectAllocation
+  isClassObjectAllocation(?val),
+  VarPointsTo(?var, ?val):-
+    AssignHeapAllocation_Heap(?insn, ?val),
+    isNormalHeap(?val),
+    AssignInstruction_To(?insn, ?var),
+    HeapAllocation_Type(?val, ?type),
+    ?type != "list",
+    ?type != "object",
+    isClassType(?type).
+
+
+  VarPointsTo(?var, ?val):-
+    AssignHeapAllocation_Heap(?insn, ?str),
+    isStringConstant(?str),
+    AssignInstruction_To(?insn, ?var),
+    ?val = cat("<string constant:",cat(?str,">")).
+
+  #define NewAllocMacro(fun,type, index) cat("<", cat(fun, cat("/newinstanceof", cat(type, cat("/", cat( to_string(index),">"))))))
+
+  .output isClassInstanceAllocation
+  isClassInstanceAllocation(?val),
+  HeapAllocation_Type(?val, ?type),
+  isHeapAllocation(?val),
+  VarPointsTo(?var, ?val):-
+    isFunctionInvocation(?insn),
+    AssignInstruction_To(?insn, ?var),
+    FunctionInvocation_Base(?insn, ?base),
+    VarPointsTo(?base, ?baseVal),
+    HeapAllocation_Type(?baseVal, ?type),
+    isClassType(?type),
+    Instruction_Function(?insn, ?function),
+    Instruction_Index(?insn, ?index),
+    ?val = NewAllocMacro(?function, ?type, ?index).
+
+
+
+  VarPointsToFunction(?var, ?val):-
+    VarPointsTo(?var,?val),
+    HeapAllocation_Type(?val, ?type),
+    isFunction(?type).
+
+
+
+

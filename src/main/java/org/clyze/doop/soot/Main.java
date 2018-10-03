@@ -1,18 +1,26 @@
 package org.clyze.doop.soot;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
+import org.xmlpull.v1.XmlPullParserException;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.jimple.infoflow.InfoflowConfiguration.ImplicitFlowMode;
+import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
+import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.LayoutMatchingMode;
+import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
 
-import java.io.File;
-import java.util.*;
+import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
 public class Main {
 
@@ -20,71 +28,19 @@ public class Main {
         return sootParameters.isApplicationClass(klass.getName());
     }
 
-    public static void main(String[] args) throws Throwable {
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            System.err.println("usage: [options] file...");
+            throw new DoopErrorCodeException(0);
+        }
+
         SootParameters sootParameters = new SootParameters();
         try {
-            if (args.length == 0) {
-                System.err.println("usage: [options] file...");
-                throw new DoopErrorCodeException(0);
-            }
-
-            for (int i = 0; i < args.length; i++) {
-                int next_i = sootParameters.processNextArg(args, i);
-                if (next_i != -1) {
-                    i = next_i;
-                    continue;
-                }
-                switch (args[i]) {
-                    case "-h":
-                    case "--help":
-                    case "-help":
-                        System.err.println("\nusage: [options] file");
-                        System.err.println("options:");
-                        System.err.println("  --main <class>                        Specify the name of the main class");
-                        System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
-                        System.err.println("  --full                                Generate facts by full transitive resolution");
-                        System.err.println("  -d <directory>                        Specify where to generate csv fact files");
-                        System.err.println("  -l <archive>                          Find (library) classes in jar/zip archive");
-                        System.err.println("  -ld <archive>                         Find (dependency) classes in jar/zip archive");
-                        System.err.println("  -lsystem                              Find classes in default system classes");
-                        System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
-                        System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
-                        System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
-                        System.err.println("  --R-out-dir <directory>               Specify where to generate R code (when linking AAR inputs)");
-                        System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
-                        System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
-                        System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
-                        throw new DoopErrorCodeException(0);
-                    case "--generate-jimple-help":
-                        System.err.println("\nusage: [options] file");
-                        System.err.println("options:");
-                        System.err.println("  --ssa                                 Generate Shimple files (use SSA for variables)");
-                        System.err.println("  --full                                Generate Jimple/Shimple files by full transitive resolution");
-                        System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-                        System.err.println("  -d <directory>                        Specify where to generate files");
-                        System.err.println("  -l <archive>                          Find classes in jar/zip archive");
-                        System.err.println("  -lsystem                              Find classes in default system classes");
-                        System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
-                        throw new DoopErrorCodeException(0);
-                    default:
-                        if (args[i].charAt(0) == '-') {
-                            System.err.println("error: unrecognized option: " + args[i]);
-                            throw new DoopErrorCodeException(6);
-                        }
-                        break;
-                }
-            }
-
-            sootParameters.finishArgProcessing();
+            sootParameters.initFromArgs(args);
             produceFacts(sootParameters);
-        }
-        catch(DoopErrorCodeException errCode) {
-            System.err.println("Exiting with code " + errCode.getErrorCode());
-            throw errCode;
-        }
-        catch(Exception exc) {
-            exc.printStackTrace();
-            throw exc;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw ex;
         }
     }
 
@@ -98,9 +54,9 @@ public class Main {
         if (sootParameters._ssa) {
             Options.v().set_via_shimple(true);
             Options.v().set_output_format(Options.output_format_shimple);
-        } else {
+        } else
             Options.v().set_output_format(Options.output_format_jimple);
-        }
+
         //soot.options.Options.v().set_drop_bodies_after_load(true);
         Options.v().set_keep_line_number(true);
 
@@ -117,10 +73,9 @@ public class Main {
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             android = new AndroidSupport_Soot(sootParameters, java);
-            android.processInputs(sootParameters._androidJars, tmpDirs);
-        } else {
+            android.processInputs(tmpDirs);
+        } else
             Options.v().set_src_prec(Options.src_prec_class);
-        }
 
         Scene scene = Scene.v();
         List<String> inputs = sootParameters.getInputs();
@@ -180,44 +135,46 @@ public class Main {
 
         try {
             System.out.println("Total classes in Scene: " + classes.size());
-            DoopAddons.retrieveAllSceneClassesBodies();
+            DoopAddons.retrieveAllSceneClassesBodies(sootParameters._cores);
             // The call below has a problem (only retrieves app method bodies).
             // DoopAddons.retrieveAllBodies();
-            System.out.println("Retrieved all bodies");
+            System.out.println("Retrieved all bodies.");
         }
         catch (Exception ex) {
-            System.out.println("Not all bodies retrieved");
+            System.err.println("Error: not all bodies retrieved.");
         }
 
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
-            FactWriter writer = new FactWriter(db);
-            ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
-            SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores);
+            boolean reportPhantoms = sootParameters._reportPhantoms;
+            FactWriter writer = new FactWriter(db, reportPhantoms);
+            ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, reportPhantoms);
+            SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors);
+            factory.setDriver(driver);
 
             writer.writePreliminaryFacts(classes, java, sootParameters);
             db.flush();
 
-            if (sootParameters._android && (android != null)) {
-                if (sootParameters.getRunFlowdroid()) {
-                    SootMethod dummyMain = android.getDummyMain();
-                    if (dummyMain == null)
-                        throw new RuntimeException("Internal error: FlowDroid returned null dummy main()");
-                    driver.doAndroidInSequentialOrder(dummyMain, classes, writer, sootParameters._ssa);
-                    return;
-                } else {
-                    Objects.requireNonNull(android).writeComponents(writer, sootParameters);
-                }
-            }
+            if (android != null)
+                android.writeComponents(writer, sootParameters);
 
             if (!sootParameters.noFacts()) {
                 scene.getOrMakeFastHierarchy();
+
+                if (sootParameters._android && sootParameters.getRunFlowdroid()) {
+                    SootMethod dummyMain = getDummyMain(sootParameters.getInputs().get(0), sootParameters._androidJars);
+                    if (dummyMain == null)
+                        throw new RuntimeException("Internal error: could not compute dummy main() with FlowDroid");
+                    System.out.println("Generated dummy main method " + dummyMain.getName() + "()");
+                    driver.generateMethod(dummyMain, writer, sootParameters._ssa, reportPhantoms);
+                }
+
                 // avoids a concurrent modification exception, since we may
                 // later be asking soot to add phantom classes to the scene's hierarchy
                 driver.generateInParallel(classes);
                 if (sootParameters._generateJimple) {
                     Set<SootClass> jimpleClasses = new HashSet<>(classes);
                     if (sootParameters._factsSubSet == null) {
-                        List<String> allClassNames = new ArrayList<>();
+                        Collection<String> allClassNames = new ArrayList<>();
                         Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
                         for (String artifact : artifactToClassMap.keySet()) {
                             //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
@@ -248,12 +205,42 @@ public class Main {
             scene.extendSootClassPath(input);
     }
 
-    private static void forceResolveClasses(Collection<String> classesToResolve, Collection<SootClass> resolvedClasses, Scene scene) {
+    private static void forceResolveClasses(Iterable<String> classesToResolve, Collection<SootClass> resolvedClasses, Scene scene) {
         for (String className : classesToResolve) {
             scene.forceResolve(className, SootClass.BODIES);
             SootClass c = scene.loadClass(className, SootClass.BODIES);
             resolvedClasses.add(c);
         }
+    }
+
+    /**
+     * Call FlowDroid to calculate a dummy main method.
+     */
+    private static SootMethod getDummyMain(String appInput, String androidJars) {
+        if (!DoopAddons.usingUpstream())
+            System.err.println("WARNING: FlowDroid is only supported when using upstream Soot (see build.gradle).");
+
+        Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
+
+        SetupApplication app = new SetupApplication(androidJars, appInput);
+        InfoflowAndroidConfiguration config = app.getConfig();
+        config.setMergeDexFiles(true);
+        config.getCallbackConfig().setCallbackAnalyzer(Fast);
+        // config.setImplicitFlowMode(ImplicitFlowMode.AllImplicitFlows);
+        config.setImplicitFlowMode(ImplicitFlowMode.NoImplicitFlows);
+        config.getSourceSinkConfig().setLayoutMatchingMode(LayoutMatchingMode.MatchAll);
+
+        String sourcesAndSinks = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
+        String taintWrapper = Objects.requireNonNull(Main.class.getClassLoader().getResource("EasyTaintWrapperSource.txt")).getFile();
+        try {
+            app.setTaintWrapper(new EasyTaintWrapper(new File(taintWrapper)));
+            app.runInfoflow(sourcesAndSinks);
+            return app.getDummyMainMethod();
+        } catch (IOException | XmlPullParserException ex) {
+            System.err.println("FlowDroid failed:");
+            ex.printStackTrace();
+        }
+        return null;
     }
 
 }

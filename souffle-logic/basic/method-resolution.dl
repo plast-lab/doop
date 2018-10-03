@@ -99,6 +99,14 @@ ResolveInvocation(?type, ?invocation, ?tomethod) :-
     MethodLookup(?simplename, ?descriptor, ?type, ?tomethod),
     SubtypeOf(?type, ?basetype).
 
+ResolveInvocation(?basetype, ?invocation, ?tomethod) :-
+    SuperMethodInvocation_SimpleName(?invocation, ?simplename),
+    SuperMethodInvocation_Descriptor(?invocation, ?descriptor),
+    SuperMethodInvocation_Base(?invocation, ?base),
+    Var_Type(?base, ?basetype),
+    DirectSuperclass(?basetype, ?supertype),
+    MethodLookup(?simplename, ?descriptor, ?supertype, ?tomethod).
+
 OverridableMethod(?type, ?method) :-
     MethodLookup(_, _, ?type, ?method),
     ! Method_Modifier("static", ?method),

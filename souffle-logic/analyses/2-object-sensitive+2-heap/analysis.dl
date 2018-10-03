@@ -18,10 +18,11 @@
   // identity of the receiver object and the receiver object of the caller.
   // Again, this may trigger creation of a new object.
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
     ?hctx = [?hctxValue1, ?hctxValue2],
     ?calleeCtx = [?hctxValue2, ?value],
-    ?hctxValue1 = ?hctxValue1.
+    ?hctxValue1 = ?hctxValue1,
+    ?tomethod = ?tomethod.
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

@@ -8,45 +8,19 @@
 .decl ZipperPrecisionCriticalMethod(?method:Method)
 .input ZipperPrecisionCriticalMethod(IO="file",filename="ZipperPrecisionCriticalMethod.facts",delimiter="\t")
 
-// virtual invocation
-isContext(?calleeCtx),
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value), 
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-  ZipperPrecisionCriticalMethod(?tomethod).
-#ifndef X_CONTEXT_REMOVER
-// .plan 1:(2,1,3,4), 2:(3,1,2,4)
-#endif
-
-CallGraphEdge(?callerCtx, ?invocation, ?immCtx, ?tomethod) :-
-  configuration.ContextRequest(?callerCtx, _, ?invocation, ?value), 
-  isImmutableContext(?immCtx),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-  !ZipperPrecisionCriticalMethod(?tomethod).
-#ifndef X_CONTEXT_REMOVER
-// .plan 1:(2,1,3,4), 2:(3,1,2,4)
-#endif
-
 // special invocation
 isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
-  MethodInvocation_Method(?invocation, ?tomethod),
-  isSpecialMethodInvocation_Insn(?invocation),
   ZipperPrecisionCriticalMethod(?tomethod).
 #ifndef X_CONTEXT_REMOVER
 // .plan 1:(2,1,3,4)
 #endif
 
 CallGraphEdge(?callerCtx, ?invocation, ?immCtx, ?tomethod) :-
-  configuration.ContextRequest(?callerCtx, _, ?invocation, _),
+  configuration.ContextRequest(?callerCtx, _, ?invocation, _, ?tomethod),
   isImmutableContext(?immCtx),
-  MethodInvocation_Method(?invocation, ?tomethod),
-  isSpecialMethodInvocation_Insn(?invocation),
   !ZipperPrecisionCriticalMethod(?tomethod).
 #ifndef X_CONTEXT_REMOVER
 // .plan 1:(2,1,3,4)
@@ -76,22 +50,10 @@ CallGraphEdge(?callerCtx, ?invocation, ?immCtx, ?tomethod) :-
 
 isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value), 
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
-  Value_Type(?value, ?valuetype),
-  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod).
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx).
 #ifndef X_CONTEXT_REMOVER
- .plan 1:(2,1,3,4), 2:(3,1,2,4)
-#endif
- 
-isContext(?calleeCtx),
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
-  MethodInvocation_Method(?invocation, ?tomethod),
-  isSpecialMethodInvocation_Insn(?invocation).
-#ifndef X_CONTEXT_REMOVER
- .plan 1:(2,1,3,4)
+ .plan 1:(2,1)
 #endif
 
 configuration.StaticContextRequest(?callerCtx, ?invocation) :-

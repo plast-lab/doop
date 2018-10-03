@@ -12,76 +12,33 @@ import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.types.annotations.Annotation;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.Parameters;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static org.clyze.doop.common.Parameters.shift;
-
 public class WalaInvoker {
 
-    /**
-     * Used for logging various messages
-     */
-    protected Log logger;
-
-    public WalaInvoker() {
-        logger =  LogFactory.getLog(getClass());
-    }
-
-    private static boolean isApplicationClass(WalaParameters walaParameters, IClass klass) {
+    private static boolean isApplicationClass(Parameters walaParameters, IClass klass) {
         // Change package delimiter from "/" to "."
         return walaParameters.isApplicationClass(WalaUtils.fixTypeString(klass.getName().toString()));
     }
 
     public void main(String[] args) throws IOException, DoopErrorCodeException {
-        WalaParameters walaParameters = new WalaParameters();
-        try {
-            if (args.length == 0) {
-                System.err.println("usage: [options] file...");
-                throw new DoopErrorCodeException(0);
-            }
-
-            for (int i = 0; i < args.length; i++) {
-                int next_i = walaParameters.processNextArg(args, i);
-                if (next_i != -1) {
-                    i = next_i;
-                    continue;
-                }
-                switch (args[i]) {
-                    case "--generate-ir":
-                        walaParameters._generateIR = true;
-                        break;
-                    case "-p":
-                        i = shift(args, i);
-                        walaParameters._javaPath = args[i];
-                        break;
-                    default:
-                        if (args[i].charAt(0) == '-') {
-                            System.err.println("error: unrecognized option: " + args[i]);
-                            throw new DoopErrorCodeException(6);
-                        }
-                        break;
-                }
-            }
-        } catch(DoopErrorCodeException errCode) {
-            int n = errCode.getErrorCode();
-            if (n != 0)
-                System.err.println("Exiting with code " + n);
+        if (args.length == 0) {
+            System.err.println("usage: [options] file...");
+            throw new DoopErrorCodeException(0);
         }
-        catch(Exception exc) {
-            exc.printStackTrace();
-        }
+        Parameters walaParameters = new Parameters();
+        walaParameters.initFromArgs(args);
         run(walaParameters);
     }
 
-    private void run(WalaParameters walaParameters) throws IOException, DoopErrorCodeException {
+    private void run(Parameters walaParameters) throws IOException, DoopErrorCodeException {
         StringBuilder classPath = new StringBuilder();
         List<String> inputs = walaParameters.getInputs();
         for (int i = 0; i < inputs.size(); i++) {
@@ -107,7 +64,6 @@ public class WalaInvoker {
             scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
         else
             scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
-            //scope = WalaScopeReader.makeScope(classPath.toString(), null, walaParameters._javaPath);      // Build a class hierarchy representing all classes to analyze.  This step will read the class
 
         ClassHierarchy cha = null;
         try {
@@ -128,8 +84,7 @@ public class WalaInvoker {
 
             if (walaParameters._android) {
                 WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);
-                parser.parseXMLFiles();
-                parser.writeComponents();
+                parser.process();
             }
             System.out.println("Number of classes: " + cha.getNumberOfClasses());
 
@@ -144,7 +99,7 @@ public class WalaInvoker {
             db.flush();
 
             IClass klass;
-            Set<IClass> classesSet = new HashSet<>();
+            Collection<IClass> classesSet = new HashSet<>();
             Map<String, List<String>> signaturePolymorphicMethods = new HashMap<>();
             while (classes.hasNext()) {
                 klass = classes.next();
@@ -159,12 +114,13 @@ public class WalaInvoker {
                         cache.getIR(m);
                     } catch (Throwable e) {
                         System.out.println("Error while creating IR for method: " + m.getReference() + "\n" + e);
+                        e.printStackTrace();
                     }
                 }
             }
             walaFactWriter.setSignaturePolyMorphicMethods(signaturePolymorphicMethods);
 
-            WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), walaParameters._cores, walaParameters._android, cache);
+            WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), walaParameters._cores, cache, false);
             driver.generateInParallel(classesSet);
 
             if (walaFactWriter.getNumberOfPhantomTypes() > 0)
@@ -173,6 +129,9 @@ public class WalaInvoker {
                 System.out.println("WARNING: Input contains phantom methods. \nNumber of phantom methods:" + walaFactWriter.getNumberOfPhantomMethods());
             if (walaFactWriter.getNumberOfPhantomBasedMethods() > 0)
                 System.out.println("WARNING: Input contains phantom based methods. \nNumber of phantom based methods:" + walaFactWriter.getNumberOfPhantomBasedMethods());
+
+            walaFactWriter.writeLastFacts(java);
+
             db.flush();
         }
     }

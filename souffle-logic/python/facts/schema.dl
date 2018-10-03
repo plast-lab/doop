@@ -1,5 +1,14 @@
+.type BoolConstant
+.decl isBoolConstant(?n:BoolConstant)
+
 .type NumConstant
 .decl isNumConstant(?n:NumConstant)
+
+.type IntConstant = NumConstant
+.decl isIntConstant(?n:IntConstant)
+
+.type FloatConstant = NumConstant
+.decl isFloatConstant(?n:FloatConstant)
 
 .type Type
 .type PrimitiveType = Type
@@ -33,15 +42,24 @@
 
 //-----------------------------------------------------------------------------
 
-.type Function
+.type File
+.decl isFile(file:File)
+
+//-----------------------------------------------------------------------------
+
+.type Scope = File | Function | Module
+
+//-----------------------------------------------------------------------------
+.type Function = Type
 .decl isMethod(?m:Function)
 .decl isFunction(?m:Function)
 
 
 .decl Function_SimpleName(?function:Function, ?simpleName:symbol)
 .decl Function_Arity(?function:Function, ?arity:number)
+.decl Function_DeclaredInFile(?function:Function, ?file:File)
 
-.decl FormalParam(?index:number, ?function:Function, ?var:Var)
+.decl FormalParam(?index:number, ?paramName:symbol, ?function:Function, ?var:Var)
 
 .decl ThisVar(?function:Function, ?var:Var)
 
@@ -51,6 +69,7 @@
 .decl isVar(v:Var)
 
 .decl Var_DeclaringFunction(?var:Var, ?function:Function)
+.decl Var_SourceName(?var:Var, ?name:symbol)
 
 .decl ApplicationVar(?var:Var)
 
@@ -60,13 +79,19 @@
 //-----------------------------------------------------------------------------
 
 .type HeapAllocation
-.type NormalHeap           = HeapAllocation
-.type StringConstant       = HeapAllocation
+.type NormalHeap                = HeapAllocation
+.type StringConstant            = HeapAllocation
+.type ClassInstanceAllocation   = HeapAllocation
+.type ClassObjectAllocation     = HeapAllocation
+.type FunctionObjectAllocation  = HeapAllocation
 
 .decl isHeapAllocation(?h:HeapAllocation)
 .decl isNormalHeap(?h:NormalHeap)
 .decl isStringConstant(?h:StringConstant)
 .decl isStringRaw(?id:symbol)
+.decl isClassInstanceAllocation(?h: ClassInstanceAllocation)
+.decl isClassObjectAllocation(?h: ClassObjectAllocation)
+.decl isFunctionObjectAllocation(?h: FunctionObjectAllocation)
 
 .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
 .decl OriginalHeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
@@ -101,24 +126,43 @@
 .type AssignBinop_Insn                = AssignOper_Insn
 .type AssignUnop_Insn                 = AssignOper_Insn
 .type AssignLocal_Insn                = AssignOper_Insn
-.type AssignNumConstant_Insn          = AssignInstruction
+.type AssignIntConstant_Insn          = AssignInstruction
+.type AssignFloatConstant_Insn        = AssignInstruction
+.type AssignBoolConstant_Insn         = AssignInstruction
+.type AssignNone_Insn                 = AssignInstruction
 .type AssignHeapAllocation_Insn       = AssignInstruction
 .type ReturnInstruction               = Instruction
 .type ReturnNone_Insn                 = ReturnInstruction
 .type ReturnNonNone_Insn              = ReturnInstruction
+.type ImportInstruction               = AssignInstruction
+.type FunctionInvocation_Insn         = Instruction
+.type LexicalAccess_Insn              = AssignInstruction
+.type LexicalRead_Insn                = LexicalAccess_Insn
+.type LexicalWrite_Insn               = LexicalAccess_Insn
+.type GlobalAccess_Insn               = AssignInstruction
+.type GlobalRead_Insn                 = GlobalAccess_Insn
+.type GlobalWrite_Insn                = GlobalAccess_Insn
 
 .decl isAssignInstruction(?insn:AssignInstruction)
 .decl isAssignOper_Insn(?insn:AssignOper_Insn)
 .decl isAssignBinop_Insn(?insn:AssignBinop_Insn)
 .decl isAssignUnop_Insn(?insn:AssignUnop_Insn)
 .decl isAssignLocal_Insn(?insn:AssignLocal_Insn)
-.decl isAssignNumConstant_Insn(?insn:AssignNumConstant_Insn)
+.decl isAssignIntConstant_Insn(?insn:AssignIntConstant_Insn)
+.decl isAssignFloatConstant_Insn(?insn:AssignFloatConstant_Insn)
+.decl isAssignBoolConstant_Insn(?insn:AssignBoolConstant_Insn)
+.decl isAssignNone_Insn(?insn:AssignNone_Insn)
 .decl isAssignHeapAllocation_Insn(?insn:AssignHeapAllocation_Insn)
 .decl isReturnInstruction(?insn:ReturnInstruction)
 .decl isReturnNone_Insn(?insn:ReturnNone_Insn)
 .decl isReturnNonNone_Insn(?insn:ReturnNonNone_Insn)
-
-.type FunctionInvocation_Insn                = Instruction
+.decl isImportInstruction(?insn: ImportInstruction)
+.decl isLexicalAccess_Insn(?insn: LexicalAccess_Insn)
+.decl isLexicalRead_Insn(?insn: LexicalRead_Insn)
+.decl isLexicalWrite_Insn(?insn: LexicalWrite_Insn)
+.decl isGlobalAccess_Insn(?insn: GlobalAccess_Insn)
+.decl isGlobalRead_Insn(?insn: GlobalRead_Insn)
+.decl isGlobalWrite_Insn(?insn: GlobalWrite_Insn)
 
 .decl isFunctionInvocation(?insn:FunctionInvocation_Insn)
 
@@ -143,7 +187,7 @@
 // The associated *field* of this instruction. It applies to
 // all types of field instuctions.
 
-.decl FieldInstruction_SimpleName(?insn:FieldInstruction, ?sign:symbol)
+.decl FieldInstruction_FieldName(?insn:FieldInstruction, ?fieldName:symbol)
 
 //------------------------------------------------
 // A LoadInstanceField instruction has the form:
@@ -180,13 +224,18 @@
 .decl AssignInstruction_To(?insn:AssignInstruction, ?to:Var)
 
 // Assign numeric constant instruction
-.decl AssignNumConstant_Id(?insn:AssignNumConstant_Insn, ?const:NumConstant)
+.decl AssignIntConstant_Id(?insn:AssignIntConstant_Insn, ?const:IntConstant)
+.decl AssignFloatConstant_Id(?insn:AssignFloatConstant_Insn, ?const:FloatConstant)
+.decl AssignBoolConstant_Id(?insn:AssignBoolConstant_Insn, ?const:BoolConstant)
 
 // Assign local instruction
 .decl AssignLocal_From(?insn:AssignLocal_Insn, ?from:Var)
 
 // Assign expression vars
-.decl AssignOper_From(?insn:AssignOper_Insn, ?from:Var)
+.decl AssignOper_From(?insn:AssignOper_Insn, ?operNum:number, ?from:Var)
+
+// Assign operation
+.decl Assign_Operation(?insn:AssignOper_Insn, ?oper:symbol)
 
 // Assign Heap Allocation
 .decl AssignHeapAllocation_Heap(?insn:AssignHeapAllocation_Insn, ?heap:HeapAllocation)
@@ -216,6 +265,25 @@
 
 // Function Invocation
 .decl FunctionInvocation_Base(?invocation:FunctionInvocation_Insn, ?base:Var)
+
+//-----------------------------------------------------------------------------
+// [Import]
+//-----------------------------------------------------------------------------
+.decl ImportInsn_ModuleName(?insn: ImportInstruction, ?name:symbol)
+
+//-----------------------------------------------------------------------------
+// [LexicalAccess (LexicalRead, LexicalWrite) ]
+//-----------------------------------------------------------------------------
+.decl LexicalAccessInsn_Name(?insn: LexicalAccess_Insn, ?name:symbol)
+.decl LexicalAccessInsn_VarScope(?insn: LexicalAccess_Insn, ?scope:Function)
+.decl LexicalWriteInsn_From(?insn: LexicalAccess_Insn, ?from:Var)
+
+//-----------------------------------------------------------------------------
+// [GlobalAccess (GlobalRead, GlobalWrite) ]
+//-----------------------------------------------------------------------------
+.decl GlobalAccessInsn_Name(?insn: GlobalAccess_Insn, ?name:symbol)
+.decl GlobalAccessInsn_Scope(?insn: GlobalAccess_Insn, ?scope:Scope)
+.decl GlobalWriteInsn_From(?insn: GlobalAccess_Insn, ?from:Var)
 
 //-----------------------------------------------------------------------------
 // [Exception Handlers]

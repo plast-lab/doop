@@ -91,22 +91,29 @@ public class PythonRepresentation {
         return s;
     }
 
+    String sourceFileName(IClass klass){
+        return "<" + klass.getSourceFileName() + ">";
+    }
+
+    String sourceFileName(IMethod m){
+        return sourceFileName(m.getDeclaringClass());
+    }
+
     String signature(IMethod m) {
         //return signature(m.getReference());
         String sourceFileName = m.getDeclaringClass().getSourceFileName();
         String sourceFolderName = sourceFileName.substring(0, sourceFileName.lastIndexOf("/") + 1);
         String functionName = m.getDeclaringClass().getName().toString().substring(1).replaceFirst("script ","").replace("/",":");
-        return "<" + sourceFolderName + functionName + ">";
+        String methSig = "<" + sourceFolderName + functionName + ">";
+        _methodSigRepr.putIfAbsent(m.getDeclaringClass().getName().toString().substring(1), methSig);
+        return methSig;
     }
 
-    String signature(MethodReference m) {
-        String WalaSignature = m.getSignature();
-        String doopSignature = _methodSigRepr.get(WalaSignature);
-        if (doopSignature == null){
-            doopSignature = createMethodSignature(m);
-            _methodSigRepr.put(WalaSignature,doopSignature);
-        }
-        return doopSignature;
+    String getSigByName(String name){
+        String methSig = _methodSigRepr.get(name);
+        if(methSig == null)
+            return name;
+        return methSig;
     }
 
 

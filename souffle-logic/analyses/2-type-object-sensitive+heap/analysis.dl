@@ -4,17 +4,18 @@
 .comp TwoTypeObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
 // In this analysis, the real context is a Type and a Value and the
 // real heap context a single Value.
-.type Context  = [ type:Type, value:Value ]
-.type HContext = [ value:Value ]
+.type Context  = [ type:Type, value:mainAnalysis.Value ]
+.type HContext = [ value:mainAnalysis.Value ]
          
 // .decl CachedMerge(?hctx:HContext, ?value:Value, ?calleeCtx:Context)
 // .decl CachedMergeStatic(?callerCtx:Context, ?invo:MethodInvocation, ?calleeCtx:Context)
 
 ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx) :-
-  ContextRequest(?callerCtx, ?hctx, ?invocation, ?value),
+  ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
   ?hctx = [?hctxValue],
   Value_DeclaringType(?hctxValue, ?type), 
-  ?calleeCtx = [?type, ?value].
+  ?calleeCtx = [?type, ?value],
+  ?tomethod = ?tomethod.
 /*
  * The above gives us an upper bound of the receiver allocator's allocator's dynamic type!
  * Another option is the exact dynamic type of the allocator object. In that case we have:

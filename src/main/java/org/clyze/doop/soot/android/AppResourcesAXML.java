@@ -18,7 +18,6 @@ import java.util.Set;
 public class AppResourcesAXML implements AppResources {
     private final ProcessManifest pm;
     private DirectLayoutFileParser lfp;
-    private ARSCFileParser resParser;
     private final String apkLocation;
 
     public AppResourcesAXML(String apkLocation) throws IOException, org.xmlpull.v1.XmlPullParserException {

@@ -17,7 +17,7 @@ class PackageUtil {
 	 * Any classes that are not included in packages are also retrieved.
 	 */
 	static Set<String> getPackages(File archive) {
-		String name = archive.getName().toLowerCase()
+		String name = archive.name.toLowerCase()
 		if (name.endsWith(".jar") || name.endsWith(".zip")) {
 			return getPackagesForJAR(archive)
 		} else if (name.endsWith(".apk")) {
@@ -32,9 +32,9 @@ class PackageUtil {
 	static Set<String> getPackagesForAPK(File apk) {
 		Set<String> pkgs = []
 		MultiDexContainer multiDex = loadDexContainer(apk, null)
-		for (String dex : multiDex.getDexEntryNames()) {
+		for (String dex : (multiDex.dexEntryNames)) {
 			def dexFile = multiDex.getEntry(dex)
-			for (DexBackedClassDef dexClass : dexFile.getClasses()) {
+			for (DexBackedClassDef dexClass : (dexFile.classes)) {
 				String className = dexClass.toString()
 				if (!className.startsWith("L") || !className.endsWith(";")) {
 					System.err.println("getPackagesForAPK: bad class " + className)

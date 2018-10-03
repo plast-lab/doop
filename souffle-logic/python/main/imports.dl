@@ -1,0 +1,43 @@
+.type Module
+
+.decl isModule(?module:Module)
+
+.decl Module_DeclaringModule(?module: Module, ?declModule: Module)
+.decl Function_Module(?function:Function, ?module: Module)
+.decl ClassType_Module(?class:ClassType, ?module: Module)
+
+.decl VarPointsToModule(?var:Var, ?module:Module)
+
+.decl VarPointsToFunction(?var:Var, ?val: Value)
+.output VarPointsToFunction
+.output isFunction
+
+.output VarPointsToModule
+
+VarPointsToModule(?var, ?module):-
+  VarPointsTo(?var, ?module),
+  isModule(?module).
+
+VarPointsTo(?var, ?module):-
+  isImportInstruction(?insn),
+  ImportInsn_ModuleName(?insn, ?name),
+  AssignInstruction_To(?insn, ?var),
+  ?module = cat(cat("<",?name),">"),
+  isModule(?module).
+
+VarPointsTo(?var, ?heap):-
+  isLoadInstanceField_Insn(?insn),
+  FieldInstruction_FieldName(?insn, ?fieldName),
+  LoadInstanceField_Base(?insn, ?base),
+  LoadInstanceField_To(?insn, ?var),
+  VarPointsToModule(?base, ?parModule),
+  GlobalNamePointsTo(?parModule, ?fieldName, ?heap).
+
+//One thing to be considered in the future is the difference between:
+//1) from file import var
+//   var = 5
+//
+//2) import file
+//   file.var = 5
+//
+// The first creates a copy of the variable in your scope while the second modifies the original var

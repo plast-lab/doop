@@ -17,10 +17,7 @@ import org.clyze.doop.python.utils.PythonIRPrinter;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 import static org.clyze.doop.python.utils.PythonUtils.createLocal;
 import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
@@ -36,7 +33,7 @@ public class PythonFactGenerator implements Runnable{
     //The classes that are in the class hierarchy by default
     //Useful on our current one-classhierarchy-per-file approach
     private static final String[] DEFAULT_CLASSES = new String[]{"list", "Root", "Exception", "object", "CodeBody", "trampoline"};
-    private static final Set<String> defaultClasses = new HashSet<>(Arrays.asList(DEFAULT_CLASSES));
+    private static final Collection<String> defaultClasses = new HashSet<>(Arrays.asList(DEFAULT_CLASSES));
 
     PythonFactGenerator(PythonFactWriter writer, Set<IClass> iClasses, String outDir, IAnalysisCacheView analysisCache)
     {
@@ -49,6 +46,13 @@ public class PythonFactGenerator implements Runnable{
 
     @Override
     public void run() {
+
+        //Write all the methods in the beginning to populate the method name -> signature map in the representation
+        for (IClass iClass : _iClasses) {
+            for (IMethod m : iClass.getDeclaredMethods()) {
+                _writer.writeMethod(m);
+            }
+        }
 
         for (IClass iClass : _iClasses) {
             String cName = iClass.getName().toString().substring(1);
@@ -108,7 +112,7 @@ public class PythonFactGenerator implements Runnable{
     }
 
     private void generate(IMethod m, Session session) {
-        _writer.writeMethod(m);
+        //_writer.writeMethod(m); //COMMENTED OUT FROM HERE FOR NOW.
         int paramIndex = 0;
 
 
@@ -258,8 +262,6 @@ public class PythonFactGenerator implements Runnable{
             brachTarget = 0;
         }
 
-        if(brachTarget == -1) //In Android conditional branches can have -1 as target
-            brachTarget =0;
         if(ssaInstructions[brachTarget] == null) {
             targetInstr = getNextNonNullInstruction(ir,brachTarget);
             if(targetInstr == null)
@@ -399,6 +401,8 @@ public class PythonFactGenerator implements Runnable{
         String globalName = instruction.getGlobalName();
         if(globalName.startsWith("global "))
             globalName = globalName.substring(7);
+        if(globalName.contains("/"))
+            globalName = globalName.substring(globalName.indexOf("/") + 1);
         _writer.writeGlobalRead(m, instruction, to, globalName, session);
 
     }
@@ -423,6 +427,8 @@ public class PythonFactGenerator implements Runnable{
         String globalName = instruction.getGlobalName();
         if(globalName.startsWith("global "))
             globalName = globalName.substring(7);
+        if(globalName.contains("/"))
+            globalName = globalName.substring(globalName.indexOf("/") + 1);
         _writer.writeGlobalWrite(m, instruction, from, globalName, session);
 
     }
@@ -524,16 +530,16 @@ public class PythonFactGenerator implements Runnable{
             l.setType(PythonTypes.object);
             _writer.writeStringConstantExpression(ir, m, instruction, l, (ConstantValue) v, session);
         } else if (v.isNullConstant()) {
-            _writer.writeNullExpression(m, instruction, l, session);
-        } else if (symbolTable.isIntegerConstant(l.getVarIndex())) {
+            _writer.writeNoneExpression(m, instruction, l, session);
+        } else if (symbolTable.isIntegerConstant(l.getVarIndex()) || symbolTable.isLongConstant(l.getVarIndex())) {
             l.setType(PythonTypes.object);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+            _writer.writeIntConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isFloatConstant(l.getVarIndex()) || symbolTable.isDoubleConstant(l.getVarIndex())) {
             l.setType(PythonTypes.object);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+            _writer.writeFloatConstantExpression(m, instruction, l, (ConstantValue) v, session);
         } else if (symbolTable.isBooleanConstant(l.getVarIndex())) {
             l.setType(PythonTypes.object);
-            _writer.writeNumConstantExpression(m, instruction, l, (ConstantValue) v, session);
+            _writer.writeBoolConstantExpression(m, instruction, l, (ConstantValue) v, session);
         }
     }
 

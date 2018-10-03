@@ -17,12 +17,15 @@ import static org.apache.commons.io.FileUtils.deleteQuietly
 @Log4j
 class SouffleScript {
 
+	static final String EXE_NAME = "exe"
+
 	Executor executor
 	long compilationTime = 0L
 	long executionTime = 0L
 
 	File compile(File origScriptFile, File outDir, File cacheDir,
-	            boolean profile = false, boolean debug = false, boolean removeContext = false) {
+                 boolean profile = false, boolean debug = false,
+                 boolean forceRecompile = true, boolean removeContext = false) {
 
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
@@ -32,7 +35,7 @@ class SouffleScript {
 		def checksum = CheckSum.checksum(c2, DoopAnalysisFactory.HASH_ALGO)
 		def cacheFile = new File(cacheDir, checksum)
 
-		if (!cacheFile.exists() || debug) {
+		if (!cacheFile.exists() || debug || forceRecompile) {
 
 			if (removeContext) {
 				def backupFile = new File("${scriptFile}.backup")
@@ -40,7 +43,7 @@ class SouffleScript {
 				ContextRemover.removeContexts(backupFile, scriptFile)
 			}
 
-			def executable = new File(outDir, "exe")
+			def executable = new File(outDir, EXE_NAME)
 			def compilationCommand = "souffle -c -o $executable $scriptFile".split().toList()
 			if (profile)
 				compilationCommand << ("-p${outDir}/profile.txt" as String)

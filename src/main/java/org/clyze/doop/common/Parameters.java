@@ -3,13 +3,14 @@ package org.clyze.doop.common;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 
 /**
- * This class contains common parameters for Doop Java front-ends.
+ * This class handles common parameters for Doop Java front-ends.
  */
-public abstract class Parameters {
+public class Parameters {
     private List<String> _inputs = new ArrayList<>();
     private List<String> _dependencies = new ArrayList<>();
     private final List<String> _platformLibs = new ArrayList<>();
@@ -24,11 +25,25 @@ public abstract class Parameters {
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
+    public boolean _ignoreFactGenErrors = false;
+    private boolean _decodeApk = false;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
-    protected Parameters() {
+    public Parameters() {
         setAppRegex("**");
+    }
+
+    public void initFromArgs(String[] args) throws DoopErrorCodeException {
+        int i = 0, last_i;
+        while (i < args.length) {
+            last_i = processNextArg(args, i);
+            if (last_i == -1)
+                throw new RuntimeException("Bad argument: " + args[i]);
+            i = last_i + 1;
+        }
+
+        finishArgProcessing();
     }
 
     private void setAppRegex(String regex) {
@@ -57,12 +72,6 @@ public abstract class Parameters {
 
     public boolean isApplicationClass(String className) {
         return applicationClassFilter.matches(className);
-    }
-
-    public List<String> getInputsAndDependencies() {
-        List<String> ret = new ArrayList<>(_inputs);
-        ret.addAll(_dependencies);
-        return ret;
     }
 
     public List<String> getDependenciesAndPlatformLibs() {
@@ -94,6 +103,10 @@ public abstract class Parameters {
         _dependencies = deps;
     }
 
+    public boolean getDecodeApk() {
+        return _decodeApk;
+    }
+
     public static int shift(String[] args, int index) throws DoopErrorCodeException {
         if(args.length == index + 1) {
             System.err.println("error: option " + args[index] + " requires an argument");
@@ -111,7 +124,7 @@ public abstract class Parameters {
      * @return  -1 if the next argument was not recognized, otherwise
      *          the index of the last argument processed
      */
-    public int processNextArg(String[] args, int i) throws DoopErrorCodeException {
+    protected int processNextArg(String[] args, int i) throws DoopErrorCodeException {
         switch (args[i]) {
         case "--android-jars":
             i = shift(args, i);
@@ -175,17 +188,21 @@ public abstract class Parameters {
         case "--noFacts":
             _noFacts = true;
             break;
+        case "--ignore-factgen-errors":
+            _ignoreFactGenErrors = true;
+            break;
+        case "--decode-apk":
+            _decodeApk = true;
+            break;
         default:
             return -1;
         }
         return i;
     }
 
-    public void finishArgProcessing() throws DoopErrorCodeException {
+    protected void finishArgProcessing() throws DoopErrorCodeException {
         // For some facts-subset values, some options will be ignored (cleared).
-        if (_factsSubSet == null)
-            return;
-        else if (_factsSubSet == FactsSubSet.APP) {
+        if (_factsSubSet == FactsSubSet.APP) {
             _dependencies.clear();
             _platformLibs.clear();
         } else if (_factsSubSet == FactsSubSet.APP_N_DEPS)
@@ -193,9 +210,12 @@ public abstract class Parameters {
         else if (_factsSubSet == FactsSubSet.PLATFORM) {
             _inputs.clear();
             _dependencies.clear();
-        } else {
+        } else if (_factsSubSet != null) {
             System.err.println("Illegal facts subset option: " + _factsSubSet);
             throw new DoopErrorCodeException(4);
+        } else if (getOutputDir() == null) {
+            System.err.println("Error: no output facts directory.");
+            throw new DoopErrorCodeException(16);
         }
     }
 }

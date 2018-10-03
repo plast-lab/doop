@@ -22,7 +22,7 @@ public class JavaRepresentation {
         return m + "/" + kind + "/instruction" + index;
     }
 
-    public static String invokeId(String pre, String mid, SessionCounter c) {
+    public static String numberedInstructionId(String pre, String mid, SessionCounter c) {
         return pre + "/" + mid + "/" + c.nextNumber(mid);
     }
 
@@ -42,4 +42,11 @@ public class JavaRepresentation {
         return m + "/new " + s + "/" +  c.nextNumber(s);
     }
 
+    public static String handlerMid(String excType) {
+        return "catch " + excType;
+    }
+
+    protected static String throwLocalId(String name) {
+        return "throw " + name;
+    }
 }

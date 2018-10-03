@@ -9,7 +9,7 @@ import soot.SourceLocator;
 
 public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdder {
 
-    public void addSootClasses(Collection<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
+    public void addSootClasses(Iterable<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
         for (String className : classesToLoad) {
             SootClass c = scene.loadClass(className, SootClass.BODIES);
             loadedClasses.add(c);

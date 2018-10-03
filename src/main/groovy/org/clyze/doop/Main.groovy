@@ -27,8 +27,13 @@ class Main {
 
 	static void main(String[] args) {
 
-		Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"))
-		Helper.initLogging("INFO", "${Doop.doopHome}/build/logs", true)
+		Doop.initDoopFromEnv()
+		try {
+			Helper.tryInitLogging("INFO", "${Doop.doopHome}/build/logs", true)
+		} catch (IOException ex) {
+			System.err.println("Warning: could not initialize logging")
+			throw new DoopErrorCodeException(15)
+		}
 
 		try {
 			// The builder for displaying usage and parging the arguments
@@ -113,7 +118,7 @@ class Main {
 				executorService.shutdownNow()
 			}
 		} catch (e) {
-			e = (e.getCause() ?: e)
+			e = (e.cause ?: e)
 			e = StackTraceUtils.deepSanitize e
 			log.error(e.message, e)
 		}
@@ -123,13 +128,13 @@ class Main {
 		if (logLevel) {
 			switch (logLevel) {
 				case "debug":
-					Logger.getRootLogger().setLevel(Level.DEBUG)
+					Logger.rootLogger.level = Level.DEBUG
 					break
 				case "info":
-					Logger.getRootLogger().setLevel(Level.INFO)
+					Logger.rootLogger.level = Level.INFO
 					break
 				case "error":
-					Logger.getRootLogger().setLevel(Level.ERROR)
+					Logger.rootLogger.level = Level.ERROR
 					break
 				default:
 					log.info "Invalid log level: $logLevel - using default (info)"
@@ -143,7 +148,7 @@ class Main {
 			if (timeout <= 0) throw new Exception()
 			return timeout
 		} catch (all) {
-			log.info "Invalid user supplied timeout: `$userTimeout` - fallback to default."
+			log.info "Invalid user supplied timeout: `${userTimeout}` - fallback to default (${defaultTimeout})."
 			return defaultTimeout
 		}
 	}

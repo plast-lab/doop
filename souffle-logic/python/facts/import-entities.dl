@@ -45,13 +45,22 @@ DirectSuperclass(?class, ?superclass) :-
 
 // FormalParam
 
-.decl _FormalParam(?index:number, ?function:symbol, ?var:symbol)
+.decl _FormalParam(?index:number, ?paramName:symbol, ?function:symbol, ?var:symbol)
 .input _FormalParam(IO="file", filename="FormalParam.facts", delimiter="\t")
 
 isVar(?var),
-FormalParam(?index, ?function, ?var) :-
-  _FormalParam(?index, ?function, ?var).
+FormalParam(?index, ?paramName, ?function, ?var) :-
+  _FormalParam(?index, ?paramName, ?function, ?var).
 
+
+// Var:DeclaringMethod
+
+.decl _Var_DeclaringFunction(?var:symbol, ?method:symbol)
+.input _Var_DeclaringFunction(IO="file", filename="Var-DeclaringFunction.facts", delimiter="\t")
+
+isVar(?var),
+Var_DeclaringFunction(?var, ?function) :-
+  _Var_DeclaringFunction(?var, ?function).
 
 // NativeReturnVar
 

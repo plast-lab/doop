@@ -38,8 +38,7 @@ public interface AppResources {
     }
 
     default void printManifestInfo() {
-        System.out.println("application name: " + getApplicationName());
-        System.out.println("package name: " + getPackageName());
+        printManifestHeader();
         System.out.println("activities: " + getActivities());
         System.out.println("content providers: " + getProviders());
         System.out.println("broadcast receivers: " + getReceivers());

@@ -18,20 +18,32 @@ public abstract class Driver<C, F> {
     private int _classCounter;
     private final int _totalClasses;
     private final int _classSplit = 80;
+    private int errors;
+    public final boolean _ignoreFactGenErrors;
 
-    protected Driver(F factory, int totalClasses, Integer cores) {
+    protected Driver(F factory, int totalClasses, Integer cores, boolean ignoreFactGenErrors) {
         this._factory = factory;
         this._totalClasses = totalClasses;
         this._cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
         this._classCounter = 0;
         this._tmpClassGroup = new HashSet<>();
+        this._ignoreFactGenErrors = ignoreFactGenErrors;
 
         System.out.println("Fact generation cores: " + _cores);
+    }
+
+    public synchronized void markError() {
+        errors++;
+    }
+
+    public synchronized boolean errorsExist() {
+        return (errors > 0);
     }
 
     private void initExecutor() {
         _classCounter = 0;
         _tmpClassGroup = new HashSet<>();
+        errors = 0;
 
         if (_cores > 2) {
             _executor = new ThreadPoolExecutor(_cores /2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
@@ -43,7 +55,7 @@ public abstract class Driver<C, F> {
         }
     }
 
-    private void doInParallel(Set<? extends C> classesToProcess, Consumer<? super C> action) throws DoopErrorCodeException {
+    private void doInParallel(Iterable<? extends C> classesToProcess, Consumer<? super C> action) throws DoopErrorCodeException {
         initExecutor();
         classesToProcess.forEach(action);
         shutdownExecutor();
@@ -57,13 +69,19 @@ public abstract class Driver<C, F> {
             System.err.println(e.getMessage());
             throw new DoopErrorCodeException(10);
         }
+        if (errorsExist()) {
+            System.err.println("Fact generation failed (" + errors + " errors).");
+            if (!_ignoreFactGenErrors)
+                throw new DoopErrorCodeException(5);
+        }
+        errors = 0;
     }
 
-    public void generateInParallel(Set<? extends C> classesToProcess) throws DoopErrorCodeException {
+    public void generateInParallel(Iterable<? extends C> classesToProcess) throws DoopErrorCodeException {
         doInParallel(classesToProcess, this::generate);
     }
 
-    public void writeInParallel(Set<? extends C> classesToProcess) throws DoopErrorCodeException {
+    public void writeInParallel(Iterable<? extends C> classesToProcess) throws DoopErrorCodeException {
         doInParallel(classesToProcess, this::write);
     }
 

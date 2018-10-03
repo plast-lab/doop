@@ -14,8 +14,6 @@ import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.types.annotations.Annotation;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
@@ -48,9 +46,6 @@ public class WalaFactWriter extends JavaFactWriter {
 
     private Map<String,List<String>> _signaturePolyMorphicMethods;
 
-    //Used for logging various messages
-    protected Log logger;
-
     WalaFactWriter(Database db) {
         super(db);
         _rep = WalaRepresentation.getRepresentation();
@@ -58,7 +53,6 @@ public class WalaFactWriter extends JavaFactWriter {
         _phantomType = new ConcurrentHashMap<>();
         _phantomMethod = new ConcurrentHashMap<>();
         _phantomBasedMethod = new ConcurrentHashMap<>();
-        logger =  LogFactory.getLog(getClass());
         _signaturePolyMorphicMethods = null;
     }
 
@@ -127,10 +121,6 @@ public class WalaFactWriter extends JavaFactWriter {
 //            }
 //        }
         return result;
-    }
-
-    void writeAndroidEntryPoint(IMethod m) {
-        _db.add(ANDROID_ENTRY_POINT, _rep.signature(m));
     }
 
     void writeClassOrInterfaceType(IClass c) {
@@ -552,7 +542,8 @@ public class WalaFactWriter extends JavaFactWriter {
             try {
                 Collection<IField> flds = s.getDeclaredStaticFields();
                 result.addAll(flds);
-            }catch (NullPointerException exc){
+            } catch (NullPointerException exc) {
+                System.err.println("Ignoring null pointer exception when reading static fields of " + fixTypeString(cl.getName().toString()));
             }
 
             s = s.getSuperclass();
@@ -563,6 +554,7 @@ public class WalaFactWriter extends JavaFactWriter {
                     Collection<IField> flds = interf.getDeclaredStaticFields();
                     result.addAll(flds);
                 } catch (NullPointerException exc) {
+                    System.err.println("Ignoring null pointer exception when reading interfaces of " + fixTypeString(cl.getName().toString()));
                 }
             }
         }
@@ -593,7 +585,7 @@ public class WalaFactWriter extends JavaFactWriter {
         return typeRef;
     }
 
-    public String writeField(IField f) {
+    public void writeField(IField f) {
         String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
         if(f instanceof FieldImpl) { //Currently annotations do not work on android and are disabled
@@ -604,7 +596,6 @@ public class WalaFactWriter extends JavaFactWriter {
                 }
             }
         }
-        return fieldId;
     }
 
 
@@ -901,24 +892,22 @@ public class WalaFactWriter extends JavaFactWriter {
         writeAssignClassConstant(inMethod, instruction, l, constant, session);
     }
 
-    private Local writeMethodHandleConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+    private void writeMethodHandleConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         // introduce a new temporary variable
 //        String basename = "$mhandleconstant";
 //        String varname = basename + session.nextNumber(basename);
 //        Local l = new Local(varname,-1, TypeReference.JavaLangInvokeMethodHandle);
         writeLocal(inMethod, l);
         writeAssignMethodHandleConstant(inMethod, instruction, l, constant, session);
-        return l;
     }
 
-    private Local writeMethodTypeConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+    private void writeMethodTypeConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         // introduce a new temporary variable
 //        String basename = "$mhandleconstant";
 //        String varname = basename + session.nextNumber(basename);
 //        Local l = new Local(varname,-1, TypeReference.JavaLangInvokeMethodHandle);
         writeLocal(inMethod, l);
         writeAssignMethodTypeConstant(inMethod, instruction, l, constant, session);
-        return l;
     }
 
 
@@ -1165,7 +1154,7 @@ public class WalaFactWriter extends JavaFactWriter {
         //addMockExceptionThrows(m, declaredExceptions);
     }
 
-    void addMockExceptionThrows(MethodReference mr, List<String> declaredExceptions)
+    void addMockExceptionThrows(MethodReference mr, Iterable<String> declaredExceptions)
     {
         int i = -2;
         String varBase = "mockExc";
@@ -1203,15 +1192,10 @@ public class WalaFactWriter extends JavaFactWriter {
 //        } else
 //            return _rep.signature(bootstrapMeth.resolve());
         String declaringClass = bootstrapMeth.methodClass().replace('/','.');
-        StringBuilder bootStrapSig = new StringBuilder("<");
-        bootStrapSig.append(declaringClass);
-        bootStrapSig.append(": ");
-        bootStrapSig.append(createMethodSignature(bootstrapMeth.methodType(),bootstrapMeth.methodName()));
-        bootStrapSig.append(">");
 
 
         //System.out.println("\n\n\n\n\n\nBOOTSTRAP SIG " + bootStrapSig);
-        return bootStrapSig.toString();
+        return "<" + declaringClass + ": " + createMethodSignature(bootstrapMeth.methodType(), bootstrapMeth.methodName()) + ">";
     }
 
     //        private Value writeImmediate(IMethod inMethod, Stmt stmt, Value v, Session session) {
@@ -1254,8 +1238,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), methodId);
-
+        writeAssignUnop(insn, index, _rep.local(m, to), methodId);
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, from));
     }
 

@@ -4,28 +4,14 @@ import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import org.clyze.doop.common.Driver;
 
-import java.util.Iterator;
-
 class WalaDriver extends Driver<IClass, WalaThreadFactory> {
-    private final boolean _android;
     private final IAnalysisCacheView _cache;
 
     WalaDriver(WalaThreadFactory factory, int totalClasses,
-           Integer cores, boolean android, IAnalysisCacheView cache) {
-        super(factory, totalClasses, cores);
-        _android = android;
+               Integer cores, IAnalysisCacheView cache,
+               boolean ignoreFactGenErrors) {
+        super(factory, totalClasses, cores, ignoreFactGenErrors);
         _cache = cache;
-    }
-
-    void generateSequentially(Iterator<IClass> iClasses, WalaFactWriter writer, String outDir) {
-        while (iClasses.hasNext()) {
-            _tmpClassGroup.add(iClasses.next());
-        }
-
-        WalaFactGenerator factGenerator = new WalaFactGenerator(writer, _tmpClassGroup, outDir, _android, _cache);
-        //factGenerator.generate(dummyMain, new Session());
-        //writer.writeAndroidEntryPoint(dummyMain);
-        factGenerator.run();
     }
 
     @Override

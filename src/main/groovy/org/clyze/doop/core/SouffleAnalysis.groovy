@@ -4,6 +4,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
+import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.utils.SouffleScript
 
 import java.util.concurrent.Callable
@@ -39,16 +40,21 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		def executorService = Executors.newFixedThreadPool(2)
 		def futures = executorService.invokeAll([
-				new Callable<File>() {
+				new Callable<Object>() {
 					@Override
-					File call() {
+					Object call() {
 						log.info "[Task FACTS...]"
-						generateFacts()
-						log.info "[Task FACTS Done]"
+						try {
+							generateFacts()
+							log.info "[Task FACTS Done]"
+						} catch (DoopErrorCodeException ex) {
+							log.info "[Task FACTS Failed (code: ${ex.errorCode})]"
+							return ex
+						}
 						null
 					}
 				},
-				new Callable<File>() {
+				new Callable<Object>() {
 					@Override
 					File call() {
 						if (options.X_STOP_AT_FACTS.value) return
@@ -57,6 +63,7 @@ class SouffleAnalysis extends DoopAnalysis {
 						def generatedFile = script.compile(analysis, outDir, cacheDir,
 								options.SOUFFLE_PROFILE.value as boolean,
 								options.SOUFFLE_DEBUG.value as boolean,
+								options.X_FORCE_RECOMPILE.value as boolean,
 								options.X_CONTEXT_REMOVER.value as boolean)
 						log.info "[Task COMPILE Done]"
 						return generatedFile
@@ -65,9 +72,14 @@ class SouffleAnalysis extends DoopAnalysis {
 		])
 		executorService.shutdown()
 
+		// If fact generation failed, propagate its exception.
+		def factsResult = futures[0].get()
+		if (factsResult instanceof DoopErrorCodeException)
+			throw factsResult
+
 		if (options.X_STOP_AT_FACTS.value) return
 
-		File generatedFile = futures[1].get()
+		File generatedFile = (File)futures[1].get()
 		script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
 				(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
 
@@ -111,6 +123,15 @@ class SouffleAnalysis extends DoopAnalysis {
 			def cfgAnalysisPath = "${Doop.souffleAddonsPath}/cfg-analysis"
 			cpp.includeAtEnd("$analysis", "${cfgAnalysisPath}/analysis.dl", "${cfgAnalysisPath}/declarations.dl")
 		}
+                if (options.X_STOP_AT_BASIC.value) {
+                   if (options.X_STOP_AT_BASIC.value == 'classes-scc') {
+                        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/classes-scc.dl")
+                   }
+
+                   if (options.X_STOP_AT_BASIC.value == 'partitioning') {
+                        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/partitioning.dl")
+                   }
+                }
 	}
 
 	void mainAnalysis() {

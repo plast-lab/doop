@@ -901,6 +901,16 @@ DeadMethodWithJVMDescriptor(?jvmFullName, ?method) :-
 #define FILENAME_EXPECTED_BY_REDEX_PASS "methods_to_remove.csv"
 .output DeadMethodWithJVMDescriptor(IO="file", filename=FILENAME_EXPECTED_BY_REDEX_PASS, delimiter="\t")
 
+// .decl MethodFullJVMDescriptor(?method:Method, ?jvmFullName:symbol)
+
+// .output MethodFullJVMDescriptor
+
+// MethodFullJVMDescriptor(?method, ?jvmFullName) :-
+//   MethodInvocation_Method(_, ?method),
+//   Method_DeclaringType(?method, ?className),
+//   Method_JVMDescriptor(?method, ?sig),
+//   Method_SimpleName(?method, ?simplename),
+//   ?jvmFullName = cat("L", cat(?className, cat(";:", cat(?simplename, ?sig)))).
 
 /**
  * General-purpose helpers

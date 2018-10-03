@@ -24,7 +24,7 @@ import java.util.Map;
  * The scopes of each handler are stored in walaHandlerScopes
  */
 
-public class WalaExceptionHelper {
+class WalaExceptionHelper {
     private int[][] exceArrays;
     private String[][] exceTypeArrays; //We do not currently use this information but we may do so in the future.
     private SSAInstruction[] instructions;

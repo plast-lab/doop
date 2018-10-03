@@ -1,0 +1,79 @@
+.decl VarHasConstValue(?var:Var, ?val:Value)
+
+.decl VarHasConstNoneValue(?var:Var, ?val:Value)
+.output VarHasConstNoneValue
+
+VarPointsTo(?var, ?val):-
+  VarHasConstValue(?var, ?val).
+
+VarHasConstValue(?var, ?val),
+VarHasConstNoneValue(?var, ?val):-
+  isAssignNone_Insn(?instr),
+  AssignInstruction_To(?instr, ?var),
+  ?val = "<None>".
+
+.decl VarHasConstFloatValue(?var:Var, ?numVal:IntConstant, ?val:NumConstantValue)
+.output VarHasConstFloatValue
+
+VarHasConstValue(?var, ?val),
+Value_Num(?val,?num),
+VarHasConstFloatValue(?var, ?num, ?val):-
+  AssignFloatConstant_Id(?instr, ?num),
+  AssignInstruction_To(?instr, ?var),
+  ?val = cat(cat("<num-constant(float):", ?num),">").
+
+.decl VarHasConstIntValue(?var:Var, ?numVal:IntConstant, ?val:NumConstantValue)
+.output VarHasConstIntValue
+
+VarHasConstValue(?var, ?val),
+Value_Num(?val,?num),
+VarHasConstIntValue(?var, ?num, ?val):-
+  AssignIntConstant_Id(?instr, ?num),
+  AssignInstruction_To(?instr, ?var),
+  ?val = cat(cat("<num-constant(int):", ?num),">").
+
+VarHasConstValue(?var, ?val),
+Value_Num(?val,?res),
+VarHasConstIntValue(?var, ?res, ?val):-
+  AssignInstruction_To(?instr, ?var),
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
+  BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res),
+  ?val = cat(cat("<num-constant(int):", ?res),">").
+
+.decl BinaryIntOp(?instr:Instruction, ?var1:Var, ?var2:Var, ?op:symbol, ?res:IntConstant)
+.output BinaryIntOp
+
+isIntConstant(?res),
+BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
+  VarHasConstIntValue(?var1, ?numConst1, _),
+  VarHasConstIntValue(?var2, ?numConst2, _),
+  ?op = "add",
+  ?res = to_string(to_number(?numConst1) + to_number(?numConst2)).
+
+isIntConstant(?res),
+BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
+  VarHasConstIntValue(?var1, ?numConst1, _),
+  VarHasConstIntValue(?var2, ?numConst2, _),
+  ?op = "sub",
+  ?res = to_string(to_number(?numConst1) - to_number(?numConst2)).
+
+isIntConstant(?res),
+BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
+  VarHasConstIntValue(?var1, ?numConst1, _),
+  VarHasConstIntValue(?var2, ?numConst2, _),
+  ?op = "mul",
+  ?res = to_string(to_number(?numConst1) * to_number(?numConst2)).
+
+//TODO: Maybe perform some checks that the result of this is Int
+isIntConstant(?res),
+BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
+  VarHasConstIntValue(?var1, ?numConst1, _),
+  VarHasConstIntValue(?var2, ?numConst2, _),
+  ?intConst1 = to_number(?numConst1),
+  ?intConst2 = to_number(?numConst2),
+  ?op = "div",
+  ?res = to_string(?intConst1 / ?intConst2).

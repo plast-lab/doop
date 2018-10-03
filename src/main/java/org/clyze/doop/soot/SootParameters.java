@@ -1,30 +1,28 @@
 package org.clyze.doop.soot;
 
+import java.io.File;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Parameters;
 
 public class SootParameters extends Parameters {
-     enum Mode { INPUTS, FULL }
+    enum Mode { INPUTS, FULL }
 
-     Mode _mode = null;
-     String _main = null;
-     boolean _ssa = false;
-     boolean _allowPhantom = false;
-     private boolean _runFlowdroid = false;
-     boolean _generateJimple = false;
-     private boolean _toStdout = false;
-     boolean _ignoreWrongStaticness = false;
+    Mode _mode = null;
+    String _main = null;
+    boolean _ssa = false;
+    boolean _allowPhantom = false;
+    private boolean _runFlowdroid = false;
+    boolean _generateJimple = false;
+    private boolean _toStdout = false;
+    boolean _ignoreWrongStaticness = false;
+    boolean _reportPhantoms = true;
 
-     public boolean getRunFlowdroid() {
-          return this._runFlowdroid;
-     }
+    public boolean getRunFlowdroid() {
+      return this._runFlowdroid;
+    }
 
     @Override
-    public int processNextArg(String[] args, int i) throws DoopErrorCodeException {
-        int next_i = super.processNextArg(args, i);
-        if (next_i != -1)
-            return next_i;
-
+    protected int processNextArg(String[] args, int i) throws DoopErrorCodeException {
         switch (args[i]) {
         case "--full":
             if (this._mode != null) {
@@ -55,8 +53,44 @@ public class SootParameters extends Parameters {
         case "--ignoreWrongStaticness":
             this._ignoreWrongStaticness = true;
             break;
+        case "--dont-report-phantoms":
+            this._reportPhantoms = false;
+            break;
+        case "-h":
+        case "--help":
+        case "-help":
+            System.err.println("\nusage: [options] file");
+            System.err.println("options:");
+            System.err.println("  --main <class>                        Specify the name of the main class");
+            System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
+            System.err.println("  --full                                Generate facts by full transitive resolution");
+            System.err.println("  -d <directory>                        Specify where to generate csv fact files");
+            System.err.println("  -l <archive>                          Find (library) classes in jar/zip archive");
+            System.err.println("  -ld <archive>                         Find (dependency) classes in jar/zip archive");
+            System.err.println("  -lsystem                              Find classes in default system classes");
+            System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
+            System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails");
+            System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
+            System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
+            System.err.println("  --R-out-dir <directory>               Specify where to generate R code (when linking AAR inputs)");
+            System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
+            System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
+            System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
+            throw new DoopErrorCodeException(0);
+        case "--generate-jimple-help":
+            System.err.println("\nusage: [options] file");
+            System.err.println("options:");
+            System.err.println("  --ssa                                 Generate Shimple files (use SSA for variables)");
+            System.err.println("  --full                                Generate Jimple/Shimple files by full transitive resolution");
+            System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
+            System.err.println("  -d <directory>                        Specify where to generate files");
+            System.err.println("  -l <archive>                          Find classes in jar/zip archive");
+            System.err.println("  -lsystem                              Find classes in default system classes");
+            System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
+            System.err.println("  --decode-apk                          Decompress .apk input in facts directory.");
+            throw new DoopErrorCodeException(0);
         default:
-            return -1;
+            return super.processNextArg(args, i);
         }
         return i;
     }
@@ -66,7 +100,8 @@ public class SootParameters extends Parameters {
      * or missing options or sets defaults).
      * @throws DoopErrorCodeException    exception containing error code
      */
-    public void finishArgProcessing() throws DoopErrorCodeException {
+    @Override
+    protected void finishArgProcessing() throws DoopErrorCodeException {
         super.finishArgProcessing();
 
         if (_mode == null)
@@ -89,5 +124,4 @@ public class SootParameters extends Parameters {
         if (!_toStdout && getOutputDir() == null)
             setOutputDir(System.getProperty("user.dir"));
     }
-
 }

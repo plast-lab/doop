@@ -32,13 +32,13 @@ class WalaIRPrinter {
         BytecodeClass bytecodeClass = (BytecodeClass) cl;
         String fileName = _outputDir + "/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
         File file = new File(fileName);
-        file.getParentFile().getParentFile().mkdirs();
-        file.getParentFile().mkdirs();
+        if (file.getParentFile().mkdirs())
+            System.out.println("Created directory " + file.getParentFile());
 
 //        Collection<IField> fields = cl.getAllFields();
         Collection<IField> fields = WalaFactWriter.getAllFieldsOfClass(cl);
         Collection<? extends IMethod> methods = cl.getDeclaredMethods();
-        Collection<IClass> interfaces =  cl.getAllImplementedInterfaces();
+        Collection<IClass> interfaces = cl.getAllImplementedInterfaces();
         try {
             PrintWriter printWriter = new PrintWriter(file);
             if(bytecodeClass.isPublic())
@@ -141,7 +141,7 @@ class WalaIRPrinter {
             if(basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock)
             {
                 writer.write("\t\tHandler");
-                Iterator<TypeReference> types = ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCaughtExceptionTypes();
+                Iterator<TypeReference> types = basicBlock.getCaughtExceptionTypes();
                 while(types.hasNext())
                     writer.write(" " + types.next().getName().toString());
                     writer.write("\n");

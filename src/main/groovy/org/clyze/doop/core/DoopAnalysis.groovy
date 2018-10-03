@@ -8,15 +8,16 @@ import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.common.FrontEnd
+import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
-
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 
 import static org.apache.commons.io.FileUtils.*
 
@@ -126,7 +127,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	protected void linkOrCopyFacts(File fromDir) {
 		if (options.X_SYMLINK_CACHED_FACTS.value) {
 			try {
-				Path fromDirPath = FileSystems.getDefault().getPath(fromDir.canonicalPath)
+				Path fromDirPath = FileSystems.default.getPath(fromDir.canonicalPath)
 				Files.createSymbolicLink(factsDir.toPath(), fromDirPath)
 				return
 			} catch (UnsupportedOperationException x) {
@@ -166,11 +167,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			try {
 				if (options.PYTHON.value) runPython(tmpDirs)
 				else if (options.WALA_FACT_GEN.value) runFrontEnd(tmpDirs, FrontEnd.WALA)
+				else if (options.DEX_FACT_GEN.value) runFrontEnd(tmpDirs, FrontEnd.DEX)
 				else runFrontEnd(tmpDirs, FrontEnd.SOOT)
 			} catch (all) {
 				all = StackTraceUtils.deepSanitize all
 				log.info all
-				throw new DoopErrorCodeException(8)
+				throw new DoopErrorCodeException(8, all)
 			} finally {
 				JHelper.cleanUp(tmpDirs)
 			}
@@ -222,18 +224,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				}
 			}
 
-			if (options.SCALER.value) {
-				File origScalerFile = new File(options.SCALER.value.toString())
-				File destScalerFile = new File(factsDir, "ScalerMethodContext.facts")
-				Files.copy(origScalerFile.toPath(), destScalerFile.toPath())
-			}
-
-			if (options.ZIPPER.value) {
-				File origZipperFile = new File(options.ZIPPER.value.toString())
-				File destZipperFile = new File(factsDir, "ZipperPrecisionCriticalMethod.facts")
-				Files.copy(origZipperFile.toPath(), destZipperFile.toPath())
-			}
-
 			if (!options.X_START_AFTER_FACTS.value) {
 				if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
 					runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
@@ -255,6 +245,19 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				options.MAIN_CLASS.value.each { w.writeLine(it as String) }
 			}
 		}
+
+		if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
+			File origSpecialCSMethodsFile = new File(options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString())
+			File destSpecialCSMethodsFile = new File(factsDir, "SpecialContextSensitivityMethod.facts")
+			Files.copy(origSpecialCSMethodsFile.toPath(), destSpecialCSMethodsFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+		}
+
+		if (options.ZIPPER.value) {
+			File origZipperFile = new File(options.ZIPPER.value.toString())
+			File destZipperFile = new File(factsDir, "ZipperPrecisionCriticalMethod.facts")
+			Files.copy(origZipperFile.toPath(), destZipperFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+		}
+
 	}
 
 	private List<String> getInputArgsJars(Set<String> tmpDirs) {
@@ -309,21 +312,31 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
 		}
 
-		params = params + ["-d", factsDir.toString()] + inputArgs
+		if (options.DECODE_APK.value) {
+			params += ["--decode-apk"]
+		}
+
+		params.addAll(["-d", factsDir.toString()] + inputArgs)
+		deps.addAll(platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>)
 
 		if (frontEnd == FrontEnd.SOOT) {
 			runSoot(platform, deps, platforms, params)
 		} else if (frontEnd == FrontEnd.WALA) {
 			runWala(platform, deps, platforms, params)
+		} else if (frontEnd == FrontEnd.DEX) {
+			if (options.X_STOP_AT_FACTS.value) {
+				runDexFactGen(platform, deps, platforms, params, tmpDirs)
+			} else {
+				System.err.println("Option --${options.DEX_FACT_GEN.name} only works with --${options.X_STOP_AT_FACTS.name}")
+				throw new DoopErrorCodeException(15)
+			}
 		} else {
 			println("Unknown front-end: " + frontEnd)
 		}
 	}
 
 	protected void runSoot(String platform, Collection<String> deps, List<File> platforms, Collection<String> params) {
-		Collection<String> depArgs = (platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-
-		params += [ "--full" ] + depArgs
+		params += [ "--full" ] + deps
 
 		if (platform == "android") {
 			// This uses all platformLibs.
@@ -340,16 +353,24 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			params += ["--allow-phantom"]
 		}
 
+		if (options.DONT_REPORT_PHANTOMS.value) {
+			params += ["--dont-report-phantoms"]
+		}
+
 		if (options.RUN_FLOWDROID.value) {
 			params += ["--run-flowdroid"]
+		}
+
+		if (options.X_IGNORE_WRONG_STATICNESS.value) {
+			params += ["--ignoreWrongStaticness"]
 		}
 
 		if (options.GENERATE_JIMPLE.value) {
 			params += ["--generate-jimple"]
 		}
 
-		if (options.X_IGNORE_WRONG_STATICNESS.value) {
-			params += ["--ignoreWrongStaticness"]
+		if (options.X_IGNORE_FACTGEN_ERRORS.value) {
+			params += ["--ignore-factgen-errors"]
 		}
 
 		log.debug "Params of soot: ${params.join(' ')}"
@@ -363,38 +384,27 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			//separate process.
 			ClassLoader loader = sootClassLoader()
 			def success = Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
-			if (!success)
+			if (!success) {
+				if (!(options.X_IGNORE_FACTGEN_ERRORS.value)) {
+					log.info "An error occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
+				}
 				throw new RuntimeException("Soot fact generation error")
+			}
 		}
 		log.info "Soot fact generation time: ${factGenTime}"
 	}
 
 	protected void runWala(String platform, Collection<String> deps, List<File> platforms, Collection<String> params) {
-		Collection<String> depArgs
-
-		switch (platform) {
-			case "java":
-				depArgs = deps
-				depArgs.add("-p")
-				depArgs.add(platforms.first().absolutePath.toString().replace("/rt.jar", ""))
-				depArgs = (platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + depArgs
-				break
-			case "android":
-				// This uses all platformLibs.
-				// params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-				// This uses just platformLibs[0], assumed to be android.jar.
-				depArgs = (platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-				params.addAll(["--android-jars"] + [platforms.first().absolutePath])
-				break
-			default:
-				throw new RuntimeException("Unsupported platform")
+		if (platform == "android") {
+			// This uses all platformLibs.
+			// params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+			// This uses just platformLibs[0], assumed to be android.jar.
+			params.addAll(["--android-jars", platforms.first().absolutePath])
+		} else if (platform != "java") {
+			throw new RuntimeException("Unsupported platform: ${platform}")
 		}
 
-		if (options.GENERATE_JIMPLE.value) {
-			params += ["--generate-ir"]
-		}
-		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
-		params = params + depArgs
+		params = params + deps
 
 		log.debug "Params of wala: ${params.join(' ')}"
 
@@ -410,9 +420,23 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 				wala.main(params.toArray(new String[params.size()]))
 			}
 		} catch(walaError){
+			walaError.printStackTrace()
 			throw new RuntimeException("Wala fact generation Error: $walaError", walaError)
 		}
 		log.info "Wala fact generation time: ${factGenTime}"
+	}
+
+	protected void runDexFactGen(String platform, Collection<String> deps, List<File> platforms, Collection<String> params, Set<String> tmpDirs) {
+
+		// params += [ "--print-phantoms" ]
+
+		log.debug "Params of dex front-end: ${params.join(' ')}"
+
+		try {
+			DexInvoker.main(params.toArray(new String[params.size()]))
+		} catch (Exception ex) {
+			ex.printStackTrace()
+		}
 	}
 
 	protected void runPython(Set<String> tmpDirs) {
@@ -429,6 +453,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 		}
 		if (options.GENERATE_JIMPLE.value) {
 			params += ["--generate-ir"]
+		}
+		if (options.SINGLE_FILE_ANALYSIS.value) {
+			params += ["--single-file-analysis"]
 		}
 		//depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
 		params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
@@ -488,19 +515,37 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 	protected ClassLoader sootClassLoader() { copyOfCurrentClasspath() }
 
 	protected ClassLoader copyOfCurrentClasspath() {
-		URLClassLoader loader = this.getClass().getClassLoader() as URLClassLoader
-		URL[] classpath = loader.getURLs()
+		URLClassLoader loader = this.class.classLoader as URLClassLoader
+		URL[] classpath = loader.URLs
 		return new URLClassLoader(classpath, null as ClassLoader)
 	}
 
 	protected void runHeapDL(List<String> filenames) {
+
+		// Support compressed formats: decompress
+		List<String> tmpFiles = []
+		List<String> processed = filenames.collect { String heapdl ->
+			if (heapdl.toLowerCase().endsWith(".gz")) {
+				String tmpPath = Files.createTempFile("gzip-", ".hprof").toString()
+				log.debug "Decompressing ${heapdl} to ${tmpPath}..."
+				FileOps.decompressGzipFile(heapdl, tmpPath)
+				tmpFiles << tmpPath
+				return tmpPath
+			} else {
+				return heapdl
+			}
+		}
+
 		try {
-			MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filenames, options.HEAPDL_NOSTRINGS.value ? false : true)
+			MemoryAnalyser memoryAnalyser = new MemoryAnalyser(processed, options.HEAPDL_NOSTRINGS.value ? false : true)
 			int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
 			log.info("Generated " + n + " addditional facts from memory dump")
 		} catch (Exception e) {
 			e.printStackTrace()
 		}
+
+		// Delete any temporary files created.
+		tmpFiles.each { deleteQuietly(new File(it)) }
 	}
 
 	protected final void handleImportDynamicFacts() {

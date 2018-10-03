@@ -73,8 +73,13 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	}
 
 	private static List<String> getFromProperties(File propsBaseDir, Properties props, String what) {
+		def prop = props.getProperty(what)
+
+		if (!prop)
+			return [] as List
+
 		// Files, if relative, are being resolved via the propsBaseDir or later if they are URLs
-		return props.getProperty(what).split().collect {
+		return prop.split().collect {
 			try {
 				it.trim()
 				// If it is not a valid URL an exception is thrown
@@ -214,12 +219,12 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 		options.collect { AnalysisOption option ->
 			if (option.multipleValues) {
 				def o = new Option(option.optName, option.name, true, desc(option))
-				o.setArgs(Option.UNLIMITED_VALUES)
-				o.setArgName(option.argName)
+				o.args = Option.UNLIMITED_VALUES
+				o.argName = option.argName
 				return o
 			} else if (option.argName) {
 				def o = new Option(option.optName, option.name, true, desc(option))
-				o.setArgName(option.argName)
+				o.argName = option.argName
 				return o
 			} else {
 				return new Option(option.optName, option.name, false, desc(option))

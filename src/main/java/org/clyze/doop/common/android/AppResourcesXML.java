@@ -195,21 +195,18 @@ public class AppResourcesXML implements AppResources {
         // 'android:onClick' attributes in XML files under /res.
 
         Set<String> ret = new HashSet<>();
-        ZipInputStream zin;
-        try {
-            zin = new ZipInputStream(new FileInputStream(archive));
+        // Find all xml files under /res in the archive.
+        Collection<String> resXMLs = new HashSet<>();
+        try (ZipInputStream zin = new ZipInputStream(new FileInputStream(archive))) {
+            for (ZipEntry e; (e = zin.getNextEntry()) != null; ) {
+                String name = e.getName();
+                if (name.startsWith("res/") &&
+                        (name.endsWith(".xml") || name.endsWith(".XML")))
+                    resXMLs.add(name);
+            }
         } catch (Exception ex) {
             handleException(ex);
             return ret;
-        }
-
-        // Find all xml files under /res in the archive.
-        Set<String> resXMLs = new HashSet<>();
-        for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
-            String name = e.getName();
-            if (name.startsWith("res/") &&
-                (name.endsWith(".xml") || name.endsWith(".XML")))
-                resXMLs.add(name);
         }
 
         // Parse each XML to find possible callbacks.
@@ -229,8 +226,7 @@ public class AppResourcesXML implements AppResources {
     public Set<LayoutControl> getUserControls() {
         Set<String> layoutFiles = new HashSet<>();
         Set<LayoutControl> controls = new HashSet<>();
-        try {
-            ZipInputStream zin = new ZipInputStream(new FileInputStream(archive));
+        try (ZipInputStream zin = new ZipInputStream(new FileInputStream(archive))) {
             for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
                 String name = e.getName();
                 if (name.startsWith("res/layout") && name.endsWith(".xml"))
@@ -296,14 +292,25 @@ public class AppResourcesXML implements AppResources {
             if (name.equals("fragment"))
                 name = attrOrDefault(node, "android:name", "-1");
             String id = attrOrDefault(node, "android:id", "-1");
-            System.out.println("id = " + id);
-            if (id.startsWith("@+"))
-                id = id.substring(2);
-            if (id.contains("/")) {
-                String[] parts = id.split("/");
-                Integer c = RLinker.getInstance().lookupConst(packageName, parts[0], parts[1]);
-                if (c != null)
-                    intId = c;
+            // System.out.println("name = " + name + ", id = " + id + ", parentId = " + parentId);
+            final String RESOURCE_ID = "resourceId:";
+            if (id.startsWith(RESOURCE_ID)) {
+                String strId = id.substring(RESOURCE_ID.length());
+                if (strId.startsWith("0x"))
+                    intId = Integer.parseInt(strId.substring(2), 16);
+                else {
+                    System.err.println("Warning: non-hex resource id found: " + strId);
+                    intId = Integer.parseInt(strId);
+                }
+            } else {
+                if (id.startsWith("@+"))
+                    id = id.substring(2);
+                if (id.contains("/")) {
+                    String[] parts = id.split("/");
+                    Integer c = RLinker.getInstance().lookupConst(packageName, parts[0], parts[1]);
+                    if (c != null)
+                        intId = c;
+                }
             }
 
             // Add a layout control with empty attributes.

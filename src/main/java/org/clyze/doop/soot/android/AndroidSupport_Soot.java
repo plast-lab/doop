@@ -10,55 +10,15 @@ import org.clyze.doop.soot.*;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import soot.Scene;
 import soot.SootClass;
-import soot.SootMethod;
 import soot.coffi.Util;
 import soot.dexpler.DexFileProvider;
-import soot.jimple.infoflow.android.SetupApplication;
 
 import static soot.dexpler.DexFileProvider.DexContainer;
-import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
 public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
 
-    private SootMethod dummyMain;
-
     public AndroidSupport_Soot(SootParameters sootParameters, BasicJavaSupport_Soot java) {
         super(sootParameters, java);
-    }
-
-    public SootMethod getDummyMain() {
-        return dummyMain;
-    }
-
-    private SootParameters getSootParameters() {
-        if (parameters instanceof SootParameters)
-            return (SootParameters)parameters;
-        else
-            throw new RuntimeException("Internal error: field type != SootParameters");
-    }
-
-    public void processInputs(String androidJars, Set<String> tmpDirs) throws Exception {
-        SootParameters sootParameters = getSootParameters();
-        if (sootParameters.getRunFlowdroid()) {
-            String appInput = parameters.getInputs().get(0);
-            SetupApplication app = new SetupApplication(androidJars, appInput);
-            app.getConfig().getCallbackConfig().setCallbackAnalyzer(Fast);
-            String filename = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
-            try {
-                // TODO: fix this method call (refactored in newer
-                // versions of FlowDroid):
-                // app.calculateSourcesSinksEntryPoints(filename);
-                throw new RuntimeException("FlowDroid interface missing");
-            } catch (Exception ex) {
-                System.err.println("calculateSourcesSinksEntrypoints() failed:");
-                ex.printStackTrace();
-            }
-            dummyMain = app.getDummyMainMethod();
-            if (dummyMain == null) {
-                throw new RuntimeException("Dummy main null");
-            }
-        } else
-            super.processInputs(tmpDirs);
     }
 
     /**
@@ -68,7 +28,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
      * @param scene     the Soot Scene object
      * @param inputApk  the filename of the APK
      */
-    private void addClasses(Set<SootClass> classes, Scene scene, String inputApk) {
+    private void addClasses(Collection<SootClass> classes, Scene scene, String inputApk) {
         File apk = new File(inputApk);
         System.out.println("Android mode, APK = " + inputApk);
         String artifact = apk.getName();
@@ -92,7 +52,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
         }
     }
 
-    private void addClasses(List<String> inputs, Set<SootClass> classes, Scene scene, Set<String> target) {
+    private void addClasses(Iterable<String> inputs, Collection<SootClass> classes, Scene scene, Iterable<String> target) {
         for (String input : inputs) {
             if (input.endsWith(".apk")) {
                 addClasses(classes, scene, input);

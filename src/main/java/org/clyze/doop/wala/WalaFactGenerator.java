@@ -28,7 +28,7 @@ import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 
 class WalaFactGenerator implements Runnable {
 
-    protected Log logger;
+    private final Log logger;
 
     private final WalaFactWriter _writer;
     private final Set<IClass> _iClasses;
@@ -81,10 +81,10 @@ class WalaFactGenerator implements Runnable {
             }
 
             iClass.getDeclaredInstanceFields().forEach(this::generate);
-            try{
+            try {
                 iClass.getDeclaredStaticFields().forEach(this::generate);
-            }catch (NullPointerException exc) //For some reason in DexClasses .getDeclaredStaticFields() can throw a NullPointerException
-            {
+            } catch (NullPointerException exc) { //For some reason in DexClasses .getDeclaredStaticFields() can throw a NullPointerException
+                System.err.println("Ignoring null exception when reading static fields");
             }
 
 
@@ -92,9 +92,8 @@ class WalaFactGenerator implements Runnable {
                 Session session = new org.clyze.doop.wala.Session();
                 try {
                     generate(m, session);
-                }
-                catch (Exception exc) {
-                    System.err.println("Error while processing method: " + m + " of class " +m.getDeclaringClass());
+                } catch (Exception exc) {
+                    System.err.println("Error while processing method: " + m + " of class " + m.getDeclaringClass());
                     exc.printStackTrace();
                     throw exc;
                 }
@@ -205,7 +204,8 @@ class WalaFactGenerator implements Runnable {
             try {
                 IR ir = cache.getIR(m, Everywhere.EVERYWHERE);
                 generate(m, ir, session);
-            }catch (Throwable t){
+            } catch (Throwable t){
+                System.err.println("Ignoring exception: " + t.getMessage());
             }
         }
     }

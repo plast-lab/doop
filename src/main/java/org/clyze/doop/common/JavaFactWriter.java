@@ -20,7 +20,7 @@ public class JavaFactWriter {
         this._db = db;
     }
 
-    protected static String str(int i) {
+    public static String str(int i) {
         return String.valueOf(i);
     }
 
@@ -235,5 +235,9 @@ public class JavaFactWriter {
     protected void writeArrayTypes(String arrayType, String componentType) {
         _db.add(ARRAY_TYPE, arrayType);
         _db.add(COMPONENT_TYPE, arrayType, componentType);
+    }
+
+    protected void writeAssignUnop(String insn, int index, String local, String methId) {
+        _db.add(ASSIGN_UNOP, insn, str(index), local, methId);
     }
 }

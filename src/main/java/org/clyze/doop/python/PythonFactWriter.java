@@ -106,7 +106,7 @@ public class PythonFactWriter {
         }
 
         _db.add(STRING_RAW, result, result);
-        _db.add(FUNCTION, result, _rep.simpleName(m), par, arity);
+        _db.add(FUNCTION, result, _rep.simpleName(m), par, arity, _rep.sourceFileName(m));
         return result;
     }
 
@@ -193,20 +193,36 @@ public class PythonFactWriter {
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId);
     }
 
-    private void writeAssignNull(IMethod m, SSAInstruction instruction, Local l, Session session) {
+    private void writeAssignNone(IMethod m, SSAInstruction instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_NULL, insn, str(index), _rep.local(m, l), methodId);
+        _db.add(ASSIGN_NONE, insn, str(index), _rep.local(m, l), methodId);
     }
 
-    private void writeAssignNumConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+    private void writeAssignBoolConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
+        _db.add(ASSIGN_BOOL_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
+    }
+
+    private void writeAssignIntConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String methodId = _rep.signature(m);
+
+        _db.add(ASSIGN_INT_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
+    }
+
+    private void writeAssignFloatConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+        int index = session.calcInstructionNumber(instruction);
+        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String methodId = _rep.signature(m);
+
+        _db.add(ASSIGN_FLOAT_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
     }
 
     void writeStoreInstanceField(IMethod m, SSAInstruction instruction, FieldReference f, Local base, Local from, Session session) {
@@ -244,10 +260,11 @@ public class PythonFactWriter {
         String methodId = _rep.signature(m);
         String varName = instruction.getAccess(0).variableName;
         String varDefiner = instruction.getAccess(0).variableDefiner.substring(1);
+        String definerFunctRepr = _rep.getSigByName(varDefiner);
         if(instruction instanceof AstLexicalWrite){
-            _db.add(LEXICAL_WRITE, insn, str(index), varName, varDefiner, _rep.local(m, l), methodId);
+            _db.add(LEXICAL_WRITE, insn, str(index), varName, definerFunctRepr, _rep.local(m, l), methodId);
         }else if(instruction instanceof AstLexicalRead){
-            _db.add(LEXICAL_READ, insn, str(index), _rep.local(m, l), varName, varDefiner, methodId);
+            _db.add(LEXICAL_READ, insn, str(index), _rep.local(m, l), varName, definerFunctRepr, methodId);
         }else{
             throw new RuntimeException("Unexpected AstLexicalAccess subclass of type: "+ instruction.getClass().getName());
         }
@@ -373,15 +390,18 @@ public class PythonFactWriter {
     void writeFormalParam(IMethod m, IR ir, int paramIndex, int actualIndex) {
         String methodId = _rep.signature(m);
         String var = _rep.param(m, paramIndex);
-        _db.add(FORMAL_PARAM, str(actualIndex), methodId, var);
+        String paramName = "__NONAME__";
         _db.add(VAR_DECLARING_FUNCTION, var, methodId);
         String[] names = null;
         names = ir.getLocalNames(0, paramIndex + 1);
-        if(names.length > 0)
+        if(names.length > 0) {
             _db.add(VAR_SOURCE_NAME, var, names[0]);
+            paramName = names[0];
+        }
         else{
             System.out.println("This shouldn't(?) ever happen.");
         }
+        _db.add(FORMAL_PARAM, str(actualIndex), paramName, methodId, var);
     }
 
     void writeLocal(IMethod m, Local l) {
@@ -397,16 +417,28 @@ public class PythonFactWriter {
         writeAssignStringConstant(ir, inMethod, instruction, l, constant, session);
     }
 
-    void writeNullExpression(IMethod inMethod, SSAInstruction instruction, Local l, Session session) {
+    void writeNoneExpression(IMethod inMethod, SSAInstruction instruction, Local l, Session session) {
         // introduce a new temporary variable
         writeLocal(inMethod, l);
-        writeAssignNull(inMethod, instruction, l,session);
+        writeAssignNone(inMethod, instruction, l,session);
     }
 
-    void writeNumConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+    void writeIntConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         // introduce a new temporary variable
         writeLocal(inMethod, l);
-        writeAssignNumConstant(inMethod, instruction, l, constant, session);
+        writeAssignIntConstant(inMethod, instruction, l, constant, session);
+    }
+
+    void writeBoolConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+        // introduce a new temporary variable
+        writeLocal(inMethod, l);
+        writeAssignBoolConstant(inMethod, instruction, l, constant, session);
+    }
+
+    void writeFloatConstantExpression(IMethod inMethod, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
+        // introduce a new temporary variable
+        writeLocal(inMethod, l);
+        writeAssignFloatConstant(inMethod, instruction, l, constant, session);
     }
 
     //TODO: This needs work for pythons positional params!!!!!!!!!!!!
@@ -442,10 +474,10 @@ public class PythonFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
+        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), instruction.getOperator().toString(), methodId);
 
-        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
-        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
+        _db.add(ASSIGN_OPER_FROM, insn, "1", _rep.local(m, op1));
+        _db.add(ASSIGN_OPER_FROM, insn, "2", _rep.local(m, op2));
 
     }
 
@@ -480,10 +512,10 @@ public class PythonFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
+        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), instruction.getOperator().toString(), methodId);
 
-        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
-        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
+        _db.add(ASSIGN_OPER_FROM, insn, "1", _rep.local(m, op1));
+        _db.add(ASSIGN_OPER_FROM, insn, "2", _rep.local(m, op2));
 
     }
     //
@@ -492,9 +524,9 @@ public class PythonFactWriter {
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), methodId);
+        _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, to), instruction.getOpcode().toString(), methodId);
 
-        _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, from));
+        _db.add(ASSIGN_OPER_FROM, insn, "1", _rep.local(m, from));
     }
 
     void writePythonInvoke(IMethod inMethod, IR ir, PythonInvokeInstruction instruction, Local to, Session session, TypeInference typeInference) {
@@ -510,11 +542,11 @@ public class PythonFactWriter {
         writeActualParams(inMethod, ir, instruction, insn, session, typeInference);
 
         int index = session.calcInstructionNumber(instruction);
-
+        Local toVar = createLocal(ir,instruction,instruction.getDef(), typeInference);
         Local functionObject = createLocal(ir,instruction,instruction.getUse(0), typeInference);
         if (instruction.isDispatch()) {
             //System.out.println("Virtual "+ instruction.toString(ir.getSymbolTable()));
-            _db.add(FUNCTION_INV, insn, str(index), _rep.local(inMethod, functionObject), methodId);
+            _db.add(FUNCTION_INV, insn, str(index), _rep.local(inMethod,toVar), _rep.local(inMethod, functionObject), methodId);
         }
         else {
             throw new RuntimeException("Cannot handle invoke instruction: " + instruction.toString(ir.getSymbolTable()));
@@ -540,7 +572,7 @@ public class PythonFactWriter {
 
         if (instruction.isStatic()) {
             if(targetRef.getName().toString().equals("import")){
-                String module = fixType(targetRef.getReturnType());
+                String module = fixType(targetRef.getReturnType()).replace('/','.');
                 _db.add(IMPORT, insn, str(index), module, _rep.local(inMethod,to), methodId);
             }
             else{

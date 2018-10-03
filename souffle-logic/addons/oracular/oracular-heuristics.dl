@@ -3,7 +3,7 @@
 VPTCountPerMethodVariable(?method, ?var, Y) :-
    Var_DeclaringMethod(?var, ?method),
    Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
-
+.output VPTCountPerMethodVariable
 
 .decl MethodVPTCost(?method:Method, Y:number)
 

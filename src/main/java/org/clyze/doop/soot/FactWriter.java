@@ -12,10 +12,7 @@ import soot.jimple.toolkits.typing.fast.BottomType;
 import soot.tagkit.*;
 import soot.util.backend.ASMBackendUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.JavaRepresentation.*;
@@ -28,11 +25,13 @@ import static org.clyze.doop.common.PredicateFile.*;
 class FactWriter extends JavaFactWriter {
     private final Representation _rep;
     private final Map<String, Type> _varTypeMap;
+    private final boolean _reportPhantoms;
 
-    FactWriter(Database db) {
+    FactWriter(Database db, boolean reportPhantoms) {
         super(db);
         _rep = Representation.getRepresentation();
         _varTypeMap = new ConcurrentHashMap<>();
+        _reportPhantoms = reportPhantoms;
     }
 
     String writeMethod(SootMethod m) {
@@ -71,7 +70,8 @@ class FactWriter extends JavaFactWriter {
         String classStr = c.getName();
         boolean isInterface = c.isInterface();
         if (isInterface && c.isPhantom()) {
-            System.out.println("Interface " + classStr + " is phantom.");
+            if (_reportPhantoms)
+                System.out.println("Interface " + classStr + " is phantom.");
             writePhantomType(c);
         }
         _db.add(isInterface ? INTERFACE_TYPE : CLASS_TYPE, classStr);
@@ -126,13 +126,15 @@ class FactWriter extends JavaFactWriter {
 
     void writePhantomMethod(SootMethod m) {
         String sig = writeMethod(m);
-        System.out.println("Method " + sig + " is phantom.");
+        if (_reportPhantoms)
+            System.out.println("Method " + sig + " is phantom.");
         writePhantomMethod(sig);
     }
 
     void writePhantomBasedMethod(SootMethod m) {
         String sig = writeMethod(m);
-        System.out.println("Method signature " + sig + " contains phantom types.");
+        if (_reportPhantoms)
+            System.out.println("Method signature " + sig + " contains phantom types.");
         _db.add(PHANTOM_BASED_METHOD, sig);
     }
 
@@ -160,7 +162,7 @@ class FactWriter extends JavaFactWriter {
         _db.add(ASSIGN_LOCAL, insn, str(index), _rep.local(m, from), _rep.local(m, to), methodId);
     }
 
-    void writeAssignLocal(SootMethod m, Stmt stmt, Local to, ThisRef ref, Session session) {
+    void writeAssignLocal(SootMethod m, Stmt stmt, Local to, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, index);
         String methodId = writeMethod(m);
@@ -229,7 +231,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     private void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session) {
-        String heap = _rep.heapMultiArrayAlloc(m, expr, arrayType, session);
+        String heap = _rep.heapMultiArrayAlloc(m, /* expr, */ arrayType, session);
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, index);
 
@@ -627,8 +629,8 @@ class FactWriter extends JavaFactWriter {
     /**
      * Throw statement
      */
-    void writeThrow(SootMethod m, Stmt stmt, Local l, Session session) {
-        int index = session.calcUnitNumber(stmt);
+    void writeThrow(SootMethod m, Unit unit, Local l, Session session) {
+        int index = session.calcUnitNumber(unit);
         String insn = _rep.throwLocal(m, l, session);
         String methodId = writeMethod(m);
 
@@ -852,7 +854,8 @@ class FactWriter extends JavaFactWriter {
         SootMethodRef bootstrapMeth = di.getBootstrapMethodRef();
         if (bootstrapMeth.declaringClass().isPhantom()) {
             String bootstrapSig = bootstrapMeth.toString();
-            System.out.println("Bootstrap method is phantom: " + bootstrapSig);
+            if (_reportPhantoms)
+                System.out.println("Bootstrap method is phantom: " + bootstrapSig);
             _db.add(PHANTOM_METHOD, bootstrapSig);
             return bootstrapSig;
         } else
@@ -899,7 +902,7 @@ class FactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, left), methodId);
+        writeAssignUnop(insn, index, _rep.local(m, left), methodId);
 
         if (right.getOp() instanceof Local) {
             Local op = (Local) right.getOp();
@@ -955,7 +958,7 @@ class FactWriter extends JavaFactWriter {
             }
     }
 
-    public void writePreliminaryFacts(Set<SootClass> classes, BasicJavaSupport java, SootParameters sootParameters) {
+    public void writePreliminaryFacts(Collection<SootClass> classes, BasicJavaSupport java, SootParameters sootParameters) {
         classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(this::writeApplicationClass);
         writePreliminaryFacts(java, sootParameters);
     }
