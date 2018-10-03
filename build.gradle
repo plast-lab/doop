@@ -78,6 +78,7 @@ dependencies {
             "ext:AXMLPrinter:2.0",
             // Upstream stable version, to be used instead of ext:sootclasses.
             // "ca.mcgill.sable:soot:3.1.0",
+            // Doop's Soot fork.
             "ext:sootclasses:3.2.7",
             "ext:soot-infoflow:2.5.1",
             "ext:soot-infoflow-android:2.5.1",
