@@ -721,8 +721,21 @@ ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) :
 
 #ifndef FEATHERWEIGHT_ANALYSIS
 .decl ReflectiveHeapInterproceduralAssign(?sig:Field, ?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
+
 ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to,?fromCtx, ?from) :-
   ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue),
+  ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from),
+  !Value_Null(?basevalue).
+  .plan 1:(2,1)
+
+ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to,?fromCtx, ?from) :-
+  ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue),
+  StoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from),
+  !Value_Null(?basevalue).
+  .plan 1:(2,1)
+
+ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to,?fromCtx, ?from) :-
+  LoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue),
   ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from),
   !Value_Null(?basevalue).
   .plan 1:(2,1)
