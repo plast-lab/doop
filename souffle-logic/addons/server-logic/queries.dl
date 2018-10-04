@@ -313,6 +313,12 @@ Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 0) :-
   mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod),
   Instruction_Method(?invo, ?fromMethod).
 
+#ifdef REFLECTION
+Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 0) :-
+  mainAnalysis.ReflectiveCallGraphEdge(_, ?invo, _, ?toMethod),
+  Instruction_Method(?invo, ?fromMethod).
+#endif // REFLECTION
+
 Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 1) :-
   basic.ResolveInvocation(_, ?invo, ?toMethod),
   !mainAnalysis.CallGraphEdge(_, ?invo, _, _),
