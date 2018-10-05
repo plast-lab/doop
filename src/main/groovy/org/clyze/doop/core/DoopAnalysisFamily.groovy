@@ -284,14 +284,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true,
 					changesFacts: true
 			),
-
 			new BooleanAnalysisOption(
 					id: "ANDROID",
 					name: "android",
 					description: "If true the analysis is ran on an Android app.",
 					forPreprocessor: true
 			),
-
 			new BooleanAnalysisOption(
 					id: "CFG_ANALYSIS",
 					name: "cfg",
@@ -468,9 +466,10 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "GENERATE_PROGUARD_KEEP_DIRECTIVES",
-					name: "gen-proguard-keep",
-					description: "Generate keep directives for ProGuard."
+					id: "GENERATE_OPTIMIZATION_DIRECTIVES",
+					name: "gen-opt-directives",
+					description: "Generates additional relations for code optimization uses.",
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "DISCOVER_TESTS",

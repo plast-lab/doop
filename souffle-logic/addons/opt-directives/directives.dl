@@ -1,0 +1,53 @@
+// Facts used for optimization
+
+.decl InvocationTarget_Count(?invocation:MethodInvocation, ?n:number)
+
+InvocationTarget_Count(?invocation, ?n) :-
+  isVirtualMethodInvocation_Insn(?invocation),
+  ?n = count:{mainAnalysis.CallGraphEdge(_, ?invocation, _, _)}.
+
+// Virtual invocation sites that only call a single method (and can
+// thus be candidates for devirtualization).
+.decl SingleInvocationTarget(?invocation:MethodInvocation, ?target:Method)
+SingleInvocationTarget(?invocation, ?target) :-
+  InvocationTarget_Count(?invocation, 1),
+  mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target).
+
+.output SingleInvocationTarget
+
+// Helper relation: virtual invocation sites that call multiple methods.
+.decl MultiInvocationTarget(?invocation:MethodInvocation, ?target:Method)
+MultiInvocationTarget(?invocation, ?target) :-
+  InvocationTarget_Count(?invocation, ?n),
+  ?n > 1,
+  mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target).
+
+// Reachable methods that are only the target of invocations that can be
+// devirtualized. We can thus convert them to static and remove the virtual version.
+.decl ReachableMethodOnlyUsedInSingleInvocationTarget(?method:Method)
+
+ReachableMethodOnlyUsedInSingleInvocationTarget(?method) :-
+  SingleInvocationTarget(_, ?method),
+  !MultiInvocationTarget(_, ?method).
+
+.output ReachableMethodOnlyUsedInSingleInvocationTarget
+
+.decl Method_Size(?method:Method, ?size:number)
+
+Method_Size(?method, ?size) :-
+  isMethod(?method),
+  ?size = count:{Instruction_Method(_, ?method)}.
+
+.decl SmallMethod(?method:Method)
+
+SmallMethod(?method) :- Method_Size(?method, ?size), ?size < 40.
+
+.output SmallMethod
+
+.decl InvocationToInline(?invocation:MethodInvocation, ?target:Method)
+
+InvocationToInline(?invocation, ?target) :-
+  SingleInvocationTarget(?invocation, ?target),
+  SmallMethod(?target).
+
+.output InvocationToInline

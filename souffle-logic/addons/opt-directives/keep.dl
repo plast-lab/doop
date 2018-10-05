@@ -10,4 +10,4 @@ KeepMethod(cat("-keep class ", cat(?type, cat(" { ", cat(?retType, cat(" ", cat(
 	Method_Descriptor(?m, ?descriptor),
 	Method_SimpleName(?m, ?simpleName),
 	Method_ReturnType(?m, ?retType).
-#endif
+#endif // REFLECTION
