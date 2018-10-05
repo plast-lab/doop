@@ -156,6 +156,12 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
 		}
 
+		if (options.SYMBOLIC_REASONING.value) {
+			def symbolicReasoningPath ="${Doop.souffleAddonsPath}/symbolic-reasoning"
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/const-type-infer.dl")
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/constant-propagation.dl")
+		}
+
 		String openProgramsRules = options.OPEN_PROGRAMS.value
 		if (openProgramsRules) {
 			log.debug "Using open-programs rules: ${openProgramsRules}"

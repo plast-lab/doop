@@ -11,7 +11,7 @@ AnyMethodInvocation(?invocation, ?tomethod) :-
   isSpecialMethodInvocation_Insn(?invocation).
 
 VarUse(?from, ?insn) :-
-  AssignOper_From(?insn, ?from).
+  AssignOper_From(?insn, _, ?from).
 
 TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to),
 TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) :-

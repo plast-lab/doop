@@ -505,6 +505,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Perform a featherweight analysis (global state and complex objects immutable).",
 					forPreprocessor: true
 			),
+            new AnalysisOption<String>(
+                    id: "SYMBOLIC_REASONING",
+                    name: "symbolic-reasoning",
+                    description: "Symbolic reasoning for expressions"
+            ),
 			new AnalysisOption<String>(
 					id: "INFORMATION_FLOW",
 					name: "information-flow",

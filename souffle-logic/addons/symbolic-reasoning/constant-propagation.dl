@@ -1,0 +1,62 @@
+.decl ConstantPropagation(?instruction:symbol, ?variable:symbol, ?value:number, ?method:symbol)
+.output ConstantPropagation
+
+ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+    IntConstant(?instr, ?var, ?value, ?meth).
+
+ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+    _AssignUnop(?instr, _, ?var, ?meth),
+    _AssignOperFrom(?instr, _, ?var1),
+    ConstantPropagation(_, ?var1, ?value1, ?meth),
+    _OperatorAt(?instr, "-"),
+    ?value = - ?value1.
+
+ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+    _AssignBinop(?instr, _, ?var, ?meth),
+    _AssignOperFrom(?instr, ?pos1, ?right_oper1),
+    _AssignOperFrom(?instr, ?pos2, ?right_oper2),
+    ?pos1 < ?pos2,
+    ConstantPropagation(_, ?right_oper1, ?value1, ?meth),
+    ConstantPropagation(_, ?right_oper2, ?value2, ?meth),
+    _OperatorAt(?instr, "+"),
+    ?value = ?value1 + ?value2.
+
+ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+    _AssignBinop(?instr, _, ?var, ?meth),
+    _AssignOperFrom(?instr, ?pos1, ?right_oper1),
+    _AssignOperFrom(?instr, ?pos2, ?right_oper2),
+    ?pos1 < ?pos2,
+    ConstantPropagation(_, ?right_oper1, ?value1, ?meth),
+    ConstantPropagation(_, ?right_oper2, ?value2, ?meth),
+    _OperatorAt(?instr, "*"),
+    ?value = ?value1 * ?value2.
+
+ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+    _AssignBinop(?instr, _, ?var, ?meth),
+    _AssignOperFrom(?instr, ?pos1, ?right_oper1),
+    _AssignOperFrom(?instr, ?pos2, ?right_oper2),
+    ?pos1 < ?pos2,
+    ConstantPropagation(_, ?right_oper1, ?value1, ?meth),
+    ConstantPropagation(_, ?right_oper2, ?value2, ?meth),
+    _OperatorAt(?instr, "-"),
+    ?value = ?value1 - ?value2.
+
+ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+    _AssignBinop(?instr, _, ?var, ?meth),
+    _AssignOperFrom(?instr, ?pos1, ?right_oper1),
+    _AssignOperFrom(?instr, ?pos2, ?right_oper2),
+    ?pos1 < ?pos2,
+    ConstantPropagation(_, ?right_oper1, ?value1, ?meth),
+    ConstantPropagation(_, ?right_oper2, ?value2, ?meth),
+    _OperatorAt(?instr, "/"),
+    ?value = ?value1 / ?value2.
+
+ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+    _AssignBinop(?instr, _, ?var, ?meth),
+    _AssignOperFrom(?instr, ?pos1, ?right_oper1),
+    _AssignOperFrom(?instr, ?pos2, ?right_oper2),
+    ?pos1 < ?pos2,
+    ConstantPropagation(_, ?right_oper1, ?value1, ?meth),
+    ConstantPropagation(_, ?right_oper2, ?value2, ?meth),
+    _OperatorAt(?instr, "%"),
+    ?value = ?value1 % ?value2.

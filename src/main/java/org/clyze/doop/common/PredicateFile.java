@@ -105,7 +105,8 @@ public enum PredicateFile
     BREAKPOINT_STMT("BreakpointStmt"),
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
     CLASS_ARTIFACT("Class-Artifact"),
-    SPECIAL_CONTEXT_SENSITIVITY_METHOD("SpecialContextSensitivityMethod");
+    SPECIAL_CONTEXT_SENSITIVITY_METHOD("SpecialContextSensitivityMethod"),
+    OPERATOR_AT("OperatorAt");
 
     private final String name;
 
