@@ -40,14 +40,20 @@ Method_Size(?method, ?size) :-
 
 .decl SmallMethod(?method:Method)
 
-SmallMethod(?method) :- Method_Size(?method, ?size), ?size < 40.
+SmallMethod(?method) :- Method_Size(?method, ?size), ?size < 30.
 
 .output SmallMethod
 
 .decl InvocationToInline(?invocation:MethodInvocation, ?target:Method)
 
 InvocationToInline(?invocation, ?target) :-
-  SingleInvocationTarget(?invocation, ?target),
-  SmallMethod(?target).
+  SmallMethod(?target),
+  SingleInvocationTarget(?invocation, ?target).
+
+InvocationToInline(?invocation, ?target) :-
+  SmallMethod(?target),
+  (isStaticMethodInvocation_Insn(?invocation);
+   isSpecialMethodInvocation_Insn(?invocation)),
+  mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target).
 
 .output InvocationToInline
