@@ -206,6 +206,7 @@ lang:entity(`ReturnVoid:Insn).
 
 lang:entity(`MethodInvocation).
 lang:entity(`SpecialMethodInvocation:Insn).
+lang:entity(`SuperMethodInvocation:Insn).
 lang:entity(`StaticMethodInvocation:Insn).
 lang:entity(`VirtualMethodInvocation:Insn).
 lang:entity(`DynamicMethodInvocation:Insn).
@@ -252,6 +253,7 @@ ReturnNonvoid:Insn(?insn)              -> ReturnInstruction(?insn).
 MethodInvocation(?insn)                -> Instruction(?insn).
 VirtualMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 SpecialMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
+SuperMethodInvocation:Insn(?insn)      -> MethodInvocation(?insn).
 StaticMethodInvocation:Insn(?insn)     -> MethodInvocation(?insn).
 DynamicMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 
@@ -505,6 +507,16 @@ SpecialMethodInvocation:SimpleName[?invocation] = ?simplename ->
    MethodInvocation(?invocation), SimpleName(?simplename).
 
 SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor ->
+   MethodInvocation(?invocation), MethodDescriptor(?descriptor).
+
+// Super Method Invocation
+SuperMethodInvocation:Base[?invocation] = ?base ->
+   SuperMethodInvocation:Insn(?invocation), Var(?base).
+
+SuperMethodInvocation:SimpleName[?invocation] = ?simplename ->
+   MethodInvocation(?invocation), SimpleName(?simplename).
+
+SuperMethodInvocation:Descriptor[?invocation] = ?descriptor ->
    MethodInvocation(?invocation), MethodDescriptor(?descriptor).
 
 

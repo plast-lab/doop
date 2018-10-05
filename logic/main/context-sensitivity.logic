@@ -109,7 +109,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   ReachableContext(?ctx, ?inmethod),
   ObjectShouldBeRefined(?value).
 #endif
-
+ 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   Value:byHeap[?heap] = ?value,
@@ -122,6 +122,7 @@ ReachableAssignContextInsensitiveHeapAllocation(?var, ?ctx, ?heap) <-
 /**
  * Null assignments
  */
+
 
 VarPointsTo(?hctx, ?null, ?toCtx, ?to) <-
    ImmutableHContextFromContext[?toCtx] = ?hctx,
@@ -185,7 +186,6 @@ OptAssignCast(?type, ?to, ?from) <-
 /**
  * Load instance fields
  */
-
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
@@ -400,6 +400,7 @@ AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
 
 // The main analysis is merely looking up the previously created
 // context objects.
+
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
@@ -538,6 +539,75 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   CachedMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
   MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
+  ThisVar[?tomethod] = ?this,
+  SiteShouldBeRefined(?invocation).
+#endif /* #ifndef CachedMergeRefinedMacro */
+#endif /* #ifdef MergeRefinedMacro
+
+
+/**
+ * Super method invocations
+ */
+
+// REVIEW: indexing changed in the Doop->flow-sens revision,
+// so the optimization below should be re-examined.
+OptSuperMethodInvocationBase(?invocation, ?base) <-
+  Reachable(?inmethod),
+  Instruction:Method(?invocation, ?inmethod),
+  SuperMethodInvocation:Base(?invocation, ?base).
+
+#ifndef AdvancedMergeBasisMacro
+// Default behavior
+MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
+  OptSuperMethodInvocationBase(?invocation, ?base),
+  SuperMethodInvocation:Insn(?invocation),
+  MethodInvocation:Method[?invocation] = ?tomethod,
+  ThisVar[?tomethod] = ?this,
+  SiteShouldNotBeRefined(?invocation).
+#else /* there is advanced behavior available */
+
+AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  OptSuperMethodInvocationBase(?invocation, ?base).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  CachedMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  MethodInvocation:Method[?invocation] = ?tomethod,
+  SuperMethodInvocation:Insn(?invocation),
+  ThisVar[?tomethod] = ?this,
+  SiteShouldNotBeRefined(?invocation).
+#endif /* #ifndef AdvancedMergeBasisMacro */
+
+#ifdef MergeRefinedMacro
+#ifndef CachedMergeRefinedMacro
+// Default behavior
+MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  OptSuperMethodInvocationBase(?invocation, ?base),
+  MethodInvocation:Method[?invocation] = ?tomethod,
+  SuperMethodInvocation:Insn(?invocation),
+  ThisVar[?tomethod] = ?this,
+  SiteShouldBeRefined(?invocation).
+
+#else /* there is advanced behavior available */
+
+AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  OptSuperMethodInvocationBase(?invocation, ?base).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  CachedMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  MethodInvocation:Method[?invocation] = ?tomethod,
+  SuperMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldBeRefined(?invocation).
 #endif /* #ifndef CachedMergeRefinedMacro */

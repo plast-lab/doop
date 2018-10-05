@@ -508,6 +508,29 @@ _SpecialMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
    _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
 
+// Super method invocation
+
+lang:physical:storageModel[`_SuperMethodInvocation] = "DelimitedFile".
+lang:physical:filePath[`_SuperMethodInvocation] = "facts/SuperMethodInvocation.facts".
+lang:physical:delimiter[`_SuperMethodInvocation] = "\t".
+lang:physical:hasColumnNames[`_SuperMethodInvocation] = false.
+
+_SuperMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?signature),
+   string(?base),
+   string(?method).
+
++SuperMethodInvocation:Insn(?x),
++Instruction:Id(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++SuperMethodInvocation:Base[?x] = ?base,
++MethodInvocation:Method[?x] = ?signature <-
+   _SuperMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+
+
 // Virtual method invocation
 
 lang:physical:storageModel[`_VirtualMethodInvocation] = "DelimitedFile".
