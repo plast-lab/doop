@@ -8,6 +8,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
+import org.clyze.utils.Helper;
 import org.clyze.utils.JHelper;
 import org.xmlpull.v1.XmlPullParserException;
 import soot.Scene;
@@ -45,7 +46,16 @@ public class Main {
     }
 
     private static void produceFacts(SootParameters sootParameters) throws Exception {
-        Options.v().set_output_dir(sootParameters.getOutputDir());
+        String outDir = sootParameters.getOutputDir();
+
+        try {
+            Helper.tryInitLogging("DEBUG", outDir + File.separator + "logs", true);
+        } catch (IOException ex) {
+            System.err.println("Warning: could not initialize logging");
+            throw new DoopErrorCodeException(18);
+        }
+
+        Options.v().set_output_dir(outDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
 
         if (sootParameters._ignoreWrongStaticness)
