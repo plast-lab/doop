@@ -20,36 +20,3 @@ BoolConstant(?instr, ?var, to_number(?value), ?meth) :-
     AssignNumConstant_Id(?instr, ?value),
     _Var_Type(?var, ?type),
     Type_boolean(?type).
-
-//.decl VarIsConstant(?instruction:symbol, ?variable:symbol, ?method:symbol)
-//.output VarIsConstant
-//
-//// Target variable is a constant, in case of num constant assignment
-//VarIsConstant(?instr, ?var, ?meth) :-
-//    _Var_Type(?var, ?type),
-//    (Type_int(?type) ; Type_byte(?type)),
-//    isAssignIntConstant_Insn(?instr),
-//    Instruction_Method(?instr, ?meth),
-//    AssignInstruction_To(?instr, ?var).
-//
-//// Target variable is a constant in case of of unary operation assignment
-//// if the right operand is a num constant
-//VarIsConstant(?instr, ?var, ?meth) :-
-//    _Var_Type(?var, ?type),
-//    (Type_int(?type) ; Type_byte(?type)),
-//    _AssignUnop(?instr, _, ?var, ?meth),
-//    _AssignOperFrom(?instr, _, ?var1),
-//    VarIsConstant(_, ?var1, ?meth).
-//
-//// Target variable is a constant in case of a binary operation assignment
-//// if both of the right operands are num constants
-//VarIsConstant(?instr, ?var, ?meth) :-
-//    _Var_Type(?var, ?type),
-//    (Type_int(?type) ; Type_byte(?type)),
-//    _AssignBinop(?instr, _, ?var, ?meth),
-//    _AssignOperFrom(?instr, ?pos1, ?right_oper1),
-//    _AssignOperFrom(?instr, ?pos2, ?right_oper2),
-//    ?pos1 < ?pos2,
-//    VarIsConstant(_, ?right_oper1, ?meth),
-//    VarIsConstant(_, ?right_oper2, ?meth).
-//

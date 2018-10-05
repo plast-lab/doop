@@ -553,6 +553,9 @@ class FactWriter extends JavaFactWriter {
         if (condStmt instanceof ConditionExpr) {
             ConditionExpr condition = (ConditionExpr) condStmt;
 
+            Local dummy = new JimpleLocal("tmp" + insn, BooleanType.v());
+            _db.add(DUMMY_IF_VAR, insn, _rep.local(m, dummy));
+
             if (condition instanceof EqExpr)
                 _db.add(OPERATOR_AT, insn, "==");
             else if (condition instanceof NeExpr)
@@ -567,13 +570,14 @@ class FactWriter extends JavaFactWriter {
                 _db.add(OPERATOR_AT, insn, "<");
 
 
+            // TODO: create table entry for constants (?)
             if (condition.getOp1() instanceof Local) {
                 Local op1 = (Local) condition.getOp1();
-                _db.add(IF_VAR, insn, _rep.local(m, op1));
+                _db.add(IF_VAR, insn, "1", _rep.local(m, op1));
             }
             if (condition.getOp2() instanceof Local) {
                 Local op2 = (Local) condition.getOp2();
-                _db.add(IF_VAR, insn, _rep.local(m, op2));
+                _db.add(IF_VAR, insn, "2", _rep.local(m, op2));
             }
         }
     }

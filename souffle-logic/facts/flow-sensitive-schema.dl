@@ -252,7 +252,8 @@
 
 //-----------------------------------------------------------------------------
 
-.decl If_Var(?insn:If_Insn, ?var:Var)
+.decl DummyIf_Var(?insn:If_Insn, ?Var:Var)
+.decl If_Var(?insn:If_Insn, ?pos:number, ?var:Var)
 .decl Throw_Var(?insn:Throw_Insn, ?var:Var)
 .decl Goto_Target(?insn:Goto_Insn, ?index:number)
 .decl If_Target(?insn:If_Insn, ?index:number)

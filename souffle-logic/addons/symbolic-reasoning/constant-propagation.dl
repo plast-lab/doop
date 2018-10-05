@@ -1,62 +1,114 @@
-.decl ConstantPropagation(?instruction:symbol, ?variable:symbol, ?value:number, ?method:symbol)
-.output ConstantPropagation
+.decl IntConstPropagation(?instruction:symbol, ?variable:symbol, ?value:number, ?method:symbol)
+.output IntConstPropagation
 
-ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+// Constant Propagation for primitive integers
+
+IntConstPropagation(?instr, ?var, ?value, ?meth) :-
     IntConstant(?instr, ?var, ?value, ?meth).
 
-ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+IntConstPropagation(?instr, ?var, ?value, ?meth) :-
     _AssignUnop(?instr, _, ?var, ?meth),
     _AssignOperFrom(?instr, _, ?var1),
-    ConstantPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
     _OperatorAt(?instr, "-"),
     ?value = - ?value1.
 
-ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+IntConstPropagation(?instr, ?var, ?value, ?meth) :-
     _AssignBinop(?instr, _, ?var, ?meth),
     _AssignOperFrom(?instr, ?pos1, ?right_oper1),
     _AssignOperFrom(?instr, ?pos2, ?right_oper2),
     ?pos1 < ?pos2,
-    ConstantPropagation(_, ?right_oper1, ?value1, ?meth),
-    ConstantPropagation(_, ?right_oper2, ?value2, ?meth),
+    IntConstPropagation(_, ?right_oper1, ?value1, ?meth),
+    IntConstPropagation(_, ?right_oper2, ?value2, ?meth),
     _OperatorAt(?instr, "+"),
     ?value = ?value1 + ?value2.
 
-ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+IntConstPropagation(?instr, ?var, ?value, ?meth) :-
     _AssignBinop(?instr, _, ?var, ?meth),
     _AssignOperFrom(?instr, ?pos1, ?right_oper1),
     _AssignOperFrom(?instr, ?pos2, ?right_oper2),
     ?pos1 < ?pos2,
-    ConstantPropagation(_, ?right_oper1, ?value1, ?meth),
-    ConstantPropagation(_, ?right_oper2, ?value2, ?meth),
+    IntConstPropagation(_, ?right_oper1, ?value1, ?meth),
+    IntConstPropagation(_, ?right_oper2, ?value2, ?meth),
     _OperatorAt(?instr, "*"),
     ?value = ?value1 * ?value2.
 
-ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+IntConstPropagation(?instr, ?var, ?value, ?meth) :-
     _AssignBinop(?instr, _, ?var, ?meth),
     _AssignOperFrom(?instr, ?pos1, ?right_oper1),
     _AssignOperFrom(?instr, ?pos2, ?right_oper2),
     ?pos1 < ?pos2,
-    ConstantPropagation(_, ?right_oper1, ?value1, ?meth),
-    ConstantPropagation(_, ?right_oper2, ?value2, ?meth),
+    IntConstPropagation(_, ?right_oper1, ?value1, ?meth),
+    IntConstPropagation(_, ?right_oper2, ?value2, ?meth),
     _OperatorAt(?instr, "-"),
     ?value = ?value1 - ?value2.
 
-ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+IntConstPropagation(?instr, ?var, ?value, ?meth) :-
     _AssignBinop(?instr, _, ?var, ?meth),
     _AssignOperFrom(?instr, ?pos1, ?right_oper1),
     _AssignOperFrom(?instr, ?pos2, ?right_oper2),
     ?pos1 < ?pos2,
-    ConstantPropagation(_, ?right_oper1, ?value1, ?meth),
-    ConstantPropagation(_, ?right_oper2, ?value2, ?meth),
+    IntConstPropagation(_, ?right_oper1, ?value1, ?meth),
+    IntConstPropagation(_, ?right_oper2, ?value2, ?meth),
     _OperatorAt(?instr, "/"),
     ?value = ?value1 / ?value2.
 
-ConstantPropagation(?instr, ?var, ?value, ?meth) :-
+IntConstPropagation(?instr, ?var, ?value, ?meth) :-
     _AssignBinop(?instr, _, ?var, ?meth),
     _AssignOperFrom(?instr, ?pos1, ?right_oper1),
     _AssignOperFrom(?instr, ?pos2, ?right_oper2),
     ?pos1 < ?pos2,
-    ConstantPropagation(_, ?right_oper1, ?value1, ?meth),
-    ConstantPropagation(_, ?right_oper2, ?value2, ?meth),
+    IntConstPropagation(_, ?right_oper1, ?value1, ?meth),
+    IntConstPropagation(_, ?right_oper2, ?value2, ?meth),
     _OperatorAt(?instr, "%"),
     ?value = ?value1 % ?value2.
+
+.decl BoolConstPropagation(?instruction:symbol, ?variable:symbol, ?value:number, ?method:symbol)
+.output BoolConstPropagation
+
+// Constant propagation for primitive boolean
+// TODO: Propagation of conditionals (introduce a dummy if-var target
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    BoolConstant(?instr, ?var, ?value, ?meth).
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    _AssignUnop(?instr, _, ?var, ?meth),
+    _AssignOperFrom(?instr, _, ?var1),
+    BoolConstPropagation(_, ?var1, ?value1, ?meth),
+    _OperatorAt(?instr, "-"),
+    ?value1 > 0,
+    ?value = 0.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    _AssignUnop(?instr, _, ?var, ?meth),
+    _AssignOperFrom(?instr, _, ?var1),
+    BoolConstPropagation(_, ?var1, ?value1, ?meth),
+    _OperatorAt(?instr, "-"),
+    ?value1 < 1,
+    ?value = 1.
+
+// Error while compiling the analysis, because of the following operators
+//
+//BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+//    _AssignBinop(?instr, _, ?var, ?meth),
+//    _AssignOperFrom(?instr, ?pos1, ?right_oper1),
+//    _AssignOperFrom(?instr, ?pos2, ?right_oper2),
+//    ?pos1 < ?pos2,
+//    BoolConstPropagation(_, ?right_oper1, ?value1, ?meth),
+//    BoolConstant(?instr, ?right_oper1, ?value1, ?meth),
+//    BoolConstPropagation(_, ?right_oper2, ?value2, ?meth),
+//    BoolConstant(?instr, ?right_oper2, ?value2, ?meth),
+//    _OperatorAt(?instr, "+"),
+//    ?value = ?value1 & ?value2.
+//
+//BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+//    _AssignBinop(?instr, _, ?var, ?meth),
+//    _AssignOperFrom(?instr, ?pos1, ?right_oper1),
+//    _AssignOperFrom(?instr, ?pos2, ?right_oper2),
+//    ?pos1 < ?pos2,
+//    BoolConstPropagation(_, ?right_oper1, ?value1, ?meth),
+//    BoolConstant(?instr, ?right_oper1, ?value1, ?meth),
+//    BoolConstPropagation(_, ?right_oper2, ?value2, ?meth),
+//    BoolConstant(?instr, ?right_oper2, ?value2, ?meth),
+//    _OperatorAt(?instr, "*"),
+//    ?value = ?value1 | ?value2.

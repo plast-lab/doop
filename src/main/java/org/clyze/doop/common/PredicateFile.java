@@ -106,6 +106,7 @@ public enum PredicateFile
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
     CLASS_ARTIFACT("Class-Artifact"),
     SPECIAL_CONTEXT_SENSITIVITY_METHOD("SpecialContextSensitivityMethod"),
+    DUMMY_IF_VAR("DummyIfVar"),
     OPERATOR_AT("OperatorAt");
 
     private final String name;

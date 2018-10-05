@@ -171,12 +171,19 @@ AssignOper_From(?instruction, ?pos, ?from) :-
 
 // IfVar
 
-.decl _IfVar(?instruction:symbol, ?var:symbol)
+.decl _IfVar(?instruction:symbol, ?pos:number, ?var:symbol)
 .input _IfVar(IO="file", filename="IfVar.facts", delimiter="\t")
 
-If_Var(?instruction, ?var) :-
-  _IfVar(?instruction, ?var).
+If_Var(?instruction, ?pos, ?var) :-
+  _IfVar(?instruction, ?pos, ?var).
 
+// DummyIfVar
+
+.decl _DummyIfVar(?instruction:symbol, ?var:symbol)
+.input _DummyIfVar(IO="file", filename="DummyIfVar.facts", delimiter="\t")
+
+DummyIf_Var(?instruction, ?var) :-
+    _DummyIfVar(?instruction, ?var).
 
 // AssignCast
 
