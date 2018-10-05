@@ -61,6 +61,7 @@
 .decl Function_DeclaredInFile(?function:Function, ?file:File)
 
 .decl FormalParam(?index:number, ?paramName:symbol, ?function:Function, ?var:Var)
+.decl FormalParam_DefaultValFrom(?function:Function,?paramName:symbol, ?from:Var)
 
 .decl ThisVar(?function:Function, ?var:Var)
 

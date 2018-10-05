@@ -77,6 +77,28 @@ FormalParam( 0, "dtype", "<tensorflow.placeholder>", "<tensorflow.placeholder>/m
 FormalParam( 1, "shape", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam2").
 FormalParam( 2, "name", "<tensorflow.placeholder>",  "<tensorflow.placeholder>/mockParam3").
 
+ModeledFunction("<tensorflow.layers.conv2d>", "conv2d", "<tensorflow.layers>").
+FormalParam( 0, "inputs", "<tensorflow.layers.conv2d>", "<tensorflow.layers.conv2d>/mockParam1").
+FormalParam( 1, "filters", "<tensorflow.layers.conv2d>", "<tensorflow.layers.conv2d>/mockParam2").
+FormalParam( 2, "kernel_size", "<tensorflow.layers.conv2d>",  "<tensorflow.layers.conv2d>/mockParam3").
+FormalParam( 3, "strides", "<tensorflow.layers.conv2d>",  "<tensorflow.layers.conv2d>/mockParam4").
+FormalParam( 4, "padding", "<tensorflow.layers.conv2d>",  "<tensorflow.layers.conv2d>/mockParam5").
+FormalParam( 5, "data_format", "<tensorflow.layers.conv2d>",  "<tensorflow.layers.conv2d>/mockParam6").
+FormalParam( 6, "dilation_rate", "<tensorflow.layers.conv2d>",  "<tensorflow.layers.conv2d>/mockParam7").
+
+isListOfIntConsts("<tensorflow.layers>/new list/0").
+ConstListDimensions("<tensorflow.layers>/new list/0",2).
+ConstListContents("<tensorflow.layers>/new list/0", 0, "<num-constant(int):1>").
+ConstListContents("<tensorflow.layers>/new list/0", 1, "<num-constant(int):1>").
+
+FormalParam_DefaultValFrom("<tensorflow.layers.conv2d>", "strides", "<tensorflow.layers>/stridesDefValVar").
+VarPointsTo("<tensorflow.layers>/stridesDefValVar", "<tensorflow.layers>/new list/0").
+VarPointsToList("<tensorflow.layers>/stridesDefValVar", "<tensorflow.layers>/new list/0").
+
+FormalParam_DefaultValFrom("<tensorflow.layers.conv2d>", "dilation_rate", "<tensorflow.layers>/dilationRateDefValVar").
+VarPointsTo("<tensorflow.layers>/dilationRateDefValVar", "<tensorflow.layers>/new list/0").
+VarPointsToList("<tensorflow.layers>/dilationRateDefValVar", "<tensorflow.layers>/new list/0").
+
 
 .decl TensorHasConcreteDimensions(?tensorVal:Value)
 .output TensorHasConcreteDimensions
@@ -297,3 +319,32 @@ Value_Type(?outVal, "<tensorflow.Tensor>"):-
   TensorReshapeInvocationProducesOutput_Value(?insn, ?tensorArgVal, ?dimListArgVal, ?outVal),
   AssignInstruction_To(?insn, ?var),
   TensorHasConcreteDimensions(?tensorArgVal).
+
+
+//------------------------------------------------------
+//              CONVOLUTION LAYER OP
+//------------------------------------------------------
+
+#define LayersConvValue(op,fun,val1, val2, val3, val4, val5) cat("<tensor ", cat(fun, cat("/", cat(op, cat(val1, cat("+", cat(val2, cat("+", cat(val3, cat("+", cat(val4, cat("+", cat(val5,">")))))))))))))
+
+.decl TfLayersConv2dValue(?insn:FunctionInvocation_Insn, ?newVal:Value)
+.output TfLayersConv2dValue
+
+.decl TfLayersConv2dValue_NameToVal(?insn:FunctionInvocation_Insn, ?newVal:Value, ?name:symbol, ?valForName:Value)
+.output TfLayersConv2dValue_NameToVal
+
+TfLayersConv2dValue_NameToVal(?insn, ?newVal, "inputs", ?inputsTensorArgVal),
+TfLayersConv2dValue_NameToVal(?insn, ?newVal, "filters", ?filtersArgVal),
+TfLayersConv2dValue_NameToVal(?insn, ?newVal, "kernel_size", ?kernelSizeArgVal),
+TfLayersConv2dValue_NameToVal(?insn, ?newVal, "strides", ?stridesArgVal),
+TfLayersConv2dValue_NameToVal(?insn, ?newVal, "dilation_rate", ?dilationRateArgVal),
+TfLayersConv2dValue(?insn, ?newVal):-
+  FunctionInvResolvesTo(?insn, ?baseVal, "<tensorflow.layers.conv2d>"),
+  ResolvedActualParams(?insn, ?baseVal, 0, "inputs", ?inputsTensorArgVal),
+  ResolvedActualParams(?insn, ?baseVal, 1, "filters", ?filtersArgVal),
+  ResolvedActualParams(?insn, ?baseVal, 2, "kernel_size", ?kernelSizeArgVal),
+  ResolvedActualParams(?insn, ?baseVal, 3, "strides", ?stridesArgVal),
+  ResolvedActualParams(?insn, ?baseVal, 6, "dilation_rate", ?dilationRateArgVal),
+  Instruction_Function(?insn, ?function),
+  ?newVal = LayersConvValue("conv2d", ?function, ?inputsTensorArgVal, ?filtersArgVal, ?kernelSizeArgVal, ?stridesArgVal, ?dilationRateArgVal).
+

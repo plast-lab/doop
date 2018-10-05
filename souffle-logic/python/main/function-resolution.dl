@@ -19,3 +19,14 @@ ResolvedActualParams(?insn, ?baseValue, ?paramIndex, ?paramName, ?paramValue):-
     ActualKeywordParam(_, ?insn, ?paramName, ?actualParamVar)
   ),
   VarPointsTo(?actualParamVar, ?paramValue).
+
+VarPointsTo(?var, ?paramValue),
+ResolvedActualParams(?insn, ?baseValue, ?paramIndex, ?paramName, ?paramValue):-
+  FunctionInvResolvesTo(?insn, ?baseValue, ?function),
+  FormalParam(?paramIndex, ?paramName, ?function, ?var),
+  !(
+    ActualPositionalParam(?paramIndex, ?insn, _);
+    ActualKeywordParam(_, ?insn, ?paramName, _)
+  ),
+  FormalParam_DefaultValFrom(?function, ?paramName, ?defaultParamVar),
+  VarPointsTo(?defaultParamVar, ?paramValue).
