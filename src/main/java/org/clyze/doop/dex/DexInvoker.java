@@ -31,7 +31,7 @@ class DexInvoker {
             Helper.tryInitLogging("DEBUG", outDir + File.separator + "logs", true);
         } catch (IOException ex) {
             System.err.println("Warning: could not initialize logging");
-            throw new DoopErrorCodeException(15);
+            throw new DoopErrorCodeException(18);
         }
 
         Log logger = LogFactory.getLog(DexInvoker.class);
@@ -89,7 +89,7 @@ class DexInvoker {
             cha.conclude(db, writer, dexParams.printPhantoms());
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new DoopErrorCodeException(5, ex);
+            throw new DoopErrorCodeException(17, ex);
         }
     }
 }
