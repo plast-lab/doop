@@ -1,5 +1,60 @@
 // Facts used for optimization
 
+/*** Method removal ***/
+
+// Output for dead method removal.
+.decl MethodToRemove(?method:Method)
+MethodToRemove(?method) :-
+  ApplicationMethod(?method),
+  !mainAnalysis.ReachableContext(_, ?method),
+//  !Method_Modifier("abstract", ?method),
+  !Method_Modifier("native", ?method),
+  (basic.MethodOverridesOther(?method, _);
+   !basic.MethodOverridesOther(_, ?method)).
+   // don't throw away root methods that may be needed for dispatch of overriding methods.
+.output MethodToRemove
+
+.decl ClassOfDeadMethod(?method:Method, ?class:ClassType)
+ClassOfDeadMethod(?method, ?class) :-
+  MethodToRemove(?method),
+  Method_DeclaringType(?method, ?class).
+
+.decl _RelevantStringPosition(?className: symbol, ?pos:number)
+_RelevantStringPosition(?className, ?pos) :-
+  ClassNameWithSlashes(_, ?className),
+  mainAnalysis._StringIterationTrick(?pos), ?pos < strlen(?className).
+
+// N^2 computation, but it doesn't matter since its application is so limited
+.decl ClassNameWithSlashes(?className:ClassType, ?classNameWithSlash:symbol)
+ClassNameWithSlashes(?className, ?className) :-
+  ClassOfDeadMethod(_, ?className).
+ClassNameWithSlashes(?className, ?classNameTransformed) :-
+  ClassNameWithSlashes(?className, ?classNameOther),
+  _RelevantStringPosition(?className, ?pos),
+  substr(?classNameOther, ?pos, 1) = ".",
+  substr(?classNameOther, 0, ?pos) = ?prefix,
+  !contains(".", ?prefix),
+  substr(?classNameOther, ?pos+1, strlen(?className)-?pos-1) = ?suffix,
+  ?classNameTransformed = cat(?prefix, cat("/", ?suffix)).
+
+.decl ClassNameWithOnlySlashes(?className:ClassType, ?classNameTransformed:symbol)
+ClassNameWithOnlySlashes(?className, ?classNameTransformed) :-
+  ClassNameWithSlashes(?className, ?classNameTransformed),
+  !contains(".", ?classNameTransformed).
+
+.decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol, ?method:symbol)
+DeadMethodWithJVMDescriptor(?jvmFullName, ?method) :-
+  ClassOfDeadMethod(?method, ?class),
+  ClassNameWithOnlySlashes(?class, ?className),
+  Method_JVMDescriptor(?method, ?sig),
+  Method_SimpleName(?method, ?simplename),
+  ?jvmFullName = cat("L", cat(?className, cat(";:", cat(?simplename, ?sig)))).
+
+#define FILENAME_EXPECTED_BY_OPT_PASS "methods_to_remove.csv"
+.output DeadMethodWithJVMDescriptor(IO="file", filename=FILENAME_EXPECTED_BY_OPT_PASS, delimiter="\t")
+
+/*** Devirtualization ***/
+
 .decl InvocationTarget_Count(?invocation:MethodInvocation, ?n:number)
 
 InvocationTarget_Count(?invocation, ?n) :-
@@ -31,6 +86,8 @@ ReachableMethodOnlyUsedInSingleInvocationTarget(?method) :-
   !MultiInvocationTarget(_, ?method).
 
 .output ReachableMethodOnlyUsedInSingleInvocationTarget
+
+/*** Inlining ***/
 
 .decl Method_Size(?method:Method, ?size:number)
 
