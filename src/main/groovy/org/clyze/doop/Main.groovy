@@ -25,8 +25,23 @@ class Main {
 	// Allow access to the analysis object from external code
 	static DoopAnalysis analysis
 
-	static void main(String[] args) {
+	public static void main(String[] args) {
+		try {
+			main2(args)
+		} catch (e) {
+			CommandLineAnalysisFactory.createCliBuilder().usage()
+		}
+	}
 
+	/**
+	 * Entry point when using Doop as a library.
+	 *
+	 * @param args					   the command line arguments that
+	 *								   Doop should receive
+	 * @throws DoopErrorCodeException  an exception with an error code
+	 *								   that identifies points of failure
+	 */
+	static void main2(String[] args) throws DoopErrorCodeException {
 		Doop.initDoopFromEnv()
 		try {
 			Helper.tryInitLogging("INFO", "${Doop.doopHome}/build/logs", true)
@@ -69,27 +84,20 @@ class Main {
 			}
 
 			String userTimeout
-			try {
-				if (cli['p']) {
-					//create analysis from the properties file & the cli options
-					def file = cli['p'] as String
-					def f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
-					def propsBaseDir = f.absoluteFile.parentFile
-					def props = FileOps.loadProperties(f)
+			if (cli['p']) {
+				//create analysis from the properties file & the cli options
+				def file = cli['p'] as String
+				def f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
+				def propsBaseDir = f.absoluteFile.parentFile
+				def props = FileOps.loadProperties(f)
 
-					changeLogLevel(cli['L'] ?: props.getProperty("level"))
-					userTimeout = cli['t'] ?: props.getProperty("timeout")
-					analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
-				} else {
-					changeLogLevel(cli['L'])
-					userTimeout = cli['t']
-					analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
-				}
-			} catch (e) {
-				e = StackTraceUtils.deepSanitize e
-				log.error(e.message, e)
-				clidBuilder.usage()
-				return
+				changeLogLevel(cli['L'] ?: props.getProperty("level"))
+				userTimeout = cli['t'] ?: props.getProperty("timeout")
+				analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
+			} else {
+				changeLogLevel(cli['L'])
+				userTimeout = cli['t']
+				analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
 			}
 
 			analysis.options.BLOX_OPTS.value = bloxOptions
@@ -118,9 +126,15 @@ class Main {
 				executorService.shutdownNow()
 			}
 		} catch (e) {
-			e = (e.cause ?: e)
-			e = StackTraceUtils.deepSanitize e
-			log.error(e.message, e)
+			if (e instanceof DoopErrorCodeException) {
+				log.error(e.message)
+				log.debug(e.message, e)
+			} else {
+				e = (e.cause ?: e)
+				e = StackTraceUtils.deepSanitize e
+				log.error(e.message, e)
+			}
+			throw e
 		}
 	}
 

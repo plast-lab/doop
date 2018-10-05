@@ -7,7 +7,7 @@ public class DoopErrorCodeException extends Exception {
     private final int errorCode;
 
     public DoopErrorCodeException(int errorCode, Throwable original) {
-        super("Doop exception with error code " + errorCode, original);
+        super("Doop error " + errorCode, original);
         this.errorCode = errorCode;
     }
 
@@ -17,5 +17,11 @@ public class DoopErrorCodeException extends Exception {
 
     public int getErrorCode() {
         return errorCode;
+    }
+
+    @Override
+    public String getMessage() {
+        Throwable t = getCause();
+        return (t == null) ? super.getMessage() : super.getMessage() + ": " + t.getMessage();
     }
 }
