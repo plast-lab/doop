@@ -19,17 +19,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	void init() {}
 
 	@Override
-	List<AnalysisOption> supportedOptions() { calcSupportedOptions() }
+	List<AnalysisOption> supportedOptions() { SUPPORTED_OPTIONS }
 
 	@Override
-	Map<String, AnalysisOption> supportedOptionsAsMap() { calcSupportedOptions().collectEntries { [(it.id): it] } }
+	Map<String, AnalysisOption> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
 
-	/**
-	 * Calculates the options supported by Doop. This needs Doop to be
-	 * initialized first (e.g., to find analysis names).
-	 */
-	private static List<AnalysisOption> calcSupportedOptions() {
-		[
+	private static List<AnalysisOption> SUPPORTED_OPTIONS = [
 			/* Start Main options */
 			new AnalysisOption<String>(
 					id: "USER_SUPPLIED_ID",
@@ -776,8 +771,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "REFINE",
 					cli: false
 			),
-		]
-	}
+	]
 
 	private static List<String> analysesFor(String path, String fileToLookFor) {
 		if (!path) {
