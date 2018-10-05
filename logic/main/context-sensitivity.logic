@@ -122,8 +122,6 @@ ReachableAssignContextInsensitiveHeapAllocation(?var, ?ctx, ?heap) <-
 /**
  * Null assignments
  */
-
-
 VarPointsTo(?hctx, ?null, ?toCtx, ?to) <-
    ImmutableHContextFromContext[?toCtx] = ?hctx,
    AssignNull(?to, ?inmethod),
@@ -184,39 +182,65 @@ OptAssignCast(?type, ?to, ?from) <-
 
 
 /**
- * Load instance fields
+ * Load/Store instance fields
  */
+
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) <-
+  LoadInstanceField(?base, ?sig, ?to, _),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
+  StoreInstanceField(?from, ?base, ?signature, _),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+#ifndef FEATHERWEIGHT_ANALYSIS
+HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) <-
+  LoadHeapInstanceField(?ctxTo, ?to, ?signature, ?basehctx, ?basevalue),
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctxFrom, ?from).
+// !Value:Null(?basevalue).
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
+  HeapInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  NotSpecialObject(?value).
+
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-
-LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) <-
-  OptLoadInstanceField(?to, ?sig, ?base),
-  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
-
-OptLoadInstanceField(?to, ?sig, ?base) <-
-  LoadInstanceField(?base, ?sig, ?to, _).
-
-/**
- * Store instance fields
- */
+#else
+// FEATHERWEIGHT_ANALYSIS
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+#endif
 
 #ifndef FEATHERWEIGHT_ANALYSIS
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   NotSpecialObject(?value).
+// !Value:Null(?basevalue).
+#else
+NoInformationOnSignature(?signature) <-
+ isField(?signature),
+ !DynamicInstanceFieldPointsTo(?signature, _, _, _, _).
+
+ConstructorVar(?var) <-
+  Var_DeclaringMethod(?var, ?meth),
+  ApplicationMethod(?meth),
+  ClassConstructor(?meth, _).
+
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  ConstructorVar(?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  NoInformationOnSignature(?signature),
+  Value:byDynamicHeap(_, ?value),
+  NotSpecialObject(?value),
+  !Value:Null(?basevalue).
 #endif
-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <- InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
-StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
-  Value:Null[] != ?basevalue,
-  OptStoreInstanceField(?from, ?signature, ?base),
-  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
-
-OptStoreInstanceField(?from, ?signature, ?base) <-
-  StoreInstanceField(?from, ?base, ?signature, _).
-
+ 
 /**
  * Load static fields
  */
