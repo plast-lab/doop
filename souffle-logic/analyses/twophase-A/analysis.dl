@@ -258,4 +258,6 @@ SpecialContextSensitivityMethodConstraintViolated(?method) :-
   !isMethod(?method).
 
 .printsize SpecialContextSensitivityMethodConstraintViolated
+
+#include "../../main/common-rules.dl"
 }

@@ -68,4 +68,25 @@
       isImmutableContext(?ctx).
   #endif
 
+  ImmutableContextFromHContext(?hctx, ?ctx) :-
+    isImmutableContext(?ctx),
+    isHContext(?hctx).
+
+  ImmutableHContextFromContext(?ctx, ?hctx) :-
+    isImmutableHContext(?hctx),
+    isContext(?ctx).
+
+  ImmutableContextFromContext(?ctx1, ?ctx2) :-
+    isImmutableContext(?ctx2),
+    isContext(?ctx1).
+
+  CompatibleHContexts(?hctx1, ?hctx2) :-
+    isHContext(?hctx1),
+    isHContext(?hctx2). 
+
+  CompatibleContextAndHContext(?ctx, ?hctx) :-
+    isContext(?ctx),
+    isHContext(?hctx).
+
+#include "../../main/common-rules.dl"
 }

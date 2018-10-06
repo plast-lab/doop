@@ -13,7 +13,6 @@ configuration.RecordContextRequest(?callerCtx, ?heapValue, ?formal) :-
   ?register = "<java.lang.ref.Finalizer: void register(java.lang.Object)>",
   isMethod(?register),
   FormalParam(0, ?register, ?formal).
-      
 
 isHContext(?newHCtx),
 VarPointsTo(?newHCtx, ?heapValue, ?newCtx, ?formal) :-

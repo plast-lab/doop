@@ -2,6 +2,7 @@
 
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
+
 #define UNIQUE_HCONTEXT "<<unique-hcontext>>"
 
 .comp OneCallSiteSensitiveConfiguration : AbstractConfiguration {
@@ -55,4 +56,6 @@
   .decl StartupInvocation(?invocation:MethodInvocation)
 
   StartupInvocation("<<jvm-startup-context>>").
+
+#include "../../main/common-rules.dl"
 }

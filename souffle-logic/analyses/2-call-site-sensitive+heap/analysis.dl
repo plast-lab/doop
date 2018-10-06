@@ -64,4 +64,6 @@
   StartupInvocation(?startupInvocation) :-
     ?startupInvocation = "<<jvm-startup-context>>",
     isMethodInvocation(?startupInvocation).
+
+#include "../../main/common-rules.dl"
 }

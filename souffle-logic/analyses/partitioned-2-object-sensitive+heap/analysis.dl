@@ -3,8 +3,8 @@
 #include "partitioning.dl"
 
 .comp PartitionedTwoObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
-  .type Context  = [ partition: Partition, value1:mainAnalysis.Value, value2:mainAnalysis.Value ]
-  .type HContext = [ partition: Partition, value:mainAnalysis.Value ]
+  .type Context  = [ partition: Partition, value1: mainAnalysis.Value, value2: mainAnalysis.Value ]
+  .type HContext = [ partition: Partition, value: mainAnalysis.Value ]
 
   .decl PartitionForValue(value: mainAnalysis.Value, partition: Partition)
   .decl ValueInAllPartitions(value: mainAnalysis.Value)
@@ -18,46 +18,66 @@
   .decl MatchingMethodForInvocationAndType(type: Type, invocation: Instruction, method: Method)
   .decl ValidCtxVar(ctx: Context, var: Var)
   .decl CollapsedVarPointsTo(hctx: HContext, heap: mainAnalysis.Value, ctx: Context, var: Var)
-  .output CollapsedVarPointsTo
+  
   // horrible indexing, but there will only be a handful of such contexts
   ImmutableContextFromHContext(hctx, ctx) :-
     isHContext(hctx),
     isImmutableContext(ctx),
-    hctx = [partition, hctxVal],
-    ctx = [partition, ctxVal1, ctxVal2],
+    hctx = [partitionId, hctxVal],
+    ctx = [partitionId, ctxVal1, ctxVal2],
     ctxVal1 = ctxVal1,
     ctxVal2 = ctxVal2,
     hctxVal = hctxVal.
+  .output ImmutableContextFromHContext
 
   ImmutableContextFromContext(ctx1, ctx2) :-
     isContext(ctx1),
     isImmutableContext(ctx2),
-    ctx1 = [partition, ctx1Val1, ctx1Val2],
-    ctx2 = [partition, ctx2Val1, ctx2Val2],
+    ctx1 = [partitionId, ctx1Val1, ctx1Val2],
+    ctx2 = [partitionId, ctx2Val1, ctx2Val2],
     ctx1Val1 = ctx1Val1,
     ctx1Val2 = ctx1Val2,
     ctx2Val1 = ctx2Val1,
     ctx2Val2 = ctx2Val2.
+  .output ImmutableContextFromContext
 
   ImmutableHContextFromContext(ctx, hctx) :-
     isContext(ctx),
     isImmutableHContext(hctx),
-    ctx = [partition, ctxVal1, ctxVal2],
-    hctx = [partition, hctxVal],
+    ctx = [partitionId, ctxVal1, ctxVal2],
+    hctx = [partitionId, hctxVal],
     ctxVal1 = ctxVal1,
     ctxVal2 = ctxVal2,
     hctxVal = hctxVal.
+  .output ImmutableHContextFromContext
+
+  CompatibleHContexts(hctx1, hctx2) :-
+    isHContext(hctx1),
+    isHContext(hctx2),
+    hctx1 = [partition, hctxv1],
+    hctx2 = [partition, hctxv2],
+    hctxv1 = hctxv1,
+    hctxv2 = hctxv2.
+
+  CompatibleContextAndHContext(ctx, hctx) :-
+    isContext(ctx),
+    isHContext(hctx),
+    ctx = [partition, ctxv1, ctxv2],
+    hctx = [partition, hctxv],
+    ctxv1 = ctxv1,
+    ctxv2 = ctxv2,
+    hctxv = hctxv.
 
   // Merge optimization hack
 
-  MatchingMethodForInvocationAndType(type, invocation, tomethod) :-
-    basic.ResolveInvocation(type, invocation, tomethod).
+  // MatchingMethodForInvocationAndType(type, invocation, tomethod) :-
+  //   basic.ResolveInvocation(type, invocation, tomethod).
 
-  MatchingMethodForInvocationAndType(type, invocation, tomethod) :-
-    SpecialMethodInvocation_Base(invocation, base),
-    MethodInvocation_Method(invocation, tomethod),
-    Var_Type(base, basetype),
-    basic.SubtypeOf(type, basetype).
+  // MatchingMethodForInvocationAndType(type, invocation, tomethod) :-
+  //   SpecialMethodInvocation_Base(invocation, base),
+  //   MethodInvocation_Method(invocation, tomethod),
+  //   Var_Type(base, basetype),
+  //   basic.SubtypeOf(type, basetype).
 
   PartitionForValue(value, partitionId) :-
     mainAnalysis.Value_Type(value, valueClass),
@@ -92,35 +112,34 @@
     Method_DeclaringType(method, type),
     TypeInAllPartitions(type).
 
-  PartitionForResolvedInvocation(type, invo, partitionId) :-
-    MatchingMethodForInvocationAndType(type, invo, tomethod),
-    Method_DeclaringType(tomethod, toclass),
-    TypeToPartitionId(toclass, partitionId).
+  // PartitionForResolvedInvocation(type, invo, partitionId) :-
+  //   MatchingMethodForInvocationAndType(type, invo, tomethod),
+  //   Method_DeclaringType(tomethod, toclass),
+  //   TypeToPartitionId(toclass, partitionId).
 
   /// Base the decision on the partition of the target method
-  isContext(calleeCtx),
   ContextResponse(callerCtx, hctx, invo, value, calleeCtx) :-
-    ContextRequest(callerCtx, hctx, invo, value, _),
+    ContextRequest(callerCtx, hctx, invo, value, tomethod),
     mainAnalysis.Value_Type(value, valuetype),
-      (TypeInAllPartitions(valuetype) ;
-      (PartitionForResolvedInvocation(valuetype, invo, partition),
-       PartitionForInvocation(invo, partition))),
-    hctx = [__partition, __value1],
-    calleeCtx = [__partition, __value1, value].
+    ((PartitionForMethod(tomethod, partition),
+      PartitionForInvocation(invo, partition));
+      TypeInAllPartitions(valuetype)),
+    hctx = [partition, hctxValue],
+    calleeCtx = [partition, hctxValue, value].
 
   ContextResponse(callerCtx, hctx, invo,value, calleeCtx) :-
-    ContextRequest(callerCtx, hctx, invo, value, _),
+    ContextRequest(callerCtx, hctx, invo, value, tomethod),
     mainAnalysis.Value_Type(value, valuetype),
-    !(PartitionForResolvedInvocation(valuetype, invo, _)),
+    !(PartitionForMethod(tomethod, _)),
     !TypeInAllPartitions(valuetype),
     ImmutableContextFromHContext(hctx, calleeCtx).
 
   ContextResponse(callerCtx, hctx, invo, value, calleeCtx) :-
-    ContextRequest(callerCtx, hctx, invo, value, _),
+    ContextRequest(callerCtx, hctx, invo, value, tomethod),
     mainAnalysis.Value_Type(value, valuetype),
-    PartitionForResolvedInvocation(valuetype, invo, partId),
-    ((!PartitionForInvocation(invo, partId)) ;
-     (!PartitionForInvocation(invo, _))),
+    PartitionForMethod(tomethod, partId),
+    (!PartitionForInvocation(invo, partId) ;
+     !PartitionForInvocation(invo, _)),
     !TypeInAllPartitions(valuetype),
     ImmutableContextFromHContext(hctx, calleeCtx).
 
@@ -129,8 +148,8 @@
     StaticContextRequest(callerCtx, invo),
     MethodInvocation_Method(invo, tomethod),
     ((PartitionForMethod(tomethod, partition),
-    PartitionForInvocation(invo, partition));
-    MethodInAllPartitions(tomethod)),
+      PartitionForInvocation(invo, partition));
+      MethodInAllPartitions(tomethod)),
     calleeCtx = callerCtx.
 
   StaticContextResponse(callerCtx, invo, calleeCtx) :-
@@ -143,29 +162,29 @@
   StaticContextResponse(callerCtx, invo, calleeCtx) :-
     StaticContextRequest(callerCtx, invo),
     MethodInvocation_Method(invo, tomethod),
-    ((PartitionForMethod(tomethod, topartition),
-     PartitionForInvocation(invo, invopartition),
-     topartition != invopartition) ;
-    !(PartitionForInvocation(invo, _))),
+    ((PartitionForMethod(tomethod, targetpartition),
+      PartitionForInvocation(invo, invopartition),
+      targetpartition != invopartition);
+      !PartitionForInvocation(invo, _)),
     !MethodInAllPartitions(tomethod),
-    ImmutableContextFromContext(callerCtx, calleeCtx).
+    ImmutableContextFromContext(callerCtx, calleeCtx).      
 
   ThreadStartContextResponse(callerCtx, hctx, value, newCtx) :-
     ThreadStartContextRequest(callerCtx, hctx, value),
     hctx = [partition, hctxValue],
     newCtx = [partition, hctxValue, value].
-
+        
   StartupContextResponse(hctx, value, newCtx) :-
     StartupContextRequest(hctx, value),
     hctx = [partition, hctxValue],
     newCtx = [partition, hctxValue, value].
-
+        
   FinalizerRegisterContextResponse(callerCtx, inmethod, value, newCtx) :-
     FinalizerRegisterContextRequest(callerCtx, inmethod, value),
     callerCtx = [partition, callerCtxValue1, callerCtxValue2],
     newCtx = [partition, callerCtxValue2, value],
     callerCtxValue1 = callerCtxValue1.
-
+       
   InitContextResponse(value, ctx) :-
     InitContextRequest(value),
     isPartition(partition),
@@ -178,7 +197,6 @@
 
 
   // What are the necessary parameters for this analysis
-  isHContext(hctx),
   RecordContextResponse(ctx, value, var, hctx) :-
     RecordContextRequest(ctx, value,var),
     ctx = [partition, ctxv1, ctxv2],
@@ -187,29 +205,63 @@
     hctx = [partition, ctxv2],
     ctxv1 = ctxv1.
 
-  isHContext(hctx),
   RecordContextResponse(ctx, value, var, hctx) :-
     RecordContextRequest(ctx, value, var),
-    PartitionForValue(value, partId),
-    ctx = [partId2, ctxv1, ctxv2],
-    partId != partId2,
+    PartitionForValue(value, partitionId1),
+    ctx = [partitionId2, ctxv1, ctxv2],
+    partitionId1 != partitionId2,
     NotValueInAllPartitions(value),
     ImmutableHContextFromContext(ctx, hctx),
     ctxv1 = ctxv1,
     ctxv2 = ctxv2.
-
+  
   // Post-processing
  ValidCtxVar(ctx, var) :-
-    mainAnalysis.ReachableContext(ctx, meth),
-    Method_DeclaringType(meth, intype),
-    Var_DeclaringMethod(var,meth),
-    ((!TypeToPartitionId(intype, _));
-     (TypeToPartitionId(intype, partition),
-      ctx = [partition, ctxv1, ctxv2],
-      ctxv1 = ctxv1,
-      ctxv2 = ctxv2)).
-
+   mainAnalysis.ReachableContext(ctx, meth),
+   Method_DeclaringType(meth, intype),
+   Var_DeclaringMethod(var, meth),
+   (!TypeToPartitionId(intype, _);
+     TypeToPartitionId(intype, partition),
+     ctx = [partition, ctxv1, ctxv2],
+     ctxv1 = ctxv1,
+     ctxv2 = ctxv2).
+  
   CollapsedVarPointsTo(hctx, heap, ctx, var) :-
     mainAnalysis.VarPointsTo(hctx, heap, ctx, var),
     ValidCtxVar(ctx, var).
+// .output isContext
+// .output isHContext
+// .output isImmutableContext
+// .output isImmutableHContext
+
+// .decl VerbatimContext(partition: Partition, value1: mainAnalysis.Value, value2: mainAnalysis.Value)
+// .output VerbatimContext
+
+// VerbatimContext(partition, value1, value2) :-
+//   isContext(ctx),
+//   ctx = [partition, value1, value2].
+
+// .decl VerbatimHContext(partition: Partition, value: mainAnalysis.Value)
+// .output VerbatimHContext
+
+// VerbatimHContext(partition, value) :-
+//    isHContext(hctx),
+//    hctx = [partition, value].
+
+// .decl VerbatimImmutableContext(partition: Partition, value1: mainAnalysis.Value, value2: mainAnalysis.Value)
+// .output VerbatimImmutableContext
+
+// VerbatimImmutableContext(partition, value1, value2) :-
+//    isContext(ctx),
+//    isImmutableContext(ctx),
+//    ctx = [partition, value1, value2].
+
+// .decl VerbatimImmutableHContext(partition: Partition, value: mainAnalysis.Value)
+// .output VerbatimImmutableHContext
+
+// VerbatimImmutableHContext(partition, value) :-
+//    isHContext(hctx),
+//    isImmutableHContext(hctx),
+//    hctx = [partition, value].
+
 }

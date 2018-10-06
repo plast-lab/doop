@@ -1,3 +1,4 @@
+
 VarPointsTo(?hctx, ?argArray, ?ctx, ?args),
 ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
    ImmutableHContextFromContext(?ctx, ?hctx),

@@ -57,4 +57,6 @@
   InitHContextResponse(?value, ?hctx) :-
      InitHContextRequest(?value),
      ?hctx = ["Java.lang.String", ?value].
+
+#include "../../main/common-rules.dl"
 }

@@ -1,28 +1,5 @@
-/**
- * Elegance hacks, using macros: instead of burdening all normal
- * analyses, provide default definitions for the common cases.
- */
-
-#ifndef MULTIPLE_SEGREGATED_ANALYSES
-ImmutableContextFromHContext(?hctx, ?ctx) :-
-  isImmutableContext(?ctx),
-  isHContext(?hctx).
-
-ImmutableHContextFromContext(?ctx, ?hctx) :-
-  isImmutableHContext(?hctx),
-  isContext(?ctx).
-
-ImmutableContextFromContext(?ctx1, ?ctx2) :-
-  isImmutableContext(?ctx2),
-  isContext(?ctx1).
-#endif // MULTIPLE_SEGREGATED_ANALYSES
-
-#ifndef CompatibleContextAndHContextMacro
-#define CompatibleContextAndHContextMacro(ctx, hctx) ctx = ctx, hctx = hctx
-#endif
-#ifndef CompatibleHContextsMacro
-#define CompatibleHContextsMacro(hctx1, hctx2) hctx1 = hctx1, hctx2 = hctx2
-#endif
+.decl CompatibleHContexts(?hctx1:configuration.HContext, ?hctx2:configuration.HContext)
+.decl CompatibleContextAndHContext(?ctx: configuration.Context, ?hctx:configuration.HContext)
 
 #include "init.dl"
 
@@ -58,6 +35,7 @@ VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
 /**
  * Null assignments
  */
+
 VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
    Reachable(?inmethod),  // optimization purposes
    AssignNull(?to, ?inmethod),
@@ -84,6 +62,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
 
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
+
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   AssignLocal(?from, ?to, _).
@@ -146,9 +125,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 #endif
 
-/**
- * Store instance fields
- */
 #ifndef FEATHERWEIGHT_ANALYSIS
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
@@ -158,10 +134,6 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
  .plan 1:(2,1,3), 2:(3,2,1)
 
 #else
-// FEATHERWEIGHT_ANALYSIS
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
 .decl NoInformationOnSignature(?signature: Field)
 .output NoInformationOnSignature
@@ -215,9 +187,10 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   StaticFieldPointsTo(?hctx, ?value, ?sig),
   LoadStaticField(?sig, ?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  CompatibleContextAndHContextMacro(?ctx, ?hctx).
+  CompatibleContextAndHContext(?ctx, ?hctx).
+
 #ifndef X_CONTEXT_REMOVER
-  .plan 1:(3,2,1)
+  .plan 1:(3,4,2,1)
 #endif
 
 /**
