@@ -28,7 +28,6 @@ ImmutableHContextFromContext[?ctx] = ?hctx <-
 
 ImmutableContextFromContext[?ctx1] = ?ctx2 <-
   ImmutableContext(?ctx2), Context(?ctx1).
-#endif // MULTIPLE_SEGREGATED_ANALYSES
 
 #ifndef CompatibleContextAndHContextMacro
 #define CompatibleContextAndHContextMacro(ctx, hctx) ctx = ctx, hctx = hctx
@@ -36,7 +35,7 @@ ImmutableContextFromContext[?ctx1] = ?ctx2 <-
 #ifndef CompatibleHContextsMacro
 #define CompatibleHContextsMacro(hctx1, hctx2) hctx1 = hctx1, hctx2 = hctx2
 #endif
-
+#endif // MULTIPLE_SEGREGATED_ANALYSES
 
 #include "main.logic"
 
