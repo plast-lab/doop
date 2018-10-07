@@ -87,6 +87,163 @@ BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
     ?value1 < 1,
     ?value = 1.
 
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, "<"),
+    ?value1 < ?value2,
+    ?value = 1.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, "<"),
+    ?value1 >= ?value2,
+    ?value = 0.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, ">"),
+    ?value1 > ?value2,
+    ?value = 1.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, ">"),
+    ?value1 <= ?value2,
+    ?value = 0.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, ">="),
+    ?value1 >= ?value2,
+    ?value = 1.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, ">="),
+    ?value1 < ?value2,
+    ?value = 0.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, "<="),
+    ?value1 <= ?value2,
+    ?value = 1.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, "<="),
+    ?value1 > ?value2,
+    ?value = 0.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, "!="),
+    ?value1 != ?value2,
+    ?value = 1.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, "!="),
+    ?value1 = ?value2,
+    ?value = 0.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, "=="),
+    ?value1 = ?value2,
+    ?value = 1.
+
+BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
+    isIf_Insn(?instr),
+    Instruction_Method(?instr, ?meth),
+    DummyIf_Var(?instr, ?var),
+    If_Var(?instr, ?pos1, ?var1),
+    If_Var(?instr, ?pos2, ?var2),
+    ?pos1 < ?pos2,
+    IntConstPropagation(_, ?var1, ?value1, ?meth),
+    IntConstPropagation(_, ?var2, ?value2, ?meth),
+    _OperatorAt(?instr, "=="),
+    ?value1 != ?value2,
+    ?value = 0.
+
+
 // Error while compiling the analysis, because of the following operators
 //
 //BoolConstPropagation(?instr, ?var, ?value, ?meth) :-
