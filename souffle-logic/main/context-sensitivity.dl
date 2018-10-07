@@ -30,7 +30,7 @@ VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
   AssignContextInsensitiveHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx).
-  .plan 1:(4,3,2,1), 2:(4,3,1,2)
+  .plan 1:(4,3,2,1)
 
 /**
  * Null assignments
@@ -42,7 +42,6 @@ VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
    Value_Null(?null),
    ReachableContext(?toCtx, ?inmethod),
    ImmutableHContextFromContext(?toCtx, ?hctx).
-   .plan 2:(5,4,1,2,3)
 
 /**
  * Assignment of numeric constant. Currently context-insensitive and
@@ -58,7 +57,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
    AssignInstruction_To(?insn, ?to),
    Value_Num(?value, ?const),
    ImmutableHContextFromContext(?toCtx, ?hctx).
-   .plan 1:(6,1,2,3,4,5)
+   //.plan 1:(6,1,2,3,4,5)
 
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo

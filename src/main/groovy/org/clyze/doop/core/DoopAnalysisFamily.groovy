@@ -166,7 +166,16 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "special-cs-methods",
 					argName: "FILE",
 					description: "Use a file that specifies special context sensitivity for some methods",
-					forPreprocessor: true
+					forCacheID: true,
+					changesFacts: true
+			),
+			new AnalysisOption<String>(
+					id: "USER_DEFINED_PARTITIONS",
+					name: "user-defined-partitions",
+					argName: "FILE",
+					description: "Use a file that specifies the partitions of the analyzed program",
+					forCacheID: true,
+					changesFacts: true
 			),
 			new BooleanAnalysisOption(
 					id: "SANITY",
