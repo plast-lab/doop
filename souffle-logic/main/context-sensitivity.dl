@@ -1,5 +1,46 @@
-.decl CompatibleHContexts(?hctx1:configuration.HContext, ?hctx2:configuration.HContext)
-.decl CompatibleContextAndHContext(?ctx: configuration.Context, ?hctx:configuration.HContext)
+/**
+ * Elegance hacks, using macros: instead of burdening all normal
+ * analyses, provide default definitions for the common cases.
+ */
+
+#ifndef MULTIPLE_SEGREGATED_ANALYSES
+ImmutableContextFromHContext(?hctx, ?ctx) :-
+  isImmutableContext(?ctx),
+  isHContext(?hctx).
+
+ImmutableHContextFromContext(?ctx, ?hctx) :-
+  isImmutableHContext(?hctx),
+  isContext(?ctx).
+
+ImmutableContextFromContext(?ctx1, ?ctx2) :-
+  isImmutableContext(?ctx2),
+  isContext(?ctx1).
+
+#ifndef CompatibleContextAndHContextMacro
+#define CompatibleContextAndHContextMacro(ctx, hctx) ctx = ctx, hctx = hctx
+#endif
+#ifndef CompatibleHContextsMacro
+#define CompatibleHContextsMacro(hctx1, hctx2) hctx1 = hctx1, hctx2 = hctx2
+#endif
+#else
+#define CompatibleHContextsMacro(hctx1, hctx2) \
+  isHContext(hctx1), \
+  isHContext(hctx2), \
+  hctx1 = [partition, hctxv1], \
+  hctx2 = [partition, hctxv2], \
+  hctxv1 = hctxv1, \
+  hctxv2 = hctxv2
+
+#define CompatibleContextAndHContextMacro(ctx, hctx) \
+  isContext(ctx), \
+  isHContext(hctx), \
+  ctx = [partition, ctxv1, ctxv2], \
+  hctx = [partition, hctxv], \
+  ctxv1 = ctxv1, \
+  ctxv2 = ctxv2, \
+  hctxv = hctxv
+#endif // MULTIPLE_SEGREGATED_ANALYSES
+
 
 #include "init.dl"
 
@@ -30,7 +71,7 @@ VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
   AssignContextInsensitiveHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx).
-  .plan 1:(4,3,2,1)
+  .plan 1:(4,3,2,1), 2:(4,3,1,2)
 
 /**
  * Null assignments
@@ -57,7 +98,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
    AssignInstruction_To(?insn, ?to),
    Value_Num(?value, ?const),
    ImmutableHContextFromContext(?toCtx, ?hctx).
-   //.plan 1:(6,1,2,3,4,5)
+   .plan 1:(6,1,2,3,4,5)
 
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
@@ -186,10 +227,14 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   StaticFieldPointsTo(?hctx, ?value, ?sig),
   LoadStaticField(?sig, ?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  CompatibleContextAndHContext(?ctx, ?hctx).
+  CompatibleContextAndHContextMacro(?ctx, ?hctx).
 
 #ifndef X_CONTEXT_REMOVER
-  .plan 1:(3,4,2,1)
+#ifndef MULTIPLE_SEGREGATED_ANALYSES
+  .plan 1:(3,2,1)
+#else
+  .plan 1:(3,5,4,2,1)
+#endif
 #endif
 
 /**

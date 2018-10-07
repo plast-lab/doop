@@ -306,5 +306,5 @@ VPTCountPerVar(?var, Y) :- isVar(?var), Y =  count : preAnalysis.VarPointsTo(_, 
 // MethodToRefine(?method) :-
 //    OutFlowDirectTwoValues(?method).            
 
-#include "../../main/common-rules.dl"
+
 }

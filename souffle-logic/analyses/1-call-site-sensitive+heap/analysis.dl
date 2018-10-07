@@ -53,5 +53,5 @@
 
   StartupInvocation("<<jvm-startup-context>>").
 
-#include "../../main/common-rules.dl"
+
 }

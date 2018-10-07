@@ -181,5 +181,5 @@ NoSensitivityViolation(?method) :-
 .printsize ContextInsensitiveMethod
 .output ContextInsensitiveMethod
 
-#include "../../main/common-rules.dl"
+
 }

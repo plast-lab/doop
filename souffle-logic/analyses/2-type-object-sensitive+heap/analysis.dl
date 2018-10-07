@@ -61,5 +61,5 @@ InitHContextResponse(?value, ?ctx) :-
   InitHContextRequest(?value),
   ?ctx = [?value].
 
-#include "../../main/common-rules.dl"
+
 }

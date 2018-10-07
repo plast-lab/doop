@@ -83,5 +83,5 @@ DynamicContextToHContext(?hctx, ?dctx) :-
    isImmutableHContext(?hctx).
 #endif
 
-#include "../../main/common-rules.dl"
+
 }

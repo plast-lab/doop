@@ -94,5 +94,5 @@ InitHContextResponse(?s, ?hctx) :-
     isImmutableHContext(?hctx).
 #endif
 
-#include "../../main/common-rules.dl"
+
 }

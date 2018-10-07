@@ -177,6 +177,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true,
 					changesFacts: true
 			),
+            new BooleanAnalysisOption(
+                    id: "MULTIPLE_SEGREGATED_ANALYSES",
+                    name: "multiple-segregated-analyses",
+                    forPreprocessor: true,
+                    cli: false
+            ),
 			new BooleanAnalysisOption(
 					id: "SANITY",
 					name: "sanity",

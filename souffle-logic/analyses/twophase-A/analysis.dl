@@ -259,5 +259,5 @@ SpecialContextSensitivityMethodConstraintViolated(?method) :-
 
 .printsize SpecialContextSensitivityMethodConstraintViolated
 
-#include "../../main/common-rules.dl"
+
 }

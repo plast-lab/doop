@@ -57,5 +57,5 @@
     InitHContextRequest(?value),
     ?hctx = [?value, ?value].
 
-#include "../../main/common-rules.dl"
+
 }

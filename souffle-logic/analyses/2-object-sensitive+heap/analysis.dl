@@ -84,6 +84,4 @@
     !DynamicContextHeap1(_, ?dynCtx),
     isImmutableHContext(?hctx).
 #endif
-
-#include "../../main/common-rules.dl"
 }

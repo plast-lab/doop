@@ -73,5 +73,5 @@ DynamicContextToContext(?ctx, ?dynCtx) :-
    isImmutableContext(?ctx).
 #endif
 
-#include "../../main/common-rules.dl"
+
 }

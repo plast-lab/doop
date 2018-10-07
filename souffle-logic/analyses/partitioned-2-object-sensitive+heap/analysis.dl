@@ -4,6 +4,31 @@
 
 .type Partition
 
+.decl ValidCtxVar(ctx: mainAnalysis.configuration.Context, var: Var)
+.decl CollapsedVarPointsTo(hctx: mainAnalysis.configuration.HContext, heap: mainAnalysis.Value, ctx: mainAnalysis.configuration.Context, var: Var)
+.decl isPartition(partition: Partition)
+
+// Post-processing
+ValidCtxVar(ctx, var) :-
+  mainAnalysis.ReachableContext(ctx, meth),
+  Method_DeclaringType(meth, intype),
+  Var_DeclaringMethod(var,meth),
+  ((!TypeToPartitionId(intype, _));
+   (TypeToPartitionId(intype, partition),
+    ctx = [partition, ctxv1, ctxv2],
+    ctxv1 = ctxv1,
+    ctxv2 = ctxv2)).
+
+CollapsedVarPointsTo(hctx, heap, ctx, var) :-
+  mainAnalysis.VarPointsTo(hctx, heap, ctx, var),
+  ValidCtxVar(ctx, var).
+
+.decl TypeToPartitionId(type: Type, id: Partition)
+.input TypeToPartitionId(IO="file", filename="TypeToPartitionId.facts", delimiter=",")
+
+isPartition(?partition) :-
+  TypeToPartitionId(_, ?partition).
+
 .comp PartitionedTwoObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
 
   .type Context  = [ partition: Partition, value1:mainAnalysis.Value, value2:mainAnalysis.Value ]
@@ -19,11 +44,8 @@
   .decl MethodInAllPartitions(method: Method)
   .decl PartitionForResolvedInvocation(type: Type, invo: Instruction, partition: Partition)
   .decl MatchingMethodForInvocationAndType(type: Type, invocation: Instruction, method: Method)
-  .decl ValidCtxVar(ctx: Context, var: Var)
-  .decl CollapsedVarPointsTo(hctx: HContext, heap: mainAnalysis.Value, ctx: Context, var: Var)
-  .decl isPartition(partition: Partition)
 
-  .output CollapsedVarPointsTo
+
   // horrible indexing, but there will only be a handful of such contexts
   ImmutableContextFromHContext(hctx, ctx) :-
     isHContext(hctx),
@@ -52,23 +74,6 @@
     ctxVal1 = ctxVal1,
     ctxVal2 = ctxVal2,
     hctxVal = hctxVal.
-
-  CompatibleHContexts(hctx1, hctx2) :-
-      isHContext(hctx1),
-      isHContext(hctx2),
-      hctx1 = [partition, hctxv1],
-      hctx2 = [partition, hctxv2],
-      hctxv1 = hctxv1,
-      hctxv2 = hctxv2.
-
-  CompatibleContextAndHContext(ctx, hctx) :-
-      isContext(ctx),
-      isHContext(hctx),
-      ctx = [partition, ctxv1, ctxv2],
-      hctx = [partition, hctxv],
-      ctxv1 = ctxv1,
-      ctxv2 = ctxv2,
-      hctxv = hctxv.
 
   // Merge optimization hack
 
@@ -219,25 +224,4 @@
     ImmutableHContextFromContext(ctx, hctx),
     ctxv1 = ctxv1,
     ctxv2 = ctxv2.
-
-  // Post-processing
- ValidCtxVar(ctx, var) :-
-    mainAnalysis.ReachableContext(ctx, meth),
-    Method_DeclaringType(meth, intype),
-    Var_DeclaringMethod(var,meth),
-    ((!TypeToPartitionId(intype, _));
-     (TypeToPartitionId(intype, partition),
-      ctx = [partition, ctxv1, ctxv2],
-      ctxv1 = ctxv1,
-      ctxv2 = ctxv2)).
-
-  CollapsedVarPointsTo(hctx, heap, ctx, var) :-
-    mainAnalysis.VarPointsTo(hctx, heap, ctx, var),
-    ValidCtxVar(ctx, var).
-
-  .decl TypeToPartitionId(type: Type, id: Partition)
-  .input TypeToPartitionId(IO="file", filename="TypeToPartitionId.facts", delimiter=",")
-
-  isPartition(?partition) :-
-    TypeToPartitionId(_, ?partition).
 }
