@@ -19,6 +19,8 @@
   // from heap allocations that share the same string value.
   .decl Value_Num(?value:NumConstantValue, ?const:NumConstant)
 
+  .decl Value_String(?value:Value, ?str:StringConstant)
+
   //.decl Value_isNonHeap(?value:Value)
 
   .decl Value_Type(?value:Value, ?type:Type)
@@ -111,7 +113,7 @@
     ?type != "object",
     isClassType(?type).
 
-
+  Value_String(?val, ?str),
   VarPointsTo(?var, ?val):-
     AssignHeapAllocation_Heap(?insn, ?str),
     isStringConstant(?str),
