@@ -206,6 +206,7 @@ test {
     testLogging {
         exceptionFormat = 'full'
     }
+    environment.DOOP_HOME = projectDir
 }
 
 task fullClean {
