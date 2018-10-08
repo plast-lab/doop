@@ -12,7 +12,7 @@ AnyMethodInvocation(?invocation, ?tomethod) <-
 
 AnyMethodInvocationOpt(?tomethod, ?invocation) <- AnyMethodInvocation(?invocation, ?tomethod).
 
-VarUse(?from, ?insn) <- AssignOper:From(?insn, ?from).
+VarUse(?from, ?insn) <- AssignOper:From(?insn, _, ?from).
 
 VarIsTaintedFromVar(?type, ?ctx, ?var, ?ctx, ?var) -> Type(?type), Context(?ctx), Var(?var), Context(?ctx), Var(?var).
 

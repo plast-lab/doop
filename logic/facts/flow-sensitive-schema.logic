@@ -264,8 +264,8 @@ BreakpointStmt(?insn)                  -> UnsupportedInstruction(?insn).
 //-----------------------------------------------------------------------------
 
 
-If:Var(?insn, ?var) ->
-   If:Insn(?insn), Var(?var).
+If:Var(?insn, ?pos, ?var) ->
+   If:Insn(?insn), int[32](?pos), Var(?var).
 
 Throw:Var[?insn] = ?var ->
    Throw:Insn(?insn), Var(?var).
@@ -417,8 +417,8 @@ AssignInstanceOf:Type[?insn] = ?type ->
    AssignInstanceOf:Insn(?insn), Type(?type).
 
 // Assign expression vars
-AssignOper:From(?insn, ?from) ->
-   AssignOper:Insn(?insn), Var(?from).
+AssignOper:From(?insn, ?pos, ?from) ->
+   AssignOper:Insn(?insn), int[32](?pos), Var(?from).
 
 AssignOper:Type(?insn, ?type) ->
    AssignOper:Insn(?insn), string(?type).

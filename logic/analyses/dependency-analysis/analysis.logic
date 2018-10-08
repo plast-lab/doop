@@ -94,7 +94,7 @@ InstructionUsesVar(?instruction, ?var) <-
     AssignOper:From(?instruction, ?var) ;
     AssignCast:From[?instruction] = ?var ;
     AssignInstanceOf:From[?instruction] = ?var ;
-    If:Var(?instruction, ?var) ;
+    If:Var(?instruction, _, ?var) ;
     VirtualMethodInvocation:Base[?instruction] = ?var ;
     Switch:Key[?instruction] = ?var ;
     ActualParam[_, ?instruction] = ?var ;
