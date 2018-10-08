@@ -25,6 +25,7 @@ class Doop {
 	static String doopHome
 	static String doopOut
 	static String doopCache
+	static String doopLog
 	static String souffleAnalysesCache
 	static String logicPath
 	static String souffleLogicPath
@@ -43,13 +44,14 @@ class Doop {
 	 * @param cachePath The doop cache directory (sets the doopCache variable, optional, defaults to 'cache' under doopHome).
 	 * @return The doop home directory.
 	 */
-	static void initDoop(String homePath, String outPath, String cachePath) {
+	static void initDoop(String homePath, String outPath, String cachePath, String logPath) {
 		doopHome = homePath
 		if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
 		FileOps.findDirOrThrow(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
 
 		doopOut = outPath ?: "$doopHome/out"
 		doopCache = cachePath ?: "$doopHome/cache"
+		doopLog = logPath ?: "$doopHome/build/logs"
 		souffleAnalysesCache = "$doopCache/souffle-analyses"
 		logicPath = "$doopHome/logic"
 		souffleLogicPath = "$doopHome/souffle-logic"
@@ -61,7 +63,7 @@ class Doop {
 		souffleAnalysesPath = "$souffleLogicPath/analyses"
 		soufflePythonPath = "$souffleLogicPath/python"
 
-		[doopOut, doopCache, souffleAnalysesCache].each {
+		[doopOut, doopCache, doopLog, souffleAnalysesCache].each {
 			def f = new File(it)
 			f.mkdirs()
 			FileOps.findDirOrThrow(f, "Could not create directory: $it")
@@ -72,7 +74,7 @@ class Doop {
 	 * Initializes Doop using the default environment variables.
 	 */
 	static void initDoopFromEnv() {
-		Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"))
+		Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"), System.getenv("DOOP_LOG"))
 	}
 
 	/**

@@ -14,6 +14,7 @@ For trouble-free configuration:
 * The `DOOP_PLATFORMS_LIB` environment variable could point to your PLATFORM lib directory (optional, see below).
 * The `DOOP_OUT` environment variable could point to the output files directory (optional, defaults to `out`).
 * The `DOOP_CACHE` environment variable could point to the cached facts directory (optional, defaults to `cache`).
+* The `DOOP_LOG` environment variable could point to a log output directory (optional, defaults to `build/logs`).
 * The `LOGICBLOX_HOME` environment variable **should** point to the `logicblox` directory of the engine, if you want to use LogicBlox.
 
 

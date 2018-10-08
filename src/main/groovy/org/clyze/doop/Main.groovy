@@ -44,7 +44,7 @@ class Main {
 	static void main2(String[] args) throws DoopErrorCodeException {
 		Doop.initDoopFromEnv()
 		try {
-			Helper.tryInitLogging("INFO", "${Doop.doopHome}/build/logs", true)
+			Helper.tryInitLogging("INFO", Doop.doopLog, true)
 		} catch (IOException ex) {
 			System.err.println("Warning: could not initialize logging")
 			throw new DoopErrorCodeException(15)
