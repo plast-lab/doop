@@ -1,5 +1,3 @@
-#define MULTIPLE_SEGREGATED_ANALYSES 
-
 // For this analysis, every heap context recorded on allocation
 // corresponds to the most significant element of the calling
 // context of the allocator method.

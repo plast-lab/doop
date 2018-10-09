@@ -106,7 +106,7 @@ public enum PredicateFile
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
     CLASS_ARTIFACT("Class-Artifact"),
     SPECIAL_CONTEXT_SENSITIVITY_METHOD("SpecialContextSensitivityMethod"),
-    TYPE_TO_PARTITION_ID("TypeToPartitionId"),
+    TYPE_TO_PARTITION("TypeToPartition"),
     DUMMY_IF_VAR("DummyIfVar"),
     OPERATOR_AT("OperatorAt");
 

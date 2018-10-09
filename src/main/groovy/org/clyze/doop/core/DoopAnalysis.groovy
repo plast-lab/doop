@@ -260,7 +260,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 		if (options.USER_DEFINED_PARTITIONS.value) {
 			File origPartitionsFile = new File(options.USER_DEFINED_PARTITIONS.value.toString())
-			File destPartitionsFile = new File(factsDir, "TypeToPartitionId.facts")
+			File destPartitionsFile = new File(factsDir, "TypeToPartition.facts")
 			Files.copy(origPartitionsFile.toPath(), destPartitionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
 		}
 

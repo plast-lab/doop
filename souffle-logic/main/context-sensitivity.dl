@@ -233,7 +233,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 #ifndef MULTIPLE_SEGREGATED_ANALYSES
   .plan 1:(3,2,1)
 #else
-  .plan 1:(3,5,4,2,1)
+  .plan 1:(3,4,5,2,1)
 #endif
 #endif
 

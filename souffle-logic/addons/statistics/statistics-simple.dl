@@ -3,7 +3,7 @@
 // collapse for analyses that simultaneously compute multiple results
 // and need to combine them.
 #ifdef MULTIPLE_SEGREGATED_ANALYSES
-#define VarPointsTo(hctx, heap, ctx, var) CollapsedVarPointsTo(hctx, heap, ctx, var)
+#define VarPointsTo(hctx, heap, ctx, var) mainAnalysis.configuration.CollapsedVarPointsTo(hctx, heap, ctx, var)
 #endif // MULTIPLE_SEGREGATED_ANALYSES
 
 #include "statistics-output.dl"

@@ -174,6 +174,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "user-defined-partitions",
 					argName: "FILE",
 					description: "Use a file that specifies the partitions of the analyzed program",
+					forPreprocessor: true,
 					forCacheID: true,
 					changesFacts: true
 			),
