@@ -99,6 +99,14 @@ FormalParam_DefaultValFrom("<tensorflow.layers.conv2d>", "dilation_rate", "<tens
 VarPointsTo("<tensorflow.layers>/dilationRateDefValVar", "<tensorflow.layers>/new list/0").
 VarPointsToList("<tensorflow.layers>/dilationRateDefValVar", "<tensorflow.layers>/new list/0").
 
+FormalParam_DefaultValFrom("<tensorflow.layers.conv2d>", "data_format", "<tensorflow.layers>/dataFormatDefValVar").
+VarPointsTo("<tensorflow.layers>/dataFormatDefValVar", "<string constant:channels_last>").
+Value_String("<string constant:channels_last>" ,"channels_last").
+
+FormalParam_DefaultValFrom("<tensorflow.layers.conv2d>", "padding", "<tensorflow.layers>/paddingDefValVar").
+VarPointsTo("<tensorflow.layers>/paddingDefValVar", "<string constant:valid>").
+Value_String("<string constant:valid>" ,"valid").
+
 
 .decl TensorHasConcreteDimensions(?tensorVal:Value)
 .output TensorHasConcreteDimensions
@@ -325,26 +333,203 @@ Value_Type(?outVal, "<tensorflow.Tensor>"):-
 //              CONVOLUTION LAYER OP
 //------------------------------------------------------
 
-#define LayersConvValue(op,fun,val1, val2, val3, val4, val5) cat("<tensor ", cat(fun, cat("/", cat(op, cat(val1, cat("+", cat(val2, cat("+", cat(val3, cat("+", cat(val4, cat("+", cat(val5,">")))))))))))))
+#define LayersConvValue(op,fun,val1, val2, val3, val4, val5, val6) cat("<tensor ", cat(fun, cat("/", cat(op, cat(val1, cat("+", cat(val2, cat("+", cat(val3, cat("+", cat(val4, cat("+", cat(val5, cat("+", cat(val6,">")))))))))))))))
 
-.decl TfLayersConv2dValue(?insn:FunctionInvocation_Insn, ?newVal:Value)
-.output TfLayersConv2dValue
+.decl ConvOperation(?insn:FunctionInvocation_Insn, ?baseVal:Value, ?newVal:Value)
+.output ConvOperation
 
-.decl TfLayersConv2dValue_NameToVal(?insn:FunctionInvocation_Insn, ?newVal:Value, ?name:symbol, ?valForName:Value)
-.output TfLayersConv2dValue_NameToVal
+.decl ConvOperation_ProducesOutput(?insn:FunctionInvocation_Insn, ?newVal:Value)
+.output ConvOperation_ProducesOutput
 
-TfLayersConv2dValue_NameToVal(?insn, ?newVal, "inputs", ?inputsTensorArgVal),
-TfLayersConv2dValue_NameToVal(?insn, ?newVal, "filters", ?filtersArgVal),
-TfLayersConv2dValue_NameToVal(?insn, ?newVal, "kernel_size", ?kernelSizeArgVal),
-TfLayersConv2dValue_NameToVal(?insn, ?newVal, "strides", ?stridesArgVal),
-TfLayersConv2dValue_NameToVal(?insn, ?newVal, "dilation_rate", ?dilationRateArgVal),
-TfLayersConv2dValue(?insn, ?newVal):-
+.decl ConvOperation_AllDimsCanBeComputed(?insn:FunctionInvocation_Insn, ?newVal:Value)
+.output ConvOperation_AllDimsCanBeComputed
+
+.decl ConvOperation_NumOfDims(?insn:FunctionInvocation_Insn, ?newVal:Value, ?ndims:number)
+.output ConvOperation_NumOfDims
+
+.decl ConvOperation_ChannelsLast(?insn:FunctionInvocation_Insn, ?newVal:Value)
+.output ConvOperation_ChannelsLast
+
+.decl ConvOperation_DimResult(?insn:FunctionInvocation_Insn, ?newVal:Value, ?dim:number, ?dimRes:Value)
+.output ConvOperation_DimResult
+
+.decl ConvOperation_StridesForDim(?insn:FunctionInvocation_Insn, ?newVal:Value, ?dim:number, ?strideValForDim:Value)
+.output ConvOperation_StridesForDim
+
+.decl ConvOperation_KernelSizeForDim(?insn:FunctionInvocation_Insn, ?newVal:Value, ?dim:number, ?kernelSizeValForDim:Value)
+.output ConvOperation_KernelSizeForDim
+
+.decl ConvOperation_DillationRateForDim(?insn:FunctionInvocation_Insn, ?newVal:Value, ?dim:number, ?dillationRateValForDim:Value)
+.output ConvOperation_DillationRateForDim
+
+.decl ConvOperation_NameToVal(?insn:FunctionInvocation_Insn, ?newVal:Value, ?name:symbol, ?valForName:Value)
+.output ConvOperation_NameToVal
+
+ConvOperation_NameToVal(?insn, ?newVal, "inputs", ?inputsTensorArgVal),
+ConvOperation_NameToVal(?insn, ?newVal, "filters", ?filtersArgVal),
+ConvOperation_NameToVal(?insn, ?newVal, "kernel_size", ?kernelSizeArgVal),
+ConvOperation_NameToVal(?insn, ?newVal, "strides", ?stridesArgVal),
+ConvOperation_NameToVal(?insn, ?newVal, "data_format", ?dataFormatArgVal),
+ConvOperation_NameToVal(?insn, ?newVal, "dilation_rate", ?dilationRateArgVal),
+ConvOperation_NumOfDims(?insn, ?newVal, 2),
+ConvOperation(?insn, ?baseVal, ?newVal):-
   FunctionInvResolvesTo(?insn, ?baseVal, "<tensorflow.layers.conv2d>"),
   ResolvedActualParams(?insn, ?baseVal, 0, "inputs", ?inputsTensorArgVal),
   ResolvedActualParams(?insn, ?baseVal, 1, "filters", ?filtersArgVal),
   ResolvedActualParams(?insn, ?baseVal, 2, "kernel_size", ?kernelSizeArgVal),
   ResolvedActualParams(?insn, ?baseVal, 3, "strides", ?stridesArgVal),
+  ResolvedActualParams(?insn, ?baseVal, 5, "data_format", ?dataFormatArgVal),
   ResolvedActualParams(?insn, ?baseVal, 6, "dilation_rate", ?dilationRateArgVal),
   Instruction_Function(?insn, ?function),
-  ?newVal = LayersConvValue("conv2d", ?function, ?inputsTensorArgVal, ?filtersArgVal, ?kernelSizeArgVal, ?stridesArgVal, ?dilationRateArgVal).
+  ?newVal = LayersConvValue("conv2d", ?function, ?inputsTensorArgVal, ?filtersArgVal, ?kernelSizeArgVal, ?stridesArgVal, ?dataFormatArgVal, ?dilationRateArgVal).
 
+.decl PossibleDimNumber(?dim: number)
+PossibleDimNumber(1).
+PossibleDimNumber(2).
+PossibleDimNumber(3).
+
+ConvOperation_StridesForDim(?insn, ?newVal, ?dim, ?strideValForDim):-
+  ConvOperation_NumOfDims(?insn, ?newVal, ?numOfDims),
+  ?dim <= ?numOfDims,
+  PossibleDimNumber(?dim),
+  ConvOperation_NameToVal(?insn, ?newVal, "strides", ?stridesArgVal),
+  (
+    (
+        isListOfIntConsts(?stridesArgVal),
+        ConstListContents(?stridesArgVal, ?dim - 1, ?strideValForDim),
+        Value_Num(?strideValForDim, _)
+    );
+    (
+        ?strideValForDim = ?stridesArgVal,
+        Value_Num(?strideValForDim, _)
+    )
+  ).
+
+ConvOperation_KernelSizeForDim(?insn, ?newVal, ?dim, ?kernelSizeValForDim):-
+  ConvOperation_NumOfDims(?insn, ?newVal, ?numOfDims),
+  ?dim <= ?numOfDims,
+  PossibleDimNumber(?dim),
+  ConvOperation_NameToVal(?insn, ?newVal, "kernel_size", ?kernelSizeArgVal),
+  (
+    (
+        isListOfIntConsts(?kernelSizeArgVal),
+        ConstListContents(?kernelSizeArgVal, ?dim - 1, ?kernelSizeValForDim),
+        Value_Num(?kernelSizeValForDim, _)
+    );
+    (
+        ?kernelSizeValForDim = ?kernelSizeArgVal,
+        Value_Num(?kernelSizeValForDim, _)
+    )
+  ).
+
+ConvOperation_DillationRateForDim(?insn, ?newVal, ?dim, ?dillationRateValForDim):-
+  ConvOperation_NumOfDims(?insn, ?newVal, ?numOfDims),
+  ?dim <= ?numOfDims,
+  PossibleDimNumber(?dim),
+  ConvOperation_NameToVal(?insn, ?newVal, "dilation_rate", ?dilationRateArgVal),
+  (
+    (
+        isListOfIntConsts(?dilationRateArgVal),
+        ConstListContents(?dilationRateArgVal, ?dim - 1, ?dillationRateValForDim),
+        Value_Num(?dillationRateValForDim, _)
+    );
+    (
+        ?dillationRateValForDim = ?dilationRateArgVal,
+        Value_Num(?dillationRateValForDim, _)
+    )
+  ).
+
+ConvOperation_ChannelsLast(?insn, ?newVal):-
+    ConvOperation_NameToVal(?insn, ?newVal, "data_format", "channels_last").
+
+
+Value_Num(?dimRes, ?valNumStr),
+ConvOperation_DimResult(?insn, ?newVal, ?dim, ?dimRes):-
+  ConvOperation_NumOfDims(?insn, ?newVal, ?numOfDims),
+  ?dim <= ?numOfDims,
+  PossibleDimNumber(?dim),
+  (
+    (
+      ConvOperation_NameToVal(?insn, ?newVal, "data_format", "<string constant:channels_last>"),
+      ?dimPosInTensor = ?dim
+    );
+    (
+      ConvOperation_NameToVal(?insn, ?newVal, "data_format", "<string constant:channels_first>"),
+      ?dimPosInTensor = ?dim + 1
+    )
+  ),
+  ConvOperation_NameToVal(?insn, ?newVal, "inputs", ?inputsTensorVal),
+  ConstListContents(?inputsTensorVal, ?dimPosInTensor, ?tensorValForDim),
+  ConvOperation_KernelSizeForDim(?insn, ?newVal, ?dim, ?kernelSizeValForDim),
+  Value_Num(?tensorValForDim, ?tensorValForDimNumStr),
+  Value_Num(?kernelSizeValForDim, ?kernelSizeValForDimNumStr),
+  ?temp = to_number(?tensorValForDimNumStr) + 1 - to_number(?kernelSizeValForDimNumStr),
+  ConvOperation_StridesForDim(?insn, ?newVal, ?dim, ?strideValForDim),
+  Value_Num(?strideValForDim, ?strideValForDimNumStr),
+  ?stridesNum = to_number(?strideValForDimNumStr),
+  ?temp % ?stridesNum = 0,
+  ?valNumStr = to_string(?temp / ?stridesNum),
+  ?dimRes = cat("<num-constant(int):",cat(?valNumStr, ">")).
+
+
+ConvOperation_AllDimsCanBeComputed(?insn, ?newVal):-
+    ConvOperation_NumOfDims(?insn, ?newVal, ?numOfDims),
+    ?numOfDims = 2,
+    ConvOperation_DimResult(?insn, ?newVal, 1, _),
+    ConvOperation_DimResult(?insn, ?newVal, 2, _).
+
+ConvOperation_AllDimsCanBeComputed(?insn, ?newVal):-
+    ConvOperation_NumOfDims(?insn, ?newVal, ?numOfDims),
+    ?numOfDims = 3,
+    ConvOperation_DimResult(?insn, ?newVal, 1, _),
+    ConvOperation_DimResult(?insn, ?newVal, 2, _),
+    ConvOperation_DimResult(?insn, ?newVal, 3, _).
+
+VarPointsTo(?var, ?newVal),
+Value_Type(?newVal, "<tensorflow.Tensor>"):-
+  ConvOperation_ProducesOutput(?insn, ?newVal),
+  AssignInstruction_To(?insn, ?var).
+
+ConvOperation_ProducesOutput(?insn, ?newVal):-
+  ConvOperation(?insn, _, ?newVal),
+  ConvOperation_AllDimsCanBeComputed(?insn, ?newVal).
+
+TensorShapeListSize(?newVal, ?size):-
+  ConvOperation_ProducesOutput(?insn, ?newVal),
+  ConvOperation_NameToVal(?insn, ?newVal, "inputs", ?inputsTensorVal),
+  TensorShapeListSize(?inputsTensorVal, ?size).
+
+TensorShapeListContent(?newVal, ?dimPosInTensor, ?dimValue):-
+  ConvOperation_ProducesOutput(?insn, ?newVal),
+  ConvOperation_DimResult(?insn, ?newVal, ?dim, ?dimValue),
+  (
+    (
+      ConvOperation_NameToVal(?insn, ?newVal, "data_format", "<string constant:channels_last>"),
+      ?dimPosInTensor = ?dim
+    );
+    (
+      ConvOperation_NameToVal(?insn, ?newVal, "data_format", "<string constant:channels_first>"),
+      ?dimPosInTensor = ?dim + 1
+    )
+  ).
+
+TensorShapeListContent(?newVal, 0, ?batchValue):-
+  ConvOperation_ProducesOutput(?insn, ?newVal),
+  ConvOperation_NameToVal(?insn, ?newVal, "inputs", ?inputsTensorVal),
+  TensorShapeListContent(?inputsTensorVal, 0, ?batchValue).
+
+TensorShapeListContent(?newVal, ?channelsPosInTensor, ?filtersArgVal):-
+  ConvOperation_ProducesOutput(?insn, ?newVal),
+  ConvOperation_DimResult(?insn, ?newVal, ?dim, ?dimValue),
+  (
+    (
+      ConvOperation_NameToVal(?insn, ?newVal, "data_format", "<string constant:channels_last>"),
+      TensorShapeListSize(?newVal, ?size),
+      ?channelsPosInTensor = ?size - 1
+    );
+    (
+      ConvOperation_NameToVal(?insn, ?newVal, "data_format", "<string constant:channels_first>"),
+      ?channelsPosInTensor = 1
+    )
+  ),
+  ConvOperation_NameToVal(?insn, ?newVal, "filters", ?filtersArgVal).
