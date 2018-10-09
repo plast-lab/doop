@@ -17,5 +17,5 @@ VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to) :-
   VirtualMethodInvocation_Base(?invo, ?base),
   Var_DeclaringMethod(?base, ?method),
   ReachableContext(?ctx, ?method),
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   ActualParam(0, ?invo, ?to).

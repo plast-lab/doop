@@ -423,7 +423,7 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
   ReflectiveStaticMethodInvocation(?callerCtx, ?invocation, ?callee).
 #else
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
-  ImmutableContextFromContext(?callerCtx, ?calleeCtx),
+  isImmutableContext(?calleeCtx),
   ReflectiveStaticMethodInvocation(?callerCtx, ?invocation, ?callee).
 #endif
 
@@ -450,7 +450,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ThisVar(?callee, ?this),
-  ImmutableContextFromHContext(?hctx, ?calleeCtx),
+  isImmutableContext(?calleeCtx),
 // Check if object is an instance of the class declaring the method. It's a
 // special method. Should they be identical types? Probably not. Can use
 // special reflective calls to call private superclass methods.
@@ -493,7 +493,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   Method_Descriptor(?signature, ?descriptor),
   basic.MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
   ThisVar(?tomethod, ?this),
-  ImmutableContextFromHContext(?hctx, ?calleeCtx).
+  isImmutableContext(?calleeCtx).
 #endif
 
 // Return values of reflective method invocations
@@ -531,7 +531,7 @@ InitializedClass(?type) :-
 
 /** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
   ReifiedClass(?type, ?value),
   AssignReturnValue(?invocation, ?return).
@@ -547,7 +547,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
 
 /** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   ReflectiveAssignMethodConstant(?ctx, ?to, ?signature),
   ReifiedMethod(?signature, ?value).
 
@@ -558,7 +558,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 .decl ReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)
 
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   ReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
   ReifiedField(?signature, ?value).
 
@@ -582,7 +582,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 /** This VarPointsTo is ok **/
 InitializedClass(?type),
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
   ReflectiveAllocation(?instruction, ?type, ?value),
   Var_Type(?var, ?vartype),
@@ -1031,7 +1031,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   SpecialMissingForNameValue(?invocation, ?value),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   AssignReturnValue(?invocation, ?return).
 #ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5)
@@ -1044,7 +1044,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
 
 /** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_Class_newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
   SpecialMissingForNameValue(?forNameInvocation, ?specialclass),
@@ -1054,7 +1054,7 @@ VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) :-
 
 /** This VarPointsTo is NOT ok, but produces FEWER tuples **/
 VarPointsTo(?hctx, ?specialConstructorValue, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   (java_lang_Class_getConstructor(?to, ?var);
    java_lang_Class_getDeclaredConstructor(?to, ?var)),
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
@@ -1065,7 +1065,7 @@ VarPointsTo(?hctx, ?specialConstructorValue, ?ctx, ?to) :-
 // return var points to (established by forward logic) is populated
 // with the special Constructor object the call returns.
 ArrayIndexPointsTo(?hctx, ?specialConstructorValue, ?hctx, ?arrayValue) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to),
   VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to),
   SpecialMissingGetConstructorValue(?forNameInvocation, ?specialConstructorValue).
@@ -1083,7 +1083,7 @@ OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to) :-
 
 /** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_reflect_Constructor_newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialConstructor, ?ctx, ?var),
   SpecialMissingGetConstructorValue(?forNameInvocation, ?specialConstructor),
@@ -1250,7 +1250,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   AssignReturnValue(?invocation, ?return),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  ImmutableHContextFromContext(?ctx, ?hctx).
+  isImmutableHContext(?hctx).
 
 // At the site of an invoke over a special method object (that marks
 // its "getMethod" origin), return a new special object that remembers
@@ -1263,7 +1263,7 @@ VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
   SpecialMissingGetMethodValue(?getMethodInvocation, ?specialMethodValue),
   SpecialMissingInvokeValueFromGetMethod(?getMethodInvocation, ?specialvalue),
   AssignReturnValue(?invocation, ?var),
-  ImmutableHContextFromContext(?ctx, ?hctx).
+  isImmutableHContext(?hctx).
 
 // a cast (to ?type) receives the result of an invoke call on a value
 // returned from a getMethod.
@@ -1312,7 +1312,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   AssignReturnValue(?invocation, ?return),
-  ImmutableHContextFromContext(?ctx, ?hctx).
+  isImmutableHContext(?hctx).
 #ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5)
 #endif
@@ -1326,7 +1326,7 @@ VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
   SpecialMissingGetFieldValue(?getFieldInvocation, ?specialFieldValue),
   SpecialMissingGetValueFromGetField(?getFieldInvocation, ?specialvalue),
   AssignReturnValue(?invocation, ?var),
-  ImmutableHContextFromContext(?ctx, ?hctx).
+  isImmutableHContext(?hctx).
 
 // a cast gets the special value returned from a "get". The value marks
 // the original getField
@@ -1370,7 +1370,7 @@ ArrayIndexPointsTo(?hctx1, ?value, ?hctx, ?arrayValue) :-
   SpecialMissingGetMethodsValue(?invocation, ?value),
   AssignReturnValue(?invocation, ?return),
   VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return),
-  ImmutableHContextFromContext(?ctx, ?hctx1),
+  isImmutableHContext(?hctx1),
   isContext(?ctx). // hack to avoid warning
 
 // Is this slow? We've already done it in forward logic. Maybe store/reuse.
@@ -1393,7 +1393,7 @@ OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation, ?ctx, ?invocatio
 // Make an invoke return a special object that remembers the method it's
 // supposed to be called on.
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation , ?ctx, ?invocation),
   SpecialMissingInvokeValueFromGetMethods(?getMethodsInvocation, ?specialvalue),
   AssignReturnValue(?invocation, ?var).
@@ -1439,7 +1439,7 @@ ArrayIndexPointsTo(?hctx, ?methodValue, ?hctx, ?arrayValue) :-
 // The array that the return var points to (established by forward logic)
 // is populated with the special Field object the call returns.
 ArrayIndexPointsTo(?hctx1, ?value, ?hctx, ?arrayValue) :-
-  ImmutableHContextFromContext(?ctx, ?hctx1),
+  isImmutableHContext(?hctx1),
   SpecialMissingGetFieldsValue(?invocation, ?value),
   AssignReturnValue(?invocation, ?return),
   VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return),
@@ -1465,7 +1465,7 @@ OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation, ?ctx, ?invocation) :-
 // Make a get return a special object that remembers the field it's
 // supposed to be called on.
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation, ?ctx, ?invocation),
   SpecialMissingGetValueFromGetFields(?getFieldsInvocation, ?specialvalue),
   AssignReturnValue(?invocation, ?var).
@@ -1560,7 +1560,7 @@ MarkerReflectiveObject(?invocation, cat(cat("<special object for missing reflect
  *************************************************************/
 // Propagate the marker object everywhere
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   (java_lang_Class_newInstance(?invocation, _, _);
    java_lang_reflect_Constructor_newInstance(?invocation, _, _);
    java_lang_reflect_Method_invoke(?invocation, _);

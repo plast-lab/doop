@@ -10,7 +10,7 @@
  * We just create a dummy value to represent the URL resource returned.
  *************************************************************/
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_ClassLoader_getResource(?invocation, ?to, ?from),
   Var_DeclaringMethod(?from, ?method),
   ReachableContext(?ctx, ?method),
@@ -33,7 +33,7 @@ VarPointsTo(?hctx, ?classValue, ?callerCtx, ?classResultVar) :-
   VarPointsTo(_, ?className, _, ?arg),
   ReifiedClass(?className, ?classValue),
   AssignReturnValue(?invocation, ?classResultVar),
-  ImmutableHContextFromContext(?callerCtx, ?hctx).
+  isImmutableHContext(?hctx).
 
 // Dalvik internals.
 #ifdef ANDROID
@@ -48,7 +48,7 @@ DalvikMethodInvocation(?var, ?m, ?ctx, ?hctx) :-
   MethodInvocation_Method(?invocation, ?m),
   Method_DeclaringType(?m, ?t),
   (?t = "dalvik.system.VMStack" ; ?t = "dalvik.system.VMRuntime"),
-  ImmutableHContextFromContext(?ctx, ?hctx).
+  isImmutableHContext(?hctx).
 
 #define MOCK_DALVIK_CLASSLOADER "<mock Dalvik class-loader>"
 

@@ -57,8 +57,7 @@ RunningThread(?hctx, ?value)
  */
 VarPointsTo(?hctx, ?value, ?callerCtx, ?local) :-
    ReachableCurrentThreadInvocation(?callerCtx, ?local),
-   RunningThread(?hctx, ?value),
-   CompatibleContextAndHContextMacro(?callerCtx, ?hctx).
+   RunningThread(?hctx, ?value).
 
 ReachableCurrentThreadInvocation(?callerCtx, ?local) :-
    ?signature = "<java.lang.Thread: java.lang.Thread currentThread()>",
@@ -109,7 +108,6 @@ VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
     MainThreadGroup(?hctx, ?value),
     FormalParam(0, ?signature, ?groupParam),
     SystemThreadGroup(?groupHCtx, ?group),
-    CompatibleHContextsMacro(?hctx, ?groupHCtx),
     configuration.StartupContextRequest(?hctx, ?value),
     configuration.StartupContextResponse(?hctx, ?value, ?calleeCtx).
 
@@ -135,7 +133,6 @@ VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
     MainThread(?hctx, ?value),
     FormalParam(0, ?signature, ?groupParam),
     MainThreadGroup(?groupHCtx, ?group),
-    CompatibleHContextsMacro(?hctx, ?groupHCtx),
     configuration.StartupContextRequest(?hctx, ?value),
     configuration.StartupContextResponse(?hctx, ?value, ?calleeCtx).
 

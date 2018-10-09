@@ -284,7 +284,7 @@ VarPointsTo(?hctx, ?value, ?ctxFrom, ?base) :-
   basic.ResolveInvocation(?type, ?invocation, ?toMethod),
   SingletonDynamicHeapObject(?type, ?value),
   MethodInvocation_Base(?invocation, ?base),
-  ImmutableHContextFromContext(?ctxFrom, ?hctx).
+  isImmutableHContext(?hctx).
 
 #ifdef HEAPDL_DYNAMICVARPOINTSTO
 

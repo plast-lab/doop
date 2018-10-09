@@ -49,7 +49,7 @@ InitializedClass(?type) :-
 
 // Tweaked from reflection/rules.dl.
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
   // ApplicationClass(?type),
   ReifiedClass(?type, ?value),

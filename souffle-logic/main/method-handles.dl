@@ -75,10 +75,10 @@ InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod) :-
    VarPointsTo(_, ?value, ?callerCtx, ?var),
    VirtualMethodInvocation_Base(?i, ?var),
    VirtualMethodInvocation_SimpleName(?i, ?dynName),
-   ImmutableContextFromContext(?callerCtx, ?calleeCtx).
+   isImmutableContext(?calleeCtx).
 
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, LAMBDA_METAFACTORY_ID) :-
-   ImmutableContextFromContext(?callerCtx, ?calleeCtx),
+   isImmutableContext(?calleeCtx),
    InvokedynamicBootstrap(?i, ?callerCtx).
 
 ReachableContext(?calleeCtx, ?callee) :-
@@ -90,7 +90,7 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    FormalParam(?idx, ?realMethod, ?formal),
    ActualParam(?idx, ?i, ?actual),
    VarPointsTo(_, ?val, _, ?actual),
-   ImmutableHContextFromContext(?ctx, ?hctx).
+   isImmutableHContext(?hctx).
 
 // Handle return values.
 VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
@@ -242,7 +242,7 @@ VarPointsTo(?hctx, MT_VALUE(?descriptor), ?callerCtx, ?ret) :-
    ReachableMethodTypeN(?invo, ?caller, ?callerCtx),
    MTCallMatchesDescriptor(?invo, ?descriptor),
    AssignReturnValue(?invo, ?ret),
-   ImmutableHContextFromContext(?callerCtx, ?hctx).
+   isImmutableHContext(?hctx).
 
 // Method lookup methods.
 

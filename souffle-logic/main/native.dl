@@ -1,7 +1,7 @@
 
 VarPointsTo(?hctx, ?argArray, ?ctx, ?args),
 ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
-   ImmutableHContextFromContext(?ctx, ?hctx),
+   isImmutableHContext(?hctx),
    basic.MainMethodDeclaration(?mainMethod),
    ReachableContext(?ctx, ?mainMethod),
    FormalParam(0, ?mainMethod, ?args),
@@ -367,6 +367,6 @@ VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return) :-
   NativeReturnVar(?return, ?m),
   Var_Type(?return, ?t),
   (isClassType(?t) ; isArrayType(?t)),
-  ImmutableHContextFromContext(?ctx, ?hctx).
+  isImmutableHContext(?hctx).
   .plan 1:(5,1,2,3,4)
 #endif // SIMULATE_NATIVE_RETURNS

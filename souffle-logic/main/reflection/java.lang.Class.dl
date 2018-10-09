@@ -16,7 +16,7 @@
 VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :-
   java_lang_Object_getClass(?to, ?from),
   VarPointsTo(_, ?value, ?ctx, ?from),
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   Value_Type(?value, ?type),
   ReifiedClass(?type, ?classValue).
   #ifdef INFORMATION_FLOW
@@ -90,7 +90,7 @@ ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
  *************************************************************/
 
 VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
-  ImmutableHContextFromContext(?callerCtx, ?hctx),
+  isImmutableHContext(?hctx),
   (java_lang_Class_getName(?to, ?from);
    java_lang_Class_getCanonicalName(?to, ?from)),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
@@ -138,7 +138,7 @@ VarPointsTo(?hctx, ?simpleName, ?ctx, ?return) :-
  *************************************************************/
 
 VarPointsTo(?hctx, ?componentClassValue, ?callerCtx, ?to) :-
-  ImmutableHContextFromContext(?callerCtx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_Class_getComponentType(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?type, ?classValue),
@@ -163,7 +163,7 @@ VarPointsTo(?hctx, ?componentClassValue, ?callerCtx, ?to) :-
 .decl FromGetSuperClassType(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?type:Type, ?to:Var)
 
 FromGetSuperClassType(?callerCtx, ?hctx, ?type, ?to) :-
-  ImmutableHContextFromContext(?callerCtx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_Class_getSuperclass(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?type, ?classValue).
@@ -200,7 +200,7 @@ ArrayIndexPointsTo(?hctx, ?superInterfaceValue, ?hctx, ?arrayValue) :-
 
 FillArray_Interfaces(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) :-
-  ImmutableHContextFromContext(?callerCtx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_Class_getInterfaces(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?type, ?classValue),
@@ -235,7 +235,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass(?type, ?classValue),
   ReflectiveAllocation(?invocation, _, ?arrayValue),
-  ImmutableHContextFromContext(?ctx, ?hctx).
+  isImmutableHContext(?hctx).
 
 // NOTE that this won't fire when we are in distinguish-no-string-constants
 // mode. The constant will never flow to ?param.
@@ -292,7 +292,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
 
 FillArray_Methods(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_Class_getDeclaredMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass(?type, ?classValue),
@@ -334,7 +334,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
 
 FillArray_PublicConstructors(?hctx, ?arrayValue, ?classValue),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_Class_getConstructors(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReflectiveAllocation(?invocation, _, ?arrayValue).
@@ -342,7 +342,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_Class_getConstructor(?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   OptClassToConstructor(?constructor, ?classValue),
@@ -360,7 +360,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
 
 FillArray_Constructors(?hctx, ?arrayValue, ?classValue),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_Class_getDeclaredConstructors(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReflectiveAllocation(?invocation, _, ?arrayValue).
@@ -369,7 +369,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_Class_getDeclaredConstructor(?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   OptClassToConstructor(?constructor, ?classValue),
@@ -408,7 +408,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
 
 FillArray_PublicFields(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_Class_getFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass(?type, ?classValue),
@@ -465,7 +465,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) _-
 
 FillArray_Fields(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   java_lang_Class_getDeclaredFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass(?type, ?classValue),
@@ -557,7 +557,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   java_lang_Class_getClassLoader(?invocation, ?to, ?from),
   Var_DeclaringMethod(?from, ?method),
   ReachableContext(?ctx, ?method),
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   isType(?type),
   ?type = "java.lang.ClassLoader",
   ReflectiveAllocation(?invocation, ?type, ?value).

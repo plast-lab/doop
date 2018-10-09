@@ -417,7 +417,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   SpecialMissingPackableValue(?invocation, ?value),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   AssignReturnValue(?invocation, ?return).
 #ifndef X_CONTEXT_REMOVER
  .plan 1:(4,3,2,1,5)
@@ -526,7 +526,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ForcedReachableAndroidContext(?ctx, ?meth),
   basic.ConcreteMethodDeclared(?meth, ?class),
   ReifiedAndroidObjectValue(?value, ?class),
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
 //  Method_DeclaringType(?meth, ?class),
   ThisVar(?meth, ?this).
 #ifndef X_CONTEXT_REMOVER
@@ -554,7 +554,7 @@ FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) :-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   basic.SubtypeOf(?type, ?formalType),
   ReifiedAndroidObjectValue(?value, ?type).
 #ifndef X_CONTEXT_REMOVER
@@ -767,7 +767,7 @@ OptInterproceduralAssign(?ctx, ?formal, ?callerCtx, ?actual),
 VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
    AsynchTaskExecute(?actual, ?base),
    VarPointsTo(?hctx, ?basevalue, ?callerCtx, ?base),
-   ImmutableContextFromContext(?callerCtx, ?ctx),
+   isImmutableContext(?ctx),
    Value_Type(?baseValue, ?type),
    Method_DeclaringType(?method, ?type),
    Method_SimpleName(?method, "doInBackground"),

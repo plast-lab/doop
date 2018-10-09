@@ -168,7 +168,7 @@ OptForNameInvocation(?invocation, ?inmethod) :-
 VarPointsTo(?hctx, ?classObj, ?ctx, ?return) :-
   OptForNameInvocation(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   Tamiflex_ReflectionMap(?class, ?invocation),
   ?classObj = cat(cat("<class ", ?class), ">"),
   isHeapAllocation(?classObj),
@@ -181,7 +181,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   Instruction_Method(?invocation, ?inmethod),
   AssignReturnValue(?invocation, ?return),
   ReachableContext(?ctx, ?inmethod),
-  ImmutableHContextFromContext(?ctx, ?hctx).
+  isImmutableHContext(?hctx).
 
 .decl TamiflexConstructorCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation,
                                        ?calleeCtx:configuration.Context, ?callee:Method)
@@ -196,8 +196,8 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   ReachableContext(?callerCtx, ?inmethod),
   AssignReturnValue(?invocation, ?return),
   ThisVar(?constructor, ?this),
-  ImmutableHContextFromContext(?callerCtx, ?hctx),
-  ImmutableContextFromContext(?callerCtx, ?calleeCtx).
+  isImmutableHContext(?hctx),
+  isImmutableContext(?calleeCtx).
 
 Tamiflex_Invoke(?callerCtx, ?invocation, ?method) :-
   ?sig = "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>",
@@ -220,7 +220,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   ActualParam(0, ?invocation, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ThisVar(?callee, ?this),
-  ImmutableContextFromHContext(?hctx, ?calleeCtx).
+  isImmutableContext(?calleeCtx).
 
 /**
  * Static method invocations
@@ -228,7 +228,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
 TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
    Tamiflex_Invoke(?callerCtx, ?invocation, ?callee),
    Method_Modifier("static", ?callee),
-   ImmutableContextFromContext(?callerCtx, ?calleeCtx).
+   isImmutableContext(?calleeCtx).
 
 /**
  * Return values of reflective method invocations
@@ -237,7 +237,7 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
   Tamiflex_Invoke(?callerCtx, ?invocation, ?callee),
   AssignReturnValue(?invocation, ?local),
   ReturnVar(?return, ?callee),
-  ImmutableContextFromContext(?callerCtx, ?calleeCtx).
+  isImmutableContext(?calleeCtx).
 
 /**
  * Handle the array of actual parameters of a reflective method call
@@ -252,7 +252,7 @@ TamiflexInvocationFirstParam(?calleeCtx, ?formal, ?callerCtx, ?argsParam) :-
   Tamiflex_Invoke(?callerCtx, ?invocation, ?callee),
   ActualParam(1, ?invocation, ?argsParam),
   FormalParam(_, ?callee, ?formal),
-  ImmutableContextFromContext(?callerCtx, ?calleeCtx).
+  isImmutableContext(?calleeCtx).
 /// ... vs. constructor calls
 TamiflexInvocationFirstParam(?calleeCtx, ?formal, ?callerCtx, ?argsParam) :-
   TamiflexConstructorCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
@@ -281,5 +281,5 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
    Tamiflex_ReifiedMethodArray(_, ?value, ?invocation) ),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  ImmutableHContextFromContext(?ctx, ?hctx),
+  isImmutableHContext(?hctx),
   AssignReturnValue(?invocation, ?return).
