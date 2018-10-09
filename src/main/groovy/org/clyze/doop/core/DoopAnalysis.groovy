@@ -244,7 +244,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			new File(factsDir, "MainClass.facts").withWriterAppend { w ->
 				options.MAIN_CLASS.value.each { w.writeLine(it as String) }
 			}
+	        }
+
+                if (options.PRIMARY_PARTITION.value) {
+			new File(factsDir, "PrimaryPartition.facts").withWriterAppend { w ->
+				w.writeLine(options.PRIMARY_PARTITION.value.toString()) 
+			}
 		}
+        
 
 		if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
 			File origSpecialCSMethodsFile = new File(options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString())

@@ -178,12 +178,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true,
 					changesFacts: true
 			),
-            new BooleanAnalysisOption(
-                    id: "MULTIPLE_SEGREGATED_ANALYSES",
-                    name: "multiple-segregated-analyses",
-                    forPreprocessor: true,
-                    cli: false
-            ),
+                        new AnalysisOption<String>(
+					id: "PRIMARY_PARTITION",
+					name: "primary-partition",
+					argName: "PARTITION_NAME",
+					description: "Specify the primary partition of a partitioned-2object-sensitive+heap analysis",
+					forPreprocessor: true
+			),
 			new BooleanAnalysisOption(
 					id: "SANITY",
 					name: "sanity",

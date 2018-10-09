@@ -102,10 +102,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		options.CONFIGURATION.value = availableConfigurations.get(options.ANALYSIS.value)
 
-		if (options.ANALYSIS.value == "partitioned-2-object-sensitive+heap") {
-			options.MULTIPLE_SEGREGATED_ANALYSES.value = true
-        }
-
 		// Initialize the environment used for executing commands
 		def commandsEnv = initExternalCommandsEnvironment(options)
 		createOutputDirectory(options)

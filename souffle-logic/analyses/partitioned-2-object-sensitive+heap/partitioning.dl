@@ -10,7 +10,8 @@
 
 // Which types should be partitioned? 
 PartitionedType(type) :-
-  ApplicationClass(type).
+  isType(type),
+  !mainAnalysis.configuration.TypeInAllPartitions(type).
 
 TypeRefersToOther(typeFrom, typeTo) :-
   PartitionedType(typeFrom), PartitionedType(typeTo),
