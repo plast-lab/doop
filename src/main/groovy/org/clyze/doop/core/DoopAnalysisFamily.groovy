@@ -235,6 +235,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
+					id: "SIMULATE_NATIVE_RETURNS",
+					name: "simulate-native-returns",
+					description: "Assume native method calls return mock objects.",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "DACAPO",
 					name: "dacapo",
 					description: "Load additional logic for DaCapo (2006) benchmarks properties.",

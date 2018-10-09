@@ -336,6 +336,7 @@ HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
   .plan 1:(2,1)
 
 
+#ifdef SIMULATE_NATIVE_RETURNS
 // Crude heuristic: assume that every native method that returns a
 // class/array type C, returns an object allocated in that method. This is
 // an underapproximation: the method could return objects of a subtype of C
@@ -367,3 +368,5 @@ VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return) :-
   Var_Type(?return, ?t),
   (isClassType(?t) ; isArrayType(?t)),
   ImmutableHContextFromContext(?ctx, ?hctx).
+
+#endif // SIMULATE_NATIVE_RETURNS
