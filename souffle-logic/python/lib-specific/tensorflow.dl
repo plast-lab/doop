@@ -427,6 +427,9 @@ ConvOperationFunctionInfo("<tensorflow.nn.conv3d>", "conv3d", 3).
 .decl ConvOperation_DillationRateForDim(?insn:FunctionInvocation_Insn, ?newVal:Value, ?dim:number, ?dillationRateValForDim:Value)
 .output ConvOperation_DillationRateForDim
 
+.decl ConvOperation_NumOfOutputChannels(?insn:FunctionInvocation_Insn, ?newVal:Value, ?outputChannelsVal:Value)
+.output ConvOperation_StridesForDim
+
 .decl ConvOperation_NameToVal(?insn:FunctionInvocation_Insn, ?newVal:Value, ?name:symbol, ?valForName:Value)
 .output ConvOperation_NameToVal
 
@@ -547,6 +550,12 @@ ConvOperation_StridesForDim(?insn, ?newVal, ?dim, ?strideValForDim):-
     )
   ).
 
+ConvOperation_StridesForDim(?insn, ?newVal, ?dim, ?strideValForDim):-
+  NNConvOperation(?insn, ?newVal),
+  ConvOperation_ValidDimension(?insn, ?newVal, ?dim),
+  ConvOperation_NameToVal(?insn, ?newVal, "strides", ?stridesArgVal),
+  ConstListContents(?stridesArgVal, ?dim, ?strideValForDim).
+
 ConvOperation_KernelSizeForDim(?insn, ?newVal, ?dim, ?kernelSizeValForDim):-
   LayersConvOperation(?insn, ?newVal),
   ConvOperation_ValidDimension(?insn, ?newVal, ?dim),
@@ -584,6 +593,16 @@ ConvOperation_DillationRateForDim(?insn, ?newVal, ?dim, ?dillationRateValForDim)
         Value_Num(?dillationRateValForDim, _)
     )
   ).
+
+ConvOperation_NumOfOutputChannels(?insn, ?newVal, ?outputChannelsNumValue):-
+  NNConvOperation(?insn, ?newVal),
+  ConvOperation_NameToVal(?insn, ?newVal, "filter", ?filterArgVal),
+  TensorShapeListSize(?filterArgVal, ?size),
+  TensorShapeListContent(?filterArgVal, ?size - 1, ?outputChannelsNumValue).
+
+ConvOperation_NumOfOutputChannels(?insn, ?newVal, ?outputChannelsNumValue):-
+    LayersConvOperation(?insn, ?newVal),
+    ConvOperation_NameToVal(?insn, ?newVal, "filters", ?outputChannelsNumValue).
 
 ConvOperation_GetNumbersForDim(?insn, ?newVal, ?dim, ?tensorValForDimNum, ?kernelSizeValForDimNum, ?strideValForDimNum):-
   ConvOperation_ValidDimension(?insn, ?newVal, ?dim),
@@ -696,7 +715,7 @@ TensorShapeListContent(?newVal, 0, ?batchValue):-
   ConvOperation_NameToVal(?insn, ?newVal, "inputs", ?inputsTensorVal),
   TensorShapeListContent(?inputsTensorVal, 0, ?batchValue).
 
-TensorShapeListContent(?newVal, ?channelsPosInTensor, ?filtersArgVal):-
+TensorShapeListContent(?newVal, ?channelsPosInTensor, ?outputChannelsNum):-
   ConvOperation_ProducesOutput(?insn, ?newVal),
   ConvOperation_DimResult(?insn, ?newVal, ?dim, ?dimValue),
   (
@@ -710,4 +729,4 @@ TensorShapeListContent(?newVal, ?channelsPosInTensor, ?filtersArgVal):-
       ?channelsPosInTensor = 1
     )
   ),
-  ConvOperation_NameToVal(?insn, ?newVal, "filters", ?filtersArgVal).
+  ConvOperation_NumOfOutputChannels(?insn, ?newVal, ?outputChannelsNum).
