@@ -64,7 +64,7 @@ class DoopAddons {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             System.err.println("Could not call Soot method retrieveAllBodies():");
             ex.printStackTrace();
-            throw new DoopErrorCodeException(11);
+            throw new DoopErrorCodeException(11, ex);
         }
     }
 
@@ -78,7 +78,7 @@ class DoopAddons {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             System.err.println("Could not call Soot method writeClass(): ");
             ex.printStackTrace();
-            throw new DoopErrorCodeException(12);
+            throw new DoopErrorCodeException(12, ex);
         }
     }
 

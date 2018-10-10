@@ -40,7 +40,10 @@ public class Main {
             sootParameters.initFromArgs(args);
             produceFacts(sootParameters);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            // We assume Doop exceptions have already printed
+            // something to the standard error output.
+            if (!(ex instanceof DoopErrorCodeException))
+                ex.printStackTrace();
             throw ex;
         }
     }
