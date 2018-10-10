@@ -17,7 +17,7 @@ ConstListContents(?heap, ?index, ?val):-
   FieldInstruction_FieldName(?instr, ?fieldName),
   ?index = to_number(?fieldName),
   StoreInstanceField_From(?instr, ?from),
-  VarHasConstValue(?from, ?val).
+  VarPointsToConstValue(?from, ?val).
 
 .output ConstListDimensions
 ConstListDimensions(?heap,?size):-
@@ -48,12 +48,12 @@ isListOfIntConsts(?heap):-
 //  VarPointsToList(?var, ?heap),
 //  StoreInstanceField_Base(?instr, ?var),
 //  StoreInstanceField_From(?instr, ?from),
-//  VarHasConstValue(?from, ?val),
+//  VarPointsToConstValue(?from, ?val),
 //  ?countRes= count:
 //  {
 //    StoreInstanceField_Base(?instr2, ?var),
 //    StoreInstanceField_From(?instr2, ?from2),
-//    VarHasConstValue(?from2, ?val)
+//    VarPointsToConstValue(?from2, ?val)
 //  }.
 
 PyConstListSpecialValueCount(?heap, ?val, ?countRes):-
@@ -71,6 +71,9 @@ PyConstListSpecialValueCount(?heap, ?val, ?countRes):-
     VarHasConstValue(?from2, ?val)
   }.
 
+//VarPointsToList(?var, ?heap):-
+//  VarPointsTo(?var, ?heap),
+//  IsPyList(?heap).
 
 .output IsPyList
 IsPyList(?heap),
@@ -93,7 +96,7 @@ ListHasNonConstantIntVal(?heap):-
   VarPointsToList(?var, ?heap),
   StoreInstanceField_Base(?instr, ?var),
   StoreInstanceField_From(?instr, ?from),
-  !(VarHasConstIntValue(?from,_, _)).
+  !(VarHasConstIntValue(?from, _)).
 
 .decl ConstListMultAll(?heap:HeapAllocation, ?res:number)
 .decl ConstListMultAllInner(?heap:HeapAllocation, ?index:number, ?res:number)

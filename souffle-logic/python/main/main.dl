@@ -6,14 +6,17 @@
 
   .type BoolConstantValue
 
-  //.type NoneConstantValue
+  .type NoneConstantValue
 
-  .type Value = HeapAllocation | NumConstantValue | BoolConstantValue | Module
+  .type Value = HeapAllocation | NumConstantValue | BoolConstantValue | Module | NoneConstantValue
 
-  //.decl isValue(?value:Value)
+  .decl isValue(?value:Value)
 
-  //.decl Value_isHeap(?value:Value)
+  .decl isHeapValue(?value:Value)
 
+  .decl isModeledHeapValue(?value:Value)
+
+  .decl isConstantValue(?value:Value)
   // Value_Num maps each numeric constant to a value while
   // also prepending it with *num-constant-* to distinguish it
   // from heap allocations that share the same string value.
@@ -21,15 +24,29 @@
 
   .decl Value_String(?value:Value, ?str:StringConstant)
 
-  //.decl Value_isNonHeap(?value:Value)
+  .decl isNonHeapValue(?value:Value)
 
   .decl Value_Type(?value:Value, ?type:Type)
   //.decl Value_DeclaringType(?value:Value, ?type:Type)
 
   // [Miscellaneous]
-  //.decl Value_None(?none:Value)
+  .decl isNoneValue(?none:Value)
 
+  isNoneValue("<None>").
 
+  isValue(?val):-
+    isHeapValue(?val);
+    isNoneValue(?val);
+    isConstantValue(?val).
+
+  isConstantValue(?val):-
+    Value_Num(?val, _);
+    Value_String(?val, _);
+    isNoneValue(?val).
+
+  isNonHeapValue(?val):-
+    Value_Num(?val, _);
+    isNoneValue(?val).
 
   .output VarPointsTo
   .decl VarPointsTo(?var:Var, ?val:Value)
