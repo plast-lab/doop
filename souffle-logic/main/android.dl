@@ -419,9 +419,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ReachableContext(?ctx, ?inmethod),
   isImmutableHContext(?hctx),
   AssignReturnValue(?invocation, ?return).
-#ifndef X_CONTEXT_REMOVER
- .plan 1:(4,3,2,1,5)
-#endif
 
 MockValueConsMacro(?value, ?concreteType),
 VarPointsTo(?hctx, ?value, ?ctx, ?to),
@@ -558,7 +555,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   basic.SubtypeOf(?type, ?formalType),
   ReifiedAndroidObjectValue(?value, ?type).
 #ifndef X_CONTEXT_REMOVER
- .plan 1:(2,1,3,4), 2:(4,3,1,2)
+ .plan 1:(2,1,3,4)
 #endif
 
 // Attempt at a policy that yields a reasonable compromise between
@@ -774,10 +771,6 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
    FormalParam(0, ?method, ?formal),
    // TODO: requires proper method resolution
    ThisVar(?method, ?this).
-#ifndef X_CONTEXT_REMOVER
- .plan 2:(3,1,2,4,5,6,7,8)
-#endif
-
 
 /**
  * Contribute to the global summary relation
