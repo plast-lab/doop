@@ -18,9 +18,8 @@
     ?partitionId = ord(?partitionRepresentativeType).
 
   .decl PrimaryPartitionName(?partitionRepresentativeType: symbol)
+  .input PrimaryPartitionName(IO="file", filename="PrimaryPartition.facts")
   .output PrimaryPartitionName
-  
-  PrimaryPartitionName(PRIMARY_PARTITION).
 
   .decl PrimaryPartitionId(?partitionId: number)
   .output PrimaryPartitionId
