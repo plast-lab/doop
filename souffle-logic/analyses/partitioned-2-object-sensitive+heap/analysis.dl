@@ -7,32 +7,37 @@
 .comp PartitionedTwoObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
 
   .decl TypeToPartitionName(?type: Type, ?partitionRepresentativeType: symbol)
-  .input TypeToPartitionName(IO="file", filename="TypeToPartition.facts", delimiter=",")
+  .input TypeToPartitionName(IO="file", filename="TypeToPartition.facts", delimiter="\t")
   .output TypeToPartitionName
 
   .decl TypeToPartitionId(?type: Type, ?id: number)
-         
+  .output TypeToPartitionId
+
   TypeToPartitionId(?type, ?partitionId) :-
     TypeToPartitionName(?type, ?partitionRepresentativeType),
     ?partitionId = ord(?partitionRepresentativeType).
 
   .decl PrimaryPartitionName(?partitionRepresentativeType: symbol)
-
+  .output PrimaryPartitionName
+  
   PrimaryPartitionName(PRIMARY_PARTITION).
 
   .decl PrimaryPartitionId(?partitionId: number)
-
+  .output PrimaryPartitionId
+  
   PrimaryPartitionId(?partitionId) :-
     PrimaryPartitionName(?partitionRepresentativeType),
     ?partitionId = ord(?partitionRepresentativeType).
 
   .decl PartitionId(?partitionId: number)
-
+  .output PartitionId
+  
   PartitionId(?partitionId) :-
     TypeToPartitionId(_, ?partitionId).
 
   .decl PartitionName(?partitionName: symbol)
-
+  .output PartitionName
+  
   PartitionName(?partitionName) :-
     TypeToPartitionName(_, ?partitionName).
 
@@ -84,8 +89,8 @@
     ContextRequest(callerCtx, hctx, invo, value, tomethod),
     mainAnalysis.Value_Type(value,  valuetype),
     (TypeInAllPartitions(valuetype) ;
-     (MethodInPrimaryPartition(tomethod),
-     InvocationInPrimaryPartition(invo))),
+      (MethodInPrimaryPartition(tomethod),
+       InvocationInPrimaryPartition(invo))),
     hctx = [hctxvalue],
     calleeCtx = [hctxvalue, value].
 
@@ -108,9 +113,9 @@
   StaticContextResponse(callerCtx, invo, calleeCtx) :-
     StaticContextRequest(callerCtx, invo),
     MethodInvocation_Method(invo, tomethod),
-    ((MethodInPrimaryPartition(tomethod),
-      InvocationInPrimaryPartition(invo));
-     MethodInAllPartitions(tomethod)),
+    (MethodInAllPartitions(tomethod);
+      (MethodInPrimaryPartition(tomethod),
+       InvocationInPrimaryPartition(invo))),
     calleeCtx = callerCtx.
 
   StaticContextResponse(callerCtx, invo, calleeCtx) :-
