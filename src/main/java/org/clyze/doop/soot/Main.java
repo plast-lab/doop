@@ -257,4 +257,15 @@ public class Main {
         return null;
     }
 
+    public static class Standalone {
+        public static void main(String[] args) throws Exception {
+            try {
+                Main.main(args);
+            } catch (Exception e) {
+                boolean normalExit = (e instanceof DoopErrorCodeException) && (((DoopErrorCodeException)e).getErrorCode() == 0);
+                if (!normalExit)
+                    throw e;
+            }
+        }
+    }
 }
