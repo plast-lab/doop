@@ -5,6 +5,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
 import org.clyze.doop.common.SessionCounter;
+import org.clyze.doop.util.TypeUtils;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
@@ -347,11 +348,11 @@ class FactWriter extends JavaFactWriter {
            types seem to have been translated to a syntax with the initial
            L, but arrays are still represented as [, for example [C for
            char[] */
-        if (first == '[' || (first == 'L' && s.endsWith(";")) ) {
+        if (TypeUtils.isLowLevelType(first, s)) {
             // array type
-            Type t = soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(s);
-            heap = _rep.classConstant(t);
+            Type t = ClassHeapFinder.raiseTypeWithSoot(s);
             String actualType = t.toString();
+            heap = _rep.classConstant(t);
             _db.add(CLASS_HEAP, heap, actualType);
         } else if (first == '(') {
             // method type constant (viewed by Soot as a class constant)

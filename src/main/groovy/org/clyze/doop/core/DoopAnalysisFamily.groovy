@@ -741,6 +741,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xignore-factgen-errors",
 					description: "Continue with analysis despite fact generation errors."
 			),
+			new AnalysisOption<List<String>>(
+					id: "ALSO_RESOLVE",
+					name: "also-resolve",
+					description: "Force resolution of class(es) by Soot.",
+					value: [],
+					multipleValues: true,
+					argName: "CLASS"
+			),
 			new IntegerAnalysisOption(
 					id: "X_MONITORING_INTERVAL",
 					name: "Xmonitoring-interval",

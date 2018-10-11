@@ -3,6 +3,8 @@ package org.clyze.doop.soot;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
@@ -24,6 +26,8 @@ import soot.options.Options;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
 public class Main {
+
+    private static Log logger;
 
     private static boolean isApplicationClass(SootParameters sootParameters, SootClass klass) {
         return sootParameters.isApplicationClass(klass.getName());
@@ -54,6 +58,7 @@ public class Main {
 
         try {
             Helper.tryInitLogging("DEBUG", outDir + File.separator + "logs", true);
+            logger = LogFactory.getLog(Main.class);
         } catch (IOException ex) {
             System.err.println("Warning: could not initialize logging");
             throw new DoopErrorCodeException(18);
@@ -132,6 +137,11 @@ public class Main {
         else
             classAdder.addAppClasses(classes, scene);
 
+        for (String extraClass : sootParameters.getExtraClassesToResolve()) {
+            System.out.println("Marking class to resolve: " + extraClass);
+            scene.addBasicClass(extraClass, SootClass.BODIES);
+        }
+
         scene.loadNecessaryClasses();
 
         /*
@@ -157,6 +167,13 @@ public class Main {
         catch (Exception ex) {
             System.err.println("Error: not all bodies retrieved.");
         }
+
+        logDebug("Checking class heaps for missing types...");
+        Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
+        if (unrecorded.size() > 0) {
+            System.err.println("Warning: some classes are missing, consider adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
+        }
+
 
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
             boolean reportPhantoms = sootParameters._reportPhantoms;
@@ -267,5 +284,12 @@ public class Main {
                     throw e;
             }
         }
+    }
+
+    private static void logDebug(String s) {
+        if (logger == null)
+            System.err.println(s);
+        else
+            logger.debug(s);
     }
 }

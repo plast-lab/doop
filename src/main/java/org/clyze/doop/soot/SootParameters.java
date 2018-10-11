@@ -1,6 +1,8 @@
 package org.clyze.doop.soot;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.ArrayList;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Parameters;
 
@@ -16,9 +18,14 @@ public class SootParameters extends Parameters {
     private boolean _toStdout = false;
     boolean _ignoreWrongStaticness = false;
     boolean _reportPhantoms = true;
+    private Collection<String> extraClassesToResolve = new ArrayList<>();
 
     public boolean getRunFlowdroid() {
       return this._runFlowdroid;
+    }
+
+    public Collection<String> getExtraClassesToResolve() {
+        return extraClassesToResolve;
     }
 
     @Override
@@ -56,6 +63,10 @@ public class SootParameters extends Parameters {
         case "--dont-report-phantoms":
             this._reportPhantoms = false;
             break;
+        case "--also-resolve":
+            i = shift(args, i);
+            extraClassesToResolve.add(args[i]);
+            break;
         case "-h":
         case "--help":
         case "-help":
@@ -81,6 +92,7 @@ public class SootParameters extends Parameters {
             System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails");
             System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
             System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
+            System.err.println("  --also-resolve <class>                Force resolution of class that may not be found automatically.");
             System.err.println("Jimple/Shimple generation:");
             System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
             System.err.println("  --stdout                              Write Jimple/Shimple to stdout");

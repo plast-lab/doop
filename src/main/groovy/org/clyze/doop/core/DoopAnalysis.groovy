@@ -385,6 +385,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--ignore-factgen-errors"]
         }
 
+        if (options.ALSO_RESOLVE.value) {
+            List<String> extraClasses = options.ALSO_RESOLVE.value as List<String>
+            params.addAll(extraClasses.collect { c -> ["--also-resolve", c] }.flatten() as Collection<String>)
+        }
+
         log.debug "Params of soot: ${params.join(' ')}"
 
         factGenTime = Helper.timing {

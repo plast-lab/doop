@@ -93,4 +93,7 @@ public enum TypeUtils implements Opcodes  {
                 s.equals(CHAR) || s.equals(SHORT) || s.equals(BYTE));
     }
 
+    public static boolean isLowLevelType(char first, String s) {
+        return first == '[' || (first == 'L' && s.endsWith(";"));
+    }
 }
