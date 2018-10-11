@@ -60,6 +60,15 @@ public class SootParameters extends Parameters {
         case "--help":
         case "-help":
             System.err.println("\nusage: [options] file");
+            showHelp();
+            throw new DoopErrorCodeException(0);
+        default:
+            return super.processNextArg(args, i);
+        }
+        return i;
+    }
+
+    static void showHelp() {
             System.err.println("options:");
             System.err.println("  --main <class>                        Specify the name of the main class");
             System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
@@ -72,27 +81,14 @@ public class SootParameters extends Parameters {
             System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails");
             System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
             System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
-            System.err.println("  --R-out-dir <directory>               Specify where to generate R code (when linking AAR inputs)");
-            System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
+            System.err.println("Jimple/Shimple generation:");
             System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
-            System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
-            throw new DoopErrorCodeException(0);
-        case "--generate-jimple-help":
-            System.err.println("\nusage: [options] file");
-            System.err.println("options:");
-            System.err.println("  --ssa                                 Generate Shimple files (use SSA for variables)");
-            System.err.println("  --full                                Generate Jimple/Shimple files by full transitive resolution");
             System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-            System.err.println("  -d <directory>                        Specify where to generate files");
-            System.err.println("  -l <archive>                          Find classes in jar/zip archive");
-            System.err.println("  -lsystem                              Find classes in default system classes");
-            System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
-            System.err.println("  --decode-apk                          Decompress .apk input in facts directory.");
-            throw new DoopErrorCodeException(0);
-        default:
-            return super.processNextArg(args, i);
-        }
-        return i;
+            System.err.println("Android options:");
+            System.err.println("  --android-jars <archive>              The main android library jar (for Android apk inputs). The same jar should be provided in the -l option");
+            System.err.println("  --decode-apk                          Decompress apk input in facts directory.");
+            System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
+            System.err.println("  --R-out-dir <directory>               Specify where to generate R code (when linking AAR inputs)");
     }
 
     /**
