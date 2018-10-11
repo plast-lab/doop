@@ -240,4 +240,8 @@ public class JavaFactWriter {
     protected void writeAssignUnop(String insn, int index, String local, String methId) {
         _db.add(ASSIGN_UNOP, insn, str(index), local, methId);
     }
+
+    protected void writeClassModifier(String c, String modifier) {
+        _db.add(CLASS_MODIFIER, modifier, c);
+    }
 }

@@ -55,7 +55,7 @@ class DexClassFactWriter extends JavaFactWriter {
             if (flag == AccessFlags.INTERFACE)
                 isInterface = true;
             else
-                _db.add(CLASS_MODIFIER, flag.toString(), className);
+                writeClassModifier(className, flag.toString());
         if (isInterface)
             _db.add(INTERFACE_TYPE, className);
         else

@@ -605,8 +605,7 @@ public class WalaFactWriter extends JavaFactWriter {
     }
 
     void writeClassModifier(IClass c, String modifier) {
-        String type = fixTypeString(c.getName().toString());
-        _db.add(CLASS_MODIFIER, modifier, type);
+        writeClassModifier(fixTypeString(c.getName().toString()), modifier);
     }
 
     void writeMethodModifier(IMethod m, String modifier) {
