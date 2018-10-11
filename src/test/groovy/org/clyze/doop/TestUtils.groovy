@@ -17,6 +17,12 @@ class TestUtils {
 		assert actualSize < (expectedSize * 1.1)
 	}
 
+	static void relationHasExactSize(Analysis analysis, String relation, int expectedSize) {
+		int actualSize = 0
+		forEachLineIn("${analysis.database}/${relation}.csv", { actualSize++ })
+		assert actualSize == expectedSize
+	}
+
 	/**
 	 * Replacement of Groovy's eachLine(), to work with large files.
 	 */
