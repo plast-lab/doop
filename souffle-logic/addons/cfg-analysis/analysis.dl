@@ -249,12 +249,13 @@ LargerPredecessorIndexToSameBB(?insn, ?indexLarge, ?prevSmall) :-
    Instruction_Index(?prevSmall, ?indexSmall),
    ?indexLarge > ?indexSmall.
 
-.decl NextPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number) output
+.decl NextPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number)
+.output NextPredecessorIndexToSameBB
 NextPredecessorIndexToSameBB(?insn, ?prev, ?indexNext) :-
    LargerPredecessorIndexToSameBB(?insn, _, ?prev),
    ?indexNext = min ?index : LargerPredecessorIndexToSameBB(?insn, ?index, ?prev).
 
-.decl NextPredecessorToSameBB(?insn:Instruction, ?pred:Instruction, ?nextPred:Instruction) 
+.decl NextPredecessorToSameBB(?insn:Instruction, ?pred:Instruction, ?nextPred:Instruction)
 NextPredecessorToSameBB(?insn, ?pred, ?nextPred) :-
    NextPredecessorIndexToSameBB(?insn, ?pred, ?indexNext),
    Instruction_Method(?insn, ?method),
@@ -288,7 +289,8 @@ LargerNonDomPredecessorIndexToSameBB(?insn, ?indexLarge, ?prevSmall) :-
    Instruction_Index(?prevSmall, ?indexSmall),
    ?indexLarge > ?indexSmall.
 
-.decl NextNonDomPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number) output
+.decl NextNonDomPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number)
+.output NextNonDomPredecessorIndexToSameBB
 NextNonDomPredecessorIndexToSameBB(?insn, ?prev, ?indexNext) :-
    LargerNonDomPredecessorIndexToSameBB(?insn, _, ?prev),
    ?indexNext = min ?index : LargerNonDomPredecessorIndexToSameBB(?insn, ?index, ?prev).
