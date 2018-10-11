@@ -25,13 +25,12 @@ import static org.clyze.doop.common.PredicateFile.*;
  */
 class FactWriter extends JavaFactWriter {
     private final Representation _rep;
-    private final Map<String, Type> _varTypeMap;
+    private final Map<String, Type> _varTypeMap = new ConcurrentHashMap<>();
     private final boolean _reportPhantoms;
 
     FactWriter(Database db, boolean reportPhantoms) {
         super(db);
         _rep = Representation.getRepresentation();
-        _varTypeMap = new ConcurrentHashMap<>();
         _reportPhantoms = reportPhantoms;
     }
 
