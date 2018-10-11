@@ -18,6 +18,7 @@ public class SootParameters extends Parameters {
     private boolean _toStdout = false;
     boolean _ignoreWrongStaticness = false;
     boolean _reportPhantoms = true;
+    boolean _failOnMissingClasses = false;
     private Collection<String> extraClassesToResolve = new ArrayList<>();
 
     public boolean getRunFlowdroid() {
@@ -67,6 +68,9 @@ public class SootParameters extends Parameters {
             i = shift(args, i);
             extraClassesToResolve.add(args[i]);
             break;
+        case "--failOnMissingClasses":
+            _failOnMissingClasses = true;
+            break;
         case "-h":
         case "--help":
         case "-help":
@@ -91,7 +95,8 @@ public class SootParameters extends Parameters {
             System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
             System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails");
             System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
-            System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot.");
+            System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot");
+            System.err.println("  --failOnMissingClasses                Terminate if classes are missing");
             System.err.println("  --also-resolve <class>                Force resolution of class that may not be found automatically.");
             System.err.println("Jimple/Shimple generation:");
             System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");

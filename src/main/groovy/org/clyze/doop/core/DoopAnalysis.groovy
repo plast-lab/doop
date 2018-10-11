@@ -14,6 +14,7 @@ import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
+import java.lang.reflect.InvocationTargetException
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -386,29 +387,74 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
 
         if (options.ALSO_RESOLVE.value) {
-            List<String> extraClasses = options.ALSO_RESOLVE.value as List<String>
-            params.addAll(extraClasses.collect { c -> ["--also-resolve", c] }.flatten() as Collection<String>)
+            alsoResolve(params, options.ALSO_RESOLVE.value as Collection<String>)
+        }
+
+        if (options.THOROUGH_FACT_GEN.value) {
+            params += ["--failOnMissingClasses"]
         }
 
         log.debug "Params of soot: ${params.join(' ')}"
 
         factGenTime = Helper.timing {
-            //We invoke soot reflectively using a separate class-loader to be able
-            //to support multiple soot invocations in the same JVM @ server-side.
-            //TODO: Investigate whether this approach may lead to memory leaks,
-            //not only for soot but for all other Java-based tools, like jphantom.
-            //In such a case, we should invoke all Java-based tools using a
-            //separate process.
-            ClassLoader loader = sootClassLoader()
-            def success = Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
-            if (!success) {
-                if (!(options.X_IGNORE_FACTGEN_ERRORS.value)) {
-                    log.info "An error occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
+            int tries = 0
+            boolean redo = true
+            while (redo) {
+                // We invoke Soot reflectively using a separate class-loader to
+                // be able to support multiple soot invocations in the same JVM
+                // (server-side). Note that information may be passed over the
+                // different class-loader border but this needs some careful
+                // code (a class "A" in the context of this class is not the
+                // same as "A" in the context of Soot); see exception handling
+                // below for details.
+                //
+                // TODO: Investigate whether this approach may lead to memory
+                // leaks, not only for soot but for all other Java-based tools,
+                // like jphantom.  In such a case, we should invoke all
+                // Java-based tools using a separate process.
+                ClassLoader loader = sootClassLoader()
+                try {
+                    redo = false
+                    Helper.execJavaNoCatch(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
+                } catch (ex) {
+                    boolean handledGracefully = false
+                    if (ex instanceof InvocationTargetException) {
+                        final String MISSING_CLASSES = 'org.clyze.doop.soot.MissingClassesException'
+                        def cause = ((InvocationTargetException)ex).getTargetException() as Throwable
+                        // Since Soot ran in a different class loader, we cannot
+                        // do instanceof checks but have to resort to string
+                        // checks to find the type of thrown exceptions.
+                        if (cause.getClass().getName() == MISSING_CLASSES) {
+                            // The front-end complained that some classes should
+                            // be explicitly passed, so we should restart fact
+                            // generation with these classes explicitly resolved.
+                            String[] extraClasses = loader.loadClass(MISSING_CLASSES).getDeclaredField("classes").get(cause) as String[]
+                            if (tries > 3) {
+                                System.err.println("Too many fact generation restarts, classes still not resolved: " + Arrays.toString(extraClasses))
+                            } else {
+                                System.out.println("Restarting fact generation with " + extraClasses.length + " more classes: " + Arrays.toString(extraClasses))
+                                DoopAnalysis.alsoResolve(params, Arrays.asList(extraClasses))
+                                handledGracefully = true
+                                redo = true
+                                tries++
+                            }
+                        }
+                    }
+
+                    if (!handledGracefully) {
+                        if (!(options.X_IGNORE_FACTGEN_ERRORS.value)) {
+                            log.info "An error occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
+                        }
+                        throw new RuntimeException("Soot fact generation error")
+                    }
                 }
-                throw new RuntimeException("Soot fact generation error")
             }
         }
         log.info "Soot fact generation time: ${factGenTime}"
+    }
+
+    private static void alsoResolve(Collection<String> params, Collection<String> extraClasses) {
+        params.addAll(extraClasses.collect { c -> ["--also-resolve", c] }.flatten() as Collection<String>)
     }
 
     protected void runWala(String platform, Collection<String> deps, List<File> platforms, Collection<String> params) {

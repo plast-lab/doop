@@ -749,6 +749,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					multipleValues: true,
 					argName: "CLASS"
 			),
+			new BooleanAnalysisOption(
+					id: "THOROUGH_FACT_GEN",
+					name: "thorough-fact-gen",
+					description: "Attempt to resolve as many classes during fact generation (may take more time)."
+			),
 			new IntegerAnalysisOption(
 					id: "X_MONITORING_INTERVAL",
 					name: "Xmonitoring-interval",

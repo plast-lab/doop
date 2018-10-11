@@ -171,9 +171,14 @@ public class Main {
         logDebug("Checking class heaps for missing types...");
         Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
         if (unrecorded.size() > 0) {
-            System.err.println("Warning: some classes are missing, consider adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
+            // If option is set, fail and notify caller that fact generation
+            // must run again with these classes added.
+            if (sootParameters._failOnMissingClasses) {
+                throw new MissingClassesException(unrecorded.toArray(new String[0]));
+            } else {
+                System.err.println("Warning: some classes were not resolved, consider adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
+            }
         }
-
 
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
             boolean reportPhantoms = sootParameters._reportPhantoms;
