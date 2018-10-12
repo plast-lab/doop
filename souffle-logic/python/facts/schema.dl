@@ -48,6 +48,7 @@
 
 //-----------------------------------------------------------------------------
 
+.type Module
 .type Scope = File | Function | Module
 
 //-----------------------------------------------------------------------------
@@ -189,7 +190,7 @@
 // The associated *field* of this instruction. It applies to
 // all types of field instuctions.
 
-.decl FieldInstruction_FieldName(?insn:FieldInstruction, ?fieldName:symbol)
+.decl FieldInstruction_Signature(?insn:FieldInstruction, ?fieldName:symbol)
 
 //------------------------------------------------
 // A LoadInstanceField instruction has the form:

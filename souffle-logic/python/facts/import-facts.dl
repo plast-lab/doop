@@ -346,7 +346,7 @@ isFieldInstruction(?instruction),
 isStoreInstanceField_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Function(?instruction, ?function),
-FieldInstruction_FieldName(?instruction, ?fieldName),
+FieldInstruction_Signature(?instruction, ?fieldName),
 StoreInstanceField_Base(?instruction, ?base),
 StoreInstanceField_From(?instruction, ?from) :-
   _StoreInstanceField(?instruction, ?index, ?from, ?base, ?fieldName, ?function).
@@ -362,7 +362,7 @@ isFieldInstruction(?instruction),
 isLoadInstanceField_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Function(?instruction, ?function),
-FieldInstruction_FieldName(?instruction, ?fieldName),
+FieldInstruction_Signature(?instruction, ?fieldName),
 LoadInstanceField_Base(?instruction, ?base),
 LoadInstanceField_To(?instruction, ?to) :-
   _LoadInstanceField(?instruction, ?index, ?to, ?base, ?fieldName, ?function).

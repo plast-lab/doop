@@ -1,115 +1,163 @@
-.decl VarPointsToConstValue(?var:Var, ?val:Value)
+.decl VarPointsToConstValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 
-.decl VarPointsToConstNoneValue(?var:Var, ?val:Value)
+.decl VarPointsToConstNoneValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 .output VarPointsToConstNoneValue
 
-.decl VarPointsToConstFloatValue(?var:Var, ?val:NumConstantValue)
+
+// anantoni: Had to switch all these from NumConstantValue to Value
+.decl VarPointsToConstFloatValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 .output VarPointsToConstFloatValue
 
-.decl VarPointsToConstIntValue(?var:Var, ?val:NumConstantValue)
+.decl VarPointsToConstIntValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 .output VarPointsToConstIntValue
 
-.decl VarHasConstFloatValue(?var:Var, ?val:NumConstantValue)
+.decl VarHasConstFloatValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 .output VarHasConstFloatValue
 
-.decl VarHasConstValue(?var:Var, ?val:NumConstantValue)
+.decl VarHasConstValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 .output VarHasConstValue
 
-.decl VarHasConstIntValue(?var:Var, ?val:NumConstantValue)
+.decl VarHasConstIntValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 .output VarHasConstIntValue
 
-.decl VarHasConstNoneValue(?var:Var, ?val:Value)
+.decl VarHasConstNoneValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 .output VarHasConstNoneValue
 
-VarHasConstValue(?var, ?val):-
-  VarHasConstNoneValue(?var, ?val),
-  VarHasConstFloatValue(?var, ?val),
-  VarHasConstIntValue(?var, ?val).
+//anantoni: Shouldn't this be a disjunction?
+VarHasConstValue(?hctx, ?value, ?ctx, ?var) :-
+  VarHasConstNoneValue(?hctx, ?value, ?ctx, ?var),
+  VarHasConstFloatValue(?hctx, ?value, ?ctx, ?var),
+  VarHasConstIntValue(?hctx, ?value, ?ctx, ?var).
 
-VarPointsToConstValue(?var, ?val):-
-  VarPointsTo(?var, ?val),
-  isConstantValue(?val).
+VarPointsToConstValue(?hctx, ?value, ?ctx, ?var) :-
+  VarPointsTo(?hctx, ?value, ?ctx, ?var),
+  isConstantValue(?value).
 
-VarPointsToConstNoneValue(?var, ?val):-
-  VarPointsTo(?var, ?val),
-  isNoneValue(?val).
+VarPointsToConstNoneValue(?hctx, ?value, ?ctx, ?var) :-
+  VarPointsTo(?hctx, ?value, ?ctx, ?var),
+  isNoneValue(?value).
 
-VarPointsToConstFloatValue(?var, ?val):-
-  VarPointsTo(?var, ?val),
-  Value_Num(?val,?num),
+VarPointsToConstFloatValue(?hctx, ?value, ?ctx, ?var) :-
+  VarPointsTo(?hctx, ?value, ?ctx, ?var),
+  Value_Num(?value,?num),
   isFloatConstant(?num).
 
-VarPointsToConstIntValue(?var, ?val):-
-  VarPointsTo(?var, ?val),
-  Value_Num(?val,?num),
+VarPointsToConstIntValue(?hctx, ?value, ?ctx, ?var) :-
+  VarPointsTo(?hctx, ?value, ?ctx, ?var),
+  Value_Num(?value,?num),
   isIntConstant(?num).
 
-VarPointsTo(?var, ?val),
-VarHasConstNoneValue(?var, ?val):-
+configuration.RecordContextRequest(?ctx, ?value, ?var) :-
+  Reachable(?function),
+  ReachableContext(?ctx, ?function),
+  Instruction_Function(?instr, ?function),
   isAssignNone_Insn(?instr),
   AssignInstruction_To(?instr, ?var),
-  ?val = "<None>".
+  ?value = "<None>".
 
-Value_Num(?val,?num),
-VarHasConstFloatValue(?var, ?val),
-VarPointsTo(?var, ?val):-
+VarPointsTo(?hctx, ?value, ?ctx, ?var),
+VarHasConstNoneValue(?hctx, ?value, ?ctx, ?var) :-
+  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
+  ?value = "<None>".
+
+configuration.RecordContextRequest(?ctx, ?value, ?var) :-
+  Reachable(?function),
+  ReachableContext(?ctx, ?function),
+  Instruction_Function(?instr, ?function),
   AssignFloatConstant_Id(?instr, ?num),
   AssignInstruction_To(?instr, ?var),
-  ?val = cat(cat("<num-constant(float):", ?num),">").
+  ?value = cat(cat("<num-constant(float):", ?num),">").
 
-Value_Num(?val,?num),
-VarHasConstIntValue(?var, ?val),
-VarPointsTo(?var, ?val):-
+Value_Num(?value, ?num),
+VarHasConstFloatValue(?hctx, ?value, ?ctx, ?var),
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  Reachable(?function),
+  ReachableContext(?ctx, ?function),
+  Instruction_Function(?instr, ?function),
+  AssignFloatConstant_Id(?instr, ?num),
+  AssignInstruction_To(?instr, ?var),
+  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
+  ?value = cat(cat("<num-constant(float):", ?num),">").
+
+configuration.RecordContextRequest(?ctx, ?value, ?var) :-
+  Reachable(?function),
+  ReachableContext(?ctx, ?function),
+  Instruction_Function(?instr, ?function),
   AssignIntConstant_Id(?instr, ?num),
   AssignInstruction_To(?instr, ?var),
-  ?val = cat(cat("<num-constant(int):", ?num),">").
+  ?value = cat(cat("<num-constant(int):", ?num),">").
 
-Value_Num(?val,?res),
-VarPointsTo(?var, ?val):-
+configuration.RecordContextRequest(?ctx, ?value, ?var) :-
+  Reachable(?function),
+  ReachableContext(?ctx, ?function),
+  Instruction_Function(?instr, ?function),
   AssignInstruction_To(?instr, ?var),
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
-  BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res),
-  ?val = cat(cat("<num-constant(int):", ?res),">").
+  BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res),
+  ?value = cat(cat("<num-constant(int):", ?res),">").
 
-.decl BinaryIntOp(?instr:Instruction, ?var1:Var, ?var2:Var, ?op:symbol, ?res:IntConstant)
+Value_Num(?value,?num),
+VarHasConstIntValue(?hctx, ?value, ?ctx, ?var),
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  Reachable(?function),
+  ReachableContext(?ctx, ?function),
+  Instruction_Function(?instr, ?function),
+  AssignIntConstant_Id(?instr, ?num),
+  AssignInstruction_To(?instr, ?var),
+  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
+  ?value = cat(cat("<num-constant(int):", ?num),">").
+
+Value_Num(?value,?res),
+VarHasConstIntValue(?hctx, ?value, ?ctx, ?var),
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  Reachable(?function),
+  ReachableContext(?ctx, ?function),
+  Instruction_Function(?instr, ?function),
+  AssignInstruction_To(?instr, ?var),
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
+  BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res),
+  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
+  ?value = cat(cat("<num-constant(int):", ?res),">").
+
+.decl BinaryIntOp(?ctx: configuration.Context, ?instr:Instruction, ?var1:Var, ?var2:Var, ?op:symbol, ?res:IntConstant)
 .output BinaryIntOp
 
 isIntConstant(?res),
-BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res) :-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
-  VarPointsToConstIntValue(?var1, ?numConstVal1),
-  VarPointsToConstIntValue(?var2, ?numConstVal2),
-  Value_Num(?numConstVal1,?numConst1),
-  Value_Num(?numConstVal2,?numConst2),
+  VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
+  VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),
+  Value_Num(?numConstVal1, ?numConst1),
+  Value_Num(?numConstVal2, ?numConst2),
   ?op = "add",
   ?res = to_string(to_number(?numConst1) + to_number(?numConst2)).
 
 isIntConstant(?res),
-BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res):-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
-  VarPointsToConstIntValue(?var1, ?numConstVal1),
-  VarPointsToConstIntValue(?var2, ?numConstVal2),
-  Value_Num(?numConstVal1,?numConst1),
-  Value_Num(?numConstVal2,?numConst2),
+  VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
+  VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),
+  Value_Num(?numConstVal1, ?numConst1),
+  Value_Num(?numConstVal2, ?numConst2),
   ?op = "sub",
   ?res = to_string(to_number(?numConst1) - to_number(?numConst2)).
 
 isIntConstant(?res),
-BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res):-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
-  VarPointsToConstIntValue(?var1, ?numConstVal1),
-  VarPointsToConstIntValue(?var2, ?numConstVal2),
-  Value_Num(?numConstVal1,?numConst1),
-  Value_Num(?numConstVal2,?numConst2),
+  VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
+  VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),
+  Value_Num(?numConstVal1, ?numConst1),
+  Value_Num(?numConstVal2, ?numConst2),
   ?op = "mul",
   ?res = to_string(to_number(?numConst1) * to_number(?numConst2)).
 
 //TODO: Maybe perform some checks that the result of this is Int
 isIntConstant(?res),
-BinaryIntOp(?instr, ?var1, ?var2, ?op, ?res):-
+BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res):-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
-  VarPointsToConstIntValue(?var1, ?numConstVal1),
-  VarPointsToConstIntValue(?var2, ?numConstVal2),
+  VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
+  VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),
   Value_Num(?numConstVal1,?numConst1),
   Value_Num(?numConstVal2,?numConst2),
   ?intConst1 = to_number(?numConst1),

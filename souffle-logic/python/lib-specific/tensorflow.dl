@@ -140,8 +140,8 @@ FormalParam_DefaultValFrom(?function, "name", "<tensorflow.nn>/nameDefValVar"):-
   ?function = "<tensorflow.nn.conv2d>";
   ?function = "<tensorflow.nn.conv3d>".
 
-.decl TensorHasConcreteDimensions(?tensorVal:Value)
-.output TensorHasConcreteDimensions
+.decl TensorObjectHasConcreteDimensions(?tensorVal:Value)
+.output TensorObjectHasConcreteDimensions
 
 //------------------------------------------------------
 //                    PLACEHOLDER INVOC
@@ -154,21 +154,22 @@ FormalParam_DefaultValFrom(?function, "name", "<tensorflow.nn>/nameDefValVar"):-
 
 isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal):-
   FunctionInvResolvesTo(?insn, ?baseVal, "<tensorflow.placeholder>"),
-  ResolvedActualParams(?insn, ?baseVal, 0, "dtype", ?typeVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 0, "dtype", ?typeVal),
   HeapAllocation_Type(?typeVal, ?typeValType),
   isTensorDataType(?typeValType),
-  ResolvedActualParams(?insn, ?baseVal, 1, "shape", ?dimListVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 1, "shape", ?dimListVal),
   isListOfConsts(?dimListVal),
   PyConstListSpecialValueCount(?dimListVal, "<None>", ?specialValueCount),
   ?specialValueCount < 2.
 
 TensorShapeListSize(?tensorVal, ?size),
 TensorShapeListContent(?tensorVal, ?index, ?indexValue):-
+  ReachableContext(?ctx, ?function),
   isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal),
   Instruction_Function(?insn, ?function),
   AssignInstruction_To(?insn, ?tensorAssignVar),
   ?tensorVal = TensorValueMacro("placeholder",?function, ?typeVal, ?dimListVal),
-  VarPointsTo(?tensorAssignVar, ?tensorVal),
+  VarPointsTo(?hctx, ?tensorVal, ?ctx, ?tensorAssignVar),
   VarPointsToList(?dimListVar, ?dimListVal),
   ConstListDimensions(?dimListVal, ?size),
   ConstListContents(?dimListVal, ?index, ?indexValue).
@@ -179,14 +180,19 @@ ConstListContents(?tensorVal, ?index, ?indexValue):-
   TensorShapeListSize(?tensorVal, ?size),
   TensorShapeListContent(?tensorVal, ?index, ?indexValue).
 
-VarPointsTo(?var, ?value),
-Value_Type(?value, "<tensorflow.Tensor>"):-
+configuration.RecordContextRequest(?ctx, ?value, ?var) :-
+  ReachableContext(?ctx, ?function),
   isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal),
   AssignInstruction_To(?insn, ?var),
   Instruction_Function(?insn, ?function),
   ?value = TensorValueMacro("placeholder",?function, ?typeVal, ?dimListVal).
 
-TensorHasConcreteDimensions(?tensorVal):-
+VarPointsTo(?hctx, ?value, ?var, ?ctx),
+Value_Type(?value, "<tensorflow.Tensor>"):-
+  configuration.ContextResponse(?ctx, ?value, ?var, ?hctx),
+  ?value = TensorValueMacro("placeholder",?function, ?typeVal, ?dimListVal).
+
+TensorObjectHasConcreteDimensions(?tensorVal):-
   isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal),
   Instruction_Function(?insn, ?function),
   AssignInstruction_To(?insn, ?tensorAssignVar),
@@ -233,9 +239,9 @@ TensorHasConcreteDimensions(?tensorVal):-
 //Checks if the required args are given and their values have correct values
 isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal):-
   FunctionInvResolvesTo(?insn, ?baseVal, "<tensorflow.reshape>"),
-  ResolvedActualParams(?insn, ?baseVal, 0, "tensor", ?tensorArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 0, "tensor", ?tensorArgVal),
   Value_Type(?tensorArgVal, "<tensorflow.Tensor>"),
-  ResolvedActualParams(?insn, ?baseVal, 1, "shape", ?dimListArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 1, "shape", ?dimListArgVal),
   isListOfConsts(?dimListArgVal),
   PyConstListSpecialValueCount(?dimListArgVal, "<num-constant(int):-1>", ?specialValueCount),
   ?specialValueCount < 2.
@@ -261,7 +267,7 @@ TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
 isValidTensorReshapeInvocationClass2(?insn, ?tensorArgVal, ?dimListArgVal):-
   isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
   isValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
-  TensorHasConcreteDimensions(?tensorArgVal),
+  TensorObjectHasConcreteDimensions(?tensorArgVal),
   PyConstListSpecialValueCount(?dimListArgVal, "<num-constant(int):-1>", 0).
 
 //All the input tensors dims are known
@@ -271,7 +277,7 @@ TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
 isValidTensorReshapeInvocationClass2(?insn, ?tensorArgVal, ?dimListArgVal):-
   isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
   isValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
-  TensorHasConcreteDimensions(?tensorArgVal),
+  TensorObjectHasConcreteDimensions(?tensorArgVal),
   PyConstListSpecialValueCount(?dimListArgVal, "<num-constant(int):-1>", 1).
 
 //All the input tensors dims are known
@@ -284,7 +290,7 @@ isValidTensorReshapeInvocationClass2(?insn, ?tensorArgVal, ?dimListArgVal):-
   isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
   isNotValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
   ConstListContents(?dimListArgVal, _, "<num-constant(int):-1>"),
-  TensorHasConcreteDimensions(?tensorArgVal),
+  TensorObjectHasConcreteDimensions(?tensorArgVal),
   ConstListMultAll(?tensorArgVal,?tensorMultRes),
   ConstListMultAll(?dimListArgVal,?dimListMultRes),
   ?tensorMultRes % ?dimListMultRes = 0,
@@ -295,7 +301,7 @@ isInvalidTensorReshapeInvocation(?insn, ?tensorArgVal, ?dimListArgVal):-
   isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
   isNotValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
   ConstListContents(?dimListArgVal, _, "<num-constant(int):-1>"),
-  TensorHasConcreteDimensions(?tensorArgVal),
+  TensorObjectHasConcreteDimensions(?tensorArgVal),
   ConstListMultAll(?tensorArgVal,?tensorMultRes),
   ConstListMultAll(?dimListArgVal,?dimListMultRes),
   ?tensorMultRes % ?dimListMultRes != 0.
@@ -304,7 +310,7 @@ isInvalidTensorReshapeInvocation(?insn, ?tensorArgVal, ?dimListArgVal):-
 isInvalidTensorReshapeInvocation(?insn, ?tensorArgVal, ?dimListArgVal):-
   isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
   isNotValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
-  TensorHasConcreteDimensions(?tensorArgVal),
+  TensorObjectHasConcreteDimensions(?tensorArgVal),
   PyConstListSpecialValueCount(?dimListArgVal, "<num-constant(int):-1>", 0).
 
 
@@ -352,13 +358,13 @@ Value_Type(?outVal, "<tensorflow.Tensor>"):-
   TensorReshapeInvocationProducesOutput_Value(?insn, ?tensorArgVal, ?dimListArgVal, ?outVal),
   AssignInstruction_To(?insn, ?var).
 
-TensorHasConcreteDimensions(?outVal),
+TensorObjectHasConcreteDimensions(?outVal),
 VarPointsTo(?var, ?outVal),
 Value_Type(?outVal, "<tensorflow.Tensor>"):-
   isValidTensorReshapeInvocationClass2(?insn, ?tensorArgVal, ?dimListArgVal),
   TensorReshapeInvocationProducesOutput_Value(?insn, ?tensorArgVal, ?dimListArgVal, ?outVal),
   AssignInstruction_To(?insn, ?var),
-  TensorHasConcreteDimensions(?tensorArgVal).
+  TensorObjectHasConcreteDimensions(?tensorArgVal).
 
 
 //------------------------------------------------------
@@ -451,13 +457,13 @@ ConvOperation(?insn, ?baseVal, ?newVal):-
   FunctionInvResolvesTo(?insn, ?baseVal, ?function),
   Function_Module(?function, "<tensorflow.layers>"),
   ConvOperationFunctionInfo(?function, ?funName, ?nDims),
-  ResolvedActualParams(?insn, ?baseVal, 0, "inputs", ?inputsTensorArgVal),
-  ResolvedActualParams(?insn, ?baseVal, 1, "filters", ?filtersArgVal),
-  ResolvedActualParams(?insn, ?baseVal, 2, "kernel_size", ?kernelSizeArgVal),
-  ResolvedActualParams(?insn, ?baseVal, 3, "strides", ?stridesArgVal),
-  ResolvedActualParams(?insn, ?baseVal, 4, "padding", ?paddingArgVal),
-  ResolvedActualParams(?insn, ?baseVal, 5, "data_format", ?dataFormatArgVal),
-  ResolvedActualParams(?insn, ?baseVal, 6, "dilation_rate", ?dilationRateArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 0, "inputs", ?inputsTensorArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 1, "filters", ?filtersArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 2, "kernel_size", ?kernelSizeArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 3, "strides", ?stridesArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 4, "padding", ?paddingArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 5, "data_format", ?dataFormatArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 6, "dilation_rate", ?dilationRateArgVal),
   Instruction_Function(?insn, ?inFunction),
   ?newVal = LayersConvValue(?funName, ?inFunction, ?inputsTensorArgVal, ?filtersArgVal, ?kernelSizeArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal, ?dilationRateArgVal).
 
@@ -472,11 +478,11 @@ ConvOperation(?insn, ?baseVal, ?newVal):-
   FunctionInvResolvesTo(?insn, ?baseVal, ?function),
   Function_Module(?function, "<tensorflow.nn>"),
   ConvOperationFunctionInfo(?function, ?funName, ?nDims),
-  ResolvedActualParams(?insn, ?baseVal, 0, "inputs", ?inputsTensorArgVal),
-  ResolvedActualParams(?insn, ?baseVal, 1, "filter", ?filterArgVal),
-  ResolvedActualParams(?insn, ?baseVal, 2, "strides", ?stridesArgVal),
-  ResolvedActualParams(?insn, ?baseVal, 3, "padding", ?paddingArgVal),
-  ResolvedActualParams(?insn, ?baseVal, 5, "data_format", ?dataFormatArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 0, "inputs", ?inputsTensorArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 1, "filter", ?filterArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 2, "strides", ?stridesArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 3, "padding", ?paddingArgVal),
+  ResolvedActualParamValue(?insn, ?baseVal, 5, "data_format", ?dataFormatArgVal),
   Instruction_Function(?insn, ?inFunction),
   ?newVal = NNConvValue(?funName, ?inFunction, ?inputsTensorArgVal, ?filterArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
 
