@@ -95,26 +95,11 @@ class FactGenerator implements Runnable {
         _writer.writeField(f);
         _writer.writeFieldInitialValue(f);
 
-        int modifiers = f.getModifiers();
-        // Following Table 4.5-A of the spec (https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.5).
-        if(Modifier.isPublic(modifiers))
-            _writer.writeFieldModifier(f, "public");
-        if(Modifier.isPrivate(modifiers))
-            _writer.writeFieldModifier(f, "private");
-        if(Modifier.isProtected(modifiers))
-            _writer.writeFieldModifier(f, "protected");
-        if(Modifier.isStatic(modifiers))
-            _writer.writeFieldModifier(f, "static");
-        if(Modifier.isFinal(modifiers))
-            _writer.writeFieldModifier(f, "final");
-        if(Modifier.isVolatile(modifiers))
-            _writer.writeFieldModifier(f, "volatile");
-        if(Modifier.isTransient(modifiers))
-            _writer.writeFieldModifier(f, "transient");
-        if(Modifier.isSynthetic(modifiers))
-            _writer.writeFieldModifier(f, "synthetic");
-        if(Modifier.isEnum(modifiers))
-            _writer.writeFieldModifier(f, "enum");
+        // Take the modifiers from Soot, so that we are robust against
+        // changes of the JVM spec.
+        String[] modifiers = Modifier.toString(f.getModifiers()).split(" ");
+        for (String m : modifiers)
+            _writer.writeFieldModifier(f, m);
     }
 
 
@@ -169,32 +154,16 @@ class FactGenerator implements Runnable {
         if (isPhantomBased(m))
             _writer.writePhantomBasedMethod(m);
 
-        int modifiers = m.getModifiers();
-        // Follows Table 4.6-A of the spec (https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6).
-        if(Modifier.isPublic(modifiers))
-            _writer.writeMethodModifier(m, "public");
-        if(Modifier.isPrivate(modifiers))
-            _writer.writeMethodModifier(m, "private");
-        if(Modifier.isProtected(modifiers))
-            _writer.writeMethodModifier(m, "protected");
-        if(Modifier.isStatic(modifiers))
-            _writer.writeMethodModifier(m, "static");
-        if(Modifier.isFinal(modifiers))
-            _writer.writeMethodModifier(m, "final");
-        if(Modifier.isSynchronized(modifiers))
-            _writer.writeMethodModifier(m, "synchronized");
-        if(Modifier.isVolatile(modifiers))
-            _writer.writeMethodModifier(m, "bridge");  // volatile = bridge for methods
-        if(Modifier.isTransient(modifiers))
-            _writer.writeMethodModifier(m, "varargs"); // transient = varargs for methods
-        if(Modifier.isNative(modifiers))
-            _writer.writeMethodModifier(m, "native");
-        if(Modifier.isAbstract(modifiers))
-            _writer.writeMethodModifier(m, "abstract");
-        if(Modifier.isStrictFP(modifiers))
-            _writer.writeMethodModifier(m, "strictfp");
-        if(Modifier.isSynthetic(modifiers))
-            _writer.writeMethodModifier(m, "synthetic");
+        // Take the modifiers from Soot, so that we are robust against changes
+        // of the JVM spec. Some modifiers still need special handling.
+        String[] modifiers = Modifier.toString(m.getModifiers()).split(" ");
+        for (String mod : modifiers)
+            if ("volatile".equals(mod))
+                _writer.writeMethodModifier(m, "bridge");  // volatile = bridge for methods
+            else if ("transient".equals(mod))
+                _writer.writeMethodModifier(m, "varargs"); // transient = varargs for methods
+            else
+                _writer.writeMethodModifier(m, mod);
 
         if(!m.isStatic())
         {
