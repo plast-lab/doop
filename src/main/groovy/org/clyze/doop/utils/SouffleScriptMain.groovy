@@ -4,6 +4,20 @@ import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.utils.Executor
 import org.clyze.utils.Helper
 
+if (args.size() < 7) {
+    println "Usage:"
+    println "  ./gradlew souffleScript -Pargs='<scriptFilePath> <factsDirPath> <outDirPath> <cacheDirPath> <jobs> <profile> <debug>'"
+    println "Parameters:"
+    println "  scriptFilePath   the Datalog file to evaluate"
+    println "  factsDirPath     the directory containing the input facts"
+    println "  outDirPath       the directory where facts will be written"
+    println "  cacheDirPath     the cache directory (e.g. \$DOOP_HOME/cache)"
+    println "  jobs             the number of jobs to use when running (e.g., 4)"
+    println "  profile          'true' or 'false'"
+    println "  debug            'true' or 'false'"
+    return
+}
+
 def (String scriptFilePath, String factsDirPath, String outDirPath, String cacheDirPath, String jobs, String profile, String debug) = args
 def outDir = new File(outDirPath)
 outDir.mkdirs()
