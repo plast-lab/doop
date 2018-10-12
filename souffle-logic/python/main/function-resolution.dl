@@ -29,7 +29,7 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?baseValue, ?basehctx, ?paramIndex, 
     ActualPositionalParam(?paramIndex, ?invo, ?actual);
     ActualKeywordParam(_, ?invo, ?paramName, ?actual)
   ),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?formal).
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?actual).
 
 // Default arguments
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
@@ -41,5 +41,34 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?baseValue, ?basehctx, ?paramIndex, 
     ActualPositionalParam(?paramIndex, ?invo, _);
     ActualKeywordParam(_, ?invo, ?paramName, _)
   ),
-  FormalParam_DefaultValFrom(?function, ?paramName, ?formal),
-  VarPointsTo(?hctx,  ?value, ?callerCtx, ?formal).
+  FormalParam_DefaultValFrom(?function, ?paramName, ?default),
+  VarPointsTo(?hctx,  ?value, ?callerCtx, ?default).
+
+
+VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
+  CallGraphEdge(?callerCtx, ?invo, _, ?tofunction),
+  ReachableContext(?callerCtx, ?function),
+  Instruction_Function(?invo, ?function),
+  AssignInstruction_To(?invo, ?return),
+  Instruction_Function(?retInsn, ?tofunction),
+  !(isReturnInstruction(?retInsn)),
+  isNoneValue(?value),
+  isImmutableHContext(?hctx).
+
+VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
+  CallGraphEdge(?callerCtx, ?invo, _, ?tofunction),
+  ReachableContext(?callerCtx, ?function),
+  Instruction_Function(?invo, ?function),
+  AssignInstruction_To(?invo, ?return),
+  isReturnNone_Insn(?retInsn),
+  Instruction_Function(?retInsn, ?tofunction),
+  isNoneValue(?value),
+  isImmutableHContext(?hctx).
+
+VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
+  CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
+  AssignInstruction_To(?invo, ?return),
+  isReturnNonNone_Insn(?retInsn),
+  Instruction_Function(?retInsn, ?tofunction),
+  ReturnNonNone_Var(?retInsn, ?var),
+  VarPointsTo(?hctx, ?value, ?calleeCtx, ?var).
