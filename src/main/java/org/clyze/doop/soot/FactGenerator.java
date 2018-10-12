@@ -96,30 +96,25 @@ class FactGenerator implements Runnable {
         _writer.writeFieldInitialValue(f);
 
         int modifiers = f.getModifiers();
-        if(Modifier.isAbstract(modifiers))
-            _writer.writeFieldModifier(f, "abstract");
-        if(Modifier.isFinal(modifiers))
-            _writer.writeFieldModifier(f, "final");
-        if(Modifier.isNative(modifiers))
-            _writer.writeFieldModifier(f, "native");
+        // Following Table 4.5-A of the spec (https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.5).
+        if(Modifier.isPublic(modifiers))
+            _writer.writeFieldModifier(f, "public");
         if(Modifier.isPrivate(modifiers))
             _writer.writeFieldModifier(f, "private");
         if(Modifier.isProtected(modifiers))
             _writer.writeFieldModifier(f, "protected");
-        if(Modifier.isPublic(modifiers))
-            _writer.writeFieldModifier(f, "public");
         if(Modifier.isStatic(modifiers))
             _writer.writeFieldModifier(f, "static");
-        if(Modifier.isSynchronized(modifiers))
-            _writer.writeFieldModifier(f, "synchronized");
-        if(Modifier.isTransient(modifiers))
-            _writer.writeFieldModifier(f, "transient");
+        if(Modifier.isFinal(modifiers))
+            _writer.writeFieldModifier(f, "final");
         if(Modifier.isVolatile(modifiers))
             _writer.writeFieldModifier(f, "volatile");
-        // TODO interface?
-        // TODO strictfp?
-        // TODO annotation?
-        // TODO enum?
+        if(Modifier.isTransient(modifiers))
+            _writer.writeFieldModifier(f, "transient");
+        if(Modifier.isSynthetic(modifiers))
+            _writer.writeFieldModifier(f, "synthetic");
+        if(Modifier.isEnum(modifiers))
+            _writer.writeFieldModifier(f, "enum");
     }
 
 
