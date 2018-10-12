@@ -170,32 +170,31 @@ class FactGenerator implements Runnable {
             _writer.writePhantomBasedMethod(m);
 
         int modifiers = m.getModifiers();
-        if(Modifier.isAbstract(modifiers))
-            _writer.writeMethodModifier(m, "abstract");
-        if(Modifier.isFinal(modifiers))
-            _writer.writeMethodModifier(m, "final");
-        if(Modifier.isNative(modifiers))
-            _writer.writeMethodModifier(m, "native");
+        // Follows Table 4.6-A of the spec (https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6).
+        if(Modifier.isPublic(modifiers))
+            _writer.writeMethodModifier(m, "public");
         if(Modifier.isPrivate(modifiers))
             _writer.writeMethodModifier(m, "private");
         if(Modifier.isProtected(modifiers))
             _writer.writeMethodModifier(m, "protected");
-        if(Modifier.isPublic(modifiers))
-            _writer.writeMethodModifier(m, "public");
         if(Modifier.isStatic(modifiers))
             _writer.writeMethodModifier(m, "static");
+        if(Modifier.isFinal(modifiers))
+            _writer.writeMethodModifier(m, "final");
         if(Modifier.isSynchronized(modifiers))
             _writer.writeMethodModifier(m, "synchronized");
-        // TODO would be nice to have isVarArgs in Soot
-        if(Modifier.isTransient(modifiers))
-            _writer.writeMethodModifier(m, "varargs");
-        // TODO would be nice to have isBridge in Soot
         if(Modifier.isVolatile(modifiers))
-            _writer.writeMethodModifier(m, "bridge");
-        // TODO interface?
-        // TODO strictfp?
-        // TODO annotation?
-        // TODO enum?
+            _writer.writeMethodModifier(m, "bridge");  // volatile = bridge for methods
+        if(Modifier.isTransient(modifiers))
+            _writer.writeMethodModifier(m, "varargs"); // transient = varargs for methods
+        if(Modifier.isNative(modifiers))
+            _writer.writeMethodModifier(m, "native");
+        if(Modifier.isAbstract(modifiers))
+            _writer.writeMethodModifier(m, "abstract");
+        if(Modifier.isStrictFP(modifiers))
+            _writer.writeMethodModifier(m, "strictfp");
+        if(Modifier.isSynthetic(modifiers))
+            _writer.writeMethodModifier(m, "synthetic");
 
         if(!m.isStatic())
         {
