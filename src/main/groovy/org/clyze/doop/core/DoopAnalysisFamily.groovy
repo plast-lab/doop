@@ -121,7 +121,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "MAIN_CLASS",
 					name: "main",
 					argName: "MAIN",
-					description: "Specify the main class(es) separated by spaces",
+					description: "Specify the main class(es) separated by spaces.",
 					value: [],
 					multipleValues: true,
 					changesFacts: true
@@ -165,7 +165,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SPECIAL_CONTEXT_SENSITIVITY_METHODS",
 					name: "special-cs-methods",
 					argName: "FILE",
-					description: "Use a file that specifies special context sensitivity for some methods",
+					description: "Use a file that specifies special context sensitivity for some methods.",
 					forCacheID: true,
 					changesFacts: true
 			),
@@ -173,7 +173,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "USER_DEFINED_PARTITIONS",
 					name: "user-defined-partitions",
 					argName: "FILE",
-					description: "Use a file that specifies the partitions of the analyzed program",
+					description: "Use a file that specifies the partitions of the analyzed program.",
 					forPreprocessor: true,
 					forCacheID: true,
 					changesFacts: true
@@ -182,7 +182,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "PRIMARY_PARTITION",
 					name: "primary-partition",
 					argName: "PARTITION_NAME",
-					description: "Specify the primary partition of a partitioned-2object-sensitive+heap analysis",
+					description: "Specify the primary partition of a partitioned-2object-sensitive+heap analysis.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -328,7 +328,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption(
 					id: "ZIPPER",
 					name: "zipper",
-					description: "Use file with precision-critical methods selected by Zipper, these methods are analyzed context-sensitively",
+					description: "Use file with precision-critical methods selected by Zipper, these methods are analyzed context-sensitively.",
 					argName: "FILE",
 					argInputType: InputType.MISC,
 					forCacheID: true,
@@ -522,11 +522,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Perform a featherweight analysis (global state and complex objects immutable).",
 					forPreprocessor: true
 			),
-            new AnalysisOption<String>(
-                    id: "SYMBOLIC_REASONING",
-                    name: "symbolic-reasoning",
-                    description: "Symbolic reasoning for expressions"
-            ),
+			new AnalysisOption<String>(
+					id: "SYMBOLIC_REASONING",
+					name: "symbolic-reasoning",
+					description: "Symbolic reasoning for expressions."
+			),
 			new AnalysisOption<String>(
 					id: "INFORMATION_FLOW",
 					name: "information-flow",
