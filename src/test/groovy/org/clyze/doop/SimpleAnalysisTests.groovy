@@ -23,6 +23,18 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 
 	// @spock.lang.Ignore
 	@Unroll
+	def "Server analysis test 107 (lambdas)"() {
+		when:
+		analyzeTest("107-lambdas", ["--platform", "java_8", "--Xserver-logic", "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl", "--generate-jimple"])
+
+		then:
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/intWriter#_12', '<Main: void main(java.lang.String[])>/invokedynamic_Main::lambda$main$0/0::: java.util.function.Function::: (Mock)::: reference Main::lambda$main$0 from <Main: java.lang.String lambda$main$0(java.lang.Integer)> wrapped as java.util.function.Function.apply')
+		invokedynamicCGE(analysis, '<Main: void main(java.lang.String[])>/java.util.function.Function.apply/0', '<Main: java.lang.String lambda$main$0(java.lang.Integer)>')
+        invoValue(analysis, '<A: java.lang.Integer lambda$new$0(java.lang.Integer,java.lang.Integer)>/java.lang.Integer.compareTo/0', '<java.lang.Integer: int compareTo(java.lang.Integer)>')
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
 	def "Server analysis test 104 (method references)"() {
 		when:
 		analyzeTest("104-method-references", ["--platform", "java_8"])

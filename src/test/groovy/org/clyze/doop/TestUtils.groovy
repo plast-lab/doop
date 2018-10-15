@@ -90,6 +90,14 @@ class TestUtils {
 		findPair(analysis, "Server_Var_Values", local, 1, value, 2)
 	}
 
+	static void invoValue(Analysis analysis, String local, String value) {
+		findPair(analysis, "Server_Invocation_Values", local, 1, value, 2)
+	}
+
+	static void invokedynamicCGE(Analysis analysis, String instr, String meth) {
+		findPair(analysis, "mainAnalysis-InvokedynamicCallGraphEdge", instr, 1, meth, 3)
+	}
+
 	// Check that an instance field points to a value.
 	static void instanceFieldPointsTo(Analysis analysis, String fld, String value) {
 		findPair(analysis, "mainAnalysis-InstanceFieldPointsTo", fld, 2, value, 1)
