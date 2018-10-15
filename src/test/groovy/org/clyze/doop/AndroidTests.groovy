@@ -1,30 +1,13 @@
 package org.clyze.doop
 
-import org.clyze.analysis.Analysis
 import org.clyze.doop.core.Doop
-import spock.lang.Specification
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
 
 /**
  * Test Android functionality.
  */
-class AndroidTests extends Specification {
-
-	final static String DOOP_BENCHMARKS = "DOOP_BENCHMARKS"
-	static String doopBenchmarksDir
-	Analysis analysis
-
-	def setupSpec() {
-		Doop.initDoopFromEnv()
-
-		doopBenchmarksDir = System.getenv(DOOP_BENCHMARKS)
-		if (!doopBenchmarksDir) {
-			System.err.println("Error: environment variable ${DOOP_BENCHMARKS} not set, cannot run Android analysis tests")
-		}
-		assert null != doopBenchmarksDir
-	}
-
+class AndroidTests extends DoopBenchmark {
 	@Unroll
 	def "Android analysis test androidterm"() {
 		when:
