@@ -48,7 +48,7 @@ _Server_Interesting_Type(?type) :-
 #ifdef REFLECTION_DYNAMIC_PROXIES
 // Proxied interfaces
 _Server_Interesting_Type(?interface) :-
-  ProxyObject_Interface(_, ?interface).
+  mainAnalysis.ProxyObject_Interface(_, ?interface).
 #endif
 
 // Transitively, everything up the hierarchy
