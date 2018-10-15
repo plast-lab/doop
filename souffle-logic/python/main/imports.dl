@@ -11,6 +11,7 @@
 .output isFunction
 
 .output VarPointsToModule
+.output isModule
 
 VarPointsToModule(?hctx, ?module, ?ctx, ?var):-
   VarPointsTo(?hctx, ?module, ?ctx, ?var),
@@ -32,8 +33,8 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to):-
   FieldInstruction_Signature(?insn, ?signature),
   LoadInstanceField_Base(?insn, ?base),
   LoadInstanceField_To(?insn, ?to),
-  VarPointsToModule(?hctx, ?parModule, ?ctx, ?base),
-  GlobalNamePointsTo(?hctx, ?heap, ?signature, ?parModule).
+  VarPointsToModule(_, ?parModule, ?ctx, ?base),
+  GlobalNamePointsTo(?hctx, ?heap, ?parModule, ?signature).
 
 //One thing to be considered in the future is the difference between:
 //1) from file import var

@@ -14,8 +14,8 @@
 .decl ListOfIntConstsAtIndexPointsTo(?listHctx:configuration.HContext, ?listHeap:HeapAllocation, ?index:number, ?value:Value)
 .output ListOfIntConstsAtIndexPointsTo
 
-.decl ListLength(?listHeap:HeapAllocation, ?length:number)
-.output ListLength
+.decl ListInitialLength(?listHeap:HeapAllocation, ?length:number)
+.output ListInitialLength
 
 .decl ListOfIntConsts(?listHctx:configuration.HContext, ?heapList:HeapAllocation)
 .output ListOfIntConsts
@@ -43,13 +43,13 @@ ListOfConsts(?listHctx, ?list):-
   ListOfConstsInner(?listHctx, ?list, 0).
 
 ListOfConstsInner(?listHctx, ?list, ?index):-
-  ListLength(?list, ?length),
+  ListInitialLength(?list, ?length),
   ?index = ?length -1,
   ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
   isConstantValue(?val).
 
 ListOfConstsInner(?listHctx, ?list, ?index):-
-  ListLength(?list, ?length),
+  ListInitialLength(?list, ?length),
   ?index < ?length -1,
   ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
   isConstantValue(?val),
@@ -66,13 +66,13 @@ ListOfIntConsts(?listHctx, ?list):-
   ListOfIntConstsInner(?listHctx, ?list, 0).
 
 ListOfIntConstsInner(?listHctx, ?list, ?index):-
-  ListLength(?list, ?length),
+  ListInitialLength(?list, ?length),
   ?index = ?length -1,
   ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
   Value_Num(?val, _).
 
 ListOfIntConstsInner(?listHctx, ?list, ?index):-
-  ListLength(?list, ?length),
+  ListInitialLength(?list, ?length),
   ?index < ?length -1,
   ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
   Value_Num(?val, _),
@@ -81,7 +81,7 @@ ListOfIntConstsInner(?listHctx, ?list, ?index):-
 
 ListAtIndexPointsTo(?listHctx, ?list, ?index, ?hctx, ?val):-
   ListInitialAssignVar(?list, ?var, ?ctx),
-  //ListLength(?list, ?length),
+  //ListInitialLength(?list, ?length),
   VarPointsTo(?listHctx, ?list, ?ctx, ?var),
   StoreInstanceField_Base(?instr, ?var),
   isOriginalIntConstant(?fieldName),
@@ -90,7 +90,7 @@ ListAtIndexPointsTo(?listHctx, ?list, ?index, ?hctx, ?val):-
   StoreInstanceField_From(?instr, ?from),
   VarPointsTo(?hctx, ?val, ?ctx, ?from).
 
-ListLength(?list, ?length):-
+ListInitialLength(?list, ?length):-
   ListInitialAssignVar(?list, ?var, _),
   ?length = 1 + max ?index: {
     StoreInstanceField_Base(?instr, ?var),
@@ -108,14 +108,14 @@ ConstListMultAll(?listHctx, ?heapList, ?res):-
   ConstListMultAllInner(?listHctx, ?heapList, 0, ?res).
 
 ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
-  ListLength(?heapList, ?dims),
+  ListInitialLength(?heapList, ?dims),
   ?index = ?dims - 1,
   ListOfConstsAtIndexPointsTo(?listHctx, ?heapList, ?index, ?val),
   Value_Num(?val,?num),
   ?res = to_number(?num).
 
 ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
-  ListLength(?heapList, ?dims),
+  ListInitialLength(?heapList, ?dims),
   ListOfConstsAtIndexPointsTo(?listHctx, ?heapList, ?index, ?val),
   ?index < ?dims - 1,
   Value_Num(?val,?numStr),
@@ -125,7 +125,7 @@ ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
   ?res = ?num * ?prevRes.
 
 ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
-  ListLength(?heapList, ?dims),
+  ListInitialLength(?heapList, ?dims),
   ListOfConstsAtIndexPointsTo(?listHctx, ?heapList, ?index, ?val),
   ?index < ?dims - 1,
   Value_Num(?val,?numStr),
@@ -134,7 +134,7 @@ ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
   ?res = ?prevRes.
 
 ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
-  ListLength(?heapList, ?dims),
+  ListInitialLength(?heapList, ?dims),
   ListOfConstsAtIndexPointsTo(?listHctx, ?heapList, ?index, ?val),
   ?index < ?dims - 1,
   ?val = "<None>",

@@ -54,9 +54,9 @@ isTensorDataType("<tensorflow.resource>").
 ModeledClass("<tensorflow.variant>", "variant", "<tensorflow>").
 isTensorDataType("<tensorflow.variant>").
 
-.decl TensorShapeListSize(?val:Value, ?size:number)
-.decl TensorShapeListContent(?val:Value, ?index:number, ?indexValue:Value)
-.output TensorShapeListSize
+.decl TensorShapeListLength(?hctx:configuration.HContext, ?val:Value, ?size:number)
+.decl TensorShapeListContent(?hctx:configuration.HContext, ?val:Value, ?index:number, ?indexValue:Value)
+.output TensorShapeListLength
 .output TensorShapeListContent
 
 ModeledClass("<tensorflow.Tensor>", "Tensor", "<tensorflow>").
@@ -101,10 +101,10 @@ Value_Num("<num-constant(int):1>", "1").
 Value_String("<string constant:valid>" ,"valid").
 Value_String("<string constant:channels_last>" ,"channels_last").
 
-VarPointsTo("<tensorflow.layers>/stridesDefValVar", "<num-constant(int):1>").
-VarPointsTo("<tensorflow.layers>/dilationRateDefValVar", "<num-constant(int):1>").
-VarPointsTo("<tensorflow.layers>/dataFormatDefValVar", "<string constant:channels_last>").
-VarPointsTo("<tensorflow.layers>/paddingDefValVar", "<string constant:valid>").
+VarPointsTo("<<unique-hcontext>>", "<num-constant(int):1>", "<<unique-context>>", "<tensorflow.layers>/stridesDefValVar").
+VarPointsTo("<<unique-hcontext>>", "<num-constant(int):1>", "<<unique-context>>", "<tensorflow.layers>/dilationRateDefValVar").
+VarPointsTo("<<unique-hcontext>>", "<string constant:channels_last>", "<<unique-context>>", "<tensorflow.layers>/dataFormatDefValVar").
+VarPointsTo("<<unique-hcontext>>", "<string constant:valid>", "<<unique-context>>", "<tensorflow.layers>/paddingDefValVar").
 
 FormalParam_DefaultValFrom(?function, "strides", "<tensorflow.layers>/stridesDefValVar"),
 FormalParam_DefaultValFrom(?function, "dilation_rate", "<tensorflow.layers>/dilationRateDefValVar"),
@@ -129,9 +129,9 @@ FormalParam( 5, "name", ?function,  cat(?function,"/mockParam7")):-
   ?function = "<tensorflow.nn.conv2d>";
   ?function = "<tensorflow.nn.conv3d>".
 
-VarPointsTo("<tensorflow.nn>/useCudnnOnGpuDefValVar", "<None>").
-VarPointsTo("<tensorflow.nn>/dataFormatDefValVar", "<None>").
-VarPointsTo("<tensorflow.nn>/nameDefValVar", "<None>").
+VarPointsTo("<<unique-hcontext>>", "<None>", "<<unique-context>>", "<tensorflow.nn>/useCudnnOnGpuDefValVar").
+VarPointsTo("<<unique-hcontext>>", "<None>", "<<unique-context>>", "<tensorflow.nn>/dataFormatDefValVar").
+VarPointsTo("<<unique-hcontext>>", "<None>", "<<unique-context>>", "<tensorflow.nn>/nameDefValVar").
 
 FormalParam_DefaultValFrom(?function, "use_cudnn_on_gpu", "<tensorflow.nn>/useCudnnOnGpuDefValVar"),
 FormalParam_DefaultValFrom(?function, "data_format", "<tensorflow.nn>/dataFormatDefValVar"),
@@ -142,58 +142,64 @@ FormalParam_DefaultValFrom(?function, "name", "<tensorflow.nn>/nameDefValVar"):-
 
 .decl TensorObjectHasConcreteDimensions(?tensorVal:Value)
 .output TensorObjectHasConcreteDimensions
-#if(0)
+
 //------------------------------------------------------
 //                    PLACEHOLDER INVOC
 //------------------------------------------------------
 
 #define TensorValueMacro(op,fun,val1, val2) cat("<tensor ", cat(fun, cat("/", cat(op, cat(val1, cat("+", cat(val2,">")))))))
 
-.decl isValidTensorPlaceHolderInvocation(?insn:FunctionInvocation_Insn, ?typeArgVal:Value, ?dimListVal:Value)
+.decl isValidTensorPlaceHolderInvocation(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?typeArgVal:Value, ?dimListVal:Value, ?listHctx:configuration.HContext)
 .output isValidTensorPlaceHolderInvocation
 
-isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal):-
-  FunctionInvResolvesTo(?insn, ?baseVal, "<tensorflow.placeholder>"),
-  ResolvedActualParamValue(?insn, ?baseVal, 0, "dtype", ?typeVal),
+isValidTensorPlaceHolderInvocation(?ctx, ?insn, ?typeVal, ?dimListVal, ?listHctx):-
+  FunctionInvResolvesTo(?ctx, ?insn, ?baseVal, ?baseHctx, "<tensorflow.placeholder>"),
+  Instruction_Function(?insn, ?function),
+  ResolvedActualParamValue(?ctx, ?insn, ?baseVal, ?baseHctx, 0, "dtype", ?typeVal, _),
   HeapAllocation_Type(?typeVal, ?typeValType),
   isTensorDataType(?typeValType),
-  ResolvedActualParamValue(?insn, ?baseVal, 1, "shape", ?dimListVal),
-  isListOfConsts(?dimListVal),
-  PyConstListSpecialValueCount(?dimListVal, "<None>", ?specialValueCount),
-  ?specialValueCount < 2.
+  ResolvedActualParamValue(?ctx, ?insn, ?baseVal, ?baseHctx, 1, "shape", ?dimListVal, ?listHctx),
+  ListOfConsts(?listHctx, ?dimListVal).
+  //PyConstListSpecialValueCount(?dimListVal, "<None>", ?specialValueCount),
+  //?specialValueCount < 2.
 
-TensorShapeListSize(?tensorVal, ?size),
-TensorShapeListContent(?tensorVal, ?index, ?indexValue):-
+#if(0)
+TensorShapeListLength(?hctx, ?tensorVal, ?size),
+TensorShapeListContent(?hctx, ?tensorVal, ?index, ?indexValue):-
   ReachableContext(?ctx, ?function),
-  isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal),
+  isValidTensorPlaceHolderInvocation(?ctx, ?insn, ?typeVal, ?dimListVal, ?listHctx),
   Instruction_Function(?insn, ?function),
   AssignInstruction_To(?insn, ?tensorAssignVar),
   ?tensorVal = TensorValueMacro("placeholder",?function, ?typeVal, ?dimListVal),
   VarPointsTo(?hctx, ?tensorVal, ?ctx, ?tensorAssignVar),
-  VarPointsToList(?dimListVar, ?dimListVal),
-  ConstListDimensions(?dimListVal, ?size),
-  ConstListContents(?dimListVal, ?index, ?indexValue).
+  VarPointsTo(?listHctx, ?dimListVal, ?ctx, ?dimListVar),
+  ListInitialLength(?dimListVal, ?size),
+  ListOfConstsAtIndexPointsTo(?listHctx, ?dimListVal, ?index, ?indexValue).
 
 
-ConstListDimensions(?tensorVal, ?size),
-ConstListContents(?tensorVal, ?index, ?indexValue):-
-  TensorShapeListSize(?tensorVal, ?size),
-  TensorShapeListContent(?tensorVal, ?index, ?indexValue).
+//ConstListDimensions(?tensorVal, ?size),
+//ConstListContents(?tensorVal, ?index, ?indexValue):-
+//  TensorShapeListSize(?tensorVal, ?size),
+//  TensorShapeListContent(?tensorVal, ?index, ?indexValue).
 
 configuration.RecordContextRequest(?ctx, ?value, ?var) :-
   ReachableContext(?ctx, ?function),
-  isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal),
+  isValidTensorPlaceHolderInvocation(?ctx, ?insn, ?typeVal, ?dimListVal, _),
   AssignInstruction_To(?insn, ?var),
   Instruction_Function(?insn, ?function),
   ?value = TensorValueMacro("placeholder",?function, ?typeVal, ?dimListVal).
 
-VarPointsTo(?hctx, ?value, ?var, ?ctx),
+VarPointsTo(?hctx, ?value, ?ctx, ?var),
 Value_Type(?value, "<tensorflow.Tensor>"):-
-  configuration.ContextResponse(?ctx, ?value, ?var, ?hctx),
+  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
+  isValidTensorPlaceHolderInvocation(?ctx, ?insn, ?typeVal, ?dimListVal, ?listHctx),
+  AssignInstruction_To(?insn, ?var),
+  Instruction_Function(?insn, ?function),
   ?value = TensorValueMacro("placeholder",?function, ?typeVal, ?dimListVal).
 
+
 TensorObjectHasConcreteDimensions(?tensorVal):-
-  isValidTensorPlaceHolderInvocation(?insn, ?typeVal, ?dimListVal),
+  isValidTensorPlaceHolderInvocation(?ctx, ?insn, ?typeVal, ?dimListVal, ?listHctx),
   Instruction_Function(?insn, ?function),
   AssignInstruction_To(?insn, ?tensorAssignVar),
   ?tensorVal = TensorValueMacro("placeholder",?function, ?typeVal, ?dimListVal),

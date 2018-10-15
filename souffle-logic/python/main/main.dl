@@ -12,8 +12,8 @@
   #include "function-resolution.dl"
   #include "lists.dl"
   #include "const-int.dl"
-  //#include "../lib-specific/modeled.dl"
-  //#include "../lib-specific/tensorflow.dl"
+  #include "../lib-specific/modeled.dl"
+  #include "../lib-specific/tensorflow.dl"
 
   /**
    * Reachable
@@ -105,8 +105,7 @@
     GlobalAccessInsn_Name(?insn, ?name),
     GlobalAccessInsn_Scope(?insn, ?scope),
     AssignInstruction_To(?insn, ?var),
-    GlobalNamePointsTo(?hctx, ?value, ?scope, ?name),
-    isImmutableHContext(?hctx).
+    GlobalNamePointsTo(?hctx, ?value, ?scope, ?name).
 
   //This rule is probably redundant
   VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
@@ -147,7 +146,7 @@
     ?type != "list",
     ?type != "object",
     isFunction(?type),
-    isImmutableHContext(?hctx).
+    configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
   isClassObjectAllocation(?value),
   VarPointsTo(?hctx, ?value, ?ctx, ?var):-
@@ -160,7 +159,7 @@
     ?type != "list",
     ?type != "object",
     isClassType(?type),
-    isImmutableHContext(?hctx).
+    configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
   IsPyList(?heap),
   ListInitialAssignVar(?heap, ?var, ?ctx),
@@ -171,7 +170,14 @@
     AssignHeapAllocation_Heap(?instr, ?heap),
     OriginalHeapAllocation_Type(?heap, ?type),
     ?type = "list",
-    isImmutableHContext(?hctx).
+    configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
+
+  configuration.RecordContextRequest(?ctx, ?heap, ?var) :-
+    Reachable(?function),
+    ReachableContext(?ctx, ?function),
+    AssignInstruction_To(?instr, ?var),
+    isNormalHeap(?heap),
+    AssignHeapAllocation_Heap(?instr, ?heap).
 
   Value_String(?value, ?str),
   VarPointsTo(?hctx, ?value, ?ctx, ?var):-
