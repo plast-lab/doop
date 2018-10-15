@@ -19,10 +19,10 @@ class OpenProgramsTest extends Specification {
 		analysis = Main.analysis
 
 		then:
-		relationHasApproxSize(analysis, "mainAnalysis-CallGraphEdge", 245415)
-		relationHasApproxSize(analysis, "mainAnalysis-InstanceFieldPointsTo", 2817045)
+		relationHasApproxSize(analysis, "CallGraphEdge", 245415)
 		relationHasApproxSize(analysis, "Reachable", 43092)
 		relationHasApproxSize(analysis, "Stats_Simple_Application_ArrayIndexPointsTo", 5692)
+		relationHasApproxSize(analysis, "Stats_Simple_Application_InstanceFieldPointsTo", 60468)
 		relationHasApproxSize(analysis, "VarPointsTo", 32832599)
 	}
 }
