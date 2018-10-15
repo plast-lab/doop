@@ -369,5 +369,4 @@ VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return) :-
   Var_Type(?return, ?t),
   (isClassType(?t) ; isArrayType(?t)),
   isImmutableHContext(?hctx).
-  .plan 1:(5,1,2,3,4)
 #endif // SIMULATE_NATIVE_RETURNS
