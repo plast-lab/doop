@@ -33,7 +33,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to):-
   LoadInstanceField_Base(?insn, ?base),
   LoadInstanceField_To(?insn, ?to),
   VarPointsToModule(?hctx, ?parModule, ?ctx, ?base),
-  GlobalNamePointsTo(?hctx, ?heap, ?signature, ?ctx, ?parModule).
+  GlobalNamePointsTo(?hctx, ?heap, ?signature, ?parModule).
 
 //One thing to be considered in the future is the difference between:
 //1) from file import var

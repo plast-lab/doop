@@ -142,7 +142,7 @@ FormalParam_DefaultValFrom(?function, "name", "<tensorflow.nn>/nameDefValVar"):-
 
 .decl TensorObjectHasConcreteDimensions(?tensorVal:Value)
 .output TensorObjectHasConcreteDimensions
-
+#if(0)
 //------------------------------------------------------
 //                    PLACEHOLDER INVOC
 //------------------------------------------------------
@@ -736,3 +736,5 @@ TensorShapeListContent(?newVal, ?channelsPosInTensor, ?outputChannelsNum):-
     )
   ),
   ConvOperation_NumOfOutputChannels(?insn, ?newVal, ?outputChannelsNum).
+
+#endif
