@@ -152,7 +152,7 @@ MockValueConsMacro(UTE_ProxyValue, UTE_Class), isProxyUTE(UTE_ProxyValue) :-
   isType(UTE_Class).
 
 Instruction_Throws(?hctx, UTE_ProxyValue, ?callerCtx, ?invo) :-
-  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
+  ProxyCallGraphEdge(?callerCtx, ?invo, _, _),
   isProxyUTE(UTE_ProxyValue),
   isImmutableHContext(?hctx).
 
@@ -177,7 +177,7 @@ ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx) :-
   Value_Null(?null).
 
 Instruction_Throws(?hctx, NPE_ProxyValue, ?callerCtx, ?invo) :-
-  ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx),
+  ProxyNullInvokeResult(?callerCtx, ?invo, _),
   AssignReturnValue(?invo, ?return),
   Var_Type(?return, ?returnType),
   isPrimitiveType(?returnType),
@@ -202,7 +202,7 @@ MockValueConsMacro(CCE_ProxyValue, CCE_Class), isProxyCCE(CCE_ProxyValue) :-
   isType(CCE_Class).
 
 Instruction_Throws(?hctx, CCE_ProxyValue, ?callerCtx, ?invo) :-
-  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
+  ProxyCallGraphEdge(?callerCtx, ?invo, _, _),
   isProxyCCE(CCE_ProxyValue),
   isImmutableHContext(?hctx).
 

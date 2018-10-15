@@ -278,7 +278,7 @@ ArgArrayAndActualArg(?argsArrValue, ?methSig, ?actual) :-
 // (a) Reference-type arguments go in directly.
 ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx2, ?arrValue) :-
    ArgArrayAndActualArg(?arrValue, _, ?actual),
-   VarPointsTo(?hctx, ?actualVal, ?ctx, ?actual),
+   VarPointsTo(?hctx, ?actualVal, _, ?actual),
    Var_Type(?actual, ?actualType),
    isReferenceType(?actualType),
    isImmutableHContext(?hctx2).
