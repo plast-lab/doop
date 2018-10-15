@@ -8,13 +8,14 @@ import static org.clyze.doop.TestUtils.*
  * Test Android functionality.
  */
 class AndroidTests extends DoopBenchmark {
+
+	// @spock.lang.Ignore
 	@Unroll
-	def "Android analysis test androidterm"() {
+	def "Basic Android analysis test"() {
 		when:
 		List args = ["-i", "${doopBenchmarksDir}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk",
 					 "-a", "context-insensitive", "--Xserver-logic",
 					 "--platform", "android_25_fulljars",
-					 // "--heapdl-file", "${doopBenchmarksDir}/android-benchmarks/jackpal.androidterm.hprof.gz",
 					 "--id", "test-android-androidterm",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 					 "--gen-opt-directives", "--decode-apk", "--thorough-fact-gen",
@@ -24,7 +25,27 @@ class AndroidTests extends DoopBenchmark {
 
 		then:
 		methodIsReachable(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>')
-		varPointsTo(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>/$r0', '<android component object jackpal.androidterm.RunScript>', true)
+		varPointsToQ(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>/$r0', '<android component object jackpal.androidterm.RunScript>')
 		instanceFieldPointsTo(analysis, '<android.widget.AdapterView$AdapterContextMenuInfo: android.view.View targetView>', '<jackpal.androidterm.Term: jackpal.androidterm.TermView createEmulatorView(jackpal.androidterm.emulatorview.TermSession)>/new jackpal.androidterm.TermView/0')
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Featherweight/HeapDL Android analysis test"() {
+		when:
+		List args = ["-i", "${doopBenchmarksDir}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk",
+					 "-a", "context-insensitive",
+					 "--platform", "android_25_fulljars",
+					 "--featherweight-analysis",
+					 "--heapdl-file", "${doopBenchmarksDir}/android-benchmarks/jackpal.androidterm.hprof.gz",
+					 "--id", "test-android-androidterm-fw-heapdl",
+					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+					 "--decode-apk", "--generate-jimple", "--Xstats-full", "-Ldebug"]
+		Main.main((String[])args)
+		analysis = Main.analysis
+
+		then:
+		// We only test if the logic compiles and loads the dynamic facts.
+		true == true
 	}
 }
