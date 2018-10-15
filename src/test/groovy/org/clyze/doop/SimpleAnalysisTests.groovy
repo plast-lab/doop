@@ -11,7 +11,7 @@ import static org.clyze.doop.TestUtils.*
  */
 class SimpleAnalysisTests extends ServerAnalysisTests {
 
-	@spock.lang.Ignore
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 012 (interface fields)"() {
 		when:
