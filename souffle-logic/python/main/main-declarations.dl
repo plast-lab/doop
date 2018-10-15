@@ -49,6 +49,6 @@
 
 .decl isNoneValue(?none:Value)
 
-.decl GlobalNamePointsTo(?hctx:configuration.HContext, ?value:Value, ?scope:Scope, ?ctx:configuration.Context, ?name:symbol)
+.decl GlobalNamePointsTo(?hctx:configuration.HContext, ?value:Value, ?scope:Scope, ?name:symbol)
 
-.decl ListInitialAssignVar(?heap:HeapAllocation, ?var:Var)
+.decl ListInitialAssignVar(?heap:HeapAllocation, ?var:Var, ?ctx:configuration.Context)

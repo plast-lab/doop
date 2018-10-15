@@ -34,7 +34,7 @@ class AndroidTests extends Specification {
 					 // "--heapdl-file", "${doopBenchmarksDir}/android-benchmarks/jackpal.androidterm.hprof.gz",
 					 "--id", "test-android-androidterm",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--gen-opt-directives", "--decode-apk",
+					 "--gen-opt-directives", "--decode-apk", "--thorough-fact-gen",
 					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
 		Main.main((String[])args)
 		analysis = Main.analysis

@@ -30,7 +30,7 @@ abstract class ServerAnalysisTests extends Specification {
 					 "-a", "context-insensitive", // "--Xserver-logic",
 					 "--id", "test-${test}", "--generate-jimple",
 					 "--Xstats-full"] + extraArgs
-		Main.main((String[])args)
+		Main.main2((String[])args)
 		analysis = Main.analysis
 	}
 }

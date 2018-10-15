@@ -11,18 +11,7 @@ import static org.clyze.doop.TestUtils.*
  */
 class SimpleAnalysisTests extends ServerAnalysisTests {
 
-    // @spock.lang.Ignore
-	@Unroll
-	def "Server analysis test 009 (native code)"() {
-		when:
-		analyzeTest("009-native", ["--simulate-native-returns"])
-
-		then:
-		varPointsTo(analysis, '<HelloJNI: void main(java.lang.String[])>/obj#_34', '<native java.lang.Object value allocated in <HelloJNI: java.lang.Object newJNIObj()>>')
-		varPointsTo(analysis, '<HelloJNI: void main(java.lang.String[])>/list#_43', '<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0')
-	}
-
-	// @spock.lang.Ignore
+	@spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 012 (interface fields)"() {
 		when:
@@ -30,24 +19,6 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 
 		then:
 		staticFieldPointsTo(analysis, '<Y: Y fooooooooo>', '<Y: void <clinit>()>/new Y$1/0')
-	}
-
-	// @spock.lang.Ignore
-	@Unroll
-	def "Server analysis test 016 (reflection)"() {
-		when:
-		analyzeTest("016-reflection", ["--reflection-classic", "--platform", "java_8"])
-
-		then:
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/cA#_27', '<class A>')
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/cA_2#_35', '<class A>')
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/constr#_28', '<<reified constructor <A: void <init>()>>>')
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/constr2#_36', '<<reified constructor <A: void <init>(java.lang.Integer,B)>>>')
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/a3#_29', '<reflective Class.newInstance/new A>')
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/a3_2#_31', '<reflective Constructor.newInstance/new A>')
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/iField#_40', '<<reified field <A: java.lang.Integer i>>>')
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/bFieldVal#_46', '<A: void <init>()>/new B/0')
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/bFieldValB#_47', '<A: void <init>()>/new B/0')
 	}
 
 	// @spock.lang.Ignore

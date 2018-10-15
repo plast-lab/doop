@@ -76,6 +76,10 @@ class TestUtils {
 	static void varPointsTo(Analysis analysis, String local, String value) {
 		varPointsTo(analysis, local, value, false)
 	}
+	// Simpler overloaded version.
+	static void varPointsToQ(Analysis analysis, String local, String value) {
+		varPointsTo(analysis, local, value, true)
+	}
 
 	// Check that a static field points to a value.
 	static void staticFieldPointsTo(Analysis analysis, String fld, String value) {
