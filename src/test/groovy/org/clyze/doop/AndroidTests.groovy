@@ -26,6 +26,7 @@ class AndroidTests extends DoopBenchmark {
 		then:
 		methodIsReachable(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>')
 		varPointsToQ(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>/$r0', '<android component object jackpal.androidterm.RunScript>')
+		varValue(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>/$r0', '<android component object jackpal.androidterm.RunScript>')
 		instanceFieldPointsTo(analysis, '<android.widget.AdapterView$AdapterContextMenuInfo: android.view.View targetView>', '<jackpal.androidterm.Term: jackpal.androidterm.TermView createEmulatorView(jackpal.androidterm.emulatorview.TermSession)>/new jackpal.androidterm.TermView/0')
 	}
 

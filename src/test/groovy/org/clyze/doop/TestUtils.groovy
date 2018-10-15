@@ -86,6 +86,10 @@ class TestUtils {
 		findPair(analysis, "mainAnalysis-StaticFieldPointsTo", fld, 2, value, 1)
 	}
 
+	static void varValue(Analysis analysis, String local, String value) {
+		findPair(analysis, "Server_Var_Values", local, 1, value, 2)
+	}
+
 	// Check that an instance field points to a value.
 	static void instanceFieldPointsTo(Analysis analysis, String fld, String value) {
 		findPair(analysis, "mainAnalysis-InstanceFieldPointsTo", fld, 2, value, 1)
