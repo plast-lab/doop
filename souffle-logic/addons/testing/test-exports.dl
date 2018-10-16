@@ -3,3 +3,5 @@
 .output mainAnalysis.InstanceFieldPointsTo
 .output mainAnalysis.StaticFieldPointsTo
 .output mainAnalysis.VarPointsTo
+.output mainAnalysis.InvokedynamicCallGraphEdge
+
