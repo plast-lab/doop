@@ -1,3 +1,6 @@
+import java.nio.file.Files
+import static java.nio.file.attribute.PosixFilePermissions.*
+
 buildscript {
     repositories {
         mavenCentral()
@@ -216,6 +219,7 @@ test {
         exceptionFormat = 'full'
     }
     environment.DOOP_HOME = projectDir
+    environment.HOME = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx"))).toString()
 }
 
 task fullClean {
