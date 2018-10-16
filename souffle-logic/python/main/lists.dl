@@ -6,16 +6,25 @@
 
 .decl VarPointsToList(?hctx:configuration.HContext, ?listHeap:HeapAllocation, ?ctx:configuration.Context, ?var:Var)
 //.decl ConstListLength(?ctx:configuration.Context, ?listHeap:HeapAllocation, ?hctx:configuration.HContext, ?numDimensions:number)
-.decl ConstListContents(?ctx:configuration.Context, ?listHeap:HeapAllocation, ?listhctx:configuration.HContext, ?index:number, ?val:NumConstantValue, ?hctx:configuration.HContext)
+//.decl ConstListContents(?ctx:configuration.Context, ?listHeap:HeapAllocation, ?listhctx:configuration.HContext, ?index:number, ?val:NumConstantValue, ?hctx:configuration.HContext)
 
 .decl ListAtIndexPointsTo(?listHctx:configuration.HContext, ?listHeap:HeapAllocation, ?index:number, ?valHctx:configuration.HContext, ?value:Value)
 .output ListAtIndexPointsTo
 
-.decl ListOfIntConstsAtIndexPointsTo(?listHctx:configuration.HContext, ?listHeap:HeapAllocation, ?index:number, ?value:Value)
-.output ListOfIntConstsAtIndexPointsTo
+.decl ListOfPosIntConstsAtIndexPointsTo(?listHctx:configuration.HContext, ?listHeap:HeapAllocation, ?index:number, ?value:Value)
+.output ListOfPosIntConstsAtIndexPointsTo
+
+.decl ListOfPosIntConsts(?listHctx:configuration.HContext, ?heapList:HeapAllocation)
+.output ListOfPosIntConsts
+
+.decl ListOfPosIntConstsInner(?listHctx:configuration.HContext ,?heapList:HeapAllocation, ?index:number)
+.output ListOfPosIntConstsInner
 
 .decl ListInitialLength(?listHeap:HeapAllocation, ?length:number)
 .output ListInitialLength
+
+.decl ListOfIntConstsAtIndexPointsTo(?listHctx:configuration.HContext, ?listHeap:HeapAllocation, ?index:number, ?value:Value)
+.output ListOfIntConstsAtIndexPointsTo
 
 .decl ListOfIntConsts(?listHctx:configuration.HContext, ?heapList:HeapAllocation)
 .output ListOfIntConsts
@@ -79,6 +88,33 @@ ListOfIntConstsInner(?listHctx, ?list, ?index):-
   ?nextIndex = ?index + 1,
   ListOfIntConstsInner(?listHctx, ?list, ?nextIndex).
 
+//POSITIVE INT CONSTS
+ListOfPosIntConstsAtIndexPointsTo(?listHctx, ?list, ?index, ?val):-
+  ListOfPosIntConsts(?listHctx, ?list),
+  ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
+  Value_Num(?val, ?num),
+  to_number(?num) > 0.
+
+ListOfPosIntConsts(?listHctx, ?list):-
+  ListOfPosIntConstsInner(?listHctx, ?list, 0).
+
+ListOfPosIntConstsInner(?listHctx, ?list, ?index):-
+  ListInitialLength(?list, ?length),
+  ?index = ?length -1,
+  ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
+  Value_Num(?val, ?num),
+  to_number(?num) > 0.
+
+ListOfPosIntConstsInner(?listHctx, ?list, ?index):-
+  ListInitialLength(?list, ?length),
+  ?index < ?length -1,
+  ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
+  Value_Num(?val, ?num),
+  to_number(?num) > 0,
+  ?nextIndex = ?index + 1,
+  ListOfPosIntConstsInner(?listHctx, ?list, ?nextIndex).
+
+//GENERAL LIST
 ListAtIndexPointsTo(?listHctx, ?list, ?index, ?hctx, ?val):-
   ListInitialAssignVar(?list, ?var, ?ctx),
   //ListInitialLength(?list, ?length),
@@ -99,6 +135,14 @@ ListInitialLength(?list, ?length):-
     ?index = to_number(?fieldName)
   }.
 
+.decl ListOfConstsLength(?hctx:configuration.HContext, ?heap:HeapAllocation, ?len:number)
+.output ListOfConstsLength
+
+ListOfConstsLength(?hctx, ?heapList, ?len):-
+  ListOfConsts(?hctx, ?heapList),
+  IsPyList(?heapList),
+  ListInitialLength(?heapList, ?len).
+
 .decl ConstListMultAll(?hctx:configuration.HContext, ?heap:HeapAllocation, ?res:number)
 .decl ConstListMultAllInner(?hctx:configuration.HContext, ?heap:HeapAllocation, ?index:number, ?res:number)
 
@@ -108,14 +152,14 @@ ConstListMultAll(?listHctx, ?heapList, ?res):-
   ConstListMultAllInner(?listHctx, ?heapList, 0, ?res).
 
 ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
-  ListInitialLength(?heapList, ?dims),
+  ListOfConstsLength(?listHctx, ?heapList, ?dims),
   ?index = ?dims - 1,
   ListOfConstsAtIndexPointsTo(?listHctx, ?heapList, ?index, ?val),
   Value_Num(?val,?num),
   ?res = to_number(?num).
 
 ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
-  ListInitialLength(?heapList, ?dims),
+  ListOfConstsLength(?listHctx, ?heapList, ?dims),
   ListOfConstsAtIndexPointsTo(?listHctx, ?heapList, ?index, ?val),
   ?index < ?dims - 1,
   Value_Num(?val,?numStr),
@@ -125,7 +169,7 @@ ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
   ?res = ?num * ?prevRes.
 
 ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
-  ListInitialLength(?heapList, ?dims),
+  ListOfConstsLength(?listHctx, ?heapList, ?dims),
   ListOfConstsAtIndexPointsTo(?listHctx, ?heapList, ?index, ?val),
   ?index < ?dims - 1,
   Value_Num(?val,?numStr),
@@ -134,7 +178,7 @@ ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
   ?res = ?prevRes.
 
 ConstListMultAllInner(?listHctx, ?heapList, ?index, ?res):-
-  ListInitialLength(?heapList, ?dims),
+  ListOfConstsLength(?listHctx, ?heapList, ?dims),
   ListOfConstsAtIndexPointsTo(?listHctx, ?heapList, ?index, ?val),
   ?index < ?dims - 1,
   ?val = "<None>",
