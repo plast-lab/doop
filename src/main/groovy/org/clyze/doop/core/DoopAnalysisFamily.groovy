@@ -178,13 +178,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true,
 					changesFacts: true
 			),
-                        new AnalysisOption<String>(
-					id: "PRIMARY_PARTITION",
-					name: "primary-partition",
-					argName: "PARTITION_NAME",
-					description: "Specify the primary partition of a partitioned-2object-sensitive+heap analysis.",
-					forPreprocessor: true
-			),
 			new BooleanAnalysisOption(
 					id: "SANITY",
 					name: "sanity",
@@ -657,8 +650,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_STOP_AT_BASIC",
 					name: "Xstop-at-basic",
 					description: "Run the basic analysis and exit. Possible strategies: default, classes-scc (outputs the classes in SCC), partitioning (outputs the classes in partitions)",
-                                        argName: "PARTITIONING_STRATEGY",
-                                        argInputType: InputType.MISC
+					argName: "PARTITIONING_STRATEGY",
+					argInputType: InputType.MISC
 			),
 			new BooleanAnalysisOption(
 					id: "X_DRY_RUN",

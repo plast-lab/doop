@@ -94,7 +94,7 @@ class SouffleScript {
 		if (profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 
-		log.debug "Execution command: $executionCommand"
+		log.debug "Execution command: ${executionCommand.join(" ")}"
 		log.info "Running analysis"
 		executionTime = Helper.timing {
 			executor.enableMonitor(monitoringInterval, monitorClosure).execute(executionCommand).disableMonitor()
