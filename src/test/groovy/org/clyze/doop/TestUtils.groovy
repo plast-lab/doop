@@ -98,6 +98,10 @@ class TestUtils {
 		findPair(analysis, "mainAnalysis-InvokedynamicCallGraphEdge", instr, 1, meth, 3)
 	}
 
+	static void proxyCGE(Analysis analysis, String instr, String meth) {
+		findPair(analysis, "mainAnalysis-ProxyCallGraphEdge", instr, 1, meth, 3)
+	}
+
 	// Check that an instance field points to a value.
 	static void instanceFieldPointsTo(Analysis analysis, String fld, String value) {
 		findPair(analysis, "mainAnalysis-InstanceFieldPointsTo", fld, 2, value, 1)

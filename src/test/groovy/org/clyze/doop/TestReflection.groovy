@@ -27,5 +27,6 @@ class TestReflection extends ServerAnalysisTests {
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/bFieldVal#_48', '<A: void <init>()>/new B/0')
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/bFieldValB#_49', '<A: void <init>()>/new B/0')
 		varPointsToQ(analysis, '<Main: void testProxies()>/g#_105', '<proxy object for interface G at <Main: void testProxies()>/java.lang.reflect.Proxy.newProxyInstance/0>')
+		proxyCGE(analysis, '<Main: void testProxies()>/G.countInteger/0', '<DHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>')
 	}
 }
