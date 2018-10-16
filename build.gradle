@@ -223,6 +223,7 @@ test {
 }
 
 task fullClean {
+    description 'Clean everything, including caches and analysis results.'
     doLast {
         def out   = System.getenv('DOOP_OUT')   ?: "$projectDir/out"
         def cache = System.getenv('DOOP_CACHE') ?: "$projectDir/cache"
