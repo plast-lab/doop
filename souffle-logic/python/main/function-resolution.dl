@@ -14,11 +14,11 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tofunction) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tofunction),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx).
 
-.decl ResolvedActualParamValue(?callerCtx: configuration.Context, ?invo:Instruction, ?resolvedFunction:Function, ?paramName:symbol, ?paramValue:Value, ?hctx:configuration.HContext)
+.decl ResolvedActualParamValue(?callerCtx: configuration.Context, ?invo:Instruction, ?resolvedFunction:Function, ?paramName:symbol, ?hctx:configuration.HContext, ?paramValue:Value)
 
 // Interprocedural Assign
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
-ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?value, ?hctx):-
+ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
   CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
   FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
   FormalParam(?paramIndex, ?paramName, ?tofunction, ?formal),
@@ -30,7 +30,7 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?value, ?hc
 
 // Default arguments
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
-ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?value, ?hctx):-
+ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
   CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
   FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
   FormalParam(?paramIndex, ?paramName, ?tofunction, ?formal),
