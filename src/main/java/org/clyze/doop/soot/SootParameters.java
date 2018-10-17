@@ -13,12 +13,13 @@ public class SootParameters extends Parameters {
     String _main = null;
     boolean _ssa = false;
     boolean _allowPhantom = false;
-    private boolean _runFlowdroid = false;
     boolean _generateJimple = false;
-    private boolean _toStdout = false;
     boolean _ignoreWrongStaticness = false;
     boolean _reportPhantoms = true;
     boolean _failOnMissingClasses = false;
+    String _androidJars = null;
+    private boolean _runFlowdroid = false;
+    private boolean _toStdout = false;
     private Collection<String> extraClassesToResolve = new ArrayList<>();
 
     public boolean getRunFlowdroid() {
@@ -48,6 +49,11 @@ public class SootParameters extends Parameters {
             break;
         case "--allow-phantom":
             this._allowPhantom = true;
+            break;
+        case "--android-jars":
+            i = shift(args, i);
+            _android = true;
+            _androidJars = args[i];
             break;
         case "--run-flowdroid":
             this._runFlowdroid = true;
@@ -123,15 +129,16 @@ public class SootParameters extends Parameters {
         if (_toStdout && !_generateJimple) {
             System.err.println("error: --stdout must be used with --generate-jimple");
             throw new DoopErrorCodeException(7);
-        }
-        else if (_toStdout && getOutputDir() != null) {
+        } else if (_toStdout && getOutputDir() != null) {
             System.err.println("error: --stdout and -d options are not compatible");
             throw new DoopErrorCodeException(2);
-        }
-        else if ((getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
+        } else if ((getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
                 (!_android)) {
             System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
             throw new DoopErrorCodeException(3);
+        } else if (_android && _androidJars == null) {
+            System.err.println("internal error: bad configuration for Android analysis mode, missing Android .jar");
+            throw new DoopErrorCodeException(21);
         }
 
         if (!_toStdout && getOutputDir() == null)

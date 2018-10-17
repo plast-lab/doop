@@ -291,6 +291,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         Collection<String> params = ["--application-regex", options.APP_REGEX.value.toString()]
 
+        if (platform == "android") {
+            params.add("--android")
+        }
+
         if (options.FACT_GEN_CORES.value) {
             params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
         }

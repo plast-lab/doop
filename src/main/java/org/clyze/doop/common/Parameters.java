@@ -19,7 +19,6 @@ public class Parameters {
     private ClassFilter applicationClassFilter;
     public boolean _android = false;
     public Integer _cores = null;
-    public String _androidJars = null;
     public String _seed = null;
     public String _specialCSMethods = null;
     public String _rOutDir = null;
@@ -126,11 +125,6 @@ public class Parameters {
      */
     protected int processNextArg(String[] args, int i) throws DoopErrorCodeException {
         switch (args[i]) {
-        case "--android-jars":
-            i = shift(args, i);
-            _android = true;
-            _androidJars = args[i];
-            break;
         case "-i":
             i = shift(args, i);
             _inputs.add(args[i]);
@@ -190,6 +184,9 @@ public class Parameters {
             break;
         case "--ignore-factgen-errors":
             _ignoreFactGenErrors = true;
+            break;
+        case "--android":
+            _android = true;
             break;
         case "--decode-apk":
             _decodeApk = true;

@@ -91,6 +91,10 @@ public class Main {
                 System.err.println("\nWARNING -- Android mode: all inputs will be preprocessed but only " + sootParameters.getInputs().get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
+            if (sootParameters._androidJars == null)
+                System.err.println("WARNING: missing --android-jars option.");
+            else
+                Options.v().set_android_jars(sootParameters._androidJars);
             android = new AndroidSupport_Soot(sootParameters, java);
             android.processInputs(tmpDirs);
         } else
