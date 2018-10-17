@@ -14,6 +14,7 @@ import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
+import java.lang.reflect.Field
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -426,7 +427,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                             // The front-end complained that some classes should
                             // be explicitly passed, so we should restart fact
                             // generation with these classes explicitly resolved.
-                            String[] extraClasses = loader.loadClass(MISSING_CLASSES).getDeclaredField("classes").get(cause) as String[]
+                            Field classesFld = loader.loadClass(MISSING_CLASSES).getDeclaredField("classes")
+                            classesFld.setAccessible(true)
+                            String[] extraClasses = classesFld.get(cause) as String[]
                             if (tries > 3) {
                                 System.err.println("Too many fact generation restarts, classes still not resolved: " + Arrays.toString(extraClasses))
                             } else {
