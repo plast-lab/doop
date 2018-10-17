@@ -9,6 +9,13 @@ HeapAllocation_ContextInsensitive(?heap) :-
 
 #define LAMBDA_ALTMETAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
 
+// Find invocations to the lambda metafactories.
+.decl LambdaMetafactoryInvoke(?invo: MethodInvocation)
+LambdaMetafactoryInvoke(?invo) :-
+   DynamicMethodInvocation_Bootstrap(?invo, LAMBDA_METAFACTORY_ID).
+LambdaMetafactoryInvoke(?invo) :-
+   DynamicMethodInvocation_Bootstrap(?invo, LAMBDA_ALTMETAFACTORY_ID).
+
 // Method references are wrapped by calling invokedynamic with
 // boostrap method being the lambda metafactory and the second
 // bootstrap argument being a constant method handle. The result
@@ -31,7 +38,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
 ConstantMHLambdaVPT(?hctx, MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?realMethod, ?interface, ?dynName)), ?ctx, ?var, ?interface, ?dynName, ?realMethod, ?invo) :-
    isDynamicMethodInvocation_Insn(?invo),
    BootstrapParam(1, ?invo, ?handleVar),
-   DynamicMethodInvocation_Bootstrap(?invo, LAMBDA_METAFACTORY_ID),
+   LambdaMetafactoryInvoke(?invo),
    VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
    MethodHandleConstant_Method(?handleVal, ?realMethod),
    DynamicMethodInvocation_DynName(?invo, ?dynName),
