@@ -396,7 +396,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of soot: ${params.join(' ')}"
 
         factGenTime = Helper.timing {
-            int tries = 0
+            final int MAX_FACTGEN_RESTARTS = 3
+            int factGenRestarts = 0
             boolean redo = true
             while (redo) {
                 // We invoke Soot reflectively using a separate class-loader to
@@ -416,7 +417,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     redo = false
                     Helper.execJavaNoCatch(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
                 } catch (ex) {
-                    boolean handledGracefully = false
+                    // This exception handler will try to restart fact
+                    // generation a limited number of times (e.g., if Soot
+                    // randomly fails or classes are found missing).
                     if (ex instanceof InvocationTargetException) {
                         final String MISSING_CLASSES = 'org.clyze.doop.soot.MissingClassesException'
                         def cause = ((InvocationTargetException)ex).getTargetException() as Throwable
@@ -430,21 +433,26 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                             Field classesFld = loader.loadClass(MISSING_CLASSES).getDeclaredField("classes")
                             classesFld.setAccessible(true)
                             String[] extraClasses = classesFld.get(cause) as String[]
-                            if (tries > 3) {
+                            if (factGenRestarts > MAX_FACTGEN_RESTARTS) {
                                 System.err.println("Too many fact generation restarts, classes still not resolved: " + Arrays.toString(extraClasses))
                             } else {
-                                System.out.println("Restarting fact generation with " + extraClasses.length + " more classes: " + Arrays.toString(extraClasses))
-                                DoopAnalysis.alsoResolve(params, Arrays.asList(extraClasses))
-                                handledGracefully = true
                                 redo = true
-                                tries++
+                                factGenRestarts++
+                                println("Restarting fact generation (run #${factGenRestarts+1}) with " + extraClasses.length + " more classes: " + Arrays.toString(extraClasses))
+                                DoopAnalysis.alsoResolve(params, Arrays.asList(extraClasses))
                             }
                         }
+                    } else if (factGenRestarts > MAX_FACTGEN_RESTARTS) {
+                        println "Too many fact generation restarts, aborting."
+                    } else {
+                        redo = true
+                        factGenRestarts++
+                        println "Errors happened, restarting fact generation (run #${factGenRestarts+1})."
                     }
 
-                    if (!handledGracefully) {
+                    if (!redo) {
                         if (!(options.X_IGNORE_FACTGEN_ERRORS.value)) {
-                            log.info "An error occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
+                            log.info "Errors occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
                         }
                         throw new RuntimeException("Soot fact generation error")
                     }
