@@ -79,12 +79,18 @@ InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod) :-
    VirtualMethodInvocation_SimpleName(?i, ?dynName),
    isImmutableContext(?calleeCtx).
 
-InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, LAMBDA_METAFACTORY_ID) :-
+ReachableContext(?calleeCtx, ?callee) :-
+   InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee).
+
+.decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?metafactory:Method)
+InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?metafactory) :-
+   LambdaMetafactoryInvoke(?i),
+   DynamicMethodInvocation_Bootstrap(?i, ?metafactory),
    isImmutableContext(?calleeCtx),
    InvokedynamicBootstrap(?i, ?callerCtx).
 
 ReachableContext(?calleeCtx, ?callee) :-
-   InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee).
+   InvokedynamicMetafactoryCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
 // Pass arguments to underlying method.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
