@@ -443,12 +443,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "DISABLE_METHOD_HANDLES",
-					name: "disable-method-handles",
-					description: "Disable handling of 'invokedynamic' and method handles.",
-					forPreprocessor: true
-			),
-			new BooleanAnalysisOption(
 					id: "REFLECTION_METHOD_HANDLES",
 					name: "reflection-method-handles",
 					description: "Reflection-based handling of the method handle APIs.",
