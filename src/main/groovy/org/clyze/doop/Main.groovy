@@ -29,7 +29,8 @@ class Main {
 		try {
 			main2(args)
 		} catch (e) {
-			CommandLineAnalysisFactory.createCliBuilder().usage()
+			if (!(e instanceof DoopErrorCodeException))
+				CommandLineAnalysisFactory.createCliBuilder().usage()
 		}
 	}
 
@@ -130,9 +131,16 @@ class Main {
 				executorService.shutdownNow()
 			}
 		} catch (e) {
-			e = (e.cause ?: e)
-			e = StackTraceUtils.deepSanitize e
-			log.error(e.message, e)
+			// DoopErrorCodeException is a special wrapper that must
+			// be propagated above, so we don't extract its cause yet.
+			if (e instanceof DoopErrorCodeException) {
+				log.error(e.message)
+				log.debug(e.message, e)
+			} else {
+				e = (e.cause ?: e)
+				e = StackTraceUtils.deepSanitize e
+				log.error(e.message, e)
+			}
 			throw e
 		}
 	}
