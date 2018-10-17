@@ -1,6 +1,5 @@
 package org.clyze.doop.soot;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.ArrayList;
 import org.clyze.doop.common.DoopErrorCodeException;

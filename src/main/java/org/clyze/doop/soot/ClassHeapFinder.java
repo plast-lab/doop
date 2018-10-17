@@ -7,7 +7,7 @@ import org.clyze.doop.util.TypeUtils;
 import soot.*;
 import soot.jimple.*;
 
-public class ClassHeapFinder {
+class ClassHeapFinder {
     private final Collection<String> recordedTypes = new LinkedList<>();
     private final Collection<String> classHeapTypes = new LinkedList<>();
 
