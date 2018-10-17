@@ -54,7 +54,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "timeout",
 					optName: "t",
 					argName: "MINUTES",
-					"description": "The analysis max allocated execution time. Measured in minutes.",
+					description: "The analysis max allocated execution time. Measured in minutes.",
 					value: 90, // Minutes
 					cli: false
 			),
@@ -298,6 +298,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "CFG_ANALYSIS",
 					name: "cfg",
+					description: "Perform a CFG analysis.",
 					cli: true
 			),
 			/* End Main options */
