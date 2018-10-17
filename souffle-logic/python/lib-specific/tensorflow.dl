@@ -153,11 +153,86 @@ FormalParam_DefaultValFrom(?function, "name", "<tensorflow.nn>/nameDefValVar"):-
 .decl TensorOperationProducesOutput(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value)
 .output TensorOperationProducesOutput
 
+.decl TensorShape(?hctx:configuration.HContext, ?tensor:Value, ?shapeList:Value)
+.output TensorShape
+
+.decl TensorDType(?tensorHctx:configuration.HContext, ?tensor:Value, ?dtypeHctx:configuration.HContext, ?dtype:Value)
+.output TensorDType
+
+configuration.RecordContextRequest(?ctx, ?outTensorVal, ?var) :-
+  TensorOperationProducesOutput(?ctx, ?insn, ?outTensorVal),
+  AssignInstruction_To(?insn, ?var).
+
+TensorShape(?hctx, ?outTensorVal, ?tensorShapeVal),
+VarPointsTo(?hctx, ?outTensorVal, ?ctx, ?var),
+Value_Type(?outTensorVal, "<tensorflow.Tensor>"):-
+  configuration.RecordContextResponse(?ctx, ?outTensorVal, ?var, ?hctx),
+  TensorOperationProducesOutput(?ctx, ?insn, ?outTensorVal),
+  AssignInstruction_To(?insn, ?var),
+  ?tensorShapeVal = cat("<shape ",cat(?outTensorVal, ">")).
+
+
+
+ListOfConstsLength(?hctx, ?tensorVal, ?len),
+ListOfConstsAtIndexPointsTo(?hctx, ?tensorVal, ?index, ?indexValue):-
+  TensorShapeListLength(?hctx, ?tensorVal, ?len),
+  TensorShapeListContent(?hctx, ?tensorVal, ?index, ?indexValue).
+
 //------------------------------------------------------
 //                    PLACEHOLDER INVOC
 //------------------------------------------------------
 
-#define TensorValueMacro(op,fun,val1, val2,hctxVal2) cat("<tensor ", cat(fun, cat("/", cat(op, cat(val1, cat("+", cat(val2, cat("+", cat(hctxVal2,">")))))))))
+#define PlaceHolderValueMacro(op,fun, index, val1, val2,hctxVal2) cat("<tensor ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val1, cat("+", cat(val2, cat("-", cat(hctxVal2,">"))))))))))
+
+.decl PlaceholderOperation(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?reshapeOpVal:Value)
+.output PlaceholderOperation
+
+TensorOperation_NameToVal(?ctx, ?insn, ?placeHolderOp, "dtype", ?typeHctx, ?typeVal),
+TensorOperation_NameToVal(?ctx, ?insn, ?placeHolderOp, "shape", ?dimListHctx, ?dimListArgVal),
+PlaceholderOperation(?ctx, ?insn, ?placeHolderOp):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.placeholder>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.placeholder>", "dtype", ?typeVal, ?typeHctx),
+  ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.placeholder>", "shape", ?dimListArgVal, ?dimListHctx),
+  HeapAllocation_Type(?typeVal, ?typeValType),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?placeHolderOp = PlaceHolderValueMacro("placeholder", ?fun, ?index, ?typeValType, ?dimListArgVal, ?dimListHctx).
+
+TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderOp):-
+  PlaceholderOperation(?ctx, ?insn, ?placeHolderOp),
+  TensorOperation_NameToVal(?ctx, ?insn, ?placeHolderOp, "dtype", _, ?typeVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?placeHolderOp, "shape", ?dimListHctx, ?dimListArgVal),
+  HeapAllocation_Type(?typeVal, ?typeValType),
+  isTensorDataType(?typeValType),
+  ListOfConsts(?dimListHctx, ?dimListArgVal).
+
+TensorObjectHasConcreteDimensions(?hctx, ?placeHolderOpVal):-
+  PlaceholderOperation(?ctx, ?insn, ?placeHolderOpVal),
+  TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderOpVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?placeHolderOpVal, "shape", ?dimListHctx, ?dimListArgVal),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?placeHolderOpVal, ?ctx, ?var),
+  ListOfIntConsts(?dimListHctx, ?dimListArgVal).
+
+TensorShapeListLength(?hctx, ?tensorShapeVal, ?size),
+TensorShapeListContent(?hctx, ?tensorShapeVal, ?index, ?indexValue):-
+  PlaceholderOperation(?ctx, ?insn, ?placeHolderOpVal),
+  TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderOpVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?placeHolderOpVal, "shape", ?dimListHctx, ?dimListArgVal),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?placeHolderOpVal, ?ctx, ?var),
+  TensorShape(?hctx, ?placeHolderOpVal, ?tensorShapeVal),
+  ListInitialLength(?dimListArgVal, ?size),
+  ListOfConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, ?index, ?indexValue).
+
+TensorDType(?tensorHctx, ?placeHolderOpVal, ?dtypeHctx, ?typeVal):-
+  PlaceholderOperation(?ctx, ?insn, ?placeHolderOpVal),
+  TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderOpVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?placeHolderOpVal, "dtype", ?dtypeHctx, ?typeVal),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?tensorHctx, ?placeHolderOpVal, ?ctx, ?var).
+
+/*
 
 .decl isValidTensorPlaceHolderInvocation(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?tensorType:TensorDataType, ?dimListVal:Value, ?listHctx:configuration.HContext)
 .output isValidTensorPlaceHolderInvocation
@@ -173,7 +248,6 @@ isValidTensorPlaceHolderInvocation(?ctx, ?insn, ?typeValType, ?dimListVal, ?list
   //PyConstListSpecialValueCount(?dimListVal, "<None>", ?specialValueCount),
   //?specialValueCount < 2.
 
-
 TensorShapeListLength(?hctx, ?tensorVal, ?size),
 TensorShapeListContent(?hctx, ?tensorVal, ?index, ?indexValue):-
   ReachableContext(?ctx, ?function),
@@ -185,12 +259,6 @@ TensorShapeListContent(?hctx, ?tensorVal, ?index, ?indexValue):-
   VarPointsTo(?listHctx, ?dimListVal, ?ctx, ?dimListVar),
   ListInitialLength(?dimListVal, ?size),
   ListOfConstsAtIndexPointsTo(?listHctx, ?dimListVal, ?index, ?indexValue).
-
-
-ListOfConstsLength(?hctx, ?tensorVal, ?len),
-ListOfConstsAtIndexPointsTo(?hctx, ?tensorVal, ?index, ?indexValue):-
-  TensorShapeListLength(?hctx, ?tensorVal, ?len),
-  TensorShapeListContent(?hctx, ?tensorVal, ?index, ?indexValue).
 
 configuration.RecordContextRequest(?ctx, ?value, ?var) :-
   isValidTensorPlaceHolderInvocation(?ctx, ?insn, ?tensorType, ?dimListVal, ?listHctx),
@@ -206,8 +274,6 @@ Value_Type(?value, "<tensorflow.Tensor>"):-
   Instruction_Function(?insn, ?function),
   ?value = TensorValueMacro("placeholder",?function, ?tensorType, ?dimListVal, ?listHctx).
 
-
-
 TensorObjectHasConcreteDimensions(?tensorHctx, ?tensorVal):-
   isValidTensorPlaceHolderInvocation(?ctx, ?insn, ?tensorType, ?dimListVal, ?listHctx),
   Instruction_Function(?insn, ?function),
@@ -215,6 +281,7 @@ TensorObjectHasConcreteDimensions(?tensorHctx, ?tensorVal):-
   ?tensorVal = TensorValueMacro("placeholder",?function, ?tensorType, ?dimListVal, ?listHctx),
   VarPointsTo(?tensorHctx, ?tensorVal, ?ctx, ?tensorAssignVar),
   ListOfIntConsts(?listHctx, ?dimListVal).
+*/
 
 //------------------------------------------------------
 //              RESHAPE OP
@@ -225,6 +292,9 @@ TensorObjectHasConcreteDimensions(?tensorHctx, ?tensorVal):-
 
 .decl ReshapeOperationInvalid(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?reshapeOpVal:Value)
 .output ReshapeOperationInvalid
+
+.decl ReshapeOperationPossibleMissalignment(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?reshapeOpVal:Value)
+.output ReshapeOperationPossibleMissalignment
 
 .decl ReshapeOperationCorrectTypeArgs(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?reshapeOpVal:Value)
 .output ReshapeOperationCorrectTypeArgs
@@ -270,7 +340,7 @@ TensorObjectHasConcreteDimensions(?tensorHctx, ?tensorVal):-
 .output ValidTensorReshape_ReplaceMinus1WithVal
 */
 
-#define ReshapeValueMacro(op,fun, index,val1, hctxVal1, val2,hctxVal2) cat("<tensor ", cat(fun, cat("/", cat(op, cat(to_string(index), cat("/", cat(val1, cat("-", cat(hctxVal1, cat("+", cat(val2, cat("-", cat(hctxVal2,">")))))))))))))
+#define ReshapeValueMacro(op,fun, index,val1, hctxVal1, val2,hctxVal2) cat("<tensor ", cat(fun, cat("/", cat(op, cat( to_string(index), cat("/", cat(val1, cat("-", cat(hctxVal1, cat("+", cat(val2, cat("-", cat(hctxVal2,">")))))))))))))
 
 //Checks if the required args are given and their values have correct values
 
@@ -301,7 +371,8 @@ ReshapeOperationCorrectTypeArgs(?ctx, ?insn, ?reshapeOpVal):-
 ReshapeOperationTensorAndListSameMult(?ctx, ?insn, ?reshapeOpVal):-
   ReshapeOperationCorrectTypeArgs(?ctx, ?insn, ?reshapeOpVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "tensor", ?tensorHctx, ?tensorArgVal),
-  ConstListMultAll(?tensorHctx, ?tensorArgVal,?tensorRes),
+  TensorShape(?tensorHctx, ?tensorArgVal, ?tensorShapeVal),
+  ConstListMultAll(?tensorHctx, ?tensorShapeVal,?tensorRes),
   TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "shape", ?dimListHctx, ?dimListArgVal),
   ConstListMultAll(?dimListHctx, ?dimListArgVal,?dimListRes),
   ?tensorRes = ?dimListRes.
@@ -310,7 +381,8 @@ ReshapeOperationTensorAndListSameMult(?ctx, ?insn, ?reshapeOpVal):-
 ReshapeOperationTensorAndListDiffMult(?ctx, ?insn, ?reshapeOpVal):-
   ReshapeOperationCorrectTypeArgs(?ctx, ?insn, ?reshapeOpVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "tensor", ?tensorHctx, ?tensorArgVal),
-  ConstListMultAll(?tensorHctx, ?tensorArgVal,?tensorRes),
+  TensorShape(?tensorHctx, ?tensorArgVal, ?tensorShapeVal),
+  ConstListMultAll(?tensorHctx, ?tensorShapeVal,?tensorRes),
   TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "shape", ?dimListHctx, ?dimListArgVal),
   ConstListMultAll(?dimListHctx, ?dimListArgVal,?dimListRes),
   ?tensorRes != ?dimListRes.
@@ -347,7 +419,8 @@ TensorOperationProducesOutput(?ctx, ?insn, ?reshapeOpVal):-
   ListOfIntConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, _, "<num-constant(int):-1>"),
   TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "tensor", ?tensorHctx, ?tensorArgVal),
   TensorObjectHasConcreteDimensions(?tensorHctx, ?tensorArgVal),
-  ConstListMultAll(?tensorHctx, ?tensorArgVal,?tensorMultRes),
+  TensorShape(?tensorHctx, ?tensorArgVal, ?tensorShapeVal),
+  ConstListMultAll(?tensorHctx, ?tensorShapeVal,?tensorMultRes),
   ConstListMultAll(?dimListHctx, ?dimListArgVal,?dimListMultRes),
   ?tensorMultRes % ?dimListMultRes = 0,
   ?replaceNumStr = to_string(?tensorMultRes / ?dimListMultRes),
@@ -360,7 +433,8 @@ ReshapeOperationInvalid(?ctx, ?insn, ?reshapeOpVal):-
   ListOfIntConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, _, "<num-constant(int):-1>"),
   TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "tensor", ?tensorHctx, ?tensorArgVal),
   TensorObjectHasConcreteDimensions(?tensorHctx, ?tensorArgVal),
-  ConstListMultAll(?tensorHctx, ?tensorArgVal,?tensorMultRes),
+  TensorShape(?tensorHctx, ?tensorArgVal, ?tensorShapeVal),
+  ConstListMultAll(?tensorHctx, ?tensorShapeVal,?tensorMultRes),
   ConstListMultAll(?dimListHctx, ?dimListArgVal,?dimListMultRes),
   ?tensorMultRes % ?dimListMultRes != 0.
 
@@ -379,19 +453,46 @@ TensorOperationProducesOutput(?ctx, ?insn, ?reshapeOpVal):-
   ReshapeOperationTensorAndListSameMult(?ctx, ?insn, ?reshapeOpVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "shape", ?dimListHctx, ?dimListArgVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "tensor", ?tensorHctx, ?tensorArgVal),
+  TensorShape(?tensorHctx, ?tensorArgVal, ?tensorShapeVal),
   ListOfIntConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, ?pos, "<num-constant(int):-1>"),
-  ListOfConstsAtIndexPointsTo(?tensorHctx, ?tensorArgVal, ?pos, "<None>").
+  ListOfConstsAtIndexPointsTo(?tensorHctx, ?tensorShapeVal, ?pos, "<None>").
 
-#if(0)
-ValidTensorReshape_ReplaceMinus1WithVal(?insn, ?tensorArgVal, ?dimListArgVal, "<None>"),
-TensorReshapeInvocationProducesOutput(?insn, ?tensorArgVal, ?dimListArgVal),
-isPossibleMisalignedTensorReshapeInvocation(?insn, ?tensorArgVal, ?dimListArgVal):-
-  isValidTensorReshapeInvocationLevel1(?insn, ?tensorArgVal, ?dimListArgVal),
-  isValidTensorReshapeInvocationLevel2(?insn, ?tensorArgVal, ?dimListArgVal),
-  ConstListContents(?tensorArgVal, ?pos1, "<None>"),
-  ConstListContents(?dimListArgVal, ?pos2, "<num-constant(int):-1>"),
+ReshapeOperationReplaceMinus1WithVal(?ctx, ?insn, ?reshapeOpVal, "<None>"),
+ReshapeOperationPossibleMissalignment(?ctx, ?insn, ?reshapeOpVal),
+TensorOperationProducesOutput(?ctx, ?insn, ?reshapeOpVal):-
+  ReshapeOperationTensorAndListSameMult(?ctx, ?insn, ?reshapeOpVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "shape", ?dimListHctx, ?dimListArgVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "tensor", ?tensorHctx, ?tensorArgVal),
+  TensorShape(?tensorHctx, ?tensorArgVal, ?tensorShapeVal),
+  ListOfIntConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, ?pos1, "<num-constant(int):-1>"),
+  ListOfConstsAtIndexPointsTo(?tensorHctx, ?tensorShapeVal, ?pos2, "<None>"),
   ?pos1 != ?pos2.
 
+TensorShapeListLength(?hctx, ?tensorShapeVal, ?size),
+TensorShapeListContent(?hctx, ?tensorShapeVal, ?index, ?indexValue):-
+  ReshapeOperation(?ctx, ?insn, ?reshapeOpVal),
+  TensorOperationProducesOutput(?ctx, ?insn, ?reshapeOpVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "shape", ?dimListHctx, ?dimListArgVal),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?reshapeOpVal, ?ctx, ?var),
+  TensorShape(?hctx, ?reshapeOpVal, ?tensorShapeVal),
+  ListInitialLength(?dimListArgVal, ?size),
+  ListOfConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, ?index, ?indexValue),
+  ?indexValue != "<num-constant(int):-1>".
+
+TensorShapeListLength(?hctx, ?tensorShapeVal, ?size),
+TensorShapeListContent(?hctx, ?tensorShapeVal, ?index, ?indexValue):-
+  ReshapeOperation(?ctx, ?insn, ?reshapeOpVal),
+  TensorOperationProducesOutput(?ctx, ?insn, ?reshapeOpVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "shape", ?dimListHctx, ?dimListArgVal),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?reshapeOpVal, ?ctx, ?var),
+  TensorShape(?hctx, ?reshapeOpVal, ?tensorShapeVal),
+  ListInitialLength(?dimListArgVal, ?size),
+  ListOfConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, ?index, "<num-constant(int):-1>"),
+  ReshapeOperationReplaceMinus1WithVal(?ctx, ?insn, ?reshapeOpVal, ?indexValue).
+
+#if(0)
 TensorShapeListSize(?outVal, ?size),
 TensorShapeListContent(?outVal, ?index, ?indexValue):-
   TensorReshapeInvocationProducesOutput_Value(?insn, ?tensorArgVal, ?dimListArgVal, ?outVal),
