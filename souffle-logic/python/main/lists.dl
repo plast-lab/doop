@@ -68,22 +68,22 @@ ListOfConstsInner(?listHctx, ?list, ?index):-
 //INT CONSTS
 ListOfIntConstsAtIndexPointsTo(?listHctx, ?list, ?index, ?val):-
   ListOfIntConsts(?listHctx, ?list),
-  ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
+  ListOfConstsAtIndexPointsTo(?listHctx, ?list, ?index, ?val),
   Value_Num(?val,_).
 
 ListOfIntConsts(?listHctx, ?list):-
   ListOfIntConstsInner(?listHctx, ?list, 0).
 
 ListOfIntConstsInner(?listHctx, ?list, ?index):-
-  ListInitialLength(?list, ?length),
+  ListOfConstsLength(?listHctx, ?list, ?length),
   ?index = ?length -1,
-  ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
+  ListOfConstsAtIndexPointsTo(?listHctx, ?list, ?index, ?val),
   Value_Num(?val, _).
 
 ListOfIntConstsInner(?listHctx, ?list, ?index):-
-  ListInitialLength(?list, ?length),
+  ListOfConstsLength(?listHctx, ?list, ?length),
   ?index < ?length -1,
-  ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
+  ListOfConstsAtIndexPointsTo(?listHctx, ?list, ?index, ?val),
   Value_Num(?val, _),
   ?nextIndex = ?index + 1,
   ListOfIntConstsInner(?listHctx, ?list, ?nextIndex).
@@ -91,7 +91,7 @@ ListOfIntConstsInner(?listHctx, ?list, ?index):-
 //POSITIVE INT CONSTS
 ListOfPosIntConstsAtIndexPointsTo(?listHctx, ?list, ?index, ?val):-
   ListOfPosIntConsts(?listHctx, ?list),
-  ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
+  ListOfIntConstsAtIndexPointsTo(?listHctx, ?list, ?index, ?val),
   Value_Num(?val, ?num),
   to_number(?num) > 0.
 
@@ -99,16 +99,16 @@ ListOfPosIntConsts(?listHctx, ?list):-
   ListOfPosIntConstsInner(?listHctx, ?list, 0).
 
 ListOfPosIntConstsInner(?listHctx, ?list, ?index):-
-  ListInitialLength(?list, ?length),
+  ListOfConstsLength(?listHctx, ?list, ?length),
   ?index = ?length -1,
-  ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
+  ListOfIntConstsAtIndexPointsTo(?listHctx, ?list, ?index, ?val),
   Value_Num(?val, ?num),
   to_number(?num) > 0.
 
 ListOfPosIntConstsInner(?listHctx, ?list, ?index):-
-  ListInitialLength(?list, ?length),
+  ListOfConstsLength(?listHctx, ?list, ?length),
   ?index < ?length -1,
-  ListAtIndexPointsTo(?listHctx, ?list, ?index, _, ?val),
+  ListOfIntConstsAtIndexPointsTo(?listHctx, ?list, ?index, ?val),
   Value_Num(?val, ?num),
   to_number(?num) > 0,
   ?nextIndex = ?index + 1,
