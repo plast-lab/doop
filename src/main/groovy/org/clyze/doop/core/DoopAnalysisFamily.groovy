@@ -816,15 +816,23 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	}
 
 	private static List<String> analysesSouffle() {
-		if (!Doop.souffleAnalysesPath) {
-			Doop.initDoopFromEnv()
+		try {
+			if (!Doop.souffleAnalysesPath) {
+				Doop.initDoopFromEnv()
+			}
+		} catch (e) {
+			println "Error initializing Doop."
 		}
 		analysesFor(Doop.souffleAnalysesPath, "analysis.dl")
 	}
 
 	private static List<String> analysesLB() {
-		if (!Doop.analysesPath) {
-			Doop.initDoopFromEnv()
+		try {
+			if (!Doop.analysesPath) {
+				Doop.initDoopFromEnv()
+			}
+		} catch (e) {
+			println "Error initializing Doop."
 		}
 		analysesFor(Doop.analysesPath, "analysis.logic")
 	}
