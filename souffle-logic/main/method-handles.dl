@@ -22,20 +22,27 @@ LambdaMetafactoryInvoke(?invo) :-
 // 'value' of the invokedynamic is a lambda, which contains an
 // instance method calling static method 'realMethod'.
 
-.decl ConstantMethodHandleLambda(?value:Value, ?dynName:symbol, ?dynRet:Type, ?realMethod:Method)
-
-.decl InvokedynamicBootstrap(?invo:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
-
 #define MHDesc(type, method, real, ret, name) \
    cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))
 
 #define MHValue(invo, ret, desc) \
    cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", desc))))
 
-// Intermediate relation to make rules easier to read.
-.decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method, ?invo:MethodInvocation)
+.decl ConstantMethodHandleLambda(?value:Value, ?dynName:symbol, ?dynRet:Type, ?realMethod:Method)
 
-ConstantMHLambdaVPT(?hctx, MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?realMethod, ?interface, ?dynName)), ?ctx, ?var, ?interface, ?dynName, ?realMethod, ?invo) :-
+// Unpack the information gathered above and populate appropriate relations.
+VarPointsTo(?hctx, ?value, ?ctx, ?var),
+MockValueConsMacro(?value, ?interface),
+ConstantMethodHandleLambda(?value, ?dynName, ?interface, ?realMethod) :-
+   ConstantMHLambdaVPT(?hctx, ?value, ?ctx, ?var, ?interface, ?dynName, ?realMethod).
+
+.decl InvokedynamicBootstrap(?invo:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
+
+// Intermediate relation to make rules easier to read.
+.decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method)
+
+InvokedynamicBootstrap(?invo, ?ctx),
+ConstantMHLambdaVPT(?hctx, MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?realMethod, ?interface, ?dynName)), ?ctx, ?var, ?interface, ?dynName, ?realMethod) :-
    isDynamicMethodInvocation_Insn(?invo),
    BootstrapParam(1, ?invo, ?handleVar),
    LambdaMetafactoryInvoke(?invo),
@@ -52,12 +59,6 @@ ConstantMHLambdaVPT(?hctx, MHValue(?invo, ?interface, MHDesc(?handleType, ?handl
    // ?value = MHValue(?invo, ?interface, ?desc).
    // ?value = MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?interface, ?dynName)).
 
-// Unpack the information gathered above and populate appropriate relations.
-VarPointsTo(?hctx, ?value, ?ctx, ?var),
-MockValueConsMacro(?value, ?interface),
-ConstantMethodHandleLambda(?value, ?dynName, ?interface, ?realMethod),
-InvokedynamicBootstrap(?invo, ?ctx) :-
-   ConstantMHLambdaVPT(?hctx, ?value, ?ctx, ?var, ?interface, ?dynName, ?realMethod, ?invo).
 
 // Record invokedynamic invocations whose bootstrap methods are not
 // handled at all.
