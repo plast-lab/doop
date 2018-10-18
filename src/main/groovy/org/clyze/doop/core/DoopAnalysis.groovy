@@ -234,7 +234,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 log.info "Caching facts in $cacheDir"
                 deleteQuietly(cacheDir)
                 cacheDir.mkdirs()
-                FileOps.copyDirContents(factsDir, cacheDir)
+                FileOps.copyDirContentsWithRetry(factsDir, cacheDir)
                 new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
             } else {
                 log.warn "WARNING: Imported facts are not cached."
