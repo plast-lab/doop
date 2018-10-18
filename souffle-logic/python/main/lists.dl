@@ -114,6 +114,9 @@ ListOfPosIntConstsInner(?listHctx, ?list, ?index):-
   ?nextIndex = ?index + 1,
   ListOfPosIntConstsInner(?listHctx, ?list, ?nextIndex).
 
+
+//Implementation for older versions of the front end, keeping this arround for some time
+#if(0)
 //GENERAL LIST
 ListAtIndexPointsTo(?listHctx, ?list, ?index, ?hctx, ?val):-
   ListInitialAssignVar(?list, ?var, ?ctx),
@@ -134,6 +137,35 @@ ListInitialLength(?list, ?length):-
     FieldInstruction_Signature(?instr, ?fieldName),
     ?index = to_number(?fieldName)
   }.
+#endif
+
+//GENERAL LIST
+ListAtIndexPointsTo(?listHctx, ?list, ?index, ?hctx, ?val):-
+  ListInitialAssignVar(?list, ?var, ?ctx),
+  //ListInitialLength(?list, ?length),
+  VarPointsTo(?listHctx, ?list, ?ctx, ?var),
+  isWriteToCollection_Insn(?instr),
+  CollectionAccessInsn_Base(?instr, ?var),
+  CollectionAccessInsn_IndexOrKey(?instr, ?indexVar),
+  VarHasConstIntValue(?indexVal, ?indexVar),
+  Value_Num(?indexVal, ?indexNum),
+  ?index = to_number(?indexNum),
+  WriteToCollectionInsn_From(?instr, ?from),
+  VarPointsTo(?hctx, ?val, ?ctx, ?from).
+
+
+ListInitialLength(?list, ?length):-
+  ListInitialAssignVar(?list, ?var, _),
+  //?length = count: {
+  ?length = 1 + max ?index: {
+    isWriteToCollection_Insn(?instr),
+    CollectionAccessInsn_Base(?instr, ?var),
+    CollectionAccessInsn_IndexOrKey(?instr, ?indexVar),
+    AssignInstruction_To(?indexAssignInstr, ?indexVar),
+    AssignIntConstant_Id(?indexAssignInstr, ?indexStr),
+    isOriginalIntConstant(?indexStr),
+    ?index = to_number(?indexStr)
+   }.
 
 .decl ListOfConstsLength(?hctx:configuration.HContext, ?heap:HeapAllocation, ?len:number)
 .output ListOfConstsLength

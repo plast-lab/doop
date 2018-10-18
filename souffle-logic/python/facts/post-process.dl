@@ -20,6 +20,11 @@ isMethod(?function):-
     Instruction_Function(?insn, ?fun),
     Function_DeclaredInFile(?fun, ?scope).
 
+.output FormalParam_DefaultValFrom
+FormalParam_DefaultValFrom(?fun, ?formalName, ?fromVar):-
+  _FormalParam_DefaultValueVar(?fun, ?formalIndex, ?fromVar),
+  FormalParam(?formalIndex, ?formalName, ?fun, _).
+
 .decl AssignBinOper_Info(?instr:Instruction, ?op:symbol, ?var1:Var, ?var2:Var)
 
 AssignBinOper_Info(?instr, ?op, ?var1, ?var2):-

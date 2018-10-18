@@ -26,7 +26,7 @@ public enum PythonPredicateFile
     ACTUAL_KEYWORD_PARAMETER("ActualKeywordParam"),
     DIRECT_SUPER_CLASS("DirectSuperclass"),
     FORMAL_PARAM("FormalParam"),
-    FORMAL_PARAM_DEFAULT_VAR("FormalParam-DefaultVar"),
+    FORMAL_PARAM_DEFAULT_VAR("FormalParam-DefaultValueVar"),
     PARAM_ANNOTATION("Param-Annotation"),
     NATIVE_RETURN_VAR("NativeReturnVar"),
     VAR_DECLARING_FUNCTION("Var-DeclaringFunction"),
