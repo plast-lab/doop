@@ -27,10 +27,10 @@ class CrudeLBTest extends Specification {
 
 		where:
 		scenario                                  | expVPT   | expFPT  | expCGE | expPolyCalls | expFailCasts
-		"antlr-insensitive-tamiflex.properties"   | 2595458  | 271819  | 57869  | 1957         | 1123
-		// "antlr-1call-tamiflex.properties"         | 10458878 | 192361  | 55859  | 1887         | 954
-		// "antlr-1objH-tamiflex.properties"         | 6695712  | 104251  | 54545  | 1811         | 926
-		// "antlr-insensitive-reflection.properties" | 8808591  | 1111250 | 77719  | 2499         | 1619
+		"antlr-insensitive-tamiflex-lb.properties"   | 2595458  | 271819  | 57869  | 1957         | 1123
+		"antlr-1call-tamiflex-lb.properties"         | 10458878 | 192361  | 55859  | 1887         | 954
+		"antlr-1objH-tamiflex-lb.properties"         | 6695712  | 104251  | 54545  | 1811         | 926
+		"antlr-insensitive-reflection-lb.properties" | 8808591  | 1111250 | 77719  | 2499         | 1619
 	}
 
 	void equals(String metric, long expectedVal) {
