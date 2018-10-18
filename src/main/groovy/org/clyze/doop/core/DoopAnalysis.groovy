@@ -396,8 +396,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of soot: ${params.join(' ')}"
 
         factGenTime = Helper.timing {
-            final int MAX_FACTGEN_RESTARTS = 3
-            int factGenRestarts = 0
+            final int MAX_FACTGEN_RUNS = 3
+            int factGenRun = 1
             boolean redo = true
             while (redo) {
                 // We invoke Soot reflectively using a separate class-loader to
@@ -416,50 +416,57 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 try {
                     redo = false
                     Helper.execJavaNoCatch(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
-                } catch (ex) {
-                    // This exception handler will try to restart fact
-                    // generation a limited number of times (e.g., if Soot
-                    // randomly fails or classes are found missing).
-                    if (ex instanceof InvocationTargetException) {
-                        final String MISSING_CLASSES = 'org.clyze.doop.soot.MissingClassesException'
-                        def cause = ((InvocationTargetException)ex).getTargetException() as Throwable
-                        // Since Soot ran in a different class loader, we cannot
-                        // do instanceof checks but have to resort to string
-                        // checks to find the type of thrown exceptions.
-                        if (cause.getClass().getName() == MISSING_CLASSES) {
-                            // The front-end complained that some classes should
-                            // be explicitly passed, so we should restart fact
-                            // generation with these classes explicitly resolved.
-                            Field classesFld = loader.loadClass(MISSING_CLASSES).getDeclaredField("classes")
-                            classesFld.setAccessible(true)
-                            String[] extraClasses = classesFld.get(cause) as String[]
-                            if (factGenRestarts > MAX_FACTGEN_RESTARTS) {
-                                System.err.println("Too many fact generation restarts, classes still not resolved: " + Arrays.toString(extraClasses))
-                            } else {
-                                redo = true
-                                factGenRestarts++
-                                println("Restarting fact generation (run #${factGenRestarts+1}) with " + extraClasses.length + " more classes: " + Arrays.toString(extraClasses))
-                                DoopAnalysis.alsoResolve(params, Arrays.asList(extraClasses))
-                            }
+                } catch (Throwable t) {
+                    // Try to restart fact generation a limited number of times
+                    // (e.g., if Soot randomly fails or classes are missing).
+                    String[] extraClasses = checkMissingClasses(loader, t)
+                    if (extraClasses != null) {
+                        // Retry with classes reported by the front-end.
+                        if (factGenRun >= MAX_FACTGEN_RUNS) {
+                            System.err.println("Too many fact generation restarts, classes still not resolved: " + Arrays.toString(extraClasses))
+                        } else {
+                            redo = true
+                            factGenRun += 1
+                            println("Restarting fact generation (run #${factGenRun}) with " + extraClasses.length + " more classes: " + Arrays.toString(extraClasses))
+                            DoopAnalysis.alsoResolve(params, Arrays.asList(extraClasses))
                         }
-                    } else if (factGenRestarts > MAX_FACTGEN_RESTARTS) {
+                    } else if (factGenRun >= MAX_FACTGEN_RUNS) {
                         println "Too many fact generation restarts, aborting."
-                    } else {
-                        redo = true
-                        factGenRestarts++
-                        println "Errors happened, restarting fact generation (run #${factGenRestarts+1})."
-                    }
-
-                    if (!redo) {
                         if (!(options.X_IGNORE_FACTGEN_ERRORS.value)) {
                             log.info "Errors occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
                         }
+                        System.err.println(t.message)
                         throw new RuntimeException("Soot fact generation error")
+                    } else {
+                        redo = true
+                        factGenRun += 1
+                        println "Errors happened, restarting fact generation (run #${factGenRun})."
                     }
                 }
             }
         }
         log.info "Soot fact generation time: ${factGenTime}"
+    }
+
+    // Since Soot runs in a different class loader, we cannot do
+    // instanceof checks but have to resort to string checks to find
+    // the type of thrown exceptions.
+    //
+    // @param loader  the class loader
+    // @param t       a throwable to be checked
+    // @return        if t is a MissingClassesException, field
+    //                'classes' is returned here, otherwise null.
+    String[] checkMissingClasses(ClassLoader loader, Throwable t) {
+        if (t instanceof InvocationTargetException) {
+            final String MISSING_CLASSES = 'org.clyze.doop.soot.MissingClassesException'
+            Throwable cause = ((InvocationTargetException)t).getTargetException() as Throwable
+            if (cause.getClass().getName() == MISSING_CLASSES) {
+                Field classesFld = loader.loadClass(MISSING_CLASSES).getDeclaredField("classes")
+                classesFld.setAccessible(true)
+                return classesFld.get(cause) as String[]
+            }
+        }
+        return null
     }
 
     private static void alsoResolve(Collection<String> params, Collection<String> extraClasses) {
