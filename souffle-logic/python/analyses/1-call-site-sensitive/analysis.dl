@@ -1,0 +1,34 @@
+// Context-sensitive pointer analysis with context of One call site.
+
+#include "../../main/main.dl"
+#include "../../main/configuration.dl"
+
+#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
+
+.comp OneCallSiteSensitiveConfiguration : AbstractConfiguration {
+
+  // In this analysis, the real context is a MethodInvocation.
+  .type Context = [ invocation:FunctionInvocation_Insn ]
+
+  // This analysis has no context for heap objects.
+  // This is emulated by creating a single HContext object,
+  // which is used everywhere.
+  .type HContext
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ?calleeCtx = [?invo],
+    ?tomethod = ?tomethod.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+  RecordContextRequest(?ctx, ?value, ?var),
+    ?hctx = UNIQUE_HCONTEXT.
+
+  InitContextResponse(?invocation, ?ctx) :-
+    InitContextRequest(?invocation),
+    ?ctx = [?invocation].
+
+  InitHContextResponse(?s, ?hctx) :-
+    InitHContextRequest(?s),
+    ?hctx = UNIQUE_HCONTEXT.
+}

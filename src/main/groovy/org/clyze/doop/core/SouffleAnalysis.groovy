@@ -12,7 +12,6 @@ import java.util.concurrent.Future
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
-import static org.apache.commons.io.FileUtils.touch
 
 @CompileStatic
 @InheritConstructors
@@ -58,8 +57,6 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 
 		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
-		def file = new File(database, "Stats_Metrics.csv")
-		touch(file)
 
 		try {
 			log.info "[Task FACTS...]"

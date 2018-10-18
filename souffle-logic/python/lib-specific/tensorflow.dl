@@ -103,10 +103,12 @@ Value_Num("<num-constant(int):1>", "1").
 Value_String("<string constant:valid>" ,"valid").
 Value_String("<string constant:channels_last>" ,"channels_last").
 
-VarPointsTo("<<unique-hcontext>>", "<num-constant(int):1>", "<<unique-context>>", "<tensorflow.layers>/stridesDefValVar").
-VarPointsTo("<<unique-hcontext>>", "<num-constant(int):1>", "<<unique-context>>", "<tensorflow.layers>/dilationRateDefValVar").
-VarPointsTo("<<unique-hcontext>>", "<string constant:channels_last>", "<<unique-context>>", "<tensorflow.layers>/dataFormatDefValVar").
-VarPointsTo("<<unique-hcontext>>", "<string constant:valid>", "<<unique-context>>", "<tensorflow.layers>/paddingDefValVar").
+VarPointsTo(?hctx, "<num-constant(int):1>", ?ctx, "<tensorflow.layers>/stridesDefValVar"),
+VarPointsTo(?hctx, "<num-constant(int):1>", ?ctx, "<tensorflow.layers>/dilationRateDefValVar"),
+VarPointsTo(?hctx, "<string constant:channels_last>", ?ctx, "<tensorflow.layers>/dataFormatDefValVar"),
+VarPointsTo(?hctx, "<string constant:valid>", ?ctx, "<tensorflow.layers>/paddingDefValVar") :-
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
 
 FormalParam_DefaultValFrom(?function, "strides", "<tensorflow.layers>/stridesDefValVar"),
 FormalParam_DefaultValFrom(?function, "dilation_rate", "<tensorflow.layers>/dilationRateDefValVar"),
@@ -131,9 +133,11 @@ FormalParam( 5, "name", ?function,  cat(?function,"/mockParam7")):-
   ?function = "<tensorflow.nn.conv2d>";
   ?function = "<tensorflow.nn.conv3d>".
 
-VarPointsTo("<<unique-hcontext>>", "<None>", "<<unique-context>>", "<tensorflow.nn>/useCudnnOnGpuDefValVar").
-VarPointsTo("<<unique-hcontext>>", "<None>", "<<unique-context>>", "<tensorflow.nn>/dataFormatDefValVar").
-VarPointsTo("<<unique-hcontext>>", "<None>", "<<unique-context>>", "<tensorflow.nn>/nameDefValVar").
+VarPointsTo(?hctx, "<None>", ?ctx, "<tensorflow.nn>/useCudnnOnGpuDefValVar"),
+VarPointsTo(?hctx, "<None>", ?ctx, "<tensorflow.nn>/dataFormatDefValVar"),
+VarPointsTo(?hctx, "<None>", ?ctx, "<tensorflow.nn>/nameDefValVar") :-
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
 
 FormalParam_DefaultValFrom(?function, "use_cudnn_on_gpu", "<tensorflow.nn>/useCudnnOnGpuDefValVar"),
 FormalParam_DefaultValFrom(?function, "data_format", "<tensorflow.nn>/dataFormatDefValVar"),
