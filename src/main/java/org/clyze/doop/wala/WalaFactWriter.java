@@ -85,7 +85,7 @@ public class WalaFactWriter extends JavaFactWriter {
             arity = Integer.toString(m.getNumberOfParameters());
 
         _db.add(STRING_RAW, result, result);
-        _db.add(METHOD, result, _rep.simpleName(m.getReference()), _rep.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        _db.add(METHOD, result, WalaRepresentation.simpleName(m.getReference()), WalaRepresentation.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         for (Annotation annotation : m.getAnnotations()) {
             _db.add(METHOD_ANNOTATION, result, fixTypeString(annotation.getType().toString()));
             //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
@@ -131,7 +131,7 @@ public class WalaFactWriter extends JavaFactWriter {
         else {
             _db.add(CLASS_TYPE, classStr);
         }
-        _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
+        _db.add(CLASS_HEAP, WalaRepresentation.classConstant(c), classStr);
 
         if(c instanceof ShrikeClass) { //We have currently disabled annotations for Android
             Collection<Annotation> annotations = c.getAnnotations();
@@ -202,7 +202,7 @@ public class WalaFactWriter extends JavaFactWriter {
             writePhantomMethod(sig);
             _db.add(STRING_RAW, sig, sig);
             String arity = Integer.toString(m.getNumberOfParameters());
-            _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+            _db.add(METHOD, sig, WalaRepresentation.simpleName(m), WalaRepresentation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         }
     }
 
@@ -434,7 +434,7 @@ public class WalaFactWriter extends JavaFactWriter {
             actualType = fixTypeString(s);
         }
         else {
-            heap = _rep.classConstant(t);
+            heap = WalaRepresentation.classConstant(t);
             actualType = fixTypeString(t.toString());
         }
 
@@ -487,7 +487,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String methodId = _rep.signature(m);
 
         TypeReference declaringClass = getCorrectFieldDeclaringClass(f, m.getClassHierarchy());
-        String fieldId = _rep.signature(f, declaringClass);
+        String fieldId = WalaRepresentation.signature(f, declaringClass);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
     }
 
@@ -505,7 +505,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String methodId = _rep.signature(m);
 
         TypeReference declaringClass = getCorrectFieldDeclaringClass(f, m.getClassHierarchy());
-        String fieldId = _rep.signature(f, declaringClass);
+        String fieldId = WalaRepresentation.signature(f, declaringClass);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), fieldId, methodId);
     }
 
@@ -586,8 +586,8 @@ public class WalaFactWriter extends JavaFactWriter {
     }
 
     public void writeField(IField f) {
-        String fieldId = _rep.signature(f);
-        _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
+        String fieldId = WalaRepresentation.signature(f);
+        _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), WalaRepresentation.simpleName(f), writeType(f.getFieldTypeReference()));
         if(f instanceof FieldImpl) { //Currently annotations do not work on android and are disabled
             Collection<Annotation> annotations = f.getAnnotations();
             if (annotations != null) {
@@ -600,7 +600,7 @@ public class WalaFactWriter extends JavaFactWriter {
 
 
     void writeFieldModifier(IField f, String modifier) {
-        String fieldId = _rep.signature(f);
+        String fieldId = WalaRepresentation.signature(f);
         _db.add(FIELD_MODIFIER, modifier, fieldId);
     }
 
@@ -1149,7 +1149,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String sig = _rep.signature(m);
         _db.add(STRING_RAW, sig, sig);
         String arity = Integer.toString(m.getNumberOfParameters());
-        _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        _db.add(METHOD, sig, WalaRepresentation.simpleName(m), WalaRepresentation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         //addMockExceptionThrows(m, declaredExceptions);
     }
 
@@ -1275,7 +1275,7 @@ public class WalaFactWriter extends JavaFactWriter {
 //    }
 
     void writeFieldInitialValue(IField f) {
-        String fieldId = _rep.signature(f);
+        String fieldId = WalaRepresentation.signature(f);
 //        String valueString = f.getInitialValueString();
 //        if (valueString != null && !valueString.equals("")) {
 //            int pos = valueString.indexOf('@');

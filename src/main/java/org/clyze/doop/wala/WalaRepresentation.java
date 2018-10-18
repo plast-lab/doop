@@ -46,11 +46,11 @@ class WalaRepresentation extends JavaRepresentation {
         return _repr;
     }
 
-    String classConstant(IClass c) {
+    static String classConstant(IClass c) {
         return classConstant(fixTypeString(c.getName().toString()));
     }
 
-    String classConstant(TypeReference t) {
+    static String classConstant(TypeReference t) {
         return classConstant(fixTypeString(t.toString()));
     }
 
@@ -68,87 +68,70 @@ class WalaRepresentation extends JavaRepresentation {
         return doopSignature;
     }
 
-
-    String signature(IField f) {
+    static String signature(IField f) {
         //return f.getReference().getSignature();
         return signature(f.getReference(), f.getReference().getDeclaringClass());
     }
 
-
-    String signature(FieldReference f, TypeReference declaringClass) {
+    static String signature(FieldReference f, TypeReference declaringClass) {
         return "<" + fixTypeString(declaringClass.toString()) + ": " +
                 fixTypeString(f.getFieldType().toString()) + " " +
                 f.getName().toString() + ">";
     }
 
-    String simpleName(MethodReference mr) {
+    static String simpleName(MethodReference mr) {
         return mr.getName().toString();
     }
 
-    String simpleName(IField f) {
+    static String simpleName(IField f) {
         return simpleName(f.getReference());
     }
 
-    private String simpleName(FieldReference f) {
+    private static String simpleName(FieldReference f) {
         return f.getName().toString();
     }
 
     //Method descriptors using Soot-like format.
     //Should maybe cache these as well.
-    String params(MethodReference methodReference)
-    {
+    static String params(MethodReference methodReference) {
         StringBuilder builder = new StringBuilder();
         int count = methodReference.getNumberOfParameters();
         builder.append("(");
-        for(int i = 0; i < count; i++)
-        {
+        for(int i = 0; i < count; i++) {
             builder.append(fixTypeString(methodReference.getParameterType(i).toString()));
-
             if(i != count - 1)
-            {
                 builder.append(",");
-            }
         }
         builder.append(")");
-
         return builder.toString();
     }
 
-    String thisVar(IMethod m)
-    {
+    String thisVar(IMethod m) {
         return signature(m) + "/v1";
     }
 
-    String nativeReturnVar(IMethod m)
-    {
+    String nativeReturnVar(IMethod m) {
         return nativeReturnVarOfMethod(signature(m));
     }
 
-    String param(IMethod m, int i)
-    {
+    String param(IMethod m, int i) {
         return signature(m) + "/v" + (i+1);
     }
 
-    String local(IMethod m, Local local)
-    {
+    String local(IMethod m, Local local) {
         return localId(signature(m), local.getName());
     }
 
-    String newLocalIntermediate(IMethod m, Local l, SessionCounter counter)
-    {
+    String newLocalIntermediate(IMethod m, Local l, SessionCounter counter) {
         return newLocalIntermediateId(local(m, l), counter);
     }
 
-    void putHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, int scopeIndex)
-    {
-
+    void putHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, int scopeIndex) {
         String handler = m.getSignature() + " v" + catchInstr.getDef();
         _handlerNumOfScopes.put(handler, scopeIndex);
-
     }
 
-    int getHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr)
-    {
+    int getHandlerNumOfScopes(IMethod m, SSAGetCaughtExceptionInstruction catchInstr) {
         String handler = m.getSignature() + " v" + catchInstr.getDef();
         Integer numOfScopes = _handlerNumOfScopes.get(handler);
         if(numOfScopes == null)
@@ -157,8 +140,7 @@ class WalaRepresentation extends JavaRepresentation {
             return numOfScopes;
     }
 
-    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, SessionCounter counter, int scopeIndex)
-    {
+    String handler(IMethod m, SSAGetCaughtExceptionInstruction catchInstr, TypeReference typeReference, SessionCounter counter, int scopeIndex) {
         String query = m.getSignature() + fixTypeString(typeReference.toString()) + " v" + catchInstr.getDef()+ "-" + scopeIndex;
 
         String result = _catchRepr.get(query);
@@ -170,16 +152,14 @@ class WalaRepresentation extends JavaRepresentation {
         return result;
     }
 
-    String throwLocal(IMethod m, Local l, SessionCounter counter)
-    {
+    String throwLocal(IMethod m, Local l, SessionCounter counter) {
         String name = throwLocalId(l.getName());
         return numberedInstructionId(signature(m), name, counter);
     }
 
     //This method takes a MethodReference as a parameter and it does not include "this" as an argument
     //Had the parameter been an IMethod it would include "this" but Soot signatures don't have it so we keep it this way.
-    private String createMethodSignature(MethodReference m)
-    {
+    private static String createMethodSignature(MethodReference m) {
         StringBuilder DoopSig = new StringBuilder("<" + fixTypeString(m.getDeclaringClass().toString()) + ": " + fixTypeString(m.getReturnType().toString()) + " " + m.getName() + "(");
         for (int i = 0; i < m.getNumberOfParameters(); i++) {
             DoopSig.append(fixTypeString(m.getParameterType(i).toString()));
@@ -190,8 +170,7 @@ class WalaRepresentation extends JavaRepresentation {
         return DoopSig.toString();
     }
 
-    private String getKind(SSAInstruction instruction)
-    {
+    private static String getKind(SSAInstruction instruction) {
         String kind = "unknown";
         if(instruction instanceof SSAInstanceofInstruction || instruction instanceof  SSANewInstruction)
             kind = "assign";
@@ -226,8 +205,7 @@ class WalaRepresentation extends JavaRepresentation {
         return kind;
     }
 
-    String unsupported(IMethod inMethod, IR ir, SSAInstruction instruction, int index)
-    {
+    String unsupported(IMethod inMethod, IR ir, SSAInstruction instruction, int index) {
         return unsupportedId(signature(inMethod), getKind(instruction), instruction.toString(ir.getSymbolTable()).replace(" ", ""), index);
     }
 
@@ -238,8 +216,7 @@ class WalaRepresentation extends JavaRepresentation {
         return instructionId(signature(inMethod), getKind(instruction), index);
     }
 
-    String invoke(IR ir, IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, SessionCounter counter, TypeInference typeInference)
-    {
+    String invoke(IR ir, IMethod inMethod, SSAInvokeInstruction instr, MethodReference methRef, SessionCounter counter, TypeInference typeInference) {
         String defaultMid = fixTypeString(methRef.getDeclaringClass().toString()) + "." + methRef.getName().toString();
         String midPart;
         if (instr instanceof SSAInvokeDynamicInstruction)
@@ -250,7 +227,7 @@ class WalaRepresentation extends JavaRepresentation {
         return numberedInstructionId(signature(inMethod), midPart, counter);
     }
 
-    private String invokeIdMiddle(IR ir, SSAInvokeInstruction instr, MethodReference resolvedTargetRef, TypeInference typeInference) {
+    private static String invokeIdMiddle(IR ir, SSAInvokeInstruction instr, MethodReference resolvedTargetRef, TypeInference typeInference) {
         MethodReference defaultTargetRef = instr.getDeclaredTarget();
 
         if (instr.isDispatch() || instr.isSpecial()) {
@@ -266,8 +243,7 @@ class WalaRepresentation extends JavaRepresentation {
     // Create a middle part for invokedynamic ids. It currently
     // supports the LambdaMetafactory machinery, returning a default
     // value for other (or missing) bootstrap methods.
-    private String dynamicInvokeMiddlePart(SSAInvokeDynamicInstruction instruction, String defaultResult) {
-
+    private static String dynamicInvokeMiddlePart(SSAInvokeDynamicInstruction instruction, String defaultResult) {
         // The signatures of the two lambda metafactories we currently support.
         final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
         final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
@@ -305,9 +281,7 @@ class WalaRepresentation extends JavaRepresentation {
         return defaultResult;
     }
 
-
-    String heapAlloc(IMethod inMethod, SSANewInstruction instruction, SessionCounter counter)
-    {
+    String heapAlloc(IMethod inMethod, SSANewInstruction instruction, SessionCounter counter) {
         int newParams = instruction.getNumberOfUses();
         if(newParams == 0 || newParams == 1) {
             return heapAlloc(inMethod, instruction.getConcreteType(), counter);
@@ -318,7 +292,6 @@ class WalaRepresentation extends JavaRepresentation {
         }
     }
 
-
     String heapMultiArrayAlloc(IMethod inMethod, SSANewInstruction instruction, TypeReference type, SessionCounter counter) {
         return heapAlloc(inMethod, type, counter);
     }
@@ -327,5 +300,4 @@ class WalaRepresentation extends JavaRepresentation {
         String s = fixTypeString(type.toString());
         return heapAllocId(signature(inMethod), s, counter);
     }
-
 }
