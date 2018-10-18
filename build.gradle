@@ -213,7 +213,7 @@ compileJava {
 }
 
 test {
-    // Remove comment to enable parallel testing.
+    // failFast = true
     maxParallelForks = 4
     testLogging {
         exceptionFormat = 'full'
