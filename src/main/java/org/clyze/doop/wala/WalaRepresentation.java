@@ -269,14 +269,11 @@ class WalaRepresentation extends JavaRepresentation {
                         System.out.println("Representation: Unsupported invokedynamic, caught InvalidClassFileException returning default result.");
                         return defaultResult;
                     }
-                }
-                else
+                } else
                     System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
-            }
-            else
+            } else
                 System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");
-        }
-        else
+        } else
             System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
         return defaultResult;
     }
