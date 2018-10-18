@@ -62,25 +62,10 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
             def lines = destPartitionsFile.readLines()
 
             def partitions = [] as Set<String>
-            def partitionSizes = [:] as HashMap<String, Integer>
             lines.each { String line ->
                 String[] lineParts = line.split('\t')
                 def partition = lineParts[1]
-                if (!partitions.contains(partition)) {
-                    partitions.add(partition)
-                }
-                if (!partitionSizes.containsKey(partition)) {
-                    partitionSizes.put(partition, 0)
-                }
-                else {
-                    def currentSize = partitionSizes.get(partition)
-                    partitionSizes.put(partition, currentSize + 1)
-                }
-
-            }
-
-            partitionSizes.each { partition, size ->
-                log.info "Partition ${partition} size: " + size
+                partitions.add(partition)
             }
 
             int partitionNumber = 0
@@ -130,17 +115,26 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
             analysisExecutorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)
 
             partitionNumber = 0
-            def insVPT = 0
-            def sensVPT = 0
+            def insPrimaryVPT = 0
+            def sensPrimaryVPT = 0
+
+            def insNonPrimaryVPTSet = [] as Set
             partitions.each { partition ->
                 partitionNumber++
                 def childDatabaseDir = new File(outDir.canonicalPath + "-part-" + partitionNumber + File.separator + "database")
 
-                insVPT += Files.lines(new File(childDatabaseDir, "Stats_Simple_InsensVarPointsTo.csv").toPath()).count()
-                sensVPT += Files.lines(new File(childDatabaseDir, "Stats_Simple_PrimaryVarPointsTo.csv").toPath()).count()
+                insPrimaryVPT += Files.lines(new File(childDatabaseDir, "Stats_Simple_InsensPrimaryVarPointsTo.csv").toPath()).count()
+                sensPrimaryVPT += Files.lines(new File(childDatabaseDir, "Stats_Simple_PrimaryVarPointsTo.csv").toPath()).count()
+                def file = new File(childDatabaseDir, "Stats_Simple_InsensNonPrimaryVarPointsTo.csv")
+                lines = file.readLines()
+
+                lines.each() {line ->
+                    insNonPrimaryVPTSet.add(line)
+                }
             }
-            statsMetricsFile.append("1.0\tvar points-to (INS)\t${insVPT}\n")
-            statsMetricsFile.append("1.5\tvar points-to (SENS)\t${sensVPT}\n")
+
+            statsMetricsFile.append("1.0\tvar points-to (INS)\t${insPrimaryVPT + insNonPrimaryVPTSet.size()}\n")
+            statsMetricsFile.append("1.5\tvar points-to (SENS)\t${sensPrimaryVPT + insNonPrimaryVPTSet.size()}\n")
 
             int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 

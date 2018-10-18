@@ -1,8 +1,5 @@
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
-#ifndef USER_DEFINED_PARTITIONS
-#include "partitioning.dl"
-#endif
 
 .comp PartitionedTwoObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
 
@@ -50,8 +47,13 @@
   .decl VarInPrimaryPartition(var: Var)
 
   .decl TypeInAllPartitions(type: Type)
+  .decl TypeInNoPartition(type: Type)
+
   .decl MethodInAllPartitions(method: Method)
+  .decl MethodInNoPartition(method: Method)
+
   .decl VarInAllPartitions(var: Var)
+  .decl VarInNoPartition(var: Var)
 
   .decl ValidCtxVar(ctx: mainAnalysis.configuration.Context, var: Var)
   .decl CollapsedVarPointsTo(hctx: mainAnalysis.configuration.HContext, heap: mainAnalysis.Value, ctx: mainAnalysis.configuration.Context, var: Var)
@@ -59,6 +61,10 @@
   TypeInAllPartitions(type) :-
     isType(type),
     match("java\.util.*", type).
+
+  TypeInNoPartition(type) :-
+      isType(type),
+      !TypeToPartitionName(type, _).
 
   InvocationInPrimaryPartition(invo) :-
     Instruction_Method(invo, inmethod),
@@ -71,9 +77,17 @@
     TypeToPartitionId(inClass, partitionId),
     PrimaryPartitionId(partitionId).
 
+  MethodInNoPartition(method) :-
+    Method_DeclaringType(method, inClass),
+    TypeInNoPartition(inClass).
+
   VarInPrimaryPartition(var) :-
     Var_DeclaringMethod(var, method),
     MethodInPrimaryPartition(method).
+
+  VarInNoPartition(var) :-
+    Var_DeclaringMethod(var, method),
+    MethodInNoPartition(method).
 
   MethodInAllPartitions(method) :-
     Method_DeclaringType(method, type),

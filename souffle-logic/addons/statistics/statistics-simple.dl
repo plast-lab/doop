@@ -10,13 +10,23 @@
 Stats_Simple_InsensVarPointsTo(?value, ?var) :-
   mainAnalysis.VarPointsTo(_, ?value, _, ?var).
 #else
-Stats_Simple_InsensVarPointsTo(?value, ?var) :-
+Stats_Simple_InsensPrimaryVarPointsTo(?value, ?var) :-
   Stats_Simple_PrimaryVarPointsTo(_, ?value, _, ?var).
 
 Stats_Simple_PrimaryVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var),
-  !mainAnalysis.isImmutableContext(?ctx).
+  mainAnalysis.configuration.VarInPrimaryPartition(?var).
+
+Stats_Simple_InsensNonPrimaryVarPointsTo(?value, ?var) :-
+  Stats_Simple_NonPrimaryVarPointsTo(_, ?value, _, ?var).
+
+Stats_Simple_NonPrimaryVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var),
+  (mainAnalysis.configuration.VarInNoPartition(?var);
+   mainAnalysis.configuration.VarInAllPartitions(?var)).
+
 #endif
+
 
 
 Stats_Simple_AssignedVariable(?var) :-
