@@ -46,9 +46,9 @@ public class WalaFactWriter extends JavaFactWriter {
 
     private Map<String,List<String>> _signaturePolyMorphicMethods;
 
-    WalaFactWriter(Database db) {
+    WalaFactWriter(Database db, WalaRepresentation rep) {
         super(db);
-        _rep = WalaRepresentation.getRepresentation();
+        _rep = rep;
         _typeMap = new ConcurrentHashMap<>();
         _phantomType = new ConcurrentHashMap<>();
         _phantomMethod = new ConcurrentHashMap<>();

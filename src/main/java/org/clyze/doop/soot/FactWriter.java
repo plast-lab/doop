@@ -28,9 +28,9 @@ class FactWriter extends JavaFactWriter {
     private final Map<String, Type> _varTypeMap = new ConcurrentHashMap<>();
     private final boolean _reportPhantoms;
 
-    FactWriter(Database db, boolean reportPhantoms) {
+    FactWriter(Database db, Representation rep, boolean reportPhantoms) {
         super(db);
-        _rep = Representation.getRepresentation();
+        _rep = rep;
         _reportPhantoms = reportPhantoms;
     }
 

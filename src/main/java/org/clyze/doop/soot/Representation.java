@@ -16,16 +16,6 @@ class Representation extends JavaRepresentation {
     private static final List<String> jimpleKeywordList = Jimple.jimpleKeywordList();
     private final Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
 
-    // Make it a trivial singleton.
-    private static Representation _repr;
-    private Representation() {}
-
-    static Representation getRepresentation() {
-        if (_repr == null)
-            _repr = new Representation();
-        return _repr;
-    }
-
     static String classConstant(SootClass c) {
         return classConstant(c.getName());
     }

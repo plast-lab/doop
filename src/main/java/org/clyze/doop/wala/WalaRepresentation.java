@@ -36,16 +36,6 @@ class WalaRepresentation extends JavaRepresentation {
      */
     private final Map<String, Integer> _handlerNumOfScopes = new ConcurrentHashMap<>();
 
-    // Make it a trivial singleton.
-    private static WalaRepresentation _repr;
-    private WalaRepresentation() {}
-
-    static WalaRepresentation getRepresentation() {
-        if (_repr == null)
-            _repr = new WalaRepresentation();
-        return _repr;
-    }
-
     static String classConstant(IClass c) {
         return classConstant(fixTypeString(c.getName().toString()));
     }
