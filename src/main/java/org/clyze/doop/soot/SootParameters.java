@@ -19,7 +19,7 @@ public class SootParameters extends Parameters {
     String _androidJars = null;
     private boolean _runFlowdroid = false;
     private boolean _toStdout = false;
-    private Collection<String> extraClassesToResolve = new ArrayList<>();
+    private final Collection<String> extraClassesToResolve = new ArrayList<>();
 
     public boolean getRunFlowdroid() {
       return this._runFlowdroid;
