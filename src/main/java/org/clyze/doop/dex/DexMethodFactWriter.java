@@ -481,7 +481,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case IF_GTZ:
             case IF_LEZ: {
                 int reg = ((OneRegisterInstruction)instr).getRegisterA();
-                writeIf(instr, new int[] { reg }, index);
+                writeIf(instr, reg, -1, index);
                 break;
             }
             case IF_EQ:
@@ -493,7 +493,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 TwoRegisterInstruction tri = (TwoRegisterInstruction)instr;
                 int regA = tri.getRegisterA();
                 int regB = tri.getRegisterB();
-                writeIf(instr, new int[] { regA, regB, }, index);
+                writeIf(instr, regA, regB, index);
                 break;
             }
             case PACKED_SWITCH:
@@ -653,12 +653,21 @@ class DexMethodFactWriter extends JavaFactWriter {
         }
     }
 
-    private void writeIf(Instruction instr, int[] regs, int index) {
+    /**
+     * Write an if instruction.
+     *
+     * @param instr      the if instruction
+     * @param regL       the left (or single) operand
+     * @param regR       the right operand (-1 for none)
+     * @param index      the instruction index
+     */
+    private void writeIf(Instruction instr, int regL, int regR, int index) {
         int offset = ((OffsetInstruction)instr).getCodeOffset();
         String insn = instructionId("if", index);
         _db.add(IF, insn, str(index), str(currentInstrAddr + offset), methId);
-        for (int reg : regs)
-            _db.add(IF_VAR, insn, local(reg));
+        writeIfVar(insn, L_OP, local(regL));
+        if (regR != -1)
+            writeIfVar(insn, R_OP, local(regR));
     }
 
     private void handleFillArrayData(Instruction instr, int index) {

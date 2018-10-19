@@ -14,6 +14,8 @@ import static org.clyze.doop.common.PredicateFile.*;
  */
 public class JavaFactWriter {
 
+    protected static final String L_OP = "1";
+    protected static final String R_OP = "2";
     protected final Database _db;
 
     protected JavaFactWriter(Database db) {
@@ -218,5 +220,13 @@ public class JavaFactWriter {
 
     protected void writeClassModifier(String c, String modifier) {
         _db.add(CLASS_MODIFIER, modifier, c);
+    }
+
+    protected void writeOperatorAt(String insn, String op) {
+        _db.add(OPERATOR_AT, insn, op);
+    }
+
+    protected void writeIfVar(String insn, String branch, String local) {
+        _db.add(IF_VAR, insn, branch, local);
     }
 }

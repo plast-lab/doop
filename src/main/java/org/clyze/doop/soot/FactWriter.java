@@ -552,27 +552,27 @@ class FactWriter extends JavaFactWriter {
             _db.add(DUMMY_IF_VAR, insn, Representation.local(m, dummy));
 
             if (condition instanceof EqExpr)
-                _db.add(OPERATOR_AT, insn, "==");
+                writeOperatorAt(insn, "==");
             else if (condition instanceof NeExpr)
-                _db.add(OPERATOR_AT, insn, "!=");
+                writeOperatorAt(insn, "!=");
             else if (condition instanceof GeExpr)
-                _db.add(OPERATOR_AT, insn, ">=");
+                writeOperatorAt(insn, ">=");
             else if (condition instanceof GtExpr)
-                _db.add(OPERATOR_AT, insn, ">");
+                writeOperatorAt(insn, ">");
             else if (condition instanceof LeExpr)
-                _db.add(OPERATOR_AT, insn, "<=");
+                writeOperatorAt(insn, "<=");
             else if (condition instanceof LtExpr)
-                _db.add(OPERATOR_AT, insn, "<");
+                writeOperatorAt(insn, "<");
 
 
             // TODO: create table entry for constants (?)
             if (condition.getOp1() instanceof Local) {
                 Local op1 = (Local) condition.getOp1();
-                _db.add(IF_VAR, insn, "1", Representation.local(m, op1));
+                writeIfVar(insn, L_OP, Representation.local(m, op1));
             }
             if (condition.getOp2() instanceof Local) {
                 Local op2 = (Local) condition.getOp2();
-                _db.add(IF_VAR, insn, "2", Representation.local(m, op2));
+                writeIfVar(insn, R_OP, Representation.local(m, op2));
             }
         }
     }
@@ -901,27 +901,27 @@ class FactWriter extends JavaFactWriter {
         _db.add(ASSIGN_BINOP, insn, str(index), Representation.local(m, left), methodId);
 
         if (right instanceof AddExpr)
-                _db.add(OPERATOR_AT, insn, "+");
+                writeOperatorAt(insn, "+");
         else if (right instanceof SubExpr)
-                _db.add(OPERATOR_AT, insn, "-");
+                writeOperatorAt(insn, "-");
         else if (right instanceof MulExpr)
-                _db.add(OPERATOR_AT, insn, "*");
+                writeOperatorAt(insn, "*");
         else if (right instanceof DivExpr)
-                _db.add(OPERATOR_AT, insn, "/");
+                writeOperatorAt(insn, "/");
         else if (right instanceof RemExpr)
-                _db.add(OPERATOR_AT, insn, "%");
+                writeOperatorAt(insn, "%");
         else if (right instanceof AndExpr)
-                _db.add(OPERATOR_AT, insn, "&");
+                writeOperatorAt(insn, "&");
         else if (right instanceof OrExpr)
-                _db.add(OPERATOR_AT, insn, "|");
+                writeOperatorAt(insn, "|");
         else if (right instanceof XorExpr)
-                _db.add(OPERATOR_AT, insn, "^");
+                writeOperatorAt(insn, "^");
         else if (right instanceof ShlExpr)
-                _db.add(OPERATOR_AT, insn, "<<");
+                writeOperatorAt(insn, "<<");
         else if (right instanceof ShrExpr)
-                _db.add(OPERATOR_AT, insn, ">>");
+                writeOperatorAt(insn, ">>");
         else if (right instanceof UshrExpr)
-                _db.add(OPERATOR_AT, insn, ">>>");
+                writeOperatorAt(insn, ">>>");
 
 
         if (right.getOp1() instanceof Local) {
@@ -941,7 +941,7 @@ class FactWriter extends JavaFactWriter {
         String methodId = writeMethod(m);
 
         writeAssignUnop(insn, index, Representation.local(m, left), methodId);
-        _db.add(OPERATOR_AT, insn, "-");
+        writeOperatorAt(insn, "-");
 
         if (right.getOp() instanceof Local) {
             Local op = (Local) right.getOp();
