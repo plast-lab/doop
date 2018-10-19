@@ -807,14 +807,14 @@ class DexMethodFactWriter extends JavaFactWriter {
         int regSource = tri.getRegisterB();
         String insn = instructionId("assign", index);
         writeAssignBinop(insn, index, local(regDest), methId);
-        _db.add(ASSIGN_OPER_FROM, insn, local(regSource));
+        writeAssignOperFrom(insn, L_OP, local(regSource));
     }
 
     private void writeBinopThreeReg(int regDest, int regSource1, int regSource2, int index) {
         String insn = instructionId("assign", index);
         writeAssignBinop(insn, index, local(regDest), methId);
-        _db.add(ASSIGN_OPER_FROM, insn, local(regSource1));
-        _db.add(ASSIGN_OPER_FROM, insn, local(regSource2));
+        writeAssignOperFrom(insn, L_OP, local(regSource1));
+        writeAssignOperFrom(insn, R_OP, local(regSource2));
     }
 
     private void writeAssignCast(OneRegisterInstruction ori, ReferenceInstruction ri, int index) {
@@ -842,7 +842,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private void writeAssignUnop(TwoRegisterInstruction tri, int index) {
         String insn = instructionId("assign", index);
         writeAssignUnop(insn, index, local(tri.getRegisterA()), methId);
-        _db.add(ASSIGN_OPER_FROM, insn, local(tri.getRegisterB()));
+        writeAssignOperFrom(insn, L_OP, local(tri.getRegisterB()));
     }
 
     private void writeThrow(int reg, int index) {

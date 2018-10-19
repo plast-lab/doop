@@ -926,12 +926,12 @@ class FactWriter extends JavaFactWriter {
 
         if (right.getOp1() instanceof Local) {
             Local op1 = (Local) right.getOp1();
-            _db.add(ASSIGN_OPER_FROM, insn, "1", Representation.local(m, op1));
+            writeAssignOperFrom(insn, L_OP, Representation.local(m, op1));
         }
 
         if (right.getOp2() instanceof Local) {
             Local op2 = (Local) right.getOp2();
-            _db.add(ASSIGN_OPER_FROM, insn, "2", Representation.local(m, op2));
+            writeAssignOperFrom(insn, R_OP, Representation.local(m, op2));
         }
     }
 
@@ -945,7 +945,7 @@ class FactWriter extends JavaFactWriter {
 
         if (right.getOp() instanceof Local) {
             Local op = (Local) right.getOp();
-            _db.add(ASSIGN_OPER_FROM, insn, "1", Representation.local(m, op));
+            writeAssignOperFrom(insn, L_OP, Representation.local(m, op));
         }
     }
 

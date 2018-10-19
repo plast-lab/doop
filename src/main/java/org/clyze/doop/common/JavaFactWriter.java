@@ -235,6 +235,10 @@ public class JavaFactWriter {
     }
 
     protected void writeAssignBinop(String insn, int index, String local, String methodId) {
-        _db.add(ASSIGN_BINOP, insn, str(index), Representation.local(m, left), methodId);
+        _db.add(ASSIGN_BINOP, insn, str(index), local, methodId);
+    }
+
+    protected void writeAssignOperFrom(String insn, String branch, String local) {
+        _db.add(ASSIGN_OPER_FROM, insn, branch, local);
     }
 }
