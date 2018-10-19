@@ -12,6 +12,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
+import static groovy.io.FileType.FILES
 import static org.apache.commons.io.FileUtils.*
 
 @CompileStatic
@@ -72,12 +73,18 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
             partitions.each { partition ->
                 partitionNumber++
                 def childOutDir = new File(outDir.canonicalPath + "-part-" + partitionNumber)
+	            if (childOutDir.exists()) {
+		            childOutDir.deleteDir()
+	            }
                 def childFactsDir = new File(childOutDir, "facts")
+	            childOutDir.mkdirs()
+	            childFactsDir.mkdirs()
 
-                childOutDir.mkdirs()
-                childFactsDir.mkdirs()
+                factsDir.eachFileMatch FILES, ~/.*\.facts/, { File factsFile ->
+	                def link = new File(childFactsDir, factsFile.name).toPath()
+	                Files.createSymbolicLink(link, factsFile.toPath())
+                }
 
-                copyDirectory(factsDir, childFactsDir)
                 new File(childFactsDir, "PrimaryPartition.facts").withWriter{ w ->
                     w.writeLine(partition)}
             }
@@ -119,22 +126,32 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
             def sensPrimaryVPT = 0
 
             def insNonPrimaryVPTSet = [] as Set
+	        def reachableMethodsSet = [] as Set
             partitions.each { partition ->
                 partitionNumber++
                 def childDatabaseDir = new File(outDir.canonicalPath + "-part-" + partitionNumber + File.separator + "database")
 
                 insPrimaryVPT += Files.lines(new File(childDatabaseDir, "Stats_Simple_InsensPrimaryVarPointsTo.csv").toPath()).count()
                 sensPrimaryVPT += Files.lines(new File(childDatabaseDir, "Stats_Simple_PrimaryVarPointsTo.csv").toPath()).count()
-                def file = new File(childDatabaseDir, "Stats_Simple_InsensNonPrimaryVarPointsTo.csv")
-                lines = file.readLines()
+
+                def insNoPrimaryVPTFile = new File(childDatabaseDir, "Stats_Simple_InsensNonPrimaryVarPointsTo.csv")
+                lines = insNoPrimaryVPTFile.readLines()
 
                 lines.each() {line ->
                     insNonPrimaryVPTSet.add(line)
                 }
+
+	            def reachableFile = new File(childDatabaseDir, "Reachable.csv")
+	            lines = reachableFile.readLines()
+
+	            lines.each() {line ->
+		            reachableMethodsSet.add(line)
+	            }
             }
 
             statsMetricsFile.append("1.0\tvar points-to (INS)\t${insPrimaryVPT + insNonPrimaryVPTSet.size()}\n")
             statsMetricsFile.append("1.5\tvar points-to (SENS)\t${sensPrimaryVPT + insNonPrimaryVPTSet.size()}\n")
+	        statsMetricsFile.append("11.5\treachable methods (INS)\t${reachableMethodsSet.size()}\n")
 
             int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 

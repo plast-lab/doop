@@ -197,12 +197,36 @@ ContextForOpenProgramEntryPoint(?calleeCtx, ?method) :-
 .decl ConcreteImplementations(?staticType:Type, ?class:ClassType)
 
 // Here we "randomly" select a concrete implementation for each type.
-// In a segregated analysis we try to select one from the same partition.
+// In a partitioned analysis we try to select one from the same partition.
+#ifndef USER_DEFINED_PARTITIONS
 TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
   AllConcreteImplementations(_, ?staticType),
   ?classOrd = min ord(?allClasses) : {
      AllConcreteImplementations(?allClasses, ?staticType)
    }.
+#else
+TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
+  AllConcreteImplementations(_, ?staticType),
+  ?classOrd = min ord(?allClasses) : {
+     AllConcreteImplementations(?allClasses, ?staticType),
+     mainAnalysis.configuration.TypeToPartitionId(?staticType, ?part1),
+     mainAnalysis.configuration.TypeToPartitionId(?allClasses, ?part2),
+     mainAnalysis.configuration.PrimaryPartitionId(?primary),
+     ?part1 != ?primary,
+     ?part2 != ?primary
+  }.
+
+  TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
+    AllConcreteImplementations(_, ?staticType),
+    ?classOrd = min ord(?allClasses) : {
+       AllConcreteImplementations(?allClasses, ?staticType),
+       mainAnalysis.configuration.TypeToPartitionId(?staticType, ?part1),
+       mainAnalysis.configuration.TypeToPartitionId(?allClasses, ?part2),
+       mainAnalysis.configuration.PrimaryPartitionId(?primary),
+       ?part1 = ?primary,
+       ?part2 = ?primary
+    }.
+#endif
 
 ConcreteImplementations(?staticType, ?class) :-
   TypeToConcreteImplementationOrd(?staticType, ?classOrd),
