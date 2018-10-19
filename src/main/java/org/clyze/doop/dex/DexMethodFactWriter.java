@@ -481,7 +481,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case IF_GTZ:
             case IF_LEZ: {
                 int reg = ((OneRegisterInstruction)instr).getRegisterA();
-                writeIf(instr, reg, -1, index);
+                writeIf(instr, reg, -1, op, index);
                 break;
             }
             case IF_EQ:
@@ -493,7 +493,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 TwoRegisterInstruction tri = (TwoRegisterInstruction)instr;
                 int regA = tri.getRegisterA();
                 int regB = tri.getRegisterB();
-                writeIf(instr, regA, regB, index);
+                writeIf(instr, regA, regB, op, index);
                 break;
             }
             case PACKED_SWITCH:
@@ -661,13 +661,22 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param regR       the right operand (-1 for none)
      * @param index      the instruction index
      */
-    private void writeIf(Instruction instr, int regL, int regR, int index) {
+    private void writeIf(Instruction instr, int regL, int regR, Opcode op, int index) {
         int offset = ((OffsetInstruction)instr).getCodeOffset();
         String insn = instructionId("if", index);
         _db.add(IF, insn, str(index), str(currentInstrAddr + offset), methId);
         writeIfVar(insn, L_OP, local(regL));
         if (regR != -1)
             writeIfVar(insn, R_OP, local(regR));
+
+        switch (op) {
+        case IF_EQ:  case IF_EQZ:  writeOperatorAt(insn, "=="); break;
+        case IF_NE:  case IF_NEZ:  writeOperatorAt(insn, "!="); break;
+        case IF_LT:  case IF_LTZ:  writeOperatorAt(insn,  "<"); break;
+        case IF_GE:  case IF_GEZ:  writeOperatorAt(insn, ">="); break;
+        case IF_GT:  case IF_GTZ:  writeOperatorAt(insn,  ">"); break;
+        case IF_LE:  case IF_LEZ:  writeOperatorAt(insn, "<="); break;
+        }
     }
 
     private void handleFillArrayData(Instruction instr, int index) {

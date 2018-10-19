@@ -564,7 +564,6 @@ class FactWriter extends JavaFactWriter {
             else if (condition instanceof LtExpr)
                 writeOperatorAt(insn, "<");
 
-
             // TODO: create table entry for constants (?)
             if (condition.getOp1() instanceof Local) {
                 Local op1 = (Local) condition.getOp1();
