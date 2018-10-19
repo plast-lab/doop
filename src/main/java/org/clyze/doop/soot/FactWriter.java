@@ -549,7 +549,7 @@ class FactWriter extends JavaFactWriter {
             ConditionExpr condition = (ConditionExpr) condStmt;
 
             Local dummy = new JimpleLocal("tmp" + insn, BooleanType.v());
-            _db.add(DUMMY_IF_VAR, insn, Representation.local(m, dummy));
+            writeDummyIfVar(insn, Representation.local(m, dummy));
 
             if (condition instanceof EqExpr)
                 writeOperatorAt(insn, "==");

@@ -229,4 +229,8 @@ public class JavaFactWriter {
     protected void writeIfVar(String insn, String branch, String local) {
         _db.add(IF_VAR, insn, branch, local);
     }
+
+    protected void writeDummyIfVar(String insn, String local) {
+        _db.add(DUMMY_IF_VAR, insn, local);
+    }
 }
