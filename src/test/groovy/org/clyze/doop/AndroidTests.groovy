@@ -1,5 +1,6 @@
 package org.clyze.doop
 
+import java.nio.file.Files
 import org.clyze.doop.core.Doop
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
@@ -47,6 +48,26 @@ class AndroidTests extends DoopBenchmark {
 
 		then:
 		// We only test if the logic compiles and loads the dynamic facts.
+		true == true
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Custom Dex front end test"() {
+		when:
+		String tmpDir = Files.createTempDirectory("dex-test-facts").toString()
+		List args = ["-i", "${doopBenchmarksDir}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk",
+					 "-a", "context-insensitive",
+					 "--platform", "android_25_fulljars",
+					 "--id", "test-android-androidterm-dex",
+					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+					 "--dex", "--decode-apk", "--Xstats-full", "-Ldebug",
+					 "--Xstop-at-facts", tmpDir]
+		Main.main((String[])args)
+		analysis = Main.analysis
+
+		then:
+		// We only test if the front end does not fail.
 		true == true
 	}
 }
