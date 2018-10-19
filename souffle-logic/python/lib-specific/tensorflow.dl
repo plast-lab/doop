@@ -194,7 +194,7 @@ ListOfConstsAtIndexPointsTo(?hctx, ?tensorVal, ?index, ?indexValue):-
 //                    PLACEHOLDER INVOC
 //------------------------------------------------------
 
-#define PlaceHolderValueMacro(op,fun, index, val1, val2,hctxVal2) cat("<tensor ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val1, cat("+", cat(val2, cat("-", cat(hctxVal2,">"))))))))))
+#define PlaceHolderValueMacro(op,fun, index, val1, val2) cat("<tensor ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val1, cat("+", cat(val2, ">"))))))))
 
 .decl PlaceholderOperation(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?reshapeOpVal:Value)
 .output PlaceholderOperation
@@ -208,7 +208,7 @@ PlaceholderOperation(?ctx, ?insn, ?placeHolderOp):-
   HeapAllocation_Type(?typeVal, ?typeValType),
   Instruction_Function(?insn, ?fun),
   Instruction_Index(?insn, ?index),
-  ?placeHolderOp = PlaceHolderValueMacro("placeholder", ?fun, ?index, ?typeValType, ?dimListArgVal, ?dimListHctx).
+  ?placeHolderOp = PlaceHolderValueMacro("placeholder", ?fun, ?index, ?typeValType, ?dimListArgVal).
 
 TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderOp):-
   PlaceholderOperation(?ctx, ?insn, ?placeHolderOp),
@@ -269,7 +269,7 @@ TensorDType(?tensorHctx, ?placeHolderOpVal, ?dtypeHctx, ?typeVal):-
 .decl ReshapeOperationReplaceMinus1WithVal(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?reshapeOpVal:Value, ?newVal:Value)
 .output ReshapeOperationReplaceMinus1WithVal
 
-#define ReshapeValueMacro(op,fun, index,val1, hctxVal1, val2,hctxVal2) cat("<tensor ", cat(fun, cat("/", cat(op, cat( to_string(index), cat("/", cat(val1, cat("-", cat(hctxVal1, cat("+", cat(val2, cat("-", cat(hctxVal2,">")))))))))))))
+#define ReshapeValueMacro(op,fun, index, val1, val2) cat("<tensor ", cat(fun, cat("/", cat(op, cat( to_string(index), cat("/", cat(val1, cat("+", cat(val2, ">")))))))))
 
 //Checks if the required args are given and their values have correct values
 
@@ -282,7 +282,7 @@ ReshapeOperation(?ctx, ?insn, ?reshapeOpVal):-
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.reshape>", "shape", ?dimListHctx, ?dimListArgVal),
   Instruction_Function(?insn, ?fun),
   Instruction_Index(?insn, ?index),
-  ?reshapeOpVal = ReshapeValueMacro("reshape", ?fun, ?index, ?tensorArgVal, ?tensorHctx, ?dimListArgVal, ?dimListHctx).
+  ?reshapeOpVal = ReshapeValueMacro("reshape", ?fun, ?index, ?tensorArgVal, ?dimListArgVal).
 
 
 ReshapeOperationCorrectTypeArgs(?ctx, ?insn, ?reshapeOpVal):-
