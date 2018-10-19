@@ -89,28 +89,33 @@ ReachableMethodOnlyUsedInSingleInvocationTarget(?method) :-
 
 /*** Inlining ***/
 
-.decl Method_Size(?method:Method, ?size:number)
+.decl ApplicationMethod_Size(?method:Method, ?size:number)
 
-Method_Size(?method, ?size) :-
-  isMethod(?method),
+ApplicationMethod_Size(?method, ?size) :-
+  ApplicationMethod(?method),
   ?size = count:{Instruction_Method(_, ?method)}.
 
-.decl SmallMethod(?method:Method)
+.decl SmallApplicationMethod(?method:Method)
 
-SmallMethod(?method) :- Method_Size(?method, ?size), ?size < 30.
+SmallApplicationMethod(?method) :-
+  ApplicationMethod_Size(?method, ?size), ?size < 30.
 
-.output SmallMethod
+.output SmallApplicationMethod
 
 .decl InvocationToInline(?invocation:MethodInvocation, ?target:Method)
 
 InvocationToInline(?invocation, ?target) :-
-  SmallMethod(?target),
-  SingleInvocationTarget(?invocation, ?target).
+  SmallApplicationMethod(?target),
+  SingleInvocationTarget(?invocation, ?target),
+  Instruction_Method(?invocation, ?invocationMethod),
+  ApplicationMethod(?invocationMethod).
 
 InvocationToInline(?invocation, ?target) :-
-  SmallMethod(?target),
+  SmallApplicationMethod(?target),
   (isStaticMethodInvocation_Insn(?invocation);
    isSpecialMethodInvocation_Insn(?invocation)),
-  mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target).
+  mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target),
+  Instruction_Method(?invocation, ?invocationMethod),
+  ApplicationMethod(?invocationMethod).
 
 .output InvocationToInline

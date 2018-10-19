@@ -57,7 +57,7 @@ TopLevelOpenProgramEntryPoint(?method) :-
   Method_DeclaringType(?method, ?class),
   ClassToConsider(?class).
 
-#ifdef OPEN_PROGRAMS
+#ifndef OPEN_PROGRAMS
 // The original definition that Neville had
 OpenProgramEntryPoint(?method) :-
   PossibleOpenProgramEntryPoint(?method),
