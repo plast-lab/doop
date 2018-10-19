@@ -25,7 +25,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 006 (hello world) / test additional command line options"() {
 		when:
-		analyzeTest("006-hello-world", ["--cfg", "--coarse-grained-allocation-sites", "--cs-library", "--sanity", "--Xextra-metrics", "--dont-report-phantoms", "--platform", "java_8", "--thorough-fact-gen"])
+		analyzeTest("006-hello-world", ["--cfg", "--coarse-grained-allocation-sites", "--cs-library", "--sanity", "--Xextra-metrics", "--dont-report-phantoms", "--symbolic-reasoning", "--platform", "java_8", "--thorough-fact-gen"])
 
 		then:
 		relationHasExactSize(analysis, "VarHasNoType", 0)
