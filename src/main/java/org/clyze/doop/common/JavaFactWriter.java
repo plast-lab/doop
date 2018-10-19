@@ -233,4 +233,8 @@ public class JavaFactWriter {
     protected void writeDummyIfVar(String insn, String local) {
         _db.add(DUMMY_IF_VAR, insn, local);
     }
+
+    protected void writeAssignBinop(String insn, int index, String local, String methodId) {
+        _db.add(ASSIGN_BINOP, insn, str(index), Representation.local(m, left), methodId);
+    }
 }

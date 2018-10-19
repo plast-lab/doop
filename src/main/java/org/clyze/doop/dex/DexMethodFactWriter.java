@@ -806,13 +806,13 @@ class DexMethodFactWriter extends JavaFactWriter {
         int regDest = tri.getRegisterA();
         int regSource = tri.getRegisterB();
         String insn = instructionId("assign", index);
-        _db.add(ASSIGN_BINOP, insn, str(index), local(regDest), methId);
+        writeAssignBinop(insn, index, local(regDest), methId);
         _db.add(ASSIGN_OPER_FROM, insn, local(regSource));
     }
 
     private void writeBinopThreeReg(int regDest, int regSource1, int regSource2, int index) {
         String insn = instructionId("assign", index);
-        _db.add(ASSIGN_BINOP, insn, str(index), local(regDest), methId);
+        writeAssignBinop(insn, index, local(regDest), methId);
         _db.add(ASSIGN_OPER_FROM, insn, local(regSource1));
         _db.add(ASSIGN_OPER_FROM, insn, local(regSource2));
     }

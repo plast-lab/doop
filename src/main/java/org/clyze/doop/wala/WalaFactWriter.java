@@ -1213,7 +1213,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
+        writeAssignBinop(insn, index, _rep.local(m, left), methodId);
 
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
@@ -1225,7 +1225,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
+        writeAssignBinop(insn, index, _rep.local(m, left), methodId);
 
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));

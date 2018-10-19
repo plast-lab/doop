@@ -898,7 +898,7 @@ class FactWriter extends JavaFactWriter {
         String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_BINOP, insn, str(index), Representation.local(m, left), methodId);
+        writeAssignBinop(insn, index, Representation.local(m, left), methodId);
 
         if (right instanceof AddExpr)
                 writeOperatorAt(insn, "+");
