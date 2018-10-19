@@ -20,7 +20,6 @@ public class Parameters {
     public boolean _android = false;
     public Integer _cores = null;
     public String _seed = null;
-    public String _specialCSMethods = null;
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
@@ -174,10 +173,6 @@ public class Parameters {
         case "--seed":
             i = shift(args, i);
             _seed = args[i];
-            break;
-        case "--special-cs-methods":
-            i = shift(args, i);
-            _specialCSMethods = args[i];
             break;
         case "--noFacts":
             _noFacts = true;
