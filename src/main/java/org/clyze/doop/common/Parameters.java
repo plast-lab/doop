@@ -174,7 +174,7 @@ public class Parameters {
             i = shift(args, i);
             _seed = args[i];
             break;
-        case "--noFacts":
+        case "--no-facts":
             _noFacts = true;
             break;
         case "--ignore-factgen-errors":

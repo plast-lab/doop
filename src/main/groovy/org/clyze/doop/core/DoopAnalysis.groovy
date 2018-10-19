@@ -313,7 +313,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
 
         if (options.X_DRY_RUN.value) {
-            params += ["--noFacts"]
+            params += ["--no-facts"]
         }
 
         if (options.X_R_OUT_DIR.value) {
