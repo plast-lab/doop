@@ -57,7 +57,7 @@ public class Main {
         String outDir = sootParameters.getOutputDir();
 
         try {
-            Helper.tryInitLogging("DEBUG", outDir + File.separator + "logs", true);
+            Helper.tryInitLogging("DEBUG", sootParameters.getLogDir(), true);
             logger = LogFactory.getLog(Main.class);
         } catch (IOException ex) {
             System.err.println("Warning: could not initialize logging");

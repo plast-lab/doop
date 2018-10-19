@@ -25,15 +25,15 @@ class DexInvoker {
         DexParameters dexParams = new DexParameters();
         dexParams.initFromArgs(args);
 
-        String outDir = dexParams.getOutputDir();
         try {
-            Helper.tryInitLogging("DEBUG", outDir + File.separator + "logs", true);
+            Helper.tryInitLogging("DEBUG", dexParams.getLogDir(), true);
         } catch (IOException ex) {
             System.err.println("Warning: could not initialize logging");
             throw new DoopErrorCodeException(18);
         }
 
         Log logger = LogFactory.getLog(DexInvoker.class);
+        String outDir = dexParams.getOutputDir();
         logger.debug("Using output directory: " + outDir);
 
         try (Database db = new Database(new File(outDir))) {

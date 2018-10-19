@@ -15,6 +15,7 @@ public class Parameters {
     private List<String> _dependencies = new ArrayList<>();
     private final List<String> _platformLibs = new ArrayList<>();
     private String _outputDir = null;
+    private String _logDir = null;
     private String _extraSensitiveControls = "";
     private ClassFilter applicationClassFilter;
     public boolean _android = false;
@@ -66,6 +67,10 @@ public class Parameters {
 
     public String getOutputDir() {
         return _outputDir;
+    }
+
+    public String getLogDir() {
+        return _logDir;
     }
 
     public boolean isApplicationClass(String className) {
@@ -146,6 +151,10 @@ public class Parameters {
             i = shift(args, i);
             setOutputDir(args[i]);
             break;
+        case "--log-dir":
+            i = shift(args, i);
+            _logDir = args[i];
+            break;
         case "--application-regex":
             i = shift(args, i);
             setAppRegex(args[i]);
@@ -208,6 +217,11 @@ public class Parameters {
         } else if (getOutputDir() == null) {
             System.err.println("Error: no output facts directory.");
             throw new DoopErrorCodeException(16);
+        }
+
+        if (_logDir == null) {
+            _logDir = getOutputDir() + File.separator + "logs";
+            System.err.println("No logs directory set, using: " + _logDir);
         }
     }
 }

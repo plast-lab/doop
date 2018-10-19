@@ -103,6 +103,7 @@ public class SootParameters extends Parameters {
             System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot");
             System.err.println("  --failOnMissingClasses                Terminate if classes are missing");
             System.err.println("  --also-resolve <class>                Force resolution of class that may not be found automatically.");
+            System.err.println("  --log-dir <dir>                       Write logs in directory <dir>.");
             System.err.println("Jimple/Shimple generation:");
             System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
             System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
