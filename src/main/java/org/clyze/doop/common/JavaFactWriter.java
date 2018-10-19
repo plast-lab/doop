@@ -65,14 +65,6 @@ public class JavaFactWriter {
         _db.add(PROPERTIES, pathId, keyId, valueId);
     }
 
-    private void writeSpecialSensitivityMethod(String line) {
-        String[] linePieces = line.split("\t");
-        String method = linePieces[0].trim();
-        String sensitivity = linePieces[1].trim();
-
-        _db.add(SPECIAL_CONTEXT_SENSITIVITY_METHOD, method, sensitivity);
-    }
-
     protected void writeMethodHandleConstant(String heap, String handleName) {
         _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
     }
@@ -137,7 +129,6 @@ public class JavaFactWriter {
 
         try {
             processSeeds(params._seed);
-            processSpecialCSMethods(params._specialCSMethods);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -197,22 +188,6 @@ public class JavaFactWriter {
             writeAndroidKeepMethod(line);
         else if (!line.contains(":"))
             writeAndroidKeepClass(line);
-    }
-
-    private void processSpecialCSMethods(String csMethods) throws IOException {
-        if (csMethods != null) {
-            System.out.println("Reading special methods from: " + csMethods);
-            try (Stream<String> stream = Files.lines(Paths.get(csMethods))) {
-                stream.forEach(this::processSpecialSensitivityMethodFileLine);
-            }
-        }
-    }
-
-    private void processSpecialSensitivityMethodFileLine(String line) {
-        if (line.contains("\t"))
-            writeSpecialSensitivityMethod(line);
-        else
-            System.err.println("Ignoring malformed special sensitivity method: " + line);
     }
 
     protected void writeMethodDeclaresException(String methodId, String exceptionType) {
