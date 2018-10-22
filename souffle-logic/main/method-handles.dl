@@ -105,6 +105,14 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
    AssignReturnValue(?i, ?ret).
 
+// Pass arguments to bootstrap methods.
+VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, ?i, ?ctx, ?metafactory),
+   FormalParam(?idx, ?metafactory, ?formal),
+   BootstrapParam(?idx, ?i, ?actual),
+   VarPointsTo(_, ?val, _, ?actual),
+   isImmutableHContext(?hctx).
+
 .decl Lambda_Method(?value:Value, ?realMethod:Method)
 Lambda_Method(?value, ?realMethod) :-
    ConstantMethodHandleLambda(?value, _, _, ?realMethod).
