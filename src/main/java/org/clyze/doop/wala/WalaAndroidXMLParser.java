@@ -2,6 +2,8 @@ package org.clyze.doop.wala;
 
 import java.io.File;
 import java.util.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Parameters;
 import org.clyze.doop.common.android.AppResources;
@@ -21,11 +23,13 @@ import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
  */
 class WalaAndroidXMLParser extends AndroidSupport {
     private final WalaFactWriter factWriter;
+    private final Log logger;
 
     WalaAndroidXMLParser(Parameters parameters, WalaFactWriter writer, BasicJavaSupport java)
     {
         super(parameters, java);
         this.factWriter = writer;
+        this.logger = LogFactory.getLog(getClass());
     }
 
     void process()
@@ -50,7 +54,7 @@ class WalaAndroidXMLParser extends AndroidSupport {
                     processAppResources(i, resources, pkgs, null);
                     resources.printManifestInfo();
                 } catch (Exception ex) {
-                    System.err.println("Error processing manifest in: " + i);
+                    logger.debug("Error processing manifest in: " + i);
                     ex.printStackTrace();
                 }
             }
@@ -67,7 +71,7 @@ class WalaAndroidXMLParser extends AndroidSupport {
                     for (String dexEntry : multiDex.getDexEntryNames()) {
                         DexBackedDexFile dex = multiDex.getEntry(dexEntry);
                         if (dex == null)
-                            System.err.println("No .dex entry for " + dexEntry);
+                            logger.debug("No .dex entry for " + dexEntry);
                         else
                             for (DexBackedClassDef dexClass : dex.getClasses()) {
                                 String className = TypeUtils.raiseTypeId(dexClass.getType());
@@ -75,7 +79,7 @@ class WalaAndroidXMLParser extends AndroidSupport {
                             }
                     }
                 } catch (Exception ex) {
-                    System.err.println("Error while calculating artifacts on Android: " + ex.getMessage());
+                    logger.debug("Error while calculating artifacts on Android: " + ex.getMessage());
                 }
     }
 }
