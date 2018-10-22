@@ -10,10 +10,12 @@ HeapAllocation_ContextInsensitive(?heap) :-
 #define LAMBDA_ALTMETAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
 
 // Find invocations to the lambda metafactories.
-.decl LambdaMetafactoryInvoke(?invo:MethodInvocation)
-LambdaMetafactoryInvoke(?invo) :-
+.decl LambdaMetafactoryInvoke(?invo:MethodInvocation, ?dynName:symbol, ?interface:InterfaceType)
+LambdaMetafactoryInvoke(?invo, ?dynName, ?interface) :-
    DynamicMethodInvocation_Bootstrap(?invo, ?method),
-   (?method = LAMBDA_METAFACTORY_ID ; ?method = LAMBDA_ALTMETAFACTORY_ID).
+   (?method = LAMBDA_METAFACTORY_ID ; ?method = LAMBDA_ALTMETAFACTORY_ID),
+   DynamicMethodInvocation_DynName(?invo, ?dynName),
+   DynamicMethodInvocation_DynReturnType(?invo, ?interface).
 
 // Method references are wrapped by calling invokedynamic with
 // boostrap method being the lambda metafactory and the second
@@ -32,15 +34,12 @@ LambdaMetafactoryInvoke(?invo) :-
 // Intermediate relation to make rules easier to read.
 .decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method)
 
-InvokedynamicBootstrap(?invo, ?ctx),
+InvokedynamicBootstrapCtx(?invo, ?ctx),
 ConstantMHLambdaVPT(?hctx, MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?realMethod, ?interface, ?dynName)), ?ctx, ?var, ?interface, ?dynName, ?realMethod) :-
-   isDynamicMethodInvocation_Insn(?invo),
    BootstrapParam(1, ?invo, ?handleVar),
-   LambdaMetafactoryInvoke(?invo),
+   LambdaMetafactoryInvoke(?invo, ?dynName, ?interface),
    VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
    MethodHandleConstant_Method(?handleVal, ?realMethod),
-   DynamicMethodInvocation_DynName(?invo, ?dynName),
-   DynamicMethodInvocation_DynReturnType(?invo, ?interface),
    isInterfaceType(?interface),
    AssignReturnValue(?invo, ?var),
    // Used to generate friendly description for the generated wrapper.
@@ -53,16 +52,15 @@ MockValueConsMacro(?value, ?interface),
 ConstantMethodHandleLambda(?value, ?dynName, ?interface, ?realMethod) :-
    ConstantMHLambdaVPT(?hctx, ?value, ?ctx, ?var, ?interface, ?dynName, ?realMethod).
 
-.decl InvokedynamicBootstrap(?invo:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
+.decl InvokedynamicBootstrapCtx(?invo:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
 
 // Record invokedynamic invocations whose bootstrap methods are not
 // handled at all.
 .decl UnhandledInvokedynamic(?i:DynamicMethodInvocation_Insn, ?bootMethodId:symbol)
 
 UnhandledInvokedynamic(?i, ?bootMethodId) :-
-   isDynamicMethodInvocation_Insn(?i),
    DynamicMethodInvocation_Bootstrap(?i, ?bootMethodId),
-   !LambdaMetafactoryInvoke(?i).
+   !LambdaMetafactoryInvoke(?i, _, _).
 
 // When invokeinterface is called on a lambda object constructed by a
 // constant method handle, the real method is called. This can wrap a
@@ -84,10 +82,10 @@ ReachableContext(?calleeCtx, ?callee) :-
 
 .decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?metafactory:Method)
 InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?metafactory) :-
-   LambdaMetafactoryInvoke(?i),
+   LambdaMetafactoryInvoke(?i, _, _),
    DynamicMethodInvocation_Bootstrap(?i, ?metafactory),
    isImmutableContext(?calleeCtx),
-   InvokedynamicBootstrap(?i, ?callerCtx).
+   InvokedynamicBootstrapCtx(?i, ?callerCtx).
 
 ReachableContext(?calleeCtx, ?callee) :-
    InvokedynamicMetafactoryCallGraphEdge(_, _, ?calleeCtx, ?callee).
