@@ -23,11 +23,8 @@ LambdaMetafactoryInvoke(?invo, ?dynName, ?interface) :-
 // 'value' of the invokedynamic is a lambda, which contains an
 // instance method calling static method 'realMethod'.
 
-#define MHDesc(type, method, real, ret, name) \
-   cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))
-
-#define MHValue(invo, ret, desc) \
-   cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", desc))))
+#define MHMock(invo, ret, type, method, real, name) \
+   cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
 
 .decl ConstantMethodHandleLambda(?value:Value, ?dynName:symbol, ?dynRet:Type, ?realMethod:Method)
 
@@ -35,7 +32,7 @@ LambdaMetafactoryInvoke(?invo, ?dynName, ?interface) :-
 .decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method)
 
 InvokedynamicBootstrapCtx(?invo, ?ctx),
-ConstantMHLambdaVPT(?hctx, MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?realMethod, ?interface, ?dynName)), ?ctx, ?var, ?interface, ?dynName, ?realMethod) :-
+ConstantMHLambdaVPT(?hctx, MHMock(?invo, ?interface, ?handleType, ?handleMeth, ?realMethod, ?dynName), ?ctx, ?var, ?interface, ?dynName, ?realMethod) :-
    BootstrapParam(1, ?invo, ?handleVar),
    LambdaMetafactoryInvoke(?invo, ?dynName, ?interface),
    VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
