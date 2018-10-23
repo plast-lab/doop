@@ -29,15 +29,15 @@ LambdaMetafactoryInvoke(?invo, ?dynName, ?interface) :-
 .decl ConstantMethodHandleLambda(?value:Value, ?dynName:symbol, ?dynRet:Type, ?realMethod:Method)
 
 // Intermediate relation to make rules easier to read.
-.decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method)
+.decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?samType:InterfaceType, ?dynName:symbol, ?realMethod:Method)
 
 InvokedynamicBootstrapCtx(?invo, ?ctx),
-ConstantMHLambdaVPT(?hctx, MHMock(?invo, ?interface, ?handleType, ?handleMeth, ?realMethod, ?dynName), ?ctx, ?var, ?interface, ?dynName, ?realMethod) :-
+ConstantMHLambdaVPT(?hctx, MHMock(?invo, ?samType, ?handleType, ?handleMeth, ?realMethod, ?dynName), ?ctx, ?var, ?samType, ?dynName, ?realMethod) :-
+   LambdaMetafactoryInvoke(?invo, ?dynName, ?samType),
    BootstrapParam(1, ?invo, ?handleVar),
-   LambdaMetafactoryInvoke(?invo, ?dynName, ?interface),
    VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
    MethodHandleConstant_Method(?handleVal, ?realMethod),
-   isInterfaceType(?interface),
+   isInterfaceType(?samType),
    AssignReturnValue(?invo, ?var),
    // Used to generate friendly description for the generated wrapper.
    Method_SimpleName(?realMethod, ?handleMeth),
@@ -45,9 +45,9 @@ ConstantMHLambdaVPT(?hctx, MHMock(?invo, ?interface, ?handleType, ?handleMeth, ?
 
 // Unpack the information gathered above and populate appropriate relations.
 VarPointsTo(?hctx, ?value, ?ctx, ?var),
-MockValueConsMacro(?value, ?interface),
-ConstantMethodHandleLambda(?value, ?dynName, ?interface, ?realMethod) :-
-   ConstantMHLambdaVPT(?hctx, ?value, ?ctx, ?var, ?interface, ?dynName, ?realMethod).
+MockValueConsMacro(?value, ?samType),
+ConstantMethodHandleLambda(?value, ?dynName, ?samType, ?realMethod) :-
+   ConstantMHLambdaVPT(?hctx, ?value, ?ctx, ?var, ?samType, ?dynName, ?realMethod).
 
 .decl InvokedynamicBootstrapCtx(?invo:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
 
