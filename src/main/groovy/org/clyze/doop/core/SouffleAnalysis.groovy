@@ -190,6 +190,10 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
 		}
 
+		if (options.X_CONTEXT_DEPENDENCY_HEURISTIC.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/2-object-ctx-dependency-heuristic.dl")
+		}
+
 		if (options.X_STATS_NONE.value) return
 
 		if (options.X_STATS_AROUND.value) {

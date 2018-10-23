@@ -673,7 +673,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_ORACULAR_HEURISTICS",
 					name: "Xoracular-heuristics",
-					description: "Run sensitivity heuristics logic under addons/statistics",
+					description: "Run sensitivity heuristics logic under addons/oracular",
+					forPreprocessor: false
+			),
+			new BooleanAnalysisOption(
+					id: "X_CONTEXT_DEPENDENCY_HEURISTIC",
+					name: "Xcontext-dependency-heuristic",
+					description: "Run context dependency heuristics logic under addons/oracular",
 					forPreprocessor: false
 			),
 			new AnalysisOption<String>(
