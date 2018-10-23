@@ -5,15 +5,15 @@
 HeapAllocation_ContextInsensitive(?heap) :-
    isMethodHandleConstant(?heap).
 
-#define LAMBDA_METAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
+#define LAMBDA_METAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
 
-#define LAMBDA_ALTMETAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
+#define LAMBDA_ALTMETAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
 
 // Find invocations to the lambda metafactories.
 .decl LambdaMetafactoryInvoke(?invo:MethodInvocation, ?dynName:symbol, ?interface:InterfaceType)
 LambdaMetafactoryInvoke(?invo, ?dynName, ?interface) :-
    DynamicMethodInvocation_Bootstrap(?invo, ?method),
-   (?method = LAMBDA_METAFACTORY_ID ; ?method = LAMBDA_ALTMETAFACTORY_ID),
+   (?method = LAMBDA_METAFACTORY ; ?method = LAMBDA_ALTMETAFACTORY),
    DynamicMethodInvocation_DynName(?invo, ?dynName),
    DynamicMethodInvocation_DynReturnType(?invo, ?interface).
 
@@ -102,11 +102,44 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
    AssignReturnValue(?i, ?ret).
 
-// Pass arguments to bootstrap methods.
+// Pass arguments to bootstrap methods. First three arguments are
+// filled in by the JVM.
+
+// Use a mock method handles lookup object for all metafactories.
+MockValueConsMacro(MOCK_MH_LOOKUP, "java.lang.invoke.MethodHandles$Lookup"),
+VarPointsTo(?hctx, MOCK_MH_LOOKUP, ?ctx, ?caller) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, _, ?ctx, ?metafactory),
+   FormalParam(0, ?metafactory, ?caller),
+   MOCK_MH_LOOKUP = "mock method handles lookup object",
+   isImmutableHContext(?hctx).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?invokedName) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, _, ?ctx, ?metafactory),
+   FormalParam(?idx, ?metafactory, ?invokedName),
+   (?idx = 1 ; ?idx = 2),
+   VarPointsTo(?hctx, ?value, ?ctx, ?invokedName).
+
+// Normal handling for the last three arguments of the metafactory.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    InvokedynamicMetafactoryCallGraphEdge(_, ?i, ?ctx, ?metafactory),
-   FormalParam(?idx, ?metafactory, ?formal),
+   ?metafactory = LAMBDA_METAFACTORY,
+   FormalParam(?idx + 3, ?metafactory, ?formal),
    BootstrapParam(?idx, ?i, ?actual),
+   VarPointsTo(_, ?val, _, ?actual),
+   isImmutableHContext(?hctx).
+
+// Use a mock varargs array to fix calls to the alt metafactory.
+
+#define MOCK_ARRAY(instr) cat("metafactory varargs array for ", instr)
+
+ArrayIndexPointsTo(?hctx, ?val, ?hctx, MOCK_ARRAY(?i)),
+MockValueConsMacro(MOCK_ARRAY(?i), "java.lang.Object[]"),
+VarPointsTo(?hctx, MOCK_ARRAY(?i), ?ctx, ?formalVarArgs) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, ?i, ?ctx, ?metafactory),
+   ?metafactory = LAMBDA_ALTMETAFACTORY,
+   FormalParam(3, ?metafactory, ?formalVarArgs),
+   BootstrapParam(?idx, ?i, ?actual),
+   ?idx > 2,
    VarPointsTo(_, ?val, _, ?actual),
    isImmutableHContext(?hctx).
 
