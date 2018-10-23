@@ -13,7 +13,11 @@
   #include "lists.dl"
   #include "const-int.dl"
   #include "../lib-specific/modeled.dl"
-  #include "../lib-specific/tensorflow.dl"
+  #include "../lib-specific/tensorflow/tensorflow.dl"
+  #include "../lib-specific/tensorflow/general-tensor-modeling.dl"
+  #include "../lib-specific/tensorflow/tensor-creation-ops.dl"
+  #include "../lib-specific/tensorflow/ops.dl"
+  #include "../lib-specific/tensorflow/pooling-conv-ops.dl"
 
   /**
    * Reachable
