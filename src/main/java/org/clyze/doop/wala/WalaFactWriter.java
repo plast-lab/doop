@@ -927,11 +927,12 @@ public class WalaFactWriter extends JavaFactWriter {
 
         }
         if (instruction instanceof SSAInvokeDynamicInstruction) {
-            for (int j = 0; j < ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentCount(); j++) {
-                int arg = ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentIndex(j);
+            SSAInvokeDynamicInstruction invokedynamic = (SSAInvokeDynamicInstruction) instruction;
+            for (int j = 0; j < (invokedynamic).getBootstrap().callArgumentCount(); j++) {
+                int arg = (invokedynamic).getBootstrap().callArgumentIndex(j);
 
                 //Local l = createLocal(ir, instruction, arg); //TODO: TypeInference for bootstrap parameters??
-                Local l = bootstrapParamHelper(ir, inMethod, (SSAInvokeDynamicInstruction)instruction, j, session);
+                Local l = bootstrapParamHelper(ir, inMethod, invokedynamic, j, session);
                 _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, _rep.local(inMethod, l));
 
             }
