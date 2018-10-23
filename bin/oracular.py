@@ -48,7 +48,7 @@ def run_pre_analyses(init_args, app):
     args = args + ['--Xsymlink-cached-facts']
 
     cmd = ' '.join(args)
-    print YELLOW + BOLD + 'Running pre-analyses #1 ' + PRE_ANALYSIS_1 + RESET
+    print(YELLOW + BOLD + 'Running pre-analyses #1 ' + PRE_ANALYSIS_1 + RESET)
     # print cmd
     os.system(cmd)
     ci_analysis_database = os.path.join(DOOP_OUT, 'context-insensitive', app+'-ci', 'database')
@@ -62,16 +62,17 @@ def run_pre_analyses(init_args, app):
     shutil.copyfile(from_path, dump_path)
     
     
-    print YELLOW + BOLD + 'Running pre-analyses #2 ' + PRE_ANALYSIS_2 + RESET
+    print(YELLOW + BOLD + 'Running pre-analyses #2 ' + PRE_ANALYSIS_2 + RESET)
     args = [DOOP] + init_args
     args = args + ['-a', PRE_ANALYSIS_2]
     args = args + ['--Xoracular-heuristics']
+    args = args + ['--Xcontext-dependency-heuristic']
     args = args + ['--Xstart-after-facts', app+"-facts"]
     args = args + ['--id', app+'-2obj']
     args = args + ['--Xsymlink-cached-facts']
 
     cmd = ' '.join(args)
-    print cmd
+    print(cmd)
     os.system(cmd)
     two_obj_analysis_database = os.path.join(DOOP_OUT, '2-object-sensitive+heap', app+'-2obj', 'database')
     two_obj_analysis_facts = os.path.join(DOOP_OUT, '2-object-sensitive+heap', app+'-2obj', 'facts')
@@ -87,7 +88,7 @@ def run_pre_analyses(init_args, app):
 
 
 def run_oracular_analysis_classification(app, slowdown):
-    print YELLOW + BOLD + 'Running Oracular classification ' + RESET
+    print(YELLOW + BOLD + 'Running Oracular classification ' + RESET)
     insens_weight_file = open(os.path.join(ORACULAR_CACHE, app, 'InsensMethodWeight.facts'), 'r')
     sens_weight_file = open(os.path.join(ORACULAR_CACHE, app, 'SensMethodWeight.facts'), 'r')
     insens_cost_file = open(os.path.join(ORACULAR_CACHE, app, 'InsensMethodCost.facts'), 'r')
@@ -99,7 +100,7 @@ def run_oracular_analysis_classification(app, slowdown):
         weight = int(pieces[1])
         insens_method_weight_dict.update({method: weight})
 
-    print YELLOW + BOLD + 'INSENS methods ' + str(len(insens_method_weight_dict.keys())) + RESET
+    print(YELLOW + BOLD + 'INSENS methods ' + str(len(insens_method_weight_dict.keys())) + RESET)
     insens_weight_file.close()
 
     for line in sens_weight_file:
@@ -108,7 +109,7 @@ def run_oracular_analysis_classification(app, slowdown):
         weight = int(pieces[1])
         sens_method_weight_dict.update({method: weight})
 
-    print YELLOW + BOLD + 'SENS methods ' + str(len(sens_method_weight_dict.keys())) + RESET
+    print(YELLOW + BOLD + 'SENS methods ' + str(len(sens_method_weight_dict.keys())) + RESET)
     sens_weight_file.close()
 
     for line in insens_cost_file:
@@ -135,8 +136,8 @@ def run_oracular_analysis_classification(app, slowdown):
     for method_cost in sens_method_cost_dict.values():
         two_obj_analysis_weight += method_cost
 
-    print YELLOW + BOLD + 'context insensitive analysis weight: ' + str(ci_analysis_weight) + RESET
-    print YELLOW + BOLD + '2 object sensitive analysis weight: ' + str(two_obj_analysis_weight) + RESET
+    print(YELLOW + BOLD + 'context insensitive analysis weight: ' + str(ci_analysis_weight) + RESET)
+    print(YELLOW + BOLD + '2 object sensitive analysis weight: ' + str(two_obj_analysis_weight) + RESET)
 
     special_cs_file = open(os.path.join(ORACULAR_CACHE, app, 'SpecialCSMethods.csv'), 'w')
     calculate_method_ratios(insens_method_weight_dict, sens_method_weight_dict, special_cs_file)
@@ -162,8 +163,8 @@ def run_oracular_analysis_classification(app, slowdown):
 
     special_cs_file.close()
 
-    print YELLOW + BOLD + '2-object methods: ' + str(two_object_sensitive_methods) + RESET
-    print YELLOW + BOLD + 'context-insensitive methods: ' + str(context_insensitive_methods) + RESET
+    print(YELLOW + BOLD + '2-object methods: ' + str(two_object_sensitive_methods) + RESET)
+    print(YELLOW + BOLD + 'context-insensitive methods: ' + str(context_insensitive_methods) + RESET)
 
 def calculate_analysis_threshold(ratio_threshold):
     analysis_weight = 0
@@ -175,7 +176,7 @@ def calculate_analysis_threshold(ratio_threshold):
             if insens_method_cost_dict.__contains__(method):
                 analysis_weight += insens_method_cost_dict.get(method)
             else:
-                print YELLOW + BOLD + 'Reachable method missing from insensitive: ' + method + RESET
+                print(YELLOW + BOLD + 'Reachable method missing from insensitive: ' + method + RESET)
     return analysis_weight
 
 
@@ -199,7 +200,7 @@ def calculate_method_ratios(insens_method_weight_dict, sens_method_weight_dict, 
                 special_cs_file.write(method + '\t' '2-object\n')
                 #print YELLOW + BOLD + 'Possibly non-reachable method in high precision given, 2-obj context: ' + method + RESET
                 missing_methods += 1
-    print YELLOW + BOLD +  'Total methods possibly unreachable in high precision: ' + str(missing_methods) + RESET
+    print(YELLOW + BOLD +  'Total methods possibly unreachable in high precision: ' + str(missing_methods) + RESET)
 
 
 def binary_search_threshold(threshold_list, slowdown):
@@ -208,12 +209,12 @@ def binary_search_threshold(threshold_list, slowdown):
     value = float(slowdown)
 
     if value < float(calculate_analysis_threshold(threshold_list[0]))/float(ci_analysis_weight):
-        print float(calculate_analysis_threshold(threshold_list[0]))
-        print YELLOW + BOLD + 'Optimal threshold found after ' + str(loop_count) + ' steps' + RESET
+        print (float(calculate_analysis_threshold(threshold_list[0])))
+        print (YELLOW + BOLD + 'Optimal threshold found after ' + str(loop_count) + ' steps' + RESET)
         return threshold_list[0]
     if value > float(calculate_analysis_threshold(threshold_list[len(threshold_list) - 1]))/float(ci_analysis_weight):
-        print float(calculate_analysis_threshold(threshold_list[len(threshold_list) - 1]))
-        print YELLOW + BOLD + 'Optimal threshold found after ' + str(loop_count) + ' steps' + RESET
+        print (float(calculate_analysis_threshold(threshold_list[len(threshold_list) - 1])))
+        print (YELLOW + BOLD + 'Optimal threshold found after ' + str(loop_count) + ' steps' + RESET)
         return threshold_list[len(threshold_list)-1]
 
     low = 0
@@ -228,12 +229,12 @@ def binary_search_threshold(threshold_list, slowdown):
         elif value > float(calculate_analysis_threshold(threshold_list[mid]))/float(ci_analysis_weight):
             low = mid + 1
         else:
-            print YELLOW + BOLD + 'Optimal threshold found after ' + str(loop_count) + ' steps' + RESET
+            print (YELLOW + BOLD + 'Optimal threshold found after ' + str(loop_count) + ' steps' + RESET)
             return threshold_list[mid]
 
-    print YELLOW + BOLD + 'Optimal threshold found after ' + str(loop_count) + ' steps' + RESET
-    print YELLOW + BOLD + 'low 2-obj cost ' + str(calculate_analysis_threshold(threshold_list[low])) + RESET
-    print YELLOW + BOLD + 'high 2-obj cost ' + str(calculate_analysis_threshold(threshold_list[high])) + RESET
+    print (YELLOW + BOLD + 'Optimal threshold found after ' + str(loop_count) + ' steps' + RESET)
+    print (YELLOW + BOLD + 'low 2-obj cost ' + str(calculate_analysis_threshold(threshold_list[low])) + RESET)
+    print (YELLOW + BOLD + 'high 2-obj cost ' + str(calculate_analysis_threshold(threshold_list[high])) + RESET)
 
     if (float(calculate_analysis_threshold(threshold_list[low]))/float(ci_analysis_weight) - value) < (value - float(calculate_analysis_threshold(threshold_list[high]))/float(ci_analysis_weight)):
         return threshold_list[low]
