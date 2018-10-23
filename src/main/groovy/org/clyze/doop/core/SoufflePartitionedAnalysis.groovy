@@ -62,13 +62,24 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
             File destPartitionsFile = new File(factsDir, "TypeToPartition.facts")
             def lines = destPartitionsFile.readLines()
 
-            def partitions = [] as Set<String>
+            def partitionSizes = [:] as HashMap<String, Integer>
             lines.each { String line ->
                 String[] lineParts = line.split('\t')
                 def partition = lineParts[1]
-                partitions.add(partition)
+                if (partitionSizes.containsKey(partition)) {
+                    def currentSize = partitionSizes.get(partition)
+                    partitionSizes.put(partition, currentSize+1)
+                }
+                else {
+                    partitionSizes.put(partition, 0)
+                }
             }
 
+	        partitionSizes.each() { partition, size ->
+		        log.info "Partition: ${partition} size: ${size}"
+	        }
+
+            def partitions = partitionSizes.keySet()
             int partitionNumber = 0
             partitions.each { partition ->
                 partitionNumber++

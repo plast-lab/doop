@@ -22,8 +22,7 @@ Stats_Simple_InsensNonPrimaryVarPointsTo(?value, ?var) :-
 
 Stats_Simple_NonPrimaryVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var),
-  (mainAnalysis.configuration.VarInNoPartition(?var);
-   mainAnalysis.configuration.VarInAllPartitions(?var)).
+  mainAnalysis.configuration.VarInNoPartition(?var).
 
 #endif
 
