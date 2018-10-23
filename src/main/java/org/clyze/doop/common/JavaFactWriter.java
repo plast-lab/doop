@@ -241,4 +241,8 @@ public class JavaFactWriter {
     protected void writeAssignOperFrom(String insn, String branch, String local) {
         _db.add(ASSIGN_OPER_FROM, insn, branch, local);
     }
+
+    protected void writeInvokedynamic(String insn, int index, String bootSig, String dynName, String dynRetType, int dynArity, String dynParamTypes, int tag, String methodId) {
+        _db.add(DYNAMIC_METHOD_INV, insn, str(index), bootSig, dynName, dynRetType, str(dynArity), dynParamTypes, str(tag), methodId);
+    }
 }

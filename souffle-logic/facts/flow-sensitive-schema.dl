@@ -419,6 +419,8 @@
 .decl DynamicMethodInvocation_DynParamTypes(?invocation:DynamicMethodInvocation_Insn, ?dynParamTypes:symbol)
 // Arity of the dynamic method (calculated by the front-end).
 .decl DynamicMethodInvocation_DynArity(?invocation:DynamicMethodInvocation_Insn, ?dynArity:number)
+// The tag of the method handle (spec: JVMS 5.4.3.5).
+.decl DynamicMethodInvocation_HandleTag(?instruction:DynamicMethodInvocation_Insn, ?tag:number)
 
 // The bootstrap parameters of a dynamic invocation.
 .decl BootstrapParam(?index:number, ?invocation:DynamicMethodInvocation_Insn, ?var:Var)

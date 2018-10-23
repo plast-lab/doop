@@ -406,7 +406,7 @@ SuperMethodInvocation_Base(?instruction, ?base) :-
 
 // Dynamic method invocation
 
-.decl _DynamicMethodInvocation(?instruction:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?method:symbol)
+.decl _DynamicMethodInvocation(?instruction:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?tag:number, ?method:symbol)
 .input _DynamicMethodInvocation(IO="file", filename="DynamicMethodInvocation.facts", delimiter="\t")
 
 
@@ -419,8 +419,9 @@ DynamicMethodInvocation_Bootstrap(?instruction, ?bootSignature),
 DynamicMethodInvocation_DynName(?instruction, ?dynName),
 DynamicMethodInvocation_DynReturnType(?instruction, ?dynRetType),
 DynamicMethodInvocation_DynParamTypes(?instruction, ?dynParamTypes),
+DynamicMethodInvocation_HandleTag(?instruction, ?tag),
 DynamicMethodInvocation_DynArity(?instruction, ?dynArity) :-
-  _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?method).
+  _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method).
 
 // Opaque method invocations
 

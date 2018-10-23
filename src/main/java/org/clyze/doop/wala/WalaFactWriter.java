@@ -1110,8 +1110,6 @@ public class WalaFactWriter extends JavaFactWriter {
 
         if (instruction instanceof SSAInvokeDynamicInstruction) { //Had to put these first because wala considers them static
 //            MethodReference dynInfo = instruction.getDeclaredTarget();
-            String dynArity = String.valueOf(targetRef.getNumberOfParameters());
-
             StringBuilder parameterTypes = new StringBuilder();
             for (int i = 0; i < targetRef.getNumberOfParameters(); i++) {
                 if (i==0) {
@@ -1122,7 +1120,9 @@ public class WalaFactWriter extends JavaFactWriter {
                 }
             }
             String sig = getBootstrapSig(((SSAInvokeDynamicInstruction) instruction).getBootstrap(),inMethod.getClassHierarchy());
-            _db.add(DYNAMIC_METHOD_INV, insn, str(index), sig, targetRef.getName().toString(), fixTypeString(targetRef.getReturnType().toString()), dynArity, parameterTypes.toString(), methodId);
+            int dynArity = targetRef.getNumberOfParameters();
+            // TODO: we do not write the tag of the method handle.
+            writeInvokedynamic(insn, index, sig, targetRef.getName().toString(), fixTypeString(targetRef.getReturnType().toString()), dynArity, parameterTypes.toString(), -1, methodId);
         }
         else if (instruction.isStatic()) {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
