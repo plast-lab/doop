@@ -1,0 +1,13 @@
+// Model sun.misc.Unsafe.ensureClassInitialized().
+Reachable(?clinit) :-
+  Reachable(?method),
+  Instruction_Method(?invo, ?method),
+  MethodInvocation_Method(?invo, "<sun.misc.Unsafe: void ensureClassInitialized(java.lang.Class)>"),
+  VirtualMethodInvocation_Base(?invo, ?unsafeVar),
+  VarPointsTo(_, ?val, _, ?unsafeVar),
+  !Value_Null(?val),
+  ActualParam(0, ?invo, ?arg),
+  VarPointsTo(_, ?classValue, _, ?arg),
+  ReifiedClass(?type, ?classValue),
+  Method_DeclaringType(?clinit, ?type),
+  Method_SimpleName(?clinit, "<clinit>").
