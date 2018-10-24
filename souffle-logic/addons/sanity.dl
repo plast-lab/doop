@@ -59,10 +59,15 @@ NotReachableVarPointsTo(?var, ?method) :-
   mainAnalysis.VarPointsTo(_, _, _, ?var),
   !mainAnalysis.Reachable(?method).
 
-// Soot quirk.
 .decl ForceTypeCompatibility(?valueType:Type, ?varType:Type)
 
+// Soot quirk.
 ForceTypeCompatibility("java.lang.invoke.MethodType", "java.lang.Class").
+
+// Ignore boxing as it can happen behind the scenes (dynamic proxies,
+// invokedynamic). This includes the null object.
+ForceTypeCompatibility(?valueType, ?varType) :-
+  mainAnalysis.PrimitiveType_Boxed(?valueType, ?varType).
 
 .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
 .output VarPointsToWronglyTypedValue

@@ -126,19 +126,6 @@ ArgArrayOfProxyMethod(?objMeth, ?invo, cat(cat(cat(cat("<argument array for prox
    MethodOfInterface(?meth, ?iface),
    SpecialMethodFromObject(?meth, ?objMeth).
 
-// JLS 5.1.7 (Java 8).
-// TODO Misses null-to-null boxing (is it useful for proxies?).
-.decl PrimitiveType_Boxed(?type:Type, ?boxedType:Type)
-
-PrimitiveType_Boxed("boolean", "java.lang.Boolean").
-PrimitiveType_Boxed("byte"   , "java.lang.Byte").
-PrimitiveType_Boxed("short"  , "java.lang.Short").
-PrimitiveType_Boxed("char"   , "java.lang.Character").
-PrimitiveType_Boxed("int"    , "java.lang.Integer").
-PrimitiveType_Boxed("long"   , "java.lang.Long").
-PrimitiveType_Boxed("float"  , "java.lang.Float").
-PrimitiveType_Boxed("double" , "java.lang.Double").
-
 .decl PrimitiveFormalOfInterface(?meth:Method, ?formal:Var, ?formalType:PrimitiveType)
 
 PrimitiveFormalOfInterface(?meth, ?formal, ?formalType) :-
