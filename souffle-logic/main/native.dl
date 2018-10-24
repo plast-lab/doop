@@ -1,6 +1,7 @@
+
 VarPointsTo(?hctx, ?argArray, ?ctx, ?args),
 ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
-   ImmutableHContextFromContext(?ctx, ?hctx),
+   isImmutableHContext(?hctx),
    basic.MainMethodDeclaration(?mainMethod),
    ReachableContext(?ctx, ?mainMethod),
    FormalParam(0, ?mainMethod, ?args),
@@ -41,8 +42,9 @@ ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
       isMethod(strMethod), \
       NativeReturnVar(?return, strMethod), \
       isMethod(strConstructor), \
-      ?index = 1
-
+      ?index = 1. \
+  \
+  Value_DeclaringType(strHeap, strMethod)
 
 #define SimulateNativeStringArrayAllocation(strMethod, strArray, strElement, strElementType) \
   AssignHeapAllocation(strArray, ?return, strMethod) \
@@ -366,6 +368,5 @@ VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return) :-
   NativeReturnVar(?return, ?m),
   Var_Type(?return, ?t),
   (isClassType(?t) ; isArrayType(?t)),
-  ImmutableHContextFromContext(?ctx, ?hctx).
-
+  isImmutableHContext(?hctx).
 #endif // SIMULATE_NATIVE_RETURNS

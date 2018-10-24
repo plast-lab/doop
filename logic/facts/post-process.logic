@@ -86,6 +86,13 @@ SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    Method:SimpleName[?signature] = ?simplename,
    Method:Descriptor[?signature] = ?descriptor.
 
+SuperMethodInvocation:SimpleName[?invocation] = ?simplename,
+SuperMethodInvocation:Descriptor[?invocation] = ?descriptor <-
+   SuperMethodInvocation:Insn(?invocation),
+   MethodInvocation:Method[?invocation] = ?signature,
+   Method:SimpleName[?signature] = ?simplename,
+   Method:Descriptor[?signature] = ?descriptor.
+
 // Combining the three
 MethodInvocation:SimpleName[?invocation] = ?simplename <-
   VirtualMethodInvocation:SimpleName[?invocation] = ?simplename ;

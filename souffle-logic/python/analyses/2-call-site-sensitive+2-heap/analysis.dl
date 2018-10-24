@@ -1,0 +1,39 @@
+// Context-sensitive pointer analysis with context of 2 call site and
+// a context-sensitive heap abstraction of 2 call sites
+
+#include "../../main/main.dl"
+#include "../../main/configuration.dl"
+
+.comp TwoCallSiteSensitivePlusTwoHeapConfiguration : AbstractConfiguration {
+
+  // In this analysis, the real context and the real heap context are pairs of
+  // MethodInvocations. Keeping mapping functions is the way to handle analyses
+  // where HContext = Context (since the language considers them different
+  // types).
+  .type Context = [ invocation1:FunctionInvocation_Insn, invocation2:FunctionInvocation_Insn ]
+  .type HContext = [ invocation1:FunctionInvocation_Insn, invocation2:FunctionInvocation_Insn ]
+
+  // For this analysis the context of a method call corresponds to the
+  // invocation site of the method and the most significant element of the
+  // calling context for the caller method.
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ?callerCtx = [?invocation1, ?invocation2],
+    ?calleeCtx = [?invocation2, ?invo],
+    ?invocation1 = ?invocation1,
+    ?tomethod = ?tomethod.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),
+    ?ctx = [?invocation1, ?invocation2],
+    ?hctx = [?invocation1, ?invocation2].
+
+  InitContextResponse(?invo, ?ctx) :-
+    InitContextRequest(?invo),
+    ?ctx = [?invo, ?invo].
+
+  InitHContextResponse(?invo, ?hctx) :-
+    InitHContextRequest(?invo),
+    ?hctx = [?invo, ?invo].
+}

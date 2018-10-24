@@ -3,11 +3,14 @@ package org.clyze.doop.soot;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
+import org.clyze.utils.Helper;
 import org.clyze.utils.JHelper;
 import org.xmlpull.v1.XmlPullParserException;
 import soot.Scene;
@@ -24,6 +27,8 @@ import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.Callback
 
 public class Main {
 
+    private static Log logger;
+
     private static boolean isApplicationClass(SootParameters sootParameters, SootClass klass) {
         return sootParameters.isApplicationClass(klass.getName());
     }
@@ -31,6 +36,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.err.println("usage: [options] file...");
+            SootParameters.showHelp();
             throw new DoopErrorCodeException(0);
         }
 
@@ -39,13 +45,26 @@ public class Main {
             sootParameters.initFromArgs(args);
             produceFacts(sootParameters);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            // We assume Doop exceptions have already printed
+            // something to the standard error output.
+            if (!(ex instanceof DoopErrorCodeException))
+                ex.printStackTrace();
             throw ex;
         }
     }
 
     private static void produceFacts(SootParameters sootParameters) throws Exception {
-        Options.v().set_output_dir(sootParameters.getOutputDir());
+        String outDir = sootParameters.getOutputDir();
+
+        try {
+            Helper.tryInitLogging("DEBUG", sootParameters.getLogDir(), true);
+            logger = LogFactory.getLog(Main.class);
+        } catch (IOException ex) {
+            System.err.println("Warning: could not initialize logging");
+            throw new DoopErrorCodeException(18);
+        }
+
+        Options.v().set_output_dir(outDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
 
         if (sootParameters._ignoreWrongStaticness)
@@ -72,6 +91,10 @@ public class Main {
                 System.err.println("\nWARNING -- Android mode: all inputs will be preprocessed but only " + sootParameters.getInputs().get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
+            if (sootParameters._androidJars == null)
+                System.err.println("WARNING: missing --android-jars option.");
+            else
+                Options.v().set_android_jars(sootParameters._androidJars);
             android = new AndroidSupport_Soot(sootParameters, java);
             android.processInputs(tmpDirs);
         } else
@@ -118,6 +141,11 @@ public class Main {
         else
             classAdder.addAppClasses(classes, scene);
 
+        for (String extraClass : sootParameters.getExtraClassesToResolve()) {
+            System.out.println("Marking class to resolve: " + extraClass);
+            scene.addBasicClass(extraClass, SootClass.BODIES);
+        }
+
         scene.loadNecessaryClasses();
 
         /*
@@ -144,9 +172,22 @@ public class Main {
             System.err.println("Error: not all bodies retrieved.");
         }
 
+        logDebug("Checking class heaps for missing types...");
+        Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
+        if (unrecorded.size() > 0) {
+            // If option is set, fail and notify caller that fact generation
+            // must run again with these classes added.
+            if (sootParameters._failOnMissingClasses) {
+                throw new MissingClassesException(unrecorded.toArray(new String[0]));
+            } else {
+                System.err.println("Warning: some classes were not resolved, consider adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
+            }
+        }
+
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
             boolean reportPhantoms = sootParameters._reportPhantoms;
-            FactWriter writer = new FactWriter(db, reportPhantoms);
+            Representation rep = new Representation();
+            FactWriter writer = new FactWriter(db, rep, reportPhantoms);
             ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, reportPhantoms);
             SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors);
             factory.setDriver(driver);
@@ -243,4 +284,22 @@ public class Main {
         return null;
     }
 
+    public static class Standalone {
+        public static void main(String[] args) throws Exception {
+            try {
+                Main.main(args);
+            } catch (Exception e) {
+                boolean normalExit = (e instanceof DoopErrorCodeException) && (((DoopErrorCodeException)e).getErrorCode() == 0);
+                if (!normalExit)
+                    throw e;
+            }
+        }
+    }
+
+    private static void logDebug(String s) {
+        if (logger == null)
+            System.err.println(s);
+        else
+            logger.debug(s);
+    }
 }

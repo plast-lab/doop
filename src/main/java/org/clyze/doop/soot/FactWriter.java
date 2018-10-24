@@ -5,6 +5,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
 import org.clyze.doop.common.SessionCounter;
+import org.clyze.doop.util.TypeUtils;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
@@ -24,13 +25,12 @@ import static org.clyze.doop.common.PredicateFile.*;
  */
 class FactWriter extends JavaFactWriter {
     private final Representation _rep;
-    private final Map<String, Type> _varTypeMap;
+    private final Map<String, Type> _varTypeMap = new ConcurrentHashMap<>();
     private final boolean _reportPhantoms;
 
-    FactWriter(Database db, boolean reportPhantoms) {
+    FactWriter(Database db, Representation rep, boolean reportPhantoms) {
         super(db);
-        _rep = Representation.getRepresentation();
-        _varTypeMap = new ConcurrentHashMap<>();
+        _rep = rep;
         _reportPhantoms = reportPhantoms;
     }
 
@@ -40,7 +40,7 @@ class FactWriter extends JavaFactWriter {
         String arity = Integer.toString(m.getParameterCount());
 
         _db.add(STRING_RAW, result, methodRaw);
-        _db.add(METHOD, result, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
+        _db.add(METHOD, result, _rep.simpleName(m), Representation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
@@ -75,7 +75,7 @@ class FactWriter extends JavaFactWriter {
             writePhantomType(c);
         }
         _db.add(isInterface ? INTERFACE_TYPE : CLASS_TYPE, classStr);
-        _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
+        _db.add(CLASS_HEAP, Representation.classConstant(c), classStr);
         if (c.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
@@ -140,52 +140,52 @@ class FactWriter extends JavaFactWriter {
 
     void writeEnterMonitor(SootMethod m, EnterMonitorStmt stmt, Local var, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ENTER_MONITOR, insn, str(index), _rep.local(m, var), methodId);
+        _db.add(ENTER_MONITOR, insn, str(index), Representation.local(m, var), methodId);
     }
 
     void writeExitMonitor(SootMethod m, ExitMonitorStmt stmt, Local var, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(EXIT_MONITOR, insn, str(index), _rep.local(m, var), methodId);
+        _db.add(EXIT_MONITOR, insn, str(index), Representation.local(m, var), methodId);
     }
 
     void writeAssignLocal(SootMethod m, Stmt stmt, Local to, Local from, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_LOCAL, insn, str(index), _rep.local(m, from), _rep.local(m, to), methodId);
+        _db.add(ASSIGN_LOCAL, insn, str(index), Representation.local(m, from), Representation.local(m, to), methodId);
     }
 
     void writeAssignLocal(SootMethod m, Stmt stmt, Local to, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_LOCAL, insn, str(index), _rep.thisVar(m), _rep.local(m, to), methodId);
+        _db.add(ASSIGN_LOCAL, insn, str(index), Representation.thisVar(m), Representation.local(m, to), methodId);
     }
 
     void writeAssignLocal(SootMethod m, Stmt stmt, Local to, ParameterRef ref, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_LOCAL, insn, str(index), _rep.param(m, ref.getIndex()), _rep.local(m, to), methodId);
+        _db.add(ASSIGN_LOCAL, insn, str(index), Representation.param(m, ref.getIndex()), Representation.local(m, to), methodId);
     }
 
     void writeAssignInvoke(SootMethod inMethod, Stmt stmt, Local to, InvokeExpr expr, Session session) {
         String insn = writeInvokeHelper(inMethod, stmt, expr, session);
 
-        _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
+        _db.add(ASSIGN_RETURN_VALUE, insn, Representation.local(inMethod, to));
     }
 
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session) {
-        String heap = _rep.heapAlloc(m, expr, session);
+        String heap = Representation.heapAlloc(m, expr, session);
 
 
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
@@ -204,9 +204,9 @@ class FactWriter extends JavaFactWriter {
 
         // statement
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+getLineNumberFromStmt(stmt));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, Representation.local(m, l), methodId, ""+getLineNumberFromStmt(stmt));
     }
 
     private static int getLineNumberFromStmt(Stmt stmt) {
@@ -227,13 +227,13 @@ class FactWriter extends JavaFactWriter {
      * be allocated separately for every dimension of the array.
      */
     void writeAssignNewMultiArrayExpr(SootMethod m, Stmt stmt, Local l, NewMultiArrayExpr expr, Session session) {
-        writeAssignNewMultiArrayExprHelper(m, stmt, l, _rep.local(m,l), expr, (ArrayType) expr.getType(), session);
+        writeAssignNewMultiArrayExprHelper(m, stmt, l, Representation.local(m,l), expr, (ArrayType) expr.getType(), session);
     }
 
     private void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session) {
-        String heap = _rep.heapMultiArrayAlloc(m, /* expr, */ arrayType, session);
+        String heap = Representation.heapMultiArrayAlloc(m, /* expr, */ arrayType, session);
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
 
 
         String methodId = writeMethod(m);
@@ -243,10 +243,10 @@ class FactWriter extends JavaFactWriter {
 
         Type componentType = getComponentType(arrayType);
         if (componentType instanceof ArrayType) {
-            String childAssignTo = _rep.newLocalIntermediate(m, l, session);
+            String childAssignTo = Representation.newLocalIntermediate(m, l, session);
             writeAssignNewMultiArrayExprHelper(m, stmt, l, childAssignTo, expr, (ArrayType) componentType, session);
             int storeInsnIndex = session.calcUnitNumber(stmt);
-            String storeInsn = _rep.instruction(m, stmt, storeInsnIndex);
+            String storeInsn = Representation.instruction(m, stmt, storeInsnIndex);
 
             _db.add(STORE_ARRAY_INDEX, storeInsn, str(storeInsnIndex), childAssignTo, assignTo, methodId);
             writeLocal(childAssignTo, writeType(componentType), methodId);
@@ -305,37 +305,37 @@ class FactWriter extends JavaFactWriter {
         String heapId = writeStringConstant(content);
 
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+getLineNumberFromStmt(stmt));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, Representation.local(m, l), methodId, ""+getLineNumberFromStmt(stmt));
     }
 
     void writeAssignNull(SootMethod m, Stmt stmt, Local l, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_NULL, insn, str(index), _rep.local(m, l), methodId);
+        _db.add(ASSIGN_NULL, insn, str(index), Representation.local(m, l), methodId);
     }
 
     void writeAssignNumConstant(SootMethod m, Stmt stmt, Local l, NumericConstant constant, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, l), methodId);
+        _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString(), Representation.local(m, l), methodId);
     }
 
     private void writeAssignMethodHandleConstant(SootMethod m, Stmt stmt, Local l, MethodHandle constant, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String handleName = constant.getMethodRef().toString();
         String heap = methodHandleConstant(handleName);
         String methodId = writeMethod(m);
 
         writeMethodHandleConstant(heap, handleName);
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, Representation.local(m, l), methodId, "0");
     }
 
     void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstant constant, Session session) {
@@ -347,11 +347,11 @@ class FactWriter extends JavaFactWriter {
            types seem to have been translated to a syntax with the initial
            L, but arrays are still represented as [, for example [C for
            char[] */
-        if (first == '[' || (first == 'L' && s.endsWith(";")) ) {
+        if (TypeUtils.isLowLevelType(first, s)) {
             // array type
-            Type t = soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(s);
-            heap = _rep.classConstant(t);
+            Type t = ClassHeapFinder.raiseTypeWithSoot(s);
             String actualType = t.toString();
+            heap = Representation.classConstant(t);
             _db.add(CLASS_HEAP, heap, actualType);
         } else if (first == '(') {
             // method type constant (viewed by Soot as a class constant)
@@ -376,35 +376,35 @@ class FactWriter extends JavaFactWriter {
         }
 
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, Representation.local(m, l), methodId, "0");
     }
 
     void writeAssignCast(SootMethod m, Stmt stmt, Local to, Local from, Type t, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_CAST, insn, str(index), _rep.local(m, from), _rep.local(m, to), writeType(t), methodId);
+        _db.add(ASSIGN_CAST, insn, str(index), Representation.local(m, from), Representation.local(m, to), writeType(t), methodId);
     }
 
     void writeAssignCastNumericConstant(SootMethod m, Stmt stmt, Local to, NumericConstant constant, Type t, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_CAST_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, to), writeType(t), methodId);
+        _db.add(ASSIGN_CAST_NUM_CONST, insn, str(index), constant.toString(), Representation.local(m, to), writeType(t), methodId);
     }
 
     void writeAssignCastNull(SootMethod m, Stmt stmt, Local to, Type t, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_CAST_NULL, insn, str(index), _rep.local(m, to), writeType(t), methodId);
+        _db.add(ASSIGN_CAST_NULL, insn, str(index), Representation.local(m, to), writeType(t), methodId);
     }
 
     void writeStoreInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local from, Session session) {
@@ -417,11 +417,11 @@ class FactWriter extends JavaFactWriter {
 
     private void writeInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local var, Session session, PredicateFile storeInstField) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         String fieldId = writeField(f);
-        _db.add(storeInstField, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
+        _db.add(storeInstField, insn, str(index), Representation.local(m, var), Representation.local(m, base), fieldId, methodId);
     }
 
     void writeStoreStaticField(SootMethod m, Stmt stmt, SootField f, Local from, Session session) {
@@ -434,11 +434,11 @@ class FactWriter extends JavaFactWriter {
 
     private void writeStaticField(SootMethod m, Stmt stmt, SootField f, Local var, Session session, PredicateFile staticFieldFacts) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         String fieldId = writeField(f);
-        _db.add(staticFieldFacts, insn, str(index), _rep.local(m, var), fieldId, methodId);
+        _db.add(staticFieldFacts, insn, str(index), Representation.local(m, var), fieldId, methodId);
     }
 
     void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, Local arrIndex, Session session) {
@@ -451,13 +451,13 @@ class FactWriter extends JavaFactWriter {
 
     private void writeLoadOrStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local var, Local arrIndex, Session session, PredicateFile predicateFile) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), methodId);
+        _db.add(predicateFile, insn, str(index), Representation.local(m, var), Representation.local(m, base), methodId);
 
         if (arrIndex != null)
-            _db.add(ARRAY_INSN_INDEX, insn, _rep.local(m, arrIndex));
+            _db.add(ARRAY_INSN_INDEX, insn, Representation.local(m, arrIndex));
     }
 
     private void writeApplicationClass(SootClass application) {
@@ -465,8 +465,8 @@ class FactWriter extends JavaFactWriter {
     }
 
     String writeField(SootField f) {
-        String fieldId = _rep.signature(f);
-        _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getDeclaringClass()), _rep.simpleName(f), writeType(f.getType()));
+        String fieldId = Representation.signature(f);
+        _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getDeclaringClass()), Representation.simpleName(f), writeType(f.getType()));
         if (f.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) f.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
@@ -482,12 +482,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeClassModifier(SootClass c, String modifier) {
-        String type = c.getName();
-        if (c.isInterface())
-            _db.add(INTERFACE_TYPE, type);
-        else
-            _db.add(CLASS_TYPE, type);
-        _db.add(CLASS_MODIFIER, modifier, type);
+        writeClassModifier(c.getName(), modifier);
     }
 
     void writeMethodModifier(SootMethod m, String modifier) {
@@ -497,15 +492,15 @@ class FactWriter extends JavaFactWriter {
 
     void writeReturn(SootMethod m, Stmt stmt, Local l, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(RETURN, insn, str(index), _rep.local(m, l), methodId);
+        _db.add(RETURN, insn, str(index), Representation.local(m, l), methodId);
     }
 
     void writeReturnVoid(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         _db.add(RETURN_VOID, insn, str(index), methodId);
@@ -517,7 +512,7 @@ class FactWriter extends JavaFactWriter {
         String methodId = writeMethod(m);
 
         if (!(m.getReturnType() instanceof VoidType)) {
-            String  var = _rep.nativeReturnVar(m);
+            String  var = Representation.nativeReturnVar(m);
             _db.add(NATIVE_RETURN_VAR, var, methodId);
             writeLocal(var, writeType(m.getReturnType()), methodId);
         }
@@ -529,7 +524,7 @@ class FactWriter extends JavaFactWriter {
         int index = session.getUnitNumber(stmt);
         session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         _db.add(GOTO, insn, str(index), str(indexTo), methodId);
@@ -544,7 +539,7 @@ class FactWriter extends JavaFactWriter {
         int index = session.getUnitNumber(stmt);
         session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         _db.add(IF, insn, str(index), str(indexTo), methodId);
@@ -552,13 +547,31 @@ class FactWriter extends JavaFactWriter {
         Value condStmt = stmt.getCondition();
         if (condStmt instanceof ConditionExpr) {
             ConditionExpr condition = (ConditionExpr) condStmt;
+
+            Local dummy = new JimpleLocal("tmp" + insn, BooleanType.v());
+            writeDummyIfVar(insn, Representation.local(m, dummy));
+
+            if (condition instanceof EqExpr)
+                writeOperatorAt(insn, "==");
+            else if (condition instanceof NeExpr)
+                writeOperatorAt(insn, "!=");
+            else if (condition instanceof GeExpr)
+                writeOperatorAt(insn, ">=");
+            else if (condition instanceof GtExpr)
+                writeOperatorAt(insn, ">");
+            else if (condition instanceof LeExpr)
+                writeOperatorAt(insn, "<=");
+            else if (condition instanceof LtExpr)
+                writeOperatorAt(insn, "<");
+
+            // TODO: create table entry for constants (?)
             if (condition.getOp1() instanceof Local) {
                 Local op1 = (Local) condition.getOp1();
-                _db.add(IF_VAR, insn, _rep.local(m, op1));
+                writeIfVar(insn, L_OP, Representation.local(m, op1));
             }
             if (condition.getOp2() instanceof Local) {
                 Local op2 = (Local) condition.getOp2();
-                _db.add(IF_VAR, insn, _rep.local(m, op2));
+                writeIfVar(insn, R_OP, Representation.local(m, op2));
             }
         }
     }
@@ -572,10 +585,10 @@ class FactWriter extends JavaFactWriter {
             throw new RuntimeException("Unexpected key for TableSwitch statement " + v + " " + v.getClass());
 
         Local l = (Local) v;
-        String insn = _rep.instruction(inMethod, stmt, stmtIndex);
+        String insn = Representation.instruction(inMethod, stmt, stmtIndex);
         String methodId = writeMethod(inMethod);
 
-        _db.add(TABLE_SWITCH, insn, str(stmtIndex), _rep.local(inMethod, l), methodId);
+        _db.add(TABLE_SWITCH, insn, str(stmtIndex), Representation.local(inMethod, l), methodId);
 
         for (int tgIndex = stmt.getLowIndex(), i = 0; tgIndex <= stmt.getHighIndex(); tgIndex++, i++) {
             session.calcUnitNumber(stmt.getTarget(i));
@@ -599,10 +612,10 @@ class FactWriter extends JavaFactWriter {
             throw new RuntimeException("Unexpected key for TableSwitch statement " + v + " " + v.getClass());
 
         Local l = (Local) v;
-        String insn = _rep.instruction(inMethod, stmt, stmtIndex);
+        String insn = Representation.instruction(inMethod, stmt, stmtIndex);
         String methodId = writeMethod(inMethod);
 
-        _db.add(LOOKUP_SWITCH, insn, str(stmtIndex), _rep.local(inMethod, l), methodId);
+        _db.add(LOOKUP_SWITCH, insn, str(stmtIndex), Representation.local(inMethod, l), methodId);
 
         for(int i = 0, end = stmt.getTargetCount(); i < end; i++) {
             int tgIndex = stmt.getLookupValue(i);
@@ -620,7 +633,7 @@ class FactWriter extends JavaFactWriter {
 
     void writeUnsupported(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.unsupported(m, stmt, index);
+        String insn = Representation.unsupported(m, stmt, index);
         String methodId = writeMethod(m);
 
         _db.add(UNSUPPORTED_INSTRUCTION, insn, str(index), methodId);
@@ -631,10 +644,10 @@ class FactWriter extends JavaFactWriter {
      */
     void writeThrow(SootMethod m, Unit unit, Local l, Session session) {
         int index = session.calcUnitNumber(unit);
-        String insn = _rep.throwLocal(m, l, session);
+        String insn = Representation.throwLocal(m, l, session);
         String methodId = writeMethod(m);
 
-        _db.add(THROW, insn, str(index), _rep.local(m, l), methodId);
+        _db.add(THROW, insn, str(index), Representation.local(m, l), methodId);
     }
 
     /**
@@ -642,7 +655,7 @@ class FactWriter extends JavaFactWriter {
      */
     void writeThrowNull(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         _db.add(THROW_NULL, insn, str(index), methodId);
@@ -676,12 +689,12 @@ class FactWriter extends JavaFactWriter {
         int beginIndex = session.getUnitNumber(handler.getBeginUnit());
         session.calcUnitNumber(handler.getEndUnit());
         int endIndex = session.getUnitNumber(handler.getEndUnit());
-        _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), exc.getName(), _rep.local(m, caught), str(beginIndex), str(endIndex));
+        _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), exc.getName(), Representation.local(m, caught), str(beginIndex), str(endIndex));
     }
 
     void writeThisVar(SootMethod m) {
         String methodId = writeMethod(m);
-        String thisVar = _rep.thisVar(m);
+        String thisVar = Representation.thisVar(m);
         String type = writeType(m.getDeclaringClass());
         writeThisVar(methodId, thisVar, type);
     }
@@ -692,13 +705,13 @@ class FactWriter extends JavaFactWriter {
 
     void writeFormalParam(SootMethod m, int i) {
         String methodId = writeMethod(m);
-        String var = _rep.param(m, i);
+        String var = Representation.param(m, i);
         String type = writeType(m.getParameterType(i));
         writeFormalParam(methodId, var, type, i);
     }
 
     void writeLocal(SootMethod m, Local l) {
-        String local = _rep.local(m, l);
+        String local = Representation.local(m, l);
         Type type;
 
         if (_varTypeMap.containsKey(local))
@@ -787,7 +800,7 @@ class FactWriter extends JavaFactWriter {
 
             if (v instanceof Local) {
                 Local l = (Local) v;
-                _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
+                _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, Representation.local(inMethod, l));
             }
             else {
                 throw new RuntimeException("Actual parameter is not a local: " + v + " " + v.getClass());
@@ -801,7 +814,7 @@ class FactWriter extends JavaFactWriter {
                     Value vConst = writeActualParam(inMethod, stmt, expr, session, v, j);
                     if (vConst instanceof Local) {
                         Local l = (Local) vConst;
-                        _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, _rep.local(inMethod, l));
+                        _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, Representation.local(inMethod, l));
                     }
                     else {
                         throw new RuntimeException("Unknown actual parameter: " + v + " of type " + v.getClass().getName());
@@ -821,7 +834,7 @@ class FactWriter extends JavaFactWriter {
 
     private String writeInvokeHelper(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.invoke(inMethod, expr, session);
+        String insn = Representation.invoke(inMethod, expr, session);
         String methodId = writeMethod(inMethod);
 
         writeActualParams(inMethod, stmt, expr, insn, session);
@@ -835,10 +848,10 @@ class FactWriter extends JavaFactWriter {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), methodId);
         }
         else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr) {
-            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
+            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), Representation.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
         }
         else if (expr instanceof SpecialInvokeExpr) {
-            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
+            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), Representation.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
         }
         else if (expr instanceof DynamicInvokeExpr) {
             writeDynamicInvoke((DynamicInvokeExpr)expr, index, insn, methodId);
@@ -864,8 +877,8 @@ class FactWriter extends JavaFactWriter {
 
     private void writeDynamicInvoke(DynamicInvokeExpr di, int index, String insn, String methodId) {
         SootMethodRef dynInfo = di.getMethodRef();
-        String dynArity = str(dynInfo.parameterTypes().size());
-        _db.add(DYNAMIC_METHOD_INV, insn, str(index), getBootstrapSig(di), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynInfo.parameterTypes().toString(), methodId);
+        int dynArity = dynInfo.parameterTypes().size();
+        writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynInfo.parameterTypes().toString(), di.getHandleTag(), methodId);
     }
 
     private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {
@@ -881,46 +894,71 @@ class FactWriter extends JavaFactWriter {
 
     void writeAssignBinop(SootMethod m, AssignStmt stmt, Local left, BinopExpr right, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
+        writeAssignBinop(insn, index, Representation.local(m, left), methodId);
+
+        if (right instanceof AddExpr)
+                writeOperatorAt(insn, "+");
+        else if (right instanceof SubExpr)
+                writeOperatorAt(insn, "-");
+        else if (right instanceof MulExpr)
+                writeOperatorAt(insn, "*");
+        else if (right instanceof DivExpr)
+                writeOperatorAt(insn, "/");
+        else if (right instanceof RemExpr)
+                writeOperatorAt(insn, "%");
+        else if (right instanceof AndExpr)
+                writeOperatorAt(insn, "&");
+        else if (right instanceof OrExpr)
+                writeOperatorAt(insn, "|");
+        else if (right instanceof XorExpr)
+                writeOperatorAt(insn, "^");
+        else if (right instanceof ShlExpr)
+                writeOperatorAt(insn, "<<");
+        else if (right instanceof ShrExpr)
+                writeOperatorAt(insn, ">>");
+        else if (right instanceof UshrExpr)
+                writeOperatorAt(insn, ">>>");
+
 
         if (right.getOp1() instanceof Local) {
             Local op1 = (Local) right.getOp1();
-            _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
+            writeAssignOperFrom(insn, L_OP, Representation.local(m, op1));
         }
 
         if (right.getOp2() instanceof Local) {
             Local op2 = (Local) right.getOp2();
-            _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
+            writeAssignOperFrom(insn, R_OP, Representation.local(m, op2));
         }
     }
 
     void writeAssignUnop(SootMethod m, AssignStmt stmt, Local left, UnopExpr right, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        writeAssignUnop(insn, index, _rep.local(m, left), methodId);
+        writeAssignUnop(insn, index, Representation.local(m, left), methodId);
+        writeOperatorAt(insn, "-");
 
         if (right.getOp() instanceof Local) {
             Local op = (Local) right.getOp();
-            _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op));
+            writeAssignOperFrom(insn, L_OP, Representation.local(m, op));
         }
     }
 
     void writeAssignInstanceOf(SootMethod m, AssignStmt stmt, Local to, Local from, Type t, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_INSTANCE_OF, insn, str(index), _rep.local(m, from), _rep.local(m, to), writeType(t), methodId);
+        _db.add(ASSIGN_INSTANCE_OF, insn, str(index), Representation.local(m, from), Representation.local(m, to), writeType(t), methodId);
     }
 
     void writeAssignPhantomInvoke(SootMethod m, AssignStmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_PHANTOM_INVOKE, insn, str(index), methodId);
@@ -928,14 +966,14 @@ class FactWriter extends JavaFactWriter {
 
     void writeBreakpointStmt(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         _db.add(BREAKPOINT_STMT, insn, str(index), methodId);
     }
 
     void writeFieldInitialValue(SootField f) {
-        String fieldId = _rep.signature(f);
+        String fieldId = Representation.signature(f);
         List<Tag> tagList = f.getTags();
         for (Tag tag : tagList)
             if (tag instanceof ConstantValueTag) {

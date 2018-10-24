@@ -281,6 +281,16 @@ public class PythonFactWriter {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, session, index);
         String methodId = _rep.signature(m);
+        //TODO: Make sure this always works
+        if(globalName.contains("_defaults_")){
+            //System.out.println("WE GOT YE " + globalName + " | " + methodId);
+            String functionName = globalName.substring(0, globalName.indexOf("_defaults_"));
+            String walaFormalIndex = globalName.substring(globalName.lastIndexOf('_') + 1);
+            String functionSig = methodId.replace(">", ":" + functionName +">");
+            int formalIndex = Integer.parseInt(walaFormalIndex) - 1;
+            System.out.println(functionSig + " | " + formalIndex + " | " + _rep.local(m, from));
+            _db.add(FORMAL_PARAM_DEFAULT_VAR, functionSig, str(formalIndex), _rep.local(m, from));
+        }
         _db.add(GLOBAL_WRITE, insn, str(index), globalName, _rep.local(m, from), methodId);
     }
 
@@ -296,6 +306,12 @@ public class PythonFactWriter {
         TypeReference declaringClass = f.getDeclaringClass();
         //String fieldId = _rep.signature(f, declaringClass);
         String fieldId = _rep.simpleName(f);
+        try{
+            Integer.parseInt(fieldId);
+            _db.add(ORIGINAL_INT_CONSTANT, fieldId);
+        }catch(Throwable t){
+
+        }
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
     }
 

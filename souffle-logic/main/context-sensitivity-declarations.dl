@@ -14,11 +14,6 @@
 .decl isImmutableHContext(?hctx:configuration.HContext)
 .decl isJVMStartupHContext(?hctx:configuration.HContext)
 
-// If we have many, get a compatible one from the other kind of context.
-.decl ImmutableContextFromHContext(?hctx:configuration.HContext, ?ctx:configuration.Context)
-.decl ImmutableHContextFromContext(?ctx:configuration.Context, ?hctx:configuration.HContext)
-.decl ImmutableContextFromContext(?ctx1:configuration.Context, ?ctx2:configuration.Context)
-
 
 .decl VarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 

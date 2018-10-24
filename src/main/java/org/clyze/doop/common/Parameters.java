@@ -15,13 +15,12 @@ public class Parameters {
     private List<String> _dependencies = new ArrayList<>();
     private final List<String> _platformLibs = new ArrayList<>();
     private String _outputDir = null;
+    private String _logDir = null;
     private String _extraSensitiveControls = "";
     private ClassFilter applicationClassFilter;
     public boolean _android = false;
     public Integer _cores = null;
-    public String _androidJars = null;
     public String _seed = null;
-    public String _specialCSMethods = null;
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
@@ -68,6 +67,10 @@ public class Parameters {
 
     public String getOutputDir() {
         return _outputDir;
+    }
+
+    public String getLogDir() {
+        return _logDir;
     }
 
     public boolean isApplicationClass(String className) {
@@ -126,11 +129,6 @@ public class Parameters {
      */
     protected int processNextArg(String[] args, int i) throws DoopErrorCodeException {
         switch (args[i]) {
-        case "--android-jars":
-            i = shift(args, i);
-            _android = true;
-            _androidJars = args[i];
-            break;
         case "-i":
             i = shift(args, i);
             _inputs.add(args[i]);
@@ -152,6 +150,10 @@ public class Parameters {
         case "-d":
             i = shift(args, i);
             setOutputDir(args[i]);
+            break;
+        case "--log-dir":
+            i = shift(args, i);
+            _logDir = args[i];
             break;
         case "--application-regex":
             i = shift(args, i);
@@ -181,15 +183,14 @@ public class Parameters {
             i = shift(args, i);
             _seed = args[i];
             break;
-        case "--special-cs-methods":
-            i = shift(args, i);
-            _specialCSMethods = args[i];
-            break;
-        case "--noFacts":
+        case "--no-facts":
             _noFacts = true;
             break;
         case "--ignore-factgen-errors":
             _ignoreFactGenErrors = true;
+            break;
+        case "--android":
+            _android = true;
             break;
         case "--decode-apk":
             _decodeApk = true;
@@ -216,6 +217,11 @@ public class Parameters {
         } else if (getOutputDir() == null) {
             System.err.println("Error: no output facts directory.");
             throw new DoopErrorCodeException(16);
+        }
+
+        if (_logDir == null) {
+            _logDir = getOutputDir() + File.separator + "logs";
+            System.err.println("No logs directory set, using: " + _logDir);
         }
     }
 }

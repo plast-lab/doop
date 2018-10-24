@@ -4,11 +4,11 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
-import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.utils.SouffleScript
 
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
@@ -38,58 +38,46 @@ class SouffleAnalysis extends DoopAnalysis {
 		cacheDir.mkdirs()
 		def script = new SouffleScript(executor)
 
-		def executorService = Executors.newFixedThreadPool(2)
-		def futures = executorService.invokeAll([
-				new Callable<Object>() {
-					@Override
-					Object call() {
-						log.info "[Task FACTS...]"
-						try {
-							generateFacts()
-							log.info "[Task FACTS Done]"
-						} catch (DoopErrorCodeException ex) {
-							log.info "[Task FACTS Failed (code: ${ex.errorCode})]"
-							return ex
-						}
-						null
-					}
-				},
-				new Callable<Object>() {
-					@Override
-					File call() {
-						if (options.X_STOP_AT_FACTS.value) return
-
-						log.info "[Task COMPILE...]"
-						def generatedFile = script.compile(analysis, outDir, cacheDir,
-								options.SOUFFLE_PROFILE.value as boolean,
-								options.SOUFFLE_DEBUG.value as boolean,
-								options.X_FORCE_RECOMPILE.value as boolean,
-								options.X_CONTEXT_REMOVER.value as boolean)
-						log.info "[Task COMPILE Done]"
-						return generatedFile
-					}
+		Future<File> compilationFuture = null
+		def executorService = Executors.newSingleThreadExecutor()
+		if (!options.X_STOP_AT_FACTS.value) {
+			compilationFuture = executorService.submit(new Callable<File>() {
+				@Override
+				File call() {
+					log.info "[Task COMPILE...]"
+					def generatedFile = script.compile(analysis, outDir, cacheDir,
+							options.SOUFFLE_PROFILE.value as boolean,
+							options.SOUFFLE_DEBUG.value as boolean,
+							options.X_FORCE_RECOMPILE.value as boolean,
+							options.X_CONTEXT_REMOVER.value as boolean)
+					log.info "[Task COMPILE Done]"
+					return generatedFile
 				}
-		])
-		executorService.shutdown()
+			})
+		}
 
-		// If fact generation failed, propagate its exception.
-		def factsResult = futures[0].get()
-		if (factsResult instanceof DoopErrorCodeException)
-			throw factsResult
-
-		if (options.X_STOP_AT_FACTS.value) return
-
-		File generatedFile = (File)futures[1].get()
-		script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-				(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
-
-		int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
-		runtimeMetricsFile.createNewFile()
-		runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
-		runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
-		runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
-		runtimeMetricsFile.append("soot-fact-generation time (sec)\t$factGenTime\n")
+
+		try {
+			log.info "[Task FACTS...]"
+			generateFacts()
+			log.info "[Task FACTS Done]"
+
+			if (options.X_STOP_AT_FACTS.value) return
+
+			def generatedFile = compilationFuture.get()
+			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
+
+			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
+			runtimeMetricsFile.createNewFile()
+			runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
+			runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
+			runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
+			runtimeMetricsFile.append("soot-fact-generation time (sec)\t$factGenTime\n")
+		} finally {
+			executorService.shutdownNow()
+		}
 	}
 
 	void initDatabase() {
@@ -123,15 +111,15 @@ class SouffleAnalysis extends DoopAnalysis {
 			def cfgAnalysisPath = "${Doop.souffleAddonsPath}/cfg-analysis"
 			cpp.includeAtEnd("$analysis", "${cfgAnalysisPath}/analysis.dl", "${cfgAnalysisPath}/declarations.dl")
 		}
-                if (options.X_STOP_AT_BASIC.value) {
-                   if (options.X_STOP_AT_BASIC.value == 'classes-scc') {
-                        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/classes-scc.dl")
-                   }
+		if (options.X_STOP_AT_BASIC.value) {
+			if (options.X_STOP_AT_BASIC.value == 'classes-scc') {
+				cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/classes-scc.dl")
+			}
 
-                   if (options.X_STOP_AT_BASIC.value == 'partitioning') {
-                        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/partitioning.dl")
-                   }
-                }
+			if (options.X_STOP_AT_BASIC.value == 'partitioning') {
+				cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/partitioning.dl")
+			}
+		}
 	}
 
 	void mainAnalysis() {
@@ -156,6 +144,13 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
 		}
 
+		if (options.SYMBOLIC_REASONING.value) {
+			def symbolicReasoningPath ="${Doop.souffleAddonsPath}/symbolic-reasoning"
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/const-type-infer.dl")
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/constant-folding.dl")
+            //cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/constant-propagation.dl")
+		}
+
 		String openProgramsRules = options.OPEN_PROGRAMS.value
 		if (openProgramsRules) {
 			log.debug "Using open-programs rules: ${openProgramsRules}"
@@ -169,8 +164,9 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
 		}
 
-		if (options.GENERATE_PROGUARD_KEEP_DIRECTIVES.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/proguard/keep.dl")
+		if (!options.X_STOP_AT_FACTS.value && options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/opt-directives/keep.dl")
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/opt-directives/directives.dl")
 		}
 
 		if (options.X_EXTRA_LOGIC.value) {
@@ -193,6 +189,10 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		if (options.X_ORACULAR_HEURISTICS.value) {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
+		}
+
+		if (options.X_CONTEXT_DEPENDENCY_HEURISTIC.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/2-object-ctx-dependency-heuristic.dl")
 		}
 
 		if (options.X_STATS_NONE.value) return

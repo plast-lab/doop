@@ -1,0 +1,43 @@
+// Context-insensitive pointer analysis with on-the-fly call graph discovery
+
+#include "../../main/main.dl"
+#include "../../main/configuration.dl"
+
+// This analysis has no context for either method calls or heap objects.
+// This is emulated by creating a single Context object and a single HContext
+// object, which are used everywhere.
+
+
+.comp ContextInsensitiveConfiguration : AbstractConfiguration {
+
+  .type Context
+  .type HContext
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ?calleeCtx = ?callerCtx,
+    ?tomethod = ?tomethod.
+
+
+   /**
+    * Some library modules are generically defined, and need the macro
+    * definitions for the context-sensitive pointer analysis they are
+    * used in. For a context-insensitive pointer analysis we just
+    * generate constant contexts.
+    */
+
+  #define UNIQUE_CONTEXT  "<<unique-context>>"
+  #define UNIQUE_HCONTEXT "<<unique-hcontext>>"
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),
+    ?hctx = UNIQUE_HCONTEXT.
+
+  InitContextResponse(?s, ?ctx) :-
+    ?ctx = UNIQUE_CONTEXT,
+    InitContextRequest(?s).
+
+  InitHContextResponse(?s, ?hctx) :-
+    ?hctx = UNIQUE_HCONTEXT,
+    InitHContextRequest(?s).
+}

@@ -67,16 +67,17 @@ class SoufflePythonAnalysis extends DoopAnalysis{
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/import-facts.dl")
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/post-process.dl")
 
+        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonAnalysesPath}/${name}/analysis.dl")
 
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/main.dl")
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/const-int.dl")
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/lists.dl")
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/imports.dl")
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/function-resolution.dl")
-
-
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/lib-specific/tensorflow.dl")
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/lib-specific/modeled.dl")
+        //cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/analyses/context-insensitive/analysis.dl")
+//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/const-int.dl")
+//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/lists.dl")
+//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/imports.dl")
+//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/function-resolution.dl")
+//
+//
+//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/lib-specific/tensorflow.dl")
+//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/lib-specific/modeled.dl")
     }
 
     void basicAnalysis() {

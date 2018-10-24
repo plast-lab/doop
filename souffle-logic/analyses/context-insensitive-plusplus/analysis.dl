@@ -93,4 +93,6 @@ InitHContextResponse(?s, ?hctx) :-
     isDynamicContext(?dctx),
     isImmutableHContext(?hctx).
 #endif
+
+
 }

@@ -271,6 +271,8 @@
 <h2> addons/server-logic/queries.dl </h2>
 <ul>
 <li> .decl InvocationTarget_Count(?invocation:MethodInvocation, ?n:number)</li>
+<li> .decl MultiInvocationTarget(?invocation:MethodInvocation, ?target:Method)</li>
+<li> .decl ReachableMethodOnlyUsedInSingleInvocationTarget(?method:Method)</li>
 <li> .decl Server_Array_Values(?arrayValue:mainAnalysis.Value, ?value:mainAnalysis.Value)</li>
 <li> .decl Server_ClassCallsClass(?fromClass:ClassType, ?toClass:ClassType)</li>
 <li> .decl Server_Class_Subtype(?class:ReferenceType, ?subClass:ReferenceType)</li>
@@ -520,6 +522,19 @@
 <li> .decl StoreFldTo(?base: Var, ?fld: Field, ?insn: Instruction)</li>
 <li> .decl TaintedLoad(?ctx: mainAnalysis.configuration.Context, ?insn: Instruction)</li>
 </ul>
+<h2> analyses/fully-guided-context-sensitive/analysis.dl </h2>
+<ul>
+<li> .decl ContextInsensitiveMethod(?method:Method)</li>
+<li> .decl HContextElement(elem:symbol)</li>
+<li> .decl NoSensitivityViolation(?method:Method)</li>
+<li> .decl OneTypeMethod(?method:Method)</li>
+<li> .decl SpecialContextElement(value:symbol)</li>
+<li> .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)</li>
+<li> .decl SpecialContextSensitivityMethodNotPresentViolation(?method:Method)</li>
+<li> .decl ToTypeString(valueOrType:symbol, type:symbol)</li>
+<li> .decl TwoObjectMethod(?method:Method)</li>
+<li> .decl TwoTypeMethod(?method:Method)</li>
+</ul>
 <h2> analyses/micro/analysis.dl </h2>
 <ul>
 <li> .decl ArrayIndexPointsTo(?baseheap:HeapAllocation, ?heap:HeapAllocation)</li>
@@ -638,41 +653,20 @@
 <li> .decl isType(?t:Type)</li>
 <li> .decl isVirtualMethodInvocation_Insn(?insn:VirtualMethodInvocation_Insn)</li>
 </ul>
-<h2> analyses/oracular/analysis.dl </h2>
-<ul>
-<li> .decl ContextInsensitiveMethod(?method:Method)</li>
-<li> .decl HContextElement(elem:symbol)</li>
-<li> .decl NoSensitivityViolation(?method:Method)</li>
-<li> .decl OneTypeMethod(?method:Method)</li>
-<li> .decl SpecialContextElement(value:symbol)</li>
-<li> .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)</li>
-<li> .decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)</li>
-<li> .decl ToTypeString(valueOrType:symbol, type:symbol)</li>
-<li> .decl TwoObjectMethod(?method:Method)</li>
-<li> .decl TwoTypeMethod(?method:Method)</li>
-</ul>
 <h2> analyses/partitioned-2-object-sensitive+heap/analysis.dl </h2>
 <ul>
-<li> .decl CachedMerge(invo: Instruction, hctx: HContext, value: Value, calleeCtx: Context)</li>
-<li> .decl CachedMergeStatic(callerCtx: Context, invo: Instruction, calleeCtx: Context)</li>
-<li> .decl CachedRecord(ctx: Context, value: Value, hctx: HContext)</li>
-<li> .decl CollapsedVarPointsTo(hctx: HContext, heap: Value, ctx: Context, var: Var)</li>
+<li> .decl CollapsedVarPointsTo(hctx: HContext, heap: mainAnalysis.Value, ctx: Context, var: Var)</li>
 <li> .decl MatchingMethodForInvocationAndType(type: Type, invocation: Instruction, method: Method)</li>
-<li> .decl MergeBasis(callerCtx: Context, invo: Instruction, hctx: HContext, value: Value)</li>
-<li> .decl MergeStaticBasis(ctx: Context, invo: Instruction)</li>
 <li> .decl MethodInAllPartitions(method: Method)</li>
-<li> .decl MyMergeBasis(invo: Instruction, hctx: HContext, value: Value)</li>
-<li> .decl MyRecordBasis(ctx: Context, value: Value)</li>
 <li> .decl NotTypeInAllPartitions(type: Type)</li>
-<li> .decl NotValueInAllPartitions(value: Value)</li>
+<li> .decl NotValueInAllPartitions(value: mainAnalysis.Value)</li>
 <li> .decl PartitionForInvocation(invo: Instruction, partition: Partition)</li>
 <li> .decl PartitionForMethod(method: Method, partition: Partition)</li>
 <li> .decl PartitionForResolvedInvocation(type: Type, invo: Instruction, partition: Partition)</li>
-<li> .decl PartitionForValue(value: Value, partition: Partition)</li>
-<li> .decl RecordBasis(var: Var, ctx: Context, value: Value)</li>
+<li> .decl PartitionForValue(value: mainAnalysis.Value, partition: Partition)</li>
 <li> .decl TypeInAllPartitions(type: Type)</li>
-<li> .decl ValueInAllPartitions(value: Value)</li>
-<li> .decl _ValidCtxVar(ctx: Context, var: Var)</li>
+<li> .decl ValidCtxVar(ctx: Context, var: Var)</li>
+<li> .decl ValueInAllPartitions(value: mainAnalysis.Value)</li>
 </ul>
 <h2> analyses/partitioned-2-object-sensitive+heap/partitioning.dl </h2>
 <ul>
@@ -687,13 +681,6 @@
 <li> .decl TypeTransitivelyRefersToOther(typeFrom: Type, typeTo: Type)</li>
 <li> .decl TypesInSameSCC(type1: Type, type2: Type)</li>
 <li> .decl isPartition(partition: Partition)</li>
-</ul>
-<h2> analyses/scaler/analysis.dl </h2>
-<ul>
-<li> .decl HContextElement(elem:symbol)</li>
-<li> .decl ScalerMethodContext(?method:Method, ?context:symbol)</li>
-<li> .decl SpecialContextElement(value:symbol)</li>
-<li> .decl ToTypeString(valueOrType:symbol, type:symbol)</li>
 </ul>
 <h2> analyses/sound-may-point-to/analysis.dl </h2>
 <ul>
@@ -893,11 +880,6 @@
 <li> .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)</li>
 <li> .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)</li>
 </ul>
-<h2> analyses/special-2-type-sensitive+heap/analysis.dl </h2>
-<ul>
-<li> .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)</li>
-<li> .decl SpecialContextSensitivityMethodConstraintViolated(?method:Method)</li>
-</ul>
 <h2> analyses/twophase-A/analysis.dl </h2>
 <ul>
 <li> .decl ArgPointsTo(?arg:Var, ?method:Method, ?value:Value)</li>
@@ -948,6 +930,29 @@
 <ul>
 <li> .decl MainMethodDeclaration(?method:Method)</li>
 </ul>
+<h2> basic/classes-scc.dl </h2>
+<ul>
+<li> .decl CountOfApplicationClassesTransitivelyKnownBySCC(?idType:number, ?num:number)</li>
+<li> .decl CountOfReferencesBetweenSCCs(?sccFrom:number, ?sccTo:number, ?cnt:number)</li>
+<li> .decl CountOfTypesPerSCC(?idType:number, ?num:number)</li>
+<li> .decl MaxCountOfApplicationClassesTransitivelyKnownBySCC(?maxNum:number)</li>
+<li> .decl MaxCountOfTypesPerSCC(?maxNum:number)</li>
+<li> .decl NumberOfRelevantTypes(?num:number)</li>
+<li> .decl SCCKnowsAboutOther(?sccFrom:number, ?sccTo:number)</li>
+<li> .decl SCCPerCountOfTypes(?idType:number, ?num:number)</li>
+<li> .decl SCCRefersToType(?typeTo:Type, ?sccidFrom:number, ?scciTo:number)</li>
+<li> .decl SCCTransitivelyKnowsAboutApplicationClass(?class:ClassType, ?sccFrom:number)</li>
+<li> .decl SCCTransitivelyKnowsAboutOther(?sccFrom:number, ?sccTo:number)</li>
+<li> .decl SCCType(?type:Type)</li>
+<li> .decl SCCTypesInSameSCC(?type:Type, ?type:Type)</li>
+<li> .decl SCCWithMaxCountOfTransitivelyKnownApplicationClasses(?idType:number)</li>
+<li> .decl SCCWithMaxCountOfTypes(?idType:number)</li>
+<li> .decl SpecialLibrary(?class:ClassType)</li>
+<li> .decl TypeRefersToOther(typeFrom: Type, typeTo: Type)</li>
+<li> .decl TypeToPartitionId(?inClass:Type, ?sccId:number)</li>
+<li> .decl TypeToSCCId(?type:Type, ?idType:number)</li>
+<li> .decl TypeTransitivelyRefersToOther(typeFrom: Type, typeTo: Type)</li>
+</ul>
 <h2> basic/finalization-declarations.dl </h2>
 <ul>
 <li> .decl AllocatedObjectSupportsFinalize(?heap:HeapAllocation, ?inmethod:Method)</li>
@@ -971,6 +976,20 @@
 <li> .decl Method_CovariantBridge(?bridge:Method, ?cometh:Method)</li>
 <li> .decl MethodsOfSameNonSDKType(?method1:Method, ?method2:Method, ?class:Type)</li>
 <li> .decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)</li>
+</ul>
+<h2> basic/partitioning.dl </h2>
+<ul>
+<li> .decl CountOfTypesPerSCC(id: Partition, cnt: number)</li>
+<li> .decl IdTypeOfGenericPartition(id: Partition)</li>
+<li> .decl NumberOfRelevantTypes(cnt: number)</li>
+<li> .decl PartitionedType(type: Type)</li>
+<li> .decl TypeInGenericPartition(type: Type)</li>
+<li> .decl TypeRefersToOther(typeFrom: Type, typeTo: Type)</li>
+<li> .decl TypeToPartitionId(type: Type, id: Partition)</li>
+<li> .decl TypeToSCCId(type: Type, id: Partition)</li>
+<li> .decl TypeTransitivelyRefersToOther(typeFrom: Type, typeTo: Type)</li>
+<li> .decl TypesInSameSCC(type1: Type, type2: Type)</li>
+<li> .decl isPartition(partition: Partition)</li>
 </ul>
 <h2> basic/subclass-declarations.dl </h2>
 <ul>
@@ -1429,7 +1448,7 @@
 </ul>
 <h2> main/configuration.dl </h2>
 <ul>
-<li> .decl ContextRequest(?ctx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?value:Value)</li>
+<li> .decl ContextRequest(?ctx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?value:Value, ?method:Method)</li>
 <li> .decl ContextResponse(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?value:Value, ?calleeCtx:Context)</li>
 <li> .decl FinalizerRegisterContextRequest(?callerCtx:configuration.Context, ?inmethod:Method, ?value:Value)</li>
 <li> .decl FinalizerRegisterContextResponse(?callerCtx:configuration.Context, ?inmethod:Method, ?value:Value, ?newCtx:Context)</li>
@@ -1601,11 +1620,11 @@
 </ul>
 <h2> main/native.dl </h2>
 <ul>
-<li> .decl LoadFromReference(?ctx:mainAnalysis.configuration.Context, ?to:Var, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value)</li>
+<li> .decl LoadFromReference(?ctx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
 <li> .decl LoadFromReferenceArgs(?base:Var, ?to:Var)</li>
 <li> .decl NativeMethodReturningValue(?m:Method, ?t:Type, ?return:Var, ?v:Value)</li>
-<li> .decl ReachableNativeMethodInvocation(?ctx:mainAnalysis.configuration.Context, ?invo:MethodInvocation, ?nativeMethod:Method)</li>
-<li> .decl StoreIntoWeakReference(?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?from:Var)</li>
+<li> .decl ReachableNativeMethodInvocation(?ctx:configuration.Context, ?invo:MethodInvocation, ?nativeMethod:Method)</li>
+<li> .decl StoreIntoWeakReference(?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)</li>
 <li> .decl StoreIntoWeakReferenceArgs(?from:Var, ?base:Var)</li>
 <li> .decl _NativeMethodInvocation(?invo:MethodInvocation, ?nativeMethod:Method)</li>
 </ul>
@@ -1975,44 +1994,50 @@
 <li> .decl _ClassType(?class:symbol)</li>
 <li> .decl _DirectSuperclass(?class:symbol, ?superclass:symbol)</li>
 <li> .decl _ExceptionHandler_Previous(?handler:symbol, ?previous:symbol)</li>
-<li> .decl _FormalParam(?index:number, ?function:symbol, ?var:symbol)</li>
+<li> .decl _FormalParam(?index:number, ?paramName:symbol, ?function:symbol, ?var:symbol)</li>
 <li> .decl _NativeReturnVar(?var:symbol, ?function:symbol)</li>
 <li> .decl _ThisVar(?function:symbol, ?var:symbol)</li>
+<li> .decl _Var_DeclaringFunction(?var:symbol, ?method:symbol)</li>
 </ul>
 <h2> python/facts/import-facts.dl </h2>
 <ul>
 <li> .decl String_toRaw(?id:symbol, ?rawId:symbol)</li>
-<li> .decl VarSourceName(?var:symbol, ?name:symbol)</li>
 <li> .decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?oper:symbol, ?inFunction:symbol)</li>
 <li> .decl _AssignBoolConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inFunction:symbol)</li>
 <li> .decl _AssignFloatConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inFunction:symbol)</li>
 <li> .decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inFunction:symbol)</li>
-<li> .decl _AssignIntConstant(?instruction:symbol, ?index:number, ?const:number, ?to:symbol, ?inFunction:symbol)</li>
+<li> .decl _AssignIntConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inFunction:symbol)</li>
 <li> .decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inFunction:symbol)</li>
 <li> .decl _AssignNone(?instruction:symbol, ?index:number, ?to:symbol, ?inFunction:symbol)</li>
 <li> .decl _AssignOperFrom(?instruction:symbol, ?operNum:number, ?from:symbol)</li>
 <li> .decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?oper:symbol, ?inFunction:symbol)</li>
 <li> .decl _ExceptionHandler(?handler:symbol, ?function:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number)</li>
 <li> .decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol)</li>
-<li> .decl _Function(?function:symbol, ?simplename:symbol, ?declaringType:symbol, ?arity:number)</li>
-<li> .decl _FunctionInvocation(?instruction:symbol, ?index:number, ?base:symbol, ?function:symbol)</li>
+<li> .decl _Function(?function:symbol, ?simplename:symbol, ?declaringType:symbol, ?arity:number, ?declaredInFile: File)</li>
+<li> .decl _FunctionInvocation(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?function:symbol)</li>
+<li> .decl _GlobalRead(?instruction:symbol, ?index: number, ?to:symbol, ?name:symbol, ?inFunct:symbol)</li>
+<li> .decl _GlobalWrite(?instruction:symbol, ?index: number, ?name:symbol, ?from:symbol, ?inFunct:symbol)</li>
 <li> .decl _Goto(?instruction:symbol, ?index:number, ?to:number, ?function:symbol)</li>
 <li> .decl _If(?instruction:symbol, ?index:number, ?to:number, ?function:symbol)</li>
 <li> .decl _IfVar(?instruction:symbol, ?var:symbol)</li>
-<li> .decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?function:symbol)</li>
+<li> .decl _Import(?instruction:symbol, ?index: number, ?name:symbol, ?to:symbol, ?inFunct:symbol)</li>
+<li> .decl _LexicalRead(?instruction:symbol, ?index: number, ?to:symbol, ?name:symbol, ?scope:symbol, ?inFunct:symbol)</li>
+<li> .decl _LexicalWrite(?instruction:symbol, ?index: number, ?name:symbol, ?scope:symbol, ?from:symbol, ?inFunct:symbol)</li>
+<li> .decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?fieldName:symbol, ?function:symbol)</li>
 <li> .decl _NormalHeap(?id:symbol, ?type:symbol)</li>
+<li> .decl _OriginalIntConstant(?intConst:symbol)</li>
 <li> .decl _Return(?instruction:symbol, ?index:number, ?var:symbol, ?function:symbol)</li>
 <li> .decl _ReturnNone(?instruction:symbol, ?index:number, ?function:symbol)</li>
-<li> .decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?function:symbol)</li>
+<li> .decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?fieldName:symbol, ?function:symbol)</li>
 <li> .decl _StringConstant(?id:symbol)</li>
 <li> .decl _StringRaw(?id:symbol, ?rawId:symbol)</li>
 <li> .decl _Throw(?instruction:symbol, ?index:number, ?var:symbol, ?function:symbol)</li>
 <li> .decl _UnsupportedInstruction(?instruction:symbol, ?index:number, ?function:symbol)</li>
+<li> .decl _Var_SourceName(?var:symbol, ?name:symbol)</li>
 </ul>
 <h2> python/facts/post-process.dl </h2>
 <ul>
 <li> .decl AssignBinOper_Info(?instr:Instruction, ?op:symbol, ?var1:Var, ?var2:Var)</li>
-<li> .decl FormalParamName(?var:symbol, ?name:symbol)</li>
 </ul>
 <h2> python/facts/schema.dl </h2>
 <ul>
@@ -2042,22 +2067,29 @@
 <li> .decl ExceptionHandler_Index(?handler:ExceptionHandler, ?index:number)</li>
 <li> .decl ExceptionHandler_Previous(?handler:ExceptionHandler, ?previous:ExceptionHandler)</li>
 <li> .decl ExceptionHandler_Type(?handler:ExceptionHandler, ?type:Type)</li>
-<li> .decl FieldInstruction_SimpleName(?insn:FieldInstruction, ?sign:symbol)</li>
+<li> .decl FieldInstruction_FieldName(?insn:FieldInstruction, ?fieldName:symbol)</li>
 <li> .decl Field_DeclaringType(?field:Field, ?declaringClass:ClassType)</li>
 <li> .decl Field_SimpleName(?field:Field, ?simpleName:symbol)</li>
-<li> .decl FormalParam(?index:number, ?function:Function, ?var:Var)</li>
+<li> .decl FormalParam(?index:number, ?paramName:symbol, ?function:Function, ?var:Var)</li>
 <li> .decl FunctionInvocation(?invocation:FunctionInvocation_Insn, ?inFunction:Function)</li>
 <li> .decl FunctionInvocation_Base(?invocation:FunctionInvocation_Insn, ?base:Var)</li>
 <li> .decl Function_Arity(?function:Function, ?arity:number)</li>
+<li> .decl Function_DeclaredInFile(?function:Function, ?file:File)</li>
 <li> .decl Function_SimpleName(?function:Function, ?simpleName:symbol)</li>
+<li> .decl GlobalAccessInsn_Name(?insn: GlobalAccess_Insn, ?name:symbol)</li>
+<li> .decl GlobalAccessInsn_Scope(?insn: GlobalAccess_Insn, ?scope:Scope)</li>
+<li> .decl GlobalWriteInsn_From(?insn: GlobalAccess_Insn, ?from:Var)</li>
 <li> .decl Goto_Target(?insn:Goto_Insn, ?index:number)</li>
 <li> .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)</li>
 <li> .decl If_Target(?insn:If_Insn, ?index:number)</li>
 <li> .decl If_Var(?insn:If_Insn, ?var:Var)</li>
+<li> .decl ImportInsn_ModuleName(?insn: ImportInstruction, ?name:symbol)</li>
 <li> .decl Instruction_Function(?insn:Instruction, ?inFunction:Function)</li>
 <li> .decl Instruction_Index(?insn:Instruction, ?index:number)</li>
 <li> .decl Instruction_SourcePosition(?insn:Instruction, ?startLine:number, ?endLine:number, ?startColumn:number, ?endColumn:number)</li>
-<li> .decl IntConstToString(?n:IntConstant, ?str:symbol)</li>
+<li> .decl LexicalAccessInsn_Name(?insn: LexicalAccess_Insn, ?name:symbol)</li>
+<li> .decl LexicalAccessInsn_VarScope(?insn: LexicalAccess_Insn, ?scope:Function)</li>
+<li> .decl LexicalWriteInsn_From(?insn: LexicalAccess_Insn, ?from:Var)</li>
 <li> .decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inFunction:Function)</li>
 <li> .decl LoadInstanceField_Base(?insn:LoadInstanceField_Insn, ?var:Var)</li>
 <li> .decl LoadInstanceField_To(?insn:LoadInstanceField_Insn, ?var:Var)</li>
@@ -2080,6 +2112,7 @@
 <li> .decl Type_none(?t:PrimitiveType)</li>
 <li> .decl Type_string(?t:PrimitiveType)</li>
 <li> .decl Var_DeclaringFunction(?var:Var, ?function:Function)</li>
+<li> .decl Var_SourceName(?var:Var, ?name:symbol)</li>
 <li> .decl isAssignBinop_Insn(?insn:AssignBinop_Insn)</li>
 <li> .decl isAssignBoolConstant_Insn(?insn:AssignBoolConstant_Insn)</li>
 <li> .decl isAssignFloatConstant_Insn(?insn:AssignFloatConstant_Insn)</li>
@@ -2091,22 +2124,35 @@
 <li> .decl isAssignOper_Insn(?insn:AssignOper_Insn)</li>
 <li> .decl isAssignUnop_Insn(?insn:AssignUnop_Insn)</li>
 <li> .decl isBoolConstant(?n:BoolConstant)</li>
+<li> .decl isClassInstanceAllocation(?h: ClassInstanceAllocation)</li>
+<li> .decl isClassObjectAllocation(?h: ClassObjectAllocation)</li>
 <li> .decl isClassType(?t:ClassType)</li>
 <li> .decl isExceptionHandler(?handler:ExceptionHandler)</li>
 <li> .decl isField(?field:Field)</li>
 <li> .decl isFieldInstruction(?insn:FieldInstruction)</li>
+<li> .decl isFile(file:File)</li>
 <li> .decl isFloatConstant(?n:FloatConstant)</li>
 <li> .decl isFunction(?m:Function)</li>
 <li> .decl isFunctionInvocation(?insn:FunctionInvocation_Insn)</li>
+<li> .decl isFunctionObjectAllocation(?h: FunctionObjectAllocation)</li>
+<li> .decl isGlobalAccess_Insn(?insn: GlobalAccess_Insn)</li>
+<li> .decl isGlobalRead_Insn(?insn: GlobalRead_Insn)</li>
+<li> .decl isGlobalWrite_Insn(?insn: GlobalWrite_Insn)</li>
 <li> .decl isGoto_Insn(?insn:Goto_Insn)</li>
 <li> .decl isHeapAllocation(?h:HeapAllocation)</li>
 <li> .decl isIf_Insn(?insn:If_Insn)</li>
+<li> .decl isImportInstruction(?insn: ImportInstruction)</li>
 <li> .decl isInstruction(?insn:Instruction)</li>
 <li> .decl isIntConstant(?n:IntConstant)</li>
+<li> .decl isLexicalAccess_Insn(?insn: LexicalAccess_Insn)</li>
+<li> .decl isLexicalRead_Insn(?insn: LexicalRead_Insn)</li>
+<li> .decl isLexicalWrite_Insn(?insn: LexicalWrite_Insn)</li>
 <li> .decl isLoadInstanceField_Insn(?insn:LoadInstanceField_Insn)</li>
 <li> .decl isMethod(?m:Function)</li>
 <li> .decl isNormalHeap(?h:NormalHeap)</li>
+<li> .decl isNumConstant(?n:NumConstant)</li>
 <li> .decl isOpaqueInstruction(?insn:OpaqueInstruction)</li>
+<li> .decl isOriginalIntConstant(?n:IntConstant)</li>
 <li> .decl isPrimitiveType(?t:PrimitiveType)</li>
 <li> .decl isReturnInstruction(?insn:ReturnInstruction)</li>
 <li> .decl isReturnNonNone_Insn(?insn:ReturnNonNone_Insn)</li>
@@ -2119,9 +2165,72 @@
 <li> .decl isUnsupportedInstruction(?insn:UnsupportedInstruction)</li>
 <li> .decl isVar(v:Var)</li>
 </ul>
+<h2> python/lib-specific/modeled.dl </h2>
+<ul>
+<li> .decl ModeledClass(?class:ClassType, ?name:symbol, ?declaringModule: Module)</li>
+<li> .decl ModeledFunction(?function:Function, ?name:symbol, ?declaringModule: Module)</li>
+<li> .decl ModeledModule(?module:Module, ?name:symbol, ?declaringModule: Module)</li>
+</ul>
+<h2> python/lib-specific/tensorflow.dl </h2>
+<ul>
+<li> .decl TensorHasConcreteDimensions(?tensorVal:Value)</li>
+<li> .decl TensorReshapeInvocationProducesOutput(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)</li>
+<li> .decl TensorReshapeInvocationProducesOutput_Value(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value, ?outputVal:Value)</li>
+<li> .decl TensorShapeListContent(?val:Value, ?index:number, ?indexValue:Value)</li>
+<li> .decl TensorShapeListSize(?val:Value, ?size:number)</li>
+<li> .decl ValidTensorReshape_ReplaceMinus1WithVal(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value, ?replaceVal:Value)</li>
+<li> .decl isInvalidTensorReshapeInvocation(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)</li>
+<li> .decl isNotValidTensorReshapeInvocationLevel2(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)</li>
+<li> .decl isPossibleMisalignedTensorReshapeInvocation(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)</li>
+<li> .decl isTensorDataType(?type: TensorDataType)</li>
+<li> .decl isValidTensorPlaceHolderInvocation(?insn:FunctionInvocation_Insn, ?typeArgVal:Value, ?dimListVal:Value)</li>
+<li> .decl isValidTensorReshapeInvocationClass1(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)</li>
+<li> .decl isValidTensorReshapeInvocationClass2(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)</li>
+<li> .decl isValidTensorReshapeInvocationLevel1(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)</li>
+<li> .decl isValidTensorReshapeInvocationLevel2(?insn:FunctionInvocation_Insn, ?tensorArgVal:Value, ?dimListArgVal:Value)</li>
+</ul>
 <h2> python/main/const-int.dl </h2>
 <ul>
-<li> .decl BinaryIntOp(?instr:Instruction, ?var1:Var, ?var2:Var, ?op:symbol, ?res:number)</li>
-<li> .decl VarHasConstValue(?var:Var, ?numVal:number, ?val:symbol)</li>
+<li> .decl BinaryIntOp(?instr:Instruction, ?var1:Var, ?var2:Var, ?op:symbol, ?res:IntConstant)</li>
+<li> .decl VarHasConstFloatValue(?var:Var, ?numVal:IntConstant, ?val:NumConstantValue)</li>
+<li> .decl VarHasConstIntValue(?var:Var, ?numVal:IntConstant, ?val:NumConstantValue)</li>
+<li> .decl VarHasConstNoneValue(?var:Var, ?val:Value)</li>
+<li> .decl VarHasConstValue(?var:Var, ?val:Value)</li>
 </ul>
-<p>Timestamp: 2018-09-18 17:36:08.425665</p></body></html>
+<h2> python/main/function-resolution.dl </h2>
+<ul>
+<li> .decl FunctionInvResolvesTo(?insn:FunctionInvocation_Insn, ?val:Value, ?fun:Function)</li>
+<li> .decl ResolvedActualParams(?insn:Instruction, ?baseValue:Value, ?paramIndex:number, ?paramName:symbol, ?paramValue:Value)</li>
+</ul>
+<h2> python/main/imports.dl </h2>
+<ul>
+<li> .decl ClassType_Module(?class:ClassType, ?module: Module)</li>
+<li> .decl Function_Module(?function:Function, ?module: Module)</li>
+<li> .decl Module_DeclaringModule(?module: Module, ?declModule: Module)</li>
+<li> .decl VarPointsToFunction(?var:Var, ?val: Value)</li>
+<li> .decl VarPointsToModule(?var:Var, ?module:Module)</li>
+<li> .decl isModule(?module:Module)</li>
+</ul>
+<h2> python/main/lists.dl </h2>
+<ul>
+<li> .decl ConstListContents(?listHeap:HeapAllocation, ?index:number, ?val:Value)</li>
+<li> .decl ConstListDimensions(?listHeap:HeapAllocation, ?numDimensions:number)</li>
+<li> .decl ConstListMultAll(?heap:HeapAllocation, ?res:number)</li>
+<li> .decl ConstListMultAllInner(?heap:HeapAllocation, ?index:number, ?res:number)</li>
+<li> .decl IsPyList(?heap:HeapAllocation)</li>
+<li> .decl ListHasNonConstantIntVal(?heap:HeapAllocation)</li>
+<li> .decl ListHasNonConstantVal(?heap:HeapAllocation)</li>
+<li> .decl PyConstListSpecialValueCount(?heap:HeapAllocation, ?val:Value, ?count:number)</li>
+<li> .decl VarPointsToList(?var:Var, ?listHeap:HeapAllocation)</li>
+<li> .decl isListOfConsts(?heap:HeapAllocation)</li>
+<li> .decl isListOfIntConsts(?heap:HeapAllocation)</li>
+</ul>
+<h2> python/main/main.dl </h2>
+<ul>
+<li> .decl FieldPointsTo(?object:HeapAllocation, ?fieldName:symbol, ?fieldVal:Value)</li>
+<li> .decl GlobalNamePointsTo(?scope:Scope, ?name:symbol, ?val:Value)</li>
+<li> .decl Value_Num(?value:NumConstantValue, ?const:NumConstant)</li>
+<li> .decl Value_Type(?value:Value, ?type:Type)</li>
+<li> .decl VarPointsTo(?var:Var, ?val:Value)</li>
+</ul>
+<p>Timestamp: 2018-10-04 18:57:54.411936</p></body></html>

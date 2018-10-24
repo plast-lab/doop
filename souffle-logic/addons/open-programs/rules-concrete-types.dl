@@ -115,14 +115,6 @@ TypeForFormals(?formal, ?method, ?subtype) :-
 
 MockForFormal(?value, ?formal, ?type, ?method) :-
   TypeForFormals(?formal, ?method, ?type),
-// When running a mutliple segregated analysis, we want to restrict the program
-// so that we avoid data flowing from classes in different partitions.
-// We should select formal parameters with this intuition in mind.
-#ifdef MULTIPLE_SEGREGATED_ANALYSES
-  Method_DeclaringType(?method, ?class),
-  TypeToPartitionId(?class, ?id),
-  TypeToPartitionId(?type, ?id),
-#endif
   MockObject(?value, ?type).
 
 .decl MockObject(?value:mainAnalysis.Value, ?class:ReferenceType)
@@ -151,7 +143,7 @@ HContextForOpenProgramEntryPoint(?hctx, ?method),
 MockObjectContext(?hctx, ?value, ?class),
 mainAnalysis.VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) :-
 #ifdef OPEN_PROGRAMS_IMMUTABLE_HCTX
-  ImmutableHContextFromContext(?calleeCtx, ?hctx)
+  isImmutableHContext(?hctx)
 #else
   mainAnalysis.configuration.RecordContextResponse(?calleeCtx, ?value, ?receiver, ?hctx),
   mainAnalysis.configuration.RecordContextRequest(?calleeCtx, ?value, ?receiver),
@@ -205,16 +197,36 @@ ContextForOpenProgramEntryPoint(?calleeCtx, ?method) :-
 .decl ConcreteImplementations(?staticType:Type, ?class:ClassType)
 
 // Here we "randomly" select a concrete implementation for each type.
-// In a segregated analysis we try to select one from the same partition.
+// In a partitioned analysis we try to select one from the same partition.
+#ifndef USER_DEFINED_PARTITIONS
 TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
   AllConcreteImplementations(_, ?staticType),
   ?classOrd = min ord(?allClasses) : {
-     #ifdef MULTIPLE_SEGREGATED_ANALYSES
-     TypeToPartitionId(?allClasses, ?id),
-     TypeToPartitionId(?staticType, ?id),
-     #endif
      AllConcreteImplementations(?allClasses, ?staticType)
    }.
+#else
+TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
+  AllConcreteImplementations(_, ?staticType),
+  ?classOrd = min ord(?allClasses) : {
+     AllConcreteImplementations(?allClasses, ?staticType),
+     mainAnalysis.configuration.TypeToPartitionId(?staticType, ?part1),
+     mainAnalysis.configuration.TypeToPartitionId(?allClasses, ?part2),
+     mainAnalysis.configuration.PrimaryPartitionId(?primary),
+     ?part1 != ?primary,
+     ?part2 != ?primary
+  }.
+
+  TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
+    AllConcreteImplementations(_, ?staticType),
+    ?classOrd = min ord(?allClasses) : {
+       AllConcreteImplementations(?allClasses, ?staticType),
+       mainAnalysis.configuration.TypeToPartitionId(?staticType, ?part1),
+       mainAnalysis.configuration.TypeToPartitionId(?allClasses, ?part2),
+       mainAnalysis.configuration.PrimaryPartitionId(?primary),
+       ?part1 = ?primary,
+       ?part2 = ?primary
+    }.
+#endif
 
 ConcreteImplementations(?staticType, ?class) :-
   TypeToConcreteImplementationOrd(?staticType, ?classOrd),

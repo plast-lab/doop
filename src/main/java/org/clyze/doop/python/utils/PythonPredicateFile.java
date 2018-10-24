@@ -26,6 +26,7 @@ public enum PythonPredicateFile
     ACTUAL_KEYWORD_PARAMETER("ActualKeywordParam"),
     DIRECT_SUPER_CLASS("DirectSuperclass"),
     FORMAL_PARAM("FormalParam"),
+    FORMAL_PARAM_DEFAULT_VAR("FormalParam-DefaultValueVar"),
     PARAM_ANNOTATION("Param-Annotation"),
     NATIVE_RETURN_VAR("NativeReturnVar"),
     VAR_DECLARING_FUNCTION("Var-DeclaringFunction"),
@@ -63,6 +64,7 @@ public enum PythonPredicateFile
     RETURN("Return"),
     RETURN_NONE("ReturnNone"),
     BREAKPOINT_STMT("BreakpointStmt"),
+    ORIGINAL_INT_CONSTANT("OriginalIntConstant"),
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
     EMPTY_CHA("EmptyCha"),
     ERROR_OR_EXCEPTON("ErrorOrException");

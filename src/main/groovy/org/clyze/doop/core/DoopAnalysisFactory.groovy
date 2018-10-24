@@ -120,10 +120,15 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		if (options.LB3.value)
 			return new LB3Analysis(options, context, commandsEnv)
 		else {
-			if(options.PYTHON.value)
+			if(options.PYTHON.value) {
 				return new SoufflePythonAnalysis(options, context, commandsEnv)
-			else
-				return new SouffleAnalysis(options, context, commandsEnv)
+			}
+			else {
+				if (options.USER_DEFINED_PARTITIONS.value)
+					return new SoufflePartitionedAnalysis(options, context, commandsEnv)
+				else
+					return new SouffleAnalysis(options, context, commandsEnv)
+			}
 		}
 	}
 
@@ -399,11 +404,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			throw new RuntimeException("Error: options " + options.APP_REGEX.name + " and " + options.AUTO_APP_REGEX_MODE.name + " are mutually exclusive.\n")
 		}
 
-		// If server mode is enabled, don't produce statistics.
 		if (options.X_SERVER_LOGIC.value) {
+			// If server mode is enabled, don't produce statistics.
 			options.X_STATS_FULL.value = false
 			options.X_STATS_DEFAULT.value = false
 			options.X_STATS_NONE.value = true
+			// Turn on optimization outputs.
+			if (!(options.GENERATE_OPTIMIZATION_DIRECTIVES.value)) {
+				println "Server logic enabled, turning on optimization directives"
+				options.GENERATE_OPTIMIZATION_DIRECTIVES.value = true
+			}
 		}
 
 		// If no stats option is given, select default stats.

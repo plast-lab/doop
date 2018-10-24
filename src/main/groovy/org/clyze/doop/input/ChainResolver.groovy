@@ -3,6 +3,7 @@ package org.clyze.doop.input
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.clyze.analysis.InputType
+import org.clyze.doop.common.DoopErrorCodeException
 
 class ChainResolver implements InputResolver {
 
@@ -29,6 +30,6 @@ class ChainResolver implements InputResolver {
 			}
 		}
 
-		throw new RuntimeException("Not a valid input: $input")
+		throw new DoopErrorCodeException(14, new RuntimeException("Not a valid input: $input"))
 	}
 }

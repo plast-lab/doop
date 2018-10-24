@@ -63,7 +63,7 @@ ReflectiveMethodCall(?m, ?callerCtx, ?calleeCtx, ?this, ?args, ?invocation) :-
   Method_DeclaringType(?m, ?type),
   ApplicationClass(?type),
   Method_SimpleName(?m, ?methName),
-  ImmutableContextFromContext(?callerCtx, ?calleeCtx).
+  isImmutableContext(?calleeCtx).
 
 ReachableContext(?calleeCtx, ?m) :-
   ReflectiveMethodCall(?m, _, ?calleeCtx, _, _, _).
@@ -120,4 +120,4 @@ VarPointsTo(?hctx, NewInstanceMockObj(?type), ?ctx, ?thisVar) :-
   Method_DeclaringType(?init, ?type),
   Method_SimpleName(?init, "<init>"),
   ThisVar(?init, ?thisVar),
-  ImmutableContextFromHContext(?hctx, ?calleeCtx).
+  isImmutableContext(?calleeCtx).

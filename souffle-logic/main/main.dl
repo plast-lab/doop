@@ -14,9 +14,7 @@
 
   #include "string-concat.dl"
   #include "exceptions.dl"
-  #ifndef DISABLE_METHOD_HANDLES
-    #include "method-handles.dl"
-  #endif
+  #include "method-handles.dl"
 
   #if defined(REFLECTION)
     #include "reflection/declarations.dl"

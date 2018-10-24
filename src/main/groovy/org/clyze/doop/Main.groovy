@@ -26,17 +26,33 @@ class Main {
 	static DoopAnalysis analysis
 
 	static void main(String[] args) {
+		try {
+			main2(args)
+		} catch (e) {
+			if (!(e instanceof DoopErrorCodeException))
+				CommandLineAnalysisFactory.createCliBuilder().usage()
+		}
+	}
 
+	/**
+	 * Entry point when using Doop as a library.
+	 *
+	 * @param args					   the command line arguments that
+	 *								   Doop should receive
+	 * @throws DoopErrorCodeException  an exception with an error code
+	 *								   that identifies points of failure
+	 */
+	static void main2(String[] args) throws DoopErrorCodeException {
 		Doop.initDoopFromEnv()
 		try {
-			Helper.tryInitLogging("INFO", "${Doop.doopHome}/build/logs", true)
+			Helper.tryInitLogging("INFO", Doop.doopLog, true)
 		} catch (IOException ex) {
 			System.err.println("Warning: could not initialize logging")
 			throw new DoopErrorCodeException(15)
 		}
 
 		try {
-			// The builder for displaying usage and parging the arguments
+			// The builder for displaying usage and parsing the arguments
 			def clidBuilder = CommandLineAnalysisFactory.createCliBuilder()
 
 			if (!args) {
@@ -69,27 +85,20 @@ class Main {
 			}
 
 			String userTimeout
-			try {
-				if (cli['p']) {
-					//create analysis from the properties file & the cli options
-					def file = cli['p'] as String
-					def f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
-					def propsBaseDir = f.absoluteFile.parentFile
-					def props = FileOps.loadProperties(f)
+			if (cli['p']) {
+				//create analysis from the properties file & the cli options
+				def file = cli['p'] as String
+				def f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
+				def propsBaseDir = f.absoluteFile.parentFile
+				def props = FileOps.loadProperties(f)
 
-					changeLogLevel(cli['L'] ?: props.getProperty("level"))
-					userTimeout = cli['t'] ?: props.getProperty("timeout")
-					analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
-				} else {
-					changeLogLevel(cli['L'])
-					userTimeout = cli['t']
-					analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
-				}
-			} catch (e) {
-				e = StackTraceUtils.deepSanitize e
-				log.error(e.message, e)
-				clidBuilder.usage()
-				return
+				changeLogLevel(cli['L'] ?: props.getProperty("level"))
+				userTimeout = cli['t'] ?: props.getProperty("timeout")
+				analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
+			} else {
+				changeLogLevel(cli['L'])
+				userTimeout = cli['t']
+				analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
 			}
 
 			analysis.options.BLOX_OPTS.value = bloxOptions
@@ -107,20 +116,32 @@ class Main {
 							log.debug analysis
 							analysis.run()
 							new CommandLineAnalysisPostProcessor().process(analysis)
-						} catch (DoopErrorCodeException ex) {
-							// Don't continue with the analysis.
+						} catch (DoopErrorCodeException e) {
+							log.error(e.message)
+							log.debug(e.message, e)
+						} catch (e) {
+							log.error "Generic exception $e"
+							throw e
 						}
 					}
 				}).get(analysis.options.TIMEOUT.value as int, TimeUnit.MINUTES)
-			} catch (TimeoutException te) {
+			} catch (TimeoutException e) {
 				log.error "Timeout has expired (${analysis.options.TIMEOUT.value} min)."
 			} finally {
 				executorService.shutdownNow()
 			}
 		} catch (e) {
-			e = (e.cause ?: e)
-			e = StackTraceUtils.deepSanitize e
-			log.error(e.message, e)
+			// DoopErrorCodeException is a special wrapper that must
+			// be propagated above, so we don't extract its cause yet.
+			if (e instanceof DoopErrorCodeException) {
+				log.error(e.message)
+				log.debug(e.message, e)
+			} else {
+				e = (e.cause ?: e)
+				e = StackTraceUtils.deepSanitize e
+				log.error(e.message, e)
+			}
+			throw e
 		}
 	}
 

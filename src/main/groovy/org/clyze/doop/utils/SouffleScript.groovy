@@ -68,8 +68,7 @@ class SouffleScript {
 
 			try {
 				// COPY_ATTRIBUTES: Keep execute permission
-				def options = removeContext ? StandardCopyOption.REPLACE_EXISTING : StandardCopyOption.COPY_ATTRIBUTES
-				Files.copy(executable.toPath(), cacheFile.toPath(), options)
+				Files.copy(executable.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
 			} catch (FileAlreadyExistsException e) {
 				// If a cached file is already there, don't overwrite it
 				// (it might be used by another analysis), just reuse it.
@@ -95,7 +94,7 @@ class SouffleScript {
 		if (profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 
-		log.debug "Execution command: $executionCommand"
+		log.debug "Execution command: ${executionCommand.join(" ")}"
 		log.info "Running analysis"
 		executionTime = Helper.timing {
 			executor.enableMonitor(monitoringInterval, monitorClosure).execute(executionCommand).disableMonitor()

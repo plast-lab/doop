@@ -1,6 +1,5 @@
 package org.clyze.doop.dex;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
@@ -26,15 +25,15 @@ class DexInvoker {
         DexParameters dexParams = new DexParameters();
         dexParams.initFromArgs(args);
 
-        String outDir = dexParams.getOutputDir();
         try {
-            Helper.tryInitLogging("DEBUG", outDir + File.separator + "logs", true);
+            Helper.tryInitLogging("DEBUG", dexParams.getLogDir(), true);
         } catch (IOException ex) {
             System.err.println("Warning: could not initialize logging");
-            throw new DoopErrorCodeException(15);
+            throw new DoopErrorCodeException(18);
         }
 
         Log logger = LogFactory.getLog(DexInvoker.class);
+        String outDir = dexParams.getOutputDir();
         logger.debug("Using output directory: " + outDir);
 
         try (Database db = new Database(new File(outDir))) {
@@ -89,7 +88,7 @@ class DexInvoker {
             cha.conclude(db, writer, dexParams.printPhantoms());
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new DoopErrorCodeException(5, ex);
+            throw new DoopErrorCodeException(17, ex);
         }
     }
 }

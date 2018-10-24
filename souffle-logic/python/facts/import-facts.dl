@@ -195,6 +195,11 @@ If_Var(?instruction, ?var) :-
   _IfVar(?instruction, ?var).
 
 
+.decl _OriginalIntConstant(?intConst:symbol)
+.input _OriginalIntConstant(IO="file", filename="OriginalIntConstant.facts", delimiter="\t")
+
+isOriginalIntConstant(?num):-
+  _OriginalIntConstant(?num).
 
 // AssignIntConstant
 
@@ -202,6 +207,7 @@ If_Var(?instruction, ?var) :-
 .input _AssignIntConstant(IO="file", filename="AssignIntConstant.facts", delimiter="\t")
 
 isIntConstant(?const),
+isOriginalIntConstant(?const),
 isNumConstant(?const),
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
@@ -318,6 +324,31 @@ ExceptionHandler_End(?handler, ?end) :-
   _ExceptionHandler(?handler, ?function, ?index, ?type, ?var, ?begin, ?end).
 
 
+.decl _CollectionRead(?insn:symbol, ?index:number, ?to:symbol, ?collection:symbol, ?indexOrKey:symbol, ?function:symbol)
+.input _CollectionRead(IO="file", filename="ReflectiveRead.facts", delimiter="\t")
+
+isInstruction(?insn),
+Instruction_Index(?insn, ?index),
+Instruction_Function(?insn, ?function),
+isCollectionAccess_Insn(?insn),
+isReadFromCollection_Insn(?insn),
+CollectionAccessInsn_Base(?insn, ?base),
+CollectionAccessInsn_IndexOrKey(?insn, ?indexOrKey),
+ReadFromCollectionInsn_To(?insn, ?to):-
+  _CollectionRead(?insn, ?index, ?to, ?base, ?indexOrKey, ?function).
+
+.decl _CollectionWrite(?insn:symbol, ?index:number, ?collection:symbol, ?indexOrKey:symbol, ?from:symbol, ?function:symbol)
+.input _CollectionWrite(IO="file", filename="ReflectiveWrite.facts", delimiter="\t")
+
+isInstruction(?insn),
+Instruction_Index(?insn, ?index),
+Instruction_Function(?insn, ?function),
+isCollectionAccess_Insn(?insn),
+isWriteToCollection_Insn(?insn),
+CollectionAccessInsn_Base(?insn, ?base),
+CollectionAccessInsn_IndexOrKey(?insn, ?indexOrKey),
+WriteToCollectionInsn_From(?insn, ?from):-
+  _CollectionWrite(?insn, ?index, ?base, ?indexOrKey, ?from, ?function).
 // Function
 
 .decl _Function(?function:symbol, ?simplename:symbol, ?declaringType:symbol, ?arity:number, ?declaredInFile: File)
@@ -340,7 +371,7 @@ isFieldInstruction(?instruction),
 isStoreInstanceField_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Function(?instruction, ?function),
-FieldInstruction_FieldName(?instruction, ?fieldName),
+FieldInstruction_Signature(?instruction, ?fieldName),
 StoreInstanceField_Base(?instruction, ?base),
 StoreInstanceField_From(?instruction, ?from) :-
   _StoreInstanceField(?instruction, ?index, ?from, ?base, ?fieldName, ?function).
@@ -356,7 +387,7 @@ isFieldInstruction(?instruction),
 isLoadInstanceField_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Function(?instruction, ?function),
-FieldInstruction_FieldName(?instruction, ?fieldName),
+FieldInstruction_Signature(?instruction, ?fieldName),
 LoadInstanceField_Base(?instruction, ?base),
 LoadInstanceField_To(?instruction, ?to) :-
   _LoadInstanceField(?instruction, ?index, ?to, ?base, ?fieldName, ?function).

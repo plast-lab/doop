@@ -217,14 +217,15 @@ lang:physical:filePath[`_AssignOperFrom] = "facts/AssignOperFrom.facts".
 lang:physical:delimiter[`_AssignOperFrom] = "\t".
 lang:physical:hasColumnNames[`_AssignOperFrom] = false.
 
-_AssignOperFrom(?instruction, ?from) ->
+_AssignOperFrom(?instruction, ?pos, ?from) ->
    string(?instruction),
+   int[32](?pos),
    string(?from).
 
-+AssignOper:From(?insn, ?from) <-
++AssignOper:From(?insn, ?pos, ?from) <-
    AssignOper:Insn(?insn),
    Instruction:Id(?insn:?insnval),
-   _AssignOperFrom(?insnval, ?from).
+   _AssignOperFrom(?insnval, ?pos, ?from).
 
 // IfVar
 
@@ -233,14 +234,15 @@ lang:physical:filePath[`_IfVar] = "facts/IfVar.facts".
 lang:physical:delimiter[`_IfVar] = "\t".
 lang:physical:hasColumnNames[`_IfVar] = false.
 
-_IfVar(?instruction, ?var) ->
+_IfVar(?instruction, ?pos, ?var) ->
    string(?instruction),
+   int[32](?pos),
    string(?var).
 
-+If:Var(?insn, ?var) <-
++If:Var(?insn, ?pos, ?var) <-
    If:Insn(?insn),
    Instruction:Id(?insn, ?insnval),
-   _IfVar(?insnval, ?var).
+   _IfVar(?insnval, ?pos, ?var).
 
 // AssignCast
 
@@ -506,6 +508,29 @@ _SpecialMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
 +SpecialMethodInvocation:Base[?x] = ?base,
 +MethodInvocation:Method[?x] = ?signature <-
    _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+
+
+// Super method invocation
+
+lang:physical:storageModel[`_SuperMethodInvocation] = "DelimitedFile".
+lang:physical:filePath[`_SuperMethodInvocation] = "facts/SuperMethodInvocation.facts".
+lang:physical:delimiter[`_SuperMethodInvocation] = "\t".
+lang:physical:hasColumnNames[`_SuperMethodInvocation] = false.
+
+_SuperMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?signature),
+   string(?base),
+   string(?method).
+
++SuperMethodInvocation:Insn(?x),
++Instruction:Id(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++SuperMethodInvocation:Base[?x] = ?base,
++MethodInvocation:Method[?x] = ?signature <-
+   _SuperMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
 
 // Virtual method invocation

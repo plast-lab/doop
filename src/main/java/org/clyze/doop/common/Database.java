@@ -59,9 +59,10 @@ public class Database implements Closeable, Flushable {
                 line.append(addColumn(col));
             }
             line.append(EOL);
+            String strLine = line.toString();
             Writer writer = _writers.get(predicateFile);
             synchronized(predicateFile) {
-                writer.write(line.toString());
+                writer.write(strLine);
             }
         } catch(IOException exc) {
             throw new RuntimeException(exc);

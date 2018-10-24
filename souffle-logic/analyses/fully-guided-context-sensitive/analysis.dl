@@ -180,4 +180,6 @@ NoSensitivityViolation(?method) :-
 .output OneTypeMethod
 .printsize ContextInsensitiveMethod
 .output ContextInsensitiveMethod
+
+
 }

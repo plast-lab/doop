@@ -9,12 +9,12 @@
 .decl CountOfTypesPerSCC(id: Partition, cnt: number)
 .decl NumberOfRelevantTypes(cnt: number)
 .decl TypeToPartitionId(type: Type, id: Partition)
+.decl TypeToPartition(type: Type, partitionName: Type)
 .decl TypeInGenericPartition(type: Type)
 .decl IdTypeOfGenericPartition(id: Partition)
 
 .output TypeRefersToOther
-.output TypeToSCCId
-.output TypeToPartitionId
+.output TypeToPartition
      
 // Which types should be partitioned? 
 PartitionedType(type) :-
@@ -88,3 +88,8 @@ IdTypeOfGenericPartition(idType) :-
 TypeToPartitionId(type, idType) :-
   TypeInGenericPartition(type),
   IdTypeOfGenericPartition(idType).
+
+TypeToPartition(type, partitionName) :-
+  TypeToPartitionId(type, id),
+  PartitionedType(partitionName),
+  id = ord(partitionName).

@@ -1,0 +1,23 @@
+// This logic is meant to be used with a 2-object-sensitive+heap analysis to identify all
+// the methods that may have affected the context of ?method1
+
+.decl MethodContextDependsOnMethod(?method1: Method, ?method2: Method)
+
+MethodContextDependsOnMethod(?method1, ?method2) :-
+  mainAnalysis.CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method1),
+  Instruction_Method(?invo, ?method2),
+  ?callerCtx = ?calleeCtx.
+
+MethodContextDependsOnMethod(?method1, ?method3) :-
+  MethodContextDependsOnMethod(?method1, ?method2),
+  mainAnalysis.CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method2),
+  Instruction_Method(?invo, ?method3),
+  ?callerCtx = ?calleeCtx.
+ 
+MethodContextDependsOnMethod(?method, ?allocatingMethod) :-
+   mainAnalysis.configuration.ContextRequest(_, _, _, ?value, ?method),
+   mainAnalysis.AssignNormalHeapAllocation(?value, _, ?allocatingMethod),
+   mainAnalysis.ReachableContext(_, ?allocatingMethod).
+
+.output MethodContextDependsOnMethod
+

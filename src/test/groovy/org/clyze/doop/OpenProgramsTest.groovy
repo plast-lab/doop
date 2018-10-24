@@ -19,10 +19,10 @@ class OpenProgramsTest extends Specification {
 		analysis = Main.analysis
 
 		then:
-		relationHasApproxSize(analysis, "mainAnalysis-CallGraphEdge", 245415)
-		relationHasApproxSize(analysis, "mainAnalysis-InstanceFieldPointsTo", 2817045)
-		relationHasApproxSize(analysis, "Reachable", 43092)
-		relationHasApproxSize(analysis, "Stats_Simple_Application_ArrayIndexPointsTo", 5692)
-		relationHasApproxSize(analysis, "VarPointsTo", 32832599)
+		metricIsApprox(analysis, "call graph edges (INS)", 312_457)
+		metricIsApprox(analysis, "reachable methods (INS)", 53_874)
+		metricIsApprox(analysis, "array index points-to (INS)", 396_462)
+		metricIsApprox(analysis, "instance field points-to (INS)", 4_469_577)
+		metricIsApprox(analysis, "var points-to (INS)", 51_629_303)
 	}
 }

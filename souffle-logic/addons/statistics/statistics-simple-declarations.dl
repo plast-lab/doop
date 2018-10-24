@@ -1,9 +1,22 @@
 /***************************************************
  * Variables
  ***************************************************/
-
 .decl Stats_Simple_InsensVarPointsTo(?value:mainAnalysis.Value, ?var:Var)
 OUTPUT_STATS_DEFAULT(Stats_Simple_InsensVarPointsTo)
+
+#ifdef USER_DEFINED_PARTITIONS
+.decl Stats_Simple_InsensPrimaryVarPointsTo(?value:mainAnalysis.Value, ?var:Var)
+OUTPUT_STATS_DEFAULT(Stats_Simple_InsensPrimaryVarPointsTo)
+
+.decl Stats_Simple_PrimaryVarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
+OUTPUT_STATS_DEFAULT(Stats_Simple_PrimaryVarPointsTo)
+
+.decl Stats_Simple_InsensNonPrimaryVarPointsTo(?value:mainAnalysis.Value, ?var:Var)
+OUTPUT_STATS_DEFAULT(Stats_Simple_InsensNonPrimaryVarPointsTo)
+
+.decl Stats_Simple_NonPrimaryVarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
+OUTPUT_STATS_DEFAULT(Stats_Simple_PrimaryVarPointsTo)
+#endif
 
 .decl Stats_Simple_AssignedVariable(?var:Var)
 OUTPUT_STATS(Stats_Simple_AssignedVariable)

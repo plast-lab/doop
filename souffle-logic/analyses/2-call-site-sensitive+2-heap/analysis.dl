@@ -66,4 +66,6 @@
   StartupInvocation(?startupInvocation) :-
     ?startupInvocation = "<<jvm-startup-context>>",
     isMethodInvocation(?startupInvocation).
+
+
 }

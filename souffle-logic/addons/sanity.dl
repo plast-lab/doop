@@ -59,6 +59,11 @@ NotReachableVarPointsTo(?var, ?method) :-
   mainAnalysis.VarPointsTo(_, _, _, ?var),
   !mainAnalysis.Reachable(?method).
 
+// Soot quirk.
+.decl ForceTypeCompatibility(?valueType:Type, ?varType:Type)
+
+ForceTypeCompatibility("java.lang.invoke.MethodType", "java.lang.Class").
+
 .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
 .output VarPointsToWronglyTypedValue
 
@@ -66,7 +71,8 @@ VarPointsToWronglyTypedValue(?var, ?varType, ?value, ?valueType) :-
   mainAnalysis.Value_Type(?value, ?valueType),
   mainAnalysis.VarPointsTo(_, ?value, _, ?var),
   Var_Type(?var, ?varType),
-  !basic.SubtypeOf(?valueType, ?varType).
+  !basic.SubtypeOf(?valueType, ?varType),
+  !ForceTypeCompatibility(?valueType, ?varType).
 
 .decl VarPointsToMergedHeap(?var:Var, ?value:mainAnalysis.Value)
 .output VarPointsToMergedHeap

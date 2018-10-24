@@ -5,6 +5,7 @@
 
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
+
 #define UNIQUE_HCONTEXT "<<unique-hcontext>>"
 
 .comp OneTypeSensitiveConfiguration : AbstractConfiguration {
@@ -71,4 +72,6 @@ DynamicContextToContext(?ctx, ?dynCtx) :-
    !DynamicContextHeap1(_, ?dynCtx),
    isImmutableContext(?ctx).
 #endif
+
+
 }

@@ -1,37 +1,40 @@
-.type Module
-
 .decl isModule(?module:Module)
 
 .decl Module_DeclaringModule(?module: Module, ?declModule: Module)
 .decl Function_Module(?function:Function, ?module: Module)
 .decl ClassType_Module(?class:ClassType, ?module: Module)
 
-.decl VarPointsToModule(?var:Var, ?module:Module)
+.decl VarPointsToModule(?hctx:configuration.HContext, ?val: Value, ?ctx:configuration.Context, ?var:Var)
 
-.decl VarPointsToFunction(?var:Var, ?val: Value)
+.decl VarPointsToFunction(?hctx:configuration.HContext, ?val: Value, ?ctx:configuration.Context, ?var:Var)
 .output VarPointsToFunction
 .output isFunction
 
 .output VarPointsToModule
+.output isModule
 
-VarPointsToModule(?var, ?module):-
-  VarPointsTo(?var, ?module),
+VarPointsToModule(?hctx, ?module, ?ctx, ?var):-
+  VarPointsTo(?hctx, ?module, ?ctx, ?var),
   isModule(?module).
 
-VarPointsTo(?var, ?module):-
+VarPointsTo(?hctx, ?module, ?ctx, ?var):-
+  Reachable(?function),
+  ReachableContext(?ctx, ?function),
+  Instruction_Function(?insn, ?function),
   isImportInstruction(?insn),
   ImportInsn_ModuleName(?insn, ?name),
   AssignInstruction_To(?insn, ?var),
   ?module = cat(cat("<",?name),">"),
-  isModule(?module).
+  isModule(?module),
+  isImmutableHContext(?hctx).
 
-VarPointsTo(?var, ?heap):-
+VarPointsTo(?hctx, ?heap, ?ctx, ?to):-
   isLoadInstanceField_Insn(?insn),
-  FieldInstruction_FieldName(?insn, ?fieldName),
+  FieldInstruction_Signature(?insn, ?signature),
   LoadInstanceField_Base(?insn, ?base),
-  LoadInstanceField_To(?insn, ?var),
-  VarPointsToModule(?base, ?parModule),
-  GlobalNamePointsTo(?parModule, ?fieldName, ?heap).
+  LoadInstanceField_To(?insn, ?to),
+  VarPointsToModule(_, ?parModule, ?ctx, ?base),
+  GlobalNamePointsTo(?hctx, ?heap, ?parModule, ?signature).
 
 //One thing to be considered in the future is the difference between:
 //1) from file import var

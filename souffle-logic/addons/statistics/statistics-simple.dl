@@ -1,11 +1,3 @@
-// Horrible hack, really (TODO: generalize and clean up). Just for
-// now. Redefines the meaning of VarPointsTo for this file, to
-// collapse for analyses that simultaneously compute multiple results
-// and need to combine them.
-#ifdef MULTIPLE_SEGREGATED_ANALYSES
-#define VarPointsTo(hctx, heap, ctx, var) CollapsedVarPointsTo(hctx, heap, ctx, var)
-#endif // MULTIPLE_SEGREGATED_ANALYSES
-
 #include "statistics-output.dl"
 #include "statistics-simple-declarations.dl"
 #include "macros.dl"
@@ -14,8 +6,27 @@
  * Variables
  ***************************************************/
 
+#ifndef USER_DEFINED_PARTITIONS
 Stats_Simple_InsensVarPointsTo(?value, ?var) :-
   mainAnalysis.VarPointsTo(_, ?value, _, ?var).
+#else
+Stats_Simple_InsensPrimaryVarPointsTo(?value, ?var) :-
+  Stats_Simple_PrimaryVarPointsTo(_, ?value, _, ?var).
+
+Stats_Simple_PrimaryVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var),
+  mainAnalysis.configuration.VarInPrimaryPartition(?var).
+
+Stats_Simple_InsensNonPrimaryVarPointsTo(?value, ?var) :-
+  Stats_Simple_NonPrimaryVarPointsTo(_, ?value, _, ?var).
+
+Stats_Simple_NonPrimaryVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var),
+  mainAnalysis.configuration.VarInNoPartition(?var).
+
+#endif
+
+
 
 Stats_Simple_AssignedVariable(?var) :-
   Stats_Simple_InsensVarPointsTo(_, ?var).
@@ -183,9 +194,12 @@ Stats_Simple_Application_PotentiallyFailingCast(?type, ?from, ?to) :-
   !basic.SupertypeOf(?type, ?valuetype).
 
 /***************************************************/
-
 NewMetricMacro( "1.0", "var points-to (INS)", Stats_Simple_InsensVarPointsTo(_, _)).
+#ifndef USER_DEFINED_PARTITIONS
 NewMetricMacro( "1.5", "var points-to (SENS)", mainAnalysis.VarPointsTo(_, _, _, _)).
+#else
+NewMetricMacro( "1.5", "var points-to (SENS)", Stats_Simple_PrimaryVarPointsTo(_, _, _, _)).
+#endif
 // NewMetricMacro( "5.0", "app var points-to (INS)", Stats_Simple_Application_InsensVarPointsTo(_, _)).
 // NewMetricMacro( "5.5", "app var points-to (SENS)", Stats_Simple_Application_VarPointsTo(_, _, _, _)).
 NewMetricMacro("10.0", "reachable variables (INS)", Stats_Simple_InsensReachableVar(_)).

@@ -90,7 +90,6 @@ DynamicContextToHContext(?hctx, ?dynCtx) :-
    !DynamicContextHeap1(_, ?dynCtx),
    isImmutableHContext(?hctx).
 #endif
-
 }
 
       

@@ -1,6 +1,3 @@
-.number_type Partition
-
-.decl isPartition(partition: Partition)
 .decl PartitionedType(type: Type)
 .decl TypeRefersToOther(typeFrom: Type, typeTo: Type)
 .decl TypeTransitivelyRefersToOther(typeFrom: Type, typeTo: Type)
@@ -8,13 +5,13 @@
 .decl TypeToSCCId(type: Type, id: Partition)
 .decl CountOfTypesPerSCC(id: Partition, cnt: number)
 .decl NumberOfRelevantTypes(cnt: number)
-.decl TypeToPartitionId(type: Type, id: Partition)
 .decl TypeInGenericPartition(type: Type)
 .decl IdTypeOfGenericPartition(id: Partition)
 
 // Which types should be partitioned? 
 PartitionedType(type) :-
-  ApplicationClass(type).
+  isType(type),
+  !mainAnalysis.configuration.TypeInAllPartitions(type).
 
 TypeRefersToOther(typeFrom, typeTo) :-
   PartitionedType(typeFrom), PartitionedType(typeTo),

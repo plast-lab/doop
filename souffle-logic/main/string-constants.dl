@@ -1047,7 +1047,6 @@ RelevantSuffixPosition(?typeName, ?pos) :-
   _StringIterationTrick(?pos), ?pos < strlen(?typeName).
 
 .decl Suffix(?type:Type, ?suffix:symbol, ?suffixLen:number)
-.output Suffix
 
 Suffix(?type, ?suffix, ?suffixLen) :-
   RelevantSuffixPosition(?type, ?pos),
@@ -1060,7 +1059,6 @@ Suffix(?type, ?type, ?suffixLen) :-
   ?suffixLen = strlen(?type).
 
 .decl MinimalSuffixLen(?type:Type, ?suffixLen:number)
-.output MinimalSuffixLen
 
 MinimalSuffixLen(?type, ?suffixLen) :-
   isType(?type),
@@ -1068,7 +1066,6 @@ MinimalSuffixLen(?type, ?suffixLen) :-
 
 // Computes the suffix after the last dot of a type name.
 .decl MinimalSuffix(?type:Type, ?suffix:symbol)
-.output MinimalSuffix
 
 MinimalSuffix(?type, ?suffix) :-
   MinimalSuffixLen(?type, ?suffixLen),

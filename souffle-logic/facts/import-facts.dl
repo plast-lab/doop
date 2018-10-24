@@ -1,5 +1,8 @@
 #include "opaque-methods.dl"
 
+.decl _OperatorAt(?instruction:symbol, ?operator:symbol)
+.input _OperatorAt(IO="file", filename="OperatorAt.facts", delimiter="\t")
+
 // MainClass
 .decl _MainClass(?class:symbol)
 .input _MainClass(IO="file", filename="MainClass.facts", delimiter="\t")
@@ -159,21 +162,28 @@ AssignInstruction_To(?instruction, ?to) :-
 
 // AssignOperFrom
 
-.decl _AssignOperFrom(?instruction:symbol, ?from:symbol)
+.decl _AssignOperFrom(?instruction:symbol, ?pos: number, ?from:symbol)
 .input _AssignOperFrom(IO="file", filename="AssignOperFrom.facts", delimiter="\t")
 
-AssignOper_From(?instruction, ?from) :-
-  _AssignOperFrom(?instruction, ?from).
+AssignOper_From(?instruction, ?pos, ?from) :-
+  _AssignOperFrom(?instruction, ?pos, ?from).
 
 
 // IfVar
 
-.decl _IfVar(?instruction:symbol, ?var:symbol)
+.decl _IfVar(?instruction:symbol, ?pos:number, ?var:symbol)
 .input _IfVar(IO="file", filename="IfVar.facts", delimiter="\t")
 
-If_Var(?instruction, ?var) :-
-  _IfVar(?instruction, ?var).
+If_Var(?instruction, ?pos, ?var) :-
+  _IfVar(?instruction, ?pos, ?var).
 
+// DummyIfVar
+
+.decl _DummyIfVar(?instruction:symbol, ?var:symbol)
+.input _DummyIfVar(IO="file", filename="DummyIfVar.facts", delimiter="\t")
+
+DummyIf_Var(?instruction, ?var) :-
+    _DummyIfVar(?instruction, ?var).
 
 // AssignCast
 
@@ -396,7 +406,7 @@ SuperMethodInvocation_Base(?instruction, ?base) :-
 
 // Dynamic method invocation
 
-.decl _DynamicMethodInvocation(?instruction:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?method:symbol)
+.decl _DynamicMethodInvocation(?instruction:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?tag:number, ?method:symbol)
 .input _DynamicMethodInvocation(IO="file", filename="DynamicMethodInvocation.facts", delimiter="\t")
 
 
@@ -409,8 +419,9 @@ DynamicMethodInvocation_Bootstrap(?instruction, ?bootSignature),
 DynamicMethodInvocation_DynName(?instruction, ?dynName),
 DynamicMethodInvocation_DynReturnType(?instruction, ?dynRetType),
 DynamicMethodInvocation_DynParamTypes(?instruction, ?dynParamTypes),
+DynamicMethodInvocation_HandleTag(?instruction, ?tag),
 DynamicMethodInvocation_DynArity(?instruction, ?dynArity) :-
-  _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?method).
+  _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method).
 
 // Opaque method invocations
 

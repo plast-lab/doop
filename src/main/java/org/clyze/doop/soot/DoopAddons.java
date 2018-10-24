@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -64,7 +65,7 @@ class DoopAddons {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             System.err.println("Could not call Soot method retrieveAllBodies():");
             ex.printStackTrace();
-            throw new DoopErrorCodeException(11);
+            throw new DoopErrorCodeException(11, ex);
         }
     }
 
@@ -78,7 +79,7 @@ class DoopAddons {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             System.err.println("Could not call Soot method writeClass(): ");
             ex.printStackTrace();
-            throw new DoopErrorCodeException(12);
+            throw new DoopErrorCodeException(12, ex);
         }
     }
 
@@ -109,7 +110,7 @@ class DoopAddons {
                 if (newFile.getParentFile().mkdirs())
                     dirsCreated++;
                 try {
-                    Files.move(f.toPath(), newFile.toPath());
+                    Files.move(f.toPath(), newFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 } catch (IOException ex) {
                     System.err.println("Error moving " + f);
                     ex.printStackTrace();

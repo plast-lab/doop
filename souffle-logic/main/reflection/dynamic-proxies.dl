@@ -72,7 +72,7 @@ VarPointsTo(?hctxImmutable, ?proxyClassObj, ?ctx, ?ret) :-
    ArrayContentsPointToInterface(?iface, ?hctx, ?interfacesVal),
    ProxyClassOfInterface(?iface, ?proxyClass),
    ReifiedClass(?proxyClass, ?proxyClassObj),
-   ImmutableHContextFromContext(?ctx, ?hctxImmutable).
+   isImmutableHContext(?hctxImmutable).
 
 // Create a new heap allocation per
 // (newProxyInstance call, interface type) pair.
@@ -170,7 +170,7 @@ VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
    VarPointsTo(?hctx, ?interfacesVal, ?ctx, ?interfaces),
    ArrayContentsPointToInterface(?iface, ?hctx, ?interfacesVal),
    ProxyClassInstance(?iface, ?invo, ?value),
-   ImmutableHContextFromContext(?ctx, ?hctxImmutable).
+   isImmutableHContext(?hctxImmutable).
 
 .decl ProxyObject_Invocation(?value:Value, ?invo:MethodInvocation)
 .decl ProxyObject_Handler(?handlerObj:Value, ?value:Value)
@@ -203,7 +203,7 @@ CallToMethodOfProxyObject(?value, ?ctx, ?invo) :-
 // constructor calls super.<init>(handlerObj).
 ReachableContext(?calleeCtx, ?init),
 VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?h) :-
-   ImmutableContextFromHContext(?hctxHandler, ?calleeCtx),
+   isImmutableContext(?calleeCtx),
    ?init = "<java.lang.reflect.Proxy: void <init>(java.lang.reflect.InvocationHandler)>",
    FormalParam(0, ?init, ?h),
    ProxyObject_Handler(?handlerObj, ?proxy),
@@ -220,7 +220,7 @@ ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
 VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this),
 HandledProxy(?newProxyInstanceInvo, ?handlerType)
 :-
-   ImmutableContextFromContext(?callerCtx, ?calleeCtx),
+   isImmutableContext(?calleeCtx),
    CallToMethodOfProxyObject(?value, ?callerCtx, ?invo),
    ProxyObject_Handler(?handlerObj, ?value),
    ProxyObject_HandlerHctx(?hctxHandler, ?value),
@@ -245,7 +245,7 @@ ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) :-
    FormalParam(0, ?handlerInvokeMeth, ?proxyArg),
    FormalParam(1, ?handlerInvokeMeth, ?methArg),
    FormalParam(2, ?handlerInvokeMeth, ?argsArg),
-   ImmutableHContextFromContext(?calleeCtx, ?hctx),
+   isImmutableHContext(?hctx),
    MethodInvocation_Method(?invo, ?methSig),
    ReifiedMethod(?methSig, ?methValue),
    ProxyObject_Invocation(?proxyValue, ?invocation),
@@ -261,7 +261,7 @@ ProxyCallArgArray(?invo, ?objMethSig, ?argsArrValue) :-
    FormalParam(0, ?handlerInvokeMeth, ?proxyArg),
    FormalParam(1, ?handlerInvokeMeth, ?methArg),
    FormalParam(2, ?handlerInvokeMeth, ?argsArg),
-   ImmutableHContextFromContext(?calleeCtx, ?hctx),
+   isImmutableHContext(?hctx),
    MethodInvocation_Method(?invo, ?methSig),
    SpecialMethodFromObject(?methSig, ?objMethSig),
    ReifiedMethod(?objMethSig, ?objMethValue),
@@ -278,10 +278,10 @@ ArgArrayAndActualArg(?argsArrValue, ?methSig, ?actual) :-
 // (a) Reference-type arguments go in directly.
 ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx2, ?arrValue) :-
    ArgArrayAndActualArg(?arrValue, _, ?actual),
-   VarPointsTo(?hctx, ?actualVal, ?ctx, ?actual),
+   VarPointsTo(?hctx, ?actualVal, _, ?actual),
    Var_Type(?actual, ?actualType),
    isReferenceType(?actualType),
-   ImmutableHContextFromContext(?ctx, ?hctx2).
+   isImmutableHContext(?hctx2).
 // (b) Primitive arguments are boxed first.
 ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx, ?arrValue) :-
    ArgArrayAndActualArg(?arrValue, ?methSig, _),

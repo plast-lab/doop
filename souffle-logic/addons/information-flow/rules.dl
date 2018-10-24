@@ -11,7 +11,7 @@ AnyMethodInvocation(?invocation, ?tomethod) :-
   isSpecialMethodInvocation_Insn(?invocation).
 
 VarUse(?from, ?insn) :-
-  AssignOper_From(?insn, ?from).
+  AssignOper_From(?insn, _, ?from).
 
 TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to),
 TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) :-
@@ -399,8 +399,8 @@ TaintedObjectSerialized(?declaringType, ?source, ?type, ?hctx, ValueIdMacro(?sou
   Var_Type(?base, ?type),
   mainAnalysis.Value_DeclaringType(?obj, ?declaringType),
   SourceFromTaintedValue(?obj, ?source),
-  mainAnalysis.ImmutableHContextFromContext(?ctx, ?hctx).
-  .plan 2: (3,2,1,4,5,6,7), 5: (6,2,1,4,3,5,7)
+  mainAnalysis.isImmutableHContext(?hctx).
+  .plan 2: (3,2,1,4,5,6,7)
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ?val),
 mainAnalysis.VarPointsTo(?hctx, ?val, ?ctx, ?base) :-

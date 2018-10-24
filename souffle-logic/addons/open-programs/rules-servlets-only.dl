@@ -73,7 +73,7 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
 
 // The following two rules were originally separated to stratify negation (no longer needed)
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?receiver) :-
-  mainAnalysis.ImmutableHContextFromContext(?ctx, ?hctx),
+  mainAnalysis.isImmutableHContext(?hctx),
   ValueForReceiverInContext(?ctx, ?receiver, ?value).
   .plan 1:(2,1)
 

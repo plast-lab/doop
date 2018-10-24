@@ -1,29 +1,3 @@
-/**
- * Elegance hacks, using macros: instead of burdening all normal
- * analyses, provide default definitions for the common cases.
- */
-
-#ifndef MULTIPLE_SEGREGATED_ANALYSES
-ImmutableContextFromHContext(?hctx, ?ctx) :-
-  isImmutableContext(?ctx),
-  isHContext(?hctx).
-
-ImmutableHContextFromContext(?ctx, ?hctx) :-
-  isImmutableHContext(?hctx),
-  isContext(?ctx).
-
-ImmutableContextFromContext(?ctx1, ?ctx2) :-
-  isImmutableContext(?ctx2),
-  isContext(?ctx1).
-#endif // MULTIPLE_SEGREGATED_ANALYSES
-
-#ifndef CompatibleContextAndHContextMacro
-#define CompatibleContextAndHContextMacro(ctx, hctx) ctx = ctx, hctx = hctx
-#endif
-#ifndef CompatibleHContextsMacro
-#define CompatibleHContextsMacro(hctx1, hctx2) hctx1 = hctx1, hctx2 = hctx2
-#endif
-
 #include "init.dl"
 
 /**
@@ -39,10 +13,6 @@ configuration.RecordContextRequest(?ctx, ?heapValue, ?var) :-
   AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod).
 
-VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-  configuration.RecordContextRequest(?ctx, ?value, ?var),
-  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx).
-
 isHContext(?newHCtx),
 VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
   configuration.RecordContextRequest(?ctx, ?heapValue, ?var),
@@ -52,19 +22,19 @@ VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
   Reachable(?inmethod),  // optimization purposes
   AssignContextInsensitiveHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  ImmutableHContextFromContext(?ctx, ?hctx).
-  .plan 1:(4,3,2,1), 2:(4,3,1,2)
+  isImmutableHContext(?hctx).
+  .plan 1:(4,3,2,1)
 
 /**
  * Null assignments
  */
+
 VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
    Reachable(?inmethod),  // optimization purposes
    AssignNull(?to, ?inmethod),
    Value_Null(?null),
    ReachableContext(?toCtx, ?inmethod),
-   ImmutableHContextFromContext(?toCtx, ?hctx).
-   .plan 2:(5,4,1,2,3)
+   isImmutableHContext(?hctx).
 
 /**
  * Assignment of numeric constant. Currently context-insensitive and
@@ -79,11 +49,11 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
     AssignCastNumConstant_Id(?insn, ?const)), // TODO: check the cast?
    AssignInstruction_To(?insn, ?to),
    Value_Num(?value, ?const),
-   ImmutableHContextFromContext(?toCtx, ?hctx).
-   .plan 1:(6,1,2,3,4,5)
+   isImmutableHContext(?hctx).
 
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
+
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   AssignLocal(?from, ?to, _).
@@ -146,9 +116,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 #endif
 
-/**
- * Store instance fields
- */
 #ifndef FEATHERWEIGHT_ANALYSIS
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
@@ -158,10 +125,6 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
  .plan 1:(2,1,3), 2:(3,2,1)
 
 #else
-// FEATHERWEIGHT_ANALYSIS
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
 .decl NoInformationOnSignature(?signature: Field)
 .output NoInformationOnSignature
@@ -214,8 +177,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   StaticFieldPointsTo(?hctx, ?value, ?sig),
   LoadStaticField(?sig, ?to, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  CompatibleContextAndHContextMacro(?ctx, ?hctx).
+  ReachableContext(?ctx, ?inmethod).
 #ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1)
 #endif

@@ -1,0 +1,54 @@
+/**
+ * Generic declarations for context-sensitive pointer analysis.
+ */
+
+.decl isContext(?ctx:configuration.Context)
+.decl isHContext(?hctx:configuration.HContext)
+
+.decl isImmutableContext(?ctx:configuration.Context)
+.decl isInitialContext(?ctx:configuration.Context)
+.decl isImmutableHContext(?ctx:configuration.HContext)
+
+.decl VarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
+
+.decl InstanceFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)
+
+// array-element insensitive
+.decl ArrayIndexPointsTo(?hctx:configuration.HContext, ?value:Value, ?basehctx:configuration.HContext, ?basevalue:Value)
+
+/**
+ * Call graph
+ */
+.decl CallGraphEdge(?callerCtx:configuration.Context, ?invocation:FunctionInvocation_Insn, ?calleeCtx:configuration.Context, ?function:Function) overridable
+
+/**
+ * Reachable
+ */
+.decl Reachable(?function:Function)
+.decl ReachableContext(?ctx:configuration.Context, ?function:Function)
+
+/**
+ *  Value
+ **/
+
+.decl isValue(?value:Value)
+.decl isHeapValue(?value:Value)
+.decl isModeledHeapValue(?value:Value)
+.decl isConstantValue(?value:Value)
+.decl IsPyList(?heap:HeapAllocation)
+
+// Value_Num maps each numeric constant to a value while
+// also prepending it with *num-constant-* to distinguish it
+// from heap allocations that share the same string value.
+.decl Value_Num(?value:Value, ?const:NumConstant)
+.decl Value_String(?value:Value, ?str:StringConstant)
+.decl isNonHeapValue(?value:Value)
+
+.decl Value_Type(?value:Value, ?type:Type)
+//.decl Value_DeclaringType(?value:Value, ?type:Type)
+
+.decl isNoneValue(?none:Value)
+
+.decl GlobalNamePointsTo(?hctx:configuration.HContext, ?value:Value, ?scope:Scope, ?name:symbol)
+
+.decl ListInitialAssignVar(?heap:HeapAllocation, ?var:Var, ?ctx:configuration.Context)

@@ -1,0 +1,10 @@
+.output VarPointsTo
+.output InstanceFieldPointsTo
+.output isFunctionObjectAllocation
+.output Reachable
+
+.output ResolvedActualParamValue
+.output FunctionInvResolvesTo
+.output isClassObjectAllocation
+.output GlobalNamePointsTo
+.output isClassInstanceAllocation

@@ -28,7 +28,6 @@ ImmutableHContextFromContext[?ctx] = ?hctx <-
 
 ImmutableContextFromContext[?ctx1] = ?ctx2 <-
   ImmutableContext(?ctx2), Context(?ctx1).
-#endif // MULTIPLE_SEGREGATED_ANALYSES
 
 #ifndef CompatibleContextAndHContextMacro
 #define CompatibleContextAndHContextMacro(ctx, hctx) ctx = ctx, hctx = hctx
@@ -36,7 +35,7 @@ ImmutableContextFromContext[?ctx1] = ?ctx2 <-
 #ifndef CompatibleHContextsMacro
 #define CompatibleHContextsMacro(hctx1, hctx2) hctx1 = hctx1, hctx2 = hctx2
 #endif
-
+#endif // MULTIPLE_SEGREGATED_ANALYSES
 
 #include "main.logic"
 
@@ -109,7 +108,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   ReachableContext(?ctx, ?inmethod),
   ObjectShouldBeRefined(?value).
 #endif
-
+ 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   Value:byHeap[?heap] = ?value,
@@ -122,7 +121,6 @@ ReachableAssignContextInsensitiveHeapAllocation(?var, ?ctx, ?heap) <-
 /**
  * Null assignments
  */
-
 VarPointsTo(?hctx, ?null, ?toCtx, ?to) <-
    ImmutableHContextFromContext[?toCtx] = ?hctx,
    AssignNull(?to, ?inmethod),
@@ -183,40 +181,65 @@ OptAssignCast(?type, ?to, ?from) <-
 
 
 /**
- * Load instance fields
+ * Load/Store instance fields
  */
+
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) <-
+  LoadInstanceField(?base, ?sig, ?to, _),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
+  StoreInstanceField(?from, ?base, ?signature, _),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+#ifndef FEATHERWEIGHT_ANALYSIS
+HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) <-
+  LoadHeapInstanceField(?ctxTo, ?to, ?signature, ?basehctx, ?basevalue),
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctxFrom, ?from).
+// !Value:Null(?basevalue).
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
+  HeapInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  NotSpecialObject(?value).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-
-LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) <-
-  OptLoadInstanceField(?to, ?sig, ?base),
-  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
-
-OptLoadInstanceField(?to, ?sig, ?base) <-
-  LoadInstanceField(?base, ?sig, ?to, _).
-
-/**
- * Store instance fields
- */
+#else
+// FEATHERWEIGHT_ANALYSIS
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+#endif
 
 #ifndef FEATHERWEIGHT_ANALYSIS
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   NotSpecialObject(?value).
+// !Value:Null(?basevalue).
+#else
+NoInformationOnSignature(?signature) <-
+ isField(?signature),
+ !DynamicInstanceFieldPointsTo(?signature, _, _, _, _).
+
+ConstructorVar(?var) <-
+  Var_DeclaringMethod(?var, ?meth),
+  ApplicationMethod(?meth),
+  ClassConstructor(?meth, _).
+
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  ConstructorVar(?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  NoInformationOnSignature(?signature),
+  Value:byDynamicHeap(_, ?value),
+  NotSpecialObject(?value),
+  !Value:Null(?basevalue).
 #endif
-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <- InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
-StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
-  Value:Null[] != ?basevalue,
-  OptStoreInstanceField(?from, ?signature, ?base),
-  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
-
-OptStoreInstanceField(?from, ?signature, ?base) <-
-  StoreInstanceField(?from, ?base, ?signature, _).
-
+ 
 /**
  * Load static fields
  */
@@ -400,6 +423,7 @@ AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
 
 // The main analysis is merely looking up the previously created
 // context objects.
+
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
@@ -538,6 +562,75 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   CachedMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
   MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
+  ThisVar[?tomethod] = ?this,
+  SiteShouldBeRefined(?invocation).
+#endif /* #ifndef CachedMergeRefinedMacro */
+#endif /* #ifdef MergeRefinedMacro
+
+
+/**
+ * Super method invocations
+ */
+
+// REVIEW: indexing changed in the Doop->flow-sens revision,
+// so the optimization below should be re-examined.
+OptSuperMethodInvocationBase(?invocation, ?base) <-
+  Reachable(?inmethod),
+  Instruction:Method(?invocation, ?inmethod),
+  SuperMethodInvocation:Base(?invocation, ?base).
+
+#ifndef AdvancedMergeBasisMacro
+// Default behavior
+MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
+  OptSuperMethodInvocationBase(?invocation, ?base),
+  SuperMethodInvocation:Insn(?invocation),
+  MethodInvocation:Method[?invocation] = ?tomethod,
+  ThisVar[?tomethod] = ?this,
+  SiteShouldNotBeRefined(?invocation).
+#else /* there is advanced behavior available */
+
+AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  OptSuperMethodInvocationBase(?invocation, ?base).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  CachedMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  MethodInvocation:Method[?invocation] = ?tomethod,
+  SuperMethodInvocation:Insn(?invocation),
+  ThisVar[?tomethod] = ?this,
+  SiteShouldNotBeRefined(?invocation).
+#endif /* #ifndef AdvancedMergeBasisMacro */
+
+#ifdef MergeRefinedMacro
+#ifndef CachedMergeRefinedMacro
+// Default behavior
+MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  OptSuperMethodInvocationBase(?invocation, ?base),
+  MethodInvocation:Method[?invocation] = ?tomethod,
+  SuperMethodInvocation:Insn(?invocation),
+  ThisVar[?tomethod] = ?this,
+  SiteShouldBeRefined(?invocation).
+
+#else /* there is advanced behavior available */
+
+AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  OptSuperMethodInvocationBase(?invocation, ?base).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  CachedMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  MethodInvocation:Method[?invocation] = ?tomethod,
+  SuperMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldBeRefined(?invocation).
 #endif /* #ifndef CachedMergeRefinedMacro */

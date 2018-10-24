@@ -77,7 +77,8 @@ public class WalaInvoker {
         String outputDir = walaParameters.getOutputDir();
 
         try (Database db = new Database(new File(outputDir))) {
-            WalaFactWriter walaFactWriter = new WalaFactWriter(db);
+            WalaRepresentation rep = new WalaRepresentation();
+            WalaFactWriter walaFactWriter = new WalaFactWriter(db, rep);
             WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
             BasicJavaSupport java = new BasicJavaSupport();

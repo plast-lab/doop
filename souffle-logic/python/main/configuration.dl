@@ -1,0 +1,14 @@
+.comp AbstractConfiguration {
+
+  .decl ContextRequest(?ctx:configuration.Context, ?hctx:configuration.HContext, ?invo:FunctionInvocation_Insn,?value:Value, ?function:Function)
+  .decl ContextResponse(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:FunctionInvocation_Insn,?value:Value, ?calleeCtx:Context)
+
+  .decl RecordContextRequest(?callerCtx:configuration.Context, ?value:Value, ?var:Var)
+  .decl RecordContextResponse(?callerCtx:configuration.Context, ?value:Value, ?var:Var, ?hctx:configuration.HContext)
+
+  .decl InitContextRequest(?symbol:symbol)
+  .decl InitContextResponse(?symbol:symbol, ?context:Context)
+
+  .decl InitHContextRequest(?symbol:symbol)
+  .decl InitHContextResponse(?symbol:symbol, ?hcontext:HContext)
+}
