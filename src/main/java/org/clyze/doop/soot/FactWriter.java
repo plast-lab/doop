@@ -878,6 +878,8 @@ class FactWriter extends JavaFactWriter {
     private void writeDynamicInvoke(DynamicInvokeExpr di, int index, String insn, String methodId) {
         SootMethodRef dynInfo = di.getMethodRef();
         int dynArity = dynInfo.parameterTypes().size();
+        for (int pIdx = 0; pIdx < dynArity; pIdx++)
+            writeInvokedynamicParameterType(insn, pIdx, dynInfo.parameterType(pIdx).toString());
         writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynInfo.parameterTypes().toString(), di.getHandleTag(), methodId);
     }
 

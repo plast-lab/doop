@@ -245,4 +245,8 @@ public class JavaFactWriter {
     protected void writeInvokedynamic(String insn, int index, String bootSig, String dynName, String dynRetType, int dynArity, String dynParamTypes, int tag, String methodId) {
         _db.add(DYNAMIC_METHOD_INV, insn, str(index), bootSig, dynName, dynRetType, str(dynArity), dynParamTypes, str(tag), methodId);
     }
+
+    protected void writeInvokedynamicParameterType(String insn, int paramIndex, String type) {
+        _db.add(DYNAMIC_METHOD_INV_PARAM, insn, str(paramIndex), type);
+    }
 }
