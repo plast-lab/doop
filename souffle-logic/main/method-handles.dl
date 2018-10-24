@@ -21,33 +21,33 @@ LambdaMetafactoryInvoke(?invo, ?dynName, ?interface) :-
 // boostrap method being the lambda metafactory and the second
 // bootstrap argument being a constant method handle. The result
 // 'value' of the invokedynamic is a lambda, which contains an
-// instance method calling static method 'realMethod'.
+// instance method calling implementing method 'implMethod'.
 
 #define MHMock(invo, ret, type, method, real, name) \
    cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
 
-.decl ConstantMethodHandleLambda(?value:Value, ?dynName:symbol, ?dynRet:Type, ?realMethod:Method)
+.decl ConstantMethodHandleLambda(?value:Value, ?dynName:symbol, ?dynRet:Type, ?implMethod:Method)
 
 // Intermediate relation to make rules easier to read.
-.decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?samType:InterfaceType, ?dynName:symbol, ?realMethod:Method)
+.decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?samType:InterfaceType, ?dynName:symbol, ?implMethod:Method)
 
 InvokedynamicBootstrapCtx(?invo, ?ctx),
-ConstantMHLambdaVPT(?hctx, MHMock(?invo, ?samType, ?handleType, ?handleMeth, ?realMethod, ?dynName), ?ctx, ?var, ?samType, ?dynName, ?realMethod) :-
+ConstantMHLambdaVPT(?hctx, MHMock(?invo, ?samType, ?handleType, ?handleMeth, ?implMethod, ?dynName), ?ctx, ?var, ?samType, ?dynName, ?implMethod) :-
    LambdaMetafactoryInvoke(?invo, ?dynName, ?samType),
    BootstrapParam(1, ?invo, ?handleVar),
    VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
-   MethodHandleConstant_Method(?handleVal, ?realMethod),
+   MethodHandleConstant_Method(?handleVal, ?implMethod),
    isInterfaceType(?samType),
    AssignReturnValue(?invo, ?var),
    // Used to generate friendly description for the generated wrapper.
-   Method_SimpleName(?realMethod, ?handleMeth),
-   Method_DeclaringType(?realMethod, ?handleType).
+   Method_SimpleName(?implMethod, ?handleMeth),
+   Method_DeclaringType(?implMethod, ?handleType).
 
 // Unpack the information gathered above and populate appropriate relations.
 VarPointsTo(?hctx, ?value, ?ctx, ?var),
 MockValueConsMacro(?value, ?samType),
-ConstantMethodHandleLambda(?value, ?dynName, ?samType, ?realMethod) :-
-   ConstantMHLambdaVPT(?hctx, ?value, ?ctx, ?var, ?samType, ?dynName, ?realMethod).
+ConstantMethodHandleLambda(?value, ?dynName, ?samType, ?implMethod) :-
+   ConstantMHLambdaVPT(?hctx, ?value, ?ctx, ?var, ?samType, ?dynName, ?implMethod).
 
 .decl InvokedynamicBootstrapCtx(?invo:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
 
@@ -67,8 +67,8 @@ UnhandledInvokedynamic(?i, ?bootMethodId) :-
 
 .decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method)
 
-InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod) :-
-   ConstantMethodHandleLambda(?value, ?dynName, _, ?realMethod),
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod) :-
+   ConstantMethodHandleLambda(?value, ?dynName, _, ?implMethod),
    VarPointsTo(_, ?value, ?callerCtx, ?var),
    VirtualMethodInvocation_Base(?i, ?var),
    VirtualMethodInvocation_SimpleName(?i, ?dynName),
@@ -89,16 +89,16 @@ ReachableContext(?calleeCtx, ?callee) :-
 
 // Pass arguments to underlying method.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?realMethod),
-   FormalParam(?idx, ?realMethod, ?formal),
+   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?implMethod),
+   FormalParam(?idx, ?implMethod, ?formal),
    ActualParam(?idx, ?i, ?actual),
    VarPointsTo(_, ?val, _, ?actual),
    isImmutableHContext(?hctx).
 
 // Handle return values.
 VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
-   InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod),
-   ReturnVar(?realReturnVar, ?realMethod),
+   InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod),
+   ReturnVar(?realReturnVar, ?implMethod),
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
    AssignReturnValue(?i, ?ret).
 
@@ -143,11 +143,11 @@ VarPointsTo(?hctx, MOCK_ARRAY(?i), ?ctx, ?formalVarArgs) :-
    VarPointsTo(_, ?val, _, ?actual),
    isImmutableHContext(?hctx).
 
-.decl Lambda_Method(?value:Value, ?realMethod:Method)
-Lambda_Method(?value, ?realMethod) :-
-   ConstantMethodHandleLambda(?value, _, _, ?realMethod).
+.decl Lambda_Method(?value:Value, ?implMethod:Method)
+Lambda_Method(?value, ?implMethod) :-
+   ConstantMethodHandleLambda(?value, _, _, ?implMethod).
 
-.decl ConstructorReference(?var:Var, ?value:Value, ?i:MethodInvocation, ?realMethod:Method)
+.decl ConstructorReference(?var:Var, ?value:Value, ?i:MethodInvocation, ?implMethod:Method)
 
 // Applications of constructor references construct values. However,
 // these values do not come from a 'new' instruction in the code but
@@ -156,13 +156,13 @@ Lambda_Method(?value, ?realMethod) :-
 #define ConstructorReferenceValue(type) cat(type, "::: (Mock)")
 
 VarPointsTo(?hctx, ConstructorReferenceValue(?type), ?ctx, ?var),
-ConstructorReference(?var, ConstructorReferenceValue(?type), ?i, ?realMethod),
+ConstructorReference(?var, ConstructorReferenceValue(?type), ?i, ?implMethod),
 MockValueConsMacro(ConstructorReferenceValue(?type), ?type) :-
    VarPointsTo(?hctx, ?baseVal, ?ctx, ?base),
    VirtualMethodInvocation_Base(?i, ?base),
-   Lambda_Method(?baseVal, ?realMethod),
-   Method_SimpleName(?realMethod, "<init>"),
-   Method_DeclaringType(?realMethod, ?type),
+   Lambda_Method(?baseVal, ?implMethod),
+   Method_SimpleName(?implMethod, "<init>"),
+   Method_DeclaringType(?implMethod, ?type),
    AssignReturnValue(?i, ?var).
 
 // Method handles usually need reflection except they come from the constant pool.
