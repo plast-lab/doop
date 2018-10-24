@@ -1,0 +1,331 @@
+// Constant Folding
+// Right now: integers
+
+
+// Special relation that is needed in order to avoid division by zero
+.decl IntNonZeroConstFolding(?instruction:symbol, ?variable:symbol, ?value:number, ?meth:symbol, ?use:number)
+.output IntNonZeroConstFolding
+
+IntNonZeroConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    IntConstFolding(?instr, ?var, ?value, ?meth, ?use),
+    ?value != 0,
+    ?use < 5.
+
+
+// Identify unary assignments and the propagated value
+.decl AssignUnary(?instr:symbol, ?var:symbol, ?value:number, ?meth:symbol, ?use:number)
+
+AssignUnary(?instr, ?var, ?value, ?meth, ?use) :-
+    _AssignUnop(?instr, _, ?var, ?meth),
+    _AssignOperFrom(?instr, _, ?var1),
+    IntConstFolding(_, ?var1, ?value, ?meth, ?use).
+
+// Identify binary assignments and the propagated values
+.decl AssignBinary(?instr:symbol, ?var: symbol, ?left:number, ?right:number, ?meth:symbol, ?prev_use1:number, ?prev_use2:number)
+
+AssignBinary(?instr, ?var, ?left, ?right, ?meth, ?prev_use1, ?prev_use2) :-
+    _AssignBinop(?instr, _, ?var, ?meth),
+    _AssignOperFrom(?instr, ?pos1, ?right_oper1),
+    _AssignOperFrom(?instr, ?pos2, ?right_oper2),
+    ?pos1 < ?pos2,
+    IntConstFolding(_, ?right_oper1, ?left, ?meth, ?prev_use1),
+    IntConstFolding(_, ?right_oper2, ?right, ?meth, ?prev_use2).
+  
+.decl AssignBinaryNonZeroRight(?instr:symbol, ?var:symbol, ?left:number, ?right:number, ?meth:symbol, ?prev_use1:number, ?prev_use2:number)
+
+AssignBinaryNonZeroRight(?instr, ?var, ?left, ?right, ?meth, ?prev_use1, ?prev_use2) :-
+    _AssignBinop(?instr, _, ?var, ?meth),
+    _AssignOperFrom(?instr, ?pos1, ?right_oper1),
+    _AssignOperFrom(?instr, ?pos2, ?right_oper2),
+    ?pos1 < ?pos2,
+    IntConstFolding(_, ?right_oper1, ?left, ?meth, ?prev_use1),
+    IntNonZeroConstFolding(_, ?right_oper2, ?right, ?meth, ?prev_use2).
+  
+
+// Constant Folding relations for primitive integers
+// The computations are bounded based on the heuristic of how many times has an integer
+// constant been used, up to the current instruction's depth 
+.decl IntConstFolding(?instruction:symbol, ?variable:symbol, ?value:number, ?meth:symbol, ?use:number)
+.output IntConstFolding
+
+IntConstFolding(?instr, ?var, ?value, ?meth, 1) :-
+    IntConstant(?instr, ?var, ?value, ?meth, _).
+
+IntConstFolding(?instr, ?to, ?value, ?meth, ?use) :-
+    _AssignLocal(?instr, _, ?from, ?to, ?meth),
+    IntConstFolding(_, ?from, ?value, ?meth, ?prev_use),
+    ?prev_use < 5, ?use = ?prev_use + 1.
+
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignUnary(?instr, ?var, ?left, ?meth, ?prev_use), 
+    _OperatorAt(?instr, "-"), 
+    ?prev_use < 5, ?use = ?prev_use + 1,
+    ?left != 0,
+    ?value = - ?left.
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignUnary(?instr, ?var, ?left, ?meth, ?prev_use), 
+    _OperatorAt(?instr, "-"),
+    ?prev_use < 5, ?use = ?prev_use + 1,
+    ?left = 0,
+    ?value = 0.
+
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignBinary(?instr, ?var, ?left, ?right, ?meth, ?use1, ?use2),
+    _OperatorAt(?instr, "+"),
+    ?use1 < 5, ?use2 < 5, ?use1 < ?use2, ?use = ?use2 + 1,
+    ?value = ?left + ?right.
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignBinary(?instr, ?var, ?left, ?right, ?meth, ?use1, ?use2),
+    _OperatorAt(?instr, "+"),
+    ?use1 < 5, ?use2 < 5, ?use1 >= ?use2, ?use = ?use1 + 1,
+    ?value = ?left + ?right.
+
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignBinary(?instr, ?var, ?left, ?right, ?meth, ?use1, ?use2),
+    _OperatorAt(?instr, "-"),
+    ?use1 < 5, ?use2 < 5, ?use1 < ?use2, ?use = ?use2 + 1,
+    ?use < 5,
+    ?value = ?left - ?right.
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignBinary(?instr, ?var, ?left, ?right, ?meth, ?use1, ?use2),
+    _OperatorAt(?instr, "-"),
+    ?use1 < 5, ?use2 < 5, ?use1 >= ?use2, ?use = ?use1 + 1,
+    ?use < 5,
+    ?value = ?left - ?right.
+
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignBinary(?instr, ?var, ?left, ?right, ?meth, ?use1, ?use2),
+    _OperatorAt(?instr, "*"),
+    ?use1 < 5, ?use2 < 5, ?use1 < ?use2, ?use = ?use2 + 1,
+    ?use < 5,
+    ?value = ?left * ?right.
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignBinary(?instr, ?var, ?left, ?right, ?meth, ?use1, ?use2),
+    _OperatorAt(?instr, "*"),
+    ?use1 < 5, ?use2 < 5, ?use1 >= ?use2, ?use = ?use1 + 1,
+    ?use < 5,
+    ?value = ?left * ?right.
+
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignBinaryNonZeroRight(?instr, ?var, ?left, ?right, ?meth, ?use1, ?use2),
+    _OperatorAt(?instr, "/"),
+    ?use1 < 5, ?use2 < 5, ?use1 < ?use2, ?use = ?use2 + 1,
+    ?use < 5,
+    ?value = ?left / ?right.
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignBinaryNonZeroRight(?instr, ?var, ?left, ?right, ?meth, ?use1, ?use2),
+    _OperatorAt(?instr, "/"),
+    ?use1 < 5, ?use2 < 5, ?use1 >= ?use2, ?use = ?use1 + 1,
+    ?use < 5,
+    ?value = ?left / ?right.
+
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignBinaryNonZeroRight(?instr, ?var, ?left, ?right, ?meth, ?use1, ?use2),
+    _OperatorAt(?instr, "%"),
+    ?use1 < 5, ?use2 < 5, ?use1 < ?use2, ?use = ?use2 + 1,
+    ?use < 5,
+    ?value = ?left % ?right.
+IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
+    AssignBinaryNonZeroRight(?instr, ?var, ?left, ?right, ?meth, ?use1, ?use2),
+    _OperatorAt(?instr, "%"),
+    ?use1 < 5, ?use2 < 5, ?use1 >= ?use1, ?use = ?use1 + 1,
+    ?use < 5,
+    ?value = ?left % ?right.
+
+
+//.decl BoolConstFolding(?instruction:symbol, ?variable:symbol, ?value:number, ?method:symbol)
+//.output BoolConstFolding
+//
+//// Constant propagation for primitive boolean
+//// TODO: Folding of conditionals (introduce a dummy if-var target
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    BoolConstant(?instr, ?var, ?value, ?meth).
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    BoolConstReturn(?instr, ?var, ?value, ?meth).
+//
+//BoolConstFolding(?instr, ?to, ?value, ?meth) :-
+//    _AssignLocal(?instr, _, ?from, ?to, ?meth),
+//    BoolConstFolding(_, ?from, ?value, ?meth).
+//
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    _AssignUnop(?instr, _, ?var, ?meth),
+//    _AssignOperFrom(?instr, _, ?var1),
+//    BoolConstFolding(_, ?var1, ?left, ?meth),
+//    _OperatorAt(?instr, "-"),
+//    ?left > 0,
+//    ?value = 0.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    _AssignUnop(?instr, _, ?var, ?meth),
+//    _AssignOperFrom(?instr, _, ?var1),
+//    BoolConstFolding(_, ?var1, ?left, ?meth),
+//    _OperatorAt(?instr, "-"),
+//    ?left < 1,
+//    ?value = 1.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, "<"),
+//    ?left < ?right,
+//    ?value = 1.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, "<"),
+//    ?left >= ?right,
+//    ?value = 0.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, ">"),
+//    ?left > ?right,
+//    ?value = 1.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, ">"),
+//    ?left <= ?right,
+//    ?value = 0.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, ">="),
+//    ?left >= ?right,
+//    ?value = 1.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, ">="),
+//    ?left < ?right,
+//    ?value = 0.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, "<="),
+//    ?left <= ?right,
+//    ?value = 1.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, "<="),
+//    ?left > ?right,
+//    ?value = 0.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, "!="),
+//    ?left != ?right,
+//    ?value = 1.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, "!="),
+//    ?left = ?right,
+//    ?value = 0.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, "=="),
+//    ?left = ?right,
+//    ?value = 1.
+//
+//BoolConstFolding(?instr, ?var, ?value, ?meth) :-
+//    isIf_Insn(?instr),
+//    Instruction_Method(?instr, ?meth),
+//    DummyIf_Var(?instr, ?var),
+//    If_Var(?instr, ?pos1, ?var1),
+//    If_Var(?instr, ?pos2, ?var2),
+//    ?pos1 < ?pos2,
+//    IntConstFolding(_, ?var1, ?left, ?meth),
+//    IntConstFolding(_, ?var2, ?right, ?meth),
+//    _OperatorAt(?instr, "=="),
+//    ?left != ?right,
+//    ?value = 0.
+//
+//BoolConstFolding(?invocation, ?var, ?left, ?meth) :-
+//    _MethodInvocation_Line(?invocation, _),
+//    _AssignReturnValue(?invocation, ?var),
+//    _Var_Type(?var, ?use),
+//    Type_boolean(?use),
+//    _StaticMethodInvocation(?invocation, _, ?meth_invo, ?meth),
+//    _Return(_, _, ?var1, ?meth_invo),
+//    BoolConstFolding(_, ?var1, ?left, ?meth_invo).

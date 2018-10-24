@@ -1,7 +1,7 @@
-.decl IntConstant(?instr:symbol, ?var:symbol, ?value:number, ?method:symbol)
+.decl IntConstant(?instr:symbol, ?var:symbol, ?value:number, ?method:symbol, ?type:symbol)
 .output IntConstant
 
-IntConstant(?instr, ?var, to_number(?value), ?meth) :-
+IntConstant(?instr, ?var, to_number(?value), ?meth, ?type) :-
     isAssignNumConstant_Insn(?instr),
     Instruction_Method(?instr, ?meth),    
     AssignInstruction_To(?instr, ?var),
