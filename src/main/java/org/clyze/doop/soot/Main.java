@@ -29,10 +29,6 @@ public class Main {
 
     private static Log logger;
 
-    private static boolean isApplicationClass(SootParameters sootParameters, SootClass klass) {
-        return sootParameters.isApplicationClass(klass.getName());
-    }
-
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.err.println("usage: [options] file...");
@@ -156,7 +152,7 @@ public class Main {
          * call to `setApplicationClass()').
          */
 
-        classes.stream().filter((klass) -> isApplicationClass(sootParameters, klass)).forEachOrdered(SootClass::setApplicationClass);
+        classes.stream().filter(sootParameters::isApplicationClass).forEachOrdered(SootClass::setApplicationClass);
 
         if (sootParameters._mode == SootParameters.Mode.FULL && sootParameters._factsSubSet == null)
             classes = new HashSet<>(scene.getClasses());

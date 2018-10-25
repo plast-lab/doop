@@ -55,6 +55,15 @@ class Representation extends JavaRepresentation {
         return escape ? "'"+n+"'" : n;
     }
 
+    public static String unescapeSimpleName(String n) {
+        if (n.startsWith("'") && n.endsWith("'")) {
+            String innerText = n.substring(1, n.length()-1);
+            if (jimpleKeywordList.contains(innerText))
+                return innerText;
+        }
+        return n;
+    }
+
     private static String simpleName(SootMethodRef m) {
         return escapeSimpleName(m.name());
     }

@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.ArrayList;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Parameters;
+import soot.SootClass;
 
 public class SootParameters extends Parameters {
     enum Mode { INPUTS, FULL }
@@ -20,6 +21,10 @@ public class SootParameters extends Parameters {
     private boolean _runFlowdroid = false;
     private boolean _toStdout = false;
     private final Collection<String> extraClassesToResolve = new ArrayList<>();
+
+    public boolean isApplicationClass(SootClass klass) {
+        return isApplicationClass(Representation.unescapeSimpleName(klass.getName()));
+    }
 
     public boolean getRunFlowdroid() {
       return this._runFlowdroid;
