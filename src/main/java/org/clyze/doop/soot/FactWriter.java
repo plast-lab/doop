@@ -785,9 +785,10 @@ class FactWriter extends JavaFactWriter {
             // temporary var for the actual argument (whose value is null).
             Type argType = expr.getMethodRef().parameterType(idx);
             return writeNullExpression(inMethod, stmt, argType, session);
-        }
-        else if (v instanceof Constant)
+        } else if (v instanceof Constant)
             throw new RuntimeException("Value has unknown constant type: " + v);
+        else if (!(v instanceof JimpleLocal))
+            System.err.println("Warning: value has unknown non-constant type: " + v.getClass().getName());
         return v;
     }
 
