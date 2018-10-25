@@ -794,14 +794,10 @@ class FactWriter extends JavaFactWriter {
     private void writeActualParams(SootMethod inMethod, Stmt stmt, InvokeExpr expr, String invokeExprRepr, Session session) {
         for(int i = 0; i < expr.getArgCount(); i++) {
             Value v = writeActualParam(inMethod, stmt, expr, session, expr.getArg(i), i);
-
-            if (v instanceof Local) {
-                Local l = (Local) v;
-                _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, Representation.local(inMethod, l));
-            }
-            else {
+            if (v instanceof Local)
+                writeActualParam(i, invokeExprRepr, Representation.local(inMethod, (Local)v));
+            else
                 throw new RuntimeException("Actual parameter is not a local: " + v + " " + v.getClass());
-            }
         }
         if (expr instanceof DynamicInvokeExpr) {
             DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
@@ -812,14 +808,10 @@ class FactWriter extends JavaFactWriter {
                     if (vConst instanceof Local) {
                         Local l = (Local) vConst;
                         _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, Representation.local(inMethod, l));
-                    }
-                    else {
+                    } else
                         throw new RuntimeException("Unknown actual parameter: " + v + " of type " + v.getClass().getName());
-                    }
-                }
-                else {
+                } else
                     throw new RuntimeException("Found non-constant argument to bootstrap method: " + di);
-                }
             }
         }
     }

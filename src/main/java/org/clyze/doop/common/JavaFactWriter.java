@@ -253,4 +253,8 @@ public class JavaFactWriter {
     protected void writeAssignLocal(String insn, int index, String from, String to, String methodId) {
         _db.add(ASSIGN_LOCAL, insn, str(index), from, to, methodId);
     }
+
+    protected void writeActualParam(int index, String invo, String var) {
+        _db.add(ACTUAL_PARAMETER, str(index), invo, var);
+    }
 }

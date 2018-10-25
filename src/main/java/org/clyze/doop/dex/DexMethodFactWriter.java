@@ -986,14 +986,14 @@ class DexMethodFactWriter extends JavaFactWriter {
         String base = null;
         if (objReturnInfo.baseReg != null) {
             base = local(objReturnInfo.baseReg);
-            _db.add(ACTUAL_PARAMETER, str(0), insn, base, lineNo);
+            writeActualParam(0, insn, base);
             argStartPos = 1;
         }
 
 //        System.out.println("argRegs = " + objReturnInfo.argRegs);
         int[] argRegs = objReturnInfo.argRegs;
         for (int argPos = 0; argPos < argRegs.length; argPos++)
-            _db.add(ACTUAL_PARAMETER, str(argStartPos + argPos), insn, local(argRegs[argPos]), lineNo);
+            writeActualParam(argStartPos + argPos, insn, local(argRegs[argPos]));
 
         if (lineNoInteger != null)
             _db.add(METHOD_INV_LINE, insn, lineNo);
