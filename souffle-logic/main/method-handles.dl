@@ -10,7 +10,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
 #define LAMBDA_ALTMETAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
 
 // Find invocations to the lambda metafactories.
-.decl LambdaMetafactoryInvoke(?invo:MethodInvocation, ?dynName:symbol, ?interface:InterfaceType)
+.decl LambdaMetafactoryInvoke(?invo:DynamicMethodInvocation_Insn, ?dynName:symbol, ?interface:InterfaceType)
 LambdaMetafactoryInvoke(?invo, ?dynName, ?interface) :-
    isDynamicMethodInvocation_Insn(?invo),
    Instruction_Method(?invo, ?inMethod),
