@@ -421,7 +421,7 @@ class FactGenerator implements Runnable {
                 // seems to always get optimized out, do we need this?
                 _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
             }
-            else if (op instanceof NullConstant || op instanceof  ClassConstant || op instanceof  StringConstant)
+            else if (op instanceof NullConstant || op instanceof ClassConstant || op instanceof StringConstant)
             {
                 _writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
             }

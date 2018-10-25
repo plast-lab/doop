@@ -117,7 +117,7 @@ public enum PredicateFile
 
     @Override
     public String toString() {
-        return  name;
+        return name;
     }
 
     public Writer getWriter(File directory, String suffix) throws IOException {
