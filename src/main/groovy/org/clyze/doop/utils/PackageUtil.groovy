@@ -39,7 +39,7 @@ class PackageUtil {
 				if (!className.startsWith("L") || !className.endsWith(";")) {
 					System.err.println("getPackagesForAPK: bad class " + className)
 				} else {
-					pkgs << getPackageFromSlashes(className[1..className.size()-1])
+					pkgs << getPackageFromSlashes(className[1..className.size()-2])
 				}
 			}
 		}
@@ -48,8 +48,8 @@ class PackageUtil {
 
 	static String getPackageFromSlashes(String s) {
 		def idx = s.lastIndexOf('/')
-		String ret = idx == -1 ? s : s.substring(0, idx)
-		return ret.replaceAll("/", ".") + '.*'
+		s = s.replaceAll("/", ".")
+		return idx == -1 ? s : s.substring(0, idx) + '.*'
 	}
 
 	static String getPackageFromDots(String s) {
