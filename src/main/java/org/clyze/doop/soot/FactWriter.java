@@ -158,24 +158,21 @@ class FactWriter extends JavaFactWriter {
         int index = session.calcUnitNumber(stmt);
         String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
-
-        _db.add(ASSIGN_LOCAL, insn, str(index), Representation.local(m, from), Representation.local(m, to), methodId);
+        writeAssignLocal(insn, index, Representation.local(m, from), Representation.local(m, to), methodId);
     }
 
-    void writeAssignLocal(SootMethod m, Stmt stmt, Local to, Session session) {
+    void writeAssignThisToLocal(SootMethod m, Stmt stmt, Local to, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
-
-        _db.add(ASSIGN_LOCAL, insn, str(index), Representation.thisVar(m), Representation.local(m, to), methodId);
+        writeAssignLocal(insn, index, Representation.thisVar(m), Representation.local(m, to), methodId);
     }
 
     void writeAssignLocal(SootMethod m, Stmt stmt, Local to, ParameterRef ref, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
-
-        _db.add(ASSIGN_LOCAL, insn, str(index), Representation.param(m, ref.getIndex()), Representation.local(m, to), methodId);
+        writeAssignLocal(insn, index, Representation.param(m, ref.getIndex()), Representation.local(m, to), methodId);
     }
 
     void writeAssignInvoke(SootMethod inMethod, Stmt stmt, Local to, InvokeExpr expr, Session session) {

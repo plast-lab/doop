@@ -556,7 +556,7 @@ class FactGenerator implements Runnable {
         }
         else if(left instanceof Local && right instanceof ThisRef)
         {
-            _writer.writeAssignLocal(inMethod, stmt, (Local) left, session);
+            _writer.writeAssignThisToLocal(inMethod, stmt, (Local) left, session);
         }
         else if(left instanceof Local && right instanceof ParameterRef)
         {

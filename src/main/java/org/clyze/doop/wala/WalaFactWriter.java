@@ -238,8 +238,7 @@ public class WalaFactWriter extends JavaFactWriter {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
-
-        _db.add(ASSIGN_LOCAL, insn, str(index), _rep.local(m, from), _rep.local(m, to), methodId);
+        writeAssignLocal(insn, index, _rep.local(m, from), _rep.local(m, to), methodId);
     }
 
     void writeAssignHeapAllocation(IR ir, IMethod m, SSANewInstruction instruction, Local l, Session session) {

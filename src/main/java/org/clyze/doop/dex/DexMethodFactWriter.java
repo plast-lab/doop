@@ -457,11 +457,9 @@ class DexMethodFactWriter extends JavaFactWriter {
             case MOVE_WIDE_16:
             case MOVE_OBJECT:
             case MOVE_OBJECT_FROM16:
-            case MOVE_OBJECT_16: {
-                TwoRegisterInstruction tri = (TwoRegisterInstruction) instr;
-                writeAssignLocal(local(tri.getRegisterA()), local(tri.getRegisterB()), index);
+            case MOVE_OBJECT_16:
+                writeAssignLocal((TwoRegisterInstruction) instr, index);
                 break;
-            }
             case INSTANCE_OF:
                 writeAssignInstanceOf((TwoRegisterInstruction)instr, (ReferenceInstruction)instr, index);
                 break;
@@ -868,9 +866,10 @@ class DexMethodFactWriter extends JavaFactWriter {
         _db.add(ASSIGN_INSTANCE_OF, insn, str(index), from, to, className, methId);
     }
 
-    private void writeAssignLocal(String to, String from, int index) {
-        String insn = instructionId("assign", index);
-        _db.add(ASSIGN_LOCAL, insn, str(index), from, to, methId);
+    private void writeAssignLocal(TwoRegisterInstruction tri, int index) {
+        String to = local(tri.getRegisterA());
+        String from = local(tri.getRegisterB());
+        writeAssignLocal(instructionId("assign", index), index, from, to, methId);
     }
 
     private String local(int reg) {
