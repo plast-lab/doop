@@ -61,13 +61,17 @@ NotReachableVarPointsTo(?var, ?method) :-
 
 .decl ForceTypeCompatibility(?valueType:Type, ?varType:Type)
 
-// Soot quirk.
+// Soot quirk: method types may be shown as classes (and even leak as strings).
 ForceTypeCompatibility("java.lang.invoke.MethodType", "java.lang.Class").
+ForceTypeCompatibility("java.lang.String", "java.lang.invoke.MethodType").
+ForceTypeCompatibility("java.lang.String", "java.lang.Class").
 
 // Ignore boxing as it can happen behind the scenes (dynamic proxies,
 // invokedynamic). This includes the null object.
 ForceTypeCompatibility(?valueType, ?varType) :-
   mainAnalysis.PrimitiveType_Boxed(?varType, ?valueType).
+ForceTypeCompatibility(?valueType, ?varType) :-
+  mainAnalysis.PrimitiveType_Boxed(?varType, _), isNullType(?valueType).
 
 .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
 .output VarPointsToWronglyTypedValue
