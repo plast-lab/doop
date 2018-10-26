@@ -24,6 +24,8 @@
 .decl VarHasConstNoneValue(?value:Value, ?var:Var)
 .output VarHasConstNoneValue
 
+.output Value_Num
+
 //anantoni: Shouldn't this be a disjunction?
 VarHasConstValue(?value, ?var) :-
   VarHasConstNoneValue(?value, ?var);

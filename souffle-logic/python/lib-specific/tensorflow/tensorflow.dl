@@ -254,6 +254,9 @@ FormalParam( 2, "name", ?function,  cat(?function,"/mockParam3")):-
   ?function = "<tensorflow.ones_like>";
   ?function = "<tensorflow.zeros_like>".
 
+FormalParam_DefaultValFrom("<tensorflow.constant>", "dtype", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValFrom("<tensorflow.constant>", "shape", "<tensorflow>/noneDefVar").
+
 FormalParam( 0, "value", "<tensorflow.constant>", "<tensorflow.constant>/mockParam1").
 FormalParam( 1, "dtype", "<tensorflow.constant>", "<tensorflow.constant>/mockParam2").
 FormalParam( 2, "shape", "<tensorflow.constant>",  "<tensorflow.constant>/mockParam3").
@@ -262,3 +265,9 @@ FormalParam( 3, "name", "<tensorflow.constant>",  "<tensorflow.constant>/mockPar
 FormalParam( 0, "dims", "<tensorflow.fill>", "<tensorflow.fill>/mockParam1").
 FormalParam( 1, "value", "<tensorflow.fill>", "<tensorflow.fill>/mockParam2").
 FormalParam( 2, "name", "<tensorflow.fill>",  "<tensorflow.fill>/mockParam3").
+
+
+//REVIEW: This is not correct as it is a different class, but will keep this for now
+ModeledFunction("<tensorflow.Variable>", "Variable", "<tensorflow>").
+FormalParam( 0, "initial_value", "<tensorflow.Variable>", "<tensorflow.Variable>/mockParam1").
+FormalParam( 1, "dtype", "<tensorflow.Variable>", "<tensorflow.Variable>/mockParam2").

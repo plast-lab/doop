@@ -1,0 +1,26 @@
+isModule("<numpy>").
+
+ModeledModule("<numpy.random>", "random", "<numpy>").
+
+ModeledClass("<numpy.ndarray>", "ndarray", "<numpy>").
+
+
+ModeledFunction("<numpy.array>", "array", "<numpy>").
+ModeledFunction("<numpy.random.normal>", "normal", "<numpy.random>").
+ModeledFunction("<numpy.random.randn>", "randn", "<numpy.random>").
+
+
+.decl NumpyArrayShapeListLength(?hctx:configuration.HContext, ?val:Value, ?size:number)
+.decl NumpyArrayShapeListContent(?hctx:configuration.HContext, ?val:Value, ?index:number, ?indexValue:Value)
+.output NumpyArrayShapeListLength
+.output NumpyArrayShapeListContent
+
+
+.decl NumPyOperationOperation_NameToVal(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?name:symbol, ?namedValHctx:configuration.HContext, ?namedVal:Value)
+.output NumPyOperation_NameToVal
+
+.decl NumPyOperationProducesOutput(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value)
+.output NumPyOperationProducesOutput
+
+.decl NumpyArrayShape(?tensorHctx:configuration.HContext, ?array:Value, ?shapeHctx:configuration.HContext, ?shapeList:Value)
+.output NumpyArrayShape

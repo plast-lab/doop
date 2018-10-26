@@ -3,6 +3,51 @@
 .output TensorShapeListLength
 .output TensorShapeListContent
 
+
+//Unifying way to get the shape of a tensor object, numpy array, or the shape of a list we will statically deduce
+.decl isTensorLikeObject(?val:Value)
+.output isTensorLikeObject
+isTensorLikeObject(?val):-
+  IsPyList(?val);
+  Value_Type(?val,"<tensorflow.Tensor>");
+  Value_Type(?val,"<numpy.ndarray>").
+
+.decl TensorLikeObjectShapeListLength(?hctx:configuration.HContext, ?val:Value, ?size:number)
+.output TensorLikeObjectShapeListLength
+
+.decl TensorLikeObjectShapeListContent(?hctx:configuration.HContext, ?val:Value, ?index:number, ?indexValue:Value)
+.output TensorLikeObjectShapeListContent
+
+.decl TensorLikeObjectToTensorDtype(?hctx:configuration.HContext, ?val:Value, ?dtypeHctx:configuration.HContext, ?dtypeVal:Value)
+.output TensorLikeObjectToTensorDtype
+
+TensorLikeObjectShapeListLength(?tensorHctx, ?tensor, ?len):-
+  TensorShape(?tensorHctx, ?tensor, ?shapeHctx, ?shapeVal),
+  TensorShapeListLength(?shapeHctx, ?shapeVal, ?len).
+
+TensorLikeObjectShapeListContent(?tensorHctx, ?tensor, ?index, ?indexVal):-
+  TensorShape(?tensorHctx, ?tensor, ?shapeHctx, ?shapeVal),
+  TensorShapeListContent(?shapeHctx, ?shapeVal, ?index, ?indexVal).
+
+TensorLikeObjectShapeListLength(?pyListHctx, ?pyList, ?len):-
+  PyListDeducedShapeLength(?pyListHctx, ?pyList, ?len).
+
+TensorLikeObjectShapeListContent(?pyListHctx, ?pyList, ?index, ?indexVal):-
+  PyListDeducedShapeContents(?pyListHctx, ?pyList, ?index, ?indexVal).
+
+TensorLikeObjectToTensorDtype(?pyListHctx, ?pyList, ?immutableHctx, ?tensorDtype):-
+  PyListDeducedDtype(?pyListHctx, ?pyList, "float"),
+  ?tensorDtype = "<tensorflow>/new <tensorflow.float32>/0",
+  isImmutableHContext(?immutableHctx).
+
+TensorLikeObjectToTensorDtype(?pyListHctx, ?pyList, ?immutableHctx, ?tensorDtype):-
+  PyListDeducedDtype(?pyListHctx, ?pyList, "int"),
+  ?tensorDtype = "<tensorflow>/new <tensorflow.int32>/0",
+  isImmutableHContext(?immutableHctx).
+
+TensorLikeObjectToTensorDtype(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype):-
+  TensorDType(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype).
+
 //----------------------------------------------------------------------------------------------------------------------
 //                                              GENERAL OPERATION MODELING
 //----------------------------------------------------------------------------------------------------------------------
