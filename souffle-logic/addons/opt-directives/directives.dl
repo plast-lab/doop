@@ -55,11 +55,16 @@ DeadMethodWithJVMDescriptor(?jvmFullName, ?method) :-
 
 /*** Devirtualization ***/
 
+.decl ContextInsensitiveCallGraphEdge(?invocation:MethodInvocation, ?target:Method)
+
+ContextInsensitiveCallGraphEdge(?invocation, ?target) :-
+  mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target).
+
 .decl InvocationTarget_Count(?invocation:MethodInvocation, ?n:number)
 
 InvocationTarget_Count(?invocation, ?n) :-
   isVirtualMethodInvocation_Insn(?invocation),
-  ?n = count:{mainAnalysis.CallGraphEdge(_, ?invocation, _, _)}.
+  ?n = count:{ContextInsensitiveCallGraphEdge(?invocation, _)}.
 
 // Virtual invocation sites that only call a single method (and can
 // thus be candidates for devirtualization).
