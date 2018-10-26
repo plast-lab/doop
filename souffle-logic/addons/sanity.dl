@@ -67,11 +67,9 @@ ForceTypeCompatibility("java.lang.String", "java.lang.invoke.MethodType").
 ForceTypeCompatibility("java.lang.String", "java.lang.Class").
 
 // Ignore boxing as it can happen behind the scenes (dynamic proxies,
-// invokedynamic). This includes the null object.
+// invokedynamic).
 ForceTypeCompatibility(?valueType, ?varType) :-
-  mainAnalysis.PrimitiveType_Boxed(?varType, ?valueType).
-ForceTypeCompatibility(?valueType, ?varType) :-
-  mainAnalysis.PrimitiveType_Boxed(?varType, _), isNullType(?valueType).
+  mainAnalysis.BoxTypeConversion(?valueType, ?varType).
 
 .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
 .output VarPointsToWronglyTypedValue

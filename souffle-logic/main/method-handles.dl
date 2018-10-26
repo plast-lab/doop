@@ -145,19 +145,29 @@ InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?callsite) :
 ReachableContext(?calleeCtx, ?callee) :-
    InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
 
-// // Pass arguments to the implementing method. We shift the arguments
-// // by the number of the K captured variables.
-// VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-//    InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?implMethod, K),
-//    FormalParam(?idx, ?implMethod, ?formal),
-//    ActualParam(?idx + K, ?i, ?actual),
-//    VarPointsTo(_, ?val, _, ?actual),
-//    Value_Type(?val, ?valueType),
-//    Var_Type(?actual, ?actualType),
-//    Var_Type(?formal, ?formalType),
-//    // Why are these needed? Boxing/conversions?
-//    // basic.SubtypeOf(?valueType, ?formalType),
-//    isImmutableHContext(?hctx).
+// A boxing/unboxing conversion of types including the null type.
+.decl BoxTypeConversion(?original:Type, ?new:Type)
+
+BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, ?t2).
+BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
+BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
+BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
+
+// Pass arguments to the implementing method. We shift the arguments
+// by the number of the K captured variables and permit conversions.
+VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
+   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?callsite),
+   LambdaCallSite(?callsite, _, _, _, K),
+   FormalParam(?idx, ?implMethod, ?formal),
+   ActualParam(?idx + K, ?i, ?actual),
+   VarPointsTo(_, ?val, _, ?actual),
+   Value_Type(?val, ?valueType),
+   Var_Type(?formal, ?formalType),
+   // Check type compatibility (spec: normal case/casting/(un)boxing).
+   (basic.SubtypeOf(?valueType, ?formalType);
+    basic.SubtypeOf(?formalType, ?valueType);
+    BoxTypeConversion(?valueType, ?formalType)),
+   isImmutableHContext(?hctx).
 
 // Special handling for captured "this" parameters.
 VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
