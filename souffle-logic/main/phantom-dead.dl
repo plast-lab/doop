@@ -5,7 +5,6 @@
 // just phantom methods (methods missing from existing types).
 
 .decl PhantomInvoke(?instruction:Instruction)
-.output PhantomInvoke
 
 PhantomInvoke(?instruction),
 isUnsupportedInstruction(?instruction) :-
@@ -19,7 +18,6 @@ isUnsupportedInstruction(?instruction) :-
   PhantomMethod(?method).
 
 .decl DeadInstruction(?i:Instruction)
-.output DeadInstruction
 
 // An instruction is dead if it involves a phantom type.
 
@@ -43,7 +41,6 @@ DeadInstruction(?instruction) :-
   DeadMethod(?method).
 
 .decl DeadMethod(?m:Method)
-.output DeadMethod
 
 // A method is dead if it contains a dead instruction or is
 // phantom-based (i.e. the method signature contains a phantom type).
@@ -51,7 +48,6 @@ DeadMethod(?m) :- Instruction_Method(?i, ?m), DeadInstruction(?i).
 DeadMethod(?m) :- PhantomBasedMethod(?m).
 
 .decl DeadType(?type:Type)
-.output DeadType
 
 // Dead types (a) contain field or method signatures involving phantom
 // types, or (b) contain dead methods.
@@ -74,7 +70,6 @@ DeadType(?type) :-
 // engineering, (b) a piece of code using a wrong version of a library.
 
 .decl RemovedMethod(?method:Method)
-.output RemovedMethod
 
 RemovedMethod(?method) :-
   PhantomMethod(?method),
