@@ -1,12 +1,5 @@
 
-//.decl isListOfConsts(?ctx:configuration.Context, ?heap:HeapAllocation)
-//.decl isListOfIntConsts(?ctx:configuration.Context, ?heap:HeapAllocation)
-//.decl ListHasNonConstantVal(?ctx:configuration.Context, ?hctx:configuration.HContext, ?heap:HeapAllocation)
-//.decl ListHasNonConstantIntVal(?ctx:configuration.Context, ?hctx:configuration.HContext, ?heap:HeapAllocation)
-
 .decl VarPointsToList(?hctx:configuration.HContext, ?listHeap:HeapAllocation, ?ctx:configuration.Context, ?var:Var)
-//.decl ConstListLength(?ctx:configuration.Context, ?listHeap:HeapAllocation, ?hctx:configuration.HContext, ?numDimensions:number)
-//.decl ConstListContents(?ctx:configuration.Context, ?listHeap:HeapAllocation, ?listhctx:configuration.HContext, ?index:number, ?val:NumConstantValue, ?hctx:configuration.HContext)
 
 .decl ListAtIndexPointsTo(?listHctx:configuration.HContext, ?listHeap:HeapAllocation, ?index:number, ?valHctx:configuration.HContext, ?value:Value)
 .output ListAtIndexPointsTo
@@ -172,7 +165,7 @@ ListInitialLength(?list, ?length):-
 
 ListOfConstsLength(?hctx, ?heapList, ?len):-
   ListOfConsts(?hctx, ?heapList),
-  IsPyList(?heapList),
+  IsPyListOrTuple(?heapList),
   ListInitialLength(?heapList, ?len).
 
 
@@ -320,12 +313,12 @@ ConstListDimensions(?ctx, ?heap, ?hctx, ?size):-
 
 .output isListOfConsts
 isListOfConsts(?heap):-
-  IsPyList(?heap),
+  IsPyListOrTuple(?heap),
   !(ListHasNonConstantVal(_, ?heap, _)).
 
 .output isListOfIntConsts
 isListOfIntConsts(?heap):-
-  IsPyList(?heap),
+  IsPyListOrTuple(?heap),
   !(ListHasNonConstantIntVal(_, ?heap, _)).
 
 .decl PyConstListSpecialValueCount(?ctx:configuration.Context, ?heap:HeapAllocation, ?hctx:configuration.HContext, ?val:Value, ?count:number)
@@ -361,7 +354,7 @@ PyConstListSpecialValueCount(?ctx, ?heap, ?hctx, ?val, ?countRes):-
 
 //VarPointsToList(?var, ?heap):-
 //  VarPointsTo(?var, ?heap),
-//  IsPyList(?heap).
+//  IsPyListOrTuple(?heap).
 
 .output ListHasNonConstantVal
 ListHasNonConstantVal(?ctx, ?heap, ?hctx):-

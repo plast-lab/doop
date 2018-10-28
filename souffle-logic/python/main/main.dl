@@ -11,8 +11,10 @@
   #include "imports.dl"
   #include "function-resolution.dl"
   #include "lists.dl"
+  #include "dictionaries.dl"
   #include "const-int.dl"
   #include "../lib-specific/modeled.dl"
+  #include "../lib-specific/numpy.dl"
   #include "../lib-specific/tensorflow/tensorflow.dl"
   #include "../lib-specific/tensorflow/general-tensor-modeling.dl"
   #include "../lib-specific/tensorflow/tensor-creation-ops.dl"
@@ -162,11 +164,12 @@
     AssignInstruction_To(?insn, ?var),
     HeapAllocation_Type(?value, ?type),
     ?type != "list",
+    ?type != "tuple",
     ?type != "object",
     isClassType(?type),
     configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
-  IsPyList(?heap),
+  IsPyListOrTuple(?heap),
   ListInitialAssignVar(?heap, ?var, ?ctx),
   VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
     Reachable(?function),
@@ -174,7 +177,18 @@
     AssignInstruction_To(?instr, ?var),
     AssignHeapAllocation_Heap(?instr, ?heap),
     OriginalHeapAllocation_Type(?heap, ?type),
-    ?type = "list",
+    (?type = "list"; ?type = "tuple"),
+    configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
+
+  isPyDict(?heap),
+  DictInitialAssignVar(?heap, ?var, ?ctx),
+  VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
+    Reachable(?function),
+    ReachableContext(?ctx, ?function),
+    AssignInstruction_To(?instr, ?var),
+    AssignHeapAllocation_Heap(?instr, ?heap),
+    OriginalHeapAllocation_Type(?heap, ?type),
+    ?type = "dict",
     configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
   configuration.RecordContextRequest(?ctx, ?heap, ?var) :-

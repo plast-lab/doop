@@ -8,7 +8,7 @@
 .decl isTensorLikeObject(?val:Value)
 .output isTensorLikeObject
 isTensorLikeObject(?val):-
-  IsPyList(?val);
+  IsPyListOrTuple(?val);
   Value_Type(?val,"<tensorflow.Tensor>");
   Value_Type(?val,"<numpy.ndarray>").
 
@@ -73,7 +73,7 @@ configuration.RecordContextRequest(?ctx, ?outTensorVal, ?var) :-
   AssignInstruction_To(?insn, ?var).
 
 TensorShape(?hctx, ?outTensorVal, ?hctx, ?tensorShapeVal),
-Value_Type(?outTensorVal, "<tensorflow.TensorShape>"),
+Value_Type(?tensorShapeVal, "<tensorflow.TensorShape>"),
 VarPointsTo(?hctx, ?outTensorVal, ?ctx, ?var),
 Value_Type(?outTensorVal, "<tensorflow.Tensor>"):-
   configuration.RecordContextResponse(?ctx, ?outTensorVal, ?var, ?hctx),

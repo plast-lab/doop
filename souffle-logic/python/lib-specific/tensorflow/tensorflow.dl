@@ -269,5 +269,6 @@ FormalParam( 2, "name", "<tensorflow.fill>",  "<tensorflow.fill>/mockParam3").
 
 //REVIEW: This is not correct as it is a different class, but will keep this for now
 ModeledFunction("<tensorflow.Variable>", "Variable", "<tensorflow>").
+FormalParam_DefaultValFrom("<tensorflow.Variable>", "dtype", "<tensorflow>/noneDefVar").
 FormalParam( 0, "initial_value", "<tensorflow.Variable>", "<tensorflow.Variable>/mockParam1").
 FormalParam( 1, "dtype", "<tensorflow.Variable>", "<tensorflow.Variable>/mockParam2").
