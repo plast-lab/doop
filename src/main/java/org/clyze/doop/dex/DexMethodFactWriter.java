@@ -644,7 +644,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case GOTO:
             case GOTO_16:
             case GOTO_32:
-                queueGoto(index, currentInstrAddr + ((OffsetInstruction)instr).getCodeOffset());
+                queueGoto(index, absoluteAddr((OffsetInstruction)instr));
                 break;
             case NEG_INT:
             case NOT_INT:
@@ -686,9 +686,8 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param index      the instruction index
      */
     private void writeIf(Instruction instr, int regL, int regR, Opcode op, int index) {
-        int offset = ((OffsetInstruction)instr).getCodeOffset();
         String insn = instructionId("if", index);
-        ifs.add(new RawGoto(insn, index, currentInstrAddr + offset));
+        ifs.add(new RawGoto(insn, index, absoluteAddr((OffsetInstruction)instr)));
         writeIfVar(insn, L_OP, local(regL));
         if (regR != -1)
             writeIfVar(insn, R_OP, local(regR));
@@ -1115,4 +1114,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         return (entry == null) ? null : entry.getValue();
     }
 
+    private int absoluteAddr(OffsetInstruction instr) {
+        return currentInstrAddr + instr.getCodeOffset();
+    }
 }
