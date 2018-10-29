@@ -262,6 +262,9 @@ class DexMethodFactWriter extends JavaFactWriter {
     }
 
     private void resolveAndWriteBranches() {
+        addressToIndex.forEach((addr, index) ->
+            _db.add(DEX_INSTR_ADDR_MAP, methId, str(index), str(addr)));
+
         for (RawGoto g : gotos) {
             Integer indexTo = addressToIndex.get(g.addrTo);
             if (indexTo == null)
