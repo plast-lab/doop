@@ -29,7 +29,7 @@ class PatternManager<T extends FirstInstructionEntry> {
 
     public T getOriginalEntryForTarget(int currentOffset) {
         for (T entry : info) {
-            if ((entry.offset + entry.currentOffset) == currentOffset) {
+            if (entry.address == currentOffset) {
                 info.remove(entry);
                 return entry;
             }
