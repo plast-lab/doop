@@ -6,10 +6,12 @@ package org.clyze.doop.dex;
  * must be resolved to point to an instruction index.
  */
 class RawGoto {
-    final int codeAddr;
+    final String insn;
     final int index;
-    public RawGoto(int codeAddr, int index) {
-        this.codeAddr = codeAddr;
+    final int addrTo;
+    public RawGoto(String insn, int index, int addrTo) {
+        this.insn = insn;
         this.index = index;
+        this.addrTo = addrTo;
     }
 }
