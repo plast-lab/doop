@@ -20,7 +20,7 @@ class TestReflection extends ServerAnalysisTests {
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/cA#_31', '<class A>')
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/cA_2#_39', '<class A>')
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/constr#_32', '<<reified constructor <A: void <init>()>>>')
-		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/constr2#_39', '<<reified constructor <A: void <init>(java.lang.Integer,B)>>>')
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/constr2#_40', '<<reified constructor <A: void <init>(java.lang.Integer,B)>>>')
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/a3#_33', '<reflective Class.newInstance/new A>')
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/a3_2#_35', '<reflective Constructor.newInstance/new A>')
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/iField#_44', '<<reified field <A: java.lang.Integer i>>>')
