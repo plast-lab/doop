@@ -127,7 +127,7 @@
     LexicalAccessInsn_Name(?writeInstr, ?name),
     LexicalAccessInsn_VarScope(?writeInstr, ?scope),
     LexicalWriteInsn_From(?writeInstr, ?from),
-    VarPointsTo(?hctx, ?value, ?ctx, ?from).
+    VarPointsTo(?hctx, ?value, _, ?from).
 
 
   VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
@@ -146,6 +146,7 @@
   VarPointsTo(?hctx, ?value, ?ctx, ?var):-
     Reachable(?function),
     ReachableContext(?ctx, ?function),
+    Instruction_Function(?insn, ?function),
     AssignHeapAllocation_Heap(?insn, ?value),
     isNormalHeap(?value),
     AssignInstruction_To(?insn, ?var),
@@ -159,6 +160,7 @@
   VarPointsTo(?hctx, ?value, ?ctx, ?var):-
     Reachable(?function),
     ReachableContext(?ctx, ?function),
+    Instruction_Function(?insn, ?function),
     AssignHeapAllocation_Heap(?insn, ?value),
     isNormalHeap(?value),
     AssignInstruction_To(?insn, ?var),
@@ -174,6 +176,7 @@
   VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
     Reachable(?function),
     ReachableContext(?ctx, ?function),
+    Instruction_Function(?instr, ?function),
     AssignInstruction_To(?instr, ?var),
     AssignHeapAllocation_Heap(?instr, ?heap),
     OriginalHeapAllocation_Type(?heap, ?type),
@@ -185,6 +188,7 @@
   VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
     Reachable(?function),
     ReachableContext(?ctx, ?function),
+    Instruction_Function(?instr, ?function),
     AssignInstruction_To(?instr, ?var),
     AssignHeapAllocation_Heap(?instr, ?heap),
     OriginalHeapAllocation_Type(?heap, ?type),
@@ -194,6 +198,7 @@
   configuration.RecordContextRequest(?ctx, ?heap, ?var) :-
     Reachable(?function),
     ReachableContext(?ctx, ?function),
+    Instruction_Function(?instr, ?function),
     AssignInstruction_To(?instr, ?var),
     isNormalHeap(?heap),
     AssignHeapAllocation_Heap(?instr, ?heap).
@@ -202,6 +207,7 @@
   VarPointsTo(?hctx, ?value, ?ctx, ?var):-
     Reachable(?function),
     ReachableContext(?ctx, ?function),
+    Instruction_Function(?insn, ?function),
     AssignHeapAllocation_Heap(?insn, ?str),
     isStringConstant(?str),
     AssignInstruction_To(?insn, ?var),
@@ -210,22 +216,58 @@
 
   #define NewAllocMacro(fun,type, index) cat("<", cat(fun, cat("/newinstanceof", cat(type, cat("/", cat( to_string(index),">"))))))
 
+  HeapAllocation_Type(?heap, ?type),
+  isHeapAllocation(?heap),
+  configuration.RecordContextRequest(?ctx, ?heap, ?var) :-
+    Reachable(?function),
+    ReachableContext(?ctx, ?function),
+    isFunctionInvocation(?insn),
+    AssignInstruction_To(?insn, ?var),
+    FunctionInvocation_Base(?insn, ?base),
+    VarPointsTo(?baseHctx, ?baseVal, ?ctx, ?base),
+    isClassObjectAllocation(?baseVal),
+    HeapAllocation_Type(?baseVal, ?type),
+    isClassType(?type),
+    Instruction_Function(?insn, ?function),
+    Instruction_Index(?insn, ?index),
+    ?heap = NewAllocMacro(?function, ?type, ?index).
+
+
   isClassInstanceAllocation(?value),
-  HeapAllocation_Type(?value, ?type),
-  isHeapAllocation(?value),
+  ClassInstanceAllocationInitializingClassObject(?hctx, ?value, ?baseHctx, ?baseVal),
   VarPointsTo(?hctx, ?value, ?ctx, ?var):-
     Reachable(?function),
     ReachableContext(?ctx, ?function),
     isFunctionInvocation(?insn),
     AssignInstruction_To(?insn, ?var),
     FunctionInvocation_Base(?insn, ?base),
-    VarPointsTo(_, ?baseVal, ?ctx, ?base),
+    VarPointsTo(?baseHctx, ?baseVal, ?ctx, ?base),
+    isClassObjectAllocation(?baseVal),
     HeapAllocation_Type(?baseVal, ?type),
     isClassType(?type),
     Instruction_Function(?insn, ?function),
     Instruction_Index(?insn, ?index),
     ?value = NewAllocMacro(?function, ?type, ?index),
-    isImmutableHContext(?hctx).
+    configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx).
+
+  VarPointsTo(?hctx, ?value, ?ctx, ?to):-
+    isLoadInstanceField_Insn(?insn),
+    FieldInstruction_Signature(?insn, ?signature),
+    LoadInstanceField_Base(?insn, ?base),
+    LoadInstanceField_To(?insn, ?to),
+    VarPointsTo(?classInstanceHctx, ?classInstance, ?ctx, ?base),
+    isClassInstanceAllocation(?classInstance),
+    InstanceFieldPointsTo(?hctx, ?value, ?signature, ?classInstanceHctx, ?classInstance).
+
+  VarPointsTo(?hctx, ?value, ?ctx, ?to):-
+    isLoadInstanceField_Insn(?insn),
+    FieldInstruction_Signature(?insn, ?signature),
+    LoadInstanceField_Base(?insn, ?base),
+    LoadInstanceField_To(?insn, ?to),
+    VarPointsTo(?classInstanceHctx, ?classInstance, ?ctx, ?base),
+    isClassInstanceAllocation(?classInstance),
+    ClassInstanceAllocationInitializingClassObject(?classInstanceHctx, ?classInstance, ?classObjectHctx, ?classObject),
+    InstanceFieldPointsTo(?hctx, ?value, ?signature, ?classObjectHctx, ?classObject).
 
   VarPointsToFunction(?hctx, ?value, ?ctx, ?var):-
     VarPointsTo(?hctx, ?value, ?ctx, ?var),
