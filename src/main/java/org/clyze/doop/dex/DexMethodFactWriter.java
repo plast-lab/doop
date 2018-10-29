@@ -812,8 +812,10 @@ class DexMethodFactWriter extends JavaFactWriter {
     private void writeSwitchTargets(Instruction instr, PredicateFile predicateFile) {
         FirstInstructionEntry entry = pendingSwitchInfo.getOriginalEntryForTarget(currentInstrAddr);
         String insn = instructionId("switch", entry.index);
-        for (SwitchElement elem : ((SwitchPayload) instr).getSwitchElements())
-            _db.add(predicateFile, insn, str(elem.getKey()), str(elem.getOffset()));
+        for (SwitchElement elem : ((SwitchPayload) instr).getSwitchElements()) {
+            int branchAddr = entry.address + elem.getOffset();
+            _db.add(predicateFile, insn, str(elem.getKey()), str(branchAddr));
+        }
     }
 
     private void writeSwitchKey(Instruction instr, int index, PredicateFile predicateFile) {
