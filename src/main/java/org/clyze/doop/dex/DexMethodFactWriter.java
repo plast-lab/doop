@@ -101,6 +101,9 @@ class DexMethodFactWriter extends JavaFactWriter {
 
     private final Collection<MoveExceptionInfo> exceptionMoves = new LinkedList<>();
 
+    // Gotos point to addresses that must be resolved.
+    private final List<RawGoto> gotos = new LinkedList<>();
+
     DexMethodFactWriter(DexBackedMethod dexMethod, Database _db,
                         Map<String, MethodSig> cachedMethodDescriptors) {
         super(_db);
@@ -179,6 +182,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             pendingSwitchInfo.checkEverythingConsumed();
 
             processTryBlocks(mi.getTryBlocks());
+            writeGotos();
         }
     }
 
@@ -253,6 +257,16 @@ class DexMethodFactWriter extends JavaFactWriter {
                 _db.add(EXCEPT_HANDLER_PREV, currInsn, prevInsn);
             else
                 System.err.println("Error: no index for previous-handler pair: " + entry);
+        }
+    }
+
+    private void writeGotos() {
+        for (RawGoto g : gotos) {
+            Integer indexTo = addressToIndex.get(g.index);
+            if (indexTo == null)
+                System.err.println("Warning: cannot resolve goto target " + g.index + " in method " + methId);
+            else
+                writeGoto(indexTo, g.index);
         }
     }
 
@@ -618,7 +632,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case GOTO:
             case GOTO_16:
             case GOTO_32:
-                writeGoto(((OffsetInstruction)instr).getCodeOffset(), index);
+                queueGoto(currentInstrAddr + ((OffsetInstruction)instr).getCodeOffset(), index);
                 break;
             case NEG_INT:
             case NOT_INT:
@@ -831,9 +845,13 @@ class DexMethodFactWriter extends JavaFactWriter {
         _db.add(ASSIGN_CAST, insn, str(index), local(reg), local(reg), typeName, methId);
     }
 
-    private void writeGoto(int codeOffset, int index) {
+    private void queueGoto(int codeAddr, int index) {
+        gotos.add(new RawGoto(codeAddr, index));
+    }
+
+    private void writeGoto(int indexTo, int index) {
         String insn = instructionId("goto", index);
-        _db.add(GOTO, insn, str(index), str(codeOffset), methId);
+        _db.add(GOTO, insn, str(index), str(indexTo), methId);
     }
 
     private void writeExitMonitor(int registerA, int index) {
