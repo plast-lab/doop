@@ -101,8 +101,9 @@ class DexMethodFactWriter extends JavaFactWriter {
 
     private final Collection<MoveExceptionInfo> exceptionMoves = new LinkedList<>();
 
-    // Gotos point to addresses that must be resolved.
+    // Instructions that point to addresses that must be resolved.
     private final List<RawGoto> gotos = new LinkedList<>();
+    private final List<RawGoto> ifs = new LinkedList<>();
 
     DexMethodFactWriter(DexBackedMethod dexMethod, Database _db,
                         Map<String, MethodSig> cachedMethodDescriptors) {
@@ -182,7 +183,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             pendingSwitchInfo.checkEverythingConsumed();
 
             processTryBlocks(mi.getTryBlocks());
-            writeGotos();
+            resolveAndWriteBranches();
         }
     }
 
@@ -260,13 +261,21 @@ class DexMethodFactWriter extends JavaFactWriter {
         }
     }
 
-    private void writeGotos() {
+    private void resolveAndWriteBranches() {
         for (RawGoto g : gotos) {
-            Integer indexTo = addressToIndex.get(g.index);
+            Integer indexTo = addressToIndex.get(g.addrTo);
             if (indexTo == null)
                 System.err.println("Warning: cannot resolve goto target " + g.index + " in method " + methId);
             else
-                writeGoto(indexTo, g.index);
+                writeGoto(g.insn, indexTo, g.index);
+        }
+
+        for (RawGoto g : ifs) {
+            Integer indexTo = addressToIndex.get(g.addrTo);
+            if (indexTo == null)
+                System.err.println("Warning: cannot resolve if target " + g.index + " in method " + methId);
+            else
+                writeIf(g.insn, g.index, indexTo, methId);
         }
     }
 
@@ -632,7 +641,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case GOTO:
             case GOTO_16:
             case GOTO_32:
-                queueGoto(currentInstrAddr + ((OffsetInstruction)instr).getCodeOffset(), index);
+                queueGoto(index, currentInstrAddr + ((OffsetInstruction)instr).getCodeOffset());
                 break;
             case NEG_INT:
             case NOT_INT:
@@ -676,7 +685,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private void writeIf(Instruction instr, int regL, int regR, Opcode op, int index) {
         int offset = ((OffsetInstruction)instr).getCodeOffset();
         String insn = instructionId("if", index);
-        writeIf(insn, index, currentInstrAddr + offset, methId);
+        ifs.add(new RawGoto(insn, index, currentInstrAddr + offset));
         writeIfVar(insn, L_OP, local(regL));
         if (regR != -1)
             writeIfVar(insn, R_OP, local(regR));
@@ -845,12 +854,11 @@ class DexMethodFactWriter extends JavaFactWriter {
         _db.add(ASSIGN_CAST, insn, str(index), local(reg), local(reg), typeName, methId);
     }
 
-    private void queueGoto(int codeAddr, int index) {
-        gotos.add(new RawGoto(codeAddr, index));
+    private void queueGoto(int index, int addrTo) {
+        gotos.add(new RawGoto(instructionId("goto", index), index, addrTo));
     }
 
-    private void writeGoto(int indexTo, int index) {
-        String insn = instructionId("goto", index);
+    private void writeGoto(String insn, int indexTo, int index) {
         _db.add(GOTO, insn, str(index), str(indexTo), methId);
     }
 
