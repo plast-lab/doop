@@ -3,3 +3,8 @@
 .output mainAnalysis.InstanceFieldPointsTo
 .output mainAnalysis.StaticFieldPointsTo
 .output mainAnalysis.VarPointsTo
+.output mainAnalysis.InvokedynamicCallGraphEdge
+
+#ifdef REFLECTION_DYNAMIC_PROXIES
+.output mainAnalysis.ProxyCallGraphEdge
+#endif // REFLECTION_DYNAMIC_PROXIES

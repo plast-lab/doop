@@ -120,10 +120,15 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		if (options.LB3.value)
 			return new LB3Analysis(options, context, commandsEnv)
 		else {
-			if(options.PYTHON.value)
+			if(options.PYTHON.value) {
 				return new SoufflePythonAnalysis(options, context, commandsEnv)
-			else
-				return new SouffleAnalysis(options, context, commandsEnv)
+			}
+			else {
+				if (options.USER_DEFINED_PARTITIONS.value)
+					return new SoufflePartitionedAnalysis(options, context, commandsEnv)
+				else
+					return new SouffleAnalysis(options, context, commandsEnv)
+			}
 		}
 	}
 

@@ -28,6 +28,7 @@
 #include "java.lang.reflect.Field.dl"
 #include "java.lang.reflect.Method.dl"
 #include "classloading.dl"
+#include "native-reflection.dl"
 
 /*************************************************************
  * Give an arbitrary containing type for every reflection object,

@@ -75,6 +75,7 @@ public enum PredicateFile
     VIRTUAL_METHOD_INV("VirtualMethodInvocation"),
     SUPER_METHOD_INV("SuperMethodInvocation"),
     DYNAMIC_METHOD_INV("DynamicMethodInvocation"),
+    DYNAMIC_METHOD_INV_PARAM("DynamicMethodInvocation-Param"),
     IF_VAR("IfVar"),
     THROW("Throw"),
     THROW_NULL("ThrowNull"),
@@ -105,8 +106,6 @@ public enum PredicateFile
     BREAKPOINT_STMT("BreakpointStmt"),
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
     CLASS_ARTIFACT("Class-Artifact"),
-    SPECIAL_CONTEXT_SENSITIVITY_METHOD("SpecialContextSensitivityMethod"),
-    TYPE_TO_PARTITION("TypeToPartition"),
     DUMMY_IF_VAR("DummyIfVar"),
     OPERATOR_AT("OperatorAt");
 
@@ -118,7 +117,7 @@ public enum PredicateFile
 
     @Override
     public String toString() {
-        return  name;
+        return name;
     }
 
     public Writer getWriter(File directory, String suffix) throws IOException {

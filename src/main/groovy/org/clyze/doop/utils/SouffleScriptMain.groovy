@@ -1,6 +1,7 @@
 package org.clyze.doop.utils
 
 import org.clyze.doop.common.DoopErrorCodeException
+import org.clyze.doop.core.Doop
 import org.clyze.utils.Executor
 import org.clyze.utils.Helper
 
@@ -27,7 +28,7 @@ def env = [:]
 env.putAll(System.getenv())
 
 try {
-    Helper.tryInitLogging("INFO", "$outDir/logs", true)
+    Helper.tryInitLogging("INFO", Doop.doopLog ?: "$outDir/logs", true)
 } catch (IOException ex) {
     System.err.println("Warning: could not initialize logging")
     throw new DoopErrorCodeException(19)

@@ -1,0 +1,102 @@
+.decl TensorShapeListLength(?hctx:configuration.HContext, ?val:Value, ?size:number)
+.decl TensorShapeListContent(?hctx:configuration.HContext, ?val:Value, ?index:number, ?indexValue:Value)
+.output TensorShapeListLength
+.output TensorShapeListContent
+
+
+//Unifying way to get the shape of a tensor object, numpy array, or the shape of a list we will statically deduce
+.decl isTensorLikeObject(?val:Value)
+.output isTensorLikeObject
+isTensorLikeObject(?val):-
+  IsPyListOrTuple(?val);
+  Value_Type(?val,"<tensorflow.Tensor>");
+  Value_Type(?val,"<numpy.ndarray>").
+
+.decl TensorLikeObjectShapeListLength(?hctx:configuration.HContext, ?val:Value, ?size:number)
+.output TensorLikeObjectShapeListLength
+
+.decl TensorLikeObjectShapeListContent(?hctx:configuration.HContext, ?val:Value, ?index:number, ?indexValue:Value)
+.output TensorLikeObjectShapeListContent
+
+.decl TensorLikeObjectToTensorDtype(?hctx:configuration.HContext, ?val:Value, ?dtypeHctx:configuration.HContext, ?dtypeVal:Value)
+.output TensorLikeObjectToTensorDtype
+
+TensorLikeObjectShapeListLength(?tensorHctx, ?tensor, ?len):-
+  TensorShape(?tensorHctx, ?tensor, ?shapeHctx, ?shapeVal),
+  TensorShapeListLength(?shapeHctx, ?shapeVal, ?len).
+
+TensorLikeObjectShapeListContent(?tensorHctx, ?tensor, ?index, ?indexVal):-
+  TensorShape(?tensorHctx, ?tensor, ?shapeHctx, ?shapeVal),
+  TensorShapeListContent(?shapeHctx, ?shapeVal, ?index, ?indexVal).
+
+TensorLikeObjectShapeListLength(?pyListHctx, ?pyList, ?len):-
+  PyListDeducedShapeLength(?pyListHctx, ?pyList, ?len).
+
+TensorLikeObjectShapeListContent(?pyListHctx, ?pyList, ?index, ?indexVal):-
+  PyListDeducedShapeContents(?pyListHctx, ?pyList, ?index, ?indexVal).
+
+TensorLikeObjectToTensorDtype(?pyListHctx, ?pyList, ?immutableHctx, ?tensorDtype):-
+  PyListDeducedDtype(?pyListHctx, ?pyList, "float"),
+  ?tensorDtype = "<tensorflow>/new <tensorflow.float32>/0",
+  isImmutableHContext(?immutableHctx).
+
+TensorLikeObjectToTensorDtype(?pyListHctx, ?pyList, ?immutableHctx, ?tensorDtype):-
+  PyListDeducedDtype(?pyListHctx, ?pyList, "int"),
+  ?tensorDtype = "<tensorflow>/new <tensorflow.int32>/0",
+  isImmutableHContext(?immutableHctx).
+
+TensorLikeObjectToTensorDtype(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype):-
+  TensorDType(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype).
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              GENERAL OPERATION MODELING
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl TensorOperation_NameToVal(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?name:symbol, ?namedValHctx:configuration.HContext, ?namedVal:Value)
+.output TensorOperation_NameToVal
+
+//When creating a new operation, set the name of the input tensor that will give the dtype of the new output tensor.
+.decl TensorOperation_GetDTypeFromName(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?name:symbol)
+.output TensorOperation_GetDTypeFromName
+
+.decl TensorOperationProducesOutput(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value)
+.output TensorOperationProducesOutput
+
+.decl TensorShape(?tensorHctx:configuration.HContext, ?tensor:Value, ?shapeHctx:configuration.HContext, ?shapeList:Value)
+.output TensorShape
+
+.decl TensorDType(?tensorHctx:configuration.HContext, ?tensor:Value, ?dtypeHctx:configuration.HContext, ?dtype:Value)
+.output TensorDType
+
+configuration.RecordContextRequest(?ctx, ?outTensorVal, ?var) :-
+  TensorOperationProducesOutput(?ctx, ?insn, ?outTensorVal),
+  AssignInstruction_To(?insn, ?var).
+
+TensorShape(?hctx, ?outTensorVal, ?hctx, ?tensorShapeVal),
+Value_Type(?tensorShapeVal, "<tensorflow.TensorShape>"),
+VarPointsTo(?hctx, ?outTensorVal, ?ctx, ?var),
+Value_Type(?outTensorVal, "<tensorflow.Tensor>"):-
+  configuration.RecordContextResponse(?ctx, ?outTensorVal, ?var, ?hctx),
+  TensorOperationProducesOutput(?ctx, ?insn, ?outTensorVal),
+  AssignInstruction_To(?insn, ?var),
+  ?tensorShapeVal = cat("<shape ",cat(?outTensorVal, ">")).
+
+TensorDType(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype):-
+  TensorOperationProducesOutput(?ctx, ?insn, ?tensor),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?tensorHctx, ?tensor, ?ctx, ?var),
+  TensorOperation_GetDTypeFromName(?ctx, ?insn, ?tensor, ?name),
+  TensorOperation_NameToVal(?ctx, ?insn, ?tensor, ?name, ?inTensorHctx, ?inTensor),
+  TensorDType(?inTensorHctx, ?inTensor, ?dtypeHctx, ?dtype).
+
+TensorObjectHasConcreteDimensions(?hctx, ?tensor):-
+  TensorOperationProducesOutput(?ctx, ?insn, ?tensor),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?tensor, ?ctx, ?var),
+  TensorShape(?hctx, ?tensor, ?listHctx, ?tensorShape),
+  ListOfIntConsts(?listHctx, ?tensorShape).
+
+ListOfConstsLength(?hctx, ?tensorVal, ?len),
+ListOfConstsAtIndexPointsTo(?hctx, ?tensorVal, ?index, ?indexValue):-
+  TensorShapeListLength(?hctx, ?tensorVal, ?len),
+  TensorShapeListContent(?hctx, ?tensorVal, ?index, ?indexValue).

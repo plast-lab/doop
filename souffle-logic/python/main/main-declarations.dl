@@ -35,7 +35,8 @@
 .decl isHeapValue(?value:Value)
 .decl isModeledHeapValue(?value:Value)
 .decl isConstantValue(?value:Value)
-.decl IsPyList(?heap:HeapAllocation)
+.decl IsPyListOrTuple(?heap:HeapAllocation)
+.decl isPyDict(?heap:HeapAllocation)
 
 // Value_Num maps each numeric constant to a value while
 // also prepending it with *num-constant-* to distinguish it
@@ -49,6 +50,7 @@
 
 .decl isNoneValue(?none:Value)
 
-.decl GlobalNamePointsTo(?hctx:configuration.HContext, ?value:Value, ?scope:Scope, ?ctx:configuration.Context, ?name:symbol)
+.decl GlobalNamePointsTo(?hctx:configuration.HContext, ?value:Value, ?scope:Scope, ?name:symbol)
 
-.decl ListInitialAssignVar(?heap:HeapAllocation, ?var:Var)
+.decl ListInitialAssignVar(?heap:HeapAllocation, ?var:Var, ?ctx:configuration.Context)
+.decl DictInitialAssignVar(?heap:HeapAllocation, ?var:Var, ?ctx:configuration.Context)

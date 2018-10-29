@@ -1,3 +1,6 @@
+import java.nio.file.Files
+import static java.nio.file.attribute.PosixFilePermissions.*
+
 buildscript {
     repositories {
         mavenCentral()
@@ -210,15 +213,17 @@ compileJava {
 }
 
 test {
-    // Remove comment to enable parallel testing.
+    // failFast = true
     maxParallelForks = 4
     testLogging {
         exceptionFormat = 'full'
     }
     environment.DOOP_HOME = projectDir
+    environment.HOME = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx"))).toString()
 }
 
 task fullClean {
+    description 'Clean everything, including caches and analysis results.'
     doLast {
         def out   = System.getenv('DOOP_OUT')   ?: "$projectDir/out"
         def cache = System.getenv('DOOP_CACHE') ?: "$projectDir/cache"

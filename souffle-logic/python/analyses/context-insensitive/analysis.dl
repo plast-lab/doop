@@ -18,9 +18,6 @@
     ?calleeCtx = ?callerCtx,
     ?tomethod = ?tomethod.
 
-  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
-    StaticContextRequest(?callerCtx, ?invo),
-    ?calleeCtx = ?callerCtx.
 
    /**
     * Some library modules are generically defined, and need the macro
@@ -43,14 +40,4 @@
   InitHContextResponse(?s, ?hctx) :-
     ?hctx = UNIQUE_HCONTEXT,
     InitHContextRequest(?s).
-
-  #ifdef HEAPDLS
-    DynamicContextToHContext(?hctx, ?dynCtx) :-
-      isDynamicContext(?dynCtx),
-      isImmutableHContext(?hctx).
-
-    DynamicContextToContext(?ctx, ?dynCtx) :-
-      isDynamicContext(?dynCtx),
-      isImmutableContext(?ctx).
-  #endif
 }

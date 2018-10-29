@@ -11,23 +11,26 @@
 .decl VarPointsToConstIntValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 .output VarPointsToConstIntValue
 
-.decl VarHasConstFloatValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
+//Made these context insensitive, maybe Review this.
+.decl VarHasConstFloatValue(?value:Value, ?var:Var)
 .output VarHasConstFloatValue
 
-.decl VarHasConstValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
+.decl VarHasConstValue(?value:Value, ?var:Var)
 .output VarHasConstValue
 
-.decl VarHasConstIntValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
+.decl VarHasConstIntValue(?value:Value, ?var:Var)
 .output VarHasConstIntValue
 
-.decl VarHasConstNoneValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
+.decl VarHasConstNoneValue(?value:Value, ?var:Var)
 .output VarHasConstNoneValue
 
+.output Value_Num
+
 //anantoni: Shouldn't this be a disjunction?
-VarHasConstValue(?hctx, ?value, ?ctx, ?var) :-
-  VarHasConstNoneValue(?hctx, ?value, ?ctx, ?var),
-  VarHasConstFloatValue(?hctx, ?value, ?ctx, ?var),
-  VarHasConstIntValue(?hctx, ?value, ?ctx, ?var).
+VarHasConstValue(?value, ?var) :-
+  VarHasConstNoneValue(?value, ?var);
+  VarHasConstFloatValue(?value, ?var);
+  VarHasConstIntValue(?value,?var).
 
 VarPointsToConstValue(?hctx, ?value, ?ctx, ?var) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
@@ -47,6 +50,7 @@ VarPointsToConstIntValue(?hctx, ?value, ?ctx, ?var) :-
   Value_Num(?value,?num),
   isIntConstant(?num).
 
+VarHasConstNoneValue(?value, ?var),
 configuration.RecordContextRequest(?ctx, ?value, ?var) :-
   Reachable(?function),
   ReachableContext(?ctx, ?function),
@@ -55,11 +59,12 @@ configuration.RecordContextRequest(?ctx, ?value, ?var) :-
   AssignInstruction_To(?instr, ?var),
   ?value = "<None>".
 
-VarPointsTo(?hctx, ?value, ?ctx, ?var),
-VarHasConstNoneValue(?hctx, ?value, ?ctx, ?var) :-
+VarPointsTo(?hctx, ?value, ?ctx, ?var):-
   configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
   ?value = "<None>".
 
+Value_Num(?value, ?num),
+VarHasConstFloatValue(?value, ?var),
 configuration.RecordContextRequest(?ctx, ?value, ?var) :-
   Reachable(?function),
   ReachableContext(?ctx, ?function),
@@ -68,8 +73,6 @@ configuration.RecordContextRequest(?ctx, ?value, ?var) :-
   AssignInstruction_To(?instr, ?var),
   ?value = cat(cat("<num-constant(float):", ?num),">").
 
-Value_Num(?value, ?num),
-VarHasConstFloatValue(?hctx, ?value, ?ctx, ?var),
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   Reachable(?function),
   ReachableContext(?ctx, ?function),
@@ -79,6 +82,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
   ?value = cat(cat("<num-constant(float):", ?num),">").
 
+Value_Num(?value,?num),
+VarHasConstIntValue(?value, ?var),
 configuration.RecordContextRequest(?ctx, ?value, ?var) :-
   Reachable(?function),
   ReachableContext(?ctx, ?function),
@@ -87,6 +92,8 @@ configuration.RecordContextRequest(?ctx, ?value, ?var) :-
   AssignInstruction_To(?instr, ?var),
   ?value = cat(cat("<num-constant(int):", ?num),">").
 
+Value_Num(?value,?res),
+//VarHasConstIntValue(?hctx, ?value, ?ctx, ?var),
 configuration.RecordContextRequest(?ctx, ?value, ?var) :-
   Reachable(?function),
   ReachableContext(?ctx, ?function),
@@ -96,8 +103,6 @@ configuration.RecordContextRequest(?ctx, ?value, ?var) :-
   BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res),
   ?value = cat(cat("<num-constant(int):", ?res),">").
 
-Value_Num(?value,?num),
-VarHasConstIntValue(?hctx, ?value, ?ctx, ?var),
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   Reachable(?function),
   ReachableContext(?ctx, ?function),
@@ -107,8 +112,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
   ?value = cat(cat("<num-constant(int):", ?num),">").
 
-Value_Num(?value,?res),
-VarHasConstIntValue(?hctx, ?value, ?ctx, ?var),
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   Reachable(?function),
   ReachableContext(?ctx, ?function),

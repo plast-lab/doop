@@ -421,7 +421,7 @@ class FactGenerator implements Runnable {
                 // seems to always get optimized out, do we need this?
                 _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
             }
-            else if (op instanceof NullConstant || op instanceof  ClassConstant || op instanceof  StringConstant)
+            else if (op instanceof NullConstant || op instanceof ClassConstant || op instanceof StringConstant)
             {
                 _writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
             }
@@ -556,7 +556,7 @@ class FactGenerator implements Runnable {
         }
         else if(left instanceof Local && right instanceof ThisRef)
         {
-            _writer.writeAssignLocal(inMethod, stmt, (Local) left, session);
+            _writer.writeAssignThisToLocal(inMethod, stmt, (Local) left, session);
         }
         else if(left instanceof Local && right instanceof ParameterRef)
         {

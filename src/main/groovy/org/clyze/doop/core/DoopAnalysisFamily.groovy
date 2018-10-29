@@ -54,7 +54,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "timeout",
 					optName: "t",
 					argName: "MINUTES",
-					"description": "The analysis max allocated execution time. Measured in minutes.",
+					description: "The analysis max allocated execution time. Measured in minutes.",
 					value: 90, // Minutes
 					cli: false
 			),
@@ -121,7 +121,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "MAIN_CLASS",
 					name: "main",
 					argName: "MAIN",
-					description: "Specify the main class(es) separated by spaces",
+					description: "Specify the main class(es) separated by spaces.",
 					value: [],
 					multipleValues: true,
 					changesFacts: true
@@ -165,7 +165,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SPECIAL_CONTEXT_SENSITIVITY_METHODS",
 					name: "special-cs-methods",
 					argName: "FILE",
-					description: "Use a file that specifies special context sensitivity for some methods",
+					description: "Use a file that specifies special context sensitivity for some methods.",
 					forCacheID: true,
 					changesFacts: true
 			),
@@ -173,17 +173,10 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "USER_DEFINED_PARTITIONS",
 					name: "user-defined-partitions",
 					argName: "FILE",
-					description: "Use a file that specifies the partitions of the analyzed program",
+					description: "Use a file that specifies the partitions of the analyzed program.",
 					forPreprocessor: true,
 					forCacheID: true,
 					changesFacts: true
-			),
-                        new AnalysisOption<String>(
-					id: "PRIMARY_PARTITION",
-					name: "primary-partition",
-					argName: "PARTITION_NAME",
-					description: "Specify the primary partition of a partitioned-2object-sensitive+heap analysis",
-					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "SANITY",
@@ -305,6 +298,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "CFG_ANALYSIS",
 					name: "cfg",
+					description: "Perform a CFG analysis.",
 					cli: true
 			),
 			/* End Main options */
@@ -328,7 +322,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption(
 					id: "ZIPPER",
 					name: "zipper",
-					description: "Use file with precision-critical methods selected by Zipper, these methods are analyzed context-sensitively",
+					description: "Use file with precision-critical methods selected by Zipper, these methods are analyzed context-sensitively.",
 					argName: "FILE",
 					argInputType: InputType.MISC,
 					forCacheID: true,
@@ -449,12 +443,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "DISABLE_METHOD_HANDLES",
-					name: "disable-method-handles",
-					description: "Disable handling of 'invokedynamic' and method handles.",
-					forPreprocessor: true
-			),
-			new BooleanAnalysisOption(
 					id: "REFLECTION_METHOD_HANDLES",
 					name: "reflection-method-handles",
 					description: "Reflection-based handling of the method handle APIs.",
@@ -522,11 +510,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Perform a featherweight analysis (global state and complex objects immutable).",
 					forPreprocessor: true
 			),
-            new AnalysisOption<String>(
-                    id: "SYMBOLIC_REASONING",
-                    name: "symbolic-reasoning",
-                    description: "Symbolic reasoning for expressions"
-            ),
+			new AnalysisOption<String>(
+					id: "SYMBOLIC_REASONING",
+					name: "symbolic-reasoning",
+					description: "Symbolic reasoning for expressions."
+			),
 			new AnalysisOption<String>(
 					id: "INFORMATION_FLOW",
 					name: "information-flow",
@@ -657,8 +645,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_STOP_AT_BASIC",
 					name: "Xstop-at-basic",
 					description: "Run the basic analysis and exit. Possible strategies: default, classes-scc (outputs the classes in SCC), partitioning (outputs the classes in partitions)",
-                                        argName: "PARTITIONING_STRATEGY",
-                                        argInputType: InputType.MISC
+					argName: "PARTITIONING_STRATEGY",
+					argInputType: InputType.MISC
 			),
 			new BooleanAnalysisOption(
 					id: "X_DRY_RUN",
@@ -685,7 +673,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_ORACULAR_HEURISTICS",
 					name: "Xoracular-heuristics",
-					description: "Run sensitivity heuristics logic under addons/statistics",
+					description: "Run sensitivity heuristics logic under addons/oracular",
+					forPreprocessor: false
+			),
+			new BooleanAnalysisOption(
+					id: "X_CONTEXT_DEPENDENCY_HEURISTIC",
+					name: "Xcontext-dependency-heuristic",
+					description: "Run context dependency heuristics logic under addons/oracular",
 					forPreprocessor: false
 			),
 			new AnalysisOption<String>(
@@ -822,15 +816,23 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	}
 
 	private static List<String> analysesSouffle() {
-		if (!Doop.souffleAnalysesPath) {
-			Doop.initDoopFromEnv()
+		try {
+			if (!Doop.souffleAnalysesPath) {
+				Doop.initDoopFromEnv()
+			}
+		} catch (e) {
+			println "Error initializing Doop."
 		}
 		analysesFor(Doop.souffleAnalysesPath, "analysis.dl")
 	}
 
 	private static List<String> analysesLB() {
-		if (!Doop.analysesPath) {
-			Doop.initDoopFromEnv()
+		try {
+			if (!Doop.analysesPath) {
+				Doop.initDoopFromEnv()
+			}
+		} catch (e) {
+			println "Error initializing Doop."
 		}
 		analysesFor(Doop.analysesPath, "analysis.logic")
 	}

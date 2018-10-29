@@ -101,6 +101,9 @@ class DexMethodFactWriter extends JavaFactWriter {
 
     private final Collection<MoveExceptionInfo> exceptionMoves = new LinkedList<>();
 
+    // Gotos point to addresses that must be resolved.
+    private final List<RawGoto> gotos = new LinkedList<>();
+
     DexMethodFactWriter(DexBackedMethod dexMethod, Database _db,
                         Map<String, MethodSig> cachedMethodDescriptors) {
         super(_db);
@@ -179,6 +182,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             pendingSwitchInfo.checkEverythingConsumed();
 
             processTryBlocks(mi.getTryBlocks());
+            writeGotos();
         }
     }
 
@@ -253,6 +257,16 @@ class DexMethodFactWriter extends JavaFactWriter {
                 _db.add(EXCEPT_HANDLER_PREV, currInsn, prevInsn);
             else
                 System.err.println("Error: no index for previous-handler pair: " + entry);
+        }
+    }
+
+    private void writeGotos() {
+        for (RawGoto g : gotos) {
+            Integer indexTo = addressToIndex.get(g.index);
+            if (indexTo == null)
+                System.err.println("Warning: cannot resolve goto target " + g.index + " in method " + methId);
+            else
+                writeGoto(indexTo, g.index);
         }
     }
 
@@ -457,11 +471,9 @@ class DexMethodFactWriter extends JavaFactWriter {
             case MOVE_WIDE_16:
             case MOVE_OBJECT:
             case MOVE_OBJECT_FROM16:
-            case MOVE_OBJECT_16: {
-                TwoRegisterInstruction tri = (TwoRegisterInstruction) instr;
-                writeAssignLocal(local(tri.getRegisterA()), local(tri.getRegisterB()), index);
+            case MOVE_OBJECT_16:
+                writeAssignLocal((TwoRegisterInstruction) instr, index);
                 break;
-            }
             case INSTANCE_OF:
                 writeAssignInstanceOf((TwoRegisterInstruction)instr, (ReferenceInstruction)instr, index);
                 break;
@@ -481,7 +493,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case IF_GTZ:
             case IF_LEZ: {
                 int reg = ((OneRegisterInstruction)instr).getRegisterA();
-                writeIf(instr, new int[] { reg }, index);
+                writeIf(instr, reg, -1, op, index);
                 break;
             }
             case IF_EQ:
@@ -493,7 +505,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 TwoRegisterInstruction tri = (TwoRegisterInstruction)instr;
                 int regA = tri.getRegisterA();
                 int regB = tri.getRegisterB();
-                writeIf(instr, new int[] { regA, regB, }, index);
+                writeIf(instr, regA, regB, op, index);
                 break;
             }
             case PACKED_SWITCH:
@@ -620,7 +632,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case GOTO:
             case GOTO_16:
             case GOTO_32:
-                writeGoto(((OffsetInstruction)instr).getCodeOffset(), index);
+                queueGoto(currentInstrAddr + ((OffsetInstruction)instr).getCodeOffset(), index);
                 break;
             case NEG_INT:
             case NOT_INT:
@@ -653,12 +665,30 @@ class DexMethodFactWriter extends JavaFactWriter {
         }
     }
 
-    private void writeIf(Instruction instr, int[] regs, int index) {
+    /**
+     * Write an if instruction.
+     *
+     * @param instr      the if instruction
+     * @param regL       the left (or single) operand
+     * @param regR       the right operand (-1 for none)
+     * @param index      the instruction index
+     */
+    private void writeIf(Instruction instr, int regL, int regR, Opcode op, int index) {
         int offset = ((OffsetInstruction)instr).getCodeOffset();
         String insn = instructionId("if", index);
-        _db.add(IF, insn, str(index), str(currentInstrAddr + offset), methId);
-        for (int reg : regs)
-            _db.add(IF_VAR, insn, local(reg));
+        writeIf(insn, index, currentInstrAddr + offset, methId);
+        writeIfVar(insn, L_OP, local(regL));
+        if (regR != -1)
+            writeIfVar(insn, R_OP, local(regR));
+
+        switch (op) {
+        case IF_EQ:  case IF_EQZ:  writeOperatorAt(insn, "=="); break;
+        case IF_NE:  case IF_NEZ:  writeOperatorAt(insn, "!="); break;
+        case IF_LT:  case IF_LTZ:  writeOperatorAt(insn,  "<"); break;
+        case IF_GE:  case IF_GEZ:  writeOperatorAt(insn, ">="); break;
+        case IF_GT:  case IF_GTZ:  writeOperatorAt(insn,  ">"); break;
+        case IF_LE:  case IF_LEZ:  writeOperatorAt(insn, "<="); break;
+        }
     }
 
     private void handleFillArrayData(Instruction instr, int index) {
@@ -797,15 +827,15 @@ class DexMethodFactWriter extends JavaFactWriter {
         int regDest = tri.getRegisterA();
         int regSource = tri.getRegisterB();
         String insn = instructionId("assign", index);
-        _db.add(ASSIGN_BINOP, insn, str(index), local(regDest), methId);
-        _db.add(ASSIGN_OPER_FROM, insn, local(regSource));
+        writeAssignBinop(insn, index, local(regDest), methId);
+        writeAssignOperFrom(insn, L_OP, local(regSource));
     }
 
     private void writeBinopThreeReg(int regDest, int regSource1, int regSource2, int index) {
         String insn = instructionId("assign", index);
-        _db.add(ASSIGN_BINOP, insn, str(index), local(regDest), methId);
-        _db.add(ASSIGN_OPER_FROM, insn, local(regSource1));
-        _db.add(ASSIGN_OPER_FROM, insn, local(regSource2));
+        writeAssignBinop(insn, index, local(regDest), methId);
+        writeAssignOperFrom(insn, L_OP, local(regSource1));
+        writeAssignOperFrom(insn, R_OP, local(regSource2));
     }
 
     private void writeAssignCast(OneRegisterInstruction ori, ReferenceInstruction ri, int index) {
@@ -815,9 +845,13 @@ class DexMethodFactWriter extends JavaFactWriter {
         _db.add(ASSIGN_CAST, insn, str(index), local(reg), local(reg), typeName, methId);
     }
 
-    private void writeGoto(int codeOffset, int index) {
+    private void queueGoto(int codeAddr, int index) {
+        gotos.add(new RawGoto(codeAddr, index));
+    }
+
+    private void writeGoto(int indexTo, int index) {
         String insn = instructionId("goto", index);
-        _db.add(GOTO, insn, str(index), str(codeOffset), methId);
+        _db.add(GOTO, insn, str(index), str(indexTo), methId);
     }
 
     private void writeExitMonitor(int registerA, int index) {
@@ -833,7 +867,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private void writeAssignUnop(TwoRegisterInstruction tri, int index) {
         String insn = instructionId("assign", index);
         writeAssignUnop(insn, index, local(tri.getRegisterA()), methId);
-        _db.add(ASSIGN_OPER_FROM, insn, local(tri.getRegisterB()));
+        writeAssignOperFrom(insn, L_OP, local(tri.getRegisterB()));
     }
 
     private void writeThrow(int reg, int index) {
@@ -850,9 +884,10 @@ class DexMethodFactWriter extends JavaFactWriter {
         _db.add(ASSIGN_INSTANCE_OF, insn, str(index), from, to, className, methId);
     }
 
-    private void writeAssignLocal(String to, String from, int index) {
-        String insn = instructionId("assign", index);
-        _db.add(ASSIGN_LOCAL, insn, str(index), from, to, methId);
+    private void writeAssignLocal(TwoRegisterInstruction tri, int index) {
+        String to = local(tri.getRegisterA());
+        String from = local(tri.getRegisterB());
+        writeAssignLocal(instructionId("assign", index), index, from, to, methId);
     }
 
     private String local(int reg) {
@@ -969,14 +1004,14 @@ class DexMethodFactWriter extends JavaFactWriter {
         String base = null;
         if (objReturnInfo.baseReg != null) {
             base = local(objReturnInfo.baseReg);
-            _db.add(ACTUAL_PARAMETER, str(0), insn, base, lineNo);
+            writeActualParam(0, insn, base);
             argStartPos = 1;
         }
 
 //        System.out.println("argRegs = " + objReturnInfo.argRegs);
         int[] argRegs = objReturnInfo.argRegs;
         for (int argPos = 0; argPos < argRegs.length; argPos++)
-            _db.add(ACTUAL_PARAMETER, str(argStartPos + argPos), insn, local(argRegs[argPos]), lineNo);
+            writeActualParam(argStartPos + argPos, insn, local(argRegs[argPos]));
 
         if (lineNoInteger != null)
             _db.add(METHOD_INV_LINE, insn, lineNo);

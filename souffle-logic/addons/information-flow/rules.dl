@@ -400,7 +400,7 @@ TaintedObjectSerialized(?declaringType, ?source, ?type, ?hctx, ValueIdMacro(?sou
   mainAnalysis.Value_DeclaringType(?obj, ?declaringType),
   SourceFromTaintedValue(?obj, ?source),
   mainAnalysis.isImmutableHContext(?hctx).
-  .plan 2: (3,2,1,4,5,6,7), 5: (6,2,1,4,3,5,7)
+  .plan 2: (3,2,1,4,5,6,7)
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ?val),
 mainAnalysis.VarPointsTo(?hctx, ?val, ?ctx, ?base) :-

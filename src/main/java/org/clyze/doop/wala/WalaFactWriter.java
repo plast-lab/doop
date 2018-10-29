@@ -46,9 +46,9 @@ public class WalaFactWriter extends JavaFactWriter {
 
     private Map<String,List<String>> _signaturePolyMorphicMethods;
 
-    WalaFactWriter(Database db) {
+    WalaFactWriter(Database db, WalaRepresentation rep) {
         super(db);
-        _rep = WalaRepresentation.getRepresentation();
+        _rep = rep;
         _typeMap = new ConcurrentHashMap<>();
         _phantomType = new ConcurrentHashMap<>();
         _phantomMethod = new ConcurrentHashMap<>();
@@ -85,7 +85,7 @@ public class WalaFactWriter extends JavaFactWriter {
             arity = Integer.toString(m.getNumberOfParameters());
 
         _db.add(STRING_RAW, result, result);
-        _db.add(METHOD, result, _rep.simpleName(m.getReference()), _rep.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        _db.add(METHOD, result, WalaRepresentation.simpleName(m.getReference()), WalaRepresentation.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         for (Annotation annotation : m.getAnnotations()) {
             _db.add(METHOD_ANNOTATION, result, fixTypeString(annotation.getType().toString()));
             //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
@@ -131,7 +131,7 @@ public class WalaFactWriter extends JavaFactWriter {
         else {
             _db.add(CLASS_TYPE, classStr);
         }
-        _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
+        _db.add(CLASS_HEAP, WalaRepresentation.classConstant(c), classStr);
 
         if(c instanceof ShrikeClass) { //We have currently disabled annotations for Android
             Collection<Annotation> annotations = c.getAnnotations();
@@ -202,7 +202,7 @@ public class WalaFactWriter extends JavaFactWriter {
             writePhantomMethod(sig);
             _db.add(STRING_RAW, sig, sig);
             String arity = Integer.toString(m.getNumberOfParameters());
-            _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+            _db.add(METHOD, sig, WalaRepresentation.simpleName(m), WalaRepresentation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         }
     }
 
@@ -238,8 +238,7 @@ public class WalaFactWriter extends JavaFactWriter {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
-
-        _db.add(ASSIGN_LOCAL, insn, str(index), _rep.local(m, from), _rep.local(m, to), methodId);
+        writeAssignLocal(insn, index, _rep.local(m, from), _rep.local(m, to), methodId);
     }
 
     void writeAssignHeapAllocation(IR ir, IMethod m, SSANewInstruction instruction, Local l, Session session) {
@@ -434,7 +433,7 @@ public class WalaFactWriter extends JavaFactWriter {
             actualType = fixTypeString(s);
         }
         else {
-            heap = _rep.classConstant(t);
+            heap = WalaRepresentation.classConstant(t);
             actualType = fixTypeString(t.toString());
         }
 
@@ -487,7 +486,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String methodId = _rep.signature(m);
 
         TypeReference declaringClass = getCorrectFieldDeclaringClass(f, m.getClassHierarchy());
-        String fieldId = _rep.signature(f, declaringClass);
+        String fieldId = WalaRepresentation.signature(f, declaringClass);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
     }
 
@@ -505,7 +504,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String methodId = _rep.signature(m);
 
         TypeReference declaringClass = getCorrectFieldDeclaringClass(f, m.getClassHierarchy());
-        String fieldId = _rep.signature(f, declaringClass);
+        String fieldId = WalaRepresentation.signature(f, declaringClass);
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), fieldId, methodId);
     }
 
@@ -586,8 +585,8 @@ public class WalaFactWriter extends JavaFactWriter {
     }
 
     public void writeField(IField f) {
-        String fieldId = _rep.signature(f);
-        _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), _rep.simpleName(f), writeType(f.getFieldTypeReference()));
+        String fieldId = WalaRepresentation.signature(f);
+        _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getReference().getDeclaringClass()), WalaRepresentation.simpleName(f), writeType(f.getFieldTypeReference()));
         if(f instanceof FieldImpl) { //Currently annotations do not work on android and are disabled
             Collection<Annotation> annotations = f.getAnnotations();
             if (annotations != null) {
@@ -600,7 +599,7 @@ public class WalaFactWriter extends JavaFactWriter {
 
 
     void writeFieldModifier(IField f, String modifier) {
-        String fieldId = _rep.signature(f);
+        String fieldId = WalaRepresentation.signature(f);
         _db.add(FIELD_MODIFIER, modifier, fieldId);
     }
 
@@ -659,9 +658,9 @@ public class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
 
-        _db.add(IF, insn, str(index), str(indexTo), methodId);
-        _db.add(IF_VAR, insn, _rep.local(m, var1));
-        _db.add(IF_VAR, insn, _rep.local(m, var2));
+        writeIf(insn, index, indexTo, methodId);
+        writeIfVar(insn, L_OP, _rep.local(m, var1));
+        writeIfVar(insn, R_OP, _rep.local(m, var2));
     }
 //
 //    void writeTableSwitch(IMethod inMethod, TableSwitchStmt stmt, Session session) {
@@ -915,23 +914,24 @@ public class WalaFactWriter extends JavaFactWriter {
             //for (int i = 0; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 0; i < instruction.getNumberOfPositionalParameters(); i++) {
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
-                _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
+                writeActualParam(i, invokeExprRepr, _rep.local(inMethod, l));
             }
         }
         else {
             //for (int i = 1; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 1; i < instruction.getNumberOfPositionalParameters(); i++) {
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
-                _db.add(ACTUAL_PARAMETER, str(i-1), invokeExprRepr, _rep.local(inMethod, l));
+                writeActualParam(i-1, invokeExprRepr, _rep.local(inMethod, l));
             }
 
         }
         if (instruction instanceof SSAInvokeDynamicInstruction) {
-            for (int j = 0; j < ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentCount(); j++) {
-                int arg = ((SSAInvokeDynamicInstruction) instruction).getBootstrap().callArgumentIndex(j);
+            SSAInvokeDynamicInstruction invokedynamic = (SSAInvokeDynamicInstruction) instruction;
+            for (int j = 0; j < (invokedynamic).getBootstrap().callArgumentCount(); j++) {
+                int arg = (invokedynamic).getBootstrap().callArgumentIndex(j);
 
                 //Local l = createLocal(ir, instruction, arg); //TODO: TypeInference for bootstrap parameters??
-                Local l = bootstrapParamHelper(ir, inMethod, (SSAInvokeDynamicInstruction)instruction, j, session);
+                Local l = bootstrapParamHelper(ir, inMethod, invokedynamic, j, session);
                 _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, _rep.local(inMethod, l));
 
             }
@@ -1109,8 +1109,6 @@ public class WalaFactWriter extends JavaFactWriter {
 
         if (instruction instanceof SSAInvokeDynamicInstruction) { //Had to put these first because wala considers them static
 //            MethodReference dynInfo = instruction.getDeclaredTarget();
-            String dynArity = String.valueOf(targetRef.getNumberOfParameters());
-
             StringBuilder parameterTypes = new StringBuilder();
             for (int i = 0; i < targetRef.getNumberOfParameters(); i++) {
                 if (i==0) {
@@ -1121,7 +1119,9 @@ public class WalaFactWriter extends JavaFactWriter {
                 }
             }
             String sig = getBootstrapSig(((SSAInvokeDynamicInstruction) instruction).getBootstrap(),inMethod.getClassHierarchy());
-            _db.add(DYNAMIC_METHOD_INV, insn, str(index), sig, targetRef.getName().toString(), fixTypeString(targetRef.getReturnType().toString()), dynArity, parameterTypes.toString(), methodId);
+            int dynArity = targetRef.getNumberOfParameters();
+            // TODO: we do not write the tag of the method handle.
+            writeInvokedynamic(insn, index, sig, targetRef.getName().toString(), fixTypeString(targetRef.getReturnType().toString()), dynArity, parameterTypes.toString(), -1, methodId);
         }
         else if (instruction.isStatic()) {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
@@ -1149,7 +1149,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String sig = _rep.signature(m);
         _db.add(STRING_RAW, sig, sig);
         String arity = Integer.toString(m.getNumberOfParameters());
-        _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        _db.add(METHOD, sig, WalaRepresentation.simpleName(m), WalaRepresentation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         //addMockExceptionThrows(m, declaredExceptions);
     }
 
@@ -1213,7 +1213,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
+        writeAssignBinop(insn, index, _rep.local(m, left), methodId);
 
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
@@ -1225,7 +1225,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
+        writeAssignBinop(insn, index, _rep.local(m, left), methodId);
 
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op1));
         _db.add(ASSIGN_OPER_FROM, insn, _rep.local(m, op2));
@@ -1275,7 +1275,7 @@ public class WalaFactWriter extends JavaFactWriter {
 //    }
 
     void writeFieldInitialValue(IField f) {
-        String fieldId = _rep.signature(f);
+        String fieldId = WalaRepresentation.signature(f);
 //        String valueString = f.getInitialValueString();
 //        if (valueString != null && !valueString.equals("")) {
 //            int pos = valueString.indexOf('@');

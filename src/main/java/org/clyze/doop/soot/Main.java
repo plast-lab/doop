@@ -29,10 +29,6 @@ public class Main {
 
     private static Log logger;
 
-    private static boolean isApplicationClass(SootParameters sootParameters, SootClass klass) {
-        return sootParameters.isApplicationClass(klass.getName());
-    }
-
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.err.println("usage: [options] file...");
@@ -57,7 +53,7 @@ public class Main {
         String outDir = sootParameters.getOutputDir();
 
         try {
-            Helper.tryInitLogging("DEBUG", outDir + File.separator + "logs", true);
+            Helper.tryInitLogging("DEBUG", sootParameters.getLogDir(), true);
             logger = LogFactory.getLog(Main.class);
         } catch (IOException ex) {
             System.err.println("Warning: could not initialize logging");
@@ -91,6 +87,10 @@ public class Main {
                 System.err.println("\nWARNING -- Android mode: all inputs will be preprocessed but only " + sootParameters.getInputs().get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
+            if (sootParameters._androidJars == null)
+                System.err.println("WARNING: missing --android-jars option.");
+            else
+                Options.v().set_android_jars(sootParameters._androidJars);
             android = new AndroidSupport_Soot(sootParameters, java);
             android.processInputs(tmpDirs);
         } else
@@ -152,7 +152,7 @@ public class Main {
          * call to `setApplicationClass()').
          */
 
-        classes.stream().filter((klass) -> isApplicationClass(sootParameters, klass)).forEachOrdered(SootClass::setApplicationClass);
+        classes.stream().filter(sootParameters::isApplicationClass).forEachOrdered(SootClass::setApplicationClass);
 
         if (sootParameters._mode == SootParameters.Mode.FULL && sootParameters._factsSubSet == null)
             classes = new HashSet<>(scene.getClasses());
@@ -182,7 +182,8 @@ public class Main {
 
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
             boolean reportPhantoms = sootParameters._reportPhantoms;
-            FactWriter writer = new FactWriter(db, reportPhantoms);
+            Representation rep = new Representation();
+            FactWriter writer = new FactWriter(db, rep, reportPhantoms);
             ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, reportPhantoms);
             SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors);
             factory.setDriver(driver);

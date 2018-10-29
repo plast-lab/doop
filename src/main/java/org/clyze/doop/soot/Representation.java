@@ -16,21 +16,11 @@ class Representation extends JavaRepresentation {
     private static final List<String> jimpleKeywordList = Jimple.jimpleKeywordList();
     private final Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
 
-    // Make it a trivial singleton.
-    private static Representation _repr;
-    private Representation() {}
-
-    static Representation getRepresentation() {
-        if (_repr == null)
-            _repr = new Representation();
-        return _repr;
-    }
-
-    String classConstant(SootClass c) {
+    static String classConstant(SootClass c) {
         return classConstant(c.getName());
     }
 
-    String classConstant(Type t) {
+    static String classConstant(Type t) {
         return classConstant(t.toString());
     }
 
@@ -46,7 +36,7 @@ class Representation extends JavaRepresentation {
         return result;
     }
 
-    String signature(SootField f) {
+    static String signature(SootField f) {
         return f.getSignature();
     }
 
@@ -65,15 +55,20 @@ class Representation extends JavaRepresentation {
         return escape ? "'"+n+"'" : n;
     }
 
-    private String simpleName(SootMethodRef m) {
+    public static String unescapeSimpleName(String n) {
+        boolean escaped = n.startsWith("'") && n.endsWith("'");
+        return escaped ? n.substring(1, n.length()-1) : n;
+    }
+
+    private static String simpleName(SootMethodRef m) {
         return escapeSimpleName(m.name());
     }
 
-    String simpleName(SootField m) {
+    static String simpleName(SootField m) {
         return m.getName();
     }
 
-    String params(SootMethod m) {
+    static String params(SootMethod m) {
         StringBuilder builder = new StringBuilder();
         int count = m.getParameterCount();
         builder.append("(");
@@ -86,33 +81,27 @@ class Representation extends JavaRepresentation {
         return builder.toString();
     }
 
-    String thisVar(SootMethod m)
-    {
+    static String thisVar(SootMethod m) {
         return getMethodSignature(m) + "/@this";
     }
 
-    String nativeReturnVar(SootMethod m)
-    {
+    static String nativeReturnVar(SootMethod m) {
         return nativeReturnVarOfMethod(getMethodSignature(m));
     }
 
-    String param(SootMethod m, int i)
-    {
+    static String param(SootMethod m, int i) {
         return getMethodSignature(m) + "/@parameter" + i;
     }
 
-    String local(SootMethod m, Local l)
-    {
+    static String local(SootMethod m, Local l) {
         return localId(getMethodSignature(m), l.getName());
     }
 
-    String newLocalIntermediate(SootMethod m, Local l, SessionCounter counter)
-    {
+    static String newLocalIntermediate(SootMethod m, Local l, SessionCounter counter) {
         return newLocalIntermediateId(local(m, l), counter);
     }
 
-    String handler(SootMethod m, Trap trap, SessionCounter counter)
-    {
+    String handler(SootMethod m, Trap trap, SessionCounter counter) {
         String result = _trapRepr.get(trap);
 
         if(result == null)
@@ -125,19 +114,16 @@ class Representation extends JavaRepresentation {
         return result;
     }
 
-    String throwLocal(SootMethod m, Local l, SessionCounter counter)
-    {
+    static String throwLocal(SootMethod m, Local l, SessionCounter counter) {
         String name = throwLocalId(l.getName());
         return numberedInstructionId(getMethodSignature(m), name, counter);
     }
 
-    private String getMethodSignature(SootMethod m)
-    {
+    private static String getMethodSignature(SootMethod m) {
         return m.getSignature();
     }
 
-    private String getKind(Stmt stmt)
-    {
+    private static String getKind(Stmt stmt) {
         String kind = "unknown";
         if ((stmt instanceof AssignStmt) || (stmt instanceof IdentityStmt))
             kind = "assign";
@@ -166,24 +152,24 @@ class Representation extends JavaRepresentation {
         return kind;
     }
 
-    String unsupported(SootMethod inMethod, Stmt stmt, int index) {
+    static String unsupported(SootMethod inMethod, Stmt stmt, int index) {
         return unsupportedId(getMethodSignature(inMethod), getKind(stmt), stmt.toString(), index);
     }
 
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(SootMethod inMethod, Stmt stmt, int index) {
+    static String instruction(SootMethod inMethod, Stmt stmt, int index) {
         return instructionId(getMethodSignature(inMethod), getKind(stmt), index);
     }
 
-    String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
+    static String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
         String midPart = (expr instanceof DynamicInvokeExpr) ?
             dynamicInvokeIdMiddle((DynamicInvokeExpr)expr) : invokeIdMiddle(expr);
         return numberedInstructionId(getMethodSignature(inMethod), midPart, counter);
     }
 
-    private String invokeIdMiddle(InvokeExpr expr) {
+    private static String invokeIdMiddle(InvokeExpr expr) {
         SootMethodRef exprMethodRef = expr.getMethodRef();
         return exprMethodRef.declaringClass() + "." + simpleName(exprMethodRef);
     }
@@ -191,7 +177,7 @@ class Representation extends JavaRepresentation {
     // Create a middle part for invokedynamic ids. It currently
     // supports the LambdaMetafactory machinery, returning a default
     // value for other (or missing) bootstrap methods.
-    private String dynamicInvokeIdMiddle(DynamicInvokeExpr expr) {
+    private static String dynamicInvokeIdMiddle(DynamicInvokeExpr expr) {
         // The signatures of the two lambda metafactories we currently support.
         final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
         final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
@@ -221,24 +207,21 @@ class Representation extends JavaRepresentation {
     }
 
 
-    String heapAlloc(SootMethod inMethod, AnyNewExpr expr, SessionCounter counter) {
+    static String heapAlloc(SootMethod inMethod, AnyNewExpr expr, SessionCounter counter) {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
             return heapAlloc(inMethod, expr.getType(), counter);
-	else if(expr instanceof NewMultiArrayExpr)
+	    else if(expr instanceof NewMultiArrayExpr)
             return heapAlloc(inMethod, expr.getType(), counter);
             //      return getMethodSignature(inMethod) + "/" + type + "/" +  session.nextNumber(type);
-	else
+	    else
             throw new RuntimeException("Cannot handle new expression: " + expr);
     }
 
-
-    String heapMultiArrayAlloc(SootMethod inMethod, /* NewMultiArrayExpr expr, */ ArrayType type, SessionCounter counter)
-    {
+    static String heapMultiArrayAlloc(SootMethod inMethod, /* NewMultiArrayExpr expr, */ ArrayType type, SessionCounter counter) {
         return heapAlloc(inMethod, type, counter);
     }
 
-    private String heapAlloc(SootMethod inMethod, Type type, SessionCounter counter)
-    {
+    static private String heapAlloc(SootMethod inMethod, Type type, SessionCounter counter) {
         return heapAllocId(getMethodSignature(inMethod), type.toString(), counter);
     }
 }

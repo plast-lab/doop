@@ -1,0 +1,30 @@
+// Context-sensitive pointer analysis with context of 1 call site and a
+// context-sensnitive heap abstraction of 1 call site.
+
+#include "../../main/main.dl"
+#include "../../main/configuration.dl"
+
+.comp OneCallSiteSensitivePlusHeapConfiguration : AbstractConfiguration {
+  // In this analysis, both the real context and the real heap context are
+  // FunctionInvocation_Insns.
+  .type Context  = [ invocation:FunctionInvocation_Insn ]
+  .type HContext = [ invocation:FunctionInvocation_Insn ]
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ?calleeCtx = [?invo],
+    ?tomethod = ?tomethod.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),
+    ?ctx = [?invo],
+    ?hctx = [?invo].
+
+  InitContextResponse(?invocation, ?ctx) :-
+    InitContextRequest(?invocation),
+    ?ctx = [?invocation].
+
+  InitHContextResponse(?value, ?hctx) :-
+    InitHContextRequest(?value),
+    ?hctx = [?value].
+}

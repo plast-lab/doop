@@ -25,11 +25,12 @@ class Main {
 	// Allow access to the analysis object from external code
 	static DoopAnalysis analysis
 
-	public static void main(String[] args) {
+	static void main(String[] args) {
 		try {
 			main2(args)
 		} catch (e) {
-			CommandLineAnalysisFactory.createCliBuilder().usage()
+			if (!(e instanceof DoopErrorCodeException))
+				CommandLineAnalysisFactory.createCliBuilder().usage()
 		}
 	}
 
@@ -51,7 +52,7 @@ class Main {
 		}
 
 		try {
-			// The builder for displaying usage and parging the arguments
+			// The builder for displaying usage and parsing the arguments
 			def clidBuilder = CommandLineAnalysisFactory.createCliBuilder()
 
 			if (!args) {
@@ -115,17 +116,23 @@ class Main {
 							log.debug analysis
 							analysis.run()
 							new CommandLineAnalysisPostProcessor().process(analysis)
-						} catch (DoopErrorCodeException ex) {
-							// Don't continue with the analysis.
+						} catch (DoopErrorCodeException e) {
+							log.error(e.message)
+							log.debug(e.message, e)
+						} catch (e) {
+							log.error "Generic exception $e"
+							throw e
 						}
 					}
 				}).get(analysis.options.TIMEOUT.value as int, TimeUnit.MINUTES)
-			} catch (TimeoutException te) {
+			} catch (TimeoutException e) {
 				log.error "Timeout has expired (${analysis.options.TIMEOUT.value} min)."
 			} finally {
 				executorService.shutdownNow()
 			}
 		} catch (e) {
+			// DoopErrorCodeException is a special wrapper that must
+			// be propagated above, so we don't extract its cause yet.
 			if (e instanceof DoopErrorCodeException) {
 				log.error(e.message)
 				log.debug(e.message, e)

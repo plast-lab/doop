@@ -3,11 +3,8 @@
 
 FunctionInvResolvesTo(?callerCtx, ?invo, ?value, ?hctx, ?tofunction),
 configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tofunction) :-
-  Reachable(?fun),
-  ReachableContext(?callerCtx, ?fun),
-  Instruction_Function(?invo, ?fun),
-  FunctionInvocation_Base(?invo, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  FunctionInvocation_Base(?invo, ?base),
   HeapAllocation_Type(?value, ?tofunction),
   isFunction(?tofunction).
 
@@ -17,14 +14,14 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tofunction) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tofunction),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx).
 
-.decl ResolvedActualParamValue(?callerCtx: configuration.Context, ?invo:Instruction, ?baseValue:Value, ?basehctx:configuration.HContext, ?paramIndex:number, ?paramName:symbol, ?paramValue:Value, ?hctx:configuration.HContext)
+.decl ResolvedActualParamValue(?callerCtx: configuration.Context, ?invo:Instruction, ?resolvedFunction:Function, ?paramName:symbol, ?hctx:configuration.HContext, ?paramValue:Value)
 
 // Interprocedural Assign
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
-ResolvedActualParamValue(?callerCtx, ?invo, ?baseValue, ?basehctx, ?paramIndex, ?paramName, ?value, ?hctx):-
+ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
   CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
   FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
-  FormalParam(?paramIndex, ?paramName, ?function, ?formal),
+  FormalParam(?paramIndex, ?paramName, ?tofunction, ?formal),
   (
     ActualPositionalParam(?paramIndex, ?invo, ?actual);
     ActualKeywordParam(_, ?invo, ?paramName, ?actual)
@@ -33,15 +30,15 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?baseValue, ?basehctx, ?paramIndex, 
 
 // Default arguments
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
-ResolvedActualParamValue(?callerCtx, ?invo, ?baseValue, ?basehctx, ?paramIndex, ?paramName, ?value, ?hctx):-
+ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
   CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
-  FunctionInvResolvesTo(?calleCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
-  FormalParam(?paramIndex, ?paramName, ?function, ?formal),
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
+  FormalParam(?paramIndex, ?paramName, ?tofunction, ?formal),
   !(
     ActualPositionalParam(?paramIndex, ?invo, _);
     ActualKeywordParam(_, ?invo, ?paramName, _)
   ),
-  FormalParam_DefaultValFrom(?function, ?paramName, ?default),
+  FormalParam_DefaultValFrom(?tofunction, ?paramName, ?default),
   VarPointsTo(?hctx,  ?value, ?callerCtx, ?default).
 
 

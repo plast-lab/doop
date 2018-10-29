@@ -5,105 +5,189 @@
 HeapAllocation_ContextInsensitive(?heap) :-
    isMethodHandleConstant(?heap).
 
-#define LAMBDA_METAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
+#define LAMBDA_METAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
 
-#define LAMBDA_ALTMETAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
+#define LAMBDA_ALTMETAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
 
-// Method references are wrapped by calling invokedynamic with
-// boostrap method being the lambda metafactory and the second
-// bootstrap argument being a constant method handle. The result
-// 'value' of the invokedynamic is a lambda, which contains an
-// instance method calling static method 'realMethod'.
+/** Phase 1: Linkage (creating a CallSite) **/
 
-.decl ConstantMethodHandleLambda(?value:Value, ?dynName:symbol, ?dynRet:Type, ?realMethod:Method)
-
-.decl InvokedynamicBootstrap(?invo:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
-
-#define MHDesc(type, method, real, ret, name) \
-   cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))
-
-#define MHValue(invo, ret, desc) \
-   cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", desc))))
-
-// Intermediate relation to make rules easier to read.
-.decl ConstantMHLambdaVPT(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method, ?invo:MethodInvocation)
-
-ConstantMHLambdaVPT(?hctx, MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?realMethod, ?interface, ?dynName)), ?ctx, ?var, ?interface, ?dynName, ?realMethod, ?invo) :-
-   isDynamicMethodInvocation_Insn(?invo),
-   BootstrapParam(1, ?invo, ?handleVar),
-   DynamicMethodInvocation_Bootstrap(?invo, LAMBDA_METAFACTORY_ID),
-   VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
-   MethodHandleConstant_Method(?handleVal, ?realMethod),
-   DynamicMethodInvocation_DynName(?invo, ?dynName),
-   DynamicMethodInvocation_DynReturnType(?invo, ?interface),
-   isInterfaceType(?interface),
-   AssignReturnValue(?invo, ?var),
-   // Used to generate friendly description for the generated wrapper.
-   Method_SimpleName(?realMethod, ?handleMeth),
-   Method_DeclaringType(?realMethod, ?handleType).
-   // ?desc = MHDesc(?handleType, ?handleMeth, ?interface, ?dynName),
-   // ?value = MHValue(?invo, ?interface, ?desc).
-   // ?value = MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?interface, ?dynName)).
-
-// Unpack the information gathered above and populate appropriate relations.
-VarPointsTo(?hctx, ?value, ?ctx, ?var),
-MockValueConsMacro(?value, ?interface),
-ConstantMethodHandleLambda(?value, ?dynName, ?interface, ?realMethod),
-InvokedynamicBootstrap(?invo, ?ctx) :-
-   ConstantMHLambdaVPT(?hctx, ?value, ?ctx, ?var, ?interface, ?dynName, ?realMethod, ?invo).
+// Find invocations to the lambda metafactories.
+.decl LambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?interface:InterfaceType)
+LambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?interface) :-
+   isDynamicMethodInvocation_Insn(?invokedynamic),
+   Instruction_Method(?invokedynamic, ?inMethod),
+   Reachable(?inMethod),
+   DynamicMethodInvocation_Bootstrap(?invokedynamic, ?method),
+   (?method = LAMBDA_METAFACTORY ; ?method = LAMBDA_ALTMETAFACTORY),
+   DynamicMethodInvocation_DynName(?invokedynamic, ?dynName),
+   DynamicMethodInvocation_DynReturnType(?invokedynamic, ?interface).
 
 // Record invokedynamic invocations whose bootstrap methods are not
 // handled at all.
 .decl UnhandledInvokedynamic(?i:DynamicMethodInvocation_Insn, ?bootMethodId:symbol)
 
 UnhandledInvokedynamic(?i, ?bootMethodId) :-
-   isDynamicMethodInvocation_Insn(?i),
    DynamicMethodInvocation_Bootstrap(?i, ?bootMethodId),
-   // ?bootMethodId != LAMBDA_ALTMETAFACTORY_ID,
-   ?bootMethodId != LAMBDA_METAFACTORY_ID.
+   !LambdaMetafactoryInvoke(?i, _, _).
+
+#define MockLambdaCallSite(invo, ret, type, method, real, name) \
+   cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
+
+.decl LambdaCallSite(?value:Value, ?dynName:symbol, ?dynRet:Type, ?implMethod:Method, K:number)
+
+// Intermediate relation to make rules easier to read.
+.decl LambdaCallSiteAux(?invokedynamic:DynamicMethodInvocation_Insn, ?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?samType:InterfaceType, ?dynName:symbol, ?implMethod:Method, K:number)
+
+.decl InvokedynamicBootstrapCtx(?invokedynamic:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
+
+InvokedynamicBootstrapCtx(?invokedynamic, ?ctx),
+LambdaCallSiteAux(?invokedynamic, ?hctx, MockLambdaCallSite(?invokedynamic, ?samType, ?handleType, ?handleMeth, ?implMethod, ?dynName), ?ctx, ?var, ?samType, ?dynName, ?implMethod, K) :-
+   LambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?samType),
+   DynamicMethodInvocation_DynArity(?invokedynamic, K),
+   BootstrapParam(1, ?invokedynamic, ?handleVar),
+   VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
+   MethodHandleConstant_Method(?handleVal, ?implMethod),
+   isInterfaceType(?samType),
+   AssignReturnValue(?invokedynamic, ?var),
+   // Used to generate friendly description for the generated mock value.
+   Method_SimpleName(?implMethod, ?handleMeth),
+   Method_DeclaringType(?implMethod, ?handleType).
+
+.decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?metafactory:Method)
+InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?metafactory) :-
+   LambdaMetafactoryInvoke(?i, _, _),
+   DynamicMethodInvocation_Bootstrap(?i, ?metafactory),
+   isImmutableContext(?calleeCtx),
+   InvokedynamicBootstrapCtx(?i, ?callerCtx).
+
+ReachableContext(?calleeCtx, ?callee) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, _, ?calleeCtx, ?callee).
+
+.decl LambdaCallSite_Invokedynamic(?value:Value, ?invokedynamic:DynamicMethodInvocation_Insn)
+
+// Unpack the information gathered above and populate appropriate relations.
+VarPointsTo(?hctx, ?value, ?ctx, ?var),
+MockValueConsMacro(?value, ?samType),
+LambdaCallSite_Invokedynamic(?value, ?invokedynamic),
+LambdaCallSite(?value, ?dynName, ?samType, ?implMethod, K) :-
+   LambdaCallSiteAux(?invokedynamic, ?hctx, ?value, ?ctx, ?var, ?samType, ?dynName, ?implMethod, K).
+
+// Pass arguments to bootstrap methods. First three arguments are
+// filled in by the JVM.
+
+#define MOCK_MH_LOOKUP "mock method handles lookup object"
+
+// Use a mock method handles lookup object for all metafactories.
+MockValueConsMacro(MOCK_MH_LOOKUP, "java.lang.invoke.MethodHandles$Lookup"),
+VarPointsTo(?hctx, MOCK_MH_LOOKUP, ?ctx, ?caller) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, _, ?ctx, ?metafactory),
+   FormalParam(0, ?metafactory, ?caller),
+   isImmutableHContext(?hctx).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?invokedName) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, _, ?ctx, ?metafactory),
+   FormalParam(?idx, ?metafactory, ?invokedName),
+   (?idx = 1 ; ?idx = 2),
+   VarPointsTo(?hctx, ?value, ?ctx, ?invokedName).
+
+// Normal handling for the last three arguments of the metafactory.
+VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, ?i, ?ctx, ?metafactory),
+   ?metafactory = LAMBDA_METAFACTORY,
+   FormalParam(?idx + 3, ?metafactory, ?formal),
+   BootstrapParam(?idx, ?i, ?actual),
+   VarPointsTo(_, ?val, _, ?actual),
+   isImmutableHContext(?hctx).
+
+// Use a mock varargs array to fix calls to the alt metafactory.
+
+#define MOCK_ARRAY(instr) cat("metafactory varargs array for ", instr)
+
+ArrayIndexPointsTo(?hctx, ?val, ?hctx, MOCK_ARRAY(?i)),
+MockValueConsMacro(MOCK_ARRAY(?i), "java.lang.Object[]"),
+VarPointsTo(?hctx, MOCK_ARRAY(?i), ?ctx, ?formalVarArgs) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, ?i, ?ctx, ?metafactory),
+   ?metafactory = LAMBDA_ALTMETAFACTORY,
+   FormalParam(3, ?metafactory, ?formalVarArgs),
+   BootstrapParam(?idx, ?i, ?actual),
+   ?idx > 2,
+   VarPointsTo(_, ?val, _, ?actual),
+   isImmutableHContext(?hctx).
+
+/** Phase 2: Capture (invoke CallSite, return functional object) **/
+
+.decl LambdaCapturedThis(?callsite:Value, ?thisValue:Value, ?ctx:configuration.Context)
+.output LambdaCapturedThis
+
+// Capture value of 'this'.
+LambdaCapturedThis(?callsite, ?thisValue, ?ctx) :-
+   LambdaCallSite(?callsite, _, _, _, K),
+   K > 0,
+   LambdaCallSite_Invokedynamic(?callsite, ?invokedynamic),
+   ActualParam(0, ?invokedynamic, ?actualThis),
+   VarPointsTo(_, ?thisValue, ?ctx, ?actualThis).
+
+/** Phase 3: Invocation (call method on the functional object) **/
 
 // When invokeinterface is called on a lambda object constructed by a
 // constant method handle, the real method is called. This can wrap a
-// static method call as an instance method call. We create two call
-// graph edges: (1) invokeinterface on the method handle lambda calls
-// the real method and (2) invokedynamic calls the bootstrap method.
+// static method call as an instance method call.
 
-.decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method)
+.decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?callsite:Value)
 
-InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod) :-
-   ConstantMethodHandleLambda(?value, ?dynName, _, ?realMethod),
-   VarPointsTo(_, ?value, ?callerCtx, ?var),
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?callsite) :-
+   LambdaCallSite(?callsite, ?dynName, _, ?implMethod, _),
+   VarPointsTo(_, ?callsite, ?callerCtx, ?var),
    VirtualMethodInvocation_Base(?i, ?var),
    VirtualMethodInvocation_SimpleName(?i, ?dynName),
    isImmutableContext(?calleeCtx).
 
-InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, LAMBDA_METAFACTORY_ID) :-
-   isImmutableContext(?calleeCtx),
-   InvokedynamicBootstrap(?i, ?callerCtx).
-
 ReachableContext(?calleeCtx, ?callee) :-
-   InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee).
+   InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
 
-// Pass arguments to underlying method.
+// A boxing/unboxing conversion of types including the null type.
+.decl BoxTypeConversion(?original:Type, ?new:Type)
+
+BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, ?t2).
+BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
+BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
+BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
+
+// Pass arguments to the implementing method. We shift the arguments
+// by the number of the K captured variables and permit conversions.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?realMethod),
-   FormalParam(?idx, ?realMethod, ?formal),
-   ActualParam(?idx, ?i, ?actual),
+   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?callsite),
+   LambdaCallSite(?callsite, _, _, _, K),
+   FormalParam(?idx, ?implMethod, ?formal),
+   ActualParam(?idx + K, ?i, ?actual),
    VarPointsTo(_, ?val, _, ?actual),
+   Value_Type(?val, ?valueType),
+   Var_Type(?formal, ?formalType),
+   // Check type compatibility (spec: normal case/casting/(un)boxing).
+   (basic.SubtypeOf(?valueType, ?formalType);
+    basic.SubtypeOf(?formalType, ?valueType);
+    BoxTypeConversion(?valueType, ?formalType)),
+   isImmutableHContext(?hctx).
+
+// Special handling for captured "this" parameters.
+VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
+   InvokedynamicCallGraphEdge(_, _, ?ctx, ?implMethod, ?callsite),
+   LambdaCapturedThis(?callsite, ?thisValue, ?ctx),
+   ThisVar(?implMethod, ?this),
    isImmutableHContext(?hctx).
 
 // Handle return values.
 VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
-   InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod),
-   ReturnVar(?realReturnVar, ?realMethod),
+   InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, _),
+   ReturnVar(?realReturnVar, ?implMethod),
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
    AssignReturnValue(?i, ?ret).
 
-.decl Lambda_Method(?value:Value, ?realMethod:Method)
-Lambda_Method(?value, ?realMethod) :-
-   ConstantMethodHandleLambda(?value, _, _, ?realMethod).
+.decl Lambda_Method(?value:Value, ?implMethod:Method)
+Lambda_Method(?value, ?implMethod) :-
+   LambdaCallSite(?value, _, _, ?implMethod, _).
 
-.decl ConstructorReference(?var:Var, ?value:Value, ?i:MethodInvocation, ?realMethod:Method)
+.decl ConstructorReference(?var:Var, ?value:Value, ?i:MethodInvocation, ?implMethod:Method)
 
 // Applications of constructor references construct values. However,
 // these values do not come from a 'new' instruction in the code but
@@ -112,17 +196,17 @@ Lambda_Method(?value, ?realMethod) :-
 #define ConstructorReferenceValue(type) cat(type, "::: (Mock)")
 
 VarPointsTo(?hctx, ConstructorReferenceValue(?type), ?ctx, ?var),
-ConstructorReference(?var, ConstructorReferenceValue(?type), ?i, ?realMethod),
+ConstructorReference(?var, ConstructorReferenceValue(?type), ?i, ?implMethod),
 MockValueConsMacro(ConstructorReferenceValue(?type), ?type) :-
    VarPointsTo(?hctx, ?baseVal, ?ctx, ?base),
    VirtualMethodInvocation_Base(?i, ?base),
-   Lambda_Method(?baseVal, ?realMethod),
-   Method_SimpleName(?realMethod, "<init>"),
-   Method_DeclaringType(?realMethod, ?type),
+   Lambda_Method(?baseVal, ?implMethod),
+   Method_SimpleName(?implMethod, "<init>"),
+   Method_DeclaringType(?implMethod, ?type),
    AssignReturnValue(?i, ?var).
 
 // Method handles usually need reflection except they come from the constant pool.
-.decl MethodHandle_Method(?mh: Value, ?method: Method)
+.decl MethodHandle_Method(?mh:Value, ?method:Method)
 .decl isMethodHandle(?mh:Value)
 
 isMethodHandle(?mh),

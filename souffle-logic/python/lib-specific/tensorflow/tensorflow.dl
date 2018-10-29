@@ -1,0 +1,274 @@
+
+
+isModule("<tensorflow>").
+
+//------------------------------------------------------
+//                    TENSOR DATA TYPES
+//------------------------------------------------------
+
+.type TensorDataType = ClassType
+
+.decl isTensorDataType(?type: TensorDataType)
+ModeledClass("<tensorflow.float16>", "float16", "<tensorflow>").
+isTensorDataType("<tensorflow.float16>").
+ModeledClass("<tensorflow.float32>", "float32", "<tensorflow>").
+isTensorDataType("<tensorflow.float32>").
+ModeledClass("<tensorflow.float64>", "float64", "<tensorflow>").
+isTensorDataType("<tensorflow.float64>").
+ModeledClass("<tensorflow.bfloat16>", "bfloat16", "<tensorflow>").
+isTensorDataType("<tensorflow.bfloat16>").
+ModeledClass("<tensorflow.complex64>", "complex64", "<tensorflow>").
+isTensorDataType("<tensorflow.complex64>").
+ModeledClass("<tensorflow.complex128>", "complex128", "<tensorflow>").
+isTensorDataType("<tensorflow.complex128>").
+ModeledClass("<tensorflow.int8>", "int8", "<tensorflow>").
+isTensorDataType("<tensorflow.int8>").
+ModeledClass("<tensorflow.uint8>", "uint8", "<tensorflow>").
+isTensorDataType("<tensorflow.uint8>").
+ModeledClass("<tensorflow.uint16>", "uint16", "<tensorflow>").
+isTensorDataType("<tensorflow.uint16>").
+ModeledClass("<tensorflow.uint32>", "uint32", "<tensorflow>").
+isTensorDataType("<tensorflow.uint32>").
+ModeledClass("<tensorflow.uint64>", "uint64", "<tensorflow>").
+isTensorDataType("<tensorflow.uint64>").
+ModeledClass("<tensorflow.int16>", "int16", "<tensorflow>").
+isTensorDataType("<tensorflow.int16>").
+ModeledClass("<tensorflow.int32>", "int32", "<tensorflow>").
+isTensorDataType("<tensorflow.int32>").
+ModeledClass("<tensorflow.int64>", "int64", "<tensorflow>").
+isTensorDataType("<tensorflow.int64>").
+ModeledClass("<tensorflow.bool>", "bool", "<tensorflow>").
+isTensorDataType("<tensorflow.bool>").
+ModeledClass("<tensorflow.string>", "string", "<tensorflow>").
+isTensorDataType("<tensorflow.string>").
+ModeledClass("<tensorflow.qint8>", "qint8", "<tensorflow>").
+isTensorDataType("<tensorflow.qint8>").
+ModeledClass("<tensorflow.quint8>", "quint8", "<tensorflow>").
+isTensorDataType("<tensorflow.quint8>").
+ModeledClass("<tensorflow.qint16>", "qint16", "<tensorflow>").
+isTensorDataType("<tensorflow.qint16>").
+ModeledClass("<tensorflow.quint16>", "quint16", "<tensorflow>").
+isTensorDataType("<tensorflow.quint16>").
+ModeledClass("<tensorflow.qint32>", "qint32", "<tensorflow>").
+isTensorDataType("<tensorflow.qint32>").
+ModeledClass("<tensorflow.resource>", "resource", "<tensorflow>").
+isTensorDataType("<tensorflow.resource>").
+ModeledClass("<tensorflow.variant>", "variant", "<tensorflow>").
+isTensorDataType("<tensorflow.variant>").
+
+ModeledClass("<tensorflow.Tensor>", "Tensor", "<tensorflow>").
+
+ModeledClass("<tensorflow.TensorShape>", "TensorShape", "<tensorflow>").
+
+ModeledModule("<tensorflow.layers>", "layers", "<tensorflow>").
+ModeledModule("<tensorflow.nn>", "nn", "<tensorflow>").
+
+ModeledFunction("<tensorflow.reshape>", "reshape", "<tensorflow>").
+FormalParam( 0, "tensor", "<tensorflow.reshape>", "<tensorflow.reshape>/mockParam1").
+FormalParam( 1, "shape", "<tensorflow.reshape>",  "<tensorflow.reshape>/mockParam2").
+FormalParam( 2, "name", "<tensorflow.reshape>",   "<tensorflow.reshape>/mockParam3").
+
+ModeledFunction("<tensorflow.placeholder>", "placeholder", "<tensorflow>").
+FormalParam( 0, "dtype", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam1").
+FormalParam( 1, "shape", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam2").
+FormalParam( 2, "name", "<tensorflow.placeholder>",  "<tensorflow.placeholder>/mockParam3").
+
+
+// LAYERS CONVOLUTION
+
+ModeledFunction("<tensorflow.layers.conv1d>", "conv1d", "<tensorflow.layers>").
+ModeledFunction("<tensorflow.layers.conv2d>", "conv2d", "<tensorflow.layers>").
+ModeledFunction("<tensorflow.layers.conv3d>", "conv3d", "<tensorflow.layers>").
+
+FormalParam( 0, "inputs", ?function, cat(?function,"/mockParam1")),
+FormalParam( 1, "filters", ?function, cat(?function,"/mockParam2")),
+FormalParam( 2, "kernel_size", ?function,  cat(?function,"/mockParam3")),
+FormalParam( 3, "strides", ?function,  cat(?function,"/mockParam4")),
+FormalParam( 4, "padding", ?function,  cat(?function,"/mockParam5")),
+FormalParam( 5, "data_format", ?function,  cat(?function,"/mockParam6")),
+FormalParam( 6, "dilation_rate", ?function,  cat(?function,"/mockParam7")):-
+  ?function = "<tensorflow.layers.conv1d>";
+  ?function = "<tensorflow.layers.conv2d>";
+  ?function = "<tensorflow.layers.conv3d>".
+
+//isListOfIntConsts("<tensorflow.layers>/new list/0").
+//ConstListDimensions("<tensorflow.layers>/new list/0",2).
+//ConstListContents("<tensorflow.layers>/new list/0", 0, "<num-constant(int):1>").
+//ConstListContents("<tensorflow.layers>/new list/0", 1, "<num-constant(int):1>").
+
+Value_Num("<num-constant(int):1>", "1").
+Value_String("<string constant:valid>" ,"valid").
+Value_String("<string constant:channels_last>" ,"channels_last").
+
+VarPointsTo(?hctx, "<num-constant(int):1>", ?ctx, "<tensorflow.layers>/stridesDefValVar"),
+VarPointsTo(?hctx, "<num-constant(int):1>", ?ctx, "<tensorflow.layers>/dilationRateDefValVar"),
+VarPointsTo(?hctx, "<string constant:channels_last>", ?ctx, "<tensorflow.layers>/dataFormatDefValVar"),
+VarPointsTo(?hctx, "<string constant:valid>", ?ctx, "<tensorflow.layers>/paddingDefValVar") :-
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
+
+FormalParam_DefaultValFrom(?function, "strides", "<tensorflow.layers>/stridesDefValVar"),
+FormalParam_DefaultValFrom(?function, "dilation_rate", "<tensorflow.layers>/dilationRateDefValVar"),
+FormalParam_DefaultValFrom(?function, "data_format", "<tensorflow.layers>/dataFormatDefValVar"),
+FormalParam_DefaultValFrom(?function, "padding", "<tensorflow.layers>/paddingDefValVar"):-
+  ?function = "<tensorflow.layers.conv1d>";
+  ?function = "<tensorflow.layers.conv2d>";
+  ?function = "<tensorflow.layers.conv3d>".
+
+//  LAYERS POOLING
+
+ModeledFunction("<tensorflow.layers.max_pooling1d>", "max_pooling1d", "<tensorflow.layers>").
+ModeledFunction("<tensorflow.layers.max_pooling2d>", "max_pooling2d", "<tensorflow.layers>").
+ModeledFunction("<tensorflow.layers.max_pooling3d>", "max_pooling3d", "<tensorflow.layers>").
+
+ModeledFunction("<tensorflow.layers.average_pooling1d>", "average_pooling1d", "<tensorflow.layers>").
+ModeledFunction("<tensorflow.layers.average_pooling2d>", "average_pooling2d", "<tensorflow.layers>").
+ModeledFunction("<tensorflow.layers.average_pooling3d>", "average_pooling3d", "<tensorflow.layers>").
+
+
+FormalParam_DefaultValFrom(?function, "padding", "<tensorflow.layers>/paddingDefValVar"),
+FormalParam_DefaultValFrom(?function, "data_format", "<tensorflow.layers>/dataFormatDefValVar"),
+FormalParam( 0, "inputs", ?function, cat(?function,"/mockParam1")),
+FormalParam( 1, "pool_size", ?function, cat(?function,"/mockParam2")),
+FormalParam( 2, "padding", ?function,  cat(?function,"/mockParam3")),
+FormalParam( 3, "data_format", ?function,  cat(?function,"/mockParam4")):-
+  ?function = "<tensorflow.layers.max_pooling1d>";
+  ?function = "<tensorflow.layers.max_pooling2d>";
+  ?function = "<tensorflow.layers.max_pooling3d>";
+  ?function = "<tensorflow.layers.average_pooling1d>";
+  ?function = "<tensorflow.layers.average_pooling2d>";
+  ?function = "<tensorflow.layers.average_pooling3d>".
+
+
+// NN CONV
+
+ModeledFunction("<tensorflow.nn.conv1d>", "conv1d", "<tensorflow.nn>").
+ModeledFunction("<tensorflow.nn.conv2d>", "conv2d", "<tensorflow.nn>").
+ModeledFunction("<tensorflow.nn.conv3d>", "conv3d", "<tensorflow.nn>").
+
+
+FormalParam( 0, "value", "<tensorflow.nn.conv1d>", "<tensorflow.nn.conv1d>/mockParam1").
+FormalParam( 1, "filters", "<tensorflow.nn.conv1d>", "<tensorflow.nn.conv1d>/mockParam2").
+FormalParam( 2, "stride", "<tensorflow.nn.conv1d>",  "<tensorflow.nn.conv1d>/mockParam3").
+
+FormalParam( 0, "inputs", ?function, cat(?function,"/mockParam1")),
+FormalParam( 1, "filter", ?function, cat(?function,"/mockParam2")),
+FormalParam( 2, "strides", ?function,  cat(?function,"/mockParam3")):-
+  ?function = "<tensorflow.nn.conv2d>";
+  ?function = "<tensorflow.nn.conv3d>".
+
+
+FormalParam( 3, "padding", ?function,  cat(?function,"/mockParam4")),
+FormalParam( 4, "use_cudnn_on_gpu", ?function,  cat(?function,"/mockParam5")),
+FormalParam( 5, "data_format", ?function,  cat(?function,"/mockParam6")),
+FormalParam( 5, "name", ?function,  cat(?function,"/mockParam7")):-
+  ?function = "<tensorflow.nn.conv1d>";
+  ?function = "<tensorflow.nn.conv2d>";
+  ?function = "<tensorflow.nn.conv3d>".
+
+Value_String("<string constant:NHWC>" ,"NHWC").
+Value_String("<string constant:NDHWC>" ,"NDHWC").
+
+VarPointsTo(?hctx, "<None>", ?ctx, "<tensorflow.nn>/useCudnnOnGpuDefValVar"),
+VarPointsTo(?hctx, "<None>", ?ctx, "<tensorflow.nn>/dataFormat1dDefValVar"),
+VarPointsTo(?hctx, "<string constant:NHWC>", ?ctx, "<tensorflow.nn>/dataFormat2dDefValVar"),
+VarPointsTo(?hctx, "<string constant:NDHWC>", ?ctx, "<tensorflow.nn>/dataFormat3dDefValVar"),
+VarPointsTo(?hctx, "<None>", ?ctx, "<tensorflow.nn>/nameDefValVar") :-
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
+
+
+FormalParam_DefaultValFrom("<tensorflow.nn.conv1d>", "data_format", "<tensorflow.nn>/dataFormat1dDefValVar").
+FormalParam_DefaultValFrom("<tensorflow.nn.conv2d>", "data_format", "<tensorflow.nn>/dataFormat2dDefValVar").
+FormalParam_DefaultValFrom("<tensorflow.nn.conv3d>", "data_format", "<tensorflow.nn>/dataFormat3dDefValVar").
+
+FormalParam_DefaultValFrom(?function, "use_cudnn_on_gpu", "<tensorflow.nn>/useCudnnOnGpuDefValVar"),
+FormalParam_DefaultValFrom(?function, "name", "<tensorflow.nn>/nameDefValVar"):-
+  ?function = "<tensorflow.nn.conv1d>";
+  ?function = "<tensorflow.nn.conv2d>";
+  ?function = "<tensorflow.nn.conv3d>".
+
+
+// NN POOLING
+
+ModeledFunction("<tensorflow.nn.avg_pool>", "avg_pool", "<tensorflow.nn>").
+ModeledFunction("<tensorflow.nn.avg_pool3d>", "avg_pool3d", "<tensorflow.nn>").
+ModeledFunction("<tensorflow.nn.max_pool>", "max_pool", "<tensorflow.nn>").
+ModeledFunction("<tensorflow.nn.max_pool3d>", "max_pool3d", "<tensorflow.nn>").
+
+FormalParam( 0, "value", ?function, cat(?function,"/mockParam1")):-
+  ?function = "<tensorflow.nn.avg_pool>";
+  ?function = "<tensorflow.nn.max_pool>".
+
+FormalParam( 0, "input", ?function, cat(?function,"/mockParam1")):-
+  ?function = "<tensorflow.nn.avg_pool3d>";
+  ?function = "<tensorflow.nn.max_pool3d>".
+
+FormalParam( 1, "ksize", ?function, cat(?function,"/mockParam2")),
+FormalParam( 2, "strides", ?function,  cat(?function,"/mockParam3")),
+FormalParam( 3, "padding", ?function,  cat(?function,"/mockParam4")),
+FormalParam( 4, "data_format", ?function,  cat(?function,"/mockParam5")):-
+  ?function = "<tensorflow.nn.avg_pool>";
+  ?function = "<tensorflow.nn.max_pool>";
+  ?function = "<tensorflow.nn.avg_pool3d>";
+  ?function = "<tensorflow.nn.max_pool3d>".
+
+FormalParam_DefaultValFrom(?function, "data_format", "<tensorflow.nn>/dataFormat2dDefValVar"):-
+  ?function = "<tensorflow.nn.avg_pool>";
+  ?function = "<tensorflow.nn.max_pool>".
+
+FormalParam_DefaultValFrom(?function, "data_format", "<tensorflow.nn>/dataFormat3dDefValVar"):-
+  ?function = "<tensorflow.nn.avg_pool3d>";
+  ?function = "<tensorflow.nn.max_pool3d>".
+
+.decl TensorObjectHasConcreteDimensions(?tensorHctx:configuration.HContext, ?tensorVal:Value)
+.output TensorObjectHasConcreteDimensions
+
+//    CONSTANTS
+
+Value_Type("<tensorflow>/new <tensorflow.float32>/0", "<tensorflow.float32>").
+
+VarPointsTo(?hctx, "<tensorflow>/new <tensorflow.float32>/0", ?ctx, "<tensorflow>/floatDtypeDefVar"),
+VarPointsTo(?hctx, "<None>", ?ctx, "<tensorflow>/noneDefVar") :-
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
+
+ModeledFunction("<tensorflow.zeros>", "zeros", "<tensorflow>").
+ModeledFunction("<tensorflow.ones>", "ones", "<tensorflow>").
+ModeledFunction("<tensorflow.zeros_like>", "zeros_like", "<tensorflow>").
+ModeledFunction("<tensorflow.ones_like>", "ones_like", "<tensorflow>").
+ModeledFunction("<tensorflow.constant>", "constant", "<tensorflow>").
+ModeledFunction("<tensorflow.fill>", "fill", "<tensorflow>").
+
+FormalParam_DefaultValFrom(?function, "dtype", "<tensorflow>/floatDtypeDefVar"),
+FormalParam( 0, "shape", ?function, cat(?function,"/mockParam1")),
+FormalParam( 1, "dtype", ?function, cat(?function,"/mockParam2")),
+FormalParam( 2, "name", ?function,  cat(?function,"/mockParam3")):-
+  ?function = "<tensorflow.ones>";
+  ?function = "<tensorflow.zeros>".
+
+FormalParam_DefaultValFrom(?function, "dtype", "<tensorflow>/noneDefVar"),
+FormalParam( 0, "tensor", ?function, cat(?function,"/mockParam1")),
+FormalParam( 1, "dtype", ?function, cat(?function,"/mockParam2")),
+FormalParam( 2, "name", ?function,  cat(?function,"/mockParam3")):-
+  ?function = "<tensorflow.ones_like>";
+  ?function = "<tensorflow.zeros_like>".
+
+FormalParam_DefaultValFrom("<tensorflow.constant>", "dtype", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValFrom("<tensorflow.constant>", "shape", "<tensorflow>/noneDefVar").
+
+FormalParam( 0, "value", "<tensorflow.constant>", "<tensorflow.constant>/mockParam1").
+FormalParam( 1, "dtype", "<tensorflow.constant>", "<tensorflow.constant>/mockParam2").
+FormalParam( 2, "shape", "<tensorflow.constant>",  "<tensorflow.constant>/mockParam3").
+FormalParam( 3, "name", "<tensorflow.constant>",  "<tensorflow.constant>/mockParam4").
+
+FormalParam( 0, "dims", "<tensorflow.fill>", "<tensorflow.fill>/mockParam1").
+FormalParam( 1, "value", "<tensorflow.fill>", "<tensorflow.fill>/mockParam2").
+FormalParam( 2, "name", "<tensorflow.fill>",  "<tensorflow.fill>/mockParam3").
+
+
+//REVIEW: This is not correct as it is a different class, but will keep this for now
+ModeledFunction("<tensorflow.Variable>", "Variable", "<tensorflow>").
+FormalParam_DefaultValFrom("<tensorflow.Variable>", "dtype", "<tensorflow>/noneDefVar").
+FormalParam( 0, "initial_value", "<tensorflow.Variable>", "<tensorflow.Variable>/mockParam1").
+FormalParam( 1, "dtype", "<tensorflow.Variable>", "<tensorflow.Variable>/mockParam2").

@@ -1,10 +1,10 @@
 package org.clyze.doop.soot;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.ArrayList;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Parameters;
+import soot.SootClass;
 
 public class SootParameters extends Parameters {
     enum Mode { INPUTS, FULL }
@@ -13,13 +13,18 @@ public class SootParameters extends Parameters {
     String _main = null;
     boolean _ssa = false;
     boolean _allowPhantom = false;
-    private boolean _runFlowdroid = false;
     boolean _generateJimple = false;
-    private boolean _toStdout = false;
     boolean _ignoreWrongStaticness = false;
     boolean _reportPhantoms = true;
     boolean _failOnMissingClasses = false;
-    private Collection<String> extraClassesToResolve = new ArrayList<>();
+    String _androidJars = null;
+    private boolean _runFlowdroid = false;
+    private boolean _toStdout = false;
+    private final Collection<String> extraClassesToResolve = new ArrayList<>();
+
+    public boolean isApplicationClass(SootClass klass) {
+        return isApplicationClass(Representation.unescapeSimpleName(klass.getName()));
+    }
 
     public boolean getRunFlowdroid() {
       return this._runFlowdroid;
@@ -48,6 +53,11 @@ public class SootParameters extends Parameters {
             break;
         case "--allow-phantom":
             this._allowPhantom = true;
+            break;
+        case "--android-jars":
+            i = shift(args, i);
+            _android = true;
+            _androidJars = args[i];
             break;
         case "--run-flowdroid":
             this._runFlowdroid = true;
@@ -94,10 +104,11 @@ public class SootParameters extends Parameters {
             System.err.println("  -lsystem                              Find classes in default system classes");
             System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
             System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails");
-            System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
+            System.err.println("  --no-facts                            Don't generate facts (just empty files -- used for debugging)");
             System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot");
             System.err.println("  --failOnMissingClasses                Terminate if classes are missing");
             System.err.println("  --also-resolve <class>                Force resolution of class that may not be found automatically.");
+            System.err.println("  --log-dir <dir>                       Write logs in directory <dir>.");
             System.err.println("Jimple/Shimple generation:");
             System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
             System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
@@ -123,15 +134,16 @@ public class SootParameters extends Parameters {
         if (_toStdout && !_generateJimple) {
             System.err.println("error: --stdout must be used with --generate-jimple");
             throw new DoopErrorCodeException(7);
-        }
-        else if (_toStdout && getOutputDir() != null) {
+        } else if (_toStdout && getOutputDir() != null) {
             System.err.println("error: --stdout and -d options are not compatible");
             throw new DoopErrorCodeException(2);
-        }
-        else if ((getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
+        } else if ((getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
                 (!_android)) {
             System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
             throw new DoopErrorCodeException(3);
+        } else if (_android && _androidJars == null) {
+            System.err.println("internal error: bad configuration for Android analysis mode, missing Android .jar");
+            throw new DoopErrorCodeException(21);
         }
 
         if (!_toStdout && getOutputDir() == null)

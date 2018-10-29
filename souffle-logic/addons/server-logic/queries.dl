@@ -3,12 +3,18 @@
 
 // Class-- //
 
-.decl _Valid_Type(?type:ReferenceType)
-_Valid_Type(?type) :-
+.decl _Valid_Interesting_Type(?type:ReferenceType)
+_Valid_Interesting_Type(?type) :-
   isReferenceType(?type),
   !Type_null(?type),
   !isArrayType(?type),
   _Server_Interesting_Type(?type).
+
+.decl _Valid_Type(?type:ReferenceType)
+_Valid_Type(?type) :-
+  isReferenceType(?type),
+  !Type_null(?type),
+  !isArrayType(?type).
 
 // ?class is implemented/extended by ?subClass
 .decl Server_Class_Subtype(?class:ReferenceType, ?subClass:ReferenceType)
@@ -48,7 +54,7 @@ _Server_Interesting_Type(?type) :-
 #ifdef REFLECTION_DYNAMIC_PROXIES
 // Proxied interfaces
 _Server_Interesting_Type(?interface) :-
-  ProxyObject_Interface(_, ?interface).
+  mainAnalysis.ProxyObject_Interface(_, ?interface).
 #endif
 
 // Transitively, everything up the hierarchy
@@ -66,8 +72,8 @@ Server_Type_Can_Access_Field(?class, ?fld) :-
   !Modifier_private(?mod),
   basic.SupertypeOf(?supertype, ?class),
   ?supertype != ?class,
-  _Valid_Type(?class),
-  _Valid_Type(?supertype).
+  _Valid_Interesting_Type(?class),
+  _Valid_Interesting_Type(?supertype).
 
 // --Class //
 
@@ -87,8 +93,8 @@ Server_Field_ShadowedBy(?fld, ?shadowFld) :-
   Field_DeclaringType(?fld, ?class),
   Field_SimpleName(?fld, ?name),
   basic.SubtypeOfDifferent(?subClass, ?class),
-  _Valid_Type(?class),
-  _Valid_Type(?subClass),
+  _Valid_Interesting_Type(?class),
+  _Valid_Interesting_Type(?subClass),
   Field_DeclaringType(?shadowFld, ?subClass),
   Field_SimpleName(?shadowFld, ?name).
 
@@ -251,8 +257,8 @@ Server_Method_Subtype(?method, ?subMethod) :-
   ?name != "<clinit>",
   ?name != "<init>",
   basic.SubtypeOfDifferent(?subType, ?type),
-  _Valid_Type(?type),
-  _Valid_Type(?subType),
+  _Valid_Interesting_Type(?type),
+  _Valid_Interesting_Type(?subType),
   Method_DeclaringType(?subMethod, ?subType),
   Method_SimpleName(?subMethod, ?name),
   Method_Descriptor(?subMethod, ?desc).
@@ -265,8 +271,8 @@ Server_Method_Subtype(?method, ?subMethod) :-
   ?name != "<clinit>",
   ?name != "<init>",
   basic.SubtypeOfDifferent(?subType, ?type),
-  _Valid_Type(?type),
-  _Valid_Type(?subType),
+  _Valid_Interesting_Type(?type),
+  _Valid_Interesting_Type(?subType),
   basic.MethodImplemented(?name, _, ?subType, ?subMethod),
   basic.MethodLookup(?name, ?desc, ?subType, ?subMethod).
 

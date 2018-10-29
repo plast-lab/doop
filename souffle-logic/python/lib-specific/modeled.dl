@@ -8,14 +8,16 @@ isHeapAllocation(?mockVal),
 isFunctionObjectAllocation(?mockVal),
 HeapAllocation_Type(?mockVal, ?function),
 Function_Module(?function, ?declModule),
-GlobalNamePointsTo(?declModule, ?name, ?mockVal):-
+GlobalNamePointsTo(?hctx, ?mockVal, ?declModule, ?name):-
   ModeledFunction(?function, ?name, ?declModule),
-  ?mockVal = cat(?declModule, cat("/new ",cat(?function, "/0"))).
+  ?mockVal = cat(?declModule, cat("/new ",cat(?function, "/0"))),
+  isImmutableHContext(?hctx).
 
 isModule(?module),
 Module_DeclaringModule(?module, ?declModule),
-GlobalNamePointsTo(?declModule, ?name, ?module):-
-  ModeledModule(?module, ?name, ?declModule).
+GlobalNamePointsTo(?hctx, ?module, ?declModule, ?name):-
+  ModeledModule(?module, ?name, ?declModule),
+  isImmutableHContext(?hctx).
 
 isClassType(?class),
 isType(?class),
@@ -23,6 +25,7 @@ isHeapAllocation(?mockVal),
 isClassObjectAllocation(?mockVal),
 HeapAllocation_Type(?mockVal, ?class),
 ClassType_Module(?class, ?declModule),
-GlobalNamePointsTo(?declModule, ?name, ?mockVal):-
+GlobalNamePointsTo(?hctx, ?mockVal, ?declModule, ?name):-
   ModeledClass(?class, ?name, ?declModule),
-  ?mockVal = cat(?declModule, cat("/new ",cat(?class, "/0"))).
+  ?mockVal = cat(?declModule, cat("/new ",cat(?class, "/0"))),
+  isImmutableHContext(?hctx).

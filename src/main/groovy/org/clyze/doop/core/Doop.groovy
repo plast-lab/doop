@@ -36,6 +36,7 @@ class Doop {
 	static String analysesPath
 	static String souffleAnalysesPath
 	static String soufflePythonPath
+	static String soufflePythonAnalysesPath
 
 	/**
 	 * Initializes Doop.
@@ -62,6 +63,7 @@ class Doop {
 		analysesPath = "$logicPath/analyses"
 		souffleAnalysesPath = "$souffleLogicPath/analyses"
 		soufflePythonPath = "$souffleLogicPath/python"
+		soufflePythonAnalysesPath = "$soufflePythonPath/analyses"
 
 		[doopOut, doopCache, doopLog, souffleAnalysesCache].each {
 			def f = new File(it)

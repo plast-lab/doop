@@ -76,10 +76,30 @@ class TestUtils {
 	static void varPointsTo(Analysis analysis, String local, String value) {
 		varPointsTo(analysis, local, value, false)
 	}
+	// Simpler overloaded version.
+	static void varPointsToQ(Analysis analysis, String local, String value) {
+		varPointsTo(analysis, local, value, true)
+	}
 
 	// Check that a static field points to a value.
 	static void staticFieldPointsTo(Analysis analysis, String fld, String value) {
 		findPair(analysis, "mainAnalysis-StaticFieldPointsTo", fld, 2, value, 1)
+	}
+
+	static void varValue(Analysis analysis, String local, String value) {
+		findPair(analysis, "Server_Var_Values", local, 1, value, 2)
+	}
+
+	static void invoValue(Analysis analysis, String local, String value) {
+		findPair(analysis, "Server_Invocation_Values", local, 1, value, 2)
+	}
+
+	static void invokedynamicCGE(Analysis analysis, String instr, String meth) {
+		findPair(analysis, "mainAnalysis-InvokedynamicCallGraphEdge", instr, 1, meth, 3)
+	}
+
+	static void proxyCGE(Analysis analysis, String instr, String meth) {
+		findPair(analysis, "mainAnalysis-ProxyCallGraphEdge", instr, 1, meth, 3)
 	}
 
 	// Check that an instance field points to a value.
@@ -124,5 +144,20 @@ class TestUtils {
 		String rel = db ? "${analysis.database}/${relation}.csv" : "${analysis.factsDir}/${relation}.facts"
 		forEachLineIn(rel, { if (it && (it == val)) { found = true }})
 		return found
+	}
+
+	static void noSanityErrors(Analysis analysis) {
+		relationHasExactSize(analysis, "VarHasNoType", 0)
+		relationHasExactSize(analysis, "TypeIsNotConcreteType", 0)
+		relationHasExactSize(analysis, "InstructionIsNotConcreteInstruction", 0)
+		relationHasExactSize(analysis, "ValueHasNoType", 0)
+		relationHasExactSize(analysis, "ValueHasNoDeclaringType", 0)
+		relationHasExactSize(analysis, "NotReachableVarPointsTo", 0)
+		relationHasExactSize(analysis, "VarPointsToWronglyTypedValue", 0)
+		relationHasExactSize(analysis, "VarPointsToMergedHeap", 0)
+		relationHasExactSize(analysis, "HeapAllocationHasNoType", 0)
+		relationHasExactSize(analysis, "ValueIsNeitherHeapNorNonHeap", 0)
+		relationHasExactSize(analysis, "ClassTypeIsInterfaceType", 0)
+		relationHasExactSize(analysis, "PrimitiveTypeIsReferenceType", 0)
 	}
 }

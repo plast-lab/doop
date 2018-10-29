@@ -14,6 +14,8 @@ import static org.clyze.doop.common.PredicateFile.*;
  */
 public class JavaFactWriter {
 
+    protected static final String L_OP = "1";
+    protected static final String R_OP = "2";
     protected final Database _db;
 
     protected JavaFactWriter(Database db) {
@@ -63,14 +65,6 @@ public class JavaFactWriter {
         String keyId = writeStringConstant(key);
         String valueId = writeStringConstant(value);
         _db.add(PROPERTIES, pathId, keyId, valueId);
-    }
-
-    private void writeSpecialSensitivityMethod(String line) {
-        String[] linePieces = line.split("\t");
-        String method = linePieces[0].trim();
-        String sensitivity = linePieces[1].trim();
-
-        _db.add(SPECIAL_CONTEXT_SENSITIVITY_METHOD, method, sensitivity);
     }
 
     protected void writeMethodHandleConstant(String heap, String handleName) {
@@ -137,7 +131,6 @@ public class JavaFactWriter {
 
         try {
             processSeeds(params._seed);
-            processSpecialCSMethods(params._specialCSMethods);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -199,22 +192,6 @@ public class JavaFactWriter {
             writeAndroidKeepClass(line);
     }
 
-    private void processSpecialCSMethods(String csMethods) throws IOException {
-        if (csMethods != null) {
-            System.out.println("Reading special methods from: " + csMethods);
-            try (Stream<String> stream = Files.lines(Paths.get(csMethods))) {
-                stream.forEach(this::processSpecialSensitivityMethodFileLine);
-            }
-        }
-    }
-
-    private void processSpecialSensitivityMethodFileLine(String line) {
-        if (line.contains("\t"))
-            writeSpecialSensitivityMethod(line);
-        else
-            System.err.println("Ignoring malformed special sensitivity method: " + line);
-    }
-
     protected void writeMethodDeclaresException(String methodId, String exceptionType) {
         _db.add(METHOD_DECL_EXCEPTION, exceptionType, methodId);
     }
@@ -243,5 +220,45 @@ public class JavaFactWriter {
 
     protected void writeClassModifier(String c, String modifier) {
         _db.add(CLASS_MODIFIER, modifier, c);
+    }
+
+    protected void writeOperatorAt(String insn, String op) {
+        _db.add(OPERATOR_AT, insn, op);
+    }
+
+    protected void writeIf(String insn, int index, int indexTo, String methodId) {
+        _db.add(IF, insn, str(index), str(indexTo), methodId);
+    }
+
+    protected void writeIfVar(String insn, String branch, String local) {
+        _db.add(IF_VAR, insn, branch, local);
+    }
+
+    protected void writeDummyIfVar(String insn, String local) {
+        _db.add(DUMMY_IF_VAR, insn, local);
+    }
+
+    protected void writeAssignBinop(String insn, int index, String local, String methodId) {
+        _db.add(ASSIGN_BINOP, insn, str(index), local, methodId);
+    }
+
+    protected void writeAssignOperFrom(String insn, String branch, String local) {
+        _db.add(ASSIGN_OPER_FROM, insn, branch, local);
+    }
+
+    protected void writeInvokedynamic(String insn, int index, String bootSig, String dynName, String dynRetType, int dynArity, String dynParamTypes, int tag, String methodId) {
+        _db.add(DYNAMIC_METHOD_INV, insn, str(index), bootSig, dynName, dynRetType, str(dynArity), dynParamTypes, str(tag), methodId);
+    }
+
+    protected void writeInvokedynamicParameterType(String insn, int paramIndex, String type) {
+        _db.add(DYNAMIC_METHOD_INV_PARAM, insn, str(paramIndex), type);
+    }
+
+    protected void writeAssignLocal(String insn, int index, String from, String to, String methodId) {
+        _db.add(ASSIGN_LOCAL, insn, str(index), from, to, methodId);
+    }
+
+    protected void writeActualParam(int index, String invo, String var) {
+        _db.add(ACTUAL_PARAMETER, str(index), invo, var);
     }
 }

@@ -1,0 +1,22 @@
+.decl DictKeyForVal(?dictHctx:configuration.HContext, ?dict:Value, ?key:Value, ?valHctx:configuration.HContext, ?val:Value)
+
+.output DictKeyForVal
+
+DictKeyForVal(?dictHctx, ?dict, ?keyVal, ?valHctx, ?val):-
+  DictInitialAssignVar(?dict, ?var, ?ctx),
+  VarPointsTo(?dictHctx, ?dict, ?ctx, ?var),
+  isWriteToCollection_Insn(?instr),
+  CollectionAccessInsn_Base(?instr, ?var),
+  CollectionAccessInsn_IndexOrKey(?instr, ?keyVar),
+  VarPointsTo(_, ?keyVal, ?ctx, ?keyVar),
+  WriteToCollectionInsn_From(?instr, ?from),
+  VarPointsTo(?valHctx, ?val, ?ctx, ?from).
+
+VarPointsTo(?valHctx, ?val, ?ctx, ?var):-
+ ReadFromCollectionInsn_To(?insn, ?var),
+ CollectionAccessInsn_Base(?insn, ?baseVar),
+ VarPointsTo(?dictHctx, ?dict, ?ctx, ?baseVar),
+ isPyDict(?dict),
+ CollectionAccessInsn_IndexOrKey(?insn, ?keyVar),
+ VarPointsTo(_, ?keyVal, ?ctx, ?keyVar),
+ DictKeyForVal(?dictHctx, ?dict, ?keyVal, ?valHctx, ?val).

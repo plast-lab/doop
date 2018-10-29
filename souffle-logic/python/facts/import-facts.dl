@@ -324,6 +324,31 @@ ExceptionHandler_End(?handler, ?end) :-
   _ExceptionHandler(?handler, ?function, ?index, ?type, ?var, ?begin, ?end).
 
 
+.decl _CollectionRead(?insn:symbol, ?index:number, ?to:symbol, ?collection:symbol, ?indexOrKey:symbol, ?function:symbol)
+.input _CollectionRead(IO="file", filename="ReflectiveRead.facts", delimiter="\t")
+
+isInstruction(?insn),
+Instruction_Index(?insn, ?index),
+Instruction_Function(?insn, ?function),
+isCollectionAccess_Insn(?insn),
+isReadFromCollection_Insn(?insn),
+CollectionAccessInsn_Base(?insn, ?base),
+CollectionAccessInsn_IndexOrKey(?insn, ?indexOrKey),
+ReadFromCollectionInsn_To(?insn, ?to):-
+  _CollectionRead(?insn, ?index, ?to, ?base, ?indexOrKey, ?function).
+
+.decl _CollectionWrite(?insn:symbol, ?index:number, ?collection:symbol, ?indexOrKey:symbol, ?from:symbol, ?function:symbol)
+.input _CollectionWrite(IO="file", filename="ReflectiveWrite.facts", delimiter="\t")
+
+isInstruction(?insn),
+Instruction_Index(?insn, ?index),
+Instruction_Function(?insn, ?function),
+isCollectionAccess_Insn(?insn),
+isWriteToCollection_Insn(?insn),
+CollectionAccessInsn_Base(?insn, ?base),
+CollectionAccessInsn_IndexOrKey(?insn, ?indexOrKey),
+WriteToCollectionInsn_From(?insn, ?from):-
+  _CollectionWrite(?insn, ?index, ?base, ?indexOrKey, ?from, ?function).
 // Function
 
 .decl _Function(?function:symbol, ?simplename:symbol, ?declaringType:symbol, ?arity:number, ?declaredInFile: File)

@@ -11,9 +11,16 @@
   #include "imports.dl"
   #include "function-resolution.dl"
   #include "lists.dl"
+  #include "dictionaries.dl"
   #include "const-int.dl"
-  //#include "../lib-specific/modeled.dl"
-  //#include "../lib-specific/tensorflow.dl"
+  #include "../lib-specific/modeled.dl"
+  #include "../lib-specific/numpy.dl"
+  #include "../lib-specific/tensorflow/tensorflow.dl"
+  #include "../lib-specific/tensorflow/general-tensor-modeling.dl"
+  #include "../lib-specific/tensorflow/tensor-creation-ops.dl"
+  #include "../lib-specific/tensorflow/shape-mod-ops.dl"
+  #include "../lib-specific/tensorflow/arithmetic-ops.dl"
+  #include "../lib-specific/tensorflow/pooling-conv-ops.dl"
 
   /**
    * Reachable
@@ -87,7 +94,7 @@
     FieldInstruction_Signature(?insn, ?signature),
     InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
-  GlobalNamePointsTo(?hctx, ?value, ?scope, ?ctx, ?name):-
+  GlobalNamePointsTo(?hctx, ?value, ?scope, ?name):-
     Reachable(?function),
     ReachableContext(?ctx, ?function),
     Instruction_Function(?insn, ?function),
@@ -105,8 +112,7 @@
     GlobalAccessInsn_Name(?insn, ?name),
     GlobalAccessInsn_Scope(?insn, ?scope),
     AssignInstruction_To(?insn, ?var),
-    GlobalNamePointsTo(?hctx, ?value, ?scope, ?ctx, ?name),
-    isImmutableHContext(?hctx).
+    GlobalNamePointsTo(?hctx, ?value, ?scope, ?name).
 
   //This rule is probably redundant
   VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
@@ -147,7 +153,7 @@
     ?type != "list",
     ?type != "object",
     isFunction(?type),
-    isImmutableHContext(?hctx).
+    configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
   isClassObjectAllocation(?value),
   VarPointsTo(?hctx, ?value, ?ctx, ?var):-
@@ -158,20 +164,39 @@
     AssignInstruction_To(?insn, ?var),
     HeapAllocation_Type(?value, ?type),
     ?type != "list",
+    ?type != "tuple",
     ?type != "object",
     isClassType(?type),
-    isImmutableHContext(?hctx).
+    configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
-  IsPyList(?heap),
-  ListInitialAssignVar(?heap, ?var),
+  IsPyListOrTuple(?heap),
+  ListInitialAssignVar(?heap, ?var, ?ctx),
   VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
     Reachable(?function),
     ReachableContext(?ctx, ?function),
     AssignInstruction_To(?instr, ?var),
     AssignHeapAllocation_Heap(?instr, ?heap),
     OriginalHeapAllocation_Type(?heap, ?type),
-    ?type = "list",
-    isImmutableHContext(?hctx).
+    (?type = "list"; ?type = "tuple"),
+    configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
+
+  isPyDict(?heap),
+  DictInitialAssignVar(?heap, ?var, ?ctx),
+  VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
+    Reachable(?function),
+    ReachableContext(?ctx, ?function),
+    AssignInstruction_To(?instr, ?var),
+    AssignHeapAllocation_Heap(?instr, ?heap),
+    OriginalHeapAllocation_Type(?heap, ?type),
+    ?type = "dict",
+    configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
+
+  configuration.RecordContextRequest(?ctx, ?heap, ?var) :-
+    Reachable(?function),
+    ReachableContext(?ctx, ?function),
+    AssignInstruction_To(?instr, ?var),
+    isNormalHeap(?heap),
+    AssignHeapAllocation_Heap(?instr, ?heap).
 
   Value_String(?value, ?str),
   VarPointsTo(?hctx, ?value, ?ctx, ?var):-
