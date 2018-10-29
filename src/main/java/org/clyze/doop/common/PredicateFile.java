@@ -44,6 +44,7 @@ public enum PredicateFile
     CLASS_MODIFIER("ClassModifier"),
     COMPONENT_TYPE("ComponentType"),
     CONTENT_PROVIDER("ContentProvider"),
+    DEX_INSTR_ADDR_MAP("DexInstructionAddressMap"),
     DIRECT_SUPER_IFACE("DirectSuperinterface"),
     DIRECT_SUPER_CLASS("DirectSuperclass"),
     DUMMY_IF_VAR("DummyIfVar"),
