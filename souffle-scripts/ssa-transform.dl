@@ -1,0 +1,151 @@
+#import "../souffle-logic/facts/import-facts.dl"
+#import "../souffle-logic/facts/flow-sensitive-schema.dl"
+#import "../souffle-logic/facts/flow-insensitive-schema.dl"
+#import "../souffle-logic/addons/cfg-analysis/declarations.dl"
+#import "../souffle-logic/addons/cfg-analysis/analysis.dl"
+
+// If instr is an assignment found at instruction i in method meth
+// then create a new assignment fact with same RHS and LHS v_i,
+// where v is the name of the original variable.
+
+.decl SSA_Alias(?method:symbol, ?variable:symbol, ?ssa_name:symbol)
+.output SSA_Alias
+
+// Helper relation to factor out some code.
+.decl SSA_AssignDetails(?instr:symbol, ?to:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+
+SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    Instruction_Index(?instr, ?index),
+    AssignInstruction_To(?instr, ?to),
+    Instruction_Method(?instr, ?method).
+
+.decl SSA_AssignHeapAllocation(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+.output SSA_AssignHeapAllocation
+
+SSA_Alias(?method, ?to, ?ssa_name),
+SSA_AssignHeapAllocation(?instr, ?index, ?ssa_name, ?method) :-
+    isAssignHeapAllocation_Insn(?instr),
+    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+
+.decl SSA_AssignLocal(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+.output SSA_AssignLocal
+
+SSA_Alias(?method, ?to, ?ssa_name),
+SSA_AssignLocal(?instr, ?index, ?ssa_name, ?method) :-
+    isAssignLocal_Insn(?instr),
+    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+
+.decl SSA_AssignBinop(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+.output SSA_AssignBinop
+
+SSA_Alias(?method, ?to, ?ssa_name),
+SSA_AssignBinop(?instr, ?index, ?ssa_name, ?method) :-
+    isAssignBinop_Insn(?instr),
+    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+
+.decl SSA_AssignUnop(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+.output SSA_AssignUnop
+
+SSA_Alias(?method, ?to, ?ssa_name),
+SSA_AssignUnop(?instr, ?index, ?ssa_name, ?method) :-
+    isAssignUnop_Insn(?instr),
+    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+
+// TODO: Is this needed?
+//.decl SSA_AssignOperFrom(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+//.output SSA_AssignOperFrom
+//
+//SSA_Alias(?method, ?to, ?ssa_name),
+//SSA_AssignOperFrom(?instr, ?index, ?ssa_name, ?method) :-
+//    isAssignOperFrom_Insn(?instr),
+//    Instruction_Index(?instr, ?index),
+//    AssignInstruction_To(?instr, ?to),
+//    Instruction_Method(?instr, ?method),
+//    ?ssa_name = cat(?to, cat("_", to_string(?index))).
+
+.decl SSA_AssignCast(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+.output SSA_AssignCast
+
+SSA_Alias(?method, ?to, ?ssa_name),
+SSA_AssignCast(?instr, ?index, ?ssa_name, ?method) :-
+    isAssignCast_Insn(?instr),
+    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+
+.decl SSA_AssignCastNumConstant(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+.output SSA_AssignCastNumConstant
+
+SSA_Alias(?method, ?to, ?ssa_name),
+SSA_AssignCastNumConstant(?instr, ?index, ?ssa_name, ?method) :-
+    isAssignCastNumConstant_Insn(?instr),
+    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+
+.decl SSA_AssignCastNull(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+.output SSA_AssignCastNull
+
+SSA_Alias(?method, ?to, ?ssa_name),
+SSA_AssignCastNull(?instr, ?index, ?ssa_name, ?method) :-
+    isAssignCastNull_Insn(?instr),
+    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+
+.decl SSA_AssignNumConstant(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+.output SSA_AssignNumConstant
+
+SSA_Alias(?method, ?to, ?ssa_name),
+SSA_AssignNumConstant(?instr, ?index, ?ssa_name, ?method) :-
+    isAssignNumConstant_Insn(?instr),
+    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+
+.decl SSA_AssignInstanceOf(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+.output SSA_AssignInstanceOf
+
+SSA_Alias(?method, ?to, ?ssa_name),
+SSA_AssignInstanceOf(?instr, ?index, ?ssa_name, ?method) :-
+    isAssignInstanceOf_Insn(?instr),
+    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+
+// TODO: Is this needed?
+//.decl SSA_AssignPhantomInvoke(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+//.output SSA_AssignPhantomInvoke
+//
+//SSA_Alias(?method, ?to, ?ssa_name),
+//SSA_AssignPhantomInvoke(?instr, ?index, ?ssa_name, ?method) :-
+//    isAssignPhantomInvoke(?instr),
+//    Instruction_Index(?instr, ?index),
+//    AssignInstruction_To(?instr, ?to),
+//    Instruction_Method(?instr, ?method),
+//    ?ssa_name = cat(?to, cat("_", to_string(?index))).
+
+.decl StrictlyDominates(?dominator:symbol, ?block:symbol)
+.output StrictlyDominates
+
+StrictlyDominates(?dominator, ?block) :-
+    Dominates(?dominator, ?block),
+    !?dominator = ?block.
+
+.decl DominanceFrontier(?dBlock:symbol, ?block:symbol)
+.output DominanceFrontier
+
+DominanceFrontier(?dBlock, ?block) :-
+    MayPredecessorBBModuloThrow(?pred, ?block),
+    Dominates(?dBlock, ?pred),
+    !StrictlyDominates(?dBlock, ?block).
+
+.decl ContainsAssignment(?dBlock:symbol, ?var:symbol)
+
+ContainsAssignment(?dBlock, ?var) :-
+    BasicBlockHead(?insn, ?dBlock),
+    SSA_AssignDetails(?insn, ?var, _, _, _).
+
+.decl DebugBB(?bb:symbol)
+.output BasicBlockBegin
+
+DebugBB(?bb) :- BasicBlockBegin(?bb).
+
+// Phi Instrutions inserted at basic blocks.
+.decl PlacePhi(?var:symbol, ?block:symbol)
+.output PlacePhi
+
+PlacePhi(?var, ?block) :-
+    DominanceFrontier(?dBlock, ?block),
+    ContainsAssignment(?dBlock, ?var).
+    
