@@ -676,7 +676,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private void writeIf(Instruction instr, int regL, int regR, Opcode op, int index) {
         int offset = ((OffsetInstruction)instr).getCodeOffset();
         String insn = instructionId("if", index);
-        _db.add(IF, insn, str(index), str(currentInstrAddr + offset), methId);
+        writeIf(insn, index, currentInstrAddr + offset, methId);
         writeIfVar(insn, L_OP, local(regL));
         if (regR != -1)
             writeIfVar(insn, R_OP, local(regR));

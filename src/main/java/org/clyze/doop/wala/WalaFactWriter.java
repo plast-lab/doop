@@ -658,9 +658,9 @@ public class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
 
-        _db.add(IF, insn, str(index), str(indexTo), methodId);
-        _db.add(IF_VAR, insn, _rep.local(m, var1));
-        _db.add(IF_VAR, insn, _rep.local(m, var2));
+        writeIf(insn, index, indexTo, methodId);
+        writeIfVar(insn, L_OP, _rep.local(m, var1));
+        writeIfVar(insn, R_OP, _rep.local(m, var2));
     }
 //
 //    void writeTableSwitch(IMethod inMethod, TableSwitchStmt stmt, Session session) {

@@ -539,7 +539,7 @@ class FactWriter extends JavaFactWriter {
         String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(IF, insn, str(index), str(indexTo), methodId);
+        writeIf(insn, index, indexTo, methodId);
 
         Value condStmt = stmt.getCondition();
         if (condStmt instanceof ConditionExpr) {

@@ -226,6 +226,10 @@ public class JavaFactWriter {
         _db.add(OPERATOR_AT, insn, op);
     }
 
+    protected void writeIf(String insn, int index, int indexTo, String methodId) {
+        _db.add(IF, insn, str(index), str(indexTo), methodId);
+    }
+
     protected void writeIfVar(String insn, String branch, String local) {
         _db.add(IF_VAR, insn, branch, local);
     }
