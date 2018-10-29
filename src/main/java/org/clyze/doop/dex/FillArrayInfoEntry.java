@@ -4,11 +4,10 @@ class FillArrayInfoEntry extends FirstInstructionEntry {
     final int reg;
     final NewArrayInfo newArrayInfo;
 
-    FillArrayInfoEntry(int currentOffset, int offset, int reg, int index,
+    FillArrayInfoEntry(int address, int reg, int index,
                        NewArrayInfo newArrayInfo) {
-        super(currentOffset, offset, index);
+        super(address, index);
         this.reg = reg;
         this.newArrayInfo = newArrayInfo;
     }
 }
-

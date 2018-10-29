@@ -644,7 +644,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case GOTO:
             case GOTO_16:
             case GOTO_32:
-                queueGoto(index, currentInstrAddr + ((OffsetInstruction)instr).getCodeOffset());
+                queueGoto(index, absoluteAddr((OffsetInstruction)instr));
                 break;
             case NEG_INT:
             case NOT_INT:
@@ -686,9 +686,8 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param index      the instruction index
      */
     private void writeIf(Instruction instr, int regL, int regR, Opcode op, int index) {
-        int offset = ((OffsetInstruction)instr).getCodeOffset();
         String insn = instructionId("if", index);
-        ifs.add(new RawGoto(insn, index, currentInstrAddr + offset));
+        ifs.add(new RawGoto(insn, index, absoluteAddr((OffsetInstruction)instr)));
         writeIfVar(insn, L_OP, local(regL));
         if (regR != -1)
             writeIfVar(insn, R_OP, local(regR));
@@ -705,12 +704,11 @@ class DexMethodFactWriter extends JavaFactWriter {
 
     private void handleFillArrayData(Instruction instr, int index) {
         int regA = ((OneRegisterInstruction) instr).getRegisterA();
-        int offset = ((OffsetInstruction) instr).getCodeOffset();
         // Sanity check: fill-array-data should appear at most 2 instructions
         // after a new-array instruction.
         if (lastNewArrayInfo.index > (index + 2))
             System.err.println("Warning: suspicious fill-array-data + new-array pattern in " + methId);
-        fillArrayInfo.registerFirstInstructionData(new FillArrayInfoEntry(currentInstrAddr, offset, regA, index, lastNewArrayInfo));
+        fillArrayInfo.registerFirstInstructionData(new FillArrayInfoEntry(absoluteAddr((OffsetInstruction)instr), regA, index, lastNewArrayInfo));
         // Consume the information.
         this.lastNewArrayInfo = null;
     }
@@ -814,16 +812,17 @@ class DexMethodFactWriter extends JavaFactWriter {
     private void writeSwitchTargets(Instruction instr, PredicateFile predicateFile) {
         FirstInstructionEntry entry = pendingSwitchInfo.getOriginalEntryForTarget(currentInstrAddr);
         String insn = instructionId("switch", entry.index);
-        for (SwitchElement elem : ((SwitchPayload) instr).getSwitchElements())
-            _db.add(predicateFile, insn, str(elem.getKey()), str(elem.getOffset()));
+        for (SwitchElement elem : ((SwitchPayload) instr).getSwitchElements()) {
+            int branchAddr = entry.address + elem.getOffset();
+            _db.add(predicateFile, insn, str(elem.getKey()), str(branchAddr));
+        }
     }
 
     private void writeSwitchKey(Instruction instr, int index, PredicateFile predicateFile) {
         int testRegister = ((OneRegisterInstruction)instr).getRegisterA();
-        int branchOffset = ((OffsetInstruction)instr).getCodeOffset();
         String insn = instructionId("switch", index);
         _db.add(predicateFile, insn, str(index), local(testRegister), methId);
-        this.pendingSwitchInfo.registerFirstInstructionData(new FirstInstructionEntry(currentInstrAddr, branchOffset, index));
+        this.pendingSwitchInfo.registerFirstInstructionData(new FirstInstructionEntry(absoluteAddr((OffsetInstruction)instr), index));
     }
 
     private void writeLoadOrStoreArrayIndex(ThreeRegisterInstruction tri, int index, PredicateFile predicateFile) {
@@ -1115,4 +1114,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         return (entry == null) ? null : entry.getValue();
     }
 
+    private int absoluteAddr(OffsetInstruction instr) {
+        return currentInstrAddr + instr.getCodeOffset();
+    }
 }
