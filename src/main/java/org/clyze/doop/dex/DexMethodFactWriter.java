@@ -102,8 +102,8 @@ class DexMethodFactWriter extends JavaFactWriter {
     private final Collection<MoveExceptionInfo> exceptionMoves = new LinkedList<>();
 
     // Instructions that point to addresses that must be resolved.
-    private final List<RawGoto> gotos = new LinkedList<>();
-    private final List<RawGoto> ifs = new LinkedList<>();
+    private final Collection<RawGoto> gotos = new LinkedList<>();
+    private final Collection<RawGoto> ifs = new LinkedList<>();
 
     DexMethodFactWriter(DexBackedMethod dexMethod, Database _db,
                         Map<String, MethodSig> cachedMethodDescriptors) {
