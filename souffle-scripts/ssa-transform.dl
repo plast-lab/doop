@@ -152,17 +152,18 @@ PhiAssign(?phi_var, ?arity, ?block) :-
     ?arity = count : MayPredecessorBBModuloThrow(_, ?block),
     ?phi_var = cat(cat(?var, "_phi_"), to_string(?index)).
     
-// This relation computes the definitions that are available at the exit
-// of a basic block.
-//.decl BBOutDefs(?block: symbol, ?def:symbol)
-//.output BBOutDefs
-//
-//BBOutDefs(?block, ?def) :-
-//    !MayPredecessorBBModuloThrow(_, ?block),
-//    BBLocalOutAssign(?block, ?def).
-
 .decl BBFollowsSimilarDef(?block:symbol, ?instr:symbol, ?def:symbol)
 .output BBFollowsSimilarDef
+
+BBFollowsSimilarDef(?block, ?instr, ?original) :-
+    BasicBlockHead(?instr, ?block),
+    BasicBlockHead(?follow, ?block),
+    PhiAssign(?phi_var, _, ?instr),
+    SSA_Alias(?phi_var, ?original),
+    SSA_AssignToOriginal(?follow, ?original),
+    Instruction_Index(?instr, ?i),
+    Instruction_Index(?follow, ?j),
+    ?i < ?j.
 
 BBFollowsSimilarDef(?block, ?instr, ?original) :-
     BasicBlockHead(?instr, ?block),
@@ -189,3 +190,32 @@ BBLocalOutDefs(?block, ?def) :-
     SSA_AssignToOriginal(?assgn, ?original),
     SSA_AssignDetails(?assgn, ?original, _, ?def, _),
     !BBFollowsSimilarDef(?block, ?assgn, ?original).
+
+.decl ExistsLocalDef(?block:symbol, ?def:symbol)
+ExistsLocalDef(?block, ?original) :-
+    BBLocalOutDefs(?block, ?def),
+    SSA_Alias(?def, ?original).
+
+.decl BBOutDefs(?block:symbol, ?def:symbol)
+.output BBOutDefs
+
+BBOutDefs(?block, ?def) :-
+    BBLocalOutDefs(?block, ?def).
+
+BBOutDefs(?block, ?prev_def) :-
+    MayPredecessorBBModuloThrow(?pred, ?block),
+    BBOutDefs(?pred, ?prev_def),
+    SSA_Alias(?prev_def, ?original),
+    !ExistsLocalDef(?block, ?original).
+
+//.decl InstrReachingDef(?instr:symbol, ?def:symbol, ?original:symbol)
+//
+//InstrReachingDef(?instr, ?def, ?original) :-
+//    MayPredecessorModuloThrow(?prev, ?instr),
+//    !SSA_AssignDetails(?prev, _, _, _, _),
+//    InstrReachingDef(?prev, ?def, ?original).
+//
+//InstrReachingDef(?instr, ?def, ?original) :-
+//    MayPredecessorModuloThrow(?prev, ?instr),
+//    !SSA_AssignDetails(?prev, _, _, _, _),
+//    InstrReachingDef(?prev, ?def, ?original).

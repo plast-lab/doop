@@ -125,7 +125,7 @@ Dominates(?dominator, ?insn) :-
 // Either the first instruction...
 .decl CFGRoot(?insn:Instruction, ?method:Method)
 CFGRoot(?insn, ?method) :-
-   OptInstructionFromMethodIndex(?method, 1, ?insn).
+   OptInstructionFromMethodIndex(?method, 0, ?insn).
 // or... could also be beginning of exception handler
 CFGRoot(?insn, ?method) :-
    BBHeadInMethod(?insn, ?method),
