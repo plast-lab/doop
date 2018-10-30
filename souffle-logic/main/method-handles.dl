@@ -117,7 +117,6 @@ VarPointsTo(?hctx, MOCK_ARRAY(?i), ?ctx, ?formalVarArgs) :-
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
 
 .decl LambdaCapturedThis(?callsite:Value, ?thisValue:Value, ?ctx:configuration.Context)
-.output LambdaCapturedThis
 
 // Capture value of 'this'.
 LambdaCapturedThis(?callsite, ?thisValue, ?ctx) :-
