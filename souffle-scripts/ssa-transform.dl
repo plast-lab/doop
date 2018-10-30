@@ -8,12 +8,16 @@
 // then create a new assignment fact with same RHS and LHS v_i,
 // where v is the name of the original variable.
 
-.decl SSA_Alias(?method:symbol, ?variable:symbol, ?ssa_name:symbol)
+.decl SSA_Alias(?ssa_name:symbol, ?original:symbol)
 .output SSA_Alias
 
 // Helper relation to factor out some code.
 .decl SSA_AssignDetails(?instr:symbol, ?to:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 
+.decl SSA_AssignToOriginal(?instr:symbol, ?original:symbol)
+
+SSA_AssignToOriginal(?instr, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
     Instruction_Index(?instr, ?index),
     AssignInstruction_To(?instr, ?to),
@@ -22,7 +26,6 @@ SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?m
 .decl SSA_AssignHeapAllocation(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 .output SSA_AssignHeapAllocation
 
-SSA_Alias(?method, ?to, ?ssa_name),
 SSA_AssignHeapAllocation(?instr, ?index, ?ssa_name, ?method) :-
     isAssignHeapAllocation_Insn(?instr),
     SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
@@ -30,7 +33,6 @@ SSA_AssignHeapAllocation(?instr, ?index, ?ssa_name, ?method) :-
 .decl SSA_AssignLocal(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 .output SSA_AssignLocal
 
-SSA_Alias(?method, ?to, ?ssa_name),
 SSA_AssignLocal(?instr, ?index, ?ssa_name, ?method) :-
     isAssignLocal_Insn(?instr),
     SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
@@ -38,7 +40,6 @@ SSA_AssignLocal(?instr, ?index, ?ssa_name, ?method) :-
 .decl SSA_AssignBinop(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 .output SSA_AssignBinop
 
-SSA_Alias(?method, ?to, ?ssa_name),
 SSA_AssignBinop(?instr, ?index, ?ssa_name, ?method) :-
     isAssignBinop_Insn(?instr),
     SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
@@ -46,7 +47,6 @@ SSA_AssignBinop(?instr, ?index, ?ssa_name, ?method) :-
 .decl SSA_AssignUnop(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 .output SSA_AssignUnop
 
-SSA_Alias(?method, ?to, ?ssa_name),
 SSA_AssignUnop(?instr, ?index, ?ssa_name, ?method) :-
     isAssignUnop_Insn(?instr),
     SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
@@ -66,7 +66,6 @@ SSA_AssignUnop(?instr, ?index, ?ssa_name, ?method) :-
 .decl SSA_AssignCast(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 .output SSA_AssignCast
 
-SSA_Alias(?method, ?to, ?ssa_name),
 SSA_AssignCast(?instr, ?index, ?ssa_name, ?method) :-
     isAssignCast_Insn(?instr),
     SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
@@ -74,7 +73,6 @@ SSA_AssignCast(?instr, ?index, ?ssa_name, ?method) :-
 .decl SSA_AssignCastNumConstant(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 .output SSA_AssignCastNumConstant
 
-SSA_Alias(?method, ?to, ?ssa_name),
 SSA_AssignCastNumConstant(?instr, ?index, ?ssa_name, ?method) :-
     isAssignCastNumConstant_Insn(?instr),
     SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
@@ -82,7 +80,6 @@ SSA_AssignCastNumConstant(?instr, ?index, ?ssa_name, ?method) :-
 .decl SSA_AssignCastNull(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 .output SSA_AssignCastNull
 
-SSA_Alias(?method, ?to, ?ssa_name),
 SSA_AssignCastNull(?instr, ?index, ?ssa_name, ?method) :-
     isAssignCastNull_Insn(?instr),
     SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
@@ -90,7 +87,6 @@ SSA_AssignCastNull(?instr, ?index, ?ssa_name, ?method) :-
 .decl SSA_AssignNumConstant(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 .output SSA_AssignNumConstant
 
-SSA_Alias(?method, ?to, ?ssa_name),
 SSA_AssignNumConstant(?instr, ?index, ?ssa_name, ?method) :-
     isAssignNumConstant_Insn(?instr),
     SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
@@ -98,7 +94,6 @@ SSA_AssignNumConstant(?instr, ?index, ?ssa_name, ?method) :-
 .decl SSA_AssignInstanceOf(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 .output SSA_AssignInstanceOf
 
-SSA_Alias(?method, ?to, ?ssa_name),
 SSA_AssignInstanceOf(?instr, ?index, ?ssa_name, ?method) :-
     isAssignInstanceOf_Insn(?instr),
     SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
@@ -142,10 +137,55 @@ ContainsAssignment(?dBlock, ?var) :-
 DebugBB(?bb) :- BasicBlockBegin(?bb).
 
 // Phi Instrutions inserted at basic blocks.
-.decl PlacePhi(?var:symbol, ?block:symbol)
-.output PlacePhi
+// ?phi_var is the new phi variable name that will be generated,
+// ?block is the basic block (represented by it's first instr) where
+// the Phi Instruction will be inserted.
+.decl PhiAssign(?phi_var:symbol, ?arity:number, ?block:symbol)
+.output PhiAssign
 
-PlacePhi(?var, ?block) :-
+SSA_Alias(?phi_var, ?var),
+PhiAssign(?phi_var, ?arity, ?block) :-
+    Instruction_Index(?block, ?index),
+    Instruction_Method(?instr, ?method),
     DominanceFrontier(?dBlock, ?block),
-    ContainsAssignment(?dBlock, ?var).
+    ContainsAssignment(?dBlock, ?var),
+    ?arity = count : MayPredecessorBBModuloThrow(_, ?block),
+    ?phi_var = cat(cat(?var, "_phi_"), to_string(?index)).
     
+// This relation computes the definitions that are available at the exit
+// of a basic block.
+//.decl BBOutDefs(?block: symbol, ?def:symbol)
+//.output BBOutDefs
+//
+//BBOutDefs(?block, ?def) :-
+//    !MayPredecessorBBModuloThrow(_, ?block),
+//    BBLocalOutAssign(?block, ?def).
+
+.decl BBFollowsSimilarDef(?block:symbol, ?instr:symbol, ?def:symbol)
+.output BBFollowsSimilarDef
+
+BBFollowsSimilarDef(?block, ?instr, ?original) :-
+    BasicBlockHead(?instr, ?block),
+    BasicBlockHead(?follow, ?block),
+    SSA_AssignToOriginal(?instr, ?original),
+    SSA_AssignToOriginal(?follow, ?original),
+    Instruction_Index(?instr, ?i),
+    Instruction_Index(?follow, ?j),
+    ?i < ?j.
+
+.decl BBLocalOutDefs(?block:symbol, ?def:symbol)
+.output BBLocalOutDefs
+
+BBLocalOutDefs(?block, ?def) :-
+    BasicBlockBegin(?block),
+    PhiAssign(?def, _, ?block),
+    SSA_Alias(?def, ?original),
+    !SSA_AssignToOriginal(?block, ?original),
+    !BBFollowsSimilarDef(?block, ?block, ?original).
+
+BBLocalOutDefs(?block, ?def) :-
+    BasicBlockBegin(?block),
+    BasicBlockHead(?assgn, ?block),
+    SSA_AssignToOriginal(?assgn, ?original),
+    SSA_AssignDetails(?assgn, ?original, _, ?def, _),
+    !BBFollowsSimilarDef(?block, ?assgn, ?original).

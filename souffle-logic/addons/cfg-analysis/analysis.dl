@@ -58,7 +58,7 @@ FallThrough(?insn) :-
 
 // First instruction of a method is a basic block beginning
 BasicBlockBegin(?insn) :-
-   OptInstructionFromMethodIndex(_, 1, ?insn).
+   OptInstructionFromMethodIndex(_, 0, ?insn).
 BasicBlockBegin(?insn) :-
    ExceptionHandlerFirstInstruction(?insn).
 BasicBlockBegin(?insn) :-
