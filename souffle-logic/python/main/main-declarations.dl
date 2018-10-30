@@ -45,6 +45,9 @@
 .decl Value_String(?value:Value, ?str:StringConstant)
 .decl isNonHeapValue(?value:Value)
 
+.decl ClassInstanceAllocationInitializingClassObject(?instanceHctx:configuration.HContext, ?classInstance:HeapAllocation, ?classObjectHctx:configuration.HContext, ?classObject:HeapAllocation)
+
+
 .decl Value_Type(?value:Value, ?type:Type)
 //.decl Value_DeclaringType(?value:Value, ?type:Type)
 

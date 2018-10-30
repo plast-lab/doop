@@ -272,3 +272,12 @@ ModeledFunction("<tensorflow.Variable>", "Variable", "<tensorflow>").
 FormalParam_DefaultValFrom("<tensorflow.Variable>", "dtype", "<tensorflow>/noneDefVar").
 FormalParam( 0, "initial_value", "<tensorflow.Variable>", "<tensorflow.Variable>/mockParam1").
 FormalParam( 1, "dtype", "<tensorflow.Variable>", "<tensorflow.Variable>/mockParam2").
+
+
+ModeledClass("<tensorflow.Session>", "Session", "<tensorflow>").
+ModeledMethod("<tensorflow.Session.__init__>", "__init__", "<tensorflow.Session>", "<tensorflow>").
+
+
+ModeledMethod("<tensorflow.Session.run>", "run", "<tensorflow.Session>", "<tensorflow>").
+FormalParam( 0, "fetch", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam1").
+FormalParam( 1, "feed_dict", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam2").
