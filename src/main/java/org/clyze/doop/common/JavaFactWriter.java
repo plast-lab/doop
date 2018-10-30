@@ -226,6 +226,10 @@ public class JavaFactWriter {
         _db.add(OPERATOR_AT, insn, op);
     }
 
+    protected void writeIf(String insn, int index, int indexTo, String methodId) {
+        _db.add(IF, insn, str(index), str(indexTo), methodId);
+    }
+
     protected void writeIfVar(String insn, String branch, String local) {
         _db.add(IF_VAR, insn, branch, local);
     }
@@ -244,5 +248,17 @@ public class JavaFactWriter {
 
     protected void writeInvokedynamic(String insn, int index, String bootSig, String dynName, String dynRetType, int dynArity, String dynParamTypes, int tag, String methodId) {
         _db.add(DYNAMIC_METHOD_INV, insn, str(index), bootSig, dynName, dynRetType, str(dynArity), dynParamTypes, str(tag), methodId);
+    }
+
+    protected void writeInvokedynamicParameterType(String insn, int paramIndex, String type) {
+        _db.add(DYNAMIC_METHOD_INV_PARAM, insn, str(paramIndex), type);
+    }
+
+    protected void writeAssignLocal(String insn, int index, String from, String to, String methodId) {
+        _db.add(ASSIGN_LOCAL, insn, str(index), from, to, methodId);
+    }
+
+    protected void writeActualParam(int index, String invo, String var) {
+        _db.add(ACTUAL_PARAMETER, str(index), invo, var);
     }
 }

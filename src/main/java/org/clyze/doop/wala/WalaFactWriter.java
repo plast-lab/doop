@@ -238,8 +238,7 @@ public class WalaFactWriter extends JavaFactWriter {
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
-
-        _db.add(ASSIGN_LOCAL, insn, str(index), _rep.local(m, from), _rep.local(m, to), methodId);
+        writeAssignLocal(insn, index, _rep.local(m, from), _rep.local(m, to), methodId);
     }
 
     void writeAssignHeapAllocation(IR ir, IMethod m, SSANewInstruction instruction, Local l, Session session) {
@@ -659,9 +658,9 @@ public class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
 
-        _db.add(IF, insn, str(index), str(indexTo), methodId);
-        _db.add(IF_VAR, insn, _rep.local(m, var1));
-        _db.add(IF_VAR, insn, _rep.local(m, var2));
+        writeIf(insn, index, indexTo, methodId);
+        writeIfVar(insn, L_OP, _rep.local(m, var1));
+        writeIfVar(insn, R_OP, _rep.local(m, var2));
     }
 //
 //    void writeTableSwitch(IMethod inMethod, TableSwitchStmt stmt, Session session) {
@@ -915,14 +914,14 @@ public class WalaFactWriter extends JavaFactWriter {
             //for (int i = 0; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 0; i < instruction.getNumberOfPositionalParameters(); i++) {
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
-                _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
+                writeActualParam(i, invokeExprRepr, _rep.local(inMethod, l));
             }
         }
         else {
             //for (int i = 1; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 1; i < instruction.getNumberOfPositionalParameters(); i++) {
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
-                _db.add(ACTUAL_PARAMETER, str(i-1), invokeExprRepr, _rep.local(inMethod, l));
+                writeActualParam(i-1, invokeExprRepr, _rep.local(inMethod, l));
             }
 
         }

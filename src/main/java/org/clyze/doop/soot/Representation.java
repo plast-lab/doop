@@ -55,6 +55,11 @@ class Representation extends JavaRepresentation {
         return escape ? "'"+n+"'" : n;
     }
 
+    public static String unescapeSimpleName(String n) {
+        boolean escaped = n.startsWith("'") && n.endsWith("'");
+        return escaped ? n.substring(1, n.length()-1) : n;
+    }
+
     private static String simpleName(SootMethodRef m) {
         return escapeSimpleName(m.name());
     }

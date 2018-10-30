@@ -28,17 +28,6 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 		analyzeTest("006-hello-world", ["--cfg", "--coarse-grained-allocation-sites", "--cs-library", "--sanity", "--Xextra-metrics", "--dont-report-phantoms", "--symbolic-reasoning", "--platform", "java_8", "--thorough-fact-gen"])
 
 		then:
-		relationHasExactSize(analysis, "VarHasNoType", 0)
-		relationHasExactSize(analysis, "TypeIsNotConcreteType", 0)
-		relationHasExactSize(analysis, "InstructionIsNotConcreteInstruction", 0)
-		relationHasExactSize(analysis, "ValueHasNoType", 0)
-		relationHasExactSize(analysis, "ValueHasNoDeclaringType", 0)
-		relationHasExactSize(analysis, "NotReachableVarPointsTo", 0)
-		relationHasExactSize(analysis, "VarPointsToWronglyTypedValue", 0)
-		relationHasExactSize(analysis, "VarPointsToMergedHeap", 0)
-		relationHasExactSize(analysis, "HeapAllocationHasNoType", 0)
-		relationHasExactSize(analysis, "ValueIsNeitherHeapNorNonHeap", 0)
-		relationHasExactSize(analysis, "ClassTypeIsInterfaceType", 0)
-		relationHasExactSize(analysis, "PrimitiveTypeIsReferenceType", 0)
+		noSanityErrors(analysis)
 	}
 }

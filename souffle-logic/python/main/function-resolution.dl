@@ -39,7 +39,7 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?val
     ActualKeywordParam(_, ?invo, ?paramName, _)
   ),
   FormalParam_DefaultValFrom(?tofunction, ?paramName, ?default),
-  VarPointsTo(?hctx,  ?value, ?callerCtx, ?default).
+  VarPointsTo(?hctx,  ?value, _, ?default).       //TODO: REVIEW this at some point
 
 
 VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-

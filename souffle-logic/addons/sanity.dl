@@ -59,10 +59,17 @@ NotReachableVarPointsTo(?var, ?method) :-
   mainAnalysis.VarPointsTo(_, _, _, ?var),
   !mainAnalysis.Reachable(?method).
 
-// Soot quirk.
 .decl ForceTypeCompatibility(?valueType:Type, ?varType:Type)
 
+// Soot quirk: method types may be shown as classes (and even leak as strings).
 ForceTypeCompatibility("java.lang.invoke.MethodType", "java.lang.Class").
+ForceTypeCompatibility("java.lang.String", "java.lang.invoke.MethodType").
+ForceTypeCompatibility("java.lang.String", "java.lang.Class").
+
+// Ignore boxing as it can happen behind the scenes (dynamic proxies,
+// invokedynamic).
+ForceTypeCompatibility(?valueType, ?varType) :-
+  mainAnalysis.BoxTypeConversion(?valueType, ?varType).
 
 .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
 .output VarPointsToWronglyTypedValue

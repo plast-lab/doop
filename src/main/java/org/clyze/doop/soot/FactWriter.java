@@ -158,24 +158,21 @@ class FactWriter extends JavaFactWriter {
         int index = session.calcUnitNumber(stmt);
         String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
-
-        _db.add(ASSIGN_LOCAL, insn, str(index), Representation.local(m, from), Representation.local(m, to), methodId);
+        writeAssignLocal(insn, index, Representation.local(m, from), Representation.local(m, to), methodId);
     }
 
-    void writeAssignLocal(SootMethod m, Stmt stmt, Local to, Session session) {
+    void writeAssignThisToLocal(SootMethod m, Stmt stmt, Local to, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
-
-        _db.add(ASSIGN_LOCAL, insn, str(index), Representation.thisVar(m), Representation.local(m, to), methodId);
+        writeAssignLocal(insn, index, Representation.thisVar(m), Representation.local(m, to), methodId);
     }
 
     void writeAssignLocal(SootMethod m, Stmt stmt, Local to, ParameterRef ref, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
-
-        _db.add(ASSIGN_LOCAL, insn, str(index), Representation.param(m, ref.getIndex()), Representation.local(m, to), methodId);
+        writeAssignLocal(insn, index, Representation.param(m, ref.getIndex()), Representation.local(m, to), methodId);
     }
 
     void writeAssignInvoke(SootMethod inMethod, Stmt stmt, Local to, InvokeExpr expr, Session session) {
@@ -542,7 +539,7 @@ class FactWriter extends JavaFactWriter {
         String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
-        _db.add(IF, insn, str(index), str(indexTo), methodId);
+        writeIf(insn, index, indexTo, methodId);
 
         Value condStmt = stmt.getCondition();
         if (condStmt instanceof ConditionExpr) {
@@ -788,23 +785,20 @@ class FactWriter extends JavaFactWriter {
             // temporary var for the actual argument (whose value is null).
             Type argType = expr.getMethodRef().parameterType(idx);
             return writeNullExpression(inMethod, stmt, argType, session);
-        }
-        else if (v instanceof Constant)
+        } else if (v instanceof Constant)
             throw new RuntimeException("Value has unknown constant type: " + v);
+        else if (!(v instanceof JimpleLocal))
+            System.err.println("Warning: value has unknown non-constant type: " + v.getClass().getName());
         return v;
     }
 
     private void writeActualParams(SootMethod inMethod, Stmt stmt, InvokeExpr expr, String invokeExprRepr, Session session) {
         for(int i = 0; i < expr.getArgCount(); i++) {
             Value v = writeActualParam(inMethod, stmt, expr, session, expr.getArg(i), i);
-
-            if (v instanceof Local) {
-                Local l = (Local) v;
-                _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, Representation.local(inMethod, l));
-            }
-            else {
+            if (v instanceof Local)
+                writeActualParam(i, invokeExprRepr, Representation.local(inMethod, (Local)v));
+            else
                 throw new RuntimeException("Actual parameter is not a local: " + v + " " + v.getClass());
-            }
         }
         if (expr instanceof DynamicInvokeExpr) {
             DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
@@ -815,14 +809,10 @@ class FactWriter extends JavaFactWriter {
                     if (vConst instanceof Local) {
                         Local l = (Local) vConst;
                         _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, Representation.local(inMethod, l));
-                    }
-                    else {
+                    } else
                         throw new RuntimeException("Unknown actual parameter: " + v + " of type " + v.getClass().getName());
-                    }
-                }
-                else {
+                } else
                     throw new RuntimeException("Found non-constant argument to bootstrap method: " + di);
-                }
             }
         }
     }
@@ -878,6 +868,8 @@ class FactWriter extends JavaFactWriter {
     private void writeDynamicInvoke(DynamicInvokeExpr di, int index, String insn, String methodId) {
         SootMethodRef dynInfo = di.getMethodRef();
         int dynArity = dynInfo.parameterTypes().size();
+        for (int pIdx = 0; pIdx < dynArity; pIdx++)
+            writeInvokedynamicParameterType(insn, pIdx, dynInfo.parameterType(pIdx).toString());
         writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynInfo.parameterTypes().toString(), di.getHandleTag(), methodId);
     }
 

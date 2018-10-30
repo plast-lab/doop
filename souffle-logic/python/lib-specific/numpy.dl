@@ -1,0 +1,99 @@
+isModule("<numpy>").
+
+ModeledModule("<numpy.random>", "random", "<numpy>").
+
+ModeledClass("<numpy.ndarray>", "ndarray", "<numpy>").
+
+
+ModeledFunction("<numpy.array>", "array", "<numpy>").
+FormalParam( 0, "object", "<numpy.array>", "<numpy.array>/mockParam1").
+
+ModeledFunction("<numpy.random.normal>", "normal", "<numpy.random>").
+FormalParam( 0, "loc", "<numpy.random.normal>", "<numpy.random.normal>/mockParam1").
+FormalParam( 1, "scale", "<numpy.random.normal>", "<numpy.random.normal>/mockParam2").
+FormalParam( 2, "size", "<numpy.random.normal>", "<numpy.random.normal>/mockParam3").
+
+ModeledFunction("<numpy.random.randn>", "randn", "<numpy.random>").
+ModeledFunction("<np.random.randint>", "randint", "<numpy.random>").
+
+
+.decl NumpyArrayShapeListLength(?hctx:configuration.HContext, ?val:Value, ?size:number)
+.decl NumpyArrayShapeListContent(?hctx:configuration.HContext, ?val:Value, ?index:number, ?indexValue:Value)
+.output NumpyArrayShapeListLength
+.output NumpyArrayShapeListContent
+
+
+.decl NumPyOperation_NameToVal(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?name:symbol, ?namedValHctx:configuration.HContext, ?namedVal:Value)
+.output NumPyOperation_NameToVal
+
+.decl NumPyOperationProducesOutput(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value)
+.output NumPyOperationProducesOutput
+
+.decl NumpyArrayShape(?arrayHctx:configuration.HContext, ?array:Value, ?shapeHctx:configuration.HContext, ?shapeList:Value)
+.output NumpyArrayShape
+
+//General op modeling
+
+configuration.RecordContextRequest(?ctx, ?outArray, ?var) :-
+  NumPyOperationProducesOutput(?ctx, ?insn, ?outArray),
+  AssignInstruction_To(?insn, ?var).
+
+IsPyListOrTuple(?arrayShapeVal),
+NumpyArrayShape(?hctx, ?outArray, ?hctx, ?arrayShapeVal),
+Value_Type(?arrayShapeVal, "<tuple>"),
+VarPointsTo(?hctx, ?outArray, ?ctx, ?var),
+Value_Type(?outArray, "<numpy.ndarray>"):-
+  configuration.RecordContextResponse(?ctx, ?outArray, ?var, ?hctx),
+  NumPyOperationProducesOutput(?ctx, ?insn, ?outArray),
+  AssignInstruction_To(?insn, ?var),
+  ?arrayShapeVal = cat("<shape ",cat(?outArray, ">")).
+
+ListOfConstsLength(?hctx, ?outArray, ?len),
+ListOfConstsAtIndexPointsTo(?hctx, ?outArray, ?index, ?indexValue):-
+  NumpyArrayShapeListLength(?hctx, ?outArray, ?len),
+  NumpyArrayShapeListContent(?hctx, ?outArray, ?index, ?indexValue).
+
+
+#define SingleInValValMacro(op,fun, index, val) cat("<ndarray ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val, ">"))))))
+
+.decl NumpyArrayOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npArrayOp:Value)
+.output NumpyArrayOp
+
+NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
+NumpyArrayOp(?ctx, ?insn, ?npArrayOp):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.array>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.array>", "object", ?objHctx, ?objVal),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?npArrayOp = SingleInValValMacro("npArray", ?fun, ?index, ?objVal).
+
+NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp):-
+  NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
+  ListOfConsts(?objHctx, ?objVal).
+
+NumpyArrayShapeListContent(?shapelistHctx, ?shapelist, ?index, ?indexVal):-
+  NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
+  NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?arrayHctx, ?npArrayOp, ?ctx, ?var),
+  NumpyArrayShape(?arrayHctx, ?npArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
+  TensorLikeObjectShapeListContent(?objHctx, ?objVal, ?index, ?indexVal).
+
+NumpyArrayShapeListLength(?shapelistHctx, ?shapelist, ?len):-
+  NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
+  NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?arrayHctx, ?npArrayOp, ?ctx, ?var),
+  NumpyArrayShape(?arrayHctx, ?npArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
+  TensorLikeObjectShapeListLength(?objHctx, ?objVal, ?len).
+
+TensorLikeObjectToTensorDtype(?arrayHctx, ?npArrayOp, ?dtypeHctx, ?dtype):-
+  NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
+  NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?arrayHctx, ?npArrayOp, ?ctx, ?var),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
+  TensorLikeObjectToTensorDtype(?objHctx, ?objVal, ?dtypeHctx, ?dtype).
