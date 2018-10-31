@@ -30,7 +30,7 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethodId),
    !LambdaMetafactoryInvoke(?invokedynamic, _, _).
 
-#define MockLambdaCallSite(invo, ret, type, method, real, name) \
+#define MOCK_LAMBDA_CALL_SITE(invo, ret, type, method, real, name) \
    cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
 
 .decl LambdaCallSite(?value:Value, ?dynName:symbol, ?dynRet:Type, ?implMethod:Method, K:number)
@@ -41,7 +41,7 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 .decl InvokedynamicBootstrapCtx(?invokedynamic:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
 
 InvokedynamicBootstrapCtx(?invokedynamic, ?ctx),
-LambdaCallSiteAux(?invokedynamic, ?hctx, MockLambdaCallSite(?invokedynamic, ?samType, ?handleType, ?handleMeth, ?implMethod, ?dynName), ?ctx, ?var, ?samType, ?dynName, ?implMethod, K) :-
+LambdaCallSiteAux(?invokedynamic, ?hctx, MOCK_LAMBDA_CALL_SITE(?invokedynamic, ?samType, ?handleType, ?handleMeth, ?implMethod, ?dynName), ?ctx, ?var, ?samType, ?dynName, ?implMethod, K) :-
    LambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?samType),
    DynamicMethodInvocation_DynArity(?invokedynamic, K),
    BootstrapParam(1, ?invokedynamic, ?handleVar),
@@ -202,17 +202,18 @@ Lambda_Method(?value, ?implMethod) :-
 // these values do not come from a 'new' instruction in the code but
 // are created here as special values, one per type.
 
-#define ConstructorReferenceValue(type) cat(type, "::: (Mock)")
+#define MOCK_CONSTRUCTOR_REF(type) cat(type, "::: (Mock)")
 
-VarPointsTo(?hctx, ConstructorReferenceValue(?type), ?ctx, ?var),
-ConstructorReference(?var, ConstructorReferenceValue(?type), ?i, ?implMethod),
-MockValueConsMacro(ConstructorReferenceValue(?type), ?type) :-
+VarPointsTo(?hctx, ?mockConstructorRef, ?ctx, ?var),
+ConstructorReference(?var, ?mockConstructorRef, ?i, ?implMethod),
+MockValueConsMacro(?mockConstructorRef, ?type) :-
    VarPointsTo(?hctx, ?baseVal, ?ctx, ?base),
    VirtualMethodInvocation_Base(?i, ?base),
    Lambda_Method(?baseVal, ?implMethod),
    Method_SimpleName(?implMethod, "<init>"),
    Method_DeclaringType(?implMethod, ?type),
-   AssignReturnValue(?i, ?var).
+   AssignReturnValue(?i, ?var),
+   ?mockConstructorRef = MOCK_CONSTRUCTOR_REF(?type).
 
 // Method handles usually need reflection except they come from the constant pool.
 .decl MethodHandle_Method(?mh:Value, ?method:Method)
