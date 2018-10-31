@@ -33,7 +33,7 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 #define MOCK_LAMBDA_CALL_SITE(invo, ret, type, method, real, name) \
    cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
 
-.decl LambdaCallSite(?value:Value, ?dynName:symbol, ?dynRet:Type, ?implMethod:Method, K:number)
+.decl LambdaCallSite(?value:Value, ?dynName:symbol, ?dynRet:Type, ?implMethod:Method)
 
 // Intermediate relation to make rules easier to read.
 .decl LambdaCallSiteAux(?invokedynamic:DynamicMethodInvocation_Insn, ?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?samType:InterfaceType, ?dynName:symbol, ?implMethod:Method, K:number)
@@ -41,9 +41,9 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 .decl InvokedynamicBootstrapCtx(?invokedynamic:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
 
 InvokedynamicBootstrapCtx(?invokedynamic, ?ctx),
-LambdaCallSiteAux(?invokedynamic, ?hctx, MOCK_LAMBDA_CALL_SITE(?invokedynamic, ?samType, ?handleType, ?handleMeth, ?implMethod, ?dynName), ?ctx, ?var, ?samType, ?dynName, ?implMethod, K) :-
+LambdaCallSiteAux(?invokedynamic, ?hctx, MOCK_LAMBDA_CALL_SITE(?invokedynamic, ?samType, ?handleType, ?handleMeth, ?implMethod, ?dynName), ?ctx, ?var, ?samType, ?dynName, ?implMethod, ?K) :-
    LambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?samType),
-   DynamicMethodInvocation_DynArity(?invokedynamic, K),
+   DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
    BootstrapParam(1, ?invokedynamic, ?handleVar),
    VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
    MethodHandleConstant_Method(?handleVal, ?implMethod),
@@ -64,13 +64,15 @@ ReachableContext(?calleeCtx, ?metafactory) :-
    InvokedynamicMetafactoryCallGraphEdge(_, _, ?calleeCtx, ?metafactory).
 
 .decl LambdaCallSite_Invokedynamic(?value:Value, ?invokedynamic:DynamicMethodInvocation_Insn)
+.decl LambdaCallSite_K(?value:Value, ?K:number)
 
 // Unpack the information gathered above and populate appropriate relations.
 VarPointsTo(?hctx, ?value, ?ctx, ?var),
 MockValueConsMacro(?value, ?samType),
 LambdaCallSite_Invokedynamic(?value, ?invokedynamic),
-LambdaCallSite(?value, ?dynName, ?samType, ?implMethod, K) :-
-   LambdaCallSiteAux(?invokedynamic, ?hctx, ?value, ?ctx, ?var, ?samType, ?dynName, ?implMethod, K).
+LambdaCallSite_K(?value, ?K),
+LambdaCallSite(?value, ?dynName, ?samType, ?implMethod) :-
+   LambdaCallSiteAux(?invokedynamic, ?hctx, ?value, ?ctx, ?var, ?samType, ?dynName, ?implMethod, ?K).
 
 // Pass arguments to bootstrap methods. First three arguments are
 // filled in by the JVM, so we fill them in with mock objects.
@@ -130,8 +132,8 @@ VarPointsTo(?hctx, MOCK_ARRAY(?invokedynamic), ?ctx, ?formalVarArgs) :-
 
 // Capture value of 'this'.
 LambdaCapturedThis(?callsite, ?thisValue, ?ctx) :-
-   LambdaCallSite(?callsite, _, _, _, K),
-   K > 0,
+   LambdaCallSite_K(?callsite, ?K),
+   ?K > 0,
    LambdaCallSite_Invokedynamic(?callsite, ?invokedynamic),
    ActualParam(0, ?invokedynamic, ?actualThis),
    VarPointsTo(_, ?thisValue, ?ctx, ?actualThis).
@@ -145,7 +147,7 @@ LambdaCapturedThis(?callsite, ?thisValue, ?ctx) :-
 .decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?callsite:Value)
 
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?callsite) :-
-   LambdaCallSite(?callsite, ?dynName, _, ?implMethod, _),
+   LambdaCallSite(?callsite, ?dynName, _, ?implMethod),
    VarPointsTo(_, ?callsite, ?callerCtx, ?var),
    VirtualMethodInvocation_Base(?i, ?var),
    VirtualMethodInvocation_SimpleName(?i, ?dynName),
@@ -166,9 +168,9 @@ BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
 // by the number of the K captured variables and permit conversions.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?callsite),
-   LambdaCallSite(?callsite, _, _, _, K),
+   LambdaCallSite_K(?callsite, ?K),
    FormalParam(?idx, ?implMethod, ?formal),
-   ActualParam(?idx + K, ?i, ?actual),
+   ActualParam(?idx + ?K, ?i, ?actual),
    VarPointsTo(_, ?val, _, ?actual),
    Value_Type(?val, ?valueType),
    Var_Type(?formal, ?formalType),
