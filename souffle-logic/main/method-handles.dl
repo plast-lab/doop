@@ -24,11 +24,11 @@ LambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?interface) :-
 
 // Record invokedynamic invocations whose bootstrap methods are not
 // handled at all.
-.decl UnhandledInvokedynamic(?i:DynamicMethodInvocation_Insn, ?bootMethodId:symbol)
+.decl UnhandledInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?bootMethodId:symbol)
 
-UnhandledInvokedynamic(?i, ?bootMethodId) :-
-   DynamicMethodInvocation_Bootstrap(?i, ?bootMethodId),
-   !LambdaMetafactoryInvoke(?i, _, _).
+UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
+   DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethodId),
+   !LambdaMetafactoryInvoke(?invokedynamic, _, _).
 
 #define MockLambdaCallSite(invo, ret, type, method, real, name) \
    cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
@@ -53,15 +53,15 @@ LambdaCallSiteAux(?invokedynamic, ?hctx, MockLambdaCallSite(?invokedynamic, ?sam
    Method_SimpleName(?implMethod, ?handleMeth),
    Method_DeclaringType(?implMethod, ?handleType).
 
-.decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?metafactory:Method)
-InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?metafactory) :-
-   LambdaMetafactoryInvoke(?i, _, _),
-   DynamicMethodInvocation_Bootstrap(?i, ?metafactory),
+.decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?metafactory:Method)
+InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory) :-
+   LambdaMetafactoryInvoke(?invokedynamic, _, _),
+   DynamicMethodInvocation_Bootstrap(?invokedynamic, ?metafactory),
    isImmutableContext(?calleeCtx),
-   InvokedynamicBootstrapCtx(?i, ?callerCtx).
+   InvokedynamicBootstrapCtx(?invokedynamic, ?callerCtx).
 
-ReachableContext(?calleeCtx, ?callee) :-
-   InvokedynamicMetafactoryCallGraphEdge(_, _, ?calleeCtx, ?callee).
+ReachableContext(?calleeCtx, ?metafactory) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, _, ?calleeCtx, ?metafactory).
 
 .decl LambdaCallSite_Invokedynamic(?value:Value, ?invokedynamic:DynamicMethodInvocation_Insn)
 
@@ -92,10 +92,10 @@ VarPointsTo(?hctx, ?value, ?ctx, ?invokedName) :-
 
 // Normal handling for the last three arguments of the metafactory.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   InvokedynamicMetafactoryCallGraphEdge(_, ?i, ?ctx, ?metafactory),
+   InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, ?ctx, ?metafactory),
    ?metafactory = LAMBDA_METAFACTORY,
    FormalParam(?idx + 3, ?metafactory, ?formal),
-   BootstrapParam(?idx, ?i, ?actual),
+   BootstrapParam(?idx, ?invokedynamic, ?actual),
    VarPointsTo(_, ?val, _, ?actual),
    isImmutableHContext(?hctx).
 
@@ -103,13 +103,13 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 
 #define MOCK_ARRAY(instr) cat("metafactory varargs array for ", instr)
 
-ArrayIndexPointsTo(?hctx, ?val, ?hctx, MOCK_ARRAY(?i)),
-MockValueConsMacro(MOCK_ARRAY(?i), "java.lang.Object[]"),
-VarPointsTo(?hctx, MOCK_ARRAY(?i), ?ctx, ?formalVarArgs) :-
-   InvokedynamicMetafactoryCallGraphEdge(_, ?i, ?ctx, ?metafactory),
+ArrayIndexPointsTo(?hctx, ?val, ?hctx, MOCK_ARRAY(?invokedynamic)),
+MockValueConsMacro(MOCK_ARRAY(?invokedynamic), "java.lang.Object[]"),
+VarPointsTo(?hctx, MOCK_ARRAY(?invokedynamic), ?ctx, ?formalVarArgs) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, ?ctx, ?metafactory),
    ?metafactory = LAMBDA_ALTMETAFACTORY,
    FormalParam(3, ?metafactory, ?formalVarArgs),
-   BootstrapParam(?idx, ?i, ?actual),
+   BootstrapParam(?idx, ?invokedynamic, ?actual),
    ?idx > 2,
    VarPointsTo(_, ?val, _, ?actual),
    isImmutableHContext(?hctx).
