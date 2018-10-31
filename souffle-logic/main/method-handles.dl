@@ -164,13 +164,11 @@ BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
 BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
 BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
 
-// Pass arguments to the implementing method. We shift the arguments
-// by the number of the K captured variables and permit conversions.
+// Pass arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?callsite),
-   LambdaCallSite_K(?callsite, ?K),
    FormalParam(?idx, ?implMethod, ?formal),
-   ActualParam(?idx + ?K, ?i, ?actual),
+   ActualParam(?idx, ?i, ?actual),
    VarPointsTo(_, ?val, _, ?actual),
    Value_Type(?val, ?valueType),
    Var_Type(?formal, ?formalType),
