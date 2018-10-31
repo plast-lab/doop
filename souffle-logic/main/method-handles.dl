@@ -192,28 +192,19 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
    AssignReturnValue(?i, ?ret).
 
-.decl Lambda_Method(?value:Value, ?implMethod:Method)
-Lambda_Method(?value, ?implMethod) :-
-   LambdaCallSite(?value, _, _, ?implMethod, _).
-
-.decl ConstructorReference(?var:Var, ?value:Value, ?i:MethodInvocation, ?implMethod:Method)
-
 // Applications of constructor references construct values. However,
 // these values do not come from a 'new' instruction in the code but
-// are created here as special values, one per type.
-
-#define MOCK_CONSTRUCTOR_REF(type) cat(type, "::: (Mock)")
-
-VarPointsTo(?hctx, ?mockConstructorRef, ?ctx, ?var),
-ConstructorReference(?var, ?mockConstructorRef, ?i, ?implMethod),
-MockValueConsMacro(?mockConstructorRef, ?type) :-
-   VarPointsTo(?hctx, ?baseVal, ?ctx, ?base),
-   VirtualMethodInvocation_Base(?i, ?base),
-   Lambda_Method(?baseVal, ?implMethod),
+// are created here as mock values, one per type/invocation.
+MockValueConsMacro(?mockObj, ?type),
+VarPointsTo(?hctx, ?mockObj, ?ctx, ?var),
+VarPointsTo(?hctx, ?mockObj, ?ctx, ?thisVar) :-
+   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?implMethod, _),
    Method_SimpleName(?implMethod, "<init>"),
    Method_DeclaringType(?implMethod, ?type),
    AssignReturnValue(?i, ?var),
-   ?mockConstructorRef = MOCK_CONSTRUCTOR_REF(?type).
+   ThisVar(?implMethod, ?thisVar),
+   ?mockObj = cat("mock ", cat(?type, cat(" constructed by constructor reference at ", ?i))),
+   isImmutableHContext(?hctx).
 
 // Method handles usually need reflection except they come from the constant pool.
 .decl MethodHandle_Method(?mh:Value, ?method:Method)
