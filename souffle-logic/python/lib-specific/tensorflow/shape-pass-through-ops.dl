@@ -1,0 +1,59 @@
+#define SingleInValTensorValMacro(op,fun, index, val) cat("<tensor", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val, ">"))))))
+
+.decl ShapePassThroughFunction(?function:Function, ?name:symbol, ?declModule:Module, ?argName:symbol)
+.output ShapePassThroughFunction
+
+ShapePassThroughFunction("<tensorflow.nn.relu>", "relu" , "<tensorflow.nn>", "features").
+ShapePassThroughFunction("<tensorflow.nn.relu6>", "relu6" , "<tensorflow.nn>", "features").
+ShapePassThroughFunction("<tensorflow.nn.crelu>", "crelu" , "<tensorflow.nn>", "features").
+ShapePassThroughFunction("<tensorflow.nn.elu>", "elu" , "<tensorflow.nn>", "features").
+ShapePassThroughFunction("<tensorflow.nn.selu>", "selu" , "<tensorflow.nn>", "features").
+ShapePassThroughFunction("<tensorflow.nn.softplus>", "softplus" , "<tensorflow.nn>", "features").
+ShapePassThroughFunction("<tensorflow.nn.softsign>", "softsign" , "<tensorflow.nn>", "features").
+ShapePassThroughFunction("<tensorflow.nn.dropout>", "dropout" , "<tensorflow.nn>", "features").
+ShapePassThroughFunction("<tensorflow.nn.bias_add>", "bias_add" , "<tensorflow.nn>", "features").
+ShapePassThroughFunction("<tensorflow.sigmoid>", "sigmoid" , "<tensorflow>", "x").
+ShapePassThroughFunction("<tensorflow.nn.sigmoid>", "sigmoid" , "<tensorflow.nn>", "x").
+ShapePassThroughFunction("<tensorflow.tanh>", "tanh" , "<tensorflow>", "x").
+ShapePassThroughFunction("<tensorflow.nn.tanh>", "tanh" , "<tensorflow.nn>", "x").
+
+
+FormalParam(0, ?argName, ?function, cat(?function,"/mockParam1")),
+ModeledFunction(?function, ?name, ?declModule):-
+  ShapePassThroughFunction(?function, ?name, ?declModule, ?argName).
+
+.decl ShapePassThroughOp(?ctx:configuration.Context, ?insn:Instruction, ?shapePassThroughOp:Value)
+.output ShapePassThroughOp
+
+TensorOperation_GetDTypeFromName(?ctx, ?insn, ?shapePassThroughOp, "inTensor"),
+TensorOperation_NameToVal(?ctx, ?insn, ?shapePassThroughOp, "inTensor", ?inValueHctx, ?inValue),
+ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp):-
+  ShapePassThroughFunction(?function, ?funName, _, ?argName),
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, ?function),
+  ResolvedActualParamValue(?ctx, ?insn, ?function, ?argName, ?inValueHctx, ?inValue),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?shapePassThroughOp = SingleInValTensorValMacro(?funName, ?fun, ?index, ?inValue).
+
+TensorOperationProducesOutput(?ctx, ?insn, ?shapePassThroughOp):-
+  ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp),
+  TensorOperation_NameToVal(?ctx, ?insn, ?shapePassThroughOp, "inTensor", _, ?inValue),
+  Value_Type(?inValue, "<tensorflow.Tensor>").
+
+TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
+  ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp),
+  TensorOperationProducesOutput(?ctx, ?insn, ?shapePassThroughOp),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?shapePassThroughOp, ?ctx, ?var),
+  TensorShape(?hctx, ?shapePassThroughOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?shapePassThroughOp, "inTensor", ?inValueHctx, ?inValue),
+  TensorLikeObjectShapeListLength(?inValueHctx, ?inValue, ?len).
+
+TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
+  ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp),
+  TensorOperationProducesOutput(?ctx, ?insn, ?shapePassThroughOp),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?shapePassThroughOp, ?ctx, ?var),
+  TensorShape(?hctx, ?shapePassThroughOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?shapePassThroughOp, "inTensor", ?inValueHctx, ?inValue),
+  TensorLikeObjectShapeListContent(?inValueHctx, ?inValue, ?index, ?indexValue).
