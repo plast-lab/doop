@@ -138,13 +138,21 @@
         ?newCtx = [?callerCtxValue2, ?value],
         ?callerCtxValue1 = ?callerCtxValue1.
 
+    // InitContextResponse(?value, ?ctx) :-
+    //     InitContextRequest(?value),
+    //     ?ctx = [?value, ?value].
+
+    // InitHContextResponse(?value, ?hctx) :-
+    //     InitHContextRequest(?value),
+    //     ?hctx = [?value].
+
     InitContextResponse(?value, ?ctx) :-
         InitContextRequest(?value),
-        ?ctx = [?value, ?value].
+		isImmutableContext(?ctx).
 
     InitHContextResponse(?value, ?hctx) :-
         InitHContextRequest(?value),
-        ?hctx = [?value].
+		isImmutableHContext(?hctx).
 
 .decl SpecialContextSensitivityMethod(?method:Method, ?sensivity:symbol)
 .input SpecialContextSensitivityMethod(IO="file", filename="SpecialContextSensitivityMethod.facts", delimiter="\t")

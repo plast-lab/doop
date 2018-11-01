@@ -281,3 +281,17 @@ ModeledMethod("<tensorflow.Session.__init__>", "__init__", "<tensorflow.Session>
 ModeledMethod("<tensorflow.Session.run>", "run", "<tensorflow.Session>", "<tensorflow>").
 FormalParam( 0, "fetch", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam1").
 FormalParam( 1, "feed_dict", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam2").
+
+
+ModeledFunction("<tensorflow.random_normal>", "random_normal", "<tensorflow>").
+ModeledFunction("<tensorflow.truncated_normal>", "truncated_normal", "<tensorflow>").
+ModeledFunction("<tensorflow.random_gamma>", "random_gamma", "<tensorflow>").
+ModeledFunction("<tensorflow.random_uniform>", "random_uniform", "<tensorflow>").
+
+FormalParam_DefaultValFrom(?function, "dtype", "<tensorflow>/floatDtypeDefVar"),
+FormalParam( 0, "shape", ?function, cat(?function,"/mockParam1")),
+FormalParam( 3, "dtype", ?function, cat(?function,"/mockParam2")):-
+?function = "<tensorflow.random_normal>";
+?function = "<tensorflow.truncated_normal>";
+?function = "<tensorflow.random_gamma>";
+?function = "<tensorflow.random_uniform>".

@@ -157,8 +157,18 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${openProgramsRules}.dl", commonMacros)
 		}
 
-		if (options.SANITY.value)
+		if (options.SANITY.value) {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/sanity.dl")
+			if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
+				log.info("Warning: the sanity check is not fully compatible with --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name)
+			}
+			if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
+				log.info("Warning: the sanity check is not fully compatible with --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name)
+			}
+			if (options.NO_MERGES.value) {
+				log.info("Warning: the sanity check is not fully compatible with --" + options.NO_MERGES.name)
+			}
+		}
 
 		if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
