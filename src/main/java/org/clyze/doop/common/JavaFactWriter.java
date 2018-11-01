@@ -264,4 +264,14 @@ public class JavaFactWriter {
     protected void writeActualParam(int index, String invo, String var) {
         _db.add(ACTUAL_PARAMETER, str(index), invo, var);
     }
+
+    protected void writeMethodTypeConstant(String mt) {
+        int rParen = mt.indexOf(")");
+        int arity = 0;
+        if (mt.startsWith("(") && (rParen != -1))
+            arity = mt.substring(1, rParen).split(",").length;
+        else
+            System.err.println("Warning: cannot compute arity of " + mt);
+        _db.add(METHOD_TYPE_CONSTANT, mt, str(arity));
+    }
 }

@@ -118,6 +118,23 @@ VarPointsTo(?hctx, MOCK_ARRAY(?invokedynamic), ?ctx, ?formalVarArgs) :-
    VarPointsTo(_, ?val, _, ?actual),
    isImmutableHContext(?hctx).
 
+.decl LambdaCallSite_N(?callsite:Value, ?N:number, ?samMethodType:Value)
+
+LambdaCallSite_N(?callsite, ?N, ?val) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, _, ?metafactory),
+   ?metafactory = LAMBDA_METAFACTORY,
+   LambdaCallSite_Invokedynamic(?callsite, ?invokedynamic),
+   BootstrapParam(0, ?invokedynamic, ?actual),
+   VarPointsTo(_, ?val, _, ?actual),
+   _MethodTypeConstant(?val, ?N).
+
+LambdaCallSite_N(?callsite, ?N, ?val) :-
+   InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, _, ?metafactory),
+   ?metafactory = LAMBDA_ALTMETAFACTORY,
+   LambdaCallSite_Invokedynamic(?callsite, ?invokedynamic),
+   ArrayIndexPointsTo(_, ?val, _, MOCK_ARRAY(?invokedynamic)),
+   _MethodTypeConstant(?val, ?N).
+
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
 
 .decl LambdaCaptured(?callsite:Value, ?val:Value, ?idx:number, ?ctx:configuration.Context)
