@@ -208,7 +208,37 @@ BBOutDefs(?block, ?prev_def) :-
     SSA_Alias(?prev_def, ?original),
     !ExistsLocalDef(?block, ?original).
 
-//.decl InstrReachingDef(?instr:symbol, ?def:symbol, ?original:symbol)
+.decl SimilarDefs(?def_1:symbol, ?def_2:symbol)
+
+SimilarDefs(?def_1, ?def_2) :-
+    SSA_Alias(?def_1, ?original),
+    SSA_Alias(?def_2, ?original).
+
+.decl ExistTwoDifferentPredDefs(?block:symbol, ?phi_name:symbol)
+
+ExistTwoDifferentPredDefs(?block, ?phi_name) :-
+    MayPredecessorBBModuloThrow(?pred1, ?block),
+    MayPredecessorBBModuloThrow(?pred2, ?block),
+    ?pred1 != ?pred2,
+    SSA_Alias(?phi_name, ?original),
+    BBOutDefs(?pred_1, ?def_1),
+    BBOutDefs(?pred_2, ?def_2),
+    SimilarDefs(?def_1, ?def_2),
+    SimilarDefs(?phi_name, ?def_1),
+    ?def_1 != ?def_2.
+
+// These instructions create chains of assignments, at the head of each block.
+// This is a helper relation to assist the final assignment operation, which 
+// will require linking the assignments with the rest of the code.
+.decl PhiAssignInstruction(?phi_var:symbol, ?block:symbol, ?index:number)
+.output PhiAssignInstruction
+
+PhiAssignInstruction(?phi_var, ?block, ?relative_index) :-
+    PhiAssign(?phi_var, _, ?block),
+    ExistTwoDifferentPredDefs(?block, ?phi_var),
+    ?relative_index = 0.
+
+//.decl InstrReachingDef(?instr:symbol, ?original:symbol, ?def:symbol)
 //
 //InstrReachingDef(?instr, ?def, ?original) :-
 //    MayPredecessorModuloThrow(?prev, ?instr),
@@ -219,3 +249,21 @@ BBOutDefs(?block, ?prev_def) :-
 //    MayPredecessorModuloThrow(?prev, ?instr),
 //    !SSA_AssignDetails(?prev, _, _, _, _),
 //    InstrReachingDef(?prev, ?def, ?original).
+.decl DFPlus(?dBlock:symbol, ?block:symbol, ?var:symbol)
+.output DFPlus
+
+DFPlus(?dBlock, ?block, ?var) :-
+    ContainsAssignment(?dBlock, ?var),
+    DominanceFrontier(?dBlock, ?block).
+
+DFPlus(?dBlock, ?block, ?var) :-
+    ContainsAssignment(?dBlock, ?var),
+    IterDF(?dBlock, ?block, ?var).
+
+
+
+
+
+
+
+
