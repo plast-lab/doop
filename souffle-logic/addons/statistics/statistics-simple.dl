@@ -338,6 +338,18 @@ NewMetricMacro("61.4", "Mock Objects for Formals", MockObjFromFormal(_)).
 //NewMetricMacro("62.5", "Methods Reachable from open entry points (INS)", Stats_Simple_ReachableFromOpenProgramEntryPoint(_)).
 #endif
 
+#ifdef SPECIAL_CONTEXT_SENSITIVITY_METHODS
+Stats_Simple_TwoObjectMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
+   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), Var_DeclaringMethod(?var, ?method), mainAnalysis.configuration.TwoObjectMethod(?method).
+
+Stats_Simple_ContextInsensitiveMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
+   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), Var_DeclaringMethod(?var, ?method), mainAnalysis.configuration.ContextInsensitiveMethod(?method).
+
+NewMetricMacro("101.0", "context-insensitive methods", mainAnalysis.configuration.ContextInsensitiveMethod(_)).
+NewMetricMacro("102.0", "1-object-sensitive methods", mainAnalysis.configuration.TwoObjectMethod(_)).
+NewMetricMacro("103.0", "context-insensitive methods total VPT", Stats_Simple_ContextInsensitiveMethodsVPT(_, _, _, _)).
+NewMetricMacro("104.0", "1-object-sensitive methods total VPT", Stats_Simple_TwoObjectMethodsVPT(_, _, _, _)).
+#endif
 /***************************************************
  * Memory Dump
  ***************************************************/

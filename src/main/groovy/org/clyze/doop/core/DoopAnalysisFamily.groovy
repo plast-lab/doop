@@ -165,7 +165,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SPECIAL_CONTEXT_SENSITIVITY_METHODS",
 					name: "special-cs-methods",
 					argName: "FILE",
-					description: "Use a file that specifies special context sensitivity for some methods.",
+	                                description: "Use a file that specifies special context sensitivity for some methods.",
+                                        forPreprocessor: true,  
 					forCacheID: true,
 					changesFacts: true
 			),
