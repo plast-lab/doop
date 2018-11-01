@@ -34,14 +34,16 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
    cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
 
 .decl LambdaCallSite(?value:Value, ?dynName:symbol, ?dynRet:Type, ?implMethod:Method)
-
-// Intermediate relation to make rules easier to read.
-.decl LambdaCallSiteAux(?invokedynamic:DynamicMethodInvocation_Insn, ?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?samType:InterfaceType, ?dynName:symbol, ?implMethod:Method, K:number)
-
+.decl LambdaCallSite_Invokedynamic(?callsite:Value, ?invokedynamic:DynamicMethodInvocation_Insn)
+.decl LambdaCallSite_K(?callsite:Value, ?K:number)
 .decl InvokedynamicBootstrapCtx(?invokedynamic:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
 
 InvokedynamicBootstrapCtx(?invokedynamic, ?ctx),
-LambdaCallSiteAux(?invokedynamic, ?hctx, MOCK_LAMBDA_CALL_SITE(?invokedynamic, ?samType, ?handleType, ?handleMeth, ?implMethod, ?dynName), ?ctx, ?var, ?samType, ?dynName, ?implMethod, ?K) :-
+VarPointsTo(?hctx, ?callsite, ?ctx, ?var),
+MockValueConsMacro(?callsite, ?samType),
+LambdaCallSite_Invokedynamic(?callsite, ?invokedynamic),
+LambdaCallSite_K(?callsite, ?K),
+LambdaCallSite(?callsite, ?dynName, ?samType, ?implMethod) :-
    LambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?samType),
    DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
    BootstrapParam(1, ?invokedynamic, ?handleVar),
@@ -51,7 +53,8 @@ LambdaCallSiteAux(?invokedynamic, ?hctx, MOCK_LAMBDA_CALL_SITE(?invokedynamic, ?
    AssignReturnValue(?invokedynamic, ?var),
    // Used to generate friendly description for the generated mock value.
    Method_SimpleName(?implMethod, ?handleMeth),
-   Method_DeclaringType(?implMethod, ?handleType).
+   Method_DeclaringType(?implMethod, ?handleType),
+   ?callsite = MOCK_LAMBDA_CALL_SITE(?invokedynamic, ?samType, ?handleType, ?handleMeth, ?implMethod, ?dynName).
 
 .decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?metafactory:Method)
 InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory) :-
@@ -62,17 +65,6 @@ InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?m
 
 ReachableContext(?calleeCtx, ?metafactory) :-
    InvokedynamicMetafactoryCallGraphEdge(_, _, ?calleeCtx, ?metafactory).
-
-.decl LambdaCallSite_Invokedynamic(?value:Value, ?invokedynamic:DynamicMethodInvocation_Insn)
-.decl LambdaCallSite_K(?value:Value, ?K:number)
-
-// Unpack the information gathered above and populate appropriate relations.
-VarPointsTo(?hctx, ?value, ?ctx, ?var),
-MockValueConsMacro(?value, ?samType),
-LambdaCallSite_Invokedynamic(?value, ?invokedynamic),
-LambdaCallSite_K(?value, ?K),
-LambdaCallSite(?value, ?dynName, ?samType, ?implMethod) :-
-   LambdaCallSiteAux(?invokedynamic, ?hctx, ?value, ?ctx, ?var, ?samType, ?dynName, ?implMethod, ?K).
 
 // Pass arguments to bootstrap methods. First three arguments are
 // filled in by the JVM, so we fill them in with mock objects.
