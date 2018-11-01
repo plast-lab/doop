@@ -645,7 +645,6 @@ TensorShapeListContent(?outShapeListHctx, ?outShapeList, ?channelsPosInTensor, ?
   AssignInstruction_To(?insn, ?var),
   VarPointsTo(?hctx, ?newVal, ?ctx, ?var),
   TensorShape(?hctx, ?newVal, ?outShapeListHctx, ?outShapeList),
-  ConvOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimValue),
   (
     (
       ConvOrPoolOperation_ChannelsLast(?ctx, ?insn, ?newVal),

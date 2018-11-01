@@ -11,6 +11,9 @@
 .decl ReshapeOperationPossibleMissalignment(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?reshapeOpVal:Value)
 .output ReshapeOperationPossibleMissalignment
 
+.decl ReshapeOperationBatchContamination(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?reshapeOpVal:Value)
+.output ReshapeOperationBatchContamination
+
 .decl ReshapeOperationCorrectTypeArgs(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?reshapeOpVal:Value)
 .output ReshapeOperationCorrectTypeArgs
 
@@ -140,6 +143,16 @@ TensorOperationProducesOutput(?ctx, ?insn, ?reshapeOpVal):-
   TensorShape(?tensorHctx, ?tensorArgVal, ?shapeHctx, ?tensorShapeVal),
   ListOfIntConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, ?pos, "<num-constant(int):-1>"),
   ListOfConstsAtIndexPointsTo(?shapeHctx, ?tensorShapeVal, ?pos, "<None>").
+
+ReshapeOperationBatchContamination(?ctx, ?insn, ?reshapeOpVal),
+ReshapeOperationReplaceMinus1WithVal(?ctx, ?insn, ?reshapeOpVal, "<None>"),
+TensorOperationProducesOutput(?ctx, ?insn, ?reshapeOpVal):-
+  ReshapeOperationTensorAndListDiffMult(?ctx, ?insn, ?reshapeOpVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "shape", ?dimListHctx, ?dimListArgVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?reshapeOpVal, "tensor", ?tensorHctx, ?tensorArgVal),
+  TensorShape(?tensorHctx, ?tensorArgVal, ?shapeHctx, ?tensorShapeVal),
+  ListOfIntConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, _, "<num-constant(int):-1>"),
+  ListOfConstsAtIndexPointsTo(?shapeHctx, ?tensorShapeVal, _, "<None>").
 
 ReshapeOperationReplaceMinus1WithVal(?ctx, ?insn, ?reshapeOpVal, "<None>"),
 ReshapeOperationPossibleMissalignment(?ctx, ?insn, ?reshapeOpVal),
