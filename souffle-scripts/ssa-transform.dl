@@ -125,6 +125,17 @@ DominanceFrontier(?dBlock, ?block) :-
     Dominates(?dBlock, ?pred),
     !StrictlyDominates(?dBlock, ?block).
 
+.decl DFPlus(?dBlock:symbol, ?block:symbol, ?var:symbol)
+.output DFPlus
+
+DFPlus(?dBlock, ?block, ?var) :-
+    ContainsAssignment(?dBlock, ?var),
+    DominanceFrontier(?dBlock, ?block).
+
+DFPlus(?dBlock, ?block, ?var) :-
+    ContainsAssignment(?dBlock, ?var),
+    DFPlus(?dBlock, ?block, ?var).
+
 .decl ContainsAssignment(?dBlock:symbol, ?var:symbol)
 
 ContainsAssignment(?dBlock, ?var) :-
@@ -145,10 +156,8 @@ DebugBB(?bb) :- BasicBlockBegin(?bb).
 
 SSA_Alias(?phi_var, ?var),
 PhiAssign(?phi_var, ?arity, ?block) :-
+    DFPlus(_, ?block, ?var),
     Instruction_Index(?block, ?index),
-    Instruction_Method(?instr, ?method),
-    DominanceFrontier(?dBlock, ?block),
-    ContainsAssignment(?dBlock, ?var),
     ?arity = count : MayPredecessorBBModuloThrow(_, ?block),
     ?phi_var = cat(cat(?var, "_phi_"), to_string(?index)).
     
@@ -210,6 +219,7 @@ BBOutDefs(?block, ?prev_def) :-
 
 .decl SimilarDefs(?def_1:symbol, ?def_2:symbol)
 
+// Two defs are similar, if they
 SimilarDefs(?def_1, ?def_2) :-
     SSA_Alias(?def_1, ?original),
     SSA_Alias(?def_2, ?original).
@@ -233,10 +243,19 @@ ExistTwoDifferentPredDefs(?block, ?phi_name) :-
 .decl PhiAssignInstruction(?phi_var:symbol, ?block:symbol, ?index:number)
 .output PhiAssignInstruction
 
-PhiAssignInstruction(?phi_var, ?block, ?relative_index) :-
-    PhiAssign(?phi_var, _, ?block),
-    ExistTwoDifferentPredDefs(?block, ?phi_var),
-    ?relative_index = 0.
+.decl isNonTrivialPhi(?block:symbol, ?var:symbol)
+
+.decl PhiInstructionName(?phi)
+isNonTrivialPhi(?block, ?var) :-
+    PhiAssign(?var, _, ?block),
+    ExistTwoDifferentPredDefs(?block, ?var).
+
+PhiAssignInstruction(?phi_var, ?block, $) :-
+    isNonTrivialPhi(?block, ?phi_var).
+
+//PhiAssignInstruction(?phi_var, ?block, $) :-
+//    PhiAssign(?phi_var, _, ?block),
+//    ExistTwoDifferentPredDefs(?block, ?phi_var).
 
 //.decl InstrReachingDef(?instr:symbol, ?original:symbol, ?def:symbol)
 //
@@ -249,21 +268,3 @@ PhiAssignInstruction(?phi_var, ?block, ?relative_index) :-
 //    MayPredecessorModuloThrow(?prev, ?instr),
 //    !SSA_AssignDetails(?prev, _, _, _, _),
 //    InstrReachingDef(?prev, ?def, ?original).
-.decl DFPlus(?dBlock:symbol, ?block:symbol, ?var:symbol)
-.output DFPlus
-
-DFPlus(?dBlock, ?block, ?var) :-
-    ContainsAssignment(?dBlock, ?var),
-    DominanceFrontier(?dBlock, ?block).
-
-DFPlus(?dBlock, ?block, ?var) :-
-    ContainsAssignment(?dBlock, ?var),
-    IterDF(?dBlock, ?block, ?var).
-
-
-
-
-
-
-
-

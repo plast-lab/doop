@@ -58,7 +58,7 @@ FallThrough(?insn) :-
 
 // First instruction of a method is a basic block beginning
 BasicBlockBegin(?insn) :-
-   OptInstructionFromMethodIndex(_, 0, ?insn).
+   OptInstructionFromMethodIndex(_, 1, ?insn).
 BasicBlockBegin(?insn) :-
    ExceptionHandlerFirstInstruction(?insn).
 BasicBlockBegin(?insn) :-
@@ -125,7 +125,7 @@ Dominates(?dominator, ?insn) :-
 // Either the first instruction...
 .decl CFGRoot(?insn:Instruction, ?method:Method)
 CFGRoot(?insn, ?method) :-
-   OptInstructionFromMethodIndex(?method, 0, ?insn).
+   OptInstructionFromMethodIndex(?method, 1, ?insn).
 // or... could also be beginning of exception handler
 CFGRoot(?insn, ?method) :-
    BBHeadInMethod(?insn, ?method),
