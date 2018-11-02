@@ -6,10 +6,6 @@ public class JavaRepresentation {
         return "<class " + className + ">";
     }
 
-    public static String methodTypeConstant(String s) {
-        return s;
-    }
-
     public static String methodHandleConstant(String handleName) {
         return "<handle " + handleName + ">";
     }

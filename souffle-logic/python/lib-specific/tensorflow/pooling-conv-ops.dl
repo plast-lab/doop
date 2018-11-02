@@ -506,7 +506,7 @@ PoolOperation(?ctx, ?insn, ?newVal):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, ?function),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "value", ?inputsTensorHctx, ?inputsTensorArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "ksize", ?filtersHctx, ?filterArgVal),
-  ResolvedActualParamValue(?ctx, ?insn, ?function, "stride", ?stridesHctx, ?stridesArgVal),
+  ResolvedActualParamValue(?ctx, ?insn, ?function, "strides", ?stridesHctx, ?stridesArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "padding", ?paddingHctx, ?paddingArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
   Instruction_Function(?insn, ?inFunction),
@@ -645,7 +645,6 @@ TensorShapeListContent(?outShapeListHctx, ?outShapeList, ?channelsPosInTensor, ?
   AssignInstruction_To(?insn, ?var),
   VarPointsTo(?hctx, ?newVal, ?ctx, ?var),
   TensorShape(?hctx, ?newVal, ?outShapeListHctx, ?outShapeList),
-  ConvOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimValue),
   (
     (
       ConvOrPoolOperation_ChannelsLast(?ctx, ?insn, ?newVal),

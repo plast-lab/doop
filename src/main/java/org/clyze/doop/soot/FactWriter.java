@@ -352,8 +352,8 @@ class FactWriter extends JavaFactWriter {
             _db.add(CLASS_HEAP, heap, actualType);
         } else if (first == '(') {
             // method type constant (viewed by Soot as a class constant)
-            heap = methodTypeConstant(s);
-            _db.add(METHOD_TYPE_CONSTANT, heap);
+            heap = s;
+            writeMethodTypeConstant(heap);
         } else {
 //            SootClass c = soot.Scene.v().getSootClass(s);
 //            if (c == null) {
@@ -870,7 +870,12 @@ class FactWriter extends JavaFactWriter {
         int dynArity = dynInfo.parameterTypes().size();
         for (int pIdx = 0; pIdx < dynArity; pIdx++)
             writeInvokedynamicParameterType(insn, pIdx, dynInfo.parameterType(pIdx).toString());
-        writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynInfo.parameterTypes().toString(), di.getHandleTag(), methodId);
+
+        StringBuffer dpTypes = new StringBuffer("(");
+        dynInfo.parameterTypes().forEach(p -> dpTypes.append(p.toString()));
+        String dynParamTypes = dpTypes.append(")").toString();
+
+        writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynParamTypes, di.getHandleTag(), methodId);
     }
 
     private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {

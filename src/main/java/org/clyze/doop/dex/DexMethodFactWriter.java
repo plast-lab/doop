@@ -171,7 +171,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         DexBackedMethodImplementation mi = m.getImplementation();
         if (mi != null) {
             writeDebugItems(mi.getDebugItems());
-            int index = 0;
+            int index = 1;
             for (Instruction instr : mi.getInstructions()) {
                 addressToIndex.put(currentInstrAddr, index);
                 generateFactsFor(instr, index, fieldOps);

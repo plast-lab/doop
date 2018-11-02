@@ -21,6 +21,7 @@
   #include "../lib-specific/tensorflow/shape-mod-ops.dl"
   #include "../lib-specific/tensorflow/arithmetic-ops.dl"
   #include "../lib-specific/tensorflow/pooling-conv-ops.dl"
+  #include "../lib-specific/tensorflow/shape-pass-through-ops.dl"
 
   /**
    * Reachable

@@ -396,12 +396,11 @@ public class WalaFactWriter extends JavaFactWriter {
     private void writeAssignMethodTypeConstant(IMethod m, SSAInstruction instr, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instr);
         String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
-        //String handleName = constant.getMethodRef().toString();
-        String handleName =(String) constant.getValue();
-        String heap = methodTypeConstant(handleName);
+        //String heap = constant.getMethodRef().toString();
+        String heap = (String) constant.getValue();
         String methodId = _rep.signature(m);
 
-        _db.add(METHOD_TYPE_CONSTANT, heap);
+        writeMethodTypeConstant(heap);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
     }
 

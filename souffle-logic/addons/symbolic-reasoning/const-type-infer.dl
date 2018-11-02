@@ -7,7 +7,8 @@ IntConstant(?instr, ?var, to_number(?value), ?meth, ?type) :-
     AssignInstruction_To(?instr, ?var),
     AssignNumConstant_Id(?instr, ?value),
     _Var_Type(?var, ?type),
-    (Type_int(?type) ; Type_byte(?type) ; Type_short(?type)).
+    (Type_int(?type) ; Type_byte(?type) ;
+     Type_short(?type)).
 
 
 .decl BoolConstant(?instr:symbol, ?var:symbol, ?value:number, ?meth:symbol)

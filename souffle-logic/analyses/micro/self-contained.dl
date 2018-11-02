@@ -442,13 +442,20 @@ Reachable(?clinit) :-
    ClassInitializer(?class, ?clinit).
 
 // Main (value-based) analysis
-.decl Assign(?to:Var, ?from:Var) output
-.decl VarPointsTo(?heap:HeapAllocation, ?var:Var) output
-.decl InstanceFieldPointsTo(?heap:HeapAllocation , ?fld:Field, ?baseheap:HeapAllocation) output
-.decl StaticFieldPointsTo(?heap:HeapAllocation, ?fld:Field) output
-.decl CallGraphEdge(?invocation:MethodInvocation, ?meth:Method) output
-.decl ArrayIndexPointsTo(?baseheap:HeapAllocation, ?heap:HeapAllocation) output
-.decl Reachable(?method:Method) output
+.decl Assign(?to:Var, ?from:Var)
+.output Assign
+.decl VarPointsTo(?heap:HeapAllocation, ?var:Var)
+.output VarPointsTo
+.decl InstanceFieldPointsTo(?heap:HeapAllocation , ?fld:Field, ?baseheap:HeapAllocation)
+.output InstanceFieldPointsTo
+.decl StaticFieldPointsTo(?heap:HeapAllocation, ?fld:Field)
+.output StaticFieldPointsTo
+.decl CallGraphEdge(?invocation:MethodInvocation, ?meth:Method)
+.output CallGraphEdge
+.decl ArrayIndexPointsTo(?baseheap:HeapAllocation, ?heap:HeapAllocation)
+.output ArrayIndexPointsTo
+.decl Reachable(?method:Method)
+.output Reachable
 Assign(?actual, ?formal) :-
   CallGraphEdge(?invocation, ?method),
   FormalParam(?index, ?method, ?formal),
@@ -467,12 +474,14 @@ VarPointsTo(?heap, ?to) :-
   Reachable(?inmethod),
   AssignLocal(?from, ?to, ?inmethod),
   VarPointsTo(?heap, ?from).
+ .plan 1:(3,2,1)
 VarPointsTo(?heap, ?to) :-
   Reachable(?method),
   AssignCast(?type, ?from, ?to, ?method),
   basic.SupertypeOf(?type, ?heaptype),
   HeapAllocation_Type(?heap, ?heaptype),
   VarPointsTo(?heap, ?from).
+ .plan 1:(5,2,1,4,3)
 ArrayIndexPointsTo(?baseheap, ?heap) :-
   Reachable(?inmethod),
   StoreArrayIndex(?from, ?base, ?inmethod),
@@ -491,16 +500,19 @@ VarPointsTo(?heap, ?to) :-
   HeapAllocation_Type(?baseheap, ?baseheaptype),
   ComponentType(?baseheaptype, ?basecomponenttype),
   basic.SupertypeOf(?type, ?basecomponenttype).
+ .plan 1:(3,2,1,4,5,6,7,8), 2:(4,3,2,1,5,6,7,8)
 VarPointsTo(?heap, ?to) :-
   Reachable(?inmethod),
   LoadInstanceField(?base, ?signature, ?to, ?inmethod),
   VarPointsTo(?baseheap, ?base),
   InstanceFieldPointsTo(?heap, ?signature, ?baseheap).
+ .plan 1:(3,2,1,4), 2:(4,2,1,3)
 InstanceFieldPointsTo(?heap, ?fld, ?baseheap) :-
   Reachable(?inmethod),
   StoreInstanceField(?from, ?base, ?fld, ?inmethod),
   VarPointsTo(?heap, ?from),
   VarPointsTo(?baseheap, ?base).
+ .plan 1:(3,2,1,4), 2:(4,2,1,3)
 VarPointsTo(?heap, ?to) :-
   Reachable(?inmethod),
   LoadStaticField(?fld, ?to, ?inmethod),
@@ -519,6 +531,7 @@ VarPointsTo(?heap, ?this) :-
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
   basic.MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod),
   ThisVar(?toMethod, ?this).
+ .plan 1:(4,3,2,1,5,6,7,8,9)
 Reachable(?toMethod),
 CallGraphEdge(?invocation, ?toMethod) :-
   Reachable(?inMethod),
@@ -529,6 +542,7 @@ CallGraphEdge(?invocation, ?toMethod) :-
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
   basic.MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod).
+ .plan 1:(4,3,2,1,5,6,7,8)
 Reachable(?tomethod),
 CallGraphEdge(?invocation, ?tomethod) :-
   Reachable(?inmethod),
@@ -542,5 +556,6 @@ VarPointsTo(?heap, ?this) :-
   VarPointsTo(?heap, ?base),
   MethodInvocation_Method(?invocation, ?tomethod),
   ThisVar(?tomethod, ?this).
+ .plan 1:(4,3,2,1,5,6)
 Reachable(?method) :-
   basic.MainMethodDeclaration(?method).

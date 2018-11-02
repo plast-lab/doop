@@ -248,6 +248,9 @@ public class JavaFactWriter {
 
     protected void writeInvokedynamic(String insn, int index, String bootSig, String dynName, String dynRetType, int dynArity, String dynParamTypes, int tag, String methodId) {
         _db.add(DYNAMIC_METHOD_INV, insn, str(index), bootSig, dynName, dynRetType, str(dynArity), dynParamTypes, str(tag), methodId);
+        // Make dynamic name and method type available to the analysis as string constants.
+        writeStringConstant(dynName);
+        writeStringConstant(dynRetType + dynParamTypes);
     }
 
     protected void writeInvokedynamicParameterType(String insn, int paramIndex, String type) {
@@ -260,5 +263,15 @@ public class JavaFactWriter {
 
     protected void writeActualParam(int index, String invo, String var) {
         _db.add(ACTUAL_PARAMETER, str(index), invo, var);
+    }
+
+    protected void writeMethodTypeConstant(String mt) {
+        int rParen = mt.indexOf(")");
+        int arity = 0;
+        if (mt.startsWith("(") && (rParen != -1))
+            arity = mt.substring(1, rParen).split(",").length;
+        else
+            System.err.println("Warning: cannot compute arity of " + mt);
+        _db.add(METHOD_TYPE_CONSTANT, mt, str(arity));
     }
 }

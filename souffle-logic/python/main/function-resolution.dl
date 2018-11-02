@@ -42,15 +42,15 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?val
   VarPointsTo(?hctx,  ?value, _, ?default).       //TODO: REVIEW this at some point
 
 
-VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
-  CallGraphEdge(?callerCtx, ?invo, _, ?tofunction),
-  ReachableContext(?callerCtx, ?function),
-  Instruction_Function(?invo, ?function),
-  AssignInstruction_To(?invo, ?return),
-  Instruction_Function(?retInsn, ?tofunction),
-  !(isReturnInstruction(?retInsn)),
-  isNoneValue(?value),
-  isImmutableHContext(?hctx).
+//VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
+//  CallGraphEdge(?callerCtx, ?invo, _, ?tofunction),
+//  ReachableContext(?callerCtx, ?function),
+//  Instruction_Function(?invo, ?function),
+//  AssignInstruction_To(?invo, ?return),
+//  Instruction_Function(?retInsn, ?tofunction),
+//  !(isReturnInstruction(?retInsn)),
+//  isNoneValue(?value),
+//  isImmutableHContext(?hctx).
 
 VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
   CallGraphEdge(?callerCtx, ?invo, _, ?tofunction),
