@@ -80,14 +80,14 @@ HeapAllocation_Type(?id, "java.lang.invoke.MethodHandle") :-
 
 // MethodTypeConstant
 
-.decl _MethodTypeConstant(?id:symbol)
+.decl _MethodTypeConstant(?id:symbol, ?arity:number)
 .input _MethodTypeConstant(IO="file", filename="MethodTypeConstant.facts", delimiter="\t")
 
 isHeapAllocation(?id),
 isMethodTypeConstant(?id),
 HeapAllocation_Type(?id, "java.lang.invoke.MethodType"),
 OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodType") :-
-  _MethodTypeConstant(?id).
+  _MethodTypeConstant(?id, ?arity).
 
 // EmptyArray
 

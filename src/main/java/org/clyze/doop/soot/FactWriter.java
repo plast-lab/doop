@@ -352,8 +352,8 @@ class FactWriter extends JavaFactWriter {
             _db.add(CLASS_HEAP, heap, actualType);
         } else if (first == '(') {
             // method type constant (viewed by Soot as a class constant)
-            heap = methodTypeConstant(s);
-            _db.add(METHOD_TYPE_CONSTANT, heap);
+            heap = s;
+            writeMethodTypeConstant(heap);
         } else {
 //            SootClass c = soot.Scene.v().getSootClass(s);
 //            if (c == null) {
