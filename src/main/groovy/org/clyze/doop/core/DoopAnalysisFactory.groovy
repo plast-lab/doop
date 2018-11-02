@@ -345,6 +345,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
 		}
 
+		if (options.REFLECTION_METHOD_HANDLES.value && !options.REFLECTION_CLASSIC.value) {
+			println("Option --" + options.REFLECTION_METHOD_HANDLES.name + " turns on --" + options.REFLECTION_CLASSIC.name)
+			options.REFLECTION_CLASSIC.value = true
+		}
+
 		if (options.REFLECTION_CLASSIC.value) {
 			if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
 				throw new RuntimeException("Error: options --" + options.REFLECTION_CLASSIC.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
