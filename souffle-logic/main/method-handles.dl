@@ -201,7 +201,7 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 
 // Pass captured arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?callsite),
+   InvokedynamicCallGraphEdge(_, _, ?ctx, ?implMethod, ?callsite),
    ImplMethodArgStart(?implMethod, ?shift),
    LambdaCallSite_K(?callsite, ?K),
    FormalParam(?idx, ?implMethod, ?formal),
