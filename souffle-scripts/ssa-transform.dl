@@ -217,13 +217,23 @@ BBOutDefs(?block, ?prev_def) :-
     SSA_Alias(?prev_def, ?original),
     !ExistsLocalDef(?block, ?original).
 
+// Two defs are similar, if they are both renames of the same
+// variable in the original program.
 .decl SimilarDefs(?def_1:symbol, ?def_2:symbol)
 
-// Two defs are similar, if they
 SimilarDefs(?def_1, ?def_2) :-
     SSA_Alias(?def_1, ?original),
     SSA_Alias(?def_2, ?original).
 
+// A phi assignment is non trivial, if there exist two different predecessors
+// basic blocks that have different defs for var in their out-def sets.
+.decl isNonTrivialPhi(?block:symbol, ?var:symbol)
+
+isNonTrivialPhi(?block, ?var) :-
+    PhiAssign(?var, _, ?block),
+    ExistTwoDifferentPredDefs(?block, ?var).
+
+// Helper predicate that achieves the core logic for the non trivial phi predicate.
 .decl ExistTwoDifferentPredDefs(?block:symbol, ?phi_name:symbol)
 
 ExistTwoDifferentPredDefs(?block, ?phi_name) :-
@@ -237,21 +247,23 @@ ExistTwoDifferentPredDefs(?block, ?phi_name) :-
     SimilarDefs(?phi_name, ?def_1),
     ?def_1 != ?def_2.
 
+.decl SimilarOutDefs(?block:symbol, ?def:symbol, ?out_def:symbol)
+
+SimilarOutDefs(?block, ?def, ?out_def) :-
+    BBOutDefs(?block, ?out_def),
+    SimilarDefs(?def, ?out_def).
+
 // These instructions create chains of assignments, at the head of each block.
 // This is a helper relation to assist the final assignment operation, which 
 // will require linking the assignments with the rest of the code.
-.decl PhiAssignInstruction(?phi_var:symbol, ?block:symbol, ?index:number)
-.output PhiAssignInstruction
+.decl PhiPseudoAssign(?phi_var:symbol, ?def:symbol, ?src_block:symbol, ?dst_block:symbol)
+.output PhiPseudoAssign
 
-.decl isNonTrivialPhi(?block:symbol, ?var:symbol)
-
-.decl PhiInstructionName(?phi)
-isNonTrivialPhi(?block, ?var) :-
-    PhiAssign(?var, _, ?block),
-    ExistTwoDifferentPredDefs(?block, ?var).
-
-PhiAssignInstruction(?phi_var, ?block, $) :-
-    isNonTrivialPhi(?block, ?phi_var).
+PhiPseudoAssign(?phi_var, ?phi_arg, ?src_block, ?dst_block) :-
+    PhiAssign(?phi_var, _, ?dst_block),
+    isNonTrivialPhi(?dst_block, ?phi_var),
+    MayPredecessorBBModuloThrow(?src_block, ?dst_block),
+    SimilarOutDefs(?src_block, ?phi_var, ?phi_arg).
 
 //PhiAssignInstruction(?phi_var, ?block, $) :-
 //    PhiAssign(?phi_var, _, ?block),
