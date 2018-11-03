@@ -15,12 +15,16 @@ HeapAllocation_ContextInsensitive(?heap) :-
 .decl LambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?interface:InterfaceType)
 LambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?interface) :-
    isDynamicMethodInvocation_Insn(?invokedynamic),
-   Instruction_Method(?invokedynamic, ?inMethod),
-   Reachable(?inMethod),
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?method),
    (?method = LAMBDA_METAFACTORY ; ?method = LAMBDA_ALTMETAFACTORY),
    DynamicMethodInvocation_DynName(?invokedynamic, ?dynName),
    DynamicMethodInvocation_DynReturnType(?invokedynamic, ?interface).
+
+.decl ReachableLambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?interface:InterfaceType)
+ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?interface) :-
+   LambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?interface),
+   Instruction_Method(?invokedynamic, ?inMethod),
+   Reachable(?inMethod).
 
 // Record invokedynamic invocations whose bootstrap methods are not
 // handled at all.
@@ -44,7 +48,7 @@ MockValueConsMacro(?callsite, ?samType),
 LambdaCallSite_Invokedynamic(?callsite, ?invokedynamic),
 LambdaCallSite_K(?callsite, ?K),
 LambdaCallSite(?callsite, ?dynName, ?samType, ?implMethod) :-
-   LambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?samType),
+   ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?samType),
    DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
    BootstrapParam(1, ?invokedynamic, ?handleVar),
    VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
@@ -58,7 +62,7 @@ LambdaCallSite(?callsite, ?dynName, ?samType, ?implMethod) :-
 
 .decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?metafactory:Method)
 InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory) :-
-   LambdaMetafactoryInvoke(?invokedynamic, _, _),
+   ReachableLambdaMetafactoryInvoke(?invokedynamic, _, _),
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?metafactory),
    isImmutableContext(?calleeCtx),
    InvokedynamicBootstrapCtx(?invokedynamic, ?callerCtx).
