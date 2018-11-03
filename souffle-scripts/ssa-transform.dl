@@ -256,15 +256,62 @@ SimilarOutDefs(?block, ?def, ?out_def) :-
 // These instructions create chains of assignments, at the head of each block.
 // This is a helper relation to assist the final assignment operation, which 
 // will require linking the assignments with the rest of the code.
-.decl PhiPseudoAssign(?phi_var:symbol, ?def:symbol, ?src_block:symbol, ?dst_block:symbol)
+.decl PhiPseudoAssign(?phi_var:symbol, ?def:symbol, ?src_block:symbol, ?dst_block:symbol, ?pseudoname:symbol)
 .output PhiPseudoAssign
 
-PhiPseudoAssign(?phi_var, ?phi_arg, ?src_block, ?dst_block) :-
+// Many assigns on the same phi var, consist of a PhiChunk. These are unique, since 
+// phi_var is unique (SSA naming).
+.decl PhiChunk(?phi_var:symbol)
+.output PhiChunk
+
+PhiChunk(?phi_var),
+PhiPseudoAssign(?phi_var, ?phi_arg, ?src_block, ?dst_block, ?pseudoname) :-
     PhiAssign(?phi_var, _, ?dst_block),
     isNonTrivialPhi(?dst_block, ?phi_var),
     MayPredecessorBBModuloThrow(?src_block, ?dst_block),
-    SimilarOutDefs(?src_block, ?phi_var, ?phi_arg).
+    SimilarOutDefs(?src_block, ?phi_var, ?phi_arg),
+    Instruction_Index(?src_block, ?src_idx),
+    Instruction_Index(?dst_block, ?dst_idx),
+    ?pseudoname = cat(?phi_var, cat("_", to_string(?src_idx))).
 
+// TODO: Are the initial checks needed?
+.decl ExistsPseudoAssignBetween(?prev:symbol, ?next:symbol)
+ExistsPseudoAssignBetween(?prev, ?next) :-
+    PhiPseudoAssign(?phi, _, _, ?block, ?prev),
+    PhiPseudoAssign(?phi, _, _, ?block, ?next),
+    PhiPseudoAssign(?phi, _, _, ?block, ?mid),
+    ord(?prev) < ord(?next),
+    ord(?prev) < ord(?mid),
+    ord(?mid)  < ord(?next).
+
+.decl SSANext(?prev:symbol, ?next:symbol)
+.output SSANext
+
+.decl PhiChunkNext(?prev:symbol, ?next:symbol)
+.output PhiChunkNext
+
+// Link PhiChunk assignments
+SSANext(?prev, ?next),
+PhiChunkNext(?prev, ?next) :-
+    PhiPseudoAssign(?phi, _, _, ?block, ?prev),
+    PhiPseudoAssign(?phi, _, _, ?block, ?next),
+    ord(?prev) < ord(?next),
+    !ExistsPseudoAssignBetween(?prev, ?next).
+
+.decl PhiChunkStart(?phi_chunk:symbol, ?start:symbol)
+.output PhiChunkStart
+
+PhiChunkStart(?phi_chunk, ?start) :-
+    PhiPseudoAssign(?phi_chunk, _, _, _, ?start),
+    !PhiChunkNext(_, ?start).
+
+.decl PhiChunkEnd(?phi_chunk:symbol, ?end:symbol)
+.output PhiChunkEnd
+
+PhiChunkEnd(?phi_chunk, ?end) :-
+    PhiPseudoAssign(?phi_chunk, _, _, _, ?end),
+    !PhiChunkNext(?end, _).
+    
 //PhiAssignInstruction(?phi_var, ?block, $) :-
 //    PhiAssign(?phi_var, _, ?block),
 //    ExistTwoDifferentPredDefs(?block, ?phi_var).
