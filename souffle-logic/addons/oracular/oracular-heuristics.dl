@@ -20,14 +20,16 @@ MethodVPTCost(?method, 0) :-
 CalleeCountPerMethod(?method, Y) :-
   mainAnalysis.Reachable(?method),
   Y =  count : {Stats_Simple_InsensCallGraphEdge(?invo, _),
-  Instruction_Method(?invo, ?method)}.
+                Instruction_Method(?invo, ?method),
+                ActualParam(1, ?invo, _)}.
 
 .decl CallerCountPerMethod(?method:Method, ?n:number)
 
 CallerCountPerMethod(?tomethod, Y) :-
   mainAnalysis.Reachable(?tomethod),
   Y = count : {Stats_Simple_InsensCallGraphEdge(?invo, ?tomethod),
-  Instruction_Method(?invo, _)}.
+               Instruction_Method(?invo, _),
+               ActualParam(1, ?invo, _)}.
                              
 .decl NeighboringMethodsInCallGraph(?method:Method, ?neighbor:Method, ?weight:number)
 
@@ -35,13 +37,15 @@ NeighboringMethodsInCallGraph(?method, ?method, 1) :-
    MethodVPTCost(?method, _).
 
 NeighboringMethodsInCallGraph(?method, ?neigh, ?weight) :-
-  mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
+  Stats_Simple_InsensCallGraphEdge(?invo, ?method),
   Instruction_Method(?invo, ?neigh),
+  FormalParam(1, ?method, _),
   CalleeCountPerMethod(?neigh, ?weight).
 
 NeighboringMethodsInCallGraph(?neigh, ?method, ?weight) :-
-  mainAnalysis.CallGraphEdge(_, ?invo, _, ?neigh),
+  Stats_Simple_InsensCallGraphEdge(?invo, ?neigh),
   Instruction_Method(?invo, ?method),
+  FormalParam(1, ?neigh, _), 
   CallerCountPerMethod(?neigh, ?weight).
                      
 .decl MethodVPTImpact(?method:Method, ?n:number)

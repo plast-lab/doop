@@ -16,7 +16,7 @@ ci_analysis_weight = 0
 # ----------------- configuration -------------------------
 DOOP = './doop'  # './doopOffline'
 PRE_ANALYSIS_1 = 'context-insensitive'
-PRE_ANALYSIS_2 = '2-object-sensitive+heap'
+PRE_ANALYSIS_2 = '1-type-sensitive+heap'
 MAIN_ANALYSIS = 'fully-guided-context-sensitive'
 DATABASE = 'last-analysis'
 SOUFFLE = 'souffle'
@@ -67,7 +67,7 @@ def run_pre_analyses(init_args, app):
     args = args + ['-a', PRE_ANALYSIS_2]
     #args = args + ['--Xcontext-dependency-heuristic']
     args = args + ['--Xstart-after-facts', app+"-facts"]
-    args = args + ['--id', app+'-2obj']
+    args = args + ['--id', app+'-1type']
     args = args + ['--Xsymlink-cached-facts']
     args = args + ['--timeout 10000']
     args = args + ['--Xoracular-heuristics']
@@ -75,8 +75,8 @@ def run_pre_analyses(init_args, app):
     cmd = ' '.join(args)
     print(cmd)
     os.system(cmd)
-    two_obj_analysis_database = os.path.join(DOOP_OUT, '2-object-sensitive+heap', app+'-2obj', 'database')
-    two_obj_analysis_facts = os.path.join(DOOP_OUT, '2-object-sensitive+heap', app+'-2obj', 'facts')
+    two_obj_analysis_database = os.path.join(DOOP_OUT, '1-type-sensitive+heap', app+'-1type', 'database')
+    two_obj_analysis_facts = os.path.join(DOOP_OUT, '1-type-sensitive+heap', app+'-1type', 'facts')
     from_path = os.path.join(two_obj_analysis_database, 'MethodWeight.csv')
     dump_path = os.path.join(ORACULAR_CACHE, app, '%s' % 'SensMethodWeight.facts')
     shutil.copyfile(from_path, dump_path)
