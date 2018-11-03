@@ -307,8 +307,8 @@ ExistsPhiChunkBetween(?prev, ?next) :-
 // Link PhiChunk assignments
 SSANext(?prev, ?next),
 PhiChunkNext(?prev, ?next) :-
-    PhiPseudoAssign(?phi, _, _, ?block, ?prev),
-    PhiPseudoAssign(?phi, _, _, ?block, ?next),
+    PhiPseudoAssign(?chunk, _, _, ?block, ?prev),
+    PhiPseudoAssign(?chunk, _, _, ?block, ?next),
     ord(?prev) < ord(?next),
     !ExistsPseudoAssignBetween(?prev, ?next).
 
@@ -337,14 +337,21 @@ PhiHeaderNext(?prev, ?next) :-
     ord(?prev) < ord(?next),
     !ExistsPhiChunkBetween(?prev, ?next).
     
-//.decl PhiChunkStart(?phi_chunk:symbol, ?start:symbol)
-//.output PhiChunkStart
-//
-//PhiHeaderStart(?phi_header, ?start) :-
-//    PhiPseudoAssign(?chunk, _, _, ?phi_header, ),
-//    PhiChunk(?chunk),
-    
-    
+.decl PhiHeaderStart(?phi_chunk:symbol, ?start:symbol)
+.output PhiHeaderStart
+
+PhiHeaderStart(?phi_header, ?start) :-
+    PhiPseudoAssign(?start_chunk, _, _, ?phi_header, _),
+    PhiChunkStart(?start_chunk, ?start),
+    !PhiHeaderNext(_, ?start_chunk).
+
+.decl PhiHeaderEnd(?phi_chunk:symbol, ?end:symbol)
+.output PhiHeaderEnd
+
+PhiHeaderEnd(?phi_header, ?end) :-
+    PhiPseudoAssign(?start_chunk, _, _, ?phi_header, _),
+    PhiChunkEnd(?start_chunk, ?end),
+    !PhiHeaderNext(?start_chunk, _).
     
 //PhiAssignInstruction(?phi_var, ?block, $) :-
 //    PhiAssign(?phi_var, _, ?block),
