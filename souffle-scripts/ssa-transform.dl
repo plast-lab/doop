@@ -264,7 +264,11 @@ SimilarOutDefs(?block, ?def, ?out_def) :-
 .decl PhiChunk(?phi_var:symbol)
 .output PhiChunk
 
+.decl PhiHeader(?block:symbol)
+.output PhiHeader
+
 PhiChunk(?phi_var),
+PhiHeader(?dst_block),
 PhiPseudoAssign(?phi_var, ?phi_arg, ?src_block, ?dst_block, ?pseudoname) :-
     PhiAssign(?phi_var, _, ?dst_block),
     isNonTrivialPhi(?dst_block, ?phi_var),
@@ -280,6 +284,16 @@ ExistsPseudoAssignBetween(?prev, ?next) :-
     PhiPseudoAssign(?phi, _, _, ?block, ?prev),
     PhiPseudoAssign(?phi, _, _, ?block, ?next),
     PhiPseudoAssign(?phi, _, _, ?block, ?mid),
+    ord(?prev) < ord(?next),
+    ord(?prev) < ord(?mid),
+    ord(?mid)  < ord(?next).
+
+.decl ExistsPhiChunkBetween(?prev:symbol, ?next:symbol)
+
+ExistsPhiChunkBetween(?prev, ?next) :-
+    PhiPseudoAssign(?prev, _, _, ?block, _),
+    PhiPseudoAssign(?next, _, _, ?block, _),
+    PhiPseudoAssign(?mid, _, _, ?block, _),
     ord(?prev) < ord(?next),
     ord(?prev) < ord(?mid),
     ord(?mid)  < ord(?next).
@@ -311,6 +325,26 @@ PhiChunkStart(?phi_chunk, ?start) :-
 PhiChunkEnd(?phi_chunk, ?end) :-
     PhiPseudoAssign(?phi_chunk, _, _, _, ?end),
     !PhiChunkNext(?end, _).
+
+.decl PhiHeaderNext(?prev:symbol, ?next:symbol)
+
+SSANext(?prev_end, ?next_start),
+PhiHeaderNext(?prev, ?next) :-
+    PhiPseudoAssign(?prev, _, _, ?phi_header, _),
+    PhiPseudoAssign(?next, _, _, ?phi_header, _),
+    PhiChunkEnd(?prev, ?prev_end),
+    PhiChunkStart(?next, ?next_start),
+    ord(?prev) < ord(?next),
+    !ExistsPhiChunkBetween(?prev, ?next).
+    
+//.decl PhiChunkStart(?phi_chunk:symbol, ?start:symbol)
+//.output PhiChunkStart
+//
+//PhiHeaderStart(?phi_header, ?start) :-
+//    PhiPseudoAssign(?chunk, _, _, ?phi_header, ),
+//    PhiChunk(?chunk),
+    
+    
     
 //PhiAssignInstruction(?phi_var, ?block, $) :-
 //    PhiAssign(?phi_var, _, ?block),
