@@ -58,6 +58,8 @@ isTensorDataType("<tensorflow.variant>").
 
 ModeledClass("<tensorflow.Tensor>", "Tensor", "<tensorflow>").
 
+ModeledMethod("<tensorflow.Tensor.set_shape>", "set_shape", "<tensorflow.Tensor>", "<tensorflow>").
+
 ModeledClass("<tensorflow.TensorShape>", "TensorShape", "<tensorflow>").
 
 ModeledModule("<tensorflow.layers>", "layers", "<tensorflow>").
@@ -295,3 +297,25 @@ FormalParam( 3, "dtype", ?function, cat(?function,"/mockParam2")):-
 ?function = "<tensorflow.truncated_normal>";
 ?function = "<tensorflow.random_gamma>";
 ?function = "<tensorflow.random_uniform>".
+
+
+ModeledFunction("<tensorflow.add>", "add", "<tensorflow>").
+
+FormalParam( 0, "x", "<tensorflow.add>", "<tensorflow.add>/mockParam1").
+FormalParam( 1, "y", "<tensorflow.add>", "<tensorflow.add>/mockParam2").
+
+ModeledFunction("<tensorflow.multiply>", "multiply", "<tensorflow>").
+
+FormalParam( 0, "x", "<tensorflow.multiply>", "<tensorflow.multiply>/mockParam1").
+FormalParam( 1, "y", "<tensorflow.multiply>", "<tensorflow.multiply>/mockParam2").
+
+ModeledFunction("<tensorflow.matmul>", "matmul", "<tensorflow>").
+
+FormalParam( 0, "a", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam1").
+FormalParam( 1, "b", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam2").
+FormalParam( 2, "transpose_a", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam3").
+FormalParam( 3, "transpose_b", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam4").
+FormalParam( 4, "adjoint_a", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam5").
+FormalParam( 5, "adjoint_b", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam6").
+FormalParam( 6, "a_is_sparse", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam7").
+FormalParam( 6, "b_is_sparse", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam8").
