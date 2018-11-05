@@ -211,7 +211,7 @@ OUTPUT_STATS(Stats_Simple_OriginalTaintedValue)
 OUTPUT_STATS(Stats_Simple_ContextInsensitiveMethodsVPT)
 
 .decl Stats_Simple_TwoObjectMethodsVPT(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
-OUTPUT_STATS(Stats_Simple_TwoObjectMethodVPT)
+OUTPUT_STATS(Stats_Simple_TwoObjectMethodsVPT)
 
 /***************************************************
  * Memory Dump
