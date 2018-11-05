@@ -208,7 +208,7 @@ OUTPUT_STATS(Stats_Simple_OriginalTaintedValue)
 #endif
 
 .decl Stats_Simple_ContextInsensitiveMethodsVPT(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
-OUTPUT_STATS(Stats_Simple_ContextInsensitiveMethodVPT)
+OUTPUT_STATS(Stats_Simple_ContextInsensitiveMethodsVPT)
 
 .decl Stats_Simple_TwoObjectMethodsVPT(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 OUTPUT_STATS(Stats_Simple_TwoObjectMethodVPT)
