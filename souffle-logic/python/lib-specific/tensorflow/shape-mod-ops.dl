@@ -201,8 +201,112 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
 //                                              EXPAND DIMS OP
 //----------------------------------------------------------------------------------------------------------------------
 
+.decl ExpandDimsOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?expDimsVal:Value)
+.output ExpandDimsOp
+
+.decl ExpandDimsOpInTensorShapeLength(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?expDimsVal:Value, ?length:number)
+.output ExpandDimsOpInTensorShapeLength
+
+.decl ExpandDimsOpAxisNum(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?expDimsVal:Value, ?axis:number)
+.output ExpandDimsOpAxisNum
+
+.decl ExpandDimsValidAxisNum(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?expDimsVal:Value)
+.output ExpandDimsValidAxisNum
+
+.decl ExpandDimsInvalidAxisNum(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?expDimsVal:Value)
+.output ExpandDimsInvalidAxisNum
+
+.decl ExpandDimsOpDim(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?expDimsVal:Value, ?dim:number)
+.output ExpandDimsOpDim
 
 
+TensorOperation_GetDTypeFromName(?ctx, ?insn, ?expDimsVal, "tensor"),
+TensorOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+TensorOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "axis", ?axisHct, ?axis),
+ExpandDimsOp(?ctx, ?insn, ?expDimsVal):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.expand_dims>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.expand_dims>", "input", ?tensorHctx, ?tensorArgVal),
+  ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.expand_dims>", "axis", ?axisHct, ?axis),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?expDimsVal = ReshapeValueMacro("reshape", ?fun, ?index, ?tensorArgVal, ?axis).
+
+ExpandDimsOpAxisNum(?ctx, ?insn, ?expDimsVal, ?axisNum):-
+  ExpandDimsOp(?ctx, ?insn, ?expDimsVal),
+  ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.expand_dims>", "axis", _, ?axis),
+  Value_Num(?axis, ?axisNumStr),
+  ?axisNum = to_number(?axisNumStr).
+
+ExpandDimsOpInTensorShapeLength(?ctx, ?insn, ?expDimsVal, ?len):-
+  ExpandDimsOp(?ctx, ?insn, ?expDimsVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+  TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len).
+
+ExpandDimsValidAxisNum(?ctx, ?insn, ?expDimsVal):-
+  ExpandDimsOpAxisNum(?ctx, ?insn, ?expDimsVal, ?axisNum),
+  ExpandDimsOpInTensorShapeLength(?ctx, ?insn, ?expDimsVal, ?len),
+  ?axisNum <= ?len,
+  - ?len - 1 <= ?axisNum.
+
+ExpandDimsInvalidAxisNum(?ctx, ?insn, ?expDimsVal):-
+  ExpandDimsOpAxisNum(?ctx, ?insn, ?expDimsVal, ?axisNum),
+  ExpandDimsOpInTensorShapeLength(?ctx, ?insn, ?expDimsVal, ?len),
+  (?axisNum > ?len ; -?len - 1 > ?axisNum).
+
+ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?axisNum):-
+  ExpandDimsValidAxisNum(?ctx, ?insn, ?expDimsVal),
+  ExpandDimsOpAxisNum(?ctx, ?insn, ?expDimsVal, ?axisNum),
+  ?axisNum >= 0.
+
+ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim):-
+  ExpandDimsValidAxisNum(?ctx, ?insn, ?expDimsVal),
+  ExpandDimsOpInTensorShapeLength(?ctx, ?insn, ?expDimsVal, ?len),
+  ExpandDimsOpAxisNum(?ctx, ?insn, ?expDimsVal, ?axisNum),
+  ?axisNum < 0,
+  ?dim = ?axisNum + 1 +  ?len.
+
+TensorOperationProducesOutput(?ctx, ?insn, ?expDimsVal):-
+  ExpandDimsValidAxisNum(?ctx, ?insn, ?expDimsVal).
+
+TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len + 1):-
+  ExpandDimsOp(?ctx, ?insn, ?expDimsVal),
+  TensorOperationProducesOutput(?ctx, ?insn, ?expDimsVal),
+  ExpandDimsOpInTensorShapeLength(?ctx, ?insn, ?expDimsVal, ?len),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?expDimsVal, ?ctx, ?var),
+  TensorShape(?hctx, ?expDimsVal, ?shapeHctx, ?tensorShapeVal).
+
+TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
+  ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
+  ?index < ?dim,
+  TensorOperationProducesOutput(?ctx, ?insn, ?expDimsVal),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?expDimsVal, ?ctx, ?var),
+  TensorShape(?hctx, ?expDimsVal, ?shapeHctx, ?tensorShapeVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+  TensorShape(?tensorHctx, ?tensorArgVal, ?inShapeHctx, ?inTensorShape),
+  TensorShapeListContent(?inShapeHctx, ?inTensorShape, ?index, ?indexVal).
+
+TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index + 1, ?indexVal):-
+  ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
+  ?index > ?dim,
+  TensorOperationProducesOutput(?ctx, ?insn, ?expDimsVal),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?expDimsVal, ?ctx, ?var),
+  TensorShape(?hctx, ?expDimsVal, ?shapeHctx, ?tensorShapeVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+  TensorShape(?tensorHctx, ?tensorArgVal, ?inShapeHctx, ?inTensorShape),
+  TensorShapeListContent(?inShapeHctx, ?inTensorShape, ?index, ?indexVal).
+
+
+Value_Num("<num-constant(int):1>", "1"),
+TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, "<num-constant(int):1>"):-
+  ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
+  ?index = ?dim,
+  TensorOperationProducesOutput(?ctx, ?insn, ?expDimsVal),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?expDimsVal, ?ctx, ?var),
+  TensorShape(?hctx, ?expDimsVal, ?shapeHctx, ?tensorShapeVal).
 
 //----------------------------------------------------------------------------------------------------------------------
 //                                              REVERSE OP

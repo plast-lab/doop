@@ -70,6 +70,10 @@ FormalParam( 0, "tensor", "<tensorflow.reshape>", "<tensorflow.reshape>/mockPara
 FormalParam( 1, "shape", "<tensorflow.reshape>",  "<tensorflow.reshape>/mockParam2").
 FormalParam( 2, "name", "<tensorflow.reshape>",   "<tensorflow.reshape>/mockParam3").
 
+ModeledFunction("<tensorflow.expand_dims>", "expand_dims", "<tensorflow>").
+FormalParam( 0, "input", "<tensorflow.expand_dims>", "<tensorflow.expand_dims>/mockParam1").
+FormalParam( 1, "axis", "<tensorflow.expand_dims>",  "<tensorflow.expand_dims>/mockParam2").
+
 ModeledFunction("<tensorflow.placeholder>", "placeholder", "<tensorflow>").
 FormalParam( 0, "dtype", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam1").
 FormalParam( 1, "shape", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam2").

@@ -176,7 +176,136 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
 .decl TfMatMulOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?matMulOp:Value)
 .output TfMatMulOp
 
+.decl TfMatMulOpFull(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?matMulOp:Value, ?tensor1Hctx:configuration.HContext, ?tensor1:Value, ?tensor2Hctx:configuration.HContext, ?tensor2:Value)
+.output TfMatMulOpFull
 
+.decl TfMatMulOpCorrectTypeArgs(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?matMulOp:Value)
+.output TfMatMulOpCorrectTypeArgs
+
+.decl TfMatMulOpInTensorsSameNumOfDim(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?matMulOp:Value, ?ndims:number)
+.output TfMatMulOpInTensorsSameNumOfDim
+
+.decl TfMatMulOpDifferentNumOfDims(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?matMulOp:Value)
+.output TfMatMulOpDifferentNumOfDims
+
+.decl TfMatMulOpIncompatible(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?matMulOp:Value)
+.output TfMatMulOpIncompatible
+
+.decl TfMatMulOpRowsNColsCompatible(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?matMulOp:Value)
+.output TfMatMulOpRowsNColsCompatible
+
+.decl TfMatMulOpDimIsCompatible(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?matMulOp:Value, ?dim:number, ?dimVal:Value)
+.output TfMatMulOpDimIsCompatible
+
+.decl TfMatMulOpAllDimsHaveRes(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?matMulOp:Value)
+.output TfMatMulOpAllDimsHaveRes
+
+.decl TfMatMulOpAllDimsUpToXHaveRes(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?matMulOp:Value, ?index:number)
+.output TfMatMulOpAllDimsUpToXHaveRes
+
+TensorOperation_NameToVal(?ctx, ?insn, ?matMulOp, "a", ?tensor1Hctx, ?tensor1),
+TensorOperation_NameToVal(?ctx, ?insn, ?matMulOp, "b", ?tensor2Hctx, ?tensor2),
+TfMatMulOpFull(?ctx, ?insn, ?matMulOp, ?tensor1Hctx, ?tensor1, ?tensor2Hctx, ?tensor2),
+TfMatMulOp(?ctx, ?insn, ?matMulOp):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.matmul>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.matmul>", "a", ?tensor1Hctx, ?tensor1),
+  ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.matmul>", "b", ?tensor2Hctx, ?tensor2),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?matMulOp = PlaceHolderValueMacro("matmul", ?fun, ?index, ?tensor1, ?tensor2).
+
+TfMatMulOpCorrectTypeArgs(?ctx, ?insn, ?matMulOp):-
+  TfMatMulOpFull(?ctx, ?insn, ?matMulOp, _, ?tensor1, _, ?tensor2),
+  Value_Type(?tensor1, "<tensorflow.Tensor>"),
+  Value_Type(?tensor2, "<tensorflow.Tensor>").
+
+TfMatMulOpInTensorsSameNumOfDim(?ctx, ?insn, ?matMulOp, ?len):-
+  TfMatMulOpCorrectTypeArgs(?ctx, ?insn, ?matMulOp),
+  TfMatMulOpFull(?ctx, ?insn, ?matMulOp, ?tensor1Hctx, ?tensor1, ?tensor2Hctx, ?tensor2),
+  TensorLikeObjectShapeListLength(?tensor1Hctx, ?tensor1, ?len),
+  TensorLikeObjectShapeListLength(?tensor2Hctx, ?tensor2, ?len).
+
+TfMatMulOpDifferentNumOfDims(?ctx, ?insn, ?matMulOp):-
+  TfMatMulOpCorrectTypeArgs(?ctx, ?insn, ?matMulOp),
+  TfMatMulOpFull(?ctx, ?insn, ?matMulOp, ?tensor1Hctx, ?tensor1, ?tensor2Hctx, ?tensor2),
+  TensorLikeObjectShapeListLength(?tensor1Hctx, ?tensor1, ?len1),
+  TensorLikeObjectShapeListLength(?tensor2Hctx, ?tensor2, ?len2),
+  ?len1 != ?len2.
+
+TfMatMulOpRowsNColsCompatible(?ctx, ?insn, ?matMulOp):-
+  TfMatMulOpInTensorsSameNumOfDim(?ctx, ?insn, ?matMulOp, ?len),
+  TfMatMulOpFull(?ctx, ?insn, ?matMulOp, ?tensor1Hctx, ?tensor1, ?tensor2Hctx, ?tensor2),
+  TensorLikeObjectShapeListContent(?tensor1Hctx, ?tensor1, ?len - 1, ?indexVal),
+  TensorLikeObjectShapeListContent(?tensor2Hctx, ?tensor2, ?len - 2, ?indexVal).
+
+TfMatMulOpIncompatible(?ctx, ?insn, ?matMulOp):-
+  TfMatMulOpInTensorsSameNumOfDim(?ctx, ?insn, ?matMulOp, ?len),
+  TfMatMulOpFull(?ctx, ?insn, ?matMulOp, ?tensor1Hctx, ?tensor1, ?tensor2Hctx, ?tensor2),
+  TensorLikeObjectShapeListContent(?tensor1Hctx, ?tensor1, ?len - 1, ?indexVal1),
+  TensorLikeObjectShapeListContent(?tensor2Hctx, ?tensor2, ?len - 2, ?indexVal2),
+  ?indexVal1 != ?indexVal2.
+
+TfMatMulOpIncompatible(?ctx, ?insn, ?matMulOp):-
+  TfMatMulOpInTensorsSameNumOfDim(?ctx, ?insn, ?matMulOp, ?len),
+  ?len > 2,
+  ?dim < ?len - 2,
+  TfMatMulOpFull(?ctx, ?insn, ?matMulOp, ?tensor1Hctx, ?tensor1, ?tensor2Hctx, ?tensor2),
+  TensorLikeObjectShapeListContent(?tensor1Hctx, ?tensor1, ?dim, ?indexVal1),
+  TensorLikeObjectShapeListContent(?tensor2Hctx, ?tensor2, ?dim, ?indexVal2),
+  ?indexVal1 != ?indexVal2.
+
+TfMatMulOpDimIsCompatible(?ctx, ?insn, ?matMulOp, ?dim, ?indexVal):-
+  TfMatMulOpInTensorsSameNumOfDim(?ctx, ?insn, ?matMulOp, ?len),
+  ?len > 2,
+  ?dim < ?len - 2,
+  TfMatMulOpFull(?ctx, ?insn, ?matMulOp, ?tensor1Hctx, ?tensor1, ?tensor2Hctx, ?tensor2),
+  TensorLikeObjectShapeListContent(?tensor1Hctx, ?tensor1, ?dim, ?indexVal),
+  TensorLikeObjectShapeListContent(?tensor2Hctx, ?tensor2, ?dim, ?indexVal).
+
+TfMatMulOpDimIsCompatible(?ctx, ?insn, ?matMulOp, ?dim, ?indexVal):-
+  TfMatMulOpRowsNColsCompatible(?ctx, ?insn, ?matMulOp),
+  TfMatMulOpInTensorsSameNumOfDim(?ctx, ?insn, ?matMulOp, ?len),
+  TfMatMulOpFull(?ctx, ?insn, ?matMulOp, ?tensor1Hctx, ?tensor1, _, _),
+  ?dim = ?len - 2,
+  TensorLikeObjectShapeListContent(?tensor1Hctx, ?tensor1, ?dim, ?indexVal).
+
+TfMatMulOpDimIsCompatible(?ctx, ?insn, ?matMulOp, ?dim, ?indexVal):-
+  TfMatMulOpRowsNColsCompatible(?ctx, ?insn, ?matMulOp),
+  TfMatMulOpInTensorsSameNumOfDim(?ctx, ?insn, ?matMulOp, ?len),
+  TfMatMulOpFull(?ctx, ?insn, ?matMulOp, _, _, ?tensor2Hctx, ?tensor2),
+  ?dim = ?len - 1,
+  TensorLikeObjectShapeListContent(?tensor2Hctx, ?tensor2, ?dim, ?indexVal).
+
+TfMatMulOpAllDimsUpToXHaveRes(?ctx, ?insn, ?matMulOp, 0):-
+  TfMatMulOpDimIsCompatible(?ctx, ?insn, ?matMulOp, 0, _).
+
+TfMatMulOpAllDimsUpToXHaveRes(?ctx, ?insn, ?matMulOp, ?index):-
+  ?index > 0,
+  TfMatMulOpDimIsCompatible(?ctx, ?insn, ?matMulOp, ?index, _),
+  TfMatMulOpAllDimsUpToXHaveRes(?ctx, ?insn, ?matMulOp, ?index - 1).
+
+TensorOperationProducesOutput(?ctx, ?insn, ?matMulOp):-
+  TfMatMulOpAllDimsHaveRes(?ctx, ?insn, ?matMulOp).
+
+TfMatMulOpAllDimsHaveRes(?ctx, ?insn, ?matMulOp):-
+  TfMatMulOpRowsNColsCompatible(?ctx, ?insn, ?matMulOp),
+  TfMatMulOpInTensorsSameNumOfDim(?ctx, ?insn, ?matMulOp, ?len),
+  TfMatMulOpAllDimsUpToXHaveRes(?ctx, ?insn, ?matMulOp, ?len-1).
+
+TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
+  TfMatMulOpInTensorsSameNumOfDim(?ctx, ?insn, ?matMulOp, ?len),
+  TensorOperationProducesOutput(?ctx, ?insn, ?matMulOp),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?matMulOp, ?ctx, ?var),
+  TensorShape(?hctx, ?matMulOp, ?shapeHctx, ?tensorShapeVal).
+
+TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
+  TfMatMulOp(?ctx, ?insn, ?matMulOp),
+  TensorOperationProducesOutput(?ctx, ?insn, ?matMulOp),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?matMulOp, ?ctx, ?var),
+  TensorShape(?hctx, ?matMulOp, ?shapeHctx, ?tensorShapeVal),
+  TfMatMulOpDimIsCompatible(?ctx, ?insn, ?matMulOp, ?index, ?indexVal).
 
 //----------------------------------------------------------------------------------------------------------------------
 //                                               TENSORDOT
