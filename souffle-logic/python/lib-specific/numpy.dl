@@ -1,8 +1,13 @@
+
 isModule("<numpy>").
 
 ModeledModule("<numpy.random>", "random", "<numpy>").
 
 ModeledClass("<numpy.ndarray>", "ndarray", "<numpy>").
+
+VarPointsTo(?hctx, "<None>", ?ctx, "<numpy>/noneDefVar"):-
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
 
 
 ModeledFunction("<numpy.array>", "array", "<numpy>").
@@ -12,10 +17,15 @@ ModeledFunction("<numpy.random.normal>", "normal", "<numpy.random>").
 FormalParam( 0, "loc", "<numpy.random.normal>", "<numpy.random.normal>/mockParam1").
 FormalParam( 1, "scale", "<numpy.random.normal>", "<numpy.random.normal>/mockParam2").
 FormalParam( 2, "size", "<numpy.random.normal>", "<numpy.random.normal>/mockParam3").
+FormalParam_DefaultValFrom("<numpy.random.normal>", "size", "<numpy>/noneDefVar").
 
 ModeledFunction("<numpy.random.randn>", "randn", "<numpy.random>").
-ModeledFunction("<np.random.randint>", "randint", "<numpy.random>").
 
+ModeledFunction("<numpy.random.randint>", "randint", "<numpy.random>").
+FormalParam( 0, "low", "<numpy.random.randint>", "<numpy.random.randint>/mockParam1").
+FormalParam( 1, "high", "<numpy.random.randint>", "<numpy.random.randint>/mockParam2").
+FormalParam( 2, "size", "<numpy.random.randint>", "<numpy.random.randint>/mockParam3").
+FormalParam_DefaultValFrom("<numpy.random.randint>", "size", "<numpy>/noneDefVar").
 
 .decl NumpyArrayShapeListLength(?hctx:configuration.HContext, ?val:Value, ?size:number)
 .decl NumpyArrayShapeListContent(?hctx:configuration.HContext, ?val:Value, ?index:number, ?indexValue:Value)
@@ -31,6 +41,13 @@ ModeledFunction("<np.random.randint>", "randint", "<numpy.random>").
 
 .decl NumpyArrayShape(?arrayHctx:configuration.HContext, ?array:Value, ?shapeHctx:configuration.HContext, ?shapeList:Value)
 .output NumpyArrayShape
+
+.decl NumPyOperationOutputHCtx(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?hctx:configuration.HContext)
+.output NumPyOperationOutputHCtx
+
+.decl NumPyOperationOutputShape(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?shapeHctx:configuration.HContext, ?shape:Value)
+.output NumPyOperationOutputShape
+
 
 //General op modeling
 
@@ -48,10 +65,25 @@ Value_Type(?outArray, "<numpy.ndarray>"):-
   AssignInstruction_To(?insn, ?var),
   ?arrayShapeVal = cat("<shape ",cat(?outArray, ">")).
 
+
+NumPyOperationOutputHCtx(?ctx, ?insn, ?outArray, ?hctx):-
+  NumPyOperationProducesOutput(?ctx, ?insn, ?outArray),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?outArray, ?ctx, ?var).
+
+NumPyOperationOutputShape(?ctx, ?insn, ?outArray, ?hctx, ?arrayShapeVal):-
+  NumPyOperationOutputHCtx(?ctx, ?insn, ?outArray, ?hctx),
+  NumpyArrayShape(?hctx, ?outArray, ?hctx, ?arrayShapeVal).
+
 ListOfConstsLength(?hctx, ?outArray, ?len),
 ListOfConstsAtIndexPointsTo(?hctx, ?outArray, ?index, ?indexValue):-
   NumpyArrayShapeListLength(?hctx, ?outArray, ?len),
   NumpyArrayShapeListContent(?hctx, ?outArray, ?index, ?indexValue).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              NP.ARRAY
+//----------------------------------------------------------------------------------------------------------------------
 
 
 #define SingleInValValMacro(op,fun, index, val) cat("<ndarray ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val, ">"))))))
@@ -74,26 +106,111 @@ NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp):-
 
 NumpyArrayShapeListContent(?shapelistHctx, ?shapelist, ?index, ?indexVal):-
   NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
-  NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?arrayHctx, ?npArrayOp, ?ctx, ?var),
-  NumpyArrayShape(?arrayHctx, ?npArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npArrayOp, ?shapelistHctx, ?shapelist),
   NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
   TensorLikeObjectShapeListContent(?objHctx, ?objVal, ?index, ?indexVal).
 
 NumpyArrayShapeListLength(?shapelistHctx, ?shapelist, ?len):-
   NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
-  NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?arrayHctx, ?npArrayOp, ?ctx, ?var),
-  NumpyArrayShape(?arrayHctx, ?npArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npArrayOp, ?shapelistHctx, ?shapelist),
   NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
   TensorLikeObjectShapeListLength(?objHctx, ?objVal, ?len).
 
 TensorLikeObjectToTensorDtype(?arrayHctx, ?npArrayOp, ?dtypeHctx, ?dtype):-
   NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
-  NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?arrayHctx, ?npArrayOp, ?ctx, ?var),
+  NumPyOperationOutputHCtx(?ctx, ?insn, ?npArrayOp, ?arrayHctx),
   NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
   TensorLikeObjectToTensorDtype(?objHctx, ?objVal, ?dtypeHctx, ?dtype).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                 RANDOM DISTR TENSOR CREATIONS
+//----------------------------------------------------------------------------------------------------------------------
+
+Value_Num("<num-constant(int):0>", "0").
+Value_Num("<num-constant(float):0.0>", "0.0").
+
+
+.decl NumpyRandomFunction_Info(?function:Function, ?type:symbol, ?defVal:Value)
+.output NumpyRandomFunction_Info
+NumpyRandomFunction_Info("<numpy.random.randint>", "int", "<num-constant(int):0>").
+NumpyRandomFunction_Info("<numpy.random.normal>", "float", "<num-constant(float):0.0>").
+
+.decl NumpyRandomArrayOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npRandArrayOp:Value)
+.output NumpyRandomArrayOp
+
+.decl NumpyRandomArrayOpProducesScalar(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npRandArrayOp:Value)
+.output NumpyRandomArrayOpProducesScalar
+
+.decl NumpyRandomArrayOpFunction(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npRandArrayOp:Value, ?fun:Function)
+.output NumpyRandomArrayOpFunction
+
+NumpyRandomArrayOpFunction(?ctx, ?insn, ?npRandArrayOp, ?function),
+NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", ?sizeHctx, ?sizeVal),
+NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp):-
+  NumpyRandomFunction_Info(?function, _, _),
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, ?function),
+  ResolvedActualParamValue(?ctx, ?insn, ?function, "size", ?sizeHctx, ?sizeVal),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?npRandArrayOp = SingleInValValMacro("npRandArray", ?fun, ?index, ?sizeVal).
+
+VarPointsTo(?immutableHctx, ?val, ?ctx, ?var):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", _, ?sizeVal),
+  AssignInstruction_To(?insn, ?var),
+  ?sizeVal = "<None>",
+  NumpyRandomArrayOpFunction(?ctx, ?insn, ?npRandArrayOp, ?function),
+  NumpyRandomFunction_Info(?function, _, ?val),
+  isImmutableHContext(?immutableHctx).
+
+NumPyOperationProducesOutput(?ctx, ?insn, ?npRandArrayOp):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", ?sizeHctx, ?sizeVal),
+  ListOfIntConsts(?sizeHctx, ?sizeVal).
+
+
+NumpyArrayShapeListContent(?shapelistHctx, ?shapelist, ?index, ?indexVal):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npRandArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", ?sizeHctx, ?sizeVal),
+  ListOfIntConstsAtIndexPointsTo(?sizeHctx, ?sizeVal, ?index, ?indexVal).
+
+NumpyArrayShapeListLength(?shapelistHctx, ?shapelist, ?len):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npRandArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", ?sizeHctx, ?sizeVal),
+  ListOfConstsLength(?sizeHctx, ?sizeVal, ?len).
+
+
+TensorLikeObjectToTensorDtype(?arrayHctx, ?npRandArrayOp, ?dtypeHctx, ?dtype):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperationOutputHCtx(?ctx, ?insn, ?npRandArrayOp, ?arrayHctx),
+  NumpyRandomArrayOpFunction(?ctx, ?insn, ?npRandArrayOp, ?function),
+  NumpyRandomFunction_Info(?function, "int", _),
+  isImmutableHContext(?dtypeHctx),
+  ?dtype = "<tensorflow>/new <tensorflow.int32>/0".
+
+TensorLikeObjectToTensorDtype(?arrayHctx, ?npRandArrayOp, ?dtypeHctx, ?dtype):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperationOutputHCtx(?ctx, ?insn, ?npRandArrayOp, ?arrayHctx),
+  NumpyRandomArrayOpFunction(?ctx, ?insn, ?npRandArrayOp, ?function),
+  NumpyRandomFunction_Info(?function, "float", _),
+  isImmutableHContext(?dtypeHctx),
+  ?dtype = "<tensorflow>/new <tensorflow.float32>/0".
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                 NP RANDOM RANDN
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl NumpyRandNArrayOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npRandArrayOp:Value)
+.output NumpyRandNArrayOp
+
+NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.random.randn>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.array>", "object", ?objHctx, ?objVal),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?npArrayOp = SingleInValValMacro("npArray", ?fun, ?index, ?objVal).
+

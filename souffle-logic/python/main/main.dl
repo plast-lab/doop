@@ -14,7 +14,6 @@
   #include "dictionaries.dl"
   #include "const-int.dl"
   #include "../lib-specific/modeled.dl"
-  #include "../lib-specific/numpy.dl"
   #include "../lib-specific/tensorflow/tensorflow.dl"
   #include "../lib-specific/tensorflow/general-tensor-modeling.dl"
   #include "../lib-specific/tensorflow/tensor-creation-ops.dl"
@@ -22,6 +21,7 @@
   #include "../lib-specific/tensorflow/arithmetic-ops.dl"
   #include "../lib-specific/tensorflow/pooling-conv-ops.dl"
   #include "../lib-specific/tensorflow/shape-pass-through-ops.dl"
+  #include "../lib-specific/numpy.dl"
 
   /**
    * Reachable
