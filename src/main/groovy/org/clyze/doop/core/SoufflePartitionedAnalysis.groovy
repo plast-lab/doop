@@ -148,15 +148,15 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
                 partitionNumber++
                 def childDatabaseDir = new File(outDir.canonicalPath + "-part-" + partitionNumber + File.separator + "database")
 
-                def file = new File(childDatabaseDir, "VarPointsTo.csv")
-	            def line
-                BufferedReader reader = file.newReader()
-	            while ((line = reader.readLine()) != null) {
-                    insVPTSet.add(line)
-                }
+//                def file = new File(childDatabaseDir, "VarPointsTo.csv")
+//                BufferedReader reader = file.newReader()
+//	            while ((line = reader.readLine()) != null) {
+//                    insVPTSet.add(line)
+//                }
 
-	            file = new File(childDatabaseDir, "Reachable.csv")
-	            reader = file.newReader()
+	            def line
+	            def file = new File(childDatabaseDir, "Reachable.csv")
+	            BufferedReader reader = file.newReader()
 
 	            while ((line = reader.readLine()) != null) {
 		            insReachableSet.add(line)
@@ -183,11 +183,11 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
 		            polymorphicCallSiteSet.add(line)
 	            }
 
-	            file = new File(childDatabaseDir, "VarPointsToApp.csv")
-	            reader = file.newReader()
-	            while ((line = reader.readLine()) != null) {
-		            insVPTAppSet.add(line)
-	            }
+//	            file = new File(childDatabaseDir, "VarPointsToApp.csv")
+//	            reader = file.newReader()
+//	            while ((line = reader.readLine()) != null) {
+//		            insVPTAppSet.add(line)
+//	            }
 
 	            file = new File(childDatabaseDir, "ReachableApp.csv")
 	            reader = file.newReader()

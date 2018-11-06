@@ -228,4 +228,8 @@
   //   AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
   //   ?n > 1,
   //   MethodInNonPrimaryPartition(?meth).
+
+  TypeInPrimaryPartition(?type) :-
+    isType(?type),
+    match("java.util.*", ?type).
 }

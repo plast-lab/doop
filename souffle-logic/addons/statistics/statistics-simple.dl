@@ -176,6 +176,7 @@ Stats_Simple_Application_PotentiallyFailingCast(?type, ?from, ?to) :-
 
 /***************************************************/
 NewMetricMacro( "1.0", "var points-to (INS)", Stats_Simple_InsensVarPointsTo(_, _)).
+NewMetricMacro( "1.5", "var points-to (SENS)", mainAnalysis.VarPointsTo(_, _, _, _)).
 NewMetricMacro( "5.0", "app var points-to (INS)", Stats_Simple_Application_InsensVarPointsTo(_, _)).
 // NewMetricMacro( "5.5", "app var points-to (SENS)", Stats_Simple_Application_VarPointsTo(_, _, _, _)).
 NewMetricMacro("10.0", "reachable variables (INS)", Stats_Simple_InsensReachableVar(_)).
