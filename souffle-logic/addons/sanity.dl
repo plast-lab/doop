@@ -71,12 +71,15 @@ ForceTypeCompatibility("java.lang.String", "java.lang.Class").
 ForceTypeCompatibility(?valueType, ?varType) :-
   mainAnalysis.BoxTypeConversion(?valueType, ?varType).
 
+// On Android, primitive number types may all collapse into 'int'.
 #ifdef ANDROID
 .decl ForceValueCompatibility(?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
 
 ForceValueCompatibility("boolean", "num-constant-0", "int").
 ForceValueCompatibility("boolean", "num-constant-1", "int").
-ForceValueCompatibility("char", ?numConst, "int") :- mainAnalysis.Value_Num(?numConst, _).
+ForceValueCompatibility(?primType, ?numConst, "int") :-
+  ( ?primType = "byte" ;  ?primType = "char" ;  ?primType = "short" ),
+  mainAnalysis.Value_Num(?numConst, _).
 #endif // ANDROID
 
 .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
