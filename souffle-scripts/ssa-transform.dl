@@ -264,6 +264,7 @@ SimilarOutDefs(?block, ?def, ?out_def) :-
 .decl PhiChunk(?phi_var:symbol)
 .output PhiChunk
 
+// Many PhiChunks in the same basic block, consist of a PhiHeader.
 .decl PhiHeader(?block:symbol)
 .output PhiHeader
 
@@ -348,11 +349,41 @@ PhiHeaderStart(?phi_header, ?start) :-
 .decl PhiHeaderEnd(?phi_chunk:symbol, ?end:symbol)
 .output PhiHeaderEnd
 
+SSANext(?end, ?phi_header),
 PhiHeaderEnd(?phi_header, ?end) :-
-    PhiPseudoAssign(?start_chunk, _, _, ?phi_header, _),
-    PhiChunkEnd(?start_chunk, ?end),
-    !PhiHeaderNext(?start_chunk, _).
-    
+    PhiPseudoAssign(?end_chunk, _, _, ?phi_header, _),
+    PhiChunkEnd(?end_chunk, ?end),
+    !PhiHeaderNext(?end_chunk, _).
+
+SSANext(?prev, ?next) :-
+    Instruction_Next(?prev, ?old_next),
+    PhiHeaderStart(?old_next, ?next).
+
+SSANext(?prev, ?next) :-
+    Instruction_Next(?prev, ?next),
+    !PhiHeaderStart(?next, _).
+
+.decl isInstr(?insn:symbol)
+
+isInstruction(?insn) :-
+    Instruction_Method(?insn, _).
+
+isInstruction(?insn) :-
+    PhiPseudoAssign(_, _, _, _, ?insn).
+
+.decl SSA_InstructionIndex(?insn:symbol, ?index:number)
+.output SSA_InstructionIndex
+
+SSA_InstructionIndex(?insn, 1) :-
+    isInstruction(?insn),
+    !SSANext(_, ?insn).
+
+SSA_InstructionIndex(?insn, ?index + 1) :-
+    SSANext(?prev, ?insn),
+    SSA_InstructionIndex(?prev, ?index).
+
+//.decl ReachingDef(?insn:symbol, ?ssa_var:symbol)
+
 //PhiAssignInstruction(?phi_var, ?block, $) :-
 //    PhiAssign(?phi_var, _, ?block),
 //    ExistTwoDifferentPredDefs(?block, ?phi_var).
