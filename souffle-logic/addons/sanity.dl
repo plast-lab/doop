@@ -131,7 +131,8 @@ ValueHasNoDeclaringType(?value) :-
 ValueIsNeitherHeapNorNonHeap(?value) :-
   mainAnalysis.isValue(?value),
   !mainAnalysis.Value_isHeap(?value),
-  !mainAnalysis.Value_isNonHeap(?value).
+  !mainAnalysis.Value_isNonHeap(?value),
+  mainAnalysis.NotSpecialObject(?value).
 
 .decl ClassTypeIsInterfaceType(?type:Type)
 .output ClassTypeIsInterfaceType
