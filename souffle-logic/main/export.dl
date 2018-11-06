@@ -9,8 +9,19 @@
 
 #ifndef X_SERVER_LOGIC
 .output CallGraphEdge(IO="file",filename="CallGraphEdge.csv",delimiter="\t")
+#ifndef USER_DEFINED_PARTITIONS
 .output VarPointsTo(IO="file",filename="VarPointsTo.csv",delimiter="\t")
 .output ReachableContext(IO="file",filename="ReachableContext.csv",delimiter="\t")
+#else
+.output Stats_Simple_InsensVarPointsTo(IO="file",filename="VarPointsTo.csv",delimiter="\t")
+.output Stats_Simple_InsensCallGraphEdge(IO="file",filename="CallGraphEdge.csv",delimiter="\t")
+.output Stats_Simple_PotentiallyFailingCast(IO="file",filename="MayFailCast.csv",delimiter="\t")
+.output Stats_Simple_PolymorphicCallSite(IO="file",filename="PolymorphicCallSite.csv",delimiter="\t")
+.output Stats_Simple_Application_InsensVarPointsTo(IO="file",filename="VarPointsToApp.csv",delimiter="\t")
+.output Stats_Simple_Application_PotentiallyFailingCast(IO="file",filename="MayFailCastApp.csv",delimiter="\t")
+.output Stats_Simple_Application_PolymorphicCallSite(IO="file",filename="PolymorphicCallSiteApp.csv",delimiter="\t")
+.output Stats_Simple_Application_ReachableMethod(IO="file",filename="ReachableApp.csv",delimiter="\t")
+#endif // USER_DEFINED_PARTITIONS
 #ifndef X_STATS_NONE
 .output Stats_Metrics(IO="file",filename="Stats_Metrics.csv",delimiter="\t")
 #endif // X_STATS_NONE

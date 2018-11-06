@@ -115,69 +115,69 @@
   // or invocation in no partition and method in primary partition
   ContextResponse(callerCtx, hctx, invo, value, calleeCtx) :-
     ContextRequest(callerCtx, hctx, invo, value, tomethod),
-    // ((MethodInPrimaryPartition(tomethod),
-    //   InvocationInPrimaryPartition(invo));
-    //  (MethodInPrimaryPartition(tomethod),
-    //   InvocationInNoPartition(invo));
-    //  (MethodInNoPartition(tomethod),
-    //   InvocationInPrimaryPartition(invo));
-    //  (MethodInNoPartition(tomethod),
-    //   InvocationInNoPartition(invo))     
-    // ),
+    ((MethodInPrimaryPartition(tomethod),
+      InvocationInPrimaryPartition(invo));
+     (MethodInPrimaryPartition(tomethod),
+      InvocationInNoPartition(invo));
+     (MethodInNoPartition(tomethod),
+      InvocationInPrimaryPartition(invo));
+     (MethodInNoPartition(tomethod),
+      InvocationInNoPartition(invo))     
+    ),
     hctx = [hctxvalue],
     calleeCtx = [hctxvalue, value].
 
   // Case 2: target method in non primary partition and invocation in primary partition
   // or target method in non primary partition and invocation in no partition
   // or target method in non primary partition and invocation in non primary partition
-  // ContextResponse(callerCtx, hctx, invo,value, calleeCtx) :-
-  //   ContextRequest(callerCtx, hctx, invo, value, tomethod),
-  //   MethodInNonPrimaryPartition(tomethod),
-  //   (InvocationInPrimaryPartition(invo);
-  //    InvocationInNonPrimaryPartition(invo);
-  //    InvocationInNoPartition(invo)),
-  //   isImmutableContext(calleeCtx).
+  ContextResponse(callerCtx, hctx, invo,value, calleeCtx) :-
+    ContextRequest(callerCtx, hctx, invo, value, tomethod),
+    MethodInNonPrimaryPartition(tomethod),
+    (InvocationInPrimaryPartition(invo);
+     InvocationInNonPrimaryPartition(invo);
+     InvocationInNoPartition(invo)),
+    isImmutableContext(calleeCtx).
 
   // Case 3: target method in primary partition and invocation in non primary partition
   // or target method in no partition and invocation in no partition
-  // ContextResponse(callerCtx, hctx, invo, value, calleeCtx) :-
-  //   ContextRequest(callerCtx, hctx, invo, value, tomethod),
-  //   (MethodInPrimaryPartition(tomethod);
-  //    MethodInNoPartition(tomethod)),
-  //   InvocationInNonPrimaryPartition(invo),
-  //   isImmutableContext(calleeCtx).
+  ContextResponse(callerCtx, hctx, invo, value, calleeCtx) :-
+    ContextRequest(callerCtx, hctx, invo, value, tomethod),
+    (MethodInPrimaryPartition(tomethod);
+     MethodInNoPartition(tomethod)),
+    InvocationInNonPrimaryPartition(invo),
+    isImmutableContext(calleeCtx).
 
   // and for static methods
   StaticContextResponse(callerCtx, invo, calleeCtx) :-
     StaticContextRequest(callerCtx, invo),
-    //MethodInvocation_Method(invo, tomethod),
-    // ((MethodInPrimaryPartition(tomethod),
-    //   InvocationInPrimaryPartition(invo));
-    //  (MethodInPrimaryPartition(tomethod),
-    //   InvocationInNoPartition(invo));
-    //  (MethodInNoPartition(tomethod),
-    //   InvocationInPrimaryPartition(invo));
-    //  (MethodInNoPartition(tomethod),
-    //   InvocationInNoPartition(invo))
-    // ),
+    MethodInvocation_Method(invo, tomethod),
+    ((MethodInPrimaryPartition(tomethod),
+      InvocationInPrimaryPartition(invo));
+     (MethodInPrimaryPartition(tomethod),
+      InvocationInNoPartition(invo));
+     (MethodInNoPartition(tomethod),
+      InvocationInPrimaryPartition(invo));
+     (MethodInNoPartition(tomethod),
+      InvocationInNoPartition(invo))
+    ),
     calleeCtx = callerCtx.
 
-  // StaticContextResponse(callerCtx, invo, calleeCtx) :-
-  //   StaticContextRequest(callerCtx, invo),
-  //   MethodInvocation_Method(invo, tomethod),
-  //   (MethodInPrimaryPartition(tomethod);
-  //    MethodInNonPrimaryPartition(tomethod);
-  //    MethodInNoPartition(tomethod)),
-  //   InvocationInNonPrimaryPartition(invo),
-  //   isImmutableContext(calleeCtx).
+  StaticContextResponse(callerCtx, invo, calleeCtx) :-
+    StaticContextRequest(callerCtx, invo),
+    MethodInvocation_Method(invo, tomethod),
+    (MethodInPrimaryPartition(tomethod);
+     MethodInNonPrimaryPartition(tomethod);
+     MethodInNoPartition(tomethod)),
+    InvocationInNonPrimaryPartition(invo),
+    isImmutableContext(calleeCtx).
 
-  // StaticContextResponse(callerCtx, invo, calleeCtx) :-
-  //   StaticContextRequest(callerCtx, invo),
-  //   MethodInvocation_Method(invo, tomethod),
-  //   MethodInNonPrimaryPartition(tomethod),
-  //   (InvocationInPrimaryPartition(invo);
-  //    InvocationInNoPartition(invo)),
-  //   isImmutableContext(calleeCtx).
+  StaticContextResponse(callerCtx, invo, calleeCtx) :-
+    StaticContextRequest(callerCtx, invo),
+    MethodInvocation_Method(invo, tomethod),
+    MethodInNonPrimaryPartition(tomethod),
+    (InvocationInPrimaryPartition(invo);
+     InvocationInNoPartition(invo)),
+    isImmutableContext(calleeCtx).
 
   ThreadStartContextResponse(callerCtx, hctx, value, newCtx) :-
     ThreadStartContextRequest(callerCtx, hctx, value),
@@ -219,8 +219,13 @@
     ctxv1 = ctxv1,
     ctxv2 = ctxv2.
 
-   HeapAllocation_ContextInsensitive(?heap) :-
-     AssignHeapAllocation_Heap(?insn, ?heap),
-     Instruction_Method(?insn, ?method),
-     MethodInNonPrimaryPartition(?method).
+   // HeapAllocation_ContextInsensitive(?heap) :-
+   //   AssignHeapAllocation_Heap(?insn, ?heap),
+   //   Instruction_Method(?insn, ?method),
+   //   MethodInNonPrimaryPartition(?method).
+
+  // AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
+  //   AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
+  //   ?n > 1,
+  //   MethodInNonPrimaryPartition(?meth).
 }
