@@ -229,7 +229,7 @@
   //   ?n > 1,
   //   MethodInNonPrimaryPartition(?meth).
 
-  TypeInPrimaryPartition(?type) :-
-    isType(?type),
-    match("java.util.*", ?type).
+  // TypeInPrimaryPartition(?type) :-
+  //   isType(?type),
+  //   match("java.util.*", ?type).
 }
