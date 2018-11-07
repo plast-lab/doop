@@ -27,7 +27,7 @@ class ClassHeapFinder {
 
     private void scan(Iterable<SootClass> classes) {
         for (SootClass c : classes) {
-            recordedTypes.add(c.getName()); 
+            recordedTypes.add(c.getName());
             for (SootMethod m : c.getMethods())
                 if (!(m.isPhantom() || m.isAbstract() || m.isNative()))
                     scan(m);
@@ -44,7 +44,18 @@ class ClassHeapFinder {
                 Value right = ((AssignStmt)u).getRightOp();
                 if (right instanceof ClassConstant)
                     processClassConstant((ClassConstant)right);
-            }
+                else if (right instanceof InvokeExpr)
+                    processInvokeExpr((InvokeExpr)right);
+            } else if (u instanceof InvokeExpr)
+                processInvokeExpr((InvokeExpr)u);
+            else if (u instanceof InvokeStmt)
+                processInvokeExpr(((InvokeStmt)u).getInvokeExpr());
+    }
+
+    private void processInvokeExpr(InvokeExpr invoke) {
+        for (Value arg : invoke.getArgs())
+            if (arg instanceof ClassConstant)
+                processClassConstant((ClassConstant)arg);
     }
 
     private void processClassConstant(ClassConstant constant) {
