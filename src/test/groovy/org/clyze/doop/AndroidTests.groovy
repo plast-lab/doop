@@ -19,8 +19,9 @@ class AndroidTests extends DoopBenchmark {
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--gen-opt-directives", "--decode-apk", "--thorough-fact-gen",
-					 "--generate-jimple", "--Xstats-full", "-Ldebug", "--sanity"]
+					 "--gen-opt-directives", "--decode-apk",
+					 "--thorough-fact-gen", "--sanity",
+					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
 		Main.main((String[])args)
 		analysis = Main.analysis
 
@@ -43,7 +44,8 @@ class AndroidTests extends DoopBenchmark {
 					 "--heapdl-file", "${doopBenchmarksDir}/android-benchmarks/jackpal.androidterm.hprof.gz",
 					 "--id", "test-android-androidterm-fw-heapdl",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--decode-apk", "--generate-jimple", "--Xstats-full", "-Ldebug", "--sanity"]
+					 "--thorough-fact-gen", "--sanity",
+					 "--decode-apk", "--generate-jimple", "--Xstats-full", "-Ldebug"]
 		Main.main((String[])args)
 		analysis = Main.analysis
 
