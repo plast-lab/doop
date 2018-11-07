@@ -207,10 +207,9 @@ TensorLikeObjectToTensorDtype(?arrayHctx, ?npRandArrayOp, ?dtypeHctx, ?dtype):-
 .decl NumpyRandNArrayOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npRandArrayOp:Value)
 .output NumpyRandNArrayOp
 
-NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp):-
-  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.random.randn>"),
-  ResolvedActualParamValue(?ctx, ?insn, "<numpy.array>", "object", ?objHctx, ?objVal),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?npArrayOp = SingleInValValMacro("npArray", ?fun, ?index, ?objVal).
+//NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp):-
+//  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.random.randn>"),
+//  Instruction_Function(?insn, ?fun),
+//  Instruction_Index(?insn, ?index),
+//  ?npArrayOp = SingleInValValMacro("npArray", ?fun, ?index, ?objVal).
 

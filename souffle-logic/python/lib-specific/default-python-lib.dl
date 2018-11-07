@@ -1,0 +1,84 @@
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                                  FUNCTION DECLARATIONS
+//----------------------------------------------------------------------------------------------------------------------
+
+
+isModule("<BUILTIN_SCOPE>").
+
+VarPointsTo(?hctx, "<None>", ?ctx, "<BUILTIN_SCOPE>/noneDefVar"):-
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
+
+ModeledFunction("<range>", "range", "<BUILTIN_SCOPE>").
+
+FormalParam( 0, "startStop", "<range>", "<range>/mockParam1").
+FormalParam( 1, "stop", "<range>", "<range>/mockParam2").
+FormalParam( 2, "step", "<range>", "<range>/mockParam3").
+FormalParam_DefaultValFrom("<range>", "startStop", "<BUILTIN_SCOPE>/noneDefVar").
+FormalParam_DefaultValFrom("<range>", "stop", "<BUILTIN_SCOPE>/noneDefVar").
+FormalParam_DefaultValFrom("<range>", "step", "<BUILTIN_SCOPE>/noneDefVar").
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                                  GENERAL OP MODELING
+//----------------------------------------------------------------------------------------------------------------------
+
+
+.decl BuiltInOp_NameToVal(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?name:symbol, ?namedValHctx:configuration.HContext, ?namedVal:Value)
+.output BuiltInOp_NameToVal
+
+.decl BuiltInOpProducesOutput(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value)
+.output BuiltInOpProducesOutput
+
+
+configuration.RecordContextRequest(?ctx, ?operationVal, ?var) :-
+  BuiltInOpProducesOutput(?ctx, ?insn, ?operationVal),
+  AssignInstruction_To(?insn, ?var).
+
+VarPointsTo(?hctx, ?operationVal, ?ctx, ?var):-
+  configuration.RecordContextResponse(?ctx, ?operationVal, ?var, ?hctx),
+  BuiltInOpProducesOutput(?ctx, ?insn, ?operationVal),
+  AssignInstruction_To(?insn, ?var).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                                  RANGE OP
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl RangeOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?rangeOp:Value)
+.output RangeOp
+
+.decl RangeOpOneArg(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?rangeOp:Value)
+.output RangeOpOneArg
+
+#define RangeValMacro(op,fun, index, val1, val2, val3) cat("<range ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val1, cat("+", cat(val2, cat("+", cat(val3, ">"))))))))))
+
+
+NumPyOperation_NameToVal(?ctx, ?insn, ?rangeOp, "startStop", ?startStopHctx, ?startStop),
+NumPyOperation_NameToVal(?ctx, ?insn, ?rangeOp, "stop", ?stopHctx, ?stop),
+NumPyOperation_NameToVal(?ctx, ?insn, ?rangeOp, "step", ?stepHctx, ?step),
+RangeOp(?ctx, ?insn, ?rangeOp):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<range>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<range>", "startStop", ?startStopHctx, ?startStop),
+  ResolvedActualParamValue(?ctx, ?insn, "<range>", "stop", ?stopHctx, ?stop),
+  ResolvedActualParamValue(?ctx, ?insn, "<range>", "step", ?stepHctx, ?step),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?rangeOp = RangeValMacro("range", ?fun, ?index, ?startStop, ?stop, ?step).
+
+RangeOpOneArg(?ctx, ?insn, ?rangeOp),
+BuiltInOpProducesOutput(?ctx, ?insn, ?rangeOp):-
+  RangeOp(?ctx, ?insn, ?rangeOp),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?rangeOp, "startStop", _, ?startStop),
+  ?startStop != "<None>",
+  NumPyOperation_NameToVal(?ctx, ?insn, ?rangeOp, "stop", _, "<None>"),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?rangeOp, "step", _, "<None>").
+
+
+IterableObjectLength(?hctx, ?rangeOp, ?startStop):-
+  RangeOpOneArg(?ctx, ?insn, ?rangeOp),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?rangeOp, "startStop", _, ?startStop),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?rangeOp, ?ctx, ?var).

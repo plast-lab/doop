@@ -55,6 +55,7 @@
 .type Function = Type
 .decl isMethod(?m:Function)
 .decl isFunction(?m:Function)
+.decl isComprehensionFunction(?m:Function)
 
 
 .decl Function_SimpleName(?function:Function, ?simpleName:symbol)

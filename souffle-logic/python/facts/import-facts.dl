@@ -280,6 +280,14 @@ Field_SimpleName(?signature, ?simplename) :-
   _Field(?signature, ?declaringType, ?simplename).
 
 
+//Comprehension function
+
+.decl _ComprehensionFunction(?function:symbol)
+.input _ComprehensionFunction(IO="file", filename="ComprehensionFunction.facts", delimiter="\t")
+
+isComprehensionFunction(?fun):-
+  _ComprehensionFunction(?fun).
+
 
 // Function invocation
 

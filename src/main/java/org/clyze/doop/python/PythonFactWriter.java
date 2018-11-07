@@ -107,6 +107,8 @@ public class PythonFactWriter {
 
         _db.add(STRING_RAW, result, result);
         _db.add(FUNCTION, result, _rep.simpleName(m), par, arity, _rep.sourceFileName(m));
+        if(_rep.simpleName(m).startsWith("comprehension"))
+            _db.add(COMPREHENSION_FUNCTION, result);
         return result;
     }
 

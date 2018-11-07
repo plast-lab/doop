@@ -64,6 +64,7 @@ VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
 
 VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
   CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
+  !(isComprehensionFunction(?tofunction)),   //TODO: REVIEW THE PYTHON IR TO AVOID THIS UGLY HACK
   AssignInstruction_To(?invo, ?return),
   isReturnNonNone_Insn(?retInsn),
   Instruction_Function(?retInsn, ?tofunction),
