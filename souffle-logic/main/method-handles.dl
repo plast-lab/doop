@@ -37,14 +37,18 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 #define MOCK_LAMBDA_CALL_SITE(invo, ret, type, method, real, name) \
    cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
 
-.decl LambdaCallSite(?callsite:Value, ?dynName:symbol, ?dynRet:Type, ?implMethod:Method)
-.decl LambdaCallSite_Invokedynamic(?callsite:Value, ?invokedynamic:DynamicMethodInvocation_Insn)
-.decl LambdaCallSite_K(?callsite:Value, ?K:number)
+.type CallSite = mainAnalysis.Value
+.decl isCallSite(?value:CallSite)
+
+.decl LambdaCallSite(?callsite:CallSite, ?dynName:symbol, ?dynRet:Type, ?implMethod:Method)
+.decl LambdaCallSite_Invokedynamic(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn)
+.decl LambdaCallSite_K(?callsite:CallSite, ?K:number)
 .decl InvokedynamicBootstrapCtx(?invokedynamic:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
 
 InvokedynamicBootstrapCtx(?invokedynamic, ?ctx),
 VarPointsTo(?hctx, ?callsite, ?ctx, ?var),
-MockValueConsMacro(?callsite, ?samType),
+MockValueConsMacro(?callsite, "java.lang.invoke.CallSite"),
+isCallSite(?callsite),
 LambdaCallSite_Invokedynamic(?callsite, ?invokedynamic),
 LambdaCallSite_K(?callsite, ?K),
 LambdaCallSite(?callsite, ?dynName, ?samType, ?implMethod) :-
@@ -122,7 +126,7 @@ VarPointsTo(?hctx, MOCK_ARRAY(?invokedynamic), ?ctx, ?formalVarArgs) :-
    VarPointsTo(_, ?val, _, ?actual),
    isImmutableHContext(?hctx).
 
-.decl LambdaCallSite_N(?callsite:Value, ?N:number, ?samMethodType:Value)
+.decl LambdaCallSite_N(?callsite:CallSite, ?N:number, ?samMethodType:Value)
 
 LambdaCallSite_N(?callsite, ?N, ?val) :-
    InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, _, ?metafactory),
@@ -141,7 +145,7 @@ LambdaCallSite_N(?callsite, ?N, ?val) :-
 
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
 
-.decl LambdaCaptured(?callsite:Value, ?val:Value, ?idx:number, ?ctx:configuration.Context)
+.decl LambdaCaptured(?callsite:CallSite, ?val:Value, ?idx:number, ?ctx:configuration.Context)
 
 // Capture values of the enclosing environment.
 LambdaCaptured(?callsite, ?val, ?idx, ?ctx) :-
@@ -157,7 +161,7 @@ LambdaCaptured(?callsite, ?val, ?idx, ?ctx) :-
 // constant method handle, the real method is called. This can wrap a
 // static method call as an instance method call.
 
-.decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?callsite:Value)
+.decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?callsite:CallSite)
 
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?callsite) :-
    LambdaCallSite(?callsite, ?dynName, _, ?implMethod),
