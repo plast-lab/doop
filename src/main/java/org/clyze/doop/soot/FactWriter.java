@@ -44,7 +44,7 @@ class FactWriter extends JavaFactWriter {
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
-                _db.add(METHOD_ANNOTATION, result, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                writeMethodAnnotation(result, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
             }
         }
         if (m.getTag("VisibilityParameterAnnotationTag") != null) {

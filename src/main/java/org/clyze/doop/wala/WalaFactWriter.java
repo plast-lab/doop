@@ -87,7 +87,7 @@ public class WalaFactWriter extends JavaFactWriter {
         _db.add(STRING_RAW, result, result);
         _db.add(METHOD, result, WalaRepresentation.simpleName(m.getReference()), WalaRepresentation.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         for (Annotation annotation : m.getAnnotations()) {
-            _db.add(METHOD_ANNOTATION, result, fixTypeString(annotation.getType().toString()));
+            writeMethodAnnotation(result, fixTypeString(annotation.getType().toString()));
             //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
         }
 //        ShrikeCTMethod shrikeMethod = (ShrikeCTMethod)m;

@@ -274,4 +274,8 @@ public class JavaFactWriter {
             System.err.println("Warning: cannot compute arity of " + mt);
         _db.add(METHOD_TYPE_CONSTANT, mt, str(arity));
     }
+
+    protected void writeMethodAnnotation(String method, String annotationType) {
+        _db.add(METHOD_ANNOTATION, method, annotationType);
+    }
 }

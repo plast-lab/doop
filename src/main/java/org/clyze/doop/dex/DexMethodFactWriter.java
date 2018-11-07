@@ -139,7 +139,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                             logger.debug("Ignored supplied method signature: " + sig + " != " + mf.jvmSig);
                 }
             }
-            _db.add(METHOD_ANNOTATION, methId, annotType);
+            writeMethodAnnotation(methId, annotType);
         }
 
         for (AccessFlags f : flags)
