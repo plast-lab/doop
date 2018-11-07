@@ -382,7 +382,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				!options.HEAPDLS.value && !options.ANDROID.value &&
 				!options.DACAPO.value && !options.DACAPO_BACH.value &&
 				!options.X_START_AFTER_FACTS.value) {
-			log.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
+			log.info "WARNING: No main class was found. This will trigger open-program analysis!"
 			if (!options.OPEN_PROGRAMS.value)
 				options.OPEN_PROGRAMS.value = "concrete-types"
 		}
