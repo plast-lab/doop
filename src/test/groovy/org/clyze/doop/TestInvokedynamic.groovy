@@ -15,7 +15,10 @@ class TestInvokedynamic extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 107 (lambdas)"() {
 		when:
-		analyzeTest("107-lambdas", ["--platform", "java_8", "--Xserver-logic", "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl", "--generate-jimple", "--sanity", "--thorough-fact-gen"])
+		analyzeTest("107-lambdas", ["--platform", "java_8", "--Xserver-logic",
+									"--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+									"--thorough-fact-gen", "--sanity",
+									"--generate-jimple"])
 
 		then:
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/intWriter#_13', '<Main: void main(java.lang.String[])>/invokedynamic_Main::lambda$main$0/0::: java.util.function.Function::: (Mock)::: reference Main::lambda$main$0 from <Main: java.lang.String lambda$main$0(java.lang.Integer)> wrapped as java.util.function.Function.apply')
@@ -30,7 +33,9 @@ class TestInvokedynamic extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 104 (method references)"() {
 		when:
-		analyzeTest("104-method-references", ["--platform", "java_8", "--sanity", "--thorough-fact-gen", "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
+		analyzeTest("104-method-references", ["--platform", "java_8",
+											  "--thorough-fact-gen", "--sanity",
+											  "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
 
 		then:
 		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/c1#_15', '<Main: void main(java.lang.String[])>/invokedynamic_A::meth1234/0::: java.util.function.Consumer::: (Mock)::: reference A::meth1234 from <A: void meth1234(java.lang.Integer)> wrapped as java.util.function.Consumer.accept')
