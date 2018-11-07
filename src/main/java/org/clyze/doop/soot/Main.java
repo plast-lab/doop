@@ -176,7 +176,7 @@ public class Main {
             if (sootParameters._failOnMissingClasses) {
                 throw new MissingClassesException(unrecorded.toArray(new String[0]));
             } else {
-                System.err.println("Warning: some classes were not resolved, consider adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
+                System.err.println("Warning: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
             }
         }
 
