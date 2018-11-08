@@ -36,15 +36,15 @@ class FactWriter extends JavaFactWriter {
 
     String writeMethod(SootMethod m) {
         String methodRaw = _rep.signature(m);
-        String result = hashMethodNameIfLong(methodRaw);
+        String methodId = hashMethodNameIfLong(methodRaw);
         String arity = Integer.toString(m.getParameterCount());
 
-        _db.add(STRING_RAW, result, methodRaw);
-        _db.add(METHOD, result, _rep.simpleName(m), Representation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
+        _db.add(STRING_RAW, methodId, methodRaw);
+        _db.add(METHOD, methodId, _rep.simpleName(m), Representation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
-                writeMethodAnnotation(result, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                writeMethodAnnotation(methodId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
             }
         }
         if (m.getTag("VisibilityParameterAnnotationTag") != null) {
@@ -54,12 +54,12 @@ class FactWriter extends JavaFactWriter {
             for (int i = 0; i < annList.size(); i++) {
                 if (annList.get(i) != null) {
                     for (AnnotationTag aTag : annList.get(i).getAnnotations()) {
-                        _db.add(PARAM_ANNOTATION, result, str(i), soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                        _db.add(PARAM_ANNOTATION, methodId, str(i), soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
                     }
                 }
             }
         }
-        return result;
+        return methodId;
     }
 
     void writeAndroidEntryPoint(SootMethod m) {
