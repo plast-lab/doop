@@ -382,20 +382,35 @@ SSA_InstructionIndex(?insn, ?index + 1) :-
     SSANext(?prev, ?insn),
     SSA_InstructionIndex(?prev, ?index).
 
-//.decl ReachingDef(?insn:symbol, ?ssa_var:symbol)
+.decl ReachingDef(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
+.output ReachingDef
 
-//PhiAssignInstruction(?phi_var, ?block, $) :-
-//    PhiAssign(?phi_var, _, ?block),
-//    ExistTwoDifferentPredDefs(?block, ?phi_var).
+.decl ExistsDefInPhiHeader(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
+.output ExistsDefInPhiHeader
 
-//.decl InstrReachingDef(?instr:symbol, ?original:symbol, ?def:symbol)
-//
-//InstrReachingDef(?instr, ?def, ?original) :-
-//    MayPredecessorModuloThrow(?prev, ?instr),
-//    !SSA_AssignDetails(?prev, _, _, _, _),
-//    InstrReachingDef(?prev, ?def, ?original).
-//
-//InstrReachingDef(?instr, ?def, ?original) :-
-//    MayPredecessorModuloThrow(?prev, ?instr),
-//    !SSA_AssignDetails(?prev, _, _, _, _),
-//    InstrReachingDef(?prev, ?def, ?original).
+ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin) :-
+    BasicBlockHead(?insn, ?head),
+    PhiPseudoAssign(?ssa_var, _, _, ?head, _),
+    SSA_Alias(?ssa_var, ?origin).
+
+ReachingDef(?insn, ?ssa_var, ?origin) :-
+    BasicBlockBegin(?insn),
+    ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin).
+
+ReachingDef(?insn, ?ssa_var, ?origin) :-
+    BasicBlockBegin(?insn),
+    !ExistsDefInPhiHeader(?insn, _, ?origin),
+    SSA_Alias(?ssa_var, ?origin),
+    MayPredecessorBBModuloThrow(?pred, ?insn),
+    SimilarOutDefs(?pred, _, ?ssa_var).
+
+ReachingDef(?insn, ?ssa_var, ?origin) :-
+    PrevInSameBasicBlock(?insn, ?prev),
+    SSA_Alias(?ssa_var, ?origin),
+    !SSA_AssignToOriginal(?prev, ?origin),
+    ReachingDef(?prev, ?ssa_var, ?origin).
+
+ReachingDef(?insn, ?ssa_var, ?origin) :-
+    PrevInSameBasicBlock(?insn, ?prev),
+    SSA_Alias(?ssa_var, ?origin),
+    SSA_AssignDetails(?prev, _, _, ?ssa_var, _).
