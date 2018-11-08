@@ -17,13 +17,17 @@ class IrrelevantStmtSwitch implements StmtSwitch
             // An assignment involving invokedynamic is irrelevant if the
             // bootstrap method is declared in a phantom class.
             if (right instanceof DynamicInvokeExpr)
-                inspectMethod(((DynamicInvokeExpr)right).getBootstrapMethodRef().resolve());
+                inspectBootstrapMethod((DynamicInvokeExpr)right);
             // An assignment instruction is irrelevant if the right
             // hand side is an invoke expression of a method of a
             // phantom class.
             else if (right instanceof InvokeExpr)
                 inspectMethod(((InvokeExpr)right).getMethod());
         }
+    }
+
+    private void inspectBootstrapMethod(DynamicInvokeExpr di) {
+        inspectMethod(di.getBootstrapMethodRef().resolve());
     }
 
     // If a method or its declaring class is phantom, set "relevant" flag.
@@ -44,8 +48,13 @@ class IrrelevantStmtSwitch implements StmtSwitch
 
     public void caseInvokeStmt(InvokeStmt stmt) {
         relevant = true;
-        if (Options.v().allow_phantom_refs())
-            inspectMethod(stmt.getInvokeExpr().getMethod());
+        if (Options.v().allow_phantom_refs()) {
+            InvokeExpr expr = stmt.getInvokeExpr();
+            if (expr instanceof DynamicInvokeExpr)
+                inspectBootstrapMethod((DynamicInvokeExpr)expr);
+            else
+                inspectMethod(expr.getMethod());
+        }
     }
 
     // According to http://www.brics.dk/SootGuide/sootsurvivorsguide.pdf
