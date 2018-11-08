@@ -285,8 +285,9 @@ ModeledMethod("<tensorflow.Session.__init__>", "__init__", "<tensorflow.Session>
 
 
 ModeledMethod("<tensorflow.Session.run>", "run", "<tensorflow.Session>", "<tensorflow>").
-FormalParam( 0, "fetch", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam1").
-FormalParam( 1, "feed_dict", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam2").
+FormalParam( 0, "self", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam1").
+FormalParam( 1, "fetch", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam2").
+FormalParam( 2, "feed_dict", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam3").
 
 
 ModeledFunction("<tensorflow.random_normal>", "random_normal", "<tensorflow>").

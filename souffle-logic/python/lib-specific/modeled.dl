@@ -6,6 +6,7 @@
 
 isFunction(?function),
 isHeapAllocation(?mockVal),
+isUnboundMethodOrFunctionObjectAllocation(?mockVal),
 isFunctionObjectAllocation(?mockVal),
 HeapAllocation_Type(?mockVal, ?function),
 Function_Module(?function, ?declModule),
@@ -33,6 +34,7 @@ GlobalNamePointsTo(?hctx, ?mockVal, ?declModule, ?name):-
 
 isFunction(?meth),
 isMethod(?meth),
+isUnboundMethodObjectAllocation(?mockMethVal),
 isHeapAllocation(?mockMethVal),
 HeapAllocation_Type(?mockMethVal, ?meth),
 InstanceFieldPointsTo(?hctx,  ?mockMethVal, ?name, ?hctx, ?mockBaseVal):-
