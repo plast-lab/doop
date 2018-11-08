@@ -164,14 +164,14 @@ class Representation extends JavaRepresentation {
     }
 
     static String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
-        String midPart = (expr instanceof DynamicInvokeExpr) ?
-            dynamicInvokeIdMiddle((DynamicInvokeExpr)expr) : invokeIdMiddle(expr);
+        String midPart;
+        if (expr instanceof DynamicInvokeExpr)
+            midPart = dynamicInvokeIdMiddle((DynamicInvokeExpr)expr);
+        else {
+            SootMethodRef exprMethodRef = expr.getMethodRef();
+            return exprMethodRef.declaringClass() + "." + simpleName(exprMethodRef);
+        }
         return numberedInstructionId(getMethodSignature(inMethod), midPart, counter);
-    }
-
-    private static String invokeIdMiddle(InvokeExpr expr) {
-        SootMethodRef exprMethodRef = expr.getMethodRef();
-        return exprMethodRef.declaringClass() + "." + simpleName(exprMethodRef);
     }
 
     // Create a middle part for invokedynamic ids. It currently
@@ -197,7 +197,8 @@ class Representation extends JavaRepresentation {
                 }
             }
         }
-        return invokeIdMiddle(expr);
+        String dynName = expr.getMethodRef().name();
+        return DynamicMethodInvocation.genericId(bootMethRef.name(), dynName);
     }
 
 
