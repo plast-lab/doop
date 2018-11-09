@@ -396,21 +396,22 @@ MethodFinder(?invo, ?ret) :-
    !Value_Null(?baseVal),
    AssignReturnValue(?invo, ?ret).
 
-.decl MHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method)
+// Direct method handle lookup.
+.decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method)
 
-MHLookup(?type, ?id, ?mt, ?method) :-
+DMHLookup(?type, ?id, ?mt, ?method) :-
    Method_DeclaringType(?method, ?type),
    Method_SimpleName(?method, ?id),
    Method_Descriptor(?method, ?descriptor),
    MTValue_Descriptor(?mt, ?descriptor).
 
-// Mock method handle values.
-#define MH(meth) cat("<computed method handle for ", cat(meth, ">"))
+// Mock values for direct method handle lookup.
+#define DMH(meth) cat("<direct method handle for ", cat(meth, ">"))
 
-MockValueConsMacro(MH(?method), "java.lang.invoke.MethodHandle"),
-isMethodHandle(MH(?method)),
-MethodHandle_Method(MH(?method), ?method),
-VarPointsTo(?hctx, MH(?method), ?ctx, ?ret) :-
+MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
+isMethodHandle(?dmh),
+MethodHandle_Method(?dmh, ?method),
+VarPointsTo(?hctx, ?dmh, ?ctx, ?ret) :-
    MethodFinder(?invo, ?ret),
    ActualParam(0, ?invo, ?classParam),
    VarPointsTo(?hctx, ?classValue, ?ctx, ?classParam),
