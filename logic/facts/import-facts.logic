@@ -581,8 +581,9 @@ _DynamicMethodInvocation(?ref, ?index, ?bootSignature, ?dynName, ?dynRetType, ?d
 +DynamicMethodInvocation:DynName[?x] = ?dynName,
 +DynamicMethodInvocation:DynReturnType[?x] = ?dynRetType,
 +DynamicMethodInvocation:DynParamTypes[?x] = ?dynParamTypes,
-+DynamicMethodInvocation:DynArity[?x] = ?dynArity <-
-   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?method).
++DynamicMethodInvocation:DynArity[?x] = ?dynArity,
++DynamicMethodInvocation:HandleTag[?x] = ?tag <-
+   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method).
 
 
 // Throw
