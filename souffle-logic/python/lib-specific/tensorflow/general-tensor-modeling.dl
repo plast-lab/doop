@@ -72,6 +72,8 @@ configuration.RecordContextRequest(?ctx, ?outTensorVal, ?var) :-
   TensorOperationProducesOutput(?ctx, ?insn, ?outTensorVal),
   AssignInstruction_To(?insn, ?var).
 
+isClassInstanceAllocation(?outTensorVal),
+ClassInstanceAllocationInitializingClassObject(?hctx, ?outTensorVal, ?immutableHctx, "<tensorflow>/new <tensorflow.Tensor>/0"),
 TensorShape(?hctx, ?outTensorVal, ?hctx, ?tensorShapeVal),
 Value_Type(?tensorShapeVal, "<tensorflow.TensorShape>"),
 VarPointsTo(?hctx, ?outTensorVal, ?ctx, ?var),
@@ -79,7 +81,8 @@ Value_Type(?outTensorVal, "<tensorflow.Tensor>"):-
   configuration.RecordContextResponse(?ctx, ?outTensorVal, ?var, ?hctx),
   TensorOperationProducesOutput(?ctx, ?insn, ?outTensorVal),
   AssignInstruction_To(?insn, ?var),
-  ?tensorShapeVal = cat("<shape ",cat(?outTensorVal, ">")).
+  ?tensorShapeVal = cat("<shape ",cat(?outTensorVal, ">")),
+  isImmutableHContext(?immutableHctx).
 
 TensorDType(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype):-
   TensorOperationProducesOutput(?ctx, ?insn, ?tensor),

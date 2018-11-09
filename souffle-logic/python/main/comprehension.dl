@@ -30,7 +30,6 @@ ListCompCall(?callerCtx, ?invocation, ?tofunction):-
 ListCompCallReturnVal(?callerCtx, ?invocation, ?tofunction, ?hctx, ?value):-
   ListCompCall(?callerCtx, ?invocation, ?tofunction),
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tofunction),
-  AssignInstruction_To(?invocation, ?return),
   isReturnNonNone_Insn(?retInsn),
   Instruction_Function(?retInsn, ?tofunction),
   ReturnNonNone_Var(?retInsn, ?var),

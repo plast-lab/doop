@@ -59,6 +59,8 @@ isTensorDataType("<tensorflow.variant>").
 ModeledClass("<tensorflow.Tensor>", "Tensor", "<tensorflow>").
 
 ModeledMethod("<tensorflow.Tensor.set_shape>", "set_shape", "<tensorflow.Tensor>", "<tensorflow>").
+FormalParam( 0, "self", "<tensorflow.Tensor.set_shape>", "<tensorflow.Tensor.set_shape>/mockParam1").
+FormalParam( 1, "shape", "<tensorflow.Tensor.set_shape>",  "<tensorflow.Tensor.set_shape>/mockParam2").
 
 ModeledClass("<tensorflow.TensorShape>", "TensorShape", "<tensorflow>").
 
@@ -78,6 +80,7 @@ ModeledFunction("<tensorflow.placeholder>", "placeholder", "<tensorflow>").
 FormalParam( 0, "dtype", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam1").
 FormalParam( 1, "shape", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam2").
 FormalParam( 2, "name", "<tensorflow.placeholder>",  "<tensorflow.placeholder>/mockParam3").
+FormalParam_DefaultValFrom("<tensorflow.placeholder>", "shape", "<tensorflow>/noneDefVar").
 
 
 // LAYERS CONVOLUTION

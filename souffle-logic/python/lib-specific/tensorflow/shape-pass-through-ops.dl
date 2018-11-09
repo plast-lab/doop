@@ -16,7 +16,7 @@ ShapePassThroughFunction("<tensorflow.sigmoid>", "sigmoid" , "<tensorflow>", "x"
 ShapePassThroughFunction("<tensorflow.nn.sigmoid>", "sigmoid" , "<tensorflow.nn>", "x").
 ShapePassThroughFunction("<tensorflow.tanh>", "tanh" , "<tensorflow>", "x").
 ShapePassThroughFunction("<tensorflow.nn.tanh>", "tanh" , "<tensorflow.nn>", "x").
-
+ShapePassThroughFunction("<tensorflow.identity>", "identity" , "<tensorflow>", "input").
 
 FormalParam(0, ?argName, ?function, cat(?function,"/mockParam1")),
 ModeledFunction(?function, ?name, ?declModule):-
