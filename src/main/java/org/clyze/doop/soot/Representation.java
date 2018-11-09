@@ -169,7 +169,7 @@ class Representation extends JavaRepresentation {
             midPart = dynamicInvokeIdMiddle((DynamicInvokeExpr)expr);
         else {
             SootMethodRef exprMethodRef = expr.getMethodRef();
-            return exprMethodRef.declaringClass() + "." + simpleName(exprMethodRef);
+            midPart = exprMethodRef.declaringClass() + "." + simpleName(exprMethodRef);
         }
         return numberedInstructionId(getMethodSignature(inMethod), midPart, counter);
     }
