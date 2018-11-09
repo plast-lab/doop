@@ -8,12 +8,15 @@
 // then create a new assignment fact with same RHS and LHS v_i,
 // where v is the name of the original variable.
 
+// Holds all ssa renames in the program for a given origin variable.
+// e.g. (v0_0, v0), (v0_1, v0) ... 
 .decl SSA_Alias(?ssa_name:symbol, ?original:symbol)
 .output SSA_Alias
 
 // Helper relation to factor out some code.
 .decl SSA_AssignDetails(?instr:symbol, ?to:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 
+// Aux relation
 .decl SSA_AssignToOriginal(?instr:symbol, ?original:symbol)
 
 SSA_AssignToOriginal(?instr, ?to),
@@ -110,6 +113,8 @@ SSA_AssignInstanceOf(?instr, ?index, ?ssa_name, ?method) :-
 //    Instruction_Method(?instr, ?method),
 //    ?ssa_name = cat(?to, cat("_", to_string(?index))).
 
+// Simple implementation of the mathematical definition of strict
+// domination.
 .decl StrictlyDominates(?dominator:symbol, ?block:symbol)
 .output StrictlyDominates
 
@@ -371,20 +376,24 @@ isInstruction(?insn) :-
 isInstruction(?insn) :-
     PhiPseudoAssign(_, _, _, _, ?insn).
 
+// Simple index calculation, based on the SSANext relation.
 .decl SSA_InstructionIndex(?insn:symbol, ?index:number)
 .output SSA_InstructionIndex
 
+// Base case; If the insn has no previous instruction, then its index
+// is one.
 SSA_InstructionIndex(?insn, 1) :-
     isInstruction(?insn),
     !SSANext(_, ?insn).
 
+// If the insn has a prev instruction and prev has index "index", then
+// insn has index "index  + 1".
 SSA_InstructionIndex(?insn, ?index + 1) :-
     SSANext(?prev, ?insn),
     SSA_InstructionIndex(?prev, ?index).
 
-.decl ReachingDef(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
-.output ReachingDef
-
+// If the phi header for the basic block where insn is in, contains an phi
+// pseudo assignment on ssa_var, which is an ssa rename for origin.
 .decl ExistsDefInPhiHeader(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
 .output ExistsDefInPhiHeader
 
@@ -393,10 +402,22 @@ ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin) :-
     PhiPseudoAssign(?ssa_var, _, _, ?head, _),
     SSA_Alias(?ssa_var, ?origin).
 
+// This is a simple calculation of the reaching SSA definitions (ssa_var),
+// at a given instruction (insn), for a given origin variable (not ssa-renamed,
+// as seen in the original program).
+.decl ReachingDef(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
+.output ReachingDef
+
+// If an instruction is the first instruction in a basic block, and a ssa defintion
+// for origin exists in the Phi Header, then that def is the reaching def.
 ReachingDef(?insn, ?ssa_var, ?origin) :-
     BasicBlockBegin(?insn),
     ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin).
 
+// If an instruction is the first instrution in a basic block, and there is no ssa
+// definition for origin in the Phi Header, then the reaching definition is in the
+// outwards defs of any of the predecessor basic blocks (the defs will all be the same,
+// otherwise there would be a Phi Assignment in the Phi header).
 ReachingDef(?insn, ?ssa_var, ?origin) :-
     BasicBlockBegin(?insn),
     !ExistsDefInPhiHeader(?insn, _, ?origin),
@@ -404,12 +425,19 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
     MayPredecessorBBModuloThrow(?pred, ?insn),
     SimilarOutDefs(?pred, _, ?ssa_var).
 
+// If an instruction is not the first instruction in a basic block, and the previous
+// instuction is not an assignment with LHS an ssa rename of origin, then the reaching
+// ssa definition for origin at insn is the same as the reaching ssa definition for origin
+// at prev (recursive definition).
 ReachingDef(?insn, ?ssa_var, ?origin) :-
     PrevInSameBasicBlock(?insn, ?prev),
     SSA_Alias(?ssa_var, ?origin),
     !SSA_AssignToOriginal(?prev, ?origin),
     ReachingDef(?prev, ?ssa_var, ?origin).
 
+// If an instruction is no the first instruction in a basic block, and the previous
+// instuction is an assignment with LHS an ssa rename of origin, the the reaching ssa defition
+// for origin at insn is exactly that LHS ssa rename of origin.
 ReachingDef(?insn, ?ssa_var, ?origin) :-
     PrevInSameBasicBlock(?insn, ?prev),
     SSA_Alias(?ssa_var, ?origin),
