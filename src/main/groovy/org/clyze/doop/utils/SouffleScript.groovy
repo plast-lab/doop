@@ -9,6 +9,7 @@ import org.clyze.utils.Helper
 
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
@@ -55,7 +56,8 @@ class SouffleScript {
 
 			def ignoreCounter = 0
 			compilationTime = Helper.timing {
-				executor.execute(compilationCommand) { String line ->
+				Path tmpFile = Files.createTempFile("", "")
+				executor.executeWithRedirectedOutput(compilationCommand, tmpFile.toFile()) { String line ->
 					if (ignoreCounter != 0) ignoreCounter--
 					else if (line.startsWith("Warning: No rules/facts defined for relation") ||
 							line.startsWith("Warning: Deprecated output qualifier was used")) {
@@ -64,6 +66,7 @@ class SouffleScript {
 					} else if (line.startsWith("Warning: Record types in output relations are not printed verbatim")) ignoreCounter = 2
 					else log.info line
 				}
+				Files.delete(tmpFile)
 			}
 
 			try {
