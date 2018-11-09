@@ -40,7 +40,7 @@ class SoufflePythonAnalysis extends DoopAnalysis{
         def cacheDir = new File(Doop.souffleAnalysesCache, name)
         cacheDir.mkdirs()
         def script = new SouffleScript(executor)
-        def generatedFile = script.compile(analysis, outDir, cacheDir,
+        /*def generatedFile = script.compile(analysis, outDir, cacheDir,
                 options.SOUFFLE_PROFILE.value as boolean,
                 options.SOUFFLE_DEBUG.value as boolean,
                 options.X_FORCE_RECOMPILE.value as boolean,
@@ -49,7 +49,12 @@ class SoufflePythonAnalysis extends DoopAnalysis{
         script.run(generatedFile, factsDir, outDir,
                 options.SOUFFLE_JOBS.value as int,
                 (options.X_MONITORING_INTERVAL.value as long) * 1000,
-                monitorClosure)
+                monitorClosure)*/
+
+        script.interpretScript(analysis,outDir,factsDir,
+                options.SOUFFLE_PROFILE.value as boolean,
+                options.SOUFFLE_DEBUG.value as boolean,
+                options.X_CONTEXT_REMOVER.value as boolean)
 
 
         int dbSize = (sizeOfDirectory(database) / 1024).intValue()
