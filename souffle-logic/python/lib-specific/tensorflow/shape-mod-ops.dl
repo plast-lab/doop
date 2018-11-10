@@ -318,6 +318,34 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, "<num-constant(int):
 //                                              TRANSPOSE OP
 //----------------------------------------------------------------------------------------------------------------------
 
+.decl TransposeOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?transposeOpVal:Value)
+.output TransposeOp
+
+.decl TransposeOpShapeListLengths(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?transposeOpVal:Value, ?tensorShapeListLength:number, ?permutationListLen:number)
+.output TransposeOpShapeListLengths
+
+.decl ValidTransposeOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?transposeOpVal:Value, ?len:number)
+.output ValidTransposeOp
+
+TensorOperation_GetDTypeFromName(?ctx, ?insn, ?transposeOpVal, "a"),
+TensorOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
+TensorOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
+TransposeOp(?ctx, ?insn, ?transposeOpVal):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.transpose>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.transpose>", "a", ?tensorHctx, ?tensorArgVal),
+  ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.transpose>", "perm", ?permListHctx, ?perList),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?transposeOpVal = ReshapeValueMacro("set_shape", ?fun, ?index, ?tensorArgVal, ?perList).
+
+ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, ?len):-
+  TransposeOp(?ctx, ?insn, ?transposeOpVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
+  Value_Type(?tensorArgVal, "<tensorflow.Tensor>"),
+  TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len),
+  TensorOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
+  ListOfIntConsts(?permListHctx, ?perList),
+  ListOfConstsLength(?permListHctx, ?perList, ?len).
 
 //----------------------------------------------------------------------------------------------------------------------
 //                                              SET SHAPE OP
@@ -344,6 +372,8 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, "<num-constant(int):
 .decl SetShapeOpInvalid(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?setShapeOpVal:Value)
 .output SetShapeOpInvalid
 
+.decl SetShapeOpSameListLen(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?setShapeOpVal:Value)
+.output SetShapeOpSameListLen
 
 
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?setShapeOpVal, "self"),
@@ -413,3 +443,28 @@ TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
   AssignInstruction_To(?insn, ?var),
   VarPointsTo(?hctx, ?setShapeOpVal, ?ctx, ?var),
   TensorShape(?hctx, ?setShapeOpVal, ?shapeHctx, ?tensorShapeVal).
+
+SetShapeOpSameListLen(?ctx, ?insn, ?setShapeOpVal):-
+  SetShapeOpShapeListLengths(?ctx, ?insn, ?setShapeOpVal, ?len, ?len).
+
+//NOTE: This is hacky but I couldn't think of a better way to do it.
+//Basically transfer the result of the set_shape operation to all vars pointing to the original tensor value.
+//Under the same context, could change it to under any contexts, probably more correct
+#if(0)
+VarPointsTo(?hctx, ?setShapeOpVal, ?otherCtx, ?var):-
+  SetShapeOpSameListLen(?ctx, ?insn, ?setShapeOpVal),
+  TensorOperationProducesOutput(?ctx, ?insn, ?setShapeOpVal),
+  AssignInstruction_To(?insn, ?myVar),
+  VarPointsTo(?hctx, ?setShapeOpVal, ?ctx, ?myVar),
+  TensorOperation_NameToVal(?ctx, ?insn, ?setShapeOpVal, "self", ?tensorHctx, ?tensorArgVal),
+  VarPointsTo(?tensorHctx, ?tensorArgVal, ?otherCtx, ?var).
+
+#endif
+
+TensorShape(?tensorHctx, ?tensorArgVal, ?newShapeHctx, ?newShape):-
+  SetShapeOpSameListLen(?ctx, ?insn, ?setShapeOpVal),
+  TensorOperationProducesOutput(?ctx, ?insn, ?setShapeOpVal),
+  AssignInstruction_To(?insn, ?myVar),
+  VarPointsTo(?hctx, ?setShapeOpVal, ?ctx, ?myVar),
+  TensorOperation_NameToVal(?ctx, ?insn, ?setShapeOpVal, "self", ?tensorHctx, ?tensorArgVal),
+  TensorShape(?hctx, ?setShapeOpVal, ?newShapeHctx, ?newShape).

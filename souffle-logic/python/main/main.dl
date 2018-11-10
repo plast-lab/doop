@@ -23,6 +23,7 @@
   #include "../lib-specific/tensorflow/arithmetic-ops.dl"
   #include "../lib-specific/tensorflow/pooling-conv-ops.dl"
   #include "../lib-specific/tensorflow/shape-pass-through-ops.dl"
+  #include "../lib-specific/tensorflow/keras.dl"
   #include "../lib-specific/numpy.dl"
 
   /**

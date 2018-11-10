@@ -72,6 +72,10 @@ FormalParam( 0, "tensor", "<tensorflow.reshape>", "<tensorflow.reshape>/mockPara
 FormalParam( 1, "shape", "<tensorflow.reshape>",  "<tensorflow.reshape>/mockParam2").
 FormalParam( 2, "name", "<tensorflow.reshape>",   "<tensorflow.reshape>/mockParam3").
 
+ModeledFunction("<tensorflow.transpose>", "transpose", "<tensorflow>").
+FormalParam( 0, "a", "<tensorflow.transpose>", "<tensorflow.transpose>/mockParam1").
+FormalParam( 1, "perm", "<tensorflow.transpose>",  "<tensorflow.transpose>/mockParam2").
+
 ModeledFunction("<tensorflow.expand_dims>", "expand_dims", "<tensorflow>").
 FormalParam( 0, "input", "<tensorflow.expand_dims>", "<tensorflow.expand_dims>/mockParam1").
 FormalParam( 1, "axis", "<tensorflow.expand_dims>",  "<tensorflow.expand_dims>/mockParam2").
@@ -327,3 +331,19 @@ FormalParam( 4, "adjoint_a", "<tensorflow.matmul>", "<tensorflow.matmul>/mockPar
 FormalParam( 5, "adjoint_b", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam6").
 FormalParam( 6, "a_is_sparse", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam7").
 FormalParam( 6, "b_is_sparse", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam8").
+
+
+ModeledModule("<tensorflow.contrib>", "contrib", "<tensorflow>").
+ModeledModule("<tensorflow.contrib.keras>", "keras", "<tensorflow.contrib>").
+ModeledModule("<tensorflow.contrib.keras.api>", "api", "<tensorflow.contrib.keras>").
+ModeledModule("<tensorflow.contrib.keras.api.keras>", "keras", "<tensorflow.contrib.keras.api>").
+ModeledModule("<tensorflow.contrib.keras.api.keras.preprocessing>", "preprocessing", "<tensorflow.contrib.keras.api.keras>").
+ModeledModule("<tensorflow.contrib.keras.api.keras.preprocessing.image>", "image", "<tensorflow.contrib.keras.api.keras.preprocessing>").
+
+ModeledFunction("<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>", "load_img", "<tensorflow.contrib.keras.api.keras.preprocessing.image>").
+
+FormalParam( 0, "path", "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>", "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>/mockParam1").
+FormalParam( 1, "target_size", "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>", "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>/mockParam2").
+
+ModeledFunction("<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>", "img_to_array", "<tensorflow.contrib.keras.api.keras.preprocessing.image>").
+FormalParam( 0, "image", "<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>", "<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>/mockParam1").
