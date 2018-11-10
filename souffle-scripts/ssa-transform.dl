@@ -225,6 +225,19 @@ ExistsLocalDef(?block, ?original) :-
 .decl BBOutDefs(?block:symbol, ?def:symbol)
 .output BBOutDefs
 
+.decl BasicBlockOutDefs(?block:symbol, ?ssa_var:symbol, ?origin:symbol)
+.output BasicBlockOutDefs
+
+BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
+    BasicBlockTail(?block, ?end),
+    !SSA_AssignToOriginal(?end, ?origin),
+    ReachingDef(?end, ?ssa_var, ?origin).
+
+BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
+    BasicBlockTail(?block, ?end),
+    SSA_Alias(?ssa_var, ?origin),
+    SSA_AssignDetails(?end, _, _, ?ssa_var, _).
+
 BBOutDefs(?block, ?def) :-
     BBLocalOutDefs(?block, ?def).
 
@@ -253,11 +266,22 @@ isNonTrivialPhi(?block, ?var) :-
 // Helper predicate that achieves the core logic for the non trivial phi predicate.
 .decl ExistTwoDifferentPredDefs(?block:symbol, ?phi_name:symbol)
 
+// Refactored, doesnt compile
+//ExistTwoDifferentPredDefs(?block, ?phi_name) :-
+//    MayPredecessorBBModuloThrow(?pred1, ?block),
+//    MayPredecessorBBModuloThrow(?pred2, ?block),
+//    ?pred1 != ?pred2,
+//    SSA_Alias(?phi_name, ?origin),
+//    BasicBlockOutDefs(?pred1, ?def_1, ?origin),
+//    BasicBlockOutDefs(?pred2, ?def_2, ?origin),
+//    ?def_1 != ?def_2.
+
+// Old
 ExistTwoDifferentPredDefs(?block, ?phi_name) :-
     MayPredecessorBBModuloThrow(?pred1, ?block),
     MayPredecessorBBModuloThrow(?pred2, ?block),
     ?pred1 != ?pred2,
-    SSA_Alias(?phi_name, ?original),
+    SSA_Alias(?phi_name, ?origin),
     BBOutDefs(?pred_1, ?def_1),
     BBOutDefs(?pred_2, ?def_2),
     SimilarDefs(?def_1, ?def_2),
@@ -284,6 +308,8 @@ SimilarOutDefs(?block, ?def, ?out_def) :-
 // Many PhiChunks in the same basic block, consist of a PhiHeader.
 .decl PhiHeader(?block:symbol)
 .output PhiHeader
+
+// TODO: Check validity/necessity of isNonTrivialPhi relation
 
 PhiChunk(?phi_var),
 PhiHeader(?dst_block),
@@ -432,12 +458,21 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
 // definition for origin in the Phi Header, then the reaching definition is in the
 // outwards defs of any of the predecessor basic blocks (the defs will all be the same,
 // otherwise there would be a Phi Assignment in the Phi header).
+
+// Old
 ReachingDef(?insn, ?ssa_var, ?origin) :-
     BasicBlockBegin(?insn),
     !ExistsDefInPhiHeader(?insn, _, ?origin),
-    SSA_Alias(?ssa_var, ?origin),
+    SSA_Alias(?saa_var, ?origin),
     MayPredecessorBBModuloThrow(?pred, ?insn),
     SimilarOutDefs(?pred, _, ?ssa_var).
+
+// Based on new
+//ReachingDef(?insn, ?ssa_var, ?origin) :-
+//    BasicBlockBegin(?insn),
+//    !ExistsDefInPhiHeader(?insn, _, ?origin),
+//    MayPredecessorBBModuloThrow(?pred, ?insn),
+//    BasicBlockOutDefs(?pred, ?ssa_var, ?origin).
 
 // If an instruction is not the first instruction in a basic block, and the previous
 // instuction is not an assignment with LHS an ssa rename of origin, then the reaching
