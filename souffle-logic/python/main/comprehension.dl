@@ -69,7 +69,7 @@ PyListDeducedShapeLength(?hctx, ?outVal, 1):-
   ListCompCallReturnVal(?callerCtx, ?invocation, ?tofunction, _, ?retVal),
   isConstantValue(?retVal).
 
-PyListDeducedShapeLength(?hctx, ?outVal, ?len):-
+PyListDeducedShapeLength(?hctx, ?outVal, ?len + 1):-
   ListCompProducesOutputWithHctx(?callerCtx, ?invocation, ?tofunction, ?hctx, ?outVal),
   ListCompCallReturnVal(?callerCtx, ?invocation, ?tofunction, ?retHctx, ?retVal),
   TensorLikeObjectShapeListLength(?retHctx, ?retVal, ?len).
