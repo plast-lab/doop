@@ -143,7 +143,7 @@ PlaceholderEvaluationOp(?ctx, ?insn, ?placeHolderEvalOp):-
   TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderOp),
   FeedDictArg(?feedDictHctx, ?feedDict),
   DictKeyForVal(?feedDictHctx, ?feedDict, ?placeHolderOp, ?argHctx, ?argVal),
-  ?placeHolderEvalOp = cat("<placeholderEval",cat(?placeHolderOp,?argVal)).
+  ?placeHolderEvalOp = cat("<placeholderEval",cat(?placeHolderOp, ?argVal)).
 
 PlaceholderEvaluationOpUnknownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp):-
   PlaceholderEvaluationOpInPlaceholderOp(?ctx, ?insn, ?placeHolderEvalOp, ?placeHolderOp),

@@ -62,6 +62,10 @@ ModeledMethod("<tensorflow.Tensor.set_shape>", "set_shape", "<tensorflow.Tensor>
 FormalParam( 0, "self", "<tensorflow.Tensor.set_shape>", "<tensorflow.Tensor.set_shape>/mockParam1").
 FormalParam( 1, "shape", "<tensorflow.Tensor.set_shape>",  "<tensorflow.Tensor.set_shape>/mockParam2").
 
+ModeledMethod("<tensorflow.Tensor.eval>", "eval", "<tensorflow.Tensor>", "<tensorflow>").
+FormalParam( 0, "self", "<tensorflow.Tensor.eval>", "<tensorflow.Tensor.eval>/mockParam1").
+FormalParam( 1, "feed_dict", "<tensorflow.Tensor.eval>",  "<tensorflow.Tensor.eval>/mockParam2").
+
 ModeledClass("<tensorflow.TensorShape>", "TensorShape", "<tensorflow>").
 
 ModeledModule("<tensorflow.layers>", "layers", "<tensorflow>").
@@ -311,6 +315,12 @@ FormalParam( 3, "dtype", ?function, cat(?function,"/mockParam2")):-
 ?function = "<tensorflow.random_uniform>".
 
 
+ModeledFunction("<tensorflow.equal>", "equal", "<tensorflow>").
+
+FormalParam( 0, "x", "<tensorflow.equal>", "<tensorflow.equal>/mockParam1").
+FormalParam( 1, "y", "<tensorflow.equal>", "<tensorflow.equal>/mockParam2").
+
+
 ModeledFunction("<tensorflow.add>", "add", "<tensorflow>").
 
 FormalParam( 0, "x", "<tensorflow.add>", "<tensorflow.add>/mockParam1").
@@ -347,3 +357,9 @@ FormalParam( 1, "target_size", "<tensorflow.contrib.keras.api.keras.preprocessin
 
 ModeledFunction("<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>", "img_to_array", "<tensorflow.contrib.keras.api.keras.preprocessing.image>").
 FormalParam( 0, "image", "<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>", "<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>/mockParam1").
+
+ModeledFunction("<tensorflow.nn.embedding_lookup>", "embedding_lookup", "<tensorflow.nn>").
+FormalParam( 0, "params", "<tensorflow.nn.embedding_lookup>", "<tensorflow.nn.embedding_lookup>/mockParam1").
+FormalParam( 1, "ids", "<tensorflow.nn.embedding_lookup>", "<tensorflow.nn.embedding_lookup>/mockParam2").
+
+ModeledFunction("<tensorflow.reduce_mean>", "reduce_mean", "<tensorflow>").

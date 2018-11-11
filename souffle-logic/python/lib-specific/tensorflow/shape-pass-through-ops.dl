@@ -19,6 +19,7 @@ ShapePassThroughFunction("<tensorflow.nn.tanh>", "tanh" , "<tensorflow.nn>", "x"
 
 ShapePassThroughFunction("<tensorflow.identity>", "identity" , "<tensorflow>", "input").
 ShapePassThroughFunction("<tensorflow.log>", "log" , "<tensorflow>", "x").
+ShapePassThroughFunction("<tensorflow.cast>", "cast" , "<tensorflow>", "x"). //WARNING!!!!!!!!!!! THIS IS NOT CORRECT REGARDING THE DTYPE. TODO: FIX THIS
 
 FormalParam(0, ?argName, ?function, cat(?function,"/mockParam1")),
 ModeledFunction(?function, ?name, ?declModule):-

@@ -24,6 +24,7 @@
   #include "../lib-specific/tensorflow/pooling-conv-ops.dl"
   #include "../lib-specific/tensorflow/shape-pass-through-ops.dl"
   #include "../lib-specific/tensorflow/keras.dl"
+  #include "../lib-specific/tensorflow/uncategorized-ops.dl"
   #include "../lib-specific/numpy.dl"
 
   /**
