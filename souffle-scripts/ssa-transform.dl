@@ -217,6 +217,15 @@ BBLocalOutDefs(?block, ?def) :-
     SSA_AssignDetails(?assgn, ?original, _, ?def, _),
     !BBFollowsSimilarDef(?block, ?assgn, ?original).
 
+BBLocalOutDefs(?block, ?def) :-
+    BasicBlockBegin(?block),
+    Instruction_Index(?block, 1),
+    Instruction_Method(?block, ?method),
+    (SSA_FormalParam(_, ?method, ?def);
+    SSA_ThisVar(?method, ?def)),
+    SSA_Alias(?def, ?origin),
+    !ContainsAssignment(?block, ?origin).
+
 .decl ExistsLocalDef(?block:symbol, ?def:symbol)
 ExistsLocalDef(?block, ?original) :-
     BBLocalOutDefs(?block, ?def),
