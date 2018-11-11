@@ -100,54 +100,124 @@ TensorEvalFeedDictArg(?feedDictHctx, ?feedDict):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.Tensor.eval>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.Tensor.eval>", "feed_dict", ?feedDictHctx, ?feedDict).
 
-.decl PlaceholderEvaluationOperation(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value)
-.output PlaceholderEvaluationOperation
+.decl PlaceholderEvaluationOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value)
+.output PlaceholderEvaluationOp
 
-.decl PlaceholderEvaluationOperationUnknownPlaceholderShape(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value)
-.output PlaceholderEvaluationOperationUnknownPlaceholderShape
+.decl PlaceholderEvaluationOpUnknownPlaceholderShape(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value)
+.output PlaceholderEvaluationOpUnknownPlaceholderShape
 
-.decl PlaceholderEvaluationOperationKnownPlaceholderShape(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value)
-.output PlaceholderEvaluationOperationKnownPlaceholderShape
+.decl PlaceholderEvaluationOpKnownPlaceholderShape(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value)
+.output PlaceholderEvaluationOpKnownPlaceholderShape
 
-.decl PlaceholderEvaluationOperationEvalArg(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value, ?argHctx:configuration.HContext, ?argVal:Value)
-.output PlaceholderEvaluationOperationEvalArg
+.decl PlaceholderEvaluationOpKnownPlaceholderShapeLenForLen(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value, ?len1:number, ?len2:number)
+.output PlaceholderEvaluationOpKnownPlaceholderShapeLenForLen
 
-.decl PlaceholderEvaluationOperationInPlaceholderOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value, ?placeHolderOp:Value)
-.output PlaceholderEvaluationOperationInPlaceholderOp
+.decl PlaceholderEvaluationOpKnownPlaceholderShapeValid(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value)
+.output PlaceholderEvaluationOpKnownPlaceholderShapeValid
 
-PlaceholderEvaluationOperationInPlaceholderOp(?ctx, ?insn, ?placeHolderEvalOp, ?placeHolderOp),
-PlaceholderEvaluationOperationEvalArg(?ctx, ?insn, ?placeHolderEvalOp, ?argHctx, ?argVal),
-PlaceholderEvaluationOperation(?ctx, ?insn, ?placeHolderEvalOp):-
+.decl PlaceholderEvaluationOpKnownPlaceholderShapeInvalid(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value)
+.output PlaceholderEvaluationOpKnownPlaceholderShapeInvalid
+
+.decl PlaceholderEvaluationOpKnownPlaceholderShapeValidUpToDim(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value, ?dim:number)
+.output PlaceholderEvaluationOpKnownPlaceholderShapeValidUpToDim
+
+.decl PlaceholderEvaluationOpKnownPlaceholderShapeDimForDim(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value, ?dim:number, ?inTensorDimVal:Value, ?shapeListDimVal:Value)
+.output PlaceholderEvaluationOpKnownPlaceholderShapeDimForDim
+
+.decl PlaceholderEvaluationOpKnownPlaceholderShapeValidForDim(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value, ?dim:number, ?dimVal:Value)
+.output PlaceholderEvaluationOpKnownPlaceholderShapeValidForDim
+
+.decl PlaceholderEvaluationOpKnownPlaceholderShapeInvalidForDim(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value, ?dim:number)
+.output PlaceholderEvaluationOpKnownPlaceholderShapeInvalidForDim
+
+.decl PlaceholderEvaluationOpEvalArg(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value, ?argHctx:configuration.HContext, ?argVal:Value)
+.output PlaceholderEvaluationOpEvalArg
+
+.decl PlaceholderEvaluationOpInPlaceholderOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderEvalOp:Value, ?placeHolderOp:Value)
+.output PlaceholderEvaluationOpInPlaceholderOp
+
+PlaceholderEvaluationOpInPlaceholderOp(?ctx, ?insn, ?placeHolderEvalOp, ?placeHolderOp),
+PlaceholderEvaluationOpEvalArg(?ctx, ?insn, ?placeHolderEvalOp, ?argHctx, ?argVal),
+PlaceholderEvaluationOp(?ctx, ?insn, ?placeHolderEvalOp):-
   PlaceholderOperation(?ctx, ?insn, ?placeHolderOp),
   TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderOp),
   FeedDictArg(?feedDictHctx, ?feedDict),
   DictKeyForVal(?feedDictHctx, ?feedDict, ?placeHolderOp, ?argHctx, ?argVal),
   ?placeHolderEvalOp = cat("<placeholderEval",cat(?placeHolderOp,?argVal)).
 
-PlaceholderEvaluationOperationUnknownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp):-
-  PlaceholderEvaluationOperationInPlaceholderOp(?ctx, ?insn, ?placeHolderEvalOp, ?placeHolderOp),
+PlaceholderEvaluationOpUnknownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp):-
+  PlaceholderEvaluationOpInPlaceholderOp(?ctx, ?insn, ?placeHolderEvalOp, ?placeHolderOp),
   PlaceholderOperationUnknownShape(?ctx, ?insn, ?placeHolderOp).
 
-PlaceholderEvaluationOperationKnownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp):-
-  PlaceholderEvaluationOperationInPlaceholderOp(?ctx, ?insn, ?placeHolderEvalOp, ?placeHolderOp),
+PlaceholderEvaluationOpKnownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp):-
+  PlaceholderEvaluationOpInPlaceholderOp(?ctx, ?insn, ?placeHolderEvalOp, ?placeHolderOp),
   PlaceholderOperationKnownShape(?ctx, ?insn, ?placeHolderOp).
 
 TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderEvalOp):-
-  PlaceholderEvaluationOperationUnknownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp),
-  PlaceholderEvaluationOperationEvalArg(?ctx, ?insn, ?placeHolderEvalOp, _, ?argVal),
+  PlaceholderEvaluationOpUnknownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp),
+  PlaceholderEvaluationOpEvalArg(?ctx, ?insn, ?placeHolderEvalOp, _, ?argVal),
   isTensorLikeObject(?argVal).
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len),
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
-  PlaceholderEvaluationOperationUnknownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp),
+  PlaceholderEvaluationOpUnknownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp),
   TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderEvalOp),
   AssignInstruction_To(?insn, ?var),
   VarPointsTo(?hctx, ?placeHolderEvalOp, ?ctx, ?var),
   TensorShape(?hctx, ?placeHolderEvalOp, ?shapeHctx, ?tensorShapeVal),
-  PlaceholderEvaluationOperationEvalArg(?ctx, ?insn, ?placeHolderEvalOp, ?argHctx, ?argVal),
+  PlaceholderEvaluationOpEvalArg(?ctx, ?insn, ?placeHolderEvalOp, ?argHctx, ?argVal),
   TensorLikeObjectShapeListContent(?argHctx, ?argVal, ?index, ?indexVal),
   TensorLikeObjectShapeListLength(?argHctx, ?argVal, ?len).
 
+
+PlaceholderEvaluationOpKnownPlaceholderShapeDimForDim(?ctx, ?insn, ?placeHolderEvalOp, ?index, ?tensorDimVal, ?inShapeDimVal):-
+  PlaceholderEvaluationOpKnownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp),
+  PlaceholderEvaluationOpInPlaceholderOp(?ctx, ?insn, ?placeHolderEvalOp, ?placeHolderOp),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?placeHolderOp, ?ctx, ?var),
+  TensorLikeObjectShapeListContent(?hctx, ?placeHolderOp, ?index, ?tensorDimVal),
+  PlaceholderEvaluationOpEvalArg(?ctx, ?insn, ?placeHolderEvalOp, ?argHctx, ?argVal),
+  TensorLikeObjectShapeListContent(?argHctx, ?argVal, ?index, ?inShapeDimVal).
+
+PlaceholderEvaluationOpKnownPlaceholderShapeLenForLen(?ctx, ?insn, ?placeHolderEvalOp, ?inTensorLen, ?inShapeLen):-
+  PlaceholderEvaluationOpKnownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp),
+  PlaceholderEvaluationOpInPlaceholderOp(?ctx, ?insn, ?placeHolderEvalOp, ?placeHolderOp),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?placeHolderOp, ?ctx, ?var),
+  TensorLikeObjectShapeListLength(?hctx, ?placeHolderOp, ?inTensorLen),
+  PlaceholderEvaluationOpEvalArg(?ctx, ?insn, ?placeHolderEvalOp, ?argHctx, ?argVal),
+  TensorLikeObjectShapeListLength(?argHctx, ?argVal, ?inShapeLen).
+
+PlaceholderEvaluationOpKnownPlaceholderShapeInvalid(?ctx, ?insn, ?placeHolderEvalOp):-
+  PlaceholderEvaluationOpKnownPlaceholderShapeLenForLen(?ctx, ?insn, ?placeHolderEvalOp, ?len1, ?len2),
+  ?len1 != ?len2.
+
+PlaceholderEvaluationOpKnownPlaceholderShapeInvalid(?ctx, ?insn, ?placeHolderEvalOp):-
+  PlaceholderEvaluationOpKnownPlaceholderShapeInvalidForDim(?ctx, ?insn, ?placeHolderEvalOp, _).
+
+
+PlaceholderEvaluationOpKnownPlaceholderShapeValid(?ctx, ?insn, ?placeHolderEvalOp):-
+  PlaceholderEvaluationOpKnownPlaceholderShapeLenForLen(?ctx, ?insn, ?placeHolderEvalOp, ?len, ?len),
+  PlaceholderEvaluationOpKnownPlaceholderShapeValidUpToDim(?ctx, ?insn, ?placeHolderEvalOp, ?len - 1).
+
+PlaceholderEvaluationOpKnownPlaceholderShapeValidUpToDim(?ctx, ?insn, ?placeHolderEvalOp, ?index):-
+  PlaceholderEvaluationOpKnownPlaceholderShapeValidUpToDim(?ctx, ?insn, ?placeHolderEvalOp, ?index - 1),
+  PlaceholderEvaluationOpKnownPlaceholderShapeValidForDim(?ctx, ?insn, ?placeHolderEvalOp, ?index, _).
+
+PlaceholderEvaluationOpKnownPlaceholderShapeValidUpToDim(?ctx, ?insn, ?placeHolderEvalOp, 0):-
+  PlaceholderEvaluationOpKnownPlaceholderShapeValidForDim(?ctx, ?insn, ?placeHolderEvalOp, 0, _).
+
+PlaceholderEvaluationOpKnownPlaceholderShapeValidForDim(?ctx, ?insn, ?placeHolderEvalOp, ?index, ?tensorDimVal):-
+  PlaceholderEvaluationOpKnownPlaceholderShapeDimForDim(?ctx, ?insn, ?placeHolderEvalOp, ?index, ?tensorDimVal, ?inShapeDimVal),
+  ?tensorDimVal = ?inShapeDimVal.
+
+PlaceholderEvaluationOpKnownPlaceholderShapeValidForDim(?ctx, ?insn, ?placeHolderEvalOp, ?index, ?inShapeDimVal):-
+  PlaceholderEvaluationOpKnownPlaceholderShapeDimForDim(?ctx, ?insn, ?placeHolderEvalOp, ?index, "<None>", ?inShapeDimVal).
+
+PlaceholderEvaluationOpKnownPlaceholderShapeInvalidForDim(?ctx, ?insn, ?placeHolderEvalOp, ?index):-
+  PlaceholderEvaluationOpKnownPlaceholderShapeDimForDim(?ctx, ?insn, ?placeHolderEvalOp, ?index, ?tensorDimVal, ?inShapeDimVal),
+  ?tensorDimVal != "<None>",
+  ?tensorDimVal != ?inShapeDimVal.
 //----------------------------------------------------------------------------------------------------------------------
 //                                          ZEROS AND ONES
 //----------------------------------------------------------------------------------------------------------------------

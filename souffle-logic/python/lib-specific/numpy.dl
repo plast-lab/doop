@@ -13,6 +13,14 @@ VarPointsTo(?hctx, "<None>", ?ctx, "<numpy>/noneDefVar"):-
 ModeledFunction("<numpy.array>", "array", "<numpy>").
 FormalParam( 0, "object", "<numpy.array>", "<numpy.array>/mockParam1").
 
+ModeledFunction("<numpy.transpose>", "transpose", "<numpy>").
+FormalParam( 0, "a", "<numpy.transpose>", "<numpy.transpose>/mockParam1").
+FormalParam( 1, "axes", "<numpy.transpose>", "<numpy.transpose>/mockParam2").
+
+ModeledFunction("<numpy.expand_dims>", "expand_dims", "<numpy>").
+FormalParam( 0, "a", "<numpy.expand_dims>", "<numpy.expand_dims>/mockParam1").
+FormalParam( 1, "axis", "<numpy.expand_dims>", "<numpy.expand_dims>/mockParam2").
+
 ModeledFunction("<numpy.random.normal>", "normal", "<numpy.random>").
 FormalParam( 0, "loc", "<numpy.random.normal>", "<numpy.random.normal>/mockParam1").
 FormalParam( 1, "scale", "<numpy.random.normal>", "<numpy.random.normal>/mockParam2").
@@ -331,3 +339,108 @@ TensorLikeObjectToTensorDtype(?arrayHctx, ?npSubArrayOp, ?dtypeHctx, ?dtype):-
   NumpyGetSubArrayOpInArray(?ctx, ?insn, ?npSubArrayOp, ?inArrayHctx, ?inArray),
   NumPyOperationOutputHCtx(?ctx, ?insn, ?npSubArrayOp, ?arrayHctx),
   TensorLikeObjectToTensorDtype(?inArrayHctx, ?inArray, ?dtypeHctx, ?dtype).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              TRANSPOSE OP
+//----------------------------------------------------------------------------------------------------------------------
+
+//Some declarations are in tensorflow/shape-mod-ops.dl
+
+#define TwoInValMacro(op,fun, index, val1, val2) cat("<ndarray ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val1, cat("+", cat(val2, ">"))))))))
+
+NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
+NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
+TransposeOp(?ctx, ?insn, ?transposeOpVal):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.transpose>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.transpose>", "a", ?tensorHctx, ?tensorArgVal),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.transpose>", "axes", ?permListHctx, ?perList),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?transposeOpVal = TwoInValMacro("transpose", ?fun, ?index, ?tensorArgVal, ?perList).
+
+ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, ?len):-
+  TransposeOp(?ctx, ?insn, ?transposeOpVal),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
+  Value_Type(?tensorArgVal, "<numpy.ndarray>"),
+  TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
+  ListOfIntConsts(?permListHctx, ?perList),
+  ListOfConstsLength(?permListHctx, ?perList, ?len).
+
+TransposeOpOutputShapeListContent(?ctx, ?insn, ?transposeOpVal, ?index, ?indexVal):-
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, _),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
+  ListOfIntConstsAtIndexPointsTo(?permListHctx, ?perList, ?index, ?tensorIndexVal),
+  Value_Num(?tensorIndexVal, ?tensorIndexNumStr),
+  ?tensorIndex = to_number(?tensorIndexNumStr),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
+  TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?tensorIndex, ?indexVal).
+
+NumPyOperationProducesOutput(?ctx, ?insn, ?transposeOpVal):-
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, _).
+
+NumpyArrayShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, ?len),
+  NumPyOperationOutputShape(?ctx, ?insn, ?transposeOpVal, ?shapeHctx, ?tensorShapeVal).
+
+NumpyArrayShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, _),
+  NumPyOperationOutputShape(?ctx, ?insn, ?transposeOpVal, ?shapeHctx, ?tensorShapeVal),
+  TransposeOpOutputShapeListContent(?ctx, ?insn, ?transposeOpVal, ?index, ?indexVal).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              EXPAND DIMS OP
+//----------------------------------------------------------------------------------------------------------------------
+
+
+NumPyOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+NumPyOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "axis", ?axisHct, ?axis),
+ExpandDimsOp(?ctx, ?insn, ?expDimsVal):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.expand_dims>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.expand_dims>", "a", ?tensorHctx, ?tensorArgVal),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.expand_dims>", "axis", ?axisHct, ?axis),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?expDimsVal = TwoInValMacro("expandDims", ?fun, ?index, ?tensorArgVal, ?axis).
+
+ExpandDimsOpAxisNum(?ctx, ?insn, ?expDimsVal, ?axisNum):-
+  ExpandDimsOp(?ctx, ?insn, ?expDimsVal),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.expand_dims>", "axis", _, ?axis),
+  Value_Num(?axis, ?axisNumStr),
+  ?axisNum = to_number(?axisNumStr).
+
+ExpandDimsOpInTensorShapeLength(?ctx, ?insn, ?expDimsVal, ?len):-
+  ExpandDimsOp(?ctx, ?insn, ?expDimsVal),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+  TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len).
+
+NumPyOperationProducesOutput(?ctx, ?insn, ?expDimsVal):-
+  ExpandDimsValidAxisNum(?ctx, ?insn, ?expDimsVal).
+
+NumpyArrayShapeListLength(?shapeHctx, ?tensorShapeVal, ?len + 1):-
+  ExpandDimsOp(?ctx, ?insn, ?expDimsVal),
+  NumPyOperationOutputShape(?ctx, ?insn, ?expDimsVal, ?shapeHctx, ?tensorShapeVal),
+  ExpandDimsOpInTensorShapeLength(?ctx, ?insn, ?expDimsVal, ?len).
+
+NumpyArrayShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
+  ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
+  ?index < ?dim,
+  NumPyOperationOutputShape(?ctx, ?insn, ?expDimsVal, ?shapeHctx, ?tensorShapeVal),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+  TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?index, ?indexVal).
+
+NumpyArrayShapeListContent(?shapeHctx, ?tensorShapeVal, ?index + 1, ?indexVal):-
+  ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
+  ?index >= ?dim,
+  NumPyOperationOutputShape(?ctx, ?insn, ?expDimsVal, ?shapeHctx, ?tensorShapeVal),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+  TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?index, ?indexVal).
+
+
+Value_Num("<num-constant(int):1>", "1").
+NumpyArrayShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, "<num-constant(int):1>"):-
+  ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
+  ?index = ?dim,
+  NumPyOperationOutputShape(?ctx, ?insn, ?expDimsVal, ?shapeHctx, ?tensorShapeVal).

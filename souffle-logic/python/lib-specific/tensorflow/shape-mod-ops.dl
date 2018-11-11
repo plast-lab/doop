@@ -289,7 +289,7 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index + 1, ?indexVal):-
   ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
-  ?index > ?dim,
+  ?index >= ?dim,
   TensorOperationProducesOutput(?ctx, ?insn, ?expDimsVal),
   AssignInstruction_To(?insn, ?var),
   VarPointsTo(?hctx, ?expDimsVal, ?ctx, ?var),
@@ -327,6 +327,9 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, "<num-constant(int):
 .decl ValidTransposeOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?transposeOpVal:Value, ?len:number)
 .output ValidTransposeOp
 
+.decl TransposeOpOutputShapeListContent(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?transposeOpVal:Value, ?index:number, ?indexVal:Value)
+.output TransposeOpOutputShapeListContent
+
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?transposeOpVal, "a"),
 TensorOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
 TensorOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
@@ -336,7 +339,7 @@ TransposeOp(?ctx, ?insn, ?transposeOpVal):-
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.transpose>", "perm", ?permListHctx, ?perList),
   Instruction_Function(?insn, ?fun),
   Instruction_Index(?insn, ?index),
-  ?transposeOpVal = ReshapeValueMacro("set_shape", ?fun, ?index, ?tensorArgVal, ?perList).
+  ?transposeOpVal = ReshapeValueMacro("transpose", ?fun, ?index, ?tensorArgVal, ?perList).
 
 ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, ?len):-
   TransposeOp(?ctx, ?insn, ?transposeOpVal),
@@ -346,6 +349,34 @@ ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, ?len):-
   TensorOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
   ListOfIntConsts(?permListHctx, ?perList),
   ListOfConstsLength(?permListHctx, ?perList, ?len).
+
+TransposeOpOutputShapeListContent(?ctx, ?insn, ?transposeOpVal, ?index, ?indexVal):-
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, _),
+  TensorOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
+  ListOfIntConstsAtIndexPointsTo(?permListHctx, ?perList, ?index, ?tensorIndexVal),
+  Value_Num(?tensorIndexVal, ?tensorIndexNumStr),
+  ?tensorIndex = to_number(?tensorIndexNumStr),
+  TensorOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
+  TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?tensorIndex, ?indexVal).
+
+TensorOperationProducesOutput(?ctx, ?insn, ?transposeOpVal):-
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, _).
+
+TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
+  TensorOperationProducesOutput(?ctx, ?insn, ?transposeOpVal),
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, _),
+  TransposeOpOutputShapeListContent(?ctx, ?insn, ?transposeOpVal, ?index, ?indexVal),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?transposeOpVal, ?ctx, ?var),
+  TensorShape(?hctx, ?transposeOpVal, ?shapeHctx, ?tensorShapeVal).
+
+TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
+  TensorOperationProducesOutput(?ctx, ?insn, ?transposeOpVal),
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, ?len),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?transposeOpVal, ?ctx, ?var),
+  TensorShape(?hctx, ?transposeOpVal, ?shapeHctx, ?tensorShapeVal).
+
 
 //----------------------------------------------------------------------------------------------------------------------
 //                                              SET SHAPE OP
