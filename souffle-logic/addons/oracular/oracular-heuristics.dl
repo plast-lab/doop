@@ -28,11 +28,16 @@ InvocationPassesArguments(?invo) :-
 
 InvocationPassesArgumentsOrHasReturn(?invo) :-
   InvocationPassesArguments(?invo);
-  (isMethodInvocation(?invo),
-   AssignReturnValue(?invo, ?ret),
-   Var_Type(?ret, ?type),
-   !isPrimitiveType(?type)).
-   
+  InvocationHasReturn(?invo).
+
+.decl InvocationHasReturn(?invo:MethodInvocation)
+
+InvocationHasReturn(?invo) :-
+  isMethodInvocation(?invo),
+  AssignReturnValue(?invo, ?ret),
+  Var_Type(?ret, ?type),
+  !isPrimitiveType(?type).
+ 
 .decl OutCalleeCountPerMethod(?method:Method, ?n:number)
 
 OutCalleeCountPerMethod(?method, Y) :-
