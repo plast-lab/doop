@@ -27,7 +27,7 @@ ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?interface) :-
    Reachable(?inMethod).
 
 // Record invokedynamic invocations whose bootstrap methods are not
-// handled at all.
+// handled at all. Used for statistics.
 .decl UnhandledInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?bootMethodId:symbol)
 
 UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
