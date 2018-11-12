@@ -59,6 +59,7 @@ OutCallerCountPerMethod(?tomethod, Y) :-
 InNeighborInCallGraph(?method, ?method, 1) :-
   MethodVPTCost(?method, _).
 
+//InCaller
 InNeighborInCallGraph(?method, ?neigh, ?weight) :-
   Stats_Simple_InsensCallGraphEdge(?invo, ?method),
   Instruction_Method(?invo, ?neigh),
@@ -67,19 +68,20 @@ InNeighborInCallGraph(?method, ?neigh, ?weight) :-
   OutCallerCountPerMethod(?neigh, ?n2),
   ?weight = ?n1 + ?n2.
 
-InNeighborInCallGraph(?neigh, ?method, ?weight) :-
+//InCallee
+InNeighborInCallGraph(?method, ?neigh, ?weight) :-
   Stats_Simple_InsensCallGraphEdge(?invo, ?neigh),
   Instruction_Method(?invo, ?method),
   InvocationPassesArguments(?invo),
   OutCalleeCountPerMethod(?neigh, ?n1),
   OutCallerCountPerMethod(?neigh, ?n2),
   ?weight = ?n1 + ?n2.
-                     
+
 .decl MethodVPTImpact(?method:Method, ?n:number)
       
 MethodVPTImpact(?method, Y) :-
   mainAnalysis.Reachable(?method),      
-  Y = sum ?n * 50 / ?weight: {InNeighborInCallGraph(?neigh, ?method, ?weight), MethodVPTCost(?neigh, ?n)}.
+  Y = sum ?n * 10 / ?weight: {InNeighborInCallGraph(?neigh, ?method, ?weight), MethodVPTCost(?neigh, ?n)}.
 
 // .decl CountObjectPointsToThroughField(?basevalue:mainAnalysis.Value, ?basehctx:mainAnalysis.configuration.HContext, ?n:number)
       
