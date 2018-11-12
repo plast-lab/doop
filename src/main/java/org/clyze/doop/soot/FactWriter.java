@@ -27,6 +27,7 @@ class FactWriter extends JavaFactWriter {
     private final Representation _rep;
     private final Map<String, Type> _varTypeMap = new ConcurrentHashMap<>();
     private final boolean _reportPhantoms;
+    private final Set<Object> seenPhantoms = new HashSet<>();
 
     FactWriter(Database db, Representation rep, boolean reportPhantoms) {
         super(db);
@@ -117,6 +118,8 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writePhantomType(Type t) {
+        if (_reportPhantoms)
+            System.out.println("Type " + t + " is phantom.");
         writePhantomType(writeType(t));
     }
 
@@ -998,4 +1001,11 @@ class FactWriter extends JavaFactWriter {
         writePreliminaryFacts(java, sootParameters);
     }
 
+    boolean checkAndRegisterPhantom(Object phantom) {
+        if (seenPhantoms.contains(phantom))
+            return true;
+
+        seenPhantoms.add(phantom);
+        return false;
+    }
 }
