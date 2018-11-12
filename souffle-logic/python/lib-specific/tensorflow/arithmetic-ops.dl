@@ -127,7 +127,7 @@ TfBroadcastingOpResultShapeListContent(?ctx, ?insn, ?broadcastingOp, ?index, ?in
   (
   (?indexVal1 = "<num-constant(int):1>", ?indexVal = ?indexVal2)
   ;
-  (?indexVal2 = "<num-constant(int):1>", ?indexVal = ?indexVal2)
+  (?indexVal2 = "<num-constant(int):1>", ?indexVal = ?indexVal1)
   ).
 
 TfBroadcastingOpCannotBroadcast(?ctx, ?insn, ?broadcastingOp):-
