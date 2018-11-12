@@ -62,8 +62,8 @@ InNeighborInCallGraph(?method, ?method, 1) :-
 //InCaller
 InNeighborInCallGraph(?method, ?neigh, ?weight) :-
   Stats_Simple_InsensCallGraphEdge(?invo, ?method),
-  Instruction_Method(?invo, ?neigh),
   InvocationPassesArgumentsOrHasReturn(?invo),
+  Instruction_Method(?invo, ?neigh),
   OutCalleeCountPerMethod(?neigh, ?n1),
   OutCallerCountPerMethod(?neigh, ?n2),
   ?weight = ?n1 + ?n2.
@@ -71,8 +71,8 @@ InNeighborInCallGraph(?method, ?neigh, ?weight) :-
 //InCallee
 InNeighborInCallGraph(?method, ?neigh, ?weight) :-
   Stats_Simple_InsensCallGraphEdge(?invo, ?neigh),
-  Instruction_Method(?invo, ?method),
   InvocationPassesArguments(?invo),
+  Instruction_Method(?invo, ?method),
   OutCalleeCountPerMethod(?neigh, ?n1),
   OutCallerCountPerMethod(?neigh, ?n2),
   ?weight = ?n1 + ?n2.
