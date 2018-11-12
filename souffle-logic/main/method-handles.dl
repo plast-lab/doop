@@ -121,9 +121,9 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 // A helper filtering relation for metafactory bootstrap calls.
 
 .decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
-InvokedynamicMetafactoryCallGraphEdge(?ctx, ?invokedynamic, ?ctx, ?metafactory) :-
+InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory) :-
    ReachableLambdaMetafactoryInvoke(?invokedynamic, _, _),
-   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?metafactory).
+   InvokedynamicBootCallGraphEdge(?callertCtx, ?invokedynamic, ?calleeCtx, ?metafactory).
 
 // Use a mock varargs array to fix calls to the alt metafactory.
 
