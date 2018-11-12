@@ -160,7 +160,7 @@ TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderEvalOp):-
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len),
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
-  PlaceholderEvaluationOpUnknownPlaceholderShape(?ctx, ?insn, ?placeHolderEvalOp),
+  PlaceholderEvaluationOp(?ctx, ?insn, ?placeHolderEvalOp),
   TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderEvalOp),
   AssignInstruction_To(?insn, ?var),
   VarPointsTo(?hctx, ?placeHolderEvalOp, ?ctx, ?var),
@@ -218,6 +218,11 @@ PlaceholderEvaluationOpKnownPlaceholderShapeInvalidForDim(?ctx, ?insn, ?placeHol
   PlaceholderEvaluationOpKnownPlaceholderShapeDimForDim(?ctx, ?insn, ?placeHolderEvalOp, ?index, ?tensorDimVal, ?inShapeDimVal),
   ?tensorDimVal != "<None>",
   ?tensorDimVal != ?inShapeDimVal.
+
+//EVALUATED TENSORS ALSO PRODUCE OUTPUT RIGHT NOW, INTRODUCES IMPRECISION
+TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderEvalOp):-
+  PlaceholderEvaluationOpKnownPlaceholderShapeValid(?ctx, ?insn, ?placeHolderEvalOp).
+
 //----------------------------------------------------------------------------------------------------------------------
 //                                          ZEROS AND ONES
 //----------------------------------------------------------------------------------------------------------------------

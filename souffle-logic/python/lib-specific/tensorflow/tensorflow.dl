@@ -363,3 +363,21 @@ FormalParam( 0, "params", "<tensorflow.nn.embedding_lookup>", "<tensorflow.nn.em
 FormalParam( 1, "ids", "<tensorflow.nn.embedding_lookup>", "<tensorflow.nn.embedding_lookup>/mockParam2").
 
 ModeledFunction("<tensorflow.reduce_mean>", "reduce_mean", "<tensorflow>").
+
+
+ModeledFunction("<tensorflow.nn.softmax_cross_entropy_with_logits>", "softmax_cross_entropy_with_logits", "<tensorflow.nn>").
+FormalParam( 0, "_sentinel", "<tensorflow.nn.softmax_cross_entropy_with_logits>", "<tensorflow.nn.softmax_cross_entropy_with_logits>/mockParam1").
+FormalParam( 1, "labels", "<tensorflow.nn.softmax_cross_entropy_with_logits>", "<tensorflow.nn.softmax_cross_entropy_with_logits>/mockParam2").
+FormalParam( 2, "logits", "<tensorflow.nn.softmax_cross_entropy_with_logits>", "<tensorflow.nn.softmax_cross_entropy_with_logits>/mockParam3").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits>", "_sentinel", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits>", "labels", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits>", "logits", "<tensorflow>/noneDefVar").
+
+
+ModeledFunction("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "softmax_cross_entropy_with_logits_v2", "<tensorflow.nn>").
+FormalParam( 0, "_sentinel", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>/mockParam1").
+FormalParam( 1, "labels", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>/mockParam2").
+FormalParam( 2, "logits", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>/mockParam3").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "_sentinel", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "labels", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "logits", "<tensorflow>/noneDefVar").
