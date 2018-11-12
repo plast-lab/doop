@@ -15,114 +15,136 @@ MethodVPTCost(?method, 0) :-
   mainAnalysis.Reachable(?method),
   !Var_DeclaringMethod(_, ?method).
 
-.decl CalleeCountPerMethod(?method:Method, ?n:number)
+.decl InvocationPassesArguments(?invo:MethodInvocation)
 
-CalleeCountPerMethod(?method, Y) :-
+InvocationPassesArguments(?invo) :-
+  isMethodInvocation(?invo),
+  ActualParam(?i, ?invo, ?arg),
+  ?i != 0,
+  Var_Type(?arg, ?type),
+  !isPrimitiveType(?type).
+
+.decl InvocationPassesArgumentsOrHasReturn(?invo:MethodInvocation)
+
+InvocationPassesArgumentsOrHasReturn(?invo) :-
+  InvocationPassesArguments(?invo);
+  (isMethodInvocation(?invo),
+   AssignReturnValue(?invo, ?ret),
+   Var_Type(?ret, ?type),
+   !isPrimitiveType(?type)).
+   
+.decl OutCalleeCountPerMethod(?method:Method, ?n:number)
+
+OutCalleeCountPerMethod(?method, Y) :-
   mainAnalysis.Reachable(?method),
   Y =  count : {Stats_Simple_InsensCallGraphEdge(?invo, _),
                 Instruction_Method(?invo, ?method),
-                ActualParam(1, ?invo, _)}.
+                InvocationPassesArgumentsOrHasReturn(?invo)}.
 
-.decl CallerCountPerMethod(?method:Method, ?n:number)
+.decl OutCallerCountPerMethod(?method:Method, ?n:number)
 
-CallerCountPerMethod(?tomethod, Y) :-
+OutCallerCountPerMethod(?tomethod, Y) :-
   mainAnalysis.Reachable(?tomethod),
   Y = count : {Stats_Simple_InsensCallGraphEdge(?invo, ?tomethod),
                Instruction_Method(?invo, _),
-               ActualParam(1, ?invo, _)}.
+               InvocationPassesArguments(?invo)}.
                              
-.decl NeighboringMethodsInCallGraph(?method:Method, ?neighbor:Method, ?weight:number)
+.decl InNeighborInCallGraph(?method:Method, ?neighbor:Method, ?weight:number)
 
-NeighboringMethodsInCallGraph(?method, ?method, 1) :-
-   MethodVPTCost(?method, _).
+InNeighborInCallGraph(?method, ?method, 1) :-
+  MethodVPTCost(?method, _).
 
-NeighboringMethodsInCallGraph(?method, ?neigh, ?weight) :-
+InNeighborInCallGraph(?method, ?neigh, ?weight) :-
   Stats_Simple_InsensCallGraphEdge(?invo, ?method),
   Instruction_Method(?invo, ?neigh),
-  FormalParam(1, ?method, _),
-  CalleeCountPerMethod(?neigh, ?weight).
+  InvocationPassesArgumentsOrHasReturn(?invo),
+  OutCalleeCountPerMethod(?neigh, ?n1),
+  OutCallerCountPerMethod(?neigh, ?n2),
+  ?weight = ?n1 + ?n2.
 
-NeighboringMethodsInCallGraph(?neigh, ?method, ?weight) :-
+InNeighborInCallGraph(?neigh, ?method, ?weight) :-
   Stats_Simple_InsensCallGraphEdge(?invo, ?neigh),
   Instruction_Method(?invo, ?method),
-  FormalParam(1, ?neigh, _), 
-  CallerCountPerMethod(?neigh, ?weight).
+  InvocationPassesArguments(?invo),
+  OutCalleeCountPerMethod(?neigh, ?n1),
+  OutCallerCountPerMethod(?neigh, ?n2),
+  ?weight = ?n1 + ?n2.
                      
 .decl MethodVPTImpact(?method:Method, ?n:number)
       
 MethodVPTImpact(?method, Y) :-
   mainAnalysis.Reachable(?method),      
-  Y = sum ?n * 10 / ?weight: { NeighboringMethodsInCallGraph(?neigh, ?method, ?weight), MethodVPTCost(?neigh, ?n) }.
+  Y = sum ?n * 50 / ?weight: {InNeighborInCallGraph(?neigh, ?method, ?weight), MethodVPTCost(?neigh, ?n)}.
 
-.decl CountObjectPointsToThroughField(?basevalue:mainAnalysis.Value, ?basehctx:mainAnalysis.configuration.HContext, ?n:number)
+// .decl CountObjectPointsToThroughField(?basevalue:mainAnalysis.Value, ?basehctx:mainAnalysis.configuration.HContext, ?n:number)
       
-CountObjectPointsToThroughField(?basevalue, ?basehctx, Y) :-
-  mainAnalysis.isValue(?basevalue),
-  mainAnalysis.isHContext(?basehctx),           
-  Y = count : {mainAnalysis.InstanceFieldPointsTo(_, _, _, ?basehctx, ?basevalue)}.
+// CountObjectPointsToThroughField(?basevalue, ?basehctx, Y) :-
+//   mainAnalysis.isValue(?basevalue),
+//   mainAnalysis.isHContext(?basehctx),           
+//   Y = count : {mainAnalysis.InstanceFieldPointsTo(_, _, _, ?basehctx, ?basevalue)}.
 
-.decl MethodWritesToObjectField(?method:Method, ?basevalue:mainAnalysis.Value)
+// .decl MethodWritesToObjectField(?method:Method, ?basevalue:mainAnalysis.Value)
 
-MethodWritesToObjectField(?method, ?basevalue) :-
-  Var_DeclaringMethod(?var, ?method),
-  mainAnalysis.VarPointsTo(_, ?basevalue, _, ?var),
-  StoreInstanceField_Base(?insn, ?var),
-  Instruction_Method(?insn, ?method).
+// MethodWritesToObjectField(?method, ?basevalue) :-
+//   Var_DeclaringMethod(?var, ?method),
+//   mainAnalysis.VarPointsTo(_, ?basevalue, _, ?var),
+//   StoreInstanceField_Base(?insn, ?var),
+//   Instruction_Method(?insn, ?method).
 
-.decl CountMethodsWriteToObjectField(?basevalue:mainAnalysis.Value, ?n:number)
+// .decl CountMethodsWriteToObjectField(?basevalue:mainAnalysis.Value, ?n:number)
 
-CountMethodsWriteToObjectField(?basevalue, Y) :-
-  mainAnalysis.isValue(?basevalue),
-  Y = count : {MethodWritesToObjectField(_, ?basevalue)}.
+// CountMethodsWriteToObjectField(?basevalue, Y) :-
+//   mainAnalysis.isValue(?basevalue),
+//   Y = count : {MethodWritesToObjectField(_, ?basevalue)}.
 
-.decl MethodIFPTImpact(?method:Method, ?n:number)
+// .decl MethodIFPTImpact(?method:Method, ?n:number)
 
-MethodIFPTImpact(?method, Y) :-
-  isMethod(?method),
-  Y = sum ?n * 10 / ?weight : {NeighboringMethodsInCallGraph(?neigh, ?method, ?weight),
-  Var_DeclaringMethod(?var, ?neigh),
-  mainAnalysis.VarPointsTo(?basehctx, ?basevalue, _, ?var),
-  CountObjectPointsToThroughField(?basevalue, ?basehctx, ?n1),
-  CountMethodsWriteToObjectField(?basevalue, ?n2),
-  ?n = ?n1/?n2,
-  ?n2 != 0}.  
+// MethodIFPTImpact(?method, Y) :-
+//   isMethod(?method),
+//   Y = sum ?n * 10 / ?weight : {NeighboringMethodsInCallGraph(?neigh, ?method, ?weight),
+//   Var_DeclaringMethod(?var, ?neigh),
+//   mainAnalysis.VarPointsTo(?basehctx, ?basevalue, _, ?var),
+//   CountObjectPointsToThroughField(?basevalue, ?basehctx, ?n1),
+//   CountMethodsWriteToObjectField(?basevalue, ?n2),
+//   ?n = ?n1/?n2,
+//   ?n2 != 0}.  
 
-.decl ReachableStoreStaticField(?from:Var, ?field:Field, ?method:Method)
+// .decl ReachableStoreStaticField(?from:Var, ?field:Field, ?method:Method)
 
-ReachableStoreStaticField(?var, ?field, ?method) :-
-  StoreStaticField(?var, ?field, ?method),
-  mainAnalysis.Reachable(?method).
+// ReachableStoreStaticField(?var, ?field, ?method) :-
+//   StoreStaticField(?var, ?field, ?method),
+//   mainAnalysis.Reachable(?method).
 
-.decl NumberOfMethodsStoringToStaticField(?field:Field, ?n:number)
+// .decl NumberOfMethodsStoringToStaticField(?field:Field, ?n:number)
       
-NumberOfMethodsStoringToStaticField(?field, Y) :-
-  isField(?field),
-  Y = count : {ReachableStoreStaticField(_, ?field, _)}.
+// NumberOfMethodsStoringToStaticField(?field, Y) :-
+//   isField(?field),
+//   Y = count : {ReachableStoreStaticField(_, ?field, _)}.
 
-.decl SFPTCountPerStaticField(?field:Field, Y:number)
+// .decl SFPTCountPerStaticField(?field:Field, Y:number)
 
-SFPTCountPerStaticField(?field, Y) :-
-  isField(?field),
-  Y =  count : {mainAnalysis.StaticFieldPointsTo(_, _, ?field)}.
+// SFPTCountPerStaticField(?field, Y) :-
+//   isField(?field),
+//   Y =  count : {mainAnalysis.StaticFieldPointsTo(_, _, ?field)}.
 
-.decl StaticFieldImpactPerMethod(?field:Field, ?n:number)
+// .decl StaticFieldImpactPerMethod(?field:Field, ?n:number)
 
-StaticFieldImpactPerMethod(?field, ?n) :-
-  SFPTCountPerStaticField(?field, ?sfptCount),
-  NumberOfMethodsStoringToStaticField(?field, ?numberOfMethods),
-  ?numberOfMethods != 0,
-  ?n = ?sfptCount/?numberOfMethods. 
+// StaticFieldImpactPerMethod(?field, ?n) :-
+//   SFPTCountPerStaticField(?field, ?sfptCount),
+//   NumberOfMethodsStoringToStaticField(?field, ?numberOfMethods),
+//   ?numberOfMethods != 0,
+//   ?n = ?sfptCount/?numberOfMethods. 
 
-.decl MethodSFPTImpact(?method:Method, ?n:number)
+// .decl MethodSFPTImpact(?method:Method, ?n:number)
                                          
-MethodSFPTImpact(?method, ?impact) :-
-  StoreStaticField(_, ?field, ?method),
-  StaticFieldImpactPerMethod(?field, ?n),
-  ?impact = ?n * 10.
+// MethodSFPTImpact(?method, ?impact) :-
+//   StoreStaticField(_, ?field, ?method),
+//   StaticFieldImpactPerMethod(?field, ?n),
+//   ?impact = ?n * 10.
 
-MethodSFPTImpact(?method, 0) :-
-  mainAnalysis.Reachable(?method),
-  !StoreStaticField(_, _, ?method).
+// MethodSFPTImpact(?method, 0) :-
+//   mainAnalysis.Reachable(?method),
+//   !StoreStaticField(_, _, ?method).
 
 .decl MethodWeight(?method:Method, ?n:number)
            

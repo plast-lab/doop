@@ -19,7 +19,8 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
 #endif
 
 CallGraphEdge(?callerCtx, ?invocation, ?immCtx, ?tomethod) :-
-  configuration.ContextRequest(?callerCtx, _, ?invocation, _, ?tomethod),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),   
   isImmutableContext(?immCtx),
   !ZipperPrecisionCriticalMethod(?tomethod).
 #ifndef X_CONTEXT_REMOVER
@@ -34,13 +35,12 @@ configuration.StaticContextRequest(?callerCtx, ?invocation) :-
 
 isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
-  configuration.StaticContextRequest(?callerCtx, ?invocation),
   configuration.StaticContextResponse(?callerCtx, ?invocation, ?calleeCtx),
   MethodInvocation_Method(?invocation, ?tomethod),
   ZipperPrecisionCriticalMethod(?tomethod).
 
 CallGraphEdge(?callerCtx, ?invocation, ?immCtx, ?tomethod) :-
-  configuration.StaticContextRequest(?callerCtx, ?invocation),
+  configuration.StaticContextResponse(?callerCtx, ?invocation, _),
   isImmutableContext(?immCtx),
   MethodInvocation_Method(?invocation, ?tomethod),
   !ZipperPrecisionCriticalMethod(?tomethod).
@@ -62,7 +62,6 @@ configuration.StaticContextRequest(?callerCtx, ?invocation) :-
 
 isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
-  configuration.StaticContextRequest(?callerCtx, ?invocation),
   configuration.StaticContextResponse(?callerCtx, ?invocation, ?calleeCtx),
   MethodInvocation_Method(?invocation, ?tomethod).
 
