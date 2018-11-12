@@ -123,7 +123,7 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 .decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
 InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory) :-
    ReachableLambdaMetafactoryInvoke(?invokedynamic, _, _),
-   InvokedynamicBootCallGraphEdge(?callertCtx, ?invokedynamic, ?calleeCtx, ?metafactory).
+   InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory).
 
 // Use a mock varargs array to fix calls to the alt metafactory.
 
