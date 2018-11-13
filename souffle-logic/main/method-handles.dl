@@ -5,6 +5,8 @@
 HeapAllocation_ContextInsensitive(?heap) :-
    isMethodHandleConstant(?heap).
 
+/****************** Generic invokedynamic ********************/
+
 /** Phase 1: Linkage (creating a CallSite) **/
 
 .decl InvokedynamicBootstrapCtx(?invokedynamic:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
@@ -17,6 +19,57 @@ ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType) :-
    DynamicMethodInvocation_DynName(?invokedynamic, ?dynName),
    DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
    ReachableContext(?ctx, ?inMethod).
+
+.decl InvokedynamicBootCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
+InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod) :-
+   ReachableInvokedynamic(?invokedynamic, _, _),
+   DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
+   isImmutableContext(?calleeCtx),
+   InvokedynamicBootstrapCtx(?invokedynamic, ?callerCtx).
+
+ReachableContext(?calleeCtx, ?bootMethod) :-
+   InvokedynamicBootCallGraphEdge(_, _, ?calleeCtx, ?bootMethod).
+
+// Pass arguments to bootstrap methods. First three arguments are
+// filled in by the JVM, so we fill them in with mock objects.
+
+#define MOCK_MH_LOOKUP "mock method handles lookup object"
+#define MOCK_MT(retType, paramTypes) cat("mock method type ", cat(retType, paramTypes))
+
+MockValueConsMacro(MOCK_MH_LOOKUP, "java.lang.invoke.MethodHandles$Lookup"),
+VarPointsTo(?hctx, MOCK_MH_LOOKUP, ?ctx, ?caller),
+MockValueConsMacro(?mockMethodType, "java.lang.invoke.MethodType"),
+VarPointsTo(?hctx, ?mockMethodType, ?ctx, ?invokedTypeParam) :-
+   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?bootMethod),
+   FormalParam(0, ?bootMethod, ?caller),
+   FormalParam(2, ?bootMethod, ?invokedTypeParam),
+   DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
+   DynamicMethodInvocation_DynParamTypes(?invokedynamic, ?dynParamTypes),
+   ?mockMethodType = MOCK_MT(?dynRetType, ?dynParamTypes),
+   isImmutableHContext(?hctx).
+
+// The second-arg rule should only be enabled when strings are not merged.
+#if defined(DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS) || defined(DISTINGUISH_ALL_STRING_CONSTANTS) || defined(NO_MERGES)
+VarPointsTo(?hctx, ?invokedName, ?ctx, ?invokedNameParam) :-
+   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?bootMethod),
+   isStringConstant(?invokedName),
+   FormalParam(1, ?bootMethod, ?invokedNameParam),
+   DynamicMethodInvocation_DynName(?invokedynamic, ?invokedName),
+   isImmutableHContext(?hctx).
+#endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS || DISTINGUISH_ALL_STRING_CONSTANTS || NO_MERGES
+
+// Normal handling for the last three arguments of the bootstrap method, shifted.
+VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
+   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?bootMethod),
+   !Method_Modifier("varargs", ?bootMethod),
+   FormalParam(?idx + 3, ?bootMethod, ?formal),
+   BootstrapParam(?idx, ?invokedynamic, ?actual),
+   VarPointsTo(_, ?val, _, ?actual),
+   isImmutableHContext(?hctx).
+
+/************** Lambda-specific invokedynamic ****************/
+
+/** Phase 1: Linkage (creating a lambda CallSite) **/
 
 #define LAMBDA_METAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
 
@@ -49,16 +102,20 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 .type CallSite = mainAnalysis.Value
 .decl isCallSite(?value:CallSite)
 .decl CallSite_Invokedynamic(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn)
+.decl CallSite_DynName(?callsite:CallSite, ?dynName:symbol)
 .decl CallSite_K(?callsite:CallSite, ?K:number)
+.decl CallSite_RetType(?callsite:CallSite, ?dynRetType:Type)
 
-.decl LambdaCallSite(?callsite:CallSite, ?dynName:symbol, ?dynRet:Type, ?implMethod:Method)
+.decl LambdaCallSite_ImplMethod(?callsite:CallSite, ?implMethod:Method)
 
 VarPointsTo(?hctx, ?callsite, ?ctx, ?var),
 MockValueConsMacro(?callsite, ?dynRetType),
 isCallSite(?callsite),
 CallSite_Invokedynamic(?callsite, ?invokedynamic),
+CallSite_DynName(?callsite, ?dynName),
 CallSite_K(?callsite, ?K),
-LambdaCallSite(?callsite, ?dynName, ?dynRetType, ?implMethod) :-
+CallSite_RetType(?callsite, ?dynRetType),
+LambdaCallSite_ImplMethod(?callsite, ?implMethod) :-
    ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType),
    DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
    BootstrapParam(1, ?invokedynamic, ?handleVar),
@@ -69,53 +126,6 @@ LambdaCallSite(?callsite, ?dynName, ?dynRetType, ?implMethod) :-
    Method_SimpleName(?implMethod, ?handleMeth),
    Method_DeclaringType(?implMethod, ?handleType),
    ?callsite = MOCK_LAMBDA_CALL_SITE(?invokedynamic, ?dynRetType, ?handleType, ?handleMeth, ?implMethod, ?dynName).
-
-.decl InvokedynamicBootCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
-InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod) :-
-   ReachableInvokedynamic(?invokedynamic, _, _),
-   DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
-   isImmutableContext(?calleeCtx),
-   InvokedynamicBootstrapCtx(?invokedynamic, ?callerCtx).
-
-ReachableContext(?calleeCtx, ?bootMethod) :-
-   InvokedynamicBootCallGraphEdge(_, _, ?calleeCtx, ?bootMethod).
-
-// Pass arguments to bootstrap methods. First three arguments are
-// filled in by the JVM, so we fill them in with mock objects.
-
-#define MOCK_MH_LOOKUP "mock method handles lookup object"
-#define MOCK_MT(retType, paramTypes) cat("mock method type ", cat(retType, paramTypes))
-
-MockValueConsMacro(MOCK_MH_LOOKUP, "java.lang.invoke.MethodHandles$Lookup"),
-VarPointsTo(?hctx, MOCK_MH_LOOKUP, ?ctx, ?caller),
-MockValueConsMacro(?mockMethodType, "java.lang.invoke.MethodType"),
-VarPointsTo(?hctx, ?mockMethodType, ?ctx, ?invokedTypeParam) :-
-   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?metafactory),
-   FormalParam(0, ?metafactory, ?caller),
-   FormalParam(2, ?metafactory, ?invokedTypeParam),
-   DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
-   DynamicMethodInvocation_DynParamTypes(?invokedynamic, ?dynParamTypes),
-   ?mockMethodType = MOCK_MT(?dynRetType, ?dynParamTypes),
-   isImmutableHContext(?hctx).
-
-// The second-arg rule should only be enabled when strings are not merged.
-#if defined(DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS) || defined(DISTINGUISH_ALL_STRING_CONSTANTS) || defined(NO_MERGES)
-VarPointsTo(?hctx, ?invokedName, ?ctx, ?invokedNameParam) :-
-   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?metafactory),
-   isStringConstant(?invokedName),
-   FormalParam(1, ?metafactory, ?invokedNameParam),
-   DynamicMethodInvocation_DynName(?invokedynamic, ?invokedName),
-   isImmutableHContext(?hctx).
-#endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS || DISTINGUISH_ALL_STRING_CONSTANTS || NO_MERGES
-
-// Normal handling for the last three arguments of the metafactory, shifted.
-VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?metafactory),
-   ?metafactory = LAMBDA_METAFACTORY,
-   FormalParam(?idx + 3, ?metafactory, ?formal),
-   BootstrapParam(?idx, ?invokedynamic, ?actual),
-   VarPointsTo(_, ?val, _, ?actual),
-   isImmutableHContext(?hctx).
 
 // A helper filtering relation for metafactory bootstrap calls.
 
@@ -177,7 +187,8 @@ LambdaCaptured(?callsite, ?val, ?idx, ?ctx) :-
 .decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?callsite:CallSite)
 
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?callsite) :-
-   LambdaCallSite(?callsite, ?dynName, _, ?implMethod),
+   LambdaCallSite_ImplMethod(?callsite, ?implMethod),
+   CallSite_DynName(?callsite, ?dynName),
    VarPointsTo(_, ?callsite, ?callerCtx, ?var),
    VirtualMethodInvocation_Base(?i, ?var),
    VirtualMethodInvocation_SimpleName(?i, ?dynName),
