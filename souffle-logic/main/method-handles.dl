@@ -5,10 +5,6 @@
 HeapAllocation_ContextInsensitive(?heap) :-
    isMethodHandleConstant(?heap).
 
-#define LAMBDA_METAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
-
-#define LAMBDA_ALTMETAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
-
 /** Phase 1: Linkage (creating a CallSite) **/
 
 .decl InvokedynamicBootstrapCtx(?invokedynamic:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
@@ -21,6 +17,10 @@ ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType) :-
    DynamicMethodInvocation_DynName(?invokedynamic, ?dynName),
    DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
    ReachableContext(?ctx, ?inMethod).
+
+#define LAMBDA_METAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
+
+#define LAMBDA_ALTMETAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
 
 // Find invocations to the lambda metafactories.
 .decl LambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn)
