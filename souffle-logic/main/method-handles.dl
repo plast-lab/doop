@@ -8,7 +8,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
 /** Phase 1: Linkage (creating a CallSite) **/
 
 .decl InvokedynamicBootstrapCtx(?invokedynamic:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
-.decl ReachableInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:InterfaceType)
+.decl ReachableInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type)
 
 InvokedynamicBootstrapCtx(?invokedynamic, ?ctx),
 ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType) :-
@@ -28,10 +28,10 @@ LambdaMetafactoryInvoke(?invokedynamic) :-
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?method),
    (?method = LAMBDA_METAFACTORY ; ?method = LAMBDA_ALTMETAFACTORY).
 
-.decl ReachableLambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?interface:InterfaceType)
-ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?interface) :-
+.decl ReachableLambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type)
+ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType) :-
    LambdaMetafactoryInvoke(?invokedynamic),
-   ReachableInvokedynamic(?invokedynamic, ?dynName, ?interface).
+   ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType).
 
 // Record invokedynamic invocations whose bootstrap methods are not
 // handled at all. Used for statistics.
@@ -54,22 +54,21 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 .decl LambdaCallSite(?callsite:CallSite, ?dynName:symbol, ?dynRet:Type, ?implMethod:Method)
 
 VarPointsTo(?hctx, ?callsite, ?ctx, ?var),
-MockValueConsMacro(?callsite, ?samType),
+MockValueConsMacro(?callsite, ?dynRetType),
 isCallSite(?callsite),
 CallSite_Invokedynamic(?callsite, ?invokedynamic),
 CallSite_K(?callsite, ?K),
-LambdaCallSite(?callsite, ?dynName, ?samType, ?implMethod) :-
-   ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?samType),
+LambdaCallSite(?callsite, ?dynName, ?dynRetType, ?implMethod) :-
+   ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType),
    DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
    BootstrapParam(1, ?invokedynamic, ?handleVar),
    VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
    MethodHandleConstant_Method(?handleVal, ?implMethod),
-   isInterfaceType(?samType),
    AssignReturnValue(?invokedynamic, ?var),
    // Used to generate friendly description for the generated mock value.
    Method_SimpleName(?implMethod, ?handleMeth),
    Method_DeclaringType(?implMethod, ?handleType),
-   ?callsite = MOCK_LAMBDA_CALL_SITE(?invokedynamic, ?samType, ?handleType, ?handleMeth, ?implMethod, ?dynName).
+   ?callsite = MOCK_LAMBDA_CALL_SITE(?invokedynamic, ?dynRetType, ?handleType, ?handleMeth, ?implMethod, ?dynName).
 
 .decl InvokedynamicBootCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
 InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod) :-
