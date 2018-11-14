@@ -91,14 +91,14 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 .type CallSite = mainAnalysis.Value
 .type LinkObject = mainAnalysis.Value
 .decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?dynRetType:Type, ?linkObject:LinkObject)
-.decl LinkObjectVPT(?hctx:configuration.HContext, ?linkObject:LinkObject, ?ctx:configuration.Context)
+.decl LinkObjectContexts(?hctx:configuration.HContext, ?linkObject:LinkObject, ?ctx:configuration.Context)
 
 #define LINK_OBJECT(invokedynamic, type) \
    cat(invokedynamic, cat("::: ", cat(type, cat("::: (Mock)::: ", cat("link object of type ", type)))))
 
 // Construct link object and record CallSite metadata.
 MockValueConsMacro(?linkObject, ?dynRetType),
-LinkObjectVPT(?hctx, ?linkObject, ?ctx),
+LinkObjectContexts(?hctx, ?linkObject, ?ctx),
 InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?linkObject) :-
    ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, _),
    DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
@@ -111,7 +111,7 @@ InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?lin
 VarPointsTo(?hctx, ?linkObject, ?ctx, ?var) :-
    InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
    AssignReturnValue(?invokedynamic, ?var),
-   LinkObjectVPT(?hctx, ?linkObject, ?ctx).
+   LinkObjectContexts(?hctx, ?linkObject, ?ctx).
 
 // Method handles usually need reflection unless they come from the constant pool.
 .type MethodHandle = mainAnalysis.Value
