@@ -28,7 +28,7 @@ ReachableContext(?calleeCtx, ?bootMethod) :-
    InvokedynamicBootCallGraphEdge(_, _, ?calleeCtx, ?bootMethod).
 
 // Pass arguments to bootstrap methods. First three arguments are
-// filled in by the JVM, so we fill them in with mock objects.
+// filled in by the JVM, so we fill them with mock objects.
 
 #define MOCK_MH_LOOKUP "mock method handles lookup object"
 #define MOCK_MT(retType, paramTypes) cat("mock method type ", cat(retType, paramTypes))
