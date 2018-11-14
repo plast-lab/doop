@@ -150,7 +150,7 @@ InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?m
 
 // Use a mock varargs array to fix calls to the alt metafactory.
 
-#define MOCK_ARRAY(instr) cat("metafactory varargs array for ", instr)
+#define MOCK_ARRAY(invokedynamic) cat("metafactory varargs array for ", invokedynamic)
 
 ArrayIndexPointsTo(?hctx, ?val, ?hctx, ?mockArray),
 MockValueConsMacro(?mockArray, "java.lang.Object[]"),
