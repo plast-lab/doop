@@ -70,21 +70,27 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 .type CallSite = mainAnalysis.Value
 .type LinkObject = mainAnalysis.Value
 .decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?dynRetType:Type, ?linkObject:LinkObject)
+.decl LinkObjectVPT(?hctx:configuration.HContext, ?linkObject:LinkObject, ?ctx:configuration.Context)
 
 #define LINK_OBJECT(invokedynamic, type) \
    cat(invokedynamic, cat("::: ", cat(type, cat("::: (Mock)::: ", cat("link object of type ", type)))))
 
 // Construct link object and record CallSite metadata.
-VarPointsTo(?hctx, ?linkObject, ?ctx, ?var),
 MockValueConsMacro(?linkObject, ?dynRetType),
+LinkObjectVPT(?hctx, ?linkObject, ?ctx),
 InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?linkObject) :-
    ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType),
    DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
    ReturnVar(?bootRetVar, ?bootMethod),
    VarPointsTo(?hctx, ?callsite, ?ctx, ?bootRetVar),
-   AssignReturnValue(?invokedynamic, ?var),
    ?linkObject = LINK_OBJECT(?invokedynamic, ?dynRetType).
+
+// If the result of the invokedynamic is assigned to a variable, propagate link object.
+VarPointsTo(?hctx, ?linkObject, ?ctx, ?var) :-
+   InvokedynamicCallSite(?callsite, ?invokedynamic, _, _, _, ?linkObject),
+   AssignReturnValue(?invokedynamic, ?var),
+   LinkObjectVPT(?hctx, ?linkObject, ?ctx).
 
 /** Phase 2: Capture (invoke CallSite, capturing environment) **/
 
