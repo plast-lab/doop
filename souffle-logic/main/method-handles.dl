@@ -148,6 +148,24 @@ CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx, ?ctx) :-
    ActualParam(?idx, ?invokedynamic, ?actual),
    VarPointsTo(_, ?val, ?ctx, ?actual).
 
+/** Phase 3: Invocation (call method on the link object) **/
+
+// When a method is called on a link object, use method handle to
+// resolve the call and create a special call-graph edge.
+
+.decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?linkObject:LinkObject)
+
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?method, ?linkObject) :-
+   InvokedynamicCallSite(_, _, ?dynName, _, _, ?linkObject),
+   LinkObject_Method(?linkObject, ?method),
+   VarPointsTo(_, ?linkObject, ?callerCtx, ?var),
+   VirtualMethodInvocation_Base(?i, ?var),
+   VirtualMethodInvocation_SimpleName(?i, ?dynName),
+   isImmutableContext(?calleeCtx).
+
+ReachableContext(?calleeCtx, ?callee) :-
+   InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
+
 /************** Lambda-specific invokedynamic ****************/
 
 /** Phase 1: Linkage (creating a lambda CallSite) **/
@@ -220,22 +238,6 @@ Lambda_N(?lambda, ?N, ?val) :-
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
 
 /** Phase 3: Invocation (call method on the functional object) **/
-
-// When invokeinterface is called on a lambda object constructed by a
-// constant method handle, the real method is called. This can wrap a
-// static method call as an instance method call.
-
-.decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?lambda:LinkObject)
-
-InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
-   LambdaCallSite(_, _, ?lambda, ?dynName, _, ?implMethod, _),
-   VarPointsTo(_, ?lambda, ?callerCtx, ?var),
-   VirtualMethodInvocation_Base(?i, ?var),
-   VirtualMethodInvocation_SimpleName(?i, ?dynName),
-   isImmutableContext(?calleeCtx).
-
-ReachableContext(?calleeCtx, ?callee) :-
-   InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
 
 // A boxing/unboxing conversion of types including the null type.
 .decl BoxTypeConversion(?original:Type, ?new:Type)
