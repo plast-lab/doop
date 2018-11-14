@@ -472,7 +472,8 @@ VarPointsTo(?hctx, ?dmh, ?ctx, ?ret) :-
    VarPointsTo(_, ?id, _, ?stringParam),
    ActualParam(2, ?invo, ?mtParam),
    VarPointsTo(_, ?mt, _, ?mtParam),
-   MHLookup(?type, ?id, ?mt, ?method).
+   DMHLookup(?type, ?id, ?mt, ?method),
+   ?dmh = DMH(?method).
 
 #endif // REFLECTION
 #endif // REFLECTION_METHOD_HANDLES
