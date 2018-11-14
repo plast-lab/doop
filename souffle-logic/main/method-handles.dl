@@ -58,6 +58,30 @@ VarPointsTo(?hctx, ?invokedName, ?ctx, ?invokedNameParam) :-
    isImmutableHContext(?hctx).
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS || DISTINGUISH_ALL_STRING_CONSTANTS || NO_MERGES
 
+// Helper method to compute the varargs accumulator formal of a method.
+.decl MethodVarArgs(?method:Method, ?idx:number, ?formal:Var, ?type:ArrayType)
+MethodVarArgs(?method, ?idx, ?formal, ?type) :-
+   Method_Modifier("varargs", ?method),
+   Method_Arity(?method, ?arity),
+   ?idx = ?arity - 1,
+   FormalParam(?idx, ?method, ?formal),
+   Var_Type(?formal, ?type),
+   isArrayType(?type).
+
+// Use a mock array to fix calls to a bootstrap method accepting varargs.
+#define MOCK_ARRAY(invokedynamic) cat("bootstrap varargs array for ", invokedynamic)
+
+ArrayIndexPointsTo(?hctx, ?val, ?hctx, ?mockArray),
+MockValueConsMacro(?mockArray, ?varArgsType),
+VarPointsTo(?hctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
+   InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod),
+   MethodVarArgs(?bootMethod, ?bootIdx, ?formalVarArgs, ?varArgsType),
+   BootstrapParam(?idx, ?invokedynamic, ?actual),
+   ?idx > ?bootIdx - 3,
+   VarPointsTo(_, ?val, _, ?actual),
+   isImmutableHContext(?hctx),
+   ?mockArray = MOCK_ARRAY(?invokedynamic).
+
 // Normal handling for the last three arguments of the bootstrap method, shifted.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?bootMethod),
@@ -175,22 +199,6 @@ LambdaCallSite(?callsite, ?invokedynamic, ?linkObject, ?dynName, ?K, ?implMethod
 InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory) :-
    ReachableLambdaMetafactoryInvoke(?invokedynamic),
    InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory).
-
-// Use a mock varargs array to fix calls to the alt metafactory.
-
-#define MOCK_ARRAY(invokedynamic) cat("metafactory varargs array for ", invokedynamic)
-
-ArrayIndexPointsTo(?hctx, ?val, ?hctx, ?mockArray),
-MockValueConsMacro(?mockArray, "java.lang.Object[]"),
-VarPointsTo(?hctx, ?mockArray, ?ctx, ?formalVarArgs) :-
-   InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, ?ctx, ?metafactory),
-   ?metafactory = LAMBDA_ALTMETAFACTORY,
-   FormalParam(3, ?metafactory, ?formalVarArgs),
-   BootstrapParam(?idx, ?invokedynamic, ?actual),
-   ?idx > 2,
-   VarPointsTo(_, ?val, _, ?actual),
-   isImmutableHContext(?hctx),
-   ?mockArray = MOCK_ARRAY(?invokedynamic).
 
 .decl Lambda_N(?lambda:LinkObject, ?N:number, ?samMethodType:Value)
 
