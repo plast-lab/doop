@@ -88,7 +88,7 @@ InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?lin
 
 // If the result of the invokedynamic is assigned to a variable, propagate link object.
 VarPointsTo(?hctx, ?linkObject, ?ctx, ?var) :-
-   InvokedynamicCallSite(?callsite, ?invokedynamic, _, _, _, ?linkObject),
+   InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
    AssignReturnValue(?invokedynamic, ?var),
    LinkObjectVPT(?hctx, ?linkObject, ?ctx).
 
