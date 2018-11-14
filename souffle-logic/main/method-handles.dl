@@ -152,16 +152,17 @@ InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?m
 
 #define MOCK_ARRAY(instr) cat("metafactory varargs array for ", instr)
 
-ArrayIndexPointsTo(?hctx, ?val, ?hctx, MOCK_ARRAY(?invokedynamic)),
-MockValueConsMacro(MOCK_ARRAY(?invokedynamic), "java.lang.Object[]"),
-VarPointsTo(?hctx, MOCK_ARRAY(?invokedynamic), ?ctx, ?formalVarArgs) :-
+ArrayIndexPointsTo(?hctx, ?val, ?hctx, ?mockArray),
+MockValueConsMacro(?mockArray, "java.lang.Object[]"),
+VarPointsTo(?hctx, ?mockArray, ?ctx, ?formalVarArgs) :-
    InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, ?ctx, ?metafactory),
    ?metafactory = LAMBDA_ALTMETAFACTORY,
    FormalParam(3, ?metafactory, ?formalVarArgs),
    BootstrapParam(?idx, ?invokedynamic, ?actual),
    ?idx > 2,
    VarPointsTo(_, ?val, _, ?actual),
-   isImmutableHContext(?hctx).
+   isImmutableHContext(?hctx),
+   ?mockArray = MOCK_ARRAY(?invokedynamic).
 
 .decl Lambda_N(?lambda:LinkObject, ?N:number, ?samMethodType:Value)
 
