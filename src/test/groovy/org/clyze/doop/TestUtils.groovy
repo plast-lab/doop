@@ -107,6 +107,10 @@ class TestUtils {
 		findPair(analysis, "mainAnalysis-InvokedynamicCallGraphEdge", instr, 1, meth, 3)
 	}
 
+	static void linkObjectIsLambda(Analysis analysis, String linkObject, String desc) {
+		findPair(analysis, 'mainAnalysis-LambdaCallSite', linkObject, 2, desc, 6)
+	}
+
 	static void proxyCGE(Analysis analysis, String instr, String meth) {
 		findPair(analysis, "mainAnalysis-ProxyCallGraphEdge", instr, 1, meth, 3)
 	}

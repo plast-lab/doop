@@ -68,15 +68,23 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    isImmutableHContext(?hctx).
 
 .type CallSite = mainAnalysis.Value
-.decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?dynRetType:Type)
+.type LinkObject = mainAnalysis.Value
+.decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?dynRetType:Type, ?linkObject:LinkObject)
 
-// Record CallSite metadata.
-InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType) :-
+#define LINK_OBJECT(invokedynamic, type) \
+   cat(invokedynamic, cat("::: ", cat(type, cat("::: (Mock)::: ", cat("link object of type ", type)))))
+
+// Construct link object and record CallSite metadata.
+VarPointsTo(?hctx, ?linkObject, ?ctx, ?var),
+MockValueConsMacro(?linkObject, ?dynRetType),
+InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?linkObject) :-
    ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType),
    DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
    ReturnVar(?bootRetVar, ?bootMethod),
-   VarPointsTo(_, ?callsite, _, ?bootRetVar).
+   VarPointsTo(?hctx, ?callsite, ?ctx, ?bootRetVar),
+   AssignReturnValue(?invokedynamic, ?var),
+   ?linkObject = LINK_OBJECT(?invokedynamic, ?dynRetType).
 
 /** Phase 2: Capture (invoke CallSite, capturing environment) **/
 
@@ -84,7 +92,7 @@ InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType) :-
 
 // Capture values of the enclosing environment.
 CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx, ?ctx) :-
-   InvokedynamicCallSite(?callsite, ?invokedynamic, _, ?K, _),
+   InvokedynamicCallSite(?callsite, ?invokedynamic, _, ?K, _, _),
    ?K > 0,
    ActualParam(?idx, ?invokedynamic, ?actual),
    VarPointsTo(_, ?val, ?ctx, ?actual).
@@ -116,26 +124,22 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethodId),
    !LambdaMetafactoryInvoke(?invokedynamic).
 
-#define MOCK_LAMBDA(invo, ret, type, method, real, name) \
+#define LAMBDA_ALT_VAL(invo, ret, type, method, real, name) \
    cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
 
-.type Lambda = mainAnalysis.Value
-.decl LambdaCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:Lambda, ?dynName:symbol, ?K:number, ?implMethod:Method)
+.decl LambdaCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?linkObject:LinkObject, ?dynName:symbol, ?K:number, ?implMethod:Method, ?desc:symbol)
 
-// Generate mock lambda to model the metafactory result.
-VarPointsTo(?hctx, ?lambda, ?ctx, ?var),
-MockValueConsMacro(?lambda, ?dynRetType),
-LambdaCallSite(?callsite, ?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod) :-
+// Record more information about the link object to model the metafactory result.
+LambdaCallSite(?callsite, ?invokedynamic, ?linkObject, ?dynName, ?K, ?implMethod, ?desc) :-
    ReachableLambdaMetafactoryInvoke(?invokedynamic),
-   InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType),
+   InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?linkObject),
    BootstrapParam(1, ?invokedynamic, ?handleVar),
-   VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
+   VarPointsTo(_, ?handleVal, _, ?handleVar),
    MethodHandleConstant_Method(?handleVal, ?implMethod),
-   AssignReturnValue(?invokedynamic, ?var),
-   // Used to generate friendly description for the generated mock value.
+   // Used to generate friendly description for the lambda.
    Method_SimpleName(?implMethod, ?handleMeth),
    Method_DeclaringType(?implMethod, ?handleType),
-   ?lambda = MOCK_LAMBDA(?invokedynamic, ?dynRetType, ?handleType, ?handleMeth, ?implMethod, ?dynName).
+   ?desc = LAMBDA_ALT_VAL(?invokedynamic, ?dynRetType, ?handleType, ?handleMeth, ?implMethod, ?dynName).
 
 // A helper filtering relation for metafactory bootstrap calls.
 
@@ -159,12 +163,12 @@ VarPointsTo(?hctx, MOCK_ARRAY(?invokedynamic), ?ctx, ?formalVarArgs) :-
    VarPointsTo(_, ?val, _, ?actual),
    isImmutableHContext(?hctx).
 
-.decl Lambda_N(?lambda:Lambda, ?N:number, ?samMethodType:Value)
+.decl Lambda_N(?lambda:LinkObject, ?N:number, ?samMethodType:Value)
 
 Lambda_N(?lambda, ?N, ?val) :-
    InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, _, ?metafactory),
    ?metafactory = LAMBDA_METAFACTORY,
-   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _),
+   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
    BootstrapParam(0, ?invokedynamic, ?actual),
    VarPointsTo(_, ?val, _, ?actual),
    _MethodTypeConstant(?val, ?N).
@@ -172,17 +176,17 @@ Lambda_N(?lambda, ?N, ?val) :-
 Lambda_N(?lambda, ?N, ?val) :-
    InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, _, ?metafactory),
    ?metafactory = LAMBDA_ALTMETAFACTORY,
-   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _),
+   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
    ArrayIndexPointsTo(_, ?val, _, MOCK_ARRAY(?invokedynamic)),
    _MethodTypeConstant(?val, ?N).
 
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
 
-.decl LambdaCaptured(?lambda:Lambda, ?val:Value, ?idx:number, ?ctx:configuration.Context)
+.decl LambdaCaptured(?lambda:LinkObject, ?val:Value, ?idx:number, ?ctx:configuration.Context)
 
 // Capture values of the enclosing environment.
 LambdaCaptured(?lambda, ?val, ?idx, ?ctx) :-
-   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _),
+   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
    CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx, ?ctx).
 
 /** Phase 3: Invocation (call method on the functional object) **/
@@ -191,10 +195,10 @@ LambdaCaptured(?lambda, ?val, ?idx, ?ctx) :-
 // constant method handle, the real method is called. This can wrap a
 // static method call as an instance method call.
 
-.decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?lambda:Lambda)
+.decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?lambda:LinkObject)
 
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
-   LambdaCallSite(_, _, ?lambda, ?dynName, _, ?implMethod),
+   LambdaCallSite(_, _, ?lambda, ?dynName, _, ?implMethod, _),
    VarPointsTo(_, ?lambda, ?callerCtx, ?var),
    VirtualMethodInvocation_Base(?i, ?var),
    VirtualMethodInvocation_SimpleName(?i, ?dynName),
@@ -225,7 +229,7 @@ ImplMethodArgStart(?implMethod, 0) :-
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
    ImplMethodArgStart(?implMethod, ?shift),
-   LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod),
+   LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _),
    FormalParam(?idx + ?K - ?shift, ?implMethod, ?formal),
    ActualParam(?idx, ?i, ?actual),
    VarPointsTo(_, ?val, _, ?actual),
@@ -241,7 +245,7 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    InvokedynamicCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
    ImplMethodArgStart(?implMethod, ?shift),
-   LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod),
+   LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _),
    FormalParam(?idx, ?implMethod, ?formal),
    ?idx <= ?K - ?shift,
    LambdaCaptured(?lambda, ?val, ?idx + ?shift, ?ctx),
