@@ -7,10 +7,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
 
 /****************** Generic invokedynamic ********************/
 
-/** Phase 1: Linkage (creating a CallSite) **/
-
 .decl ReachableInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type, ?ctx:configuration.Context)
-
 ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?ctx) :-
    isDynamicMethodInvocation_Insn(?invokedynamic),
    Instruction_Method(?invokedynamic, ?inMethod),
@@ -107,13 +104,13 @@ InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?lin
    VarPointsTo(?hctx, ?callsite, ?ctx, ?bootRetVar),
    ?linkObject = LINK_OBJECT(?invokedynamic, ?dynRetType).
 
-// If the result of the invokedynamic is assigned to a variable, propagate link object.
+// If the result of the invokedynamic instruction is assigned to a
+// variable, use link object as return value.
 VarPointsTo(?hctx, ?linkObject, ?ctx, ?var) :-
    InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
    AssignReturnValue(?invokedynamic, ?var),
    LinkObjectContexts(?hctx, ?linkObject, ?ctx).
 
-// Method handles usually need reflection unless they come from the constant pool.
 .type MethodHandle = mainAnalysis.Value
 .decl isMethodHandle(?methodHandle:MethodHandle)
 .decl MethodHandle_Method(?methodHandle:MethodHandle, ?method:Method)
@@ -123,33 +120,24 @@ MethodHandle_Method(?methodHandle, ?method) :-
    MethodHandleConstant_Method(?methodHandle, ?method).
 
 .decl LinkObject_MethodHandle(?linkObject:LinkObject, ?methodHandle:MethodHandle)
-
 LinkObject_MethodHandle(?linkObject, ?methodHandle) :-
    InvokedynamicCallSite(?callsite, _, _, _, _, ?linkObject),
    InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite).
 
 .decl LinkObject_Method(?linkObject:LinkObject, ?method:Method)
-
 LinkObject_Method(?linkObject, ?method) :-
    LinkObject_MethodHandle(?linkObject, ?methodHandle),
    MethodHandle_Method(?methodHandle, ?method).
 
-/** Phase 2: Capture (invoke CallSite, capturing environment) **/
-
-.decl CallSiteCaptured(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number, ?ctx:configuration.Context)
-
 // Capture values of the enclosing environment.
+.decl CallSiteCaptured(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number, ?ctx:configuration.Context)
 CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx, ?ctx) :-
    InvokedynamicCallSite(?callsite, ?invokedynamic, _, ?K, _, _),
    ?K > 0,
    ActualParam(?idx, ?invokedynamic, ?actual),
    VarPointsTo(_, ?val, ?ctx, ?actual).
 
-/** Phase 3: Invocation (call method on the link object) **/
-
-// When a method is called on a link object, use method handle to
-// resolve the call and create a special call-graph edge.
-
+// After a method handle is resolved, the invokedynamic calls it.
 .decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?linkObject:LinkObject)
 
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?method, ?linkObject) :-
