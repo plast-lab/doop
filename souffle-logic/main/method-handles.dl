@@ -189,7 +189,6 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 .decl LambdaCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?linkObject:LinkObject, ?dynName:symbol, ?K:number, ?implMethod:Method, ?desc:symbol)
 
 // Record more information about the link object to model the metafactory result.
-LinkObject_MethodHandle(?linkObject, ?handleVal),
 LambdaCallSite(?callsite, ?invokedynamic, ?linkObject, ?dynName, ?K, ?implMethod, ?desc) :-
    ReachableLambdaMetafactoryInvoke(?invokedynamic),
    InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?linkObject),
@@ -228,6 +227,17 @@ Lambda_N(?lambda, ?N, ?val) :-
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
 
 /** Phase 3: Invocation (call method on the functional object) **/
+
+// When a method is called on a lambda object constructed by a
+// constant method handle, the real method is called. This can wrap a
+// static method call as an instance method call.
+
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
+   LambdaCallSite(_, _, ?lambda, ?dynName, _, ?implMethod, _),
+   VarPointsTo(_, ?lambda, ?callerCtx, ?var),
+   VirtualMethodInvocation_Base(?i, ?var),
+   VirtualMethodInvocation_SimpleName(?i, ?dynName),
+   isImmutableContext(?calleeCtx).
 
 // A boxing/unboxing conversion of types including the null type.
 .decl BoxTypeConversion(?original:Type, ?new:Type)
