@@ -148,6 +148,14 @@ InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?lin
 ReachableContext(?calleeCtx, ?callee) :-
    InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
 
+// Handle return values for invokedynamic call-graph edges (either in
+// the resolved invokedynamic call or later, in the case of lambdas).
+VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
+   InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?method, _),
+   ReturnVar(?realReturnVar, ?method),
+   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
+   AssignReturnValue(?i, ?ret).
+
 /************** Lambda-specific invokedynamic ****************/
 
 /** Phase 1: Linkage (creating a lambda CallSite) **/
@@ -273,13 +281,6 @@ VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
    CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0, ?ctx),
    ThisVar(?implMethod, ?this),
    isImmutableHContext(?hctx).
-
-// Handle return values.
-VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
-   InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, _),
-   ReturnVar(?realReturnVar, ?implMethod),
-   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
-   AssignReturnValue(?i, ?ret).
 
 // Applications of constructor references construct values. However,
 // these values do not come from a 'new' instruction in the code but
