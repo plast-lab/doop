@@ -92,6 +92,27 @@ VarPointsTo(?hctx, ?linkObject, ?ctx, ?var) :-
    AssignReturnValue(?invokedynamic, ?var),
    LinkObjectVPT(?hctx, ?linkObject, ?ctx).
 
+// Method handles usually need reflection unless they come from the constant pool.
+.type MethodHandle = mainAnalysis.Value
+.decl isMethodHandle(?methodHandle:MethodHandle)
+.decl MethodHandle_Method(?methodHandle:MethodHandle, ?method:Method)
+
+isMethodHandle(?methodHandle),
+MethodHandle_Method(?methodHandle, ?method) :-
+   MethodHandleConstant_Method(?methodHandle, ?method).
+
+.decl LinkObject_MethodHandle(?linkObject:LinkObject, ?methodHandle:MethodHandle)
+
+LinkObject_MethodHandle(?linkObject, ?methodHandle) :-
+   InvokedynamicCallSite(?callsite, _, _, _, _, ?linkObject),
+   InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite).
+
+.decl LinkObject_Method(?linkObject:LinkObject, ?method:Method)
+
+LinkObject_Method(?linkObject, ?method) :-
+   LinkObject_MethodHandle(?linkObject, ?methodHandle),
+   MethodHandle_Method(?methodHandle, ?method).
+
 /** Phase 2: Capture (invoke CallSite, capturing environment) **/
 
 .decl CallSiteCaptured(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number, ?ctx:configuration.Context)
@@ -136,6 +157,7 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 .decl LambdaCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?linkObject:LinkObject, ?dynName:symbol, ?K:number, ?implMethod:Method, ?desc:symbol)
 
 // Record more information about the link object to model the metafactory result.
+LinkObject_MethodHandle(?linkObject, ?handleVal),
 LambdaCallSite(?callsite, ?invokedynamic, ?linkObject, ?dynName, ?K, ?implMethod, ?desc) :-
    ReachableLambdaMetafactoryInvoke(?invokedynamic),
    InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?linkObject),
@@ -286,14 +308,6 @@ VarPointsTo(?hctx, ?mockObj, ?ctx, ?thisVar) :-
    ThisVar(?implMethod, ?thisVar),
    ?mockObj = cat("mock ", cat(?type, cat(" constructed by constructor reference at ", ?i))),
    isImmutableHContext(?hctx).
-
-// Method handles usually need reflection except they come from the constant pool.
-.decl MethodHandle_Method(?mh:Value, ?method:Method)
-.decl isMethodHandle(?mh:Value)
-
-isMethodHandle(?mh),
-MethodHandle_Method(?mh, ?method) :-
-   MethodHandleConstant_Method(?mh, ?method).
 
 // Method handles that interact with reflection are exprerimental, use
 // corresponding command-line option to enable them.
