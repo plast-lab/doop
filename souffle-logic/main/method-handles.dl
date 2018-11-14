@@ -188,7 +188,7 @@ Lambda_N(?lambda, ?N, ?val) :-
 // Capture values of the enclosing environment.
 LambdaCaptured(?lambda, ?val, ?idx, ?ctx) :-
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
-   CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx, ?ctx).
+   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx, ?ctx).
 
 /** Phase 3: Invocation (call method on the functional object) **/
 
