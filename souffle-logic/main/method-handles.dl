@@ -219,13 +219,6 @@ Lambda_N(?lambda, ?N, ?val) :-
 
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
 
-.decl LambdaCaptured(?lambda:LinkObject, ?val:Value, ?idx:number, ?ctx:configuration.Context)
-
-// Capture values of the enclosing environment.
-LambdaCaptured(?lambda, ?val, ?idx, ?ctx) :-
-   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
-   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx, ?ctx).
-
 /** Phase 3: Invocation (call method on the functional object) **/
 
 // When invokeinterface is called on a lambda object constructed by a
@@ -282,17 +275,18 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    InvokedynamicCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
    ImplMethodArgStart(?implMethod, ?shift),
-   LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _),
-   FormalParam(?idx, ?implMethod, ?formal),
+   LambdaCallSite(_, ?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
    ?idx <= ?K - ?shift,
-   LambdaCaptured(?lambda, ?val, ?idx + ?shift, ?ctx),
+   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx + ?shift, ?ctx),
+   FormalParam(?idx, ?implMethod, ?formal),
    isImmutableHContext(?hctx).
 
 // Special handling for captured "this" parameters.
 VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
    InvokedynamicCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
    !Method_Modifier("static", ?implMethod),
-   LambdaCaptured(?lambda, ?thisValue, 0, ?ctx),
+   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
+   CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0, ?ctx),
    ThisVar(?implMethod, ?this),
    isImmutableHContext(?hctx).
 
