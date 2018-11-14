@@ -9,11 +9,9 @@ HeapAllocation_ContextInsensitive(?heap) :-
 
 /** Phase 1: Linkage (creating a CallSite) **/
 
-.decl InvokedynamicBootstrapCtx(?invokedynamic:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
-.decl ReachableInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type)
+.decl ReachableInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type, ?ctx:configuration.Context)
 
-InvokedynamicBootstrapCtx(?invokedynamic, ?ctx),
-ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType) :-
+ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?ctx) :-
    isDynamicMethodInvocation_Insn(?invokedynamic),
    Instruction_Method(?invokedynamic, ?inMethod),
    DynamicMethodInvocation_DynName(?invokedynamic, ?dynName),
@@ -22,10 +20,9 @@ ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType) :-
 
 .decl InvokedynamicBootCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
 InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod) :-
-   ReachableInvokedynamic(?invokedynamic, _, _),
+   ReachableInvokedynamic(?invokedynamic, _, _, ?callerCtx),
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
-   isImmutableContext(?calleeCtx),
-   InvokedynamicBootstrapCtx(?invokedynamic, ?callerCtx).
+   isImmutableContext(?calleeCtx).
 
 ReachableContext(?calleeCtx, ?bootMethod) :-
    InvokedynamicBootCallGraphEdge(_, _, ?calleeCtx, ?bootMethod).
@@ -103,7 +100,7 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 MockValueConsMacro(?linkObject, ?dynRetType),
 LinkObjectVPT(?hctx, ?linkObject, ?ctx),
 InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?linkObject) :-
-   ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType),
+   ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, _),
    DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
    ReturnVar(?bootRetVar, ?bootMethod),
@@ -183,7 +180,7 @@ LambdaMetafactoryInvoke(?invokedynamic) :-
 .decl ReachableLambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn)
 ReachableLambdaMetafactoryInvoke(?invokedynamic) :-
    LambdaMetafactoryInvoke(?invokedynamic),
-   ReachableInvokedynamic(?invokedynamic, _, _).
+   ReachableInvokedynamic(?invokedynamic, _, _, _).
 
 // Record invokedynamic invocations whose bootstrap methods are not
 // handled at all. Used for statistics.
