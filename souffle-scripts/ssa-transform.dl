@@ -509,3 +509,20 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
     (SSA_FormalParam(_, ?method, ?ssa_var);
     SSA_ThisVar(?method, ?ssa_var)),
     SSA_Alias(?ssa_var, ?origin).
+
+// Rule rewriting
+.decl RewriteAssignBinop(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
+.output RewriteAssignBinop(filename="AssignBinop.facts")
+
+RewriteAssignBinop(?insn, ?index, ?to, ?inmethod) :-
+    SSA_AssignBinop(?insn, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index).
+
+.decl RewriteAssignOperFrom(?insn:symbol, ?pos:number, ?from:symbol)
+.output RewriteAssignOperFrom(filename="AssignOperFrom.facts")
+
+RewriteAssignOperFrom(?insn, ?pos, ?from) :-
+    AssignOper_From(?insn, ?pos, ?from_origin),
+    ReachingDef(?insn, ?from, ?from_origin).
+
+
