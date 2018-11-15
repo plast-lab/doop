@@ -381,3 +381,12 @@ FormalParam( 2, "logits", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>"
 FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "_sentinel", "<tensorflow>/noneDefVar").
 FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "labels", "<tensorflow>/noneDefVar").
 FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "logits", "<tensorflow>/noneDefVar").
+
+ModeledFunction("<tensorflow.argmax>", "argmax", "<tensorflow>").
+ModeledFunction("<tensorflow.argmin>", "argmin", "<tensorflow>").
+
+FormalParam( 0, "input", "<tensorflow.argmax>", "<tensorflow.argmax>/mockParam1").
+FormalParam( 1, "axis", "<tensorflow.argmax>", "<tensorflow.argmax>/mockParam2").
+
+FormalParam( 0, "input", "<tensorflow.argmin>", "<tensorflow.argmin>/mockParam1").
+FormalParam( 1, "axis", "<tensorflow.argmin>", "<tensorflow.argmin>/mockParam2").
