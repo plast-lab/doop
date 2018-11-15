@@ -280,33 +280,37 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		)
 	}
 
-	// This follows how Representation.dynamicInvokeMiddlePart()
-	// works. Returns null for unsupported bootstrap methods, so
-	// that a default path can be followed instead in the caller.
+	// This follows how Representation.dynamicInvokeIdMiddle() works.
 	String dynamicInvokeMiddlePart(InvokeStmtContext ctx) {
 		def bootName = "${ctx.methodSig().IDENTIFIER(0).text}.${ctx.methodSig().IDENTIFIER(2).text}"
+		def invoId = null
+		if (bootName == "java.lang.invoke.LambdaMetafactory.metafactory" ||
+			bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
+			def bootArgs = values[ctx.bootValueList()?.valueList()] as List
+			if (!bootArgs) {
+				println("Warning: metafactory invokedynamic with null bootArgs in $filename")
+			} else if (bootArgs.size() > 1) {
+				def v = (bootArgs[1] as ValueContext).methodSig()
+				if (v) {
+					def declClass = v.IDENTIFIER(0).text
+					def mName = v.IDENTIFIER(2).text
+					invoId = DynamicMethodInvocation.genId(declClass, mName)
+				} else {
+					println("Warning: metafactory invokedynamic, unknown boot argument 2: $bootArgs in $filename")
+				}
+			} else {
+				println("Warning: metafactory invokedynamic, unknown boot arguments of arity ${bootArgs.size()} in $filename")
+			}
+		}
 
-		def bootArgs = values[ctx.bootValueList()?.valueList()] as List
-		if (!bootArgs)
-			println("Warning: invokedynamic with null bootArgs in $filename")
-		else if (bootArgs.size() > 1) {
-			def v = (bootArgs[1] as ValueContext).methodSig()
-			if (v) {
-				def declClass = v.IDENTIFIER(0).text
-				def mName = v.IDENTIFIER(2).text
-				def invoId = DynamicMethodInvocation.genId(declClass, mName)
-				if (bootName == "java.lang.invoke.LambdaMetafactory.metafactory" ||
-						bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
-					def c = methodInvoCounters[invoId] as int
-					methodInvoCounters[invoId] = c + 1
-					return "${method.doopId}/${invoId}/$c"
-				} else
-					println("Warning: unsupported invokedynamic, unknown boot method: $bootName in $filename")
-			} else
-				println("Warning: unsupported invokedynamic, unknown boot argument 2: $bootArgs in $filename")
-		} else
-			println("Warning: unsupported invokedynamic, unknown boot arguments of arity ${bootArgs.size()} in $filename")
-		return null
+		if (!invoId) {
+			def dynamicName = ctx.STRING().text
+			invoId = DynamicMethodInvocation.genericId(bootName, dynamicName)
+		}
+
+		def c = methodInvoCounters[invoId] as int
+		methodInvoCounters[invoId] = c + 1
+		return "${method.doopId}/${invoId}/$c"
 	}
 
 	void exitMethodSig(MethodSigContext ctx) {
