@@ -148,8 +148,7 @@ InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?lin
 ReachableContext(?calleeCtx, ?callee) :-
    InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
 
-// Handle return values for invokedynamic call-graph edges (either in
-// the resolved invokedynamic call or later, in the case of lambdas).
+// Handle return values for invokedynamic call-graph edges.
 VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
    InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?method, _),
    ReturnVar(?realReturnVar, ?method),
@@ -232,12 +231,24 @@ Lambda_N(?lambda, ?N, ?val) :-
 // constant method handle, the real method is called. This can wrap a
 // static method call as an instance method call.
 
-InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
+.decl LambdaCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?lambda:LinkObject)
+
+LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
    LambdaCallSite(_, _, ?lambda, ?dynName, _, ?implMethod, _),
    VarPointsTo(_, ?lambda, ?callerCtx, ?var),
    VirtualMethodInvocation_Base(?i, ?var),
    VirtualMethodInvocation_SimpleName(?i, ?dynName),
    isImmutableContext(?calleeCtx).
+
+ReachableContext(?calleeCtx, ?callee) :-
+   LambdaCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
+
+// Handle return values for lambda call-graph edges.
+VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
+   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?method, _),
+   ReturnVar(?realReturnVar, ?method),
+   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
+   AssignReturnValue(?i, ?ret).
 
 // A boxing/unboxing conversion of types including the null type.
 .decl BoxTypeConversion(?original:Type, ?new:Type)
@@ -251,15 +262,15 @@ BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
 // arguments, while static methods take all K arguments before N ones.
 .decl ImplMethodArgStart(?implMethod:Method, ?idx:number)
 ImplMethodArgStart(?implMethod, 1) :-
-   InvokedynamicCallGraphEdge(_, _, _, ?implMethod, _),
+   LambdaCallGraphEdge(_, _, _, ?implMethod, _),
    ! Method_Modifier("static", ?implMethod).
 ImplMethodArgStart(?implMethod, 0) :-
-   InvokedynamicCallGraphEdge(_, _, _, ?implMethod, _),
+   LambdaCallGraphEdge(_, _, _, ?implMethod, _),
    Method_Modifier("static", ?implMethod).
 
 // Pass invocation arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
+   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
    ImplMethodArgStart(?implMethod, ?shift),
    LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _),
    FormalParam(?idx + ?K - ?shift, ?implMethod, ?formal),
@@ -275,7 +286,7 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 
 // Pass captured arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   InvokedynamicCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
+   LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
    ImplMethodArgStart(?implMethod, ?shift),
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
    ?idx <= ?K - ?shift,
@@ -285,7 +296,7 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 
 // Special handling for captured "this" parameters.
 VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
-   InvokedynamicCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
+   LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
    !Method_Modifier("static", ?implMethod),
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
    CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0, ?ctx),
@@ -298,7 +309,7 @@ VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
 MockValueConsMacro(?mockObj, ?type),
 VarPointsTo(?hctx, ?mockObj, ?ctx, ?var),
 VarPointsTo(?hctx, ?mockObj, ?ctx, ?thisVar) :-
-   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?implMethod, _),
+   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, _),
    Method_SimpleName(?implMethod, "<init>"),
    Method_DeclaringType(?implMethod, ?type),
    AssignReturnValue(?i, ?var),

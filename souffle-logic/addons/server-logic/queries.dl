@@ -317,7 +317,8 @@ Server_Method_Subtype(?method, ?subMethod) :-
 
 Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 0) :-
   (mainAnalysis.CallGraphEdge(_, ?invo, _, ?toMethod);
-   mainAnalysis.InvokedynamicCallGraphEdge(_, ?invo, _, ?toMethod, _)),
+   mainAnalysis.InvokedynamicCallGraphEdge(_, ?invo, _, ?toMethod, _);
+   mainAnalysis.LambdaCallGraphEdge(_, ?invo, _, ?toMethod, _)),
   Instruction_Method(?invo, ?fromMethod).
 
 #ifdef REFLECTION
