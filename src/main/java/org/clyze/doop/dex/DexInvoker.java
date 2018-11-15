@@ -38,7 +38,7 @@ class DexInvoker {
 
         try (Database db = new Database(new File(outDir))) {
             CHA cha = new CHA();
-            DexFactWriter writer = new DexFactWriter(db, cha);
+            DexFactWriter writer = new DexFactWriter(db, dexParams._extractMoreStrings, cha);
             BasicJavaSupport java = new BasicJavaSupport();
             java.preprocessInputs(dexParams);
             writer.writePreliminaryFacts(java, dexParams);

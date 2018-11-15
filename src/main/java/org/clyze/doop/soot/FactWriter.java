@@ -29,8 +29,9 @@ class FactWriter extends JavaFactWriter {
     private final boolean _reportPhantoms;
     private final Set<Object> seenPhantoms = new HashSet<>();
 
-    FactWriter(Database db, Representation rep, boolean reportPhantoms) {
-        super(db);
+    FactWriter(Database db, boolean moreStrings,
+               Representation rep, boolean reportPhantoms) {
+        super(db, moreStrings);
         _rep = rep;
         _reportPhantoms = reportPhantoms;
     }
@@ -76,7 +77,7 @@ class FactWriter extends JavaFactWriter {
             writePhantomType(c);
         }
         _db.add(isInterface ? INTERFACE_TYPE : CLASS_TYPE, classStr);
-        _db.add(CLASS_HEAP, Representation.classConstant(c), classStr);
+        writeClassHeap(Representation.classConstant(c), classStr);
         if (c.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
@@ -352,7 +353,7 @@ class FactWriter extends JavaFactWriter {
             Type t = ClassHeapFinder.raiseTypeWithSoot(s);
             String actualType = t.toString();
             heap = Representation.classConstant(t);
-            _db.add(CLASS_HEAP, heap, actualType);
+            writeClassHeap(heap, actualType);
         } else if (first == '(') {
             // method type constant (viewed by Soot as a class constant)
             heap = s;
@@ -372,7 +373,7 @@ class FactWriter extends JavaFactWriter {
             // bug that adds a phantom class to the Scene's hierarchy, although
             // (based on their own comments) it shouldn't.
             heap = classConstant(s);
-            _db.add(CLASS_HEAP, heap, s);
+            writeClassHeap(heap, s);
         }
 
         int index = session.calcUnitNumber(stmt);

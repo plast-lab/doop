@@ -105,9 +105,9 @@ class DexMethodFactWriter extends JavaFactWriter {
     private final Collection<RawGoto> gotos = new LinkedList<>();
     private final Collection<RawGoto> ifs = new LinkedList<>();
 
-    DexMethodFactWriter(DexBackedMethod dexMethod, Database _db,
+    DexMethodFactWriter(DexBackedMethod dexMethod, Database _db, boolean moreStrings,
                         Map<String, MethodSig> cachedMethodDescriptors) {
-        super(_db);
+        super(_db, moreStrings);
         this.m = dexMethod;
         this.cachedMethodDescriptors = cachedMethodDescriptors;
         this.methId = DexRepresentation.methodId(m, mf);
@@ -942,7 +942,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         String jvmClassName = jvmTypeOf((ReferenceInstruction)instr);
         String className = raiseTypeId(jvmClassName);
         String heapId = JavaRepresentation.classConstant(className);
-        _db.add(CLASS_HEAP, heapId, className);
+        writeClassHeap(heapId, className);
         String lineNo = strOfLineNo(findLineForInstructionIndex(index));
         int reg = ((OneRegisterInstruction)instr).getRegisterA();
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, local(reg), methId, lineNo);

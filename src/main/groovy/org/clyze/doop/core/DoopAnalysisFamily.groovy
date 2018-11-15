@@ -444,6 +444,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
+					id: "EXTRACT_MORE_STRINGS",
+					name: "extract-more-strings",
+					description: "Extract more string constants from the input code (may degrade performance).",
+			),
+			new BooleanAnalysisOption(
 					id: "REFLECTION_METHOD_HANDLES",
 					name: "reflection-method-handles",
 					description: "Reflection-based handling of the method handle APIs.",
