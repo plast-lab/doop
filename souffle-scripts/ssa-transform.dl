@@ -535,6 +535,23 @@ RewriteAssignCast(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
     ReachingDef(?insn, ?from, ?from_origin).
 
+.decl RewriteAssignCastNull(?insn:symbol, ?index:number, ?to:symbol, ?type:symbol, ?inmethod:symbol)
+.output RewriteAssignCastNull(filename="AssignCastNull.facts")
+
+RewriteAssignCastNull(?insn, ?index, ?to, ?type, ?inmethod) :-
+    SSA_AssignCastNull(?insn, _, ?to, ?inmethod),
+    AssignCast_Type(?insn, ?type),
+    SSA_InstructionIndex(?insn, ?index).
+
+.decl RewriteAssignCastNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
+.output RewriteAssignCastNumConstant(filename="AssignCastNumConstant.facts")
+
+RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod) :-
+    SSA_AssignCastNull(?insn, _, ?to, ?inmethod),
+    AssignCast_Type(?insn, ?type),
+    AssignCastNumConstant_Id(?insn, ?const),
+    SSA_InstructionIndex(?insn, ?index).
+
 .decl RewriteAssignOperFrom(?insn:symbol, ?pos:number, ?from:symbol)
 .output RewriteAssignOperFrom(filename="AssignOperFrom.facts")
 
