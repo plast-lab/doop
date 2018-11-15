@@ -511,12 +511,29 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
     SSA_Alias(?ssa_var, ?origin).
 
 // Rule rewriting
+.decl RewriteActualParam(?index:number, ?invocation:symbol, ?var:symbol)
+.output RewriteActualParam(filename="ActualParam.facts")
+
+RewriteActualParam(?index, ?invocation, ?var) :-
+    ActualParam(?index, ?invocation, ?var_origin),
+    ReachingDef(?invocation, ?var, ?var_origin).
+
 .decl RewriteAssignBinop(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
 .output RewriteAssignBinop(filename="AssignBinop.facts")
 
 RewriteAssignBinop(?insn, ?index, ?to, ?inmethod) :-
     SSA_AssignBinop(?insn, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index).
+
+.decl RewriteAssignCast(?insn:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
+.output RewriteAssignCast(filename="AssignCast.facts")
+
+RewriteAssignCast(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
+    SSA_AssignCast(?insn, _, ?to, ?inmethod),
+    AssignCast_Type(?insn, ?type),
+    AssignCast_From(?insn, ?from_origin),
+    SSA_InstructionIndex(?insn, ?index),
+    ReachingDef(?insn, ?from, ?from_origin).
 
 .decl RewriteAssignOperFrom(?insn:symbol, ?pos:number, ?from:symbol)
 .output RewriteAssignOperFrom(filename="AssignOperFrom.facts")
@@ -525,4 +542,12 @@ RewriteAssignOperFrom(?insn, ?pos, ?from) :-
     AssignOper_From(?insn, ?pos, ?from_origin),
     ReachingDef(?insn, ?from, ?from_origin).
 
+.decl RewriteAssignLocal(?insn:symbol, ?index:number, ?to:symbol, ?from:symbol, ?inmethod:symbol)
+.output RewriteAssignLocal(filename="AssignLocal.facts")
+
+RewriteAssignLocal(?insn, ?index, ?to, ?from, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    SSA_AssignLocal(?insn, _, ?to, ?inmethod),
+    AssignLocal_From(?insn, ?from_origin),
+    ReachingDef(?insn, ?from, ?from_origin).
 
