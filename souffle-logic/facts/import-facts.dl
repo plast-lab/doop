@@ -64,7 +64,7 @@ HeapAllocation_Type(?id, "java.lang.Class") :-
 
 // MethodHandleConstant
 
-.decl _MethodHandleConstant(?id:symbol, ?method:symbol)
+.decl _MethodHandleConstant(?id:symbol, ?method:symbol, ?retType:symbol, ?paramTypes:symbol, ?arity:number)
 .input _MethodHandleConstant(IO="file", filename="MethodHandleConstant.facts", delimiter="\t")
 
 isType("java.lang.invoke.MethodHandle").
@@ -75,8 +75,11 @@ isHeapAllocation(?id),
 isMethodHandleConstant(?id),
 OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodHandle"),
 MethodHandleConstant_Method(?id, ?method),
+MethodHandleConstant_Arity(?id, ?arity),
+MethodHandleConstant_ReturnType(?id, ?retType),
+MethodHandleConstant_ParamTypes(?id, ?paramTypes),
 HeapAllocation_Type(?id, "java.lang.invoke.MethodHandle") :-
-  _MethodHandleConstant(?id, ?method).
+  _MethodHandleConstant(?id, ?method, ?retType, ?paramTypes, ?arity).
 
 // MethodTypeConstant
 

@@ -331,11 +331,12 @@ class FactWriter extends JavaFactWriter {
     private void writeAssignMethodHandleConstant(SootMethod m, Stmt stmt, Local l, MethodHandle constant, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = Representation.instruction(m, stmt, index);
-        String handleName = constant.getMethodRef().toString();
-        String heap = methodHandleConstant(handleName);
+        String handleMethod = constant.getMethodRef().toString();
+        String heap = methodHandleConstant(handleMethod);
         String methodId = writeMethod(m);
 
-        writeMethodHandleConstant(heap, handleName);
+        SigInfo si = new SigInfo(constant.getMethodRef());
+        writeMethodHandleConstant(heap, handleMethod, si.retType, si.paramTypes, si.arity);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, Representation.local(m, l), methodId, "0");
     }
 
@@ -871,15 +872,10 @@ class FactWriter extends JavaFactWriter {
 
     private void writeDynamicInvoke(DynamicInvokeExpr di, int index, String insn, String methodId) {
         SootMethodRef dynInfo = di.getMethodRef();
-        int dynArity = dynInfo.parameterTypes().size();
-        for (int pIdx = 0; pIdx < dynArity; pIdx++)
+        SigInfo dynSig = new SigInfo(dynInfo);
+        for (int pIdx = 0; pIdx < dynSig.arity; pIdx++)
             writeInvokedynamicParameterType(insn, pIdx, dynInfo.parameterType(pIdx).toString());
-
-        StringBuffer dpTypes = new StringBuffer("(");
-        dynInfo.parameterTypes().forEach(p -> dpTypes.append(p.toString()));
-        String dynParamTypes = dpTypes.append(")").toString();
-
-        writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynParamTypes, di.getHandleTag(), methodId);
+        writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynSig.retType, dynSig.arity, dynSig.paramTypes, di.getHandleTag(), methodId);
     }
 
     private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {
@@ -1008,5 +1004,19 @@ class FactWriter extends JavaFactWriter {
 
         seenPhantoms.add(phantom);
         return false;
+    }
+
+    static class SigInfo {
+        public int arity;
+        public String retType;
+        public String paramTypes;
+        public SigInfo(SootMethodRef ref) {
+            this.arity = ref.parameterTypes().size();
+            this.retType = ref.returnType().toString();
+
+            StringBuffer dpTypes = new StringBuffer("(");
+            ref.parameterTypes().forEach(p -> dpTypes.append(p.toString()));
+            this.paramTypes = dpTypes.append(")").toString();
+        }
     }
 }
