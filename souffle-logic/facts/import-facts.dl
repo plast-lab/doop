@@ -800,11 +800,17 @@ isMethod(?id) :-
 isNumConstant(?const) :-
   NumConstantRaw(?const).
 
-.decl ArrayInitialValueFromConst(?instruction:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol)
+.decl ArrayInitialValueFromConst(?instruction:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol, ?method:Method)
 .input ArrayInitialValueFromConst(IO="file", filename="ArrayInitialValueFromConst.facts", delimiter="\t")
 
+isInstruction(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
 isNumConstant(?const) :-
-  ArrayInitialValueFromConst(_, _, _, _, ?const, _).
+  ArrayInitialValueFromConst(?instruction, ?index, _, _, ?const, _, ?method).
+
+isNumConstant(?const) :-
+  ArrayInitialValueFromConst(_, _, _, _, ?const, _, _).
 
 .decl ArrayInitialValueFromLocal(?instruction:symbol, ?to:symbol, ?index:number, ?from:symbol, ?baseHeap:symbol)
 .input ArrayInitialValueFromLocal(IO="file", filename="ArrayInitialValueFromLocal.facts", delimiter="\t")

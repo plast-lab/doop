@@ -728,7 +728,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             String insn = instructionId("assign", originalIndex);
             String heapId = entry.newArrayInfo.heapId;
             for (int idx = 0; idx < numbersSize; idx++)
-                _db.add(ARRAY_INITIAL_VALUE_FROM_CONST, insn, str(originalIndex), local(regDest), str(idx), numbers.get(idx).toString(), heapId);
+                _db.add(ARRAY_INITIAL_VALUE_FROM_CONST, insn, str(originalIndex), local(regDest), str(idx), numbers.get(idx).toString(), heapId, methId);
         } catch (Exception ex) {
             System.err.println(ex.getMessage());
         }
