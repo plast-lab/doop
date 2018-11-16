@@ -1,3 +1,5 @@
+#define ANDROID
+
 #import "../souffle-logic/facts/import-facts.dl"
 #import "../souffle-logic/facts/import-entities.dl"
 #import "../souffle-logic/facts/flow-sensitive-schema.dl"
@@ -511,6 +513,13 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
     SSA_Alias(?ssa_var, ?origin).
 
 // Rule rewriting
+//.decl RewriteArrayInitialValueFromConst(?insn:symbol, ?to:symbol, ?index:number, ?const:symbol, ?baseHeap:symbol)
+//.output RewriteArrayInitialValueFromConst(filename="ArrayInitialValueFromConst.facts")
+//
+//RewriteArrayInitialValueFromConst(?insn, ?to, ?index, ?const, ?baseHeap) :-
+//    ArrayInitialValueFromLocal(?index, ?invocation, ?var_origin),
+//    ReachingDef(?invocation, ?var, ?var_origin).
+
 .decl RewriteActualParam(?index:number, ?invocation:symbol, ?var:symbol)
 .output RewriteActualParam(filename="ActualParam.facts")
 
