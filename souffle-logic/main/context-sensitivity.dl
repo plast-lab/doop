@@ -229,7 +229,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseHeap) :-
  */
 VarPointsTo(?hctx, ?baseHeap, ?ctx, ?to),
 ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
-  ArrayInitialValueFromConst(_, ?to, _, ?const, ?baseHeap),
+  ArrayInitialValueFromConst(_, _, ?to, _, ?const, ?baseHeap),
   Value_Num(?value, ?const),
   isImmutableContext(?ctx),
   isImmutableHContext(?hctx).
