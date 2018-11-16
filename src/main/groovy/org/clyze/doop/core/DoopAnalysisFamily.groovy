@@ -165,7 +165,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SPECIAL_CONTEXT_SENSITIVITY_METHODS",
 					name: "special-cs-methods",
 					argName: "FILE",
-					description: "Use a file that specifies special context sensitivity for some methods.",
+	                                description: "Use a file that specifies special context sensitivity for some methods.",
+                                        forPreprocessor: true,  
 					forCacheID: true,
 					changesFacts: true
 			),
@@ -441,6 +442,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "GROUP_REFLECTION_STRINGS",
 					name: "reflection-coloring",
 					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "EXTRACT_MORE_STRINGS",
+					name: "extract-more-strings",
+					description: "Extract more string constants from the input code (may degrade performance).",
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_METHOD_HANDLES",

@@ -487,6 +487,9 @@ DynamicMethodInvocation:DynParamTypes[?invocation] = ?dynParamTypes ->
 // Arity of the dynamic method (calculated by the front-end).
 DynamicMethodInvocation:DynArity[?invocation] = ?dynArity ->
    DynamicMethodInvocation:Insn(?invocation), int[32](?dynArity).
+// Tag of the method handle.
+DynamicMethodInvocation:HandleTag[?invocation] = ?tag ->
+   DynamicMethodInvocation:Insn(?invocation), int[32](?tag).
 
 // The bootstrap parameters of a dynamic invocation.
 BootstrapParam[?index, ?invocation] = ?var ->

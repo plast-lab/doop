@@ -132,6 +132,17 @@ ListInitialLength(?list, ?length):-
   }.
 #endif
 
+VarPointsTo(?valHctx, ?val, ?ctx, ?var):-
+ ReadFromCollectionInsn_To(?insn, ?var),
+ CollectionAccessInsn_Base(?insn, ?baseVar),
+ VarPointsTo(?listHctx, ?list, ?ctx, ?baseVar),
+ IsPyListOrTuple(?list),
+ CollectionAccessInsn_IndexOrKey(?insn, ?indexVar),
+ VarHasConstIntValue(?indexVal, ?indexVar),
+ Value_Num(?indexVal, ?indexNum),
+ ?index = to_number(?indexNum),
+ ListAtIndexPointsTo(?listHctx, ?list, ?index, ?valHctx, ?val).
+
 //GENERAL LIST
 ListAtIndexPointsTo(?listHctx, ?list, ?index, ?hctx, ?val):-
   ListInitialAssignVar(?list, ?var, ?ctx),

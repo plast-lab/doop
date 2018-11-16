@@ -19,7 +19,8 @@ class AndroidTests extends DoopBenchmark {
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--gen-opt-directives", "--decode-apk", "--thorough-fact-gen",
+					 "--gen-opt-directives", "--decode-apk",
+					 "--thorough-fact-gen", "--sanity",
 					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
 		Main.main((String[])args)
 		analysis = Main.analysis
@@ -29,6 +30,7 @@ class AndroidTests extends DoopBenchmark {
 		varPointsToQ(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>/$r0', '<android component object jackpal.androidterm.RunScript>')
 		varValue(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>/$r0', '<android component object jackpal.androidterm.RunScript>')
 		instanceFieldPointsTo(analysis, '<android.widget.AdapterView$AdapterContextMenuInfo: android.view.View targetView>', '<jackpal.androidterm.Term: jackpal.androidterm.TermView createEmulatorView(jackpal.androidterm.emulatorview.TermSession)>/new jackpal.androidterm.TermView/0')
+		noSanityErrors(analysis)
 	}
 
 	// @spock.lang.Ignore
@@ -42,13 +44,15 @@ class AndroidTests extends DoopBenchmark {
 					 "--heapdl-file", "${doopBenchmarksDir}/android-benchmarks/jackpal.androidterm.hprof.gz",
 					 "--id", "test-android-androidterm-fw-heapdl",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+					 "--thorough-fact-gen", "--sanity",
 					 "--decode-apk", "--generate-jimple", "--Xstats-full", "-Ldebug"]
 		Main.main((String[])args)
 		analysis = Main.analysis
 
 		then:
-		// We only test if the logic compiles and loads the dynamic facts.
-		true == true
+		// We only test if the logic compiles, loads the dynamic facts,
+		// and passes the sanity check.
+		noSanityErrors(analysis)
 	}
 
 	// @spock.lang.Ignore

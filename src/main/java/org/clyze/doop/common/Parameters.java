@@ -26,6 +26,7 @@ public class Parameters {
     private boolean _noFacts = false;
     public boolean _ignoreFactGenErrors = false;
     private boolean _decodeApk = false;
+    public boolean _extractMoreStrings = false;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
@@ -194,6 +195,9 @@ public class Parameters {
             break;
         case "--decode-apk":
             _decodeApk = true;
+            break;
+        case "--extract-more-strings":
+            _extractMoreStrings = true;
             break;
         default:
             return -1;

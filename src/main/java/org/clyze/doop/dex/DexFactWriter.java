@@ -15,8 +15,8 @@ class DexFactWriter extends JavaFactWriter {
     private final Map<String, MethodSig> cachedMethodDescriptors;
     private final CHA cha;
 
-    DexFactWriter(Database db, CHA cha) {
-        super(db);
+    DexFactWriter(Database db, boolean moreStrings, CHA cha) {
+        super(db, moreStrings);
         this.cha = cha;
         this.cachedMethodDescriptors = new ConcurrentHashMap<>();
     }
@@ -32,7 +32,7 @@ class DexFactWriter extends JavaFactWriter {
     public void generateFacts(BasicJavaSupport java, DexParameters dexParams,
                               String apkName, String dexEntry, DexBackedDexFile dex)
             throws DoopErrorCodeException {
-        DexThreadFactory factory = new DexThreadFactory(_db, dexParams, dexEntry, apkName, cha, java, cachedMethodDescriptors);
+        DexThreadFactory factory = new DexThreadFactory(_db, dexParams, dexEntry, apkName, cha, _extractMoreStrings, java, cachedMethodDescriptors);
         int totalClasses = dex.getClassCount();
         DexDriver driver = new DexDriver(factory, totalClasses, dexParams._cores, false);
         driver.generateInParallel(dex.getClasses());

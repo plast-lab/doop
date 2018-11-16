@@ -164,14 +164,14 @@ class Representation extends JavaRepresentation {
     }
 
     static String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
-        String midPart = (expr instanceof DynamicInvokeExpr) ?
-            dynamicInvokeIdMiddle((DynamicInvokeExpr)expr) : invokeIdMiddle(expr);
+        String midPart;
+        if (expr instanceof DynamicInvokeExpr)
+            midPart = dynamicInvokeIdMiddle((DynamicInvokeExpr)expr);
+        else {
+            SootMethodRef exprMethodRef = expr.getMethodRef();
+            midPart = exprMethodRef.declaringClass() + "." + simpleName(exprMethodRef);
+        }
         return numberedInstructionId(getMethodSignature(inMethod), midPart, counter);
-    }
-
-    private static String invokeIdMiddle(InvokeExpr expr) {
-        SootMethodRef exprMethodRef = expr.getMethodRef();
-        return exprMethodRef.declaringClass() + "." + simpleName(exprMethodRef);
     }
 
     // Create a middle part for invokedynamic ids. It currently
@@ -185,25 +185,20 @@ class Representation extends JavaRepresentation {
         SootMethodRef bootMethRef = expr.getBootstrapMethodRef();
         if (bootMethRef != null) {
             String bootMethName = bootMethRef.resolve().toString();
-            int bootArity = expr.getBootstrapArgCount();
-            if (bootArity > 1) {
-                Value val1 = expr.getBootstrapArg(1);
-                if ((val1 instanceof MethodHandle) &&
-                    ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
-                     (bootMethName.equals(ALT_L_METAFACTORY)))) {
-                    SootMethodRef smr = ((MethodHandle)val1).getMethodRef();
-                    return DynamicMethodInvocation.genId(smr.declaringClass().toString(),
-                            smr.name());
+            if (bootMethName.equals(DEFAULT_L_METAFACTORY) ||
+                bootMethName.equals(ALT_L_METAFACTORY)) {
+                int bootArity = expr.getBootstrapArgCount();
+                if (bootArity > 1) {
+                    Value val1 = expr.getBootstrapArg(1);
+                    if (val1 instanceof MethodHandle) {
+                        SootMethodRef smr = ((MethodHandle)val1).getMethodRef();
+                        return DynamicMethodInvocation.genId(smr.declaringClass().toString(), smr.name());
+                    }
                 }
-                else
-                    System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
             }
-            else
-                System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");
         }
-        else
-            System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
-        return invokeIdMiddle(expr);
+        String dynName = expr.getMethodRef().name();
+        return DynamicMethodInvocation.genericId(bootMethRef.name(), dynName);
     }
 
 

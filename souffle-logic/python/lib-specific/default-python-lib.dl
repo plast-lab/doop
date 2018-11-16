@@ -1,0 +1,130 @@
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                                  FUNCTION DECLARATIONS
+//----------------------------------------------------------------------------------------------------------------------
+
+
+isModule("<BUILTIN_SCOPE>").
+
+isModule("<random>").
+
+VarPointsTo(?hctx, "<None>", ?ctx, "<BUILTIN_SCOPE>/noneDefVar"):-
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
+
+ModeledFunction("<range>", "range", "<BUILTIN_SCOPE>").
+
+FormalParam( 0, "startStop", "<range>", "<range>/mockParam1").
+FormalParam( 1, "stop", "<range>", "<range>/mockParam2").
+FormalParam( 2, "step", "<range>", "<range>/mockParam3").
+FormalParam_DefaultValFrom("<range>", "startStop", "<BUILTIN_SCOPE>/noneDefVar").
+FormalParam_DefaultValFrom("<range>", "stop", "<BUILTIN_SCOPE>/noneDefVar").
+FormalParam_DefaultValFrom("<range>", "step", "<BUILTIN_SCOPE>/noneDefVar").
+
+ModeledFunction("<len>", "len", "<BUILTIN_SCOPE>").
+
+FormalParam( 0, "s", "<len>", "<len>/mockParam1").
+
+ModeledFunction("<random.randint>", "randint", "<random>").
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                                  GENERAL OP MODELING
+//----------------------------------------------------------------------------------------------------------------------
+
+
+.decl BuiltInOp_NameToVal(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?name:symbol, ?namedValHctx:configuration.HContext, ?namedVal:Value)
+.output BuiltInOp_NameToVal
+
+.decl BuiltInOpProducesOutput(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value)
+.output BuiltInOpProducesOutput
+
+
+configuration.RecordContextRequest(?ctx, ?operationVal, ?var) :-
+  BuiltInOpProducesOutput(?ctx, ?insn, ?operationVal),
+  AssignInstruction_To(?insn, ?var).
+
+VarPointsTo(?hctx, ?operationVal, ?ctx, ?var):-
+  configuration.RecordContextResponse(?ctx, ?operationVal, ?var, ?hctx),
+  BuiltInOpProducesOutput(?ctx, ?insn, ?operationVal),
+  AssignInstruction_To(?insn, ?var).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                                  RANGE OP
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl RangeOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?rangeOp:Value)
+.output RangeOp
+
+.decl RangeOpOneArg(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?rangeOp:Value)
+.output RangeOpOneArg
+
+#define RangeValMacro(op,fun, index, val1, val2, val3) cat("<range ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val1, cat("+", cat(val2, cat("+", cat(val3, ">"))))))))))
+
+
+BuiltInOp_NameToVal(?ctx, ?insn, ?rangeOp, "startStop", ?startStopHctx, ?startStop),
+BuiltInOp_NameToVal(?ctx, ?insn, ?rangeOp, "stop", ?stopHctx, ?stop),
+BuiltInOp_NameToVal(?ctx, ?insn, ?rangeOp, "step", ?stepHctx, ?step),
+RangeOp(?ctx, ?insn, ?rangeOp):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<range>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<range>", "startStop", ?startStopHctx, ?startStop),
+  ResolvedActualParamValue(?ctx, ?insn, "<range>", "stop", ?stopHctx, ?stop),
+  ResolvedActualParamValue(?ctx, ?insn, "<range>", "step", ?stepHctx, ?step),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?rangeOp = RangeValMacro("range", ?fun, ?index, ?startStop, ?stop, ?step).
+
+RangeOpOneArg(?ctx, ?insn, ?rangeOp),
+BuiltInOpProducesOutput(?ctx, ?insn, ?rangeOp):-
+  RangeOp(?ctx, ?insn, ?rangeOp),
+  BuiltInOp_NameToVal(?ctx, ?insn, ?rangeOp, "startStop", _, ?startStop),
+  ?startStop != "<None>",
+  BuiltInOp_NameToVal(?ctx, ?insn, ?rangeOp, "stop", _, "<None>"),
+  BuiltInOp_NameToVal(?ctx, ?insn, ?rangeOp, "step", _, "<None>").
+
+
+IterableObjectLength(?hctx, ?rangeOp, ?startStop):-
+  RangeOpOneArg(?ctx, ?insn, ?rangeOp),
+  BuiltInOp_NameToVal(?ctx, ?insn, ?rangeOp, "startStop", _, ?startStop),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?rangeOp, ?ctx, ?var).
+
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                                  LEN OP
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl LenOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?lenOp:Value, ?inValHctx:configuration.HContext, ?inVal:Value)
+.output LenOp
+
+#define LenValMacro(op,fun, index, inval) cat("<len ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(inval, ">"))))))
+
+
+LenOp(?ctx, ?insn, ?lenOp, ?inValHctx, ?inVal):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<len>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<len>", "s", ?inValHctx, ?inVal),
+  Instruction_Function(?insn, ?fun),
+  Instruction_Index(?insn, ?index),
+  ?lenOp = LenValMacro("range", ?fun, ?index, ?inVal).
+
+VarPointsTo(?hctx, ?val, ?ctx, ?var):-
+  LenOp(?ctx, ?insn, _, ?inValHctx, ?inVal),
+  AssignInstruction_To(?insn, ?var),
+  TensorLikeObjectShapeListContent(?inValHctx, ?inVal, 0, ?val),
+  isImmutableHContext(?hctx).           //Maybe Review this
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                                  RANDOM RANDINT
+//----------------------------------------------------------------------------------------------------------------------
+
+Value_Num("<num-constant(int):0>", "0").
+isIntConstant("0").
+
+VarPointsTo(?hctx, ?mockVal, ?ctx, ?var):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<random.randint>"),
+  AssignInstruction_To(?insn, ?var),
+  isImmutableHContext(?hctx),
+  ?mockVal = "<num-constant(int):0>".

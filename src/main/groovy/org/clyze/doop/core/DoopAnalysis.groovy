@@ -312,6 +312,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--seed", options.SEED.value.toString()]
         }
 
+        if (options.EXTRACT_MORE_STRINGS.value) {
+            params += ["--extract-more-strings"]
+        }
+
         if (options.X_DRY_RUN.value) {
             params += ["--no-facts"]
         }

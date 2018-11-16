@@ -9,6 +9,7 @@ import org.clyze.utils.Helper
 
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
@@ -55,7 +56,8 @@ class SouffleScript {
 
 			def ignoreCounter = 0
 			compilationTime = Helper.timing {
-				executor.execute(compilationCommand) { String line ->
+				Path tmpFile = Files.createTempFile("", "")
+				executor.executeWithRedirectedOutput(compilationCommand, tmpFile.toFile()) { String line ->
 					if (ignoreCounter != 0) ignoreCounter--
 					else if (line.startsWith("Warning: No rules/facts defined for relation") ||
 							line.startsWith("Warning: Deprecated output qualifier was used")) {
@@ -64,6 +66,7 @@ class SouffleScript {
 					} else if (line.startsWith("Warning: Record types in output relations are not printed verbatim")) ignoreCounter = 2
 					else log.info line
 				}
+				Files.delete(tmpFile)
 			}
 
 			try {
@@ -103,4 +106,50 @@ class SouffleScript {
 
 		return [compilationTime, executionTime]
 	}
+
+    def interpretScript(File origScriptFile, File outDir, File factsDir,
+                   boolean profile = false, boolean debug = false,
+                   boolean removeContext = false) {
+
+        def scriptFile = File.createTempFile("gen_", ".dl", outDir)
+        executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
+
+        def db = new File(outDir, "database")
+        deleteQuietly(db)
+        db.mkdirs()
+
+        if (removeContext) {
+            def backupFile = new File("${scriptFile}.backup")
+            Files.copy(scriptFile.toPath(), backupFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+            ContextRemover.removeContexts(backupFile, scriptFile)
+        }
+
+        def interpretationCommand = "souffle  $scriptFile -F$factsDir -D$db".split().toList()
+        if (profile)
+            interpretationCommand<< ("-p${outDir}/profile.txt" as String)
+        if (debug)
+            interpretationCommand << ("-r${outDir}/report.html" as String)
+
+        log.info "Interpreting analysis script"
+        log.debug "Interpretation command: $interpretationCommand"
+
+        def ignoreCounter = 0
+        executionTime = Helper.timing {
+            Path tmpFile = Files.createTempFile("", "")
+            executor.executeWithRedirectedOutput(interpretationCommand, tmpFile.toFile()) { String line ->
+                if (ignoreCounter != 0) ignoreCounter--
+                else if (line.startsWith("Warning: No rules/facts defined for relation") ||
+                        line.startsWith("Warning: Deprecated output qualifier was used")) {
+                    log.info line
+                    ignoreCounter = 2
+                } else if (line.startsWith("Warning: Record types in output relations are not printed verbatim")) ignoreCounter = 2
+                else log.info line
+            }
+            Files.delete(tmpFile)
+        }
+
+        log.info "Analysis execution time (sec): $executionTime"
+        return [compilationTime, executionTime]
+    }
+
 }

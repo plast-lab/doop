@@ -33,6 +33,8 @@ def run_pre_analysis(initArgs):
     args = args + ['--zipper-pre']
     args = args + ['--cache']
     args = args + ['--id', APP + "-zipper-ci"]
+    args = args + ['--Xstart-after-facts', APP+"-facts"]
+    args = args + ['--Xsymlink-cached-facts']
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running pre-analysis ...' + RESET
     # print cmd
@@ -100,7 +102,9 @@ def run_zipper(app, cache_dir, out_dir):
 def run_main_analysis(args, zipper_file):
     args = [DOOP] + args
     args = args + ['--zipper', zipper_file]
-    args = args + ['--Xstart-after-facts', os.path.join(ZIPPER_CACHE, APP, 'facts')]
+    args = args + ['--Xstart-after-facts', APP+"-facts"]
+    args = args + ['--Xsymlink-cached-facts']
+    
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running main (Zipper-guided) analysis ...' + RESET
     # print cmd

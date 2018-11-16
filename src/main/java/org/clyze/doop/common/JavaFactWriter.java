@@ -17,9 +17,11 @@ public class JavaFactWriter {
     protected static final String L_OP = "1";
     protected static final String R_OP = "2";
     protected final Database _db;
+    protected boolean _extractMoreStrings;
 
-    protected JavaFactWriter(Database db) {
+    protected JavaFactWriter(Database db, boolean extractMoreStrings) {
         this._db = db;
+        this._extractMoreStrings = extractMoreStrings;
     }
 
     public static String str(int i) {
@@ -273,5 +275,15 @@ public class JavaFactWriter {
         else
             System.err.println("Warning: cannot compute arity of " + mt);
         _db.add(METHOD_TYPE_CONSTANT, mt, str(arity));
+    }
+
+    protected void writeMethodAnnotation(String method, String annotationType) {
+        _db.add(METHOD_ANNOTATION, method, annotationType);
+    }
+
+    protected void writeClassHeap(String heap, String className) {
+        _db.add(CLASS_HEAP, heap, className);
+        if (_extractMoreStrings)
+            writeStringConstant(className);
     }
 }

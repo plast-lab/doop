@@ -27,24 +27,26 @@ class FactWriter extends JavaFactWriter {
     private final Representation _rep;
     private final Map<String, Type> _varTypeMap = new ConcurrentHashMap<>();
     private final boolean _reportPhantoms;
+    private final Set<Object> seenPhantoms = new HashSet<>();
 
-    FactWriter(Database db, Representation rep, boolean reportPhantoms) {
-        super(db);
+    FactWriter(Database db, boolean moreStrings,
+               Representation rep, boolean reportPhantoms) {
+        super(db, moreStrings);
         _rep = rep;
         _reportPhantoms = reportPhantoms;
     }
 
     String writeMethod(SootMethod m) {
         String methodRaw = _rep.signature(m);
-        String result = hashMethodNameIfLong(methodRaw);
+        String methodId = hashMethodNameIfLong(methodRaw);
         String arity = Integer.toString(m.getParameterCount());
 
-        _db.add(STRING_RAW, result, methodRaw);
-        _db.add(METHOD, result, _rep.simpleName(m), Representation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
+        _db.add(STRING_RAW, methodId, methodRaw);
+        _db.add(METHOD, methodId, _rep.simpleName(m), Representation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
-                _db.add(METHOD_ANNOTATION, result, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                writeMethodAnnotation(methodId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
             }
         }
         if (m.getTag("VisibilityParameterAnnotationTag") != null) {
@@ -54,12 +56,12 @@ class FactWriter extends JavaFactWriter {
             for (int i = 0; i < annList.size(); i++) {
                 if (annList.get(i) != null) {
                     for (AnnotationTag aTag : annList.get(i).getAnnotations()) {
-                        _db.add(PARAM_ANNOTATION, result, str(i), soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                        _db.add(PARAM_ANNOTATION, methodId, str(i), soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
                     }
                 }
             }
         }
-        return result;
+        return methodId;
     }
 
     void writeAndroidEntryPoint(SootMethod m) {
@@ -75,7 +77,7 @@ class FactWriter extends JavaFactWriter {
             writePhantomType(c);
         }
         _db.add(isInterface ? INTERFACE_TYPE : CLASS_TYPE, classStr);
-        _db.add(CLASS_HEAP, Representation.classConstant(c), classStr);
+        writeClassHeap(Representation.classConstant(c), classStr);
         if (c.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
@@ -117,6 +119,8 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writePhantomType(Type t) {
+        if (_reportPhantoms)
+            System.out.println("Type " + t + " is phantom.");
         writePhantomType(writeType(t));
     }
 
@@ -349,7 +353,7 @@ class FactWriter extends JavaFactWriter {
             Type t = ClassHeapFinder.raiseTypeWithSoot(s);
             String actualType = t.toString();
             heap = Representation.classConstant(t);
-            _db.add(CLASS_HEAP, heap, actualType);
+            writeClassHeap(heap, actualType);
         } else if (first == '(') {
             // method type constant (viewed by Soot as a class constant)
             heap = s;
@@ -369,7 +373,7 @@ class FactWriter extends JavaFactWriter {
             // bug that adds a phantom class to the Scene's hierarchy, although
             // (based on their own comments) it shouldn't.
             heap = classConstant(s);
-            _db.add(CLASS_HEAP, heap, s);
+            writeClassHeap(heap, s);
         }
 
         int index = session.calcUnitNumber(stmt);
@@ -998,4 +1002,11 @@ class FactWriter extends JavaFactWriter {
         writePreliminaryFacts(java, sootParameters);
     }
 
+    boolean checkAndRegisterPhantom(Object phantom) {
+        if (seenPhantoms.contains(phantom))
+            return true;
+
+        seenPhantoms.add(phantom);
+        return false;
+    }
 }

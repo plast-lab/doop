@@ -28,6 +28,16 @@ VarPointsTo(?hctx, ?module, ?ctx, ?var):-
   isModule(?module),
   isImmutableHContext(?hctx).
 
+//TODO: REVIEW THIS, USING IMPORT FOR THE DEFAULT IMPORT FUNCTIONS OF WALA FOR NOW
+VarPointsTo(?hctx, ?value, ?ctx, ?var):-
+  Reachable(?function),
+  ReachableContext(?ctx, ?function),
+  Instruction_Function(?insn, ?function),
+  isImportInstruction(?insn),
+  ImportInsn_ModuleName(?insn, ?name),
+  AssignInstruction_To(?insn, ?var),
+  GlobalNamePointsTo(?hctx, ?value, "<BUILTIN_SCOPE>", ?name).
+
 VarPointsTo(?hctx, ?heap, ?ctx, ?to):-
   isLoadInstanceField_Insn(?insn),
   FieldInstruction_Signature(?insn, ?signature),

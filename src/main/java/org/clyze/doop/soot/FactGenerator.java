@@ -303,17 +303,13 @@ class FactGenerator implements Runnable {
     }
 
     private void generatePhantom(Object cause) {
-        if (cause instanceof SootClass) {
-            Type t = ((SootClass)cause).getType();
-            if (_reportPhantoms)
-                System.out.println("Type " + t + " is phantom.");
-            _writer.writePhantomType(t);
-        } else if (cause instanceof SootMethod) {
-            SootMethod meth = (SootMethod)cause;
-            if (_reportPhantoms)
-                System.out.println("Method " + meth.getSignature() + " is phantom.");
-            _writer.writePhantomMethod(meth);
-        }
+        if (_writer.checkAndRegisterPhantom(cause))
+            return;
+
+        if (cause instanceof SootClass)
+            _writer.writePhantomType(((SootClass)cause).getType());
+        else if (cause instanceof SootMethod)
+            _writer.writePhantomMethod((SootMethod)cause);
         else
             System.err.println("Ignoring phantom cause: " + cause);
     }

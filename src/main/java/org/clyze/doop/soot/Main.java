@@ -176,14 +176,15 @@ public class Main {
             if (sootParameters._failOnMissingClasses) {
                 throw new MissingClassesException(unrecorded.toArray(new String[0]));
             } else {
-                System.err.println("Warning: some classes were not resolved, consider adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
+                System.err.println("Warning: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
             }
         }
 
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
             boolean reportPhantoms = sootParameters._reportPhantoms;
+            boolean moreStrings = sootParameters._extractMoreStrings;
             Representation rep = new Representation();
-            FactWriter writer = new FactWriter(db, rep, reportPhantoms);
+            FactWriter writer = new FactWriter(db, moreStrings, rep, reportPhantoms);
             ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, reportPhantoms);
             SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors);
             factory.setDriver(driver);

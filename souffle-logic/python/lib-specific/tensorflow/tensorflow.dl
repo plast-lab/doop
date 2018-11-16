@@ -58,6 +58,14 @@ isTensorDataType("<tensorflow.variant>").
 
 ModeledClass("<tensorflow.Tensor>", "Tensor", "<tensorflow>").
 
+ModeledMethod("<tensorflow.Tensor.set_shape>", "set_shape", "<tensorflow.Tensor>", "<tensorflow>").
+FormalParam( 0, "self", "<tensorflow.Tensor.set_shape>", "<tensorflow.Tensor.set_shape>/mockParam1").
+FormalParam( 1, "shape", "<tensorflow.Tensor.set_shape>",  "<tensorflow.Tensor.set_shape>/mockParam2").
+
+ModeledMethod("<tensorflow.Tensor.eval>", "eval", "<tensorflow.Tensor>", "<tensorflow>").
+FormalParam( 0, "self", "<tensorflow.Tensor.eval>", "<tensorflow.Tensor.eval>/mockParam1").
+FormalParam( 1, "feed_dict", "<tensorflow.Tensor.eval>",  "<tensorflow.Tensor.eval>/mockParam2").
+
 ModeledClass("<tensorflow.TensorShape>", "TensorShape", "<tensorflow>").
 
 ModeledModule("<tensorflow.layers>", "layers", "<tensorflow>").
@@ -68,10 +76,19 @@ FormalParam( 0, "tensor", "<tensorflow.reshape>", "<tensorflow.reshape>/mockPara
 FormalParam( 1, "shape", "<tensorflow.reshape>",  "<tensorflow.reshape>/mockParam2").
 FormalParam( 2, "name", "<tensorflow.reshape>",   "<tensorflow.reshape>/mockParam3").
 
+ModeledFunction("<tensorflow.transpose>", "transpose", "<tensorflow>").
+FormalParam( 0, "a", "<tensorflow.transpose>", "<tensorflow.transpose>/mockParam1").
+FormalParam( 1, "perm", "<tensorflow.transpose>",  "<tensorflow.transpose>/mockParam2").
+
+ModeledFunction("<tensorflow.expand_dims>", "expand_dims", "<tensorflow>").
+FormalParam( 0, "input", "<tensorflow.expand_dims>", "<tensorflow.expand_dims>/mockParam1").
+FormalParam( 1, "axis", "<tensorflow.expand_dims>",  "<tensorflow.expand_dims>/mockParam2").
+
 ModeledFunction("<tensorflow.placeholder>", "placeholder", "<tensorflow>").
 FormalParam( 0, "dtype", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam1").
 FormalParam( 1, "shape", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam2").
 FormalParam( 2, "name", "<tensorflow.placeholder>",  "<tensorflow.placeholder>/mockParam3").
+FormalParam_DefaultValFrom("<tensorflow.placeholder>", "shape", "<tensorflow>/noneDefVar").
 
 
 // LAYERS CONVOLUTION
@@ -279,8 +296,9 @@ ModeledMethod("<tensorflow.Session.__init__>", "__init__", "<tensorflow.Session>
 
 
 ModeledMethod("<tensorflow.Session.run>", "run", "<tensorflow.Session>", "<tensorflow>").
-FormalParam( 0, "fetch", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam1").
-FormalParam( 1, "feed_dict", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam2").
+FormalParam( 0, "self", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam1").
+FormalParam( 1, "fetch", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam2").
+FormalParam( 2, "feed_dict", "<tensorflow.Session.run>", "<tensorflow.Session.run>/mockParam3").
 
 
 ModeledFunction("<tensorflow.random_normal>", "random_normal", "<tensorflow>").
@@ -295,3 +313,80 @@ FormalParam( 3, "dtype", ?function, cat(?function,"/mockParam2")):-
 ?function = "<tensorflow.truncated_normal>";
 ?function = "<tensorflow.random_gamma>";
 ?function = "<tensorflow.random_uniform>".
+
+
+ModeledFunction("<tensorflow.equal>", "equal", "<tensorflow>").
+
+FormalParam( 0, "x", "<tensorflow.equal>", "<tensorflow.equal>/mockParam1").
+FormalParam( 1, "y", "<tensorflow.equal>", "<tensorflow.equal>/mockParam2").
+
+
+ModeledFunction("<tensorflow.add>", "add", "<tensorflow>").
+
+FormalParam( 0, "x", "<tensorflow.add>", "<tensorflow.add>/mockParam1").
+FormalParam( 1, "y", "<tensorflow.add>", "<tensorflow.add>/mockParam2").
+
+ModeledFunction("<tensorflow.multiply>", "multiply", "<tensorflow>").
+
+FormalParam( 0, "x", "<tensorflow.multiply>", "<tensorflow.multiply>/mockParam1").
+FormalParam( 1, "y", "<tensorflow.multiply>", "<tensorflow.multiply>/mockParam2").
+
+ModeledFunction("<tensorflow.matmul>", "matmul", "<tensorflow>").
+
+FormalParam( 0, "a", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam1").
+FormalParam( 1, "b", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam2").
+FormalParam( 2, "transpose_a", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam3").
+FormalParam( 3, "transpose_b", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam4").
+FormalParam( 4, "adjoint_a", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam5").
+FormalParam( 5, "adjoint_b", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam6").
+FormalParam( 6, "a_is_sparse", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam7").
+FormalParam( 6, "b_is_sparse", "<tensorflow.matmul>", "<tensorflow.matmul>/mockParam8").
+
+
+ModeledModule("<tensorflow.contrib>", "contrib", "<tensorflow>").
+ModeledModule("<tensorflow.contrib.keras>", "keras", "<tensorflow.contrib>").
+ModeledModule("<tensorflow.contrib.keras.api>", "api", "<tensorflow.contrib.keras>").
+ModeledModule("<tensorflow.contrib.keras.api.keras>", "keras", "<tensorflow.contrib.keras.api>").
+ModeledModule("<tensorflow.contrib.keras.api.keras.preprocessing>", "preprocessing", "<tensorflow.contrib.keras.api.keras>").
+ModeledModule("<tensorflow.contrib.keras.api.keras.preprocessing.image>", "image", "<tensorflow.contrib.keras.api.keras.preprocessing>").
+
+ModeledFunction("<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>", "load_img", "<tensorflow.contrib.keras.api.keras.preprocessing.image>").
+
+FormalParam( 0, "path", "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>", "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>/mockParam1").
+FormalParam( 1, "target_size", "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>", "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>/mockParam2").
+
+ModeledFunction("<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>", "img_to_array", "<tensorflow.contrib.keras.api.keras.preprocessing.image>").
+FormalParam( 0, "image", "<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>", "<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>/mockParam1").
+
+ModeledFunction("<tensorflow.nn.embedding_lookup>", "embedding_lookup", "<tensorflow.nn>").
+FormalParam( 0, "params", "<tensorflow.nn.embedding_lookup>", "<tensorflow.nn.embedding_lookup>/mockParam1").
+FormalParam( 1, "ids", "<tensorflow.nn.embedding_lookup>", "<tensorflow.nn.embedding_lookup>/mockParam2").
+
+ModeledFunction("<tensorflow.reduce_mean>", "reduce_mean", "<tensorflow>").
+
+
+ModeledFunction("<tensorflow.nn.softmax_cross_entropy_with_logits>", "softmax_cross_entropy_with_logits", "<tensorflow.nn>").
+FormalParam( 0, "_sentinel", "<tensorflow.nn.softmax_cross_entropy_with_logits>", "<tensorflow.nn.softmax_cross_entropy_with_logits>/mockParam1").
+FormalParam( 1, "labels", "<tensorflow.nn.softmax_cross_entropy_with_logits>", "<tensorflow.nn.softmax_cross_entropy_with_logits>/mockParam2").
+FormalParam( 2, "logits", "<tensorflow.nn.softmax_cross_entropy_with_logits>", "<tensorflow.nn.softmax_cross_entropy_with_logits>/mockParam3").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits>", "_sentinel", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits>", "labels", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits>", "logits", "<tensorflow>/noneDefVar").
+
+
+ModeledFunction("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "softmax_cross_entropy_with_logits_v2", "<tensorflow.nn>").
+FormalParam( 0, "_sentinel", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>/mockParam1").
+FormalParam( 1, "labels", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>/mockParam2").
+FormalParam( 2, "logits", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>/mockParam3").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "_sentinel", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "labels", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "logits", "<tensorflow>/noneDefVar").
+
+ModeledFunction("<tensorflow.argmax>", "argmax", "<tensorflow>").
+ModeledFunction("<tensorflow.argmin>", "argmin", "<tensorflow>").
+
+FormalParam( 0, "input", "<tensorflow.argmax>", "<tensorflow.argmax>/mockParam1").
+FormalParam( 1, "axis", "<tensorflow.argmax>", "<tensorflow.argmax>/mockParam2").
+
+FormalParam( 0, "input", "<tensorflow.argmin>", "<tensorflow.argmin>/mockParam1").
+FormalParam( 1, "axis", "<tensorflow.argmin>", "<tensorflow.argmin>/mockParam2").

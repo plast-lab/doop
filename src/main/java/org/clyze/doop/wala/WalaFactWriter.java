@@ -46,8 +46,8 @@ public class WalaFactWriter extends JavaFactWriter {
 
     private Map<String,List<String>> _signaturePolyMorphicMethods;
 
-    WalaFactWriter(Database db, WalaRepresentation rep) {
-        super(db);
+    WalaFactWriter(Database db, boolean moreStrings, WalaRepresentation rep) {
+        super(db, moreStrings);
         _rep = rep;
         _typeMap = new ConcurrentHashMap<>();
         _phantomType = new ConcurrentHashMap<>();
@@ -87,7 +87,7 @@ public class WalaFactWriter extends JavaFactWriter {
         _db.add(STRING_RAW, result, result);
         _db.add(METHOD, result, WalaRepresentation.simpleName(m.getReference()), WalaRepresentation.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         for (Annotation annotation : m.getAnnotations()) {
-            _db.add(METHOD_ANNOTATION, result, fixTypeString(annotation.getType().toString()));
+            writeMethodAnnotation(result, fixTypeString(annotation.getType().toString()));
             //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
         }
 //        ShrikeCTMethod shrikeMethod = (ShrikeCTMethod)m;
@@ -131,7 +131,7 @@ public class WalaFactWriter extends JavaFactWriter {
         else {
             _db.add(CLASS_TYPE, classStr);
         }
-        _db.add(CLASS_HEAP, WalaRepresentation.classConstant(c), classStr);
+        writeClassHeap(WalaRepresentation.classConstant(c), classStr);
 
         if(c instanceof ShrikeClass) { //We have currently disabled annotations for Android
             Collection<Annotation> annotations = c.getAnnotations();
@@ -174,7 +174,7 @@ public class WalaFactWriter extends JavaFactWriter {
         if (t.isArrayType() && inMap == null) {
             TypeReference componentType = t.getArrayElementType();
             writeArrayTypes(typeName, writeType(componentType));
-            _db.add(CLASS_HEAP, classConstant(typeName), typeName);
+            writeClassHeap(classConstant(typeName), typeName);
         }
         else if (t.isPrimitiveType() || t.isReferenceType() || t.isClassType()) {
 
@@ -437,7 +437,7 @@ public class WalaFactWriter extends JavaFactWriter {
         }
 
 
-        _db.add(CLASS_HEAP, heap, actualType);
+        writeClassHeap(heap, actualType);
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);

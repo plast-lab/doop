@@ -56,6 +56,7 @@ public enum PythonPredicateFile
     THROW_NULL("ThrowNull"),
     EXCEPTION_HANDLER("ExceptionHandler"),
     FUNCTION("Function"),
+    COMPREHENSION_FUNCTION("ComprehensionFunction"),
     FUNCTION_DECORATOR("Function-Decorator"),
     STORE_INST_FIELD("StoreInstanceField"),
     LOAD_INST_FIELD("LoadInstanceField"),
