@@ -803,6 +803,12 @@ isNumConstant(?const) :-
 .decl ArrayInitialValueFromConst(?instruction:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol, ?method:Method)
 .input ArrayInitialValueFromConst(IO="file", filename="ArrayInitialValueFromConst.facts", delimiter="\t")
 
+isInstruction(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+isNumConstant(?const) :-
+  ArrayInitialValueFromConst(?instruction, ?index, _, _, ?const, _, ?method).
+
 isNumConstant(?const) :-
   ArrayInitialValueFromConst(_, _, _, _, ?const, _, _).
 
