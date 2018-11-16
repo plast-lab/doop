@@ -561,6 +561,15 @@ RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod) :-
     AssignCastNumConstant_Id(?insn, ?const),
     SSA_InstructionIndex(?insn, ?index).
 
+.decl RewriteAssignHeapAllocation(?insn:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)
+.output RewriteAssignHeapAllocation(filename="AssignHeapAllocation.facts")
+
+RewriteAssignHeapAllocation(?insn, ?index, ?heap, ?to, ?inmethod, ?linenumber) :-
+    SSA_AssignHeapAllocation(?insn, _, ?to, ?inmethod),
+    AssignHeapAllocation_Heap(?insn, ?heap),
+    Instruction_Line(?insn, ?linenumber),
+    SSA_InstructionIndex(?insn, ?index).
+
 .decl RewriteAssignOperFrom(?insn:symbol, ?pos:number, ?from:symbol)
 .output RewriteAssignOperFrom(filename="AssignOperFrom.facts")
 
