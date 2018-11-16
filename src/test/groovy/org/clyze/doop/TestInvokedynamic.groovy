@@ -49,4 +49,22 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		varPointsTo(analysis, '<A: void <init>()>/@this', 'mock A constructed by constructor reference at <Main: void main(java.lang.String[])>/java.util.function.Supplier.get/1')
 		noSanityErrors(analysis)
 	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test 115 (invokedynamic, method handles/types)"() {
+		when:
+		analyzeTest("115-invokedynamic", [ "--platform", "java_8",
+										   "--generate-jimple",
+										   // "--Xserver-logic",
+										   "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+										   "--thorough-fact-gen", "--sanity",
+										   "--reflection-classic", "--reflection-method-handles"])
+
+		then:
+		varPointsTo(analysis, '<Main: void test1()>/println2out#_31', '<direct method handle for <java.io.PrintStream: void println(java.lang.String)>>')
+		varPointsTo(analysis, '<Main: void test2()>/methV_mh#_39', '<direct method handle for <A: void methV()>>')
+		varPointsTo(analysis, '<Main: void test3()>/methI_mh#_48', '<direct method handle for <A: void methI(java.lang.Integer)>>')
+		varPointsTo(analysis, '<Main: void test4()>/methDD_mh#_57', '<direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
+	}
 }
