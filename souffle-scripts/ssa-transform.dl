@@ -421,11 +421,6 @@ SSANext(?prev, ?next) :-
 
 .decl isInstr(?insn:symbol)
 
-// TODO: Add Instruction_Method
-isInstruction(?insn),
-Instruction_Index(?insn, ?index) :- 
-    ArrayInitialValueFromConst(?insn, ?index, _, _, _, _).
-
 isInstruction(?insn) :-
     Instruction_Method(?insn, _).
 
@@ -518,11 +513,11 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
     SSA_Alias(?ssa_var, ?origin).
 
 // Rule rewriting
-.decl RewriteArrayInitialValueFromConst(?insn:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol)
+.decl RewriteArrayInitialValueFromConst(?insn:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol, ?inmethod:symbol)
 .output RewriteArrayInitialValueFromConst(filename="ArrayInitialValueFromConst.facts")
 
-RewriteArrayInitialValueFromConst(?insn, ?index, ?to, ?arrayIndex, ?const, ?baseHeap) :-
-    ArrayInitialValueFromConst(?insn, ?index, ?var_origin, ?arrayIndex, ?const, ?baseHeap),
+RewriteArrayInitialValueFromConst(?insn, ?index, ?to, ?arrayIndex, ?const, ?baseHeap, ?inmethod) :-
+    ArrayInitialValueFromConst(?insn, ?index, ?var_origin, ?arrayIndex, ?const, ?baseHeap, ?inmethod),
     ReachingDef(?insn, ?to, ?var_origin).
 
 .decl RewriteActualParam(?index:number, ?invocation:symbol, ?var:symbol)
