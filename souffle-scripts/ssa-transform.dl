@@ -31,6 +31,13 @@ SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?m
     AssignInstruction_To(?instr, ?to),
     Instruction_Method(?instr, ?method).
 
+SSA_AssignToOriginal(?invocation, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
+SSA_AssignDetails(?invocation, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    Instruction_Index(?invocation, ?index),
+    AssignReturnValue(?invocation, ?to),
+    Instruction_Method(?invocation, ?method).
+
 SSA_Alias(cat(?original, cat("_", "0")), ?original),
 SSA_FormalParam(?index, ?method, cat(?original, cat("_", "0"))) :-
     FormalParam(?index, ?method, ?original).
@@ -38,7 +45,7 @@ SSA_FormalParam(?index, ?method, cat(?original, cat("_", "0"))) :-
 SSA_Alias(cat(?original, cat("_", "0")), ?original),
 SSA_ThisVar(?method, cat(?original, cat("_", "0"))) :-
     ThisVar(?method, ?original).
-    
+
 .decl SSA_AssignHeapAllocation(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 
 SSA_AssignHeapAllocation(?instr, ?index, ?ssa_name, ?method) :-
@@ -94,6 +101,10 @@ SSA_AssignNumConstant(?instr, ?index, ?ssa_name, ?method) :-
     SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
 .decl SSA_AssignInstanceOf(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+
+SSA_AssignInstanceOf(?instr, ?index, ?ssa_name, ?method) :-
+    isAssignInstanceOf_Insn(?instr),
+    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
 SSA_AssignInstanceOf(?instr, ?index, ?ssa_name, ?method) :-
     isAssignInstanceOf_Insn(?instr),
@@ -475,6 +486,13 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
     SSA_ThisVar(?method, ?ssa_var)),
     SSA_Alias(?ssa_var, ?origin).
 
+.decl NewIndexMapping(?old:number, ?new:number)
+.output NewIndexMapping
+
+NewIndexMapping(?old, ?new) :-
+    Instruction_Index(?insn, ?old),
+    SSA_InstructionIndex(?insn, ?new).
+
 // Rule rewriting
 .decl RewriteArrayInitialValueFromConst(?insn:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol, ?inmethod:symbol)
 .output RewriteArrayInitialValueFromConst(filename="ArrayInitialValueFromConst.facts")
@@ -566,6 +584,21 @@ RewriteAssignNull(?insn, ?index, ?to, ?inmethod) :-
     SSA_AssignNull(?insn, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index).
 
+.decl RewriteAssignNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)
+.output RewriteAssignNumConstant(filename="AssignNumConstant.facts")
+
+RewriteAssignNumConstant(?insn, ?index, ?const, ?to, ?inmethod) :-
+    SSA_AssignNumConstant(?insn, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    AssignNumConstant_Id(?insn, ?const).
+
+.decl RewriteAssignReturnValue(?invocation:symbol, ?to:symbol)
+.output RewriteAssignReturnValue(filename="AssignReturnValue.facts")
+
+RewriteAssignReturnValue(?invocation, ?to) :-
+    SSA_AssignDetails(?invocation, ?to_origin, _, ?to, _),
+    AssignReturnValue(?invocation, ?to_origin).
+
 .decl RewriteAssignUnop(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
 .output RewriteAssignUnop(filename="AssignUnop.facts")
 
@@ -573,4 +606,33 @@ RewriteAssignUnop(?insn, ?index, ?to, ?inmethod) :-
     SSA_AssignUnop(?insn, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index).
 
+.output SSA_FormalParam(filename="FormalParam.facts")
+.output SSA_ThisVar(filename="ThisVar.facts")
+
+.decl RewriteGoto(?insn:symbol, ?index:number, ?to:number, ?inmethod:symbol)
+.output RewriteGoto(filename="Goto.facts")
+
+RewriteGoto(?insn, ?index, ?to, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    isGoto_Insn(?insn),
+    Instruction_Method(?insn, ?inmethod),
+    Goto_Target(?insn, ?old_to),
+    NewIndexMapping(?old_to, ?to).
+
+.decl RewriteIf(?insn:symbol, ?index:number, ?to:number, ?inmethod:symbol)
+.output RewriteIf(filename="If.facts")
+
+RewriteIf(?insn, ?index, ?to, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    isIf_Insn(?insn),
+    Instruction_Method(?insn, ?inmethod),
+    If_Target(?insn, ?old_to),
+    NewIndexMapping(?old_to, ?to).
+
+.decl RewriteIfVar(?insn:symbol, ?pos:number, ?var:symbol)
+.output RewriteIfVar(filename="IfVar.facts")
+
+RewriteIfVar(?insn, ?pos, ?var) :- 
+    If_Var(?insn, ?pos, ?var_origin),
+    ReachingDef(?insn, ?var, ?var_origin).
 
