@@ -14,7 +14,6 @@
 // Holds all ssa renames in the program for a given origin variable.
 // e.g. (v0_0, v0), (v0_1, v0) ... 
 .decl SSA_Alias(?ssa_name:symbol, ?original:symbol)
-.output SSA_Alias
 
 // Helper relation to factor out some code.
 .decl SSA_AssignDetails(?instr:symbol, ?to:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
@@ -41,79 +40,64 @@ SSA_ThisVar(?method, cat(?original, cat("_", "0"))) :-
     ThisVar(?method, ?original).
     
 .decl SSA_AssignHeapAllocation(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-.output SSA_AssignHeapAllocation
 
 SSA_AssignHeapAllocation(?instr, ?index, ?ssa_name, ?method) :-
     isAssignHeapAllocation_Insn(?instr),
-    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
 .decl SSA_AssignLocal(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-.output SSA_AssignLocal
 
 SSA_AssignLocal(?instr, ?index, ?ssa_name, ?method) :-
     isAssignLocal_Insn(?instr),
-    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
 .decl SSA_AssignBinop(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-.output SSA_AssignBinop
 
 SSA_AssignBinop(?instr, ?index, ?ssa_name, ?method) :-
     isAssignBinop_Insn(?instr),
-    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
 .decl SSA_AssignUnop(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-.output SSA_AssignUnop
 
 SSA_AssignUnop(?instr, ?index, ?ssa_name, ?method) :-
     isAssignUnop_Insn(?instr),
-    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
-
-// TODO: Is this needed?
-//.decl SSA_AssignOperFrom(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-//.output SSA_AssignOperFrom
-//
-//SSA_Alias(?method, ?to, ?ssa_name),
-//SSA_AssignOperFrom(?instr, ?index, ?ssa_name, ?method) :-
-//    isAssignOperFrom_Insn(?instr),
-//    Instruction_Index(?instr, ?index),
-//    AssignInstruction_To(?instr, ?to),
-//    Instruction_Method(?instr, ?method),
-//    ?ssa_name = cat(?to, cat("_", to_string(?index))).
+    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
 .decl SSA_AssignCast(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-.output SSA_AssignCast
 
 SSA_AssignCast(?instr, ?index, ?ssa_name, ?method) :-
     isAssignCast_Insn(?instr),
-    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
 .decl SSA_AssignCastNumConstant(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-.output SSA_AssignCastNumConstant
 
 SSA_AssignCastNumConstant(?instr, ?index, ?ssa_name, ?method) :-
     isAssignCastNumConstant_Insn(?instr),
-    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
 .decl SSA_AssignCastNull(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-.output SSA_AssignCastNull
 
 SSA_AssignCastNull(?instr, ?index, ?ssa_name, ?method) :-
     isAssignCastNull_Insn(?instr),
-    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
+
+.decl SSA_AssignNull(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+
+SSA_AssignNull(?instr, ?index, ?ssa_name, ?method) :-
+    isAssignNull_Insn(?instr),
+    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
 .decl SSA_AssignNumConstant(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-.output SSA_AssignNumConstant
 
 SSA_AssignNumConstant(?instr, ?index, ?ssa_name, ?method) :-
     isAssignNumConstant_Insn(?instr),
-    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
 .decl SSA_AssignInstanceOf(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-.output SSA_AssignInstanceOf
 
 SSA_AssignInstanceOf(?instr, ?index, ?ssa_name, ?method) :-
     isAssignInstanceOf_Insn(?instr),
-    SSA_AssignDetails(?instr, ?to, ?index, ?ssa_name, ?method).
+    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
 // TODO: Is this needed?
 //.decl SSA_AssignPhantomInvoke(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
@@ -130,14 +114,12 @@ SSA_AssignInstanceOf(?instr, ?index, ?ssa_name, ?method) :-
 // Simple implementation of the mathematical definition of strict
 // domination.
 .decl StrictlyDominates(?dominator:symbol, ?block:symbol)
-.output StrictlyDominates
 
 StrictlyDominates(?dominator, ?block) :-
     Dominates(?dominator, ?block),
     !?dominator = ?block.
 
 .decl DominanceFrontier(?dBlock:symbol, ?block:symbol)
-.output DominanceFrontier
 
 DominanceFrontier(?dBlock, ?block) :-
     MayPredecessorBBModuloThrow(?pred, ?block),
@@ -145,7 +127,6 @@ DominanceFrontier(?dBlock, ?block) :-
     !StrictlyDominates(?dBlock, ?block).
 
 .decl DFPlus(?dBlock:symbol, ?block:symbol, ?var:symbol)
-.output DFPlus
 
 DFPlus(?dBlock, ?block, ?var) :-
     ContainsAssignment(?dBlock, ?var),
@@ -162,7 +143,6 @@ ContainsAssignment(?dBlock, ?var) :-
     SSA_AssignDetails(?insn, ?var, _, _, _).
 
 .decl DebugBB(?bb:symbol)
-.output BasicBlockBegin
 
 DebugBB(?bb) :- BasicBlockBegin(?bb).
 
@@ -171,7 +151,6 @@ DebugBB(?bb) :- BasicBlockBegin(?bb).
 // ?block is the basic block (represented by it's first instr) where
 // the Phi Instruction will be inserted.
 .decl PhiAssign(?phi_var:symbol, ?arity:number, ?block:symbol)
-.output PhiAssign
 
 SSA_Alias(?phi_var, ?var),
 PhiAssign(?phi_var, ?arity, ?block) :-
@@ -181,7 +160,6 @@ PhiAssign(?phi_var, ?arity, ?block) :-
     ?phi_var = cat(cat(?var, "_phi_"), to_string(?index)).
     
 .decl BBFollowsSimilarDef(?block:symbol, ?instr:symbol, ?def:symbol)
-.output BBFollowsSimilarDef
 
 BBFollowsSimilarDef(?block, ?instr, ?original) :-
     BasicBlockHead(?instr, ?block),
@@ -203,7 +181,6 @@ BBFollowsSimilarDef(?block, ?instr, ?original) :-
     ?i < ?j.
 
 .decl BBLocalOutDefs(?block:symbol, ?def:symbol)
-.output BBLocalOutDefs
 
 BBLocalOutDefs(?block, ?def) :-
     BasicBlockBegin(?block),
@@ -234,10 +211,8 @@ ExistsLocalDef(?block, ?original) :-
     SSA_Alias(?def, ?original).
 
 .decl BBOutDefs(?block:symbol, ?def:symbol)
-.output BBOutDefs
 
 .decl BasicBlockOutDefs(?block:symbol, ?ssa_var:symbol, ?origin:symbol)
-.output BasicBlockOutDefs
 
 BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
     BasicBlockTail(?block, ?end),
@@ -309,16 +284,13 @@ SimilarOutDefs(?block, ?def, ?out_def) :-
 // This is a helper relation to assist the final assignment operation, which 
 // will require linking the assignments with the rest of the code.
 .decl PhiPseudoAssign(?phi_var:symbol, ?def:symbol, ?src_block:symbol, ?dst_block:symbol, ?pseudoname:symbol)
-.output PhiPseudoAssign
 
 // Many assigns on the same phi var, consist of a PhiChunk. These are unique, since 
 // phi_var is unique (SSA naming).
 .decl PhiChunk(?phi_var:symbol)
-.output PhiChunk
 
 // Many PhiChunks in the same basic block, consist of a PhiHeader.
 .decl PhiHeader(?block:symbol)
-.output PhiHeader
 
 // TODO: Check validity/necessity of isNonTrivialPhi relation
 
@@ -356,10 +328,8 @@ ExistsPhiChunkBetween(?prev, ?next) :-
 // New next relation, since we need to include the new assignments that
 // are generated by the phi placement.
 .decl SSANext(?prev:symbol, ?next:symbol)
-.output SSANext
 
 .decl PhiChunkNext(?prev:symbol, ?next:symbol)
-.output PhiChunkNext
 
 // Link PhiChunk assignments
 SSANext(?prev, ?next),
@@ -370,14 +340,12 @@ PhiChunkNext(?prev, ?next) :-
     !ExistsPseudoAssignBetween(?prev, ?next).
 
 .decl PhiChunkStart(?phi_chunk:symbol, ?start:symbol)
-.output PhiChunkStart
 
 PhiChunkStart(?phi_chunk, ?start) :-
     PhiPseudoAssign(?phi_chunk, _, _, _, ?start),
     !PhiChunkNext(_, ?start).
 
 .decl PhiChunkEnd(?phi_chunk:symbol, ?end:symbol)
-.output PhiChunkEnd
 
 PhiChunkEnd(?phi_chunk, ?end) :-
     PhiPseudoAssign(?phi_chunk, _, _, _, ?end),
@@ -395,7 +363,6 @@ PhiHeaderNext(?prev, ?next) :-
     !ExistsPhiChunkBetween(?prev, ?next).
     
 .decl PhiHeaderStart(?phi_chunk:symbol, ?start:symbol)
-.output PhiHeaderStart
 
 PhiHeaderStart(?phi_header, ?start) :-
     PhiPseudoAssign(?start_chunk, _, _, ?phi_header, _),
@@ -403,7 +370,6 @@ PhiHeaderStart(?phi_header, ?start) :-
     !PhiHeaderNext(_, ?start_chunk).
 
 .decl PhiHeaderEnd(?phi_chunk:symbol, ?end:symbol)
-.output PhiHeaderEnd
 
 SSANext(?end, ?phi_header),
 PhiHeaderEnd(?phi_header, ?end) :-
@@ -429,7 +395,6 @@ isInstruction(?insn) :-
 
 // Simple index calculation, based on the SSANext relation.
 .decl SSA_InstructionIndex(?insn:symbol, ?index:number)
-.output SSA_InstructionIndex
 
 // Base case; If the insn has no previous instruction, then its index
 // is one.
@@ -446,7 +411,6 @@ SSA_InstructionIndex(?insn, ?index + 1) :-
 // If the phi header for the basic block where insn is in, contains an phi
 // pseudo assignment on ssa_var, which is an ssa rename for origin.
 .decl ExistsDefInPhiHeader(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
-.output ExistsDefInPhiHeader
 
 ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin) :-
     BasicBlockHead(?insn, ?head),
@@ -457,7 +421,6 @@ ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin) :-
 // at a given instruction (insn), for a given origin variable (not ssa-renamed,
 // as seen in the original program).
 .decl ReachingDef(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
-.output ReachingDef
 
 // If an instruction is the first instruction in a basic block, and a ssa defintion
 // for origin exists in the Phi Header, then that def is the reaching def.
@@ -556,7 +519,7 @@ RewriteAssignCastNull(?insn, ?index, ?to, ?type, ?inmethod) :-
 .output RewriteAssignCastNumConstant(filename="AssignCastNumConstant.facts")
 
 RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod) :-
-    SSA_AssignCastNull(?insn, _, ?to, ?inmethod),
+    SSA_AssignCastNumConstant(?insn, _, ?to, ?inmethod),
     AssignCast_Type(?insn, ?type),
     AssignCastNumConstant_Id(?insn, ?const),
     SSA_InstructionIndex(?insn, ?index).
@@ -577,6 +540,16 @@ RewriteAssignOperFrom(?insn, ?pos, ?from) :-
     AssignOper_From(?insn, ?pos, ?from_origin),
     ReachingDef(?insn, ?from, ?from_origin).
 
+.decl RewriteAssignInstanceOf(?insn:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
+.output RewriteAssignInstanceOf(filename="AssignInstanceOf.facts")
+
+RewriteAssignInstanceOf(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
+    SSA_AssignInstanceOf(?insn, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    AssignInstanceOf_From(?insn, ?from_origin),
+    AssignInstanceOf_Type(?insn, ?type),
+    ReachingDef(?insn, ?from, ?from_origin).
+
 .decl RewriteAssignLocal(?insn:symbol, ?index:number, ?to:symbol, ?from:symbol, ?inmethod:symbol)
 .output RewriteAssignLocal(filename="AssignLocal.facts")
 
@@ -585,4 +558,19 @@ RewriteAssignLocal(?insn, ?index, ?to, ?from, ?inmethod) :-
     SSA_AssignLocal(?insn, _, ?to, ?inmethod),
     AssignLocal_From(?insn, ?from_origin),
     ReachingDef(?insn, ?from, ?from_origin).
+
+.decl RewriteAssignNull(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
+.output RewriteAssignNull(filename="AssignNull.facts")
+
+RewriteAssignNull(?insn, ?index, ?to, ?inmethod) :-
+    SSA_AssignNull(?insn, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index).
+
+.decl RewriteAssignUnop(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
+.output RewriteAssignUnop(filename="AssignUnop.facts")
+
+RewriteAssignUnop(?insn, ?index, ?to, ?inmethod) :-
+    SSA_AssignUnop(?insn, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index).
+
 
