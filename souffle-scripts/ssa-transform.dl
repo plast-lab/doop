@@ -38,6 +38,21 @@ SSA_AssignDetails(?invocation, ?to, ?index, cat(?to, cat("_", to_string(?index))
     AssignReturnValue(?invocation, ?to),
     Instruction_Method(?invocation, ?method).
 
+SSA_AssignToOriginal(?instr, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
+SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    _LoadArrayIndex(?instr, ?index, ?to, _, ?method).
+
+SSA_AssignToOriginal(?instr, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
+SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    _LoadInstanceField(?instr, ?index, ?to, _, _, ?method).
+
+SSA_AssignToOriginal(?instr, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
+SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    _LoadStaticField(?instr, ?index, ?to, _, ?method).
+
 SSA_Alias(cat(?original, cat("_", "0")), ?original),
 SSA_FormalParam(?index, ?method, cat(?original, cat("_", "0"))) :-
     FormalParam(?index, ?method, ?original).
@@ -106,10 +121,24 @@ SSA_AssignInstanceOf(?instr, ?index, ?ssa_name, ?method) :-
     isAssignInstanceOf_Insn(?instr),
     SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
 
-SSA_AssignInstanceOf(?instr, ?index, ?ssa_name, ?method) :-
-    isAssignInstanceOf_Insn(?instr),
-    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
+.decl SSA_LoadArrayIndex(?insn:symbol, ?index:number, ?to:symbol, ?method:symbol)
+    
+SSA_LoadArrayIndex(?insn, ?index, ?ssa_name, ?method) :-
+    isLoadArrayIndex_Insn(?insn),
+    SSA_AssignDetails(?insn, _, ?index, ?ssa_name, ?method).
+    
+.decl SSA_LoadInstanceField(?insn:symbol, ?index:number, ?to:symbol, ?method:symbol)
+    
+SSA_LoadInstanceField(?insn, ?index, ?ssa_name, ?method) :-
+    isLoadInstanceField_Insn(?insn),
+    SSA_AssignDetails(?insn, _, ?index, ?ssa_name, ?method).
 
+.decl SSA_LoadStaticField(?insn:symbol, ?index:number, ?to:symbol, ?method:symbol)
+
+SSA_LoadStaticField(?insn, ?index, ?ssa_name, ?method) :-
+    isLoadStaticField_Insn(?insn),
+    SSA_AssignDetails(?insn, _, ?index, ?ssa_name, ?method).
+    
 // TODO: Is this needed?
 //.decl SSA_AssignPhantomInvoke(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 //.output SSA_AssignPhantomInvoke
@@ -606,9 +635,6 @@ RewriteAssignUnop(?insn, ?index, ?to, ?inmethod) :-
     SSA_AssignUnop(?insn, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index).
 
-.output SSA_FormalParam(filename="FormalParam.facts")
-.output SSA_ThisVar(filename="ThisVar.facts")
-
 .decl RewriteGoto(?insn:symbol, ?index:number, ?to:number, ?inmethod:symbol)
 .output RewriteGoto(filename="Goto.facts")
 
@@ -636,3 +662,49 @@ RewriteIfVar(?insn, ?pos, ?var) :-
     If_Var(?insn, ?pos, ?var_origin),
     ReachingDef(?insn, ?var, ?var_origin).
 
+.decl RewriteLoadArrayIndex(?insn:symbol, ?index:number, ?to:symbol, ?base:symbol, ?method:symbol)
+.output RewriteLoadArrayIndex(filename="LoadArrayIndex.facts")
+
+RewriteLoadArrayIndex(?insn, ?index, ?to, ?base, ?inmethod) :-
+    SSA_LoadArrayIndex(?insn, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    LoadArrayIndex_Base(?insn, ?base_origin),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteLoadInstanceField(?insn:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
+.output RewriteLoadInstanceField(filename="LoadInstanceField.facts")
+
+RewriteLoadInstanceField(?insn, ?index, ?to, ?base, ?signature, ?inmethod) :-
+    SSA_LoadInstanceField(?insn, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    LoadInstanceField_Base(?insn, ?base_origin),
+    FieldInstruction_Signature(?insn, ?signature),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteReturn(?insn:symbol, ?index:number, ?var:symbol, ?inmethod:symbol)
+.output RewriteReturn(filename="Return.facts")
+
+RewriteReturn(?insn, ?index, ?var, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    Instruction_Method(?insn, ?inmethod),
+    ReturnNonvoid_Var(?insn, ?var_origin),
+    ReachingDef(?insn, ?var, ?var_origin).
+
+.decl RewriteReturnVoid(?insn:symbol, ?index:number, ?inmethod:symbol)
+.output RewriteReturnVoid(filename="ReturnVoid.facts")
+
+RewriteReturnVoid(?insn, ?index, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    Instruction_Method(?insn, ?inmethod),
+    isReturnVoid_Insn(?insn).
+
+.decl RewriteLoadStaticField(?insn:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)
+.output RewriteLoadStaticField(filename="LoadStaticField.facts")
+
+RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
+    SSA_LoadStaticField(?insn, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    FieldInstruction_Signature(?insn, ?signature).
+
+.output SSA_FormalParam(filename="FormalParam.facts")
+.output SSA_ThisVar(filename="ThisVar.facts")
