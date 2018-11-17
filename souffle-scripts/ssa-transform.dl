@@ -530,6 +530,13 @@ RewriteArrayInitialValueFromConst(?insn, ?index, ?to, ?arrayIndex, ?const, ?base
     ArrayInitialValueFromConst(?insn, ?index, ?var_origin, ?arrayIndex, ?const, ?baseHeap, ?inmethod),
     ReachingDef(?insn, ?to, ?var_origin).
 
+.decl RewriteArrayInsnIndex(?insn:symbol, ?index:symbol)
+.output RewriteArrayInsnIndex(filename="ArrayInsnIndex.facts")
+
+RewriteArrayInsnIndex(?insn, ?index) :-
+    ArrayInsnIndex(?insn, ?index_origin),
+    ReachingDef(?insn, ?index, ?index_origin).
+
 .decl RewriteActualParam(?index:number, ?invocation:symbol, ?var:symbol)
 .output RewriteActualParam(filename="ActualParam.facts")
 
@@ -705,6 +712,40 @@ RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
     SSA_LoadStaticField(?insn, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index),
     FieldInstruction_Signature(?insn, ?signature).
+
+.decl RewriteStoreArrayIndex(?insn:symbol, ?index:number, ?from:symbol, ?base:symbol, ?method:symbol)
+.output RewriteStoreArrayIndex(filename="StoreArrayIndex.facts")
+
+RewriteStoreArrayIndex(?insn, ?index, ?from, ?base, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _StoreArrayIndex(?insn, _, ?from_origin, ?base_origin, ?inmethod),
+    ReachingDef(?insn, ?from, ?from_origin),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteStoreInstanceField(?insn:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
+.output RewriteStoreInstanceField(filename="StoreInstanceField.facts")
+
+RewriteStoreInstanceField(?insn, ?index, ?from, ?base, ?signature, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _StoreInstanceField(?insn, _, ?from_origin, ?base_origin, ?signature, ?inmethod),
+    ReachingDef(?insn, ?from, ?from_origin),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteStoreStaticField(?insn:symbol, ?index:number, ?from:symbol, ?signature:symbol, ?method:symbol)
+.output RewriteStoreStaticField(filename="StoreStaticField.facts")
+
+RewriteStoreStaticField(?insn, ?index, ?from, ?signature, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _StoreStaticField(?insn, _, ?from_origin, ?signature, ?inmethod),
+    ReachingDef(?insn, ?from, ?from_origin).
+
+.decl RewriteThrow(?insn:symbol, ?index:number, ?var:symbol, ?method:symbol)
+.output RewriteThrow(filename="Throw.facts")
+
+RewriteThrow(?insn, ?index, ?var, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _Throw(?insn, _, ?var_origin, ?inmethod),
+    ReachingDef(?insn, ?var, ?var_origin).
 
 .output SSA_FormalParam(filename="FormalParam.facts")
 .output SSA_ThisVar(filename="ThisVar.facts")
