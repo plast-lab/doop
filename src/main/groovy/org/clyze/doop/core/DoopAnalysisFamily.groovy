@@ -10,7 +10,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 @Singleton
 class DoopAnalysisFamily implements AnalysisFamily {
 
-	private static final String DEFAULT_JAVA_PLATFORM = "java_7"
+	private static final String DEFAULT_JAVA_PLATFORM = "java_8"
 
 	@Override
 	String getName() { "doop" }
