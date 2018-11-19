@@ -688,6 +688,14 @@ RewriteLoadInstanceField(?insn, ?index, ?to, ?base, ?signature, ?inmethod) :-
     FieldInstruction_Signature(?insn, ?signature),
     ReachingDef(?insn, ?base, ?base_origin).
 
+.decl RewriteLoadStaticField(?insn:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)
+.output RewriteLoadStaticField(filename="LoadStaticField.facts")
+
+RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
+    SSA_LoadStaticField(?insn, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    FieldInstruction_Signature(?insn, ?signature).
+
 .decl RewriteReturn(?insn:symbol, ?index:number, ?var:symbol, ?inmethod:symbol)
 .output RewriteReturn(filename="Return.facts")
 
@@ -705,13 +713,20 @@ RewriteReturnVoid(?insn, ?index, ?inmethod) :-
     Instruction_Method(?insn, ?inmethod),
     isReturnVoid_Insn(?insn).
 
-.decl RewriteLoadStaticField(?insn:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)
-.output RewriteLoadStaticField(filename="LoadStaticField.facts")
+.decl RewriteSpecialMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
+.input RewriteSpecialMethodInvocation(filename="SpecialMethodInvocation.facts")
 
-RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
-    SSA_LoadStaticField(?insn, _, ?to, ?inmethod),
+RewriteSpecialMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
-    FieldInstruction_Signature(?insn, ?signature).
+    _SpecialMethodInvocation(?insn, _, ?signature, ?base_origin, ?inmethod),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteStaticMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?method:symbol)
+.input RewriteStaticMethodInvocation(filename="StaticMethodInvocation.facts")
+
+RewriteStaticMethodInvocation(?insn, ?index, ?signature, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _StaticMethodInvocation(?insn, _, ?signature, ?inmethod).
 
 .decl RewriteStoreArrayIndex(?insn:symbol, ?index:number, ?from:symbol, ?base:symbol, ?method:symbol)
 .output RewriteStoreArrayIndex(filename="StoreArrayIndex.facts")
@@ -739,6 +754,14 @@ RewriteStoreStaticField(?insn, ?index, ?from, ?signature, ?inmethod) :-
     _StoreStaticField(?insn, _, ?from_origin, ?signature, ?inmethod),
     ReachingDef(?insn, ?from, ?from_origin).
 
+.decl RewriteSuperMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
+.input RewriteSuperMethodInvocation(filename="SuperMethodInvocation.facts")
+
+RewriteSuperMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _SuperMethodInvocation(?insn, _, ?signature, ?base_origin, ?inmethod),
+    ReachingDef(?insn, ?base, ?base_origin).
+
 .decl RewriteThrow(?insn:symbol, ?index:number, ?var:symbol, ?method:symbol)
 .output RewriteThrow(filename="Throw.facts")
 
@@ -746,6 +769,21 @@ RewriteThrow(?insn, ?index, ?var, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
     _Throw(?insn, _, ?var_origin, ?inmethod),
     ReachingDef(?insn, ?var, ?var_origin).
+
+.decl RewriteThrowNull(?insn:symbol, ?index:number, ?method:symbol)
+.output RewriteThrowNull(filename="ThrowNull.facts")
+
+RewriteThrowNull(?insn, ?index, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _ThrowNull(?insn, _, ?inmethod).
+
+.decl RewriteVirtualMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
+.input RewriteVirtualMethodInvocation(filename="VirtualMethodInvocation.facts")
+
+RewriteVirtualMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _VirtualMethodInvocation(?insn, _, ?signature, ?base_origin, ?inmethod),
+    ReachingDef(?insn, ?base, ?base_origin).
 
 .output SSA_FormalParam(filename="FormalParam.facts")
 .output SSA_ThisVar(filename="ThisVar.facts")
