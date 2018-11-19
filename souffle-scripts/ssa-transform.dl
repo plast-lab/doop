@@ -696,6 +696,28 @@ RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
     FieldInstruction_Signature(?insn, ?signature).
 
+.decl RewriteLookupSwitch(?insn:symbol, ?index:number, ?key:symbol, ?method:symbol)
+.output RewriteLookupSwitch(filename="LookupSwitch.facts")
+
+RewriteLookupSwitch(?insn, ?index, ?key, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _LookupSwitch(?insn, _, ?key_origin, ?inmethod),
+    ReachingDef(?insn, ?key, ?key_origin).
+
+.decl RewriteLookupSwitch_Target(?insn:symbol, ?value:number, ?target:number)
+.output RewriteLookupSwitch_Target(filename="LookupSwitch-Target.facts")
+
+RewriteLookupSwitch_Target(?insn, ?value, ?target) :-
+    _LookupSwitch_Target(?insn, ?value, ?target_old),
+    NewIndexMapping(?target_old, ?target).
+
+.decl RewriteLookupSwitch_DefaultTarget(?insn:symbol, ?target:number)
+.output RewriteLookupSwitch_DefaultTarget(filename="LookupSwitch-DefaultTarget.facts")
+
+RewriteLookupSwitch_DefaultTarget(?insn, ?target) :-
+    _LookupSwitch_DefaultTarget(?insn, ?target_old),
+    NewIndexMapping(?target_old, ?target).
+
 .decl RewriteReturn(?insn:symbol, ?index:number, ?var:symbol, ?inmethod:symbol)
 .output RewriteReturn(filename="Return.facts")
 
@@ -761,6 +783,28 @@ RewriteSuperMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
     _SuperMethodInvocation(?insn, _, ?signature, ?base_origin, ?inmethod),
     ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteTableSwitch(?insn:symbol, ?index:number, ?key:symbol, ?method:symbol)
+.output RewriteTableSwitch(filename="TableSwitch.facts")
+
+RewriteTableSwitch(?insn, ?index, ?key, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _TableSwitch(?insn, _, ?key_origin, ?inmethod),
+    ReachingDef(?insn, ?key, ?key_origin).
+
+.decl RewriteTableSwitch_Target(?insn:symbol, ?value:number, ?target:number)
+.output RewriteTableSwitch_Target(filename="TableSwitch-Target.facts")
+
+RewriteTableSwitch_Target(?insn, ?value, ?target) :-
+    _TableSwitch_Target(?insn, ?value, ?target_old),
+    NewIndexMapping(?target_old, ?target).
+
+.decl RewriteTableSwitch_DefaultTarget(?insn:symbol, ?target:number)
+.output RewriteTableSwitch_DefaultTarget(filename="TableSwitch-DefaultTarget.facts")
+
+RewriteTableSwitch_DefaultTarget(?insn, ?target) :-
+    _TableSwitch_DefaultTarget(?insn, ?target_old),
+    NewIndexMapping(?target_old, ?target).
 
 .decl RewriteThrow(?insn:symbol, ?index:number, ?var:symbol, ?method:symbol)
 .output RewriteThrow(filename="Throw.facts")
