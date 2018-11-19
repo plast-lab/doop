@@ -36,6 +36,7 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		when:
 		analyzeTest("104-method-references", ["--platform", "java_8",
 											  "--thorough-fact-gen", "--sanity",
+											  "--generate-jimple",
 											  "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
 
 		then:
