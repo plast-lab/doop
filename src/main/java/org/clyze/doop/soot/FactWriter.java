@@ -5,7 +5,6 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
 import org.clyze.doop.common.SessionCounter;
-import org.clyze.doop.util.TypeUtils;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
@@ -341,48 +340,21 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstant constant, Session session) {
-        String s = constant.getValue().replace('/', '.');
-        String heap;
-        char first = s.charAt(0);
+        writeAssignClassConstant(m, stmt, l, new ClassConstantInfo(constant), session);
+    }
 
-        /* There is some weirdness in class constants: normal Java class
-           types seem to have been translated to a syntax with the initial
-           L, but arrays are still represented as [, for example [C for
-           char[] */
-        if (TypeUtils.isLowLevelType(first, s)) {
-            // array type
-            Type t = ClassHeapFinder.raiseTypeWithSoot(s);
-            String actualType = t.toString();
-            heap = Representation.classConstant(t);
-            writeClassHeap(heap, actualType);
-        } else if (first == '(') {
-            // method type constant (viewed by Soot as a class constant)
-            heap = s;
-            writeMethodTypeConstant(heap);
-        } else {
-//            SootClass c = soot.Scene.v().getSootClass(s);
-//            if (c == null) {
-//                throw new RuntimeException("Unexpected class constant: " + constant);
-//            }
-//
-//            heap =  _rep.classConstant(c);
-//            actualType = c.getName();
-////              if (!actualType.equals(s))
-////                  System.out.println("hallelujah!\n\n\n\n");
-            // The code above should be functionally equivalent with the simple code below,
-            // but the above causes a concurrent modification exception due to a Soot
-            // bug that adds a phantom class to the Scene's hierarchy, although
-            // (based on their own comments) it shouldn't.
-            heap = classConstant(s);
-            writeClassHeap(heap, s);
-        }
+    void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstantInfo info, Session session) {
+        if (info.isMethodType)
+            writeMethodTypeConstant(info.heap);
+        else
+            writeClassHeap(info.heap, info.actualType);
 
         int index = session.calcUnitNumber(stmt);
         String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, Representation.local(m, l), methodId, "0");
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), info.heap, Representation.local(m, l), methodId, "0");
     }
 
     void writeAssignCast(SootMethod m, Stmt stmt, Local to, Local from, Type t, Session session) {
@@ -726,52 +698,47 @@ class FactWriter extends JavaFactWriter {
         writeLocal(local, writeType(type), writeMethod(m));
     }
 
+    private Local freshLocal(SootMethod inMethod, String basename, Type type, Session session) {
+        String varname = basename + session.nextNumber(basename);
+        Local l = new JimpleLocal(varname, type);
+        writeLocal(inMethod, l);
+        return l;
+    }
+
     Local writeStringConstantExpression(SootMethod inMethod, Stmt stmt, StringConstant constant, Session session) {
         // introduce a new temporary variable
-        String basename = "$stringconstant";
-        String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"));
-        writeLocal(inMethod, l);
+        Local l = freshLocal(inMethod, "$stringconstant", RefType.v("java.lang.String"), session);
         writeAssignStringConstant(inMethod, stmt, l, constant, session);
         return l;
     }
 
     Local writeNullExpression(SootMethod inMethod, Stmt stmt, Type type, Session session) {
         // introduce a new temporary variable
-        String basename = "$null";
-        String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, type);
-        writeLocal(inMethod, l);
+        Local l = freshLocal(inMethod, "$null", type, session);
         writeAssignNull(inMethod, stmt, l, session);
         return l;
     }
 
     Local writeNumConstantExpression(SootMethod inMethod, Stmt stmt, NumericConstant constant, Session session) {
         // introduce a new temporary variable
-        String basename = "$numconstant";
-        String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, constant.getType());
-        writeLocal(inMethod, l);
+        Local l = freshLocal(inMethod, "$numconstant", constant.getType(), session);
         writeAssignNumConstant(inMethod, stmt, l, constant, session);
         return l;
     }
 
     Local writeClassConstantExpression(SootMethod inMethod, Stmt stmt, ClassConstant constant, Session session) {
+        ClassConstantInfo info = new ClassConstantInfo(constant);
         // introduce a new temporary variable
-        String basename = "$classconstant";
-        String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"));
-        writeLocal(inMethod, l);
-        writeAssignClassConstant(inMethod, stmt, l, constant, session);
+        Local l = info.isMethodType ?
+            freshLocal(inMethod, "$methodtypeconstant", RefType.v("java.lang.invoke.MethodType"), session) :
+            freshLocal(inMethod, "$classconstant", RefType.v("java.lang.Class"), session);
+        writeAssignClassConstant(inMethod, stmt, l, info, session);
         return l;
     }
 
     Local writeMethodHandleConstantExpression(SootMethod inMethod, Stmt stmt, MethodHandle constant, Session session) {
         // introduce a new temporary variable
-        String basename = "$mhandleconstant";
-        String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.invoke.MethodHandle"));
-        writeLocal(inMethod, l);
+        Local l = freshLocal(inMethod, "$mhandleconstant", RefType.v("java.lang.invoke.MethodHandle"), session);
         writeAssignMethodHandleConstant(inMethod, stmt, l, constant, session);
         return l;
     }
