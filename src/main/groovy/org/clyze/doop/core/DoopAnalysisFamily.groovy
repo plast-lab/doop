@@ -446,7 +446,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "EXTRACT_MORE_STRINGS",
 					name: "extract-more-strings",
-					description: "Extract more string constants from the input code (may degrade performance).",
+					description: "Extract more string constants from the input code (may degrade analysis performance).",
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_METHOD_HANDLES",
