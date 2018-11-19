@@ -712,7 +712,7 @@ RewriteLookupSwitch_Target(?insn, ?value, ?target) :-
     NewIndexMapping(?target_old, ?target).
 
 .decl RewriteLookupSwitch_DefaultTarget(?insn:symbol, ?target:number)
-.output RewriteLookupSwitch_DefaultTarget(filename="LookupSwitch-DefaultTarget.facts")
+.output RewriteLookupSwitch_DefaultTarget(filename="LookupSwitch-Default.facts")
 
 RewriteLookupSwitch_DefaultTarget(?insn, ?target) :-
     _LookupSwitch_DefaultTarget(?insn, ?target_old),
@@ -736,7 +736,7 @@ RewriteReturnVoid(?insn, ?index, ?inmethod) :-
     isReturnVoid_Insn(?insn).
 
 .decl RewriteSpecialMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
-.input RewriteSpecialMethodInvocation(filename="SpecialMethodInvocation.facts")
+.output RewriteSpecialMethodInvocation(filename="SpecialMethodInvocation.facts")
 
 RewriteSpecialMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
@@ -744,7 +744,7 @@ RewriteSpecialMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
     ReachingDef(?insn, ?base, ?base_origin).
 
 .decl RewriteStaticMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?method:symbol)
-.input RewriteStaticMethodInvocation(filename="StaticMethodInvocation.facts")
+.output RewriteStaticMethodInvocation(filename="StaticMethodInvocation.facts")
 
 RewriteStaticMethodInvocation(?insn, ?index, ?signature, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
@@ -777,7 +777,7 @@ RewriteStoreStaticField(?insn, ?index, ?from, ?signature, ?inmethod) :-
     ReachingDef(?insn, ?from, ?from_origin).
 
 .decl RewriteSuperMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
-.input RewriteSuperMethodInvocation(filename="SuperMethodInvocation.facts")
+.output RewriteSuperMethodInvocation(filename="SuperMethodInvocation.facts")
 
 RewriteSuperMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
@@ -800,7 +800,7 @@ RewriteTableSwitch_Target(?insn, ?value, ?target) :-
     NewIndexMapping(?target_old, ?target).
 
 .decl RewriteTableSwitch_DefaultTarget(?insn:symbol, ?target:number)
-.output RewriteTableSwitch_DefaultTarget(filename="TableSwitch-DefaultTarget.facts")
+.output RewriteTableSwitch_DefaultTarget(filename="TableSwitch-Default.facts")
 
 RewriteTableSwitch_DefaultTarget(?insn, ?target) :-
     _TableSwitch_DefaultTarget(?insn, ?target_old),
@@ -822,7 +822,7 @@ RewriteThrowNull(?insn, ?index, ?inmethod) :-
     _ThrowNull(?insn, _, ?inmethod).
 
 .decl RewriteVirtualMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
-.input RewriteVirtualMethodInvocation(filename="VirtualMethodInvocation.facts")
+.output RewriteVirtualMethodInvocation(filename="VirtualMethodInvocation.facts")
 
 RewriteVirtualMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
