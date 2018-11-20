@@ -77,6 +77,7 @@ public enum PredicateFile
     METHOD_HANDLE_CONSTANT("MethodHandleConstant"),
     METHOD_INV_LINE("MethodInvocation-Line"),
     METHOD_TYPE_CONSTANT("MethodTypeConstant"),
+    METHOD_TYPE_CONSTANT_PARAM("MethodTypeConstantParam"),
     METHOD_MODIFIER("Method-Modifier"),
     NATIVE_RETURN_VAR("NativeReturnVar"),
     NORMAL_HEAP("NormalHeap"),

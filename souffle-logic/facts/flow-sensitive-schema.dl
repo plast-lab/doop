@@ -147,6 +147,8 @@
 .decl MethodHandleConstant_ReturnType(?heap:MethodHandleConstant, ?retType:Type)
 .decl MethodHandleConstant_ParamTypes(?heap:MethodHandleConstant, ?paramTypes:symbol)
 .decl MethodHandleConstant_Arity(?heap:MethodHandleConstant, ?arity:number)
+.decl MethodTypeConstant_Arity(?heap:MethodTypeConstant, ?arity:number)
+.decl MethodTypeConstant_ReturnType(?heap:MethodTypeConstant, ?retType:Type)
 
 //-----------------------------------------------------------------------------
 // [Bytecode Instructions]
