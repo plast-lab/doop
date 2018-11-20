@@ -114,15 +114,21 @@ VarPointsTo(?hctx, ?linkObject, ?ctx, ?var) :-
 .type MethodHandle = mainAnalysis.Value
 .decl isMethodHandle(?methodHandle:MethodHandle)
 .decl MethodHandle_Method(?methodHandle:MethodHandle, ?method:Method)
+.decl MethodHandle_ParamTypes(?heap:MethodHandleConstant, ?paramTypes:symbol)
+.decl MethodHandle_ReturnType(?methodHandle:MethodHandle, ?retType:Type)
 
 isMethodHandle(?methodHandle),
 MethodHandle_Method(?methodHandle, ?method) :-
    MethodHandleConstant_Method(?methodHandle, ?method).
 
+MethodHandle_ReturnType(?methodHandle, ?type) :- MethodHandleConstant_ReturnType(?methodHandle, ?type).
+MethodHandle_ParamTypes(?methodHandle, ?paramTypes) :- MethodHandleConstant_ParamTypes(?methodHandle, ?paramTypes).
+
 .decl LinkObject_MethodHandle(?linkObject:LinkObject, ?methodHandle:MethodHandle)
 LinkObject_MethodHandle(?linkObject, ?methodHandle) :-
-   InvokedynamicCallSite(?callsite, _, _, _, _, ?linkObject),
-   InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite).
+   InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, ?linkObject),
+   InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
+   MethodHandle_ReturnType(?methodHandle, ?dynRetType).
 
 .decl LinkObject_Method(?linkObject:LinkObject, ?method:Method)
 LinkObject_Method(?linkObject, ?method) :-
@@ -137,7 +143,7 @@ CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx, ?ctx) :-
    ActualParam(?idx, ?invokedynamic, ?actual),
    VarPointsTo(_, ?val, ?ctx, ?actual).
 
-// After a method handle is resolved, the invokedynamic calls it.
+// After a method handle is resolved, invokedynamic calls it.
 .decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?linkObject:LinkObject)
 InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?linkObject) :-
    InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
@@ -214,14 +220,14 @@ Lambda_N(?lambda, ?N, ?val) :-
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
    BootstrapParam(0, ?invokedynamic, ?actual),
    VarPointsTo(_, ?val, _, ?actual),
-   _MethodTypeConstant(?val, ?N).
+   MethodTypeConstant_Arity(?val, ?N).
 
 Lambda_N(?lambda, ?N, ?val) :-
    InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, _, ?metafactory),
    ?metafactory = LAMBDA_ALTMETAFACTORY,
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
    ArrayIndexPointsTo(_, ?val, _, MOCK_ARRAY(?invokedynamic)),
-   _MethodTypeConstant(?val, ?N).
+   MethodTypeConstant_Arity(?val, ?N).
 
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
 
@@ -317,6 +323,15 @@ VarPointsTo(?hctx, ?mockObj, ?ctx, ?thisVar) :-
    ?mockObj = cat("mock ", cat(?type, cat(" constructed by constructor reference at ", ?i))),
    isImmutableHContext(?hctx).
 
+.type MethodType = mainAnalysis.Value
+.decl MethodType_Arity(?id:MethodType, ?arity:number)
+.decl MethodType_ParamType(?id:MethodType, ?index:number, ?pType:Type)
+.decl MethodType_ReturnType(?id:MethodType, ?retType:Type)
+
+MethodType_ParamType(?id, ?idx, ?type) :- _MethodTypeConstantParam(?id, ?idx, ?type).
+MethodType_Arity(?id, ?arity)          :- MethodTypeConstant_Arity(?id, ?arity).
+MethodType_ReturnType(?id, ?retType)   :- MethodTypeConstant_ReturnType(?id, ?retType).
+
 // Method handles that interact with reflection are exprerimental, use
 // corresponding command-line option to enable them.
 #ifdef REFLECTION_METHOD_HANDLES
@@ -324,24 +339,20 @@ VarPointsTo(?hctx, ?mockObj, ?ctx, ?thisVar) :-
 // We treat method descriptors as MethodType values (with slight
 // changes, e.g. in the treatment of 'void' or constructors).
 
-.decl MethodType_ReturnType(?descriptor:symbol, ?declType:Type, ?rType:Type)
-
 // Return types for non-constructors.
-MethodType_ReturnType(?descriptor, ?declType, ?rType) :-
+MethodType_ReturnType(?descriptor, ?declType, ?retType) :-
   Method_Descriptor(?method, ?descriptor),
-  Method_ReturnType(?method, ?rType),
+  Method_ReturnType(?method, ?retType),
   Method_SimpleName(?method, ?name),
   ?name != "<clinit>",
   ?name != "<init>",
   Method_DeclaringType(?method, ?declType).
 
 // Return types for constructors are not "void" but the type constructed.
-MethodType_ReturnType(?descriptor, ?rType, ?rType) :-
+MethodType_ReturnType(?descriptor, ?retType, ?retType) :-
   Method_Descriptor(?method, ?descriptor),
   Method_SimpleName(?method, "<init>"),
-  Method_DeclaringType(?method, ?rType).
-
-.decl MethodType_ParamType(?descriptor:symbol, ?index:number, ?pType:Type)
+  Method_DeclaringType(?method, ?retType).
 
 MethodType_ParamType(?descriptor, ?index, ?pType) :-
   Method_Descriptor(?method, ?descriptor),
@@ -460,12 +471,13 @@ MethodFinder(?invo, ?ret) :-
    AssignReturnValue(?invo, ?ret).
 
 // Direct method handle lookup.
-.decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method)
+.decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type)
 
-DMHLookup(?type, ?id, ?mt, ?method) :-
+DMHLookup(?type, ?id, ?mt, ?method, ?retType) :-
    Method_DeclaringType(?method, ?type),
    Method_SimpleName(?method, ?id),
    Method_Descriptor(?method, ?descriptor),
+   Method_ReturnType(?method, ?retType),
    MTValue_Descriptor(?mt, ?descriptor).
 
 // Mock values for direct method handle lookup.
@@ -474,6 +486,7 @@ DMHLookup(?type, ?id, ?mt, ?method) :-
 MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
 isMethodHandle(?dmh),
 MethodHandle_Method(?dmh, ?method),
+MethodHandle_ReturnType(?dmh, ?retType),
 VarPointsTo(?hctx, ?dmh, ?ctx, ?ret) :-
    MethodFinder(?invo, ?ret),
    ActualParam(0, ?invo, ?classParam),
@@ -483,7 +496,7 @@ VarPointsTo(?hctx, ?dmh, ?ctx, ?ret) :-
    VarPointsTo(_, ?id, _, ?stringParam),
    ActualParam(2, ?invo, ?mtParam),
    VarPointsTo(_, ?mt, _, ?mtParam),
-   DMHLookup(?type, ?id, ?mt, ?method),
+   DMHLookup(?type, ?id, ?mt, ?method, ?retType),
    ?dmh = DMH(?method).
 
 #endif // REFLECTION

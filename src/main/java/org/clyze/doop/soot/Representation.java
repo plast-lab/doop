@@ -164,43 +164,17 @@ class Representation extends JavaRepresentation {
     }
 
     static String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
+        SootMethodRef exprMethodRef = expr.getMethodRef();
+        String name = simpleName(exprMethodRef);
         String midPart;
-        if (expr instanceof DynamicInvokeExpr)
-            midPart = dynamicInvokeIdMiddle((DynamicInvokeExpr)expr);
-        else {
-            SootMethodRef exprMethodRef = expr.getMethodRef();
-            midPart = exprMethodRef.declaringClass() + "." + simpleName(exprMethodRef);
-        }
+        if (expr instanceof DynamicInvokeExpr) {
+            SootMethodRef bootRef = ((DynamicInvokeExpr)expr).getBootstrapMethodRef();
+            String bootName = simpleName(bootRef);
+            midPart = DynamicMethodInvocation.genericId(bootName, name);
+        } else
+            midPart = exprMethodRef.declaringClass() + "." + name;
         return numberedInstructionId(getMethodSignature(inMethod), midPart, counter);
     }
-
-    // Create a middle part for invokedynamic ids. It currently
-    // supports the LambdaMetafactory machinery, returning a default
-    // value for other (or missing) bootstrap methods.
-    private static String dynamicInvokeIdMiddle(DynamicInvokeExpr expr) {
-        // The signatures of the two lambda metafactories we currently support.
-        final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
-        final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
-
-        SootMethodRef bootMethRef = expr.getBootstrapMethodRef();
-        if (bootMethRef != null) {
-            String bootMethName = bootMethRef.resolve().toString();
-            if (bootMethName.equals(DEFAULT_L_METAFACTORY) ||
-                bootMethName.equals(ALT_L_METAFACTORY)) {
-                int bootArity = expr.getBootstrapArgCount();
-                if (bootArity > 1) {
-                    Value val1 = expr.getBootstrapArg(1);
-                    if (val1 instanceof MethodHandle) {
-                        SootMethodRef smr = ((MethodHandle)val1).getMethodRef();
-                        return DynamicMethodInvocation.genId(smr.declaringClass().toString(), smr.name());
-                    }
-                }
-            }
-        }
-        String dynName = expr.getMethodRef().name();
-        return DynamicMethodInvocation.genericId(bootMethRef.name(), dynName);
-    }
-
 
     static String heapAlloc(SootMethod inMethod, AnyNewExpr expr, SessionCounter counter) {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)

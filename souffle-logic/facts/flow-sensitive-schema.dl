@@ -144,6 +144,11 @@
 
 .decl ClassHeap_InstanceType(?classHeap:ClassHeap, ?instanceType:Type)
 .decl MethodHandleConstant_Method(?heap:MethodHandleConstant, ?method:Method)
+.decl MethodHandleConstant_ReturnType(?heap:MethodHandleConstant, ?retType:Type)
+.decl MethodHandleConstant_ParamTypes(?heap:MethodHandleConstant, ?paramTypes:symbol)
+.decl MethodHandleConstant_Arity(?heap:MethodHandleConstant, ?arity:number)
+.decl MethodTypeConstant_Arity(?heap:MethodTypeConstant, ?arity:number)
+.decl MethodTypeConstant_ReturnType(?heap:MethodTypeConstant, ?retType:Type)
 
 //-----------------------------------------------------------------------------
 // [Bytecode Instructions]

@@ -74,15 +74,15 @@ lang:physical:storageModel[`_MethodHandleConstant] = "DelimitedFile".
 lang:physical:filePath[`_MethodHandleConstant] = "facts/MethodHandleConstant.facts".
 lang:physical:delimiter[`_MethodHandleConstant] = "\t".
 lang:physical:hasColumnNames[`_MethodHandleConstant] = false.
-_MethodHandleConstant(?id, ?method) ->
-   string(?id), string(?method).
+_MethodHandleConstant(?id, ?method, ?retType, ?paramTypes, ?arity) ->
+   string(?id), string(?method), string(?retType), string(?paramTypes), int[32](?arity).
 
 +Type:Id(?t:?str),
 +ClassType(?t) <-
    ?str = "java.lang.invoke.MethodHandle".
 
 +HeapAllocation0:MethodHandleConstant(?id, ?method) <-
-   _MethodHandleConstant(?id, ?method).
+   _MethodHandleConstant(?id, ?method, _, _, _).
 
 // EmptyArray
 lang:physical:storageModel[`_EmptyArray] = "DelimitedFile".

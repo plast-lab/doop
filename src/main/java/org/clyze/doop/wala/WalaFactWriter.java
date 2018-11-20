@@ -411,8 +411,21 @@ public class WalaFactWriter extends JavaFactWriter {
         String handleName =(String) constant.getValue();
         String heap = methodHandleConstant(handleName);
         String methodId = _rep.signature(m);
+        String breakHandles[] = handleName.split(" ");
+        String retType;
+        String params;
+        int arity;
 
-        writeMethodHandleConstant(heap, handleName);
+        System.err.println("Warning: method handle constants are not yet fully supported.");
+        retType = breakHandles[1];
+        if(breakHandles[2].contains("()"))
+            arity = 0;
+        else
+            arity = (int)breakHandles[2].chars().filter(ch -> ch == ',').count() + 1;
+
+        params = breakHandles[2].substring(breakHandles[2].indexOf('('), breakHandles[2].indexOf(')') +1).replace(",", "");
+
+        writeMethodHandleConstant(heap, handleName, retType, params, arity);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
     }
 

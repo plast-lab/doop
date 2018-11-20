@@ -69,8 +69,10 @@ public class JavaFactWriter {
         _db.add(PROPERTIES, pathId, keyId, valueId);
     }
 
-    protected void writeMethodHandleConstant(String heap, String handleName) {
-        _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
+    protected void writeMethodHandleConstant(String heap, String method,
+                                             String retType, String paramTypes,
+                                             int arity) {
+        _db.add(METHOD_HANDLE_CONSTANT, heap, method, retType, paramTypes, str(arity));
     }
 
     protected void writeFormalParam(String methodId, String var, String type, int i) {
@@ -270,11 +272,16 @@ public class JavaFactWriter {
     protected void writeMethodTypeConstant(String mt) {
         int rParen = mt.indexOf(")");
         int arity = 0;
-        if (mt.startsWith("(") && (rParen != -1))
-            arity = mt.substring(1, rParen).split(",").length;
-        else
-            System.err.println("Warning: cannot compute arity of " + mt);
-        _db.add(METHOD_TYPE_CONSTANT, mt, str(arity));
+        if (mt.startsWith("(") && (rParen != -1)) {
+            String[] paramTypes = mt.substring(1, rParen).split(",");
+            arity = paramTypes.length;
+            for (int idx = 0; idx < arity; idx++) {
+                _db.add(METHOD_TYPE_CONSTANT_PARAM, mt, str(idx), paramTypes[idx]);
+            }
+            String retType = mt.substring(rParen + 1, mt.length());
+            _db.add(METHOD_TYPE_CONSTANT, mt, str(arity), retType);
+        } else
+            System.err.println("Warning: cannot process method type " + mt);
     }
 
     protected void writeMethodAnnotation(String method, String annotationType) {
