@@ -642,6 +642,22 @@ RewriteAssignUnop(?insn, ?index, ?to, ?inmethod) :-
     SSA_AssignUnop(?insn, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index).
 
+.decl RewriteEnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
+.output RewriteEnterMonitor(filename="EnterMonitor.facts")
+
+RewriteEnterMonitor(?insn, ?index, ?var, ?method) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _EnterMonitor(?insn, _, ?var_origin, ?method),
+    ReachingDef(?insn, ?var, ?var_origin).
+
+.decl RewriteExitMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
+.output RewriteExitMonitor(filename="ExitMonitor.facts")
+
+RewriteExitMonitor(?insn, ?index, ?var, ?method) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _ExitMonitor(?insn, _, ?var_origin, ?method),
+    ReachingDef(?insn, ?var, ?var_origin).
+
 .decl RewriteGoto(?insn:symbol, ?index:number, ?to:number, ?inmethod:symbol)
 .output RewriteGoto(filename="Goto.facts")
 
@@ -828,6 +844,13 @@ RewriteVirtualMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
     _VirtualMethodInvocation(?insn, _, ?signature, ?base_origin, ?inmethod),
     ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteVarDeclaringMethod(?var:symbol, ?method:symbol)
+.output RewriteVarDeclaringMethod(filename="Var-DeclaringMethod.facts")
+
+RewriteVarDeclaringMethod(?var, ?method) :-
+    Var_DeclaringMethod(?var_origin, ?method),
+    SSA_Alias(?var, ?var_origin).
 
 .output SSA_FormalParam(filename="FormalParam.facts")
 .output SSA_ThisVar(filename="ThisVar.facts")
