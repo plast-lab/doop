@@ -168,7 +168,6 @@ class Representation extends JavaRepresentation {
         String name = simpleName(exprMethodRef);
         String midPart;
         if (expr instanceof DynamicInvokeExpr) {
-            System.out.println(exprMethodRef.declaringClass());
             SootMethodRef bootRef = ((DynamicInvokeExpr)expr).getBootstrapMethodRef();
             String bootName = simpleName(bootRef);
             midPart = DynamicMethodInvocation.genericId(bootName, name);
