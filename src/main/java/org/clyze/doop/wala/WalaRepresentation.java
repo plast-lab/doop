@@ -230,42 +230,17 @@ class WalaRepresentation extends JavaRepresentation {
             return fixTypeString(resolvedTargetRef.getDeclaringClass().toString())+ "." + simpleName(resolvedTargetRef);
     }
 
-    // Create a middle part for invokedynamic ids. It currently
-    // supports the LambdaMetafactory machinery, returning a default
-    // value for other (or missing) bootstrap methods.
+    // Create a middle part for invokedynamic ids. Returns a default
+    // value for missing bootstrap methods.
     private static String dynamicInvokeMiddlePart(SSAInvokeDynamicInstruction instruction, String defaultResult) {
-        // The signatures of the two lambda metafactories we currently support.
-        final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
-        final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
-
         BootstrapMethodsReader.BootstrapMethod bootMethRef = instruction.getBootstrap();
-        if (bootMethRef != null) {
-            ConstantPoolParser constantPool = bootMethRef.getCP();
-            int bootArity = bootMethRef.callArgumentCount();
-            if (bootArity > 1) {
-                int argType = bootMethRef.callArgumentKind(1);
-                int argIndex = bootMethRef.callArgumentIndex(1);
-
-                String bootMethName = "<" + bootMethRef.methodClass().replace('/','.') + ": ";
-                bootMethName += WalaUtils.createMethodSignature(bootMethRef.methodType(),bootMethRef.methodName()) + ">";
-                if ((argType == ClassConstants.CONSTANT_MethodHandle) &&
-                    ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
-                     (bootMethName.equals(ALT_L_METAFACTORY)))) {
-                    try {
-                        String declaringClass = constantPool.getCPHandleClass(argIndex).replace('/','.');
-                        String name = constantPool.getCPHandleName(argIndex);
-                        return DynamicMethodInvocation.genId(declaringClass, name);
-                    } catch (InvalidClassFileException e) {
-                        System.out.println("Representation: Unsupported invokedynamic, caught InvalidClassFileException returning default result.");
-                        return defaultResult;
-                    }
-                } else
-                    System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
-            } else
-                System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");
-        } else
-            System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
-        return defaultResult;
+        if (bootMethRef == null) {
+            System.err.println("Unsupported invokedynamic, null boot method.");
+            return defaultResult;
+        }
+        String bootName = bootMethRef.methodName();
+        String dynName = instruction.getCallSite().getDeclaredTarget().getName().toString();
+        return DynamicMethodInvocation.genericId(bootName, dynName);
     }
 
     String heapAlloc(IMethod inMethod, SSANewInstruction instruction, SessionCounter counter) {
