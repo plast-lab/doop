@@ -15,7 +15,7 @@ class OpenProgramsTest extends Specification {
 	@Unroll
 	def "Testing support for open programs"() {
 		when:
-		Main.main((String[])["-i", "org.apache.ivy:ivy:2.3.0", "-a", "context-insensitive", "--id", "ivy-open-programs", "--open-programs", "concrete-types", "--Xstats-full"])
+		Main.main((String[])["-i", "org.apache.ivy:ivy:2.3.0", "-a", "context-insensitive", "--id", "ivy-open-programs", "--open-programs", "concrete-types", "--Xstats-full", "--platform", "java_7"])
 		analysis = Main.analysis
 
 		then:
