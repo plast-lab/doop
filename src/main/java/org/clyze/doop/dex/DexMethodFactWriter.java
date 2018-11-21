@@ -810,7 +810,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private void writeInitialArrayValues(String insn, int regDest,
                                          int[] argRegs, String[] heap) {
         for (int idx = 0; idx < argRegs.length; idx++)
-            _db.add(ARRAY_INITIAL_VALUE_FROM_LOCAL, insn, local(regDest), str(idx), local(argRegs[idx]), heap[0]);
+            _db.add(ARRAY_INITIAL_VALUE_FROM_LOCAL, insn, local(regDest), str(idx), local(argRegs[idx]), heap[0], methId);
     }
 
     private void writeSwitchTargets(Instruction instr, PredicateFile predicateFile) {

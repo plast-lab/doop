@@ -822,7 +822,7 @@ isNumConstant(?const) :-
 isNumConstant(?const) :-
   ArrayInitialValueFromConst(_, _, _, _, ?const, _, _).
 
-.decl ArrayInitialValueFromLocal(?instruction:symbol, ?to:symbol, ?index:number, ?from:symbol, ?baseHeap:symbol)
+.decl ArrayInitialValueFromLocal(?instruction:symbol, ?to:symbol, ?index:number, ?from:symbol, ?baseHeap:symbol, ?method:Method)
 .input ArrayInitialValueFromLocal(IO="file", filename="ArrayInitialValueFromLocal.facts", delimiter="\t")
 
 #endif // ANDROID
