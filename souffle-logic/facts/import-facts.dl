@@ -477,6 +477,7 @@ Instruction_Method(?instruction, ?method) :-
 isExceptionHandler(?handler),
 isInstruction(?handler),
 Instruction_Index(?handler, ?index),
+Instruction_Method(?handler, ?method),
 ExceptionHandler_Method(?handler, ?method),
 ExceptionHandler_Index(?handler, ?index),
 ExceptionHandler_Type(?handler, ?type),
