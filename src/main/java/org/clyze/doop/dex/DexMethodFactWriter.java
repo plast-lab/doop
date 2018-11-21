@@ -672,8 +672,12 @@ class DexMethodFactWriter extends JavaFactWriter {
             case NOP:
                 break;
             default:
-                System.err.println("Unknown instruction type: " + op);
-                throw new RuntimeException("Quit! [methId = " + methId + ", lineNo = " + findLineForInstructionIndex(index) + "]");
+                if (op.odexOnly())
+                    System.out.println("Ignoring unsupported ODEX instruction " + op + " in method " + methId);
+                else {
+                    System.err.println("Unknown instruction type: " + op);
+                    throw new RuntimeException("Quit! [methId = " + methId + ", lineNo = " + findLineForInstructionIndex(index) + "]");
+                }
         }
     }
 

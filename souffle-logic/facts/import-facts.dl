@@ -475,6 +475,8 @@ Instruction_Method(?instruction, ?method) :-
 .input _ExceptionHandler(IO="file", filename="ExceptionHandler.facts", delimiter="\t")
 
 isExceptionHandler(?handler),
+isInstruction(?handler),
+Instruction_Index(?handler, ?index),
 ExceptionHandler_Method(?handler, ?method),
 ExceptionHandler_Index(?handler, ?index),
 ExceptionHandler_Type(?handler, ?type),
