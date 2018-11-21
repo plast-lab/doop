@@ -416,7 +416,6 @@ public class WalaFactWriter extends JavaFactWriter {
         String params;
         int arity;
 
-        System.err.println("Warning: method handle constants are not yet fully supported.");
         retType = breakHandles[1];
         if(breakHandles[2].contains("()"))
             arity = 0;
@@ -845,7 +844,7 @@ public class WalaFactWriter extends JavaFactWriter {
             while (excTypes.hasNext()) {
                 TypeReference excType = excTypes.next();
                 String insn = _rep.handler(m, catchInstr, excType, session, i/2);
-                _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
+                writeExceptionHandler(insn, _rep.signature(m), handlerIndex, fixTypeString(excType.getName().toString()), _rep.local(m, caught), beginIndex, endIndex);
                 if (prev != null)
                     _db.add(EXCEPT_HANDLER_PREV, insn, prev);
                 prev = insn;

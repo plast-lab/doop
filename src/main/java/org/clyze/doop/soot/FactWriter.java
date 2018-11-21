@@ -663,7 +663,7 @@ class FactWriter extends JavaFactWriter {
         int beginIndex = session.getUnitNumber(handler.getBeginUnit());
         session.calcUnitNumber(handler.getEndUnit());
         int endIndex = session.getUnitNumber(handler.getEndUnit());
-        _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), exc.getName(), Representation.local(m, caught), str(beginIndex), str(endIndex));
+        writeExceptionHandler(insn, _rep.signature(m), handlerIndex, exc.getName(), Representation.local(m, caught), beginIndex, endIndex);
     }
 
     void writeThisVar(SootMethod m) {

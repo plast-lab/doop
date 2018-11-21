@@ -203,4 +203,5 @@ InstructionIsNotConcreteInstruction(?insn) :-
   !isStaticMethodInvocation_Insn(?insn),
   !isUnsupportedInstruction(?insn),
   !isAssignPhantomInvoke(?insn),
+  !isExceptionHandler(?insn),
   !isBreakpointStmt(?insn).

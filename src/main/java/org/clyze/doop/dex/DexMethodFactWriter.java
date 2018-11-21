@@ -242,7 +242,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                         System.err.println("Warning: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
                     String insn = instructionId(handlerMid(hi.excType), handlerIndex);
                     handlerInsnId.put(hi, insn);
-                    _db.add(EXCEPTION_HANDLER, insn, methId, str(handlerIndex), hi.excType, localA, str(startIndex), str(endIndex));
+                    writeExceptionHandler(insn, methId, handlerIndex, hi.excType, localA, startIndex, endIndex);
                 } catch (Handler.IndexException ex) {
                     System.err.println("Error: " + ex.getMessage());
                 }
@@ -772,7 +772,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                     boolean isEmpty = (objReturnInfo.argRegs.length == 0);
                     String[] heap = new String[1];
                     writeAssignHeapAllocation(regDest, objReturnInfo.retType, index, insn, isEmpty, heap);
-                    writeInitialArrayValues(insn, regDest, objReturnInfo.argRegs, heap);
+                    writeInitialArrayValues(insn, index, regDest, objReturnInfo.argRegs, heap);
                 }
                 break;
             case INVOKE_DIRECT:
@@ -807,10 +807,10 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param argRegs    the sequence of initial values
      * @param heap       a single-element array containing the heap id
      */
-    private void writeInitialArrayValues(String insn, int regDest,
+    private void writeInitialArrayValues(String insn, int regDest, int index,
                                          int[] argRegs, String[] heap) {
         for (int idx = 0; idx < argRegs.length; idx++)
-            _db.add(ARRAY_INITIAL_VALUE_FROM_LOCAL, insn, local(regDest), str(idx), local(argRegs[idx]), heap[0]);
+            _db.add(ARRAY_INITIAL_VALUE_FROM_LOCAL, insn, str(index), local(regDest), str(idx), local(argRegs[idx]), heap[0], methId);
     }
 
     private void writeSwitchTargets(Instruction instr, PredicateFile predicateFile) {
