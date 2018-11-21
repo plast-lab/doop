@@ -300,14 +300,22 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    FormalParam(?idx, ?implMethod, ?formal),
    isImmutableHContext(?hctx).
 
-// Special handling for captured "this" parameters.
-VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
+.decl InstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context)
+
+InstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?ctx) :-
    LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
    !Method_Modifier("static", ?implMethod),
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
-   CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0, ?ctx),
    ThisVar(?implMethod, ?this),
+   Var_Type(?this, ?thisType),
    isImmutableHContext(?hctx).
+
+// Special handling for captured "this" parameters.
+VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
+   InstanceImplMethod(?invokedynamic, _, ?this, ?thisType, ?hctx, ?ctx),
+   CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0, _),
+   Value_Type(?thisValue, ?thisValueType),
+   basic.SubtypeOf(?thisValueType, ?thisType).
 
 // Applications of constructor references construct values. However,
 // these values do not come from a 'new' instruction in the code but
