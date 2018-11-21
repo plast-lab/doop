@@ -528,6 +528,15 @@ NewIndexMapping(?old, ?new) :-
     SSA_InstructionIndex(?insn, ?new).
 
 // Rule rewriting
+.decl RewriteArrayInitialValueFromLocal(?insn:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?from:symbol, ?baseHeap:symbol, ?inmethod:symbol)
+.output RewriteArrayInitialValueFromLocal(filename="ArrayInitialValueFromLocal.facts")
+
+RewriteArrayInitialValueFromLocal(?insn, ?index, ?to, ?arrayIndex, ?from, ?baseHeap, ?inmethod) :-
+    ArrayInitialValueFromLocal(?insn, ?index, ?to_origin, ?arrayIndex, ?from_origin, ?baseHeap, ?inmethod),
+    ReachingDef(?insn, ?from, ?from_origin),
+    ReachingDef(?insn, ?to, ?to_origin).
+
+// Rule rewriting
 .decl RewriteArrayInitialValueFromConst(?insn:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol, ?inmethod:symbol)
 .output RewriteArrayInitialValueFromConst(filename="ArrayInitialValueFromConst.facts")
 
