@@ -12,7 +12,7 @@ import static org.clyze.doop.common.PredicateFile.*;
 /**
  * Common functionality that a fact writer for Java bytecode can reuse.
  */
-public class JavaFactWriter {
+public abstract class JavaFactWriter {
 
     protected static final String L_OP = "1";
     protected static final String R_OP = "2";
@@ -292,5 +292,10 @@ public class JavaFactWriter {
         _db.add(CLASS_HEAP, heap, className);
         if (_extractMoreStrings)
             writeStringConstant(className);
+    }
+
+    protected void writeExceptionHandler(String insn, String method, int index,
+                                         String type, String var, int begin, int end) {
+        _db.add(EXCEPTION_HANDLER, insn, method, str(index), type, var, str(begin), str(end));
     }
 }

@@ -242,7 +242,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                         System.err.println("Warning: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
                     String insn = instructionId(handlerMid(hi.excType), handlerIndex);
                     handlerInsnId.put(hi, insn);
-                    _db.add(EXCEPTION_HANDLER, insn, methId, str(handlerIndex), hi.excType, localA, str(startIndex), str(endIndex));
+                    writeExceptionHandler(insn, methId, handlerIndex, hi.excType, localA, startIndex, endIndex);
                 } catch (Handler.IndexException ex) {
                     System.err.println("Error: " + ex.getMessage());
                 }
