@@ -31,6 +31,11 @@ SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?m
     AssignInstruction_To(?instr, ?to),
     Instruction_Method(?instr, ?method).
 
+SSA_AssignToOriginal(?instr, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
+SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    _ExceptionHandler(?instr, ?method, ?index, _, ?to, _, _).
+
 SSA_AssignToOriginal(?invocation, ?to),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?invocation, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
@@ -639,10 +644,11 @@ RewriteDynamicMethodInvocation(?insn, ?index, ?bootSignature, ?dynName, ?dynRetT
 .output RewriteExceptionHandler(filename="ExceptionHandler.facts")
 
 RewriteExceptionHandler(?handler, ?method, ?index, ?type, ?var, ?begin, ?end) :-
-    SSA_InstructionIndex(?insn, ?index),
-    ExceptionHandlerFirstInstruction(?insn),
-    _ExceptionHandler(?handler, ?method, _, ?type, ?var, ?begin, ?end),
-    ReachingDef(?insn, ?var, ?var_origin).
+    SSA_InstructionIndex(?handler, ?index),
+    _ExceptionHandler(?handler, ?method, _, ?type, ?var_origin, ?begin_old, ?end_old),
+    NewIndexMapping(?begin_old, ?begin),
+    NewIndexMapping(?end_old, ?end),
+    SSA_AssignDetails(?handler, ?var_origin, _, ?var, _).
 
 .decl RewriteAssignNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)
 .output RewriteAssignNumConstant(filename="AssignNumConstant.facts")
@@ -876,5 +882,6 @@ RewriteVarDeclaringMethod(?var, ?method) :-
     Var_DeclaringMethod(?var_origin, ?method),
     SSA_Alias(?var, ?var_origin).
 
+.output isInstruction
 .output SSA_FormalParam(filename="FormalParam.facts")
 .output SSA_ThisVar(filename="ThisVar.facts")
