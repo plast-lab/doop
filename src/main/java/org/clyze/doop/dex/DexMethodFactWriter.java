@@ -389,6 +389,18 @@ class DexMethodFactWriter extends JavaFactWriter {
             case INVOKE_SUPER_RANGE:
                 writeInvoke(instr, op, index);
                 break;
+            case IGET_QUICK:
+            case IGET_WIDE_QUICK:
+            case IGET_OBJECT_QUICK:
+            case IPUT_QUICK:
+            case IPUT_WIDE_QUICK:
+            case IPUT_OBJECT_QUICK:
+            case INVOKE_VIRTUAL_QUICK:
+            case INVOKE_VIRTUAL_QUICK_RANGE:
+            case INVOKE_SUPER_QUICK:
+            case INVOKE_SUPER_QUICK_RANGE:
+                System.out.println("Ignoring unsupported ODEX instruction: " + instr);
+                break;
             case SPUT:
             case SPUT_WIDE:
             case SPUT_OBJECT:
