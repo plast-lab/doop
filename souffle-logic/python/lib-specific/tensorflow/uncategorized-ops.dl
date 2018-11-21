@@ -34,8 +34,8 @@ EmbdedingLookupOpTensorLengths(?ctx, ?insn, ?embLookOp, ?len1, ?len2):-
 
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
-  TensorOperationProducesOutput(?ctx, ?insn, ?embLookOp),
   EmbdedingLookupOpTensorLengths(?ctx, ?insn, ?embLookOp, ?len1, ?len2),
+  TensorOpOutputShape(?ctx, ?insn, ?embLookOp, ?shapeHctx, ?tensorShapeVal),
   AssignInstruction_To(?insn, ?var),
   VarPointsTo(?hctx, ?embLookOp, ?ctx, ?var),
   TensorShape(?hctx, ?embLookOp, ?shapeHctx, ?tensorShapeVal),
@@ -43,8 +43,8 @@ TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
 
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
-  TensorOperationProducesOutput(?ctx, ?insn, ?embLookOp),
   EmbdedingLookupOpTensorLengths(?ctx, ?insn, ?embLookOp, _, ?len2),
+  TensorOpOutputShape(?ctx, ?insn, ?embLookOp, ?shapeHctx, ?tensorShapeVal),
   ?index < ?len2,
   AssignInstruction_To(?insn, ?var),
   VarPointsTo(?hctx, ?embLookOp, ?ctx, ?var),
@@ -53,14 +53,11 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
   TensorLikeObjectShapeListContent(?idsTensHctx, ?idsTens, ?index, ?indexVal).
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
-  TensorOperationProducesOutput(?ctx, ?insn, ?embLookOp),
   EmbdedingLookupOpTensorLengths(?ctx, ?insn, ?embLookOp, _, ?len2),
+  TensorOpOutputShape(?ctx, ?insn, ?embLookOp, ?shapeHctx, ?tensorShapeVal),
   ?index >= ?len2,
   ?iindex > 0,
   ?index = ?iindex + ?len2 - 1,
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?embLookOp, ?ctx, ?var),
-  TensorShape(?hctx, ?embLookOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?embLookOp, "params", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?iindex, ?indexVal).
 
@@ -154,10 +151,7 @@ TensorOperationProducesOutput(?ctx, ?insn, ?scewlOp):-
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len1 -1):-
   SoftmaxCrEntrWLogitsOp(?ctx, ?insn, ?scewlOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?scewlOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?scewlOp, ?ctx, ?var),
-  TensorShape(?hctx, ?scewlOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?scewlOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?scewlOp, "labels", ?labelsHctx, ?labels),
   TensorShape(?labelsHctx, ?labels, ?shapeListHctx1, ?shapeList1),
   TensorShapeListLength(?shapeListHctx1, ?shapeList1, ?len1).
@@ -165,10 +159,7 @@ TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len1 -1):-
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
   SoftmaxCrEntrWLogitsOp(?ctx, ?insn, ?scewlOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?scewlOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?scewlOp, ?ctx, ?var),
-  TensorShape(?hctx, ?scewlOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?scewlOp, ?shapeHctx, ?tensorShapeVal),
   TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len),
   TensorOperation_NameToVal(?ctx, ?insn, ?scewlOp, "labels", ?labelsHctx, ?labels),
   TensorShape(?labelsHctx, ?labels, ?shapeListHctx1, ?shapeList1),
@@ -221,10 +212,7 @@ TensorOperationProducesOutput(?ctx, ?insn, ?argMaxMinOp):-
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len -1):-
   ArgMaxMinOpAxisNum(?ctx, ?insn, ?argMaxMinOp, _),
-  TensorOperationProducesOutput(?ctx, ?insn, ?argMaxMinOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?argMaxMinOp, ?ctx, ?var),
-  TensorShape(?hctx, ?argMaxMinOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?argMaxMinOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len).
 
@@ -232,20 +220,14 @@ TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len -1):-
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
   ArgMaxMinOpAxisNum(?ctx, ?insn, ?argMaxMinOp, ?axisNum),
   ?index < ?axisNum,
-  TensorOperationProducesOutput(?ctx, ?insn, ?argMaxMinOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?argMaxMinOp, ?ctx, ?var),
-  TensorShape(?hctx, ?argMaxMinOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?argMaxMinOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?index, ?indexVal).
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index - 1, ?indexVal):-
   ArgMaxMinOpAxisNum(?ctx, ?insn, ?argMaxMinOp, ?axisNum),
   ?index > ?axisNum,
-  TensorOperationProducesOutput(?ctx, ?insn, ?argMaxMinOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?argMaxMinOp, ?ctx, ?var),
-  TensorShape(?hctx, ?argMaxMinOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?argMaxMinOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?index, ?indexVal).
 //----------------------------------------------------------------------------------------------------------------------
