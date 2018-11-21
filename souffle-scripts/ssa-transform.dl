@@ -620,6 +620,30 @@ RewriteAssignNull(?insn, ?index, ?to, ?inmethod) :-
     SSA_AssignNull(?insn, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index).
 
+.decl RewriteBootstrapParam(?index:number, ?invocation:symbol, ?var:symbol)
+.output RewriteBootstrapParam(filename="BootstrapParam.facts")
+
+RewriteBootstrapParam(?index, ?invocation, ?var) :-
+    SSA_InstructionIndex(?invocation, ?index),
+    _BootstrapParam(_, ?invocation, ?var_origin),
+    ReachingDef(?invocation, ?var, ?var_origin).
+
+.decl RewriteDynamicMethodInvocation(?insn:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?tag:number, ?method:symbol)
+.output RewriteDynamicMethodInvocation(filename="DynamicMethodInvocation.facts")
+
+RewriteDynamicMethodInvocation(?insn, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _DynamicMethodInvocation(?insn, _, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method).
+
+.decl RewriteExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number)
+.output RewriteExceptionHandler(filename="ExceptionHandler.facts")
+
+RewriteExceptionHandler(?handler, ?method, ?index, ?type, ?var, ?begin, ?end) :-
+    SSA_InstructionIndex(?insn, ?index),
+    ExceptionHandlerFirstInstruction(?insn),
+    _ExceptionHandler(?handler, ?method, _, ?type, ?var, ?begin, ?end),
+    ReachingDef(?insn, ?var, ?var_origin).
+
 .decl RewriteAssignNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)
 .output RewriteAssignNumConstant(filename="AssignNumConstant.facts")
 
