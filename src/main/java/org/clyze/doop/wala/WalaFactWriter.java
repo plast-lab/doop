@@ -416,7 +416,6 @@ public class WalaFactWriter extends JavaFactWriter {
         String params;
         int arity;
 
-        System.err.println("Warning: method handle constants are not yet fully supported.");
         retType = breakHandles[1];
         if(breakHandles[2].contains("()"))
             arity = 0;
