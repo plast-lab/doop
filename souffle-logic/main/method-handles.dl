@@ -258,8 +258,16 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
 
 // A boxing/unboxing conversion of types including the null type.
 .decl BoxTypeConversion(?original:Type, ?new:Type)
+// Create a new allocation in the case of boxing.
+.decl BoxAllocation(?value:Value, ?type:Type)
+#define BOX_ALLOC(t) cat("mock box allocation for type ", t)
 
-BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, ?t2).
+BoxTypeConversion(?t1, ?t2),
+MockValueConsMacro(?mockAlloc, ?t2),
+BoxAllocation(?mockAlloc, ?t2) :-
+   PrimitiveType_Boxed(?t1, ?wrapperT),
+   basic.SubtypeOf(?wrapperT, ?t2),
+   ?mockAlloc = BOX_ALLOC(?t2).
 BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
 BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
 BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
@@ -301,9 +309,8 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    VarPointsTo(_, ?val, _, ?actual),
    Value_Type(?val, ?valType),
    Var_Type(?formal, ?formalType),
-   // Check type compatibility (spec: normal case/casting/(un)boxing).
+   // Check type compatibility (including (un)boxing).
    (basic.SubtypeOf(?valType, ?formalType);
-    basic.SubtypeOf(?formalType, ?valType);
     BoxTypeConversion(?valType, ?formalType)),
    isImmutableHContext(?hctx).
 
