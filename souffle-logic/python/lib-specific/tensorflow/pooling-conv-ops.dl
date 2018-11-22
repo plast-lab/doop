@@ -178,10 +178,6 @@ ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, ?tensorValForDi
 //                                          CONVOLUTION LAYER OP
 //----------------------------------------------------------------------------------------------------------------------
 
-#define LayersConvValue(op,fun,val1, val2, val3, val4, val5, val6, val7) cat("<tensor ", cat(fun, cat("/", cat(op, cat(val1, cat("+", cat(val2, cat("+", cat(val3, cat("+", cat(val4, cat("+", cat(val5, cat("+", cat(val6, cat("+", cat(val7,">")))))))))))))))))
-
-#define NNConvValue(op,fun,val1, val2, val3, val4, val5) cat("<tensor ", cat(fun, cat("/", cat(op, cat(val1, cat("+", cat(val2, cat("+", cat(val3, cat("+", cat(val4, cat("+", cat(val5, ">")))))))))))))
-
 .decl ConvOperationFunctionInfo(?function:Function, ?funName:symbol, ?nDims:number)
 .output ConvOperationFunctionInfo
 
@@ -235,8 +231,7 @@ ConvOperation(?ctx, ?insn, ?newVal):-
   ResolvedActualParamValue(?ctx, ?insn, ?function, "padding", ?paddingHctx, ?paddingArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "dilation_rate", ?dilationRateHctx, ?dilationRateArgVal),
-  Instruction_Function(?insn, ?inFunction),
-  ?newVal = LayersConvValue(?funName, ?inFunction, ?inputsTensorArgVal, ?filtersArgVal, ?kernelSizeArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal, ?dilationRateArgVal).
+  ?newVal = SevenInValTensorValMacro(?funName, ?insn, ?inputsTensorArgVal, ?filtersArgVal, ?kernelSizeArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal, ?dilationRateArgVal).
 
 //NN CONV OPERATION FOR 2d and 3d (they use different names)
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?newVal, "inputs"),
@@ -257,8 +252,7 @@ ConvOperation(?ctx, ?insn, ?newVal):-
   ResolvedActualParamValue(?ctx, ?insn, ?function, "strides", ?stridesHctx, ?stridesArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "padding", ?paddingHctx, ?paddingArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
-  Instruction_Function(?insn, ?inFunction),
-  ?newVal = NNConvValue(?funName, ?inFunction, ?inputsTensorArgVal, ?filterArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
+  ?newVal = FiveInValTensorValMacro(?funName, ?insn, ?inputsTensorArgVal, ?filterArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
 
 //Pass the parameters that are
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?newVal, "inputs"),
@@ -279,8 +273,7 @@ ConvOperation(?ctx, ?insn, ?newVal):-
   ResolvedActualParamValue(?ctx, ?insn, ?function, "stride", ?stridesHctx, ?stridesArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "padding", ?paddingHctx, ?paddingArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
-  Instruction_Function(?insn, ?inFunction),
-  ?newVal = NNConvValue(?funName, ?inFunction, ?inputsTensorArgVal, ?filterArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
+  ?newVal = FiveInValTensorValMacro(?funName, ?insn, ?inputsTensorArgVal, ?filterArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
 
 
 ConvOrPoolOperation_KernelSizeForDim(?ctx, ?insn, ?newVal, ?dim, ?kernelSizeValForDim):-
@@ -434,8 +427,6 @@ TensorShapeListContent(?outShapeListHctx, ?outShapeList, ?channelsPosInTensor, ?
 //                                  POOLING LAYER OP
 //----------------------------------------------------------------------------------------------------------------------
 
-#define LayersPoolValue(op,fun,val1, val2, val3, val4, val5) cat("<tensor ", cat(fun, cat("/", cat(op, cat(val1, cat("+", cat(val2, cat("+", cat(val3, cat("+", cat(val4, cat("+", cat(val5,">")))))))))))))
-
 .decl PoolOperation(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?newVal:Value)
 .output PoolOperation
 
@@ -476,8 +467,7 @@ PoolOperation(?ctx, ?insn, ?newVal):-
   ResolvedActualParamValue(?ctx, ?insn, ?function, "strides", ?stridesHctx, ?stridesArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "padding", ?paddingHctx, ?paddingArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
-  Instruction_Function(?insn, ?inFunction),
-  ?newVal = LayersPoolValue(?funName, ?inFunction, ?inputsTensorArgVal, ?kernelSizeArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
+  ?newVal = FiveInValTensorValMacro(?funName, ?insn, ?inputsTensorArgVal, ?kernelSizeArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
 
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?newVal, "inputs"),
 TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
@@ -497,8 +487,7 @@ PoolOperation(?ctx, ?insn, ?newVal):-
   ResolvedActualParamValue(?ctx, ?insn, ?function, "strides", ?stridesHctx, ?stridesArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "padding", ?paddingHctx, ?paddingArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
-  Instruction_Function(?insn, ?inFunction),
-  ?newVal = NNConvValue(?funName, ?inFunction, ?inputsTensorArgVal, ?filterArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
+  ?newVal = FiveInValTensorValMacro(?funName, ?insn, ?inputsTensorArgVal, ?filterArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
 
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?newVal, "inputs"),
 TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
@@ -518,8 +507,7 @@ PoolOperation(?ctx, ?insn, ?newVal):-
   ResolvedActualParamValue(?ctx, ?insn, ?function, "stride", ?stridesHctx, ?stridesArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "padding", ?paddingHctx, ?paddingArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
-  Instruction_Function(?insn, ?inFunction),
-  ?newVal = NNConvValue(?funName, ?inFunction, ?inputsTensorArgVal, ?filterArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
+  ?newVal = FiveInValTensorValMacro(?funName, ?insn, ?inputsTensorArgVal, ?filterArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
 
 
 ConvOrPoolOperation_KernelSizeForDim(?ctx, ?insn, ?newVal, ?dim, ?kernelSizeValForDim):-

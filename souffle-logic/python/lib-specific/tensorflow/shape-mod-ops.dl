@@ -171,7 +171,6 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
 .decl ReshapeOperationReplaceMinus1WithVal(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?reshapeOpVal:Value, ?newVal:Value)
 .output ReshapeOperationReplaceMinus1WithVal
 
-#define ReshapeValueMacro(op,fun, index, val1, val2) cat("<tensor ", cat(fun, cat("/", cat(op, cat( to_string(index), cat("/", cat(val1, cat("+", cat(val2, ">")))))))))
 
 //Checks if the required args are given and their values have correct values
 
@@ -183,9 +182,7 @@ ReshapeOperation(?ctx, ?insn, ?reshapeOpVal):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.reshape>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.reshape>", "tensor", ?tensorHctx, ?tensorArgVal),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.reshape>", "shape", ?dimListHctx, ?dimListArgVal),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?reshapeOpVal = ReshapeValueMacro("reshape", ?fun, ?index, ?tensorArgVal, ?dimListArgVal).
+  ?reshapeOpVal = TwoInValTensorValMacro("reshape", ?insn, ?tensorArgVal, ?dimListArgVal).
 
 
 ReshapeOperationCorrectTypeArgs(?ctx, ?insn, ?reshapeOpVal):-
@@ -377,9 +374,7 @@ ExpandDimsOp(?ctx, ?insn, ?expDimsVal):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.expand_dims>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.expand_dims>", "input", ?tensorHctx, ?tensorArgVal),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.expand_dims>", "axis", ?axisHct, ?axis),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?expDimsVal = ReshapeValueMacro("expandDims", ?fun, ?index, ?tensorArgVal, ?axis).
+  ?expDimsVal = TwoInValTensorValMacro("expandDims", ?insn, ?tensorArgVal, ?axis).
 
 ExpandDimsOpAxisNum(?ctx, ?insn, ?expDimsVal, ?axisNum):-
   ExpandDimsOp(?ctx, ?insn, ?expDimsVal),
@@ -476,9 +471,7 @@ TransposeOp(?ctx, ?insn, ?transposeOpVal):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.transpose>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.transpose>", "a", ?tensorHctx, ?tensorArgVal),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.transpose>", "perm", ?permListHctx, ?perList),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?transposeOpVal = ReshapeValueMacro("transpose", ?fun, ?index, ?tensorArgVal, ?perList).
+  ?transposeOpVal = TwoInValTensorValMacro("transpose", ?insn, ?tensorArgVal, ?perList).
 
 ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, ?len):-
   TransposeOp(?ctx, ?insn, ?transposeOpVal),
@@ -547,9 +540,7 @@ SetShapeOp(?ctx, ?insn, ?setShapeOpVal):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.Tensor.set_shape>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.Tensor.set_shape>", "self", ?tensorHctx, ?tensorArgVal),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.Tensor.set_shape>", "shape", ?shapeListHctx, ?shapeList),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?setShapeOpVal = ReshapeValueMacro("set_shape", ?fun, ?index, ?tensorArgVal, ?shapeList).
+  ?setShapeOpVal = TwoInValTensorValMacro("set_shape", ?insn, ?tensorArgVal, ?shapeList).
 
 SetShapeOpShapeListLengths(?ctx, ?insn, ?setShapeOpVal, ?len1, ?len2),
 SetShapeOpValidCorrectTypeArgs(?ctx, ?insn, ?setShapeOpVal):-

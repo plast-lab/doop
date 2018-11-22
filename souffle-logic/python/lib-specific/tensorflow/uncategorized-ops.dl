@@ -11,9 +11,7 @@ EmbdedingLookupOp(?ctx, ?insn, ?embLookOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.nn.embedding_lookup>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.nn.embedding_lookup>", "params", ?tensorHctx, ?tensorArgVal),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.nn.embedding_lookup>", "ids", ?idsTensHctx, ?idsTens),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?embLookOp = ReshapeValueMacro("embLookup", ?fun, ?index, ?tensorArgVal, ?idsTens).
+  ?embLookOp = TwoInValTensorValMacro("embLookup", ?insn, ?tensorArgVal, ?idsTens).
 
 
 TensorOperationProducesOutput(?ctx, ?insn, ?embLookOp):-
@@ -93,9 +91,7 @@ SoftmaxCrEntrWLogitsOp(?ctx, ?insn, ?scewlOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.nn.softmax_cross_entropy_with_logits>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.nn.softmax_cross_entropy_with_logits>", "logits", ?logitsHctx, ?logits),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.nn.softmax_cross_entropy_with_logits>", "labels", ?labelsHctx, ?labels),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?scewlOp = ReshapeValueMacro("softmax_cross_entropy_with_logits", ?fun, ?index, ?logits, ?labels).
+  ?scewlOp = TwoInValTensorValMacro("softmax_cross_entropy_with_logits", ?insn, ?logits, ?labels).
 
 SoftmaxCrEntrWLogitsOpLabelsMultRes(?ctx, ?insn, ?scewlOp, ?res):-
   SoftmaxCrEntrWLogitsOp(?ctx, ?insn, ?scewlOp),
@@ -188,9 +184,7 @@ ArgMaxMinOp(?ctx, ?insn, ?argMaxMinOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, ?function),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "input", ?tensorHctx, ?tensorArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "axis", ?axisHctx, ?axis),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?argMaxMinOp = ReshapeValueMacro("argMaxMin", ?fun, ?index, ?tensorArgVal, ?axis).
+  ?argMaxMinOp = TwoInValTensorValMacro("argMaxMin", ?insn, ?tensorArgVal, ?axis).
 
 
 ArgMaxMinOpAxisNum(?ctx, ?insn, ?argMaxMinOp, ?axisNum):-
@@ -242,6 +236,4 @@ ReduceOp(?ctx, ?insn, ?redOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.reduce_mean>"),
   //ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.reduce_mean>", "params", ?tensorHctx, ?tensorArgVal),
   //ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.reduce_mean>", "ids", ?idsTensHctx, ?idsTens),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?redOp = ReshapeValueMacro("embLookup", ?fun, ?index, "<MOCK1>", "<MOCK2>").
+  ?redOp = TwoInValTensorValMacro("embLookup", ?insn, "<MOCK1>", "<MOCK2>").

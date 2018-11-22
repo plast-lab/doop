@@ -16,6 +16,7 @@
   #include "comprehension.dl"
   #include "../lib-specific/modeled.dl"
   #include "../lib-specific/default-python-lib.dl"
+  #include "../lib-specific/lib-macros.dl"
   #include "../lib-specific/tensorflow/tensorflow.dl"
   #include "../lib-specific/tensorflow/general-tensor-modeling.dl"
   #include "../lib-specific/tensorflow/tensor-creation-ops.dl"

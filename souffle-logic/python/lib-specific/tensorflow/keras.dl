@@ -15,10 +15,8 @@
 KerasLoadImageOp(?ctx, ?insn, ?loadImgVal, ?shapeListHctx, ?shapeList):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>", "target_size", ?shapeListHctx, ?shapeList),
-  Instruction_Function(?insn, ?fun),
   ListOfIntConsts(?shapeListHctx, ?shapeList),
-  Instruction_Index(?insn, ?index),
-  ?loadImgVal = ReshapeValueMacro("loadIMG", ?fun, ?index, "rgb", ?shapeList).
+  ?loadImgVal = TwoInValTensorValMacro("loadIMG", ?insn, "rgb", ?shapeList).
 
 
 configuration.RecordContextRequest(?ctx, ?loadImgVal, ?var) :-
@@ -67,9 +65,7 @@ PILImageShapeListContent(?hctx, ?loadImgVal, ?index, ?indexVal):-
 KerasImageToArrayOp(?ctx, ?insn, ?imgToArrOp, ?imageHctx, ?image):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>", "image", ?imageHctx, ?image),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?imgToArrOp = ReshapeValueMacro("toarr", ?fun, ?index, "toarr", ?image).
+  ?imgToArrOp = SingleInValNumpyValMacro("toarr", ?insn, ?image).
 
 NumPyOperationProducesOutput(?ctx, ?insn, ?imgToArrOp):-
   KerasImageToArrayOp(?ctx, ?insn, ?imgToArrOp, _, ?image),

@@ -103,8 +103,6 @@ TensorLikeObjectShapeListContent(?hctx, ?outArray, ?index, ?indexVal):-
 //----------------------------------------------------------------------------------------------------------------------
 
 
-#define SingleInValValMacro(op,fun, index, val) cat("<ndarray ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val, ">"))))))
-
 .decl NumpyArrayOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npArrayOp:Value)
 .output NumpyArrayOp
 
@@ -112,9 +110,7 @@ NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
 NumpyArrayOp(?ctx, ?insn, ?npArrayOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.array>"),
   ResolvedActualParamValue(?ctx, ?insn, "<numpy.array>", "object", ?objHctx, ?objVal),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?npArrayOp = SingleInValValMacro("npArray", ?fun, ?index, ?objVal).
+  ?npArrayOp = SingleInValNumpyValMacro("npArray", ?insn, ?objVal).
 
 NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp):-
   NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
@@ -165,9 +161,7 @@ NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp):-
   NumpyRandomFunction_Info(?function, _, _),
   FunctionInvResolvesTo(?ctx, ?insn, _, _, ?function),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "size", ?sizeHctx, ?sizeVal),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?npRandArrayOp = SingleInValValMacro("npRandArray", ?fun, ?index, ?sizeVal).
+  ?npRandArrayOp = SingleInValNumpyValMacro("npRandArray", ?insn, ?sizeVal).
 
 VarPointsTo(?immutableHctx, ?val, ?ctx, ?var):-
   NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
@@ -250,9 +244,7 @@ NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp, ?numArgs):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.random.randn>"),
   ?numArgs = count : ActualPositionalParam(_, ?insn, _),
   ?numStr = to_string(?numArgs),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?npArrayOp = SingleInValValMacro("npArray", ?fun, ?index, ?numStr).
+  ?npArrayOp = SingleInValNumpyValMacro("npArray", ?insn, ?numStr).
 
 NumpyRandNArrayOpDimensionResult(?ctx, ?insn, ?npArrayOp, ?paramIndex, ?dimRes):-
   NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp, _),
@@ -313,9 +305,7 @@ NumpyGetSubArrayOp(?ctx, ?insn, ?npSubArrayOp):-
   VarPointsTo(_, ?indexVal, ?ctx, ?indexVar),
   Value_Num(?indexVal, ?indexNum),
   ?index = to_number(?indexNum),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?insnIndex),
-  ?npSubArrayOp = SingleInValValMacro("subArrayOf", ?fun, ?insnIndex, ?inArray).
+  ?npSubArrayOp = SingleInValNumpyValMacro("subArrayOf", ?insn, ?inArray).
 
 NumPyOperationProducesOutput(?ctx, ?insn, ?npSubArrayOp):-
   NumpyGetSubArrayOp(?ctx, ?insn, ?npSubArrayOp),
@@ -347,7 +337,6 @@ TensorLikeObjectToTensorDtype(?arrayHctx, ?npSubArrayOp, ?dtypeHctx, ?dtype):-
 
 //Some declarations are in tensorflow/shape-mod-ops.dl
 
-#define TwoInValMacro(op,fun, index, val1, val2) cat("<ndarray ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val1, cat("+", cat(val2, ">"))))))))
 
 NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
 NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
@@ -355,9 +344,7 @@ TransposeOp(?ctx, ?insn, ?transposeOpVal):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.transpose>"),
   ResolvedActualParamValue(?ctx, ?insn, "<numpy.transpose>", "a", ?tensorHctx, ?tensorArgVal),
   ResolvedActualParamValue(?ctx, ?insn, "<numpy.transpose>", "axes", ?permListHctx, ?perList),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?transposeOpVal = TwoInValMacro("transpose", ?fun, ?index, ?tensorArgVal, ?perList).
+  ?transposeOpVal = TwoInValNumpyValMacro("transpose", ?insn, ?tensorArgVal, ?perList).
 
 ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, ?len):-
   TransposeOp(?ctx, ?insn, ?transposeOpVal),
@@ -401,9 +388,7 @@ ExpandDimsOp(?ctx, ?insn, ?expDimsVal):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.expand_dims>"),
   ResolvedActualParamValue(?ctx, ?insn, "<numpy.expand_dims>", "a", ?tensorHctx, ?tensorArgVal),
   ResolvedActualParamValue(?ctx, ?insn, "<numpy.expand_dims>", "axis", ?axisHct, ?axis),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?expDimsVal = TwoInValMacro("expandDims", ?fun, ?index, ?tensorArgVal, ?axis).
+  ?expDimsVal = TwoInValNumpyValMacro("expandDims", ?insn, ?tensorArgVal, ?axis).
 
 ExpandDimsOpAxisNum(?ctx, ?insn, ?expDimsVal, ?axisNum):-
   ExpandDimsOp(?ctx, ?insn, ?expDimsVal),
