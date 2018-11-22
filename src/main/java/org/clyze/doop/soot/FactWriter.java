@@ -5,7 +5,6 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
 import org.clyze.doop.common.SessionCounter;
-import org.clyze.doop.util.TypeUtils;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
@@ -29,8 +28,9 @@ class FactWriter extends JavaFactWriter {
     private final boolean _reportPhantoms;
     private final Set<Object> seenPhantoms = new HashSet<>();
 
-    FactWriter(Database db, Representation rep, boolean reportPhantoms) {
-        super(db);
+    FactWriter(Database db, boolean moreStrings,
+               Representation rep, boolean reportPhantoms) {
+        super(db, moreStrings);
         _rep = rep;
         _reportPhantoms = reportPhantoms;
     }
@@ -76,7 +76,7 @@ class FactWriter extends JavaFactWriter {
             writePhantomType(c);
         }
         _db.add(isInterface ? INTERFACE_TYPE : CLASS_TYPE, classStr);
-        _db.add(CLASS_HEAP, Representation.classConstant(c), classStr);
+        writeClassHeap(Representation.classConstant(c), classStr);
         if (c.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
@@ -330,57 +330,31 @@ class FactWriter extends JavaFactWriter {
     private void writeAssignMethodHandleConstant(SootMethod m, Stmt stmt, Local l, MethodHandle constant, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = Representation.instruction(m, stmt, index);
-        String handleName = constant.getMethodRef().toString();
-        String heap = methodHandleConstant(handleName);
+        String handleMethod = constant.getMethodRef().toString();
+        String heap = methodHandleConstant(handleMethod);
         String methodId = writeMethod(m);
 
-        writeMethodHandleConstant(heap, handleName);
+        SigInfo si = new SigInfo(constant.getMethodRef());
+        writeMethodHandleConstant(heap, handleMethod, si.retType, si.paramTypes, si.arity);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, Representation.local(m, l), methodId, "0");
     }
 
     void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstant constant, Session session) {
-        String s = constant.getValue().replace('/', '.');
-        String heap;
-        char first = s.charAt(0);
+        writeAssignClassConstant(m, stmt, l, new ClassConstantInfo(constant), session);
+    }
 
-        /* There is some weirdness in class constants: normal Java class
-           types seem to have been translated to a syntax with the initial
-           L, but arrays are still represented as [, for example [C for
-           char[] */
-        if (TypeUtils.isLowLevelType(first, s)) {
-            // array type
-            Type t = ClassHeapFinder.raiseTypeWithSoot(s);
-            String actualType = t.toString();
-            heap = Representation.classConstant(t);
-            _db.add(CLASS_HEAP, heap, actualType);
-        } else if (first == '(') {
-            // method type constant (viewed by Soot as a class constant)
-            heap = s;
-            writeMethodTypeConstant(heap);
-        } else {
-//            SootClass c = soot.Scene.v().getSootClass(s);
-//            if (c == null) {
-//                throw new RuntimeException("Unexpected class constant: " + constant);
-//            }
-//
-//            heap =  _rep.classConstant(c);
-//            actualType = c.getName();
-////              if (!actualType.equals(s))
-////                  System.out.println("hallelujah!\n\n\n\n");
-            // The code above should be functionally equivalent with the simple code below,
-            // but the above causes a concurrent modification exception due to a Soot
-            // bug that adds a phantom class to the Scene's hierarchy, although
-            // (based on their own comments) it shouldn't.
-            heap = classConstant(s);
-            _db.add(CLASS_HEAP, heap, s);
-        }
+    void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstantInfo info, Session session) {
+        if (info.isMethodType)
+            writeMethodTypeConstant(info.heap);
+        else
+            writeClassHeap(info.heap, info.actualType);
 
         int index = session.calcUnitNumber(stmt);
         String insn = Representation.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, Representation.local(m, l), methodId, "0");
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), info.heap, Representation.local(m, l), methodId, "0");
     }
 
     void writeAssignCast(SootMethod m, Stmt stmt, Local to, Local from, Type t, Session session) {
@@ -689,7 +663,7 @@ class FactWriter extends JavaFactWriter {
         int beginIndex = session.getUnitNumber(handler.getBeginUnit());
         session.calcUnitNumber(handler.getEndUnit());
         int endIndex = session.getUnitNumber(handler.getEndUnit());
-        _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), exc.getName(), Representation.local(m, caught), str(beginIndex), str(endIndex));
+        writeExceptionHandler(insn, _rep.signature(m), handlerIndex, exc.getName(), Representation.local(m, caught), beginIndex, endIndex);
     }
 
     void writeThisVar(SootMethod m) {
@@ -724,52 +698,47 @@ class FactWriter extends JavaFactWriter {
         writeLocal(local, writeType(type), writeMethod(m));
     }
 
+    private Local freshLocal(SootMethod inMethod, String basename, Type type, Session session) {
+        String varname = basename + session.nextNumber(basename);
+        Local l = new JimpleLocal(varname, type);
+        writeLocal(inMethod, l);
+        return l;
+    }
+
     Local writeStringConstantExpression(SootMethod inMethod, Stmt stmt, StringConstant constant, Session session) {
         // introduce a new temporary variable
-        String basename = "$stringconstant";
-        String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"));
-        writeLocal(inMethod, l);
+        Local l = freshLocal(inMethod, "$stringconstant", RefType.v("java.lang.String"), session);
         writeAssignStringConstant(inMethod, stmt, l, constant, session);
         return l;
     }
 
     Local writeNullExpression(SootMethod inMethod, Stmt stmt, Type type, Session session) {
         // introduce a new temporary variable
-        String basename = "$null";
-        String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, type);
-        writeLocal(inMethod, l);
+        Local l = freshLocal(inMethod, "$null", type, session);
         writeAssignNull(inMethod, stmt, l, session);
         return l;
     }
 
     Local writeNumConstantExpression(SootMethod inMethod, Stmt stmt, NumericConstant constant, Session session) {
         // introduce a new temporary variable
-        String basename = "$numconstant";
-        String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, constant.getType());
-        writeLocal(inMethod, l);
+        Local l = freshLocal(inMethod, "$numconstant", constant.getType(), session);
         writeAssignNumConstant(inMethod, stmt, l, constant, session);
         return l;
     }
 
     Local writeClassConstantExpression(SootMethod inMethod, Stmt stmt, ClassConstant constant, Session session) {
+        ClassConstantInfo info = new ClassConstantInfo(constant);
         // introduce a new temporary variable
-        String basename = "$classconstant";
-        String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"));
-        writeLocal(inMethod, l);
-        writeAssignClassConstant(inMethod, stmt, l, constant, session);
+        Local l = info.isMethodType ?
+            freshLocal(inMethod, "$methodtypeconstant", RefType.v("java.lang.invoke.MethodType"), session) :
+            freshLocal(inMethod, "$classconstant", RefType.v("java.lang.Class"), session);
+        writeAssignClassConstant(inMethod, stmt, l, info, session);
         return l;
     }
 
     Local writeMethodHandleConstantExpression(SootMethod inMethod, Stmt stmt, MethodHandle constant, Session session) {
         // introduce a new temporary variable
-        String basename = "$mhandleconstant";
-        String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.invoke.MethodHandle"));
-        writeLocal(inMethod, l);
+        Local l = freshLocal(inMethod, "$mhandleconstant", RefType.v("java.lang.invoke.MethodHandle"), session);
         writeAssignMethodHandleConstant(inMethod, stmt, l, constant, session);
         return l;
     }
@@ -870,15 +839,10 @@ class FactWriter extends JavaFactWriter {
 
     private void writeDynamicInvoke(DynamicInvokeExpr di, int index, String insn, String methodId) {
         SootMethodRef dynInfo = di.getMethodRef();
-        int dynArity = dynInfo.parameterTypes().size();
-        for (int pIdx = 0; pIdx < dynArity; pIdx++)
+        SigInfo dynSig = new SigInfo(dynInfo);
+        for (int pIdx = 0; pIdx < dynSig.arity; pIdx++)
             writeInvokedynamicParameterType(insn, pIdx, dynInfo.parameterType(pIdx).toString());
-
-        StringBuffer dpTypes = new StringBuffer("(");
-        dynInfo.parameterTypes().forEach(p -> dpTypes.append(p.toString()));
-        String dynParamTypes = dpTypes.append(")").toString();
-
-        writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynParamTypes, di.getHandleTag(), methodId);
+        writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynSig.retType, dynSig.arity, dynSig.paramTypes, di.getHandleTag(), methodId);
     }
 
     private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {
@@ -1007,5 +971,19 @@ class FactWriter extends JavaFactWriter {
 
         seenPhantoms.add(phantom);
         return false;
+    }
+
+    static class SigInfo {
+        public int arity;
+        public String retType;
+        public String paramTypes;
+        public SigInfo(SootMethodRef ref) {
+            this.arity = ref.parameterTypes().size();
+            this.retType = ref.returnType().toString();
+
+            StringBuffer dpTypes = new StringBuffer("(");
+            ref.parameterTypes().forEach(p -> dpTypes.append(p.toString()));
+            this.paramTypes = dpTypes.append(")").toString();
+        }
     }
 }

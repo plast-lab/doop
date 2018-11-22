@@ -153,7 +153,7 @@ public class PythonFactWriter {
 //            _db.add(ARRAY_TYPE, typeName);
 //            TypeReference componentType = t.getArrayElementType();
 //            _db.add(COMPONENT_TYPE, typeName, writeType(componentType));
-//            _db.add(CLASS_HEAP, _rep.classConstant(typeName), typeName);
+//            writeClassHeap(_rep.classConstant(typeName), typeName);
 //        }
 //        else if (t.isPrimitiveType() || t.isReferenceType() || t.isClassType()) {
 //

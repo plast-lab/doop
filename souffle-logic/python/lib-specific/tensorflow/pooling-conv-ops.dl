@@ -385,20 +385,14 @@ TensorOperationProducesOutput(?ctx, ?insn, ?newVal):-
 
 TensorShapeListLength(?outShapeListHctx, ?outShapeList, ?size):-
   ConvOperation(?ctx, ?insn, ?newVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?newVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?newVal, ?ctx, ?var),
-  TensorShape(?hctx, ?newVal, ?outShapeListHctx, ?outShapeList),
+  TensorOpOutputShape(?ctx, ?insn, ?newVal, ?outShapeListHctx, ?outShapeList),
   TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
   TensorShape(?inputsHctx, ?inputsTensorVal, ?inShapeListHctx, ?inpShapeList),
   TensorShapeListLength(?inShapeListHctx, ?inpShapeList, ?size).
 
 TensorShapeListContent(?outShapeListHctx, ?outShapeList, ?dimPosInTensor, ?dimValue):-
   ConvOperation(?ctx, ?insn, ?newVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?newVal),
-  TensorShape(?hctx, ?newVal, ?outShapeListHctx, ?outShapeList),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?newVal, ?ctx, ?var),
+  TensorOpOutputShape(?ctx, ?insn, ?newVal, ?outShapeListHctx, ?outShapeList),
   ConvOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimValue),
   (
     (
@@ -413,20 +407,14 @@ TensorShapeListContent(?outShapeListHctx, ?outShapeList, ?dimPosInTensor, ?dimVa
 
 TensorShapeListContent(?outShapeListHctx, ?outShapeList, 0, ?batchValue):-
   ConvOperation(?ctx, ?insn, ?newVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?newVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?newVal, ?ctx, ?var),
-  TensorShape(?hctx, ?newVal, ?outShapeListHctx, ?outShapeList),
+  TensorOpOutputShape(?ctx, ?insn, ?newVal, ?outShapeListHctx, ?outShapeList),
   TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
   TensorShape(?inputsHctx, ?inputsTensorVal, ?inShapeListHctx, ?inpShapeList),
   TensorShapeListContent(?inShapeListHctx, ?inpShapeList, 0, ?batchValue).
 
 TensorShapeListContent(?outShapeListHctx, ?outShapeList, ?channelsPosInTensor, ?outputChannelsNum):-
   ConvOperation(?ctx, ?insn, ?newVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?newVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?newVal, ?ctx, ?var),
-  TensorShape(?hctx, ?newVal, ?outShapeListHctx, ?outShapeList),
+  TensorOpOutputShape(?ctx, ?insn, ?newVal, ?outShapeListHctx, ?outShapeList),
   ConvOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimValue),
   (
     (
@@ -602,20 +590,14 @@ PoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
 
 TensorShapeListLength(?outShapeListHctx, ?outShapeList, ?size):-
   PoolOperation(?ctx, ?insn, ?newVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?newVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?newVal, ?ctx, ?var),
-  TensorShape(?hctx, ?newVal, ?outShapeListHctx, ?outShapeList),
+  TensorOpOutputShape(?ctx, ?insn, ?newVal, ?outShapeListHctx, ?outShapeList),
   TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
   TensorShape(?inputsHctx, ?inputsTensorVal, ?inShapeListHctx, ?inpShapeList),
   TensorShapeListLength(?inShapeListHctx, ?inpShapeList, ?size).
 
 TensorShapeListContent(?outShapeListHctx, ?outShapeList, ?dimPosInTensor, ?dimValue):-
   PoolOperation(?ctx, ?insn, ?newVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?newVal),
-  TensorShape(?hctx, ?newVal, ?outShapeListHctx, ?outShapeList),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?newVal, ?ctx, ?var),
+  TensorOpOutputShape(?ctx, ?insn, ?newVal, ?outShapeListHctx, ?outShapeList),
   PoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimValue),
   (
     (
@@ -631,20 +613,14 @@ TensorShapeListContent(?outShapeListHctx, ?outShapeList, ?dimPosInTensor, ?dimVa
 
 TensorShapeListContent(?outShapeListHctx, ?outShapeList, 0, ?batchValue):-
   PoolOperation(?ctx, ?insn, ?newVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?newVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?newVal, ?ctx, ?var),
-  TensorShape(?hctx, ?newVal, ?outShapeListHctx, ?outShapeList),
+  TensorOpOutputShape(?ctx, ?insn, ?newVal, ?outShapeListHctx, ?outShapeList),
   TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
   TensorShape(?inputsHctx, ?inputsTensorVal, ?inShapeListHctx, ?inpShapeList),
   TensorShapeListContent(?inShapeListHctx, ?inpShapeList, 0, ?batchValue).
 
 TensorShapeListContent(?outShapeListHctx, ?outShapeList, ?channelsPosInTensor, ?outputChannelsNum):-
   PoolOperation(?ctx, ?insn, ?newVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?newVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?newVal, ?ctx, ?var),
-  TensorShape(?hctx, ?newVal, ?outShapeListHctx, ?outShapeList),
+  TensorOpOutputShape(?ctx, ?insn, ?newVal, ?outShapeListHctx, ?outShapeList),
   (
     (
       ConvOrPoolOperation_ChannelsLast(?ctx, ?insn, ?newVal),

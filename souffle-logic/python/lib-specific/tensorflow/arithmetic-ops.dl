@@ -127,7 +127,7 @@ TfBroadcastingOpResultShapeListContent(?ctx, ?insn, ?broadcastingOp, ?index, ?in
   (
   (?indexVal1 = "<num-constant(int):1>", ?indexVal = ?indexVal2)
   ;
-  (?indexVal2 = "<num-constant(int):1>", ?indexVal = ?indexVal2)
+  (?indexVal2 = "<num-constant(int):1>", ?indexVal = ?indexVal1)
   ).
 
 TfBroadcastingOpCannotBroadcast(?ctx, ?insn, ?broadcastingOp):-
@@ -158,17 +158,11 @@ TfBroadcastingOpAllDimsHaveRes(?ctx, ?insn, ?broadcastingOp):-
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
   TfBroadcastingOpResultShapeListLength(?ctx, ?insn, ?broadcastingOp, ?len),
-  TensorOperationProducesOutput(?ctx, ?insn, ?broadcastingOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?broadcastingOp, ?ctx, ?var),
-  TensorShape(?hctx, ?broadcastingOp, ?shapeHctx, ?tensorShapeVal).
+  TensorOpOutputShape(?ctx, ?insn, ?broadcastingOp, ?shapeHctx, ?tensorShapeVal).
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
   TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, _),
-  TensorOperationProducesOutput(?ctx, ?insn, ?broadcastingOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?broadcastingOp, ?ctx, ?var),
-  TensorShape(?hctx, ?broadcastingOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?broadcastingOp, ?shapeHctx, ?tensorShapeVal),
   TfBroadcastingOpResultShapeListContent(?ctx, ?insn, ?broadcastingOp, ?index, ?indexVal).
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -295,17 +289,11 @@ TfMatMulOpAllDimsHaveRes(?ctx, ?insn, ?matMulOp):-
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
   TfMatMulOpInTensorsSameNumOfDim(?ctx, ?insn, ?matMulOp, ?len),
-  TensorOperationProducesOutput(?ctx, ?insn, ?matMulOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?matMulOp, ?ctx, ?var),
-  TensorShape(?hctx, ?matMulOp, ?shapeHctx, ?tensorShapeVal).
+  TensorOpOutputShape(?ctx, ?insn, ?matMulOp, ?shapeHctx, ?tensorShapeVal).
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
   TfMatMulOp(?ctx, ?insn, ?matMulOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?matMulOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?matMulOp, ?ctx, ?var),
-  TensorShape(?hctx, ?matMulOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?matMulOp, ?shapeHctx, ?tensorShapeVal),
   TfMatMulOpDimIsCompatible(?ctx, ?insn, ?matMulOp, ?index, ?indexVal).
 
 //----------------------------------------------------------------------------------------------------------------------

@@ -10,7 +10,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 @Singleton
 class DoopAnalysisFamily implements AnalysisFamily {
 
-	private static final String DEFAULT_JAVA_PLATFORM = "java_7"
+	private static final String DEFAULT_JAVA_PLATFORM = "java_8"
 
 	@Override
 	String getName() { "doop" }
@@ -442,6 +442,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "GROUP_REFLECTION_STRINGS",
 					name: "reflection-coloring",
 					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "EXTRACT_MORE_STRINGS",
+					name: "extract-more-strings",
+					description: "Extract more string constants from the input code (may degrade analysis performance).",
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_METHOD_HANDLES",

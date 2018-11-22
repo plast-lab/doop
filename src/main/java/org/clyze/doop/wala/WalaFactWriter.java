@@ -46,8 +46,8 @@ public class WalaFactWriter extends JavaFactWriter {
 
     private Map<String,List<String>> _signaturePolyMorphicMethods;
 
-    WalaFactWriter(Database db, WalaRepresentation rep) {
-        super(db);
+    WalaFactWriter(Database db, boolean moreStrings, WalaRepresentation rep) {
+        super(db, moreStrings);
         _rep = rep;
         _typeMap = new ConcurrentHashMap<>();
         _phantomType = new ConcurrentHashMap<>();
@@ -131,7 +131,7 @@ public class WalaFactWriter extends JavaFactWriter {
         else {
             _db.add(CLASS_TYPE, classStr);
         }
-        _db.add(CLASS_HEAP, WalaRepresentation.classConstant(c), classStr);
+        writeClassHeap(WalaRepresentation.classConstant(c), classStr);
 
         if(c instanceof ShrikeClass) { //We have currently disabled annotations for Android
             Collection<Annotation> annotations = c.getAnnotations();
@@ -174,7 +174,7 @@ public class WalaFactWriter extends JavaFactWriter {
         if (t.isArrayType() && inMap == null) {
             TypeReference componentType = t.getArrayElementType();
             writeArrayTypes(typeName, writeType(componentType));
-            _db.add(CLASS_HEAP, classConstant(typeName), typeName);
+            writeClassHeap(classConstant(typeName), typeName);
         }
         else if (t.isPrimitiveType() || t.isReferenceType() || t.isClassType()) {
 
@@ -411,8 +411,20 @@ public class WalaFactWriter extends JavaFactWriter {
         String handleName =(String) constant.getValue();
         String heap = methodHandleConstant(handleName);
         String methodId = _rep.signature(m);
+        String breakHandles[] = handleName.split(" ");
+        String retType;
+        String params;
+        int arity;
 
-        writeMethodHandleConstant(heap, handleName);
+        retType = breakHandles[1];
+        if(breakHandles[2].contains("()"))
+            arity = 0;
+        else
+            arity = (int)breakHandles[2].chars().filter(ch -> ch == ',').count() + 1;
+
+        params = breakHandles[2].substring(breakHandles[2].indexOf('('), breakHandles[2].indexOf(')') +1).replace(",", "");
+
+        writeMethodHandleConstant(heap, handleName, retType, params, arity);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
     }
 
@@ -437,7 +449,7 @@ public class WalaFactWriter extends JavaFactWriter {
         }
 
 
-        _db.add(CLASS_HEAP, heap, actualType);
+        writeClassHeap(heap, actualType);
         int index = session.calcInstructionNumber(instruction);
         String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
@@ -832,7 +844,7 @@ public class WalaFactWriter extends JavaFactWriter {
             while (excTypes.hasNext()) {
                 TypeReference excType = excTypes.next();
                 String insn = _rep.handler(m, catchInstr, excType, session, i/2);
-                _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), fixTypeString(excType.getName().toString()), _rep.local(m, caught), str(beginIndex), str(endIndex));
+                writeExceptionHandler(insn, _rep.signature(m), handlerIndex, fixTypeString(excType.getName().toString()), _rep.local(m, caught), beginIndex, endIndex);
                 if (prev != null)
                     _db.add(EXCEPT_HANDLER_PREV, insn, prev);
                 prev = insn;

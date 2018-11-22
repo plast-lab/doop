@@ -45,18 +45,12 @@ TensorOperationProducesOutput(?ctx, ?insn, ?shapePassThroughOp):-
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
   ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?shapePassThroughOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?shapePassThroughOp, ?ctx, ?var),
-  TensorShape(?hctx, ?shapePassThroughOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?shapePassThroughOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?shapePassThroughOp, "inTensor", ?inValueHctx, ?inValue),
   TensorLikeObjectShapeListLength(?inValueHctx, ?inValue, ?len).
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
   ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?shapePassThroughOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?shapePassThroughOp, ?ctx, ?var),
-  TensorShape(?hctx, ?shapePassThroughOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?shapePassThroughOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?shapePassThroughOp, "inTensor", ?inValueHctx, ?inValue),
   TensorLikeObjectShapeListContent(?inValueHctx, ?inValue, ?index, ?indexValue).
