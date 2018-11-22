@@ -113,7 +113,6 @@ FormalParam( 6, "dilation_rate", ?function,  cat(?function,"/mockParam7")):-
 //ConstListContents("<tensorflow.layers>/new list/0", 0, "<num-constant(int):1>").
 //ConstListContents("<tensorflow.layers>/new list/0", 1, "<num-constant(int):1>").
 
-Value_Num("<num-constant(int):1>", "1").
 Value_String("<string constant:valid>" ,"valid").
 Value_String("<string constant:channels_last>" ,"channels_last").
 

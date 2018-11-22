@@ -77,6 +77,14 @@
     Value_String(?value, _);
     isNoneValue(?value).
 
+  isIntConstantValue(?value):-
+    Value_Num(?value, ?const),
+    isIntConstant(?const).
+
+  isFloatConstantValue(?value):-
+      Value_Num(?value, ?const),
+      isFloatConstant(?const).
+
   isNonHeapValue(?value):-
     Value_Num(?value, _);
     isNoneValue(?value).
@@ -84,6 +92,12 @@
   Value_Type(?value, ?type),
   isHeapValue(?value):-
     HeapAllocation_Type(?value, ?type).
+
+  .output IntConstantValue_ActualNum
+  IntConstantValue_ActualNum(?val, ?num):-
+    isIntConstantValue(?val),
+    Value_Num(?val, ?const),
+    ?num = to_number(?const).
 
   .output isNonFunctionObjectValue
   isNonFunctionObjectValue(?val):-

@@ -424,7 +424,6 @@ NumpyArrayShapeListContent(?shapeHctx, ?tensorShapeVal, ?index + 1, ?indexVal):-
   TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?index, ?indexVal).
 
 
-Value_Num("<num-constant(int):1>", "1").
 NumpyArrayShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, "<num-constant(int):1>"):-
   ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
   ?index = ?dim,

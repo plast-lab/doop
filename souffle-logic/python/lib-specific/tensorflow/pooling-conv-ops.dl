@@ -106,12 +106,11 @@ ConvOrPoolOperation_StridesForDim(?ctx, ?insn, ?newVal, ?dim, ?strideValForDim):
   (
     (
         ListOfIntConsts(?stridesHctx, ?stridesArgVal),
-        ListOfIntConstsAtIndexPointsTo(?stridesHctx, ?stridesArgVal, ?dim - 1, ?strideValForDim),
-        Value_Num(?strideValForDim, _)
+        ListOfIntConstsAtIndexPointsTo(?stridesHctx, ?stridesArgVal, ?dim - 1, ?strideValForDim)
     );
     (
         ?strideValForDim = ?stridesArgVal,
-        Value_Num(?strideValForDim, _)
+        isIntConstantValue(?strideValForDim)
     )
   ).
 
@@ -137,12 +136,11 @@ ConvOrPoolOperation_KernelSizeForDim(?ctx, ?insn, ?newVal, ?dim, ?kernelSizeValF
   (
     (
         ListOfIntConsts(?kernelSizeHctx, ?kernelSizeArgVal),
-        ListOfIntConstsAtIndexPointsTo(?kernelSizeHctx, ?kernelSizeArgVal, ?dim - 1, ?kernelSizeValForDim),
-        Value_Num(?kernelSizeValForDim, _)
+        ListOfIntConstsAtIndexPointsTo(?kernelSizeHctx, ?kernelSizeArgVal, ?dim - 1, ?kernelSizeValForDim)
     );
     (
         ?kernelSizeValForDim = ?kernelSizeArgVal,
-        Value_Num(?kernelSizeValForDim, _)
+        isIntConstantValue(?kernelSizeValForDim)
     )
   ).
 
@@ -163,13 +161,10 @@ ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, ?tensorValForDi
   TensorShape(?inputsHctx, ?inputsTensorVal, ?shapeListHctx, ?shapeList),
   TensorShapeListContent(?shapeListHctx, ?shapeList, ?dimPosInTensor, ?tensorValForDim),
   ConvOrPoolOperation_KernelSizeForDim(?ctx, ?insn, ?newVal, ?dim, ?kernelSizeValForDim),
-  Value_Num(?tensorValForDim, ?tensorValForDimNumStr),
-  Value_Num(?kernelSizeValForDim, ?kernelSizeValForDimNumStr),
-  ?tensorValForDimNum = to_number(?tensorValForDimNumStr),
-  ?kernelSizeValForDimNum = to_number(?kernelSizeValForDimNumStr),
+  IntConstantValue_ActualNum(?tensorValForDim, ?tensorValForDimNum),
+  IntConstantValue_ActualNum(?kernelSizeValForDim, ?kernelSizeValForDimNum),
   ConvOrPoolOperation_StridesForDim(?ctx, ?insn, ?newVal, ?dim, ?strideValForDim),
-  Value_Num(?strideValForDim, ?strideValForDimNumStr),
-  ?strideValForDimNum = to_number(?strideValForDimNumStr).
+  IntConstantValue_ActualNum(?strideValForDim, ?strideValForDimNum).
 
 
 
@@ -292,12 +287,11 @@ ConvOperation_DillationRateForDim(?ctx, ?insn, ?newVal, ?dim, ?dillationRateValF
   (
     (
         ListOfIntConsts(?dilationRateHctx, ?dilationRateArgVal),
-        ListOfIntConstsAtIndexPointsTo(?dilationRateHctx, ?dilationRateArgVal, ?dim - 1, ?dillationRateValForDim),
-        Value_Num(?dillationRateValForDim, _)
+        ListOfIntConstsAtIndexPointsTo(?dilationRateHctx, ?dilationRateArgVal, ?dim - 1, ?dillationRateValForDim)
     );
     (
         ?dillationRateValForDim = ?dilationRateArgVal,
-        Value_Num(?dillationRateValForDim, _)
+        isIntConstantValue(?dillationRateValForDim)
     )
   ).
 
@@ -316,6 +310,7 @@ ConvOperation_NumOfOutputChannels(?ctx, ?insn, ?newVal, ?outputChannelsNumValue)
 
 
 Value_Num(?dimRes, ?valNumStr),
+isIntConstant(?valNumStr),
 ConvOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ConvOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, ?tensorValForDimNum, ?kernelSizeValForDimNum, ?strideValForDimNum),
@@ -334,6 +329,7 @@ ConvOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ?dimRes = cat("<num-constant(int):",cat(?valNumStr, ">")).
 
 Value_Num(?dimRes, ?valNumStr),
+isIntConstant(?valNumStr),
 ConvOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ConvOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, ?tensorValForDimNum, ?kernelSizeValForDimNum, ?strideValForDimNum),
@@ -541,6 +537,7 @@ TensorOperationProducesOutput(?ctx, ?insn, ?newVal):-
 
 
 Value_Num(?dimRes, ?valNumStr),
+isIntConstant(?valNumStr),
 PoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   PoolOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, ?tensorValForDimNum, ?kernelSizeValForDimNum, ?strideValForDimNum),
@@ -559,6 +556,7 @@ PoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ?dimRes = cat("<num-constant(int):",cat(?valNumStr, ">")).
 
 Value_Num(?dimRes, ?valNumStr),
+isIntConstant(?valNumStr),
 PoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   PoolOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, ?tensorValForDimNum, ?kernelSizeValForDimNum, ?strideValForDimNum),

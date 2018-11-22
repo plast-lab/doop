@@ -37,8 +37,6 @@ PILImageShapeListLength(?hctx, ?loadImgVal, ?len + 1):-
   VarPointsTo(?hctx, ?loadImgVal, ?ctx, ?var),
   ListOfConstsLength(?shapeListHctx, ?shapeList, ?len).
 
-Value_Num("<num-constant(int):3>","3").
-isIntConstant("3").
 
 PILImageShapeListContent(?hctx, ?loadImgVal, ?len, ?mockVal):-
   KerasLoadImageOp(?ctx, ?insn, ?loadImgVal, ?shapeListHctx, ?shapeList),

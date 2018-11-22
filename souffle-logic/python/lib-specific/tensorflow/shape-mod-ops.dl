@@ -435,8 +435,6 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index + 1, ?indexVal):-
   TensorShapeListContent(?inShapeHctx, ?inTensorShape, ?index, ?indexVal).
 
 
-Value_Num("<num-constant(int):1>", "1").
-
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, "<num-constant(int):1>"):-
   ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
   ?index = ?dim,
