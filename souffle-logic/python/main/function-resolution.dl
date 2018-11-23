@@ -16,11 +16,14 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tofunction) :-
 
 .decl ResolvedActualParamValue(?callerCtx: configuration.Context, ?invo:Instruction, ?resolvedFunction:Function, ?paramName:symbol, ?hctx:configuration.HContext, ?paramValue:Value)
 
+//FOR NON BOUND METHODS AND FOR FUNCTION CALLS
+
 // Interprocedural Assign
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
 ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
   CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
   FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
   FormalParam(?paramIndex, ?paramName, ?tofunction, ?formal),
   (
     ActualPositionalParam(?paramIndex, ?invo, ?actual);
@@ -33,6 +36,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
 ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
   CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
   FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
   FormalParam(?paramIndex, ?paramName, ?tofunction, ?formal),
   !(
     ActualPositionalParam(?paramIndex, ?invo, _);
@@ -41,6 +45,41 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?val
   FormalParam_DefaultValFrom(?tofunction, ?paramName, ?default),
   VarPointsTo(?hctx,  ?value, _, ?default).       //TODO: REVIEW this at some point
 
+//FOR BOUND METHOD CALLS
+VarPointsTo(?selfHctx, ?selfVal, ?calleeCtx, ?formal),
+ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?selfHctx, ?selfVal):-
+  CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  BoundMethodAllocationSelfArgument(?basehctx, ?baseValue, ?selfHctx, ?selfVal),
+  FormalParam(0, ?paramName, ?tofunction, ?formal).
+
+// Interprocedural Assign
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
+ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
+  CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  FormalParam(?paramIndex, ?paramName, ?tofunction, ?formal),
+  (
+    ActualPositionalParam(?paramIndex - 1, ?invo, ?actual);
+    ActualKeywordParam(_, ?invo, ?paramName, ?actual)
+  ),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?actual).
+
+// Default arguments
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
+ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
+  CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  FormalParam(?paramIndex, ?paramName, ?tofunction, ?formal),
+  !(
+    ActualPositionalParam(?paramIndex - 1, ?invo, _);
+    ActualKeywordParam(_, ?invo, ?paramName, _)
+  ),
+  FormalParam_DefaultValFrom(?tofunction, ?paramName, ?default),
+  VarPointsTo(?hctx,  ?value, _, ?default).       //TODO: REVIEW this at some point
 
 //VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
 //  CallGraphEdge(?callerCtx, ?invo, _, ?tofunction),
@@ -64,6 +103,7 @@ VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
 
 VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
   CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
+  !(isComprehensionFunction(?tofunction)),   //TODO: REVIEW THE PYTHON IR TO AVOID THIS UGLY HACK
   AssignInstruction_To(?invo, ?return),
   isReturnNonNone_Insn(?retInsn),
   Instruction_Function(?retInsn, ?tofunction),

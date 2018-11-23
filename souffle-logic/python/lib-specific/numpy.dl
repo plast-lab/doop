@@ -1,21 +1,39 @@
+
 isModule("<numpy>").
 
 ModeledModule("<numpy.random>", "random", "<numpy>").
 
 ModeledClass("<numpy.ndarray>", "ndarray", "<numpy>").
 
+VarPointsTo(?hctx, "<None>", ?ctx, "<numpy>/noneDefVar"):-
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
+
 
 ModeledFunction("<numpy.array>", "array", "<numpy>").
 FormalParam( 0, "object", "<numpy.array>", "<numpy.array>/mockParam1").
+
+ModeledFunction("<numpy.transpose>", "transpose", "<numpy>").
+FormalParam( 0, "a", "<numpy.transpose>", "<numpy.transpose>/mockParam1").
+FormalParam( 1, "axes", "<numpy.transpose>", "<numpy.transpose>/mockParam2").
+
+ModeledFunction("<numpy.expand_dims>", "expand_dims", "<numpy>").
+FormalParam( 0, "a", "<numpy.expand_dims>", "<numpy.expand_dims>/mockParam1").
+FormalParam( 1, "axis", "<numpy.expand_dims>", "<numpy.expand_dims>/mockParam2").
 
 ModeledFunction("<numpy.random.normal>", "normal", "<numpy.random>").
 FormalParam( 0, "loc", "<numpy.random.normal>", "<numpy.random.normal>/mockParam1").
 FormalParam( 1, "scale", "<numpy.random.normal>", "<numpy.random.normal>/mockParam2").
 FormalParam( 2, "size", "<numpy.random.normal>", "<numpy.random.normal>/mockParam3").
+FormalParam_DefaultValFrom("<numpy.random.normal>", "size", "<numpy>/noneDefVar").
 
 ModeledFunction("<numpy.random.randn>", "randn", "<numpy.random>").
-ModeledFunction("<np.random.randint>", "randint", "<numpy.random>").
 
+ModeledFunction("<numpy.random.randint>", "randint", "<numpy.random>").
+FormalParam( 0, "low", "<numpy.random.randint>", "<numpy.random.randint>/mockParam1").
+FormalParam( 1, "high", "<numpy.random.randint>", "<numpy.random.randint>/mockParam2").
+FormalParam( 2, "size", "<numpy.random.randint>", "<numpy.random.randint>/mockParam3").
+FormalParam_DefaultValFrom("<numpy.random.randint>", "size", "<numpy>/noneDefVar").
 
 .decl NumpyArrayShapeListLength(?hctx:configuration.HContext, ?val:Value, ?size:number)
 .decl NumpyArrayShapeListContent(?hctx:configuration.HContext, ?val:Value, ?index:number, ?indexValue:Value)
@@ -31,6 +49,13 @@ ModeledFunction("<np.random.randint>", "randint", "<numpy.random>").
 
 .decl NumpyArrayShape(?arrayHctx:configuration.HContext, ?array:Value, ?shapeHctx:configuration.HContext, ?shapeList:Value)
 .output NumpyArrayShape
+
+.decl NumPyOperationOutputHCtx(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?hctx:configuration.HContext)
+.output NumPyOperationOutputHCtx
+
+.decl NumPyOperationOutputShape(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?shapeHctx:configuration.HContext, ?shape:Value)
+.output NumPyOperationOutputShape
+
 
 //General op modeling
 
@@ -48,13 +73,35 @@ Value_Type(?outArray, "<numpy.ndarray>"):-
   AssignInstruction_To(?insn, ?var),
   ?arrayShapeVal = cat("<shape ",cat(?outArray, ">")).
 
+
+NumPyOperationOutputHCtx(?ctx, ?insn, ?outArray, ?hctx):-
+  NumPyOperationProducesOutput(?ctx, ?insn, ?outArray),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?outArray, ?ctx, ?var).
+
+NumPyOperationOutputShape(?ctx, ?insn, ?outArray, ?hctx, ?arrayShapeVal):-
+  NumPyOperationOutputHCtx(?ctx, ?insn, ?outArray, ?hctx),
+  NumpyArrayShape(?hctx, ?outArray, ?hctx, ?arrayShapeVal).
+
 ListOfConstsLength(?hctx, ?outArray, ?len),
 ListOfConstsAtIndexPointsTo(?hctx, ?outArray, ?index, ?indexValue):-
   NumpyArrayShapeListLength(?hctx, ?outArray, ?len),
   NumpyArrayShapeListContent(?hctx, ?outArray, ?index, ?indexValue).
 
 
-#define SingleInValValMacro(op,fun, index, val) cat("<ndarray ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val, ">"))))))
+TensorLikeObjectShapeListLength(?hctx, ?outArray, ?len):-
+  NumpyArrayShape(?hctx, ?outArray, ?shapeHctx, ?shapeVal),
+  NumpyArrayShapeListLength(?shapeHctx, ?shapeVal, ?len).
+
+TensorLikeObjectShapeListContent(?hctx, ?outArray, ?index, ?indexVal):-
+  NumpyArrayShape(?hctx, ?outArray, ?shapeHctx, ?shapeVal),
+  NumpyArrayShapeListContent(?shapeHctx, ?shapeVal, ?index, ?indexVal).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              NP.ARRAY
+//----------------------------------------------------------------------------------------------------------------------
+
 
 .decl NumpyArrayOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npArrayOp:Value)
 .output NumpyArrayOp
@@ -63,9 +110,7 @@ NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
 NumpyArrayOp(?ctx, ?insn, ?npArrayOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.array>"),
   ResolvedActualParamValue(?ctx, ?insn, "<numpy.array>", "object", ?objHctx, ?objVal),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?npArrayOp = SingleInValValMacro("npArray", ?fun, ?index, ?objVal).
+  ?npArrayOp = SingleInValNumpyValMacro("npArray", ?insn, ?objVal).
 
 NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp):-
   NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
@@ -74,26 +119,312 @@ NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp):-
 
 NumpyArrayShapeListContent(?shapelistHctx, ?shapelist, ?index, ?indexVal):-
   NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
-  NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?arrayHctx, ?npArrayOp, ?ctx, ?var),
-  NumpyArrayShape(?arrayHctx, ?npArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npArrayOp, ?shapelistHctx, ?shapelist),
   NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
   TensorLikeObjectShapeListContent(?objHctx, ?objVal, ?index, ?indexVal).
 
 NumpyArrayShapeListLength(?shapelistHctx, ?shapelist, ?len):-
   NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
-  NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?arrayHctx, ?npArrayOp, ?ctx, ?var),
-  NumpyArrayShape(?arrayHctx, ?npArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npArrayOp, ?shapelistHctx, ?shapelist),
   NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
   TensorLikeObjectShapeListLength(?objHctx, ?objVal, ?len).
 
 TensorLikeObjectToTensorDtype(?arrayHctx, ?npArrayOp, ?dtypeHctx, ?dtype):-
   NumpyArrayOp(?ctx, ?insn, ?npArrayOp),
-  NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?arrayHctx, ?npArrayOp, ?ctx, ?var),
+  NumPyOperationOutputHCtx(?ctx, ?insn, ?npArrayOp, ?arrayHctx),
   NumPyOperation_NameToVal(?ctx, ?insn, ?npArrayOp, "object", ?objHctx, ?objVal),
   TensorLikeObjectToTensorDtype(?objHctx, ?objVal, ?dtypeHctx, ?dtype).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                 RANDOM DISTR TENSOR CREATIONS
+//----------------------------------------------------------------------------------------------------------------------
+
+Value_Num("<num-constant(int):0>", "0").
+Value_Num("<num-constant(float):0.0>", "0.0").
+
+
+.decl NumpyRandomFunction_Info(?function:Function, ?type:symbol, ?defVal:Value)
+.output NumpyRandomFunction_Info
+NumpyRandomFunction_Info("<numpy.random.randint>", "int", "<num-constant(int):0>").
+NumpyRandomFunction_Info("<numpy.random.normal>", "float", "<num-constant(float):0.0>").
+
+.decl NumpyRandomArrayOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npRandArrayOp:Value)
+.output NumpyRandomArrayOp
+
+.decl NumpyRandomArrayOpFunction(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npRandArrayOp:Value, ?fun:Function)
+.output NumpyRandomArrayOpFunction
+
+NumpyRandomArrayOpFunction(?ctx, ?insn, ?npRandArrayOp, ?function),
+NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", ?sizeHctx, ?sizeVal),
+NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp):-
+  NumpyRandomFunction_Info(?function, _, _),
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, ?function),
+  ResolvedActualParamValue(?ctx, ?insn, ?function, "size", ?sizeHctx, ?sizeVal),
+  ?npRandArrayOp = SingleInValNumpyValMacro("npRandArray", ?insn, ?sizeVal).
+
+VarPointsTo(?immutableHctx, ?val, ?ctx, ?var):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", _, ?sizeVal),
+  AssignInstruction_To(?insn, ?var),
+  ?sizeVal = "<None>",
+  NumpyRandomArrayOpFunction(?ctx, ?insn, ?npRandArrayOp, ?function),
+  NumpyRandomFunction_Info(?function, _, ?val),
+  isImmutableHContext(?immutableHctx).
+
+NumPyOperationProducesOutput(?ctx, ?insn, ?npRandArrayOp):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", ?sizeHctx, ?sizeVal),
+  ListOfIntConsts(?sizeHctx, ?sizeVal).
+
+NumPyOperationProducesOutput(?ctx, ?insn, ?npRandArrayOp):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", _, ?sizeVal),
+  Value_Num(?sizeVal, ?sizeNum),
+  isIntConstant(?sizeNum).
+
+
+NumpyArrayShapeListContent(?shapelistHctx, ?shapelist, ?index, ?indexVal):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npRandArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", ?sizeHctx, ?sizeVal),
+  ListOfIntConstsAtIndexPointsTo(?sizeHctx, ?sizeVal, ?index, ?indexVal).
+
+NumpyArrayShapeListLength(?shapelistHctx, ?shapelist, ?len):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npRandArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", ?sizeHctx, ?sizeVal),
+  ListOfConstsLength(?sizeHctx, ?sizeVal, ?len).
+
+NumpyArrayShapeListContent(?shapelistHctx, ?shapelist, 0, ?sizeVal):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npRandArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", _, ?sizeVal),
+  Value_Num(?sizeVal, ?sizeNum),
+  isIntConstant(?sizeNum).
+
+NumpyArrayShapeListLength(?shapelistHctx, ?shapelist, 1):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npRandArrayOp, ?shapelistHctx, ?shapelist),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?npRandArrayOp, "size", _, ?sizeVal),
+  Value_Num(?sizeVal, ?sizeNum),
+  isIntConstant(?sizeNum).
+
+TensorLikeObjectToTensorDtype(?arrayHctx, ?npRandArrayOp, ?dtypeHctx, ?dtype):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperationOutputHCtx(?ctx, ?insn, ?npRandArrayOp, ?arrayHctx),
+  NumpyRandomArrayOpFunction(?ctx, ?insn, ?npRandArrayOp, ?function),
+  NumpyRandomFunction_Info(?function, "int", _),
+  isImmutableHContext(?dtypeHctx),
+  ?dtype = "<tensorflow>/new <tensorflow.int32>/0".
+
+TensorLikeObjectToTensorDtype(?arrayHctx, ?npRandArrayOp, ?dtypeHctx, ?dtype):-
+  NumpyRandomArrayOp(?ctx, ?insn, ?npRandArrayOp),
+  NumPyOperationOutputHCtx(?ctx, ?insn, ?npRandArrayOp, ?arrayHctx),
+  NumpyRandomArrayOpFunction(?ctx, ?insn, ?npRandArrayOp, ?function),
+  NumpyRandomFunction_Info(?function, "float", _),
+  isImmutableHContext(?dtypeHctx),
+  ?dtype = "<tensorflow>/new <tensorflow.float32>/0".
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                 NP RANDOM RANDN
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl NumpyRandNArrayOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npRandArrayOp:Value, ?outLen:number)
+.output NumpyRandNArrayOp
+
+.decl NumpyRandNArrayOpHaveResUpToX(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npRandArrayOp:Value, ?upTo:number)
+.output NumpyRandNArrayOpHaveResUpToX
+
+.decl NumpyRandNArrayOpDimensionResult(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npRandArrayOp:Value, ?dim:number, ?dimRes:Value)
+.output NumpyRandNArrayOpDimensionResult
+
+NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp, ?numArgs):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.random.randn>"),
+  ?numArgs = count : ActualPositionalParam(_, ?insn, _),
+  ?numStr = to_string(?numArgs),
+  ?npArrayOp = SingleInValNumpyValMacro("npArray", ?insn, ?numStr).
+
+NumpyRandNArrayOpDimensionResult(?ctx, ?insn, ?npArrayOp, ?paramIndex, ?dimRes):-
+  NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp, _),
+  ActualPositionalParam(?paramIndex, ?insn, ?paramVar),
+  VarPointsTo(_, ?dimRes, ?ctx, ?paramVar),
+  Value_Num(?dimRes, ?intConst),
+  isIntConstant(?intConst).
+
+NumpyRandNArrayOpHaveResUpToX(?ctx, ?insn, ?npArrayOp, 0):-
+  NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp, _),
+  NumpyRandNArrayOpDimensionResult(?ctx, ?insn, ?npArrayOp, 0, _).
+
+NumpyRandNArrayOpHaveResUpToX(?ctx, ?insn, ?npArrayOp, ?upTo):-
+  NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp, _),
+  NumpyRandNArrayOpDimensionResult(?ctx, ?insn, ?npArrayOp, ?upTo, _),
+  NumpyRandNArrayOpHaveResUpToX(?ctx, ?insn, ?npArrayOp, ?upTo - 1).
+
+NumPyOperationProducesOutput(?ctx, ?insn, ?npArrayOp):-
+  NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp, ?len),
+  NumpyRandNArrayOpHaveResUpToX(?ctx, ?insn, ?npArrayOp, ?len - 1).
+
+NumpyArrayShapeListContent(?shapelistHctx, ?shapelist, ?index, ?indexVal):-
+  NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp, _),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npArrayOp, ?shapelistHctx, ?shapelist),
+  NumpyRandNArrayOpDimensionResult(?ctx, ?insn, ?npArrayOp, ?index, ?indexVal).
+
+NumpyArrayShapeListLength(?shapelistHctx, ?shapelist, ?len):-
+  NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp, ?len),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npArrayOp, ?shapelistHctx, ?shapelist).
+
+TensorLikeObjectToTensorDtype(?arrayHctx, ?npArrayOp, ?dtypeHctx, ?dtype):-
+  NumpyRandNArrayOp(?ctx, ?insn, ?npArrayOp, _),
+  NumPyOperationOutputHCtx(?ctx, ?insn, ?npArrayOp, ?arrayHctx),
+  isImmutableHContext(?dtypeHctx),
+  ?dtype = "<tensorflow>/new <tensorflow.float32>/0".
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                 GET SUB ARRAY
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl NumpyGetSubArrayOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npSubArrayOp:Value)
+.output NumpyGetSubArrayOp
+
+.decl NumpyGetSubArrayOpIndex(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npSubArrayOp:Value, ?index:number)
+.output NumpyGetSubArrayOpIndex
+
+.decl NumpyGetSubArrayOpInArray(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?npSubArrayOp:Value, ?inArrayHctx:configuration.HContext, ?inArray:Value)
+.output NumpyGetSubArrayOpInArray
+
+NumpyGetSubArrayOpIndex(?ctx, ?insn, ?npSubArrayOp, ?index),
+NumpyGetSubArrayOpInArray(?ctx, ?insn, ?npSubArrayOp, ?arrayHctx, ?inArray),
+NumpyGetSubArrayOp(?ctx, ?insn, ?npSubArrayOp):-
+  isReadFromCollection_Insn(?insn),
+  CollectionAccessInsn_Base(?insn, ?baseVar),
+  VarPointsTo(?arrayHctx, ?inArray, ?ctx, ?baseVar),
+  Value_Type(?inArray, "<numpy.ndarray>"),
+  CollectionAccessInsn_IndexOrKey(?insn, ?indexVar),
+  VarPointsTo(_, ?indexVal, ?ctx, ?indexVar),
+  Value_Num(?indexVal, ?indexNum),
+  ?index = to_number(?indexNum),
+  ?npSubArrayOp = SingleInValNumpyValMacro("subArrayOf", ?insn, ?inArray).
+
+NumPyOperationProducesOutput(?ctx, ?insn, ?npSubArrayOp):-
+  NumpyGetSubArrayOp(?ctx, ?insn, ?npSubArrayOp),
+  NumpyGetSubArrayOpIndex(?ctx, ?insn, ?npSubArrayOp, ?index),
+  NumpyGetSubArrayOpInArray(?ctx, ?insn, ?npSubArrayOp, ?arrayHctx, ?inArray),
+  TensorLikeObjectShapeListLength(?arrayHctx, ?inArray, ?len),
+  ?len > ?index.
+
+NumpyArrayShapeListContent(?shapelistHctx, ?shapelist, ?index - 1, ?indexVal):-
+  ?index > 0,
+  NumpyGetSubArrayOpInArray(?ctx, ?insn, ?npSubArrayOp, ?inArrayHctx, ?inArray),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npSubArrayOp, ?shapelistHctx, ?shapelist),
+  TensorLikeObjectShapeListContent(?inArrayHctx, ?inArray, ?index, ?indexVal).
+
+NumpyArrayShapeListLength(?shapelistHctx, ?shapelist, ?len - 1):-
+  NumpyGetSubArrayOpInArray(?ctx, ?insn, ?npSubArrayOp, ?inArrayHctx, ?inArray),
+  NumPyOperationOutputShape(?ctx, ?insn, ?npSubArrayOp, ?shapelistHctx, ?shapelist),
+  TensorLikeObjectShapeListLength(?inArrayHctx, ?inArray, ?len).
+
+TensorLikeObjectToTensorDtype(?arrayHctx, ?npSubArrayOp, ?dtypeHctx, ?dtype):-
+  NumpyGetSubArrayOpInArray(?ctx, ?insn, ?npSubArrayOp, ?inArrayHctx, ?inArray),
+  NumPyOperationOutputHCtx(?ctx, ?insn, ?npSubArrayOp, ?arrayHctx),
+  TensorLikeObjectToTensorDtype(?inArrayHctx, ?inArray, ?dtypeHctx, ?dtype).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              TRANSPOSE OP
+//----------------------------------------------------------------------------------------------------------------------
+
+//Some declarations are in tensorflow/shape-mod-ops.dl
+
+
+NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
+NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
+TransposeOp(?ctx, ?insn, ?transposeOpVal):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.transpose>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.transpose>", "a", ?tensorHctx, ?tensorArgVal),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.transpose>", "axes", ?permListHctx, ?perList),
+  ?transposeOpVal = TwoInValNumpyValMacro("transpose", ?insn, ?tensorArgVal, ?perList).
+
+ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, ?len):-
+  TransposeOp(?ctx, ?insn, ?transposeOpVal),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
+  Value_Type(?tensorArgVal, "<numpy.ndarray>"),
+  TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
+  ListOfIntConsts(?permListHctx, ?perList),
+  ListOfConstsLength(?permListHctx, ?perList, ?len).
+
+TransposeOpOutputShapeListContent(?ctx, ?insn, ?transposeOpVal, ?index, ?indexVal):-
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, _),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "perm", ?permListHctx, ?perList),
+  ListOfIntConstsAtIndexPointsTo(?permListHctx, ?perList, ?index, ?tensorIndexVal),
+  Value_Num(?tensorIndexVal, ?tensorIndexNumStr),
+  ?tensorIndex = to_number(?tensorIndexNumStr),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
+  TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?tensorIndex, ?indexVal).
+
+NumPyOperationProducesOutput(?ctx, ?insn, ?transposeOpVal):-
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, _).
+
+NumpyArrayShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, ?len),
+  NumPyOperationOutputShape(?ctx, ?insn, ?transposeOpVal, ?shapeHctx, ?tensorShapeVal).
+
+NumpyArrayShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
+  ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, _),
+  NumPyOperationOutputShape(?ctx, ?insn, ?transposeOpVal, ?shapeHctx, ?tensorShapeVal),
+  TransposeOpOutputShapeListContent(?ctx, ?insn, ?transposeOpVal, ?index, ?indexVal).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              EXPAND DIMS OP
+//----------------------------------------------------------------------------------------------------------------------
+
+
+NumPyOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+NumPyOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "axis", ?axisHct, ?axis),
+ExpandDimsOp(?ctx, ?insn, ?expDimsVal):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<numpy.expand_dims>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.expand_dims>", "a", ?tensorHctx, ?tensorArgVal),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.expand_dims>", "axis", ?axisHct, ?axis),
+  ?expDimsVal = TwoInValNumpyValMacro("expandDims", ?insn, ?tensorArgVal, ?axis).
+
+ExpandDimsOpAxisNum(?ctx, ?insn, ?expDimsVal, ?axisNum):-
+  ExpandDimsOp(?ctx, ?insn, ?expDimsVal),
+  ResolvedActualParamValue(?ctx, ?insn, "<numpy.expand_dims>", "axis", _, ?axis),
+  Value_Num(?axis, ?axisNumStr),
+  ?axisNum = to_number(?axisNumStr).
+
+ExpandDimsOpInTensorShapeLength(?ctx, ?insn, ?expDimsVal, ?len):-
+  ExpandDimsOp(?ctx, ?insn, ?expDimsVal),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+  TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len).
+
+NumPyOperationProducesOutput(?ctx, ?insn, ?expDimsVal):-
+  ExpandDimsValidAxisNum(?ctx, ?insn, ?expDimsVal).
+
+NumpyArrayShapeListLength(?shapeHctx, ?tensorShapeVal, ?len + 1):-
+  ExpandDimsOp(?ctx, ?insn, ?expDimsVal),
+  NumPyOperationOutputShape(?ctx, ?insn, ?expDimsVal, ?shapeHctx, ?tensorShapeVal),
+  ExpandDimsOpInTensorShapeLength(?ctx, ?insn, ?expDimsVal, ?len).
+
+NumpyArrayShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
+  ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
+  ?index < ?dim,
+  NumPyOperationOutputShape(?ctx, ?insn, ?expDimsVal, ?shapeHctx, ?tensorShapeVal),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+  TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?index, ?indexVal).
+
+NumpyArrayShapeListContent(?shapeHctx, ?tensorShapeVal, ?index + 1, ?indexVal):-
+  ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
+  ?index >= ?dim,
+  NumPyOperationOutputShape(?ctx, ?insn, ?expDimsVal, ?shapeHctx, ?tensorShapeVal),
+  NumPyOperation_NameToVal(?ctx, ?insn, ?expDimsVal, "input", ?tensorHctx, ?tensorArgVal),
+  TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?index, ?indexVal).
+
+
+NumpyArrayShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, "<num-constant(int):1>"):-
+  ExpandDimsOpDim(?ctx, ?insn, ?expDimsVal, ?dim),
+  ?index = ?dim,
+  NumPyOperationOutputShape(?ctx, ?insn, ?expDimsVal, ?shapeHctx, ?tensorShapeVal).

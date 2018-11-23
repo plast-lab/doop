@@ -1,3 +1,20 @@
+Value_Num("<num-constant(int):-1>","-1").
+isIntConstant("-1").
+
+Value_Num("<num-constant(int):0>","0").
+isIntConstant("0").
+
+Value_Num("<num-constant(int):1>","1").
+isIntConstant("1").
+
+Value_Num("<num-constant(int):3>","3").
+isIntConstant("3").
+
+Value_Num(?val, ?numStr),
+isIntConstant(?numStr):-
+  NewIntConstantValue(?val, ?numStr).
+
+
 .decl VarPointsToConstValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 
 .decl VarPointsToConstNoneValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)

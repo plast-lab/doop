@@ -71,6 +71,17 @@ ForceTypeCompatibility("java.lang.String", "java.lang.Class").
 ForceTypeCompatibility(?valueType, ?varType) :-
   mainAnalysis.BoxTypeConversion(?valueType, ?varType).
 
+// On Android, primitive number types may all collapse into 'int'.
+#ifdef ANDROID
+.decl ForceValueCompatibility(?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
+
+ForceValueCompatibility("boolean", "num-constant-0", "int").
+ForceValueCompatibility("boolean", "num-constant-1", "int").
+ForceValueCompatibility(?primType, ?numConst, "int") :-
+  ( ?primType = "byte" ;  ?primType = "char" ;  ?primType = "short" ),
+  mainAnalysis.Value_Num(?numConst, _).
+#endif // ANDROID
+
 .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
 .output VarPointsToWronglyTypedValue
 
@@ -79,6 +90,9 @@ VarPointsToWronglyTypedValue(?var, ?varType, ?value, ?valueType) :-
   mainAnalysis.VarPointsTo(_, ?value, _, ?var),
   Var_Type(?var, ?varType),
   !basic.SubtypeOf(?valueType, ?varType),
+#ifdef ANDROID
+  !ForceValueCompatibility(?varType, ?value, ?valueType),
+#endif // ANDROID
   !ForceTypeCompatibility(?valueType, ?varType).
 
 .decl VarPointsToMergedHeap(?var:Var, ?value:mainAnalysis.Value)
@@ -117,7 +131,8 @@ ValueHasNoDeclaringType(?value) :-
 ValueIsNeitherHeapNorNonHeap(?value) :-
   mainAnalysis.isValue(?value),
   !mainAnalysis.Value_isHeap(?value),
-  !mainAnalysis.Value_isNonHeap(?value).
+  !mainAnalysis.Value_isNonHeap(?value),
+  mainAnalysis.NotSpecialObject(?value).
 
 .decl ClassTypeIsInterfaceType(?type:Type)
 .output ClassTypeIsInterfaceType
@@ -188,4 +203,5 @@ InstructionIsNotConcreteInstruction(?insn) :-
   !isStaticMethodInvocation_Insn(?insn),
   !isUnsupportedInstruction(?insn),
   !isAssignPhantomInvoke(?insn),
+  !isExceptionHandler(?insn),
   !isBreakpointStmt(?insn).

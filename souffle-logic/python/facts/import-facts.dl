@@ -280,6 +280,14 @@ Field_SimpleName(?signature, ?simplename) :-
   _Field(?signature, ?declaringType, ?simplename).
 
 
+//Comprehension function
+
+.decl _ComprehensionFunction(?function:symbol)
+.input _ComprehensionFunction(IO="file", filename="ComprehensionFunction.facts", delimiter="\t")
+
+isComprehensionFunction(?fun):-
+  _ComprehensionFunction(?fun).
+
 
 // Function invocation
 
@@ -334,6 +342,7 @@ isCollectionAccess_Insn(?insn),
 isReadFromCollection_Insn(?insn),
 CollectionAccessInsn_Base(?insn, ?base),
 CollectionAccessInsn_IndexOrKey(?insn, ?indexOrKey),
+AssignInstruction_To(?insn, ?to),                  //Review: Maybe its not the best thing to do, but currently need it in numpy, for subarray creation
 ReadFromCollectionInsn_To(?insn, ?to):-
   _CollectionRead(?insn, ?index, ?to, ?base, ?indexOrKey, ?function).
 

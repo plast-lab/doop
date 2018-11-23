@@ -107,6 +107,8 @@ public class PythonFactWriter {
 
         _db.add(STRING_RAW, result, result);
         _db.add(FUNCTION, result, _rep.simpleName(m), par, arity, _rep.sourceFileName(m));
+        if(_rep.simpleName(m).startsWith("comprehension"))
+            _db.add(COMPREHENSION_FUNCTION, result);
         return result;
     }
 
@@ -151,7 +153,7 @@ public class PythonFactWriter {
 //            _db.add(ARRAY_TYPE, typeName);
 //            TypeReference componentType = t.getArrayElementType();
 //            _db.add(COMPONENT_TYPE, typeName, writeType(componentType));
-//            _db.add(CLASS_HEAP, _rep.classConstant(typeName), typeName);
+//            writeClassHeap(_rep.classConstant(typeName), typeName);
 //        }
 //        else if (t.isPrimitiveType() || t.isReferenceType() || t.isClassType()) {
 //

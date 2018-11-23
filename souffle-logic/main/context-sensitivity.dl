@@ -220,7 +220,7 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
 VarPointsTo(?baseHctx, ?baseHeap, ?ctx, ?to),
 ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseHeap) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  ArrayInitialValueFromLocal(_, ?to, _, ?from, ?baseHeap),
+  ArrayInitialValueFromLocal(_, _, ?to, _, ?from, ?baseHeap, _),
   isImmutableContext(?ctx),
   isImmutableHContext(?baseHctx).
 
@@ -229,7 +229,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseHeap) :-
  */
 VarPointsTo(?hctx, ?baseHeap, ?ctx, ?to),
 ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
-  ArrayInitialValueFromConst(_, ?to, _, ?const, ?baseHeap),
+  ArrayInitialValueFromConst(_, _, ?to, _, ?const, ?baseHeap, _),
   Value_Num(?value, ?const),
   isImmutableContext(?ctx),
   isImmutableHContext(?hctx).

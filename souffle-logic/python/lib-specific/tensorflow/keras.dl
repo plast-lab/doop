@@ -1,0 +1,86 @@
+.decl PILImageShapeListLength(?hctx:configuration.HContext, ?val:Value, ?size:number)
+.decl PILImageShapeListContent(?hctx:configuration.HContext, ?val:Value, ?index:number, ?indexValue:Value)
+.output PILImageShapeListLength
+.output PILImageShapeListContent
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              LOAD IMAGE
+//----------------------------------------------------------------------------------------------------------------------
+
+
+.decl KerasLoadImageOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?loadImgVal:Value, ?shapeListHctx:configuration.HContext, ?shapeList:Value)
+.output KerasLoadImageOp
+
+KerasLoadImageOp(?ctx, ?insn, ?loadImgVal, ?shapeListHctx, ?shapeList):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.contrib.keras.api.keras.preprocessing.image.load_img>", "target_size", ?shapeListHctx, ?shapeList),
+  ListOfIntConsts(?shapeListHctx, ?shapeList),
+  ?loadImgVal = TwoInValTensorValMacro("loadIMG", ?insn, "rgb", ?shapeList).
+
+
+configuration.RecordContextRequest(?ctx, ?loadImgVal, ?var) :-
+  KerasLoadImageOp(?ctx, ?insn, ?loadImgVal, _, _),
+  AssignInstruction_To(?insn, ?var).
+
+
+VarPointsTo(?hctx, ?loadImgVal, ?ctx, ?var),
+Value_Type(?loadImgVal, "<PIL.PIL.Image>"):-
+  configuration.RecordContextResponse(?ctx, ?loadImgVal, ?var, ?hctx),
+  KerasLoadImageOp(?ctx, ?insn, ?loadImgVal, _, _),
+  AssignInstruction_To(?insn, ?var).
+
+
+PILImageShapeListLength(?hctx, ?loadImgVal, ?len + 1):-
+  KerasLoadImageOp(?ctx, ?insn, ?loadImgVal, ?shapeListHctx, ?shapeList),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?loadImgVal, ?ctx, ?var),
+  ListOfConstsLength(?shapeListHctx, ?shapeList, ?len).
+
+
+PILImageShapeListContent(?hctx, ?loadImgVal, ?len, ?mockVal):-
+  KerasLoadImageOp(?ctx, ?insn, ?loadImgVal, ?shapeListHctx, ?shapeList),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?loadImgVal, ?ctx, ?var),
+  ?mockVal = "<num-constant(int):3>",
+  ListOfConstsLength(?shapeListHctx, ?shapeList, ?len).
+
+PILImageShapeListContent(?hctx, ?loadImgVal, ?index, ?indexVal):-
+  KerasLoadImageOp(?ctx, ?insn, ?loadImgVal, ?shapeListHctx, ?shapeList),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?loadImgVal, ?ctx, ?var),
+  ListOfIntConstsAtIndexPointsTo(?shapeListHctx, ?shapeList, ?index, ?indexVal).
+
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              IMAGE TO ARRAY
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl KerasImageToArrayOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?imgToArrOp:Value, ?imageHctx:configuration.HContext, ?image:Value)
+.output KerasImageToArrayOp
+
+KerasImageToArrayOp(?ctx, ?insn, ?imgToArrOp, ?imageHctx, ?image):-
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.contrib.keras.api.keras.preprocessing.image.img_to_array>", "image", ?imageHctx, ?image),
+  ?imgToArrOp = SingleInValNumpyValMacro("toarr", ?insn, ?image).
+
+NumPyOperationProducesOutput(?ctx, ?insn, ?imgToArrOp):-
+  KerasImageToArrayOp(?ctx, ?insn, ?imgToArrOp, _, ?image),
+  Value_Type(?image, "<PIL.PIL.Image>").
+
+NumpyArrayShapeListContent(?shapelistHctx, ?shapelist, ?index, ?indexVal):-
+  KerasImageToArrayOp(?ctx, ?insn, ?imgToArrOp, ?imageHctx, ?image),
+  NumPyOperationOutputShape(?ctx, ?insn, ?imgToArrOp, ?shapelistHctx, ?shapelist),
+  PILImageShapeListContent(?imageHctx, ?image, ?index, ?indexVal).
+
+NumpyArrayShapeListLength(?shapelistHctx, ?shapelist, ?len):-
+  KerasImageToArrayOp(?ctx, ?insn, ?imgToArrOp, ?imageHctx, ?image),
+  NumPyOperationOutputShape(?ctx, ?insn, ?imgToArrOp, ?shapelistHctx, ?shapelist),
+  PILImageShapeListLength(?imageHctx, ?image, ?len).
+
+TensorLikeObjectToTensorDtype(?arrayHctx, ?imgToArrOp, ?dtypeHctx, ?dtype):-
+  KerasImageToArrayOp(?ctx, ?insn, ?imgToArrOp, _, _),
+  NumPyOperationOutputHCtx(?ctx, ?insn, ?imgToArrOp, ?arrayHctx),
+  isImmutableHContext(?dtypeHctx),
+  ?dtype = "<tensorflow>/new <tensorflow.float32>/0".

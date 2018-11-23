@@ -16,7 +16,7 @@ class CrudeSouffleTest extends Specification {
 	def "Crude testing Souffle mode (based on sample metrics similarity) using [#scenario]"() {
 		when:
 		def propertyFile = this.class.getResource("/scenarios/$scenario").file
-		Main.main((String[])["--Xstats-full", "-p", propertyFile])
+		Main.main((String[])["--Xstats-full", "--platform", "java_7", "-p", propertyFile])
 		analysis = Main.analysis
 
 		then:

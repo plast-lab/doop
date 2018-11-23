@@ -74,15 +74,15 @@ lang:physical:storageModel[`_MethodHandleConstant] = "DelimitedFile".
 lang:physical:filePath[`_MethodHandleConstant] = "facts/MethodHandleConstant.facts".
 lang:physical:delimiter[`_MethodHandleConstant] = "\t".
 lang:physical:hasColumnNames[`_MethodHandleConstant] = false.
-_MethodHandleConstant(?id, ?method) ->
-   string(?id), string(?method).
+_MethodHandleConstant(?id, ?method, ?retType, ?paramTypes, ?arity) ->
+   string(?id), string(?method), string(?retType), string(?paramTypes), int[32](?arity).
 
 +Type:Id(?t:?str),
 +ClassType(?t) <-
    ?str = "java.lang.invoke.MethodHandle".
 
 +HeapAllocation0:MethodHandleConstant(?id, ?method) <-
-   _MethodHandleConstant(?id, ?method).
+   _MethodHandleConstant(?id, ?method, _, _, _).
 
 // EmptyArray
 lang:physical:storageModel[`_EmptyArray] = "DelimitedFile".
@@ -563,7 +563,7 @@ lang:physical:filePath[`_DynamicMethodInvocation] = "facts/DynamicMethodInvocati
 lang:physical:delimiter[`_DynamicMethodInvocation] = "\t".
 lang:physical:hasColumnNames[`_DynamicMethodInvocation] = false.
 
-_DynamicMethodInvocation(?ref, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?method) ->
+_DynamicMethodInvocation(?ref, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method) ->
    string(?ref),
    int[32](?index),
    string(?bootSignature),
@@ -571,6 +571,7 @@ _DynamicMethodInvocation(?ref, ?index, ?bootSignature, ?dynName, ?dynRetType, ?d
    string(?dynRetType),
    int[32](?dynArity),
    string(?dynParamTypes),
+   int[32](?tag),
    string(?method).
 
 +DynamicMethodInvocation:Insn(?x),
@@ -581,8 +582,9 @@ _DynamicMethodInvocation(?ref, ?index, ?bootSignature, ?dynName, ?dynRetType, ?d
 +DynamicMethodInvocation:DynName[?x] = ?dynName,
 +DynamicMethodInvocation:DynReturnType[?x] = ?dynRetType,
 +DynamicMethodInvocation:DynParamTypes[?x] = ?dynParamTypes,
-+DynamicMethodInvocation:DynArity[?x] = ?dynArity <-
-   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?method).
++DynamicMethodInvocation:DynArity[?x] = ?dynArity,
++DynamicMethodInvocation:HandleTag[?x] = ?tag <-
+   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method).
 
 
 // Throw

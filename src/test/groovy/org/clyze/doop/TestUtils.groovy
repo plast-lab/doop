@@ -1,5 +1,6 @@
 package org.clyze.doop
 
+import java.nio.file.Files
 import org.clyze.analysis.Analysis
 import org.clyze.doop.utils.SouffleScript
 
@@ -21,6 +22,14 @@ class TestUtils {
 		int actualSize = 0
 		forEachLineIn("${analysis.database}/${relation}.csv", { actualSize++ })
 		assert actualSize == expectedSize
+	}
+
+	/**
+	 * Replacement of relationHasExactSize(..., ..., 0) that does not
+	 * require reading (lots of) data.
+	 */
+	static void relationIsEmpty(Analysis analysis, String relation) {
+		assert Files.size((new File("${analysis.database}/${relation}.csv")).toPath()) == 0
 	}
 
 	/**
@@ -98,6 +107,14 @@ class TestUtils {
 		findPair(analysis, "mainAnalysis-InvokedynamicCallGraphEdge", instr, 1, meth, 3)
 	}
 
+	static void lambdaCGE(Analysis analysis, String instr, String meth) {
+		findPair(analysis, "mainAnalysis-LambdaCallGraphEdge", instr, 1, meth, 3)
+	}
+
+	static void linkObjectIsLambda(Analysis analysis, String linkObject, String desc) {
+		findPair(analysis, 'mainAnalysis-LambdaCallSite', linkObject, 2, desc, 6)
+	}
+
 	static void proxyCGE(Analysis analysis, String instr, String meth) {
 		findPair(analysis, "mainAnalysis-ProxyCallGraphEdge", instr, 1, meth, 3)
 	}
@@ -147,17 +164,17 @@ class TestUtils {
 	}
 
 	static void noSanityErrors(Analysis analysis) {
-		relationHasExactSize(analysis, "VarHasNoType", 0)
-		relationHasExactSize(analysis, "TypeIsNotConcreteType", 0)
-		relationHasExactSize(analysis, "InstructionIsNotConcreteInstruction", 0)
-		relationHasExactSize(analysis, "ValueHasNoType", 0)
-		relationHasExactSize(analysis, "ValueHasNoDeclaringType", 0)
-		relationHasExactSize(analysis, "NotReachableVarPointsTo", 0)
-		relationHasExactSize(analysis, "VarPointsToWronglyTypedValue", 0)
-		relationHasExactSize(analysis, "VarPointsToMergedHeap", 0)
-		relationHasExactSize(analysis, "HeapAllocationHasNoType", 0)
-		relationHasExactSize(analysis, "ValueIsNeitherHeapNorNonHeap", 0)
-		relationHasExactSize(analysis, "ClassTypeIsInterfaceType", 0)
-		relationHasExactSize(analysis, "PrimitiveTypeIsReferenceType", 0)
+		relationIsEmpty(analysis, "VarHasNoType")
+		relationIsEmpty(analysis, "TypeIsNotConcreteType")
+		relationIsEmpty(analysis, "InstructionIsNotConcreteInstruction")
+		relationIsEmpty(analysis, "ValueHasNoType")
+		relationIsEmpty(analysis, "ValueHasNoDeclaringType")
+		relationIsEmpty(analysis, "NotReachableVarPointsTo")
+		relationIsEmpty(analysis, "VarPointsToWronglyTypedValue")
+		relationIsEmpty(analysis, "VarPointsToMergedHeap")
+		relationIsEmpty(analysis, "HeapAllocationHasNoType")
+		relationIsEmpty(analysis, "ValueIsNeitherHeapNorNonHeap")
+		relationIsEmpty(analysis, "ClassTypeIsInterfaceType")
+		relationIsEmpty(analysis, "PrimitiveTypeIsReferenceType")
 	}
 }

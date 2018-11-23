@@ -15,7 +15,9 @@ class CrudeLBTest extends Specification {
 	def "Crude testing LB mode (based on sample metrics similarity) using [#scenario]"() {
 		when:
 		def propertyFile = this.class.getResource("/scenarios/$scenario").file
-		Main.main((String[])["--lb", "--Xstats-full", "-p", propertyFile])
+		Main.main((String[])[ "--lb", "--Xstats-full",
+							  "--platform", "java_7",
+							  "-p", propertyFile ])
 		analysis = Main.analysis
 
 		then:

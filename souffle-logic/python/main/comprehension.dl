@@ -1,0 +1,86 @@
+.decl IterableObjectLength(?hctx:configuration.HContext, ?val:Value, ?lenVal:Value)
+.output IterableObjectLength
+
+IterableObjectLength(?hctx, ?val, ?len):-
+  TensorLikeObjectShapeListContent(?hctx, ?val, 0, ?len).
+
+.decl ListCompCall(?callerCtx:configuration.Context, ?invo:FunctionInvocation_Insn, ?fun:Function)
+.output ListCompCall
+
+.decl ListCompProducesOutput(?callerCtx:configuration.Context, ?invo:FunctionInvocation_Insn, ?fun:Function, ?outVal:Value)
+.output ListCompProducesOutput
+
+.decl ListCompProducesOutputWithHctx(?callerCtx:configuration.Context, ?invo:FunctionInvocation_Insn, ?fun:Function, ?hctx:configuration.HContext, ?outVal:Value)
+.output ListCompProducesOutputWithHctx
+
+.decl ListCompCallIterArg(?callerCtx:configuration.Context, ?invo:FunctionInvocation_Insn, ?fun:Function, ?hctx:configuration.HContext, ?val:Value)
+.output ListCompCallIterArg
+
+.decl ListCompCallReturnVal(?callerCtx:configuration.Context, ?invo:FunctionInvocation_Insn, ?fun:Function, ?hctx:configuration.HContext, ?val:Value)
+.output ListCompCallReturnVal
+
+#define ListCompVal(op,fun, index, iterVal, retVal) cat("<list ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(iterVal, cat("+", cat(retVal, ">"))))))))
+
+
+ListCompCall(?callerCtx, ?invocation, ?tofunction):-
+  isComprehensionFunction(?tofunction),
+  CallGraphEdge(?callerCtx, ?invocation, _, ?tofunction).
+
+
+ListCompCallReturnVal(?callerCtx, ?invocation, ?tofunction, ?hctx, ?value):-
+  ListCompCall(?callerCtx, ?invocation, ?tofunction),
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tofunction),
+  isReturnNonNone_Insn(?retInsn),
+  Instruction_Function(?retInsn, ?tofunction),
+  ReturnNonNone_Var(?retInsn, ?var),
+  VarPointsTo(?hctx, ?value, ?calleeCtx, ?var).
+
+ListCompCallIterArg(?callerCtx, ?invocation, ?tofunction, ?hctx, ?value):-
+  ListCompCall(?callerCtx, ?invocation, ?tofunction),
+  ActualPositionalParam(1, ?invocation, ?var),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?var).
+
+ListCompProducesOutput(?callerCtx, ?invocation, ?tofunction, ?outVal):-
+  ListCompCall(?callerCtx, ?invocation, ?tofunction),
+  ListCompCallIterArg(?callerCtx, ?invocation, ?tofunction, ?iterHctx, ?iterVal),
+  IterableObjectLength(?iterHctx, ?iterVal, _),
+  ListCompCallReturnVal(?callerCtx, ?invocation, ?tofunction, _, ?retVal),
+  (isConstantValue(?retVal); isTensorLikeObject(?retVal)),
+  Instruction_Function(?invocation, ?fun),
+  Instruction_Index(?invocation, ?index),
+  ?outVal = ListCompVal("listComp",?fun, ?index, ?iterVal, ?retVal).
+
+
+configuration.RecordContextRequest(?callerCtx, ?outVal, ?var) :-
+  ListCompProducesOutput(?callerCtx, ?invocation, _, ?outVal),
+  AssignInstruction_To(?invocation, ?var).
+
+ListCompProducesOutputWithHctx(?callerCtx, ?invocation, ?fun, ?hctx, ?outVal),
+IsPyListOrTuple(?outVal),
+Value_Type(?outVal, "list"),
+VarPointsTo(?hctx, ?outVal, ?ctx, ?var):-
+  configuration.RecordContextResponse(?ctx, ?outVal, ?var, ?hctx),
+  ListCompProducesOutput(?callerCtx, ?invocation, ?fun, ?outVal),
+  AssignInstruction_To(?invocation, ?var).
+
+
+PyListDeducedShapeLength(?hctx, ?outVal, 1):-
+  ListCompProducesOutputWithHctx(?callerCtx, ?invocation, ?tofunction, ?hctx, ?outVal),
+  ListCompCallReturnVal(?callerCtx, ?invocation, ?tofunction, _, ?retVal),
+  isConstantValue(?retVal).
+
+PyListDeducedShapeLength(?hctx, ?outVal, ?len + 1):-
+  ListCompProducesOutputWithHctx(?callerCtx, ?invocation, ?tofunction, ?hctx, ?outVal),
+  ListCompCallReturnVal(?callerCtx, ?invocation, ?tofunction, ?retHctx, ?retVal),
+  TensorLikeObjectShapeListLength(?retHctx, ?retVal, ?len).
+
+PyListDeducedShapeContents(?hctx, ?outVal, 0, ?val):-
+  ListCompProducesOutputWithHctx(?callerCtx, ?invocation, ?tofunction, ?hctx, ?outVal),
+  ListCompCallIterArg(?callerCtx, ?invocation, ?tofunction, ?iterHctx, ?iterVal),
+  IterableObjectLength(?iterHctx, ?iterVal, ?val).
+
+
+PyListDeducedShapeContents(?hctx, ?outVal, ?index + 1, ?indexVal):-
+  ListCompProducesOutputWithHctx(?callerCtx, ?invocation, ?tofunction, ?hctx, ?outVal),
+  ListCompCallReturnVal(?callerCtx, ?invocation, ?tofunction, ?retHctx, ?retVal),
+  TensorLikeObjectShapeListContent(?retHctx, ?retVal, ?index, ?indexVal).

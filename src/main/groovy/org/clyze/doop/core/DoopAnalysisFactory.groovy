@@ -345,6 +345,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
 		}
 
+		if (options.REFLECTION_METHOD_HANDLES.value && !options.REFLECTION_CLASSIC.value) {
+			println("Option --" + options.REFLECTION_METHOD_HANDLES.name + " turns on --" + options.REFLECTION_CLASSIC.name)
+			options.REFLECTION_CLASSIC.value = true
+		}
+
 		if (options.REFLECTION_CLASSIC.value) {
 			if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
 				throw new RuntimeException("Error: options --" + options.REFLECTION_CLASSIC.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
@@ -377,7 +382,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				!options.HEAPDLS.value && !options.ANDROID.value &&
 				!options.DACAPO.value && !options.DACAPO_BACH.value &&
 				!options.X_START_AFTER_FACTS.value) {
-			log.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
+			log.info "WARNING: No main class was found. This will trigger open-program analysis!"
 			if (!options.OPEN_PROGRAMS.value)
 				options.OPEN_PROGRAMS.value = "concrete-types"
 		}

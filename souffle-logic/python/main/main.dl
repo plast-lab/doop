@@ -13,8 +13,10 @@
   #include "lists.dl"
   #include "dictionaries.dl"
   #include "const-int.dl"
+  #include "comprehension.dl"
   #include "../lib-specific/modeled.dl"
-  #include "../lib-specific/numpy.dl"
+  #include "../lib-specific/default-python-lib.dl"
+  #include "../lib-specific/lib-macros.dl"
   #include "../lib-specific/tensorflow/tensorflow.dl"
   #include "../lib-specific/tensorflow/general-tensor-modeling.dl"
   #include "../lib-specific/tensorflow/tensor-creation-ops.dl"
@@ -22,6 +24,9 @@
   #include "../lib-specific/tensorflow/arithmetic-ops.dl"
   #include "../lib-specific/tensorflow/pooling-conv-ops.dl"
   #include "../lib-specific/tensorflow/shape-pass-through-ops.dl"
+  #include "../lib-specific/tensorflow/keras.dl"
+  #include "../lib-specific/tensorflow/uncategorized-ops.dl"
+  #include "../lib-specific/numpy.dl"
 
   /**
    * Reachable
@@ -72,9 +77,35 @@
     Value_String(?value, _);
     isNoneValue(?value).
 
+  isIntConstantValue(?value):-
+    Value_Num(?value, ?const),
+    isIntConstant(?const).
+
+  isFloatConstantValue(?value):-
+      Value_Num(?value, ?const),
+      isFloatConstant(?const).
+
   isNonHeapValue(?value):-
     Value_Num(?value, _);
     isNoneValue(?value).
+
+  Value_Type(?value, ?type),
+  isHeapValue(?value):-
+    HeapAllocation_Type(?value, ?type).
+
+  .output IntConstantValue_ActualNum
+  IntConstantValue_ActualNum(?val, ?num):-
+    isIntConstantValue(?val),
+    Value_Num(?val, ?const),
+    ?num = to_number(?const).
+
+  .output isNonFunctionObjectValue
+  isNonFunctionObjectValue(?val):-
+    HeapAllocation_Type(?val, ?type),
+    isClassType(?type).
+
+  isNonFunctionObjectValue(?val):-
+    isConstantValue(?val).
 
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
     Reachable(?function),
@@ -115,6 +146,17 @@
     AssignInstruction_To(?insn, ?var),
     GlobalNamePointsTo(?hctx, ?value, ?scope, ?name).
 
+  //FOR IMPORTING BUILT IN FUNCTIONS
+  VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+    Reachable(?function),
+    ReachableContext(?ctx, ?function),
+    Instruction_Function(?insn, ?function),
+    isGlobalRead_Insn(?insn),
+    GlobalAccessInsn_Name(?insn, ?name),
+    AssignInstruction_To(?insn, ?var),
+    GlobalNamePointsTo(?hctx, ?value, "<BUILTIN_SCOPE>", ?name).
+
+
   //This rule is probably redundant
   VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
     Reachable(?function),
@@ -141,7 +183,29 @@
     LexicalAccessInsn_VarScope(?insn, ?scope),
     Var_DeclaringFunction(?from, ?scope),
     Var_SourceName(?from, ?name),
-    VarPointsTo(?hctx, ?value, ?ctx, ?from).
+    VarPointsTo(?hctx, ?value, _, ?from). //TODO: REVIEW this at some point
+
+  .output isUnboundMethodObjectAllocation
+  .output isUnboundMethodOrFunctionObjectAllocation
+
+  //Need to review this at some point
+  //Right now I consider that a method is a function but it is sometimes making it harder to create other
+
+
+  isUnboundMethodObjectAllocation(?value):-
+    isFunctionObjectAllocation(?value),
+    isNormalHeap(?value),
+    HeapAllocation_Type(?value, ?type),
+    isMethod(?type).
+
+  isUnboundMethodOrFunctionObjectAllocation(?value):-
+    isUnboundMethodObjectAllocation(?value).
+
+  isUnboundMethodOrFunctionObjectAllocation(?value):-
+    isFunctionObjectAllocation(?value),
+    isNormalHeap(?value),
+    HeapAllocation_Type(?value, ?type),
+    isFunction(?type).
 
   isFunctionObjectAllocation(?value),
   VarPointsTo(?hctx, ?value, ?ctx, ?var):-
@@ -152,8 +216,6 @@
     isNormalHeap(?value),
     AssignInstruction_To(?insn, ?var),
     HeapAllocation_Type(?value, ?type),
-    ?type != "list",
-    ?type != "object",
     isFunction(?type),
     configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
@@ -268,7 +330,34 @@
     VarPointsTo(?classInstanceHctx, ?classInstance, ?ctx, ?base),
     isClassInstanceAllocation(?classInstance),
     ClassInstanceAllocationInitializingClassObject(?classInstanceHctx, ?classInstance, ?classObjectHctx, ?classObject),
-    InstanceFieldPointsTo(?hctx, ?value, ?signature, ?classObjectHctx, ?classObject).
+    InstanceFieldPointsTo(?hctx, ?value, ?signature, ?classObjectHctx, ?classObject),
+    isNonFunctionObjectValue(?value).
+
+  #define BoundMethValueMacro(fun,obj) cat("<bound-method", cat(fun, cat("/to-object", cat(obj, ">"))))
+
+  .output isBoundMethodObjectAllocation
+  .output BoundMethodAllocationSelfArgument
+
+  //BINDING METHODS TO OBJECTS
+  //Right now how I'm handling it is: When someone "asks" for the bound method through, looking for the attribute for the object
+  //Then create the new bound method value
+  //Alternatively I could produce new instance fields points to for the classInstance Object and the bound method.
+  isBoundMethodObjectAllocation(?boundMethVal),
+  BoundMethodAllocationSelfArgument(?hctx, ?boundMethVal, ?classInstanceHctx, ?classInstance),
+  isHeapAllocation(?boundMethVal),
+  HeapAllocation_Type(?boundMethVal, ?function),
+  VarPointsTo(?hctx, ?boundMethVal, ?ctx, ?to):-
+    isLoadInstanceField_Insn(?insn),
+    FieldInstruction_Signature(?insn, ?signature),
+    LoadInstanceField_Base(?insn, ?base),
+    LoadInstanceField_To(?insn, ?to),
+    VarPointsTo(?classInstanceHctx, ?classInstance, ?ctx, ?base),
+    isClassInstanceAllocation(?classInstance),
+    ClassInstanceAllocationInitializingClassObject(?classInstanceHctx, ?classInstance, ?classObjectHctx, ?classObject),
+    InstanceFieldPointsTo(?hctx, ?value, ?signature, ?classObjectHctx, ?classObject),
+    Value_Type(?value, ?function),
+    isFunction(?function),
+    ?boundMethVal = BoundMethValueMacro(?function, ?classInstance).
 
   VarPointsToFunction(?hctx, ?value, ?ctx, ?var):-
     VarPointsTo(?hctx, ?value, ?ctx, ?var),

@@ -15,12 +15,12 @@ class CrudeWalaTest extends Specification {
 	@Unroll
 	def "Crude testing WALA fact generation and analysis"() {
 		when:
-		Main.main((String[])["-i", "http://centauri.di.uoa.gr:8081/artifactory/DaCapo-benchmarks/2006/antlr.jar", "-a", "context-insensitive", "--id", "antlr-wala", "--dacapo", "--wala-fact-gen"])
+		Main.main((String[])["-i", "http://centauri.di.uoa.gr:8081/artifactory/DaCapo-benchmarks/2006/antlr.jar", "-a", "context-insensitive", "--id", "antlr-wala", "--dacapo", "--wala-fact-gen", "--platform", "java_8"])
 		analysis = Main.analysis
 
 		then:
-		relationHasApproxSize(analysis, "CallGraphEdge", 58065)
-		relationHasApproxSize(analysis, "VarPointsTo", 2479880)
-		relationHasApproxSize(analysis, "ReachableContext", 8477)
+		relationHasApproxSize(analysis, "CallGraphEdge", 73000)
+		relationHasApproxSize(analysis, "VarPointsTo", 3200000)
+		relationHasApproxSize(analysis, "ReachableContext", 11000)
 	}
 }
