@@ -57,6 +57,8 @@
 .decl Value_String(?value:Value, ?str:StringConstant)
 .decl isNonHeapValue(?value:Value)
 
+.decl NewIntConstantValue(?value:Value, ?numStr:IntConstant)
+
 .decl ClassInstanceAllocationInitializingClassObject(?instanceHctx:configuration.HContext, ?classInstance:HeapAllocation, ?classObjectHctx:configuration.HContext, ?classObject:HeapAllocation)
 .decl BoundMethodAllocationSelfArgument(?boundMethHctx:configuration.HContext, ?boundMethodVal:Value, ?selfHctx:configuration.HContext, ?selfVal:Value)
 

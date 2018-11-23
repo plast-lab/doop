@@ -260,29 +260,26 @@ PyListDeducedDtype(?listHctx, ?list, ?dtype):-
   ListAtIndexPointsTo(?listHctx, ?list, 0, ?indexValHctx, ?indexVal),
   PyListDeducedDtype(?indexValHctx, ?indexVal, ?dtype).
 
-Value_Num(?value, ?lengthStr),
-isIntConstant(?lengthStr),
-PyListDeducedShapeContents(?listHctx, ?list, 0, ?value),
+
 PyListDeducedShapeLength(?listHctx, ?list, 1):-
   ListInitialAssignVar(?list, ?var, ?ctx),
-  ListInitialLength(?list, ?length),
   VarPointsTo(?listHctx, ?list, ?ctx, ?var),
-  ListOfConsts(?listHctx, ?list),
-  ?lengthStr = to_string(?length),
-  ?value = cat(cat("<num-constant(int):", ?lengthStr),">").
+  ListOfConsts(?listHctx, ?list).
 
-Value_Num(?value, ?lengthStr),
-isIntConstant(?lengthStr),
-PyListDeducedShapeContents(?listHctx, ?list, 0, ?value),
 PyListDeducedShapeLength(?listHctx, ?list, ?newLen):-
   ListInitialAssignVar(?list, ?var, ?ctx),
-  ListInitialLength(?list, ?length),
   VarPointsTo(?listHctx, ?list, ?ctx, ?var),
-  ?lengthStr = to_string(?length),
-  ?value = cat(cat("<num-constant(int):", ?lengthStr),">"),
   ListAtIndexPointsTo(?listHctx, ?list, 0, ?indexValHctx, ?indexVal),
   PyListDeducedShapeLength(?indexValHctx, ?indexVal, ?oldLen),
   ?newLen = ?oldLen + 1.
+
+NewIntConstantValue(?value, ?lengthStr),
+PyListDeducedShapeContents(?listHctx, ?list, 0, ?value):-
+  ListInitialAssignVar(?list, ?var, ?ctx),
+  ListInitialLength(?list, ?length),
+  VarPointsTo(?listHctx, ?list, ?ctx, ?var),
+  ?lengthStr = to_string(?length),
+  ?value = cat(cat("<num-constant(int):", ?lengthStr),">").
 
 PyListDeducedShapeContents(?listHctx, ?list, ?index + 1, ?value):-
   ListInitialAssignVar(?list, ?var, ?ctx),

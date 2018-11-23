@@ -10,6 +10,10 @@ isIntConstant("1").
 Value_Num("<num-constant(int):3>","3").
 isIntConstant("3").
 
+Value_Num(?val, ?numStr),
+isIntConstant(?numStr):-
+  NewIntConstantValue(?val, ?numStr).
+
 
 .decl VarPointsToConstValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 
