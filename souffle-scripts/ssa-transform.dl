@@ -14,6 +14,7 @@
 // Holds all ssa renames in the program for a given origin variable.
 // e.g. (v0_0, v0), (v0_1, v0) ... 
 .decl SSA_Alias(?ssa_name:symbol, ?original:symbol)
+.decl SSA_Type(?var:symbol, ?type:symbol)
 
 // Helper relation to factor out some code.
 .decl SSA_AssignDetails(?instr:symbol, ?to:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
@@ -31,37 +32,52 @@ SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?m
     AssignInstruction_To(?instr, ?to),
     Instruction_Method(?instr, ?method).
 
+// Exception object assignment.
 SSA_AssignToOriginal(?instr, ?to),
+SSA_Type(cat(?to, cat("_", to_string(?index))), ?type),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
-    _ExceptionHandler(?instr, ?method, ?index, _, ?to, _, _).
+    _ExceptionHandler(?instr, ?method, ?index, ?type, ?to, _, _).
 
+// Return value assignment.
 SSA_AssignToOriginal(?invocation, ?to),
+SSA_Type(cat(?to, cat("_", to_string(?index))), ?type),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?invocation, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
     Instruction_Index(?invocation, ?index),
     AssignReturnValue(?invocation, ?to),
-    Instruction_Method(?invocation, ?method).
+    Instruction_Method(?invocation, ?method),
+    MethodInvocation_Method(?invocation, ?signature),
+    Method_ReturnType(?signature, ?type).
 
+// Load from array assignment.
 SSA_AssignToOriginal(?instr, ?to),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
     _LoadArrayIndex(?instr, ?index, ?to, _, ?method).
 
+// Load from object field assignment.
 SSA_AssignToOriginal(?instr, ?to),
+SSA_Type(cat(?to, cat("_", to_string(?index))), ?type),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
-    _LoadInstanceField(?instr, ?index, ?to, _, _, ?method).
+    _LoadInstanceField(?instr, ?index, ?to, _, ?signature, ?method),
+    _Field(?signature, _, _, ?type).
 
+// Load from static field assignment.
 SSA_AssignToOriginal(?instr, ?to),
+SSA_Type(cat(?to, cat("_", to_string(?index))), ?type),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
-    _LoadStaticField(?instr, ?index, ?to, _, ?method).
+    _LoadStaticField(?instr, ?index, ?to, ?signature, ?method),
+    _Field(?signature, _, _, ?type).
 
+// Method formal params.
 SSA_Alias(cat(?original, cat("_", "0")), ?original),
 SSA_FormalParam(?index, ?method, cat(?original, cat("_", "0"))) :-
     FormalParam(?index, ?method, ?original).
 
+// Method this var.
 SSA_Alias(cat(?original, cat("_", "0")), ?original),
 SSA_ThisVar(?method, cat(?original, cat("_", "0"))) :-
     ThisVar(?method, ?original).
