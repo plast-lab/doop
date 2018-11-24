@@ -15,6 +15,7 @@
 // e.g. (v0_0, v0), (v0_1, v0) ... 
 .decl SSA_Alias(?ssa_name:symbol, ?original:symbol)
 .decl SSA_Type(?var:symbol, ?type:symbol)
+.output SSA_Type
 
 // Helper relation to factor out some code.
 .decl SSA_AssignDetails(?instr:symbol, ?to:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
@@ -34,21 +35,17 @@ SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?m
 
 // Exception object assignment.
 SSA_AssignToOriginal(?instr, ?to),
-SSA_Type(cat(?to, cat("_", to_string(?index))), ?type),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
     _ExceptionHandler(?instr, ?method, ?index, ?type, ?to, _, _).
 
 // Return value assignment.
 SSA_AssignToOriginal(?invocation, ?to),
-SSA_Type(cat(?to, cat("_", to_string(?index))), ?type),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?invocation, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
     Instruction_Index(?invocation, ?index),
     AssignReturnValue(?invocation, ?to),
-    Instruction_Method(?invocation, ?method),
-    MethodInvocation_Method(?invocation, ?signature),
-    Method_ReturnType(?signature, ?type).
+    Instruction_Method(?invocation, ?method).
 
 // Load from array assignment.
 SSA_AssignToOriginal(?instr, ?to),
@@ -58,19 +55,15 @@ SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?m
 
 // Load from object field assignment.
 SSA_AssignToOriginal(?instr, ?to),
-SSA_Type(cat(?to, cat("_", to_string(?index))), ?type),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
-    _LoadInstanceField(?instr, ?index, ?to, _, ?signature, ?method),
-    _Field(?signature, _, _, ?type).
+    _LoadInstanceField(?instr, ?index, ?to, _, _, ?method).
 
 // Load from static field assignment.
 SSA_AssignToOriginal(?instr, ?to),
-SSA_Type(cat(?to, cat("_", to_string(?index))), ?type),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
-    _LoadStaticField(?instr, ?index, ?to, ?signature, ?method),
-    _Field(?signature, _, _, ?type).
+    _LoadStaticField(?instr, ?index, ?to, _, ?method).
 
 // Method formal params.
 SSA_Alias(cat(?original, cat("_", "0")), ?original),
@@ -611,11 +604,12 @@ RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod) :-
 .decl RewriteAssignHeapAllocation(?insn:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)
 .output RewriteAssignHeapAllocation(filename="AssignHeapAllocation.facts")
 
+SSA_Type(?to, ?type),
 RewriteAssignHeapAllocation(?insn, ?index, ?heap, ?to, ?inmethod, ?linenumber) :-
-    SSA_AssignHeapAllocation(?insn, _, ?to, ?inmethod),
-    AssignHeapAllocation_Heap(?insn, ?heap),
-    Instruction_Line(?insn, ?linenumber),
-    SSA_InstructionIndex(?insn, ?index).
+    _AssignHeapAllocation(?insn, _, ?heap, ?to_origin, ?inmethod, ?linenumber),
+    HeapAllocation_Type(?heap, ?type),
+    SSA_InstructionIndex(?insn, ?index),
+    SSA_AssignDetails(?insn, ?to_origin, _, ?to, _).
 
 .decl RewriteAssignOperFrom(?insn:symbol, ?pos:number, ?from:symbol)
 .output RewriteAssignOperFrom(filename="AssignOperFrom.facts")
@@ -668,6 +662,7 @@ RewriteDynamicMethodInvocation(?insn, ?index, ?bootSignature, ?dynName, ?dynRetT
 .decl RewriteExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number)
 .output RewriteExceptionHandler(filename="ExceptionHandler.facts")
 
+SSA_Type(?var, ?type),
 RewriteExceptionHandler(?handler, ?method, ?index, ?type, ?var, ?begin, ?end) :-
     SSA_InstructionIndex(?handler, ?index),
     _ExceptionHandler(?handler, ?method, _, ?type, ?var_origin, ?begin_old, ?end_old),
@@ -686,9 +681,12 @@ RewriteAssignNumConstant(?insn, ?index, ?const, ?to, ?inmethod) :-
 .decl RewriteAssignReturnValue(?invocation:symbol, ?to:symbol)
 .output RewriteAssignReturnValue(filename="AssignReturnValue.facts")
 
+SSA_Type(?to, ?type),
 RewriteAssignReturnValue(?invocation, ?to) :-
     SSA_AssignDetails(?invocation, ?to_origin, _, ?to, _),
-    AssignReturnValue(?invocation, ?to_origin).
+    AssignReturnValue(?invocation, ?to_origin),
+    MethodInvocation_Method(?invocation, ?signature),
+    Method_ReturnType(?signature, ?type).
 
 .decl RewriteAssignUnop(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
 .output RewriteAssignUnop(filename="AssignUnop.facts")
@@ -752,19 +750,23 @@ RewriteLoadArrayIndex(?insn, ?index, ?to, ?base, ?inmethod) :-
 .decl RewriteLoadInstanceField(?insn:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
 .output RewriteLoadInstanceField(filename="LoadInstanceField.facts")
 
+SSA_Type(?to, ?type),
 RewriteLoadInstanceField(?insn, ?index, ?to, ?base, ?signature, ?inmethod) :-
-    SSA_LoadInstanceField(?insn, _, ?to, ?inmethod),
+    _LoadInstanceField(?insn, _, ?to_origin, ?base_origin, ?signature, ?inmethod),
+    _Field(?signature, _, _, ?type),
     SSA_InstructionIndex(?insn, ?index),
-    LoadInstanceField_Base(?insn, ?base_origin),
-    FieldInstruction_Signature(?insn, ?signature),
+    SSA_AssignDetails(?insn, ?to_original, _, ?to, _),
     ReachingDef(?insn, ?base, ?base_origin).
 
 .decl RewriteLoadStaticField(?insn:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)
 .output RewriteLoadStaticField(filename="LoadStaticField.facts")
 
+SSA_Type(?to, ?type),
 RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
-    SSA_LoadStaticField(?insn, _, ?to, ?inmethod),
+    _LoadStaticField(?insn, _, ?to_origin, ?signature, ?inmethod),
+    _Field(?signature, _, _, ?type),
     SSA_InstructionIndex(?insn, ?index),
+    SSA_AssignDetails(?insn, ?to_original, _, ?to, _),
     FieldInstruction_Signature(?insn, ?signature).
 
 .decl RewriteLookupSwitch(?insn:symbol, ?index:number, ?key:symbol, ?method:symbol)
@@ -907,6 +909,10 @@ RewriteVarDeclaringMethod(?var, ?method) :-
     Var_DeclaringMethod(?var_origin, ?method),
     SSA_Alias(?var, ?var_origin).
 
-.output isInstruction
 .output SSA_FormalParam(filename="FormalParam.facts")
 .output SSA_ThisVar(filename="ThisVar.facts")
+
+// Transitive rule
+SSA_Type(?to, ?type) :-
+    RewriteAssignLocal(_, _, ?to, ?from, _),
+    SSA_Type(?from, ?type).
