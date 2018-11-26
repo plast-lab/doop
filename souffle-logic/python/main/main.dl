@@ -228,9 +228,10 @@
     isNormalHeap(?value),
     AssignInstruction_To(?insn, ?var),
     HeapAllocation_Type(?value, ?type),
-    ?type != "list",
-    ?type != "tuple",
-    ?type != "object",
+    ?type != "<list>",
+    ?type != "<tuple>",
+    ?type != "<object>",
+    ?type != "<dict>",
     isClassType(?type),
     configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
@@ -243,7 +244,7 @@
     AssignInstruction_To(?instr, ?var),
     AssignHeapAllocation_Heap(?instr, ?heap),
     OriginalHeapAllocation_Type(?heap, ?type),
-    (?type = "list"; ?type = "tuple"),
+    (?type = "<list>"; ?type = "<tuple>"),
     configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
   isPyDict(?heap),
@@ -255,7 +256,7 @@
     AssignInstruction_To(?instr, ?var),
     AssignHeapAllocation_Heap(?instr, ?heap),
     OriginalHeapAllocation_Type(?heap, ?type),
-    ?type = "dict",
+    ?type = "<dict>",
     configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
   configuration.RecordContextRequest(?ctx, ?heap, ?var) :-

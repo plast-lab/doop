@@ -294,4 +294,7 @@ ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
    ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
    ReturnVar(?handlerReturnVar, ?handlerInvokeMeth),
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?handlerReturnVar),
-   AssignReturnValue(?invo, ?ret).
+   AssignReturnValue(?invo, ?ret),
+   Value_Type(?retVal, ?valType),
+   Var_Type(?ret, ?retType),
+   basic.SubtypeOf(?valType, ?retType).
