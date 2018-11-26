@@ -77,14 +77,12 @@ public abstract class JavaFactWriter {
 
     protected void writeFormalParam(String methodId, String var, String type, int i) {
         _db.add(FORMAL_PARAM, str(i), methodId, var);
-        _db.add(VAR_TYPE, var, type);
-        _db.add(VAR_DECLARING_METHOD, var, methodId);
+        writeLocal(var, type, methodId);
     }
 
     protected void writeThisVar(String methodId, String thisVar, String type) {
         _db.add(THIS_VAR, methodId, thisVar);
-        _db.add(VAR_TYPE, thisVar, type);
-        _db.add(VAR_DECLARING_METHOD, thisVar, methodId);
+        writeLocal(thisVar, type, methodId);
     }
 
     public void writeApplication(String applicationName) {
