@@ -79,6 +79,30 @@ Method_NumberOfContexts(?method, ?n) :-
 //                Instruction_Method(?invo, _),
 //                InvocationPassesArguments(?invo)}.
                              
+.decl InNeighborInCallGraph(?method:Method, ?neighbor:Method, ?weight:number)
+
+InNeighborInCallGraph(?method, ?method, 1) :-
+  MethodVPTCost(?method, _).
+
+//InCaller
+InNeighborInCallGraph(?method, ?neigh, ?weight) :-
+  Stats_Simple_InsensCallGraphEdge(?invo, ?method),
+  InvocationPassesArgumentsOrHasReturn(?invo),
+  Instruction_Method(?invo, ?neigh),
+  OutCalleeCountPerMethod(?neigh, ?n1),
+  OutCallerCountPerMethod(?neigh, ?n2),
+  ?weight = ?n1 + ?n2.
+
+//InCallee
+InNeighborInCallGraph(?method, ?neigh, ?weight) :-
+  Stats_Simple_InsensCallGraphEdge(?invo, ?neigh),
+  InvocationPassesArguments(?invo),
+  Instruction_Method(?invo, ?method),
+  OutCalleeCountPerMethod(?neigh, ?n1),
+  OutCallerCountPerMethod(?neigh, ?n2),
+  ?weight = ?n1 + ?n2.
+
+.decl MethodVPTImpact(?method:Method, ?n:number)
 // .decl InNeighborInCallGraph(?method:Method, ?neighbor:Method, ?weight:number)
 
 // InNeighborInCallGraph(?method, ?method, 1) :-

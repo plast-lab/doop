@@ -71,7 +71,7 @@
 //-----------------------------------------------------------------------------
 
 // Represents the return type and the argument types of a method
-.type MethodDescriptor
+.type MethodDescriptor = symbol
 .decl isMethodDescriptor(?md:MethodDescriptor)
 
 .type Method

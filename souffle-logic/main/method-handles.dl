@@ -258,56 +258,94 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
 
 // A boxing/unboxing conversion of types including the null type.
 .decl BoxTypeConversion(?original:Type, ?new:Type)
+// Create a new allocation in the case of boxing.
+.decl BoxAllocation(?value:Value, ?type:Type)
+#define BOX_ALLOC(t) cat("mock box allocation for type ", t)
 
-BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, ?t2).
+BoxTypeConversion(?t1, ?t2),
+MockValueConsMacro(?mockAlloc, ?t2),
+BoxAllocation(?mockAlloc, ?t2) :-
+   PrimitiveType_Boxed(?t1, ?wrapperT),
+   basic.SubtypeOf(?wrapperT, ?t2),
+   ?mockAlloc = BOX_ALLOC(?t2).
 BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
 BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
 BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
 
-// Helper relation: instance methods implicitly consume one of the K
-// arguments, while static methods take all K arguments before N ones.
-.decl ImplMethodArgStart(?implMethod:Method, ?idx:number)
-ImplMethodArgStart(?implMethod, 1) :-
-   LambdaCallGraphEdge(_, _, _, ?implMethod, _),
-   ! Method_Modifier("static", ?implMethod).
-ImplMethodArgStart(?implMethod, 0) :-
-   LambdaCallGraphEdge(_, _, _, ?implMethod, _),
+// Helper relation: implementing method is an instance method.
+.decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?lambda:LinkObject)
+CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?ctx, ?lambda) :-
+   LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
+   !Method_Modifier("static", ?implMethod),
+   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
+   ThisVar(?implMethod, ?this),
+   Var_Type(?this, ?thisType),
+   isImmutableHContext(?hctx).
+
+// Helper relation: instance methods may implicitly consume one of the
+// K or N arguments for the receiver (shifting them by 1), while
+// static methods take all K arguments before N ones.
+.decl Params_ReceiverShiftRight(?lambda:LinkObject, ?implMethod:Method, ?shiftK:number, ?shiftN:number)
+
+Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
+   LambdaCallGraphEdge(_, _, _, ?implMethod, ?lambda),
    Method_Modifier("static", ?implMethod).
+// No bootstrap arguments = an actual argument will be used for 'this'.
+Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
+   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, _, ?lambda),
+   DynamicMethodInvocation_DynArity(?invokedynamic, 0).
+// First bootstrap argument exists, will be used for 'this'.
+Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
+   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, _, ?lambda),
+   CallSiteCaptured(_, ?invokedynamic, _, 0, _).
 
 // Pass invocation arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
-   ImplMethodArgStart(?implMethod, ?shift),
+   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
    LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _),
-   FormalParam(?idx + ?K - ?shift, ?implMethod, ?formal),
    ActualParam(?idx, ?i, ?actual),
+   FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
    VarPointsTo(_, ?val, _, ?actual),
    Value_Type(?val, ?valType),
    Var_Type(?formal, ?formalType),
-   // Check type compatibility (spec: normal case/casting/(un)boxing).
+   // Check type compatibility (including (un)boxing).
    (basic.SubtypeOf(?valType, ?formalType);
-    basic.SubtypeOf(?formalType, ?valType);
     BoxTypeConversion(?valType, ?formalType)),
    isImmutableHContext(?hctx).
 
 // Pass captured arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
-   ImplMethodArgStart(?implMethod, ?shift),
+   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, _),
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
-   ?idx <= ?K - ?shift,
-   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx + ?shift, ?ctx),
-   FormalParam(?idx, ?implMethod, ?formal),
+   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx, ?ctx),
+   ?idx + ?shiftK <= ?K,
+   FormalParam(?idx - ?shiftK, ?implMethod, ?formal),
+   Value_Type(?val, ?valType),
+   Var_Type(?formal, ?formalType),
+   basic.SubtypeOf(?valType, ?formalType),
    isImmutableHContext(?hctx).
 
 // Special handling for captured "this" parameters.
 VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
-   LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
-   !Method_Modifier("static", ?implMethod),
-   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
-   CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0, ?ctx),
+   Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0),
+   CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?ctx, ?lambda),
+   CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0, _),
+   Value_Type(?thisValue, ?thisValueType),
+   basic.SubtypeOf(?thisValueType, ?thisType).
+
+// Special handling for "this" parameters to method references that do
+// not capture a receiver.
+VarPointsTo(?hctx, ?argValue, ?ctx, ?this) :-
+   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
+   Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1),
+   ActualParam(0, ?i, ?actual),
+   VarPointsTo(?hctx, ?argValue, ?ctx, ?actual),
+   Value_Type(?argValue, ?argType),
    ThisVar(?implMethod, ?this),
-   isImmutableHContext(?hctx).
+   Var_Type(?this, ?thisType),
+   basic.SubtypeOf(?argType, ?thisType).
 
 // Applications of constructor references construct values. However,
 // these values do not come from a 'new' instruction in the code but
@@ -324,23 +362,38 @@ VarPointsTo(?hctx, ?mockObj, ?ctx, ?thisVar) :-
    isImmutableHContext(?hctx).
 
 .type MethodType = mainAnalysis.Value
+.decl isMethodType(?value:MethodType)
 .decl MethodType_Arity(?id:MethodType, ?arity:number)
 .decl MethodType_ParamType(?id:MethodType, ?index:number, ?pType:Type)
 .decl MethodType_ReturnType(?id:MethodType, ?retType:Type)
+
+isMethodType(?id) :- isMethodTypeConstant(?id).
+isMethodType(?descriptor) :- Method_Descriptor(_, ?descriptor).
 
 MethodType_ParamType(?id, ?idx, ?type) :- _MethodTypeConstantParam(?id, ?idx, ?type).
 MethodType_Arity(?id, ?arity)          :- MethodTypeConstant_Arity(?id, ?arity).
 MethodType_ReturnType(?id, ?retType)   :- MethodTypeConstant_ReturnType(?id, ?retType).
 
-// Method handles that interact with reflection are exprerimental, use
-// corresponding command-line option to enable them.
-#ifdef REFLECTION_METHOD_HANDLES
+MethodType_ParamType(?descriptor, ?index, ?pType) :-
+  Method_Descriptor(?method, ?descriptor),
+  FormalParam(?index, ?method, ?var),
+  _Var_Type(?var, ?pType).
+
+MethodType_ReturnType(?descriptor, ?retType) :-
+  Method_Descriptor(?method, ?descriptor),
+  Method_ReturnType(?method, ?retType).
+
+MethodType_Arity(?descriptor, ?arity) :-
+  Method_Descriptor(?method, ?descriptor),
+  Method_Arity(?method, ?arity).
+
+.decl MethodType_AdjustedReturnType(?descriptor:symbol, ?adjType:Type, ?retType:Type)
 
 // We treat method descriptors as MethodType values (with slight
 // changes, e.g. in the treatment of 'void' or constructors).
 
 // Return types for non-constructors.
-MethodType_ReturnType(?descriptor, ?declType, ?retType) :-
+MethodType_AdjustedReturnType(?descriptor, ?declType, ?retType) :-
   Method_Descriptor(?method, ?descriptor),
   Method_ReturnType(?method, ?retType),
   Method_SimpleName(?method, ?name),
@@ -349,15 +402,14 @@ MethodType_ReturnType(?descriptor, ?declType, ?retType) :-
   Method_DeclaringType(?method, ?declType).
 
 // Return types for constructors are not "void" but the type constructed.
-MethodType_ReturnType(?descriptor, ?retType, ?retType) :-
+MethodType_AdjustedReturnType(?descriptor, ?retType, ?retType) :-
   Method_Descriptor(?method, ?descriptor),
   Method_SimpleName(?method, "<init>"),
   Method_DeclaringType(?method, ?retType).
 
-MethodType_ParamType(?descriptor, ?index, ?pType) :-
-  Method_Descriptor(?method, ?descriptor),
-  FormalParam(?index, ?method, ?var),
-  _Var_Type(?var, ?pType).
+// Method handles that interact with reflection are exprerimental, use
+// corresponding command-line option to enable them.
+#ifdef REFLECTION_METHOD_HANDLES
 
 #ifdef REFLECTION
 
@@ -401,16 +453,10 @@ MT_ParamValue(?invo, 0, MT_NOARGS_VALUE) :-
 
 MTReturnTypeMatchesDescriptor(?invo, ?descriptor) :-
    MT_ReturnType(?invo, "java.lang.Void"),
-   MethodType_ReturnType(?descriptor, _, "void").
+   MethodType_ReturnType(?descriptor, "void").
 MTReturnTypeMatchesDescriptor(?invo, ?descriptor) :-
    MT_ReturnType(?invo, ?rType),
-   MethodType_ReturnType(?descriptor, _, ?rType).
-
-.decl Descriptor_Arity(?descriptor:symbol, ?arity:number)
-
-Descriptor_Arity(?descriptor, ?arity) :-
-  Method_Descriptor(?method, ?descriptor),
-  Method_Arity(?method, ?arity).
+   MethodType_ReturnType(?descriptor, ?rType).
 
 .decl MTCallMatchesDescriptor(?invo:MethodInvocation, ?descriptor:symbol)
 
@@ -419,7 +465,7 @@ MTCallMatchesDescriptor(?invo, ?descriptor) :-
    MTEntryPoint(1, ?invo, _),
    MTReturnTypeMatchesDescriptor(?invo, ?descriptor),
    MT_ParamValue(?invo, 0, MT_NOARGS_VALUE),
-   Descriptor_Arity(?descriptor, 0).
+   MethodType_Arity(?descriptor, 0).
 
 // MethodType2.
 MTCallMatchesDescriptor(?invo, ?descriptor) :-
@@ -428,7 +474,7 @@ MTCallMatchesDescriptor(?invo, ?descriptor) :-
    MT_ParamValue(?invo, 0, ?classValue0),
    ReifiedClass(?pType0, ?classValue0),
    MethodType_ParamType(?descriptor, 0, ?pType0),
-   Descriptor_Arity(?descriptor, 1).
+   MethodType_Arity(?descriptor, 1).
 
 .decl MTValue_Descriptor(?mt:Value, ?descriptor:symbol)
 

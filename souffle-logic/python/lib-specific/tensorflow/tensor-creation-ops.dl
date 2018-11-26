@@ -2,7 +2,6 @@
 //                                          PLACEHOLDER INVOC
 //----------------------------------------------------------------------------------------------------------------------
 
-#define PlaceHolderValueMacro(op,fun, index, val1, val2) cat("<tensor ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val1, cat("+", cat(val2, ">"))))))))
 
 .decl PlaceholderOperation(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderOp:Value)
 .output PlaceholderOperation
@@ -28,9 +27,7 @@ PlaceholderOperation(?ctx, ?insn, ?placeHolderOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.placeholder>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.placeholder>", "dtype", ?typeHctx, ?typeVal),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.placeholder>", "shape", ?dimListHctx, ?dimListArgVal),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?placeHolderOp = PlaceHolderValueMacro("placeholder", ?fun, ?index, ?typeVal, ?dimListArgVal).
+  ?placeHolderOp = TwoInValTensorValMacro("placeholder", ?insn, ?typeVal, ?dimListArgVal).
 
 PlaceholderOperationOutDtype(?ctx, ?insn, ?placeHolderOp, ?typeHctx, ?typeVal):-
   PlaceholderOperation(?ctx, ?insn, ?placeHolderOp),
@@ -60,21 +57,16 @@ TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderOp):-
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?size),
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
   PlaceholderOperation(?ctx, ?insn, ?placeHolderOpVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderOpVal),
+  TensorOpOutputShape(?ctx, ?insn, ?placeHolderOpVal, ?shapeHctx, ?tensorShapeVal),
   PlaceholderOperationKnownShape(?ctx, ?insn, ?placeHolderOpVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?placeHolderOpVal, "shape", ?dimListHctx, ?dimListArgVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?placeHolderOpVal, ?ctx, ?var),
-  TensorShape(?hctx, ?placeHolderOpVal, ?shapeHctx, ?tensorShapeVal),
   ListInitialLength(?dimListArgVal, ?size),
   ListOfConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, ?index, ?indexValue).
 
 TensorDType(?tensorHctx, ?placeHolderOpVal, ?dtypeHctx, ?typeVal):-
   PlaceholderOperation(?ctx, ?insn, ?placeHolderOpVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderOpVal),
-  PlaceholderOperationOutDtype(?ctx, ?insn, ?placeHolderOpVal, ?dtypeHctx, ?typeVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?tensorHctx, ?placeHolderOpVal, ?ctx, ?var).
+  TensorOpOutputWithHctx(?ctx, ?insn, ?tensorHctx, ?placeHolderOpVal),
+  PlaceholderOperationOutDtype(?ctx, ?insn, ?placeHolderOpVal, ?dtypeHctx, ?typeVal).
 
 //----------------------------------------------------------------------------------------------------------------------
 //                                          PLACHOLDER EVALUATION
@@ -161,10 +153,7 @@ TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderEvalOp):-
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len),
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
   PlaceholderEvaluationOp(?ctx, ?insn, ?placeHolderEvalOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?placeHolderEvalOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?placeHolderEvalOp, ?ctx, ?var),
-  TensorShape(?hctx, ?placeHolderEvalOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?placeHolderEvalOp, ?shapeHctx, ?tensorShapeVal),
   PlaceholderEvaluationOpEvalArg(?ctx, ?insn, ?placeHolderEvalOp, ?argHctx, ?argVal),
   TensorLikeObjectShapeListContent(?argHctx, ?argVal, ?index, ?indexVal),
   TensorLikeObjectShapeListLength(?argHctx, ?argVal, ?len).
@@ -243,9 +232,7 @@ ZerosOrOnesOp(?ctx, ?insn, ?zerosOrOnesOpVal):-
   ResolvedActualParamValue(?ctx, ?insn, ?function, "shape", ?dimListHctx, ?dimListArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "dtype", ?typeHctx, ?typeVal),
   HeapAllocation_Type(?typeVal, ?typeValType),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?zerosOrOnesOpVal = PlaceHolderValueMacro("zeros-ones", ?fun, ?index, ?typeValType, ?dimListArgVal).
+  ?zerosOrOnesOpVal = TwoInValTensorValMacro("zeros-ones", ?insn, ?typeValType, ?dimListArgVal).
 
 TensorOperationProducesOutput(?ctx, ?insn, ?zerosOrOnesOpVal):-
   ZerosOrOnesOp(?ctx, ?insn, ?zerosOrOnesOpVal),
@@ -260,19 +247,15 @@ TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?size),
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
   ZerosOrOnesOp(?ctx, ?insn, ?zerosOrOnesOpVal),
   TensorOperationProducesOutput(?ctx, ?insn, ?zerosOrOnesOpVal),
+  TensorOpOutputShape(?ctx, ?insn, ?zerosOrOnesOpVal, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?zerosOrOnesOpVal, "shape", ?dimListHctx, ?dimListArgVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?zerosOrOnesOpVal, ?ctx, ?var),
-  TensorShape(?hctx, ?zerosOrOnesOpVal, ?shapeHctx, ?tensorShapeVal),
   ListInitialLength(?dimListArgVal, ?size),
   ListOfConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, ?index, ?indexValue).
 
 TensorDType(?tensorHctx, ?zerosOrOnesOpVal, ?dtypeHctx, ?typeVal):-
   ZerosOrOnesOp(?ctx, ?insn, ?zerosOrOnesOpVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?zerosOrOnesOpVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?zerosOrOnesOpVal, "dtype", ?dtypeHctx, ?typeVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?tensorHctx, ?zerosOrOnesOpVal, ?ctx, ?var).
+  TensorOpOutputWithHctx(?ctx, ?insn, ?tensorHctx, ?zerosOrOnesOpVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?zerosOrOnesOpVal, "dtype", ?dtypeHctx, ?typeVal).
 
 //----------------------------------------------------------------------------------------------------------------------
 //                                          ZEROS/ONES_LIKE
@@ -292,9 +275,7 @@ ZerosOrOnesLikeOp(?ctx, ?insn, ?zerosOrOnesOpVal):-
   ResolvedActualParamValue(?ctx, ?insn, ?function, "tensor", ?inTensorHctx, ?inTensor),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "dtype", ?typeHctx, ?typeVal),
   HeapAllocation_Type(?typeVal, ?typeValType),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?zerosOrOnesOpVal = PlaceHolderValueMacro("zeros-ones-like", ?fun, ?index, ?inTensor, ?typeValType).
+  ?zerosOrOnesOpVal = TwoInValTensorValMacro("zeros-ones-like", ?insn, ?inTensor, ?typeValType).
 
 TensorOperationProducesOutput(?ctx, ?insn, ?zerosOrOnesOpVal):-
   ZerosOrOnesLikeOp(?ctx, ?insn, ?zerosOrOnesOpVal),
@@ -304,22 +285,17 @@ TensorOperationProducesOutput(?ctx, ?insn, ?zerosOrOnesOpVal):-
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?size),
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
   ZerosOrOnesLikeOp(?ctx, ?insn, ?zerosOrOnesOpVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?zerosOrOnesOpVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?zerosOrOnesOpVal, "tensor", ?inTensorHctx, ?inTensor),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?zerosOrOnesOpVal, ?ctx, ?var),
-  TensorShape(?hctx, ?zerosOrOnesOpVal, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?zerosOrOnesOpVal, ?shapeHctx, ?tensorShapeVal),
   TensorShape(?inTensorHctx, ?inTensor, ?inShapeHctx, ?inTensorShape),
   TensorShapeListLength(?inShapeHctx, ?inTensorShape, ?size),
   TensorShapeListContent(?inShapeHctx, ?inTensorShape, ?index, ?indexValue).
 
 TensorDType(?tensorHctx, ?zerosOrOnesOpVal, ?dtypeHctx, ?typeVal):-
   ZerosOrOnesLikeOp(?ctx, ?insn, ?zerosOrOnesOpVal),
-  TensorOperationProducesOutput(?ctx, ?insn, ?zerosOrOnesOpVal),
+  TensorOpOutputWithHctx(?ctx, ?insn, ?tensorHctx, ?zerosOrOnesOpVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?zerosOrOnesOpVal, "dtype", ?dtypeHctx, ?typeVal),
-  ?typeVal != "<None>",
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?tensorHctx, ?zerosOrOnesOpVal, ?ctx, ?var).
+  ?typeVal != "<None>".
 
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?zerosOrOnesOpVal, "tensor"):-
   ZerosOrOnesLikeOp(?ctx, ?insn, ?zerosOrOnesOpVal),
@@ -338,8 +314,6 @@ TensorOperation_GetDTypeFromName(?ctx, ?insn, ?zerosOrOnesOpVal, "tensor"):-
 //----------------------------------------------------------------------------------------------------------------------
 //                                           CONSTANT
 //----------------------------------------------------------------------------------------------------------------------
-
-#define TfConstantValueMacro(op,fun, index, val1, val2, val3) cat("<tensor ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val1, cat("+", cat(val2, cat("+", cat(val3, ">"))))))))))
 
 .decl TfConstantOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?constOp:Value)
 .output TfConstantOp
@@ -367,9 +341,7 @@ TfConstantOp(?ctx, ?insn, ?constOp):-
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.constant>", "value", ?inValueHctx, ?inValue),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.constant>", "dtype", ?typeHctx, ?typeVal),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.constant>", "shape", ?dimListHctx, ?dimListArgVal),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?constOp = TfConstantValueMacro("tfconstant", ?fun, ?index, ?inValue, ?typeVal, ?dimListArgVal).
+  ?constOp = ThreeInValTensorValMacro("tfconstant", ?insn, ?inValue, ?typeVal, ?dimListArgVal).
 
 //Case where we know shape and dtype and we just dont care.
 TensorOperationProducesOutput(?ctx, ?insn, ?constOp):-
@@ -451,25 +423,17 @@ TfConstantOpOutDtype(?ctx, ?insn, ?constOp, ?typeHctx, ?typeVal):-
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
   TfConstantOp(?ctx, ?insn, ?constOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?constOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?constOp, ?ctx, ?var),
-  TensorShape(?hctx, ?constOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?constOp, ?shapeHctx, ?tensorShapeVal),
   TfConstantOpOutShapeLength(?ctx, ?insn, ?constOp, ?len).
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?dimNum, ?dimVal):-
   TfConstantOp(?ctx, ?insn, ?constOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?constOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?constOp, ?ctx, ?var),
-  TensorShape(?hctx, ?constOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?constOp, ?shapeHctx, ?tensorShapeVal),
   TfConstantOpOutShapeContent(?ctx, ?insn, ?constOp, ?dimNum, ?dimVal).
 
 TensorDType(?hctx, ?constOp, ?dtypeHctx, ?dtype):-
   TfConstantOp(?ctx, ?insn, ?constOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?constOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?constOp, ?ctx, ?var),
+  TensorOpOutputWithHctx(?ctx, ?insn, ?hctx, ?constOp),
   TfConstantOpOutDtype(?ctx, ?insn, ?constOp, ?dtypeHctx, ?dtype).
 
 //Case we have to find the shape of the input value ¯\_(ツ)_/¯
@@ -494,9 +458,7 @@ TfVariableOp(?ctx, ?insn, ?varOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.Variable>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.Variable>", "dtype", ?typeHctx, ?typeVal),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.Variable>", "initial_value", ?inValueHctx, ?inValue),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?varOp = PlaceHolderValueMacro("variable", ?fun, ?index, ?inValue, ?typeVal).
+  ?varOp = TwoInValTensorValMacro("variable", ?insn, ?inValue, ?typeVal).
 
 //Case of val with 0 shape
 TensorOperationProducesOutput(?ctx, ?insn, ?varOp):-
@@ -534,36 +496,25 @@ TfVariableOpOutDtype(?ctx, ?insn, ?varOp, ?typeHctx, ?typeVal):-
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, 0):-
   TfVariableOp(?ctx, ?insn, ?varOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?varOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?varOp, ?ctx, ?var),
-  TensorShape(?hctx, ?varOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?varOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?varOp, "initial_value", _, ?inValue),
   Value_Num(?inValue, _).
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
   TfVariableOp(?ctx, ?insn, ?varOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?varOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?varOp, ?ctx, ?var),
-  TensorShape(?hctx, ?varOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?varOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?varOp, "initial_value", ?inValueHctx, ?inValue),
   TensorLikeObjectShapeListLength(?inValueHctx, ?inValue, ?len).
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
   TfVariableOp(?ctx, ?insn, ?varOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?varOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?varOp, ?ctx, ?var),
-  TensorShape(?hctx, ?varOp, ?shapeHctx, ?tensorShapeVal),
+  TensorOpOutputShape(?ctx, ?insn, ?varOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?varOp, "initial_value", ?inValueHctx, ?inValue),
   TensorLikeObjectShapeListContent(?inValueHctx, ?inValue, ?index, ?indexValue).
 
 TensorDType(?hctx, ?varOp, ?dtypeHctx, ?dtype):-
   TfVariableOp(?ctx, ?insn, ?varOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?varOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?varOp, ?ctx, ?var),
+  TensorOpOutputWithHctx(?ctx, ?insn, ?hctx, ?varOp),
   TfVariableOpOutDtype(?ctx, ?insn, ?varOp, ?dtypeHctx, ?dtype).
 
 
@@ -589,9 +540,7 @@ TfRandTensorOp(?ctx, ?insn, ?randOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, ?toFunction),
   ResolvedActualParamValue(?ctx, ?insn, ?toFunction, "shape", ?shapeListHctx, ?shapeList),
   ResolvedActualParamValue(?ctx, ?insn, ?toFunction, "dtype", ?typeHctx, ?typeVal),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?randOp = PlaceHolderValueMacro(?opName, ?fun, ?index, ?shapeList, ?typeVal).
+  ?randOp = TwoInValTensorValMacro(?opName, ?insn, ?shapeList, ?typeVal).
 
 TensorOperationProducesOutput(?ctx, ?insn, ?randOp):-
   TfRandTensorOp(?ctx, ?insn, ?randOp),
@@ -601,17 +550,12 @@ TensorOperationProducesOutput(?ctx, ?insn, ?randOp):-
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?size),
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
   TfRandTensorOp(?ctx, ?insn, ?randOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?randOp),
+  TensorOpOutputShape(?ctx, ?insn, ?randOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?insn, ?randOp, "shape", ?dimListHctx, ?dimListArgVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?randOp, ?ctx, ?var),
-  TensorShape(?hctx, ?randOp, ?shapeHctx, ?tensorShapeVal),
   ListInitialLength(?dimListArgVal, ?size),
   ListOfConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, ?index, ?indexValue).
 
 TensorDType(?tensorHctx, ?randOp, ?dtypeHctx, ?typeVal):-
   TfRandTensorOp(?ctx, ?insn, ?randOp),
-  TensorOperationProducesOutput(?ctx, ?insn, ?randOp),
-  TensorOperation_NameToVal(?ctx, ?insn, ?randOp, "dtype", ?dtypeHctx, ?typeVal),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?tensorHctx, ?randOp, ?ctx, ?var).
+  TensorOpOutputWithHctx(?ctx, ?insn, ?tensorHctx, ?randOp),
+  TensorOperation_NameToVal(?ctx, ?insn, ?randOp, "dtype", ?dtypeHctx, ?typeVal).

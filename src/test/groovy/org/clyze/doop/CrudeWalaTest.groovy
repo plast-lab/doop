@@ -19,8 +19,8 @@ class CrudeWalaTest extends Specification {
 		analysis = Main.analysis
 
 		then:
-		relationHasApproxSize(analysis, "CallGraphEdge", 63974)
-		relationHasApproxSize(analysis, "VarPointsTo", 2755187)
-		relationHasApproxSize(analysis, "ReachableContext", 9297)
+		relationHasApproxSize(analysis, "CallGraphEdge", 73000)
+		relationHasApproxSize(analysis, "VarPointsTo", 3200000)
+		relationHasApproxSize(analysis, "ReachableContext", 11000)
 	}
 }

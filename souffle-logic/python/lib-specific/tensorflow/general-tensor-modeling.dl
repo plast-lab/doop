@@ -65,8 +65,20 @@ TensorLikeObjectToTensorDtype(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype):-
 .decl TensorShape(?tensorHctx:configuration.HContext, ?tensor:Value, ?shapeHctx:configuration.HContext, ?shapeList:Value)
 .output TensorShape
 
+.decl TensorOpOutputWithHctx(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?opValHctx:configuration.HContext, ?operationVal:Value)
+.output TensorOpOutputWithHctx
+
+.decl TensorOpOutputShape(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?shapeHctx:configuration.HContext, ?shapeVal:Value)
+.output TensorOpOutputShape
+
 .decl TensorDType(?tensorHctx:configuration.HContext, ?tensor:Value, ?dtypeHctx:configuration.HContext, ?dtype:Value)
 .output TensorDType
+
+.decl isTensorVal(?val:Value)
+.output isTensorVal
+
+isTensorVal(?val):-
+  Value_Type(?val, "<tensorflow.Tensor>").
 
 configuration.RecordContextRequest(?ctx, ?outTensorVal, ?var) :-
   TensorOperationProducesOutput(?ctx, ?insn, ?outTensorVal),
@@ -83,6 +95,16 @@ Value_Type(?outTensorVal, "<tensorflow.Tensor>"):-
   AssignInstruction_To(?insn, ?var),
   ?tensorShapeVal = cat("<shape ",cat(?outTensorVal, ">")),
   isImmutableHContext(?immutableHctx).
+
+
+TensorOpOutputWithHctx(?ctx, ?insn, ?hctx, ?outTensorVal):-
+  TensorOperationProducesOutput(?ctx, ?insn, ?outTensorVal),
+  AssignInstruction_To(?insn, ?var),
+  VarPointsTo(?hctx, ?outTensorVal, ?ctx, ?var).
+
+TensorOpOutputShape(?ctx, ?insn, ?outTensorVal, ?shapeHctx, ?shape):-
+  TensorOpOutputWithHctx(?ctx, ?insn, ?hctx, ?outTensorVal),
+  TensorShape(?hctx, ?outTensorVal, ?shapeHctx, ?shape).
 
 TensorDType(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype):-
   TensorOperationProducesOutput(?ctx, ?insn, ?tensor),
