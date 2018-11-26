@@ -32,7 +32,7 @@ public class PythonFactGenerator implements Runnable{
 
     //The classes that are in the class hierarchy by default
     //Useful on our current one-classhierarchy-per-file approach
-    private static final String[] DEFAULT_CLASSES = new String[]{"list", "Root", "Exception", "object", "CodeBody", "trampoline"};
+    private static final String[] DEFAULT_CLASSES = new String[]{"Root", "Exception", "CodeBody", "trampoline"};
     private static final Collection<String> defaultClasses = new HashSet<>(Arrays.asList(DEFAULT_CLASSES));
 
     PythonFactGenerator(PythonFactWriter writer, Set<IClass> iClasses, String outDir, IAnalysisCacheView analysisCache)
@@ -78,7 +78,7 @@ public class PythonFactGenerator implements Runnable{
 
                 String clRepr = _writer.writeClassOrInterfaceType(iClass);
                 iClass.getAllFields().forEach(this::generate);
-                System.out.println("Adding Class <" + clRepr + ">");
+                System.out.println("Adding Class " + clRepr);
 
                 if (iClass.getSuperclass() != null && !iClass.isInterface()) {//Currently all seem to have object as a superclass, something not working on WALA's part
                     _writer.writeDirectSuperclass(iClass, iClass.getSuperclass());

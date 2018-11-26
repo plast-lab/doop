@@ -79,12 +79,14 @@ public class PythonRepresentation {
                 if(i!= classNameParts.length -1)
                     className+=":";
             }
+            return "<" + declaringModule + ":" + className + ">";
         }
         else {
             declaringModule = "BUILTIN";
             className = classNameParts[0];
+            return "<" +className + ">";
         }
-        return "<" + declaringModule + ":" + className + ">";
+        //return "<" + declaringModule + ":" + className + ">";
     }
 
     String methodTypeConstant(String s) {
