@@ -48,7 +48,7 @@ import static org.clyze.doop.util.TypeUtils.raiseTypeId;
  * Writes facts for a single method found in a .dex class.
  */
 class DexMethodFactWriter extends JavaFactWriter {
-    private static final boolean extractRegisterTypes = true;
+    private static final boolean extractRegisterTypes = false;
 
     private static final boolean debug = false;
     private static final Log logger = debug ? LogFactory.getLog(DexMethodFactWriter.class) : null;
@@ -286,14 +286,14 @@ class DexMethodFactWriter extends JavaFactWriter {
         for (DebugItem di : debugItems) {
             if (di instanceof StartLocal) {
                 StartLocal sl = (StartLocal)di;
-                writeRegisterType(sl.getRegister(), raiseTypeId(sl.getType()));
+                // writeRegisterType(sl.getRegister(), raiseTypeId(sl.getType()));
             } else if (di instanceof EndLocal) {
                 EndLocal el = (EndLocal)di;
-                writeRegisterType(el.getRegister(), raiseTypeId(el.getType()));
+                // writeRegisterType(el.getRegister(), raiseTypeId(el.getType()));
             } else if (di instanceof RestartLocal) {
                 RestartLocal rl = (RestartLocal)di;
                 int reg = rl.getRegister();
-                writeLocal(local(reg), raiseTypeId(rl.getType()), methId);
+                // writeRegisterType(reg, raiseTypeId(rl.getType()));
             } else if (di instanceof ImmutableLineNumber) {
                 ImmutableLineNumber lineNo = ((ImmutableLineNumber) di);
                 lineNumbers.put(lineNo.getCodeAddress(), lineNo.getLineNumber());
