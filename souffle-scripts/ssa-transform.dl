@@ -587,6 +587,7 @@ RewriteAssignCast(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
 .decl RewriteAssignCastNull(?insn:symbol, ?index:number, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .output RewriteAssignCastNull(filename="AssignCastNull.facts")
 
+SSA_Type(?to, ?type),
 RewriteAssignCastNull(?insn, ?index, ?to, ?type, ?inmethod) :-
     SSA_AssignCastNull(?insn, _, ?to, ?inmethod),
     AssignCast_Type(?insn, ?type),
@@ -595,6 +596,7 @@ RewriteAssignCastNull(?insn, ?index, ?to, ?type, ?inmethod) :-
 .decl RewriteAssignCastNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .output RewriteAssignCastNumConstant(filename="AssignCastNumConstant.facts")
 
+SSA_Type(?to, ?type),
 RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod) :-
     SSA_AssignCastNumConstant(?insn, _, ?to, ?inmethod),
     AssignCast_Type(?insn, ?type),
@@ -621,6 +623,7 @@ RewriteAssignOperFrom(?insn, ?pos, ?from) :-
 .decl RewriteAssignInstanceOf(?insn:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .output RewriteAssignInstanceOf(filename="AssignInstanceOf.facts")
 
+SSA_Type(?to, ?type),
 RewriteAssignInstanceOf(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
     SSA_AssignInstanceOf(?insn, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index),
