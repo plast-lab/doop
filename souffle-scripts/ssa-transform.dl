@@ -916,3 +916,13 @@ RewriteVarDeclaringMethod(?var, ?method) :-
 SSA_Type(?to, ?type) :-
     RewriteAssignLocal(_, _, ?to, ?from, _),
     SSA_Type(?from, ?type).
+
+SSA_Type(?to, ?type) :-
+    SSA_FormalParam(_, _, ?to),
+    SSA_Alias(?to, ?to_origin),
+    Var_Type(?to_origin, ?type).
+
+SSA_Type(?to, ?type) :-
+    SSA_ThisVar(_, ?to),
+    SSA_Alias(?to, ?to_origin),
+    Var_Type(?to_origin, ?type).
