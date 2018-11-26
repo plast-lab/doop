@@ -68,119 +68,88 @@ VarPointsToConstIntValue(?hctx, ?value, ?ctx, ?var) :-
   isIntConstant(?num).
 
 VarHasConstNoneValue(?value, ?var),
-configuration.RecordContextRequest(?ctx, ?value, ?var) :-
+VarPointsTo(?immutableHctx, ?value, ?ctx, ?var):-
   Reachable(?function),
   ReachableContext(?ctx, ?function),
   Instruction_Function(?instr, ?function),
   isAssignNone_Insn(?instr),
   AssignInstruction_To(?instr, ?var),
-  ?value = "<None>".
-
-VarPointsTo(?hctx, ?value, ?ctx, ?var):-
-  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
-  ?value = "<None>".
+  ?value = "<None>",
+  isImmutableHContext(?immutableHctx).
 
 Value_Num(?value, ?num),
 VarHasConstFloatValue(?value, ?var),
-configuration.RecordContextRequest(?ctx, ?value, ?var) :-
+VarPointsTo(?immutableHctx, ?value, ?ctx, ?var) :-
   Reachable(?function),
   ReachableContext(?ctx, ?function),
   Instruction_Function(?instr, ?function),
   AssignFloatConstant_Id(?instr, ?num),
   AssignInstruction_To(?instr, ?var),
-  ?value = cat(cat("<num-constant(float):", ?num),">").
-
-VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-  Reachable(?function),
-  ReachableContext(?ctx, ?function),
-  Instruction_Function(?instr, ?function),
-  AssignFloatConstant_Id(?instr, ?num),
-  AssignInstruction_To(?instr, ?var),
-  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
-  ?value = cat(cat("<num-constant(float):", ?num),">").
+  ?value = cat(cat("<num-constant(float):", ?num),">"),
+  isImmutableHContext(?immutableHctx).
 
 Value_Num(?value,?num),
 VarHasConstIntValue(?value, ?var),
-configuration.RecordContextRequest(?ctx, ?value, ?var) :-
+VarPointsTo(?immutableHctx, ?value, ?ctx, ?var):-
   Reachable(?function),
   ReachableContext(?ctx, ?function),
   Instruction_Function(?instr, ?function),
   AssignIntConstant_Id(?instr, ?num),
   AssignInstruction_To(?instr, ?var),
-  ?value = cat(cat("<num-constant(int):", ?num),">").
+  ?value = cat(cat("<num-constant(int):", ?num),">"),
+  isImmutableHContext(?immutableHctx).
 
-Value_Num(?value,?res),
-//VarHasConstIntValue(?hctx, ?value, ?ctx, ?var),
-configuration.RecordContextRequest(?ctx, ?value, ?var) :-
+NewIntConstantValue(?value, ?resStr),
+VarPointsTo(?immutableHctx, ?value, ?ctx, ?var):-
   Reachable(?function),
   ReachableContext(?ctx, ?function),
+  isAssignBinop_Insn(?instr),
   Instruction_Function(?instr, ?function),
   AssignInstruction_To(?instr, ?var),
-  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
-  BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res),
-  ?value = cat(cat("<num-constant(int):", ?res),">").
+  BinaryIntOp(?ctx, ?instr, ?res),
+  ?resStr = to_string(?res),
+  ?value = cat(cat("<num-constant(int):", ?resStr),">"),
+  isImmutableHContext(?immutableHctx).
 
-VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-  Reachable(?function),
-  ReachableContext(?ctx, ?function),
-  Instruction_Function(?instr, ?function),
-  AssignIntConstant_Id(?instr, ?num),
-  AssignInstruction_To(?instr, ?var),
-  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
-  ?value = cat(cat("<num-constant(int):", ?num),">").
-
-VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-  Reachable(?function),
-  ReachableContext(?ctx, ?function),
-  Instruction_Function(?instr, ?function),
-  AssignInstruction_To(?instr, ?var),
-  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
-  BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res),
-  configuration.RecordContextResponse(?ctx, ?value, ?var, ?hctx),
-  ?value = cat(cat("<num-constant(int):", ?res),">").
-
-.decl BinaryIntOp(?ctx: configuration.Context, ?instr:Instruction, ?var1:Var, ?var2:Var, ?op:symbol, ?res:IntConstant)
+.decl BinaryIntOp(?ctx: configuration.Context, ?instr:Instruction, ?res:number)
 .output BinaryIntOp
 
-isIntConstant(?res),
-BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res) :-
+
+BinaryIntOp(?ctx, ?instr, ?res) :-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
   VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
   VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),
-  Value_Num(?numConstVal1, ?numConst1),
-  Value_Num(?numConstVal2, ?numConst2),
+  IntConstantValue_ActualNum(?numConstVal1, ?num1),
+  IntConstantValue_ActualNum(?numConstVal2, ?num2),
   ?op = "add",
-  ?res = to_string(to_number(?numConst1) + to_number(?numConst2)).
+  ?res = ?num1 + ?num2.
 
-isIntConstant(?res),
-BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res):-
+
+BinaryIntOp(?ctx, ?instr, ?res):-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
   VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
   VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),
-  Value_Num(?numConstVal1, ?numConst1),
-  Value_Num(?numConstVal2, ?numConst2),
+  IntConstantValue_ActualNum(?numConstVal1, ?num1),
+  IntConstantValue_ActualNum(?numConstVal2, ?num2),
   ?op = "sub",
-  ?res = to_string(to_number(?numConst1) - to_number(?numConst2)).
+  ?res = ?num1 - ?num2.
 
-isIntConstant(?res),
-BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res):-
+
+BinaryIntOp(?ctx, ?instr, ?res):-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
   VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
   VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),
-  Value_Num(?numConstVal1, ?numConst1),
-  Value_Num(?numConstVal2, ?numConst2),
+  IntConstantValue_ActualNum(?numConstVal1, ?num1),
+  IntConstantValue_ActualNum(?numConstVal2, ?num2),
   ?op = "mul",
-  ?res = to_string(to_number(?numConst1) * to_number(?numConst2)).
+  ?res = ?num1 * ?num2.
 
 //TODO: Maybe perform some checks that the result of this is Int
-isIntConstant(?res),
-BinaryIntOp(?ctx, ?instr, ?var1, ?var2, ?op, ?res):-
+BinaryIntOp(?ctx, ?instr, ?res):-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
   VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
   VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),
-  Value_Num(?numConstVal1,?numConst1),
-  Value_Num(?numConstVal2,?numConst2),
-  ?intConst1 = to_number(?numConst1),
-  ?intConst2 = to_number(?numConst2),
+  IntConstantValue_ActualNum(?numConstVal1, ?num1),
+  IntConstantValue_ActualNum(?numConstVal2, ?num2),
   ?op = "div",
-  ?res = to_string(?intConst1 / ?intConst2).
+  ?res = ?num1 / ?num2.
