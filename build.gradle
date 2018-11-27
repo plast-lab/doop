@@ -114,9 +114,6 @@ dependencies {
             "ext:herosclasses:1.1",
             "ext:axml:2.0",
             "org.smali:util:2.2.5",                              // Dexlib2 utilities
-            "com.google.guava:guava:23.0",
-            "ext:scaler:1.0",
-            "ext:zipper:1.0"
 
     // JimpleParser
     antlr   "org.antlr:antlr4:4.5.1-1"
