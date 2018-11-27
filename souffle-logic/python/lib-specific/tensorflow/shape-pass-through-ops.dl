@@ -1,4 +1,3 @@
-#define SingleInValTensorValMacro(op,fun, index, val) cat("<tensor", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val, ">"))))))
 
 .decl ShapePassThroughFunction(?function:Function, ?name:symbol, ?declModule:Module, ?argName:symbol)
 .output ShapePassThroughFunction
@@ -34,9 +33,7 @@ ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp):-
   ShapePassThroughFunction(?function, ?funName, _, ?argName),
   FunctionInvResolvesTo(?ctx, ?insn, _, _, ?function),
   ResolvedActualParamValue(?ctx, ?insn, ?function, ?argName, ?inValueHctx, ?inValue),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?shapePassThroughOp = SingleInValTensorValMacro(?funName, ?fun, ?index, ?inValue).
+  ?shapePassThroughOp = SingleInValTensorValMacro(?funName, ?insn, ?inValue).
 
 TensorOperationProducesOutput(?ctx, ?insn, ?shapePassThroughOp):-
   ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp),

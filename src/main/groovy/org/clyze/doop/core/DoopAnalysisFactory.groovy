@@ -28,7 +28,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
 	static final String HASH_ALGO = "SHA-256"
 	static final availableConfigurations = [
-			"scaler"                             : "ScalerConfiguration",
 			"twophase-A"                         : "TwoPhaseAConfiguration",
 			"twophase-B"                         : "TwoPhaseBConfiguration",
 			"dependency-analysis"                : "TwoObjectSensitivePlusHeapConfiguration",
@@ -126,8 +125,15 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			else {
 				if (options.USER_DEFINED_PARTITIONS.value)
 					return new SoufflePartitionedAnalysis(options, context, commandsEnv)
-				else
-					return new SouffleAnalysis(options, context, commandsEnv)
+				else {
+					if (options.ANALYSIS.value == "fully-guided-context-sensitive") {
+						return new SouffleMultiPhaseAnalysis(options, context, commandsEnv)
+					}
+					else {
+						return new SouffleAnalysis(options, context, commandsEnv)
+					}
+
+				}
 			}
 		}
 	}
@@ -382,9 +388,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				!options.HEAPDLS.value && !options.ANDROID.value &&
 				!options.DACAPO.value && !options.DACAPO_BACH.value &&
 				!options.X_START_AFTER_FACTS.value) {
-			log.info "WARNING: No main class was found. This will trigger open-program analysis!"
-			if (!options.OPEN_PROGRAMS.value)
-				options.OPEN_PROGRAMS.value = "concrete-types"
+			if (options.DISCOVER_MAIN_METHODS.value) {
+				log.info "WARNING: No main class was found. Using --${options.DISCOVER_MAIN_METHODS.name}"
+			} else {
+				log.info "WARNING: No main class was found. This will trigger open-program analysis!"
+				if (!options.OPEN_PROGRAMS.value)
+					options.OPEN_PROGRAMS.value = "concrete-types"
+			}
 		}
 
 		if (options.X_DRY_RUN.value) {

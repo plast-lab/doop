@@ -16,6 +16,7 @@
   #include "comprehension.dl"
   #include "../lib-specific/modeled.dl"
   #include "../lib-specific/default-python-lib.dl"
+  #include "../lib-specific/lib-macros.dl"
   #include "../lib-specific/tensorflow/tensorflow.dl"
   #include "../lib-specific/tensorflow/general-tensor-modeling.dl"
   #include "../lib-specific/tensorflow/tensor-creation-ops.dl"
@@ -76,6 +77,14 @@
     Value_String(?value, _);
     isNoneValue(?value).
 
+  isIntConstantValue(?value):-
+    Value_Num(?value, ?const),
+    isIntConstant(?const).
+
+  isFloatConstantValue(?value):-
+      Value_Num(?value, ?const),
+      isFloatConstant(?const).
+
   isNonHeapValue(?value):-
     Value_Num(?value, _);
     isNoneValue(?value).
@@ -83,6 +92,12 @@
   Value_Type(?value, ?type),
   isHeapValue(?value):-
     HeapAllocation_Type(?value, ?type).
+
+  .output IntConstantValue_ActualNum
+  IntConstantValue_ActualNum(?val, ?num):-
+    isIntConstantValue(?val),
+    Value_Num(?val, ?const),
+    ?num = to_number(?const).
 
   .output isNonFunctionObjectValue
   isNonFunctionObjectValue(?val):-
@@ -213,9 +228,10 @@
     isNormalHeap(?value),
     AssignInstruction_To(?insn, ?var),
     HeapAllocation_Type(?value, ?type),
-    ?type != "list",
-    ?type != "tuple",
-    ?type != "object",
+    ?type != "<list>",
+    ?type != "<tuple>",
+    ?type != "<object>",
+    ?type != "<dict>",
     isClassType(?type),
     configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
@@ -228,7 +244,7 @@
     AssignInstruction_To(?instr, ?var),
     AssignHeapAllocation_Heap(?instr, ?heap),
     OriginalHeapAllocation_Type(?heap, ?type),
-    (?type = "list"; ?type = "tuple"),
+    (?type = "<list>"; ?type = "<tuple>"),
     configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
   isPyDict(?heap),
@@ -240,7 +256,7 @@
     AssignInstruction_To(?instr, ?var),
     AssignHeapAllocation_Heap(?instr, ?heap),
     OriginalHeapAllocation_Type(?heap, ?type),
-    ?type = "dict",
+    ?type = "<dict>",
     configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
   configuration.RecordContextRequest(?ctx, ?heap, ?var) :-

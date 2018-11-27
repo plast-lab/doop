@@ -19,7 +19,7 @@ import java.util.Set;
 
 import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
 
-class DexInvoker {
+public class DexInvoker {
 
     public static void main(String[] args) throws DoopErrorCodeException {
         DexParameters dexParams = new DexParameters();

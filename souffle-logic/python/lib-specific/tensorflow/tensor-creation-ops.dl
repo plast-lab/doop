@@ -2,7 +2,6 @@
 //                                          PLACEHOLDER INVOC
 //----------------------------------------------------------------------------------------------------------------------
 
-#define PlaceHolderValueMacro(op,fun, index, val1, val2) cat("<tensor ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val1, cat("+", cat(val2, ">"))))))))
 
 .decl PlaceholderOperation(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?placeHolderOp:Value)
 .output PlaceholderOperation
@@ -28,9 +27,7 @@ PlaceholderOperation(?ctx, ?insn, ?placeHolderOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.placeholder>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.placeholder>", "dtype", ?typeHctx, ?typeVal),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.placeholder>", "shape", ?dimListHctx, ?dimListArgVal),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?placeHolderOp = PlaceHolderValueMacro("placeholder", ?fun, ?index, ?typeVal, ?dimListArgVal).
+  ?placeHolderOp = TwoInValTensorValMacro("placeholder", ?insn, ?typeVal, ?dimListArgVal).
 
 PlaceholderOperationOutDtype(?ctx, ?insn, ?placeHolderOp, ?typeHctx, ?typeVal):-
   PlaceholderOperation(?ctx, ?insn, ?placeHolderOp),
@@ -235,9 +232,7 @@ ZerosOrOnesOp(?ctx, ?insn, ?zerosOrOnesOpVal):-
   ResolvedActualParamValue(?ctx, ?insn, ?function, "shape", ?dimListHctx, ?dimListArgVal),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "dtype", ?typeHctx, ?typeVal),
   HeapAllocation_Type(?typeVal, ?typeValType),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?zerosOrOnesOpVal = PlaceHolderValueMacro("zeros-ones", ?fun, ?index, ?typeValType, ?dimListArgVal).
+  ?zerosOrOnesOpVal = TwoInValTensorValMacro("zeros-ones", ?insn, ?typeValType, ?dimListArgVal).
 
 TensorOperationProducesOutput(?ctx, ?insn, ?zerosOrOnesOpVal):-
   ZerosOrOnesOp(?ctx, ?insn, ?zerosOrOnesOpVal),
@@ -280,9 +275,7 @@ ZerosOrOnesLikeOp(?ctx, ?insn, ?zerosOrOnesOpVal):-
   ResolvedActualParamValue(?ctx, ?insn, ?function, "tensor", ?inTensorHctx, ?inTensor),
   ResolvedActualParamValue(?ctx, ?insn, ?function, "dtype", ?typeHctx, ?typeVal),
   HeapAllocation_Type(?typeVal, ?typeValType),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?zerosOrOnesOpVal = PlaceHolderValueMacro("zeros-ones-like", ?fun, ?index, ?inTensor, ?typeValType).
+  ?zerosOrOnesOpVal = TwoInValTensorValMacro("zeros-ones-like", ?insn, ?inTensor, ?typeValType).
 
 TensorOperationProducesOutput(?ctx, ?insn, ?zerosOrOnesOpVal):-
   ZerosOrOnesLikeOp(?ctx, ?insn, ?zerosOrOnesOpVal),
@@ -322,8 +315,6 @@ TensorOperation_GetDTypeFromName(?ctx, ?insn, ?zerosOrOnesOpVal, "tensor"):-
 //                                           CONSTANT
 //----------------------------------------------------------------------------------------------------------------------
 
-#define TfConstantValueMacro(op,fun, index, val1, val2, val3) cat("<tensor ", cat(fun, cat("/", cat(op, cat( to_string(index), cat(val1, cat("+", cat(val2, cat("+", cat(val3, ">"))))))))))
-
 .decl TfConstantOp(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?constOp:Value)
 .output TfConstantOp
 
@@ -350,9 +341,7 @@ TfConstantOp(?ctx, ?insn, ?constOp):-
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.constant>", "value", ?inValueHctx, ?inValue),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.constant>", "dtype", ?typeHctx, ?typeVal),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.constant>", "shape", ?dimListHctx, ?dimListArgVal),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?constOp = TfConstantValueMacro("tfconstant", ?fun, ?index, ?inValue, ?typeVal, ?dimListArgVal).
+  ?constOp = ThreeInValTensorValMacro("tfconstant", ?insn, ?inValue, ?typeVal, ?dimListArgVal).
 
 //Case where we know shape and dtype and we just dont care.
 TensorOperationProducesOutput(?ctx, ?insn, ?constOp):-
@@ -469,9 +458,7 @@ TfVariableOp(?ctx, ?insn, ?varOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.Variable>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.Variable>", "dtype", ?typeHctx, ?typeVal),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.Variable>", "initial_value", ?inValueHctx, ?inValue),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?varOp = PlaceHolderValueMacro("variable", ?fun, ?index, ?inValue, ?typeVal).
+  ?varOp = TwoInValTensorValMacro("variable", ?insn, ?inValue, ?typeVal).
 
 //Case of val with 0 shape
 TensorOperationProducesOutput(?ctx, ?insn, ?varOp):-
@@ -528,8 +515,6 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
 TensorDType(?hctx, ?varOp, ?dtypeHctx, ?dtype):-
   TfVariableOp(?ctx, ?insn, ?varOp),
   TensorOpOutputWithHctx(?ctx, ?insn, ?hctx, ?varOp),
-  AssignInstruction_To(?insn, ?var),
-  VarPointsTo(?hctx, ?varOp, ?ctx, ?var),
   TfVariableOpOutDtype(?ctx, ?insn, ?varOp, ?dtypeHctx, ?dtype).
 
 
@@ -555,9 +540,7 @@ TfRandTensorOp(?ctx, ?insn, ?randOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, ?toFunction),
   ResolvedActualParamValue(?ctx, ?insn, ?toFunction, "shape", ?shapeListHctx, ?shapeList),
   ResolvedActualParamValue(?ctx, ?insn, ?toFunction, "dtype", ?typeHctx, ?typeVal),
-  Instruction_Function(?insn, ?fun),
-  Instruction_Index(?insn, ?index),
-  ?randOp = PlaceHolderValueMacro(?opName, ?fun, ?index, ?shapeList, ?typeVal).
+  ?randOp = TwoInValTensorValMacro(?opName, ?insn, ?shapeList, ?typeVal).
 
 TensorOperationProducesOutput(?ctx, ?insn, ?randOp):-
   TfRandTensorOp(?ctx, ?insn, ?randOp),

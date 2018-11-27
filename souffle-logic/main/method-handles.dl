@@ -258,51 +258,23 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
 
 // A boxing/unboxing conversion of types including the null type.
 .decl BoxTypeConversion(?original:Type, ?new:Type)
+// Create a new allocation in the case of boxing.
+.decl BoxAllocation(?value:Value, ?type:Type)
+#define BOX_ALLOC(t) cat("mock box allocation for type ", t)
 
-BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, ?t2).
+BoxTypeConversion(?t1, ?t2),
+MockValueConsMacro(?mockAlloc, ?t2),
+BoxAllocation(?mockAlloc, ?t2) :-
+   PrimitiveType_Boxed(?t1, ?wrapperT),
+   basic.SubtypeOf(?wrapperT, ?t2),
+   ?mockAlloc = BOX_ALLOC(?t2).
 BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
 BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
 BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
 
-// Helper relation: instance methods implicitly consume one of the K
-// arguments, while static methods take all K arguments before N ones.
-.decl ImplMethodArgStart(?implMethod:Method, ?idx:number)
-ImplMethodArgStart(?implMethod, 1) :-
-   LambdaCallGraphEdge(_, _, _, ?implMethod, _),
-   ! Method_Modifier("static", ?implMethod).
-ImplMethodArgStart(?implMethod, 0) :-
-   LambdaCallGraphEdge(_, _, _, ?implMethod, _),
-   Method_Modifier("static", ?implMethod).
-
-// Pass invocation arguments to the implementing method.
-VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
-   ImplMethodArgStart(?implMethod, ?shift),
-   LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _),
-   FormalParam(?idx + ?K - ?shift, ?implMethod, ?formal),
-   ActualParam(?idx, ?i, ?actual),
-   VarPointsTo(_, ?val, _, ?actual),
-   Value_Type(?val, ?valType),
-   Var_Type(?formal, ?formalType),
-   // Check type compatibility (spec: normal case/casting/(un)boxing).
-   (basic.SubtypeOf(?valType, ?formalType);
-    basic.SubtypeOf(?formalType, ?valType);
-    BoxTypeConversion(?valType, ?formalType)),
-   isImmutableHContext(?hctx).
-
-// Pass captured arguments to the implementing method.
-VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
-   ImplMethodArgStart(?implMethod, ?shift),
-   LambdaCallSite(_, ?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
-   ?idx <= ?K - ?shift,
-   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx + ?shift, ?ctx),
-   FormalParam(?idx, ?implMethod, ?formal),
-   isImmutableHContext(?hctx).
-
-.decl InstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context)
-
-InstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?ctx) :-
+// Helper relation: implementing method is an instance method.
+.decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?lambda:LinkObject)
+CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?ctx, ?lambda) :-
    LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
    !Method_Modifier("static", ?implMethod),
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
@@ -310,12 +282,70 @@ InstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?ctx) :
    Var_Type(?this, ?thisType),
    isImmutableHContext(?hctx).
 
+// Helper relation: instance methods may implicitly consume one of the
+// K or N arguments for the receiver (shifting them by 1), while
+// static methods take all K arguments before N ones.
+.decl Params_ReceiverShiftRight(?lambda:LinkObject, ?implMethod:Method, ?shiftK:number, ?shiftN:number)
+
+Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
+   LambdaCallGraphEdge(_, _, _, ?implMethod, ?lambda),
+   Method_Modifier("static", ?implMethod).
+// No bootstrap arguments = an actual argument will be used for 'this'.
+Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
+   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, _, ?lambda),
+   DynamicMethodInvocation_DynArity(?invokedynamic, 0).
+// First bootstrap argument exists, will be used for 'this'.
+Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
+   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, _, ?lambda),
+   CallSiteCaptured(_, ?invokedynamic, _, 0, _).
+
+// Pass invocation arguments to the implementing method.
+VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
+   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
+   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
+   LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _),
+   ActualParam(?idx, ?i, ?actual),
+   FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
+   VarPointsTo(_, ?val, _, ?actual),
+   Value_Type(?val, ?valType),
+   Var_Type(?formal, ?formalType),
+   // Check type compatibility (including (un)boxing).
+   (basic.SubtypeOf(?valType, ?formalType);
+    BoxTypeConversion(?valType, ?formalType)),
+   isImmutableHContext(?hctx).
+
+// Pass captured arguments to the implementing method.
+VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
+   LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
+   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, _),
+   LambdaCallSite(_, ?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
+   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx, ?ctx),
+   ?idx + ?shiftK <= ?K,
+   FormalParam(?idx - ?shiftK, ?implMethod, ?formal),
+   Value_Type(?val, ?valType),
+   Var_Type(?formal, ?formalType),
+   basic.SubtypeOf(?valType, ?formalType),
+   isImmutableHContext(?hctx).
+
 // Special handling for captured "this" parameters.
 VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
-   InstanceImplMethod(?invokedynamic, _, ?this, ?thisType, ?hctx, ?ctx),
+   Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0),
+   CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?ctx, ?lambda),
    CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0, _),
    Value_Type(?thisValue, ?thisValueType),
    basic.SubtypeOf(?thisValueType, ?thisType).
+
+// Special handling for "this" parameters to method references that do
+// not capture a receiver.
+VarPointsTo(?hctx, ?argValue, ?ctx, ?this) :-
+   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
+   Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1),
+   ActualParam(0, ?i, ?actual),
+   VarPointsTo(?hctx, ?argValue, ?ctx, ?actual),
+   Value_Type(?argValue, ?argType),
+   ThisVar(?implMethod, ?this),
+   Var_Type(?this, ?thisType),
+   basic.SubtypeOf(?argType, ?thisType).
 
 // Applications of constructor references construct values. However,
 // these values do not come from a 'new' instruction in the code but
