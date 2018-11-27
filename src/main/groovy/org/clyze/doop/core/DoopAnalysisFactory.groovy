@@ -28,7 +28,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
 	static final String HASH_ALGO = "SHA-256"
 	static final availableConfigurations = [
-			"scaler"                             : "ScalerConfiguration",
 			"twophase-A"                         : "TwoPhaseAConfiguration",
 			"twophase-B"                         : "TwoPhaseBConfiguration",
 			"dependency-analysis"                : "TwoObjectSensitivePlusHeapConfiguration",
@@ -126,8 +125,15 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			else {
 				if (options.USER_DEFINED_PARTITIONS.value)
 					return new SoufflePartitionedAnalysis(options, context, commandsEnv)
-				else
-					return new SouffleAnalysis(options, context, commandsEnv)
+				else {
+					if (options.ANALYSIS.value == "fully-guided-context-sensitive") {
+						return new SouffleMultiPhaseAnalysis(options, context, commandsEnv)
+					}
+					else {
+						return new SouffleAnalysis(options, context, commandsEnv)
+					}
+
+				}
 			}
 		}
 	}

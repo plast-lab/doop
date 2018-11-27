@@ -76,6 +76,7 @@ dependencies {
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             "net.dongliu:apk-parser:2.6.2",                     // needed for reading binary XML entries from APK inputs
+            "com.google.guava:guava:27.0-jre",
             // "ext:apktool:2.3.3",                                // needed for decoding APK inputs (optional)
 
             // Soot
