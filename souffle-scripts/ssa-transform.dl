@@ -171,7 +171,7 @@ SSA_LoadStaticField(?insn, ?index, ?ssa_name, ?method) :-
 
 StrictlyDominates(?dominator, ?block) :-
     Dominates(?dominator, ?block),
-    !?dominator = ?block.
+    ?dominator != ?block.
 
 .decl DominanceFrontier(?dBlock:symbol, ?block:symbol)
 
@@ -186,9 +186,10 @@ DFPlus(?dBlock, ?block, ?var) :-
     ContainsAssignment(?dBlock, ?var),
     DominanceFrontier(?dBlock, ?block).
 
-DFPlus(?dBlock, ?block, ?var) :-
-    ContainsAssignment(?dBlock, ?var),
-    DFPlus(?dBlock, ?block, ?var).
+// TODO: Review this
+DFPlus(?dBlock, ?dfblock, ?var) :-
+    DFPlus(?dBlock, ?block, ?var),
+    DominanceFrontier(?block, ?dfblock).
 
 .decl ContainsAssignment(?dBlock:symbol, ?var:symbol)
 
@@ -640,6 +641,11 @@ RewriteAssignLocal(?insn, ?index, ?to, ?from, ?inmethod) :-
     AssignLocal_From(?insn, ?from_origin),
     ReachingDef(?insn, ?from, ?from_origin).
 
+RewriteAssignLocal(?insn, ?index, ?to, ?from, ?inmethod) :-
+    PhiPseudoAssign(?to, ?from, _, ?block, ?insn),
+    Instruction_Method(?block, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index).
+
 .decl RewriteAssignNull(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
 .output RewriteAssignNull(filename="AssignNull.facts")
 
@@ -929,3 +935,12 @@ SSA_Type(?to, ?type) :-
     SSA_ThisVar(_, ?to),
     SSA_Alias(?to, ?to_origin),
     Var_Type(?to_origin, ?type).
+
+// Debug output
+.output DFPlus
+.output Dominates
+.output DominanceFrontier
+.output DoesNotDominate
+.output StrictlyDominates
+.output BasicBlockBegin
+.output MayPredecessorBBModuloThrow
