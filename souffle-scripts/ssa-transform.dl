@@ -187,7 +187,7 @@ DFPlus(?dBlock, ?block, ?var) :-
     DominanceFrontier(?dBlock, ?block).
 
 // TODO: Review this
-DFPlus(?dBlock, ?dfblock, ?var) :-
+DFPlus(?block, ?dfblock, ?var) :-
     DFPlus(?dBlock, ?block, ?var),
     DominanceFrontier(?block, ?dfblock).
 
