@@ -125,3 +125,16 @@ ListOfConstsLength(?hctx, ?tensorVal, ?len),
 ListOfConstsAtIndexPointsTo(?hctx, ?tensorVal, ?index, ?indexValue):-
   TensorShapeListLength(?hctx, ?tensorVal, ?len),
   TensorShapeListContent(?hctx, ?tensorVal, ?index, ?indexValue).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              IMPRECISION METRICS
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl TensorOpImpreciseNameToVal(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?name:symbol)
+.output TensorOpImpreciseNameToVal
+
+TensorOpImpreciseNameToVal(?ctx, ?insn, ?op, ?name):-
+  TensorOperation_NameToVal(?ctx, ?insn, ?op, ?name, ?argHctx, ?argVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?op, ?name, ?argHctx2, ?argVal2),
+  (?argVal != ?argVal2; ?argHctx != ?argHctx2).
