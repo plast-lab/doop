@@ -62,6 +62,12 @@ TensorLikeObjectToTensorDtype(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype):-
 .decl TensorOperationProducesOutput(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value)
 .output TensorOperationProducesOutput
 
+.decl TensorOperationError(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?errorMSG:symbol)
+.output TensorOperationError
+
+.decl TensorOperationWarning(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?warningMSG:symbol)
+.output TensorOperationWarning
+
 .decl TensorShape(?tensorHctx:configuration.HContext, ?tensor:Value, ?shapeHctx:configuration.HContext, ?shapeList:Value)
 .output TensorShape
 

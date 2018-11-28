@@ -56,4 +56,10 @@ OUTPUT_STATS_DEFAULT(ImpreciseTensorShapeList_Insens)
 .decl TensorOperationProducesOutput_Insens(?insn:FunctionInvocation_Insn, ?tensor:Value)
 OUTPUT_STATS_DEFAULT(TensorOperationProducesOutput_Insens)
 
+.decl TensorOperationError_Insens(?insn:FunctionInvocation_Insn, ?tensor:Value, ?msg:symbol)
+OUTPUT_STATS_DEFAULT(TensorOperationError_Insens)
+
+.decl TensorOperationWarning_Insens(?insn:FunctionInvocation_Insn, ?tensor:Value, ?msg:symbol)
+OUTPUT_STATS_DEFAULT(TensorOperationWarning_Insens)
+
 #endif
