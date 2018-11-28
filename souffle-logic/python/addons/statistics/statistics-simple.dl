@@ -1,0 +1,67 @@
+#include "statistics-output.dl"
+#include "statistics-simple-declarations.dl"
+#include "statistics-macros.dl"
+
+/***************************************************
+ * Variables
+ ***************************************************/
+
+Stats_Simple_InsensVarPointsTo(?value, ?var) :-
+  mainAnalysis.VarPointsTo(_, ?value, _, ?var).
+
+Stats_Simple_AssignedVariable(?var) :-
+  Stats_Simple_InsensVarPointsTo(_, ?var).
+
+Stats_Simple_InsensReachableVar(?var),
+Stats_Simple_ReachableVar(?ctx, ?var) :-
+  Stats_Simple_AssignedVariable(?var),
+  Var_DeclaringFunction(?var, ?function),
+  mainAnalysis.ReachableContext(?ctx, ?function).
+
+
+/***************************************************
+ * Call graph edges
+ ***************************************************/
+
+Stats_Simple_InsensCallGraphEdge(?from, ?to) :-
+   mainAnalysis.CallGraphEdge(_, ?from, _, ?to).
+
+#ifdef TENSOR_SHAPE_ANALYSIS
+/***************************************************
+ * Tensor shape analysis
+ ***************************************************/
+
+TensorOpHasImpreciseArg_Insens(?insn, ?op):-
+  mainAnalysis.TensorOpHasImpreciseArg(_, ?insn, ?op).
+
+TensorHasMoreThanOneShape_Insens(?tensor):-
+  mainAnalysis.TensorHasMoreThanOneShape(_, ?tensor).
+
+TensorOperationProducesOutput_Insens(?insn, ?op):-
+  mainAnalysis.TensorOperationProducesOutput(_, ?insn, ?op).
+
+ImpreciseTensorShapeList_Insens(?shapeVal):-
+  mainAnalysis.ImpreciseTensorShapeList(_, ?shapeVal).
+#endif
+
+NewMetricMacro( "1.0", "var points-to (INS)", Stats_Simple_InsensVarPointsTo(_, _)).
+NewMetricMacro( "1.5", "var points-to (SENS)", mainAnalysis.VarPointsTo(_, _, _, _)).
+NewMetricMacro("10.0", "reachable variables (INS)", Stats_Simple_InsensReachableVar(_)).
+NewMetricMacro("10.5", "reachable variables (SENS)", Stats_Simple_ReachableVar(_, _)).
+
+
+NewMetricMacro( "12.0", "call graph edges (INS)", Stats_Simple_InsensCallGraphEdge(_, _)).
+NewMetricMacro( "12.5", "call graph edges (SENS)", mainAnalysis.CallGraphEdge(_, _, _, _)).
+NewMetricMacro("11.0", "reachable methods (INS)", mainAnalysis.Reachable(_)).
+NewMetricMacro("11.5", "reachable methods (SENS)", mainAnalysis.ReachableContext(_, _)).
+
+#ifdef TENSOR_SHAPE_ANALYSIS
+  NewMetricMacro("20.0", "tensor op produces output (INS)", TensorOperationProducesOutput_Insens(_, _)).
+  NewMetricMacro("20.5", "tensor op produces output (SENS)", mainAnalysis.TensorOperationProducesOutput(_, _, _)).
+  NewMetricMacro("21.0", "tensor op has more than one shape (INS)", TensorHasMoreThanOneShape_Insens(_)).
+  NewMetricMacro("21.5", "tensor op has more than one shape (SENS)", mainAnalysis.TensorHasMoreThanOneShape(_, _)).
+  NewMetricMacro("22.0", "tensor shape has imprecise contents (INS)", ImpreciseTensorShapeList_Insens(_)).
+  NewMetricMacro("22.5", "tensor shape has imprecise contents (SENS)", mainAnalysis.ImpreciseTensorShapeList(_, _)).
+  NewMetricMacro("23.0", "tensor op has imprecise name (INS)", TensorOpHasImpreciseArg_Insens(_, _)).
+  NewMetricMacro("23.5", "tensor op has imprecise name (SENS)", mainAnalysis.TensorOpHasImpreciseArg(_, _, _)).
+#endif

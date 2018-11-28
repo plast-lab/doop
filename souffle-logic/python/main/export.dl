@@ -12,3 +12,7 @@
 
 .output ReachableContext
 .output CallGraphEdge
+
+#ifndef X_STATS_NONE
+.output Stats_Metrics(IO="file",filename="Stats_Metrics.csv",delimiter="\t")
+#endif // X_STATS_NONE

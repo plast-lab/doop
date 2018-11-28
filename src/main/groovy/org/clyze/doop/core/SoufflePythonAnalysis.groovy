@@ -72,18 +72,6 @@ class SoufflePythonAnalysis extends DoopAnalysis{
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/import-entities.dl")
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/import-facts.dl")
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/post-process.dl")
-
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonAnalysesPath}/${name}/analysis.dl")
-
-        //cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/analyses/context-insensitive/analysis.dl")
-//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/const-int.dl")
-//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/lists.dl")
-//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/imports.dl")
-//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/main/function-resolution.dl")
-//
-//
-//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/lib-specific/tensorflow.dl")
-//        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/lib-specific/modeled.dl")
     }
 
     void basicAnalysis() {
@@ -97,6 +85,7 @@ class SoufflePythonAnalysis extends DoopAnalysis{
     }
 
     void mainAnalysis() {
+        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonAnalysesPath}/${name}/analysis.dl")
 //        def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 //        def mainPath = "${Doop.souffleLogicPath}/main"
 //        def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
@@ -135,31 +124,11 @@ class SoufflePythonAnalysis extends DoopAnalysis{
     }
 
     void produceStats() {
-//        def statsPath = "${Doop.souffleAddonsPath}/statistics"
-//        if (options.X_EXTRA_METRICS.value) {
-//            cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
-//        }
-//
-//        if (options.X_SENSITIVITY_HEURISTICS.value) {
-//            cpp.includeAtEnd("$analysis", "${statsPath}/sensitivity-heuristics.dl")
-//        }
-//
-//        if (options.X_STATS_NONE.value) return
-//
-//        if (options.X_STATS_AROUND.value) {
-//            cpp.includeAtEnd("$analysis", options.X_STATS_AROUND.value as String)
-//            return
-//        }
-//
-//        // Special case of X_STATS_AROUND (detected automatically)
-//        def specialStats = new File("${Doop.souffleAnalysesPath}/${name}/statistics.dl")
-//        if (specialStats.exists()) {
-//            cpp.includeAtEnd("$analysis", specialStats.toString())
-//            return
-//        }
-//
-//        cpp.includeAtEnd("$analysis", "${statsPath}/statistics-simple.dl")
-//
+        def statsPath = "${Doop.soufflePythonPath}/addons/statistics"
+
+        if (options.X_STATS_NONE.value) return
+
+        cpp.includeAtEnd("$analysis", "${statsPath}/statistics-simple.dl")
 //        if (options.X_STATS_FULL.value || options.X_STATS_DEFAULT.value) {
 //            cpp.includeAtEnd("$analysis", "${statsPath}/statistics.dl")
 //        }
