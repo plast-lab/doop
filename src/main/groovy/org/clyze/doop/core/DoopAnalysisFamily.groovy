@@ -514,6 +514,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "souffle-profile",
 					description: "Enable profiling in the Souffle binary."
 			),
+			new BooleanAnalysisOption(
+					id: "SOUFFLE_RUN_INTERPRETED",
+					name: "souffle-run-interpreted",
+					description: "Run souffle in interpreted mode(currently only for python analyses)."
+			),
 			/* Start Souffle related options */
 
 			//Information-flow, etc.
