@@ -337,7 +337,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SINGLE_FILE_ANALYSIS",
 					name: "single-file-analysis",
 					description: "Flag to be passed to WALAs IR translator to produce IR that makes the analysis of a single script file easier.",
+					changesFacts: true,
 					forCacheID: true
+			),
+			new BooleanAnalysisOption(
+					id: "TENSOR_SHAPE_ANALYSIS",
+					name: "tensor-shape-analysis",
+					description: "Enable tensor shape analysis for python.",
+					forPreprocessor: true
 			),
 			/* End Python related options */
 
