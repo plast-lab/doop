@@ -132,7 +132,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 Path fromDirPath = FileSystems.default.getPath(fromDir.canonicalPath)
                 Files.createSymbolicLink(factsDir.toPath(), fromDirPath)
                 return
-            } catch (UnsupportedOperationException x) {
+            } catch (UnsupportedOperationException ignored) {
                 System.err.println("Filesystem does not support symbolic links, copying directory instead...")
             }
         }
