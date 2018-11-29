@@ -276,8 +276,8 @@ BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
 
 BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
     BasicBlockTail(?block, ?end),
-    SSA_Alias(?ssa_var, ?origin),
-    SSA_AssignDetails(?end, _, _, ?ssa_var, _).
+    SSA_AssignDetails(?end, _, _, ?ssa_var, _),
+    SSA_Alias(?ssa_var, ?origin).
 
 BBOutDefs(?block, ?def) :-
     BBLocalOutDefs(?block, ?def).
@@ -460,8 +460,8 @@ SSA_InstructionIndex(?insn, 1) :-
 // If the insn has a prev instruction and prev has index "index", then
 // insn has index "index  + 1".
 SSA_InstructionIndex(?insn, ?index + 1) :-
-    SSANext(?prev, ?insn),
-    SSA_InstructionIndex(?prev, ?index).
+    SSA_InstructionIndex(?prev, ?index),
+    SSANext(?prev, ?insn).
 
 // If the phi header for the basic block where insn is in, contains an phi
 // pseudo assignment on ssa_var, which is an ssa rename for origin.
