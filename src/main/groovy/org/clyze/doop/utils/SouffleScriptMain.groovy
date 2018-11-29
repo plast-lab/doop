@@ -35,8 +35,9 @@ try {
 }
 
 def script = new SouffleScript(new Executor(outDir, env))
-def generatedFile = script.compile(new File(scriptFilePath), outDir, cacheDir, profile.toBoolean(), debug.toBoolean())
-script.run(generatedFile, new File(factsDirPath), outDir, jobs.toInteger(), 5000, null)
+def prof = profile.toBoolean()
+def generatedFile = script.compile(new File(scriptFilePath), outDir, cacheDir, prof, debug.toBoolean())
+script.run(generatedFile, new File(factsDirPath), outDir, jobs.toInteger(), 5000, null, prof)
 
 println "Compilation time (sec)\t${script.compilationTime}\n"
 println "Execution time (sec)\t${script.executionTime}\n"
