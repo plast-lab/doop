@@ -232,7 +232,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SIMULATE_NATIVE_RETURNS",
 					name: "simulate-native-returns",
-					description: "Assume native method calls return mock objects.",
+					description: "Assume native methods return mock objects.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
