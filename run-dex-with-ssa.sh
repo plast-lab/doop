@@ -17,11 +17,19 @@ SSA_TRANSFORMER=$(realpath souffle-scripts/ssa-transform.dl)
 
 ./doop -i ${APP} -a context-insensitive --id ${APP_NAME}-dex-facts --platform android_25_fulljars --dex --Xstop-at-facts ${FACTS_IN}
 
-./gradlew souffleScript -Pargs="${SSA_TRANSFORMER} ${FACTS_IN} ${FACTS_OUT} ${DOOP_HOME}/cache 2 false false"
+./gradlew souffleScript -Pargs="${SSA_TRANSFORMER} ${FACTS_IN} ${FACTS_OUT} ${DOOP_HOME}/cache 4 true false"
 
-pushd ${FACTS_OUT}
+pushd "${FACTS_OUT}/database"
 echo "TODO: move"
-exit
+
+for file in ${FACTS_IN}/*.facts; do
+    filename=$(basename "${file}")
+
+    if [ ! -f "${filename}" ]; then
+        cp $file .
+    fi
+done
+
 popd
 
-# ./doop -i ${APP} -a context-insensitive --id ${APP_NAME}-analysis --Xstart-after-facts ${FACTS_OUT}
+./doop -i ${APP} -a context-insensitive --id ${APP_NAME}-analysis --Xstart-after-facts ${FACTS_OUT}
