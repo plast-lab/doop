@@ -205,28 +205,46 @@ TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
      AllConcreteImplementations(?allClasses, ?staticType)
    }.
 #else
+.decl PrimaryTypeHasNoPrimaryConcreteImplementation(?type:Type)
+.decl PrimaryTypeHasPrimaryConcreteImplementation(?type:Type)
+
+PrimaryTypeHasPrimaryConcreteImplementation(?type) :-
+  mainAnalysis.configuration.TypeInPrimaryPartition(?type),
+  AllConcreteImplementations(?impl, ?type),
+  mainAnalysis.configuration.TypeInPrimaryPartition(?impl).
+
+PrimaryTypeHasNoPrimaryConcreteImplementation(?type) :-
+  mainAnalysis.configuration.TypeInPrimaryPartition(?type),
+  !PrimaryTypeHasPrimaryConcreteImplementation(?type).
+
+.decl NonPrimaryTypeHasNoNonPrimaryConcreteImplementation(?type:Type)
+.decl NonPrimaryTypeHasNonPrimaryConcreteImplementation(?type:Type)
+
+NonPrimaryTypeHasNonPrimaryConcreteImplementation(?type) :-
+  mainAnalysis.configuration.TypeInNonPrimaryPartition(?type),
+  AllConcreteImplementations(?impl, ?type),
+  mainAnalysis.configuration.TypeInNonPrimaryPartition(?impl).
+
+NonPrimaryTypeHasNoNonPrimaryConcreteImplementation(?type) :-
+  mainAnalysis.configuration.TypeInNonPrimaryPartition(?type),
+  !NonPrimaryTypeHasNonPrimaryConcreteImplementation(?type).
+
 TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
   AllConcreteImplementations(_, ?staticType),
   ?classOrd = min ord(?allClasses) : {
-     AllConcreteImplementations(?allClasses, ?staticType),
-     mainAnalysis.configuration.TypeToPartitionId(?staticType, ?part1),
-     mainAnalysis.configuration.TypeToPartitionId(?allClasses, ?part2),
-     mainAnalysis.configuration.PrimaryPartitionId(?primary),
-     ?part1 != ?primary,
-     ?part2 != ?primary
+    AllConcreteImplementations(?allClasses, ?staticType),
+    ((mainAnalysis.configuration.TypeInNonPrimaryPartition(?staticType), mainAnalysis.configuration.TypeInNonPrimaryPartition(?allClasses) ;
+    (mainAnalysis.configuration.TypeInPrimaryPartition(?staticType), mainAnalysis.configuration.TypeInPrimaryPartition(?allClasses))
   }.
 
-  TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
-    AllConcreteImplementations(_, ?staticType),
-    ?classOrd = min ord(?allClasses) : {
-       AllConcreteImplementations(?allClasses, ?staticType),
-       mainAnalysis.configuration.TypeToPartitionId(?staticType, ?part1),
-       mainAnalysis.configuration.TypeToPartitionId(?allClasses, ?part2),
-       mainAnalysis.configuration.PrimaryPartitionId(?primary),
-       ?part1 = ?primary,
-       ?part2 = ?primary
-    }.
+TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
+ AllConcreteImplementations(_, ?staticType),
+ ?classOrd = min ord(?allClasses) : {
+    AllConcreteImplementations(?allClasses, ?staticType),
+    (NonPrimaryTypeHasNoNonPrimaryConcreteImplementation(?staticType) ; PrimaryTypeHasNoPrimaryConcreteImplementation(?staticType))
+ }.
 #endif
+.printsize TypeToConcreteImplementationOrd
 
 ConcreteImplementations(?staticType, ?class) :-
   TypeToConcreteImplementationOrd(?staticType, ?classOrd),

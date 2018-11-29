@@ -8,6 +8,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Stream;
 import static org.clyze.doop.common.PredicateFile.*;
+import org.clyze.utils.Helper;
 
 /**
  * Common functionality that a fact writer for Java bytecode can reuse.
@@ -56,6 +57,10 @@ public abstract class JavaFactWriter {
 
     private void writeAndroidKeepMethod(String methodSig) {
         _db.add(ANDROID_KEEP_METHOD, "<" + methodSig + ">");
+    }
+
+    private void writeAndroidKeepMethodDoopId(String methodDoopId) {
+        _db.add(ANDROID_KEEP_METHOD, methodDoopId);
     }
 
     private void writeAndroidKeepClass(String className) {
@@ -188,10 +193,26 @@ public abstract class JavaFactWriter {
     }
 
     private void processSeedFileLine(String line) {
-        if (line.contains("("))
-            writeAndroidKeepMethod(line);
-        else if (!line.contains(":"))
-            writeAndroidKeepClass(line);
+        //The SEED file may contain method doopIds
+        if (line.startsWith("<")) {
+            writeAndroidKeepMethodDoopId(line);
+        }
+        else {
+            if (line.contains("(")) {
+                //writeAndroidKeepMethod(line);
+                
+                //The seeds file notation does not use doopIds for constructors.
+                //e.g. in a seeds file we have:
+                //package.class$innerClass: class$innerClass(args...)
+                //instead of: 
+                //package.class$innerClass: void <init>(args...)
+                String doopId = Helper.readMethodDoopId(line);
+                writeAndroidKeepMethodDoopId(doopId);
+            }
+            else if (!line.contains(":")) {
+                writeAndroidKeepClass(line);
+            }
+        }
     }
 
     protected void writeMethodDeclaresException(String methodId, String exceptionType) {

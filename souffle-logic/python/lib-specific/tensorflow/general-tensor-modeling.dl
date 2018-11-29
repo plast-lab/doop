@@ -62,6 +62,12 @@ TensorLikeObjectToTensorDtype(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype):-
 .decl TensorOperationProducesOutput(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value)
 .output TensorOperationProducesOutput
 
+.decl TensorOperationError(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?errorMSG:symbol)
+.output TensorOperationError
+
+.decl TensorOperationWarning(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?warningMSG:symbol)
+.output TensorOperationWarning
+
 .decl TensorShape(?tensorHctx:configuration.HContext, ?tensor:Value, ?shapeHctx:configuration.HContext, ?shapeList:Value)
 .output TensorShape
 
@@ -125,3 +131,44 @@ ListOfConstsLength(?hctx, ?tensorVal, ?len),
 ListOfConstsAtIndexPointsTo(?hctx, ?tensorVal, ?index, ?indexValue):-
   TensorShapeListLength(?hctx, ?tensorVal, ?len),
   TensorShapeListContent(?hctx, ?tensorVal, ?index, ?indexValue).
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              IMPRECISION METRICS
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl TensorOpImpreciseNameToVal(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?name:symbol)
+.output TensorOpImpreciseNameToVal
+
+.decl TensorOpHasImpreciseArg(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value)
+.output TensorOpHasImpreciseArg
+
+.decl TensorShapeListAtIndexHasMoreThanOneVal(?shapeValHctx:configuration.HContext, ?shapeVal:Value, ?index:number)
+.output TensorShapeListAtIndexHasMoreThanOneVal
+
+.decl ImpreciseTensorShapeList(?shapeValHctx:configuration.HContext, ?shapeVal:Value)
+.output ImpreciseTensorShapeList
+
+.decl TensorHasMoreThanOneShape(?tensorHctx:configuration.HContext, ?tensor:Value)
+.output TensorHasMoreThanOneShape
+
+TensorOpHasImpreciseArg(?ctx, ?insn, ?op):-
+  TensorOpImpreciseNameToVal(?ctx, ?insn, ?op, _).
+
+TensorOpImpreciseNameToVal(?ctx, ?insn, ?op, ?name):-
+  TensorOperation_NameToVal(?ctx, ?insn, ?op, ?name, ?argHctx, ?argVal),
+  TensorOperation_NameToVal(?ctx, ?insn, ?op, ?name, ?argHctx2, ?argVal2),
+  (?argVal != ?argVal2; ?argHctx != ?argHctx2).
+
+TensorShapeListAtIndexHasMoreThanOneVal(?shapeHctx, ?shapeVal, ?index):-
+  TensorShapeListContent(?shapeHctx, ?shapeVal, ?index, ?val1),
+  TensorShapeListContent(?shapeHctx, ?shapeVal, ?index, ?val2),
+  ?val1 != ?val2.
+
+ImpreciseTensorShapeList(?shapeHctx, ?shapeVal):-
+  TensorShapeListAtIndexHasMoreThanOneVal(?shapeHctx, ?shapeVal, _).
+
+TensorHasMoreThanOneShape(?tensorHctx, ?tensor):-
+  TensorShape(?tensorHctx, ?tensor, _, ?shape1),
+  TensorShape(?tensorHctx, ?tensor, _, ?shape2),
+  ?shape1 != ?shape2.

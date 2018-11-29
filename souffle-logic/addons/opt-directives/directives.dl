@@ -2,10 +2,20 @@
 
 /*** Method removal ***/
 
+.decl SpecialMethodToKeep(?method:Method)
+
+SpecialMethodToKeep(?method) :-
+  basic.SubtypeOf(?type, "java.lang.Enum"),
+  Method_DeclaringType(?method, ?type),
+  Method_Modifier("static", ?method),
+  Method_SimpleName(?method, ?name),
+  (?name = "values" ; ?name = "valueOf").
+
 // Output for dead method removal.
 .decl MethodToRemove(?method:Method)
 MethodToRemove(?method) :-
   ApplicationMethod(?method),
+  !SpecialMethodToKeep(?method),
   !mainAnalysis.ReachableContext(_, ?method),
 //  !Method_Modifier("abstract", ?method),
   !Method_Modifier("native", ?method),

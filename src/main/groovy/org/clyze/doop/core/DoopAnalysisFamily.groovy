@@ -232,7 +232,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SIMULATE_NATIVE_RETURNS",
 					name: "simulate-native-returns",
-					description: "Assume native method calls return mock objects.",
+					description: "Assume native methods return mock objects.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -250,6 +250,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "WALA_FACT_GEN",
 					name: "wala-fact-gen",
+					description: "Use WALA to generate the facts.",
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
@@ -337,7 +338,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SINGLE_FILE_ANALYSIS",
 					name: "single-file-analysis",
 					description: "Flag to be passed to WALAs IR translator to produce IR that makes the analysis of a single script file easier.",
+					changesFacts: true,
 					forCacheID: true
+			),
+			new BooleanAnalysisOption(
+					id: "TENSOR_SHAPE_ANALYSIS",
+					name: "tensor-shape-analysis",
+					description: "Enable tensor shape analysis for python.",
+					forPreprocessor: true
 			),
 			/* End Python related options */
 
@@ -500,12 +508,18 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_DEBUG",
-					name: "souffle-debug"
+					name: "souffle-debug",
+					description: "Enable profiling in the Souffle binary."
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_PROFILE",
 					name: "souffle-profile",
 					description: "Enable profiling in the Souffle binary."
+			),
+			new BooleanAnalysisOption(
+					id: "SOUFFLE_RUN_INTERPRETED",
+					name: "souffle-run-interpreted",
+					description: "Run souffle in interpreted mode(currently only for python analyses)."
 			),
 			/* Start Souffle related options */
 

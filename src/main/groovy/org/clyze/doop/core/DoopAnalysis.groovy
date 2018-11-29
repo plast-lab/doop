@@ -132,7 +132,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 Path fromDirPath = FileSystems.default.getPath(fromDir.canonicalPath)
                 Files.createSymbolicLink(factsDir.toPath(), fromDirPath)
                 return
-            } catch (UnsupportedOperationException x) {
+            } catch (UnsupportedOperationException ignored) {
                 System.err.println("Filesystem does not support symbolic links, copying directory instead...")
             }
         }
@@ -625,7 +625,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         try {
             MemoryAnalyser memoryAnalyser = new MemoryAnalyser(processed, options.HEAPDL_NOSTRINGS.value ? false : true)
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
-            log.info("Generated " + n + " addditional facts from memory dump")
+            log.info("Generated " + n + " additional facts from memory dump")
         } catch (Exception e) {
             e.printStackTrace()
         }
