@@ -32,4 +32,4 @@ done
 
 popd
 
-./doop -i ${APP} -a context-insensitive --id ${APP_NAME}-analysis --Xstart-after-facts ${FACTS_OUT}
+./doop -i ${APP} -a context-insensitive --id ${APP_NAME}-analysis --Xstart-after-facts ${FACTS_OUT}/database

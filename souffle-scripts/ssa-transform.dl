@@ -509,7 +509,6 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
 // at prev (recursive definition).
 ReachingDef(?insn, ?ssa_var, ?origin) :-
     PrevInSameBasicBlock(?insn, ?prev),
-    SSA_Alias(?ssa_var, ?origin),
     !SSA_AssignToOriginal(?prev, ?origin),
     ReachingDef(?prev, ?ssa_var, ?origin).
 
@@ -518,8 +517,8 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
 // for origin at insn is exactly that LHS ssa rename of origin.
 ReachingDef(?insn, ?ssa_var, ?origin) :-
     PrevInSameBasicBlock(?insn, ?prev),
-    SSA_Alias(?ssa_var, ?origin),
-    SSA_AssignDetails(?prev, _, _, ?ssa_var, _).
+    SSA_AssignDetails(?prev, _, _, ?ssa_var, _),
+    SSA_Alias(?ssa_var, ?origin).
 
 // If an instruction is the first instruction in a method, then all formal paramters and
 // the "this" register are reaching defs to that instruction.
