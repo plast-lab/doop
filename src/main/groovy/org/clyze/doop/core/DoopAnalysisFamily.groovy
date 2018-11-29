@@ -250,6 +250,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "WALA_FACT_GEN",
 					name: "wala-fact-gen",
+					description: "Use WALA to generate the facts.",
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
@@ -507,7 +508,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_DEBUG",
-					name: "souffle-debug"
+					name: "souffle-debug",
+					description: "Enable profiling in the Souffle binary."
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_PROFILE",
