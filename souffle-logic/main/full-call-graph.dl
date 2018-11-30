@@ -1,0 +1,16 @@
+// A relation that gathers all call-graph information.
+
+.decl AnyCallGraphEdge(?instr:Instruction, ?method:Method)
+
+AnyCallGraphEdge(?i, ?m) :- CallGraphEdge(_, ?i, _, ?m).
+AnyCallGraphEdge(?i, ?m) :- InvokedynamicBootCallGraphEdge(_, ?i, _, ?m).
+AnyCallGraphEdge(?i, ?m) :- InvokedynamicCallGraphEdge(_, ?i, _, ?m, _).
+AnyCallGraphEdge(?i, ?m) :- LambdaCallGraphEdge(_, ?i, _, ?m, _).
+
+#ifdef REFLECTION
+AnyCallGraphEdge(?from, ?to) :- ReflectiveCallGraphEdge(_, ?from, _, ?to).
+#endif // REFLECTION
+
+#ifdef TAMIFLEX
+AnyCallGraphEdge(?from, ?to) :- TamiflexCallGraphEdge(_, ?from, _, ?to).
+#endif // TAMIFLEX

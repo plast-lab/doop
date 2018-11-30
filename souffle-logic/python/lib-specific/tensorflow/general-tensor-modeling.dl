@@ -52,7 +52,7 @@ TensorLikeObjectToTensorDtype(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype):-
 //                                              GENERAL OPERATION MODELING
 //----------------------------------------------------------------------------------------------------------------------
 
-.decl TensorOperation_NameToVal(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?name:symbol, ?namedValHctx:configuration.HContext, ?namedVal:Value)
+.decl TensorOperation_NameToVal(?ctx:configuration.Context, ?operationVal:Value, ?name:symbol, ?namedValHctx:configuration.HContext, ?namedVal:Value)
 .output TensorOperation_NameToVal
 
 //When creating a new operation, set the name of the input tensor that will give the dtype of the new output tensor.
@@ -117,7 +117,7 @@ TensorDType(?tensorHctx, ?tensor, ?dtypeHctx, ?dtype):-
   AssignInstruction_To(?insn, ?var),
   VarPointsTo(?tensorHctx, ?tensor, ?ctx, ?var),
   TensorOperation_GetDTypeFromName(?ctx, ?insn, ?tensor, ?name),
-  TensorOperation_NameToVal(?ctx, ?insn, ?tensor, ?name, ?inTensorHctx, ?inTensor),
+  TensorOperation_NameToVal(?ctx, ?tensor, ?name, ?inTensorHctx, ?inTensor),
   TensorDType(?inTensorHctx, ?inTensor, ?dtypeHctx, ?dtype).
 
 TensorObjectHasConcreteDimensions(?hctx, ?tensor):-
@@ -156,8 +156,9 @@ TensorOpHasImpreciseArg(?ctx, ?insn, ?op):-
   TensorOpImpreciseNameToVal(?ctx, ?insn, ?op, _).
 
 TensorOpImpreciseNameToVal(?ctx, ?insn, ?op, ?name):-
-  TensorOperation_NameToVal(?ctx, ?insn, ?op, ?name, ?argHctx, ?argVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?op, ?name, ?argHctx2, ?argVal2),
+  TensorOperationProducesOutput(?ctx, ?insn, ?op),  //TODO: Review this later, right now only care about the ones producing output
+  TensorOperation_NameToVal(?ctx, ?op, ?name, ?argHctx, ?argVal),
+  TensorOperation_NameToVal(?ctx, ?op, ?name, ?argHctx2, ?argVal2),
   (?argVal != ?argVal2; ?argHctx != ?argHctx2).
 
 TensorShapeListAtIndexHasMoreThanOneVal(?shapeHctx, ?shapeVal, ?index):-

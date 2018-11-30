@@ -7,7 +7,7 @@ import org.clyze.utils.Helper
 
 if (args.size() < 7) {
     println "Usage:"
-    println "  ./gradlew souffleScript -Pargs='<scriptFilePath> <factsDirPath> <outDirPath> <cacheDirPath> <jobs> <profile> <debug> <recompile>'"
+    println "  ./gradlew souffleScript -Pargs='<scriptFilePath> <factsDirPath> <outDirPath> <cacheDirPath> <jobs> <profile> <debug> <provenance> <recompile>'"
     println "Parameters:"
     println "  scriptFilePath   the Datalog file to evaluate"
     println "  factsDirPath     the directory containing the input facts"
@@ -16,11 +16,12 @@ if (args.size() < 7) {
     println "  jobs             the number of jobs to use when running (e.g., 4)"
     println "  profile          'true' or 'false'"
     println "  debug            'true' or 'false'"
+    println "  provenance       'true' or 'false'"
     println "  recompile        'true' or 'false'"
     return
 }
 
-def (String scriptFilePath, String factsDirPath, String outDirPath, String cacheDirPath, String jobs, String profile, String debug, String recompile) = args
+def (String scriptFilePath, String factsDirPath, String outDirPath, String cacheDirPath, String jobs, String profile, String debug, String provenance, String recompile) = args
 def outDir = new File(outDirPath)
 outDir.mkdirs()
 def cacheDir = new File(cacheDirPath)
@@ -37,8 +38,8 @@ try {
 
 def script = new SouffleScript(new Executor(outDir, env))
 def prof = profile.toBoolean()
-def generatedFile = script.compile(new File(scriptFilePath), outDir, cacheDir, prof, debug.toBoolean(), recompile.toBoolean())
-script.run(generatedFile, new File(factsDirPath), outDir, jobs.toInteger(), 5000, null, prof)
+def generatedFile = script.compile(new File(scriptFilePath), outDir, cacheDir, prof, debug.toBoolean(), provenance.toBoolean(), recompile.toBoolean())
+script.run(generatedFile, new File(factsDirPath), outDir, jobs.toInteger(), 5000, null, provenance, prof)
 
 println "Compilation time (sec)\t${script.compilationTime}\n"
 println "Execution time (sec)\t${script.executionTime}\n"
