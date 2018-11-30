@@ -64,6 +64,7 @@
   #include "../commonMacros.dl"
   #include "prologue.dl"
   #include "context-sensitivity.dl"
+  #include "full-call-graph.dl"
   #include "export.dl"
 
   #if defined(REFLECTION)
