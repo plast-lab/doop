@@ -14,8 +14,10 @@
 // Holds all ssa renames in the program for a given origin variable.
 // e.g. (v0_0, v0), (v0_1, v0) ... 
 .decl SSA_Alias(?ssa_name:symbol, ?original:symbol)
+
+// Type info for renamed ssa variables.
 .decl SSA_Type(?var:symbol, ?type:symbol)
-.output SSA_Type
+.output SSA_Type(filename="Var-Type.facts")
 
 // Helper relation to factor out some code.
 .decl SSA_AssignDetails(?instr:symbol, ?to:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
@@ -153,18 +155,6 @@ SSA_LoadStaticField(?insn, ?index, ?ssa_name, ?method) :-
     isLoadStaticField_Insn(?insn),
     SSA_AssignDetails(?insn, _, ?index, ?ssa_name, ?method).
     
-// TODO: Is this needed?
-//.decl SSA_AssignPhantomInvoke(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-//.output SSA_AssignPhantomInvoke
-//
-//SSA_Alias(?method, ?to, ?ssa_name),
-//SSA_AssignPhantomInvoke(?instr, ?index, ?ssa_name, ?method) :-
-//    isAssignPhantomInvoke(?instr),
-//    Instruction_Index(?instr, ?index),
-//    AssignInstruction_To(?instr, ?to),
-//    Instruction_Method(?instr, ?method),
-//    ?ssa_name = cat(?to, cat("_", to_string(?index))).
-
 // Simple implementation of the mathematical definition of strict
 // domination.
 .decl StrictlyDominates(?dominator:symbol, ?block:symbol)
@@ -188,7 +178,7 @@ DFPlus(?dBlock, ?block, ?var) :-
 
 // TODO: Review this
 DFPlus(?block, ?dfblock, ?var) :-
-    DFPlus(?dBlock, ?block, ?var),
+    DFPlus(_, ?block, ?var),
     DominanceFrontier(?block, ?dfblock).
 
 .decl ContainsAssignment(?dBlock:symbol, ?var:symbol)
@@ -196,10 +186,6 @@ DFPlus(?block, ?dfblock, ?var) :-
 ContainsAssignment(?dBlock, ?var) :-
     BasicBlockHead(?insn, ?dBlock),
     SSA_AssignDetails(?insn, ?var, _, _, _).
-
-.decl DebugBB(?bb:symbol)
-
-DebugBB(?bb) :- BasicBlockBegin(?bb).
 
 // Phi Instrutions inserted at basic blocks.
 // ?phi_var is the new phi variable name that will be generated,
@@ -296,14 +282,6 @@ SimilarDefs(?def_1, ?def_2) :-
     SSA_Alias(?def_1, ?original),
     SSA_Alias(?def_2, ?original).
 
-// A phi assignment is non trivial, if there exist two different predecessors
-// basic blocks that have different defs for var in their out-def sets.
-.decl isNonTrivialPhi(?block:symbol, ?var:symbol)
-
-isNonTrivialPhi(?block, ?var) :-
-    PhiAssign(?var, _, ?block),
-    ExistTwoDifferentPredDefs(?block, ?var).
-
 // Helper predicate that achieves the core logic for the non trivial phi predicate.
 .decl ExistTwoDifferentPredDefs(?block:symbol, ?phi_name:symbol)
 
@@ -316,18 +294,6 @@ ExistTwoDifferentPredDefs(?block, ?phi_name) :-
     BasicBlockOutDefs(?pred1, ?def_1, ?origin),
     BasicBlockOutDefs(?pred2, ?def_2, ?origin),
     ?def_1 != ?def_2.
-
-// Old
-//ExistTwoDifferentPredDefs(?block, ?phi_name) :-
-//    MayPredecessorBBModuloThrow(?pred1, ?block),
-//    MayPredecessorBBModuloThrow(?pred2, ?block),
-//    ?pred1 != ?pred2,
-//    SSA_Alias(?phi_name, ?origin),
-//    BBOutDefs(?pred_1, ?def_1),
-//    BBOutDefs(?pred_2, ?def_2),
-//    SimilarDefs(?def_1, ?def_2),
-//    SimilarDefs(?phi_name, ?def_1),
-//    ?def_1 != ?def_2.
 
 .decl SimilarOutDefs(?block:symbol, ?def:symbol, ?out_def:symbol)
 
@@ -353,7 +319,6 @@ PhiChunk(?phi_var),
 PhiHeader(?dst_block),
 PhiPseudoAssign(?phi_var, ?phi_arg, ?src_block, ?dst_block, ?pseudoname) :-
     PhiAssign(?phi_var, _, ?dst_block),
-    //isNonTrivialPhi(?dst_block, ?phi_var),
     MayPredecessorBBModuloThrow(?src_block, ?dst_block),
     SimilarOutDefs(?src_block, ?phi_var, ?phi_arg),
     Instruction_Index(?src_block, ?src_idx),
@@ -934,12 +899,3 @@ SSA_Type(?to, ?type) :-
     SSA_ThisVar(_, ?to),
     SSA_Alias(?to, ?to_origin),
     Var_Type(?to_origin, ?type).
-
-// Debug output
-.output DFPlus
-.output Dominates
-.output DominanceFrontier
-.output DoesNotDominate
-.output StrictlyDominates
-.output BasicBlockBegin
-.output MayPredecessorBBModuloThrow
