@@ -28,7 +28,7 @@ ModeledFunction(?function, ?name, ?declModule):-
 .output ShapePassThroughOp
 
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?shapePassThroughOp, "inTensor"),
-TensorOperation_NameToVal(?ctx, ?insn, ?shapePassThroughOp, "inTensor", ?inValueHctx, ?inValue),
+TensorOperation_NameToVal(?ctx, ?shapePassThroughOp, "inTensor", ?inValueHctx, ?inValue),
 ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp):-
   ShapePassThroughFunction(?function, ?funName, _, ?argName),
   FunctionInvResolvesTo(?ctx, ?insn, _, _, ?function),
@@ -37,17 +37,17 @@ ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp):-
 
 TensorOperationProducesOutput(?ctx, ?insn, ?shapePassThroughOp):-
   ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp),
-  TensorOperation_NameToVal(?ctx, ?insn, ?shapePassThroughOp, "inTensor", _, ?inValue),
+  TensorOperation_NameToVal(?ctx, ?shapePassThroughOp, "inTensor", _, ?inValue),
   Value_Type(?inValue, "<tensorflow.Tensor>").
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
   ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp),
   TensorOpOutputShape(?ctx, ?insn, ?shapePassThroughOp, ?shapeHctx, ?tensorShapeVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?shapePassThroughOp, "inTensor", ?inValueHctx, ?inValue),
+  TensorOperation_NameToVal(?ctx, ?shapePassThroughOp, "inTensor", ?inValueHctx, ?inValue),
   TensorLikeObjectShapeListLength(?inValueHctx, ?inValue, ?len).
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
   ShapePassThroughOp(?ctx, ?insn, ?shapePassThroughOp),
   TensorOpOutputShape(?ctx, ?insn, ?shapePassThroughOp, ?shapeHctx, ?tensorShapeVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?shapePassThroughOp, "inTensor", ?inValueHctx, ?inValue),
+  TensorOperation_NameToVal(?ctx, ?shapePassThroughOp, "inTensor", ?inValueHctx, ?inValue),
   TensorLikeObjectShapeListContent(?inValueHctx, ?inValue, ?index, ?indexValue).

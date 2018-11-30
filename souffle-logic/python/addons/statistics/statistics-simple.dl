@@ -68,8 +68,8 @@ NewMetricMacro("11.5", "reachable methods (SENS)", mainAnalysis.ReachableContext
   NewMetricMacro("21.5", "tensor op error (SENS)", mainAnalysis.TensorOperationError(_, _, _, _)).
   NewMetricMacro("22.0", "tensor op warning (INS)", TensorOperationWarning_Insens(_, _, _)).
   NewMetricMacro("22.5", "tensor op warning (SENS)", mainAnalysis.TensorOperationWarning(_, _, _, _)).
-  NewMetricMacro("23.0", "tensor op has more than one shape (INS)", TensorHasMoreThanOneShape_Insens(_)).
-  NewMetricMacro("23.5", "tensor op has more than one shape (SENS)", mainAnalysis.TensorHasMoreThanOneShape(_, _)).
+  NewMetricMacro("23.0", "tensor has more than one shape (INS)", TensorHasMoreThanOneShape_Insens(_)).
+  NewMetricMacro("23.5", "tensor has more than one shape (SENS)", mainAnalysis.TensorHasMoreThanOneShape(_, _)).
   NewMetricMacro("24.0", "tensor shape has imprecise contents (INS)", ImpreciseTensorShapeList_Insens(_)).
   NewMetricMacro("24.5", "tensor shape has imprecise contents (SENS)", mainAnalysis.ImpreciseTensorShapeList(_, _)).
   NewMetricMacro("25.0", "tensor op has imprecise name (INS)", TensorOpHasImpreciseArg_Insens(_, _)).

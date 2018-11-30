@@ -5,8 +5,8 @@
 .output EmbdedingLookupOpTensorLengths
 
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?embLookOp, "params"),
-TensorOperation_NameToVal(?ctx, ?insn, ?embLookOp, "params", ?tensorHctx, ?tensorArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?embLookOp, "ids", ?idsTensHctx, ?idsTens),
+TensorOperation_NameToVal(?ctx, ?embLookOp, "params", ?tensorHctx, ?tensorArgVal),
+TensorOperation_NameToVal(?ctx, ?embLookOp, "ids", ?idsTensHctx, ?idsTens),
 EmbdedingLookupOp(?ctx, ?insn, ?embLookOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.nn.embedding_lookup>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.nn.embedding_lookup>", "params", ?tensorHctx, ?tensorArgVal),
@@ -16,8 +16,8 @@ EmbdedingLookupOp(?ctx, ?insn, ?embLookOp):-
 
 TensorOperationProducesOutput(?ctx, ?insn, ?embLookOp):-
   EmbdedingLookupOp(?ctx, ?insn, ?embLookOp),
-  TensorOperation_NameToVal(?ctx, ?insn, ?embLookOp, "params", _, ?tensorArgVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?embLookOp, "ids", _, ?idsTens),
+  TensorOperation_NameToVal(?ctx, ?embLookOp, "params", _, ?tensorArgVal),
+  TensorOperation_NameToVal(?ctx, ?embLookOp, "ids", _, ?idsTens),
   Value_Type(?tensorArgVal, "<tensorflow.Tensor>"),
   Value_Type(?idsTens, "<tensorflow.Tensor>").
 
@@ -25,8 +25,8 @@ TensorOperationProducesOutput(?ctx, ?insn, ?embLookOp):-
 EmbdedingLookupOpTensorLengths(?ctx, ?insn, ?embLookOp, ?len1, ?len2):-
   TensorOperationProducesOutput(?ctx, ?insn, ?embLookOp),
   EmbdedingLookupOp(?ctx, ?insn, ?embLookOp),
-  TensorOperation_NameToVal(?ctx, ?insn, ?embLookOp, "params", ?tensorHctx, ?tensorArgVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?embLookOp, "ids", ?idsTensHctx, ?idsTens),
+  TensorOperation_NameToVal(?ctx, ?embLookOp, "params", ?tensorHctx, ?tensorArgVal),
+  TensorOperation_NameToVal(?ctx, ?embLookOp, "ids", ?idsTensHctx, ?idsTens),
   TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len1),
   TensorLikeObjectShapeListLength(?idsTensHctx, ?idsTens, ?len2).
 
@@ -47,7 +47,7 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
   AssignInstruction_To(?insn, ?var),
   VarPointsTo(?hctx, ?embLookOp, ?ctx, ?var),
   TensorShape(?hctx, ?embLookOp, ?shapeHctx, ?tensorShapeVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?embLookOp, "ids", ?idsTensHctx, ?idsTens),
+  TensorOperation_NameToVal(?ctx, ?embLookOp, "ids", ?idsTensHctx, ?idsTens),
   TensorLikeObjectShapeListContent(?idsTensHctx, ?idsTens, ?index, ?indexVal).
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
@@ -56,7 +56,7 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
   ?index >= ?len2,
   ?iindex > 0,
   ?index = ?iindex + ?len2 - 1,
-  TensorOperation_NameToVal(?ctx, ?insn, ?embLookOp, "params", ?tensorHctx, ?tensorArgVal),
+  TensorOperation_NameToVal(?ctx, ?embLookOp, "params", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?iindex, ?indexVal).
 
 
@@ -85,8 +85,8 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
 .decl SoftmaxCrEntrWLogitsOpLabelsMultRes(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?scewlOp:Value, ?res: number)
 .output SoftmaxCrEntrWLogitsOpLabelsMultRes
 
-TensorOperation_NameToVal(?ctx, ?insn, ?scewlOp, "logits", ?logitsHctx, ?logits),
-TensorOperation_NameToVal(?ctx, ?insn, ?scewlOp, "labels", ?labelsHctx, ?labels),
+TensorOperation_NameToVal(?ctx, ?scewlOp, "logits", ?logitsHctx, ?logits),
+TensorOperation_NameToVal(?ctx, ?scewlOp, "labels", ?labelsHctx, ?labels),
 SoftmaxCrEntrWLogitsOp(?ctx, ?insn, ?scewlOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.nn.softmax_cross_entropy_with_logits>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.nn.softmax_cross_entropy_with_logits>", "logits", ?logitsHctx, ?logits),
@@ -95,7 +95,7 @@ SoftmaxCrEntrWLogitsOp(?ctx, ?insn, ?scewlOp):-
 
 SoftmaxCrEntrWLogitsOpLabelsMultRes(?ctx, ?insn, ?scewlOp, ?res):-
   SoftmaxCrEntrWLogitsOp(?ctx, ?insn, ?scewlOp),
-  TensorOperation_NameToVal(?ctx, ?insn, ?scewlOp, "labels", ?labelsHctx, ?labels),
+  TensorOperation_NameToVal(?ctx, ?scewlOp, "labels", ?labelsHctx, ?labels),
   TensorShape(?labelsHctx, ?labels, ?shapeListHctx, ?shapeList),
   ConstListMultAll(?shapeListHctx, ?shapeList, ?multRes),
   TensorShapeListLength(?shapeListHctx, ?shapeList, ?len),
@@ -105,7 +105,7 @@ SoftmaxCrEntrWLogitsOpLabelsMultRes(?ctx, ?insn, ?scewlOp, ?res):-
 
 SoftmaxCrEntrWLogitsOpLogitsMultRes(?ctx, ?insn, ?scewlOp, ?res):-
   SoftmaxCrEntrWLogitsOp(?ctx, ?insn, ?scewlOp),
-  TensorOperation_NameToVal(?ctx, ?insn, ?scewlOp, "logits", ?logitsHctx, ?logits),
+  TensorOperation_NameToVal(?ctx, ?scewlOp, "logits", ?logitsHctx, ?logits),
   TensorShape(?logitsHctx, ?logits, ?shapeListHctx, ?shapeList),
   ConstListMultAll(?shapeListHctx, ?shapeList, ?multRes),
   TensorShapeListLength(?shapeListHctx, ?shapeList, ?len),
@@ -119,11 +119,11 @@ SoftmaxCrEntrWLogitsOpSameRes(?ctx, ?insn, ?scewlOp, ?res):-
 
 SoftmaxCrEntrWLogitsOpAxisNums(?ctx, ?insn, ?scewlOp, ?val1, ?val2):-
   SoftmaxCrEntrWLogitsOp(?ctx, ?insn, ?scewlOp),
-  TensorOperation_NameToVal(?ctx, ?insn, ?scewlOp, "labels", ?labelsHctx, ?labels),
+  TensorOperation_NameToVal(?ctx, ?scewlOp, "labels", ?labelsHctx, ?labels),
   TensorShape(?labelsHctx, ?labels, ?shapeListHctx1, ?shapeList1),
   TensorShapeListLength(?shapeListHctx1, ?shapeList1, ?len1),
   TensorShapeListContent(?shapeListHctx1, ?shapeList1, ?len1 - 1, ?val1),
-  TensorOperation_NameToVal(?ctx, ?insn, ?scewlOp, "logits", ?logitsHctx, ?logits),
+  TensorOperation_NameToVal(?ctx, ?scewlOp, "logits", ?logitsHctx, ?logits),
   TensorShape(?logitsHctx, ?logits, ?shapeListHctx2, ?shapeList2),
   TensorShapeListLength(?shapeListHctx2, ?shapeList2, ?len2),
   TensorShapeListContent(?shapeListHctx2, ?shapeList2, ?len2 - 1, ?val2).
@@ -148,7 +148,7 @@ TensorOperationProducesOutput(?ctx, ?insn, ?scewlOp):-
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len1 -1):-
   SoftmaxCrEntrWLogitsOp(?ctx, ?insn, ?scewlOp),
   TensorOpOutputShape(?ctx, ?insn, ?scewlOp, ?shapeHctx, ?tensorShapeVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?scewlOp, "labels", ?labelsHctx, ?labels),
+  TensorOperation_NameToVal(?ctx, ?scewlOp, "labels", ?labelsHctx, ?labels),
   TensorShape(?labelsHctx, ?labels, ?shapeListHctx1, ?shapeList1),
   TensorShapeListLength(?shapeListHctx1, ?shapeList1, ?len1).
 
@@ -157,7 +157,7 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
   SoftmaxCrEntrWLogitsOp(?ctx, ?insn, ?scewlOp),
   TensorOpOutputShape(?ctx, ?insn, ?scewlOp, ?shapeHctx, ?tensorShapeVal),
   TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len),
-  TensorOperation_NameToVal(?ctx, ?insn, ?scewlOp, "labels", ?labelsHctx, ?labels),
+  TensorOperation_NameToVal(?ctx, ?scewlOp, "labels", ?labelsHctx, ?labels),
   TensorShape(?labelsHctx, ?labels, ?shapeListHctx1, ?shapeList1),
   ?index < ?len,
   TensorShapeListContent(?shapeListHctx1, ?shapeList1, ?index, ?indexVal).
@@ -177,8 +177,8 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
 .output ArgMaxMinOpAxisDimIsOneWarning
 
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?argMaxMinOp, "input"),
-TensorOperation_NameToVal(?ctx, ?insn, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?argMaxMinOp, "axis", ?axisHctx, ?axis),
+TensorOperation_NameToVal(?ctx, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
+TensorOperation_NameToVal(?ctx, ?argMaxMinOp, "axis", ?axisHctx, ?axis),
 ArgMaxMinOp(?ctx, ?insn, ?argMaxMinOp):-
   (?function = "<tensorflow.argmax>" ; ?function = "<tensorflow.argmin>"),
   FunctionInvResolvesTo(?ctx, ?insn, _, _, ?function),
@@ -189,25 +189,25 @@ ArgMaxMinOp(?ctx, ?insn, ?argMaxMinOp):-
 
 ArgMaxMinOpAxisNum(?ctx, ?insn, ?argMaxMinOp, ?axisNum):-
   ArgMaxMinOp(?ctx, ?insn, ?argMaxMinOp),
-  TensorOperation_NameToVal(?ctx, ?insn, ?argMaxMinOp, "axis", _, ?axis),
+  TensorOperation_NameToVal(?ctx, ?argMaxMinOp, "axis", _, ?axis),
   Value_Num(?axis, ?axisNumStr),
   ?axisNum = to_number(?axisNumStr).
 
 ArgMaxMinOpAxisDimIsOneWarning(?ctx, ?insn, ?argMaxMinOp):-
   ArgMaxMinOpAxisNum(?ctx, ?insn, ?argMaxMinOp, ?axisNum),
-  TensorOperation_NameToVal(?ctx, ?insn, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
+  TensorOperation_NameToVal(?ctx, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?axisNum, "<num-constant(int):1>").
 
 TensorOperationProducesOutput(?ctx, ?insn, ?argMaxMinOp):-
   ArgMaxMinOpAxisNum(?ctx, ?insn, ?argMaxMinOp, ?axisNum),
-  TensorOperation_NameToVal(?ctx, ?insn, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
+  TensorOperation_NameToVal(?ctx, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len),
   ?len > ?axisNum.
 
 TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len -1):-
   ArgMaxMinOpAxisNum(?ctx, ?insn, ?argMaxMinOp, _),
   TensorOpOutputShape(?ctx, ?insn, ?argMaxMinOp, ?shapeHctx, ?tensorShapeVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
+  TensorOperation_NameToVal(?ctx, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len).
 
 
@@ -215,14 +215,14 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
   ArgMaxMinOpAxisNum(?ctx, ?insn, ?argMaxMinOp, ?axisNum),
   ?index < ?axisNum,
   TensorOpOutputShape(?ctx, ?insn, ?argMaxMinOp, ?shapeHctx, ?tensorShapeVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
+  TensorOperation_NameToVal(?ctx, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?index, ?indexVal).
 
 TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index - 1, ?indexVal):-
   ArgMaxMinOpAxisNum(?ctx, ?insn, ?argMaxMinOp, ?axisNum),
   ?index > ?axisNum,
   TensorOpOutputShape(?ctx, ?insn, ?argMaxMinOp, ?shapeHctx, ?tensorShapeVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
+  TensorOperation_NameToVal(?ctx, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?index, ?indexVal).
 //----------------------------------------------------------------------------------------------------------------------
 //                                              INCORRECTLY MODELED OPS
