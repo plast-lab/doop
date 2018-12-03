@@ -634,12 +634,11 @@ lang:physical:filePath[`_ExceptionHandler] = "facts/ExceptionHandler.facts".
 lang:physical:delimiter[`_ExceptionHandler] = "\t".
 lang:physical:hasColumnNames[`_ExceptionHandler] = false.
 
-_ExceptionHandler(?ref, ?method, ?index, ?type, ?var, ?begin, ?end) ->
+_ExceptionHandler(?ref, ?method, ?index, ?type, ?begin, ?end) ->
    string(?ref),
    string(?method),
    int[32](?index),
    string(?type),
-   string(?var),
    int[32](?begin),
    int[32](?end).
 
@@ -648,11 +647,23 @@ _ExceptionHandler(?ref, ?method, ?index, ?type, ?var, ?begin, ?end) ->
 +ExceptionHandler:Method[?x] = ?method,
 +ExceptionHandler:Index[?x] = ?index,
 +ExceptionHandler:Type[?x] = ?type,
-+ExceptionHandler:FormalParam[?x] = ?var,
 +ExceptionHandler:Begin[?x] = ?begin,
 +ExceptionHandler:End[?x] = ?end <-
-   _ExceptionHandler(?ref, ?method, ?index, ?type, ?var, ?begin, ?end).
+   _ExceptionHandler(?ref, ?method, ?index, ?type, ?begin, ?end).
 
+lang:physical:storageModel[`_ExceptionHandlerFormalParam] = "DelimitedFile".
+lang:physical:filePath[`_ExceptionHandlerFormalParam] = "facts/ExceptionHandler-FormalParam.facts".
+lang:physical:delimiter[`_ExceptionHandlerFormalParam] = "\t".
+lang:physical:hasColumnNames[`_ExceptionHandlerFormalParam] = false.
+
+_ExceptionHandlerFormalParam(?ref, ?var) ->
+   string(?ref),
+   string(?var).
+
++ExceptionHandler(?x),
++ExceptionHandler:Id(?x:?ref),
++ExceptionHandler:FormalParam[?x] = ?var <-
+   _ExceptionHandlerFormalParam(?ref, ?var).
 
 // Method signature
 

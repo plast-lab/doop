@@ -216,6 +216,17 @@ class DexMethodFactWriter extends JavaFactWriter {
                 } else
                     excType = raiseTypeId(t);
                 Handler current = new Handler(startAddr, endAddr, handlerAddr, excType);
+
+                String insn = handlerMid(excType);
+                Integer handlerIndex = addressToIndex.get(handlerAddr);
+                Integer startIndex = addressToIndex.get(startAddr);
+                Integer endIndex = addressToIndex.get(endAddr);
+
+                if (handlerIndex == null || startIndex == null || endIndex == null) {
+                    System.err.println("Error: handler {" + handlerIndex + ", " + startIndex + ", " + endIndex + "}");
+                } else
+                    writeExceptionHandler(insn, methId, handlerIndex, excType, startIndex, endIndex);
+
                 handlers.add(current);
                 if (previous != null)
                     previousHandlers.put(current, previous);
@@ -223,7 +234,9 @@ class DexMethodFactWriter extends JavaFactWriter {
             }
         }
 
-        // Step 2: match every queued MOVE_EXCEPTION against its handler.
+        // Step 2: match every queued MOVE_EXCEPTION against its handler. This
+        // resolves the "formal" of exception handlers and is optional: some
+        // handlers may not have MOVE_EXCEPTION opcodes (but e.g., a GOTO).
         Map<Handler, String> handlerInsnId = new HashMap<>();
         for (MoveExceptionInfo mei : exceptionMoves) {
             List<Handler> containingHandlers = Handler.findHandlerStartingAt(handlers, mei.address);
@@ -242,7 +255,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                         System.err.println("Warning: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
                     String insn = instructionId(handlerMid(hi.excType), handlerIndex);
                     handlerInsnId.put(hi, insn);
-                    writeExceptionHandler(insn, methId, handlerIndex, hi.excType, localA, startIndex, endIndex);
+                    writeExceptionHandlerFormal(insn, localA);
                 } catch (Handler.IndexException ex) {
                     System.err.println("Error: " + ex.getMessage());
                 }
@@ -255,9 +268,12 @@ class DexMethodFactWriter extends JavaFactWriter {
             String currInsn = handlerInsnId.get(entry.getKey());
             String prevInsn = handlerInsnId.get(entry.getValue());
             if ((currInsn != null) && (prevInsn != null))
-                _db.add(EXCEPT_HANDLER_PREV, currInsn, prevInsn);
-            else
-                System.err.println("Error: no index for previous-handler pair: " + entry);
+                writeExceptionHandlerPrevious(currInsn, prevInsn);
+            else {
+                System.err.println("Error: no index for previous-handler pair in " + methId +
+                                   ": current = " + currInsn + ", previous = " + prevInsn +
+                                   ", entry = " + entry);
+            }
         }
     }
 

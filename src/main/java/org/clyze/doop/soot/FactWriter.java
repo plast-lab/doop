@@ -636,7 +636,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeExceptionHandlerPrevious(SootMethod m, Trap current, Trap previous, SessionCounter counter) {
-        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, current, counter), _rep.handler(m, previous, counter));
+        writeExceptionHandlerPrevious(_rep.handler(m, current, counter), _rep.handler(m, previous, counter));
     }
 
     void writeExceptionHandler(SootMethod m, Trap handler, Session session) {
@@ -663,7 +663,8 @@ class FactWriter extends JavaFactWriter {
         int beginIndex = session.getUnitNumber(handler.getBeginUnit());
         session.calcUnitNumber(handler.getEndUnit());
         int endIndex = session.getUnitNumber(handler.getEndUnit());
-        writeExceptionHandler(insn, _rep.signature(m), handlerIndex, exc.getName(), Representation.local(m, caught), beginIndex, endIndex);
+        writeExceptionHandler(insn, _rep.signature(m), handlerIndex, exc.getName(), beginIndex, endIndex);
+        writeExceptionHandlerFormal(insn, Representation.local(m, caught));
     }
 
     void writeThisVar(SootMethod m) {

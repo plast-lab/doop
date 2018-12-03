@@ -314,7 +314,15 @@ public abstract class JavaFactWriter {
     }
 
     protected void writeExceptionHandler(String insn, String method, int index,
-                                         String type, String var, int begin, int end) {
-        _db.add(EXCEPTION_HANDLER, insn, method, str(index), type, var, str(begin), str(end));
+                                         String type, int begin, int end) {
+        _db.add(EXCEPTION_HANDLER, insn, method, str(index), type, str(begin), str(end));
+    }
+
+    protected void writeExceptionHandlerFormal(String insn, String var) {
+        _db.add(EXCEPTION_HANDLER_FORMAL_PARAM, insn, var);
+    }
+
+    protected void writeExceptionHandlerPrevious(String currInsn, String prevInsn) {
+        _db.add(EXCEPT_HANDLER_PREV, currInsn, prevInsn);
     }
 }

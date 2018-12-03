@@ -804,7 +804,7 @@ public class WalaFactWriter extends JavaFactWriter {
         SSAGetCaughtExceptionInstruction currCatch = current.getCatchInstruction();
         TypeReference currType = current.getCaughtExceptionTypes().next();
 
-        _db.add(EXCEPT_HANDLER_PREV, _rep.handler(m, currCatch, currType, counter, 0), _rep.handler(m, prevCatch, prevType, counter, prevNumOfScopes));
+        writeExceptionHandlerPrevious(_rep.handler(m, currCatch, currType, counter, 0), _rep.handler(m, prevCatch, prevType, counter, prevNumOfScopes));
     }
 
     void writeExceptionHandler(IR ir, IMethod m, SSACFG.ExceptionHandlerBasicBlock handlerBlock, Session session, TypeInference typeInference, WalaExceptionHelper exceptionHelper) {
@@ -844,9 +844,10 @@ public class WalaFactWriter extends JavaFactWriter {
             while (excTypes.hasNext()) {
                 TypeReference excType = excTypes.next();
                 String insn = _rep.handler(m, catchInstr, excType, session, i/2);
-                writeExceptionHandler(insn, _rep.signature(m), handlerIndex, fixTypeString(excType.getName().toString()), _rep.local(m, caught), beginIndex, endIndex);
+                writeExceptionHandler(insn, _rep.signature(m), handlerIndex, fixTypeString(excType.getName().toString()), beginIndex, endIndex);
+                writeExceptionHandlerFormal(insn, _rep.local(m, caught));
                 if (prev != null)
-                    _db.add(EXCEPT_HANDLER_PREV, insn, prev);
+                    writeExceptionHandlerPrevious(insn, prev);
                 prev = insn;
             }
         }
