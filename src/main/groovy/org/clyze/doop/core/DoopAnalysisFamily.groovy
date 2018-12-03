@@ -11,6 +11,9 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static final String DEFAULT_JAVA_PLATFORM = "java_8"
+	private static final String GROUP_FACTS = "Fact generation"
+	private static final String GROUP_REFLECTION = "Reflection"
+	private static final String GROUP_ENGINE = "Datalog engine"
 
 	@Override
 	String getName() { "doop" }
@@ -146,6 +149,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "TAMIFLEX",
 					name: "tamiflex",
+					group: GROUP_REFLECTION,
 					description: "Use file with tamiflex data for reflection.",
 					argName: "FILE",
 					argInputType: InputType.MISC,
@@ -165,8 +169,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SPECIAL_CONTEXT_SENSITIVITY_METHODS",
 					name: "special-cs-methods",
 					argName: "FILE",
-	                                description: "Use a file that specifies special context sensitivity for some methods.",
-                                        forPreprocessor: true,  
+					description: "Use a file that specifies special context sensitivity for some methods.",
+					forPreprocessor: true,	
 					forCacheID: true,
 					changesFacts: true
 			),
@@ -187,6 +191,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "CACHE",
 					name: "cache",
+					group: GROUP_FACTS,
 					description: "The analysis will use the cached facts, if they exist."
 			),
 			new BooleanAnalysisOption(
@@ -197,6 +202,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "NO_SSA",
 					name: "no-ssa",
+					group: GROUP_FACTS,
 					description: "Disable the default policy of using ssa transformation on input."
 			),
 			new BooleanAnalysisOption(
@@ -220,12 +226,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DONT_REPORT_PHANTOMS",
 					name: "dont-report-phantoms",
+					group: GROUP_FACTS,
 					description: "Do not report phantom methods/types during fact generation.",
 					value: false
 			),
 			new BooleanAnalysisOption(
 					id: "GENERATE_JIMPLE",
 					name: "generate-jimple",
+					group: GROUP_FACTS,
 					description: "Generate Jimple/Shimple files along with .facts files.",
 					forCacheID: true
 			),
@@ -250,18 +258,21 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "WALA_FACT_GEN",
 					name: "wala-fact-gen",
+					group: GROUP_FACTS,
 					description: "Use WALA to generate the facts.",
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
 					id: "DEX_FACT_GEN",
 					name: "dex",
+					group: GROUP_FACTS,
 					description: "Use custom front-end to generate facts for .apk inputs, using Soot for other inputs.",
 					forCacheID: true
 			),
 			new AnalysisOption<String>(
 					id: "DECODE_APK",
 					name: "decode-apk",
+					group: GROUP_FACTS,
 					description: "Decode .apk inputs to facts directory."
 			),
 			new BooleanAnalysisOption(
@@ -272,6 +283,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new IntegerAnalysisOption(
 					id: "FACT_GEN_CORES",
 					name: "fact-gen-cores",
+					group: GROUP_FACTS,
 					description: "Number of cores to use for parallel fact generation.",
 					argName: "NUMBER"
 			),
@@ -337,6 +349,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SINGLE_FILE_ANALYSIS",
 					name: "single-file-analysis",
+					group: GROUP_FACTS,
 					description: "Flag to be passed to WALAs IR translator to produce IR that makes the analysis of a single script file easier.",
 					changesFacts: true,
 					forCacheID: true
@@ -359,6 +372,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
 					name: "distinguish-reflection-only-string-constants",
+					group: GROUP_REFLECTION,
 					description: "Merge all string constants except those useful for reflection.",
 					forPreprocessor: true
 			),
@@ -377,6 +391,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DISTINGUISH_STRING_BUFFERS_PER_PACKAGE",
 					name: "distinguish-string-buffers-per-package",
+					group: GROUP_REFLECTION,
 					description: "Merges string buffer objects only on a per-package basis (default behavior for reflection-classic).",
 					forPreprocessor: true
 			),
@@ -411,71 +426,84 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "REFLECTION",
 					name: "reflection",
+					group: GROUP_REFLECTION,
 					description: "Enable logic for handling Java reflection.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_CLASSIC",
 					name: "reflection-classic",
+					group: GROUP_REFLECTION,
 					description: "Enable (classic subset of) logic for handling Java reflection."
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_SUBSTRING_ANALYSIS",
 					name: "reflection-substring-analysis",
+					group: GROUP_REFLECTION,
 					description: "Allows reasoning on what substrings may yield reflection objects.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_CONTEXT_SENSITIVITY",
 					name: "reflection-context-sensitivity",
+					group: GROUP_REFLECTION,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_HIGH_SOUNDNESS_MODE",
 					name: "reflection-high-soundness-mode",
+					group: GROUP_REFLECTION,
 					description: "Enable extra rules for more sound handling of reflection.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS",
 					name: "reflection-speculative-use-based-analysis",
+					group: GROUP_REFLECTION,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_INVENT_UNKNOWN_OBJECTS",
 					name: "reflection-invent-unknown-objects",
+					group: GROUP_REFLECTION,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "GROUP_REFLECTION_STRINGS",
 					name: "reflection-coloring",
+					group: GROUP_REFLECTION,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "EXTRACT_MORE_STRINGS",
 					name: "extract-more-strings",
+					group: GROUP_FACTS,
 					description: "Extract more string constants from the input code (may degrade analysis performance).",
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_METHOD_HANDLES",
 					name: "reflection-method-handles",
+					group: GROUP_REFLECTION,
 					description: "Reflection-based handling of the method handle APIs.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_REFINED_OBJECTS",
 					name: "reflection-refined-objects",
+					group: GROUP_REFLECTION,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_DYNAMIC_PROXIES",
 					name: "reflection-dynamic-proxies",
+					group: GROUP_REFLECTION,
 					description: "Enable handling of the Java dynamic proxy API.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "LIGHT_REFLECTION_GLUE",
 					name: "light-reflection-glue",
+					group: GROUP_REFLECTION,
 					description: "Handle some shallow reflection patterns without full reflection support.",
 					forPreprocessor: true
 			),
@@ -502,6 +530,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new IntegerAnalysisOption(
 					id: "SOUFFLE_JOBS",
 					name: "souffle-jobs",
+					group: GROUP_ENGINE,
 					description: "Specify number of Souffle jobs to run.",
 					argName: "NUMBER",
 					value: 4
@@ -509,24 +538,28 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_DEBUG",
 					name: "souffle-debug",
+					group: GROUP_ENGINE,
 					description: "Enable profiling in the Souffle binary."
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_PROFILE",
 					name: "souffle-profile",
+					group: GROUP_ENGINE,
 					description: "Enable profiling in the Souffle binary."
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_PROVENANCE",
 					name: "souffle-provenance",
+					group: GROUP_ENGINE,
 					description: "Call the provenance browser."
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_RUN_INTERPRETED",
 					name: "souffle-run-interpreted",
-					description: "Run souffle in interpreted mode(currently only for python analyses)."
+					group: GROUP_ENGINE,
+					description: "Run souffle in interpreted mode (currently only for python analyses)."
 			),
-			/* Start Souffle related options */
+			/* End Souffle related options */
 
 			//Information-flow, etc.
 			new AnalysisOption<String>(
@@ -611,24 +644,29 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			/* Start LogicBlox related options */
 			new AnalysisOption<String>(
 					id: "LOGICBLOX_HOME",
+					group: GROUP_ENGINE,
 					value: System.getenv("LOGICBLOX_HOME"),
 					cli: false
 			),
 			new AnalysisOption<String>(
 					id: "LD_LIBRARY_PATH", //the value is set based on LOGICBLOX_HOME
+					group: GROUP_ENGINE,
 					cli: false
 			),
 			new AnalysisOption<String>(
 					id: "BLOXBATCH", //the value is set based on LOGICBLOX_HOME
+					group: GROUP_ENGINE,
 					cli: false
 			),
 			new AnalysisOption<String>(
 					id: "BLOX_OPTS",
+					group: GROUP_ENGINE,
 					cli: false
 			),
 			new BooleanAnalysisOption(
 					id: "LB3",
 					name: "lb",
+					group: GROUP_ENGINE,
 					description: "Use the LB engine."
 			),
 			/* End LogicBlox related options */
@@ -662,6 +700,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "X_STOP_AT_FACTS",
 					name: "Xstop-at-facts",
+					group: GROUP_FACTS,
 					description: "Only generate facts and exit. Link result to OUT_DIR",
 					argName: "OUT_DIR",
 					argInputType: InputType.MISC
@@ -669,6 +708,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "X_STOP_AT_BASIC",
 					name: "Xstop-at-basic",
+					group: GROUP_FACTS,
 					description: "Run the basic analysis and exit. Possible strategies: default, classes-scc (outputs the classes in SCC), partitioning (outputs the classes in partitions)",
 					argName: "PARTITIONING_STRATEGY",
 					argInputType: InputType.MISC
@@ -681,6 +721,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_FORCE_RECOMPILE",
 					name: "Xforce-recompile",
+					group: GROUP_ENGINE,
 					description: "Force recompilation of Souffle logic."
 			),
 			new BooleanAnalysisOption(
@@ -724,12 +765,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_SYMLINK_CACHED_FACTS",
 					name: "Xsymlink-cached-facts",
+					group: GROUP_FACTS,
 					description: "Use symbolic links instead of copying cached facts.",
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
 					id: "X_START_AFTER_FACTS",
 					name: "Xstart-after-facts",
+					group: GROUP_FACTS,
 					description: "Import facts from OUT_DIR and start the analysis.",
 					argName: "OUT_DIR",
 					argInputType: InputType.MISC,
@@ -753,16 +796,19 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_IGNORE_WRONG_STATICNESS",
 					name: "Xignore-wrong-staticness",
+					group: GROUP_FACTS,
 					description: "Ignore 'wrong static-ness' errors in Soot."
 			),
 			new BooleanAnalysisOption(
 					id: "X_IGNORE_FACTGEN_ERRORS",
 					name: "Xignore-factgen-errors",
+					group: GROUP_FACTS,
 					description: "Continue with analysis despite fact generation errors."
 			),
 			new AnalysisOption<List<String>>(
 					id: "ALSO_RESOLVE",
 					name: "also-resolve",
+					group: GROUP_FACTS,
 					description: "Force resolution of class(es) by Soot.",
 					value: [],
 					multipleValues: true,
@@ -771,6 +817,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "THOROUGH_FACT_GEN",
 					name: "thorough-fact-gen",
+					group: GROUP_FACTS,
 					description: "Attempt to resolve as many classes during fact generation (may take more time)."
 			),
 			new IntegerAnalysisOption(
@@ -783,6 +830,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "X_FACTS_SUBSET",
 					name: "Xfacts-subset",
+					group: GROUP_FACTS,
 					description: "Produce facts only for a subset of the given classes.",
 					argName: "SUBSET",
 					validValues: Parameters.FactsSubSet.values().collect { it as String },
@@ -791,11 +839,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_UNIQUE_FACTS",
 					name: "Xunique-facts",
+					group: GROUP_FACTS,
 					description: "Eliminate redundancy from .facts files.",
 			),
 			new AnalysisOption<String>(
 					id: "X_USE_EXISTING_FACTS",
 					name: "Xuse-existing-facts",
+					group: GROUP_FACTS,
 					description: "Expand upon the facts found in the given directory.",
 					argName: "DIR",
 					argInputType: InputType.MISC
