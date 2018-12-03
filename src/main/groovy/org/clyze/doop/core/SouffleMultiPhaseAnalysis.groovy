@@ -4,6 +4,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
+import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.ptatoolkit.scaler.Main
 import org.clyze.doop.utils.SouffleScript
@@ -16,6 +17,7 @@ import java.util.concurrent.Future
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
+import static org.apache.commons.io.FilenameUtils.*
 
 @CompileStatic
 @InheritConstructors
@@ -41,11 +43,11 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 		executor = new Executor(outDir, commandsEnv)
 		cpp = new CPreprocessor(this, executor)
 
-		preAnalysisInitDatabase()
-		preAnalysisBasicAnalysis()
+		initDatabase(preAnalysis)
+		basicAnalysis(preAnalysis)
 		if (!options.X_STOP_AT_BASIC.value) {
-			preAnalysisMainAnalysis()
-			preAnalysisProduceStats()
+			mainAnalysis(preAnalysis)
+			produceStats(preAnalysis)
 		}
 
 		def cacheDir = new File(Doop.souffleAnalysesCache, name)
@@ -102,11 +104,11 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 		executor = new Executor(outDir, commandsEnv)
 		cpp = new CPreprocessor(this, executor)
 
-		initDatabase()
-		basicAnalysis()
+		initDatabase(analysis)
+		basicAnalysis(analysis)
 		if (!options.X_STOP_AT_BASIC.value) {
-			mainAnalysis()
-			produceStats()
+			mainAnalysis(analysis)
+			produceStats(analysis)
 		}
 
 		compilationFuture = null
@@ -148,7 +150,7 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 
 	}
 
-	void initDatabase() {
+	void initDatabase(File analysis) {
 		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-sensitive-schema.dl")
 		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-insensitive-schema.dl")
@@ -171,7 +173,7 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 		}
 	}
 
-	void basicAnalysis() {
+	void basicAnalysis(File analysis) {
 		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
 
@@ -190,10 +192,11 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 		}
 	}
 
-	void mainAnalysis() {
+	void mainAnalysis(File analysis) {
 		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 		def mainPath = "${Doop.souffleLogicPath}/main"
-		def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
+		log.debug("analysis: ${getBaseName(analysis.name)}")
+		def analysisPath = "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}"
 
 		if (name == "sound-may-point-to") {
 			cpp.includeAtEnd("$analysis", "${mainPath}/string-constants.dl")
@@ -259,7 +262,7 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 		}
 	}
 
-	void produceStats() {
+	void produceStats(File analysis) {
 		def statsPath = "${Doop.souffleAddonsPath}/statistics"
 		if (options.X_EXTRA_METRICS.value) {
 			cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
@@ -287,152 +290,6 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 
 		if (options.X_STATS_FULL.value || options.X_STATS_DEFAULT.value) {
 			cpp.includeAtEnd("$analysis", "${statsPath}/statistics.dl")
-		}
-	}
-
-	void preAnalysisInitDatabase() {
-		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-		cpp.includeAtEnd("$preAnalysis", "${Doop.souffleFactsPath}/flow-sensitive-schema.dl")
-		cpp.includeAtEnd("$preAnalysis", "${Doop.souffleFactsPath}/flow-insensitive-schema.dl")
-		cpp.includeAtEnd("$preAnalysis", "${Doop.souffleFactsPath}/import-entities.dl")
-		cpp.includeAtEnd("$preAnalysis", "${Doop.souffleFactsPath}/import-facts.dl")
-		cpp.includeAtEnd("$preAnalysis", "${Doop.souffleFactsPath}/to-flow-sensitive.dl")
-		cpp.includeAtEnd("$preAnalysis", "${Doop.souffleFactsPath}/post-process.dl", commonMacros)
-		cpp.includeAtEnd("$preAnalysis", "${Doop.souffleFactsPath}/mock-heap.dl", commonMacros)
-
-		handleImportDynamicFacts()
-
-		if (options.HEAPDLS.value || options.IMPORT_DYNAMIC_FACTS.value) {
-			cpp.includeAtEnd("$preAnalysis", "${Doop.souffleFactsPath}/import-dynamic-facts.dl", commonMacros)
-		}
-
-		if (options.TAMIFLEX.value) {
-			def tamiflexPath = "${Doop.souffleAddonsPath}/tamiflex"
-			cpp.includeAtEnd("$preAnalysis", "${tamiflexPath}/fact-declarations.dl")
-			cpp.includeAtEnd("$preAnalysis", "${tamiflexPath}/import.dl")
-		}
-	}
-
-	void preAnalysisBasicAnalysis() {
-		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-		cpp.includeAtEnd("$preAnalysis", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
-
-		if (options.CFG_ANALYSIS.value || name == "sound-may-point-to") {
-			def cfgAnalysisPath = "${Doop.souffleAddonsPath}/cfg-analysis"
-			cpp.includeAtEnd("$preAnalysis", "${cfgAnalysisPath}/analysis.dl", "${cfgAnalysisPath}/declarations.dl")
-		}
-		if (options.X_STOP_AT_BASIC.value) {
-			if (options.X_STOP_AT_BASIC.value == 'classes-scc') {
-				cpp.includeAtEnd("$preAnalysis", "${Doop.souffleLogicPath}/basic/classes-scc.dl")
-			}
-
-			if (options.X_STOP_AT_BASIC.value == 'partitioning') {
-				cpp.includeAtEnd("$preAnalysis", "${Doop.souffleLogicPath}/basic/partitioning.dl")
-			}
-		}
-	}
-
-	void preAnalysisMainAnalysis() {
-		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-		def mainPath = "${Doop.souffleLogicPath}/main"
-		def analysisPath = "${Doop.souffleAnalysesPath}/context-insensitive"
-
-		if (name == "sound-may-point-to") {
-			cpp.includeAtEnd("$preAnalysis", "${mainPath}/string-constants.dl")
-			cpp.includeAtEnd("$preAnalysis", "${analysisPath}/analysis.dl")
-		} else {
-			cpp.includeAtEndIfExists("$preAnalysis", "${analysisPath}/declarations.dl")
-			cpp.includeAtEndIfExists("$preAnalysis", "${analysisPath}/delta.dl", commonMacros)
-			cpp.includeAtEnd("$preAnalysis", "${analysisPath}/analysis.dl", commonMacros)
-		}
-
-		if (options.INFORMATION_FLOW.value) {
-			def infoFlowPath = "${Doop.souffleAddonsPath}/information-flow"
-			cpp.includeAtEnd("$preAnalysis", "${infoFlowPath}/declarations.dl")
-			cpp.includeAtEnd("$preAnalysis", "${infoFlowPath}/delta.dl")
-			cpp.includeAtEnd("$preAnalysis", "${infoFlowPath}/rules.dl")
-			cpp.includeAtEnd("$preAnalysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
-		}
-
-		if (options.SYMBOLIC_REASONING.value) {
-			def symbolicReasoningPath ="${Doop.souffleAddonsPath}/symbolic-reasoning"
-			cpp.includeAtEnd("$preAnalysis", "${symbolicReasoningPath}/const-type-infer.dl")
-			cpp.includeAtEnd("$preAnalysis", "${symbolicReasoningPath}/constant-folding.dl")
-			//cpp.includeAtEnd("$preAnalysis", "${symbolicReasoningPath}/constant-propagation.dl")
-		}
-
-		String openProgramsRules = options.OPEN_PROGRAMS.value
-		if (openProgramsRules) {
-			log.debug "Using open-programs rules: ${openProgramsRules}"
-			cpp.includeAtEnd("$preAnalysis", "${Doop.souffleAddonsPath}/open-programs/rules-${openProgramsRules}.dl", commonMacros)
-		}
-
-		if (options.SANITY.value) {
-			cpp.includeAtEnd("$preAnalysis", "${Doop.souffleAddonsPath}/sanity.dl")
-			if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
-				log.info("Warning: the sanity check is not fully compatible with --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name)
-			}
-			if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-				log.info("Warning: the sanity check is not fully compatible with --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name)
-			}
-			if (options.NO_MERGES.value) {
-				log.info("Warning: the sanity check is not fully compatible with --" + options.NO_MERGES.name)
-			}
-		}
-
-		if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
-			cpp.includeAtEnd("$preAnalysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
-		}
-
-		if (!options.X_STOP_AT_FACTS.value && options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
-			cpp.includeAtEnd("$preAnalysis", "${Doop.souffleAddonsPath}/opt-directives/keep.dl")
-			cpp.includeAtEnd("$preAnalysis", "${Doop.souffleAddonsPath}/opt-directives/directives.dl")
-		}
-
-		if (options.X_EXTRA_LOGIC.value) {
-			File extraLogic = new File(options.X_EXTRA_LOGIC.value as String)
-			if (extraLogic.exists()) {
-				String extraLogicPath = extraLogic.canonicalPath
-				log.info "Adding extra logic file ${extraLogicPath}"
-				cpp.includeAtEnd("${analysis}", extraLogicPath, commonMacros)
-			} else {
-				log.warn "Extra logic file does not exist: ${extraLogic}"
-			}
-		}
-	}
-
-	void preAnalysisProduceStats() {
-		def statsPath = "${Doop.souffleAddonsPath}/statistics"
-		if (options.X_EXTRA_METRICS.value) {
-			cpp.includeAtEnd("$preAnalysis", "${statsPath}/metrics.dl")
-		}
-
-		if (options.X_ORACULAR_HEURISTICS.value) {
-			cpp.includeAtEnd("$preAnalysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
-		}
-
-		if (options.X_CONTEXT_DEPENDENCY_HEURISTIC.value) {
-			cpp.includeAtEnd("$preAnalysis", "${Doop.souffleAddonsPath}/oracular/2-object-ctx-dependency-heuristic.dl")
-		}
-
-		if (options.X_STATS_NONE.value) return
-
-		if (options.X_STATS_AROUND.value) {
-			cpp.includeAtEnd("$preAnalysis", options.X_STATS_AROUND.value as String)
-			return
-		}
-
-		// Special case of X_STATS_AROUND (detected automatically)
-		def specialStats = new File("${Doop.souffleAnalysesPath}/${name}/statistics.dl")
-		if (specialStats.exists()) {
-			cpp.includeAtEnd("$preAnalysis", specialStats.toString())
-			return
-		}
-
-		cpp.includeAtEnd("$preAnalysis", "${statsPath}/statistics-simple.dl")
-
-		if (options.X_STATS_FULL.value || options.X_STATS_DEFAULT.value) {
-			cpp.includeAtEnd("$preAnalysis", "${statsPath}/statistics.dl")
 		}
 	}
 
