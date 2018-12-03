@@ -20,7 +20,7 @@ public class Parameters {
     private ClassFilter applicationClassFilter;
     public boolean _android = false;
     public Integer _cores = null;
-    public String _seed = null;
+    public String _entryPoints = null;
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
@@ -180,9 +180,9 @@ public class Parameters {
             i = shift(args, i);
             _extraSensitiveControls = args[i];
             break;
-        case "--seed":
+        case "--entry-points":
             i = shift(args, i);
-            _seed = args[i];
+            _entryPoints = args[i];
             break;
         case "--no-facts":
             _noFacts = true;

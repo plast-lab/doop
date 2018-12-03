@@ -137,7 +137,7 @@ public abstract class JavaFactWriter {
         }
 
         try {
-            processSeeds(params._seed);
+            processEntryPoints(params._entryPoints);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -183,36 +183,34 @@ public abstract class JavaFactWriter {
         }
     }
 
-    private void processSeeds(String seed) throws IOException {
-        if (seed != null) {
-            System.out.println("Reading seeds from: " + seed);
-            try (Stream<String> stream = Files.lines(Paths.get(seed))) {
-                stream.forEach(this::processSeedFileLine);
+    private void processEntryPoints(String file) throws IOException {
+        if (file != null) {
+            System.out.println("Reading entry points from: " + file);            
+            try (Stream<String> stream = Files.lines(Paths.get(file))) {
+                stream.forEach(this::processEntryPointsFileLine);
             }
         }
     }
 
-    private void processSeedFileLine(String line) {
-        //The SEED file may contain method doopIds
+    private void processEntryPointsFileLine(String line) {        
+        //The entry points file may contain method doopIds or proguard seeds
         if (line.startsWith("<")) {
             writeAndroidKeepMethodDoopId(line);
         }
-        else {
-            if (line.contains("(")) {
+        else if (line.contains("(")) {
                 //writeAndroidKeepMethod(line);
                 
-                //The seeds file notation does not use doopIds for constructors.
+                //The proguard seeds file notation does not use doopIds for constructors.
                 //e.g. in a seeds file we have:
                 //package.class$innerClass: class$innerClass(args...)
                 //instead of: 
                 //package.class$innerClass: void <init>(args...)
                 String doopId = Helper.readMethodDoopId(line);
                 writeAndroidKeepMethodDoopId(doopId);
-            }
-            else if (!line.contains(":")) {
-                writeAndroidKeepClass(line);
-            }
         }
+        else if (!line.contains(":")) {
+            writeAndroidKeepClass(line);
+        }        
     }
 
     protected void writeMethodDeclaresException(String methodId, String exceptionType) {

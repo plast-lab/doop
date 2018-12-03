@@ -158,11 +158,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
-					id: "SEED",
-					name: "seed",
+					id: "ENTRY_POINTS",
+					name: "entry-points",
 					argName: "FILE",
 					forCacheID: true,
-					description: "Use ProGuard seed file.",
+					description: "Entry points (Proguard seed file or doop method IDs).",
 					changesFacts: true,
 			),
 			new AnalysisOption<String>(
