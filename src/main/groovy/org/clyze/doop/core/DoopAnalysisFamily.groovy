@@ -360,6 +360,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Enable tensor shape analysis for python.",
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "FULL_TENSOR_PRECISION",
+					name: "full-tensor-precision",
+					description: "Full precision tensor shape analysis(not guaranteed to finish).",
+					forPreprocessor: true
+			),
 			/* End Python related options */
 
 			/* Start preprocessor normal flags */

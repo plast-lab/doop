@@ -74,4 +74,5 @@ NewMetricMacro("11.5", "reachable methods (SENS)", mainAnalysis.ReachableContext
   NewMetricMacro("24.5", "tensor shape has imprecise contents (SENS)", mainAnalysis.ImpreciseTensorShapeList(_, _)).
   NewMetricMacro("25.0", "tensor op has imprecise name (INS)", TensorOpHasImpreciseArg_Insens(_, _)).
   NewMetricMacro("25.5", "tensor op has imprecise name (SENS)", mainAnalysis.TensorOpHasImpreciseArg(_, _, _)).
+  NewMetricMacro("26.0", "tensor op leads to circle (INS)", mainAnalysis.TensorFlowsToSelf(_)).
 #endif

@@ -359,6 +359,12 @@
     HeapAllocation_Type(?value, ?type),
     isFunction(?type).
 
+  VarPointsTo(?hctx, ?value, ?ctx, ?to):-
+    isAssignLocal_Insn(?insn),
+    AssignLocal_From(?insn, ?from),
+    AssignInstruction_To(?insn, ?to),
+    VarPointsTo(?hctx, ?value, ?ctx, ?from).
+
   .init configuration = Configuration
 }
 
