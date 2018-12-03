@@ -877,10 +877,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true,
 					cli: false
 			),
-			new BooleanAnalysisOption(
-					id: "REFINE",
-					cli: false
-			),
 	]
 
 	private static List<String> analysesFor(String path, String fileToLookFor) {

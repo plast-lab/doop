@@ -54,6 +54,7 @@ public enum PredicateFile
     ENTER_MONITOR("EnterMonitor"),
     EXCEPT_HANDLER_PREV("ExceptionHandler-Previous"),
     EXCEPTION_HANDLER("ExceptionHandler"),
+    EXCEPTION_HANDLER_FORMAL_PARAM("ExceptionHandler-FormalParam"),
     EXIT_MONITOR("ExitMonitor"),
     FIELD_ANNOTATION("Field-Annotation"),
     FIELD_INITIAL_VALUE("FieldInitialValue"),

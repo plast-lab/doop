@@ -471,7 +471,7 @@ Instruction_Method(?instruction, ?method) :-
 
 // Exception handler
 
-.decl _ExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number)
+.decl _ExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?begin:number, ?end:number)
 .input _ExceptionHandler(IO="file", filename="ExceptionHandler.facts", delimiter="\t")
 
 isExceptionHandler(?handler),
@@ -481,11 +481,11 @@ Instruction_Method(?handler, ?method),
 ExceptionHandler_Method(?handler, ?method),
 ExceptionHandler_Index(?handler, ?index),
 ExceptionHandler_Type(?handler, ?type),
-ExceptionHandler_FormalParam(?handler, ?var),
 ExceptionHandler_Begin(?handler, ?begin),
 ExceptionHandler_End(?handler, ?end) :-
-  _ExceptionHandler(?handler, ?method, ?index, ?type, ?var, ?begin, ?end).
+  _ExceptionHandler(?handler, ?method, ?index, ?type, ?begin, ?end).
 
+.input ExceptionHandler_FormalParam(IO="file", filename="ExceptionHandler-FormalParam.facts", delimiter="\t")
 
 // Method
 
