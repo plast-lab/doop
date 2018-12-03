@@ -554,6 +554,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Call the provenance browser."
 			),
 			new BooleanAnalysisOption(
+					id: "SOUFFLE_FORCE_RECOMPILE",
+					name: "souffle-force-recompile",
+					group: GROUP_ENGINE,
+					description: "Force recompilation of Souffle logic."
+			),
+			new BooleanAnalysisOption(
 					id: "SOUFFLE_RUN_INTERPRETED",
 					name: "souffle-run-interpreted",
 					group: GROUP_ENGINE,
@@ -717,12 +723,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_DRY_RUN",
 					name: "Xdry-run",
 					description: "Do a dry run of the analysis."
-			),
-			new BooleanAnalysisOption(
-					id: "X_FORCE_RECOMPILE",
-					name: "Xforce-recompile",
-					group: GROUP_ENGINE,
-					description: "Force recompilation of Souffle logic."
 			),
 			new BooleanAnalysisOption(
 					id: "X_SERVER_LOGIC",
