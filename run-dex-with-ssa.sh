@@ -32,4 +32,4 @@ done
 
 popd
 
-./doop -i ${APP} -a context-insensitive --id ${APP_NAME}-analysis --Xstart-after-facts ${FACTS_OUT}/database
+./doop -i ${APP} -a context-insensitive --id ${APP_NAME}-analysis --platform android_25_fulljars --Xfacts-subset PLATFORM --Xuse-existing-facts ${FACTS_OUT}/database
