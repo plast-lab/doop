@@ -68,6 +68,7 @@ public class Driver {
         System.out.println(ANSIColor.BOLD + ANSIColor.YELLOW + "Scaler Rank starts ..." + ANSIColor.RESET);
         scalerTimer.start();
         ScalerRank scalerRank = new ScalerRank(pta);
+        scalerRank.rank();
 
 //        Map<Method, String> scalerResults = scaler.selectContext();
 //        scalerTimer.stop();

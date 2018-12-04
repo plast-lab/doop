@@ -1,5 +1,8 @@
 package org.clyze.doop.ptatoolkit.scaler.doop;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Streams;
 import org.clyze.doop.ptatoolkit.Global;
 import org.clyze.doop.ptatoolkit.doop.DataBase;
@@ -10,6 +13,7 @@ import org.clyze.doop.ptatoolkit.pta.basic.*;
 import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 import org.clyze.doop.ptatoolkit.util.MutableInteger;
 import org.clyze.doop.ptatoolkit.util.Timer;
+import org.python.bouncycastle.asn1.eac.BidirectionalMap;
 
 import java.io.File;
 import java.util.*;
@@ -25,7 +29,7 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     private Set<Method> reachableMethods;
     private Map<Method, Set<Method>> methodNeighborMap;
     private Map<Method, Integer> methodTotalVPTMap;
-    private Map<Method, Integer> methodIdMap;
+    private BiMap<Method, Integer> methodIdMap;
     // The following factories may be used by iterators
     private VariableFactory varFactory;
     private ObjFactory objFactory;
@@ -320,7 +324,7 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     }
 
     private void buildMethodTotalVPTMap(MethodFactory mtdFactory) {
-        methodIdMap = new LinkedHashMap<>();
+        methodIdMap = HashBiMap.create();
         methodTotalVPTMap = new LinkedHashMap<>();
         AtomicInteger id = new AtomicInteger(0);
 
@@ -331,5 +335,17 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
 
             methodTotalVPTMap.put(method, totalVPT);
         });
+    }
+
+    public Map<Method, Integer> getMethodTotalVPTMap() {
+        return methodTotalVPTMap;
+    }
+
+    public BiMap<Method, Integer> getMethodIdMap() {
+        return methodIdMap;
+    }
+
+    public Map<Method, Set<Method>> getMethodNeighborMap() {
+        return methodNeighborMap;
     }
 }
