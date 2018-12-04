@@ -11,15 +11,28 @@ Value_Num("<num-constant(int):3>","3").
 isIntConstant("3").
 
 Value_Num(?val, ?numStr),
+IntConstant_Distance(?numStr, 0),
 isIntConstant(?numStr):-
-  NewIntConstantValue(?val, ?numStr).
+  NonBinopNewIntConstantValue(?val, ?numStr).
 
+Value_Num(?val, ?numStr),
+IntConstant_Distance(?numStr, ?newDist),
+isIntConstant(?numStr):-
+  BinopNewIntConstantValue(?val, ?numStr, ?newDist),
+  !isOriginalIntConstant(?numStr).
+
+IntConstant_Distance(?numStr, 0):-
+  isOriginalIntConstant(?numStr).
+
+#define MAX_NEW_INT_VALUE  100000
 
 .decl VarPointsToConstValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 
 .decl VarPointsToConstNoneValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 .output VarPointsToConstNoneValue
 
+.decl IntConstant_Distance(?const:IntConstant, ?distance:number)
+.output IntConstant_Distance
 
 // anantoni: Had to switch all these from NumConstantValue to Value
 .decl VarPointsToConstFloatValue(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
@@ -99,23 +112,52 @@ VarPointsTo(?immutableHctx, ?value, ?ctx, ?var):-
   ?value = cat(cat("<num-constant(int):", ?num),">"),
   isImmutableHContext(?immutableHctx).
 
-NewIntConstantValue(?value, ?resStr),
+BinopNewIntConstantValue(?value, ?resStr, ?newDist),
 VarPointsTo(?immutableHctx, ?value, ?ctx, ?var):-
   Reachable(?function),
   ReachableContext(?ctx, ?function),
   isAssignBinop_Insn(?instr),
+  AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
   Instruction_Function(?instr, ?function),
   AssignInstruction_To(?instr, ?var),
-  BinaryIntOp(?ctx, ?instr, ?res),
+  //BinaryIntOp(?ctx, ?instr, ?res),
+  ValidBinaryIntOp(?ctx, ?instr, ?res, ?newDist),
+  ?res < MAX_NEW_INT_VALUE,
   ?resStr = to_string(?res),
   ?value = cat(cat("<num-constant(int):", ?resStr),">"),
   isImmutableHContext(?immutableHctx).
 
-.decl BinaryIntOp(?ctx: configuration.Context, ?instr:Instruction, ?res:number)
+.decl BinaryIntOp(?ctx: configuration.Context, ?instr:Instruction, ?constVal1:Value, ?constVal2:Value, ?res:number)
 .output BinaryIntOp
 
+.decl ValidBinaryIntOp(?ctx: configuration.Context, ?instr:Instruction, ?res:number, ?newDist:number)
+.output ValidBinaryIntOp
 
-BinaryIntOp(?ctx, ?instr, ?res) :-
+.decl BinaryIntOpOperandDists(?ctx: configuration.Context, ?instr:Instruction, ?constVal1:Value, ?constVal2:Value, ?dist1:number, ?dist2:number)
+.output BinaryIntOpOperandDists
+
+ValidBinaryIntOp(?ctx, ?instr, ?res, ?newDist):-
+  BinaryIntOpOperandDists(?ctx, ?instr, ?numConstVal1, ?numConstVal2, ?dist1, ?dist2),
+  BinaryIntOp(?ctx, ?instr, ?numConstVal1, ?numConstVal2, ?res),
+  ?dist1 < 50,
+  ?dist1 >= ?dist2,
+  ?newDist = ?dist1 + 1.
+
+ValidBinaryIntOp(?ctx, ?instr, ?res, ?newDist):-
+  BinaryIntOpOperandDists(?ctx, ?instr, ?numConstVal1, ?numConstVal2, ?dist1, ?dist2),
+  BinaryIntOp(?ctx, ?instr, ?numConstVal1, ?numConstVal2, ?res),
+  ?dist2 < 50,
+  ?dist2 > ?dist1,
+  ?newDist = ?dist2 + 1.
+
+BinaryIntOpOperandDists(?ctx, ?instr, ?numConstVal1, ?numConstVal2, ?dist1, ?dist2):-
+  BinaryIntOp(?ctx, ?instr, ?numConstVal1, ?numConstVal2, _),
+  Value_Num(?numConstVal1, ?numStr1),
+  Value_Num(?numConstVal2, ?numStr2),
+  IntConstant_Distance(?numStr1, ?dist1),
+  IntConstant_Distance(?numStr2, ?dist2).
+
+BinaryIntOp(?ctx, ?instr, ?numConstVal1, ?numConstVal2, ?res) :-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
   VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
   VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),
@@ -125,7 +167,7 @@ BinaryIntOp(?ctx, ?instr, ?res) :-
   ?res = ?num1 + ?num2.
 
 
-BinaryIntOp(?ctx, ?instr, ?res):-
+BinaryIntOp(?ctx, ?instr, ?numConstVal1, ?numConstVal2, ?res):-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
   VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
   VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),
@@ -135,7 +177,7 @@ BinaryIntOp(?ctx, ?instr, ?res):-
   ?res = ?num1 - ?num2.
 
 
-BinaryIntOp(?ctx, ?instr, ?res):-
+BinaryIntOp(?ctx, ?instr, ?numConstVal1, ?numConstVal2, ?res):-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
   VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
   VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),
@@ -145,7 +187,7 @@ BinaryIntOp(?ctx, ?instr, ?res):-
   ?res = ?num1 * ?num2.
 
 //TODO: Maybe perform some checks that the result of this is Int
-BinaryIntOp(?ctx, ?instr, ?res):-
+BinaryIntOp(?ctx, ?instr, ?numConstVal1, ?numConstVal2, ?res):-
   AssignBinOper_Info(?instr, ?op, ?var1, ?var2),
   VarPointsToConstIntValue(_, ?numConstVal1, ?ctx, ?var1),
   VarPointsToConstIntValue(_, ?numConstVal2, ?ctx, ?var2),

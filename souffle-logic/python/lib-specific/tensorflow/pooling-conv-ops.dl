@@ -399,7 +399,7 @@ ConvOperation_DimResBeforeStrides(?ctx, ?insn, ?newVal, ?dim, ?resBeforeStrides)
   ?resBeforeStrides = ?tensorValForDimNum + 1 - ?kernelSizeValForDimNum.
 
 
-NewIntConstantValue(?dimRes, ?valNumStr),
+NonBinopNewIntConstantValue(?dimRes, ?valNumStr),
 ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ConvOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, _, _, ?strideValForDimNum),
@@ -408,7 +408,7 @@ ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ?valNumStr = to_string(?resBeforeStrides / ?strideValForDimNum),
   ?dimRes = cat("<num-constant(int):",cat(?valNumStr, ">")).
 
-NewIntConstantValue(?dimRes, ?valNumStr),
+NonBinopNewIntConstantValue(?dimRes, ?valNumStr),
 ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ConvOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, _, _, ?strideValForDimNum),
@@ -519,7 +519,7 @@ PoolOperation_DimResBeforeStrides(?ctx, ?insn, ?newVal, ?dim, ?resBeforeStrides)
   ?resBeforeStrides = ?tensorValForDimNum + 1 - ?kernelSizeValForDimNum.
 
 
-NewIntConstantValue(?dimRes, ?valNumStr),
+NonBinopNewIntConstantValue(?dimRes, ?valNumStr),
 ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   PoolOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, _, _, ?strideValForDimNum),
@@ -528,7 +528,7 @@ ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ?valNumStr = to_string(?resBeforeStrides / ?strideValForDimNum),
   ?dimRes = cat("<num-constant(int):",cat(?valNumStr, ">")).
 
-NewIntConstantValue(?dimRes, ?valNumStr),
+NonBinopNewIntConstantValue(?dimRes, ?valNumStr),
 ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   PoolOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, _, _, ?strideValForDimNum),

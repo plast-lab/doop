@@ -123,7 +123,7 @@ ReshapeOperationInvalid(?ctx, ?insn, ?reshapeOpVal):-
   ?tensorRes != ?dimListRes.
 
 //Concrete To Minus 1
-NewIntConstantValue(?replaceNumVal, ?replaceNumStr),
+NonBinopNewIntConstantValue(?replaceNumVal, ?replaceNumStr),
 ReshapeOperationReplaceMinus1WithVal(?ctx, ?insn, ?reshapeOpVal, ?replaceNumVal),
 TensorOperationProducesOutput(?ctx, ?insn, ?reshapeOpVal):-
   ReshapeOperationConcreteToMinus1(?ctx, ?insn, ?reshapeOpVal),

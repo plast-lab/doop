@@ -273,7 +273,7 @@ PyListDeducedShapeLength(?listHctx, ?list, ?newLen):-
   PyListDeducedShapeLength(?indexValHctx, ?indexVal, ?oldLen),
   ?newLen = ?oldLen + 1.
 
-NewIntConstantValue(?value, ?lengthStr),
+NonBinopNewIntConstantValue(?value, ?lengthStr),
 PyListDeducedShapeContents(?listHctx, ?list, 0, ?value):-
   ListInitialAssignVar(?list, ?var, ?ctx),
   ListInitialLength(?list, ?length),
