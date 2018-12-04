@@ -47,12 +47,55 @@ Object_In(?heap, ?method) :-
     AssignHeapAllocation_Heap(?instruction, ?heap).
 
 
-.output HeapAllocation_ContextInsensitive(IO="file",filename="SPECIAL_OBJECTS.csv",delimiter="\t")
+.output HeapAllocation_ContextInsensitive(IO="file", filename="SPECIAL_OBJECTS.csv",delimiter="\t")
 
 
 .decl Var_In(?var:Var, ?method:Method)
-.output Var_In(IO="file",filename="VAR_IN.csv",delimiter="\t")
+.output Var_In(IO="file", filename="VAR_IN.csv", delimiter="\t")
 
 Var_In(?var, ?method) :-
     Reachable(?method),
     Var_DeclaringMethod(?var, ?method).
+
+.decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
+
+VPTCountPerMethodVariable(?method, ?var, Y) :-
+   Var_DeclaringMethod(?var, ?method),
+   Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
+
+.decl Method_TotalVPT(?method:Method, Y:number)
+
+Method_TotalVPT(?method, Y) :-
+  mainAnalysis.Reachable(?method),
+  Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
+
+Method_TotalVPT(?method, 0) :-
+  mainAnalysis.Reachable(?method),
+  !Var_DeclaringMethod(_, ?method).
+
+.output Method_TotalVPT(IO="file", filename="Method_TotalVPT.csv", delimiter="\t")
+
+.decl Method_Neighbor(?method:Method, ?neighbor:Method)
+
+Method_Neighbor(?neighbor, ?method),
+Method_Neighbor(?method, ?neighbor) :-
+  AllCallGraphEdge(?invo, ?neighbor),
+  Instruction_Method(?invo, ?method).
+
+.output Method_Neighbor(IO="file", filename="Method_Neighbor.csv", delimiter="\t")
+
+.decl Method_NumberOfNeighbors(?method:Method, ?n:number)
+
+Method_NumberOfNeighbors(?method, ?n) :-
+   mainAnalysis.Reachable(?method),
+   ?n =  count : {Method_Neighbor(?method, _)}.
+
+.output Method_NumberOfNeighbors(IO="file", filename="Method_NumberOfNeighbors.csv", delimiter="\t")
+
+.decl Method_NumberOfContexts(?method:Method, ?n:number)
+
+Method_NumberOfContexts(?method, ?n) :-
+  mainAnalysis.Reachable(?method),
+  ?n =  count : {mainAnalysis.ReachableContext(_, ?method)}.
+
+.output Method_NumberOfContexts(IO="file", filename="Method_NumberOfContexts.csv", delimiter="\t")

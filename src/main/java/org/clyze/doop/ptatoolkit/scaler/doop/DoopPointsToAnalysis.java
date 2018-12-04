@@ -13,6 +13,7 @@ import org.clyze.doop.ptatoolkit.util.Timer;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.clyze.doop.ptatoolkit.scaler.doop.Attribute.*;
@@ -22,18 +23,25 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     private final DataBase db;
     private Set<Obj> allObjs;
     private Set<Method> reachableMethods;
+    private Map<Method, Set<Method>> methodNeighborMap;
+    private Map<Method, Integer> methodTotalVPTMap;
+    private Map<Method, Integer> methodIdMap;
     // The following factories may be used by iterators
     private VariableFactory varFactory;
     private ObjFactory objFactory;
     private Set<String> specialObjects;
 
-    public DoopPointsToAnalysis(File database) {
+    public DoopPointsToAnalysis(File database, String option) {
         Timer ptaTimer = new Timer("Points-to Analysis Timer");
         System.out.println("Reading points-to analysis results ... ");
         ptaTimer.start();
-        DataBase db = new DataBase(database);
-        this.db = db;
-        init();
+        this.db = new DataBase(database);
+        if (option.equals("scaler")) {
+            initScalerPostProcessing();
+        }
+        else {
+            initScalerRankPostProcessing();
+        }
         ptaTimer.stop();
     }
 
@@ -104,7 +112,7 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
         return (Type) method.getAttribute(DECLARING_TYPE);
     }
 
-    private void init() {
+    private void initScalerPostProcessing() {
         TypeFactory typeFactory = new TypeFactory();
         varFactory = new VariableFactory();
         objFactory = new ObjFactory();
@@ -139,6 +147,15 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
         buildDeclaredVariables(mtdFactory, varFactory);
 
         buildDeclaringType(mtdFactory, typeFactory);
+    }
+
+
+    private void initScalerRankPostProcessing() {
+        varFactory = new VariableFactory();
+        MethodFactory mtdFactory = new MethodFactory(db, varFactory);
+
+        buildMethodNeighborsMap(mtdFactory);
+        buildMethodTotalVPTMap(mtdFactory);
     }
 
     /**
@@ -220,7 +237,7 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     private void buildMethodsInvokedOnObjects(MethodFactory mtdFactory) {
         mtdFactory.getAllElements()
                 .stream()
-                .filter(m -> m.isInstance())
+                .filter(Method::isInstance)
                 .map(m -> (InstanceMethod) m)
                 .forEach(instMtd -> {
                     Variable thisVar = instMtd.getThis();
@@ -233,15 +250,13 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     /**
      * Map each object to the type which contains its allocation site.
      */
-    private void buildDeclaringAllocationType(ObjFactory objFactory,
-                                              TypeFactory typeFactory) {
+    private void buildDeclaringAllocationType(ObjFactory objFactory, TypeFactory typeFactory) {
         db.query(Query.DECLARING_CLASS_ALLOCATION).forEachRemaining(list -> {
             Obj obj = objFactory.get(list.get(0));
             Type type = typeFactory.get(list.get(1));
             obj.setAttribute(DECLARING_ALLOC_TYPE, type);
         });
     }
-
 
     /**
      * Map each instance method to their receiver objects.
@@ -257,8 +272,7 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     /**
      * Map each method to the variables declared in the method.
      */
-    private void buildDeclaredVariables(MethodFactory mtdFactory,
-                                        VariableFactory varFactory) {
+    private void buildDeclaredVariables(MethodFactory mtdFactory, VariableFactory varFactory) {
         db.query(Query.VAR_IN).forEachRemaining(list -> {
             Variable var = varFactory.get(list.get(0));
             Method inMethod = mtdFactory.get(list.get(1));
@@ -278,6 +292,44 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
             String typeName = sig.substring(1, sig.indexOf(':'));
             Type type = typeFactory.get(typeName);
             m.setAttribute(DECLARING_TYPE, type);
+        });
+    }
+
+    private void buildMethodNeighborsMap(MethodFactory mtdFactory) {
+        methodNeighborMap = new LinkedHashMap<>();
+
+        db.query(Query.Method_Neighbor).forEachRemaining(list -> {
+            Method method = mtdFactory.get(list.get(0));
+            Method neighbor = mtdFactory.get(list.get(1));
+
+            fillNeighborMap(method, neighbor, methodNeighborMap.get(method));
+
+            fillNeighborMap(neighbor, method, methodNeighborMap.get(method));
+        });
+    }
+
+    private void fillNeighborMap(Method method, Method neighbor, Set<Method> methods) {
+        if(methodNeighborMap.containsKey(method)) {
+            methods.add(neighbor);
+        }
+        else {
+            Set<Method> neighborSet = new HashSet<>();
+            neighborSet.add(neighbor);
+            methodNeighborMap.put(method, neighborSet);
+        }
+    }
+
+    private void buildMethodTotalVPTMap(MethodFactory mtdFactory) {
+        methodIdMap = new LinkedHashMap<>();
+        methodTotalVPTMap = new LinkedHashMap<>();
+        AtomicInteger id = new AtomicInteger(0);
+
+        db.query(Query.Method_TotalVPT).forEachRemaining(list -> {
+            Method method = mtdFactory.get(list.get(0));
+            methodIdMap.put(method, id.getAndAdd(1));
+            Integer totalVPT = Integer.getInteger(list.get(1));
+
+            methodTotalVPTMap.put(method, totalVPT);
         });
     }
 }

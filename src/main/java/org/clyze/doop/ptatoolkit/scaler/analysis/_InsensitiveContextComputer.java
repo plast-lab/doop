@@ -9,7 +9,7 @@ import org.clyze.doop.ptatoolkit.pta.basic.Method;
  */
 public class _InsensitiveContextComputer extends ContextComputer {
 
-    public _InsensitiveContextComputer(PointsToAnalysis pta) {
+    _InsensitiveContextComputer(PointsToAnalysis pta) {
         super(pta, null);
     }
 

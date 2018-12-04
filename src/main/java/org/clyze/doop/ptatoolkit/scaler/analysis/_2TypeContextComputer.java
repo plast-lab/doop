@@ -6,14 +6,11 @@ import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.pta.basic.Obj;
 import org.clyze.doop.ptatoolkit.pta.basic.Type;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class _2TypeContextComputer extends ContextComputer {
 
-    public _2TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
+    _2TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
         super(pta, oag);
     }
 
@@ -41,7 +38,7 @@ public class _2TypeContextComputer extends ContextComputer {
                 }
             } else {
                 // without allocator, back to 1-type
-                contexts.add(Arrays.asList(
+                contexts.add(Collections.singletonList(
                         pta.declaringAllocationTypeOf(recv)));
             }
         }

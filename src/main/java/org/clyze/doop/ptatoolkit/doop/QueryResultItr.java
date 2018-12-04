@@ -59,7 +59,7 @@ class QueryResultItr implements Iterator<List<String>> {
             if(reader != null) {
                 try {
                     reader.close();
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
             }
             reader = null;
