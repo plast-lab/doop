@@ -300,16 +300,18 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     }
 
     private void buildMethodNeighborsMap(MethodFactory mtdFactory) {
-        methodNeighborMap = new LinkedHashMap<>();
+        methodNeighborMap = new HashMap<>();
 
         db.query(Query.Method_Neighbor).forEachRemaining(list -> {
             Method method = mtdFactory.get(list.get(0));
             Method neighbor = mtdFactory.get(list.get(1));
-
+            //System.out.println("Put (" + method + ", " + neighbor + ")");
             fillNeighborMap(method, neighbor, methodNeighborMap.get(method));
 
-            fillNeighborMap(neighbor, method, methodNeighborMap.get(method));
+            fillNeighborMap(neighbor, method, methodNeighborMap.get(neighbor));
+
         });
+        System.out.println("Method neighbors map total size: " + methodNeighborMap.keySet().size());
     }
 
     private void fillNeighborMap(Method method, Method neighbor, Set<Method> methods) {
@@ -325,14 +327,14 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
 
     private void buildMethodTotalVPTMap(MethodFactory mtdFactory) {
         methodIdMap = HashBiMap.create();
-        methodTotalVPTMap = new LinkedHashMap<>();
+        methodTotalVPTMap = new HashMap<>();
         AtomicInteger id = new AtomicInteger(0);
 
         db.query(Query.Method_TotalVPT).forEachRemaining(list -> {
             Method method = mtdFactory.get(list.get(0));
             methodIdMap.put(method, id.getAndAdd(1));
-            Integer totalVPT = Integer.getInteger(list.get(1));
-
+            Integer totalVPT = Integer.parseInt(list.get(1));
+            //System.out.println("Put (" + method + ", " + totalVPT + ")");
             methodTotalVPTMap.put(method, totalVPT);
         });
     }

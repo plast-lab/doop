@@ -40,7 +40,7 @@ public class ScalerRank {
 
 		//Printing Answers
 		for (int i = 0; i < totalMethods; i++) {
-			System.out.println(pta.getMethodIdMap().inverse().get(i) + " answer: " + ans.get(0, 0));
+			System.out.println(pta.getMethodIdMap().inverse().get(i) + " answer: " + ans.get(i, 0));
 		}
 	}
 
