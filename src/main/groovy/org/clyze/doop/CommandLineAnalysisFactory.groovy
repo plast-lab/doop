@@ -101,9 +101,6 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 				parser: new GnuParser(),
 				formatter: new HelpGroupFormatter(),
 				usage: USAGE,
-				footer: "\nCommon Bloxbatch options:\n" +
-						"-logicProfile N: Profile the execution of logic, show the top N predicates.\n" +
-						"-logLevel LEVEL: Log the execution of logic at level LEVEL (for example: all).",
 				width: WIDTH,
 		)
 
