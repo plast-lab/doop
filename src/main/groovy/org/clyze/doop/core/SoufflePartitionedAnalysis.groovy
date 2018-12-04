@@ -48,7 +48,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
                     def generatedFile = script.compile(analysis, outDir, cacheDir,
                             options.SOUFFLE_PROFILE.value as boolean,
                             options.SOUFFLE_DEBUG.value as boolean,
-                            options.X_FORCE_RECOMPILE.value as boolean,
+                            options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
                             options.X_CONTEXT_REMOVER.value as boolean)
                     log.info "[Task COMPILE Done]"
                     return generatedFile

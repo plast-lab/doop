@@ -308,8 +308,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
-        if (options.SEED.value) {
-            params += ["--seed", options.SEED.value.toString()]
+        if (options.ENTRY_POINTS.value) {
+            params += ["--entry-points", options.ENTRY_POINTS.value.toString()]
         }
 
         if (options.EXTRACT_MORE_STRINGS.value) {

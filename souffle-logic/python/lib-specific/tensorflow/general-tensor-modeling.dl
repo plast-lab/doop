@@ -173,3 +173,46 @@ TensorHasMoreThanOneShape(?tensorHctx, ?tensor):-
   TensorShape(?tensorHctx, ?tensor, _, ?shape1),
   TensorShape(?tensorHctx, ?tensor, _, ?shape2),
   ?shape1 != ?shape2.
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              TENSORFLOW GRAPH
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl TensorOperationTensorArg(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?operationVal:Value, ?tensorArgHctx:configuration.HContext, ?tensorArg:Value)
+.output TensorOperationTensorArg
+
+.decl TensorFlowsToTensor_Insens(?from:Value, ?to:Value)
+.output TensorFlowsToTensor_Insens
+
+.decl TensorFlowsToTensorOp(?fromHctx:configuration.HContext, ?from:Value, ?toCtx:configuration.Context, ?to:Value)
+.output TensorFlowsToTensorOp
+
+.decl TensorFlowsToSelf_Insens(?tensor:Value)
+.output TensorFlowsToSelf_Insens
+
+.decl TensorFlowsToSelf(?ctx:configuration.Context, ?tensor:Value)
+.output TensorFlowsToSelf
+
+TensorOperationTensorArg(?ctx, ?insn, ?op, ?argHctx, ?argVal):-
+  TensorOperationProducesOutput(?ctx, ?insn, ?op),  //TODO: Review this later, right now only care about the ones producing output
+  TensorOperation_NameToVal(?ctx, ?op, _, ?argHctx, ?argVal),
+  isTensorVal(?argVal).
+
+TensorFlowsToTensor_Insens(?argVal, ?op):-
+  TensorOperationTensorArg(_, _, ?op, _, ?argVal).
+
+TensorFlowsToTensor_Insens(?inDirectFlowTensor, ?op):-
+  TensorOperationTensorArg(_, _, ?op, _, ?argVal),
+  TensorFlowsToTensor_Insens(?inDirectFlowTensor, ?argVal).
+
+TensorFlowsToSelf_Insens(?tensor):-
+  TensorFlowsToTensor_Insens(?tensor, ?tensor).
+
+TensorFlowsToTensorOp(?argHctx, ?argVal, ?ctx, ?op):-
+  TensorOperationTensorArg(?ctx, _, ?op, ?argHctx, ?argVal).
+
+TensorFlowsToSelf(?ctx, ?op):-
+  TensorFlowsToTensorOp(?hctx, ?op, ?ctx, ?op),
+  ?hctx=[?one],
+  ?ctx =[?one].

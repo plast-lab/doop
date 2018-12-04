@@ -1,5 +1,4 @@
-//#define NEWVALUES
-#ifdef NEWVALUES
+#ifdef FULL_TENSOR_PRECISION
 
     #define SingleInValTensorValMacro(op, insn, val) cat("<tensor ", cat(insn, cat("/", cat(op, cat(val, ">")))))
 
