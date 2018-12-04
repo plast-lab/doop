@@ -29,7 +29,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	Map<String, AnalysisOption> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
 
 	private static List<AnalysisOption> SUPPORTED_OPTIONS = [
-			/* Start Driver options */
+			/* Start Main options */
 			new AnalysisOption<String>(
 					id: "USER_SUPPLIED_ID",
 					name: "id",
@@ -317,7 +317,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Perform a CFG analysis.",
 					cli: true
 			),
-			/* End Driver options */
+			/* End Main options */
 
 			/* Start Scaler related options */
 			new BooleanAnalysisOption(
