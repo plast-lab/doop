@@ -293,7 +293,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				} else if (options.IGNORE_MAIN_METHOD.value) {
 					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
 				} else {
-					log.info "Driver class(es) expanded with ${options.MAIN_CLASS.value}"
+					log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
 				}
 			} else {
 				if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
@@ -302,13 +302,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 						//Try to read the main class from the manifest contained in the jar
 						def main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS)
 						if (main) {
-							log.debug "Driver class(es) expanded with ${main}"
+							log.debug "Main class(es) expanded with ${main}"
 							options.MAIN_CLASS.value << main
 						} else {
 							//Check whether the jar contains a class with the same name
 							def jarName = FilenameUtils.getBaseName(jarFile.name)
 							if (jarFile.getJarEntry("${jarName}.class")) {
-								log.debug "Driver class(es) expanded with ${jarName}"
+								log.debug "Main class(es) expanded with ${jarName}"
 								options.MAIN_CLASS.value << jarName
 							}
 						}

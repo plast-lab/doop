@@ -193,7 +193,7 @@ class LB3Analysis extends DoopAnalysis {
 				.addBlockFile("prologue.logic")
 				.commit()
 				.elapsedTime()
-				.timedTransaction("-- Driver Deltas -- ")
+				.timedTransaction("-- Main Deltas -- ")
 				.executeFile("${name}-delta.logic")
 
 		if (options.REFLECTION.value) {

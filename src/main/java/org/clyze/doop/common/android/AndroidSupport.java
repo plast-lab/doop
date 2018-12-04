@@ -209,7 +209,7 @@ public abstract class AndroidSupport {
         if (apktoolHome == null || (!(new File(apktoolHome)).exists())) {
             System.err.println("Invalid environment variable: " + APKTOOL_HOME_ENV_VAR + "=" + apktoolHome + ", using default apktool...");
             try {
-                Class.forName("brut.apktool.Driver").getDeclaredMethod("main").invoke(cmdArgs);
+                Class.forName("brut.apktool.Main").getDeclaredMethod("main").invoke(cmdArgs);
             } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                 System.err.println("Error: could not find default apktool.");
             }

@@ -7,7 +7,7 @@ class SootParametersTest extends Specification {
         given:
         String[] args = [
             "--application-regex", "XYZ",
-            "--main", "Driver",
+            "--main", "Main",
             "--fact-gen-cores", "2",
             "--ignoreWrongStaticness",
             "--generate-jimple",
@@ -29,7 +29,7 @@ class SootParametersTest extends Specification {
 
         then:
 
-        "Driver" == sootParameters._main
+        "Main" == sootParameters._main
 
         2 == sootParameters._cores.intValue()
 
