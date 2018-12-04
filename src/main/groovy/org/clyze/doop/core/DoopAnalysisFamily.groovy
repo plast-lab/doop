@@ -14,6 +14,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_FACTS = "Fact generation"
 	private static final String GROUP_REFLECTION = "Reflection"
 	private static final String GROUP_ENGINE = "Datalog engine"
+	private static final String GROUP_PYTHON = "Python"
 
 	@Override
 	String getName() { "doop" }
@@ -278,7 +279,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "PYTHON",
 					name: "python",
-					forCacheID: true
+					forCacheID: true,
+					cli: false
 			),
 			new IntegerAnalysisOption(
 					id: "FACT_GEN_CORES",
@@ -349,7 +351,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SINGLE_FILE_ANALYSIS",
 					name: "single-file-analysis",
-					group: GROUP_FACTS,
+					group: GROUP_PYTHON,
 					description: "Flag to be passed to WALAs IR translator to produce IR that makes the analysis of a single script file easier.",
 					changesFacts: true,
 					forCacheID: true
@@ -357,12 +359,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "TENSOR_SHAPE_ANALYSIS",
 					name: "tensor-shape-analysis",
+					group: GROUP_PYTHON,
 					description: "Enable tensor shape analysis for python.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "FULL_TENSOR_PRECISION",
 					name: "full-tensor-precision",
+					group: GROUP_PYTHON,
 					description: "Full precision tensor shape analysis(not guaranteed to finish).",
 					forPreprocessor: true
 			),
