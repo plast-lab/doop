@@ -416,7 +416,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 ClassLoader loader = sootClassLoader()
                 try {
                     redo = false
-                    System.out.println("LALA")
                     Helper.execJavaNoCatch(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
                 } catch (Throwable t) {
                     // Try to restart fact generation a limited number of times
