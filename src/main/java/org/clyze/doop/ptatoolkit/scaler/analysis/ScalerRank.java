@@ -24,9 +24,14 @@ public class ScalerRank {
 
 			Method method = pta.getMethodIdMap().inverse().get(i);
 			Set<Method> neighborSet = pta.getMethodNeighborMap().get(method);
-			for (Method neighbor : neighborSet) {
-				int neighborIndex = pta.getMethodIdMap().get(neighbor);
-				lhsArray[i][neighborIndex] = -1.0/neighborSet.size();
+			if (neighborSet != null) {
+				for (Method neighbor : neighborSet) {
+					int neighborIndex = pta.getMethodIdMap().get(neighbor);
+					lhsArray[i][neighborIndex] = -1.0 / neighborSet.size();
+				}
+			}
+			else {
+				System.out.println("Warning -- " + method);
 			}
 
 			rhsArray[i] = pta.getMethodTotalVPTMap().get(method);
