@@ -8,6 +8,7 @@ import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.common.FrontEnd
+import org.clyze.doop.common.JavaFactWriter
 import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
@@ -141,16 +142,30 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         FileOps.copyDirContents(fromDir, factsDir)
     }
 
+    /**
+     * Reuses an existing facts directory. May add more facts on top of
+     * the existing facts, if appropriate command line options are set.
+     *
+     * @param fromDir the existing directory containing the facts
+     */
+    protected void reuseFacts(File fromDir) {
+        linkOrCopyFacts(fromDir)
+        def entryPoints = options.ENTRY_POINTS.value as String
+        if (entryPoints) {
+            JavaFactWriter.processEntryPointsWithDir(factsDir, entryPoints)
+        }
+    }
+
     protected void generateFacts() throws DoopErrorCodeException {
         deleteQuietly(factsDir)
 
         if (cacheDir.exists() && options.CACHE.value) {
             log.info "Using cached facts from $cacheDir"
-            linkOrCopyFacts(cacheDir)
+            reuseFacts(cacheDir)
         } else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
             def importedFactsDir = options.X_START_AFTER_FACTS.value as String
             log.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
-            linkOrCopyFacts(new File(importedFactsDir))
+            reuseFacts(new File(importedFactsDir))
         } else {
             factsDir.mkdirs()
             log.info "-- Fact Generation --"
