@@ -301,6 +301,11 @@ SimilarOutDefs(?block, ?def, ?out_def) :-
     BBOutDefs(?block, ?out_def),
     SimilarDefs(?def, ?out_def).
 
+// This causes a recursive cycle with negation.
+//SimilarOutDefs(?block, ?def, ?out_def) :-
+//    BasicBlockOutDefs(?block, ?out_def, _),
+//    SimilarDefs(?def, ?out_def).
+
 // These instructions create chains of assignments, at the head of each block.
 // This is a helper relation to assist the final assignment operation, which 
 // will require linking the assignments with the rest of the code.
@@ -434,7 +439,7 @@ SSA_InstructionIndex(?insn, ?index + 1) :-
 
 ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin) :-
     BasicBlockHead(?insn, ?head),
-    PhiPseudoAssign(?ssa_var, _, _, ?head, _),
+    PhiAssign(?ssa_var, _, ?head),
     SSA_Alias(?ssa_var, ?origin).
 
 // This is a simple calculation of the reaching SSA definitions (ssa_var),
