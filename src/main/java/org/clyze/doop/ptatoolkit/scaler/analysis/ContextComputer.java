@@ -9,10 +9,10 @@ import java.util.Map;
 public abstract class ContextComputer {
 
     protected final PointsToAnalysis pta;
-    protected final ObjectAllocationGraph oag;
-    protected final Map<Method, Integer> method2ctxNumber = new HashMap<>();
+    final ObjectAllocationGraph oag;
+    private final Map<Method, Integer> method2ctxNumber = new HashMap<>();
 
-    protected ContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
+    ContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
         this.pta = pta;
         this.oag = oag;
         computeContext();

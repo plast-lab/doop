@@ -38,7 +38,7 @@ public class ObjectAllocationGraph implements DirectedGraph<Obj> {
         invokedMethods.forEach((obj, methods) -> {
             methods.stream()
                     .map(pta::objectsAllocatedIn)
-                    .flatMap(os -> os.stream())
+                    .flatMap(Collection::stream)
                     .forEach(o -> {
                         obj.addToAttributeSet(SUCCS, o);
                         o.addToAttributeSet(PREDS, obj);

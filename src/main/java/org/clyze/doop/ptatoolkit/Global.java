@@ -31,7 +31,7 @@ public class Global {
         return enableWrappedFlow;
     }
 
-    public static void setEnableWrappedFlow(boolean enableWrappedFlow) {
+    static void setEnableWrappedFlow(boolean enableWrappedFlow) {
         Global.enableWrappedFlow = enableWrappedFlow;
     }
 
@@ -41,7 +41,7 @@ public class Global {
         return enableUnwrappedFlow;
     }
 
-    public static void setEnableUnwrappedFlow(boolean enableUnwrappedFlow) {
+    static void setEnableUnwrappedFlow(boolean enableUnwrappedFlow) {
         Global.enableUnwrappedFlow = enableUnwrappedFlow;
     }
 
@@ -51,7 +51,7 @@ public class Global {
         return isExpress;
     }
 
-    public static void setExpress(boolean isExpress) {
+    static void setExpress(boolean isExpress) {
         Global.isExpress = isExpress;
     }
 
@@ -62,7 +62,7 @@ public class Global {
         return thread;
     }
 
-    public static void setThread(int thread) {
+    static void setThread(int thread) {
         Global.thread = thread;
     }
 
@@ -73,7 +73,7 @@ public class Global {
         return tst;
     }
 
-    public static void setTST(int tst) {
+    static void setTST(int tst) {
         Global.tst = tst;
     }
 
@@ -83,7 +83,7 @@ public class Global {
         return listContext;
     }
 
-    public static void setListContext(boolean listContext) {
+    static void setListContext(boolean listContext) {
         Global.listContext = listContext;
     }
 }

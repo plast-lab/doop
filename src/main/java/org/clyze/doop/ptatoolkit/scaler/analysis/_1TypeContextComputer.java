@@ -6,7 +6,7 @@ import org.clyze.doop.ptatoolkit.pta.basic.Method;
 
 public class _1TypeContextComputer extends ContextComputer {
 
-    public _1TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
+    _1TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
         super(pta, oag);
     }
 

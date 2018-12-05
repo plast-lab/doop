@@ -19,7 +19,7 @@ public class MethodFactory extends ElementFactory<Method> {
 
     private final Map<String, Variable> sig2this = new HashMap<>();
 
-    public MethodFactory(DataBase db, VariableFactory varFactory) {
+    MethodFactory(DataBase db, VariableFactory varFactory) {
         db.query(Query.THIS_VAR).forEachRemaining(list -> {
             String sig = list.get(0);
             Variable thisVar = varFactory.get(list.get(1));

@@ -61,11 +61,15 @@ configurations.all {
     resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
 }
 
+compileGroovy {
+    groovyOptions.optimizationOptions.indy = true
+}
+
 dependencies {
 
     compile "org.clyze:clue-common:3.8.+",
             "org.clyze:deepdoop:0.9.+",
-            "org.codehaus.groovy:groovy-all:2.4.13",            // Groovy
+            "org.codehaus.groovy:groovy-all:2.4.13:indy",       // Groovy
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
@@ -87,6 +91,8 @@ dependencies {
             "ext:sootclasses:3.2.7",
             "ext:soot-infoflow:2.5.1",
             "ext:soot-infoflow-android:2.5.1",
+            // https://mvnrepository.com/artifact/gov.nist.math/jama
+            "gov.nist.math:jama:1.0.3",
 
             /// WALA
             /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util

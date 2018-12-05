@@ -8,12 +8,14 @@ import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.common.FrontEnd
+import org.clyze.doop.common.JavaFactWriter
 import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
+
 import java.lang.reflect.Field
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.FileSystems
@@ -110,9 +112,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     String toString() {
-        return [id: id, name: name, outDir: outDir, cacheDir: cacheDir, inputFiles: ctx.toString()]
-                .collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") + "\n" +
-                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
+        return options.values().collect { AnalysisOption option ->
+            def v = option.value
+            def vStr = v ? (v instanceof List ? (v as List).join(" ") : v as String) : ""
+            return "${option.id}=$vStr"
+        }.sort().join("\n") + "\n"
     }
 
     @Override
@@ -141,16 +145,30 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         FileOps.copyDirContents(fromDir, factsDir)
     }
 
+    /**
+     * Reuses an existing facts directory. May add more facts on top of
+     * the existing facts, if appropriate command line options are set.
+     *
+     * @param fromDir the existing directory containing the facts
+     */
+    protected void reuseFacts(File fromDir) {
+        linkOrCopyFacts(fromDir)
+        def entryPoints = options.ENTRY_POINTS.value as String
+        if (entryPoints) {
+            JavaFactWriter.processEntryPointsWithDir(factsDir, entryPoints)
+        }
+    }
+
     protected void generateFacts() throws DoopErrorCodeException {
         deleteQuietly(factsDir)
 
         if (cacheDir.exists() && options.CACHE.value) {
             log.info "Using cached facts from $cacheDir"
-            linkOrCopyFacts(cacheDir)
+            reuseFacts(cacheDir)
         } else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
             def importedFactsDir = options.X_START_AFTER_FACTS.value as String
             log.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
-            linkOrCopyFacts(new File(importedFactsDir))
+            reuseFacts(new File(importedFactsDir))
         } else {
             factsDir.mkdirs()
             log.info "-- Fact Generation --"
@@ -191,9 +209,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 log.info "Time to make facts unique: $timing"
             }
 
-            touch(new File(factsDir, "ApplicationClass.facts"))
-            touch(new File(factsDir, "Properties.facts"))
-            touch(new File(factsDir, "Dacapo.facts"))
             touch(new File(factsDir, "MainClass.facts"))
 
             if (options.DACAPO.value) {
@@ -308,8 +323,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
-        if (options.SEED.value) {
-            params += ["--seed", options.SEED.value.toString()]
+        if (options.ENTRY_POINTS.value) {
+            params += ["--entry-points", options.ENTRY_POINTS.value.toString()]
         }
 
         if (options.EXTRACT_MORE_STRINGS.value) {

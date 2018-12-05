@@ -9,7 +9,7 @@ import java.util.Set;
 
 public class _2ObjectContextComputer extends ContextComputer {
 
-    public _2ObjectContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
+    _2ObjectContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
         super(pta, oag);
     }
 

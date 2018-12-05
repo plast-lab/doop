@@ -1,10 +1,12 @@
 package org.clyze.doop.ptatoolkit.scaler.pta;
 
+import com.google.common.collect.BiMap;
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.pta.basic.Obj;
 import org.clyze.doop.ptatoolkit.pta.basic.Type;
 import org.clyze.doop.ptatoolkit.pta.basic.Variable;
 
+import java.util.Map;
 import java.util.Set;
 
 public interface PointsToAnalysis {
@@ -91,4 +93,8 @@ public interface PointsToAnalysis {
      * @return the type that declares method
      */
     Type declaringTypeOf(Method method);
+
+    Map<Method, Set<Method>> getMethodNeighborMap();
+    BiMap<Method, Integer> getMethodIdMap();
+    Map<Method, Integer> getMethodTotalVPTMap();
 }

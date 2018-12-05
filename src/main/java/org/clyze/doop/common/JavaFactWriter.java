@@ -1,5 +1,6 @@
 package org.clyze.doop.common;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -55,16 +56,12 @@ public abstract class JavaFactWriter {
         _db.add(CLASS_ARTIFACT, artifact, className, subArtifact);
     }
 
-    private void writeAndroidKeepMethod(String methodSig) {
-        _db.add(ANDROID_KEEP_METHOD, "<" + methodSig + ">");
+    private static void writeAndroidKeepMethodDoopId(Database db, String methodDoopId) {
+        db.add(ANDROID_KEEP_METHOD, methodDoopId);
     }
 
-    private void writeAndroidKeepMethodDoopId(String methodDoopId) {
-        _db.add(ANDROID_KEEP_METHOD, methodDoopId);
-    }
-
-    private void writeAndroidKeepClass(String className) {
-        _db.add(ANDROID_KEEP_CLASS, className);
+    private static void writeAndroidKeepClass(Database db, String className) {
+        db.add(ANDROID_KEEP_CLASS, className);
     }
 
     private void writeProperty(String path, String key, String value) {
@@ -137,7 +134,7 @@ public abstract class JavaFactWriter {
         }
 
         try {
-            processSeeds(params._seed);
+            processEntryPointsWithDb(_db, params._entryPoints);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -183,36 +180,42 @@ public abstract class JavaFactWriter {
         }
     }
 
-    private void processSeeds(String seed) throws IOException {
-        if (seed != null) {
-            System.out.println("Reading seeds from: " + seed);
-            try (Stream<String> stream = Files.lines(Paths.get(seed))) {
-                stream.forEach(this::processSeedFileLine);
+    public static void processEntryPointsWithDir(File factsDir, String file) {
+        try (Database db = new Database(factsDir)) {
+            processEntryPointsWithDb(db, file);
+            db.flush();
+        } catch (IOException ex) {
+            System.err.println("Error writing entry point information: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    private static void processEntryPointsWithDb(Database db, String file) throws IOException {
+        if (file != null) {
+            System.out.println("Reading entry points from: " + file);
+            try (Stream<String> stream = Files.lines(Paths.get(file))) {
+                stream.forEach(s -> processEntryPointsFileLine(db, s));
             }
         }
     }
 
-    private void processSeedFileLine(String line) {
-        //The SEED file may contain method doopIds
-        if (line.startsWith("<")) {
-            writeAndroidKeepMethodDoopId(line);
-        }
-        else {
-            if (line.contains("(")) {
+    private static void processEntryPointsFileLine(Database db, String line) {
+        // The entry points file may contain method doopIds or proguard seeds.
+        if (line.startsWith("<"))
+            writeAndroidKeepMethodDoopId(db, line);
+        else if (line.contains("(")) {
                 //writeAndroidKeepMethod(line);
                 
-                //The seeds file notation does not use doopIds for constructors.
+                //The proguard seeds file notation does not use doopIds for constructors.
                 //e.g. in a seeds file we have:
                 //package.class$innerClass: class$innerClass(args...)
                 //instead of: 
                 //package.class$innerClass: void <init>(args...)
                 String doopId = Helper.readMethodDoopId(line);
-                writeAndroidKeepMethodDoopId(doopId);
-            }
-            else if (!line.contains(":")) {
-                writeAndroidKeepClass(line);
-            }
+                writeAndroidKeepMethodDoopId(db, doopId);
         }
+        else if (!line.contains(":"))
+            writeAndroidKeepClass(db, line);
     }
 
     protected void writeMethodDeclaresException(String methodId, String exceptionType) {
@@ -314,7 +317,15 @@ public abstract class JavaFactWriter {
     }
 
     protected void writeExceptionHandler(String insn, String method, int index,
-                                         String type, String var, int begin, int end) {
-        _db.add(EXCEPTION_HANDLER, insn, method, str(index), type, var, str(begin), str(end));
+                                         String type, int begin, int end) {
+        _db.add(EXCEPTION_HANDLER, insn, method, str(index), type, str(begin), str(end));
+    }
+
+    protected void writeExceptionHandlerFormal(String insn, String var) {
+        _db.add(EXCEPTION_HANDLER_FORMAL_PARAM, insn, var);
+    }
+
+    protected void writeExceptionHandlerPrevious(String currInsn, String prevInsn) {
+        _db.add(EXCEPT_HANDLER_PREV, currInsn, prevInsn);
     }
 }

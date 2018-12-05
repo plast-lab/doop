@@ -34,16 +34,11 @@ public class DataBase {
 	 */
 	private File getResultFile(Query query) {
 		String queryName = query.name();
-		File resultFile = new File(getResultFilePath(queryName));
-		return resultFile;
+		return new File(getResultFilePath(queryName));
 	}
 	
 	private String getResultFilePath(String queryName) {
 		String fileName = String.format("%s.csv", queryName);
-		String filePath = String.format("%s%s%s",
-				dbDir.getAbsolutePath(), File.separator, fileName);
-		logger.debug("Result File Path: " + filePath);
-
-		return filePath;
+		return String.format("%s%s%s", dbDir.getAbsolutePath(), File.separator, fileName);
 	}
 }
