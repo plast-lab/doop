@@ -7,11 +7,13 @@ import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.DoopErrorCodeException
+import org.clyze.doop.common.EntryPointsProcessor
 import org.clyze.doop.common.FrontEnd
 import org.clyze.doop.common.JavaFactWriter
 import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
+import org.clyze.doop.soot.SootEntryPointsProcessor
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
@@ -155,7 +157,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         linkOrCopyFacts(fromDir)
         def entryPoints = options.ENTRY_POINTS.value as String
         if (entryPoints) {
-            JavaFactWriter.processEntryPointsWithDir(factsDir, entryPoints)
+            boolean usesSoot = !(options.PYTHON.value || options.WALA_FACT_GEN.value || options.DEX_FACT_GEN.value)
+            def processor = usesSoot ? new SootEntryPointsProcessor() : new EntryPointsProcessor()
+            processor.processDir(factsDir, entryPoints)
         }
     }
 

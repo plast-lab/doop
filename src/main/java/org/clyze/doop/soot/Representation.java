@@ -50,7 +50,7 @@ class Representation extends JavaRepresentation {
     }
 
     // Fix simple name if it is a special Jimple keyword.
-    private static String escapeSimpleName(String n) {
+    public static String escapeSimpleName(String n) {
         boolean escape = (!n.startsWith("'") && jimpleKeywordList.contains(n));
         return escape ? "'"+n+"'" : n;
     }

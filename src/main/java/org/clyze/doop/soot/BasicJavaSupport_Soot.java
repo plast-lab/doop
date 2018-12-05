@@ -69,4 +69,8 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdde
         }
     }
 
+    @Override
+    public EntryPointsProcessor getEntryPointsProcessor() {
+        return new SootEntryPointsProcessor();
+    }
 }
