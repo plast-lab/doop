@@ -191,9 +191,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 log.info "Time to make facts unique: $timing"
             }
 
-            touch(new File(factsDir, "ApplicationClass.facts"))
-            touch(new File(factsDir, "Properties.facts"))
-            touch(new File(factsDir, "Dacapo.facts"))
             touch(new File(factsDir, "MainClass.facts"))
 
             if (options.DACAPO.value) {
