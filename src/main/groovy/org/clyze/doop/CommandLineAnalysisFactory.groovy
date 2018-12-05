@@ -61,37 +61,37 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	DoopAnalysis newAnalysis(File propsBaseDir, Properties props, OptionAccessor cli) {
 		def options = Doop.overrideDefaultOptionsWithPropertiesAndCLI(props, cli) { it.cli }
 		// Get the id of the analysis (short option: id)
-		options.USER_SUPPLIED_ID.value = cli.id ?: props.getProperty("id")
+		options.USER_SUPPLIED_ID.value = cli.id ?: ["id", "USER_SUPPLIED_ID"].findResult { props.getProperty(it) }
 		// Get the name of the analysis (short option: a)
-		options.ANALYSIS.value = cli.a ?: props.getProperty("analysis")
+		options.ANALYSIS.value = cli.a ?: ["analysis", "ANALYSIS"].findResult { props.getProperty(it) }
 		// Get the inputFiles of the analysis (short option: i)
-		options.INPUTS.value = cli.is ?: getFromProperties(propsBaseDir, props, "inputFiles")
+		options.INPUTS.value = cli.is ?: filesFromProperty(propsBaseDir, props, ["inputFiles", "INPUTS"])
 		// Get the libraryFiles of the analysis (short option: l)
-		options.LIBRARIES.value = cli.ls ?: getFromProperties(propsBaseDir, props, "libraryFiles")
+		options.LIBRARIES.value = cli.ls ?: filesFromProperty(propsBaseDir, props, ["libraryFiles", "LIBRARIES"])
 		// Get the heapFiles of the analysis (long option: heapdl)
-		options.HEAPDLS.value = cli.heapdls ?: getFromProperties(propsBaseDir, props, "heapFiles")
+		options.HEAPDLS.value = cli.heapdls ?: filesFromProperty(propsBaseDir, props, ["heapFiles", "HEAPDLS"])
 
 		newAnalysis(FAMILY, options)
 	}
 
-	private static List<String> getFromProperties(File propsBaseDir, Properties props, String what) {
-		def prop = props.getProperty(what)
+	private static List<String> filesFromProperty(File propsBaseDir, Properties props, List<String> possibleIDs) {
+		return possibleIDs.findResult { p ->
+			def prop = props.getProperty(p)
+			if (!prop || prop == "[]") return null
 
-		if (!prop)
-			return [] as List
-
-		// Files, if relative, are being resolved via the propsBaseDir or later if they are URLs
-		return prop.split().collect {
-			try {
-				it.trim()
-				// If it is not a valid URL an exception is thrown
-				def url = new URL(it)
-				return it
-			} catch (e) {
+			// Files, if relative, are being resolved via the propsBaseDir or later if they are URLs
+			return prop.split().collect {
+				try {
+					it.trim()
+					// If it is not a valid URL an exception is thrown
+					def url = new URL(it)
+					return it
+				} catch (e) {
+				}
+				def f = new File(it)
+				return f.absolute ? it : new File(propsBaseDir, it).canonicalFile.absolutePath
 			}
-			def f = new File(it)
-			return f.absolute ? it : new File(propsBaseDir, it).canonicalFile.absolutePath
-		}
+		} ?: []
 	}
 
 	static CliBuilder createCliBuilder() {

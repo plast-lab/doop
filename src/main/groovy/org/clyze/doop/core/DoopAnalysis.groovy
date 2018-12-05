@@ -14,6 +14,7 @@ import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
+
 import java.lang.reflect.Field
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.FileSystems
@@ -110,9 +111,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     String toString() {
-        return [id: id, name: name, outDir: outDir, cacheDir: cacheDir, inputFiles: ctx.toString()]
-                .collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") + "\n" +
-                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
+        return options.values().collect { AnalysisOption option ->
+            def v = option.value
+            def vStr = v ? (v instanceof List ? (v as List).join(" ") : v as String) : ""
+            return "${option.id}=$vStr"
+        }.sort().join("\n") + "\n"
     }
 
     @Override
