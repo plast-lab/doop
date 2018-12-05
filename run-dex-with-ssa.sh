@@ -8,7 +8,7 @@ if [ "$1" == "" ]; then
     exit
 else
     APP="$1"
-    APP_NAME=$(basename "$1")
+    APP_NAME=$(basename "$1" | sed -e 's/[()]/_/g')
 fi
 
 FACTS_IN=${ANDROID_IN}
