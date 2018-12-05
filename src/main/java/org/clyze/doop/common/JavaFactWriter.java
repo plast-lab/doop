@@ -1,5 +1,6 @@
 package org.clyze.doop.common;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -55,16 +56,12 @@ public abstract class JavaFactWriter {
         _db.add(CLASS_ARTIFACT, artifact, className, subArtifact);
     }
 
-    private void writeAndroidKeepMethod(String methodSig) {
-        _db.add(ANDROID_KEEP_METHOD, "<" + methodSig + ">");
+    private static void writeAndroidKeepMethodDoopId(Database db, String methodDoopId) {
+        db.add(ANDROID_KEEP_METHOD, methodDoopId);
     }
 
-    private void writeAndroidKeepMethodDoopId(String methodDoopId) {
-        _db.add(ANDROID_KEEP_METHOD, methodDoopId);
-    }
-
-    private void writeAndroidKeepClass(String className) {
-        _db.add(ANDROID_KEEP_CLASS, className);
+    private static void writeAndroidKeepClass(Database db, String className) {
+        db.add(ANDROID_KEEP_CLASS, className);
     }
 
     private void writeProperty(String path, String key, String value) {
@@ -137,7 +134,7 @@ public abstract class JavaFactWriter {
         }
 
         try {
-            processEntryPoints(params._entryPoints);
+            processEntryPointsWithDb(_db, params._entryPoints);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -183,20 +180,29 @@ public abstract class JavaFactWriter {
         }
     }
 
-    private void processEntryPoints(String file) throws IOException {
+    public static void processEntryPointsWithDir(File factsDir, String file) {
+        try (Database db = new Database(factsDir)) {
+            processEntryPointsWithDb(db, file);
+            db.flush();
+        } catch (IOException ex) {
+            System.err.println("Error writing entry point information: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    private static void processEntryPointsWithDb(Database db, String file) throws IOException {
         if (file != null) {
-            System.out.println("Reading entry points from: " + file);            
+            System.out.println("Reading entry points from: " + file);
             try (Stream<String> stream = Files.lines(Paths.get(file))) {
-                stream.forEach(this::processEntryPointsFileLine);
+                stream.forEach(s -> processEntryPointsFileLine(db, s));
             }
         }
     }
 
-    private void processEntryPointsFileLine(String line) {        
-        //The entry points file may contain method doopIds or proguard seeds
-        if (line.startsWith("<")) {
-            writeAndroidKeepMethodDoopId(line);
-        }
+    private static void processEntryPointsFileLine(Database db, String line) {
+        // The entry points file may contain method doopIds or proguard seeds.
+        if (line.startsWith("<"))
+            writeAndroidKeepMethodDoopId(db, line);
         else if (line.contains("(")) {
                 //writeAndroidKeepMethod(line);
                 
@@ -206,11 +212,10 @@ public abstract class JavaFactWriter {
                 //instead of: 
                 //package.class$innerClass: void <init>(args...)
                 String doopId = Helper.readMethodDoopId(line);
-                writeAndroidKeepMethodDoopId(doopId);
+                writeAndroidKeepMethodDoopId(db, doopId);
         }
-        else if (!line.contains(":")) {
-            writeAndroidKeepClass(line);
-        }        
+        else if (!line.contains(":"))
+            writeAndroidKeepClass(db, line);
     }
 
     protected void writeMethodDeclaresException(String methodId, String exceptionType) {

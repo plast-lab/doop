@@ -317,6 +317,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
+		if (options.ENTRY_POINTS.value && options.X_SYMLINK_CACHED_FACTS.value) {
+			throw new RuntimeException("Options ${options.ENTRY_POINTS.value} and ${options.X_SYMLINK_CACHED_FACTS.value} are not compatible")
+		}
+
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
 			def tamiflexArg = options.TAMIFLEX.value as String
 			options.TAMIFLEX.value = resolveAsInput(tamiflexArg)
