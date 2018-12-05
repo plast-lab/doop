@@ -5,6 +5,7 @@
 
 
 isFunction(?function),
+isModeledFunction(?function),
 isHeapAllocation(?mockVal),
 isUnboundMethodOrFunctionObjectAllocation(?mockVal),
 isFunctionObjectAllocation(?mockVal),
@@ -33,6 +34,7 @@ GlobalNamePointsTo(?hctx, ?mockVal, ?declModule, ?name):-
   isImmutableHContext(?hctx).
 
 isFunction(?meth),
+isModeledFunction(?meth),
 isMethod(?meth),
 isUnboundMethodObjectAllocation(?mockMethVal),
 isHeapAllocation(?mockMethVal),
@@ -42,3 +44,8 @@ InstanceFieldPointsTo(?hctx,  ?mockMethVal, ?name, ?hctx, ?mockBaseVal):-
   ?mockBaseVal = cat(?inModule, cat("/new ",cat(?declClass, "/0"))),
   ?mockMethVal = cat(?inModule, cat("/new ",cat(?meth, "/0"))),
   isImmutableHContext(?hctx).
+
+
+Function_Arity(?fun, ?arity):-
+  isModeledFunction(?fun),
+  ?arity = count : FormalParam(_, _, ?fun, _).

@@ -42,7 +42,7 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?val
     ActualPositionalParam(?paramIndex, ?invo, _);
     ActualKeywordParam(_, ?invo, ?paramName, _)
   ),
-  FormalParam_DefaultValFrom(?tofunction, ?paramName, ?default),
+  FormalParam_DefaultValForName(?tofunction, ?paramName, ?default),
   VarPointsTo(?hctx,  ?value, _, ?default).       //TODO: REVIEW this at some point
 
 //FOR BOUND METHOD CALLS
@@ -78,7 +78,7 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?val
     ActualPositionalParam(?paramIndex - 1, ?invo, _);
     ActualKeywordParam(_, ?invo, ?paramName, _)
   ),
-  FormalParam_DefaultValFrom(?tofunction, ?paramName, ?default),
+  FormalParam_DefaultValForName(?tofunction, ?paramName, ?default),
   VarPointsTo(?hctx,  ?value, _, ?default).       //TODO: REVIEW this at some point
 
 //VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
