@@ -147,6 +147,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         FileOps.copyDirContents(fromDir, factsDir)
     }
 
+    private void writeMainClassFacts() {
+        if (options.MAIN_CLASS.value) {
+            new File(factsDir, "MainClass.facts").withWriterAppend { w ->
+                options.MAIN_CLASS.value.each { w.writeLine(it as String) }
+            }
+        }
+    }
+
     /**
      * Reuses an existing facts directory. May add more facts on top of
      * the existing facts, if appropriate command line options are set.
@@ -161,6 +169,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             def processor = usesSoot ? new SootEntryPointsProcessor() : new EntryPointsProcessor()
             processor.processDir(factsDir, entryPoints)
         }
+        writeMainClassFacts()
     }
 
     protected void generateFacts() throws DoopErrorCodeException {
@@ -261,11 +270,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             log.info "----"
         }
 
-        if (options.MAIN_CLASS.value) {
-            new File(factsDir, "MainClass.facts").withWriterAppend { w ->
-                options.MAIN_CLASS.value.each { w.writeLine(it as String) }
-            }
-        }
+        writeMainClassFacts()
 
         if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
             File origSpecialCSMethodsFile = new File(options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString())
