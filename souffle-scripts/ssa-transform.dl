@@ -39,7 +39,8 @@ SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?m
 SSA_AssignToOriginal(?instr, ?to),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
 SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
-    _ExceptionHandler(?instr, ?method, ?index, ?type, ?to, _, _).
+    _ExceptionHandler(?instr, ?method, ?index, ?type, _, _),
+    ExceptionHandler_FormalParam(?instr, ?to).
 
 // Return value assignment.
 SSA_AssignToOriginal(?invocation, ?to),
@@ -637,16 +638,23 @@ RewriteDynamicMethodInvocation(?insn, ?index, ?bootSignature, ?dynName, ?dynRetT
     SSA_InstructionIndex(?insn, ?index),
     _DynamicMethodInvocation(?insn, _, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method).
 
-.decl RewriteExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number)
+.decl RewriteExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?begin:number, ?end:number)
 .output RewriteExceptionHandler(filename="ExceptionHandler.facts")
 
-SSA_Type(?var, ?type),
-RewriteExceptionHandler(?handler, ?method, ?index, ?type, ?var, ?begin, ?end) :-
+.decl RewriteExceptionHandler_FormalParam(?handler:symbol, ?var:symbol)
+.output RewriteExceptionHandler_FormalParam(filename="ExceptionHandler-FormalParam.facts")
+
+RewriteExceptionHandler(?handler, ?method, ?index, ?type, ?begin, ?end) :-
     SSA_InstructionIndex(?handler, ?index),
-    _ExceptionHandler(?handler, ?method, _, ?type, ?var_origin, ?begin_old, ?end_old),
+    _ExceptionHandler(?handler, ?method, _, ?type, ?begin_old, ?end_old),
     NewIndexMapping(?begin_old, ?begin),
-    NewIndexMapping(?end_old, ?end),
-    SSA_AssignDetails(?handler, ?var_origin, _, ?var, _).
+    NewIndexMapping(?end_old, ?end).
+
+SSA_Type(?var, ?type),
+RewriteExceptionHandler_FormalParam(?handler, ?var) :-
+    isExceptionHandler(?handler),
+    ExceptionHandler_Type(?handler, ?type),
+    SSA_AssignDetails(?handler, _, _, ?var, _).
 
 .decl RewriteAssignNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)
 .output RewriteAssignNumConstant(filename="AssignNumConstant.facts")
