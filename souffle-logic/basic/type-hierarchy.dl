@@ -74,6 +74,7 @@ Superclass(?c, ?a) :-
 .decl Unsubclassable(?type:Type)
 .decl Subclassable(?type:Type)
 .decl SubtypeOfDifferent(?subtype:Type, ?type:Type)
+.decl ClassConstructor(?method:Method, ?type:Type)
 
 /**
  * The following rules check whether type S can be cast to type T. Implicitly,
@@ -246,3 +247,7 @@ Subclassable(?type) :-
     Method_Modifier("protected", ?method),
     ! Unsubclassable(?type).
 
+ClassConstructor(method, type) :-
+    MethodLookup(_, _, type, method),
+    isMethod(method),
+    match(".*<init>.*", method).

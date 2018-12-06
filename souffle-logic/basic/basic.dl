@@ -2,7 +2,7 @@
 
 #include "finalization-declarations.dl"
 #include "finalization.dl"
-#include "method-resolution-declarations.dl"
+#include "method-lookup.dl"
 #include "method-resolution.dl"
 #include "type-hierarchy.dl"
 
