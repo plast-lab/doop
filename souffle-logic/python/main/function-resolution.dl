@@ -1,8 +1,121 @@
 .decl FunctionInvResolvesTo(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?val:Value, ?hctx:configuration.HContext, ?fun:Function)
+.decl ResolvedFunctionActualParam(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamVar:Var, ?actualParamVar:Var)
+.decl ResolvedFunctionHasActualParamForIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number)
+.decl ResolvedFunctionMissingActualParamForIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number)
+.decl ResolvedFunctionHasKeywordAndPositionalActualParamForIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number)
+.decl ResolvedFunctionHasActualParamUptoIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number)
+.decl ResolvedFunctionHasAllRequredParams(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function)
+.output ResolvedFunctionActualParam
+.output ResolvedFunctionHasAllRequredParams
+
+.output ResolvedFunctionHasKeywordAndPositionalActualParamForIndex
+.output ResolvedFunctionMissingActualParamForIndex
 
 
-FunctionInvResolvesTo(?callerCtx, ?invo, ?value, ?hctx, ?tofunction),
-configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tofunction) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tofunction):-
+  isModeledFunction(?tofunction),
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?value, ?hctx, ?tofunction).
+
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tofunction):-
+  !isModeledFunction(?tofunction),
+  ResolvedFunctionHasAllRequredParams(?callerCtx, ?invo, ?tofunction),
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?value, ?hctx, ?tofunction).
+
+ResolvedFunctionActualParam(?callerCtx, ?invo, ?tofunction, ?formal, ?actual):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, ?formal),
+  ActualPositionalParam(?formalIndex, ?invo, ?actual),
+  !ActualKeywordParam(_, ?invo, ?paramName, _).
+
+
+ResolvedFunctionActualParam(?callerCtx, ?invo, ?tofunction, ?formal, ?actual):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, ?formal),
+  ActualKeywordParam(_, ?invo, ?paramName, ?actual),
+  !ActualPositionalParam(?formalIndex, ?invo, _).
+
+
+ResolvedFunctionActualParam(?callerCtx, ?invo, ?tofunction, ?formal, ?actual):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, ?formal),
+  !ActualKeywordParam(_, ?invo, ?paramName, _),
+  !ActualPositionalParam(?formalIndex, ?invo, _),
+  FormalParam_DefaultValForName(?tofunction, ?paramName, ?actual).
+
+ResolvedFunctionMissingActualParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, _),
+  !ActualKeywordParam(_, ?invo, ?paramName, _),
+  !ActualPositionalParam(?formalIndex, ?invo, _),
+  !FormalParam_DefaultValForName(?tofunction, ?paramName, _).
+
+ResolvedFunctionHasKeywordAndPositionalActualParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, _),
+  ActualKeywordParam(_, ?invo, ?paramName, _),
+  ActualPositionalParam(?formalIndex, ?invo, _).
+
+ResolvedFunctionActualParam(?callerCtx, ?invo, ?tofunction, ?formal, ?actual):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, ?formal),
+  ActualPositionalParam(?formalIndex - 1, ?invo, ?actual),
+  !ActualKeywordParam(_, ?invo, ?paramName, _).
+
+
+ResolvedFunctionActualParam(?callerCtx, ?invo, ?tofunction, ?formal, ?actual):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, ?formal),
+  ActualKeywordParam(_, ?invo, ?paramName, ?actual),
+  !ActualPositionalParam(?formalIndex - 1, ?invo, _).
+
+
+ResolvedFunctionActualParam(?callerCtx, ?invo, ?tofunction, ?formal, ?actual):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, ?formal),
+  !ActualKeywordParam(_, ?invo, ?paramName, _),
+  !ActualPositionalParam(?formalIndex - 1, ?invo, _),
+  FormalParam_DefaultValForName(?tofunction, ?paramName, ?actual).
+
+ResolvedFunctionMissingActualParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, _),
+  !ActualKeywordParam(_, ?invo, ?paramName, _),
+  !ActualPositionalParam(?formalIndex - 1, ?invo, _),
+  !FormalParam_DefaultValForName(?tofunction, ?paramName, _).
+
+ResolvedFunctionHasKeywordAndPositionalActualParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, _),
+  ActualKeywordParam(_, ?invo, ?paramName, _),
+  ActualPositionalParam(?formalIndex - 1, ?invo, _).
+
+ResolvedFunctionHasActualParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex):-
+  ResolvedFunctionActualParam(?callerCtx, ?invo, ?tofunction, ?formal, _),
+  FormalParam(?formalIndex, _, ?tofunction, ?formal).
+
+ResolvedFunctionHasActualParamUptoIndex(?callerCtx, ?invo, ?tofunction, 0):-
+  ResolvedFunctionHasActualParamForIndex(?callerCtx, ?invo, ?tofunction, 0).
+
+ResolvedFunctionHasActualParamUptoIndex(?callerCtx, ?invo, ?tofunction, ?index):-
+  ResolvedFunctionHasActualParamForIndex(?callerCtx, ?invo, ?tofunction, ?index),
+  ResolvedFunctionHasActualParamUptoIndex(?callerCtx, ?invo, ?tofunction, ?index - 1).
+
+ResolvedFunctionHasAllRequredParams(?callerCtx, ?invo, ?tofunction):-
+  ResolvedFunctionHasActualParamUptoIndex(?callerCtx, ?invo, ?tofunction, ?index),
+  Function_NumOfRequiredParams(?tofunction, ?index + 1).
+
+
+FunctionInvResolvesTo(?callerCtx, ?invo, ?value, ?hctx, ?tofunction):-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   FunctionInvocation_Base(?invo, ?base),
   HeapAllocation_Type(?value, ?tofunction),
@@ -10,7 +123,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tofunction) :-
 
 
 isContext(?calleeCtx),
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tofunction) :-
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tofunction):-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tofunction),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx).
 
