@@ -9,7 +9,6 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.common.EntryPointsProcessor
 import org.clyze.doop.common.FrontEnd
-import org.clyze.doop.common.JavaFactWriter
 import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
@@ -118,8 +117,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     String toString() {
         return options.values().collect { AnalysisOption option ->
             def v = option.value
-            def vStr = v ? (v instanceof List ? (v as List).join(" ") : v as String) : ""
-            return "${option.id}=$vStr"
+            return "${option.id}=${v instanceof List ? (v as List).join(" ") : v as String}"
         }.sort().join("\n") + "\n"
     }
 

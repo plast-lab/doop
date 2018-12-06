@@ -139,12 +139,12 @@ class Doop {
 					boolean filtered = filter ? filter.call(option) : true
 					if (filtered) {
 						if (option.argName) {
-							option.value = value
+							option.value = (value != "null" ? value : null)
 						} else {
 							// value.toBoolean will fail on null
 							// value as Boolean will return null, on null
 							// value as boolean will return false, on null
-							option.value = value as boolean
+							option.value = value?.toBoolean() as boolean
 						}
 					}
 				}
