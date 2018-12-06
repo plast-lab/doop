@@ -251,3 +251,18 @@ ClassConstructor(method, type) :-
     MethodLookup(_, _, type, method),
     isMethod(method),
     match(".*<init>.*", method).
+
+
+// ?class is implemented/extended by ?subClass
+.decl Class_InterestingSubtype(?class:ReferenceType, ?subClass:ReferenceType)
+.decl _Valid_Type(?type:ReferenceType)
+
+Class_InterestingSubtype(?class, ?subClass) :-
+  SubtypeOfDifferent(?subClass, ?class),
+  _Valid_Type(?class),
+  _Valid_Type(?subClass).
+
+_Valid_Type(?type) :-
+  isReferenceType(?type),
+  !Type_null(?type),
+  !isArrayType(?type).

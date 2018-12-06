@@ -10,23 +10,9 @@ _Valid_Interesting_Type(?type) :-
   !isArrayType(?type),
   _Server_Interesting_Type(?type).
 
-.decl _Valid_Type(?type:ReferenceType)
-_Valid_Type(?type) :-
-  isReferenceType(?type),
-  !Type_null(?type),
-  !isArrayType(?type).
-
-// ?class is implemented/extended by ?subClass
-.decl Server_Class_Subtype(?class:ReferenceType, ?subClass:ReferenceType)
 // ?class has access to ?field (either it is declared in the class, or in a superclass)
 .decl Server_Type_Can_Access_Field(?class:ClassType, ?fld:Field)
-.output Server_Class_Subtype
 .output Server_Type_Can_Access_Field
-
-Server_Class_Subtype(?class, ?subClass) :-
-  basic.SubtypeOfDifferent(?subClass, ?class),
-  _Valid_Type(?class),
-  _Valid_Type(?subClass).
 
 .decl _Server_Interesting_Type(?class:ReferenceType)
 

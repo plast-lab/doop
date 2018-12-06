@@ -106,6 +106,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             factsDir = new File(outDir, "facts")
 
         database = new File(outDir, "database")
+        deleteQuietly(database)
+        database.mkdirs()
 
         executor = new Executor(outDir, commandsEnvironment)
         cpp = new CPreprocessor(this, executor)

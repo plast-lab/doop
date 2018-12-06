@@ -4,9 +4,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
-import org.apache.commons.io.FileUtils
 import org.clyze.doop.utils.SouffleScript
-import org.clyze.utils.FileOps
 
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
@@ -67,25 +65,21 @@ class SouffleAnalysis extends DoopAnalysis {
 			generateFacts()
 			log.info "[Task FACTS Done]"
 
-			if (options.X_STOP_AT_FACTS.value) {
-				if (options.X_SERVER_CHA.value) {
-					log.info "[CHA...]"
-					def methodLookupFile = new File("${Doop.doopHome}/souffle-scripts/method-lookup-script.dl")
-					def generatedFile = script.compile(methodLookupFile, outDir, cacheDir,
-							options.SOUFFLE_PROFILE.value as boolean,
-							options.SOUFFLE_DEBUG.value as boolean,
-							provenance,
-							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-							options.X_CONTEXT_REMOVER.value as boolean)
-					script.run(generatedFile, factsDir, factsDir, options.SOUFFLE_JOBS.value as int,
-							(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance)
-					new File(factsDir, "database").eachFile { File file ->
-						FileUtils.moveFile(file, new File(factsDir, file.name.replace(".csv", ".facts")))
-					}
-					log.info "[CHA Done]"
-				}
-				return
+			if (options.X_SERVER_CHA.value) {
+				log.info "[CHA...]"
+				def methodLookupFile = new File("${Doop.doopHome}/souffle-scripts/method-lookup-script.dl")
+				def generatedFile = script.compile(methodLookupFile, outDir, cacheDir,
+						options.SOUFFLE_PROFILE.value as boolean,
+						options.SOUFFLE_DEBUG.value as boolean,
+						provenance,
+						options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
+						options.X_CONTEXT_REMOVER.value as boolean)
+				script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+						(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance)
+				log.info "[CHA Done]"
 			}
+
+			if (options.X_STOP_AT_FACTS.value) return
 
 			def generatedFile = compilationFuture.get()
 			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,

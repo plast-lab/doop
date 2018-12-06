@@ -6,8 +6,8 @@
 #include "../souffle-logic/basic/type-hierarchy.dl"
 #include "../souffle-logic/basic/method-lookup.dl"
 
-.output SupertypeOf
 .output MethodLookup
+.output Class_InterestingSubtype
 
 .decl Invocation_Parts(?invocation:MethodInvocation, ?simplename:symbol, ?descriptor:symbol, ?basetype:Type)
 .output Invocation_Parts

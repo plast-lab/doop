@@ -94,8 +94,6 @@ class SouffleScript {
 	        int jobs, long monitoringInterval, Closure monitorClosure = null, boolean provenance = false, boolean profile = false) {
 
 		def db = new File(outDir, "database")
-		deleteQuietly(db)
-		db.mkdirs()
 
 		def executionCommand = "$cacheFile -j$jobs -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
 		if (profile)
