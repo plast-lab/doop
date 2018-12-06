@@ -97,7 +97,7 @@ class SouffleScript {
 		deleteQuietly(db)
 		db.mkdirs()
 
-		def executionCommand = "$cacheFile -j$jobs -F$factsDir -D$db".split().toList()
+		def executionCommand = "$cacheFile -j$jobs -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
 		if (profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 

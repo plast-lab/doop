@@ -741,6 +741,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
+					id: "X_SERVER_CHA",
+					name: "Xserver-cha",
+					description: "Run server queries related to CHA"
+			),
+			new BooleanAnalysisOption(
 					id: "X_EXTRA_METRICS",
 					name: "Xextra-metrics",
 					description: "Run extra metrics logic under addons/statistics",
