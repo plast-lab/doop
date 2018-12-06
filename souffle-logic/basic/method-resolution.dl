@@ -107,19 +107,7 @@ ResolveInvocation(?basetype, ?invocation, ?tomethod) :-
     DirectSuperclass(?basetype, ?supertype),
     MethodLookup(?simplename, ?descriptor, ?supertype, ?tomethod).
 
-OverridableMethod(?type, ?method) :-
-    MethodLookup(_, _, ?type, ?method),
-    ! Method_Modifier("static", ?method),
-    ! Method_Modifier("final", ?method),
-    Method_Modifier("public", ?method),
-    Subclassable(?type).
-
-OverridableMethod(?type, ?method) :-
-    MethodLookup(_, _, ?type, ?method),
-    ! Method_Modifier("static", ?method),
-    ! Method_Modifier("final", ?method),
-    Method_Modifier("protected", ?method),
-    Subclassable(?type).
+/* TODO: Misc relations, should not be here */
 
 ClassConstructor(method, type) :-
     MethodLookup(_, _, type, method),
