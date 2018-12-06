@@ -296,30 +296,23 @@ Server_Method_Subtype(?method, ?subMethod) :-
 
 // Invocation-- //
 
-.decl Server_Invocation_Values(?fromMethod:Method, ?invo:MethodInvocation, ?toMethod:Method, ?isCHA:number)
+.decl Server_Invocation_Values(?fromMethod:Method, ?invo:MethodInvocation, ?toMethod:Method)
 .decl Server_ClassCallsClass(?fromClass:ClassType, ?toClass:ClassType)
 .output Server_Invocation_Values
 .output Server_ClassCallsClass
 
-Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 0) :-
+Server_Invocation_Values(?fromMethod, ?invo, ?toMethod) :-
   mainAnalysis.AnyCallGraphEdge(?invo, ?toMethod),
   Instruction_Method(?invo, ?fromMethod).
 
 #ifdef REFLECTION
-Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 0) :-
+Server_Invocation_Values(?fromMethod, ?invo, ?toMethod) :-
   mainAnalysis.ReflectiveCallGraphEdge(_, ?invo, _, ?toMethod),
   Instruction_Method(?invo, ?fromMethod).
 #endif // REFLECTION
 
-Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 1) :-
-  basic.ResolveInvocation(_, ?invo, ?toMethod),
-  !mainAnalysis.CallGraphEdge(_, ?invo, _, _),
-  !mainAnalysis.InvokedynamicCallGraphEdge(_, ?invo, _, _, _),
-  Instruction_Method(?invo, ?fromMethod),
-  mainAnalysis.Reachable(?fromMethod).
-
 Server_ClassCallsClass(?fromClass, ?toClass) :-
-  Server_Invocation_Values(?fromMethod, _, ?toMethod, _),
+  Server_Invocation_Values(?fromMethod, _, ?toMethod),
   Method_DeclaringType(?fromMethod, ?fromClass),
   Method_DeclaringType(?toMethod, ?toClass).
 

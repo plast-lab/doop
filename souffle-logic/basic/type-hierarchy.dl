@@ -258,7 +258,7 @@ ClassConstructor(method, type) :-
 .decl _Valid_Type(?type:ReferenceType)
 
 Class_InterestingSubtype(?class, ?subClass) :-
-  SubtypeOfDifferent(?subClass, ?class),
+  SubtypeOf(?subClass, ?class),
   _Valid_Type(?class),
   _Valid_Type(?subClass).
 
