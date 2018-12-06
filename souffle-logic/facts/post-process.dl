@@ -28,45 +28,6 @@ ConcreteClass(?class) :-
   isClassType(?class),
   !ClassModifier("abstract", ?class).
 
-VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
-VirtualMethodInvocation_Descriptor(?invocation, ?descriptor) :-
-  isVirtualMethodInvocation_Insn(?invocation),
-  MethodInvocation_Method(?invocation, ?signature),
-  Method_SimpleName(?signature, ?simplename),
-  Method_Descriptor(?signature, ?descriptor).
-
-StaticMethodInvocation_SimpleName(?invocation, ?simplename),
-StaticMethodInvocation_Descriptor(?invocation, ?descriptor) :-
-  isStaticMethodInvocation_Insn(?invocation),
-  MethodInvocation_Method(?invocation, ?signature),
-  Method_SimpleName(?signature, ?simplename),
-  Method_Descriptor(?signature, ?descriptor).
-
-SpecialMethodInvocation_SimpleName(?invocation, ?simplename),
-SpecialMethodInvocation_Descriptor(?invocation, ?descriptor) :-
-  isSpecialMethodInvocation_Insn(?invocation),
-  MethodInvocation_Method(?invocation, ?signature),
-  Method_SimpleName(?signature, ?simplename),
-  Method_Descriptor(?signature, ?descriptor).
-
-SuperMethodInvocation_SimpleName(?invocation, ?simplename),
-SuperMethodInvocation_Descriptor(?invocation, ?descriptor) :-
-  isSuperMethodInvocation_Insn(?invocation),
-  MethodInvocation_Method(?invocation, ?signature),
-  Method_SimpleName(?signature, ?simplename),
-  Method_Descriptor(?signature, ?descriptor).
-
-.decl MethodInvocation_SimpleName(?invocation:Instruction, ?simpleName:symbol)
-
-MethodInvocation_SimpleName(?invocation, ?simplename) :-
-  VirtualMethodInvocation_SimpleName(?invocation, ?simplename).
-MethodInvocation_SimpleName(?invocation, ?simplename) :-
-  SpecialMethodInvocation_SimpleName(?invocation, ?simplename).
-MethodInvocation_SimpleName(?invocation, ?simplename) :-
-  StaticMethodInvocation_SimpleName(?invocation, ?simplename).
-MethodInvocation_SimpleName(?invocation, ?simplename) :-
-  SuperMethodInvocation_SimpleName(?invocation, ?simplename).
-
 // Note that this is more than a straightforward import of generated
 // facts into a DB relation. It filters out the guessed control
 // types that do not correspond to existing types.
