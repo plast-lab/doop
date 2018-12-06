@@ -14,7 +14,7 @@ class AndroidTests extends DoopBenchmark {
 	@Unroll
 	def "Basic Android analysis test"() {
 		when:
-		List args = ["-i", ANDROIDTERM_APK,
+		List args = ["-i", Artifacts.ANDROIDTERM_APK,
 					 "-a", "context-insensitive", "--Xserver-logic",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm",
@@ -37,7 +37,7 @@ class AndroidTests extends DoopBenchmark {
 	@Unroll
 	def "Featherweight/HeapDL Android analysis test"() {
 		when:
-		List args = ["-i", ANDROIDTERM_APK,
+		List args = ["-i", Artifacts.ANDROIDTERM_APK,
 					 "-a", "context-insensitive",
 					 "--platform", "android_25_fulljars",
 					 "--featherweight-analysis",
@@ -60,7 +60,7 @@ class AndroidTests extends DoopBenchmark {
 	def "Custom Dex front end test"() {
 		when:
 		String tmpDir = Files.createTempDirectory("dex-test-facts").toString()
-		List args = ["-i", ANDROIDTERM_APK,
+		List args = ["-i", Artifacts.ANDROIDTERM_APK,
 					 "-a", "context-insensitive",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm-dex",
