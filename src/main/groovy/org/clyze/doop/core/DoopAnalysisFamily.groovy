@@ -706,7 +706,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Load default logic for collecting statistics.",
 					forPreprocessor: true
 			),
-			new BooleanAnalysisOption(
+			new AnalysisOption<String>(
 					id: "X_STATS_AROUND",
 					name: "Xstats-around",
 					description: "Load custom logic for collecting statistics.",
