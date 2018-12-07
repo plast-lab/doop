@@ -330,7 +330,7 @@ class FactWriter extends JavaFactWriter {
     private void writeAssignMethodHandleConstant(SootMethod m, Stmt stmt, Local l, MethodHandle constant, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, index);
-        String handleMethod = constant.getMethodRef().toString();
+        String handleMethod = Representation.signature(constant.getMethodRef());
         String heap = methodHandleConstant(handleMethod);
         String methodId = writeMethod(m);
 
@@ -829,7 +829,7 @@ class FactWriter extends JavaFactWriter {
     private String getBootstrapSig(DynamicInvokeExpr di) {
         SootMethodRef bootstrapMeth = di.getBootstrapMethodRef();
         if (bootstrapMeth.declaringClass().isPhantom()) {
-            String bootstrapSig = bootstrapMeth.toString();
+            String bootstrapSig = Representation.signature(bootstrapMeth);
             if (_reportPhantoms)
                 System.out.println("Bootstrap method is phantom: " + bootstrapSig);
             _db.add(PHANTOM_METHOD, bootstrapSig);

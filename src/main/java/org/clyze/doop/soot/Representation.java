@@ -43,6 +43,10 @@ class Representation extends JavaRepresentation {
         return stripQuotes(f.getSignature());
     }
 
+    static String signature(SootMethodRef mRef) {
+        return stripQuotes(mRef.toString());
+    }
+
     String simpleName(SootMethod m) {
         String result = methodNames.get(m);
         if (result == null) {
