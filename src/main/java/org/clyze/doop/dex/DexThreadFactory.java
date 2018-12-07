@@ -15,7 +15,7 @@ class DexThreadFactory {
     private final CHA cha;
     private final String dexEntry;
     private final String apkName;
-    private boolean moreStrings;
+    private final boolean moreStrings;
 
     /**
      * Generates a thread factory for the parallel fact generation of a single

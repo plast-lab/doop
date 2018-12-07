@@ -15,7 +15,7 @@ public abstract class JavaFactWriter {
     protected static final String L_OP = "1";
     protected static final String R_OP = "2";
     protected final Database _db;
-    protected boolean _extractMoreStrings;
+    protected final boolean _extractMoreStrings;
 
     protected JavaFactWriter(Database db, boolean extractMoreStrings) {
         this._db = db;
