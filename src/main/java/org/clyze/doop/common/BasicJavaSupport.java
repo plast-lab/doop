@@ -118,8 +118,4 @@ public class BasicJavaSupport {
     public Set<String> getClassesInDependencyJars() {
         return classesInDependencyJars;
     }
-
-    public EntryPointsProcessor getEntryPointsProcessor() {
-        return new EntryPointsProcessor();
-    }
 }

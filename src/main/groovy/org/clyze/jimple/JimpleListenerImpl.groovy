@@ -14,6 +14,7 @@ import org.clyze.persistent.model.doop.Class as Klass
 import org.codehaus.groovy.runtime.StackTraceUtils
 
 import static org.clyze.jimple.JimpleParser.*
+import static org.clyze.doop.soot.Representation.stripQuotes
 
 @CompileStatic
 class JimpleListenerImpl extends JimpleBaseListener {
@@ -53,7 +54,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def id = ctx.IDENTIFIER(0)
 		def line = id.symbol.line
 		def startCol = id.symbol.charPositionInLine + 1
-		def qualifiedName = ctx.IDENTIFIER(0).text
+		def qualifiedName = stripQuotes(ctx.IDENTIFIER(0).text)
 		def position = new Position(line, line, startCol, startCol + qualifiedName.length())
 		def packageName = getPackageName(qualifiedName)
 		def className = getClassName(qualifiedName)
@@ -83,7 +84,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def line = id.symbol.line
 		def startCol = id.symbol.charPositionInLine + 1
 		def type = ctx.IDENTIFIER(0).text + (hasToken(ctx, "[]") ? "[]" : "")
-		def name = ctx.IDENTIFIER(1).text
+		def name = stripQuotes(ctx.IDENTIFIER(1).text)
 		def position = new Position(line, line, startCol, startCol + name.length())
 
 		processor.call new Field(
@@ -102,7 +103,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def line = id.symbol.line
 		def startCol = id.symbol.charPositionInLine + 1
 		def retType = ctx.IDENTIFIER(0).text
-		def name = ctx.IDENTIFIER(1).text
+		def name = stripQuotes(ctx.IDENTIFIER(1).text)
 		def position = new Position(line, line, startCol, startCol + name.length())
 
 		def paramTypes = gatherIdentifiers(ctx.identifierList())
@@ -254,7 +255,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		def methodClassId = ctx.methodSig().IDENTIFIER(0)
 		def methodClass = methodClassId.text
-		def methodName = ctx.methodSig().IDENTIFIER(2).text
+		def methodName = stripQuotes(ctx.methodSig().IDENTIFIER(2).text)
 
 		def line = methodClassId.symbol.line
 		def startCol = methodClassId.symbol.charPositionInLine
@@ -319,7 +320,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	Variable var(TerminalNode id, boolean isLocal) {
 		def line = id.symbol.line
 		def startCol = id.symbol.charPositionInLine + 1
-		def name = id.text
+		def name = stripQuotes(id.text)
 
 		def v = new Variable(
 				new Position(line, line, startCol, startCol + name.length()),
@@ -343,7 +344,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	void addVarUsage(TerminalNode id, UsageKind kind) {
 		def line = id.symbol.line
 		def startCol = id.symbol.charPositionInLine + 1
-		def name = id.text
+		def name = stripQuotes(id.text)
 
 		processor.call new Usage(
 				new Position(line, line, startCol, startCol + name.length()),
@@ -356,7 +357,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	Usage fieldUsage(FieldSigContext ctx, UsageKind kind) {
 		def klassStr = ctx.IDENTIFIER(0).text
 		def type = ctx.IDENTIFIER(1).text
-		def name = ctx.IDENTIFIER(2).text
+		def name = stripQuotes(ctx.IDENTIFIER(2).text)
 
 		def line = ctx.IDENTIFIER(0).symbol.line
 		def startCol = ctx.IDENTIFIER(0).symbol.charPositionInLine
@@ -375,7 +376,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		def line = id.symbol.line
 		def startCol = id.symbol.charPositionInLine + 1
-		def name = id.text
+		def name = stripQuotes(id.text)
 
 		if (name == "void") return
 

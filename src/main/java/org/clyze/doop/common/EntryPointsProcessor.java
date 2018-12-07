@@ -13,7 +13,7 @@ import org.clyze.utils.Helper;
  * ProGuard seeds syntax).
  */
 public class EntryPointsProcessor {
-    public void processDir(File factsDir, String file) {
+    public static void processDir(File factsDir, String file) {
         try (Database db = new Database(factsDir)) {
             processDb(db, file);
             db.flush();
@@ -23,7 +23,7 @@ public class EntryPointsProcessor {
         }
     }
 
-    public void processDb(Database db, String file) throws IOException {
+    public static void processDb(Database db, String file) throws IOException {
         if (file != null) {
             System.out.println("Reading entry points from: " + file);
             try (Stream<String> stream = Files.lines(Paths.get(file))) {
@@ -32,7 +32,7 @@ public class EntryPointsProcessor {
         }
     }
 
-    private void processFileLine(Database db, String line) {
+    private static void processFileLine(Database db, String line) {
         // The entry points file may contain method doopIds or proguard seeds.
         if (line.startsWith("<"))
             writeAndroidKeepMethodDoopId(db, line);
@@ -48,11 +48,11 @@ public class EntryPointsProcessor {
             writeAndroidKeepClass(db, line);
     }
 
-    protected void writeAndroidKeepMethodDoopId(Database db, String doopId) {
+    private static void writeAndroidKeepMethodDoopId(Database db, String doopId) {
         db.add(ANDROID_KEEP_METHOD, doopId);
     }
 
-    private void writeAndroidKeepClass(Database db, String className) {
+    private static void writeAndroidKeepClass(Database db, String className) {
         db.add(ANDROID_KEEP_CLASS, className);
     }
 

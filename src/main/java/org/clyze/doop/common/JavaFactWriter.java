@@ -122,7 +122,7 @@ public abstract class JavaFactWriter {
         }
 
         try {
-            java.getEntryPointsProcessor().processDb(_db, params._entryPoints);
+            EntryPointsProcessor.processDb(_db, params._entryPoints);
         } catch (IOException ex) {
             ex.printStackTrace();
         }

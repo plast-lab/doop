@@ -3,7 +3,6 @@ package org.clyze.doop.soot;
 import java.util.Collection;
 import java.util.Set;
 import org.clyze.doop.common.BasicJavaSupport;
-import org.clyze.doop.common.EntryPointsProcessor;
 import soot.Scene;
 import soot.SootClass;
 import soot.SourceLocator;
@@ -68,10 +67,5 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdde
         if (SourceLocator.v().getClassSource(className) != null) {
             scene.addBasicClass(className);
         }
-    }
-
-    @Override
-    public EntryPointsProcessor getEntryPointsProcessor() {
-        return new SootEntryPointsProcessor();
     }
 }
