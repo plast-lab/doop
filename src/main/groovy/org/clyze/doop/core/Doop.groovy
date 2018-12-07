@@ -141,10 +141,7 @@ class Doop {
 						if (option.argName) {
 							option.value = (value != "null" ? value : null)
 						} else {
-							// value.toBoolean will fail on null
-							// value as Boolean will return null, on null
-							// value as boolean will return false, on null
-							option.value = value?.toBoolean() as boolean
+							option.value = Boolean.parseBoolean(value)
 						}
 					}
 				}
