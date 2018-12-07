@@ -35,7 +35,7 @@ FormalParam_DefaultValForIndex(?fun, ?formalIndex, ?fromVar):-
 .output Function_NumOfRequiredParams
 Function_NumOfRequiredParams(?fun, ?numOfParams):-
   isFunction(?fun),
-  ?numOfParams = 1 + min ?formalIndex: {FormalParam_DefaultValForIndex(?fun, ?formalIndex, _)}.
+  ?numOfParams = min ?formalIndex: {FormalParam_DefaultValForIndex(?fun, ?formalIndex, _)}.
 
 Function_NumOfRequiredParams(?fun, ?numOfParams):-
   isFunction(?fun),

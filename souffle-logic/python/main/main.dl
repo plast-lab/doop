@@ -222,10 +222,8 @@
     isNormalHeap(?value),
     AssignInstruction_To(?insn, ?var),
     HeapAllocation_Type(?value, ?type),
-    ?type != "<list>",
-    ?type != "<tuple>",
-    ?type != "<object>",
-    ?type != "<dict>",
+    ?type != "<list>", ?type != "<tuple>",
+    ?type != "<object>", ?type != "<dict>",
     isClassType(?type),
     configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
