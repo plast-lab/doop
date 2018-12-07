@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-class Representation extends JavaRepresentation {
+public class Representation extends JavaRepresentation {
     private final Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
     private final Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
     private final Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
