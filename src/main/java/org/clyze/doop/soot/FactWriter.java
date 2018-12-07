@@ -26,7 +26,7 @@ class FactWriter extends JavaFactWriter {
     private final Representation _rep;
     private final Map<String, Type> _varTypeMap = new ConcurrentHashMap<>();
     private final boolean _reportPhantoms;
-    private final Collection<Object> seenPhantoms = new HashSet<>();
+    private final Set<Object> seenPhantoms = new HashSet<>();
 
     FactWriter(Database db, boolean moreStrings,
                Representation rep, boolean reportPhantoms) {
@@ -975,10 +975,10 @@ class FactWriter extends JavaFactWriter {
     }
 
     static class SigInfo {
-        final int arity;
-        final String retType;
-        final String paramTypes;
-        SigInfo(SootMethodRef ref) {
+        public int arity;
+        public String retType;
+        public String paramTypes;
+        public SigInfo(SootMethodRef ref) {
             this.arity = ref.parameterTypes().size();
             this.retType = ref.returnType().toString();
 
