@@ -164,7 +164,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         linkOrCopyFacts(fromDir)
         def entryPoints = options.ENTRY_POINTS.value as String
         if (entryPoints) {
-            boolean usesSoot = !(options.PYTHON.value || options.WALA_FACT_GEN.value || options.DEX_FACT_GEN.value)
             EntryPointsProcessor.processDir(factsDir, entryPoints)
         }
         writeMainClassFacts()
