@@ -912,3 +912,128 @@ SSA_Type(?to, ?type) :-
     SSA_ThisVar(_, ?to),
     SSA_Alias(?to, ?to_origin),
     Var_Type(?to_origin, ?type).
+
+// Type inference rules WIP.
+
+// ?var1 := ?var2;
+Assign(?stmt, ?var1, ?var2)
+
+// Some simple ordering relations over constraints, for forall definition
+NotFirstConstraintForVar(?var, ?stmt) :-
+   ConstraintForVar(?var, ?stmt),
+   ConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) < ord(?stmt).
+
+NotLastConstraintForVar(?var, ?stmt) :-
+   ConstraintForVar(?var, ?stmt),
+   ConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) > ord(?stmt).
+
+LaterConstraintForVar(?var, ?stmt, ?stmtLater) :-
+   ConstraintForVar(?var, ?stmt),
+   ConstraintForVar(?var, ?stmtLater),
+   ord(?stmtLater) > ord(?stmt).
+
+NextConstraintForVar(?var, ?stmt, ?stmtNext) :-
+   ConstraintForVar(?var, ?stmt),
+   ?stmtNext = min ?stmtLater: LaterConstraintForVar(?var, ?stmtLater).
+
+FirstConstraintForVar(?var, ?stmt) :-
+   ConstraintForVar(?var, ?stmt),
+   !NotFirstConstraintForVar(?var, ?stmt).
+
+   
+// Least upper bound on types lattice
+CommonAncestor(?type1, ?type2, ?supertype) :-
+   subtype(?type1, ?supertype),
+   subtype(?type2, ?supertype).
+
+NotLeastCommonAncestor(?type1, ?type2, ?supertype) :-
+   CommonAncestor(?type1, ?type2, ?supertype),
+   CommonAncestor(?type1, ?type2, ?otherSupertype),
+   ?supertype != ?otherSupertype,
+   subtype(?otherSupertype, ?supertype).
+
+LeastCommonAncestor(?type1, ?type2, ?common) :-
+   CommonAncestor(?type1, ?type2, ?common),
+   !NotLeastCommonAncestor(?type1, ?type2, ?common).
+
+// Greatest lower bound on types lattice
+CommonDescendant(?type1, ?type2, ?subtype) :-
+   subtype(?subtype, ?type1),
+   subtype(?subtype, ?type2).
+
+NotGreatestCommonDescendant(?type1, ?type2, ?subtype) :-
+   CommonDescendant(?type1, ?type2, ?subtype),
+   CommonDescendant(?type1, ?type2, ?otherSubtype),
+   ?subtype != ?otherSubtype,
+   subtype(?subtype, ?otherSubtype).
+
+GreatestCommonDescendant(?type1, ?type2, ?common) :-
+   CommonDescendant(?type1, ?type2, ?common),
+   !NotGreatestCommonDescendant(?type1, ?type2, ?common).
+
+
+// If we know a declared type, that's enough!
+LowerBoundTypeForAllConstraints(?var, ?type) :-
+   HasKnownType(?var, ?type).
+
+// Otherwise iterate
+LowerBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
+   !HasKnownType(?var, _),
+   LowerBoundTypeForConstraint(?var, ?type, ?stmt),
+   FirstConstraintForVar(?var, ?stmt).
+   
+LowerBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
+   LowerBoundTypeUpToConstraint(?var, ?typeBefore, ?stmtPrev),
+   NextConstraintForVar(?var, ?stmtPrev, ?stmt),
+   LowerBoundTypeForConstraint(?var, ?typeCur, ?stmt),
+   GreatestCommonDescendant(?typeBefore, ?typeCur, ?type).
+
+LowerBoundTypeForAllConstraints(?var, ?type) :-
+   LowerBoundTypeUpToConstraint(?var, ?type, ?stmt),
+   !NextConstraintForVar(?var, ?stmt, _).
+
+// Similarly for upper bounds
+UpperBoundTypeForAllConstraints(?var, ?type) :-
+   HasKnownType(?var, ?type).
+
+UpperBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
+   !HasKnownType(?var, _),
+   UpperBoundTypeForConstraint(?var, ?type, ?stmt),
+   FirstConstraintForVar(?var, ?stmt).
+   
+UpperBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
+   UpperBoundTypeUpToConstraint(?var, ?typeBefore, ?stmtPrev),
+   NextConstraintForVar(?var, ?stmtPrev, ?stmt),
+   UpperBoundTypeForConstraint(?var, ?typeCur, ?stmt),
+   LeastCommonAncestor(?typeBefore, ?typeCur, ?type).
+
+UpperBoundTypeForAllConstraints(?var, ?type) :-
+   UpperBoundTypeUpToConstraint(?var, ?type, ?stmt),
+   !NextConstraintForVar(?var, ?stmt, _).
+
+
+// Take both bounds into account
+TypeCompatibleWithAllConstraints(?var, ?type) :-
+   LowerBoundTypeForAllConstraints(?var, ?lowerType),
+   subtype(?lowerType, ?type),
+   UpperBoundTypeForAllConstraints(?var, ?upperType),
+   subtype(?type, ?upperType).
+   
+
+// And now, let's encode the constraints themselves
+LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
+   Assign(?stmt, ?var, ?varOther),
+   TypeCompatibleWithAllConstraints(?varOther, ?type).
+
+UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
+   Assign(?stmt, ?var, _).
+
+UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
+   Assign(?stmt, ?varOther, ?var),
+   TypeCompatibleWithAllConstraints(?varOther, ?type).
+
+LowerBoundTypeForConstraint(?var, "NullType", ?stmt) :-
+   Assign(?stmt, _, ?var).
+
