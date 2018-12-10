@@ -14,7 +14,7 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 			new FileResolver(),
 			new DirectoryResolver(),
 			new URLResolver(),
-			IvyResolver.newInstance()
+			new IvyResolver()
 	)
 
 	static final ChainResolver PYTHON_RESOLVER = new ChainResolver(
