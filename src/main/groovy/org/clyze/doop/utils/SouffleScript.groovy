@@ -91,7 +91,7 @@ class SouffleScript {
 	}
 
 	def run(File cacheFile, File factsDir, File outDir,
-	        int jobs, long monitoringInterval, Closure monitorClosure = null, boolean provenance = false, boolean profile = false) {
+	        int jobs, long monitoringInterval, Closure monitorClosure, boolean provenance = false, boolean profile = false) {
 
 		def db = new File(outDir, "database")
 
