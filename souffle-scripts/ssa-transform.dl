@@ -737,9 +737,12 @@ RewriteLoadArrayIndex(?insn, ?index, ?to, ?base, ?inmethod) :-
 .output RewriteLoadInstanceField(filename="LoadInstanceField.facts")
 
 SSA_Type(?to, ?type),
+LowerBoundTypeForConstraint(?to, ?type, insn),
+UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn),
 RewriteLoadInstanceField(?insn, ?index, ?to, ?base, ?signature, ?inmethod) :-
     _LoadInstanceField(?insn, _, ?to_origin, ?base_origin, ?signature, ?inmethod),
     _Field(?signature, _, _, ?type),
+    Field_DeclaringType(?signature, ?declaring_type),
     SSA_InstructionIndex(?insn, ?index),
     SSA_AssignDetails(?insn, ?to_original, _, ?to, _),
     ReachingDef(?insn, ?base, ?base_origin).
@@ -748,6 +751,7 @@ RewriteLoadInstanceField(?insn, ?index, ?to, ?base, ?signature, ?inmethod) :-
 .output RewriteLoadStaticField(filename="LoadStaticField.facts")
 
 SSA_Type(?to, ?type),
+LowerBoundTypeForConstraint(?to, ?type, insn),
 RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
     _LoadStaticField(?insn, _, ?to_origin, ?signature, ?inmethod),
     _Field(?signature, _, _, ?type),
@@ -918,7 +922,52 @@ SSA_Type(?to, ?type) :-
 // The Assign relation models the assignment, in a general way:
 //  1) ?var1 := ?var2; (local assigment)
 //  2) f(?var, ...); (argument passing [formal param = actual param])
-Assign(?stmt, ?var1, ?var2).
+.decl Assign(?stmt:symbol, ?var1:symbol, ?var2:symbol)
+
+.decl HasKnownType(?var:symbol, ?type:symbol)
+
+// The following relations are used to iterate over the constraints.
+.decl NotFirstConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl NotLastConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl LaterConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtLater:symbol)
+.decl NextConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtNext:symbol)
+
+// Relations for finding the least common ancestor/greatest common decendant of two
+// types in the type lattice.
+.decl CommonAncestor(?type1:symbol, ?type2:symbol, ?supertype:symbol)
+.decl NotLeastCommonAncestor(?type1:symbol, ?type2:symbol, ?supertype:symbol)
+.decl LeastCommonAncestor(?type1:symbol, ?type2:symbol, ?supertype:symbol)
+.decl CommonDescendant(?type1:symbol, ?type2:symbol, ?subtype:symbol)
+.decl NotGreatestCommonDescendant(?type1:symbol, ?type2:symbol, ?subtype:symbol)
+.decl GreatestCommonDescendant(?type1:symbol, ?type2:symbol, ?subtype:symbol)
+
+.decl LowerBoundTypeForAllConstraints(?var:symbol, ?type:symbol)
+.decl LowerBoundTypeUpToConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)
+
+.decl UpperBoundTypeForAllConstraints(?var:symbol, ?type:symbol)
+.decl UpperBoundTypeUpToConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)
+
+.decl TypeCompatibleWithAllConstraints(?var:symbol, ?type:symbol)
+
+// ?var1 := ?var2
+Assign(?stmt, ?var1, ?var2) :-
+    RewriteAssignLocal(?stmt, _. ?var1, ?var2, _).
+
+// f(?var1)
+Assign(?invocation, ?var1, ?var2) :-
+    RewriteActualParam(?index, ?invocation, ?var2),
+    MethodInvocation_Method(?invocation, ?method),
+    SSA_FormalParam(?index, ?method, ?var1).
+
+// Static type of formal params is known.
+HasKnownType(?var, ?type)
+    SSA_FormalParam(?index, _, ?var),
+    SSA_Type(?var, ?type).
+
+// Static type of this vars is known.
+HasKnownType(?var, ?type)
+    SSA_ThisVar(_, ?var),
+    SSA_Type(?var, ?type).
 
 // Some simple ordering relations over constraints, for forall definition
 NotFirstConstraintForVar(?var, ?stmt) :-
@@ -1032,6 +1081,11 @@ UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
    Assign(?stmt, ?varOther, ?var),
    TypeCompatibleWithAllConstraints(?varOther, ?type).
 
-LowerBoundTypeForConstraint(?var, "NullType", ?stmt) :-
+LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
    Assign(?stmt, _, ?var).
 
+ConstraintForVar(?var, ?stmt) :-
+    LowerBoundTypeForConstraint(?var, _, ?stmt).
+
+ConstraintForVar(?var, ?stmt) :-
+    UpperBoundTypeForConstraint(?var, _, ?stmt).
