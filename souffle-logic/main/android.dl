@@ -759,6 +759,7 @@ AsynchTaskExecute(?param, ?base) :-
    isArrayType(?type),
    MethodInvocation_Base(?invocation, ?base).
 
+ForcedReachableAndroidContext(?ctx, ?method),
 ReachableContext(?ctx, ?method),
 OptInterproceduralAssign(?ctx, ?formal, ?callerCtx, ?actual),
 VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
