@@ -78,7 +78,7 @@ class TestUtils {
 	 * @param qualified	  if true, qualify relation name
 	 */
 	static void varPointsTo(Analysis analysis, String local, String value, boolean qualified) {
-		String rel = qualified ? "mainAnalysis-VarPointsTo" : "VarPointsTo"
+		String rel = qualified ? "mainAnalysis.VarPointsTo" : "VarPointsTo"
 		findPair(analysis, rel, local, 3, value, 1)
 	}
 	// Simpler overloaded version.
@@ -92,7 +92,7 @@ class TestUtils {
 
 	// Check that a static field points to a value.
 	static void staticFieldPointsTo(Analysis analysis, String fld, String value) {
-		findPair(analysis, "mainAnalysis-StaticFieldPointsTo", fld, 2, value, 1)
+		findPair(analysis, "mainAnalysis.StaticFieldPointsTo", fld, 2, value, 1)
 	}
 
 	static void varValue(Analysis analysis, String local, String value) {
@@ -104,24 +104,24 @@ class TestUtils {
 	}
 
 	static void invokedynamicCGE(Analysis analysis, String instr, String meth) {
-		findPair(analysis, "mainAnalysis-InvokedynamicCallGraphEdge", instr, 1, meth, 3)
+		findPair(analysis, "mainAnalysis.InvokedynamicCallGraphEdge", instr, 1, meth, 3)
 	}
 
 	static void lambdaCGE(Analysis analysis, String instr, String meth) {
-		findPair(analysis, "mainAnalysis-LambdaCallGraphEdge", instr, 1, meth, 3)
+		findPair(analysis, "mainAnalysis.LambdaCallGraphEdge", instr, 1, meth, 3)
 	}
 
 	static void linkObjectIsLambda(Analysis analysis, String linkObject, String desc) {
-		findPair(analysis, 'mainAnalysis-LambdaCallSite', linkObject, 2, desc, 6)
+		findPair(analysis, 'mainAnalysis.LambdaCallSite', linkObject, 2, desc, 6)
 	}
 
 	static void proxyCGE(Analysis analysis, String instr, String meth) {
-		findPair(analysis, "mainAnalysis-ProxyCallGraphEdge", instr, 1, meth, 3)
+		findPair(analysis, "mainAnalysis.ProxyCallGraphEdge", instr, 1, meth, 3)
 	}
 
 	// Check that an instance field points to a value.
 	static void instanceFieldPointsTo(Analysis analysis, String fld, String value) {
-		findPair(analysis, "mainAnalysis-InstanceFieldPointsTo", fld, 2, value, 1)
+		findPair(analysis, "mainAnalysis.InstanceFieldPointsTo", fld, 2, value, 1)
 	}
 
 	// Check that a method is reachable.
