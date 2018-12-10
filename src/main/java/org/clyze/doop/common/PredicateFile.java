@@ -14,6 +14,7 @@ public enum PredicateFile
     ANDROID_APPLICATION("AndroidApplication"),
     ANDROID_ENTRY_POINT("AndroidEntryPoint"),
     APP_CLASS("ApplicationClass"),
+    APP_PACKAGE("ApplicationPackage"),
     ARRAY_INITIAL_VALUE_FROM_LOCAL("ArrayInitialValueFromLocal"),
     ARRAY_INITIAL_VALUE_FROM_CONST("ArrayInitialValueFromConst"),
     ARRAY_INSN_INDEX("ArrayInsnIndex"),

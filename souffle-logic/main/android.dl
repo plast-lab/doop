@@ -785,6 +785,11 @@ ApplicationEntryPoint(?meth) :-
  * Unobfuscated classes and members: special treatment
 **/
 
+.decl ApplicationPackageRegex(?regex:symbol)
+
+ApplicationPackageRegex(cat(?package, ".*")) :-
+  _ApplicationPackage(?package).
+
 .decl UnobfuscatedApplicationClass(?class:ClassType)
 .output UnobfuscatedApplicationClass
 UnobfuscatedApplicationClass(?class) :-
@@ -798,6 +803,10 @@ UnobfuscatedApplicationClass(?class) :-
    match("okhttp3.*", ?class);
    match("retrofit.*", ?class);
    match("retrofit2.*", ?class)).
+UnobfuscatedApplicationClass(?class) :-
+  ApplicationClass(?class),
+  ApplicationPackageRegex(?regex),
+  match(?regex, ?class).
 
 .decl UnobfuscatedMethod(?meth:Method)
 .output UnobfuscatedMethod

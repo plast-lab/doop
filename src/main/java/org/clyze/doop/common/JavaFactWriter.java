@@ -278,4 +278,8 @@ public abstract class JavaFactWriter {
     protected void writeExceptionHandlerPrevious(String currInsn, String prevInsn) {
         _db.add(EXCEPT_HANDLER_PREV, currInsn, prevInsn);
     }
+
+    public void writeAppPackage(String appPackage) {
+        _db.add(APP_PACKAGE, appPackage);
+    }
 }
