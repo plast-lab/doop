@@ -179,8 +179,8 @@ DFPlus(?dBlock, ?block, ?var) :-
 
 // TODO: Review this
 DFPlus(?block, ?dfblock, ?var) :-
-    DFPlus(_, ?block, ?var),
-    DominanceFrontier(?block, ?dfblock).
+    DFPlus(?block, ?block_1, ?var),
+    DominanceFrontier(?block_1, ?dfblock).
 
 .decl ContainsAssignment(?dBlock:symbol, ?var:symbol)
 
