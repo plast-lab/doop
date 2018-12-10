@@ -6,6 +6,7 @@
 #import "../souffle-logic/facts/flow-insensitive-schema.dl"
 #import "../souffle-logic/addons/cfg-analysis/declarations.dl"
 #import "../souffle-logic/addons/cfg-analysis/analysis.dl"
+#import "../souffle-logic/basic/type-hierarchy-declarations.dl"
 
 // If instr is an assignment found at instruction i in method meth
 // then create a new assignment fact with same RHS and LHS v_i,
@@ -737,7 +738,9 @@ RewriteLoadArrayIndex(?insn, ?index, ?to, ?base, ?inmethod) :-
 .output RewriteLoadInstanceField(filename="LoadInstanceField.facts")
 
 SSA_Type(?to, ?type),
-LowerBoundTypeForConstraint(?to, ?type, insn),
+ConstraintForVar(?to, ?insn),
+ConstraintForVar(?base, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn),
 UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn),
 RewriteLoadInstanceField(?insn, ?index, ?to, ?base, ?signature, ?inmethod) :-
     _LoadInstanceField(?insn, _, ?to_origin, ?base_origin, ?signature, ?inmethod),
@@ -751,7 +754,8 @@ RewriteLoadInstanceField(?insn, ?index, ?to, ?base, ?signature, ?inmethod) :-
 .output RewriteLoadStaticField(filename="LoadStaticField.facts")
 
 SSA_Type(?to, ?type),
-LowerBoundTypeForConstraint(?to, ?type, insn),
+ConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn),
 RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
     _LoadStaticField(?insn, _, ?to_origin, ?signature, ?inmethod),
     _Field(?signature, _, _, ?type),
@@ -928,6 +932,7 @@ SSA_Type(?to, ?type) :-
 
 // The following relations are used to iterate over the constraints.
 .decl NotFirstConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl FirstConstraintForVar(?var:symbol, ?stmt:symbol)
 .decl NotLastConstraintForVar(?var:symbol, ?stmt:symbol)
 .decl LaterConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtLater:symbol)
 .decl NextConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtNext:symbol)
@@ -943,15 +948,19 @@ SSA_Type(?to, ?type) :-
 
 .decl LowerBoundTypeForAllConstraints(?var:symbol, ?type:symbol)
 .decl LowerBoundTypeUpToConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)
+.decl LowerBoundTypeForConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)
 
 .decl UpperBoundTypeForAllConstraints(?var:symbol, ?type:symbol)
 .decl UpperBoundTypeUpToConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)
+.decl UpperBoundTypeForConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)
+
+.decl ConstraintForVar(?var:symbol, ?stmt:symbol)
 
 .decl TypeCompatibleWithAllConstraints(?var:symbol, ?type:symbol)
 
 // ?var1 := ?var2
 Assign(?stmt, ?var1, ?var2) :-
-    RewriteAssignLocal(?stmt, _. ?var1, ?var2, _).
+    RewriteAssignLocal(?stmt, _, ?var1, ?var2, _).
 
 // f(?var1)
 Assign(?invocation, ?var1, ?var2) :-
@@ -959,13 +968,17 @@ Assign(?invocation, ?var1, ?var2) :-
     MethodInvocation_Method(?invocation, ?method),
     SSA_FormalParam(?index, ?method, ?var1).
 
+ConstraintForVar(?var1, ?stmt),
+ConstraintForVar(?var2, ?stmt) :- 
+    Assign(?stmt, ?var1, ?var2).
+
 // Static type of formal params is known.
-HasKnownType(?var, ?type)
-    SSA_FormalParam(?index, _, ?var),
+HasKnownType(?var, ?type) :-
+    SSA_FormalParam(_, _, ?var),
     SSA_Type(?var, ?type).
 
 // Static type of this vars is known.
-HasKnownType(?var, ?type)
+HasKnownType(?var, ?type) :-
     SSA_ThisVar(_, ?var),
     SSA_Type(?var, ?type).
 
@@ -987,7 +1000,7 @@ LaterConstraintForVar(?var, ?stmt, ?stmtLater) :-
 
 NextConstraintForVar(?var, ?stmt, ?stmtNext) :-
    ConstraintForVar(?var, ?stmt),
-   ?stmtNext = min ?stmtLater: LaterConstraintForVar(?var, ?stmtLater).
+   ?stmtNext = min ?stmtLater : LaterConstraintForVar(?var, ?stmt, ?stmtLater).
 
 FirstConstraintForVar(?var, ?stmt) :-
    ConstraintForVar(?var, ?stmt),
@@ -995,14 +1008,14 @@ FirstConstraintForVar(?var, ?stmt) :-
    
 // Least upper bound on types lattice
 CommonAncestor(?type1, ?type2, ?supertype) :-
-   subtype(?type1, ?supertype),
-   subtype(?type2, ?supertype).
+   SubtypeOf(?type1, ?supertype),
+   SubtypeOf(?type2, ?supertype).
 
 NotLeastCommonAncestor(?type1, ?type2, ?supertype) :-
    CommonAncestor(?type1, ?type2, ?supertype),
    CommonAncestor(?type1, ?type2, ?otherSupertype),
    ?supertype != ?otherSupertype,
-   subtype(?otherSupertype, ?supertype).
+   SubtypeOf(?otherSupertype, ?supertype).
 
 LeastCommonAncestor(?type1, ?type2, ?common) :-
    CommonAncestor(?type1, ?type2, ?common),
@@ -1010,14 +1023,14 @@ LeastCommonAncestor(?type1, ?type2, ?common) :-
 
 // Greatest lower bound on types lattice
 CommonDescendant(?type1, ?type2, ?subtype) :-
-   subtype(?subtype, ?type1),
-   subtype(?subtype, ?type2).
+   SubtypeOf(?subtype, ?type1),
+   SubtypeOf(?subtype, ?type2).
 
 NotGreatestCommonDescendant(?type1, ?type2, ?subtype) :-
    CommonDescendant(?type1, ?type2, ?subtype),
    CommonDescendant(?type1, ?type2, ?otherSubtype),
    ?subtype != ?otherSubtype,
-   subtype(?subtype, ?otherSubtype).
+   SubtypeOf(?subtype, ?otherSubtype).
 
 GreatestCommonDescendant(?type1, ?type2, ?common) :-
    CommonDescendant(?type1, ?type2, ?common),
@@ -1065,9 +1078,9 @@ UpperBoundTypeForAllConstraints(?var, ?type) :-
 // Take both bounds into account
 TypeCompatibleWithAllConstraints(?var, ?type) :-
    LowerBoundTypeForAllConstraints(?var, ?lowerType),
-   subtype(?lowerType, ?type),
+   SubtypeOf(?lowerType, ?type),
    UpperBoundTypeForAllConstraints(?var, ?upperType),
-   subtype(?type, ?upperType).
+   SubtypeOf(?type, ?upperType).
    
 // And now, let's encode the constraints themselves
 LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
@@ -1083,9 +1096,3 @@ UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
 
 LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
    Assign(?stmt, _, ?var).
-
-ConstraintForVar(?var, ?stmt) :-
-    LowerBoundTypeForConstraint(?var, _, ?stmt).
-
-ConstraintForVar(?var, ?stmt) :-
-    UpperBoundTypeForConstraint(?var, _, ?stmt).
