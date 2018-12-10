@@ -110,7 +110,7 @@ ReachableContext(?ctx, ?meth) :-
   AndroidEntryPoint(?meth),
   isImmutableContext(?ctx).
 
-// Also accept info from ProGuard keep annotations (e.g., produced via -printseeds in PG).
+// Also accept info from keep annotations (e.g., produced via -printseeds in ProGuard).
 // Forcing the reachability and mocking of all "keep" methods.
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
