@@ -80,3 +80,11 @@ ApplicationEntryPoint(?meth) :-
   ImplicitReachable(?meth),
   ApplicationMethod(?meth).
 #endif // EXCLUDE_IMPLICITLY_REACHABLE_CODE
+
+#ifndef ANDROID
+
+ReachableContext(?ctx, ?meth) :-
+  KeepMethod(?meth),
+  isImmutableContext(?ctx).
+
+#endif // ANDROID

@@ -114,7 +114,7 @@ ReachableContext(?ctx, ?meth) :-
 // Forcing the reachability and mocking of all "keep" methods.
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
-  AndroidKeepMethod(?meth),
+  KeepMethod(?meth),
   isImmutableContext(?ctx).
 
 // Not clear what ProGuard does with "keep" annotations for classes, but certainly
@@ -122,7 +122,7 @@ ReachableContext(?ctx, ?meth) :-
 // constructors.
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
-  AndroidKeepClass(?class),
+  KeepClass(?class),
   Method_DeclaringType(?meth, ?class),
   Method_SimpleName(?meth, "<init>"),
   !FormalParam(_, ?meth, _),
@@ -830,12 +830,12 @@ ObfuscationOn() :-
 
 // If obfuscation is on, then treat all unobfuscated method names as
 // entry points: the programmer probably had a "keep" specification for
-// them. Note that AndroidKeep* are both input and derived predicates.
-AndroidKeepMethod(?meth) :-
+// them. Note that Keep* are both input and derived predicates.
+KeepMethod(?meth) :-
   ObfuscationOn(),
   UnobfuscatedMethod(?meth).
 
-AndroidKeepClass(?class) :-
+KeepClass(?class) :-
   ObfuscationOn(),
   UnobfuscatedApplicationClass(?class).
 

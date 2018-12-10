@@ -484,6 +484,10 @@
 .decl Stats_Metrics(order:symbol, msg:symbol, c:number)
 #endif
 
+// Keep method/class information.
+.decl KeepMethod(?m:Method)
+.decl KeepClass(?c:ClassType)
+
 //-----------------------------------------------------------------------------
 // [Android-related]
 //-----------------------------------------------------------------------------
@@ -500,8 +504,6 @@
 .decl SensitiveLayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)
 .decl SensitiveLayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
 .decl AndroidEntryPoint(?m:Method)
-.decl AndroidKeepMethod(?m:Method)
-.decl AndroidKeepClass(?c:ClassType)
 .decl AndroidApplication(?t:ClassType)
 
 #endif

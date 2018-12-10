@@ -35,7 +35,7 @@ public class EntryPointsProcessor {
     private static void processFileLine(Database db, String line) {
         // The entry points file may contain method doopIds or proguard seeds.
         if (line.startsWith("<"))
-            writeAndroidKeepMethodDoopId(db, line);
+            writeKeepMethodDoopId(db, line);
         else if (line.contains("(")) {
             // The proguard seeds file notation does not use doopIds for constructors.
             // e.g. in a seeds file we have:
@@ -43,17 +43,17 @@ public class EntryPointsProcessor {
             // instead of:
             //   package.class$innerClass: void <init>(args...)
             String doopId = Helper.readMethodDoopId(line);
-            writeAndroidKeepMethodDoopId(db, doopId);
+            writeKeepMethodDoopId(db, doopId);
         } else if (!line.contains(":"))
-            writeAndroidKeepClass(db, line);
+            writeKeepClass(db, line);
     }
 
-    private static void writeAndroidKeepMethodDoopId(Database db, String doopId) {
-        db.add(ANDROID_KEEP_METHOD, doopId);
+    private static void writeKeepMethodDoopId(Database db, String doopId) {
+        db.add(KEEP_METHOD, doopId);
     }
 
-    private static void writeAndroidKeepClass(Database db, String className) {
-        db.add(ANDROID_KEEP_CLASS, className);
+    private static void writeKeepClass(Database db, String className) {
+        db.add(KEEP_CLASS, className);
     }
 
 }
