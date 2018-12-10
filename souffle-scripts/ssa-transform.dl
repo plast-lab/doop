@@ -915,8 +915,10 @@ SSA_Type(?to, ?type) :-
 
 // Type inference rules WIP.
 
-// ?var1 := ?var2;
-Assign(?stmt, ?var1, ?var2)
+// The Assign relation models the assignment, in a general way:
+//  1) ?var1 := ?var2; (local assigment)
+//  2) f(?var, ...); (argument passing [formal param = actual param])
+Assign(?stmt, ?var1, ?var2).
 
 // Some simple ordering relations over constraints, for forall definition
 NotFirstConstraintForVar(?var, ?stmt) :-
@@ -941,7 +943,6 @@ NextConstraintForVar(?var, ?stmt, ?stmtNext) :-
 FirstConstraintForVar(?var, ?stmt) :-
    ConstraintForVar(?var, ?stmt),
    !NotFirstConstraintForVar(?var, ?stmt).
-
    
 // Least upper bound on types lattice
 CommonAncestor(?type1, ?type2, ?supertype) :-
@@ -972,7 +973,6 @@ NotGreatestCommonDescendant(?type1, ?type2, ?subtype) :-
 GreatestCommonDescendant(?type1, ?type2, ?common) :-
    CommonDescendant(?type1, ?type2, ?common),
    !NotGreatestCommonDescendant(?type1, ?type2, ?common).
-
 
 // If we know a declared type, that's enough!
 LowerBoundTypeForAllConstraints(?var, ?type) :-
@@ -1013,7 +1013,6 @@ UpperBoundTypeForAllConstraints(?var, ?type) :-
    UpperBoundTypeUpToConstraint(?var, ?type, ?stmt),
    !NextConstraintForVar(?var, ?stmt, _).
 
-
 // Take both bounds into account
 TypeCompatibleWithAllConstraints(?var, ?type) :-
    LowerBoundTypeForAllConstraints(?var, ?lowerType),
@@ -1021,7 +1020,6 @@ TypeCompatibleWithAllConstraints(?var, ?type) :-
    UpperBoundTypeForAllConstraints(?var, ?upperType),
    subtype(?type, ?upperType).
    
-
 // And now, let's encode the constraints themselves
 LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
    Assign(?stmt, ?var, ?varOther),
