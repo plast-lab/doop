@@ -15,9 +15,9 @@ FACTS_IN=${ANDROID_IN}
 FACTS_OUT=${ANDROID_OUT}
 SSA_TRANSFORMER=$(realpath souffle-scripts/ssa-transform.dl)
 
-./doop -i ${APP} -a context-insensitive --id ${APP_NAME}-dex-facts --platform android_25_fulljars --dex --Xstop-at-facts ${FACTS_IN} --cache
+./doopOffline -i ${APP} -a context-insensitive --id ${APP_NAME}-dex-facts --platform android_25_fulljars --dex --Xstop-at-facts ${FACTS_IN} --cache
 
-./gradlew souffleScript -Pargs="${SSA_TRANSFORMER} ${FACTS_IN} ${FACTS_OUT} ${DOOP_HOME}/cache 26 true false false false"
+./gradlew souffleScript -Pargs="${SSA_TRANSFORMER} ${FACTS_IN} ${FACTS_OUT} ${DOOP_HOME}/cache 26 true false false false" --offline
 
 pushd "${FACTS_OUT}/database"
 echo "TODO: move"
@@ -31,5 +31,7 @@ for file in ${FACTS_IN}/*.facts; do
 done
 
 popd
+
+exit 1
 
 ./doop -i ${APP} -a context-insensitive --id ${APP_NAME}-analysis --platform android_25_fulljars --Xfacts-subset PLATFORM --Xuse-existing-facts ${FACTS_OUT}/database

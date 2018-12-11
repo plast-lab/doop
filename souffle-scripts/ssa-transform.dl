@@ -6,7 +6,7 @@
 #import "../souffle-logic/facts/flow-insensitive-schema.dl"
 #import "../souffle-logic/addons/cfg-analysis/declarations.dl"
 #import "../souffle-logic/addons/cfg-analysis/analysis.dl"
-#import "../souffle-logic/basic/type-hierarchy-declarations.dl"
+#import "type-hierarchy-script.dl"
 
 // If instr is an assignment found at instruction i in method meth
 // then create a new assignment fact with same RHS and LHS v_i,
@@ -958,6 +958,17 @@ SSA_Type(?to, ?type) :-
 
 .decl TypeCompatibleWithAllConstraints(?var:symbol, ?type:symbol)
 
+.output LowerBoundTypeForConstraint
+.output UpperBoundTypeForConstraint
+.output TypeCompatibleWithAllConstraints
+.output HasKnownType
+.output SubtypeOf
+.output Assign
+.output isReferenceType
+
+SubtypeOf(?t, "java.lang.Object") :-
+    isReferenceType(?t).
+
 // ?var1 := ?var2
 Assign(?stmt, ?var1, ?var2) :-
     RewriteAssignLocal(?stmt, _, ?var1, ?var2, _).
@@ -999,8 +1010,9 @@ LaterConstraintForVar(?var, ?stmt, ?stmtLater) :-
    ord(?stmtLater) > ord(?stmt).
 
 NextConstraintForVar(?var, ?stmt, ?stmtNext) :-
-   ConstraintForVar(?var, ?stmt),
-   ?stmtNext = min ?stmtLater : LaterConstraintForVar(?var, ?stmt, ?stmtLater).
+   LaterConstraintForVar(?var, ?stmt, ?stmtNext),
+   ?stmtNextOrd = min ord(?stmtLater) : LaterConstraintForVar(?var, ?stmt, ?stmtLater),
+   ord(?stmtNext) = ?stmtNextOrd.
 
 FirstConstraintForVar(?var, ?stmt) :-
    ConstraintForVar(?var, ?stmt),
