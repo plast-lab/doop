@@ -95,8 +95,7 @@ OverridingProtectedMethodOfComponent(?methConcrete) :-
   ProtectedMethodOfComponent(?meth),
   AppMethodOverridesAndroidLibraryMethod(?methConcrete, ?meth).
 
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
 //// Weaken. Seems reasonable.
 //  (PublicMethodOfComponent(?meth);
 //   OverridingProtectedMethodOfComponent(?meth);
@@ -105,23 +104,20 @@ ReachableContext(?ctx, ?meth) :-
   isImmutableContext(?ctx).
 
 // By marking them "ForcedReachable" we enable their mocking, not just reachability.
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   AndroidEntryPoint(?meth),
   isImmutableContext(?ctx).
 
 // Also accept info from keep annotations (e.g., produced via -printseeds in ProGuard).
 // Forcing the reachability and mocking of all "keep" methods.
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   KeepMethod(?meth),
   isImmutableContext(?ctx).
 
 // Not clear what ProGuard does with "keep" annotations for classes, but certainly
 // I've seen documented behavior in industrial code that expects it to keep no-arg
 // constructors.
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   KeepClass(?class),
   Method_DeclaringType(?meth, ?class),
   Method_SimpleName(?meth, "<init>"),
@@ -172,8 +168,7 @@ OverridingProtectedOnMethodOfLayoutControl(?methConcrete) :-
   ProtectedOnMethodOfLayoutControl(?meth),
   AppMethodOverridesAndroidLibraryMethod(?methConcrete, ?meth).
 
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   (PublicOnMethodOfLayoutControl(?meth);
    OverridingProtectedOnMethodOfLayoutControl(?meth)),
   isImmutableContext(?ctx).
@@ -210,8 +205,7 @@ AndroidViewType(?type) :-
 
 // anantoni: Make the getters and setters of classes extending View reachable
 //// REVIEW: this seems pretty liberal
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   Method_SimpleName(?meth, ?simplename),
   (match("set.*", ?simplename);
    match("get.*", ?simplename)),
@@ -261,8 +255,7 @@ OverridingProtectedOnMethodOfReachableListener(?methConcrete) :-
   ProtectedOnMethodOfReachableListener(?meth),
   AppMethodOverridesAndroidLibraryMethod(?methConcrete, ?meth).
 
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   (PublicOnMethodOfReachableListener(?meth);
    OverridingProtectedOnMethodOfReachableListener(?meth)),
   isImmutableContext(?ctx).
@@ -367,8 +360,7 @@ ReachableAppPackableMethodOverridingLib(?methConcrete) :-
   LibraryReachableAppPackableClass(?class),
   AppMethodOverridesAndroidLibraryMethod(?methConcrete, _).
 
-ForcedReachableAndroidContext(?ctx, ?methConcrete),
-ReachableContext(?ctx, ?methConcrete) :-
+ForcedReachableAndroidContext(?ctx, ?methConcrete) :-
   ReachableAppPackableMethodOverridingLib(?methConcrete),
   isImmutableContext(?ctx).
 
@@ -439,8 +431,7 @@ ReifiedAndroidObjectValue(?value, ?concreteType) :-
  * so we currently just force reachability of all "run" methods.
 **/
 
-ForcedReachableAndroidContext(?ctx, ?runmeth),
-ReachableContext(?ctx, ?runmeth) :-
+ForcedReachableAndroidContext(?ctx, ?runmeth) :-
   ReachableApplicationObjectOfType(_, _, ?type),
   Method_SimpleName(?runmeth, "run"),
   basic.MethodDeclaredOrInherited(?runmeth, ?type),
@@ -465,8 +456,7 @@ WebClientType(?type):-
 .output _ForcedReachableFromJavascriptContext
 
 _ForcedReachableFromJavascriptContext(?ctx, ?meth),
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   basic.ConcreteMethodDeclared(?meth, ?class),
   (Method_Modifier("protected", ?meth);
    Method_Modifier("public", ?meth)),
@@ -491,8 +481,7 @@ ArgToAddJavascriptInterface(?var) :-
   Method_DeclaringType(?addjsmethod, "android.webkit.WebView"),
   FormalParam(0, ?addjsmethod, ?var).
 
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   ArgToAddJavascriptInterface(?var),
   VarPointsTo(_, ?value, _, ?var),
   Value_Type(?value, ?type),
@@ -510,8 +499,7 @@ ReachableContext(?ctx, ?meth) :-
 
 // Link the two concepts: if an object is a ReifiedAndroidObjectValue,
 // make its constructors ForcedReachable.
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   ReifiedAndroidObjectValue(_, ?type),
   Method_DeclaringType(?meth, ?type),
   Method_SimpleName(?meth, "<init>"),
@@ -760,7 +748,6 @@ AsynchTaskExecute(?param, ?base) :-
    MethodInvocation_Base(?invocation, ?base).
 
 ForcedReachableAndroidContext(?ctx, ?method),
-ReachableContext(?ctx, ?method),
 OptInterproceduralAssign(?ctx, ?formal, ?callerCtx, ?actual),
 VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
    AsynchTaskExecute(?actual, ?base),
@@ -781,6 +768,11 @@ ApplicationEntryPoint(?meth) :-
   ForcedReachableAndroidContext(_, ?meth),
   ApplicationMethod(?meth).
 
+/**
+ * Forced-reachable Android contexts are reachable contexts.
+ */
+ReachableContext(?ctx, ?meth) :-
+  ForcedReachableAndroidContext(?ctx, ?meth).
 
 /**
  * Unobfuscated classes and members: special treatment
