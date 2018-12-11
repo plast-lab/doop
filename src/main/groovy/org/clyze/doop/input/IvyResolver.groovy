@@ -1,15 +1,5 @@
 package org.clyze.doop.input
 
-import org.apache.commons.io.FileUtils
-import org.apache.ivy.Ivy
-import org.apache.ivy.core.module.descriptor.DefaultDependencyDescriptor
-import org.apache.ivy.core.module.descriptor.DefaultModuleDescriptor
-import org.apache.ivy.core.module.id.ModuleRevisionId
-import org.apache.ivy.core.report.ArtifactDownloadReport
-import org.apache.ivy.core.report.ResolveReport
-import org.apache.ivy.core.resolve.ResolveOptions
-import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorWriter
-import org.apache.ivy.util.filter.FilterHelper
 import org.clyze.analysis.InputType
 import org.clyze.fetcher.Artifact
 import org.clyze.fetcher.ArtifactFetcher
