@@ -6,13 +6,39 @@
 #include "../souffle-logic/basic/type-hierarchy.dl"
 #include "../souffle-logic/basic/method-lookup.dl"
 
-.output MethodLookup
 .output Class_InterestingSubtype
 
-.decl Invocation_Parts(?invocation:MethodInvocation, ?simplename:symbol, ?descriptor:symbol, ?basetype:Type)
+.decl MethodLookupExt(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method, ?isSingleDispatch:number)
+.output MethodLookupExt
+
+.decl SingleDispatch(?method:Method)
+SingleDispatch(?method) :-
+    isMethod(?method),
+    (Method_Modifier("static", ?method) ;
+     Method_Modifier("private", ?method) ;
+     ?simplename = "<clinit>" ;
+     ?simplename = "<init>").
+
+MethodLookupExt(?simplename, ?descriptor, ?type, ?method, 1) :-
+    MethodLookup(?simplename, ?descriptor, ?type, ?method),
+    SingleDispatch(?method).
+
+MethodLookupExt(?simplename, ?descriptor, ?type, ?method, 0) :-
+    MethodLookup(?simplename, ?descriptor, ?type, ?method),
+    !SingleDispatch(?method).
+
+.decl Invocation_Parts(?invocation:MethodInvocation, ?simplename:symbol, ?descriptor:symbol, ?basetype:Type, ?isSingleDispatch:number)
 .output Invocation_Parts
 
-Invocation_Parts(?invocation, ?simplename, ?descriptor, ?basetype) :-
+Invocation_Parts(?invocation, ?simplename, ?descriptor, ?basetype, 1) :-
+    (isSpecialMethodInvocation_Insn(?invocation) ;
+     isStaticMethodInvocation_Insn(?invocation)),
+    MethodInvocation_Method(?invocation, ?signature),
+    Method_SimpleName(?signature, ?simplename),
+    Method_Descriptor(?signature, ?descriptor),
+    Method_DeclaringType(?signature, ?basetype).
+
+Invocation_Parts(?invocation, ?simplename, ?descriptor, ?basetype, 0) :-
     VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
     VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
     VirtualMethodInvocation_Base(?invocation, ?base),
