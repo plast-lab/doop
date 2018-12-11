@@ -21,8 +21,8 @@ class CrudeScalerTest extends Specification {
 		then:
 		relationHasApproxSize(analysis, "CallGraphEdge", 1086574)
 		relationHasApproxSize(analysis, "VarPointsTo", 6643270)
-                relationHasApproxSize(analysis, "ApplicationMethod", 2680)
-                relationHasApproxSize(analysis, "Reachable", 10311)
-                relationHasApproxSize(analysis, "basic-ResolveInvocation", 5290606)
+		relationHasApproxSize(analysis, "ApplicationMethod", 2680)
+		relationHasApproxSize(analysis, "Reachable", 10311)
+		relationHasApproxSize(analysis, "basic.ResolveInvocation", 5290606)
 	}
 }
