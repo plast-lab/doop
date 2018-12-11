@@ -205,6 +205,8 @@ AndroidViewType(?type) :-
 
 // anantoni: Make the getters and setters of classes extending View reachable
 //// REVIEW: this seems pretty liberal
+MockValueConsMacro(cat("<android view object ", cat(?viewType, ">")), ?viewType),
+ReifiedAndroidObjectValue(cat("<android view object ", cat(?viewType, ">")), ?viewType),
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   Method_SimpleName(?meth, ?simplename),
   (match("set.*", ?simplename);
