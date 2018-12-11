@@ -56,7 +56,7 @@ ImplicitReachable(?m) :-
  * TODO: this method does not seems to be implicitly reachable. There is a
  * method Finalizer.runFinalization, but this method is invoked via a native call
  * from Runtime.runFinalization. runFinalizer is invoked from the FinalizerThread,
- * which the analyses should be able to figure out by itself.
+ * which the analysis should be able to figure out by itself.
 
 ImplicitReachable("<java.lang.ref.Finalizer: void runFinalizer()>").
 */
