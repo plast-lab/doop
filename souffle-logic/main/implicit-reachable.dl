@@ -61,30 +61,30 @@ ImplicitReachable(?m) :-
 ImplicitReachable("<java.lang.ref.Finalizer: void runFinalizer()>").
 */
 
+#ifndef MICRO
+
 // Make test entry points implicitly reachable by discovering their
 // annotations. This can also discover the entry points of
 // XCorpus.
 #ifdef DISCOVER_TESTS
-
 #include "../addons/testing/test-discovery.dl"
 
-ImplicitReachable(?m) :- TestNGAnnotatedMethod(?m).
-ImplicitReachable(?m) :- JUnitAnnotatedMethod(?m).
-ImplicitReachable(?m) :- JUnitGenerator(?m).
-ImplicitReachable(?m) :- JUnitTestCaseMethod(?m).
-ImplicitReachable(?m) :- EvoSuiteEntryPoint(?m).
-
+ForcedReachable(?m) :- TestNGAnnotatedMethod(?m).
+ForcedReachable(?m) :- JUnitAnnotatedMethod(?m).
+ForcedReachable(?m) :- JUnitGenerator(?m).
+ForcedReachable(?m) :- JUnitTestCaseMethod(?m).
+ForcedReachable(?m) :- EvoSuiteEntryPoint(?m).
 #endif // DISCOVER_TESTS
 
 ApplicationEntryPoint(?meth) :-
-  ImplicitReachable(?meth),
+  ForcedReachable(?meth),
   ApplicationMethod(?meth).
-#endif // EXCLUDE_IMPLICITLY_REACHABLE_CODE
 
 #ifndef ANDROID
-
-ReachableContext(?ctx, ?meth) :-
-  KeepMethod(?meth),
-  isImmutableContext(?ctx).
-
+ForcedReachable(?meth) :-
+  KeepMethod(?meth).
 #endif // ANDROID
+
+#endif // MICRO
+
+#endif // EXCLUDE_IMPLICITLY_REACHABLE_CODE
