@@ -215,10 +215,6 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
   AndroidViewType(?viewType),
   isImmutableContext(?ctx).
 
-// REVIEW: should we force the instantiation of some mock View objects?
-// Otherwise we are just relying on the ones already created. Why the difference
-// in the handling of View objects and listeners?
-
 
 /**
  * Listeners and callbacks
