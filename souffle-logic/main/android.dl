@@ -216,6 +216,27 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
   isImmutableContext(?ctx).
 
 
+// Keep Activity methods for onClick behavior.
+MockValueConsMacro(cat("<android activity object ", cat(?type, ">")), ?type),
+ReifiedAndroidObjectValue(cat("<android activity object ", cat(?type, ">")), ?type),
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  basic.SubtypeOf(?type, "android.app.Activity"),
+  Method_DeclaringType(?method, ?type),
+  Method_Arity(?method, 1),
+  FormalParam(0, ?method, ?formal),
+  Var_Type(?formal, "android.view.View"),
+  isImmutableContext(?ctx).
+
+
+// Recognize "Keep" annotations on methods.
+MockValueConsMacro(cat("<android keep object ", cat(?type, ">")), ?type),
+ReifiedAndroidObjectValue(cat("<android keep object ", cat(?type, ">")), ?type),
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  Method_Annotation(?method, "android.support.annotation.Keep"),
+  Method_DeclaringType(?method, ?type),
+  isImmutableContext(?ctx).
+
+
 /**
  * Listeners and callbacks
 **/
