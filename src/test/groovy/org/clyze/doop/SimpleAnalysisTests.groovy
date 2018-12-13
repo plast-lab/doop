@@ -13,16 +13,6 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 
 	// @spock.lang.Ignore
 	@Unroll
-	def "Server analysis test 012 (interface fields)"() {
-		when:
-		analyzeTest("012-interface-fields", ["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
-
-		then:
-		staticFieldPointsTo(analysis, '<Y: Y fooooooooo>', '<Y: void <clinit>()>/new Y$1/0')
-	}
-
-	// @spock.lang.Ignore
-	@Unroll
 	def "Server analysis test 006 (hello world) / test additional command line options"() {
 		when:
 		analyzeTest("006-hello-world", ["--coarse-grained-allocation-sites",
@@ -34,5 +24,15 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 
 		then:
 		noSanityErrors(analysis)
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test 012 (interface fields)"() {
+		when:
+		analyzeTest("012-interface-fields", ["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
+
+		then:
+		staticFieldPointsTo(analysis, '<Y: Y fooooooooo>', '<Y: void <clinit>()>/new Y$1/0')
 	}
 }
