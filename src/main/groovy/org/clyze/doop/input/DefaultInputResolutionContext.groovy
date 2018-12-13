@@ -57,8 +57,11 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 
 	@Override
 	void resolve() {
-		files = files.asImmutable()
-		files.each { inputType, paths ->
+		// Iterate over a local immutable copy, since the resolver may
+		// modify the contents of the files field.
+		Map map = [:]
+		files.each { inputType, paths -> map.put(inputType, paths) }
+		map.each { inputType, paths ->
 			paths.each { path ->
 				log.debug "Resolving $path ($inputType)"
 				def resolvedFile = resolvedFiles[inputType][path]
