@@ -35,4 +35,15 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 		then:
 		staticFieldPointsTo(analysis, '<Y: Y fooooooooo>', '<Y: void <clinit>()>/new Y$1/0')
 	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test 013 (enums)"() {
+		when:
+		analyzeTest("013-enums", ["--reflection-classic", "--generate-jimple",
+								  "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
+
+		then:
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Main$UndeletablePrefKey: void <clinit>()>/new Main$UndeletablePrefKey/0')
+	}
 }
