@@ -15,10 +15,6 @@ class DexRepresentation {
         return methId + "/p" + i;
     }
 
-    public static String fieldId(String declClass, String type, String name) {
-        return "<" + declClass + ": " + type + " " + name + ">";
-    }
-
     public static String methodId(String declClass, String retType, String name, String paramsSig) {
         return "<" + declClass + ": " + retType + " " + name + paramsSig + ">";
     }

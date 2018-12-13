@@ -36,10 +36,8 @@ public class Main {
             throw new DoopErrorCodeException(0);
         }
 
-        SootParameters sootParameters = new SootParameters();
         try {
-            sootParameters.initFromArgs(args);
-            produceFacts(sootParameters);
+            produceFacts(args);
         } catch (Exception ex) {
             // We assume Doop exceptions have already printed
             // something to the standard error output.
@@ -49,7 +47,9 @@ public class Main {
         }
     }
 
-    private static void produceFacts(SootParameters sootParameters) throws Exception {
+    private static void produceFacts(String[] args) throws Exception {
+        SootParameters sootParameters = new SootParameters();
+        sootParameters.initFromArgs(args);
         String outDir = sootParameters.getOutputDir();
 
         try {
@@ -82,7 +82,9 @@ public class Main {
 
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
-        if (sootParameters._android) {
+        if (sootParameters._dex) {
+            System.out.println("Running in mixed Soot/Dex mode.");
+        } else if (sootParameters._android) {
             if (sootParameters.getInputs().size() > 1)
                 System.err.println("\nWARNING -- Android mode: all inputs will be preprocessed but only " + sootParameters.getInputs().get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
             Options.v().set_process_multiple_dex(true);

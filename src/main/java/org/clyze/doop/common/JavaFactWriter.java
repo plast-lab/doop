@@ -282,4 +282,18 @@ public abstract class JavaFactWriter {
     public void writeAppPackage(String appPackage) {
         _db.add(APP_PACKAGE, appPackage);
     }
+
+    public void writePhantomTypes(Iterable<String> phantomTypes) {
+        for (String s : phantomTypes) {
+            System.out.println("Phantom type: " + s);
+            writePhantomType(s);
+        }
+    }
+
+    public void writePhantomMethods(Iterable<String> phantomMethods) {
+        for (String m : phantomMethods) {
+            System.out.println("Phantom method: " + m);
+            writePhantomMethod(m);
+        }
+    }
 }

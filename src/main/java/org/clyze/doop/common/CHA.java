@@ -1,4 +1,4 @@
-package org.clyze.doop.dex;
+package org.clyze.doop.common;
 
 import org.clyze.doop.common.Database;
 import org.clyze.doop.util.TypeUtils;
@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  *
  * A single instance of this class should be used for whole-program fact generation.
  */
-class CHA {
+public class CHA {
     // Type data.
     private final Collection<String> referencedTypes = new CopyOnWriteArrayList<>();
     private final Map<String, String> classInfo = new ConcurrentHashMap<>();
@@ -107,7 +107,7 @@ class CHA {
      * @param writer          the fact writer to use
      * @param reportPhantoms  if phantoms should be printed
      */
-    public void conclude(Database db, DexFactWriter writer, boolean reportPhantoms) {
+    public void conclude(Database db, JavaFactWriter writer, boolean reportPhantoms) {
         writeFieldOps(db);
 
         // Write phantom types.
@@ -137,5 +137,4 @@ class CHA {
         }
         fields.addAll(fis);
     }
-
 }

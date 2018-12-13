@@ -28,6 +28,7 @@ public class Parameters {
     private boolean _decodeApk = false;
     public boolean _extractMoreStrings = false;
     private boolean _reportPhantoms = true;
+    public boolean _dex = false;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
@@ -206,6 +207,9 @@ public class Parameters {
             break;
         case "--dont-report-phantoms":
             this._reportPhantoms = false;
+            break;
+        case "--dex":
+            this._dex = true;
             break;
         default:
             return -1;

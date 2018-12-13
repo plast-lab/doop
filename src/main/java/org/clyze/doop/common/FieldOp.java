@@ -1,11 +1,8 @@
-package org.clyze.doop.dex;
-
-import org.clyze.doop.common.Database;
-import org.clyze.doop.common.PredicateFile;
+package org.clyze.doop.common;
 
 import java.util.Map;
 
-class FieldOp {
+public class FieldOp {
     private final PredicateFile target;
     private final String insn;
     private final String strIndex;
@@ -26,7 +23,7 @@ class FieldOp {
      * @param fieldInfo   the field id
      * @param methId      the enclosing method id
      */
-    FieldOp(PredicateFile target, String insn, String strIndex,
+    public FieldOp(PredicateFile target, String insn, String strIndex,
                    String localA, String localB, FieldInfo fieldInfo,
                    String methId) {
         this.target = target;
