@@ -3,6 +3,7 @@ package org.clyze.doop
 import java.nio.file.Files
 import org.clyze.analysis.Analysis
 import org.clyze.doop.utils.SouffleScript
+import static org.clyze.utils.Helper.forEachLineIn
 
 /**
  * Utility class with checker methods used by other tests.
@@ -30,18 +31,6 @@ class TestUtils {
 	 */
 	static void relationIsEmpty(Analysis analysis, String relation) {
 		assert Files.size((new File("${analysis.database}/${relation}.csv")).toPath()) == 0
-	}
-
-	/**
-	 * Replacement of Groovy's eachLine(), to work with large files.
-	 */
-	static void forEachLineIn(String path, Closure cl) {
-		File file = new File(path)
-		BufferedReader br = new BufferedReader(new FileReader(file))
-		br.withCloseable {
-			String line
-			while ((line = it.readLine()) != null) { cl(line) }
-		}
 	}
 
 	static void metricIsApprox(Analysis analysis, String metric, long expectedVal) {
