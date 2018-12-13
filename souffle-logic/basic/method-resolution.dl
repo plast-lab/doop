@@ -21,17 +21,6 @@ ResolveInvocation(?basetype, ?invocation, ?tomethod) :-
     MethodLookup(?simplename, ?descriptor, ?supertype, ?tomethod).
 
 
-// This shouldn't be too expensive, once MethodLookup has been computed,
-// and it's a useful concept.
-.decl MethodOverridesOther(?methodSub:Method, ?methodSuper:Method)
-MethodOverridesOther(?methSub, ?methSuper) :-
-  SubtypeOf(?subtype, ?supertype),
-  Method_DeclaringType(?methSuper, ?supertype),
-  Method_SimpleName(?methSuper, ?simplename),
-  Method_Descriptor(?methSuper, ?descriptor),
-  MethodLookup(?simplename, ?descriptor, ?subtype, ?methSub),
-  ?methSub != ?methSuper.
-
 .decl ConcreteMethodDeclared(?meth:Method, ?class:ClassType)
 ConcreteMethodDeclared(?meth, ?class) :-
   isClassType(?class),

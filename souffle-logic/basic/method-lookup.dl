@@ -20,6 +20,21 @@ MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
     ! MethodImplemented(?simplename, ?descriptor, ?type, _).
 
 /**
+ * Method overriding
+ *
+ * This shouldn't be too expensive, once MethodLookup has been computed,
+ * and it's a useful concept.
+ */
+.decl MethodOverridesOther(?methodSub:Method, ?methodSuper:Method)
+MethodOverridesOther(?methSub, ?methSuper) :-
+  SubtypeOf(?subtype, ?supertype),
+  Method_DeclaringType(?methSuper, ?supertype),
+  Method_SimpleName(?methSuper, ?simplename),
+  Method_Descriptor(?methSuper, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?subtype, ?methSub),
+  ?methSub != ?methSuper.
+
+/**
  * Arrays
  *
  * TODO MethodLookup of clone in an array type now results in

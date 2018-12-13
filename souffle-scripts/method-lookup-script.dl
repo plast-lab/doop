@@ -6,6 +6,7 @@
 #include "../souffle-logic/basic/type-hierarchy.dl"
 #include "../souffle-logic/basic/method-lookup.dl"
 
+.output MethodOverridesOther
 .output Class_InterestingSubtype
 
 .decl MethodLookupExt(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method, ?isSingleDispatch:number)
