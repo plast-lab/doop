@@ -14,7 +14,7 @@
 
 .decl SingleDispatch(?method:Method)
 SingleDispatch(?method) :-
-    isMethod(?method),
+    Method_SimpleName(?method, ?simplename),
     (Method_Modifier("static", ?method) ;
      Method_Modifier("private", ?method) ;
      ?simplename = "<clinit>" ;
