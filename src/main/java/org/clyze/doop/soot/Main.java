@@ -181,7 +181,7 @@ public class Main {
         }
 
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
-            boolean reportPhantoms = sootParameters._reportPhantoms;
+            boolean reportPhantoms = sootParameters.getReportPhantoms();
             boolean moreStrings = sootParameters._extractMoreStrings;
             Representation rep = new Representation();
             FactWriter writer = new FactWriter(db, moreStrings, rep, reportPhantoms);

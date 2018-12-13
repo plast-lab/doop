@@ -15,7 +15,6 @@ public class SootParameters extends Parameters {
     boolean _allowPhantom = false;
     boolean _generateJimple = false;
     boolean _ignoreWrongStaticness = false;
-    boolean _reportPhantoms = true;
     boolean _failOnMissingClasses = false;
     String _androidJars = null;
     private boolean _runFlowdroid = false;
@@ -70,9 +69,6 @@ public class SootParameters extends Parameters {
             break;
         case "--ignoreWrongStaticness":
             this._ignoreWrongStaticness = true;
-            break;
-        case "--dont-report-phantoms":
-            this._reportPhantoms = false;
             break;
         case "--also-resolve":
             i = shift(args, i);
