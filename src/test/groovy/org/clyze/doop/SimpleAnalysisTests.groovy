@@ -44,6 +44,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 								  "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
 
 		then:
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Main$UndeletablePrefKey: void <clinit>()>/new Main$UndeletablePrefKey/0')
+		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Enums array for Main$UndeletablePrefKey>')
+		arrayIndexPointsTo(analysis, '<Enums array for Main$UndeletablePrefKey>', '<Main$UndeletablePrefKey: void <clinit>()>/new Main$UndeletablePrefKey/0', true)
 	}
 }

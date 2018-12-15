@@ -42,6 +42,7 @@ isOpaqueMethod(?method) :- MTEntryPoint(_, _, ?method).
 #define OPAQUE_METHOD(meth) isOpaqueMethod(m) :- isMethod(m), m = meth
 
 OPAQUE_METHOD("<java.lang.Class: java.lang.String getSimpleName()>").
+OPAQUE_METHOD("<java.lang.Class: java.lang.Object[] getEnumConstants()>").
 
 #ifdef ANDROID
 OPAQUE_METHOD("<java.lang.Class: java.lang.String getNameNative()>").

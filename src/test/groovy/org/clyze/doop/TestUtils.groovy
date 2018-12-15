@@ -84,6 +84,11 @@ class TestUtils {
 		findPair(analysis, "mainAnalysis.StaticFieldPointsTo", fld, 2, value, 1)
 	}
 
+	static void arrayIndexPointsTo(Analysis analysis, String baseValue, String value, boolean qualified) {
+		String rel = qualified ? "mainAnalysis.ArrayIndexPointsTo" : "ArrayIndexPointsTo"
+		findPair(analysis, rel, baseValue, 3, value, 1)
+	}
+
 	static void varValue(Analysis analysis, String local, String value) {
 		findPair(analysis, "Server_Var_Values", local, 1, value, 2)
 	}
