@@ -549,6 +549,10 @@ RewriteAssignBinop(?insn, ?index, ?to, ?inmethod) :-
 .decl RewriteAssignCast(?insn:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .output RewriteAssignCast(filename="AssignCast.facts")
 
+ConstraintForVar(?to, ?insn),
+ConstraintForVar(?from, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn),
+UpperBoundTypeForConstraint(?from, ?type, ?insn),
 RewriteAssignCast(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
     SSA_AssignCast(?insn, _, ?to, ?inmethod),
     AssignCast_Type(?insn, ?type),
@@ -560,6 +564,8 @@ RewriteAssignCast(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
 .output RewriteAssignCastNull(filename="AssignCastNull.facts")
 
 SSA_Type(?to, ?type),
+ConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn),
 RewriteAssignCastNull(?insn, ?index, ?to, ?type, ?inmethod) :-
     SSA_AssignCastNull(?insn, _, ?to, ?inmethod),
     AssignCast_Type(?insn, ?type),
@@ -579,6 +585,8 @@ RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod) :-
 .output RewriteAssignHeapAllocation(filename="AssignHeapAllocation.facts")
 
 SSA_Type(?to, ?type),
+ConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn),
 RewriteAssignHeapAllocation(?insn, ?index, ?heap, ?to, ?inmethod, ?linenumber) :-
     _AssignHeapAllocation(?insn, _, ?heap, ?to_origin, ?inmethod, ?linenumber),
     HeapAllocation_Type(?heap, ?type),
