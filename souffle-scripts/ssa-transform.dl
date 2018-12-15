@@ -670,7 +670,7 @@ RewriteAssignNumConstant(?insn, ?index, ?const, ?to, ?inmethod) :-
 
 SSA_Type(?to, ?type),
 ConstraintForVar(?to, ?invocation),
-LowerBoundTypeForConstaint(?to, ?type, ?invocation),
+LowerBoundTypeForConstraint(?to, ?type, ?invocation),
 RewriteAssignReturnValue(?invocation, ?to) :-
     SSA_AssignDetails(?invocation, ?to_origin, _, ?to, _),
     AssignReturnValue(?invocation, ?to_origin),
@@ -1010,7 +1010,7 @@ HasKnownType(?var, ?type) :-
     SSA_Type(?var, ?type).
 
 HasKnownType(?var, ?type) :-
-    RewriteExceptionHandler_FormalParam(?handler, ?var),
+    RewriteExceptionHandler_FormalParam(_, ?var),
     SSA_Type(?var, ?type).
 
 // Some simple ordering relations over constraints, for forall definition
