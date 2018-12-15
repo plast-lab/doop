@@ -669,6 +669,8 @@ RewriteAssignNumConstant(?insn, ?index, ?const, ?to, ?inmethod) :-
 .output RewriteAssignReturnValue(filename="AssignReturnValue.facts")
 
 SSA_Type(?to, ?type),
+ConstraintForVar(?to, ?invocation),
+LowerBoundTypeForConstaint(?to, ?type, ?invocation),
 RewriteAssignReturnValue(?invocation, ?to) :-
     SSA_AssignDetails(?invocation, ?to_origin, _, ?to, _),
     AssignReturnValue(?invocation, ?to_origin),
@@ -737,6 +739,7 @@ RewriteLoadArrayIndex(?insn, ?index, ?to, ?base, ?inmethod) :-
 .decl RewriteLoadInstanceField(?insn:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
 .output RewriteLoadInstanceField(filename="LoadInstanceField.facts")
 
+// TODO: Upper lower bound on base object as well? (until field is shadowed)
 SSA_Type(?to, ?type),
 ConstraintForVar(?to, ?insn),
 ConstraintForVar(?base, ?insn),
@@ -788,10 +791,13 @@ RewriteLookupSwitch_DefaultTarget(?insn, ?target) :-
 .decl RewriteReturn(?insn:symbol, ?index:number, ?var:symbol, ?inmethod:symbol)
 .output RewriteReturn(filename="Return.facts")
 
+ConstraintForVar(?var, ?insn),
+UpperBoundTypeForConstraint(?var, ?type, ?insn),
 RewriteReturn(?insn, ?index, ?var, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
     Instruction_Method(?insn, ?inmethod),
     ReturnNonvoid_Var(?insn, ?var_origin),
+    Method_ReturnType(?inmethod, ?type),
     ReachingDef(?insn, ?var, ?var_origin).
 
 .decl RewriteReturnVoid(?insn:symbol, ?index:number, ?inmethod:symbol)
