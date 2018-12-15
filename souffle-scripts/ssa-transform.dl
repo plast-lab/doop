@@ -739,7 +739,7 @@ RewriteLoadArrayIndex(?insn, ?index, ?to, ?base, ?inmethod) :-
 .decl RewriteLoadInstanceField(?insn:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
 .output RewriteLoadInstanceField(filename="LoadInstanceField.facts")
 
-// TODO: Upper lower bound on base object as well? (until field is shadowed)
+// TODO: Lower bound on base object as well? (until field is shadowed)
 SSA_Type(?to, ?type),
 ConstraintForVar(?to, ?insn),
 ConstraintForVar(?base, ?insn),
@@ -761,7 +761,7 @@ ConstraintForVar(?to, ?insn),
 LowerBoundTypeForConstraint(?to, ?type, ?insn),
 RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
     _LoadStaticField(?insn, _, ?to_origin, ?signature, ?inmethod),
-    _Field(?signature, _, _, ?type),
+    Field_Type(?signature, ?type),
     SSA_InstructionIndex(?insn, ?index),
     SSA_AssignDetails(?insn, ?to_original, _, ?to, _),
     FieldInstruction_Signature(?insn, ?signature).
@@ -835,18 +835,28 @@ RewriteStoreArrayIndex(?insn, ?index, ?from, ?base, ?inmethod) :-
 .decl RewriteStoreInstanceField(?insn:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
 .output RewriteStoreInstanceField(filename="StoreInstanceField.facts")
 
+// TODO: Lower bound on base object as well? (until field is shadowed)
+ConstraintForVar(?from, ?insn),
+ConstraintForVar(?base, ?insn),
+UpperBoundTypeForConstraint(?from, ?type, ?insn),
+UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn),
 RewriteStoreInstanceField(?insn, ?index, ?from, ?base, ?signature, ?inmethod) :-
-    SSA_InstructionIndex(?insn, ?index),
     _StoreInstanceField(?insn, _, ?from_origin, ?base_origin, ?signature, ?inmethod),
+    Field_DeclaringType(?signature, ?declaring_type),
+    Field_Type(?signature, ?type),
+    SSA_InstructionIndex(?insn, ?index),
     ReachingDef(?insn, ?from, ?from_origin),
     ReachingDef(?insn, ?base, ?base_origin).
 
 .decl RewriteStoreStaticField(?insn:symbol, ?index:number, ?from:symbol, ?signature:symbol, ?method:symbol)
 .output RewriteStoreStaticField(filename="StoreStaticField.facts")
 
+ConstraintForVar(?from, ?insn),
+UpperBoundTypeForConstraint(?from, ?type, ?insn),
 RewriteStoreStaticField(?insn, ?index, ?from, ?signature, ?inmethod) :-
-    SSA_InstructionIndex(?insn, ?index),
     _StoreStaticField(?insn, _, ?from_origin, ?signature, ?inmethod),
+    Field_Type(?signature, ?type),
+    SSA_InstructionIndex(?insn, ?index),
     ReachingDef(?insn, ?from, ?from_origin).
 
 .decl RewriteSuperMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
@@ -981,8 +991,8 @@ Assign(?stmt, ?var1, ?var2) :-
 
 // f(?var1)
 Assign(?invocation, ?var1, ?var2) :-
-    RewriteActualParam(?index, ?invocation, ?var2),
     MethodInvocation_Method(?invocation, ?method),
+    RewriteActualParam(?index, ?invocation, ?var2),
     SSA_FormalParam(?index, ?method, ?var1).
 
 ConstraintForVar(?var1, ?stmt),
@@ -997,6 +1007,10 @@ HasKnownType(?var, ?type) :-
 // Static type of this vars is known.
 HasKnownType(?var, ?type) :-
     SSA_ThisVar(_, ?var),
+    SSA_Type(?var, ?type).
+
+HasKnownType(?var, ?type) :-
+    RewriteExceptionHandler_FormalParam(?handler, ?var),
     SSA_Type(?var, ?type).
 
 // Some simple ordering relations over constraints, for forall definition
