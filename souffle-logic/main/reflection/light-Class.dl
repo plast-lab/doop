@@ -1,5 +1,5 @@
 #ifdef REFLECTION
-#error "light-Class-forName.dl is not compatible with full reflection support"
+#error "light-Class.dl is not compatible with full reflection support"
 #endif
 
 // A few rules to handle expressions 'X.class' and 'Class.forName("X")' (the
@@ -54,3 +54,26 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   // ApplicationClass(?type),
   ReifiedClass(?type, ?value),
   AssignReturnValue(?invocation, ?return).
+
+// Taken from java.lang.Class.dl.
+.decl Enums(?enumsArray:Value, ?enumType:Type, ?ctx:configuration.Context, ?return:Var)
+
+// This is an opaque invocation, so we read its facts directly.
+Enums(?enumsArray, ?enumType, ?ctx, ?return),
+MockValueConsMacro(?enumsArray, cat(?enumType, "[]")) :-
+  ReachableContext(?ctx, ?caller),
+  _VirtualMethodInvocation(?invocation, _, ?method, ?base, ?caller),
+  ?method = "<java.lang.Class: java.lang.Object[] getEnumConstants()>",
+  VarPointsTo(_, ?classValue, ?ctx, ?base),
+  ReifiedClass(?enumType, ?classValue),
+  basic.SubtypeOf(?enumType, "java.lang.Enum"),
+  AssignReturnValue(?invocation, ?return),
+  ?enumsArray = cat("<Enums array for ", cat(?enumType, ">")).
+
+VarPointsTo(?hctx, ?enumsArray, ?ctx, ?return),
+ArrayIndexPointsTo(?hctx0, ?enumValue, ?hctx, ?enumsArray) :-
+  Enums(?enumsArray, ?enumType, ?ctx, ?return),
+  Field_DeclaringType(?fld, ?enumType),
+  StaticFieldPointsTo(?hctx, ?enumValue, ?fld),
+  Value_Type(?enumValue, ?enumType),
+  isImmutableHContext(?hctx0).
