@@ -59,14 +59,13 @@ class AndroidTests extends DoopBenchmark {
 	@Unroll
 	def "Custom Dex front end test"() {
 		when:
-		String tmpDir = Files.createTempDirectory("dex-test-facts").toString()
 		List args = ["-i", Artifacts.ANDROIDTERM_APK,
 					 "-a", "context-insensitive",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm-dex",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 					 "--dex", "--decode-apk", "--Xstats-full", "-Ldebug",
-					 "--Xstop-at-facts", tmpDir]
+					 "--Xdry-run"]
 		Main.main((String[])args)
 		analysis = Main.analysis
 
