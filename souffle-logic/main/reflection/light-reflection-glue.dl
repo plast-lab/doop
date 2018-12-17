@@ -102,6 +102,8 @@ java_lang_Class_getConstructor(?to, ?from) :-
 java_lang_reflect_Constructor_newInstance(?invocation, ?to, ?from) :-
   isMethod("<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
   MethodInvocation_Method(?invocation, "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
+  Instruction_Method(?invocation, ?method),
+  Reachable(?method),
   AssignReturnValue(?invocation, ?to), VirtualMethodInvocation_Base(?invocation, ?from).
 
 // Same as hard-coded string concatenation in rules.dl.
