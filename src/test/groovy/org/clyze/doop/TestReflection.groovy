@@ -31,4 +31,22 @@ class TestReflection extends ServerAnalysisTests {
 		proxyCGE(analysis, '<Main: void testProxies()>/G.countInteger/0', '<DHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>')
 		noSanityErrors(analysis)
 	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test 016 (light reflection glue)"() {
+		when:
+		analyzeTest("016-reflection",
+					["--light-reflection-glue", "--reflection-dynamic-proxies",
+					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+					 "--thorough-fact-gen", "--sanity",
+					 "--platform", "java_8"],
+					'context-insensitive',
+					'016-reflection-glue')
+
+		then:
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/cA#_31', '<class A>')
+		proxyCGE(analysis, '<Main: void testProxies()>/G.countInteger/0', '<DHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>')
+		noSanityErrors(analysis)
+	}
 }

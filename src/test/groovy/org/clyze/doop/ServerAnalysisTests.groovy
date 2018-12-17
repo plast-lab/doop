@@ -25,10 +25,11 @@ abstract class ServerAnalysisTests extends Specification {
 		assert null != serverAnalysisTestsDir
 	}
 
-	String analyzeTest(String test, List<String> extraArgs) {
+	String analyzeTest(String test, List<String> extraArgs, String analysisName = "context-insensitive", String id = null) {
+		String analysisId = id ?: "test-${test}"
 		List args = ["-i", "${serverAnalysisTestsDir}/${test}/build/libs/${test}.jar",
-					 "-a", "context-insensitive", // "--Xserver-logic",
-					 "--id", "test-${test}", "--generate-jimple",
+					 "-a", analysisName, // "--Xserver-logic",
+					 "--id", analysisId, "--generate-jimple",
 					 "--Xstats-full"] + extraArgs
 		Main.main2((String[])args)
 		analysis = Main.analysis
