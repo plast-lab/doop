@@ -284,14 +284,13 @@ BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
 BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
 
 // Helper relation: implementing method is an instance method.
-.decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?lambda:LinkObject)
-CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?ctx, ?lambda) :-
+.decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?ctx:configuration.Context, ?lambda:LinkObject)
+CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?ctx, ?lambda) :-
    LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
    !Method_Modifier("static", ?implMethod),
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
    ThisVar(?implMethod, ?this),
-   Var_Type(?this, ?thisType),
-   isImmutableHContext(?hctx).
+   Var_Type(?this, ?thisType).
 
 // Helper relation: instance methods may implicitly consume one of the
 // K or N arguments for the receiver (shifting them by 1), while
@@ -303,11 +302,11 @@ Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
    Method_Modifier("static", ?implMethod).
 // No bootstrap arguments = an actual argument will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
-   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, _, ?lambda),
+   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
    DynamicMethodInvocation_DynArity(?invokedynamic, 0).
 // First bootstrap argument exists, will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
-   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, _, ?lambda),
+   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
    CallSiteCaptured(_, ?invokedynamic, _, 0, _).
 
 // Pass invocation arguments to the implementing method.
@@ -341,10 +340,11 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 // Special handling for captured "this" parameters.
 VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
    Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0),
-   CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?ctx, ?lambda),
+   CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?ctx, ?lambda),
    CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0, _),
    Value_Type(?thisValue, ?thisValueType),
-   basic.SubtypeOf(?thisValueType, ?thisType).
+   basic.SubtypeOf(?thisValueType, ?thisType),
+   isImmutableHContext(?hctx).
 
 // Special handling for "this" parameters to method references that do
 // not capture a receiver.
