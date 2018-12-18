@@ -97,55 +97,55 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 		//Scaler Execution
 		Driver scalerMain = new Driver()
 		scalerMain.runScalerRank(factsDir, database)
+		//scalerMain.runScaler(factsDir, database)
+		options.CONFIGURATION.value = "FullyGuidedContextSensitiveConfiguration"
+		options.SCALER_PRE_ANALYSIS.value = null
+		executor = new Executor(outDir, commandsEnv)
+		cpp = new CPreprocessor(this, executor)
 
-//		options.CONFIGURATION.value = "FullyGuidedContextSensitiveConfiguration"
-//		options.SCALER_PRE_ANALYSIS.value = null
-//		executor = new Executor(outDir, commandsEnv)
-//		cpp = new CPreprocessor(this, executor)
-//
-//		initDatabase(analysis)
-//		basicAnalysis(analysis)
-//		if (!options.X_STOP_AT_BASIC.value) {
-//			mainAnalysis(analysis)
-//			produceStats(analysis)
-//		}
-//
-//		compilationFuture = null
-//		executorService = Executors.newSingleThreadExecutor()
-//		if (!options.X_STOP_AT_FACTS.value) {
-//			compilationFuture = executorService.submit(new Callable<File>() {
-//				@Override
-//				File call() {
-//					log.info "[Task COMPILE...]"
-//					def generatedFile = script.compile(analysis, outDir, cacheDir,
-//							options.SOUFFLE_PROFILE.value as boolean,
-//							options.SOUFFLE_DEBUG.value as boolean,
-//							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-//							options.X_CONTEXT_REMOVER.value as boolean)
-//					log.info "[Task COMPILE Done]"
-//					return generatedFile
-//				}
-//			})
-//		}
-//
-//		runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
-//
-//		try {
-//			if (options.X_STOP_AT_FACTS.value) return
-//
-//			def generatedFile = compilationFuture.get()
-//			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-//					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
-//
-//			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
-//			runtimeMetricsFile.createNewFile()
-//			runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
-//			runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
-//			runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
-//			runtimeMetricsFile.append("soot-fact-generation time (sec)\t$factGenTime\n")
-//		} finally {
-//			executorService.shutdownNow()
-//		}
+		initDatabase(analysis)
+		basicAnalysis(analysis)
+		if (!options.X_STOP_AT_BASIC.value) {
+			mainAnalysis(analysis)
+			produceStats(analysis)
+		}
+
+		compilationFuture = null
+		executorService = Executors.newSingleThreadExecutor()
+		if (!options.X_STOP_AT_FACTS.value) {
+			compilationFuture = executorService.submit(new Callable<File>() {
+				@Override
+				File call() {
+					log.info "[Task COMPILE...]"
+					def generatedFile = script.compile(analysis, outDir, cacheDir,
+							options.SOUFFLE_PROFILE.value as boolean,
+							options.SOUFFLE_DEBUG.value as boolean,
+							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
+							options.X_CONTEXT_REMOVER.value as boolean)
+					log.info "[Task COMPILE Done]"
+					return generatedFile
+				}
+			})
+		}
+
+		runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
+
+		try {
+			if (options.X_STOP_AT_FACTS.value) return
+
+			def generatedFile = compilationFuture.get()
+			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
+
+			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
+			runtimeMetricsFile.createNewFile()
+			runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
+			runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
+			runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
+			runtimeMetricsFile.append("soot-fact-generation time (sec)\t$factGenTime\n")
+		} finally {
+			executorService.shutdownNow()
+		}
 	}
 
 	void initDatabase(File analysis) {

@@ -68,26 +68,14 @@ public class Driver {
         System.out.println(ANSIColor.BOLD + ANSIColor.YELLOW + "Scaler Rank starts ..." + ANSIColor.RESET);
         scalerTimer.start();
         ScalerRank scalerRank = new ScalerRank(pta);
-        scalerRank.rank();
 
-//        Map<Method, String> scalerResults = scaler.selectContext();
-//        scalerTimer.stop();
-//        System.out.print(ANSIColor.BOLD + ANSIColor.YELLOW +
-//                "Scaler finishes, analysis time: " + ANSIColor.RESET);
-//        System.out.print(ANSIColor.BOLD + ANSIColor.GREEN);
-//        System.out.printf("%.2fs", scalerTimer.inSecond());
-//        System.out.println(ANSIColor.RESET);
-//        if (Global.isDebug()) {
-//            for (ContextComputer cc : scaler.getContextComputers()) {
-//                outputMethodContext(pta, cc, scaler);
-//                outputContextByType(pta, cc);
-//            }
-//        }
 
-//        File scalerOutput = new File(factsDir, "SpecialContextSensitivityMethod.facts");
-//        System.out.printf("Writing Scaler method context sensitivities to %s...\n",
-//                scalerOutput.getPath());
-//        writeScalerResults(scalerResults, scalerOutput);
+        Map<Method, String> scalerResults = scalerRank.selectContext();
+
+        File scalerOutput = new File(factsDir, "SpecialContextSensitivityMethod.facts");
+        System.out.printf("Writing Scaler method context sensitivities to %s...\n",
+                scalerOutput.getPath());
+        writeScalerResults(scalerResults, scalerOutput);
     }
 
     private static void outputMethodContext(PointsToAnalysis pta, ContextComputer cc, Scaler scaler) {
@@ -115,7 +103,7 @@ public class Driver {
         Map<Type, Integer> typeContext = new HashMap<>();
         group.forEach((type, methods) -> {
             int contextSum = methods.stream()
-                    .mapToInt(m -> cc.contextNumberOf(m))
+                    .mapToInt(cc::contextNumberOf)
                     .sum();
             typeContext.put(type, contextSum);
         });

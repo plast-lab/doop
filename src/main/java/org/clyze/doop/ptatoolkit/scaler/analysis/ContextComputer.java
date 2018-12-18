@@ -10,7 +10,7 @@ public abstract class ContextComputer {
 
     protected final PointsToAnalysis pta;
     final ObjectAllocationGraph oag;
-    private final Map<Method, Integer> method2ctxNumber = new HashMap<>();
+    private Map<Method, Integer> method2ctxNumber = new HashMap<>();
 
     ContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
         this.pta = pta;
@@ -19,7 +19,11 @@ public abstract class ContextComputer {
     }
 
     public int contextNumberOf(Method method) {
-        return method2ctxNumber.get(method);
+        Integer contextNumber = method2ctxNumber.get(method);
+        if (contextNumber == null) {
+            return 0;
+        }
+        return contextNumber;
     }
 
     public abstract String getAnalysisName();

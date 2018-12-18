@@ -151,31 +151,45 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
         buildDeclaredVariables(mtdFactory, varFactory);
 
         buildDeclaringType(mtdFactory, typeFactory);
+        buildMethodTotalVPTMap(mtdFactory);
     }
 
 
     private void initScalerRankPostProcessing() {
-        varFactory = new VariableFactory();
-        MethodFactory mtdFactory = new MethodFactory(db, varFactory);
+        TypeFactory typeFactory = new TypeFactory();
 
+        varFactory = new VariableFactory();
+        objFactory = new ObjFactory();
+
+        MethodFactory mtdFactory = new MethodFactory(db, varFactory);
+        Set<String> interestingVarNames = new HashSet<>();
+
+        buildPointsToSet(varFactory, objFactory, interestingVarNames);
         buildMethodNeighborsMap(mtdFactory);
+        buildCallees(mtdFactory);
+
         buildMethodTotalVPTMap(mtdFactory);
+        buildDeclaringType(mtdFactory, typeFactory);
     }
 
     /**
      * Build points-to sets of interesting variables. This method also computes
      * the size of points-to set for each variable (in instance method).
      */
-    private void buildPointsToSet(VariableFactory varFactory, ObjFactory objFactory,
-                                  Set<String> interestingVarNames) {
+    private void buildPointsToSet(VariableFactory varFactory, ObjFactory objFactory, Set<String> interestingVarNames) {
         allObjs = new HashSet<>();
         db.query(Query.Stats_Simple_InsensVarPointsTo).forEachRemaining(list -> {
             String objName = list.get(0);
             String varName = list.get(1);
             Obj obj = objFactory.get(objName);
             Variable var = varFactory.get(varName);
-            if (interestingVarNames.contains(varName)) {
-                // add points-to set to var as its attribute
+            if (!interestingVarNames.isEmpty()) {
+                if (interestingVarNames.contains(varName)) {
+                    // add points-to set to var as its attribute
+                    var.addToAttributeSet(PTS, obj);
+                }
+            }
+            else {
                 var.addToAttributeSet(PTS, obj);
             }
             increasePointsToSetSizeOf(var);
