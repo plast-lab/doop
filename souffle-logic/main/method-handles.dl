@@ -299,7 +299,7 @@ CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?
 .decl Params_ReceiverShiftRight(?lambda:LinkObject, ?implMethod:Method, ?shiftK:number, ?shiftN:number)
 
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
-   LambdaCallGraphEdge(_, _, _, ?implMethod, ?lambda),
+   LambdaCallSite(_, _, ?lambda, _, _, ?implMethod, _),
    Method_Modifier("static", ?implMethod).
 // No bootstrap arguments = an actual argument will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
