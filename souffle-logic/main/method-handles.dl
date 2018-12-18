@@ -315,8 +315,8 @@ Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
    CallSiteCaptured(_, ?invokedynamic, _, 0, _).
 
 // Pass invocation arguments to the implementing method.
-VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+   LambdaCallGraphEdge(_, ?i, ?calleeCtx, ?implMethod, ?lambda),
    Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
    LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _),
    ActualParam(?idx, ?i, ?actual),
