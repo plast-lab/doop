@@ -145,6 +145,17 @@ CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx, ?ctx) :-
 
 // After a method handle is resolved, invokedynamic calls it.
 .decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?linkObject:LinkObject)
+
+configuration.StaticContextRequest(?callerCtx, ?invokedynamic) :-
+   InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
+   LinkObject_Method(?linkObject, ?method),
+   Method_Modifier("static", ?method),
+   LinkObjectContexts(_, ?linkObject, ?callerCtx).
+InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?linkObject) :-
+   InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
+   LinkObject_Method(?linkObject, ?method),
+   configuration.StaticContextResponse(?callerCtx, ?invokedynamic, ?calleeCtx).
+
 InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?linkObject) :-
    InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
    LinkObject_Method(?linkObject, ?method),
