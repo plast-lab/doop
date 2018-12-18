@@ -284,29 +284,34 @@ BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
 BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
 
 // Helper relation: implementing method is an instance method.
-.decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?ctx:configuration.Context, ?lambda:LinkObject)
-CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?ctx, ?lambda) :-
-   LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
+.decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?calleeCtx:configuration.Context, ?lambda:LinkObject)
+CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda) :-
+   LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
    !Method_Modifier("static", ?implMethod),
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
    ThisVar(?implMethod, ?this),
    Var_Type(?this, ?thisType).
 
+// Helper relation: a lambda call site that uses an instance method.
+.decl LambdaCallSiteWithInstanceMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:LinkObject, ?implMethod:Method)
+LambdaCallSiteWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod) :-
+   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, ?implMethod, _),
+   !Method_Modifier("static", ?implMethod).
+
 // Helper relation: instance methods may implicitly consume one of the
 // K or N arguments for the receiver (shifting them by 1), while
 // static methods take all K arguments before N ones.
 .decl Params_ReceiverShiftRight(?lambda:LinkObject, ?implMethod:Method, ?shiftK:number, ?shiftN:number)
-
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
    LambdaCallSite(_, _, ?lambda, _, _, ?implMethod, _),
    Method_Modifier("static", ?implMethod).
 // No bootstrap arguments = an actual argument will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
-   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
+   LambdaCallSiteWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod),
    DynamicMethodInvocation_DynArity(?invokedynamic, 0).
 // First bootstrap argument exists, will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
-   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
+   LambdaCallSiteWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod),
    CallSiteCaptured(_, ?invokedynamic, _, 0, _).
 
 // Pass invocation arguments to the implementing method.
