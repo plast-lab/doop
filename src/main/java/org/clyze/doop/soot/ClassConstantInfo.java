@@ -9,8 +9,8 @@ import static org.clyze.doop.common.JavaRepresentation.classConstant;
 /**
  * Auxiliary class to help when method type constants appear as class heaps.
  */
-public class ClassConstantInfo {
-    String heap;
+class ClassConstantInfo {
+    final String heap;
     boolean isMethodType = false;
     // null for method types
     String actualType = null;

@@ -13,16 +13,16 @@ class CrudeScalerTest extends Specification {
 	Analysis analysis
 
 	@Unroll
-	def "Crude testing micro analysis"() {
+	def "Crude testing scaler analysis"() {
 		when:
-		Main.main((String[])["-i", "http://centauri.di.uoa.gr:8081/artifactory/DaCapo-benchmarks/2006/antlr.jar", "-a", "fully-guided-context-sensitive", "--id", "antlr-scaler", "--dacapo", "--scaler-pre", "--fact-gen-cores", "1", "--platform", "java_8"])
+		Main.main((String[])["-i", Artifacts.ANTLR_JAR, "-a", "fully-guided-context-sensitive", "--id", "antlr-scaler", "--dacapo", "--scaler-pre", "--fact-gen-cores", "1", "--platform", "java_8"])
 		analysis = Main.analysis
 
 		then:
 		relationHasApproxSize(analysis, "CallGraphEdge", 1086574)
 		relationHasApproxSize(analysis, "VarPointsTo", 6643270)
-                relationHasApproxSize(analysis, "ApplicationMethod", 2680)
-                relationHasApproxSize(analysis, "Reachable", 10311)
-                relationHasApproxSize(analysis, "basic-ResolveInvocation", 5290606)
+		relationHasApproxSize(analysis, "ApplicationMethod", 2680)
+		relationHasApproxSize(analysis, "Reachable", 10311)
+		relationHasApproxSize(analysis, "basic.ResolveInvocation", 5290606)
 	}
 }

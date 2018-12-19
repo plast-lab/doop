@@ -6,9 +6,11 @@ import heapdl.core.MemoryAnalyser
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
+import org.clyze.doop.common.CHA
+import org.clyze.doop.common.FieldInfo
 import org.clyze.doop.common.DoopErrorCodeException
+import org.clyze.doop.common.EntryPointsProcessor
 import org.clyze.doop.common.FrontEnd
-import org.clyze.doop.common.JavaFactWriter
 import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
@@ -104,6 +106,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             factsDir = new File(outDir, "facts")
 
         database = new File(outDir, "database")
+        deleteQuietly(database)
+        database.mkdirs()
 
         executor = new Executor(outDir, commandsEnvironment)
         cpp = new CPreprocessor(this, executor)
@@ -114,8 +118,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     String toString() {
         return options.values().collect { AnalysisOption option ->
             def v = option.value
-            def vStr = v ? (v instanceof List ? (v as List).join(" ") : v as String) : ""
-            return "${option.id}=$vStr"
+            return "${option.id}=${v instanceof List ? (v as List).join(" ") : v as String}"
         }.sort().join("\n") + "\n"
     }
 
@@ -145,6 +148,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         FileOps.copyDirContents(fromDir, factsDir)
     }
 
+    private void writeMainClassFacts() {
+        if (options.MAIN_CLASS.value) {
+            new File(factsDir, "MainClass.facts").withWriterAppend { w ->
+                options.MAIN_CLASS.value.each { w.writeLine(it as String) }
+            }
+        }
+    }
+
     /**
      * Reuses an existing facts directory. May add more facts on top of
      * the existing facts, if appropriate command line options are set.
@@ -155,8 +166,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         linkOrCopyFacts(fromDir)
         def entryPoints = options.ENTRY_POINTS.value as String
         if (entryPoints) {
-            JavaFactWriter.processEntryPointsWithDir(factsDir, entryPoints)
+            EntryPointsProcessor.processDir(factsDir, entryPoints)
         }
+        writeMainClassFacts()
     }
 
     protected void generateFacts() throws DoopErrorCodeException {
@@ -185,10 +197,22 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
             Set<String> tmpDirs = [] as Set
             try {
-                if (options.PYTHON.value) runPython(tmpDirs)
-                else if (options.WALA_FACT_GEN.value) runFrontEnd(tmpDirs, FrontEnd.WALA)
-                else if (options.DEX_FACT_GEN.value) runFrontEnd(tmpDirs, FrontEnd.DEX)
-                else runFrontEnd(tmpDirs, FrontEnd.SOOT)
+                if (options.PYTHON.value) {
+                    runPython(tmpDirs)
+                } else if (options.WALA_FACT_GEN.value) {
+                    runFrontEnd(tmpDirs, FrontEnd.WALA, null)
+                } else if (options.DEX_FACT_GEN.value) {
+                    // Run Soot in platform-only mode for fact generation, to
+                    // fill in non .dex facts and the type hierarchy.
+                    options.X_FACTS_SUBSET.value = "PLATFORM"
+                    runFrontEnd(tmpDirs, FrontEnd.SOOT, null)
+                    CHA cha = new CHA()
+                    fillCHAFromSootFacts(cha)
+                    options.X_FACTS_SUBSET.value = null
+                    runFrontEnd(tmpDirs, FrontEnd.DEX, cha)
+                } else {
+                    runFrontEnd(tmpDirs, FrontEnd.SOOT, null)
+                }
             } catch (all) {
                 all = StackTraceUtils.deepSanitize all
                 log.info all
@@ -257,11 +281,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             log.info "----"
         }
 
-        if (options.MAIN_CLASS.value) {
-            new File(factsDir, "MainClass.facts").withWriterAppend { w ->
-                options.MAIN_CLASS.value.each { w.writeLine(it as String) }
-            }
-        }
+        writeMainClassFacts()
 
         if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
             File origSpecialCSMethodsFile = new File(options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString())
@@ -293,7 +313,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         return AARUtils.toJars(deps as List<String>, false, tmpDirs)
     }
 
-    protected void runFrontEnd(Set<String> tmpDirs, FrontEnd frontEnd) {
+    protected void runFrontEnd(Set<String> tmpDirs, FrontEnd frontEnd, CHA cha) {
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         if (platform != "android" && platform != "java")
             throw new RuntimeException("Unsupported platform: ${platform}")
@@ -343,6 +363,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--decode-apk"]
         }
 
+        if (options.DEX_FACT_GEN.value) {
+            params += ["--dex"]
+        }
+
         params.addAll(["--log-dir", Doop.doopLog])
         params.addAll(["-d", factsDir.toString()] + inputArgs)
         deps.addAll(platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>)
@@ -352,12 +376,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         } else if (frontEnd == FrontEnd.WALA) {
             runWala(platform, deps, platforms, params)
         } else if (frontEnd == FrontEnd.DEX) {
-            if (options.X_STOP_AT_FACTS.value) {
-                runDexFactGen(platform, deps, platforms, params, tmpDirs)
-            } else {
-                System.err.println("Option --${options.DEX_FACT_GEN.name} only works with --${options.X_STOP_AT_FACTS.name}")
-                throw new DoopErrorCodeException(20)
-            }
+            runDexFactGen(platform, deps, platforms, params, tmpDirs, cha)
         } else {
             println("Unknown front-end: " + frontEnd)
         }
@@ -527,14 +546,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.info "Wala fact generation time: ${factGenTime}"
     }
 
-    protected void runDexFactGen(String platform, Collection<String> deps, List<File> platforms, Collection<String> params, Set<String> tmpDirs) {
+    protected void runDexFactGen(String platform, Collection<String> deps, List<File> platforms, Collection<String> params, Set<String> tmpDirs, CHA cha) {
 
         // params += [ "--print-phantoms" ]
 
         log.debug "Params of dex front-end: ${params.join(' ')}"
 
         try {
-            DexInvoker.main(params.toArray(new String[params.size()]))
+            DexInvoker.start(params.toArray(new String[params.size()]), cha)
         } catch (Exception ex) {
             ex.printStackTrace()
         }
@@ -658,5 +677,28 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 copyFileToDirectory(f, factsDir)
             }
         }
+    }
+
+    private void fillCHAFromSootFacts(CHA cha) {
+		String supFile = "${factsDir}/DirectSuperclass.facts"
+		println "Importing non-dex class type hierarchy from ${supFile}"
+		Helper.forEachLineIn(supFile, { String line ->
+			def parts = line.tokenize('\t')
+			cha.registerSuperClass(parts[0], parts[1])
+		})
+
+		String fieldFile = "${factsDir}/Field.facts"
+		println "Importing non-dex fields from ${fieldFile}"
+		Map<String, List<FieldInfo> > fields = [:].withDefault { [] }
+		Helper.forEachLineIn(fieldFile, { String line ->
+			def parts = line.tokenize('\t')
+			String declType = parts[1]
+			String name = parts[2]
+			String type = parts[3]
+			List<FieldInfo> info = fields.get(declType)
+			info.add(new FieldInfo(type, name))
+			fields.put(declType, info)
+		})
+		fields.each { declType, fs -> cha.registerDefinedClassFields(declType, fs) }
     }
 }

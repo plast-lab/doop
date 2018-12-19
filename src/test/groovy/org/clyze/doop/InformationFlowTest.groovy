@@ -23,6 +23,6 @@ class InformationFlowTest extends DoopBenchmark {
 
         then:
         relationHasApproxSize(analysis, "AppTaintedVar", 2663)
-        relationHasApproxSize(analysis, "Stats_Simple_Application_TaintedVarPointsTo", 57571)
+        relationHasApproxSize(analysis, "Stats_Simple_Application_TaintedVarPointsTo", 55194)
     }
 }

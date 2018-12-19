@@ -1,9 +1,0 @@
-.decl SubtypeOf(?subtype:Type, ?type:Type)
-
-.decl SupertypeOf(?supertype:Type, ?type:Type)
-
-.decl Unsubclassable(?type:Type)
-
-.decl Subclassable(?type:Type)
-
-.decl SubtypeOfDifferent(?subtype:Type, ?type:Type)

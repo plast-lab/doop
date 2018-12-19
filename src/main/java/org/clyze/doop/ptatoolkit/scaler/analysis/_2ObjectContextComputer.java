@@ -20,6 +20,7 @@ public class _2ObjectContextComputer extends ContextComputer {
 
     @Override
     protected int computeContextNumberOf(Method method) {
+        System.out.println("blah");
         if (pta.receiverObjectsOf(method).isEmpty()) {
             if (Global.isDebug()) {
                 System.out.printf("Empty receiver: %s\n", method.toString());

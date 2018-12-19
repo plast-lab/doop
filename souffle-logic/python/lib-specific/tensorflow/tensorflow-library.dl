@@ -86,7 +86,7 @@ ModeledFunction("<tensorflow.placeholder>", "placeholder", "<tensorflow>").
 FormalParam( 0, "dtype", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam1").
 FormalParam( 1, "shape", "<tensorflow.placeholder>", "<tensorflow.placeholder>/mockParam2").
 FormalParam( 2, "name", "<tensorflow.placeholder>",  "<tensorflow.placeholder>/mockParam3").
-FormalParam_DefaultValFrom("<tensorflow.placeholder>", "shape", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValForName("<tensorflow.placeholder>", "shape", "<tensorflow>/noneDefVar").
 
 
 // LAYERS CONVOLUTION
@@ -121,10 +121,10 @@ VarPointsTo(?hctx, "<string constant:valid>", ?ctx, "<tensorflow.layers>/padding
   isImmutableContext(?ctx),
   isImmutableHContext(?hctx).
 
-FormalParam_DefaultValFrom(?function, "strides", "<tensorflow.layers>/stridesDefValVar"),
-FormalParam_DefaultValFrom(?function, "dilation_rate", "<tensorflow.layers>/dilationRateDefValVar"),
-FormalParam_DefaultValFrom(?function, "data_format", "<tensorflow.layers>/dataFormatDefValVar"),
-FormalParam_DefaultValFrom(?function, "padding", "<tensorflow.layers>/paddingDefValVar"):-
+FormalParam_DefaultValForName(?function, "strides", "<tensorflow.layers>/stridesDefValVar"),
+FormalParam_DefaultValForName(?function, "dilation_rate", "<tensorflow.layers>/dilationRateDefValVar"),
+FormalParam_DefaultValForName(?function, "data_format", "<tensorflow.layers>/dataFormatDefValVar"),
+FormalParam_DefaultValForName(?function, "padding", "<tensorflow.layers>/paddingDefValVar"):-
   ?function = "<tensorflow.layers.conv1d>";
   ?function = "<tensorflow.layers.conv2d>";
   ?function = "<tensorflow.layers.conv3d>".
@@ -140,8 +140,8 @@ ModeledFunction("<tensorflow.layers.average_pooling2d>", "average_pooling2d", "<
 ModeledFunction("<tensorflow.layers.average_pooling3d>", "average_pooling3d", "<tensorflow.layers>").
 
 
-FormalParam_DefaultValFrom(?function, "padding", "<tensorflow.layers>/paddingDefValVar"),
-FormalParam_DefaultValFrom(?function, "data_format", "<tensorflow.layers>/dataFormatDefValVar"),
+FormalParam_DefaultValForName(?function, "padding", "<tensorflow.layers>/paddingDefValVar"),
+FormalParam_DefaultValForName(?function, "data_format", "<tensorflow.layers>/dataFormatDefValVar"),
 FormalParam( 0, "inputs", ?function, cat(?function,"/mockParam1")),
 FormalParam( 1, "pool_size", ?function, cat(?function,"/mockParam2")),
 FormalParam( 2, "padding", ?function,  cat(?function,"/mockParam3")),
@@ -192,12 +192,12 @@ VarPointsTo(?hctx, "<None>", ?ctx, "<tensorflow.nn>/nameDefValVar") :-
   isImmutableHContext(?hctx).
 
 
-FormalParam_DefaultValFrom("<tensorflow.nn.conv1d>", "data_format", "<tensorflow.nn>/dataFormat1dDefValVar").
-FormalParam_DefaultValFrom("<tensorflow.nn.conv2d>", "data_format", "<tensorflow.nn>/dataFormat2dDefValVar").
-FormalParam_DefaultValFrom("<tensorflow.nn.conv3d>", "data_format", "<tensorflow.nn>/dataFormat3dDefValVar").
+FormalParam_DefaultValForName("<tensorflow.nn.conv1d>", "data_format", "<tensorflow.nn>/dataFormat1dDefValVar").
+FormalParam_DefaultValForName("<tensorflow.nn.conv2d>", "data_format", "<tensorflow.nn>/dataFormat2dDefValVar").
+FormalParam_DefaultValForName("<tensorflow.nn.conv3d>", "data_format", "<tensorflow.nn>/dataFormat3dDefValVar").
 
-FormalParam_DefaultValFrom(?function, "use_cudnn_on_gpu", "<tensorflow.nn>/useCudnnOnGpuDefValVar"),
-FormalParam_DefaultValFrom(?function, "name", "<tensorflow.nn>/nameDefValVar"):-
+FormalParam_DefaultValForName(?function, "use_cudnn_on_gpu", "<tensorflow.nn>/useCudnnOnGpuDefValVar"),
+FormalParam_DefaultValForName(?function, "name", "<tensorflow.nn>/nameDefValVar"):-
   ?function = "<tensorflow.nn.conv1d>";
   ?function = "<tensorflow.nn.conv2d>";
   ?function = "<tensorflow.nn.conv3d>".
@@ -227,11 +227,11 @@ FormalParam( 4, "data_format", ?function,  cat(?function,"/mockParam5")):-
   ?function = "<tensorflow.nn.avg_pool3d>";
   ?function = "<tensorflow.nn.max_pool3d>".
 
-FormalParam_DefaultValFrom(?function, "data_format", "<tensorflow.nn>/dataFormat2dDefValVar"):-
+FormalParam_DefaultValForName(?function, "data_format", "<tensorflow.nn>/dataFormat2dDefValVar"):-
   ?function = "<tensorflow.nn.avg_pool>";
   ?function = "<tensorflow.nn.max_pool>".
 
-FormalParam_DefaultValFrom(?function, "data_format", "<tensorflow.nn>/dataFormat3dDefValVar"):-
+FormalParam_DefaultValForName(?function, "data_format", "<tensorflow.nn>/dataFormat3dDefValVar"):-
   ?function = "<tensorflow.nn.avg_pool3d>";
   ?function = "<tensorflow.nn.max_pool3d>".
 
@@ -254,22 +254,22 @@ ModeledFunction("<tensorflow.ones_like>", "ones_like", "<tensorflow>").
 ModeledFunction("<tensorflow.constant>", "constant", "<tensorflow>").
 ModeledFunction("<tensorflow.fill>", "fill", "<tensorflow>").
 
-FormalParam_DefaultValFrom(?function, "dtype", "<tensorflow>/floatDtypeDefVar"),
+FormalParam_DefaultValForName(?function, "dtype", "<tensorflow>/floatDtypeDefVar"),
 FormalParam( 0, "shape", ?function, cat(?function,"/mockParam1")),
 FormalParam( 1, "dtype", ?function, cat(?function,"/mockParam2")),
 FormalParam( 2, "name", ?function,  cat(?function,"/mockParam3")):-
   ?function = "<tensorflow.ones>";
   ?function = "<tensorflow.zeros>".
 
-FormalParam_DefaultValFrom(?function, "dtype", "<tensorflow>/noneDefVar"),
+FormalParam_DefaultValForName(?function, "dtype", "<tensorflow>/noneDefVar"),
 FormalParam( 0, "tensor", ?function, cat(?function,"/mockParam1")),
 FormalParam( 1, "dtype", ?function, cat(?function,"/mockParam2")),
 FormalParam( 2, "name", ?function,  cat(?function,"/mockParam3")):-
   ?function = "<tensorflow.ones_like>";
   ?function = "<tensorflow.zeros_like>".
 
-FormalParam_DefaultValFrom("<tensorflow.constant>", "dtype", "<tensorflow>/noneDefVar").
-FormalParam_DefaultValFrom("<tensorflow.constant>", "shape", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValForName("<tensorflow.constant>", "dtype", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValForName("<tensorflow.constant>", "shape", "<tensorflow>/noneDefVar").
 
 FormalParam( 0, "value", "<tensorflow.constant>", "<tensorflow.constant>/mockParam1").
 FormalParam( 1, "dtype", "<tensorflow.constant>", "<tensorflow.constant>/mockParam2").
@@ -283,7 +283,7 @@ FormalParam( 2, "name", "<tensorflow.fill>",  "<tensorflow.fill>/mockParam3").
 
 //REVIEW: This is not correct as it is a different class, but will keep this for now
 ModeledFunction("<tensorflow.Variable>", "Variable", "<tensorflow>").
-FormalParam_DefaultValFrom("<tensorflow.Variable>", "dtype", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValForName("<tensorflow.Variable>", "dtype", "<tensorflow>/noneDefVar").
 FormalParam( 0, "initial_value", "<tensorflow.Variable>", "<tensorflow.Variable>/mockParam1").
 FormalParam( 1, "dtype", "<tensorflow.Variable>", "<tensorflow.Variable>/mockParam2").
 
@@ -303,7 +303,7 @@ ModeledFunction("<tensorflow.truncated_normal>", "truncated_normal", "<tensorflo
 ModeledFunction("<tensorflow.random_gamma>", "random_gamma", "<tensorflow>").
 ModeledFunction("<tensorflow.random_uniform>", "random_uniform", "<tensorflow>").
 
-FormalParam_DefaultValFrom(?function, "dtype", "<tensorflow>/floatDtypeDefVar"),
+FormalParam_DefaultValForName(?function, "dtype", "<tensorflow>/floatDtypeDefVar"),
 FormalParam( 0, "shape", ?function, cat(?function,"/mockParam1")),
 FormalParam( 3, "dtype", ?function, cat(?function,"/mockParam2")):-
 ?function = "<tensorflow.random_normal>";
@@ -366,18 +366,18 @@ ModeledFunction("<tensorflow.nn.softmax_cross_entropy_with_logits>", "softmax_cr
 FormalParam( 0, "_sentinel", "<tensorflow.nn.softmax_cross_entropy_with_logits>", "<tensorflow.nn.softmax_cross_entropy_with_logits>/mockParam1").
 FormalParam( 1, "labels", "<tensorflow.nn.softmax_cross_entropy_with_logits>", "<tensorflow.nn.softmax_cross_entropy_with_logits>/mockParam2").
 FormalParam( 2, "logits", "<tensorflow.nn.softmax_cross_entropy_with_logits>", "<tensorflow.nn.softmax_cross_entropy_with_logits>/mockParam3").
-FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits>", "_sentinel", "<tensorflow>/noneDefVar").
-FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits>", "labels", "<tensorflow>/noneDefVar").
-FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits>", "logits", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValForName("<tensorflow.nn.softmax_cross_entropy_with_logits>", "_sentinel", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValForName("<tensorflow.nn.softmax_cross_entropy_with_logits>", "labels", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValForName("<tensorflow.nn.softmax_cross_entropy_with_logits>", "logits", "<tensorflow>/noneDefVar").
 
 
 ModeledFunction("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "softmax_cross_entropy_with_logits_v2", "<tensorflow.nn>").
 FormalParam( 0, "_sentinel", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>/mockParam1").
 FormalParam( 1, "labels", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>/mockParam2").
 FormalParam( 2, "logits", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "<tensorflow.nn.softmax_cross_entropy_with_logits_v2>/mockParam3").
-FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "_sentinel", "<tensorflow>/noneDefVar").
-FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "labels", "<tensorflow>/noneDefVar").
-FormalParam_DefaultValFrom("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "logits", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValForName("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "_sentinel", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValForName("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "labels", "<tensorflow>/noneDefVar").
+FormalParam_DefaultValForName("<tensorflow.nn.softmax_cross_entropy_with_logits_v2>", "logits", "<tensorflow>/noneDefVar").
 
 ModeledFunction("<tensorflow.argmax>", "argmax", "<tensorflow>").
 ModeledFunction("<tensorflow.argmin>", "argmin", "<tensorflow>").

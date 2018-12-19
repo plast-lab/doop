@@ -63,6 +63,40 @@ DeadMethodWithJVMDescriptor(?jvmFullName, ?method) :-
 #define FILENAME_EXPECTED_BY_OPT_PASS "methods_to_remove.csv"
 .output DeadMethodWithJVMDescriptor(IO="file", filename=FILENAME_EXPECTED_BY_OPT_PASS, delimiter="\t")
 
+/**** Helper relations to aid the user when removing/keeping methods ****/
+
+.decl ExceptionThrownByReachableMethod(?excType:Type, ?method:Method)
+.output ExceptionThrownByReachableMethod
+
+ExceptionThrownByReachableMethod(?excType, ?method) :-
+  mainAnalysis.Reachable(?method),
+  Method_DeclaresException(?excType, ?method).
+
+ExceptionThrownByReachableMethod(?excType, ?method) :-
+  mainAnalysis.Reachable(?method),
+  mainAnalysis.ThrowPointsTo(_, ?exc, _, ?method),
+  mainAnalysis.Value_Type(?exc, ?excType),
+  !isNullType(?excType).
+
+.decl ClassWithReachableConstructor(?class:ClassType)
+.output ClassWithReachableConstructor
+
+ClassWithReachableConstructor(?class) :-
+  mainAnalysis.Reachable(?method),
+  Method_SimpleName(?method, "<init>"),
+  Method_DeclaringType(?method, ?class).
+
+.decl ConstructorlessReachableInstanceClass(?class:ClassType)
+.output ConstructorlessReachableInstanceClass
+
+ConstructorlessReachableInstanceClass(?class) :-
+  mainAnalysis.Reachable(?method),
+  Method_DeclaringType(?method, ?class),
+  ApplicationClass(?class),
+  isClassType(?class),
+  !Method_Modifier("static", ?method),
+  !ClassWithReachableConstructor(?class).
+
 /*** Devirtualization ***/
 
 .decl ContextInsensitiveCallGraphEdge(?invocation:MethodInvocation, ?target:Method)

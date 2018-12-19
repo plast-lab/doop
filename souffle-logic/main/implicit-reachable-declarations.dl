@@ -4,3 +4,7 @@
 .decl ImplicitReachable(?sig:Method)
 
 .decl ApplicationEntryPoint(?meth:Method)
+
+#ifndef MICRO
+.decl ForcedReachable(?method:Method)
+#endif // MICRO

@@ -68,5 +68,4 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdde
             scene.addBasicClass(className);
         }
     }
-
 }

@@ -1,6 +1,8 @@
 package org.clyze.doop.dex;
 
 import org.clyze.doop.common.Database;
+import org.clyze.doop.common.FieldInfo;
+import org.clyze.doop.common.FieldOp;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.util.TypeUtils;
 import org.jf.dexlib2.AccessFlags;
@@ -69,7 +71,7 @@ class DexClassFactWriter extends JavaFactWriter {
     }
 
     private void writeField(Field fieldRef) {
-        FieldInfo fi = new FieldInfo(fieldRef);
+        FieldInfo fi = new DexFieldInfo(fieldRef);
         String fieldId = fi.getFieldId();
         _db.add(FIELD_SIGNATURE, fieldId, fi.definingClass, fi.name, fi.type);
         EncodedValue e = fieldRef.getInitialValue();

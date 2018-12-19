@@ -757,14 +757,14 @@ Instruction_Method(?instruction, ?method) :-
   _UnsupportedInstruction(?instruction, ?index, ?method).
 
 
+// The exact info from keep annotations
+.input KeepMethod(IO="file", filename="KeepMethod.facts", delimiter="\t")
+.input KeepClass(IO="file", filename="KeepClass.facts", delimiter="\t")
+
 #ifdef ANDROID
 
 // AndroidEntryPoints
 .input AndroidEntryPoint(IO="file", filename="AndroidEntryPoint.facts", delimiter="\t")
-
-// The exact info from ProGuard keep annotations
-.input AndroidKeepMethod(IO="file", filename="AndroidKeepMethod.facts", delimiter="\t")
-.input AndroidKeepClass(IO="file", filename="AndroidKeepClass.facts", delimiter="\t")
 
 // AndroidApplication
 .input AndroidApplication(IO="file", filename="AndroidApplication.facts", delimiter="\t")

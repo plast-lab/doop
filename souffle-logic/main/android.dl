@@ -95,8 +95,7 @@ OverridingProtectedMethodOfComponent(?methConcrete) :-
   ProtectedMethodOfComponent(?meth),
   AppMethodOverridesAndroidLibraryMethod(?methConcrete, ?meth).
 
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
 //// Weaken. Seems reasonable.
 //  (PublicMethodOfComponent(?meth);
 //   OverridingProtectedMethodOfComponent(?meth);
@@ -105,24 +104,21 @@ ReachableContext(?ctx, ?meth) :-
   isImmutableContext(?ctx).
 
 // By marking them "ForcedReachable" we enable their mocking, not just reachability.
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   AndroidEntryPoint(?meth),
   isImmutableContext(?ctx).
 
-// Also accept info from ProGuard keep annotations (e.g., produced via -printseeds in PG).
+// Also accept info from keep annotations (e.g., produced via -printseeds in ProGuard).
 // Forcing the reachability and mocking of all "keep" methods.
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
-  AndroidKeepMethod(?meth),
+ForcedReachableAndroidContext(?ctx, ?meth) :-
+  KeepMethod(?meth),
   isImmutableContext(?ctx).
 
 // Not clear what ProGuard does with "keep" annotations for classes, but certainly
 // I've seen documented behavior in industrial code that expects it to keep no-arg
 // constructors.
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
-  AndroidKeepClass(?class),
+ForcedReachableAndroidContext(?ctx, ?meth) :-
+  KeepClass(?class),
   Method_DeclaringType(?meth, ?class),
   Method_SimpleName(?meth, "<init>"),
   !FormalParam(_, ?meth, _),
@@ -172,8 +168,7 @@ OverridingProtectedOnMethodOfLayoutControl(?methConcrete) :-
   ProtectedOnMethodOfLayoutControl(?meth),
   AppMethodOverridesAndroidLibraryMethod(?methConcrete, ?meth).
 
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   (PublicOnMethodOfLayoutControl(?meth);
    OverridingProtectedOnMethodOfLayoutControl(?meth)),
   isImmutableContext(?ctx).
@@ -210,8 +205,9 @@ AndroidViewType(?type) :-
 
 // anantoni: Make the getters and setters of classes extending View reachable
 //// REVIEW: this seems pretty liberal
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+MockValueConsMacro(cat("<android view object ", cat(?viewType, ">")), ?viewType),
+ReifiedAndroidObjectValue(cat("<android view object ", cat(?viewType, ">")), ?viewType),
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   Method_SimpleName(?meth, ?simplename),
   (match("set.*", ?simplename);
    match("get.*", ?simplename)),
@@ -219,9 +215,26 @@ ReachableContext(?ctx, ?meth) :-
   AndroidViewType(?viewType),
   isImmutableContext(?ctx).
 
-// REVIEW: should we force the instantiation of some mock View objects?
-// Otherwise we are just relying on the ones already created. Why the difference
-// in the handling of View objects and listeners?
+
+// Keep Activity methods for onClick behavior.
+MockValueConsMacro(cat("<android activity object ", cat(?type, ">")), ?type),
+ReifiedAndroidObjectValue(cat("<android activity object ", cat(?type, ">")), ?type),
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  basic.SubtypeOf(?type, "android.app.Activity"),
+  Method_DeclaringType(?method, ?type),
+  Method_Arity(?method, 1),
+  FormalParam(0, ?method, ?formal),
+  Var_Type(?formal, "android.view.View"),
+  isImmutableContext(?ctx).
+
+
+// Recognize "Keep" annotations on methods.
+MockValueConsMacro(cat("<android keep object ", cat(?type, ">")), ?type),
+ReifiedAndroidObjectValue(cat("<android keep object ", cat(?type, ">")), ?type),
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  Method_Annotation(?method, "android.support.annotation.Keep"),
+  Method_DeclaringType(?method, ?type),
+  isImmutableContext(?ctx).
 
 
 /**
@@ -261,8 +274,7 @@ OverridingProtectedOnMethodOfReachableListener(?methConcrete) :-
   ProtectedOnMethodOfReachableListener(?meth),
   AppMethodOverridesAndroidLibraryMethod(?methConcrete, ?meth).
 
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   (PublicOnMethodOfReachableListener(?meth);
    OverridingProtectedOnMethodOfReachableListener(?meth)),
   isImmutableContext(?ctx).
@@ -367,8 +379,7 @@ ReachableAppPackableMethodOverridingLib(?methConcrete) :-
   LibraryReachableAppPackableClass(?class),
   AppMethodOverridesAndroidLibraryMethod(?methConcrete, _).
 
-ForcedReachableAndroidContext(?ctx, ?methConcrete),
-ReachableContext(?ctx, ?methConcrete) :-
+ForcedReachableAndroidContext(?ctx, ?methConcrete) :-
   ReachableAppPackableMethodOverridingLib(?methConcrete),
   isImmutableContext(?ctx).
 
@@ -439,8 +450,7 @@ ReifiedAndroidObjectValue(?value, ?concreteType) :-
  * so we currently just force reachability of all "run" methods.
 **/
 
-ForcedReachableAndroidContext(?ctx, ?runmeth),
-ReachableContext(?ctx, ?runmeth) :-
+ForcedReachableAndroidContext(?ctx, ?runmeth) :-
   ReachableApplicationObjectOfType(_, _, ?type),
   Method_SimpleName(?runmeth, "run"),
   basic.MethodDeclaredOrInherited(?runmeth, ?type),
@@ -465,8 +475,7 @@ WebClientType(?type):-
 .output _ForcedReachableFromJavascriptContext
 
 _ForcedReachableFromJavascriptContext(?ctx, ?meth),
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   basic.ConcreteMethodDeclared(?meth, ?class),
   (Method_Modifier("protected", ?meth);
    Method_Modifier("public", ?meth)),
@@ -491,8 +500,7 @@ ArgToAddJavascriptInterface(?var) :-
   Method_DeclaringType(?addjsmethod, "android.webkit.WebView"),
   FormalParam(0, ?addjsmethod, ?var).
 
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   ArgToAddJavascriptInterface(?var),
   VarPointsTo(_, ?value, _, ?var),
   Value_Type(?value, ?type),
@@ -510,8 +518,7 @@ ReachableContext(?ctx, ?meth) :-
 
 // Link the two concepts: if an object is a ReifiedAndroidObjectValue,
 // make its constructors ForcedReachable.
-ForcedReachableAndroidContext(?ctx, ?meth),
-ReachableContext(?ctx, ?meth) :-
+ForcedReachableAndroidContext(?ctx, ?meth) :-
   ReifiedAndroidObjectValue(_, ?type),
   Method_DeclaringType(?meth, ?type),
   Method_SimpleName(?meth, "<init>"),
@@ -759,7 +766,7 @@ AsynchTaskExecute(?param, ?base) :-
    isArrayType(?type),
    MethodInvocation_Base(?invocation, ?base).
 
-ReachableContext(?ctx, ?method),
+ForcedReachableAndroidContext(?ctx, ?method),
 OptInterproceduralAssign(?ctx, ?formal, ?callerCtx, ?actual),
 VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
    AsynchTaskExecute(?actual, ?base),
@@ -780,10 +787,20 @@ ApplicationEntryPoint(?meth) :-
   ForcedReachableAndroidContext(_, ?meth),
   ApplicationMethod(?meth).
 
+/**
+ * Forced-reachable Android contexts are reachable contexts.
+ */
+ReachableContext(?ctx, ?meth) :-
+  ForcedReachableAndroidContext(?ctx, ?meth).
 
 /**
  * Unobfuscated classes and members: special treatment
 **/
+
+.decl ApplicationPackageRegex(?regex:symbol)
+
+ApplicationPackageRegex(cat(?package, ".*")) :-
+  _ApplicationPackage(?package).
 
 .decl UnobfuscatedApplicationClass(?class:ClassType)
 .output UnobfuscatedApplicationClass
@@ -798,6 +815,10 @@ UnobfuscatedApplicationClass(?class) :-
    match("okhttp3.*", ?class);
    match("retrofit.*", ?class);
    match("retrofit2.*", ?class)).
+UnobfuscatedApplicationClass(?class) :-
+  ApplicationClass(?class),
+  ApplicationPackageRegex(?regex),
+  match(?regex, ?class).
 
 .decl UnobfuscatedMethod(?meth:Method)
 .output UnobfuscatedMethod
@@ -830,12 +851,12 @@ ObfuscationOn() :-
 
 // If obfuscation is on, then treat all unobfuscated method names as
 // entry points: the programmer probably had a "keep" specification for
-// them. Note that AndroidKeep* are both input and derived predicates.
-AndroidKeepMethod(?meth) :-
+// them. Note that Keep* are both input and derived predicates.
+KeepMethod(?meth) :-
   ObfuscationOn(),
   UnobfuscatedMethod(?meth).
 
-AndroidKeepClass(?class) :-
+KeepClass(?class) :-
   ObfuscationOn(),
   UnobfuscatedApplicationClass(?class).
 

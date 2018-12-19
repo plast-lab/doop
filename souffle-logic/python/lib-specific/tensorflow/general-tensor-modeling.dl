@@ -212,7 +212,11 @@ TensorFlowsToSelf_Insens(?tensor):-
 TensorFlowsToTensorOp(?argHctx, ?argVal, ?ctx, ?op):-
   TensorOperationTensorArg(?ctx, _, ?op, ?argHctx, ?argVal).
 
+TensorFlowsToTensorOp(?argHctx, ?argVal, ?ctx, ?resultVal):-
+  TensorOperationTensorArg(?ctx, _, ?resultVal, ?intermHctx, ?argIntermVal),
+  configuration.RecordContextResponse(?intermCtx, ?argIntermVal, _, ?intermHctx),       //Makes sure ?intermHctx and ?intermCtx are "compatible"(for our usual case of 1-call+H  checks that the contexts are the same)
+  TensorFlowsToTensorOp(?argHctx, ?argVal, ?intermCtx, ?argIntermVal).
+
 TensorFlowsToSelf(?ctx, ?op):-
   TensorFlowsToTensorOp(?hctx, ?op, ?ctx, ?op),
-  ?hctx=[?one],
-  ?ctx =[?one].
+  configuration.RecordContextResponse(?ctx, ?op, _, ?hctx).

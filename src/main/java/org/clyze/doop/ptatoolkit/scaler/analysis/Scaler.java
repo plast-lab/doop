@@ -75,14 +75,8 @@ public class Scaler {
     }
 
     public int getAccumulativePTSSizeOf(Method method) {
-        if (!ptsSize.containsKey(method)) {
-            int size = pta.variablesDeclaredIn(method)
-                    .stream()
-                    .mapToInt(pta::pointsToSetSizeOf)
-                    .sum();
-            ptsSize.put(method, size);
-        }
-        return ptsSize.get(method);
+
+        return pta.getMethodTotalVPTMap().get(method);
     }
 
     private void init() {

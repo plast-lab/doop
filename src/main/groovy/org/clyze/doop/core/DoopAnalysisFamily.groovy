@@ -706,7 +706,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Load default logic for collecting statistics.",
 					forPreprocessor: true
 			),
-			new BooleanAnalysisOption(
+			new AnalysisOption<String>(
 					id: "X_STATS_AROUND",
 					name: "Xstats-around",
 					description: "Load custom logic for collecting statistics.",
@@ -739,6 +739,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xserver-logic",
 					description: "Run server queries under addons/server-logic",
 					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "X_SERVER_CHA",
+					name: "Xserver-cha",
+					description: "Run server queries related to CHA"
 			),
 			new BooleanAnalysisOption(
 					id: "X_EXTRA_METRICS",

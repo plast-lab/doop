@@ -57,6 +57,9 @@ FormalParam(?index, ?paramName, ?function, ?var) :-
 .decl _FormalParam_DefaultValueVar(?function:symbol, ?index:number, ?var:symbol)
 .input _FormalParam_DefaultValueVar(IO="file", filename="FormalParam-DefaultValueVar.facts", delimiter="\t")
 
+FormalParam_DefaultValForIndex(?fun, ?formalIndex, ?fromVar):-
+  _FormalParam_DefaultValueVar(?fun, ?formalIndex, ?fromVar).
+
 // Var:DeclaringMethod
 
 .decl _Var_DeclaringFunction(?var:symbol, ?method:symbol)

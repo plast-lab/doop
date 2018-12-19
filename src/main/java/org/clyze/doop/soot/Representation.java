@@ -10,10 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-class Representation extends JavaRepresentation {
+public class Representation extends JavaRepresentation {
     private final Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
     private final Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
-    private static final List<String> jimpleKeywordList = Jimple.jimpleKeywordList();
     private final Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
 
     static String classConstant(SootClass c) {
@@ -24,12 +23,16 @@ class Representation extends JavaRepresentation {
         return classConstant(t.toString());
     }
 
+    public static String stripQuotes(String s) {
+        return s.replaceAll("'", "");
+    }
+
     String signature(SootMethod m) {
         String result = _methodSigRepr.get(m);
 
         if(result == null)
         {
-            result = m.getSignature();
+            result = stripQuotes(m.getSignature());
             _methodSigRepr.put(m, result);
         }
 
@@ -37,22 +40,20 @@ class Representation extends JavaRepresentation {
     }
 
     static String signature(SootField f) {
-        return f.getSignature();
+        return stripQuotes(f.getSignature());
+    }
+
+    static String signature(SootMethodRef mRef) {
+        return stripQuotes(mRef.toString());
     }
 
     String simpleName(SootMethod m) {
         String result = methodNames.get(m);
         if (result == null) {
-            result = escapeSimpleName(m.getName());
+            result = stripQuotes(m.getName());
             methodNames.put(m, result);
         }
         return result;
-    }
-
-    // Fix simple name if it is a special Jimple keyword.
-    private static String escapeSimpleName(String n) {
-        boolean escape = (!n.startsWith("'") && jimpleKeywordList.contains(n));
-        return escape ? "'"+n+"'" : n;
     }
 
     public static String unescapeSimpleName(String n) {
@@ -61,7 +62,7 @@ class Representation extends JavaRepresentation {
     }
 
     private static String simpleName(SootMethodRef m) {
-        return escapeSimpleName(m.name());
+        return m.name();
     }
 
     static String simpleName(SootField m) {
@@ -81,23 +82,23 @@ class Representation extends JavaRepresentation {
         return builder.toString();
     }
 
-    static String thisVar(SootMethod m) {
-        return getMethodSignature(m) + "/@this";
+    String thisVar(SootMethod m) {
+        return signature(m) + "/@this";
     }
 
-    static String nativeReturnVar(SootMethod m) {
-        return nativeReturnVarOfMethod(getMethodSignature(m));
+    String nativeReturnVar(SootMethod m) {
+        return nativeReturnVarOfMethod(signature(m));
     }
 
-    static String param(SootMethod m, int i) {
-        return getMethodSignature(m) + "/@parameter" + i;
+    String param(SootMethod m, int i) {
+        return signature(m) + "/@parameter" + i;
     }
 
-    static String local(SootMethod m, Local l) {
-        return localId(getMethodSignature(m), l.getName());
+    String local(SootMethod m, Local l) {
+        return stripQuotes(localId(signature(m), l.getName()));
     }
 
-    static String newLocalIntermediate(SootMethod m, Local l, SessionCounter counter) {
+    String newLocalIntermediate(SootMethod m, Local l, SessionCounter counter) {
         return newLocalIntermediateId(local(m, l), counter);
     }
 
@@ -107,23 +108,19 @@ class Representation extends JavaRepresentation {
         if(result == null)
         {
             String name = handlerMid(trap.getException().getName());
-            result = numberedInstructionId(getMethodSignature(m), name, counter);
+            result = numberedInstructionId(signature(m), name, counter);
             _trapRepr.put(trap, result);
         }
 
         return result;
     }
 
-    static String throwLocal(SootMethod m, Local l, SessionCounter counter) {
+    String throwLocal(SootMethod m, Local l, SessionCounter counter) {
         String name = throwLocalId(l.getName());
-        return numberedInstructionId(getMethodSignature(m), name, counter);
+        return numberedInstructionId(signature(m), name, counter);
     }
 
-    private static String getMethodSignature(SootMethod m) {
-        return m.getSignature();
-    }
-
-    private static String getKind(Stmt stmt) {
+    private String getKind(Stmt stmt) {
         String kind = "unknown";
         if ((stmt instanceof AssignStmt) || (stmt instanceof IdentityStmt))
             kind = "assign";
@@ -152,18 +149,18 @@ class Representation extends JavaRepresentation {
         return kind;
     }
 
-    static String unsupported(SootMethod inMethod, Stmt stmt, int index) {
-        return unsupportedId(getMethodSignature(inMethod), getKind(stmt), stmt.toString(), index);
+    String unsupported(SootMethod inMethod, Stmt stmt, int index) {
+        return unsupportedId(signature(inMethod), getKind(stmt), stmt.toString(), index);
     }
 
     /**
      * Text representation of instruction to be used as refmode.
      */
-    static String instruction(SootMethod inMethod, Stmt stmt, int index) {
-        return instructionId(getMethodSignature(inMethod), getKind(stmt), index);
+    String instruction(SootMethod inMethod, Stmt stmt, int index) {
+        return instructionId(signature(inMethod), getKind(stmt), index);
     }
 
-    static String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
+    String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
         SootMethodRef exprMethodRef = expr.getMethodRef();
         String name = simpleName(exprMethodRef);
         String midPart;
@@ -173,24 +170,24 @@ class Representation extends JavaRepresentation {
             midPart = DynamicMethodInvocation.genericId(bootName, name);
         } else
             midPart = exprMethodRef.declaringClass() + "." + name;
-        return numberedInstructionId(getMethodSignature(inMethod), midPart, counter);
+        return numberedInstructionId(signature(inMethod), midPart, counter);
     }
 
-    static String heapAlloc(SootMethod inMethod, AnyNewExpr expr, SessionCounter counter) {
+    String heapAlloc(SootMethod inMethod, AnyNewExpr expr, SessionCounter counter) {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
             return heapAlloc(inMethod, expr.getType(), counter);
 	    else if(expr instanceof NewMultiArrayExpr)
             return heapAlloc(inMethod, expr.getType(), counter);
-            //      return getMethodSignature(inMethod) + "/" + type + "/" +  session.nextNumber(type);
+            //      return signature(inMethod) + "/" + type + "/" +  session.nextNumber(type);
 	    else
             throw new RuntimeException("Cannot handle new expression: " + expr);
     }
 
-    static String heapMultiArrayAlloc(SootMethod inMethod, /* NewMultiArrayExpr expr, */ ArrayType type, SessionCounter counter) {
+    String heapMultiArrayAlloc(SootMethod inMethod, /* NewMultiArrayExpr expr, */ ArrayType type, SessionCounter counter) {
         return heapAlloc(inMethod, type, counter);
     }
 
-    static private String heapAlloc(SootMethod inMethod, Type type, SessionCounter counter) {
-        return heapAllocId(getMethodSignature(inMethod), type.toString(), counter);
+    private String heapAlloc(SootMethod inMethod, Type type, SessionCounter counter) {
+        return heapAllocId(signature(inMethod), type.toString(), counter);
     }
 }

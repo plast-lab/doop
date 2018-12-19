@@ -1,5 +1,6 @@
 // Extra logic included by some tests.
 
+.output mainAnalysis.ArrayIndexPointsTo
 .output mainAnalysis.InstanceFieldPointsTo
 .output mainAnalysis.StaticFieldPointsTo
 .output mainAnalysis.VarPointsTo

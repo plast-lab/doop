@@ -1,4 +1,82 @@
 /**
+ * An interface type K is a superinterface of class (or interface) type C
+ */
+.decl Superinterface(?k:Type, ?c:Type)
+
+/**
+ * An interface type K is a superinterface of class type C if one of the
+ * following is true
+ * - K is a direct superinterface of C
+ */
+Superinterface(?k, ?c) :-
+    DirectSuperinterface(?c, ?k).
+
+/**
+ * - C has a direct superinterface J that has K as a superinterface
+ */
+Superinterface(?k, ?c) :-
+    DirectSuperinterface(?c, ?j),
+    Superinterface(?k, ?j).
+
+/**
+ * - K is a superinterface of the direct superclass of C
+ */
+Superinterface(?k, ?c) :-
+    DirectSuperclass(?c, ?super),
+    Superinterface(?k, ?super).
+
+/**
+ * A class ?a is a direct subclass of class ?c
+ */
+.decl DirectSubclass(?a:Type, ?c:Type)
+
+/**
+ * A class ?a is a subclass of class ?c
+ *
+ * NOTE: the ordering might be unnatural, so pay attention when you use this
+ * predicate.
+ */
+.decl Subclass(?c:Type, ?a:Type)
+
+/**
+ * A class ?a is a superclass of class ?c
+ *
+ * NOTE: The ordering might be unnatural, so pay attention when you use this
+ * predicate.
+ */
+.decl Superclass(?c:Type, ?a:Type)
+
+DirectSubclass(?a, ?c) :-
+    DirectSuperclass(?a, ?c).
+
+/**
+ * A class A is a subclass of a class C if A is a direct subclass of C
+ */
+Subclass(?c, ?a) :-
+    DirectSubclass(?a, ?c).
+
+/**
+ * A class A is a subclass of a class C if there is a direct subclass B of C and class A is a subclass of B
+ */
+Subclass(?c, ?a) :-
+    Subclass(?b, ?a),
+    DirectSubclass(?b, ?c).
+
+/**
+ * A Class A is a superclass of class C whenever C is a subclass of A
+ */
+Superclass(?c, ?a) :-
+    Subclass(?a, ?c).
+
+
+.decl SubtypeOf(?subtype:Type, ?type:Type)
+.decl SupertypeOf(?supertype:Type, ?type:Type)
+.decl Unsubclassable(?type:Type)
+.decl Subclassable(?type:Type)
+.decl SubtypeOfDifferent(?subtype:Type, ?type:Type)
+.decl ClassConstructor(?method:Method, ?type:Type)
+
+/**
  * The following rules check whether type S can be cast to type T. Implicitly,
  * they expose the type hierarchy.
  */
@@ -169,3 +247,22 @@ Subclassable(?type) :-
     Method_Modifier("protected", ?method),
     ! Unsubclassable(?type).
 
+ClassConstructor(method, type) :-
+    MethodLookup(_, _, type, method),
+    isMethod(method),
+    match(".*<init>.*", method).
+
+
+// ?class is implemented/extended by ?subClass
+.decl Class_InterestingSubtype(?class:ReferenceType, ?subClass:ReferenceType)
+.decl _Valid_Type(?type:ReferenceType)
+
+Class_InterestingSubtype(?class, ?subClass) :-
+  SubtypeOf(?subClass, ?class),
+  _Valid_Type(?class),
+  _Valid_Type(?subClass).
+
+_Valid_Type(?type) :-
+  isReferenceType(?type),
+  !Type_null(?type),
+  !isArrayType(?type).

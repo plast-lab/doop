@@ -1,6 +1,7 @@
 package org.clyze.doop.dex;
 
 import org.clyze.doop.common.BasicJavaSupport;
+import org.clyze.doop.common.CHA;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.util.TypeUtils;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
@@ -15,7 +16,7 @@ class DexThreadFactory {
     private final CHA cha;
     private final String dexEntry;
     private final String apkName;
-    private boolean moreStrings;
+    private final boolean moreStrings;
 
     /**
      * Generates a thread factory for the parallel fact generation of a single

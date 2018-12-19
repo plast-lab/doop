@@ -2,11 +2,13 @@ package org.clyze.doop.dex;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.clyze.doop.common.Database;
+import org.clyze.doop.common.FieldInfo;
+import org.clyze.doop.common.FieldOp;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.JavaRepresentation;
-import org.clyze.doop.common.SessionCounter;
-import org.clyze.doop.common.Database;
 import org.clyze.doop.common.PredicateFile;
+import org.clyze.doop.common.SessionCounter;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.Opcode;
 import org.jf.dexlib2.dexbacked.DexBackedExceptionHandler;
@@ -937,7 +939,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                               Collection<FieldOp> fieldOps) {
         String insn = instructionId("assign", index);
         Reference fieldRef = ((ReferenceInstruction)instr).getReference();
-        FieldInfo fi = new FieldInfo((DexBackedFieldReference)fieldRef);
+        FieldInfo fi = new DexFieldInfo((DexBackedFieldReference)fieldRef);
         fieldOps.add(new FieldOp(target, insn, str(index), localA, localB, fi, methId));
     }
 

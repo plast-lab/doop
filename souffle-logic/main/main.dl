@@ -70,7 +70,7 @@
   #if defined(REFLECTION)
     #include "reflection/rules.dl"
   #elif defined(LIGHT_REFLECTION_GLUE)
-    #include "reflection/light-Class-forName.dl"
+    #include "reflection/light-Class.dl"
     #include "reflection/light-reflection-glue.dl"
   #endif
 
@@ -79,7 +79,7 @@
   #if defined(REFLECTION_DYNAMIC_PROXIES)
     // If no reflection support is available, at least handle Class objects.
     #if !defined(REFLECTION) && !defined(LIGHT_REFLECTION_GLUE)
-      #include "reflection/light-Class-forName.dl"
+      #include "reflection/light-Class.dl"
     #endif
     #include "reflection/dynamic-proxies.dl"
     #include "reflection/dynamic-proxies-delta.dl"
