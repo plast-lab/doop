@@ -367,9 +367,9 @@ VarPointsTo(?hctx, ?argValue, ?ctx, ?this) :-
 // these values do not come from a 'new' instruction in the code but
 // are created here as mock values, one per type/invocation.
 MockValueConsMacro(?mockObj, ?type),
-VarPointsTo(?hctx, ?mockObj, ?ctx, ?var),
-VarPointsTo(?hctx, ?mockObj, ?ctx, ?thisVar) :-
-   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, _),
+VarPointsTo(?hctx, ?mockObj, ?callerCtx, ?var),
+VarPointsTo(?hctx, ?mockObj, ?calleeCtx, ?thisVar) :-
+   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, _),
    Method_SimpleName(?implMethod, "<init>"),
    Method_DeclaringType(?implMethod, ?type),
    AssignReturnValue(?i, ?var),
