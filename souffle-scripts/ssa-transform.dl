@@ -1136,3 +1136,14 @@ UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
 
 LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
    Assign(?stmt, _, ?var).
+
+// Logic for exceptions
+LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
+    RewriteThrow(?stmt, ?var, _).
+
+UpperBoundTypeForConstraint(?var, "java.lang.Throwable", ?stmt) :-
+    RewriteThrow(?stmt, ?var, _).
+
+UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
+    RewriteThrow(?stmt, ?var, ?method),
+    Method_DeclaresException(?type, ?method).
