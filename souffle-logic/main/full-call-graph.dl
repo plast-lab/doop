@@ -14,3 +14,7 @@ AnyCallGraphEdge(?from, ?to) :- ReflectiveCallGraphEdge(_, ?from, _, ?to).
 #ifdef TAMIFLEX
 AnyCallGraphEdge(?from, ?to) :- TamiflexCallGraphEdge(_, ?from, _, ?to).
 #endif // TAMIFLEX
+
+#ifdef REFLECTION_DYNAMIC_PROXIES
+AnyCallGraphEdge(?from, ?to) :- ProxyCallGraphEdge(_, ?from, _, ?to).
+#endif // REFLECTION_DYNAMIC_PROXIES
