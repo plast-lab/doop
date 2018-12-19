@@ -31,25 +31,25 @@ ReachableContext(?calleeCtx, ?bootMethod) :-
 #define MOCK_MT(retType, paramTypes) cat("mock method type ", cat(retType, paramTypes))
 
 MockValueConsMacro(MOCK_MH_LOOKUP, "java.lang.invoke.MethodHandles$Lookup"),
-VarPointsTo(?hctx, MOCK_MH_LOOKUP, ?ctx, ?caller),
+VarPointsTo(?immHctx, MOCK_MH_LOOKUP, ?calleeCtx, ?caller),
 MockValueConsMacro(?mockMethodType, "java.lang.invoke.MethodType"),
-VarPointsTo(?hctx, ?mockMethodType, ?ctx, ?invokedTypeParam) :-
-   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?bootMethod),
+VarPointsTo(?immHctx, ?mockMethodType, ?calleeCtx, ?invokedTypeParam) :-
+   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
    FormalParam(0, ?bootMethod, ?caller),
    FormalParam(2, ?bootMethod, ?invokedTypeParam),
    DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
    DynamicMethodInvocation_DynParamTypes(?invokedynamic, ?dynParamTypes),
    ?mockMethodType = MOCK_MT(?dynRetType, ?dynParamTypes),
-   isImmutableHContext(?hctx).
+   isImmutableHContext(?immHctx).
 
 // The second-arg rule should only be enabled when strings are not merged.
 #if defined(DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS) || defined(DISTINGUISH_ALL_STRING_CONSTANTS) || defined(NO_MERGES)
-VarPointsTo(?hctx, ?invokedName, ?ctx, ?invokedNameParam) :-
-   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?bootMethod),
+VarPointsTo(?immHctx, ?invokedName, ?calleeCtx, ?invokedNameParam) :-
+   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
    isStringConstant(?invokedName),
    FormalParam(1, ?bootMethod, ?invokedNameParam),
    DynamicMethodInvocation_DynName(?invokedynamic, ?invokedName),
-   isImmutableHContext(?hctx).
+   isImmutableHContext(?immHctx).
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS || DISTINGUISH_ALL_STRING_CONSTANTS || NO_MERGES
 
 // Helper method to compute the varargs accumulator formal of a method.
@@ -65,25 +65,25 @@ MethodVarArgs(?method, ?idx, ?formal, ?type) :-
 // Use a mock array to fix calls to a bootstrap method accepting varargs.
 #define MOCK_ARRAY(invokedynamic) cat("bootstrap varargs array for ", invokedynamic)
 
-ArrayIndexPointsTo(?hctx, ?val, ?hctx, ?mockArray),
+ArrayIndexPointsTo(?immHctx, ?val, ?immHctx, ?mockArray),
 MockValueConsMacro(?mockArray, ?varArgsType),
-VarPointsTo(?hctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
+VarPointsTo(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
    InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod),
    MethodVarArgs(?bootMethod, ?bootIdx, ?formalVarArgs, ?varArgsType),
    BootstrapParam(?idx, ?invokedynamic, ?actual),
    ?idx > ?bootIdx - 3,
    VarPointsTo(_, ?val, _, ?actual),
-   isImmutableHContext(?hctx),
+   isImmutableHContext(?immHctx),
    ?mockArray = MOCK_ARRAY(?invokedynamic).
 
 // Normal handling for the last three arguments of the bootstrap method, shifted.
-VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?bootMethod),
+VarPointsTo(?immHctx, ?val, ?calleeCtx, ?formal) :-
+   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
    !Method_Modifier("varargs", ?bootMethod),
    FormalParam(?idx + 3, ?bootMethod, ?formal),
    BootstrapParam(?idx, ?invokedynamic, ?actual),
    VarPointsTo(_, ?val, _, ?actual),
-   isImmutableHContext(?hctx).
+   isImmutableHContext(?immHctx).
 
 .type CallSite = mainAnalysis.Value
 .type LinkObject = mainAnalysis.Value
