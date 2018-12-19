@@ -136,12 +136,12 @@ LinkObject_Method(?linkObject, ?method) :-
    MethodHandle_Method(?methodHandle, ?method).
 
 // Capture values of the enclosing environment.
-.decl CallSiteCaptured(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number, ?ctx:configuration.Context)
-CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx, ?ctx) :-
+.decl CallSiteCaptured(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number)
+CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx) :-
    InvokedynamicCallSite(?callsite, ?invokedynamic, _, ?K, _, _),
    ?K > 0,
    ActualParam(?idx, ?invokedynamic, ?actual),
-   VarPointsTo(_, ?val, ?ctx, ?actual).
+   VarPointsTo(_, ?val, _, ?actual).
 
 // After a method handle is resolved, invokedynamic calls it.
 .decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?linkObject:LinkObject)
@@ -312,7 +312,7 @@ Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
 // First bootstrap argument exists, will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
    LambdaCallSiteWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod),
-   CallSiteCaptured(_, ?invokedynamic, _, 0, _).
+   CallSiteCaptured(_, ?invokedynamic, _, 0).
 
 // Pass invocation arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
@@ -330,11 +330,11 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
    isImmutableHContext(?hctx).
 
 // Pass captured arguments to the implementing method.
-VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+   LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
    Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, _),
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
-   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx, ?ctx),
+   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx),
    ?idx + ?shiftK <= ?K,
    FormalParam(?idx - ?shiftK, ?implMethod, ?formal),
    Value_Type(?val, ?valType),
@@ -346,7 +346,7 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
 VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
    Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0),
    CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?ctx, ?lambda),
-   CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0, _),
+   CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0),
    Value_Type(?thisValue, ?thisValueType),
    basic.SubtypeOf(?thisValueType, ?thisType),
    isImmutableHContext(?hctx).
