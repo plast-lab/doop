@@ -353,11 +353,11 @@ VarPointsTo(?hctx, ?thisValue, ?calleeCtx, ?this) :-
 
 // Special handling for "this" parameters to method references that do
 // not capture a receiver.
-VarPointsTo(?hctx, ?argValue, ?ctx, ?this) :-
-   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
+VarPointsTo(?hctx, ?argValue, ?calleeCtx, ?this) :-
+   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda),
    Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1),
    ActualParam(0, ?i, ?actual),
-   VarPointsTo(?hctx, ?argValue, ?ctx, ?actual),
+   VarPointsTo(?hctx, ?argValue, ?callerCtx, ?actual),
    Value_Type(?argValue, ?argType),
    ThisVar(?implMethod, ?this),
    Var_Type(?this, ?thisType),
