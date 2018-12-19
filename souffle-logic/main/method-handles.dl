@@ -343,9 +343,9 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
    isImmutableHContext(?hctx).
 
 // Special handling for captured "this" parameters.
-VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
+VarPointsTo(?hctx, ?thisValue, ?calleeCtx, ?this) :-
    Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0),
-   CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?ctx, ?lambda),
+   CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda),
    CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0),
    Value_Type(?thisValue, ?thisValueType),
    basic.SubtypeOf(?thisValueType, ?thisType),
