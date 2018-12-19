@@ -156,9 +156,13 @@ InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?lin
    LinkObject_Method(?linkObject, ?method),
    configuration.StaticContextResponse(?callerCtx, ?invokedynamic, ?calleeCtx).
 
+// General rule for non-static methods resolved by invokedynamic. This rule
+// does not use the Request/Response schema, since we do not have a "value"
+// for the receiver (call site resolution happens at load time).
 InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?linkObject) :-
    InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
    LinkObject_Method(?linkObject, ?method),
+   !Method_Modifier("static", ?method),
    LinkObjectContexts(_, ?linkObject, ?callerCtx),
    isImmutableContext(?calleeCtx).
 
