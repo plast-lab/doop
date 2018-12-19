@@ -95,13 +95,13 @@ VarPointsTo(?immHctx, ?val, ?calleeCtx, ?formal) :-
 
 // Construct link object and record CallSite metadata.
 MockValueConsMacro(?linkObject, ?dynRetType),
-LinkObjectContexts(?hctx, ?linkObject, ?ctx),
+LinkObjectContexts(?hctx, ?linkObject, ?callerCtx),
 InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?linkObject) :-
-   ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, _),
+   ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?callerCtx),
    DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
    ReturnVar(?bootRetVar, ?bootMethod),
-   VarPointsTo(?hctx, ?callsite, ?ctx, ?bootRetVar),
+   VarPointsTo(?hctx, ?callsite, _, ?bootRetVar),
    ?linkObject = LINK_OBJECT(?invokedynamic, ?dynRetType).
 
 // If the result of the invokedynamic instruction is assigned to a
