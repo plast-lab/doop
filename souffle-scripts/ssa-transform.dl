@@ -1,12 +1,13 @@
 #define ANDROID
 
-#import "../souffle-logic/facts/import-facts.dl"
-#import "../souffle-logic/facts/import-entities.dl"
 #import "../souffle-logic/facts/flow-sensitive-schema.dl"
 #import "../souffle-logic/facts/flow-insensitive-schema.dl"
+#import "../souffle-logic/facts/import-facts.dl"
+#import "../souffle-logic/facts/import-entities.dl"
 #import "../souffle-logic/addons/cfg-analysis/declarations.dl"
 #import "../souffle-logic/addons/cfg-analysis/analysis.dl"
-#import "type-hierarchy-script.dl"
+#import "../souffle-logic/basic/type-hierarchy.dl"
+#import "../souffle-logic/basic/method-lookup.dl"
 
 // If instr is an assignment found at instruction i in method meth
 // then create a new assignment fact with same RHS and LHS v_i,
@@ -1139,11 +1140,11 @@ LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
 
 // Logic for exceptions
 LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
-    RewriteThrow(?stmt, ?var, _).
+    RewriteThrow(?stmt, _, ?var, _).
 
 UpperBoundTypeForConstraint(?var, "java.lang.Throwable", ?stmt) :-
-    RewriteThrow(?stmt, ?var, _).
+    RewriteThrow(?stmt, _, ?var, _).
 
 UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
-    RewriteThrow(?stmt, ?var, ?method),
+    RewriteThrow(?stmt, _, ?var, ?method),
     Method_DeclaresException(?type, ?method).
