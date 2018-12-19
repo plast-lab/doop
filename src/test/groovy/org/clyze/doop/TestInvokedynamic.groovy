@@ -37,7 +37,7 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		analysisName << TEST_ANALYSES
 	}
 
-	@spock.lang.Ignore
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 104 (method references)"(String analysisName) {
 		when:
