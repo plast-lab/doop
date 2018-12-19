@@ -25,7 +25,7 @@ ModeledFunction("<numpy.random.normal>", "normal", "<numpy.random>").
 FormalParam( 0, "loc", "<numpy.random.normal>", "<numpy.random.normal>/mockParam1").
 FormalParam( 1, "scale", "<numpy.random.normal>", "<numpy.random.normal>/mockParam2").
 FormalParam( 2, "size", "<numpy.random.normal>", "<numpy.random.normal>/mockParam3").
-FormalParam_DefaultValFrom("<numpy.random.normal>", "size", "<numpy>/noneDefVar").
+FormalParam_DefaultValForName("<numpy.random.normal>", "size", "<numpy>/noneDefVar").
 
 ModeledFunction("<numpy.random.randn>", "randn", "<numpy.random>").
 
@@ -33,7 +33,7 @@ ModeledFunction("<numpy.random.randint>", "randint", "<numpy.random>").
 FormalParam( 0, "low", "<numpy.random.randint>", "<numpy.random.randint>/mockParam1").
 FormalParam( 1, "high", "<numpy.random.randint>", "<numpy.random.randint>/mockParam2").
 FormalParam( 2, "size", "<numpy.random.randint>", "<numpy.random.randint>/mockParam3").
-FormalParam_DefaultValFrom("<numpy.random.randint>", "size", "<numpy>/noneDefVar").
+FormalParam_DefaultValForName("<numpy.random.randint>", "size", "<numpy>/noneDefVar").
 
 .decl NumpyArrayShapeListLength(?hctx:configuration.HContext, ?val:Value, ?size:number)
 .decl NumpyArrayShapeListContent(?hctx:configuration.HContext, ?val:Value, ?index:number, ?indexValue:Value)

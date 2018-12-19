@@ -45,4 +45,8 @@ public class JavaRepresentation {
     protected static String throwLocalId(String name) {
         return "throw " + name;
     }
+
+    public static String fieldId(String declClass, String type, String name) {
+        return "<" + declClass + ": " + type + " " + name + ">";
+    }
 }

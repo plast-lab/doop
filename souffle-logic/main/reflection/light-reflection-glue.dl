@@ -1,6 +1,6 @@
 // This file contains simple intraprocedural rules to handle
 // reflection patterns without Doop's full reflection support, only
-// using the "light-Class-forName" set of rules. The rules below do not
+// using the "light-Class" set of rules. The rules below do not
 // create reified objects (such as Constructor or Method) and should
 // only be used to expose code that is behind very simple reflective
 // access. Patterns supported (assuming c is a Class object):
@@ -102,6 +102,8 @@ java_lang_Class_getConstructor(?to, ?from) :-
 java_lang_reflect_Constructor_newInstance(?invocation, ?to, ?from) :-
   isMethod("<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
   MethodInvocation_Method(?invocation, "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
+  Instruction_Method(?invocation, ?method),
+  Reachable(?method),
   AssignReturnValue(?invocation, ?to), VirtualMethodInvocation_Base(?invocation, ?from).
 
 // Same as hard-coded string concatenation in rules.dl.

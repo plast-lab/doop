@@ -31,25 +31,25 @@ ReachableContext(?calleeCtx, ?bootMethod) :-
 #define MOCK_MT(retType, paramTypes) cat("mock method type ", cat(retType, paramTypes))
 
 MockValueConsMacro(MOCK_MH_LOOKUP, "java.lang.invoke.MethodHandles$Lookup"),
-VarPointsTo(?hctx, MOCK_MH_LOOKUP, ?ctx, ?caller),
+VarPointsTo(?immHctx, MOCK_MH_LOOKUP, ?calleeCtx, ?caller),
 MockValueConsMacro(?mockMethodType, "java.lang.invoke.MethodType"),
-VarPointsTo(?hctx, ?mockMethodType, ?ctx, ?invokedTypeParam) :-
-   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?bootMethod),
+VarPointsTo(?immHctx, ?mockMethodType, ?calleeCtx, ?invokedTypeParam) :-
+   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
    FormalParam(0, ?bootMethod, ?caller),
    FormalParam(2, ?bootMethod, ?invokedTypeParam),
    DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
    DynamicMethodInvocation_DynParamTypes(?invokedynamic, ?dynParamTypes),
    ?mockMethodType = MOCK_MT(?dynRetType, ?dynParamTypes),
-   isImmutableHContext(?hctx).
+   isImmutableHContext(?immHctx).
 
 // The second-arg rule should only be enabled when strings are not merged.
 #if defined(DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS) || defined(DISTINGUISH_ALL_STRING_CONSTANTS) || defined(NO_MERGES)
-VarPointsTo(?hctx, ?invokedName, ?ctx, ?invokedNameParam) :-
-   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?bootMethod),
+VarPointsTo(?immHctx, ?invokedName, ?calleeCtx, ?invokedNameParam) :-
+   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
    isStringConstant(?invokedName),
    FormalParam(1, ?bootMethod, ?invokedNameParam),
    DynamicMethodInvocation_DynName(?invokedynamic, ?invokedName),
-   isImmutableHContext(?hctx).
+   isImmutableHContext(?immHctx).
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS || DISTINGUISH_ALL_STRING_CONSTANTS || NO_MERGES
 
 // Helper method to compute the varargs accumulator formal of a method.
@@ -65,25 +65,25 @@ MethodVarArgs(?method, ?idx, ?formal, ?type) :-
 // Use a mock array to fix calls to a bootstrap method accepting varargs.
 #define MOCK_ARRAY(invokedynamic) cat("bootstrap varargs array for ", invokedynamic)
 
-ArrayIndexPointsTo(?hctx, ?val, ?hctx, ?mockArray),
+ArrayIndexPointsTo(?immHctx, ?val, ?immHctx, ?mockArray),
 MockValueConsMacro(?mockArray, ?varArgsType),
-VarPointsTo(?hctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
+VarPointsTo(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
    InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod),
    MethodVarArgs(?bootMethod, ?bootIdx, ?formalVarArgs, ?varArgsType),
    BootstrapParam(?idx, ?invokedynamic, ?actual),
    ?idx > ?bootIdx - 3,
    VarPointsTo(_, ?val, _, ?actual),
-   isImmutableHContext(?hctx),
+   isImmutableHContext(?immHctx),
    ?mockArray = MOCK_ARRAY(?invokedynamic).
 
 // Normal handling for the last three arguments of the bootstrap method, shifted.
-VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?ctx, ?bootMethod),
+VarPointsTo(?immHctx, ?val, ?calleeCtx, ?formal) :-
+   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
    !Method_Modifier("varargs", ?bootMethod),
    FormalParam(?idx + 3, ?bootMethod, ?formal),
    BootstrapParam(?idx, ?invokedynamic, ?actual),
    VarPointsTo(_, ?val, _, ?actual),
-   isImmutableHContext(?hctx).
+   isImmutableHContext(?immHctx).
 
 .type CallSite = mainAnalysis.Value
 .type LinkObject = mainAnalysis.Value
@@ -136,15 +136,26 @@ LinkObject_Method(?linkObject, ?method) :-
    MethodHandle_Method(?methodHandle, ?method).
 
 // Capture values of the enclosing environment.
-.decl CallSiteCaptured(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number, ?ctx:configuration.Context)
-CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx, ?ctx) :-
+.decl CallSiteCaptured(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number)
+CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx) :-
    InvokedynamicCallSite(?callsite, ?invokedynamic, _, ?K, _, _),
    ?K > 0,
    ActualParam(?idx, ?invokedynamic, ?actual),
-   VarPointsTo(_, ?val, ?ctx, ?actual).
+   VarPointsTo(_, ?val, _, ?actual).
 
 // After a method handle is resolved, invokedynamic calls it.
 .decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?linkObject:LinkObject)
+
+configuration.StaticContextRequest(?callerCtx, ?invokedynamic) :-
+   InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
+   LinkObject_Method(?linkObject, ?method),
+   Method_Modifier("static", ?method),
+   LinkObjectContexts(_, ?linkObject, ?callerCtx).
+InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?linkObject) :-
+   InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
+   LinkObject_Method(?linkObject, ?method),
+   configuration.StaticContextResponse(?callerCtx, ?invokedynamic, ?calleeCtx).
+
 InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?linkObject) :-
    InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
    LinkObject_Method(?linkObject, ?method),
@@ -273,35 +284,39 @@ BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
 BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
 
 // Helper relation: implementing method is an instance method.
-.decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?lambda:LinkObject)
-CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?ctx, ?lambda) :-
-   LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
+.decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?calleeCtx:configuration.Context, ?lambda:LinkObject)
+CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda) :-
+   LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
    !Method_Modifier("static", ?implMethod),
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
    ThisVar(?implMethod, ?this),
-   Var_Type(?this, ?thisType),
-   isImmutableHContext(?hctx).
+   Var_Type(?this, ?thisType).
+
+// Helper relation: a lambda call site that uses an instance method.
+.decl LambdaCallSiteWithInstanceMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:LinkObject, ?implMethod:Method)
+LambdaCallSiteWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod) :-
+   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, ?implMethod, _),
+   !Method_Modifier("static", ?implMethod).
 
 // Helper relation: instance methods may implicitly consume one of the
 // K or N arguments for the receiver (shifting them by 1), while
 // static methods take all K arguments before N ones.
 .decl Params_ReceiverShiftRight(?lambda:LinkObject, ?implMethod:Method, ?shiftK:number, ?shiftN:number)
-
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
-   LambdaCallGraphEdge(_, _, _, ?implMethod, ?lambda),
+   LambdaCallSite(_, _, ?lambda, _, _, ?implMethod, _),
    Method_Modifier("static", ?implMethod).
 // No bootstrap arguments = an actual argument will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
-   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, _, ?lambda),
+   LambdaCallSiteWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod),
    DynamicMethodInvocation_DynArity(?invokedynamic, 0).
 // First bootstrap argument exists, will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
-   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, _, ?lambda),
-   CallSiteCaptured(_, ?invokedynamic, _, 0, _).
+   LambdaCallSiteWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod),
+   CallSiteCaptured(_, ?invokedynamic, _, 0).
 
 // Pass invocation arguments to the implementing method.
-VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+   LambdaCallGraphEdge(_, ?i, ?calleeCtx, ?implMethod, ?lambda),
    Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
    LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _),
    ActualParam(?idx, ?i, ?actual),
@@ -315,11 +330,11 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    isImmutableHContext(?hctx).
 
 // Pass captured arguments to the implementing method.
-VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
-   LambdaCallGraphEdge(_, _, ?ctx, ?implMethod, ?lambda),
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+   LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
    Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, _),
    LambdaCallSite(_, ?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
-   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx, ?ctx),
+   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx),
    ?idx + ?shiftK <= ?K,
    FormalParam(?idx - ?shiftK, ?implMethod, ?formal),
    Value_Type(?val, ?valType),
@@ -328,20 +343,21 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
    isImmutableHContext(?hctx).
 
 // Special handling for captured "this" parameters.
-VarPointsTo(?hctx, ?thisValue, ?ctx, ?this) :-
+VarPointsTo(?hctx, ?thisValue, ?calleeCtx, ?this) :-
    Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0),
-   CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?hctx, ?ctx, ?lambda),
-   CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0, _),
+   CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda),
+   CallSiteCaptured(_, ?invokedynamic, ?thisValue, 0),
    Value_Type(?thisValue, ?thisValueType),
-   basic.SubtypeOf(?thisValueType, ?thisType).
+   basic.SubtypeOf(?thisValueType, ?thisType),
+   isImmutableHContext(?hctx).
 
 // Special handling for "this" parameters to method references that do
 // not capture a receiver.
-VarPointsTo(?hctx, ?argValue, ?ctx, ?this) :-
-   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, ?lambda),
+VarPointsTo(?hctx, ?argValue, ?calleeCtx, ?this) :-
+   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda),
    Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1),
    ActualParam(0, ?i, ?actual),
-   VarPointsTo(?hctx, ?argValue, ?ctx, ?actual),
+   VarPointsTo(?hctx, ?argValue, ?callerCtx, ?actual),
    Value_Type(?argValue, ?argType),
    ThisVar(?implMethod, ?this),
    Var_Type(?this, ?thisType),
@@ -351,9 +367,9 @@ VarPointsTo(?hctx, ?argValue, ?ctx, ?this) :-
 // these values do not come from a 'new' instruction in the code but
 // are created here as mock values, one per type/invocation.
 MockValueConsMacro(?mockObj, ?type),
-VarPointsTo(?hctx, ?mockObj, ?ctx, ?var),
-VarPointsTo(?hctx, ?mockObj, ?ctx, ?thisVar) :-
-   LambdaCallGraphEdge(_, ?i, ?ctx, ?implMethod, _),
+VarPointsTo(?hctx, ?mockObj, ?callerCtx, ?var),
+VarPointsTo(?hctx, ?mockObj, ?calleeCtx, ?thisVar) :-
+   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, _),
    Method_SimpleName(?implMethod, "<init>"),
    Method_DeclaringType(?implMethod, ?type),
    AssignReturnValue(?i, ?var),

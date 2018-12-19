@@ -11,14 +11,18 @@ import static org.clyze.doop.TestUtils.*
  * references).
  */
 class TestInvokedynamic extends ServerAnalysisTests {
+    final static String[] TEST_ANALYSES = [ "context-insensitive", "1-object-sensitive+heap" ]
+
 	// @spock.lang.Ignore
 	@Unroll
-	def "Server analysis test 107 (lambdas)"() {
+	def "Server analysis test 107 (lambdas)"(String analysisName) {
 		when:
-		analyzeTest("107-lambdas", ["--platform", "java_8", "--Xserver-logic",
-									"--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-									"--thorough-fact-gen", "--sanity",
-									"--generate-jimple"])
+		analyzeTest("107-lambdas",
+					["--platform", "java_8", "--Xserver-logic",
+					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+					 "--thorough-fact-gen", "--sanity",
+					 "--generate-jimple"],
+				   analysisName)
 
 		then:
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/intWriter#_13', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::apply/0::: java.util.function.Function::: (Mock)::: link object of type java.util.function.Function')
@@ -28,16 +32,21 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		invoValue(analysis, '<A: java.lang.Integer lambda$new$0(java.lang.Integer,java.lang.Integer,java.lang.Integer)>/java.lang.Integer.compareTo/1', '<java.lang.Integer: int compareTo(java.lang.Integer)>')
 		methodIsReachable(analysis, '<java.lang.invoke.InnerClassLambdaMetafactory: java.lang.invoke.CallSite buildCallSite()>')
 		noSanityErrors(analysis)
+
+		where:
+		analysisName << TEST_ANALYSES
 	}
 
-	// @spock.lang.Ignore
+	@spock.lang.Ignore
 	@Unroll
-	def "Server analysis test 104 (method references)"() {
+	def "Server analysis test 104 (method references)"(String analysisName) {
 		when:
-		analyzeTest("104-method-references", ["--platform", "java_8",
-											  "--thorough-fact-gen", "--sanity",
-											  "--generate-jimple",
-											  "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
+		analyzeTest("104-method-references",
+					["--platform", "java_8",
+					 "--thorough-fact-gen", "--sanity",
+					 "--generate-jimple",
+					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"],
+				   analysisName)
 
 		then:
 		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/c1#_15', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::accept/0::: java.util.function.Consumer::: (Mock)::: link object of type java.util.function.Consumer')
@@ -63,6 +72,9 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		// Test constructor reference (HashSet::new).
 		varPointsTo(analysis, '<MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/$r0', 'mock java.util.HashSet constructed by constructor reference at <MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/java.util.function.Supplier.get/0')
 		noSanityErrors(analysis)
+
+		where:
+		analysisName << TEST_ANALYSES
 	}
 
 	// @spock.lang.Ignore
@@ -81,5 +93,32 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		varPointsTo(analysis, '<Main: void test2()>/methV_mh#_39', '<direct method handle for <A: void methV()>>')
 		varPointsTo(analysis, '<Main: void test3()>/methI_mh#_49', '<direct method handle for <A: void methI(java.lang.Integer)>>')
 		varPointsTo(analysis, '<Main: void test4()>/methDD_mh#_58', '<direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test ForEach"(String analysisName) {
+		when:
+		analyzeTest("invokedynamic-ForEach", ["--platform", "java_8"], analysisName)
+
+		then:
+		methodIsReachable(analysis, '<example_foreach.ForEach: void printTheList()>')
+
+		where:
+		analysisName << TEST_ANALYSES
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test FutureExample"(String analysisName) {
+		when:
+		analyzeTest("invokedynamic-FutureExample", ["--platform", "java_8" ], analysisName)
+
+		then:
+		varPointsTo(analysis, '<java.util.concurrent.FutureTask: void run()>/l1#_261', '<example_foreach.FutureExample: void useFuture()>/invokedynamic_metafactory::call/0::: java.util.concurrent.Callable::: (Mock)::: link object of type java.util.concurrent.Callable')
+		methodIsReachable(analysis, '<example_foreach.FutureExample: java.lang.Integer doComputation()>')
+
+		where:
+		analysisName << TEST_ANALYSES
 	}
 }

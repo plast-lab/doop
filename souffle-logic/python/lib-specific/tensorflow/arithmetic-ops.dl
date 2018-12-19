@@ -33,8 +33,8 @@ BroadcastingFunctionInfo("<tensorflow.equal>", "equal").
 
 
 TfBroadcastingOpResultShapeListLength(?ctx, ?insn, ?broadcastingOp, ?len1),
-TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
-TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op2", ?tensor2Hctx, ?tensor2),
+TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
+TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op2", ?tensor2Hctx, ?tensor2),
 TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset):-
   BroadcastingFunctionInfo(?toFunction, ?funName),
   ResolvedActualParamValue(?ctx, ?insn, ?toFunction, "x", ?tensor1Hctx, ?tensor1),
@@ -46,8 +46,8 @@ TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset):-
   ?broadcastingOp = TwoInValTensorValMacro(?funName, ?insn, ?tensor1, ?tensor2).
 
 TfBroadcastingOpResultShapeListLength(?ctx, ?insn, ?broadcastingOp, ?len2),
-TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op1", ?tensor2Hctx, ?tensor2),
-TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op2", ?tensor1Hctx, ?tensor1),
+TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op1", ?tensor2Hctx, ?tensor2),
+TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op2", ?tensor1Hctx, ?tensor1),
 TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset):-
   BroadcastingFunctionInfo(?toFunction, ?funName),
   ResolvedActualParamValue(?ctx, ?insn, ?toFunction, "x", ?tensor1Hctx, ?tensor1),
@@ -60,8 +60,8 @@ TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset):-
 
 
 TfBroadcastingOpResultShapeListLength(?ctx, ?insn, ?broadcastingOp, ?len1),
-TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
-TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op2", ?tensor2Hctx, ?tensor2),
+TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
+TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op2", ?tensor2Hctx, ?tensor2),
 TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset):-
   isAssignBinop_Insn(?insn),
   AssignOper_From(?insn, 1, ?from1),
@@ -77,8 +77,8 @@ TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset):-
   ?broadcastingOp = TwoInValTensorValMacro(?op, ?insn, ?tensor1, ?tensor2).
 
 TfBroadcastingOpResultShapeListLength(?ctx, ?insn, ?broadcastingOp, ?len2),
-TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op1", ?tensor2Hctx, ?tensor2),
-TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op2", ?tensor1Hctx, ?tensor1),
+TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op1", ?tensor2Hctx, ?tensor2),
+TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op2", ?tensor1Hctx, ?tensor1),
 TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset):-
   isAssignBinop_Insn(?insn),
   AssignOper_From(?insn, 1, ?from1),
@@ -96,14 +96,14 @@ TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset):-
 TfBroadcastingOpResultShapeListContent(?ctx, ?insn, ?broadcastingOp, ?index, ?indexVal):-
   TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset),
   ?index < ?offset,
-  TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
+  TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
   TensorLikeObjectShapeListContent(?tensor1Hctx, ?tensor1, ?index, ?indexVal).
 
 TfBroadcastingOpResultShapeListContent(?ctx, ?insn, ?broadcastingOp, ?index, ?indexVal):-
   TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset),
   ?index >= ?offset,
-  TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
-  TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op2", ?tensor2Hctx, ?tensor2),
+  TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
+  TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op2", ?tensor2Hctx, ?tensor2),
   TensorLikeObjectShapeListContent(?tensor1Hctx, ?tensor1, ?index, ?indexVal),
   TensorLikeObjectShapeListContent(?tensor2Hctx, ?tensor2, ?index - ?offset, ?indexVal).
 
@@ -111,8 +111,8 @@ TfBroadcastingOpBroadcastWarning(?ctx, ?insn, ?broadcastingOp),
 TfBroadcastingOpResultShapeListContent(?ctx, ?insn, ?broadcastingOp, ?index, ?indexVal):-
   TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset),
   ?index >= ?offset,
-  TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
-  TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op2", ?tensor2Hctx, ?tensor2),
+  TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
+  TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op2", ?tensor2Hctx, ?tensor2),
   TensorLikeObjectShapeListContent(?tensor1Hctx, ?tensor1, ?index, ?indexVal1),
   TensorLikeObjectShapeListContent(?tensor2Hctx, ?tensor2, ?index - ?offset, ?indexVal2),
   ?indexVal1 != ?indexVal2,
@@ -122,11 +122,18 @@ TfBroadcastingOpResultShapeListContent(?ctx, ?insn, ?broadcastingOp, ?index, ?in
   (?indexVal2 = "<num-constant(int):1>", ?indexVal = ?indexVal1)
   ).
 
+TensorOperationError(?ctx, ?insn, ?broadcastingOp, "shapes of operands cannot be broadcast."):-
+  TfBroadcastingOpCannotBroadcast(?ctx, ?insn, ?broadcastingOp).
+
+TensorOperationWarning(?ctx, ?insn, ?broadcastingOp, "broadcast warning, check output shape."):-
+  TfBroadcastingOpBroadcastWarning(?ctx, ?insn, ?broadcastingOp).
+
+
 TfBroadcastingOpCannotBroadcast(?ctx, ?insn, ?broadcastingOp):-
   TfBroadcastingOp(?ctx, ?insn, ?broadcastingOp, ?offset),
   ?index >= ?offset,
-  TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
-  TensorOperation_NameToVal(?ctx, ?insn, ?broadcastingOp, "op2", ?tensor2Hctx, ?tensor2),
+  TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op1", ?tensor1Hctx, ?tensor1),
+  TensorOperation_NameToVal(?ctx, ?broadcastingOp, "op2", ?tensor2Hctx, ?tensor2),
   TensorLikeObjectShapeListContent(?tensor1Hctx, ?tensor1, ?index, ?indexVal1),
   TensorLikeObjectShapeListContent(?tensor2Hctx, ?tensor2, ?index - ?offset, ?indexVal2),
   ?indexVal1 != ?indexVal2,
@@ -190,8 +197,8 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
 .decl TfMatMulOpAllDimsUpToXHaveRes(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?matMulOp:Value, ?index:number)
 .output TfMatMulOpAllDimsUpToXHaveRes
 
-TensorOperation_NameToVal(?ctx, ?insn, ?matMulOp, "a", ?tensor1Hctx, ?tensor1),
-TensorOperation_NameToVal(?ctx, ?insn, ?matMulOp, "b", ?tensor2Hctx, ?tensor2),
+TensorOperation_NameToVal(?ctx, ?matMulOp, "a", ?tensor1Hctx, ?tensor1),
+TensorOperation_NameToVal(?ctx, ?matMulOp, "b", ?tensor2Hctx, ?tensor2),
 TfMatMulOpFull(?ctx, ?insn, ?matMulOp, ?tensor1Hctx, ?tensor1, ?tensor2Hctx, ?tensor2),
 TfMatMulOp(?ctx, ?insn, ?matMulOp):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.matmul>"),
@@ -222,6 +229,12 @@ TfMatMulOpRowsNColsCompatible(?ctx, ?insn, ?matMulOp):-
   TfMatMulOpFull(?ctx, ?insn, ?matMulOp, ?tensor1Hctx, ?tensor1, ?tensor2Hctx, ?tensor2),
   TensorLikeObjectShapeListContent(?tensor1Hctx, ?tensor1, ?len - 1, ?indexVal),
   TensorLikeObjectShapeListContent(?tensor2Hctx, ?tensor2, ?len - 2, ?indexVal).
+
+TensorOperationError(?ctx, ?insn, ?matMulOp, "matmul argument tensors have different ranks."):-
+  TfMatMulOpDifferentNumOfDims(?ctx, ?insn, ?matMulOp).
+
+TensorOperationError(?ctx, ?insn, ?matMulOp, "tensors cannot be multiplied(dimensions do not match)."):-
+  TfMatMulOpIncompatible(?ctx, ?insn, ?matMulOp).
 
 TfMatMulOpIncompatible(?ctx, ?insn, ?matMulOp):-
   TfMatMulOpInTensorsSameNumOfDim(?ctx, ?insn, ?matMulOp, ?len),

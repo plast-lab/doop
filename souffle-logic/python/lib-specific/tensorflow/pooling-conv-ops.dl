@@ -111,72 +111,72 @@ ConvOrPoolOperation_ValidDimension(?ctx, ?insn, ?newVal, ?dim):-
 
 ConvOrPoolOperation_ChannelsLast(?ctx, ?insn, ?newVal):-
   LayersLibOperation(?ctx, ?insn, ?newVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", _, "<string constant:channels_last>").
+  TensorOperation_NameToVal(?ctx, ?newVal, "data_format", _, "<string constant:channels_last>").
 
 ConvOrPoolOperation_ChannelsFirst(?ctx, ?insn, ?newVal):-
   LayersLibOperation(?ctx, ?insn, ?newVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", _, "<string constant:channels_first>").
+  TensorOperation_NameToVal(?ctx, ?newVal, "data_format", _, "<string constant:channels_first>").
 
 ConvOrPoolOperation_ChannelsLast(?ctx, ?insn, ?newVal):-
   NNLibOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, 1),
   (
-    TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", _, "<string constant:NWC>");
-    TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", _, "<None>")
+    TensorOperation_NameToVal(?ctx, ?newVal, "data_format", _, "<string constant:NWC>");
+    TensorOperation_NameToVal(?ctx, ?newVal, "data_format", _, "<None>")
   ).
 
 ConvOrPoolOperation_ChannelsLast(?ctx, ?insn, ?newVal):-
   NNLibOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, 2),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", _, "<string constant:NHWC>").
+  TensorOperation_NameToVal(?ctx, ?newVal, "data_format", _, "<string constant:NHWC>").
 
 ConvOrPoolOperation_ChannelsLast(?ctx, ?insn, ?newVal):-
   NNLibOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, 3),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", _, "<string constant:NDHWC>").
+  TensorOperation_NameToVal(?ctx, ?newVal, "data_format", _, "<string constant:NDHWC>").
 
 ConvOrPoolOperation_ChannelsFirst(?ctx, ?insn, ?newVal):-
   NNLibOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, 1),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", _, "<string constant:NCW>").
+  TensorOperation_NameToVal(?ctx, ?newVal, "data_format", _, "<string constant:NCW>").
 
 ConvOrPoolOperation_ChannelsFirst(?ctx, ?insn, ?newVal):-
   NNLibOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, 2),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", _, "<string constant:NCHW>").
+  TensorOperation_NameToVal(?ctx, ?newVal, "data_format", _, "<string constant:NCHW>").
 
 ConvOrPoolOperation_ChannelsFirst(?ctx, ?insn, ?newVal):-
   NNLibOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, 3),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", _, "<string constant:NCDHW>").
+  TensorOperation_NameToVal(?ctx, ?newVal, "data_format", _, "<string constant:NCDHW>").
 
 ConvOrPoolOperation_PaddingSame(?ctx, ?insn, ?newVal):-
   LayersLibOperation(?ctx, ?insn, ?newVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "padding", _, "<string constant:same>").
+  TensorOperation_NameToVal(?ctx, ?newVal, "padding", _, "<string constant:same>").
 
 ConvOrPoolOperation_PaddingValid(?ctx, ?insn, ?newVal):-
   LayersLibOperation(?ctx, ?insn, ?newVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "padding", _, "<string constant:valid>").
+  TensorOperation_NameToVal(?ctx, ?newVal, "padding", _, "<string constant:valid>").
 
 ConvOrPoolOperation_PaddingSame(?ctx, ?insn, ?newVal):-
   NNLibOperation(?ctx, ?insn, ?newVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "padding", _, "<string constant:SAME>").
+  TensorOperation_NameToVal(?ctx, ?newVal, "padding", _, "<string constant:SAME>").
 
 ConvOrPoolOperation_PaddingValid(?ctx, ?insn, ?newVal):-
   NNLibOperation(?ctx, ?insn, ?newVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "padding", _, "<string constant:VALID>").
+  TensorOperation_NameToVal(?ctx, ?newVal, "padding", _, "<string constant:VALID>").
 
 
 ConvOrPoolOperation_StridesForDim(?ctx, ?insn, ?newVal, ?dim, ?strideValForDim):-
   LayersLibOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_ValidDimension(?ctx, ?insn, ?newVal, ?dim),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
   ListOfIntConstsAtIndexPointsTo(?stridesHctx, ?stridesArgVal, ?dim - 1, ?strideValForDim).
 
 ConvOrPoolOperation_StridesForDim(?ctx, ?insn, ?newVal, ?dim, ?stridesArgVal):-
   LayersLibOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_ValidDimension(?ctx, ?insn, ?newVal, ?dim),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "strides", _, ?stridesArgVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "strides", _, ?stridesArgVal),
   isIntConstantValue(?stridesArgVal).
 
 ConvOrPoolOperation_StridesForDim(?ctx, ?insn, ?newVal, ?dim, ?strideValForDim):-
@@ -184,7 +184,7 @@ ConvOrPoolOperation_StridesForDim(?ctx, ?insn, ?newVal, ?dim, ?strideValForDim):
   ConvOrPoolOperation_ValidDimension(?ctx, ?insn, ?newVal, ?dim),
   ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, ?nDims),
   ?nDims != 1,
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
   ListOfIntConstsAtIndexPointsTo(?stridesHctx, ?stridesArgVal, ?dim, ?strideValForDim).
 
 ConvOrPoolOperation_StridesForDim(?ctx, ?insn, ?newVal, ?dim, ?stridesArgVal):-
@@ -192,24 +192,24 @@ ConvOrPoolOperation_StridesForDim(?ctx, ?insn, ?newVal, ?dim, ?stridesArgVal):-
   ConvOrPoolOperation_ValidDimension(?ctx, ?insn, ?newVal, ?dim),
   ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, ?nDims),
   ?nDims = 1,
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "strides", _, ?stridesArgVal).
+  TensorOperation_NameToVal(?ctx, ?newVal, "strides", _, ?stridesArgVal).
 
 ConvOrPoolOperation_KernelSizeForDim(?ctx, ?insn, ?newVal, ?dim, ?kernelSizeValForDim):-
   LayersLibOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_ValidDimension(?ctx, ?insn, ?newVal, ?dim),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "kernel_size", ?kernelSizeHctx, ?kernelSizeArgVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "kernel_size", ?kernelSizeHctx, ?kernelSizeArgVal),
   ListOfIntConstsAtIndexPointsTo(?kernelSizeHctx, ?kernelSizeArgVal, ?dim - 1, ?kernelSizeValForDim).
 
 ConvOrPoolOperation_KernelSizeForDim(?ctx, ?insn, ?newVal, ?dim, ?kernelSizeArgVal):-
   LayersLibOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_ValidDimension(?ctx, ?insn, ?newVal, ?dim),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "kernel_size", _, ?kernelSizeArgVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "kernel_size", _, ?kernelSizeArgVal),
   isIntConstantValue(?kernelSizeArgVal).
 
 
 ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, ?tensorValForDimNum, ?kernelSizeValForDimNum, ?strideValForDimNum):-
   ConvOrPoolOperation_DimPosInTensor(?ctx, ?insn, ?newVal, ?dim, ?dimPosInTensor),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
   TensorShape(?inputsHctx, ?inputsTensorVal, ?shapeListHctx, ?shapeList),
   TensorShapeListContent(?shapeListHctx, ?shapeList, ?dimPosInTensor, ?tensorValForDim),
   ConvOrPoolOperation_KernelSizeForDim(?ctx, ?insn, ?newVal, ?dim, ?kernelSizeValForDim),
@@ -229,7 +229,7 @@ ConvOrPoolOperation_DimPosInTensor(?ctx, ?insn, ?newVal, ?dim, ?dim + 1):-
 
 ConvOrPoolOperation_ChannelsPosInTensor(?ctx, ?insn, ?newVal, ?len - 1):-
   ConvOrPoolOperation_ChannelsLast(?ctx, ?insn, ?newVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
   TensorShape(?inputsHctx, ?inputsTensorVal, ?inShapeListHctx, ?inpShapeList),
   TensorShapeListLength(?inShapeListHctx, ?inpShapeList, ?len).
 
@@ -257,7 +257,7 @@ ConvOrPoolOperation_AllDimsCanBeComputed(?ctx, ?insn, ?newVal):-
 TensorShapeListLength(?outShapeListHctx, ?outShapeList, ?size):-
   ConvOrPoolOperation(?ctx, ?insn, ?newVal),
   TensorOpOutputShape(?ctx, ?insn, ?newVal, ?outShapeListHctx, ?outShapeList),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
   TensorShape(?inputsHctx, ?inputsTensorVal, ?inShapeListHctx, ?inpShapeList),
   TensorShapeListLength(?inShapeListHctx, ?inpShapeList, ?size).
 
@@ -270,7 +270,7 @@ TensorShapeListContent(?outShapeListHctx, ?outShapeList, ?dimPosInTensor, ?dimVa
 TensorShapeListContent(?outShapeListHctx, ?outShapeList, 0, ?batchValue):-
   ConvOrPoolOperation(?ctx, ?insn, ?newVal),
   TensorOpOutputShape(?ctx, ?insn, ?newVal, ?outShapeListHctx, ?outShapeList),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
   TensorShape(?inputsHctx, ?inputsTensorVal, ?inShapeListHctx, ?inpShapeList),
   TensorShapeListContent(?inShapeListHctx, ?inpShapeList, 0, ?batchValue).
 
@@ -287,13 +287,13 @@ TensorShapeListContent(?outShapeListHctx, ?outShapeList, ?channelsPosInTensor, ?
 
 
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?newVal, "inputs"),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "filters", ?filtersHctx, ?filtersArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "kernel_size", ?kernelSizeHctx, ?kernelSizeArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "dilation_rate", ?dilationRateHctx, ?dilationRateArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "filters", ?filtersHctx, ?filtersArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "kernel_size", ?kernelSizeHctx, ?kernelSizeArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "dilation_rate", ?dilationRateHctx, ?dilationRateArgVal),
 ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, ?nDims),
 LayersLibOperation(?ctx, ?insn, ?newVal),
 ConvOperation(?ctx, ?insn, ?newVal):-
@@ -311,11 +311,11 @@ ConvOperation(?ctx, ?insn, ?newVal):-
 
 //NN CONV OPERATION FOR 2d and 3d (they use different names)
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?newVal, "inputs"),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "filter", ?filtersHctx, ?filterArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "filter", ?filtersHctx, ?filterArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
 ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, ?nDims),
 NNLibOperation(?ctx, ?insn, ?newVal),
 ConvOperation(?ctx, ?insn, ?newVal):-
@@ -332,11 +332,11 @@ ConvOperation(?ctx, ?insn, ?newVal):-
 
 //Pass the parameters that are
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?newVal, "inputs"),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "filter", ?filtersHctx, ?filterArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "filter", ?filtersHctx, ?filterArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
 ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, ?nDims),
 NNLibOperation(?ctx, ?insn, ?newVal),
 ConvOperation(?ctx, ?insn, ?newVal):-
@@ -356,7 +356,7 @@ ConvOrPoolOperation_KernelSizeForDim(?ctx, ?insn, ?newVal, ?dim, ?kernelSizeValF
   NNLibOperation(?ctx, ?insn, ?newVal),
   ConvOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_ValidDimension(?ctx, ?insn, ?newVal, ?dim),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "filter", ?filterHctx, ?filterArgVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "filter", ?filterHctx, ?filterArgVal),
   TensorShape(?filterHctx, ?filterArgVal, ?shapeListHctx, ?shapeList),
   TensorShapeListContent(?shapeListHctx,?shapeList, ?dim - 1, ?kernelSizeValForDim).
 
@@ -364,20 +364,20 @@ ConvOperation_DillationRateForDim(?ctx, ?insn, ?newVal, ?dim, ?dillationRateValF
   LayersLibOperation(?ctx, ?insn, ?newVal),
   ConvOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_ValidDimension(?ctx, ?insn, ?newVal, ?dim),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "dilation_rate", ?dilationRateHctx, ?dilationRateArgVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "dilation_rate", ?dilationRateHctx, ?dilationRateArgVal),
   ListOfIntConstsAtIndexPointsTo(?dilationRateHctx, ?dilationRateArgVal, ?dim - 1, ?dillationRateValForDim).
 
 ConvOperation_DillationRateForDim(?ctx, ?insn, ?newVal, ?dim, ?dilationRateArgVal):-
   LayersLibOperation(?ctx, ?insn, ?newVal),
   ConvOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_ValidDimension(?ctx, ?insn, ?newVal, ?dim),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "dilation_rate", _, ?dilationRateArgVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "dilation_rate", _, ?dilationRateArgVal),
   isIntConstantValue(?dilationRateArgVal).
 
 ConvOrPoolOperation_NumOfOutputChannels(?ctx, ?insn, ?newVal, ?outputChannelsNumValue):-
   ConvOperation(?ctx, ?insn, ?newVal),
   NNLibOperation(?ctx, ?insn, ?newVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "filter", ?filterHctx, ?filterArgVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "filter", ?filterHctx, ?filterArgVal),
   TensorShape(?filterHctx, ?filterArgVal, ?shapeListHctx, ?shapeList),
   TensorShapeListLength(?shapeListHctx, ?shapeList, ?size),
   TensorShapeListContent(?shapeListHctx, ?shapeList, ?size - 1, ?outputChannelsNumValue).
@@ -385,7 +385,7 @@ ConvOrPoolOperation_NumOfOutputChannels(?ctx, ?insn, ?newVal, ?outputChannelsNum
 ConvOrPoolOperation_NumOfOutputChannels(?ctx, ?insn, ?newVal, ?outputChannelsNumValue):-
   ConvOperation(?ctx, ?insn, ?newVal),
   LayersLibOperation(?ctx, ?insn, ?newVal),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "filters", _, ?outputChannelsNumValue).
+  TensorOperation_NameToVal(?ctx, ?newVal, "filters", _, ?outputChannelsNumValue).
 
 ConvOperation_DimResBeforeStrides(?ctx, ?insn, ?newVal, ?dim, ?tensorValForDimNum):-
   ConvOperation(?ctx, ?insn, ?newVal),
@@ -399,7 +399,7 @@ ConvOperation_DimResBeforeStrides(?ctx, ?insn, ?newVal, ?dim, ?resBeforeStrides)
   ?resBeforeStrides = ?tensorValForDimNum + 1 - ?kernelSizeValForDimNum.
 
 
-NewIntConstantValue(?dimRes, ?valNumStr),
+NonBinopNewIntConstantValue(?dimRes, ?valNumStr),
 ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ConvOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, _, _, ?strideValForDimNum),
@@ -408,7 +408,7 @@ ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ?valNumStr = to_string(?resBeforeStrides / ?strideValForDimNum),
   ?dimRes = cat("<num-constant(int):",cat(?valNumStr, ">")).
 
-NewIntConstantValue(?dimRes, ?valNumStr),
+NonBinopNewIntConstantValue(?dimRes, ?valNumStr),
 ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ConvOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, _, _, ?strideValForDimNum),
@@ -429,11 +429,11 @@ TensorOperationProducesOutput(?ctx, ?insn, ?newVal):-
 
 
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?newVal, "inputs"),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "kernel_size", ?kernelSizeHctx, ?kernelSizeArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "kernel_size", ?kernelSizeHctx, ?kernelSizeArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
 ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, ?nDims),
 LayersLibOperation(?ctx, ?insn, ?newVal),
 PoolOperation(?ctx, ?insn, ?newVal):-
@@ -448,11 +448,11 @@ PoolOperation(?ctx, ?insn, ?newVal):-
   ?newVal = FiveInValTensorValMacro(?funName, ?insn, ?inputsTensorArgVal, ?kernelSizeArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
 
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?newVal, "inputs"),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "ksize", ?filtersHctx, ?filterArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "ksize", ?filtersHctx, ?filterArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
 ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, ?nDims),
 NNLibOperation(?ctx, ?insn, ?newVal),
 PoolOperation(?ctx, ?insn, ?newVal):-
@@ -468,11 +468,11 @@ PoolOperation(?ctx, ?insn, ?newVal):-
   ?newVal = FiveInValTensorValMacro(?funName, ?insn, ?inputsTensorArgVal, ?filterArgVal, ?stridesArgVal, ?paddingArgVal, ?dataFormatArgVal).
 
 TensorOperation_GetDTypeFromName(?ctx, ?insn, ?newVal, "inputs"),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "ksize", ?filtersHctx, ?filterArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
-TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "inputs", ?inputsTensorHctx, ?inputsTensorArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "ksize", ?filtersHctx, ?filterArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "strides", ?stridesHctx, ?stridesArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "padding", ?paddingHctx, ?paddingArgVal),
+TensorOperation_NameToVal(?ctx, ?newVal, "data_format", ?dataFormatHctx, ?dataFormatArgVal),
 ConvOrPoolOperation_NumOfDims(?ctx, ?insn, ?newVal, ?nDims),
 NNLibOperation(?ctx, ?insn, ?newVal),
 PoolOperation(?ctx, ?insn, ?newVal):-
@@ -492,7 +492,7 @@ ConvOrPoolOperation_KernelSizeForDim(?ctx, ?insn, ?newVal, ?dim, ?kernelSizeValF
   NNLibOperation(?ctx, ?insn, ?newVal),
   PoolOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_ValidDimension(?ctx, ?insn, ?newVal, ?dim),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "ksize", ?ksizeHctx, ?ksizeList),
+  TensorOperation_NameToVal(?ctx, ?newVal, "ksize", ?ksizeHctx, ?ksizeList),
   ListOfIntConstsAtIndexPointsTo(?ksizeHctx, ?ksizeList, ?dim - 1, ?kernelSizeValForDim).
 
 
@@ -503,7 +503,7 @@ TensorOperationProducesOutput(?ctx, ?insn, ?newVal):-
 ConvOrPoolOperation_NumOfOutputChannels(?ctx, ?insn, ?newVal, ?outputChannelsNum):-
   PoolOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_ChannelsPosInTensor(?ctx, ?insn, ?newVal, ?channelsPosInTensor),
-  TensorOperation_NameToVal(?ctx, ?insn, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
+  TensorOperation_NameToVal(?ctx, ?newVal, "inputs", ?inputsHctx, ?inputsTensorVal),
   TensorShape(?inputsHctx, ?inputsTensorVal, ?inShapeListHctx, ?inpShapeList),
   TensorShapeListContent(?inShapeListHctx, ?inpShapeList, ?channelsPosInTensor, ?outputChannelsNum).
 
@@ -519,7 +519,7 @@ PoolOperation_DimResBeforeStrides(?ctx, ?insn, ?newVal, ?dim, ?resBeforeStrides)
   ?resBeforeStrides = ?tensorValForDimNum + 1 - ?kernelSizeValForDimNum.
 
 
-NewIntConstantValue(?dimRes, ?valNumStr),
+NonBinopNewIntConstantValue(?dimRes, ?valNumStr),
 ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   PoolOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, _, _, ?strideValForDimNum),
@@ -528,7 +528,7 @@ ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   ?valNumStr = to_string(?resBeforeStrides / ?strideValForDimNum),
   ?dimRes = cat("<num-constant(int):",cat(?valNumStr, ">")).
 
-NewIntConstantValue(?dimRes, ?valNumStr),
+NonBinopNewIntConstantValue(?dimRes, ?valNumStr),
 ConvOrPoolOperation_DimResult(?ctx, ?insn, ?newVal, ?dim, ?dimRes):-
   PoolOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, _, _, ?strideValForDimNum),

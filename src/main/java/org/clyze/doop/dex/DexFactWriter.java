@@ -39,7 +39,7 @@ class DexFactWriter extends JavaFactWriter {
 
         // Register all field/type/method references found, to find phantoms later.
         for (DexBackedFieldReference fieldRef : dex.getFields())
-            cha.registerReferencedField(new FieldInfo(fieldRef));
+            cha.registerReferencedField(new DexFieldInfo(fieldRef));
         for (DexBackedTypeReference typeRef : dex.getTypes())
             cha.registerReferencedType(TypeUtils.raiseTypeId(typeRef.getType()));
         for (DexBackedMethodReference methRef : dex.getMethods())
@@ -47,20 +47,6 @@ class DexFactWriter extends JavaFactWriter {
 
         if (dex.getMethodHandleCount() > 0)
             System.err.println("Warning: method handles are not yet supported.");
-    }
-
-    public void writePhantomTypes(Iterable<String> phantomTypes) {
-        for (String s : phantomTypes) {
-            System.out.println("Phantom type: " + s);
-            writePhantomType(s);
-        }
-    }
-
-    public void writePhantomMethods(Iterable<String> phantomMethods) {
-        for (String m : phantomMethods) {
-            System.out.println("Phantom method: " + m);
-            writePhantomMethod(m);
-        }
     }
 
 }

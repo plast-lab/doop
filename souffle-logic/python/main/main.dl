@@ -13,20 +13,14 @@
   #include "lists.dl"
   #include "dictionaries.dl"
   #include "const-int.dl"
-  #include "comprehension.dl"
-  #include "../lib-specific/modeled.dl"
-  #include "../lib-specific/default-python-lib.dl"
-  #include "../lib-specific/lib-macros.dl"
-  #include "../lib-specific/tensorflow/tensorflow.dl"
-  #include "../lib-specific/tensorflow/general-tensor-modeling.dl"
-  #include "../lib-specific/tensorflow/tensor-creation-ops.dl"
-  #include "../lib-specific/tensorflow/shape-mod-ops.dl"
-  #include "../lib-specific/tensorflow/arithmetic-ops.dl"
-  #include "../lib-specific/tensorflow/pooling-conv-ops.dl"
-  #include "../lib-specific/tensorflow/shape-pass-through-ops.dl"
-  #include "../lib-specific/tensorflow/keras.dl"
-  #include "../lib-specific/tensorflow/uncategorized-ops.dl"
-  #include "../lib-specific/numpy.dl"
+  #ifdef TENSOR_SHAPE_ANALYSIS
+    #include "comprehension.dl"
+    #include "../lib-specific/modeled.dl"
+    #include "../lib-specific/default-python-lib.dl"
+    #include "../lib-specific/lib-macros.dl"
+    #include "../lib-specific/tensorflow/tensorflow.dl"
+    #include "../lib-specific/numpy.dl"
+  #endif
 
   /**
    * Reachable
@@ -228,10 +222,8 @@
     isNormalHeap(?value),
     AssignInstruction_To(?insn, ?var),
     HeapAllocation_Type(?value, ?type),
-    ?type != "<list>",
-    ?type != "<tuple>",
-    ?type != "<object>",
-    ?type != "<dict>",
+    ?type != "<list>", ?type != "<tuple>",
+    ?type != "<object>", ?type != "<dict>",
     isClassType(?type),
     configuration.RecordContextResponse(?ctx, ?heap, ?var, ?hctx).
 
@@ -364,6 +356,12 @@
     VarPointsTo(?hctx, ?value, ?ctx, ?var),
     HeapAllocation_Type(?value, ?type),
     isFunction(?type).
+
+  VarPointsTo(?hctx, ?value, ?ctx, ?to):-
+    isAssignLocal_Insn(?insn),
+    AssignLocal_From(?insn, ?from),
+    AssignInstruction_To(?insn, ?to),
+    VarPointsTo(?hctx, ?value, ?ctx, ?from).
 
   .init configuration = Configuration
 }

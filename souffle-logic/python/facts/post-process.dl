@@ -20,10 +20,27 @@ isMethod(?function):-
     Instruction_Function(?insn, ?fun),
     Function_DeclaredInFile(?fun, ?scope).
 
-.output FormalParam_DefaultValFrom
-FormalParam_DefaultValFrom(?fun, ?formalName, ?fromVar):-
+.output FormalParam_DefaultValForName
+FormalParam_DefaultValForName(?fun, ?formalName, ?fromVar):-
   _FormalParam_DefaultValueVar(?fun, ?formalIndex, ?fromVar),
   FormalParam(?formalIndex, ?formalName, ?fun, _).
+
+//This is needed as I'm not only adding FormalParam_DefaultValForName preds about the modeled functions
+//just to make it harder to make mistakes
+.output FormalParam_DefaultValForIndex
+FormalParam_DefaultValForIndex(?fun, ?formalIndex, ?fromVar):-
+  FormalParam_DefaultValForName(?fun, ?formalName, ?fromVar),
+  FormalParam(?formalIndex, ?formalName, ?fun, _).
+
+.output Function_NumOfRequiredParams
+Function_NumOfRequiredParams(?fun, ?numOfParams):-
+  isFunction(?fun),
+  ?numOfParams = min ?formalIndex: {FormalParam_DefaultValForIndex(?fun, ?formalIndex, _)}.
+
+Function_NumOfRequiredParams(?fun, ?numOfParams):-
+  isFunction(?fun),
+  !FormalParam_DefaultValForIndex(?fun, _, _),
+  Function_Arity(?fun, ?numOfParams).
 
 .decl AssignBinOper_Info(?instr:Instruction, ?op:symbol, ?var1:Var, ?var2:Var)
 

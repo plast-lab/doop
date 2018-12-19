@@ -2,11 +2,13 @@ package org.clyze.doop.dex;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.clyze.doop.common.Database;
+import org.clyze.doop.common.FieldInfo;
+import org.clyze.doop.common.FieldOp;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.JavaRepresentation;
-import org.clyze.doop.common.SessionCounter;
-import org.clyze.doop.common.Database;
 import org.clyze.doop.common.PredicateFile;
+import org.clyze.doop.common.SessionCounter;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.Opcode;
 import org.jf.dexlib2.dexbacked.DexBackedExceptionHandler;
@@ -195,13 +197,12 @@ class DexMethodFactWriter extends JavaFactWriter {
      */
     private void processTryBlocks(Iterable<? extends DexBackedTryBlock> tryBlocks) {
         Collection<Handler> handlers = new LinkedList<>();
-        Map<Handler, Handler> previousHandlers = new HashMap<>();
 
         // Step 1: read all try blocks and record exception handler information.
         for (DexBackedTryBlock block : tryBlocks) {
             int startAddr = block.getStartCodeAddress();
             int endAddr = startAddr + block.getCodeUnitCount();
-            Handler previous = null;
+            String previous = null;
             List<? extends DexBackedExceptionHandler> exHandlers = block.getExceptionHandlers();
             // Sort by address, lowest-first, so that "previous" works.
             List<? extends DexBackedExceptionHandler> sortedHandlers = (exHandlers.size() < 2) ? exHandlers : exHandlers.stream().sorted(Comparator.comparingInt(ExceptionHandler::getHandlerCodeAddress)).collect(Collectors.toList());
@@ -215,15 +216,27 @@ class DexMethodFactWriter extends JavaFactWriter {
                         logger.debug("Warning: no exception type found for handler in " + methId + ", using " + excType);
                 } else
                     excType = raiseTypeId(t);
-                Handler current = new Handler(startAddr, endAddr, handlerAddr, excType);
-                handlers.add(current);
-                if (previous != null)
-                    previousHandlers.put(current, previous);
-                previous = current;
+                handlers.add(new Handler(startAddr, endAddr, handlerAddr, excType));
+
+                Integer handlerIndex = addressToIndex.get(handlerAddr);
+                Integer startIndex = addressToIndex.get(startAddr);
+                Integer endIndex = addressToIndex.get(endAddr);
+                if (handlerIndex == null || startIndex == null || endIndex == null) {
+                    System.err.println("Error: handler {" + handlerIndex + ", " + startIndex + ", " + endIndex + "}");
+                    previous = null;
+                } else {
+                    String insn = instructionId(handlerMid(excType), handlerIndex);
+                    writeExceptionHandler(insn, methId, handlerIndex, excType, startIndex, endIndex);
+                    if (previous != null)
+                        writeExceptionHandlerPrevious(insn, previous);
+                    previous = insn;
+                }
             }
         }
 
-        // Step 2: match every queued MOVE_EXCEPTION against its handler.
+        // Step 2: match every queued MOVE_EXCEPTION against its handler. This
+        // resolves the "formal" of exception handlers and is optional: some
+        // handlers may not have MOVE_EXCEPTION opcodes (but e.g., a GOTO).
         Map<Handler, String> handlerInsnId = new HashMap<>();
         for (MoveExceptionInfo mei : exceptionMoves) {
             List<Handler> containingHandlers = Handler.findHandlerStartingAt(handlers, mei.address);
@@ -242,22 +255,11 @@ class DexMethodFactWriter extends JavaFactWriter {
                         System.err.println("Warning: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
                     String insn = instructionId(handlerMid(hi.excType), handlerIndex);
                     handlerInsnId.put(hi, insn);
-                    writeExceptionHandler(insn, methId, handlerIndex, hi.excType, localA, startIndex, endIndex);
+                    writeExceptionHandlerFormal(insn, localA);
                 } catch (Handler.IndexException ex) {
                     System.err.println("Error: " + ex.getMessage());
                 }
             }
-        }
-
-        // Step 3: now that we have an index for every handler (from the
-        // previous loop), we can write previous-handler facts.
-        for (Map.Entry<Handler, Handler> entry : previousHandlers.entrySet()) {
-            String currInsn = handlerInsnId.get(entry.getKey());
-            String prevInsn = handlerInsnId.get(entry.getValue());
-            if ((currInsn != null) && (prevInsn != null))
-                _db.add(EXCEPT_HANDLER_PREV, currInsn, prevInsn);
-            else
-                System.err.println("Error: no index for previous-handler pair: " + entry);
         }
     }
 
@@ -937,7 +939,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                               Collection<FieldOp> fieldOps) {
         String insn = instructionId("assign", index);
         Reference fieldRef = ((ReferenceInstruction)instr).getReference();
-        FieldInfo fi = new FieldInfo((DexBackedFieldReference)fieldRef);
+        FieldInfo fi = new DexFieldInfo((DexBackedFieldReference)fieldRef);
         fieldOps.add(new FieldOp(target, insn, str(index), localA, localB, fi, methId));
     }
 

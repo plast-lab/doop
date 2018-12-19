@@ -56,14 +56,17 @@
 .decl isMethod(?m:Function)
 .decl isFunction(?m:Function)
 .decl isComprehensionFunction(?m:Function)
+.decl isModeledFunction(?m:Function)
 
 
 .decl Function_SimpleName(?function:Function, ?simpleName:symbol)
 .decl Function_Arity(?function:Function, ?arity:number)
+.decl Function_NumOfRequiredParams(?function:Function, ?numOfParams:number)
 .decl Function_DeclaredInFile(?function:Function, ?file:File)
 
 .decl FormalParam(?index:number, ?paramName:symbol, ?function:Function, ?var:Var)
-.decl FormalParam_DefaultValFrom(?function:Function,?paramName:symbol, ?from:Var)
+.decl FormalParam_DefaultValForName(?function:Function,?paramName:symbol, ?from:Var)
+.decl FormalParam_DefaultValForIndex(?function:Function,?paramIndex:number, ?from:Var)
 
 .decl ThisVar(?function:Function, ?var:Var)
 

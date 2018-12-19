@@ -1,12 +1,10 @@
 package org.clyze.doop.common;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Stream;
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**
@@ -17,7 +15,7 @@ public abstract class JavaFactWriter {
     protected static final String L_OP = "1";
     protected static final String R_OP = "2";
     protected final Database _db;
-    protected boolean _extractMoreStrings;
+    protected final boolean _extractMoreStrings;
 
     protected JavaFactWriter(Database db, boolean extractMoreStrings) {
         this._db = db;
@@ -52,14 +50,6 @@ public abstract class JavaFactWriter {
 
     private void writeClassArtifact(String artifact, String className, String subArtifact) {
         _db.add(CLASS_ARTIFACT, artifact, className, subArtifact);
-    }
-
-    private void writeAndroidKeepMethod(String methodSig) {
-        _db.add(ANDROID_KEEP_METHOD, "<" + methodSig + ">");
-    }
-
-    private void writeAndroidKeepClass(String className) {
-        _db.add(ANDROID_KEEP_CLASS, className);
     }
 
     private void writeProperty(String path, String key, String value) {
@@ -132,7 +122,7 @@ public abstract class JavaFactWriter {
         }
 
         try {
-            processSeeds(params._seed);
+            EntryPointsProcessor.processDb(_db, params._entryPoints);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -176,22 +166,6 @@ public abstract class JavaFactWriter {
                 System.err.println("Ignoring control: " + control);
             }
         }
-    }
-
-    private void processSeeds(String seed) throws IOException {
-        if (seed != null) {
-            System.out.println("Reading seeds from: " + seed);
-            try (Stream<String> stream = Files.lines(Paths.get(seed))) {
-                stream.forEach(this::processSeedFileLine);
-            }
-        }
-    }
-
-    private void processSeedFileLine(String line) {
-        if (line.contains("("))
-            writeAndroidKeepMethod(line);
-        else if (!line.contains(":"))
-            writeAndroidKeepClass(line);
     }
 
     protected void writeMethodDeclaresException(String methodId, String exceptionType) {
@@ -293,7 +267,33 @@ public abstract class JavaFactWriter {
     }
 
     protected void writeExceptionHandler(String insn, String method, int index,
-                                         String type, String var, int begin, int end) {
-        _db.add(EXCEPTION_HANDLER, insn, method, str(index), type, var, str(begin), str(end));
+                                         String type, int begin, int end) {
+        _db.add(EXCEPTION_HANDLER, insn, method, str(index), type, str(begin), str(end));
+    }
+
+    protected void writeExceptionHandlerFormal(String insn, String var) {
+        _db.add(EXCEPTION_HANDLER_FORMAL_PARAM, insn, var);
+    }
+
+    protected void writeExceptionHandlerPrevious(String currInsn, String prevInsn) {
+        _db.add(EXCEPT_HANDLER_PREV, currInsn, prevInsn);
+    }
+
+    public void writeAppPackage(String appPackage) {
+        _db.add(APP_PACKAGE, appPackage);
+    }
+
+    public void writePhantomTypes(Iterable<String> phantomTypes) {
+        for (String s : phantomTypes) {
+            System.out.println("Phantom type: " + s);
+            writePhantomType(s);
+        }
+    }
+
+    public void writePhantomMethods(Iterable<String> phantomMethods) {
+        for (String m : phantomMethods) {
+            System.out.println("Phantom method: " + m);
+            writePhantomMethod(m);
+        }
     }
 }

@@ -20,13 +20,15 @@ public class Parameters {
     private ClassFilter applicationClassFilter;
     public boolean _android = false;
     public Integer _cores = null;
-    public String _seed = null;
+    public String _entryPoints = null;
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
     public boolean _ignoreFactGenErrors = false;
     private boolean _decodeApk = false;
     public boolean _extractMoreStrings = false;
+    private boolean _reportPhantoms = true;
+    public boolean _dex = false;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
@@ -111,6 +113,10 @@ public class Parameters {
         return _decodeApk;
     }
 
+    public boolean getReportPhantoms() {
+        return _reportPhantoms;
+    }
+
     public static int shift(String[] args, int index) throws DoopErrorCodeException {
         if(args.length == index + 1) {
             System.err.println("error: option " + args[index] + " requires an argument");
@@ -180,9 +186,9 @@ public class Parameters {
             i = shift(args, i);
             _extraSensitiveControls = args[i];
             break;
-        case "--seed":
+        case "--entry-points":
             i = shift(args, i);
-            _seed = args[i];
+            _entryPoints = args[i];
             break;
         case "--no-facts":
             _noFacts = true;
@@ -198,6 +204,12 @@ public class Parameters {
             break;
         case "--extract-more-strings":
             _extractMoreStrings = true;
+            break;
+        case "--dont-report-phantoms":
+            this._reportPhantoms = false;
+            break;
+        case "--dex":
+            this._dex = true;
             break;
         default:
             return -1;

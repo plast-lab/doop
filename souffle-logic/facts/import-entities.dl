@@ -194,6 +194,12 @@ ApplicationClass(?type) :-
   _ApplicationClass(?type).
 
 
+// ApplicationPackage
+
+.decl _ApplicationPackage(?package:symbol)
+.input _ApplicationPackage(IO="file", filename="ApplicationPackage.facts", delimiter="\t")
+
+
 // ThisVar
 
 .decl _ThisVar(?method:symbol, ?var:symbol)

@@ -61,21 +61,25 @@ configurations.all {
     resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
 }
 
+compileGroovy {
+    groovyOptions.optimizationOptions.indy = true
+}
+
 dependencies {
 
     compile "org.clyze:clue-common:3.8.+",
             "org.clyze:deepdoop:0.9.+",
-            "org.codehaus.groovy:groovy-all:2.4.13",            // Groovy
+            "org.codehaus.groovy:groovy-all:2.4.13:indy",       // Groovy
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
             "commons-io:commons-io:2.4",                        // File Utils
-            "org.apache.ivy:ivy:2.3.0",                         // Apache Ivy (for downloading jars from maven repos)
             "org.ow2.asm:asm-debug-all:5.1",                    // Java Bytecode library
             "org.smali:dexlib2:2.2.5",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             "net.dongliu:apk-parser:2.6.2",                     // needed for reading binary XML entries from APK inputs
+            "com.google.guava:guava:27.0-jre",
             // "ext:apktool:2.3.3",                                // needed for decoding APK inputs (optional)
 
             // Soot
@@ -86,6 +90,8 @@ dependencies {
             "ext:sootclasses:3.2.7",
             "ext:soot-infoflow:2.5.1",
             "ext:soot-infoflow-android:2.5.1",
+            // https://mvnrepository.com/artifact/gov.nist.math/jama
+            "gov.nist.math:jama:1.0.3",
 
             /// WALA
             /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
@@ -112,10 +118,7 @@ dependencies {
     runtime "org.clyze:jphantom:1.2",
             "ext:herosclasses:1.1",
             "ext:axml:2.0",
-            "org.smali:util:2.2.5",                              // Dexlib2 utilities
-            "com.google.guava:guava:23.0",
-            "ext:scaler:1.0",
-            "ext:zipper:1.0"
+            "org.smali:util:2.2.5"                              // Dexlib2 utilities
 
     // JimpleParser
     antlr   "org.antlr:antlr4:4.5.1-1"
