@@ -15,11 +15,14 @@ ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?ctx) :-
    DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
    ReachableContext(?ctx, ?inMethod).
 
+.decl isBootstrapMethodContext(?ctx:configuration.Context)
+isBootstrapMethodContext(?ctx) :- isImmutableContext(?ctx).
+
 .decl InvokedynamicBootCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
 InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod) :-
    ReachableInvokedynamic(?invokedynamic, _, _, ?callerCtx),
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
-   isImmutableContext(?calleeCtx).
+   isBootstrapMethodContext(?calleeCtx).
 
 ReachableContext(?calleeCtx, ?bootMethod) :-
    InvokedynamicBootCallGraphEdge(_, _, ?calleeCtx, ?bootMethod).
@@ -101,7 +104,8 @@ InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?lin
    DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
    DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
    ReturnVar(?bootRetVar, ?bootMethod),
-   VarPointsTo(?hctx, ?callsite, _, ?bootRetVar),
+   isBootstrapMethodContext(?calleeCtx),
+   VarPointsTo(?hctx, ?callsite, ?calleeCtx, ?bootRetVar),
    ?linkObject = LINK_OBJECT(?invokedynamic, ?dynRetType).
 
 // If the result of the invokedynamic instruction is assigned to a
