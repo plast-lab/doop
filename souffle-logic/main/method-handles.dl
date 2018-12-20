@@ -18,6 +18,7 @@ ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?ctx) :-
 .decl isBootstrapMethodContext(?ctx:configuration.Context)
 isBootstrapMethodContext(?ctx) :- isImmutableContext(?ctx).
 
+// Call-graph edge: invokedynamic instruction -> boot method.
 .decl InvokedynamicBootCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
 InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod) :-
    ReachableInvokedynamic(?invokedynamic, _, _, ?callerCtx),
@@ -147,7 +148,8 @@ CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx) :-
    ActualParam(?idx, ?invokedynamic, ?actual),
    VarPointsTo(_, ?val, _, ?actual).
 
-// After a method handle is resolved, invokedynamic calls it.
+// After a method handle is resolved, invokedynamic calls it. This is a call-graph
+// edge from an invokedynamic instruction to the method invoked by the call site.
 .decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?linkObject:LinkObject)
 
 configuration.StaticContextRequest(?callerCtx, ?invokedynamic) :-
@@ -256,6 +258,7 @@ Lambda_N(?lambda, ?N, ?val) :-
 // constant method handle, the real method is called. This can wrap a
 // static method call as an instance method call.
 
+// Call-graph edge: method invocation on lambda object -> implementing method.
 .decl LambdaCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?lambda:LinkObject)
 
 LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
