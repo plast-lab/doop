@@ -217,7 +217,7 @@ compileJava {
 
 test {
     // failFast = true
-    maxParallelForks = 4
+    maxParallelForks = 3
     testLogging {
         exceptionFormat = 'full'
     }
