@@ -97,15 +97,12 @@ class TestInvokedynamic extends ServerAnalysisTests {
 
 	// @spock.lang.Ignore
 	@Unroll
-	def "Server analysis test ForEach"(String analysisName) {
+	def "Server analysis test ForEach"() {
 		when:
-		analyzeTest("invokedynamic-ForEach", ["--platform", "java_8"], analysisName)
+		analyzeTest("invokedynamic-ForEach", ["--platform", "java_8"])
 
 		then:
 		methodIsReachable(analysis, '<example_foreach.ForEach: void printTheList()>')
-
-		where:
-		analysisName << TEST_ANALYSES
 	}
 
 	// @spock.lang.Ignore
