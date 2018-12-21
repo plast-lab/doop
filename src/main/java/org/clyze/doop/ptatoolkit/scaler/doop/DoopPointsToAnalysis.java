@@ -2,7 +2,6 @@ package org.clyze.doop.ptatoolkit.scaler.doop;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Streams;
 import org.clyze.doop.ptatoolkit.Global;
 import org.clyze.doop.ptatoolkit.doop.DataBase;
@@ -13,7 +12,6 @@ import org.clyze.doop.ptatoolkit.pta.basic.*;
 import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 import org.clyze.doop.ptatoolkit.util.MutableInteger;
 import org.clyze.doop.ptatoolkit.util.Timer;
-import org.python.bouncycastle.asn1.eac.BidirectionalMap;
 
 import java.io.File;
 import java.util.*;

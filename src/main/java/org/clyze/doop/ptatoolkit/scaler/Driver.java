@@ -69,6 +69,13 @@ public class Driver {
         scalerTimer.start();
         ScalerRank scalerRank = new ScalerRank(pta);
 
+        scalerTimer.stop();
+        System.out.print(ANSIColor.BOLD + ANSIColor.YELLOW +
+                "Scaler finishes, analysis time: " + ANSIColor.RESET);
+        System.out.print(ANSIColor.BOLD + ANSIColor.GREEN);
+        System.out.printf("%.2fs", scalerTimer.inSecond());
+        System.out.println(ANSIColor.RESET);
+
 
         Map<Method, String> scalerResults = scalerRank.selectContext();
 

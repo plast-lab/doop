@@ -35,7 +35,7 @@ public class ScalerRank {
 	private Set<Method> instanceMethods;
 	private ContextComputer[] ctxComputers;
 	private ContextComputer bottomLine;
-	private long tst = 30000000;
+	private long tst = 900000000;
 	private List<Triple<Method, String, Integer>> results;
 
 	public ScalerRank(PointsToAnalysis pta) {
@@ -62,65 +62,14 @@ public class ScalerRank {
 	public static boolean DESC = false;
 
 	private Set<Method> rank() {
-//		//Creating  Arrays Representing Equations
-//		int totalMethods = pta.getMethodIdMap().keySet().size();
-//		double[][] array = new double[totalMethods][totalMethods];
-//		double[][] vector = new double[totalMethods][1];
-//
-//		for (int i = 0; i < totalMethods; i++) {
-//			array[i][i] = 1.0;
-//
-//			Method method = pta.getMethodIdMap().inverse().get(i);
-//			Set<Method> neighborSet = pta.getMethodNeighborMap().get(method);
-//			if (neighborSet != null) {
-//				for (Method neighbor : neighborSet) {
-//					int neighborIndex = pta.getMethodIdMap().get(neighbor);
-//					array[i][neighborIndex] = +1.0 / neighborSet.size();
-//				}
-//			}
-//			else {
-//				System.out.println("Warning -- " + method);
-//			}
-//
-//			//vector[i] = pta.getMethodTotalVPTMap().get(method);
-//			vector[i][0] = 1.0;
-//		}
-//
-//		for (int n = 0; n < 10; n++) {
-//			//Creating Matrix Objects with arrays
-//			Matrix lhs = new Matrix(array);
-//			Matrix rhs = new Matrix(vector);
-//
-//			//Calculate Solved Matrix
-//			Matrix ans = lhs.times(rhs);
-//
-//			vector = ans.getArray();
-//		}
-//
-//		//Printing Answers
-//		System.out.println(Arrays.deepToString(vector));
 		scores = new HashMap<>();
 		int max_iterations = MAX_ITERATIONS_DEFAULT;
 		// initialization
 		int totalMethods = pta.getMethodIdMap().keySet().size();
-		boolean weighted = false;
-		Map<Method, Double> weights;
-        if (weighted) {
-			weights = new HashMap<>(totalMethods);
-		} else {
-			weights = Collections.emptyMap();
-		}
-
-		double initScore = 1.0d / totalMethods;
 		for (Method m : pta.getMethodIdMap().keySet()) {
+			double initScore = getFactor(m, ctxComputers[0]);
 			scores.put(m, initScore);
-//			if (weighted) {
-//				double sum = 0;
-//				for (E e : g.outgoingEdgesOf(m)) {
-//					sum += g.getEdgeWeight(e);
-//				}
-//				weights.put(m, sum);
-//			}
+
 		}
 
 		// run PageRank
@@ -142,21 +91,11 @@ public class ScalerRank {
 			maxChange = 0d;
 			for (Method v : pta.getMethodIdMap().keySet()) {
 				double contribution = 0d;
-
-//				if (weighted) {
-//					for (E e : g.incomingEdgesOf(v)) {
-//						V w = Graphs.getOppositeVertex(g, e, v);
-//						contribution +=
-//								DAMPING_FACTOR_DEFAULT * scores.get(w) * g.getEdgeWeight(e) / weights.get(w);
-//					}
-//				} else {
-				    if (pta.getMethodNeighborMap().get(v) != null) {
-					    for (Method m : pta.getMethodNeighborMap().get(v)) {
-						    //V w = Graphs.getOppositeVertex(g, e, v);
-						    contribution += (DAMPING_FACTOR_DEFAULT * scores.get(m) * pta.getMethodTotalVPTMap().get(m))/pta.getMethodNeighborMap().get(m).size();
-					    }
-				    }
-//				}
+				if (pta.getMethodNeighborMap().get(v) != null) {
+					for (Method m : pta.getMethodNeighborMap().get(v)) {
+						contribution += (DAMPING_FACTOR_DEFAULT * scores.get(m) * getFactor(m, ctxComputers[0]))/pta.getMethodNeighborMap().get(m).size();
+					}
+				}
 
 				double vOldValue = scores.get(v);
 				double vNewValue = r + contribution;
@@ -174,7 +113,7 @@ public class ScalerRank {
 		}
 		for (Method m : scores.keySet()) {
 			if (pta.getMethodTotalVPTMap().get(m) != 0) {
-				scores.put(m, scores.get(m)*pta.getMethodTotalVPTMap().get(m));
+				scores.put(m, scores.get(m)*getFactor(m, ctxComputers[0]));
 			}
 		}
 
