@@ -101,6 +101,9 @@ VarPointsToWronglyTypedValue(?var, ?varType, ?value, ?valueType) :-
 VarPointsToMergedHeap(?var, ?value) :-
   mainAnalysis.Value_isHeap(?value),
   mainAnalysis.HeapAllocation_Merge(?value, ?value2),
+#if defined(NO_MERGES) || defined(DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS) || defined(DISTINGUISH_ALL_STRING_CONSTANTS)
+  !isStringConstant(?value),
+#endif // distinguished strings support
   mainAnalysis.VarPointsTo(_, ?value, _, ?var),
   ?value != ?value2.
 
@@ -203,4 +206,5 @@ InstructionIsNotConcreteInstruction(?insn) :-
   !isStaticMethodInvocation_Insn(?insn),
   !isUnsupportedInstruction(?insn),
   !isAssignPhantomInvoke(?insn),
+  !isExceptionHandler(?insn),
   !isBreakpointStmt(?insn).

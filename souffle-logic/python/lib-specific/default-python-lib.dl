@@ -18,9 +18,9 @@ ModeledFunction("<range>", "range", "<BUILTIN_SCOPE>").
 FormalParam( 0, "startStop", "<range>", "<range>/mockParam1").
 FormalParam( 1, "stop", "<range>", "<range>/mockParam2").
 FormalParam( 2, "step", "<range>", "<range>/mockParam3").
-FormalParam_DefaultValFrom("<range>", "startStop", "<BUILTIN_SCOPE>/noneDefVar").
-FormalParam_DefaultValFrom("<range>", "stop", "<BUILTIN_SCOPE>/noneDefVar").
-FormalParam_DefaultValFrom("<range>", "step", "<BUILTIN_SCOPE>/noneDefVar").
+FormalParam_DefaultValForName("<range>", "startStop", "<BUILTIN_SCOPE>/noneDefVar").
+FormalParam_DefaultValForName("<range>", "stop", "<BUILTIN_SCOPE>/noneDefVar").
+FormalParam_DefaultValForName("<range>", "step", "<BUILTIN_SCOPE>/noneDefVar").
 
 ModeledFunction("<len>", "len", "<BUILTIN_SCOPE>").
 

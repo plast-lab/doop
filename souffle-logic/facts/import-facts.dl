@@ -64,7 +64,7 @@ HeapAllocation_Type(?id, "java.lang.Class") :-
 
 // MethodHandleConstant
 
-.decl _MethodHandleConstant(?id:symbol, ?method:symbol)
+.decl _MethodHandleConstant(?id:symbol, ?method:symbol, ?retType:symbol, ?paramTypes:symbol, ?arity:number)
 .input _MethodHandleConstant(IO="file", filename="MethodHandleConstant.facts", delimiter="\t")
 
 isType("java.lang.invoke.MethodHandle").
@@ -75,19 +75,27 @@ isHeapAllocation(?id),
 isMethodHandleConstant(?id),
 OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodHandle"),
 MethodHandleConstant_Method(?id, ?method),
+MethodHandleConstant_Arity(?id, ?arity),
+MethodHandleConstant_ReturnType(?id, ?retType),
+MethodHandleConstant_ParamTypes(?id, ?paramTypes),
 HeapAllocation_Type(?id, "java.lang.invoke.MethodHandle") :-
-  _MethodHandleConstant(?id, ?method).
+  _MethodHandleConstant(?id, ?method, ?retType, ?paramTypes, ?arity).
 
 // MethodTypeConstant
 
-.decl _MethodTypeConstant(?id:symbol, ?arity:number)
+.decl _MethodTypeConstant(?id:symbol, ?arity:number, ?retType:symbol)
 .input _MethodTypeConstant(IO="file", filename="MethodTypeConstant.facts", delimiter="\t")
 
 isHeapAllocation(?id),
 isMethodTypeConstant(?id),
 HeapAllocation_Type(?id, "java.lang.invoke.MethodType"),
+MethodTypeConstant_Arity(?id, ?arity),
+MethodTypeConstant_ReturnType(?id, ?retType),
 OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodType") :-
-  _MethodTypeConstant(?id, ?arity).
+  _MethodTypeConstant(?id, ?arity, ?retType).
+
+.decl _MethodTypeConstantParam(?id:symbol, ?idx:number, ?type:symbol)
+.input _MethodTypeConstantParam(IO="file", filename="MethodTypeConstantParam.facts", delimiter="\t")
 
 // EmptyArray
 
@@ -463,18 +471,21 @@ Instruction_Method(?instruction, ?method) :-
 
 // Exception handler
 
-.decl _ExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number)
+.decl _ExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?begin:number, ?end:number)
 .input _ExceptionHandler(IO="file", filename="ExceptionHandler.facts", delimiter="\t")
 
 isExceptionHandler(?handler),
+isInstruction(?handler),
+Instruction_Index(?handler, ?index),
+Instruction_Method(?handler, ?method),
 ExceptionHandler_Method(?handler, ?method),
 ExceptionHandler_Index(?handler, ?index),
 ExceptionHandler_Type(?handler, ?type),
-ExceptionHandler_FormalParam(?handler, ?var),
 ExceptionHandler_Begin(?handler, ?begin),
 ExceptionHandler_End(?handler, ?end) :-
-  _ExceptionHandler(?handler, ?method, ?index, ?type, ?var, ?begin, ?end).
+  _ExceptionHandler(?handler, ?method, ?index, ?type, ?begin, ?end).
 
+.input ExceptionHandler_FormalParam(IO="file", filename="ExceptionHandler-FormalParam.facts", delimiter="\t")
 
 // Method
 
@@ -746,14 +757,14 @@ Instruction_Method(?instruction, ?method) :-
   _UnsupportedInstruction(?instruction, ?index, ?method).
 
 
+// The exact info from keep annotations
+.input KeepMethod(IO="file", filename="KeepMethod.facts", delimiter="\t")
+.input KeepClass(IO="file", filename="KeepClass.facts", delimiter="\t")
+
 #ifdef ANDROID
 
 // AndroidEntryPoints
 .input AndroidEntryPoint(IO="file", filename="AndroidEntryPoint.facts", delimiter="\t")
-
-// The exact info from ProGuard keep annotations
-.input AndroidKeepMethod(IO="file", filename="AndroidKeepMethod.facts", delimiter="\t")
-.input AndroidKeepClass(IO="file", filename="AndroidKeepClass.facts", delimiter="\t")
 
 // AndroidApplication
 .input AndroidApplication(IO="file", filename="AndroidApplication.facts", delimiter="\t")
@@ -800,13 +811,19 @@ isMethod(?id) :-
 isNumConstant(?const) :-
   NumConstantRaw(?const).
 
-.decl ArrayInitialValueFromConst(?instruction:symbol, ?to:symbol, ?index:number, ?const:symbol, ?baseHeap:symbol)
+.decl ArrayInitialValueFromConst(?instruction:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol, ?method:Method)
 .input ArrayInitialValueFromConst(IO="file", filename="ArrayInitialValueFromConst.facts", delimiter="\t")
 
+isInstruction(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
 isNumConstant(?const) :-
-  ArrayInitialValueFromConst(_, _, _, ?const, _).
+  ArrayInitialValueFromConst(?instruction, ?index, _, _, ?const, _, ?method).
 
-.decl ArrayInitialValueFromLocal(?instruction:symbol, ?to:symbol, ?index:number, ?from:symbol, ?baseHeap:symbol)
+isNumConstant(?const) :-
+  ArrayInitialValueFromConst(_, _, _, _, ?const, _, _).
+
+.decl ArrayInitialValueFromLocal(?instruction:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?from:symbol, ?baseHeap:symbol, ?method:Method)
 .input ArrayInitialValueFromLocal(IO="file", filename="ArrayInitialValueFromLocal.facts", delimiter="\t")
 
 #endif // ANDROID

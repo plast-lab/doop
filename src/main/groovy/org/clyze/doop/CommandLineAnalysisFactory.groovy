@@ -1,7 +1,9 @@
 package org.clyze.doop
 
 import org.apache.commons.cli.GnuParser
+import org.apache.commons.cli.HelpFormatter
 import org.apache.commons.cli.Option
+import org.apache.commons.cli.Options
 import org.clyze.analysis.AnalysisFamily
 import org.clyze.analysis.AnalysisOption
 import org.clyze.analysis.BooleanAnalysisOption
@@ -59,37 +61,37 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	DoopAnalysis newAnalysis(File propsBaseDir, Properties props, OptionAccessor cli) {
 		def options = Doop.overrideDefaultOptionsWithPropertiesAndCLI(props, cli) { it.cli }
 		// Get the id of the analysis (short option: id)
-		options.USER_SUPPLIED_ID.value = cli.id ?: props.getProperty("id")
+		options.USER_SUPPLIED_ID.value = cli.id ?: ["id", "USER_SUPPLIED_ID"].findResult { props.getProperty(it) }
 		// Get the name of the analysis (short option: a)
-		options.ANALYSIS.value = cli.a ?: props.getProperty("analysis")
+		options.ANALYSIS.value = cli.a ?: ["analysis", "ANALYSIS"].findResult { props.getProperty(it) }
 		// Get the inputFiles of the analysis (short option: i)
-		options.INPUTS.value = cli.is ?: getFromProperties(propsBaseDir, props, "inputFiles")
+		options.INPUTS.value = cli.is ?: filesFromProperty(propsBaseDir, props, ["inputFiles", "INPUTS"])
 		// Get the libraryFiles of the analysis (short option: l)
-		options.LIBRARIES.value = cli.ls ?: getFromProperties(propsBaseDir, props, "libraryFiles")
+		options.LIBRARIES.value = cli.ls ?: filesFromProperty(propsBaseDir, props, ["libraryFiles", "LIBRARIES"])
 		// Get the heapFiles of the analysis (long option: heapdl)
-		options.HEAPDLS.value = cli.heapdls ?: getFromProperties(propsBaseDir, props, "heapFiles")
+		options.HEAPDLS.value = cli.heapdls ?: filesFromProperty(propsBaseDir, props, ["heapFiles", "HEAPDLS"])
 
 		newAnalysis(FAMILY, options)
 	}
 
-	private static List<String> getFromProperties(File propsBaseDir, Properties props, String what) {
-		def prop = props.getProperty(what)
+	private static List<String> filesFromProperty(File propsBaseDir, Properties props, List<String> possibleIDs) {
+		return possibleIDs.findResult { p ->
+			def prop = props.getProperty(p)
+			if (!prop || prop == "[]") return null
 
-		if (!prop)
-			return [] as List
-
-		// Files, if relative, are being resolved via the propsBaseDir or later if they are URLs
-		return prop.split().collect {
-			try {
-				it.trim()
-				// If it is not a valid URL an exception is thrown
-				def url = new URL(it)
-				return it
-			} catch (e) {
+			// Files, if relative, are being resolved via the propsBaseDir or later if they are URLs
+			return prop.split().collect {
+				try {
+					it.trim()
+					// If it is not a valid URL an exception is thrown
+					def url = new URL(it)
+					return it
+				} catch (e) {
+				}
+				def f = new File(it)
+				return f.absolute ? it : new File(propsBaseDir, it).canonicalFile.absolutePath
 			}
-			def f = new File(it)
-			return f.absolute ? it : new File(propsBaseDir, it).canonicalFile.absolutePath
-		}
+		} ?: []
 	}
 
 	static CliBuilder createCliBuilder() {
@@ -97,10 +99,8 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
 		def cli = new CliBuilder(
 				parser: new GnuParser(),
+				formatter: new HelpGroupFormatter(),
 				usage: USAGE,
-				footer: "\nCommon Bloxbatch options:\n" +
-						"-logicProfile N: Profile the execution of logic, show the top N predicates.\n" +
-						"-logLevel LEVEL: Log the execution of logic at level LEVEL (for example: all).",
 				width: WIDTH,
 		)
 
@@ -215,20 +215,76 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	/**
 	 * Creates the cli args from the respective analysis options (the ones with their cli property set to true).
 	 */
-	static List<Option> convertAnalysisOptionsToCliOptions(List<AnalysisOption> options) {
+	static List<GOption> convertAnalysisOptionsToCliOptions(List<AnalysisOption> options) {
 		options.collect { AnalysisOption option ->
 			if (option.multipleValues) {
-				def o = new Option(option.optName, option.name, true, desc(option))
+				def o = new GOption(option.optName, option.name, true, desc(option), option.group)
 				o.args = Option.UNLIMITED_VALUES
 				o.argName = option.argName
 				return o
 			} else if (option.argName) {
-				def o = new Option(option.optName, option.name, true, desc(option))
+				def o = new GOption(option.optName, option.name, true, desc(option), option.group)
 				o.argName = option.argName
 				return o
 			} else {
-				return new Option(option.optName, option.name, false, desc(option))
+				return new GOption(option.optName, option.name, false, desc(option), option.group)
 			}
 		}
 	}
+}
+
+/**
+ * An option that may mention a containing group.
+ */
+class GOption extends Option {
+    String group
+
+    GOption(String opt, String longOpt, boolean hasArg, String description, String group) {
+        super(opt, longOpt, hasArg, description)
+        this.group = group
+    }
+}
+
+/**
+ * A CliBuilder formatter that groups options per group when printing
+ * the usage message. Assumes long options exist for all options.
+ */
+class HelpGroupFormatter extends HelpFormatter {
+    @Override
+    void printOptions(PrintWriter pw, int width, Options options, int leftPad, int descPad) {
+        // This set gathers "null" Doop options and miscellaneous CliBuilder options.
+        Options nullGroupOpts = new Options()
+        def otherGroupOpts = [] as List
+        options.options.each { opt ->
+            if ((opt instanceof GOption) && (opt.group != null)) {
+                otherGroupOpts << opt
+            } else {
+                nullGroupOpts.addOption(opt)
+            }
+        }
+
+        // Measure widths per group to fix them when calling the printer on each.
+        def groups = [:]
+        groups.put("General options", new Tuple(nullGroupOpts, calcMaxWidth(nullGroupOpts)))
+        otherGroupOpts.groupBy { it.group }.sort().each { group, optsList ->
+            def opts = new Options()
+            optsList.each { opts.addOption(it) }
+            groups.put(group, new Tuple(opts, calcMaxWidth(opts)))
+        }
+
+        int maxWidth = groups.collect { group, optsInfo -> optsInfo[1] }.max()
+
+        groups.each { group, optsInfo ->
+            pw.println "\n== ${group} =="
+            int gWidth = maxWidth - optsInfo[1]
+            def opts = optsInfo[0]
+            super.printOptions(pw, width, opts, leftPad, descPad + gWidth)
+        }
+    }
+
+    int calcMaxWidth(Options opts) {
+        opts.options.collect { opt ->
+            opt.longOpt.size() + (opt.hasArg() ? (opt.argName ?: argName).size() + 3 : 0)
+        }.max()
+    }
 }

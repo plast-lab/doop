@@ -48,7 +48,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
                     def generatedFile = script.compile(analysis, outDir, cacheDir,
                             options.SOUFFLE_PROFILE.value as boolean,
                             options.SOUFFLE_DEBUG.value as boolean,
-                            options.X_FORCE_RECOMPILE.value as boolean,
+                            options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
                             options.X_CONTEXT_REMOVER.value as boolean)
                     log.info "[Task COMPILE Done]"
                     return generatedFile
@@ -124,7 +124,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
                     void run() {
                         def childScript = new SouffleScript(executor)
                         childScript.run(generatedFile, childFactsDir, childOutDir, options.SOUFFLE_JOBS.value as int,
-                                (options.X_MONITORING_INTERVAL.value as long) * 1000)
+                                        (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
                         runtimeMetricsFile.append("analysis execution time (sec)\t${childScript.executionTime}\n")
                     }
                 })

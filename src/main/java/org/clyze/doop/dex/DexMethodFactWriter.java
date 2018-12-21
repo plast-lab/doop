@@ -2,11 +2,13 @@ package org.clyze.doop.dex;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.clyze.doop.common.Database;
+import org.clyze.doop.common.FieldInfo;
+import org.clyze.doop.common.FieldOp;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.JavaRepresentation;
-import org.clyze.doop.common.SessionCounter;
-import org.clyze.doop.common.Database;
 import org.clyze.doop.common.PredicateFile;
+import org.clyze.doop.common.SessionCounter;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.Opcode;
 import org.jf.dexlib2.dexbacked.DexBackedExceptionHandler;
@@ -48,7 +50,7 @@ import static org.clyze.doop.util.TypeUtils.raiseTypeId;
  * Writes facts for a single method found in a .dex class.
  */
 class DexMethodFactWriter extends JavaFactWriter {
-    private static final boolean extractRegisterTypes = true;
+    private static final boolean extractRegisterTypes = false;
 
     private static final boolean debug = false;
     private static final Log logger = debug ? LogFactory.getLog(DexMethodFactWriter.class) : null;
@@ -105,9 +107,9 @@ class DexMethodFactWriter extends JavaFactWriter {
     private final Collection<RawGoto> gotos = new LinkedList<>();
     private final Collection<RawGoto> ifs = new LinkedList<>();
 
-    DexMethodFactWriter(DexBackedMethod dexMethod, Database _db,
+    DexMethodFactWriter(DexBackedMethod dexMethod, Database _db, boolean moreStrings,
                         Map<String, MethodSig> cachedMethodDescriptors) {
-        super(_db);
+        super(_db, moreStrings);
         this.m = dexMethod;
         this.cachedMethodDescriptors = cachedMethodDescriptors;
         this.methId = DexRepresentation.methodId(m, mf);
@@ -195,13 +197,12 @@ class DexMethodFactWriter extends JavaFactWriter {
      */
     private void processTryBlocks(Iterable<? extends DexBackedTryBlock> tryBlocks) {
         Collection<Handler> handlers = new LinkedList<>();
-        Map<Handler, Handler> previousHandlers = new HashMap<>();
 
         // Step 1: read all try blocks and record exception handler information.
         for (DexBackedTryBlock block : tryBlocks) {
             int startAddr = block.getStartCodeAddress();
             int endAddr = startAddr + block.getCodeUnitCount();
-            Handler previous = null;
+            String previous = null;
             List<? extends DexBackedExceptionHandler> exHandlers = block.getExceptionHandlers();
             // Sort by address, lowest-first, so that "previous" works.
             List<? extends DexBackedExceptionHandler> sortedHandlers = (exHandlers.size() < 2) ? exHandlers : exHandlers.stream().sorted(Comparator.comparingInt(ExceptionHandler::getHandlerCodeAddress)).collect(Collectors.toList());
@@ -215,15 +216,27 @@ class DexMethodFactWriter extends JavaFactWriter {
                         logger.debug("Warning: no exception type found for handler in " + methId + ", using " + excType);
                 } else
                     excType = raiseTypeId(t);
-                Handler current = new Handler(startAddr, endAddr, handlerAddr, excType);
-                handlers.add(current);
-                if (previous != null)
-                    previousHandlers.put(current, previous);
-                previous = current;
+                handlers.add(new Handler(startAddr, endAddr, handlerAddr, excType));
+
+                Integer handlerIndex = addressToIndex.get(handlerAddr);
+                Integer startIndex = addressToIndex.get(startAddr);
+                Integer endIndex = addressToIndex.get(endAddr);
+                if (handlerIndex == null || startIndex == null || endIndex == null) {
+                    System.err.println("Error: handler {" + handlerIndex + ", " + startIndex + ", " + endIndex + "}");
+                    previous = null;
+                } else {
+                    String insn = instructionId(handlerMid(excType), handlerIndex);
+                    writeExceptionHandler(insn, methId, handlerIndex, excType, startIndex, endIndex);
+                    if (previous != null)
+                        writeExceptionHandlerPrevious(insn, previous);
+                    previous = insn;
+                }
             }
         }
 
-        // Step 2: match every queued MOVE_EXCEPTION against its handler.
+        // Step 2: match every queued MOVE_EXCEPTION against its handler. This
+        // resolves the "formal" of exception handlers and is optional: some
+        // handlers may not have MOVE_EXCEPTION opcodes (but e.g., a GOTO).
         Map<Handler, String> handlerInsnId = new HashMap<>();
         for (MoveExceptionInfo mei : exceptionMoves) {
             List<Handler> containingHandlers = Handler.findHandlerStartingAt(handlers, mei.address);
@@ -242,22 +255,11 @@ class DexMethodFactWriter extends JavaFactWriter {
                         System.err.println("Warning: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
                     String insn = instructionId(handlerMid(hi.excType), handlerIndex);
                     handlerInsnId.put(hi, insn);
-                    _db.add(EXCEPTION_HANDLER, insn, methId, str(handlerIndex), hi.excType, localA, str(startIndex), str(endIndex));
+                    writeExceptionHandlerFormal(insn, localA);
                 } catch (Handler.IndexException ex) {
                     System.err.println("Error: " + ex.getMessage());
                 }
             }
-        }
-
-        // Step 3: now that we have an index for every handler (from the
-        // previous loop), we can write previous-handler facts.
-        for (Map.Entry<Handler, Handler> entry : previousHandlers.entrySet()) {
-            String currInsn = handlerInsnId.get(entry.getKey());
-            String prevInsn = handlerInsnId.get(entry.getValue());
-            if ((currInsn != null) && (prevInsn != null))
-                _db.add(EXCEPT_HANDLER_PREV, currInsn, prevInsn);
-            else
-                System.err.println("Error: no index for previous-handler pair: " + entry);
         }
     }
 
@@ -286,14 +288,14 @@ class DexMethodFactWriter extends JavaFactWriter {
         for (DebugItem di : debugItems) {
             if (di instanceof StartLocal) {
                 StartLocal sl = (StartLocal)di;
-                writeRegisterType(sl.getRegister(), raiseTypeId(sl.getType()));
+                // writeRegisterType(sl.getRegister(), raiseTypeId(sl.getType()));
             } else if (di instanceof EndLocal) {
                 EndLocal el = (EndLocal)di;
-                writeRegisterType(el.getRegister(), raiseTypeId(el.getType()));
+                // writeRegisterType(el.getRegister(), raiseTypeId(el.getType()));
             } else if (di instanceof RestartLocal) {
                 RestartLocal rl = (RestartLocal)di;
                 int reg = rl.getRegister();
-                writeLocal(local(reg), raiseTypeId(rl.getType()), methId);
+                // writeRegisterType(reg, raiseTypeId(rl.getType()));
             } else if (di instanceof ImmutableLineNumber) {
                 ImmutableLineNumber lineNo = ((ImmutableLineNumber) di);
                 lineNumbers.put(lineNo.getCodeAddress(), lineNo.getLineNumber());
@@ -672,8 +674,12 @@ class DexMethodFactWriter extends JavaFactWriter {
             case NOP:
                 break;
             default:
-                System.err.println("Unknown instruction type: " + op);
-                throw new RuntimeException("Quit! [methId = " + methId + ", lineNo = " + findLineForInstructionIndex(index) + "]");
+                if (op.odexOnly())
+                    System.out.println("Ignoring unsupported ODEX instruction " + op + " in method " + methId);
+                else {
+                    System.err.println("Unknown instruction type: " + op);
+                    throw new RuntimeException("Quit! [methId = " + methId + ", lineNo = " + findLineForInstructionIndex(index) + "]");
+                }
         }
     }
 
@@ -728,7 +734,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             String insn = instructionId("assign", originalIndex);
             String heapId = entry.newArrayInfo.heapId;
             for (int idx = 0; idx < numbersSize; idx++)
-                _db.add(ARRAY_INITIAL_VALUE_FROM_CONST, insn, local(regDest), str(idx), numbers.get(idx).toString(), heapId);
+                _db.add(ARRAY_INITIAL_VALUE_FROM_CONST, insn, str(originalIndex), local(regDest), str(idx), numbers.get(idx).toString(), heapId, methId);
         } catch (Exception ex) {
             System.err.println(ex.getMessage());
         }
@@ -768,7 +774,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                     boolean isEmpty = (objReturnInfo.argRegs.length == 0);
                     String[] heap = new String[1];
                     writeAssignHeapAllocation(regDest, objReturnInfo.retType, index, insn, isEmpty, heap);
-                    writeInitialArrayValues(insn, regDest, objReturnInfo.argRegs, heap);
+                    writeInitialArrayValues(insn, index, regDest, objReturnInfo.argRegs, heap);
                 }
                 break;
             case INVOKE_DIRECT:
@@ -803,10 +809,10 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param argRegs    the sequence of initial values
      * @param heap       a single-element array containing the heap id
      */
-    private void writeInitialArrayValues(String insn, int regDest,
+    private void writeInitialArrayValues(String insn, int regDest, int index,
                                          int[] argRegs, String[] heap) {
         for (int idx = 0; idx < argRegs.length; idx++)
-            _db.add(ARRAY_INITIAL_VALUE_FROM_LOCAL, insn, local(regDest), str(idx), local(argRegs[idx]), heap[0]);
+            _db.add(ARRAY_INITIAL_VALUE_FROM_LOCAL, insn, str(index), local(regDest), str(idx), local(argRegs[idx]), heap[0], methId);
     }
 
     private void writeSwitchTargets(Instruction instr, PredicateFile predicateFile) {
@@ -933,7 +939,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                               Collection<FieldOp> fieldOps) {
         String insn = instructionId("assign", index);
         Reference fieldRef = ((ReferenceInstruction)instr).getReference();
-        FieldInfo fi = new FieldInfo((DexBackedFieldReference)fieldRef);
+        FieldInfo fi = new DexFieldInfo((DexBackedFieldReference)fieldRef);
         fieldOps.add(new FieldOp(target, insn, str(index), localA, localB, fi, methId));
     }
 
@@ -942,7 +948,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         String jvmClassName = jvmTypeOf((ReferenceInstruction)instr);
         String className = raiseTypeId(jvmClassName);
         String heapId = JavaRepresentation.classConstant(className);
-        _db.add(CLASS_HEAP, heapId, className);
+        writeClassHeap(heapId, className);
         String lineNo = strOfLineNo(findLineForInstructionIndex(index));
         int reg = ((OneRegisterInstruction)instr).getRegisterA();
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, local(reg), methId, lineNo);

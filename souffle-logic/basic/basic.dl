@@ -1,12 +1,12 @@
 .comp Basic {
 
-#include "basic-declarations.dl"
-
+#include "finalization-declarations.dl"
 #include "finalization.dl"
+#include "method-lookup.dl"
 #include "method-resolution.dl"
-#include "subclass.dl"
-#include "superinterface.dl"
 #include "type-hierarchy.dl"
+
+.decl MainMethodDeclaration(?method:Method)
 
 MainMethodDeclaration(?method) :-
 #ifndef DISCOVER_MAIN_METHODS

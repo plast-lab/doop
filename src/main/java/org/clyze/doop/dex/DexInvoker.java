@@ -3,6 +3,7 @@ package org.clyze.doop.dex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
+import org.clyze.doop.common.CHA;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.android.AndroidSupport;
@@ -19,9 +20,13 @@ import java.util.Set;
 
 import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
 
-class DexInvoker {
+public class DexInvoker {
 
     public static void main(String[] args) throws DoopErrorCodeException {
+        start(args, new CHA());
+    }
+
+    public static void start(String[] args, CHA cha) throws DoopErrorCodeException {
         DexParameters dexParams = new DexParameters();
         dexParams.initFromArgs(args);
 
@@ -37,8 +42,7 @@ class DexInvoker {
         logger.debug("Using output directory: " + outDir);
 
         try (Database db = new Database(new File(outDir))) {
-            CHA cha = new CHA();
-            DexFactWriter writer = new DexFactWriter(db, cha);
+            DexFactWriter writer = new DexFactWriter(db, dexParams._extractMoreStrings, cha);
             BasicJavaSupport java = new BasicJavaSupport();
             java.preprocessInputs(dexParams);
             writer.writePreliminaryFacts(java, dexParams);
@@ -85,7 +89,7 @@ class DexInvoker {
             }
 
             writer.writeLastFacts(java);
-            cha.conclude(db, writer, dexParams.printPhantoms());
+            cha.conclude(db, writer, dexParams.getReportPhantoms());
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new DoopErrorCodeException(17, ex);

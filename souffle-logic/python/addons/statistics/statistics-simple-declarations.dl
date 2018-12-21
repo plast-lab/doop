@@ -1,0 +1,65 @@
+/***************************************************
+ * Variables
+ ***************************************************/
+.decl Stats_Simple_InsensVarPointsTo(?value:Value, ?var:Var)
+OUTPUT_STATS_DEFAULT(Stats_Simple_InsensVarPointsTo)
+
+.decl Stats_Simple_AssignedVariable(?var:Var)
+OUTPUT_STATS(Stats_Simple_AssignedVariable)
+
+.decl Stats_Simple_InsensReachableVar(?var:Var)
+OUTPUT_STATS(Stats_Simple_InsensReachableVar)
+
+.decl Stats_Simple_ReachableVar(?ctx:mainAnalysis.configuration.Context, ?var:Var)
+OUTPUT_STATS(Stats_Simple_ReachableVar)
+
+/***************************************************
+ * Fields
+ ***************************************************/
+
+//.decl Stats_Simple_InsensInstanceFieldPointsTo(?value:Value, ?sig:Field, ?basevalue:mainAnalysis.Value)
+//OUTPUT_STATS(Stats_Simple_InsensInstanceFieldPointsTo)
+
+//.decl Stats_Simple_InsensStaticFieldPointsTo(?value:Value, ?sig:Field)
+//OUTPUT_STATS(Stats_Simple_InsensStaticFieldPointsTo)
+
+//.decl Stats_Simple_Application_InsensInstanceFieldPointsTo(?value:Value, ?sig:Field, ?basevalue:mainAnalysis.Value)
+//OUTPUT_STATS(Stats_Simple_Application_InsensInstanceFieldPointsTo)
+
+//.decl Stats_Simple_Application_InstanceFieldPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value)
+//OUTPUT_STATS(Stats_Simple_Application_InstanceFieldPointsTo)
+
+/***************************************************
+ * Call graph edges
+ ***************************************************/
+
+.decl Stats_Simple_InsensCallGraphEdge(?from:FunctionInvocation_Insn, ?to:Function)
+OUTPUT_STATS_DEFAULT(Stats_Simple_InsensCallGraphEdge)
+
+.decl Stats_Simple_VirtualCallGraphEdge(?from:FunctionInvocation_Insn, ?to:Function)
+OUTPUT_STATS(Stats_Simple_VirtualCallGraphEdge)
+
+
+/***************************************************
+ * Tensor shape analysis
+ ***************************************************/
+#ifdef TENSOR_SHAPE_ANALYSIS
+.decl TensorOpHasImpreciseArg_Insens(?insn:FunctionInvocation_Insn, ?operationVal:Value)
+OUTPUT_STATS_DEFAULT(TensorOpHasImpreciseArg_Insens)
+
+.decl TensorHasMoreThanOneShape_Insens(?tensor:Value)
+OUTPUT_STATS_DEFAULT(TensorHasMoreThanOneShape_Insens)
+
+.decl ImpreciseTensorShapeList_Insens(?shape:Value)
+OUTPUT_STATS_DEFAULT(ImpreciseTensorShapeList_Insens)
+
+.decl TensorOperationProducesOutput_Insens(?insn:FunctionInvocation_Insn, ?tensor:Value)
+OUTPUT_STATS_DEFAULT(TensorOperationProducesOutput_Insens)
+
+.decl TensorOperationError_Insens(?insn:FunctionInvocation_Insn, ?tensor:Value, ?msg:symbol)
+OUTPUT_STATS_DEFAULT(TensorOperationError_Insens)
+
+.decl TensorOperationWarning_Insens(?insn:FunctionInvocation_Insn, ?tensor:Value, ?msg:symbol)
+OUTPUT_STATS_DEFAULT(TensorOperationWarning_Insens)
+
+#endif

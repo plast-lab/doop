@@ -34,6 +34,8 @@
 .decl isValue(?value:Value)
 .decl isHeapValue(?value:Value)
 .decl isModeledHeapValue(?value:Value)
+.decl isIntConstantValue(?value:Value)
+.decl isFloatConstantValue(?value:Value)
 .decl isConstantValue(?value:Value)
 .decl IsPyListOrTuple(?heap:HeapAllocation)
 .decl isPyDict(?heap:HeapAllocation)
@@ -51,8 +53,12 @@
 // also prepending it with *num-constant-* to distinguish it
 // from heap allocations that share the same string value.
 .decl Value_Num(?value:Value, ?const:NumConstant)
+.decl IntConstantValue_ActualNum(?value:Value, ?num:number)
 .decl Value_String(?value:Value, ?str:StringConstant)
 .decl isNonHeapValue(?value:Value)
+
+.decl NonBinopNewIntConstantValue(?value:Value, ?numStr:IntConstant)
+.decl BinopNewIntConstantValue(?value:Value, ?numStr:IntConstant, ?dist:number)
 
 .decl ClassInstanceAllocationInitializingClassObject(?instanceHctx:configuration.HContext, ?classInstance:HeapAllocation, ?classObjectHctx:configuration.HContext, ?classObject:HeapAllocation)
 .decl BoundMethodAllocationSelfArgument(?boundMethHctx:configuration.HContext, ?boundMethodVal:Value, ?selfHctx:configuration.HContext, ?selfVal:Value)

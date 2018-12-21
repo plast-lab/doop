@@ -1,6 +1,8 @@
 package org.clyze.doop.dex;
 
 import org.clyze.doop.common.Database;
+import org.clyze.doop.common.FieldInfo;
+import org.clyze.doop.common.FieldOp;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.util.TypeUtils;
 import org.jf.dexlib2.AccessFlags;
@@ -26,8 +28,8 @@ class DexClassFactWriter extends JavaFactWriter {
     public final Collection<FieldInfo> definedFields = new LinkedList<>();
     public String superClass;
 
-    DexClassFactWriter(Database db) {
-        super(db);
+    DexClassFactWriter(Database db, boolean moreStrings) {
+        super(db, moreStrings);
     }
 
     public void generateFacts(DexBackedClassDef dexClass, String className,
@@ -36,7 +38,7 @@ class DexClassFactWriter extends JavaFactWriter {
             _db.add(APP_CLASS, className);
 
         for (DexBackedMethod dexMethod : dexClass.getMethods()) {
-            DexMethodFactWriter mWriter = new DexMethodFactWriter(dexMethod, _db, cachedMethodDescriptors);
+            DexMethodFactWriter mWriter = new DexMethodFactWriter(dexMethod, _db, _extractMoreStrings, cachedMethodDescriptors);
             mWriter.writeMethod(fieldOps, definedMethods);
         }
 
@@ -69,7 +71,7 @@ class DexClassFactWriter extends JavaFactWriter {
     }
 
     private void writeField(Field fieldRef) {
-        FieldInfo fi = new FieldInfo(fieldRef);
+        FieldInfo fi = new DexFieldInfo(fieldRef);
         String fieldId = fi.getFieldId();
         _db.add(FIELD_SIGNATURE, fieldId, fi.definingClass, fi.name, fi.type);
         EncodedValue e = fieldRef.getInitialValue();

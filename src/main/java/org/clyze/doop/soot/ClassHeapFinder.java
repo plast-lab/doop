@@ -18,9 +18,9 @@ class ClassHeapFinder {
      *
      * @return the heap types
      */
-    public Collection<String> getUnrecordedTypes(Collection<SootClass> classes) {
+    public Collection<String> getUnrecordedTypes(Iterable<SootClass> classes) {
         scan(classes);
-        Set<String> ret = new HashSet<>(classHeapTypes);
+        Collection<String> ret = new HashSet<>(classHeapTypes);
         ret.removeAll(recordedTypes);
         return ret;
     }

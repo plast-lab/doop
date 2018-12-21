@@ -24,10 +24,10 @@ class DryRuns extends Specification {
 		when:
 		// Some analyses do not support full stats.
 		String stats = ((analysisName == "micro") || (analysisName == "sound-may-point-to")) ? "--Xstats-none" : "--Xstats-full"
-		Main.main((String[])["-i", "http://centauri.di.uoa.gr:8081/artifactory/Demo-benchmarks/test-resources/006-hello-world-1.2.jar",
+		Main.main((String[])["-i", Artifacts.HELLO_JAR,
 							 "-a", analysisName,
 							 "--id", "dry-run-${analysisName}",
-							 "--Xdry-run", "--Xforce-recompile",
+							 "--Xdry-run", "--souffle-force-recompile",
 							 stats])
 		analysis = Main.analysis
 

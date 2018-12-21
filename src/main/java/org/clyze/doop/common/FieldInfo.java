@@ -1,28 +1,20 @@
-package org.clyze.doop.dex;
-
-import org.clyze.doop.util.TypeUtils;
-import org.jf.dexlib2.iface.reference.FieldReference;
+package org.clyze.doop.common;
 
 import java.util.Collection;
 import java.util.Map;
 
-class FieldInfo {
-    String definingClass;
-    final String type;
-    final String name;
+public class FieldInfo {
+    public String definingClass;
+    public final String type;
+    public final String name;
 
-    /**
-     * Generate the field information for a field reference.
-     * @param fieldRef     the field reference
-     */
-    FieldInfo(FieldReference fieldRef) {
-        this.definingClass = TypeUtils.raiseTypeId(fieldRef.getDefiningClass());
-        this.name = fieldRef.getName();
-        this.type = TypeUtils.raiseTypeId(fieldRef.getType());
+    public FieldInfo(String t, String n) {
+        this.type = t;
+        this.name = n;
     }
 
     public String getFieldId() {
-        return DexRepresentation.fieldId(definingClass, type, name);
+        return JavaRepresentation.fieldId(definingClass, type, name);
     }
 
     /**

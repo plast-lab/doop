@@ -2,6 +2,7 @@ package org.clyze.doop.utils
 
 import groovy.transform.TupleConstructor
 import groovy.util.logging.Log4j
+import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.utils.CheckSum
 import org.clyze.utils.Executor
@@ -26,13 +27,14 @@ class SouffleScript {
 
 	File compile(File origScriptFile, File outDir, File cacheDir,
                  boolean profile = false, boolean debug = false,
+                 boolean provenance = false,
                  boolean forceRecompile = true, boolean removeContext = false) {
 
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
 
 		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
-		def c2 = c1 + profile.toString()
+		def c2 = c1 + profile.toString() + provenance.toString()
 		def checksum = CheckSum.checksum(c2, DoopAnalysisFactory.HASH_ALGO)
 		def cacheFile = new File(cacheDir, checksum)
 
@@ -50,6 +52,8 @@ class SouffleScript {
 				compilationCommand << ("-p${outDir}/profile.txt" as String)
 			if (debug)
 				compilationCommand << ("-r${outDir}/report.html" as String)
+			if (provenance)
+				compilationCommand << ("--provenance=1" as String)
 
 			log.info "Compiling Datalog to C++ program and executable"
 			log.debug "Compilation command: $compilationCommand"
@@ -87,17 +91,21 @@ class SouffleScript {
 	}
 
 	def run(File cacheFile, File factsDir, File outDir,
-	        int jobs, long monitoringInterval, Closure monitorClosure = null, boolean profile = false) {
+	        int jobs, long monitoringInterval, Closure monitorClosure, boolean provenance = false, boolean profile = false) {
 
 		def db = new File(outDir, "database")
-		deleteQuietly(db)
-		db.mkdirs()
 
-		def executionCommand = "$cacheFile -j$jobs -F$factsDir -D$db".split().toList()
+		def executionCommand = "$cacheFile -j$jobs -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
 		if (profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 
-		log.debug "Execution command: ${executionCommand.join(" ")}"
+		def cmd = executionCommand.join(" ")
+		if (provenance) {
+			println "This process will now exit, run this command to browse provenance: rlwrap ${cmd}"
+			throw new DoopErrorCodeException(22)
+		}
+
+		log.debug "Execution command: ${cmd}"
 		log.info "Running analysis"
 		executionTime = Helper.timing {
 			executor.enableMonitor(monitoringInterval, monitorClosure).execute(executionCommand).disableMonitor()

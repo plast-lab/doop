@@ -143,6 +143,9 @@ public abstract class AndroidSupport {
                 // https://developer.android.com/guide/topics/manifest/application-element.html
                 writer.writeApplication("android.app.Application");
             }
+            String appPackageName = processMan.getPackageName();
+            if (appPackageName != null)
+                writer.writeAppPackage(appPackageName);
 
             for (String s : appActivities)
                 writer.writeActivity(processMan.expandClassName(s));

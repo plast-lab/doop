@@ -1,4 +1,4 @@
-package org.clyze.doop.dex;
+package org.clyze.doop.common;
 
 import org.clyze.doop.common.Database;
 import org.clyze.doop.util.TypeUtils;
@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  *
  * A single instance of this class should be used for whole-program fact generation.
  */
-class CHA {
+public class CHA {
     // Type data.
     private final Collection<String> referencedTypes = new CopyOnWriteArrayList<>();
     private final Map<String, String> classInfo = new ConcurrentHashMap<>();
@@ -105,19 +105,19 @@ class CHA {
      *
      * @param db              the database object to use
      * @param writer          the fact writer to use
-     * @param printPhantoms   if phantoms should be printed
+     * @param reportPhantoms  if phantoms should be printed
      */
-    public void conclude(Database db, DexFactWriter writer, boolean printPhantoms) {
+    public void conclude(Database db, JavaFactWriter writer, boolean reportPhantoms) {
         writeFieldOps(db);
 
         // Write phantom types.
         Set<String> definedTypes = classInfo.keySet();
-        writePhantoms(referencedTypes, definedTypes, "types", printPhantoms, writer::writePhantomTypes);
+        writePhantoms(referencedTypes, definedTypes, "types", reportPhantoms, writer::writePhantomTypes);
         // Write phantom methods.
-        writePhantoms(referencedMethods, definedMethods, "methods", printPhantoms, writer::writePhantomMethods);
+        writePhantoms(referencedMethods, definedMethods, "methods", reportPhantoms, writer::writePhantomMethods);
         // Report phantom fields.
         System.out.println("Number of phantom fields: " + phantomFields.size());
-        if (printPhantoms)
+        if (reportPhantoms)
             phantomFields.forEach((String s) -> System.out.println("Phantom field: " + s));
     }
 
@@ -137,5 +137,4 @@ class CHA {
         }
         fields.addAll(fis);
     }
-
 }

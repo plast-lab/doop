@@ -1,0 +1,20 @@
+// An output statement like ".output A" is just a shorthand for
+// ".output AB(IO="file",filename="A.csv",delimiter="\t")".
+
+#if defined(X_STATS_FULL)
+#define OUTPUT_STATS(x) .output x
+#define OUTPUT_STATS_DEFAULT(x) .output x
+
+#elif defined(X_STATS_DEFAULT)
+#define OUTPUT_STATS(x)
+#define OUTPUT_STATS_DEFAULT(x) .output x
+
+#elif defined(X_STATS_NONE)
+
+#define OUTPUT_STATS(x)
+#define OUTPUT_STATS_DEFAULT(x)
+
+#else
+#error "One of X_STATS_FULL/X_STATS_DEFAULT/X_STATS_NONE must be given."
+
+#endif

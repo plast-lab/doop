@@ -73,4 +73,16 @@ class MiscAnalysisTests extends ServerAnalysisTests {
 		then:
 		methodIsReachable(analysis, '<TimeProblem: void printTime(java.time.LocalTime)>')
 	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test 018-threads"() {
+		when:
+		analyzeTest("018-threads", ["--generate-jimple"])
+
+		then:
+		methodIsReachable(analysis, '<Main$1: void run()>')
+		methodIsReachable(analysis, '<Main$2: void run()>')
+		methodIsReachable(analysis, '<Main: void lambda$main$0()>')
+	}
 }

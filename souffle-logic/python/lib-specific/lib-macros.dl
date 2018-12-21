@@ -1,0 +1,38 @@
+#ifdef FULL_TENSOR_PRECISION
+
+    #define SingleInValTensorValMacro(op, insn, val) cat("<tensor ", cat(insn, cat("/", cat(op, cat(val, ">")))))
+
+    #define TwoInValTensorValMacro(op, insn, val1, val2) cat("<tensor ", cat(insn, cat("/", cat(op, cat("/", cat(val1, cat("+", cat(val2, ">"))))))))
+
+    #define ThreeInValTensorValMacro(op, insn, val1, val2, val3) cat("<tensor ", cat(insn, cat("/", cat(op, cat("/", cat(val1, cat("+", cat(val2, cat("+", cat(val3, ">"))))))))))
+
+    #define FiveInValTensorValMacro(op, insn, val1, val2, val3, val4, val5) cat("<tensor ", cat(insn, cat("/", cat(op, cat("/", cat(val1, cat("+", cat(val2, cat("+", cat(val3, cat("+", cat(val4, cat("+", cat(val5, ">"))))))))))))))
+
+    #define SevenInValTensorValMacro(op, insn, val1, val2, val3, val4, val5, val6, val7) cat("<tensor ", cat(insn, cat("/", cat(op, cat("/", cat(val1, cat("+", cat(val2, cat("+", cat(val3, cat("+", cat(val4, cat("+", cat(val5, cat("+", cat(val6, cat("+", cat(val7,">"))))))))))))))))))
+
+
+    #define SingleInValNumpyValMacro(op, insn, val) cat("<ndarray ", cat(insn, cat("/", cat(op, cat( "/", cat(val, ">"))))))
+
+    #define TwoInValNumpyValMacro(op, insn, val1, val2) cat("<ndarray ", cat(insn, cat("/", cat(op, cat( "/", cat(val1, cat("+", cat(val2, ">"))))))))
+
+#else
+
+    #define SingleInValTensorValMacro(op, insn, val) cat("<tensor ", cat(op, cat(insn, ">")))
+
+    #define TwoInValTensorValMacro(op, insn, val1, val2) cat("<tensor ", cat(op, cat(insn, ">")))
+
+    #define ThreeInValTensorValMacro(op, insn, val1, val2, val3) cat("<tensor ", cat(op, cat(insn, ">")))
+
+    #define FiveInValTensorValMacro(op, insn, val1, val2, val3, val4, val5) cat("<tensor ", cat(op, cat(insn, ">")))
+
+    #define SevenInValTensorValMacro(op, insn, val1, val2, val3, val4, val5, val6, val7) cat("<tensor ", cat(op, cat(insn, ">")))
+
+    //#define SingleInValNumpyValMacro(op, insn, val) cat("<ndarray ", cat(insn, ">"))
+
+    //#define TwoInValNumpyValMacro(op, insn, val1, val2) cat("<ndarray ", cat(insn, ">"))
+
+    #define SingleInValNumpyValMacro(op, insn, val) cat("<ndarray ", cat(insn, cat("/", cat(op, cat( "/", cat(val, ">"))))))
+
+    #define TwoInValNumpyValMacro(op, insn, val1, val2) cat("<ndarray ", cat(insn, cat("/", cat(op, cat( "/", cat(val1, cat("+", cat(val2, ">"))))))))
+
+#endif
