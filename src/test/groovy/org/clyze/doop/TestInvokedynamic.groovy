@@ -17,12 +17,12 @@ class TestInvokedynamic extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 107 (lambdas)"(String analysisName) {
 		when:
-		analyzeTest("107-lambdas",
-					["--platform", "java_8", "--Xserver-logic",
-					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--thorough-fact-gen", "--sanity",
-					 "--generate-jimple"],
-				   analysisName)
+		Analysis analysis = analyzeTest("107-lambdas",
+										["--platform", "java_8", "--Xserver-logic",
+										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+										 "--thorough-fact-gen", "--sanity",
+										 "--generate-jimple"],
+										analysisName)
 
 		then:
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/intWriter#_13', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::apply/0::: java.util.function.Function::: (Mock)::: link object of type java.util.function.Function')
@@ -41,12 +41,12 @@ class TestInvokedynamic extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 104 (method references)"(String analysisName) {
 		when:
-		analyzeTest("104-method-references",
-					["--platform", "java_8",
-					 "--thorough-fact-gen", "--sanity",
-					 "--generate-jimple",
-					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"],
-				   analysisName)
+		Analysis analysis = analyzeTest("104-method-references",
+										["--platform", "java_8",
+										 "--thorough-fact-gen", "--sanity",
+										 "--generate-jimple",
+										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"],
+										analysisName)
 
 		then:
 		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/c1#_15', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::accept/0::: java.util.function.Consumer::: (Mock)::: link object of type java.util.function.Consumer')
@@ -81,12 +81,13 @@ class TestInvokedynamic extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 115 (invokedynamic, method handles/types)"() {
 		when:
-		analyzeTest("115-invokedynamic", [ "--platform", "java_8",
-										   "--generate-jimple",
-										   // "--Xserver-logic",
-										   "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-										   "--thorough-fact-gen", "--sanity",
-										   "--reflection-classic", "--reflection-method-handles"])
+		Analysis analysis = analyzeTest("115-invokedynamic",
+										["--platform", "java_8",
+										 "--generate-jimple",
+										 // "--Xserver-logic",
+										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+										 "--thorough-fact-gen", "--sanity",
+										 "--reflection-classic", "--reflection-method-handles"])
 
 		then:
 		varPointsTo(analysis, '<Main: void test1()>/println2out#_31', '<direct method handle for <java.io.PrintStream: void println(java.lang.String)>>')
@@ -99,7 +100,7 @@ class TestInvokedynamic extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test ForEach"() {
 		when:
-		analyzeTest("invokedynamic-ForEach", ["--platform", "java_8"])
+		Analysis analysis = analyzeTest("invokedynamic-ForEach", ["--platform", "java_8"])
 
 		then:
 		methodIsReachable(analysis, '<example_foreach.ForEach: void printTheList()>')
@@ -109,7 +110,7 @@ class TestInvokedynamic extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test FutureExample"(String analysisName) {
 		when:
-		analyzeTest("invokedynamic-FutureExample", ["--platform", "java_8" ], analysisName)
+		Analysis analysis = analyzeTest("invokedynamic-FutureExample", ["--platform", "java_8" ], analysisName)
 
 		then:
 		varPointsTo(analysis, '<java.util.concurrent.FutureTask: void run()>/l1#_261', '<example_foreach.FutureExample: void useFuture()>/invokedynamic_metafactory::call/0::: java.util.concurrent.Callable::: (Mock)::: link object of type java.util.concurrent.Callable')

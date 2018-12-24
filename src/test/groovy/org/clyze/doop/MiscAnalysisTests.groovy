@@ -15,7 +15,7 @@ class MiscAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test DefaultImplementation"() {
 		when:
-		analyzeTest("doop-bug-report-2018-07-20-DefaultImplementation", [])
+		Analysis analysis = analyzeTest("doop-bug-report-2018-07-20-DefaultImplementation", [])
 
 		then:
 		methodIsReachable(analysis, '<Foo: void meh()>')
@@ -25,7 +25,7 @@ class MiscAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test Flatten"() {
 		when:
-		analyzeTest("doop-bug-report-2018-07-20-Flatten", ["--reflection-classic"])
+		Analysis analysis = analyzeTest("doop-bug-report-2018-07-20-Flatten", ["--reflection-classic"])
 
 		then:
 		methodIsReachable(analysis, '<Flatten: void flatten()>')
@@ -35,7 +35,7 @@ class MiscAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test ForkJoinProblem"() {
 		when:
-		analyzeTest("doop-bug-report-2018-07-20-ForkJoinProblem", ["--platform", "java_8"])
+		Analysis analysis = analyzeTest("doop-bug-report-2018-07-20-ForkJoinProblem", ["--platform", "java_8"])
 
 		then:
 		methodIsReachable(analysis, '<ForkJoinProblem$Something: void compute()>')
@@ -45,7 +45,7 @@ class MiscAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test ListCompare"() {
 		when:
-		analyzeTest("doop-bug-report-2018-07-20-ListCompare", ["--platform", "java_8"])
+		Analysis analysis = analyzeTest("doop-bug-report-2018-07-20-ListCompare", ["--platform", "java_8"])
 
 		then:
 		methodIsReachable(analysis, '<ListCompare$1: int compare(java.lang.Integer,java.lang.Integer)>')
@@ -55,7 +55,7 @@ class MiscAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test PQueueCompare"() {
 		when:
-		analyzeTest("doop-bug-report-2018-07-20-PQueueCompare", ["--platform", "java_8"])
+		Analysis analysis = analyzeTest("doop-bug-report-2018-07-20-PQueueCompare", ["--platform", "java_8"])
 
 		then:
 		methodIsReachable(analysis, '<Compare: int compare(java.lang.Object,java.lang.Object)>')
@@ -68,7 +68,7 @@ class MiscAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test TimeProblem"() {
 		when:
-		analyzeTest("doop-bug-report-2018-07-20-TimeProblem", [])
+		Analysis analysis = analyzeTest("doop-bug-report-2018-07-20-TimeProblem", [])
 
 		then:
 		methodIsReachable(analysis, '<TimeProblem: void printTime(java.time.LocalTime)>')
@@ -78,7 +78,7 @@ class MiscAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 018-threads"() {
 		when:
-		analyzeTest("018-threads", ["--generate-jimple"])
+		Analysis analysis = analyzeTest("018-threads", ["--generate-jimple"])
 
 		then:
 		methodIsReachable(analysis, '<Main$1: void run()>')

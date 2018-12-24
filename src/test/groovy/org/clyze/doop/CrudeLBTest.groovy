@@ -9,8 +9,6 @@ import spock.lang.Unroll
  */
 class CrudeLBTest extends Specification {
 
-	Analysis analysis
-
 	@Unroll
 	def "Crude testing LB mode (based on sample metrics similarity) using [#scenario]"() {
 		when:
@@ -18,14 +16,14 @@ class CrudeLBTest extends Specification {
 		Main.main((String[])[ "--lb", "--Xstats-full",
 							  "--platform", "java_7",
 							  "-p", propertyFile ])
-		analysis = Main.analysis
+		Analysis analysis = Main.analysis
 
 		then:
-		equals("var points-to (SENS)", expVPT)
-		equals("instance field points-to (INS)", expFPT)
-		equals("call graph edges (INS)", expCGE)
-		equals("polymorphic virtual call sites", expPolyCalls)
-		equals("reachable casts that may fail", expFailCasts)
+		equals(analysis, "var points-to (SENS)", expVPT)
+		equals(analysis, "instance field points-to (INS)", expFPT)
+		equals(analysis, "call graph edges (INS)", expCGE)
+		equals(analysis, "polymorphic virtual call sites", expPolyCalls)
+		equals(analysis, "reachable casts that may fail", expFailCasts)
 
 		where:
 		scenario                                  | expVPT   | expFPT  | expCGE | expPolyCalls | expFailCasts
@@ -35,7 +33,7 @@ class CrudeLBTest extends Specification {
 		"antlr-insensitive-reflection-lb.properties" | 6153491  | 765054  | 56191  | 1813         | 1474
 	}
 
-	void equals(String metric, long expectedVal) {
+	void equals(Analysis analysis, String metric, long expectedVal) {
 		long actualVal = -1
 		def cmd = [analysis.options.BLOXBATCH.value as String, '-db', analysis.database as String, '-query', "_(v) <- Stats:Metrics(_, \"$metric\", v)." as String]
 		println "equals() cmd = ${cmd}"

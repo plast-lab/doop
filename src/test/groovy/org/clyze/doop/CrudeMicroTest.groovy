@@ -10,13 +10,11 @@ import static org.clyze.doop.TestUtils.*
  */
 class CrudeMicroTest extends Specification {
 
-	Analysis analysis
-
 	@Unroll
 	def "Crude testing micro analysis"() {
 		when:
 		Main.main((String[])["-i", Artifacts.ANTLR_JAR, "-a", "micro", "--id", "antlr-micro", "--dacapo", "--Xstats-none", "--fact-gen-cores", "1", "--platform", "java_7"])
-		analysis = Main.analysis
+		Analysis analysis = Main.analysis
 
 		then:
 		relationHasApproxSize(analysis, "ApplicationMethod", 2680)

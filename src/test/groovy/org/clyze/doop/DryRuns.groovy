@@ -12,9 +12,6 @@ import static org.clyze.doop.TestUtils.*
  */
 class DryRuns extends Specification {
 
-	Analysis analysis
-	List analysisNames
-
 	def setupSpec() {
 		Doop.initDoopFromEnv()
 	}
@@ -29,7 +26,7 @@ class DryRuns extends Specification {
 							 "--id", "dry-run-${analysisName}",
 							 "--Xdry-run", "--souffle-force-recompile",
 							 stats])
-		analysis = Main.analysis
+		Analysis analysis = Main.analysis
 
         then:
         execExists(analysis)

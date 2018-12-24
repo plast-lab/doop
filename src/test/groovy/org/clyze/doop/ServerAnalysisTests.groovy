@@ -13,7 +13,6 @@ abstract class ServerAnalysisTests extends Specification {
 
 	final static String SERVER_ANALYSIS_TESTS_DIR = "SERVER_ANALYSIS_TESTS_DIR"
 	static String serverAnalysisTestsDir
-	Analysis analysis
 
 	def setupSpec() {
 		Doop.initDoopFromEnv()
@@ -25,13 +24,13 @@ abstract class ServerAnalysisTests extends Specification {
 		assert null != serverAnalysisTestsDir
 	}
 
-	String analyzeTest(String test, List<String> extraArgs, String analysisName = "context-insensitive", String id = null) {
+	Analysis analyzeTest(String test, List<String> extraArgs, String analysisName = "context-insensitive", String id = null) {
 		String analysisId = id ?: "test-${test}"
 		List args = ["-i", "${serverAnalysisTestsDir}/${test}/build/libs/${test}.jar",
 					 "-a", analysisName, // "--Xserver-logic",
 					 "--id", analysisId, "--generate-jimple",
 					 "--Xstats-full"] + extraArgs
 		Main.main2((String[])args)
-		analysis = Main.analysis
+		return Main.analysis
 	}
 }
