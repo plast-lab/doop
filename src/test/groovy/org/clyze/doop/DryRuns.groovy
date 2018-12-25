@@ -23,7 +23,7 @@ class DryRuns extends Specification {
 		String stats = ((analysisName == "micro") || (analysisName == "sound-may-point-to")) ? "--Xstats-none" : "--Xstats-full"
 		Main.main((String[])["-i", Artifacts.HELLO_JAR,
 							 "-a", analysisName,
-							 "--id", "dry-run-${analysisName}",
+							 "--id", "dry-run-${analysisName}", "--cache",
 							 "--Xdry-run", "--souffle-force-recompile",
 							 stats])
 		Analysis analysis = Main.analysis
