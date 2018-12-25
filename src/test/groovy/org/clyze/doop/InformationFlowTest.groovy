@@ -19,7 +19,7 @@ class InformationFlowTest extends DoopBenchmark {
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
 		Main.main((String[])args)
-		analysis = Main.analysis
+		Analysis analysis = Main.analysis
 
         then:
         relationHasApproxSize(analysis, "AppTaintedVar", 2663)

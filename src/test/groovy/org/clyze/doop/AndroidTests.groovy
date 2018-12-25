@@ -23,7 +23,7 @@ class AndroidTests extends DoopBenchmark {
 					 "--thorough-fact-gen", "--sanity",
 					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
 		Main.main((String[])args)
-		analysis = Main.analysis
+		Analysis analysis = Main.analysis
 
 		then:
 		methodIsReachable(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>')
@@ -47,7 +47,7 @@ class AndroidTests extends DoopBenchmark {
 					 "--thorough-fact-gen", "--sanity",
 					 "--decode-apk", "--generate-jimple", "--Xstats-full", "-Ldebug"]
 		Main.main((String[])args)
-		analysis = Main.analysis
+		Analysis analysis = Main.analysis
 
 		then:
 		// We only test if the logic compiles, loads the dynamic facts,
@@ -67,7 +67,7 @@ class AndroidTests extends DoopBenchmark {
 					 "--dex", "--decode-apk", "--Xstats-full", "-Ldebug",
 					 "--Xdry-run"]
 		Main.main((String[])args)
-		analysis = Main.analysis
+		Analysis analysis = Main.analysis
 
 		then:
 		// We only test if the front end does not fail.
