@@ -32,6 +32,9 @@ class DryRuns extends Specification {
         execExists(analysis)
 
         where:
-        analysisName << DoopAnalysisFamily.analysesSouffle()
+        // Omit analyses tested elsewhere or having problems with dry runs.
+        analysisName << DoopAnalysisFamily.analysesSouffle().findAll {
+            it != 'fully-guided-context-sensitive'
+        }
     }
 }
