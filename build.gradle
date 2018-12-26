@@ -219,6 +219,7 @@ test {
     // failFast = true
     maxParallelForks = 3
     forkEvery = 1
+    jvmArgs '-XX:ReservedCodeCacheSize=1g'
     testLogging {
         exceptionFormat = 'full'
     }
