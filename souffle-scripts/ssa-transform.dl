@@ -285,19 +285,6 @@ SimilarDefs(?def_1, ?def_2) :-
     SSA_Alias(?def_1, ?original),
     SSA_Alias(?def_2, ?original).
 
-// Helper predicate that achieves the core logic for the non trivial phi predicate.
-.decl ExistTwoDifferentPredDefs(?block:symbol, ?phi_name:symbol)
-
-// Refactored, doesnt compile
-ExistTwoDifferentPredDefs(?block, ?phi_name) :-
-    MayPredecessorBBModuloThrow(?pred1, ?block),
-    MayPredecessorBBModuloThrow(?pred2, ?block),
-    ?pred1 != ?pred2,
-    SSA_Alias(?phi_name, ?origin),
-    BasicBlockOutDefs(?pred1, ?def_1, ?origin),
-    BasicBlockOutDefs(?pred2, ?def_2, ?origin),
-    ?def_1 != ?def_2.
-
 .decl SimilarOutDefs(?block:symbol, ?def:symbol, ?out_def:symbol)
 
 SimilarOutDefs(?block, ?def, ?out_def) :-
@@ -320,8 +307,6 @@ SimilarOutDefs(?block, ?def, ?out_def) :-
 
 // Many PhiChunks in the same basic block, consist of a PhiHeader.
 .decl PhiHeader(?block:symbol)
-
-// TODO: Check validity/necessity of isNonTrivialPhi relation
 
 PhiChunk(?phi_var),
 PhiHeader(?dst_block),
@@ -502,11 +487,12 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
     SSA_ThisVar(?method, ?ssa_var)),
     SSA_Alias(?ssa_var, ?origin).
 
-.decl NewIndexMapping(?old:number, ?new:number)
+.decl NewIndexMapping(?old:number, ?new:number, ?method:symbol)
 .output NewIndexMapping
 
-NewIndexMapping(?old, ?new) :-
+NewIndexMapping(?old, ?new, ?method) :-
     Instruction_Index(?insn, ?old),
+    Instruction_Method(?insn, ?method),
     SSA_InstructionIndex(?insn, ?new).
 
 // Rule rewriting
@@ -616,8 +602,8 @@ RewriteAssignInstanceOf(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
 .output RewriteAssignLocal(filename="AssignLocal.facts")
 
 RewriteAssignLocal(?insn, ?index, ?to, ?from, ?inmethod) :-
-    SSA_InstructionIndex(?insn, ?index),
     SSA_AssignLocal(?insn, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
     AssignLocal_From(?insn, ?from_origin),
     ReachingDef(?insn, ?from, ?from_origin).
 
@@ -637,8 +623,8 @@ RewriteAssignNull(?insn, ?index, ?to, ?inmethod) :-
 .output RewriteBootstrapParam(filename="BootstrapParam.facts")
 
 RewriteBootstrapParam(?index, ?invocation, ?var) :-
-    SSA_InstructionIndex(?invocation, ?index),
     _BootstrapParam(_, ?invocation, ?var_origin),
+    SSA_InstructionIndex(?invocation, ?index),
     ReachingDef(?invocation, ?var, ?var_origin).
 
 .decl RewriteDynamicMethodInvocation(?insn:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?tag:number, ?method:symbol)
@@ -655,10 +641,10 @@ RewriteDynamicMethodInvocation(?insn, ?index, ?bootSignature, ?dynName, ?dynRetT
 .output RewriteExceptionHandler_FormalParam(filename="ExceptionHandler-FormalParam.facts")
 
 RewriteExceptionHandler(?handler, ?method, ?index, ?type, ?begin, ?end) :-
-    SSA_InstructionIndex(?handler, ?index),
     _ExceptionHandler(?handler, ?method, _, ?type, ?begin_old, ?end_old),
-    NewIndexMapping(?begin_old, ?begin),
-    NewIndexMapping(?end_old, ?end).
+    SSA_InstructionIndex(?handler, ?index),
+    NewIndexMapping(?begin_old, ?begin, ?method),
+    NewIndexMapping(?end_old, ?end, ?method).
 
 SSA_Type(?var, ?type),
 RewriteExceptionHandler_FormalParam(?handler, ?var) :-
@@ -717,7 +703,7 @@ RewriteGoto(?insn, ?index, ?to, ?inmethod) :-
     isGoto_Insn(?insn),
     Instruction_Method(?insn, ?inmethod),
     Goto_Target(?insn, ?old_to),
-    NewIndexMapping(?old_to, ?to).
+    NewIndexMapping(?old_to, ?to, ?inmethod).
 
 .decl RewriteIf(?insn:symbol, ?index:number, ?to:number, ?inmethod:symbol)
 .output RewriteIf(filename="If.facts")
@@ -727,7 +713,7 @@ RewriteIf(?insn, ?index, ?to, ?inmethod) :-
     isIf_Insn(?insn),
     Instruction_Method(?insn, ?inmethod),
     If_Target(?insn, ?old_to),
-    NewIndexMapping(?old_to, ?to).
+    NewIndexMapping(?old_to, ?to, ?inmethod).
 
 .decl RewriteIfVar(?insn:symbol, ?pos:number, ?var:symbol)
 .output RewriteIfVar(filename="IfVar.facts")
@@ -788,14 +774,16 @@ RewriteLookupSwitch(?insn, ?index, ?key, ?inmethod) :-
 
 RewriteLookupSwitch_Target(?insn, ?value, ?target) :-
     _LookupSwitch_Target(?insn, ?value, ?target_old),
-    NewIndexMapping(?target_old, ?target).
+    Instruction_Method(?insn, ?method),
+    NewIndexMapping(?target_old, ?target, ?method).
 
 .decl RewriteLookupSwitch_DefaultTarget(?insn:symbol, ?target:number)
 .output RewriteLookupSwitch_DefaultTarget(filename="LookupSwitch-Default.facts")
 
 RewriteLookupSwitch_DefaultTarget(?insn, ?target) :-
     _LookupSwitch_DefaultTarget(?insn, ?target_old),
-    NewIndexMapping(?target_old, ?target).
+    Instruction_Method(?insn, ?method),
+    NewIndexMapping(?target_old, ?target, ?method).
 
 .decl RewriteReturn(?insn:symbol, ?index:number, ?var:symbol, ?inmethod:symbol)
 .output RewriteReturn(filename="Return.facts")
@@ -865,7 +853,7 @@ UpperBoundTypeForConstraint(?from, ?type, ?insn),
 RewriteStoreStaticField(?insn, ?index, ?from, ?signature, ?inmethod) :-
     _StoreStaticField(?insn, _, ?from_origin, ?signature, ?inmethod),
     Field_Type(?signature, ?type),
-    SSA_InstructionIndex(?insn, ?index),
+    SSA_InstructionIndex(?insn, ?index).
     ReachingDef(?insn, ?from, ?from_origin).
 
 .decl RewriteSuperMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
@@ -889,14 +877,16 @@ RewriteTableSwitch(?insn, ?index, ?key, ?inmethod) :-
 
 RewriteTableSwitch_Target(?insn, ?value, ?target) :-
     _TableSwitch_Target(?insn, ?value, ?target_old),
-    NewIndexMapping(?target_old, ?target).
+    Instruction_Method(?insn, ?method),
+    NewIndexMapping(?target_old, ?target, ?method).
 
 .decl RewriteTableSwitch_DefaultTarget(?insn:symbol, ?target:number)
 .output RewriteTableSwitch_DefaultTarget(filename="TableSwitch-Default.facts")
 
 RewriteTableSwitch_DefaultTarget(?insn, ?target) :-
     _TableSwitch_DefaultTarget(?insn, ?target_old),
-    NewIndexMapping(?target_old, ?target).
+    Instruction_Method(?insn, ?method),
+    NewIndexMapping(?target_old, ?target, ?method).
 
 .decl RewriteThrow(?insn:symbol, ?index:number, ?var:symbol, ?method:symbol)
 .output RewriteThrow(filename="Throw.facts")
@@ -946,6 +936,7 @@ SSA_Type(?to, ?type) :-
     SSA_Alias(?to, ?to_origin),
     Var_Type(?to_origin, ?type).
 
+
 // Type inference rules WIP.
 
 // The Assign relation models the assignment, in a general way:
@@ -983,6 +974,10 @@ SSA_Type(?to, ?type) :-
 
 .decl TypeCompatibleWithAllConstraints(?var:symbol, ?type:symbol)
 
+.decl DirectSuperType(?subtype:symbol, ?supertype:symbol)
+
+#ifdef TYPE_INFERENCE
+
 .output LowerBoundTypeForConstraint
 .output UpperBoundTypeForConstraint
 .output TypeCompatibleWithAllConstraints
@@ -990,6 +985,13 @@ SSA_Type(?to, ?type) :-
 .output SubtypeOf
 .output Assign
 .output isReferenceType
+.output DirectSuperType
+
+DirectSuperType(?subtype, ?supertype) :-
+    DirectSuperclass(?subtype, ?supertype).
+
+DirectSuperType(?subtype, ?supertype) :-
+    DirectSuperinterface(?subtype, ?supertype).
 
 SubtypeOf(?t, "java.lang.Object") :-
     isReferenceType(?t).
@@ -1148,3 +1150,5 @@ UpperBoundTypeForConstraint(?var, "java.lang.Throwable", ?stmt) :-
 UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
     RewriteThrow(?stmt, _, ?var, ?method),
     Method_DeclaresException(?type, ?method).
+
+#endif
