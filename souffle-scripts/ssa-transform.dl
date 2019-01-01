@@ -853,7 +853,7 @@ UpperBoundTypeForConstraint(?from, ?type, ?insn),
 RewriteStoreStaticField(?insn, ?index, ?from, ?signature, ?inmethod) :-
     _StoreStaticField(?insn, _, ?from_origin, ?signature, ?inmethod),
     Field_Type(?signature, ?type),
-    SSA_InstructionIndex(?insn, ?index).
+    SSA_InstructionIndex(?insn, ?index),
     ReachingDef(?insn, ?from, ?from_origin).
 
 .decl RewriteSuperMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
