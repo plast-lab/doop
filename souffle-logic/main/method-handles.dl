@@ -31,11 +31,13 @@ ReachableContext(?calleeCtx, ?bootMethod) :-
 // Pass arguments to bootstrap methods. First three arguments are
 // filled in by the JVM, so we fill them with mock objects.
 
-#define MOCK_MH_LOOKUP "mock method handles lookup object"
+.decl MHLookup_Type(?value:Value, ?type:Type)
+#define MOCK_MH_LOOKUP(t) cat("mock method handles lookup object for type ", t)
 #define MOCK_MT(retType, paramTypes) cat("mock method type ", cat(retType, paramTypes))
 
-MockValueConsMacro(MOCK_MH_LOOKUP, "java.lang.invoke.MethodHandles$Lookup"),
-VarPointsTo(?immHctx, MOCK_MH_LOOKUP, ?calleeCtx, ?caller),
+MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
+MHLookup_Type(?mockMHLookup, ?callerClass),
+VarPointsTo(?immHctx, ?mockMHLookup, ?calleeCtx, ?caller),
 MockValueConsMacro(?mockMethodType, "java.lang.invoke.MethodType"),
 VarPointsTo(?immHctx, ?mockMethodType, ?calleeCtx, ?invokedTypeParam) :-
    InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
@@ -44,7 +46,10 @@ VarPointsTo(?immHctx, ?mockMethodType, ?calleeCtx, ?invokedTypeParam) :-
    DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
    DynamicMethodInvocation_DynParamTypes(?invokedynamic, ?dynParamTypes),
    ?mockMethodType = MOCK_MT(?dynRetType, ?dynParamTypes),
-   isImmutableHContext(?immHctx).
+   isImmutableHContext(?immHctx),
+   Instruction_Method(?invokedynamic, ?method),
+   Method_DeclaringType(?method, ?callerClass),
+   ?mockMHLookup = MOCK_MH_LOOKUP(?callerClass).
 
 // The second-arg rule should only be enabled when strings are not merged.
 #if defined(DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS) || defined(DISTINGUISH_ALL_STRING_CONSTANTS) || defined(NO_MERGES)
@@ -437,6 +442,18 @@ MethodType_AdjustedReturnType(?descriptor, ?retType, ?retType) :-
   Method_Descriptor(?method, ?descriptor),
   Method_SimpleName(?method, "<init>"),
   Method_DeclaringType(?method, ?retType).
+
+#ifdef REFLECTION
+
+VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
+   _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>", ?base, ?method),
+   ReachableContext(?ctx, ?method),
+   VarPointsTo(?hctx, ?mhLookup, ?ctx, ?base),
+   MHLookup_Type(?mhLookup, ?type),
+   ReifiedClass(?type, ?classValue),
+   AssignReturnValue(?invo, ?ret).
+
+#endif // REFLECTION
 
 // Method handles that interact with reflection are exprerimental, use
 // corresponding command-line option to enable them.
