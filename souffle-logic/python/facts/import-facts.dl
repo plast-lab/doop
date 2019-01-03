@@ -261,6 +261,14 @@ Instruction_Function(?instruction, ?function),
 AssignInstruction_To(?instruction, ?to) :-
   _AssignNone(?instruction, ?index, ?to, ?function).
 
+//Instruction_SourcePosition
+
+.decl _Instruction_SourcePosition(?insn:symbol, ?startLine:number, ?endLine:number, ?startColumn:number, ?endColumn:number)
+.input _Instruction_SourcePosition(IO="file", filename="Instruction-SourcePosition.facts", delimiter="\t")
+
+Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn):-
+  _Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
+
 
 //Var-SourceName
 
