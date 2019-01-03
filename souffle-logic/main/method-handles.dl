@@ -557,9 +557,6 @@ DMHLookup(?type, ?id, ?mt, ?method, ?retType) :-
    Method_ReturnType(?method, ?retType),
    MTValue_Descriptor(?mt, ?descriptor).
 
-// Mock values for direct method handle lookup.
-#define DMH(meth) cat("<direct method handle for ", cat(meth, ">"))
-
 MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
 isMethodHandle(?dmh),
 MethodHandle_Method(?dmh, ?method),
@@ -574,7 +571,7 @@ VarPointsTo(?hctx, ?dmh, ?ctx, ?ret) :-
    ActualParam(2, ?invo, ?mtParam),
    VarPointsTo(_, ?mt, _, ?mtParam),
    DMHLookup(?type, ?id, ?mt, ?method, ?retType),
-   ?dmh = DMH(?method).
+   ?dmh = cat("<direct method handle for ", cat(?method, ">")).
 
 #endif // REFLECTION
 #endif // REFLECTION_METHOD_HANDLES
