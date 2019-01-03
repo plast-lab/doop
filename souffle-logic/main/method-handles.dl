@@ -261,6 +261,10 @@ Lambda_N(?lambda, ?N, ?val) :-
 // Call-graph edge: method invocation on lambda object -> implementing method.
 .decl LambdaCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?lambda:LinkObject)
 
+// Call-graph edge: method call on lambda object -> implementing
+// method.  For simplicity, the callee context is trivial. For proper
+// context sensitivity, we must model all combinations of calling
+// contexts with implementing-method staticness.
 LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
    LambdaCallSite(_, _, ?lambda, ?dynName, _, ?implMethod, _),
    VarPointsTo(_, ?lambda, ?callerCtx, ?var),
