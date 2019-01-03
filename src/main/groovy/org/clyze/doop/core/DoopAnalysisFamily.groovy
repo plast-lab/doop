@@ -408,6 +408,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "EXCLUDE_IMPLICITLY_REACHABLE_CODE",
 					name: "exclude-implicitly-reachable-code",
+					description: "Don't make any method implicitly reachable.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -526,7 +527,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DISCOVER_TESTS",
 					name: "discover-tests",
-					description: "Discover testing code (e.g. marked with JUnit annotations).",
+					description: "Discover and treat test code (e.g. JUnit) as entry points.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
