@@ -73,5 +73,5 @@
 .decl ListInitialAssignVar(?heap:HeapAllocation, ?var:Var, ?ctx:configuration.Context)
 .decl DictInitialAssignVar(?heap:HeapAllocation, ?var:Var, ?ctx:configuration.Context)
 
-.decl DiagnosticForLSP(?severity:symbol, ?startLine:number, ?startCol:number, ?endLine:number, ?endCol:number, ?message:symbol)
+.decl DiagnosticForLSP(?file:File, ?severity:symbol, ?startLine:number, ?startCol:number, ?endLine:number, ?endCol:number, ?message:symbol)
 .output DiagnosticForLSP

@@ -370,6 +370,7 @@ WriteToCollectionInsn_From(?insn, ?from):-
 
 .decl _Function(?function:symbol, ?simplename:symbol, ?declaringType:symbol, ?arity:number, ?declaredInFile: File)
 .input _Function(IO="file", filename="Function.facts", delimiter="\t")
+.output Function_DeclaredInFile
 
 Function_SimpleName(?function, ?simplename),
 Function_Arity(?function, ?arity),

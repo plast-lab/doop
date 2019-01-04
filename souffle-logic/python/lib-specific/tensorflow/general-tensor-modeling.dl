@@ -137,12 +137,16 @@ ListOfConstsAtIndexPointsTo(?hctx, ?tensorVal, ?index, ?indexValue):-
 //                                              WARNINGS / ERRORS
 //----------------------------------------------------------------------------------------------------------------------
 
-DiagnosticForLSP("Warning", ?startLine, ?endLine, ?startColumn, ?endColumn, ?warnMsg):-
-  TensorOperationWarning(_, ?insn, ?op, ?warnMsg),
+DiagnosticForLSP(?file, "Warning", ?startLine, ?endLine, ?startColumn, ?endColumn, ?warnMsg):-
+  TensorOperationWarning(_, ?insn, _, ?warnMsg),
+  Instruction_Function(?insn, ?function),
+  Function_DeclaredInFile(?function, ?file),
   Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
 
-DiagnosticForLSP("Error", ?startLine, ?endLine, ?startColumn, ?endColumn, ?errorMsg):-
-  TensorOperationError(_, ?insn, ?op, ?errorMsg),
+DiagnosticForLSP(?file, "Error", ?startLine, ?endLine, ?startColumn, ?endColumn, ?errorMsg):-
+  TensorOperationError(_, ?insn, _, ?errorMsg),
+  Instruction_Function(?insn, ?function),
+  Function_DeclaredInFile(?function, ?file),
   Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
 
 //----------------------------------------------------------------------------------------------------------------------
