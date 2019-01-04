@@ -148,16 +148,23 @@ VarPointsTo(?hctx, ?linkObject, ?ctx, ?var) :-
 
 isMethodHandle(?methodHandle),
 MethodHandle_Method(?methodHandle, ?method) :-
-   MethodHandleConstant_Method(?methodHandle, ?method).
+  MethodHandleConstant_Method(?methodHandle, ?method).
 
 MethodHandle_ReturnType(?methodHandle, ?type) :- MethodHandleConstant_ReturnType(?methodHandle, ?type).
 MethodHandle_ParamTypes(?methodHandle, ?paramTypes) :- MethodHandleConstant_ParamTypes(?methodHandle, ?paramTypes).
 
 .decl LinkObject_MethodHandle(?linkObject:LinkObject, ?methodHandle:MethodHandle)
 LinkObject_MethodHandle(?linkObject, ?methodHandle) :-
-   InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, ?linkObject),
-   InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
-   MethodHandle_ReturnType(?methodHandle, ?dynRetType).
+  InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, ?linkObject),
+  InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
+  MethodHandle_ReturnType(?methodHandle, ?dynRetType).
+// Method handle for C.<init> has dynamic return type C instead of "void".
+LinkObject_MethodHandle(?linkObject, ?methodHandle) :-
+  InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, ?linkObject),
+  InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
+  MethodHandle_Method(?methodHandle, ?method),
+  Method_SimpleName(?method, "<init>"),
+  Method_DeclaringType(?method, ?dynRetType).
 
 .decl LinkObject_Method(?linkObject:LinkObject, ?method:Method)
 LinkObject_Method(?linkObject, ?method) :-
