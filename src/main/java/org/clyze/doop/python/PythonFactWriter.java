@@ -556,7 +556,7 @@ public class PythonFactWriter {
     private String writePythonInvokeHelper(IMethod inMethod, IR ir, PythonInvokeInstruction instruction, Session session, TypeInference typeInference) {
         String methodId = _rep.signature(inMethod);
 
-        String insn = _rep.functionInvoke(inMethod, session);
+        String insn = _rep.functionInvoke(inMethod, instruction, session);
         writeActualParams(inMethod, ir, instruction, insn, session, typeInference);
 
         int index = session.calcInstructionNumber(instruction);
