@@ -180,7 +180,6 @@
 .type OpaqueInstruction               = Instruction
 
 .decl isUnsupportedInstruction(?insn:UnsupportedInstruction)
-.decl isOpaqueInstruction(?insn:OpaqueInstruction)
 
 //-----------------------------------------------------------------------------
 
