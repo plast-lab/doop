@@ -90,10 +90,10 @@ class TestInvokedynamic extends ServerAnalysisTests {
 										 "--reflection-classic", "--reflection-method-handles"])
 
 		then:
-		varPointsTo(analysis, '<Main: void test1()>/println2out#_31', '<direct method handle for <java.io.PrintStream: void println(java.lang.String)>>')
-		varPointsTo(analysis, '<Main: void test2()>/methV_mh#_39', '<direct method handle for <A: void methV()>>')
-		varPointsTo(analysis, '<Main: void test3()>/methI_mh#_49', '<direct method handle for <A: void methI(java.lang.Integer)>>')
-		varPointsTo(analysis, '<Main: void test4()>/methDD_mh#_58', '<direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
+		varPointsTo(analysis, '<Main: void test1()>/println2out#_31', '<computed direct method handle for <java.io.PrintStream: void println(java.lang.String)>>')
+		varPointsTo(analysis, '<Main: void test2()>/methV_mh#_39', '<computed direct method handle for <A: void methV()>>')
+		varPointsTo(analysis, '<Main: void test3()>/methI_mh#_49', '<computed direct method handle for <A: void methI(java.lang.Integer)>>')
+		varPointsTo(analysis, '<Main: void test4()>/methDD_mh#_58', '<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
 	}
 
 	// @spock.lang.Ignore
