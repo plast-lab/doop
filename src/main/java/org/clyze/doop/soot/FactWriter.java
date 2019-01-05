@@ -982,9 +982,10 @@ class FactWriter extends JavaFactWriter {
             this.arity = ref.parameterTypes().size();
             this.retType = ref.returnType().toString();
 
-            StringBuffer dpTypes = new StringBuffer("(");
-            ref.parameterTypes().forEach(p -> dpTypes.append(p.toString()));
-            this.paramTypes = dpTypes.append(")").toString();
+            StringJoiner joiner = new StringJoiner(",");
+            ref.parameterTypes().forEach(p -> joiner.add(p.toString()));
+            StringBuffer sb = new StringBuffer("(").append(joiner.toString());
+            this.paramTypes = sb.append(")").toString();
         }
     }
 }
