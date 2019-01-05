@@ -213,6 +213,17 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
    AssignReturnValue(?i, ?ret).
 
+// Use link object as receiver when calling constructors.
+VarPointsTo(?hctx, ?linkObject, ?calleeCtx, ?thisVar) :-
+   InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, _),
+   Method_SimpleName(?method, "<init>"),
+   ThisVar(?method, ?thisVar),
+   InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
+   LinkObject_Method(?linkObject, ?method),  // sanity join
+   Value_Type(?linkObject, ?t),
+   Method_DeclaringType(?method, ?t),
+   isImmutableHContext(?hctx).
+
 /************** Lambda-specific invokedynamic ****************/
 
 /** Phase 1: Linkage (creating a lambda CallSite) **/
