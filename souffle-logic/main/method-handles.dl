@@ -657,6 +657,23 @@ AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?ret) :-
    Method_ReturnType(?method, ?retType),
    AssignReturnValue(?invo, ?ret).
 
+// TODO: populate MethodHandle_ParamTypes as well (for completeness).
+MockValueConsMacro(?adapterMH, "java.lang.invoke.MethodHandle"),
+isMethodHandle(?adapterMH),
+MethodHandle_Method(?adapterMH, ?mhMethod),
+MethodHandle_ReturnType(?adapterMH, ?retType),
+VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret) :-
+  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
+  ReachableContext(?ctx, ?method),
+  ?sig = "<java.lang.invoke.MethodHandle: java.lang.invoke.MethodHandle asType(java.lang.invoke.MethodType)>",
+  VarPointsTo(?hctx, ?mh, ?ctx, ?base),
+  ActualParam(0, ?invo, ?arg),
+  VarPointsTo(_, ?mt, ?ctx, ?arg),
+  AssignReturnValue(?invo, ?ret),
+  MethodHandle_Method(?mh, ?mhMethod),
+  MethodType_ReturnType(?mt, ?retType),
+  ?adapterMH = cat("<adapter for ", cat(?mh, cat(" as ", ?mt))).
+
 
 #endif // REFLECTION
 #endif // REFLECTION_METHOD_HANDLES
