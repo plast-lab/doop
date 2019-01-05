@@ -215,7 +215,7 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
 
 // Use link object as receiver when calling constructors.
 VarPointsTo(?hctx, ?linkObject, ?calleeCtx, ?thisVar) :-
-   InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, _),
+   InvokedynamicCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?method, _),
    Method_SimpleName(?method, "<init>"),
    ThisVar(?method, ?thisVar),
    InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
