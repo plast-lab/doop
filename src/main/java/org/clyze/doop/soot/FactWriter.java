@@ -767,14 +767,18 @@ class FactWriter extends JavaFactWriter {
     }
 
     private void writeActualParams(SootMethod inMethod, Stmt stmt, InvokeExpr expr, String invokeExprRepr, Session session) {
-        for(int i = 0; i < expr.getArgCount(); i++) {
-            Value v = writeActualParam(inMethod, stmt, expr, session, expr.getArg(i), i);
+        boolean isInvokedynamic = (expr instanceof DynamicInvokeExpr);
+        int count = expr.getArgCount();
+        for (int i = 0; i < count; i++) {
+            // Undo Soot's reverse order of invokedynamic arguments.
+            Value arg = isInvokedynamic ? expr.getArg(count-i-1) : expr.getArg(i);
+            Value v = writeActualParam(inMethod, stmt, expr, session, arg, i);
             if (v instanceof Local)
                 writeActualParam(i, invokeExprRepr, _rep.local(inMethod, (Local)v));
             else
                 throw new RuntimeException("Actual parameter is not a local: " + v + " " + v.getClass());
         }
-        if (expr instanceof DynamicInvokeExpr) {
+        if (isInvokedynamic) {
             DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
             for (int j = 0; j < di.getBootstrapArgCount(); j++) {
                 Value v = di.getBootstrapArg(j);
