@@ -37,17 +37,21 @@ ReachableContext(?calleeCtx, ?bootMethod) :-
 .decl Invokedynamic_MethodType(?invokedynamic:DynamicMethodInvocation_Insn, ?mt:MethodType)
 
 #define MOCK_MT(retType, paramTypes) cat("mock method type ", cat(retType, paramTypes))
+.decl PopulateMTParamTypes(?mt:Value, ?invokedynamic:DynamicMethodInvocation_Insn)
 
 // For every reachable invokedynamic, create a mock method type.
-// TODO: populate MethodType_ParamType as well (for completeness).
 MockValueConsMacro(?mockMethodType, "java.lang.invoke.MethodType"),
 isMethodType(?mockMethodType),
 MethodType_ReturnType(?mockMethodType, ?dynRetType),
+PopulateMTParamTypes(?mockMethodType, ?invokedynamic),
 Invokedynamic_MethodType(?invokedynamic, ?mockMethodType) :-
-   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, _, _),
-   DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
-   DynamicMethodInvocation_DynParamTypes(?invokedynamic, ?dynParamTypes),
-   ?mockMethodType = MOCK_MT(?dynRetType, ?dynParamTypes).
+  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, _, _),
+  DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
+  DynamicMethodInvocation_DynParamTypes(?invokedynamic, ?dynParamTypes),
+  ?mockMethodType = MOCK_MT(?dynRetType, ?dynParamTypes).
+MethodType_ParamType(?mt, ?index, ?pType) :-
+  PopulateMTParamTypes(?mt, ?invokedynamic),
+  _DynamicMethodInvocation_DynParamType(?invokedynamic, ?index, ?pType).
 
 // Pass arguments to bootstrap methods. First three arguments are
 // filled in by the JVM, so we fill them with mock objects.
