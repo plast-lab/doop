@@ -499,6 +499,17 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
   ReifiedClass(?retType, ?classValue),
   AssignReturnValue(?invo, ?ret).
 
+// Crude model of MethodType.parameterType(), since we do not track
+// primitive values (for its argument).
+VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
+  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
+  ?sig = "<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>",
+  ReachableContext(?ctx, ?method),
+  VarPointsTo(?hctx, ?mt, ?ctx, ?base),
+  MethodType_ParamType(?mt, _, ?pType),
+  ReifiedClass(?pType, ?classValue),
+  AssignReturnValue(?invo, ?ret).
+
 #endif // REFLECTION
 
 // Method handles that interact with reflection are exprerimental, use

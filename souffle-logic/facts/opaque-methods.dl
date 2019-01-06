@@ -44,6 +44,7 @@ isOpaqueMethod(?method) :- MTEntryPoint(_, _, ?method).
 OPAQUE_METHOD("<java.lang.Class: java.lang.String getSimpleName()>").
 OPAQUE_METHOD("<java.lang.Class: java.lang.Object[] getEnumConstants()>").
 OPAQUE_METHOD("<java.lang.invoke.MethodHandle: java.lang.invoke.MethodHandle asType(java.lang.invoke.MethodType)>").
+OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>").
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class returnType()>").
 
 #ifdef ANDROID
