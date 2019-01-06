@@ -499,7 +499,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
   ReifiedClass(?retType, ?classValue),
   AssignReturnValue(?invo, ?ret).
 
-// Crude model of MethodType.parameterType(), since we do not track
+// Imprecise model of MethodType.parameterType(), since we do not track
 // primitive values (for its argument).
 VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
