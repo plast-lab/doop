@@ -1,5 +1,6 @@
 package org.clyze.doop.soot;
 
+import com.google.common.collect.Lists;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
@@ -334,7 +335,7 @@ class FactWriter extends JavaFactWriter {
         String heap = methodHandleConstant(handleMethod);
         String methodId = writeMethod(m);
 
-        SigInfo si = new SigInfo(constant.getMethodRef());
+        SigInfo si = new SigInfo(constant.getMethodRef(), false);
         writeMethodHandleConstant(heap, handleMethod, si.retType, si.paramTypes, si.arity);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
     }
@@ -840,7 +841,7 @@ class FactWriter extends JavaFactWriter {
 
     private void writeDynamicInvoke(DynamicInvokeExpr di, int index, String insn, String methodId) {
         SootMethodRef dynInfo = di.getMethodRef();
-        SigInfo dynSig = new SigInfo(dynInfo);
+        SigInfo dynSig = new SigInfo(dynInfo, true);
         for (int pIdx = 0; pIdx < dynSig.arity; pIdx++)
             writeInvokedynamicParameterType(insn, pIdx, dynInfo.parameterType(pIdx).toString());
         writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynSig.retType, dynSig.arity, dynSig.paramTypes, di.getHandleTag(), methodId);
@@ -978,12 +979,16 @@ class FactWriter extends JavaFactWriter {
         public int arity;
         public String retType;
         public String paramTypes;
-        public SigInfo(SootMethodRef ref) {
-            this.arity = ref.parameterTypes().size();
+        public SigInfo(SootMethodRef ref, boolean reverse) {
+            List<Type> paramTypes = ref.parameterTypes();
+            if (reverse)
+                paramTypes = Lists.reverse(paramTypes);
+
+            this.arity = paramTypes.size();
             this.retType = ref.returnType().toString();
 
             StringJoiner joiner = new StringJoiner(",");
-            ref.parameterTypes().forEach(p -> joiner.add(p.toString()));
+            paramTypes.forEach(p -> joiner.add(p.toString()));
             StringBuffer sb = new StringBuffer("(").append(joiner.toString());
             this.paramTypes = sb.append(")").toString();
         }
