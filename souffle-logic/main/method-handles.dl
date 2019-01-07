@@ -506,26 +506,6 @@ MethodType_Arity(?descriptor, ?arity) :-
   Method_Descriptor(?method, ?descriptor),
   Method_Arity(?method, ?arity).
 
-.decl MethodType_AdjustedReturnType(?descriptor:symbol, ?adjType:Type, ?retType:Type)
-
-// We treat method descriptors as MethodType values (with slight
-// changes, e.g. in the treatment of 'void' or constructors).
-
-// Return types for non-constructors.
-MethodType_AdjustedReturnType(?descriptor, ?declType, ?retType) :-
-  Method_Descriptor(?method, ?descriptor),
-  Method_ReturnType(?method, ?retType),
-  Method_SimpleName(?method, ?name),
-  ?name != "<clinit>",
-  ?name != "<init>",
-  Method_DeclaringType(?method, ?declType).
-
-// Return types for constructors are not "void" but the type constructed.
-MethodType_AdjustedReturnType(?descriptor, ?retType, ?retType) :-
-  Method_Descriptor(?method, ?descriptor),
-  Method_SimpleName(?method, "<init>"),
-  Method_DeclaringType(?method, ?retType).
-
 #ifdef REFLECTION
 
 VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
