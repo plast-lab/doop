@@ -462,14 +462,17 @@ public class PythonFactWriter {
 
     //TODO: This needs work for pythons positional params!!!!!!!!!!!!
     private void writeActualParams(IMethod inMethod, IR ir, PythonInvokeInstruction instruction, String invokeExprRepr, Session session, TypeInference typeInference) {
+        int totalNumberOfParams = 0;
         if (instruction.isStatic()) {
             //for (int i = 0; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 0; i < instruction.getNumberOfPositionalParameters(); i++) {
+                totalNumberOfParams++;
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
                 _db.add(ACTUAL_POSITIONAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
             }
             List<String> keywords = instruction.getKeywords();
             for (int i = 0; i < instruction.getNumberOfKeywordParameters(); i++) {
+                totalNumberOfParams++;
                 Local l = createLocal(ir, instruction, instruction.getUse(i + instruction.getNumberOfPositionalParameters()), typeInference);
                 _db.add(ACTUAL_KEYWORD_PARAMETER, str(i), invokeExprRepr,keywords.get(i), _rep.local(inMethod, l));
             }
@@ -477,15 +480,18 @@ public class PythonFactWriter {
         else {
             //for (int i = 1; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 1; i < instruction.getNumberOfPositionalParameters(); i++) {
+                totalNumberOfParams++;
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
                 _db.add(ACTUAL_POSITIONAL_PARAMETER, str(i-1), invokeExprRepr, _rep.local(inMethod, l));
             }
             List<String> keywords = instruction.getKeywords();
             for (int i = 0; i < instruction.getNumberOfKeywordParameters(); i++) {
+                totalNumberOfParams++;
                 Local l = createLocal(ir, instruction, instruction.getUse(i + instruction.getNumberOfPositionalParameters()), typeInference);
                 _db.add(ACTUAL_KEYWORD_PARAMETER, str(i-1), invokeExprRepr,keywords.get(i), _rep.local(inMethod, l));
             }
         }
+        _db.add(FUNCTION_INV_TOTAL_PARAMS, invokeExprRepr, str(totalNumberOfParams));
     }
 
     void writeAssignComparison(IMethod m, SSAComparisonInstruction instruction, Local left, Local op1, Local op2, Session session) {

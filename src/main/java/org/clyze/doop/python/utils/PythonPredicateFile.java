@@ -47,6 +47,7 @@ public enum PythonPredicateFile
     STRING_RAW("StringRaw"),
     FIELD_SIGNATURE("Field"),
     FUNCTION_INV_LINE("FunctionInvocation-Line"),
+    FUNCTION_INV_TOTAL_PARAMS("FunctionInvocation-TotalParams"),
     FUNCTION_INV("FunctionInvocation"),
     ASSIGN_BINOP("AssignBinop"),
     ASSIGN_UNOP("AssignUnop"),
