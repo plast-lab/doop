@@ -1,13 +1,9 @@
 /*************************************************************
- * MethodHandle constants
+ * Method Handles
  *************************************************************/
 
 HeapAllocation_ContextInsensitive(?heap) :-
   isMethodHandleConstant(?heap).
-
-/*************************************************************
- * Method Handles
- *************************************************************/
 
 .type MethodHandle = mainAnalysis.Value
 .decl isMethodHandle(?methodHandle:MethodHandle)
