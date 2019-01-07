@@ -70,7 +70,7 @@ $ ./doop -i ./lib/asm-debug-all-4.1.jar      [local file]
 ```
 
 #### PLATFORM (--platform)
-Optional --- default: java_7. The platform to use for the analysis. The possible Java options are java_N where N is the java version (3, 4, 5, 6, 7 etc.). Java 8 is currently not supported. The android options are android_N_V where N is the Android version (20, 21, 22, 23, 24, 25 etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom built platforms).
+Optional --- default: java_8. The platform to use for the analysis. The possible Java options are java_N where N is the java version (3, 4, 5, 6, 7 etc.). Java 8 is currently not supported. The android options are android_N_V where N is the Android version (20, 21, 22, 23, 24, 25 etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom built platforms).
 
 Example:
 
