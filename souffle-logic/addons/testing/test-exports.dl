@@ -4,7 +4,7 @@
 .output mainAnalysis.InstanceFieldPointsTo
 .output mainAnalysis.StaticFieldPointsTo
 .output mainAnalysis.VarPointsTo
-.output mainAnalysis.InvokedynamicCallGraphEdge
+.output mainAnalysis.MethodHandleCallGraphEdge
 .output mainAnalysis.LambdaCallSite
 .output mainAnalysis.LambdaCallGraphEdge
 

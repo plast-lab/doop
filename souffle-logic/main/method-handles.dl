@@ -236,41 +236,36 @@ CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx) :-
 
 // After a method handle is resolved, invokedynamic calls it. This is a call-graph
 // edge from an invokedynamic instruction to the method invoked by the call site.
-.decl InvokedynamicCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?linkObject:LinkObject)
 
 configuration.StaticContextRequest(?callerCtx, ?invokedynamic) :-
-   InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
-   LinkObject_Method(?linkObject, ?method),
-   Method_Modifier("static", ?method),
-   LinkObjectContexts(_, ?linkObject, ?callerCtx).
-InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?linkObject) :-
-   InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
-   LinkObject_Method(?linkObject, ?method),
-   configuration.StaticContextResponse(?callerCtx, ?invokedynamic, ?calleeCtx).
+  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
+  LinkObject_Method(?linkObject, ?method),
+  Method_Modifier("static", ?method),
+  LinkObjectContexts(_, ?linkObject, ?callerCtx).
+MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) :-
+  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
+  LinkObject_Method(?linkObject, ?method),
+  LinkObject_MethodHandle(?linkObject, ?mh),
+  configuration.StaticContextResponse(?callerCtx, ?invokedynamic, ?calleeCtx).
 
 // General rule for non-static methods resolved by invokedynamic. This rule
 // does not use the Request/Response schema, since we do not have a "value"
 // for the receiver (call site resolution happens at load time).
-InvokedynamicCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?linkObject) :-
-   InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
-   LinkObject_Method(?linkObject, ?method),
-   !Method_Modifier("static", ?method),
-   LinkObjectContexts(_, ?linkObject, ?callerCtx),
-   isImmutableContext(?calleeCtx).
+MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) :-
+  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
+  LinkObject_Method(?linkObject, ?method),
+  LinkObject_MethodHandle(?linkObject, ?mh),
+  !Method_Modifier("static", ?method),
+  LinkObjectContexts(_, ?linkObject, ?callerCtx),
+  isImmutableContext(?calleeCtx).
 
 ReachableContext(?calleeCtx, ?callee) :-
-   InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
+  MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
 
-// Handle return values for invokedynamic call-graph edges.
-VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
-   InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?method, _),
-   ReturnVar(?realReturnVar, ?method),
-   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
-   AssignReturnValue(?i, ?ret).
 
 // Use link object as receiver when calling constructors.
 VarPointsTo(?hctx, ?linkObject, ?calleeCtx, ?thisVar) :-
-   InvokedynamicCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?method, _),
+   MethodHandleCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?method, _),
    Method_SimpleName(?method, "<init>"),
    ThisVar(?method, ?thisVar),
    InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
