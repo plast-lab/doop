@@ -437,16 +437,14 @@ VarPointsTo(?immHctx, ?val, ?calleeCtx, ?formal) :-
 
 .type CallSite = mainAnalysis.Value
 .type LinkObject = mainAnalysis.Value
-.decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?dynRetType:Type, ?linkObject:LinkObject)
-.decl LinkObjectContexts(?hctx:configuration.HContext, ?linkObject:LinkObject, ?ctx:configuration.Context)
+.decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?dynRetType:Type, ?hctx:configuration.HContext, ?linkObject:LinkObject, ?ctx:configuration.Context)
 
 #define LINK_OBJECT(invokedynamic, type) \
   cat(invokedynamic, cat("::: ", cat(type, cat("::: (Mock)::: ", cat("link object of type ", type)))))
 
 // Construct link object and record CallSite metadata.
 MockValueConsMacro(?linkObject, ?dynRetType),
-LinkObjectContexts(?hctx, ?linkObject, ?callerCtx),
-InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?linkObject) :-
+InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?hctx, ?linkObject, ?callerCtx) :-
   ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?callerCtx),
   DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
   DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
@@ -455,21 +453,14 @@ InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?lin
   VarPointsTo(?hctx, ?callsite, ?calleeCtx, ?bootRetVar),
   ?linkObject = LINK_OBJECT(?invokedynamic, ?dynRetType).
 
-// If the result of the invokedynamic instruction is assigned to a
-// variable, use link object as return value.
-VarPointsTo(?hctx, ?linkObject, ?ctx, ?var) :-
-  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
-  AssignReturnValue(?invokedynamic, ?var),
-  LinkObjectContexts(?hctx, ?linkObject, ?ctx).
-
 .decl LinkObject_MethodHandle(?linkObject:LinkObject, ?methodHandle:MethodHandle)
 LinkObject_MethodHandle(?linkObject, ?methodHandle) :-
-  InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, ?linkObject),
+  InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, _, ?linkObject, _),
   InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
   MethodHandle_ReturnType(?methodHandle, ?dynRetType).
 // Method handle for C.<init> has dynamic return type C instead of "void".
 LinkObject_MethodHandle(?linkObject, ?methodHandle) :-
-  InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, ?linkObject),
+  InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, _, ?linkObject, _),
   InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
   MethodHandle_Method(?methodHandle, ?method),
   Method_SimpleName(?method, "<init>"),
@@ -483,21 +474,20 @@ LinkObject_Method(?linkObject, ?method) :-
 // Capture values of the enclosing environment.
 .decl CallSiteCaptured(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number)
 CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx) :-
-  InvokedynamicCallSite(?callsite, ?invokedynamic, _, ?K, _, _),
+  InvokedynamicCallSite(?callsite, ?invokedynamic, _, ?K, _, _, _, ?callerCtx),
   ?K > 0,
   ActualParam(?idx, ?invokedynamic, ?actual),
-  VarPointsTo(_, ?val, _, ?actual).
+  VarPointsTo(_, ?val, ?callerCtx, ?actual).
 
 // After a method handle is resolved, invokedynamic calls it. This is a call-graph
 // edge from an invokedynamic instruction to the method invoked by the call site.
 
 configuration.StaticContextRequest(?callerCtx, ?invokedynamic) :-
-  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
+  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, _, ?linkObject, ?callerCtx),
   LinkObject_Method(?linkObject, ?method),
-  Method_Modifier("static", ?method),
-  LinkObjectContexts(_, ?linkObject, ?callerCtx).
+  Method_Modifier("static", ?method).
 MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) :-
-  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
+  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, _, ?linkObject, ?callerCtx),
   LinkObject_Method(?linkObject, ?method),
   LinkObject_MethodHandle(?linkObject, ?mh),
   configuration.StaticContextResponse(?callerCtx, ?invokedynamic, ?calleeCtx).
@@ -506,11 +496,10 @@ MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) 
 // does not use the Request/Response schema, since we do not have a "value"
 // for the receiver (call site resolution happens at load time).
 MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) :-
-  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
+  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, _, ?linkObject, ?callerCtx),
   LinkObject_Method(?linkObject, ?method),
   LinkObject_MethodHandle(?linkObject, ?mh),
   !Method_Modifier("static", ?method),
-  LinkObjectContexts(_, ?linkObject, ?callerCtx),
   isImmutableContext(?calleeCtx).
 
 ReachableContext(?calleeCtx, ?callee) :-
@@ -564,9 +553,9 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 // Record more information about the link object to model the metafactory result.
 LambdaCallSite(?callsite, ?invokedynamic, ?linkObject, ?dynName, ?K, ?implMethod, ?desc) :-
   ReachableLambdaMetafactoryInvoke(?invokedynamic),
-  InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?linkObject),
+  InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, _, ?linkObject, ?callerCtx),
   BootstrapParam(1, ?invokedynamic, ?handleVar),
-  VarPointsTo(_, ?handleVal, _, ?handleVar),
+  VarPointsTo(_, ?handleVal, ?callerCtx, ?handleVar),
   MethodHandleConstant_Method(?handleVal, ?implMethod),
   // Used to generate friendly description for the lambda.
   Method_SimpleName(?implMethod, ?handleMeth),
