@@ -77,6 +77,7 @@ public enum PredicateFile
     METHOD_ANNOTATION("Method-Annotation"),
     METHOD_DECL_EXCEPTION("Method-DeclaresException"),
     METHOD_HANDLE_CONSTANT("MethodHandleConstant"),
+    METHOD_HANDLE_INVOCATION("MethodHandleInvocation"),
     METHOD_INV_LINE("MethodInvocation-Line"),
     METHOD_TYPE_CONSTANT("MethodTypeConstant"),
     METHOD_TYPE_CONSTANT_PARAM("MethodTypeConstantParam"),

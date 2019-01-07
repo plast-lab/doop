@@ -91,9 +91,15 @@ class TestInvokedynamic extends ServerAnalysisTests {
 
 		then:
 		varPointsTo(analysis, '<Main: void test1()>/println2out#_31', '<computed direct method handle for <java.io.PrintStream: void println(java.lang.String)>>')
-		varPointsTo(analysis, '<Main: void test2()>/methV_mh#_39', '<computed direct method handle for <A: void methV()>>')
-		varPointsTo(analysis, '<Main: void test3()>/methI_mh#_49', '<computed direct method handle for <A: void methI(java.lang.Integer)>>')
-		varPointsTo(analysis, '<Main: void test4()>/methDD_mh#_58', '<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
+		varPointsTo(analysis, '<Main: void test2()>/staticMeth_mh#_39', '<computed direct method handle for <A: java.lang.Integer staticMeth()>>')
+		varPointsTo(analysis, '<Main: void test2()>/ret#_41', '<A: java.lang.Integer staticMeth()>/new java.lang.Integer/0')
+		methodIsReachable(analysis, '<A: java.lang.Integer staticMeth()>')
+		varPointsTo(analysis, '<Main: void test3()>/methI_mh#_50', '<computed direct method handle for <A: void methI(java.lang.Integer)>>')
+		varPointsTo(analysis, '<A: void methI(java.lang.Integer)>/i#_0', '<Main: void test3()>/new java.lang.Integer/0')
+		varPointsTo(analysis, '<A: void methI(java.lang.Integer)>/this#_0', '<Main: void test3()>/new A/0')
+		methodIsReachable(analysis, '<A: void methI(java.lang.Integer)>')
+		varPointsTo(analysis, '<Main: void test4()>/methDD_mh#_59', '<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
+		methodIsReachable(analysis, '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
 	}
 
 	// @spock.lang.Ignore
