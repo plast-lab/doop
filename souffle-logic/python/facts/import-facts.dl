@@ -269,6 +269,13 @@ AssignInstruction_To(?instruction, ?to) :-
 Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn):-
   _Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
 
+//Function_SourcePosition
+
+.decl _Function_SourcePosition(?fun:symbol, ?startLine:number, ?endLine:number, ?startColumn:number, ?endColumn:number)
+.input _Function_SourcePosition(IO="file", filename="Instruction-SourcePosition.facts", delimiter="\t")
+
+Function_SourcePosition(?fun, ?startLine, ?endLine, ?startColumn, ?endColumn):-
+  _Function_SourcePosition(?fun, ?startLine, ?endLine, ?startColumn, ?endColumn).
 
 //Var-SourceName
 

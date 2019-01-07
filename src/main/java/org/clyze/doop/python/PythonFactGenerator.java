@@ -2,6 +2,7 @@ package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.ir.ssa.*;
+import com.ibm.wala.cast.loader.AstMethod;
 import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
 import com.ibm.wala.cast.python.loader.PythonLoader;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
@@ -115,9 +116,11 @@ public class PythonFactGenerator implements Runnable{
         //_writer.writeMethod(m); //COMMENTED OUT FROM HERE FOR NOW.
         int paramIndex = 0;
 
+        if(m instanceof AstMethod){
+            _writer.writeFunctionSourcePosition((AstMethod) m);
+        }
 
-        if(!m.isStatic())
-        {
+        if(!m.isStatic()) {
             //_writer.writeThisVar(m);    //Currently doesn't make sense so it is commented out. "self" is on v2
             paramIndex = 1;
         }

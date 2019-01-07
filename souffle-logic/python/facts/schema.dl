@@ -63,6 +63,7 @@
 .decl Function_Arity(?function:Function, ?arity:number)
 .decl Function_NumOfRequiredParams(?function:Function, ?numOfParams:number)
 .decl Function_DeclaredInFile(?function:Function, ?file:File)
+.decl Function_SourcePosition(?function:Function, ?startLine:number, ?endLine:number, ?startColumn:number, ?endColumn:number)
 
 .decl FormalParam(?index:number, ?paramName:symbol, ?function:Function, ?var:Var)
 .decl FormalParam_DefaultValForName(?function:Function,?paramName:symbol, ?from:Var)

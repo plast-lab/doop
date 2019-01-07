@@ -2,6 +2,7 @@ package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.ir.ssa.*;
+import com.ibm.wala.cast.loader.AstMethod;
 import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.cast.python.ssa.PythonPropertyRead;
@@ -603,6 +604,19 @@ public class PythonFactWriter {
         }
 
         return insn;
+    }
+
+    void writeFunctionSourcePosition(AstMethod meth){
+        IMethod.SourcePosition sourceInfo = meth.getSourcePosition();
+        int firstLine = 0, firstColumn =0 ,lastLine =0 ,lastColumn =0;
+        String function = _rep.signature(meth);
+        if (sourceInfo != null) {
+            firstLine = sourceInfo.getFirstLine();
+            firstColumn = sourceInfo.getFirstCol();
+            lastLine = sourceInfo.getLastLine();
+            lastColumn = sourceInfo.getLastCol();
+        }
+        _db.add(FUNCTION_SOURCE_POSITION, function, str(firstLine),str(firstColumn),str(lastLine),str(lastColumn));
     }
 
     void writeInstructionSourcePosition(IMethod inMethod, IR ir, SSAInstruction instruction, Session session)
