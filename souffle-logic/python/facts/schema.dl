@@ -285,6 +285,7 @@
 
 // Function Invocation
 .decl FunctionInvocation_Base(?invocation:FunctionInvocation_Insn, ?base:Var)
+.decl FunctionInvocation_NumberOfActualParams(?invocation:FunctionInvocation_Insn, ?total:number)
 
 //-----------------------------------------------------------------------------
 // [Import]

@@ -1,16 +1,4 @@
-.decl FunctionInvResolvesTo(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?val:Value, ?hctx:configuration.HContext, ?fun:Function)
-.decl ResolvedFunctionActualParam(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamVar:Var, ?actualParamVar:Var)
-.decl ResolvedFunctionHasActualKeywordParamForIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number, ?actualParamVar:Var)
-.decl ResolvedFunctionHasActualPositionalParamForIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number, ?actualParamVar:Var)
-.decl ResolvedFunctionNoActualKeywordParamForIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number)
-.decl ResolvedFunctionNoActualPositionalParamForIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number)
-.decl ResolvedFunctionHasActualParamForIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number)
-.decl ResolvedFunctionMissingActualOrDefaultParamForIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number)
-.decl ResolvedFunctionMissingActualParamForIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number)
-.decl ResolvedFunctionHasKeywordAndPositionalActualParamForIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number)
-.decl ResolvedFunctionHasActualParamUptoIndex(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamIndex:number)
-.decl ResolvedFunctionHasAllRequiredParams(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function)
-
+#include "function-resolution-declarations.dl"
 
 .output ResolvedFunctionActualParam
 .output ResolvedFunctionHasAllRequiredParams
@@ -25,8 +13,47 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tofunction):-
 
 configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tofunction):-
   !isModeledFunction(?tofunction),
+  ResolvedFunctionHasValidNumberOfActualParams(?callerCtx, ?invo, ?tofunction),
   ResolvedFunctionHasAllRequiredParams(?callerCtx, ?invo, ?tofunction),
   FunctionInvResolvesTo(?callerCtx, ?invo, ?value, ?hctx, ?tofunction).
+
+isContext(?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tofunction):-
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tofunction),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx).
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                 FUNCTION INVOCATION RESOLVES TO FUNCTION
+//----------------------------------------------------------------------------------------------------------------------
+
+
+FunctionInvResolvesTo(?callerCtx, ?invo, ?value, ?hctx, ?tofunction):-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  FunctionInvocation_Base(?invo, ?base),
+  HeapAllocation_Type(?value, ?tofunction),
+  isFunction(?tofunction).
+
+FunctionInvResolvesTo(?callerCtx, ?invo, ?toFunVal, ?toFunHctx, ?tofunction):-
+  FunctionInvocation_Base(?invo, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  isClassObjectAllocation(?value),
+  InstanceFieldPointsTo(?toFunHctx, ?toFunVal, "__init__", ?hctx, ?value),
+  HeapAllocation_Type(?toFunVal, ?tofunction),
+  isFunction(?tofunction).
+
+
+//TODO: ADD SUBCASE FOR BOUND/UNBOUND METHODS
+ResolvedFunctionHasValidNumberOfActualParams(?callerCtx, ?invo, ?tofunction):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  FunctionInvocation_NumberOfActualParams(?invo, ?totalParams),
+  Function_Arity(?tofunction, ?arity),
+  ?arity >= ?totalParams.
+
+ResolvedFunctionHasInvalidNumberOfActualParams(?callerCtx, ?invo, ?tofunction):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  FunctionInvocation_NumberOfActualParams(?invo, ?totalParams),
+  Function_Arity(?tofunction, ?arity),
+  ?arity < ?totalParams.
 
 //Unbound Functions/Methods
 
@@ -84,16 +111,45 @@ ResolvedFunctionMissingActualParamForIndex(?callerCtx, ?invo, ?tofunction, ?form
   ResolvedFunctionNoActualPositionalParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex),
   ResolvedFunctionNoActualKeywordParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex).
 
+//Last line is to avoid reporting missing actual or default param for the self arg of bound method calls
 ResolvedFunctionMissingActualOrDefaultParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex):-
   ResolvedFunctionMissingActualParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex),
-  !FormalParam_DefaultValForIndex(?tofunction, ?formalIndex, _).
+  !FormalParam_DefaultValForIndex(?tofunction, ?formalIndex, _),
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  !(isBoundMethodObjectAllocation(?baseValue), ?formalIndex = 0).
 
-DiagnosticForLSP(?file, "Error", ?startLine, ?endLine, ?startColumn, ?endColumn, "Missing required parameter."):-
-  ResolvedFunctionMissingActualOrDefaultParamForIndex(_, ?insn, _, _),
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              LSP DIAGNOSTIC ERRORS
+//----------------------------------------------------------------------------------------------------------------------
+DiagnosticForLSP(?file, "Error", ?startLine, ?endLine, ?startColumn, ?endColumn, ?errorMsg):-
+  ResolvedFunctionMissingActualOrDefaultParamForIndex(_, ?insn, ?tofunction, ?formalIndex),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, _),
   Instruction_Function(?insn, ?function),
   Function_DeclaredInFile(?function, ?file),
+  ?errorMsg = cat(cat(cat("Missing required parameter: ", ?paramName), " of function "),?tofunction),
   Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
 
+DiagnosticForLSP(?file, "Error", ?startLine, ?endLine, ?startColumn, ?endColumn, ?errorMsg):-
+  ResolvedFunctionHasKeywordAndPositionalActualParamForIndex(_, ?insn, ?tofunction, ?formalIndex),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, _),
+  Instruction_Function(?insn, ?function),
+  Function_DeclaredInFile(?function, ?file),
+  ?errorMsg = cat(cat(cat("Function invocation has both named and positional parameter for : ", ?paramName), " of function "),?tofunction),
+  Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
+
+DiagnosticForLSP(?file, "Error", ?startLine, ?endLine, ?startColumn, ?endColumn, ?errorMsg):-
+  ResolvedFunctionHasInvalidNumberOfActualParams(_, ?insn, ?tofunction),
+  Instruction_Function(?insn, ?function),
+  Function_DeclaredInFile(?function, ?file),
+  FunctionInvocation_NumberOfActualParams(?insn, ?totalParams),
+  Function_Arity(?tofunction, ?arity),
+  ?errorMsg = cat(cat(cat(cat(cat("Function invocation of function ", ?tofunction), " has "), to_string(?totalParams)), " params while function arity is "), to_string(?arity)),
+  Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
+
+//----------------------------------------------------------------------------------------------------------------------
+//                              CHECKING IF ALL REQUIRED PARAMS ARE PRESENT
+//----------------------------------------------------------------------------------------------------------------------
 
 ResolvedFunctionHasActualParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex):-
   ResolvedFunctionActualParam(?callerCtx, ?invo, ?tofunction, ?formal, _),
@@ -120,27 +176,33 @@ ResolvedFunctionHasAllRequiredParams(?callerCtx, ?invo, ?tofunction):-
   Function_NumOfRequiredParams(?tofunction, ?index + 1).
 
 
-FunctionInvResolvesTo(?callerCtx, ?invo, ?value, ?hctx, ?tofunction):-
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  FunctionInvocation_Base(?invo, ?base),
-  HeapAllocation_Type(?value, ?tofunction),
-  isFunction(?tofunction).
-
-FunctionInvResolvesTo(?callerCtx, ?invo, ?toFunVal, ?toFunHctx, ?tofunction):-
-  FunctionInvocation_Base(?invo, ?base),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  isClassObjectAllocation(?value),
-  InstanceFieldPointsTo(?toFunHctx, ?toFunVal, "__init__", ?hctx, ?value),
-  HeapAllocation_Type(?toFunVal, ?tofunction),
-  isFunction(?tofunction).
+//----------------------------------------------------------------------------------------------------------------------
+//                                 RESOLVED ACTUAL PARAM VALUE
+//----------------------------------------------------------------------------------------------------------------------
 
 
-isContext(?calleeCtx),
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tofunction):-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tofunction),
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx).
 
-.decl ResolvedActualParamValue(?callerCtx: configuration.Context, ?invo:Instruction, ?resolvedFunction:Function, ?paramName:symbol, ?hctx:configuration.HContext, ?paramValue:Value)
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
+ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
+  CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
+  ResolvedFunctionActualParam(?callerCtx, ?invo, ?tofunction, ?formal, ?actual),
+  FormalParam(_, ?paramName, ?tofunction, ?formal),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?actual).
+
+
+
+
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
+ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
+  CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
+  ResolvedFunctionMissingActualParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex),
+  FormalParam(?formalIndex, ?paramName, ?tofunction, ?formal),
+  FormalParam_DefaultValForIndex(?tofunction, ?formalIndex, ?default),
+  VarPointsTo(?hctx,  ?value, _, ?default).       //TODO: REVIEW this at some point
+
+//----------------------------------------------------------------------------------------------------------------------
+//            OLD RESOLVE ACTUAL PARAM VALUE CODE
+#if(0)
 
 //FOR NON BOUND METHODS AND FOR FUNCTION CALLS
 
@@ -157,6 +219,20 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?val
   ),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?actual).
 
+// Interprocedural Assign
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
+ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
+  CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  FormalParam(?paramIndex, ?paramName, ?tofunction, ?formal),
+  (
+    ActualPositionalParam(?paramIndex - 1, ?invo, ?actual);
+    ActualKeywordParam(_, ?invo, ?paramName, ?actual)
+  ),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?actual).
+
+
 // Default arguments
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
 ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
@@ -171,28 +247,6 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?val
   FormalParam_DefaultValForName(?tofunction, ?paramName, ?default),
   VarPointsTo(?hctx,  ?value, _, ?default).       //TODO: REVIEW this at some point
 
-//FOR BOUND METHOD CALLS
-VarPointsTo(?selfHctx, ?selfVal, ?calleeCtx, ?formal),
-ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?selfHctx, ?selfVal):-
-  CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
-  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
-  isBoundMethodObjectAllocation(?baseValue),
-  BoundMethodAllocationSelfArgument(?basehctx, ?baseValue, ?selfHctx, ?selfVal),
-  FormalParam(0, ?paramName, ?tofunction, ?formal).
-
-// Interprocedural Assign
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
-ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
-  CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
-  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
-  isBoundMethodObjectAllocation(?baseValue),
-  FormalParam(?paramIndex, ?paramName, ?tofunction, ?formal),
-  (
-    ActualPositionalParam(?paramIndex - 1, ?invo, ?actual);
-    ActualKeywordParam(_, ?invo, ?paramName, ?actual)
-  ),
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?actual).
-
 // Default arguments
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal),
 ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?value):-
@@ -206,6 +260,18 @@ ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?hctx, ?val
   ),
   FormalParam_DefaultValForName(?tofunction, ?paramName, ?default),
   VarPointsTo(?hctx,  ?value, _, ?default).       //TODO: REVIEW this at some point
+
+#endif
+//----------------------------------------------------------------------------------------------------------------------
+
+//FOR BOUND METHOD CALLS
+VarPointsTo(?selfHctx, ?selfVal, ?calleeCtx, ?formal),
+ResolvedActualParamValue(?callerCtx, ?invo, ?tofunction, ?paramName, ?selfHctx, ?selfVal):-
+  CallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?tofunction),
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, ?basehctx, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  BoundMethodAllocationSelfArgument(?basehctx, ?baseValue, ?selfHctx, ?selfVal),
+  FormalParam(0, ?paramName, ?tofunction, ?formal).
 
 //VarPointsTo(?hctx, ?value, ?callerCtx, ?return):-
 //  CallGraphEdge(?callerCtx, ?invo, _, ?tofunction),

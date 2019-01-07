@@ -317,6 +317,11 @@ AssignInstruction_To(?instruction, ?to),
 Instruction_Function(?instruction, ?function) :-
   _FunctionInvocation(?instruction, ?index, ?to, ?base, ?function).
 
+.decl _FunctionInvocation_NumberOfActualParams(?invocation:symbol, ?total:number)
+.input _FunctionInvocation_NumberOfActualParams(IO="file", filename="FunctionInvocation-TotalParams.facts", delimiter="\t")
+
+FunctionInvocation_NumberOfActualParams(?insn, ?total):-
+_FunctionInvocation_NumberOfActualParams(?insn, ?total).
 
 // Throw
 
