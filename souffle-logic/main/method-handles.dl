@@ -228,7 +228,7 @@ VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret) :-
 MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
 MHLookup_Type(?mockMHLookup, ?type),
 VarPointsTo(?immHctx, ?mockMHLookup, ?immCtx, ?ret) :-
-  _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup lookup()>", ?base, ?method),
+  _StaticMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup lookup()>", ?method),
   ReachableContext(?ctx, ?method),
   Method_DeclaringType(?method, ?type),
   ReifiedClass(?type, ?typeValue),
