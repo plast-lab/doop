@@ -77,6 +77,20 @@ VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
 #define MOCK_MH_LOOKUP(t) cat("mock method handles lookup object for type ", t)
 
 #ifdef REFLECTION
+
+// Model of MethodHandles.lookup().
+MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
+MHLookup_Type(?mockMHLookup, ?type),
+VarPointsTo(?immHctx, ?mockMHLookup, ?immCtx, ?ret) :-
+  _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup lookup()>", ?base, ?method),
+  ReachableContext(?ctx, ?method),
+  Method_DeclaringType(?method, ?type),
+  ReifiedClass(?type, ?typeValue),
+  AssignReturnValue(?invo, ?ret),
+  isImmutableContext(?immCtx),
+  isImmutableHContext(?immHctx),
+  ?mockMHLookup = MOCK_MH_LOOKUP(?type).
+
 // Model of MethodHandles.Lookup.lookupClass().
 VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
   _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>", ?base, ?method),
@@ -85,6 +99,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
   MHLookup_Type(?mhLookup, ?type),
   ReifiedClass(?type, ?classValue),
   AssignReturnValue(?invo, ?ret).
+
 #endif // REFLECTION
 
 /*************************************************************
