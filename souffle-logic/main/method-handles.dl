@@ -69,6 +69,74 @@ VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
   VarPointsTo(?hctx, ?val, ?calleeCtx, ?ret),
   AssignReturnValue(?invo, ?var).
 
+/*************************************************************
+ * Method Handles Lookup
+ *************************************************************/
+
+.decl MHLookup_Type(?value:Value, ?type:Type)
+#define MOCK_MH_LOOKUP(t) cat("mock method handles lookup object for type ", t)
+
+#ifdef REFLECTION
+// Model of MethodHandles.Lookup.lookupClass().
+VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
+  _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>", ?base, ?method),
+  ReachableContext(?ctx, ?method),
+  VarPointsTo(?hctx, ?mhLookup, ?ctx, ?base),
+  MHLookup_Type(?mhLookup, ?type),
+  ReifiedClass(?type, ?classValue),
+  AssignReturnValue(?invo, ?ret).
+#endif // REFLECTION
+
+/*************************************************************
+ * Method Types
+ *************************************************************/
+
+.type MethodType = mainAnalysis.Value
+.decl isMethodType(?value:MethodType)
+.decl MethodType_ParamType(?mt:MethodType, ?index:number, ?pType:Type)
+.decl MethodType_ReturnType(?mt:MethodType, ?retType:Type)
+.decl MethodType_Arity(?mt:MethodType, ?arity:number)
+
+isMethodType(?mt) :- isMethodTypeConstant(?mt).
+MethodType_ParamType(?mt, ?idx, ?type) :- _MethodTypeConstantParam(?mt, ?idx, ?type).
+MethodType_Arity(?mt, ?arity)          :- MethodTypeConstant_Arity(?mt, ?arity).
+MethodType_ReturnType(?mt, ?retType)   :- MethodTypeConstant_ReturnType(?mt, ?retType).
+
+// Convert method descriptors to method types.
+isMethodType(?descriptor) :- Method_Descriptor(_, ?descriptor).
+MethodType_ParamType(?descriptor, ?index, ?pType) :-
+  Method_Descriptor(?method, ?descriptor),
+  FormalParam(?index, ?method, ?var),
+  _Var_Type(?var, ?pType).
+MethodType_Arity(?descriptor, ?arity),
+MethodType_ReturnType(?descriptor, ?retType) :-
+  Method_Descriptor(?method, ?descriptor),
+  Method_ReturnType(?method, ?retType),
+  Method_Arity(?method, ?arity).
+
+#ifdef REFLECTION
+
+// Model of MethodType.returnType().
+VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
+  _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodType: java.lang.Class returnType()>", ?base, ?method),
+  ReachableContext(?ctx, ?method),
+  VarPointsTo(?hctx, ?mt, ?ctx, ?base),
+  MethodType_ReturnType(?mt, ?retType),
+  ReifiedClass(?retType, ?classValue),
+  AssignReturnValue(?invo, ?ret).
+
+// Imprecise model of MethodType.parameterType(), since we do not track
+// primitive values (for its argument).
+VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
+  _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>", ?base, ?method),
+  ReachableContext(?ctx, ?method),
+  VarPointsTo(?hctx, ?mt, ?ctx, ?base),
+  MethodType_ParamType(?mt, _, ?pType),
+  ReifiedClass(?pType, ?classValue),
+  AssignReturnValue(?invo, ?ret).
+
+#endif // REFLECTION
+
 /****************** Generic invokedynamic ********************/
 
 .decl ReachableInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type, ?ctx:configuration.Context)
@@ -92,14 +160,7 @@ InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMeth
 ReachableContext(?calleeCtx, ?bootMethod) :-
    InvokedynamicBootCallGraphEdge(_, _, ?calleeCtx, ?bootMethod).
 
-// Method types
-
-.type MethodType = mainAnalysis.Value
-.decl isMethodType(?value:MethodType)
-.decl MethodType_ParamType(?mt:MethodType, ?index:number, ?pType:Type)
-.decl MethodType_ReturnType(?mt:MethodType, ?retType:Type)
 .decl Invokedynamic_MethodType(?invokedynamic:DynamicMethodInvocation_Insn, ?mt:MethodType)
-
 #define MOCK_MT(retType, paramTypes) cat("mock method type ", cat(retType, paramTypes))
 .decl PopulateMTParamTypes(?mt:Value, ?invokedynamic:DynamicMethodInvocation_Insn)
 
@@ -119,10 +180,6 @@ MethodType_ParamType(?mt, ?index, ?pType) :-
 
 // Pass arguments to bootstrap methods. First three arguments are
 // filled in by the JVM, so we fill them with mock objects.
-
-.decl MHLookup_Type(?value:Value, ?type:Type)
-#define MOCK_MH_LOOKUP(t) cat("mock method handles lookup object for type ", t)
-
 MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
 MHLookup_Type(?mockMHLookup, ?callerClass),
 VarPointsTo(?immHctx, ?mockMHLookup, ?calleeCtx, ?caller),
@@ -484,57 +541,10 @@ VarPointsTo(?hctx, ?mockObj, ?calleeCtx, ?thisVar) :-
    ?mockObj = cat("mock ", cat(?type, cat(" constructed by constructor reference at ", ?i))),
    isImmutableHContext(?hctx).
 
-.decl MethodType_Arity(?mt:MethodType, ?arity:number)
-
-isMethodType(?mt) :- isMethodTypeConstant(?mt).
-MethodType_ParamType(?mt, ?idx, ?type) :- _MethodTypeConstantParam(?mt, ?idx, ?type).
-MethodType_Arity(?mt, ?arity)          :- MethodTypeConstant_Arity(?mt, ?arity).
-MethodType_ReturnType(?mt, ?retType)   :- MethodTypeConstant_ReturnType(?mt, ?retType).
-
-isMethodType(?descriptor) :- Method_Descriptor(_, ?descriptor).
-
-MethodType_ParamType(?descriptor, ?index, ?pType) :-
-  Method_Descriptor(?method, ?descriptor),
-  FormalParam(?index, ?method, ?var),
-  _Var_Type(?var, ?pType).
-
-MethodType_ReturnType(?descriptor, ?retType) :-
-  Method_Descriptor(?method, ?descriptor),
-  Method_ReturnType(?method, ?retType).
-
-MethodType_Arity(?descriptor, ?arity) :-
-  Method_Descriptor(?method, ?descriptor),
-  Method_Arity(?method, ?arity).
 
 #ifdef REFLECTION
 
-VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
-   _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>", ?base, ?method),
-   ReachableContext(?ctx, ?method),
-   VarPointsTo(?hctx, ?mhLookup, ?ctx, ?base),
-   MHLookup_Type(?mhLookup, ?type),
-   ReifiedClass(?type, ?classValue),
-   AssignReturnValue(?invo, ?ret).
 
-VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
-  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
-  ?sig = "<java.lang.invoke.MethodType: java.lang.Class returnType()>",
-  ReachableContext(?ctx, ?method),
-  VarPointsTo(?hctx, ?mt, ?ctx, ?base),
-  MethodType_ReturnType(?mt, ?retType),
-  ReifiedClass(?retType, ?classValue),
-  AssignReturnValue(?invo, ?ret).
-
-// Imprecise model of MethodType.parameterType(), since we do not track
-// primitive values (for its argument).
-VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
-  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
-  ?sig = "<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>",
-  ReachableContext(?ctx, ?method),
-  VarPointsTo(?hctx, ?mt, ?ctx, ?base),
-  MethodType_ParamType(?mt, _, ?pType),
-  ReifiedClass(?pType, ?classValue),
-  AssignReturnValue(?invo, ?ret).
 
 #endif // REFLECTION
 
