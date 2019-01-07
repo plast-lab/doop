@@ -505,16 +505,15 @@ MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) 
 ReachableContext(?calleeCtx, ?callee) :-
   MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
 
-// Use link object as receiver when calling constructors.
-VarPointsTo(?hctx, ?linkObject, ?calleeCtx, ?thisVar) :-
-  MethodHandleCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?method, _),
+// Create a receiver object when calling constructors.
+MockValueConsMacro(?value, ?type),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?thisVar) :-
+  MethodHandleCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?method, ?mh),
   Method_SimpleName(?method, "<init>"),
   ThisVar(?method, ?thisVar),
-  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, ?linkObject),
-  LinkObject_Method(?linkObject, ?method),  // sanity join
-  Value_Type(?linkObject, ?t),
-  Method_DeclaringType(?method, ?t),
-  isImmutableHContext(?hctx).
+  Method_DeclaringType(?method, ?type),
+  isImmutableHContext(?hctx),
+  ?value = cat(?type, cat(" value constructed by method handle ", ?mh)).
 
 /*************************************************************
  * Lambda-specific invokedynamic
