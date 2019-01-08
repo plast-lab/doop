@@ -166,13 +166,36 @@ MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh) :-
 ReachableContext(?calleeCtx, ?method) :-
   MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?method, _).
 
+// A boxing/unboxing conversion of types including the null type.
+.decl BoxTypeConversion(?original:Type, ?new:Type)
+// Create a new allocation in the case of boxing.
+.decl BoxAllocation(?value:Value, ?type:Type)
+#define BOX_ALLOC(t) cat("mock box allocation for type ", t)
+
+BoxTypeConversion(?t1, ?t2),
+MockValueConsMacro(?mockAlloc, ?t2),
+BoxAllocation(?mockAlloc, ?t2) :-
+  PrimitiveType_Boxed(?t1, ?wrapperT),
+  basic.SubtypeOf(?wrapperT, ?t2),
+  ?mockAlloc = BOX_ALLOC(?t2).
+BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
+BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
+BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
+
+.decl ConversibleTypes(?t:Type, ?tConv:Type)
+ConversibleTypes(?t, ?tConv) :- basic.SubtypeOf(?tConv, ?t).
+ConversibleTypes(?t, ?tConv) :- BoxTypeConversion(?t, ?tConv).
+
 // Pass arguments to static methods.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _),
   Method_Modifier("static", ?method),
   ActualParam(?idx, ?invo, ?actual),
   VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
-  FormalParam(?idx, ?method, ?formal).
+  FormalParam(?idx, ?method, ?formal),
+  Var_Type(?actual, ?actualType),
+  Var_Type(?formal, ?formalType),
+  ConversibleTypes(?actualType, ?formalType).
 
 // Pass arguments to instance methods (first argument becomes the receiver).
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
@@ -181,20 +204,29 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   ActualParam(?idx, ?invo, ?actual),
   ?idx > 0,
   VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
-  FormalParam(?idx - 1, ?method, ?formal).
+  FormalParam(?idx - 1, ?method, ?formal),
+  Var_Type(?actual, ?actualType),
+  Var_Type(?formal, ?formalType),
+  ConversibleTypes(?actualType, ?formalType).
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?this) :-
   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _),
   !Method_Modifier("static", ?method),
   ActualParam(0, ?invo, ?actual),
   VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
-  ThisVar(?method, ?this).
+  ThisVar(?method, ?this),
+  Var_Type(?actual, ?actualType),
+  Var_Type(?this, ?thisType),
+  ConversibleTypes(?actualType, ?thisType).
 
 // Get return value.
 VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _),
   ReturnVar(?ret, ?method),
   VarPointsTo(?hctx, ?val, ?calleeCtx, ?ret),
-  AssignReturnValue(?invo, ?var).
+  AssignReturnValue(?invo, ?var),
+  Var_Type(?ret, ?retType),
+  Var_Type(?var, ?varType),
+  ConversibleTypes(?retType, ?varType).
 
 // Model MethdHandle.asType().
 // TODO: populate MethodHandle_ParamTypes as well (for completeness).
@@ -502,10 +534,12 @@ MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) 
 // does not use the Request/Response schema, since we do not have a "value"
 // for the receiver (call site resolution happens at load time).
 MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) :-
-  InvokedynamicCallSite(_, ?invokedynamic, _, _, _, _, ?linkObject, ?callerCtx),
+  InvokedynamicCallSite(_, ?invokedynamic, _, _, ?dynRetType, _, ?linkObject, ?callerCtx),
   LinkObject_Method(?linkObject, ?method),
   LinkObject_MethodHandle(?linkObject, ?mh),
   !Method_Modifier("static", ?method),
+  MethodHandle_ReturnType(?mh, ?mhRetType),
+  ConversibleTypes(?mhRetType, ?dynRetType),
   isImmutableContext(?calleeCtx).
 
 ReachableContext(?calleeCtx, ?callee) :-
@@ -633,22 +667,6 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
   AssignReturnValue(?i, ?ret).
 
-// A boxing/unboxing conversion of types including the null type.
-.decl BoxTypeConversion(?original:Type, ?new:Type)
-// Create a new allocation in the case of boxing.
-.decl BoxAllocation(?value:Value, ?type:Type)
-#define BOX_ALLOC(t) cat("mock box allocation for type ", t)
-
-BoxTypeConversion(?t1, ?t2),
-MockValueConsMacro(?mockAlloc, ?t2),
-BoxAllocation(?mockAlloc, ?t2) :-
-  PrimitiveType_Boxed(?t1, ?wrapperT),
-  basic.SubtypeOf(?wrapperT, ?t2),
-  ?mockAlloc = BOX_ALLOC(?t2).
-BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
-BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
-BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
-
 // Helper relation: implementing method is an instance method.
 .decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?calleeCtx:configuration.Context, ?lambda:LinkObject)
 CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda) :-
@@ -691,8 +709,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   Value_Type(?val, ?valType),
   Var_Type(?formal, ?formalType),
   // Check type compatibility (including (un)boxing).
-  (basic.SubtypeOf(?valType, ?formalType);
-   BoxTypeConversion(?valType, ?formalType)),
+  ConversibleTypes(?valType, ?formalType),
   isImmutableHContext(?hctx).
 
 // Pass captured arguments to the implementing method.
