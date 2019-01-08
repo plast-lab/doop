@@ -507,13 +507,15 @@ ReachableContext(?calleeCtx, ?callee) :-
 
 // Create a receiver object when calling constructors.
 MockValueConsMacro(?value, ?type),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?thisVar) :-
-  MethodHandleCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?method, ?mh),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?thisVar),
+VarPointsTo(?hctx, ?value, ?callerCtx, ?ret) :-
+  MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh),
   Method_SimpleName(?method, "<init>"),
   ThisVar(?method, ?thisVar),
   Method_DeclaringType(?method, ?type),
   isImmutableHContext(?hctx),
-  ?value = cat(?type, cat(" value constructed by method handle ", ?mh)).
+  ?value = cat(?type, cat(" value constructed by method handle ", ?mh)),
+  AssignReturnValue(?invokedynamic, ?ret).
 
 /*************************************************************
  * Lambda-specific invokedynamic
