@@ -3,20 +3,17 @@
  *************************************************************/
 
 .type MethodType = mainAnalysis.Value
-.decl isMethodType(?value:MethodType)
 .decl MethodType_ParamType(?mt:MethodType, ?index:number, ?pType:Type)
 .decl MethodType_ParamTypes(?mt:MethodType, ?paramTypes:symbol)
 .decl MethodType_ReturnType(?mt:MethodType, ?retType:Type)
 .decl MethodType_Arity(?mt:MethodType, ?arity:number)
 
-isMethodType(?mt) :- isMethodTypeConstant(?mt).
 MethodType_ParamType(?mt, ?idx, ?type)  :- _MethodTypeConstantParam(?mt, ?idx, ?type).
 MethodType_Arity(?mt, ?arity)           :- MethodTypeConstant_Arity(?mt, ?arity).
 MethodType_ReturnType(?mt, ?retType)    :- MethodTypeConstant_ReturnType(?mt, ?retType).
 MethodType_ParamTypes(?mt, ?paramTypes) :- MethodTypeConstant_ParamTypes(?mt, ?paramTypes).
 
 // Convert method descriptors to method types.
-isMethodType(?descriptor) :- Method_Descriptor(_, ?descriptor).
 MethodType_ParamType(?descriptor, ?index, ?pType) :-
   Method_Descriptor(?method, ?descriptor),
   FormalParam(?index, ?method, ?var),
@@ -135,12 +132,10 @@ HeapAllocation_ContextInsensitive(?heap) :-
   isMethodHandleConstant(?heap).
 
 .type MethodHandle = mainAnalysis.Value
-.decl isMethodHandle(?methodHandle:MethodHandle)
 .decl MethodHandle_Method(?methodHandle:MethodHandle, ?method:Method)
 .decl MethodHandle_ParamTypes(?heap:MethodHandleConstant, ?paramTypes:symbol)
 .decl MethodHandle_ReturnType(?methodHandle:MethodHandle, ?retType:Type)
 
-isMethodHandle(?methodHandle),
 MethodHandle_Method(?methodHandle, ?method) :-
   MethodHandleConstant_Method(?methodHandle, ?method).
 
@@ -232,7 +227,6 @@ VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
 
 // Model MethdHandle.asType().
 MockValueConsMacro(?adapterMH, "java.lang.invoke.MethodHandle"),
-isMethodHandle(?adapterMH),
 MethodHandle_Method(?adapterMH, ?mhMethod),
 MethodHandle_ReturnType(?adapterMH, ?retType),
 MethodHandle_ParamTypes(?adapterMH, ?paramTypes),
@@ -291,7 +285,6 @@ VarPointsTo(?hctx, ?mh, ?ctx, ?var) :-
   MethodHandleConstant_ReturnType(?mh, ?retType).
 // Case 2: method handle constant not found, invent a mock object.
 MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
-isMethodHandle(?dmh),
 MethodHandle_Method(?dmh, ?method),
 MethodHandle_ParamTypes(?dmh, ?params),
 MethodHandle_ReturnType(?dmh, ?retType),
@@ -407,7 +400,6 @@ ReachableContext(?calleeCtx, ?bootMethod) :-
 
 // For every reachable invokedynamic, create a mock method type.
 MockValueConsMacro(?mockMethodType, "java.lang.invoke.MethodType"),
-isMethodType(?mockMethodType),
 MethodType_ReturnType(?mockMethodType, ?dynRetType),
 PopulateMTParamTypes(?mockMethodType, ?invokedynamic),
 Invokedynamic_MethodType(?invokedynamic, ?mockMethodType) :-
