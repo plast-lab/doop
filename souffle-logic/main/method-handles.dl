@@ -743,7 +743,55 @@ VarPointsTo(?hctx, ?mockObj, ?calleeCtx, ?thisVar) :-
   ?mockObj = cat("mock ", cat(?type, cat(" constructed by constructor reference at ", ?i))),
   isImmutableHContext(?hctx).
 
+#ifdef REFLECTION_METHOD_HANDLES
 #ifdef REFLECTION
 
+/**
+ * Naive model of Class.getDeclaredConstructors() without back-propagation of
+ * special values. Needed since the invokedynamic handling does not propagate
+ * these special values up to their uses.
+ */
+
+.decl FillConstructorsFromClass(?hctx:configuration.HContext, ?mockConstructors:Value, ?class:Type)
+
+#define GET_DECLARED_METHODS "<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>"
+#define GET_DECLARED_CONSRUCTORS "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>"
+.decl Class_getMembers(?sig:Method, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?ret:Var, ?class:Type)
+
+Class_getMembers(?sig, ?hctx, ?ctx, ?ret, ?class) :-
+  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
+  (?sig = GET_DECLARED_CONSTRUCTORS ; ?sig = GET_DECLARED_METHODS),
+  ReachableContext(?ctx, ?method),
+  VarPointsTo(_, ?classValue, ?ctx, ?base),
+  ReifiedClass(?class, ?classValue),
+  ApplicationClass(?class),
+  AssignReturnValue(?invo, ?ret),
+  isImmutableHContext(?hctx).
+
+MockValueConsMacro(?mockConstructors, "java.lang.reflect.Constructor[]"),
+VarPointsTo(?hctx, ?mockConstructors, ?ctx, ?ret),
+FillConstructorsFromClass(?hctx, ?mockConstructors, ?class) :-
+  Class_getMembers(GET_DECLARED_CONSTRUCTORS, ?hctx, ?ctx, ?ret, ?class),
+  ?mockConstructors = cat("mock constructors array for ", ?class).
+
+ArrayIndexPointsTo(?immHctx, ?constructor, ?hctx, ?mockConstructors) :-
+  FillConstructorsFromClass(?hctx, ?mockConstructors, ?class),
+  Method_DeclaringType(?method, ?class),
+  Method_SimpleName(?method, "<init>"),
+  ReifiedConstructor(?method, ?constructor),
+  isImmutableHContext(?immHctx).
+
+MockValueConsMacro(?mockMethods, "java.lang.reflect.Method[]"),
+VarPointsTo(?hctx, ?mockMethods, ?ctx, ?ret),
+FillConstructorsFromClass(?hctx, ?mockMethods, ?class) :-
+  Class_getMembers(GET_DECLARED_METHODS, ?hctx, ?ctx, ?ret, ?class),
+  ?mockMethods = cat("mock methods array for ", ?class).
+
+ArrayIndexPointsTo(?immHctx, ?methodValue, ?hctx, ?mockMethods) :-
+  FillConstructorsFromClass(?hctx, ?mockMethods, ?class),
+  Method_DeclaringType(?method, ?class),
+  ReifiedMethod(?method, ?methodValue),
+  isImmutableHContext(?immHctx).
 
 #endif // REFLECTION
+#endif // REFLECTION_METHOD_HANDLES
