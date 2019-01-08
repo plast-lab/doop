@@ -310,6 +310,9 @@ MethodFinder(?invo, ?ret) :-
   !Value_Null(?baseVal),
   AssignReturnValue(?invo, ?ret).
 
+#ifdef REFLECTION_METHOD_HANDLES
+#ifdef REFLECTION
+
 // Direct method handle lookup.
 .decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type)
 
@@ -331,6 +334,9 @@ AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?ret) :-
   ActualParam(2, ?invo, ?mtParam),
   VarPointsTo(_, ?mt, _, ?mtParam),
   DMHLookup(?type, ?id, ?mt, ?method, ?retType).
+
+#endif // REFLECTION
+#endif // REFLECTION_METHOD_HANDLES
 
 /*************************************************************
  * Generic invokedynamic
