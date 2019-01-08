@@ -5,13 +5,15 @@
 .type MethodType = mainAnalysis.Value
 .decl isMethodType(?value:MethodType)
 .decl MethodType_ParamType(?mt:MethodType, ?index:number, ?pType:Type)
+.decl MethodType_ParamTypes(?mt:MethodType, ?paramTypes:symbol)
 .decl MethodType_ReturnType(?mt:MethodType, ?retType:Type)
 .decl MethodType_Arity(?mt:MethodType, ?arity:number)
 
 isMethodType(?mt) :- isMethodTypeConstant(?mt).
-MethodType_ParamType(?mt, ?idx, ?type) :- _MethodTypeConstantParam(?mt, ?idx, ?type).
-MethodType_Arity(?mt, ?arity)          :- MethodTypeConstant_Arity(?mt, ?arity).
-MethodType_ReturnType(?mt, ?retType)   :- MethodTypeConstant_ReturnType(?mt, ?retType).
+MethodType_ParamType(?mt, ?idx, ?type)  :- _MethodTypeConstantParam(?mt, ?idx, ?type).
+MethodType_Arity(?mt, ?arity)           :- MethodTypeConstant_Arity(?mt, ?arity).
+MethodType_ReturnType(?mt, ?retType)    :- MethodTypeConstant_ReturnType(?mt, ?retType).
+MethodType_ParamTypes(?mt, ?paramTypes) :- MethodTypeConstant_ParamTypes(?mt, ?paramTypes).
 
 // Convert method descriptors to method types.
 isMethodType(?descriptor) :- Method_Descriptor(_, ?descriptor).
@@ -229,11 +231,11 @@ VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
   ConversibleTypes(?retType, ?varType).
 
 // Model MethdHandle.asType().
-// TODO: populate MethodHandle_ParamTypes as well (for completeness).
 MockValueConsMacro(?adapterMH, "java.lang.invoke.MethodHandle"),
 isMethodHandle(?adapterMH),
 MethodHandle_Method(?adapterMH, ?mhMethod),
 MethodHandle_ReturnType(?adapterMH, ?retType),
+MethodHandle_ParamTypes(?adapterMH, ?paramTypes),
 VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret) :-
   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
   ReachableContext(?ctx, ?method),
@@ -244,6 +246,7 @@ VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret) :-
   AssignReturnValue(?invo, ?ret),
   MethodHandle_Method(?mh, ?mhMethod),
   MethodType_ReturnType(?mt, ?retType),
+  Method_Params(?mhMethod, ?paramTypes),
   ?adapterMH = cat("<adapter for ", cat(?mh, cat(" as ", ?mt))).
 
 /*************************************************************
@@ -290,10 +293,12 @@ VarPointsTo(?hctx, ?mh, ?ctx, ?var) :-
 MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
 isMethodHandle(?dmh),
 MethodHandle_Method(?dmh, ?method),
+MethodHandle_ParamTypes(?dmh, ?params),
 MethodHandle_ReturnType(?dmh, ?retType),
 VarPointsTo(?hctx, ?dmh, ?ctx, ?var) :-
   AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?var),
   !MethodHandleConstant_Method(_, ?method),
+  Method_Params(?method, ?params),
   ?dmh = cat("<computed direct method handle for ", cat(?method, ">")).
 
 // Model conversions from reflection Method to method handle.
@@ -346,13 +351,14 @@ MethodFinder(?invo, ?ret) :-
 #ifdef REFLECTION
 
 // Direct method handle lookup.
-.decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type)
+.decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type, ?paramTypes:symbol)
 
-DMHLookup(?type, ?id, ?mt, ?method, ?retType) :-
+DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
   Method_DeclaringType(?method, ?type),
   Method_SimpleName(?method, ?id),
   Method_Descriptor(?method, ?descriptor),
   Method_ReturnType(?method, ?retType),
+  Method_Params(?method, ?paramTypes),
   MTValue_Descriptor(?mt, ?descriptor).
 
 // Create VarPointsTo for return values of method finders.
@@ -365,7 +371,7 @@ AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?ret) :-
   VarPointsTo(_, ?id, _, ?stringParam),
   ActualParam(2, ?invo, ?mtParam),
   VarPointsTo(_, ?mt, _, ?mtParam),
-  DMHLookup(?type, ?id, ?mt, ?method, ?retType).
+  DMHLookup(?type, ?id, ?mt, ?method, ?retType, _).
 
 #endif // REFLECTION
 #endif // REFLECTION_METHOD_HANDLES
