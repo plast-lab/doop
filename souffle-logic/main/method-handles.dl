@@ -361,6 +361,8 @@ AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?ret) :-
   ActualParam(2, ?invo, ?mtParam),
   VarPointsTo(_, ?mt, _, ?mtParam),
   DMHLookup(?type, ?id, ?mt, ?method, ?retType, _).
+  // MethodType_ParamTypes(?mt, ?paramTypes),
+  // DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes).
 
 #endif // REFLECTION
 #endif // REFLECTION_METHOD_HANDLES
@@ -377,6 +379,7 @@ ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?ctx) :-
   DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
   ReachableContext(?ctx, ?inMethod).
 
+// Helper relation to make bootstrap method context configurable.
 .decl isBootstrapMethodContext(?ctx:configuration.Context)
 isBootstrapMethodContext(?ctx) :- isImmutableContext(?ctx).
 
