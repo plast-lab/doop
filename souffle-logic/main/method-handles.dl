@@ -651,7 +651,7 @@ Lambda_N(?lambda, ?N, ?val) :-
 // context sensitivity, we must model all combinations of calling
 // contexts with implementing-method staticness.
 LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
-  LambdaCallSite(_, _, ?lambda, ?dynName, _, ?implMethod, _, ?callerCtx),
+  LambdaCallSite(_, _, ?lambda, ?dynName, _, ?implMethod, _, _),
   VarPointsTo(_, ?lambda, ?callerCtx, ?var),
   VirtualMethodInvocation_Base(?i, ?var),
   VirtualMethodInvocation_SimpleName(?i, ?dynName),
@@ -670,9 +670,9 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
 // Helper relation: implementing method is an instance method.
 .decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?calleeCtx:configuration.Context, ?lambda:LinkObject)
 CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda) :-
-  LambdaCallGraphEdge(?callerCtx, _, ?calleeCtx, ?implMethod, ?lambda),
+  LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
   !Method_Modifier("static", ?implMethod),
-  LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _, ?callerCtx),
+  LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _, _),
   ThisVar(?implMethod, ?this),
   Var_Type(?this, ?thisType).
 
@@ -700,9 +700,9 @@ Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
 
 // Pass invocation arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
-  LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda),
+  LambdaCallGraphEdge(_, ?i, ?calleeCtx, ?implMethod, ?lambda),
   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
-  LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _, ?callerCtx),
+  LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _, _),
   ActualParam(?idx, ?i, ?actual),
   FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
   VarPointsTo(_, ?val, _, ?actual),
@@ -714,9 +714,9 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
 
 // Pass captured arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
-  LambdaCallGraphEdge(?callerCtx, _, ?calleeCtx, ?implMethod, ?lambda),
+  LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, _),
-  LambdaCallSite(_, ?invokedynamic, ?lambda, _, ?K, ?implMethod, _, ?callerCtx),
+  LambdaCallSite(_, ?invokedynamic, ?lambda, _, ?K, ?implMethod, _, _),
   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx),
   ?idx + ?shiftK <= ?K,
   FormalParam(?idx - ?shiftK, ?implMethod, ?formal),
