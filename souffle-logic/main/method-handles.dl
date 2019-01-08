@@ -144,24 +144,20 @@ MethodHandle_ParamTypes(?methodHandle, ?paramTypes) :- MethodHandleConstant_Para
 
 // Invocations of a MethodHandle. These can either be explicit calls to
 // MethodHandle.invoke()/invokeExact() or implicit calls via invokedynamic.
-.decl MethodHandleInvoke(?invo:MethodInvocation, ?name:symbol, ?base:Var, ?containingMethod:Method)
-.decl MethodHandleCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?mh:MethodHandle)
+.decl MethodHandleCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?mh:MethodHandle, ?name:symbol)
 
-MethodHandleInvoke(?invo, ?name, ?base, ?containingMethod) :-
+MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, ?name) :-
   // Permit treatment of invoke methods as opaque.
   (_VirtualMethodInvocation(?invo, _, _, ?base, ?containingMethod) ;
    _SpecialMethodInvocation(?invo, _, _, ?base, ?containingMethod)),
-  _MethodHandleInvocation(?invo, ?name).
-
-MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh) :-
-  MethodHandleInvoke(?invo, _, ?base, ?containingMethod),
+  _MethodHandleInvocation(?invo, ?name),
   ReachableContext(?callerCtx, ?containingMethod),
   VarPointsTo(_, ?mh, ?callerCtx, ?base),
   MethodHandle_Method(?mh, ?method),
   // TODO: context sensitivity in the callee.
   isImmutableContext(?calleeCtx).
 ReachableContext(?calleeCtx, ?method) :-
-  MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?method, _).
+  MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?method, _, _).
 
 // A boxing/unboxing conversion of types including the null type.
 .decl BoxTypeConversion(?original:Type, ?new:Type)
@@ -185,7 +181,7 @@ ConversibleTypes(?t, ?tConv) :- BoxTypeConversion(?t, ?tConv).
 
 // Pass arguments to static methods.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _),
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
   Method_Modifier("static", ?method),
   ActualParam(?idx, ?invo, ?actual),
   VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
@@ -196,7 +192,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
 
 // Pass arguments to instance methods (first argument becomes the receiver).
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _),
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
   !Method_Modifier("static", ?method),
   ActualParam(?idx, ?invo, ?actual),
   ?idx > 0,
@@ -206,7 +202,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   Var_Type(?formal, ?formalType),
   ConversibleTypes(?actualType, ?formalType).
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?this) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _),
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
   !Method_Modifier("static", ?method),
   ActualParam(0, ?invo, ?actual),
   VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
@@ -217,7 +213,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?this) :-
 
 // Get return value.
 VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _),
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
   ReturnVar(?ret, ?method),
   VarPointsTo(?hctx, ?val, ?calleeCtx, ?ret),
   AssignReturnValue(?invo, ?var),
@@ -515,14 +511,15 @@ CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx) :-
   ActualParam(?idx, ?invokedynamic, ?actual),
   VarPointsTo(_, ?val, ?callerCtx, ?actual).
 
-// After a method handle is resolved, invokedynamic calls it. This is a call-graph
-// edge from an invokedynamic instruction to the method invoked by the call site.
+// After a method handle is resolved, invokedynamic calls it, as if
+// "invokeExact" was invoked on it. This is a call-graph edge from an
+// invokedynamic instruction to the method invoked by the call site.
 
 configuration.StaticContextRequest(?callerCtx, ?invokedynamic) :-
   InvokedynamicCallSite(_, ?invokedynamic, _, _, _, _, ?linkObject, ?callerCtx),
   LinkObject_Method(?linkObject, ?method),
   Method_Modifier("static", ?method).
-MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) :-
+MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, "invokeExact") :-
   InvokedynamicCallSite(_, ?invokedynamic, _, _, _, _, ?linkObject, ?callerCtx),
   LinkObject_Method(?linkObject, ?method),
   LinkObject_MethodHandle(?linkObject, ?mh),
@@ -531,7 +528,7 @@ MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) 
 // General rule for non-static methods resolved by invokedynamic. This rule
 // does not use the Request/Response schema, since we do not have a "value"
 // for the receiver (call site resolution happens at load time).
-MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) :-
+MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, "invokeExact") :-
   InvokedynamicCallSite(_, ?invokedynamic, _, _, ?dynRetType, _, ?linkObject, ?callerCtx),
   LinkObject_Method(?linkObject, ?method),
   LinkObject_MethodHandle(?linkObject, ?mh),
@@ -541,13 +538,13 @@ MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh) 
   isImmutableContext(?calleeCtx).
 
 ReachableContext(?calleeCtx, ?callee) :-
-  MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
+  MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?callee, _, _).
 
 // Create a receiver object when calling constructors.
 MockValueConsMacro(?value, ?type),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?thisVar),
 VarPointsTo(?hctx, ?value, ?callerCtx, ?ret) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh),
+  MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, _),
   Method_SimpleName(?method, "<init>"),
   ThisVar(?method, ?thisVar),
   Method_DeclaringType(?method, ?type),
