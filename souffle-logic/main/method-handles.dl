@@ -539,10 +539,10 @@ LambdaMetafactoryInvoke(?invokedynamic) :-
   DynamicMethodInvocation_Bootstrap(?invokedynamic, ?method),
   (?method = LAMBDA_METAFACTORY ; ?method = LAMBDA_ALTMETAFACTORY).
 
-.decl ReachableLambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn)
-ReachableLambdaMetafactoryInvoke(?invokedynamic) :-
+.decl ReachableLambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn, ?ctx:configuration.Context)
+ReachableLambdaMetafactoryInvoke(?invokedynamic, ?ctx) :-
   LambdaMetafactoryInvoke(?invokedynamic),
-  ReachableInvokedynamic(?invokedynamic, _, _, _).
+  ReachableInvokedynamic(?invokedynamic, _, _, ?ctx).
 
 // Record invokedynamic invocations whose bootstrap methods are not
 // handled at all. Used for statistics.
@@ -555,11 +555,11 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 #define LAMBDA_ALT_VAL(invo, ret, type, method, real, name) \
   cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
 
-.decl LambdaCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?linkObject:LinkObject, ?dynName:symbol, ?K:number, ?implMethod:Method, ?desc:symbol)
+.decl LambdaCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?linkObject:LinkObject, ?dynName:symbol, ?K:number, ?implMethod:Method, ?desc:symbol, ?ctx:configuration.Context)
 
 // Record more information about the link object to model the metafactory result.
-LambdaCallSite(?callsite, ?invokedynamic, ?linkObject, ?dynName, ?K, ?implMethod, ?desc) :-
-  ReachableLambdaMetafactoryInvoke(?invokedynamic),
+LambdaCallSite(?callsite, ?invokedynamic, ?linkObject, ?dynName, ?K, ?implMethod, ?desc, ?callerCtx) :-
+  ReachableLambdaMetafactoryInvoke(?invokedynamic, ?callerCtx),
   InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, _, ?linkObject, ?callerCtx),
   BootstrapParam(1, ?invokedynamic, ?handleVar),
   VarPointsTo(_, ?handleVal, ?callerCtx, ?handleVar),
@@ -573,23 +573,24 @@ LambdaCallSite(?callsite, ?invokedynamic, ?linkObject, ?dynName, ?K, ?implMethod
 
 .decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
 InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory) :-
-  ReachableLambdaMetafactoryInvoke(?invokedynamic),
+  ReachableLambdaMetafactoryInvoke(?invokedynamic, ?callerCtx),
   InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory).
 
 .decl Lambda_N(?lambda:LinkObject, ?N:number, ?samMethodType:Value)
 
 Lambda_N(?lambda, ?N, ?val) :-
-  InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, _, ?metafactory),
+  InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, _, ?metafactory),
   ?metafactory = LAMBDA_METAFACTORY,
-  LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
+  LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _, ?callerCtx),
   BootstrapParam(0, ?invokedynamic, ?actual),
-  VarPointsTo(_, ?val, _, ?actual),
+  VarPointsTo(_, ?val, ?callerCtx, ?actual),
   MethodTypeConstant_Arity(?val, ?N).
 
 Lambda_N(?lambda, ?N, ?val) :-
-  InvokedynamicMetafactoryCallGraphEdge(_, ?invokedynamic, _, ?metafactory),
+  InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, _, ?metafactory),
   ?metafactory = LAMBDA_ALTMETAFACTORY,
-  LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
+  LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _, ?callerCtx),
+  // TODO: this does not match contexts, so it loses precision.
   ArrayIndexPointsTo(_, ?val, _, MOCK_ARRAY(?invokedynamic)),
   MethodTypeConstant_Arity(?val, ?N).
 
@@ -609,7 +610,7 @@ Lambda_N(?lambda, ?N, ?val) :-
 // context sensitivity, we must model all combinations of calling
 // contexts with implementing-method staticness.
 LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
-  LambdaCallSite(_, _, ?lambda, ?dynName, _, ?implMethod, _),
+  LambdaCallSite(_, _, ?lambda, ?dynName, _, ?implMethod, _, ?callerCtx),
   VarPointsTo(_, ?lambda, ?callerCtx, ?var),
   VirtualMethodInvocation_Base(?i, ?var),
   VirtualMethodInvocation_SimpleName(?i, ?dynName),
@@ -644,16 +645,16 @@ BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
 // Helper relation: implementing method is an instance method.
 .decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?calleeCtx:configuration.Context, ?lambda:LinkObject)
 CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda) :-
-  LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
+  LambdaCallGraphEdge(?callerCtx, _, ?calleeCtx, ?implMethod, ?lambda),
   !Method_Modifier("static", ?implMethod),
-  LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _),
+  LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _, ?callerCtx),
   ThisVar(?implMethod, ?this),
   Var_Type(?this, ?thisType).
 
 // Helper relation: a lambda call site that uses an instance method.
 .decl LambdaCallSiteWithInstanceMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:LinkObject, ?implMethod:Method)
 LambdaCallSiteWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod) :-
-  LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, ?implMethod, _),
+  LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, ?implMethod, _, _),
   !Method_Modifier("static", ?implMethod).
 
 // Helper relation: instance methods may implicitly consume one of the
@@ -661,7 +662,7 @@ LambdaCallSiteWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod) :-
 // static methods take all K arguments before N ones.
 .decl Params_ReceiverShiftRight(?lambda:LinkObject, ?implMethod:Method, ?shiftK:number, ?shiftN:number)
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
-  LambdaCallSite(_, _, ?lambda, _, _, ?implMethod, _),
+  LambdaCallSite(_, _, ?lambda, _, _, ?implMethod, _, _),
   Method_Modifier("static", ?implMethod).
 // No bootstrap arguments = an actual argument will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
@@ -674,9 +675,9 @@ Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
 
 // Pass invocation arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
-  LambdaCallGraphEdge(_, ?i, ?calleeCtx, ?implMethod, ?lambda),
+  LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda),
   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
-  LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _),
+  LambdaCallSite(_, _, ?lambda, _, ?K, ?implMethod, _, ?callerCtx),
   ActualParam(?idx, ?i, ?actual),
   FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
   VarPointsTo(_, ?val, _, ?actual),
@@ -689,9 +690,9 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
 
 // Pass captured arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
-  LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
+  LambdaCallGraphEdge(?callerCtx, _, ?calleeCtx, ?implMethod, ?lambda),
   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, _),
-  LambdaCallSite(_, ?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
+  LambdaCallSite(_, ?invokedynamic, ?lambda, _, ?K, ?implMethod, _, ?callerCtx),
   CallSiteCaptured(_, ?invokedynamic, ?val, ?idx),
   ?idx + ?shiftK <= ?K,
   FormalParam(?idx - ?shiftK, ?implMethod, ?formal),
