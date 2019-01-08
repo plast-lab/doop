@@ -569,6 +569,13 @@ LambdaCallSite(?callsite, ?invokedynamic, ?linkObject, ?dynName, ?K, ?implMethod
   Method_DeclaringType(?implMethod, ?handleType),
   ?desc = LAMBDA_ALT_VAL(?invokedynamic, ?dynRetType, ?handleType, ?handleMeth, ?implMethod, ?dynName).
 
+// Return a mock lambda object. Since the link object already has the needed
+// type, we reuse it instead of inventing a new mock object.
+VarPointsTo(?immHctx, ?linkObject, ?ctx, ?ret) :-
+  LambdaCallSite(_, ?invokedynamic, ?linkObject, _, _, _, _, ?ctx),
+  AssignReturnValue(?invokedynamic, ?ret),
+  isImmutableHContext(?immHctx).
+
 // A helper filtering relation for metafactory bootstrap calls.
 
 .decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
