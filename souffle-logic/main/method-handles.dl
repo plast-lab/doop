@@ -367,6 +367,18 @@ AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?ret) :-
 #endif // REFLECTION
 #endif // REFLECTION_METHOD_HANDLES
 
+// Create a receiver object when calling constructors.
+MockValueConsMacro(?value, ?type),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?thisVar),
+VarPointsTo(?hctx, ?value, ?callerCtx, ?ret) :-
+  MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, _),
+  Method_SimpleName(?method, "<init>"),
+  ThisVar(?method, ?thisVar),
+  Method_DeclaringType(?method, ?type),
+  isImmutableHContext(?hctx),
+  ?value = cat(?type, cat(" value constructed by method handle ", ?mh)),
+  AssignReturnValue(?invokedynamic, ?ret).
+
 /*************************************************************
  * Generic invokedynamic
  *************************************************************/
@@ -496,14 +508,6 @@ CallSiteContents(?callsite, ?methodHandle, ?method) :-
   Method_SimpleName(?method, "<init>"),
   Method_DeclaringType(?method, ?dynRetType).
 
-// Capture values of the enclosing environment.
-.decl CallSiteCaptured(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number)
-CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx) :-
-  InvokedynamicCallSite(?callsite, ?invokedynamic, _, ?K, _, _, ?callerCtx),
-  ?K > 0,
-  ActualParam(?idx, ?invokedynamic, ?actual),
-  VarPointsTo(_, ?val, ?callerCtx, ?actual).
-
 // After a method handle is resolved, invokedynamic calls it, as if
 // "invokeExact" was invoked on it. This is a call-graph edge from an
 // invokedynamic instruction to the method invoked by the call site.
@@ -530,18 +534,6 @@ MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, 
 
 ReachableContext(?calleeCtx, ?callee) :-
   MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?callee, _, _).
-
-// Create a receiver object when calling constructors.
-MockValueConsMacro(?value, ?type),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?thisVar),
-VarPointsTo(?hctx, ?value, ?callerCtx, ?ret) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, _),
-  Method_SimpleName(?method, "<init>"),
-  ThisVar(?method, ?thisVar),
-  Method_DeclaringType(?method, ?type),
-  isImmutableHContext(?hctx),
-  ?value = cat(?type, cat(" value constructed by method handle ", ?mh)),
-  AssignReturnValue(?invokedynamic, ?ret).
 
 /*************************************************************
  * Lambda-specific invokedynamic
@@ -672,6 +664,14 @@ CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeC
 LambdaCallSiteWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod) :-
   LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, ?implMethod, _, _),
   !Method_Modifier("static", ?implMethod).
+
+// Capture values of the enclosing environment.
+.decl CallSiteCaptured(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number)
+CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx) :-
+  InvokedynamicCallSite(?callsite, ?invokedynamic, _, ?K, _, _, ?callerCtx),
+  ?K > 0,
+  ActualParam(?idx, ?invokedynamic, ?actual),
+  VarPointsTo(_, ?val, ?callerCtx, ?actual).
 
 // Helper relation: instance methods may implicitly consume one of the
 // K or N arguments for the receiver (shifting them by 1), while
