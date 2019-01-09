@@ -57,7 +57,7 @@
 .decl isFunction(?m:Function)
 .decl isComprehensionFunction(?m:Function)
 .decl isModeledFunction(?m:Function)
-
+.decl isConstructorMethod(?m:Function)
 
 .decl Function_SimpleName(?function:Function, ?simpleName:symbol)
 .decl Function_Arity(?function:Function, ?arity:number)

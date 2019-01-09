@@ -41,33 +41,92 @@ FunctionInvResolvesTo(?callerCtx, ?invo, ?toFunVal, ?toFunHctx, ?tofunction):-
   HeapAllocation_Type(?toFunVal, ?tofunction),
   isFunction(?tofunction).
 
+//----------------------------------------------------------------------------------------------------------------------
+//                           CHECKING FOR VALID NUMBER OF PARAMS (NOT MORE THAN THE ARITY OF THE METHOD)
+//----------------------------------------------------------------------------------------------------------------------
 
-//TODO: ADD SUBCASE FOR BOUND/UNBOUND METHODS
 ResolvedFunctionHasValidNumberOfActualParams(?callerCtx, ?invo, ?tofunction):-
   FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  !isConstructorMethod(?tofunction),
   FunctionInvocation_NumberOfActualParams(?invo, ?totalParams),
   Function_Arity(?tofunction, ?arity),
   ?arity >= ?totalParams.
 
+ResolvedFunctionHasValidNumberOfActualParams(?callerCtx, ?invo, ?tofunction):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  isConstructorMethod(?tofunction),
+  FunctionInvocation_NumberOfActualParams(?invo, ?totalParams),
+  Function_Arity(?tofunction, ?arity),
+  ?arity >= ?totalParams + 1.
+
+ResolvedFunctionHasValidNumberOfActualParams(?callerCtx, ?invo, ?tofunction):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  FunctionInvocation_NumberOfActualParams(?invo, ?totalParams),
+  Function_Arity(?tofunction, ?arity),
+  ?arity >= ?totalParams + 1.
+
 ResolvedFunctionHasInvalidNumberOfActualParams(?callerCtx, ?invo, ?tofunction):-
   FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  !isConstructorMethod(?tofunction),
   FunctionInvocation_NumberOfActualParams(?invo, ?totalParams),
   Function_Arity(?tofunction, ?arity),
   ?arity < ?totalParams.
+
+ResolvedFunctionHasInvalidNumberOfActualParams(?callerCtx, ?invo, ?tofunction):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  isConstructorMethod(?tofunction),
+  FunctionInvocation_NumberOfActualParams(?invo, ?totalParams),
+  Function_Arity(?tofunction, ?arity),
+  ?arity < ?totalParams +1.
+
+ResolvedFunctionHasInvalidNumberOfActualParams(?callerCtx, ?invo, ?tofunction):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isBoundMethodObjectAllocation(?baseValue),
+  FunctionInvocation_NumberOfActualParams(?invo, ?totalParams),
+  Function_Arity(?tofunction, ?arity),
+  ?arity < ?totalParams + 1.
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                              RESOLVING OF ACTUAL PARAMS (along with a couple of error cases)
+//----------------------------------------------------------------------------------------------------------------------
 
 //Unbound Functions/Methods
 
 ResolvedFunctionHasActualPositionalParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex, ?actual):-
   FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
   isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  !isConstructorMethod(?tofunction),
   FormalParam(?formalIndex, _, ?tofunction, _),
   ActualPositionalParam(?formalIndex, ?invo, ?actual).
 
 ResolvedFunctionNoActualPositionalParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex):-
   FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
   isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  !isConstructorMethod(?tofunction),
   FormalParam(?formalIndex, _, ?tofunction, _),
   !ActualPositionalParam(?formalIndex, ?invo, _).
+
+//Special for constructors
+//TODO: review this at some point
+ResolvedFunctionHasActualPositionalParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex, ?actual):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  isConstructorMethod(?tofunction),
+  FormalParam(?formalIndex, _, ?tofunction, _),
+  ActualPositionalParam(?formalIndex - 1, ?invo, ?actual).
+
+ResolvedFunctionNoActualPositionalParamForIndex(?callerCtx, ?invo, ?tofunction, ?formalIndex):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, ?baseValue, _, ?tofunction),
+  isUnboundMethodOrFunctionObjectAllocation(?baseValue),
+  isConstructorMethod(?tofunction),
+  FormalParam(?formalIndex, _, ?tofunction, _),
+  !ActualPositionalParam(?formalIndex - 1, ?invo, _).
 
 //Bound Methods
 
@@ -174,6 +233,10 @@ ResolvedFunctionHasActualParamUptoIndex(?callerCtx, ?invo, ?tofunction, ?index):
 ResolvedFunctionHasAllRequiredParams(?callerCtx, ?invo, ?tofunction):-
   ResolvedFunctionHasActualParamUptoIndex(?callerCtx, ?invo, ?tofunction, ?index),
   Function_NumOfRequiredParams(?tofunction, ?index + 1).
+
+ResolvedFunctionHasAllRequiredParams(?callerCtx, ?invo, ?tofunction):-
+  FunctionInvResolvesTo(?callerCtx, ?invo, _, _, ?tofunction),
+  Function_NumOfRequiredParams(?tofunction, 0).
 
 
 //----------------------------------------------------------------------------------------------------------------------
