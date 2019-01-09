@@ -60,6 +60,13 @@ public interface PointsToAnalysis {
 
     /**
      *
+     * @param method
+     * @return the caller methods of method
+     */
+    Set<Method> callersOf(Method method);
+
+    /**
+     *
      * @return all reachable methods in points-to analysis
      */
     Set<Method> reachableMethods();

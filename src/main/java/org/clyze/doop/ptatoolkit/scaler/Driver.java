@@ -34,6 +34,7 @@ public class Driver {
         System.out.println(ANSIColor.BOLD + ANSIColor.YELLOW + "Scaler starts ..." + ANSIColor.RESET);
         scalerTimer.start();
         Scaler scaler = new Scaler(pta);
+        System.out.println("|BLAH|");
         if (Global.getTST() != Global.UNDEFINE) {
             scaler.setTST(Global.getTST());
         }

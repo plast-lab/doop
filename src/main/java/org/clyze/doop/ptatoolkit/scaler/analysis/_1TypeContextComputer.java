@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class _1TypeContextComputer extends ContextComputer {
+    private Set<Method> visited = new HashSet<>();
 
     _1TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
         super(pta, oag);
@@ -21,6 +22,8 @@ public class _1TypeContextComputer extends ContextComputer {
 
     @Override
     protected int computeContextNumberOf(Method method) {
+        visited = new HashSet<>();
+        visited.add(method);
         Set<Obj> totalReceiverObjects = getReceiverObjects(method);
         if (method.isInstance()) {
             if (totalReceiverObjects.isEmpty()) {
@@ -43,8 +46,11 @@ public class _1TypeContextComputer extends ContextComputer {
             pta.receiverObjectsOf(method);
         }
         else {
-            for (Method caller : pta.calleesOf(method)) {
-                totalReceiverObjects.addAll(pta.receiverObjectsOf(caller));
+            for (Method caller : pta.callersOf(method)) {
+                if (!visited.contains(caller)) {
+                    visited.add(caller);
+                    totalReceiverObjects.addAll(getReceiverObjects((caller)));
+                }
             }
         }
         return totalReceiverObjects;

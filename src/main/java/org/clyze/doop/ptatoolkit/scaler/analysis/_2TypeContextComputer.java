@@ -5,10 +5,12 @@ import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.pta.basic.Obj;
 import org.clyze.doop.ptatoolkit.pta.basic.Type;
+import org.codehaus.groovy.util.HashCodeHelper;
 
 import java.util.*;
 
 public class _2TypeContextComputer extends ContextComputer {
+    private Set<Method> visited = null;
 
     _2TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
         super(pta, oag);
@@ -21,6 +23,9 @@ public class _2TypeContextComputer extends ContextComputer {
 
     @Override
     protected int computeContextNumberOf(Method method) {
+        visited = new HashSet<>();
+        visited.add(method);
+
         if (method.isInstance()) {
             if (pta.receiverObjectsOf(method).isEmpty()) {
                 if (Global.isDebug()) {
@@ -36,7 +41,6 @@ public class _2TypeContextComputer extends ContextComputer {
     private Set<List<Type>> getContexts(Method method) {
         Set<List<Type>> contexts = new HashSet<>();
         if (method.isInstance()) {
-
             for (Obj recv : pta.receiverObjectsOf(method)) {
                 Set<Obj> preds = oag.predsOf(recv);
                 if (!preds.isEmpty()) {
@@ -54,8 +58,11 @@ public class _2TypeContextComputer extends ContextComputer {
             return contexts;
         }
         else {
-            for (Method caller : pta.calleesOf(method)) {
-                contexts.addAll(getContexts(caller));
+            for (Method caller : pta.callersOf(method)) {
+                if (!visited.contains(caller)) {
+                    visited.add(caller);
+                    contexts.addAll(getContexts(caller));
+                }
             }
             return contexts;
         }

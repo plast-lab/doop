@@ -32,9 +32,7 @@ public abstract class ContextComputer {
 
     private void computeContext() {
         for (Method method : pta.reachableMethods()) {
-            if (method.isInstance()) {
-                method2ctxNumber.put(method, computeContextNumberOf(method));
-            }
+            method2ctxNumber.put(method, computeContextNumberOf(method));
         }
     }
 }

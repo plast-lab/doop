@@ -5,10 +5,13 @@ import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.pta.basic.Obj;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class _2ObjectContextComputer extends ContextComputer {
+    private Set<Method> visited = null;
 
     _2ObjectContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
         super(pta, oag);
@@ -21,6 +24,9 @@ public class _2ObjectContextComputer extends ContextComputer {
 
     @Override
     protected int computeContextNumberOf(Method method) {
+        visited = new HashSet<>();
+        visited.add(method);
+
         if (method.isInstance()) {
             if (pta.receiverObjectsOf(method).isEmpty()) {
                 if (Global.isDebug()) {
@@ -29,6 +35,7 @@ public class _2ObjectContextComputer extends ContextComputer {
                 return 1;
             }
         }
+
         Set<Obj> totalPreds = getPreds(method);
 
         return totalPreds.size();
@@ -49,8 +56,11 @@ public class _2ObjectContextComputer extends ContextComputer {
             }
         }
         else {
-            for (Method caller : pta.calleesOf(method)) {
-                totalPreds.addAll(getPreds(caller));
+            for (Method caller : pta.callersOf(method)) {
+                if (!visited.contains(caller)) {
+                    visited.add(caller);
+                    totalPreds.addAll(getPreds(caller));
+                }
             }
         }
         return totalPreds;

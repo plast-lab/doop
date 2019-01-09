@@ -47,6 +47,7 @@ public enum Query {
 	CALLER_CALLEE,
 	MAINMETHOD,
 	REACHABLE,
+	Reachable,
 	IMPLICITREACHABLE,
 
     // instance field store

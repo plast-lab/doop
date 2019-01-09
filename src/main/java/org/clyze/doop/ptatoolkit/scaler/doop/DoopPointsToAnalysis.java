@@ -95,6 +95,11 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     }
 
     @Override
+    public Set<Method> callersOf(Method method) {
+        return method.getAttributeSet(CALLER);
+    }
+
+    @Override
     public Set<Method> methodsInvokedOn(Obj obj) {
         return obj.getAttributeSet(MTD_ON);
     }
@@ -138,7 +143,7 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
                 .collect(Collectors.toSet());
         computeAllocatedObjects(objFactory, mtdFactory);
 
-        buildCallees(mtdFactory);
+        buildCalleesAndCallers(mtdFactory);
 
         buildMethodsInvokedOnObjects(mtdFactory);
 
@@ -164,7 +169,7 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
 
         buildPointsToSet(varFactory, objFactory, interestingVarNames);
         buildMethodNeighborsMap(mtdFactory);
-        buildCallees(mtdFactory);
+        buildCalleesAndCallers(mtdFactory);
 
         buildMethodTotalVPTMap(mtdFactory);
         buildDeclaringType(mtdFactory, typeFactory);
@@ -225,25 +230,30 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     /**
      * Build caller-callee relations.
      */
-    private void buildCallees(MethodFactory mtdFactory) {
+    private void buildCalleesAndCallers(MethodFactory mtdFactory) {
         reachableMethods = new HashSet<>();
         Map<String, String> callIn = new HashMap<>();
+
         db.query(Query.CALLSITEIN).forEachRemaining(list -> {
             String call = list.get(0);
             String methodSig = list.get(1);
             callIn.put(call, methodSig);
         });
+
         db.query(Query.CALL_EDGE).forEachRemaining(list -> {
             String callerSig = callIn.get(list.get(0));
             if (callerSig != null) {
                 Method caller = mtdFactory.get(callerSig);
                 Method callee = mtdFactory.get(list.get(1));
                 caller.addToAttributeSet(CALLEE, callee);
-                reachableMethods.add(caller);
-                reachableMethods.add(callee);
+                callee.addToAttributeSet(CALLER, caller);
             } else if (Global.isDebug()) {
                 System.out.println("Null caller of: " + list.get(0));
             }
+        });
+
+        db.query(Query.Reachable).forEachRemaining(list -> {
+           reachableMethods.add(mtdFactory.get(list.get(0)));
         });
     }
 

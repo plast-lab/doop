@@ -23,7 +23,7 @@ public class Scaler {
     private ContextComputer bottomLine;
     private Map<Method, Integer> ptsSize = new HashMap<>();
     /** Total Scalability Threshold */
-    private long tst = 300000000;
+    private long tst = 2000000;
     private List<Triple<Method, String, Integer>> results;
 
     public Scaler(PointsToAnalysis pta) {
@@ -33,9 +33,7 @@ public class Scaler {
     }
 
     public Map<Method, String> selectContext() {
-        if (Global.isDebug()) {
-            results = new ArrayList<>();
-        }
+        results = new ArrayList<>();
         System.out.println("Given TST value: " +
                 ANSIColor.BOLD + ANSIColor.GREEN + tst + ANSIColor.RESET);
         long st = binarySearch(reachableMethods, tst);
@@ -45,6 +43,7 @@ public class Scaler {
         reachableMethods.forEach(method ->
                 analysisMap.put(method, selectContextFor(method, st)));
         AtomicLong worstCaseVPT = new AtomicLong(0);
+        AtomicLong numberOfMethods = new AtomicLong(0);
         //if (Global.isDebug()) {
         results.stream()
                 .sorted(Comparator.comparing(Triple::getThird))
@@ -59,9 +58,10 @@ public class Scaler {
                             method.toString(), context,
                             nContexts, nContexts * accumuPTSSize);
                     worstCaseVPT.getAndAdd(nContexts * accumuPTSSize);
+                    numberOfMethods.getAndIncrement();
                 });
         //}
-        System.out.println("Total worst case VPT: " + worstCaseVPT);
+        System.out.println("Total worst case VPT: " + worstCaseVPT + " for " + numberOfMethods + " methods");
         return analysisMap;
     }
 
@@ -84,12 +84,15 @@ public class Scaler {
 
     private void init() {
         reachableMethods = pta.reachableMethods();
+        System.out.println("Total Reachable Methods: " + reachableMethods.size());
         // From the most precise analysis to the least precise analysis
+
         ctxComputers = new ContextComputer[] {
                 new _2ObjectContextComputer(pta, oag),
                 new _2TypeContextComputer(pta, oag),
                 new _1TypeContextComputer(pta, oag),
         };
+
         bottomLine = new _InsensitiveContextComputer(pta);
     }
 
@@ -101,11 +104,11 @@ public class Scaler {
      */
     private String selectContextFor(Method method, long st) {
         ContextComputer ctxComp = selectContext(method, st);
-        if (Global.isDebug()) {
+        //if (Global.isDebug()) {
             results.add(new Triple<>(method,
                     ctxComp.getAnalysisName(),
                     ctxComp.contextNumberOf(method)));
-        }
+        //}
         return ctxComp.getAnalysisName();
     }
 
@@ -150,10 +153,10 @@ public class Scaler {
                                          long st) {
         long total = 0;
         for (Method method : methods) {
-            if (!isSpecialMethod(method)) {
+//            if (!isSpecialMethod(method)) {
                 ContextComputer cc = selectContext(method, st);
                 total += getFactor(method, cc);
-            }
+//            }
         }
         return total;
     }
@@ -166,9 +169,9 @@ public class Scaler {
      */
     private ContextComputer selectContext(Method method, long st) {
         ContextComputer ctxComp;
-        if (isSpecialMethod(method)) {
-            ctxComp = ctxComputers[0]; // the most precise analysis
-        } else {
+//        if (isSpecialMethod(method)) {
+//            ctxComp = ctxComputers[0]; // the most precise analysis
+//        } else {
             ctxComp = bottomLine;
             for (ContextComputer cc : ctxComputers) {
                 if (getFactor(method, cc) <= st) {
@@ -176,7 +179,7 @@ public class Scaler {
                     break;
                 }
             }
-        }
+//        }
         return ctxComp;
     }
 
