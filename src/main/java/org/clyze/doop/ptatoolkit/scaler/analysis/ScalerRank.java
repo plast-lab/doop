@@ -1,6 +1,5 @@
 package org.clyze.doop.ptatoolkit.scaler.analysis;
 
-import Jama.Matrix;
 import org.clyze.doop.ptatoolkit.Global;
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
@@ -32,7 +31,7 @@ public class ScalerRank {
 	 */
 	private static final double DAMPING_FACTOR_DEFAULT = 0.0d;
 	private final ObjectAllocationGraph oag;
-	private Set<Method> instanceMethods;
+	private Set<Method> reachableMethods;
 	private ContextComputer[] ctxComputers;
 	private ContextComputer bottomLine;
 	private long tst = 900000000;
@@ -53,7 +52,7 @@ public class ScalerRank {
 				new _1TypeContextComputer(pta, oag),
 		};
 		bottomLine = new _InsensitiveContextComputer(pta);
-		instanceMethods = rank().stream()
+		reachableMethods = rank().stream()
 				.filter(Method::isInstance)
 				.collect(Collectors.toSet());
 	}
@@ -142,11 +141,11 @@ public class ScalerRank {
 		}
 		System.out.println("Given TST value: " +
 				ANSIColor.BOLD + ANSIColor.GREEN + tst + ANSIColor.RESET);
-		long st = binarySearch(instanceMethods, tst);
+		long st = binarySearch(reachableMethods, tst);
 		System.out.println("Selected ST value: " +
 				ANSIColor.BOLD + ANSIColor.GREEN + st + ANSIColor.RESET);
 		Map<Method, String> analysisMap = new HashMap<>();
-		instanceMethods.forEach(method ->
+		reachableMethods.forEach(method ->
 				analysisMap.put(method, selectContextFor(method, st)));
 		if (Global.isDebug()) {
 			results.stream()
@@ -184,7 +183,7 @@ public class ScalerRank {
 
 	/**
 	 * Search the suitable tst such that the accumulative size
-	 * of context-sensitive points to sets of given instanceMethods is less
+	 * of context-sensitive points to sets of given reachableMethods is less
 	 * than given tst.
 	 * @param methods
 	 * @param tst Total Scalability Threshold
@@ -192,7 +191,7 @@ public class ScalerRank {
 	 */
 	private long binarySearch(Set<Method> methods, long tst) {
 		// Select the max value and make it as end
-		long end = instanceMethods.stream()
+		long end = reachableMethods.stream()
 				.mapToLong(m -> getFactor(m, ctxComputers[0]))
 				.max()
 				.getAsLong();

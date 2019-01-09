@@ -57,33 +57,33 @@ public class Driver {
         writeScalerResults(scalerResults, scalerOutput);
     }
 
-    public static void runScalerRank(File factsDir, File database) throws FileNotFoundException {
-        PointsToAnalysis pta = new DoopPointsToAnalysis(database, "scalerRank");
-        if (Global.isDebug()) {
-            System.out.printf("%d objects in (pre) points-to analysis.\n",
-                    pta.allObjects().size());
-        }
-
-        Timer scalerTimer = new Timer("Scaler Timer");
-        System.out.println(ANSIColor.BOLD + ANSIColor.YELLOW + "Scaler Rank starts ..." + ANSIColor.RESET);
-        scalerTimer.start();
-        ScalerRank scalerRank = new ScalerRank(pta);
-
-        scalerTimer.stop();
-        System.out.print(ANSIColor.BOLD + ANSIColor.YELLOW +
-                "Scaler finishes, analysis time: " + ANSIColor.RESET);
-        System.out.print(ANSIColor.BOLD + ANSIColor.GREEN);
-        System.out.printf("%.2fs", scalerTimer.inSecond());
-        System.out.println(ANSIColor.RESET);
-
-
-        Map<Method, String> scalerResults = scalerRank.selectContext();
-
-        File scalerOutput = new File(factsDir, "SpecialContextSensitivityMethod.facts");
-        System.out.printf("Writing Scaler method context sensitivities to %s...\n",
-                scalerOutput.getPath());
-        writeScalerResults(scalerResults, scalerOutput);
-    }
+//    public static void runScalerRank(File factsDir, File database) throws FileNotFoundException {
+//        PointsToAnalysis pta = new DoopPointsToAnalysis(database, "scalerRank");
+//        if (Global.isDebug()) {
+//            System.out.printf("%d objects in (pre) points-to analysis.\n",
+//                    pta.allObjects().size());
+//        }
+//
+//        Timer scalerTimer = new Timer("Scaler Timer");
+//        System.out.println(ANSIColor.BOLD + ANSIColor.YELLOW + "Scaler Rank starts ..." + ANSIColor.RESET);
+//        scalerTimer.start();
+//        //Scaler scalerRank = new ScalerRank(pta);
+//
+//        scalerTimer.stop();
+//        System.out.print(ANSIColor.BOLD + ANSIColor.YELLOW +
+//                "Scaler finishes, analysis time: " + ANSIColor.RESET);
+//        System.out.print(ANSIColor.BOLD + ANSIColor.GREEN);
+//        System.out.printf("%.2fs", scalerTimer.inSecond());
+//        System.out.println(ANSIColor.RESET);
+//
+//
+//        //Map<Method, String> scalerResults = scalerRank.selectContext();
+//
+//        File scalerOutput = new File(factsDir, "SpecialContextSensitivityMethod.facts");
+//        System.out.printf("Writing Scaler method context sensitivities to %s...\n",
+//                scalerOutput.getPath());
+//        writeScalerResults(scalerResults, scalerOutput);
+//    }
 
     private static void outputMethodContext(PointsToAnalysis pta, ContextComputer cc, Scaler scaler) {
         System.out.println("Method context, analysis: " + cc.getAnalysisName());

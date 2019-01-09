@@ -1,7 +1,7 @@
 package org.clyze.doop.ptatoolkit.scaler.analysis;
 
-import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
+import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 
 import java.util.HashMap;
 import java.util.Map;

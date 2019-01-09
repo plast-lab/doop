@@ -21,27 +21,43 @@ public class _2TypeContextComputer extends ContextComputer {
 
     @Override
     protected int computeContextNumberOf(Method method) {
-        if (pta.receiverObjectsOf(method).isEmpty()) {
-            if (Global.isDebug()) {
-                System.out.printf("Empty receiver: %s\n", method.toString());
+        if (method.isInstance()) {
+            if (pta.receiverObjectsOf(method).isEmpty()) {
+                if (Global.isDebug()) {
+                    System.out.printf("Empty receiver: %s\n", method.toString());
+                }
+                return 1;
             }
-            return 1;
         }
+        return getContexts(method).size();
+
+    }
+
+    private Set<List<Type>> getContexts(Method method) {
         Set<List<Type>> contexts = new HashSet<>();
-        for (Obj recv : pta.receiverObjectsOf(method)) {
-            Set<Obj> preds = oag.predsOf(recv);
-            if (!preds.isEmpty()) {
-                for (Obj pred : preds) {
-                    contexts.add(Arrays.asList(
-                            pta.declaringAllocationTypeOf(pred),
+        if (method.isInstance()) {
+
+            for (Obj recv : pta.receiverObjectsOf(method)) {
+                Set<Obj> preds = oag.predsOf(recv);
+                if (!preds.isEmpty()) {
+                    for (Obj pred : preds) {
+                        contexts.add(Arrays.asList(
+                                pta.declaringAllocationTypeOf(pred),
+                                pta.declaringAllocationTypeOf(recv)));
+                    }
+                } else {
+                    // without allocator, back to 1-type
+                    contexts.add(Collections.singletonList(
                             pta.declaringAllocationTypeOf(recv)));
                 }
-            } else {
-                // without allocator, back to 1-type
-                contexts.add(Collections.singletonList(
-                        pta.declaringAllocationTypeOf(recv)));
             }
+            return contexts;
         }
-        return contexts.size();
+        else {
+            for (Method caller : pta.calleesOf(method)) {
+                contexts.addAll(getContexts(caller));
+            }
+            return contexts;
+        }
     }
 }
