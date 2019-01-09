@@ -607,12 +607,12 @@ VarPointsTo(?immHctx, ?lambda, ?ctx, ?ret) :-
   AssignReturnValue(?invokedynamic, ?ret),
   isImmutableHContext(?immHctx).
 
-// A helper filtering relation for metafactory bootstrap calls.
+// // A helper filtering relation for metafactory bootstrap calls.
 
-.decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
-InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory) :-
-  ReachableLambdaMetafactoryInvoke(?invokedynamic, ?callerCtx),
-  InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory).
+// .decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
+// InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory) :-
+//   ReachableLambdaMetafactoryInvoke(?invokedynamic, ?callerCtx),
+//   InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory).
 
 // .decl Lambda_N(?lambda:Lambda, ?N:number, ?samMethodType:Value)
 
