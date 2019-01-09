@@ -206,20 +206,20 @@ PhiAssign(?phi_var, ?arity, ?block) :-
 .decl BBFollowsSimilarDef(?block:symbol, ?instr:symbol, ?def:symbol)
 
 BBFollowsSimilarDef(?block, ?instr, ?original) :-
-    BasicBlockHead(?instr, ?block),
-    BasicBlockHead(?follow, ?block),
     PhiAssign(?phi_var, _, ?instr),
     SSA_Alias(?phi_var, ?original),
     SSA_AssignToOriginal(?follow, ?original),
+    BasicBlockHead(?instr, ?block),
+    BasicBlockHead(?follow, ?block),
     Instruction_Index(?instr, ?i),
     Instruction_Index(?follow, ?j),
     ?i < ?j.
 
 BBFollowsSimilarDef(?block, ?instr, ?original) :-
-    BasicBlockHead(?instr, ?block),
-    BasicBlockHead(?follow, ?block),
     SSA_AssignToOriginal(?instr, ?original),
     SSA_AssignToOriginal(?follow, ?original),
+    BasicBlockHead(?instr, ?block),
+    BasicBlockHead(?follow, ?block),
     Instruction_Index(?instr, ?i),
     Instruction_Index(?follow, ?j),
     ?i < ?j.
@@ -259,9 +259,9 @@ ExistsLocalDef(?block, ?original) :-
 .decl BasicBlockOutDefs(?block:symbol, ?ssa_var:symbol, ?origin:symbol)
 
 BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
+    ReachingDef(?end, ?ssa_var, ?origin),
     BasicBlockTail(?block, ?end),
-    !SSA_AssignToOriginal(?end, ?origin),
-    ReachingDef(?end, ?ssa_var, ?origin).
+    !SSA_AssignToOriginal(?end, ?origin).
 
 BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
     BasicBlockTail(?block, ?end),
@@ -456,19 +456,19 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
 
 // Based on new
 ReachingDef(?insn, ?ssa_var, ?origin) :-
-    BasicBlockBegin(?insn),
-    !ExistsDefInPhiHeader(?insn, _, ?origin),
+    BasicBlockOutDefs(?pred, ?ssa_var, ?origin),
     MayPredecessorBBModuloThrow(?pred, ?insn),
-    BasicBlockOutDefs(?pred, ?ssa_var, ?origin).
+    BasicBlockBegin(?insn),
+    !ExistsDefInPhiHeader(?insn, _, ?origin).
 
 // If an instruction is not the first instruction in a basic block, and the previous
 // instuction is not an assignment with LHS an ssa rename of origin, then the reaching
 // ssa definition for origin at insn is the same as the reaching ssa definition for origin
 // at prev (recursive definition).
 ReachingDef(?insn, ?ssa_var, ?origin) :-
+    ReachingDef(?prev, ?ssa_var, ?origin),
     PrevInSameBasicBlock(?insn, ?prev),
-    !SSA_AssignToOriginal(?prev, ?origin),
-    ReachingDef(?prev, ?ssa_var, ?origin).
+    !SSA_AssignToOriginal(?prev, ?origin).
 
 // If an instruction is not the first instruction in a basic block, and the previous
 // instuction is an assignment with LHS an ssa rename of origin, the the reaching ssa defition
@@ -944,6 +944,8 @@ SSA_Type(?to, ?type) :-
 //  2) f(?var, ...); (argument passing [formal param = actual param])
 .decl Assign(?stmt:symbol, ?var1:symbol, ?var2:symbol)
 
+.decl AssignArray(?stmt:symbol, ?var1:symbol, ?var2:symbol)
+
 .decl HasKnownType(?var:symbol, ?type:symbol)
 
 // The following relations are used to iterate over the constraints.
@@ -976,6 +978,8 @@ SSA_Type(?to, ?type) :-
 
 .decl DirectSuperType(?subtype:symbol, ?supertype:symbol)
 
+#define TYPE_INFERENCE
+
 #ifdef TYPE_INFERENCE
 
 .output LowerBoundTypeForConstraint
@@ -1005,6 +1009,11 @@ Assign(?invocation, ?var1, ?var2) :-
     MethodInvocation_Method(?invocation, ?method),
     RewriteActualParam(?index, ?invocation, ?var2),
     SSA_FormalParam(?index, ?method, ?var1).
+
+
+// ?var1[index] = ?var2
+AssignArray(?stmt, ?var1, ?var2) :-
+    RewriteStoreArrayIndex(?stmt, _, ?var2, ?var1, _).
 
 ConstraintForVar(?var1, ?stmt),
 ConstraintForVar(?var2, ?stmt) :- 
@@ -1124,8 +1133,10 @@ TypeCompatibleWithAllConstraints(?var, ?type) :-
    SubtypeOf(?lowerType, ?type),
    UpperBoundTypeForAllConstraints(?var, ?upperType),
    SubtypeOf(?type, ?upperType).
-   
+
 // And now, let's encode the constraints themselves
+
+// Logic for assignments
 LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
    Assign(?stmt, ?var, ?varOther),
    TypeCompatibleWithAllConstraints(?varOther, ?type).
@@ -1139,6 +1150,48 @@ UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
 
 LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
    Assign(?stmt, _, ?var).
+
+// Logic for array stores
+ConstraintForVar(?to, ?stmt),
+ConstraintForVar(?base, ?stmt) :-
+    RewriteStoreArrayIndex(?stmt, _, ?to, ?base, _).
+
+LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
+    AssignArray(?stmt, ?var, ?varOther),
+    TypeCompatibleWithAllConstraints(?varOther, ?t),
+    ?type = cat(?t, "[]").
+
+UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
+   AssignArray(?stmt, ?var, _).
+
+UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
+    AssignArray(?stmt, ?varOther, ?var),
+    TypeCompatibleWithAllConstraints(?varOther, ?t),
+    ComponentType(?t, ?type).
+
+LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
+   AssignArray(?stmt, _, ?var).
+
+// Logic for array loads
+ConstraintForVar(?to, ?stmt),
+ConstraintForVar(?base, ?stmt) :-
+    RewriteLoadArrayIndex(?stmt, _, ?to, ?base, _).
+
+LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
+    RewriteLoadArrayIndex(?stmt, _, ?var, ?varOther, _),
+    TypeCompatibleWithAllConstraints(?varOther, ?t),
+    ComponentType(?t, ?type).
+
+UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
+    RewriteLoadArrayIndex(?stmt, _, ?var, _, _).
+
+UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
+    RewriteLoadArrayIndex(?stmt, _, ?varOther, ?var, _),
+    TypeCompatibleWithAllConstraints(?varOther, ?t),
+    ComponentType(?type, ?t).
+
+LowerBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
+    RewriteLoadArrayIndex(?stmt, _, _, ?var, _).
 
 // Logic for exceptions
 LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
