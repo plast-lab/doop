@@ -473,7 +473,7 @@ VarPointsTo(?immHctx, ?val, ?calleeCtx, ?formal) :-
 .type CallSite = mainAnalysis.Value
 .decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?dynRetType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context)
 
-// Recordecord CallSite metadata.
+// Record CallSite metadata.
 InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?hctx, ?callerCtx) :-
   ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?callerCtx),
   DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
