@@ -482,23 +482,19 @@ InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?hct
   isBootstrapMethodContext(?calleeCtx),
   VarPointsTo(?hctx, ?callsite, ?calleeCtx, ?bootRetVar).
 
-.decl CallSite_MethodHandle(?callsite:CallSite, ?methodHandle:MethodHandle)
-CallSite_MethodHandle(?callsite, ?methodHandle) :-
+.decl CallSiteContents(?callsite:CallSite, ?methodHandle:MethodHandle, ?method:Method)
+CallSiteContents(?callsite, ?methodHandle, ?method) :-
   InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, _, _),
   InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
+  MethodHandle_Method(?methodHandle, ?method),
   MethodHandle_ReturnType(?methodHandle, ?dynRetType).
 // Method handle for C.<init> has dynamic return type C instead of "void".
-CallSite_MethodHandle(?callsite, ?methodHandle) :-
+CallSiteContents(?callsite, ?methodHandle, ?method) :-
   InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, _, _),
   InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
   MethodHandle_Method(?methodHandle, ?method),
   Method_SimpleName(?method, "<init>"),
   Method_DeclaringType(?method, ?dynRetType).
-
-.decl CallSite_Method(?callsite:CallSite, ?method:Method)
-CallSite_Method(?callsite, ?method) :-
-  CallSite_MethodHandle(?callsite, ?methodHandle),
-  MethodHandle_Method(?methodHandle, ?method).
 
 // Capture values of the enclosing environment.
 .decl CallSiteCaptured(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number)
@@ -514,12 +510,11 @@ CallSiteCaptured(?callsite, ?invokedynamic, ?val, ?idx) :-
 
 configuration.StaticContextRequest(?callerCtx, ?invokedynamic) :-
   InvokedynamicCallSite(?callsite, ?invokedynamic, _, _, _, _, ?callerCtx),
-  CallSite_Method(?callsite, ?method),
+  CallSiteContents(?callsite, _, ?method),
   Method_Modifier("static", ?method).
 MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, "invokeExact") :-
   InvokedynamicCallSite(?callsite, ?invokedynamic, _, _, _, _, ?callerCtx),
-  CallSite_Method(?callsite, ?method),
-  CallSite_MethodHandle(?callsite, ?mh),
+  CallSiteContents(?callsite, ?mh, ?method),
   configuration.StaticContextResponse(?callerCtx, ?invokedynamic, ?calleeCtx).
 
 // General rule for non-static methods resolved by invokedynamic. This rule
@@ -527,8 +522,7 @@ MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, 
 // for the receiver (call site resolution happens at load time).
 MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, "invokeExact") :-
   InvokedynamicCallSite(?callsite, ?invokedynamic, _, _, ?dynRetType, _, ?callerCtx),
-  CallSite_Method(?callsite, ?method),
-  CallSite_MethodHandle(?callsite, ?mh),
+  CallSiteContents(?callsite, ?mh, ?method),
   !Method_Modifier("static", ?method),
   MethodHandle_ReturnType(?mh, ?mhRetType),
   ConversibleTypes(?mhRetType, ?dynRetType),
