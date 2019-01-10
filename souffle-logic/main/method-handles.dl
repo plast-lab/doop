@@ -256,7 +256,6 @@ VarPointsTo(?immHctx, ?mockMHLookup, ?immCtx, ?ret) :-
   _StaticMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup lookup()>", ?method),
   ReachableContext(?ctx, ?method),
   Method_DeclaringType(?method, ?type),
-  ReifiedClass(?type, ?typeValue),
   AssignReturnValue(?invo, ?ret),
   isImmutableContext(?immCtx),
   isImmutableHContext(?immHctx),
