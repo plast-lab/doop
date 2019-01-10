@@ -371,13 +371,13 @@ AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?ret) :-
 MockValueConsMacro(?value, ?type),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?thisVar),
 VarPointsTo(?hctx, ?value, ?callerCtx, ?ret) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, _),
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, _),
   Method_SimpleName(?method, "<init>"),
   ThisVar(?method, ?thisVar),
   Method_DeclaringType(?method, ?type),
   isImmutableHContext(?hctx),
   ?value = cat(?type, cat(" value constructed by method handle ", ?mh)),
-  AssignReturnValue(?invokedynamic, ?ret).
+  AssignReturnValue(?invo, ?ret).
 
 /*************************************************************
  * Generic invokedynamic
