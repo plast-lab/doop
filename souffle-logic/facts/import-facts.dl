@@ -500,7 +500,7 @@ ExceptionHandler_End(?handler, ?end) :-
 isMethod(?method),
 isJVMDescriptor(?jvmDescriptor),
 Method_SimpleName(?method, ?simplename),
-Method_Params(?method, ?params),
+Method_ParamTypes(?method, ?params),
 Method_DeclaringType(?method, ?declaringType),
 Method_JVMDescriptor(?method, ?jvmDescriptor),
 Method_Arity(?method, ?arity),
@@ -510,7 +510,7 @@ Method_ReturnType(?method, ?returnType) :-
 isMethodDescriptor(?descriptor),
 Method_Descriptor(?method, ?descriptor) :-
   Method_ReturnType(?method, ?returnType),
-  Method_Params(?method, ?params),
+  Method_ParamTypes(?method, ?params),
   ?descriptor = cat(?returnType, ?params).
 
 // StoreInstanceField
