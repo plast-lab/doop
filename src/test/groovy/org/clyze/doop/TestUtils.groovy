@@ -106,7 +106,7 @@ class TestUtils {
 	}
 
 	static void linkObjectIsLambda(Analysis analysis, String linkObject, String desc) {
-		findPair(analysis, 'mainAnalysis.LambdaCallSite', linkObject, 2, desc, 6)
+		findPair(analysis, 'mainAnalysis.LambdaObject', linkObject, 1, desc, 5)
 	}
 
 	static void proxyCGE(Analysis analysis, String instr, String meth) {

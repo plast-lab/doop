@@ -5,7 +5,7 @@
 .output mainAnalysis.StaticFieldPointsTo
 .output mainAnalysis.VarPointsTo
 .output mainAnalysis.MethodHandleCallGraphEdge
-.output mainAnalysis.LambdaCallSite
+.output mainAnalysis.LambdaObject
 .output mainAnalysis.LambdaCallGraphEdge
 
 #ifdef REFLECTION_DYNAMIC_PROXIES
