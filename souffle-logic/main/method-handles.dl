@@ -159,18 +159,6 @@ MethodType_ReturnType(?mt, ?retType) :-
   MethodHandleConstant_Arity(?methodHandle, ?arity),
   ?mt = METHOD_TYPE(?paramTypes, ?retType).
 
-.decl MethodHandle_ParamTypes(?methodHandle:MethodHandle, ?paramTypes:symbol)
-.decl MethodHandle_ReturnType(?methodHandle:MethodHandle, ?retType:Type)
-.decl MethodHandle_Arity(?methodHandle:MethodHandle, ?arity:number)
-
-MethodHandle_Arity(?methodHandle, ?arity),
-MethodHandle_ParamTypes(?methodHandle, ?paramTypes),
-MethodHandle_ReturnType(?methodHandle, ?retType) :-
-  MethodHandle_MethodType(?methodHandle, ?mt),
-  MethodType_Arity(?mt, ?arity),
-  MethodType_ParamTypes(?mt, ?paramTypes),
-  MethodType_ReturnType(?mt, ?retType).
-
 // Invocations of a MethodHandle. These can either be explicit calls to
 // MethodHandle.invoke()/invokeExact() or implicit calls via invokedynamic.
 .decl MethodHandleCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?mh:MethodHandle, ?name:symbol)
@@ -204,9 +192,9 @@ BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
 BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
 BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
 
-.decl ConversibleTypes(?t:Type, ?tConv:Type)
-ConversibleTypes(?t, ?tConv) :- basic.SubtypeOf(?tConv, ?t).
-ConversibleTypes(?t, ?tConv) :- BoxTypeConversion(?t, ?tConv).
+.decl CompatibleTypes(?t:Type, ?tConv:Type)
+CompatibleTypes(?t, ?tConv) :- basic.SubtypeOf(?tConv, ?t).
+CompatibleTypes(?t, ?tConv) :- BoxTypeConversion(?t, ?tConv).
 
 // Pass arguments to static methods.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
@@ -217,7 +205,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   FormalParam(?idx, ?method, ?formal),
   Var_Type(?actual, ?actualType),
   Var_Type(?formal, ?formalType),
-  ConversibleTypes(?actualType, ?formalType).
+  CompatibleTypes(?actualType, ?formalType).
 
 // Pass arguments to instance methods (first argument becomes the receiver).
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
@@ -229,7 +217,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   FormalParam(?idx - 1, ?method, ?formal),
   Var_Type(?actual, ?actualType),
   Var_Type(?formal, ?formalType),
-  ConversibleTypes(?actualType, ?formalType).
+  CompatibleTypes(?actualType, ?formalType).
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?this) :-
   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
   !Method_Modifier("static", ?method),
@@ -238,7 +226,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?this) :-
   ThisVar(?method, ?this),
   Var_Type(?actual, ?actualType),
   Var_Type(?this, ?thisType),
-  ConversibleTypes(?actualType, ?thisType).
+  CompatibleTypes(?actualType, ?thisType).
 
 // Get return value.
 VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
@@ -248,13 +236,11 @@ VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
   AssignReturnValue(?invo, ?var),
   Var_Type(?ret, ?retType),
   Var_Type(?var, ?varType),
-  ConversibleTypes(?retType, ?varType).
+  CompatibleTypes(?retType, ?varType).
 
-// Model MethdHandle.asType().
 MockValueConsMacro(?adapterMH, "java.lang.invoke.MethodHandle"),
 MethodHandle_Method(?adapterMH, ?mhMethod),
-MethodHandle_ReturnType(?adapterMH, ?retType),
-MethodHandle_ParamTypes(?adapterMH, ?paramTypes),
+MethodHandle_MethodType(?adapterMH, ?mt),
 VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret) :-
   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
   ReachableContext(?ctx, ?method),
@@ -264,7 +250,6 @@ VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret) :-
   VarPointsTo(_, ?mt, ?ctx, ?arg),
   AssignReturnValue(?invo, ?ret),
   MethodHandle_Method(?mh, ?mhMethod),
-  MethodType_ReturnType(?mt, ?retType),
   Method_ParamTypes(?mhMethod, ?paramTypes),
   ?adapterMH = cat("<adapter for ", cat(?mh, cat(" as ", ?mt))).
 
@@ -301,25 +286,26 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
 
 // Helper relation to only create direct method handles when no constant method
 // handles are found. Used when computing the handle to store in a variable.
-.decl AssignMethodHandleToVarRequest(?method:Method, ?retType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?ret:Var)
+.decl AssignMethodHandleToVarRequest(?method:Method, ?paramTypes:symbol, ?retType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?ret:Var)
 // Case 1: method handle constant exists.
 VarPointsTo(?hctx, ?mh, ?ctx, ?var) :-
-  AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?var),
+  AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?var),
   MethodHandleConstant_Method(?mh, ?method),
+  MethodHandleConstant_ParamTypes(?mh, ?paramTypes),
   MethodHandleConstant_ReturnType(?mh, ?retType).
 // Case 2: method handle constant not found, invent a mock object.
+MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
 MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
 MethodHandle_Method(?dmh, ?method),
-MethodHandle_ParamTypes(?dmh, ?params),
-MethodHandle_ReturnType(?dmh, ?retType),
+MethodHandle_MethodType(?dmh, ?mt),
 VarPointsTo(?hctx, ?dmh, ?ctx, ?var) :-
-  AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?var),
+  AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?var),
   !MethodHandleConstant_Method(_, ?method),
-  Method_ParamTypes(?method, ?params),
+  Method_MethodType(?method, ?mt),
   ?dmh = cat("<computed direct method handle for ", cat(?method, ">")).
 
 // Model conversions from reflection Method to method handle.
-AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?ret) :-
+AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
   ( MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle unreflect(java.lang.reflect.Method)>") ;
   MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle unreflectSpecial(java.lang.reflect.Method,java.lang.Class)>")),
   Instruction_Method(?invo, ?caller),
@@ -327,15 +313,17 @@ AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?ret) :-
   ActualParam(0, ?invo, ?arg),
   VarPointsTo(?hctx, ?methodValue, ?ctx, ?arg),
   ReifiedMethod(?method, ?methodValue),
+  Method_ParamTypes(?method, ?paramTypes),
   Method_ReturnType(?method, ?retType),
   AssignReturnValue(?invo, ?ret).
-AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?ret) :-
+AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
   MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle unreflectConstructor(java.lang.reflect.Constructor)>"),
   Instruction_Method(?invo, ?caller),
   ReachableContext(?ctx, ?caller),
   ActualParam(0, ?invo, ?arg),
   VarPointsTo(?hctx, ?constructor, ?ctx, ?arg),
   ReifiedConstructor(?method, ?constructor),
+  Method_ParamTypes(?method, ?paramTypes),
   Method_ReturnType(?method, ?retType),
   AssignReturnValue(?invo, ?ret).
 
@@ -381,7 +369,7 @@ DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
   ?mt = METHOD_TYPE(?paramTypes, ?retType).
 
 // Create VarPointsTo for return values of method finders.
-AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?ret) :-
+AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
   MethodFinder(?invo, ?ret),
   ActualParam(0, ?invo, ?classParam),
   VarPointsTo(?hctx, ?classValue, ?ctx, ?classParam),
@@ -390,9 +378,7 @@ AssignMethodHandleToVarRequest(?method, ?retType, ?hctx, ?ctx, ?ret) :-
   VarPointsTo(_, ?id, _, ?stringParam),
   ActualParam(2, ?invo, ?mtParam),
   VarPointsTo(_, ?mt, _, ?mtParam),
-  DMHLookup(?type, ?id, ?mt, ?method, ?retType, _).
-  // MethodType_ParamTypes(?mt, ?paramTypes),
-  // DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes).
+  DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes).
 
 #endif // REFLECTION
 #endif // REFLECTION_METHOD_HANDLES
@@ -529,7 +515,8 @@ CallSiteContents(?callsite, ?methodHandle, ?method) :-
   InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, _),
   InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
   MethodHandle_Method(?methodHandle, ?method),
-  MethodHandle_ReturnType(?methodHandle, ?dynRetType).
+  MethodHandle_MethodType(?methodHandle, ?mt),
+  MethodType_ReturnType(?mt, ?dynRetType).
 // Method handle for C.<init> has dynamic return type C instead of "void".
 CallSiteContents(?callsite, ?methodHandle, ?method) :-
   InvokedynamicCallSite(?callsite, _, _, _, ?dynRetType, _),
@@ -558,8 +545,9 @@ MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, 
   InvokedynamicCallSite(?callsite, ?invokedynamic, _, _, ?dynRetType, ?callerCtx),
   CallSiteContents(?callsite, ?mh, ?method),
   !Method_Modifier("static", ?method),
-  MethodHandle_ReturnType(?mh, ?mhRetType),
-  ConversibleTypes(?mhRetType, ?dynRetType),
+  MethodHandle_MethodType(?mh, ?mt),
+  MethodType_ReturnType(?mt, ?mhRetType),
+  CompatibleTypes(?mhRetType, ?dynRetType),
   isImmutableContext(?calleeCtx).
 
 ReachableContext(?calleeCtx, ?callee) :-
