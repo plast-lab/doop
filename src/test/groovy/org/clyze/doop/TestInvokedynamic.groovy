@@ -90,6 +90,8 @@ class TestInvokedynamic extends ServerAnalysisTests {
 										 "--reflection-classic", "--reflection-method-handles"])
 
 		then:
+		varPointsTo(analysis, '<Main: void test1()>/lookup#_24', 'mock method handles lookup object for type Main')
+		varPointsTo(analysis, '<Main: void test1()>/mType#_25', 'method type (java.lang.String)void')
 		varPointsTo(analysis, '<Main: void test1()>/println2out#_31', '<computed direct method handle for <java.io.PrintStream: void println(java.lang.String)>>')
 		varPointsTo(analysis, '<Main: void test2()>/staticMeth_mh#_39', '<computed direct method handle for <A: java.lang.Integer staticMeth()>>')
 		varPointsTo(analysis, '<Main: void test2()>/ret#_41', '<A: java.lang.Integer staticMeth()>/new java.lang.Integer/0')
