@@ -717,7 +717,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   Var_Type(?actual, ?actualType),
   Var_Type(?formal, ?formalType),
   // Check type compatibility (including (un)boxing).
-  ConversibleTypes(?valType, ?formalType),
+  basic.SubtypeOf(?valType, ?formalType),
   isImmutableHContext(?hctx).
 
 // Pass captured arguments to the implementing method.
