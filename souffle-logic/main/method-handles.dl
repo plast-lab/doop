@@ -591,8 +591,10 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 #define LAMBDA(invokedynamic, type) \
   cat(invokedynamic, cat("::: ", cat(type, cat("::: (Mock)::: ", cat("lambda object of type ", type)))))
 
-// Record more information about the call site to model the metafactory result.
+// Record more information about the call site to model the metafactory result
+// and return the mock lambda object.
 MockValueConsMacro(?lambda, ?dynRetType),
+VarPointsTo(?immHctx, ?lambda, ?callerCtx, ?ret),
 LambdaCallSite(?callsite, ?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?desc, ?callerCtx) :-
   ReachableLambdaMetafactoryInvoke(?invokedynamic, ?callerCtx),
   InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?dynRetType, ?callerCtx),
@@ -603,11 +605,7 @@ LambdaCallSite(?callsite, ?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?d
   Method_SimpleName(?implMethod, ?handleMeth),
   Method_DeclaringType(?implMethod, ?handleType),
   ?desc = LAMBDA_ALT_VAL(?invokedynamic, ?dynRetType, ?handleType, ?handleMeth, ?implMethod, ?dynName),
-  ?lambda = LAMBDA(?invokedynamic, ?dynRetType).
-
-// Return the mock lambda object.
-VarPointsTo(?immHctx, ?lambda, ?ctx, ?ret) :-
-  LambdaCallSite(_, ?invokedynamic, ?lambda, _, _, _, _, ?ctx),
+  ?lambda = LAMBDA(?invokedynamic, ?dynRetType),
   AssignReturnValue(?invokedynamic, ?ret),
   isImmutableHContext(?immHctx).
 
