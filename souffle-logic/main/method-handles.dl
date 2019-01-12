@@ -671,15 +671,9 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
 CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda) :-
   LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
   !Method_Modifier("static", ?implMethod),
-  LambdaObject(?invokedynamic, ?lambda, _, _, _, _, _),
+  LambdaObject(?invokedynamic, ?lambda, _, _, ?implMethod, _, _),
   ThisVar(?implMethod, ?this),
   Var_Type(?this, ?thisType).
-
-// Helper relation: a lambda call site that uses an instance method.
-.decl LambdaObjectWithInstanceMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:Lambda, ?implMethod:Method)
-LambdaObjectWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod) :-
-  LambdaObject(?invokedynamic, ?lambda, _, _, ?implMethod, _, _),
-  !Method_Modifier("static", ?implMethod).
 
 // Capture values of the enclosing environment.
 .decl LambdaCaptured(?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number)
@@ -699,11 +693,11 @@ Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
   Method_Modifier("static", ?implMethod).
 // No bootstrap arguments = an actual argument will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
-  LambdaObjectWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod),
+  CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
   DynamicMethodInvocation_DynArity(?invokedynamic, 0).
 // First bootstrap argument exists, will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
-  LambdaObjectWithInstanceMethod(?invokedynamic, ?lambda, ?implMethod),
+  CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
   LambdaCaptured(?invokedynamic, _, 0).
 
 // Pass invocation arguments to the implementing method.
