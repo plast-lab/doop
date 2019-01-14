@@ -609,31 +609,6 @@ LambdaObject(?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?desc, ?callerC
   AssignReturnValue(?invokedynamic, ?ret),
   isImmutableHContext(?immHctx).
 
-// // A helper filtering relation for metafactory bootstrap calls.
-
-// .decl InvokedynamicMetafactoryCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
-// InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory) :-
-//   ReachableLambdaMetafactoryInvoke(?invokedynamic, ?callerCtx),
-//   InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?metafactory).
-
-// .decl Lambda_N(?lambda:Lambda, ?N:number, ?samMethodType:Value)
-
-// Lambda_N(?lambda, ?N, ?val) :-
-//   InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, _, ?metafactory),
-//   ?metafactory = LAMBDA_METAFACTORY,
-//   LambdaObject(?invokedynamic, ?lambda, _, _, _, ?callerCtx),
-//   BootstrapParam(0, ?invokedynamic, ?actual),
-//   VarPointsTo(_, ?val, ?callerCtx, ?actual),
-//   MethodTypeConstant_Arity(?val, ?N).
-
-// Lambda_N(?lambda, ?N, ?val) :-
-//   InvokedynamicMetafactoryCallGraphEdge(?callerCtx, ?invokedynamic, _, ?metafactory),
-//   ?metafactory = LAMBDA_ALTMETAFACTORY,
-//   LambdaObject(?invokedynamic, ?lambda, _, _, _, ?callerCtx),
-//   // TODO: this does not match contexts, so it loses precision.
-//   ArrayIndexPointsTo(_, ?val, _, MOCK_ARRAY(?invokedynamic)),
-//   MethodTypeConstant_Arity(?val, ?N).
-
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
 
 /** Phase 3: Invocation (call method on the functional object) **/
