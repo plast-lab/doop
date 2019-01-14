@@ -611,6 +611,15 @@ LambdaObject(?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?desc, ?callerC
 
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
 
+// Capture values of the enclosing environment.
+.decl LambdaCaptured(?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number)
+LambdaCaptured(?invokedynamic, ?val, ?idx) :-
+  ReachableLambdaMetafactoryInvoke(?invokedynamic, _, _, ?callerCtx),
+  DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
+  ?K > 0,
+  ActualParam(?idx, ?invokedynamic, ?actual),
+  VarPointsTo(_, ?val, ?callerCtx, ?actual).
+
 /** Phase 3: Invocation (call method on the functional object) **/
 
 // When a method is called on a lambda object constructed by a
@@ -649,15 +658,6 @@ CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeC
   LambdaObject(?invokedynamic, ?lambda, _, _, ?implMethod, _, _),
   ThisVar(?implMethod, ?this),
   Var_Type(?this, ?thisType).
-
-// Capture values of the enclosing environment.
-.decl LambdaCaptured(?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number)
-LambdaCaptured(?invokedynamic, ?val, ?idx) :-
-  ReachableLambdaMetafactoryInvoke(?invokedynamic, _, _, ?callerCtx),
-  DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
-  ?K > 0,
-  ActualParam(?idx, ?invokedynamic, ?actual),
-  VarPointsTo(_, ?val, ?callerCtx, ?actual).
 
 // Helper relation: instance methods may implicitly consume one of the
 // K or N arguments for the receiver (shifting them by 1), while
