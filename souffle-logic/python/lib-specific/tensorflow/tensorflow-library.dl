@@ -175,7 +175,7 @@ FormalParam( 2, "strides", ?function,  cat(?function,"/mockParam3")):-
 FormalParam( 3, "padding", ?function,  cat(?function,"/mockParam4")),
 FormalParam( 4, "use_cudnn_on_gpu", ?function,  cat(?function,"/mockParam5")),
 FormalParam( 5, "data_format", ?function,  cat(?function,"/mockParam6")),
-FormalParam( 5, "name", ?function,  cat(?function,"/mockParam7")):-
+FormalParam( 6, "name", ?function,  cat(?function,"/mockParam7")):-
   ?function = "<tensorflow.nn.conv1d>";
   ?function = "<tensorflow.nn.conv2d>";
   ?function = "<tensorflow.nn.conv3d>".

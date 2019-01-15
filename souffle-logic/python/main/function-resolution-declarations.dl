@@ -1,6 +1,7 @@
 
 
 .decl FunctionInvResolvesTo(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?val:Value, ?hctx:configuration.HContext, ?fun:Function)
+.decl FunctionInvResolvesToNonModelledFunction(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?val:Value, ?hctx:configuration.HContext, ?fun:Function)
 
 //formal-> actual, given an invocation and the function it resolved to.
 .decl ResolvedFunctionActualParam(?ctx: configuration.Context, ?insn:FunctionInvocation_Insn, ?tofunction:Function, ?formalParamVar:Var, ?actualParamVar:Var)
