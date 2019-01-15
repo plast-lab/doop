@@ -29,11 +29,17 @@ MTEntryPoint(id, ?invo, ?signature) :- \
    _StaticMethodInvocation(?invo, _, ?signature, _), \
    ?signature = sig
 
+// methodType(Class<?> rtype)
 MTEP(1, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class)>").
+// methodType(Class<?> rtype, Class<?> ptype0)
 MTEP(2, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class)>").
+// methodType(Class<?> rtype, Class<?> ptype0, Class<?>... ptypes)
 MTEP(3, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class,java.lang.Class[])>").
+// methodType(Class<?> rtype, Class<?>[] ptypes)
 MTEP(4, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.Class[])>").
+// methodType(Class<?> rtype, MethodType ptypes)
 MTEP(5, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.lang.invoke.MethodType)>").
+// methodType(Class<?> rtype, List<Class<?>> ptypes)
 MTEP(6, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(java.lang.Class,java.util.List)>").
 
 isOpaqueMethod(?method) :- ClassLoaderMethod(?method, _).
