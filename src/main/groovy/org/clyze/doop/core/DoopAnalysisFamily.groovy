@@ -559,6 +559,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Enable profiling in the Souffle binary."
 			),
 			new BooleanAnalysisOption(
+					id: "SOUFFLE_LIVE_PROFILE",
+					name: "souffle-live-profile",
+					group: GROUP_ENGINE,
+					description: "Enable live profiling in the Souffle binary."
+			),
+			new BooleanAnalysisOption(
 					id: "SOUFFLE_PROVENANCE",
 					name: "souffle-provenance",
 					group: GROUP_ENGINE,
