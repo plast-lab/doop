@@ -98,6 +98,7 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 		Driver scalerMain = new Driver()
 		scalerMain.runScaler(factsDir, database)
 		//scalerMain.runScaler(factsDir, database)
+		options.X_START_AFTER_FACTS.value = factsDir
 		options.CONFIGURATION.value = "FullyGuidedContextSensitiveConfiguration"
 		options.SCALER_PRE_ANALYSIS.value = null
 		executor = new Executor(outDir, commandsEnv)

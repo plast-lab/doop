@@ -10,7 +10,7 @@ public abstract class ContextComputer {
 
     protected final PointsToAnalysis pta;
     final ObjectAllocationGraph oag;
-    private Map<Method, Integer> method2ctxNumber = new HashMap<>();
+    private Map<Method, Long> method2ctxNumber = new HashMap<>();
 
     ContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
         this.pta = pta;
@@ -18,9 +18,10 @@ public abstract class ContextComputer {
         computeContext();
     }
 
-    public int contextNumberOf(Method method) {
-        Integer contextNumber = method2ctxNumber.get(method);
+    public long contextNumberOf(Method method) {
+        Long contextNumber = method2ctxNumber.get(method);
         if (contextNumber == null) {
+            System.out.println("Method has null context number!!!!");
             return 0;
         }
         return contextNumber;
@@ -28,10 +29,13 @@ public abstract class ContextComputer {
 
     public abstract String getAnalysisName();
 
-    protected abstract int computeContextNumberOf(Method method);
+    protected abstract long computeContextNumberOf(Method method);
 
     private void computeContext() {
         for (Method method : pta.reachableMethods()) {
+            if (computeContextNumberOf(method) == 0) {
+                System.out.println(getAnalysisName() + " method: " + method + " zero contexts");
+            }
             method2ctxNumber.put(method, computeContextNumberOf(method));
         }
     }

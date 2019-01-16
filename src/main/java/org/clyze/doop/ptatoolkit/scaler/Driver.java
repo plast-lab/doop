@@ -34,7 +34,6 @@ public class Driver {
         System.out.println(ANSIColor.BOLD + ANSIColor.YELLOW + "Scaler starts ..." + ANSIColor.RESET);
         scalerTimer.start();
         Scaler scaler = new Scaler(pta);
-        System.out.println("|BLAH|");
         if (Global.getTST() != Global.UNDEFINE) {
             scaler.setTST(Global.getTST());
         }
@@ -89,13 +88,12 @@ public class Driver {
     private static void outputMethodContext(PointsToAnalysis pta, ContextComputer cc, Scaler scaler) {
         System.out.println("Method context, analysis: " + cc.getAnalysisName());
         pta.reachableMethods().stream()
-                .filter(Method::isInstance)
-                .sorted((m1, m2) -> cc.contextNumberOf(m2) - cc.contextNumberOf(m1))
+                .sorted((m1, m2) -> Long.compare(cc.contextNumberOf(m2), cc.contextNumberOf(m1)))
                 .forEach(m -> {
-                    System.out.printf("%s\t%d\tcontexts\t%d ",
+                    System.out.printf("%s\t%ld\tcontexts\t%ld ",
                             m.toString(), cc.contextNumberOf(m),
-                            ((long) cc.contextNumberOf(m))
-                                    * ((long) scaler.getAccumulativePTSSizeOf(m)));
+                            cc.contextNumberOf(m)
+                                    * scaler.getAccumulativePTSSizeOf(m));
                     if (Global.isListContext()) {
                         System.out.print(cc.contextNumberOf(m));
                     }
@@ -106,19 +104,18 @@ public class Driver {
     private static void outputContextByType(PointsToAnalysis pta, ContextComputer cc) {
         System.out.println("Type context, analysis: " + cc.getAnalysisName());
         Map<Type, List<Method>> group = pta.reachableMethods().stream()
-                .filter(Method::isInstance)
                 .collect(Collectors.groupingBy(pta::declaringTypeOf));
-        Map<Type, Integer> typeContext = new HashMap<>();
+        Map<Type, Long> typeContext = new HashMap<>();
         group.forEach((type, methods) -> {
-            int contextSum = methods.stream()
-                    .mapToInt(cc::contextNumberOf)
+            long contextSum = methods.stream()
+                    .mapToLong(cc::contextNumberOf)
                     .sum();
             typeContext.put(type, contextSum);
         });
         typeContext.entrySet()
                 .stream()
-                .sorted((e1, e2) -> e2.getValue() - e1.getValue())
-                .forEach(e -> System.out.printf("%s: %d contexts\n",
+                .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
+                .forEach(e -> System.out.printf("%s: %ld contexts\n",
                         e.getKey(), e.getValue()));
     }
 
