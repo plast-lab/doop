@@ -107,7 +107,8 @@ class SouffleScript {
 
 		def cmd = executionCommand.join(" ")
 		if (provenance || liveProf) {
-			println "This process will now exit, run this command to browse provenance: rlwrap ${cmd}"
+			def mode = provenance ? "provenance" : (liveProf ? "live profiling" : "unknown")
+			println "This process will now exit, run this command to run the analysis with the requested interactive mode (${mode}): rlwrap ${cmd}"
 			throw new DoopErrorCodeException(22)
 		}
 
