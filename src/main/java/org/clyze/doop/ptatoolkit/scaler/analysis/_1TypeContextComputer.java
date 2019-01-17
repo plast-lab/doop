@@ -10,8 +10,10 @@ import java.util.Set;
 public class _1TypeContextComputer extends ContextComputer {
     private Set<Method> visited = new HashSet<>();
 
-    _1TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
+    _1TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
         super(pta, oag);
+        this.worstCaseContextComputer = worstCaseContextComputer;
+
     }
 
     @Override
@@ -22,13 +24,15 @@ public class _1TypeContextComputer extends ContextComputer {
     @Override
     protected long computeContextNumberOf(Method method) {
         visited = new HashSet<>();
-        visited.add(method);
         Set<Obj> totalReceiverObjects = getReceiverObjects(method);
         if (method.isInstance()) {
             if (totalReceiverObjects.isEmpty()) {
                 System.out.printf("1type- Empty receiver: %s\n", method.toString());
                 return 1;
             }
+        }
+        else {
+            return worstCaseContextComputer.contextNumberOf(method);
         }
         long contextNumber = totalReceiverObjects.stream()
                 .map(pta::declaringAllocationTypeOf)
@@ -41,6 +45,7 @@ public class _1TypeContextComputer extends ContextComputer {
     private Set<Obj> getReceiverObjects(Method method) {
         Set<Obj> totalReceiverObjects = new HashSet<>();
         if (method.isInstance()) {
+            visited.add(method);
             totalReceiverObjects.addAll(pta.receiverObjectsOf(method));
         }
         else {

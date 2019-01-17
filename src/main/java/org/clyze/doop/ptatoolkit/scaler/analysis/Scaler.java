@@ -23,7 +23,7 @@ public class Scaler {
     private ContextComputer bottomLine;
     private Map<Method, Integer> ptsSize = new HashMap<>();
     /** Total Scalability Threshold */
-    private long tst = 18000000;
+    private long tst = 20_000_000;
     private List<Triple<Method, String, Long>> results;
 
     public Scaler(PointsToAnalysis pta) {
@@ -34,11 +34,9 @@ public class Scaler {
 
     public Map<Method, String> selectContext() {
         results = new ArrayList<>();
-        System.out.println("Given TST value: " +
-                ANSIColor.BOLD + ANSIColor.GREEN + tst + ANSIColor.RESET);
+        System.out.println("Given TST value: " + ANSIColor.BOLD + ANSIColor.GREEN + tst + ANSIColor.RESET);
         long st = binarySearch(reachableMethods, tst);
-        System.out.println("Selected ST value: " +
-                ANSIColor.BOLD + ANSIColor.GREEN + st + ANSIColor.RESET);
+        System.out.println("Selected ST value: " + ANSIColor.BOLD + ANSIColor.GREEN + st + ANSIColor.RESET);
         Map<Method, String> analysisMap = new HashMap<>();
         reachableMethods.forEach(method ->
                 analysisMap.put(method, selectContextFor(method, st)));
@@ -87,10 +85,11 @@ public class Scaler {
         System.out.println("Total Reachable Methods: " + reachableMethods.size());
         // From the most precise analysis to the least precise analysis
 
+        ContextComputer _2ObjectContextComputer = new _2ObjectContextComputer(pta, oag);
         ctxComputers = new ContextComputer[] {
-                new _2ObjectContextComputer(pta, oag),
-                new _2TypeContextComputer(pta, oag),
-                new _1TypeContextComputer(pta, oag),
+                _2ObjectContextComputer,
+                new _2TypeContextComputer(pta, oag, _2ObjectContextComputer),
+                new _1TypeContextComputer(pta, oag, _2ObjectContextComputer),
         };
 
         bottomLine = new _InsensitiveContextComputer(pta);

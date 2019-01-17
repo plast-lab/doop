@@ -10,8 +10,15 @@ import java.util.*;
 public class _2TypeContextComputer extends ContextComputer {
     private Set<Method> visited = null;
 
-    _2TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
+
+    _2TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
         super(pta, oag);
+        if (worstCaseContextComputer == null) {
+            System.out.println("WORST CASE CONTEXT COMPUTER NULL");
+
+        }
+        this.worstCaseContextComputer = worstCaseContextComputer;
+
     }
 
     @Override
@@ -22,13 +29,18 @@ public class _2TypeContextComputer extends ContextComputer {
     @Override
     protected long computeContextNumberOf(Method method) {
         visited = new HashSet<>();
-        visited.add(method);
 
         if (method.isInstance()) {
             if (pta.receiverObjectsOf(method).isEmpty()) {
                 System.out.printf("2type - Empty receiver: %s\n", method.toString());
                 return 1;
             }
+        }
+        else {
+            if (worstCaseContextComputer == null) {
+                System.out.println("WORST CASE CONTEXT COMPUTER NULL");
+            }
+            return worstCaseContextComputer.contextNumberOf(method);
         }
 
         long contextNumber = getContexts(method).size();
@@ -38,6 +50,7 @@ public class _2TypeContextComputer extends ContextComputer {
     private Set<List<Type>> getContexts(Method method) {
         Set<List<Type>> contexts = new HashSet<>();
         if (method.isInstance()) {
+            visited.add(method);
             for (Obj recv : pta.receiverObjectsOf(method)) {
                 Set<Obj> preds = oag.predsOf(recv);
                 if (!preds.isEmpty()) {

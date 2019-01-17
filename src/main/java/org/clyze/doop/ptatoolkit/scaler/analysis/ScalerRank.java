@@ -46,15 +46,15 @@ public class ScalerRank {
 	private void init() {
 
 		// From the most precise analysis to the least precise analysis
-		ctxComputers = new ContextComputer[] {
-				new _2ObjectContextComputer(pta, oag),
-				new _2TypeContextComputer(pta, oag),
-				new _1TypeContextComputer(pta, oag),
-		};
-		bottomLine = new _InsensitiveContextComputer(pta);
-		reachableMethods = rank().stream()
-				.filter(Method::isInstance)
-				.collect(Collectors.toSet());
+//		ctxComputers = new ContextComputer[] {
+//				new _2ObjectContextComputer(pta, oag),
+//				new _2TypeContextComputer(pta, oag),
+//				new _1TypeContextComputer(pta, oag),
+//		};
+//		bottomLine = new _InsensitiveContextComputer(pta);
+//		reachableMethods = rank().stream()
+//				.filter(Method::isInstance)
+//				.collect(Collectors.toSet());
 	}
 
 	public static boolean ASC = true;

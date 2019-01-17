@@ -11,6 +11,8 @@ public abstract class ContextComputer {
     protected final PointsToAnalysis pta;
     final ObjectAllocationGraph oag;
     private Map<Method, Long> method2ctxNumber = new HashMap<>();
+    protected ContextComputer worstCaseContextComputer;
+
 
     ContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
         this.pta = pta;
@@ -33,9 +35,6 @@ public abstract class ContextComputer {
 
     private void computeContext() {
         for (Method method : pta.reachableMethods()) {
-            if (computeContextNumberOf(method) == 0) {
-                System.out.println(getAnalysisName() + " method: " + method + " zero contexts");
-            }
             method2ctxNumber.put(method, computeContextNumberOf(method));
         }
     }

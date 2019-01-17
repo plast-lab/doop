@@ -22,7 +22,6 @@ public class _2ObjectContextComputer extends ContextComputer {
     @Override
     protected long computeContextNumberOf(Method method) {
         visited = new HashSet<>();
-        visited.add(method);
 
         if (method.isInstance()) {
             if (pta.receiverObjectsOf(method).isEmpty()) {
@@ -41,6 +40,8 @@ public class _2ObjectContextComputer extends ContextComputer {
         Set<Obj> totalPreds = new HashSet<>();
 
         if (method.isInstance()) {
+            visited.add(method);
+
             for (Obj recv : pta.receiverObjectsOf(method)) {
                 Set<Obj> preds = oag.predsOf(recv);
                 if (!preds.isEmpty()) {
