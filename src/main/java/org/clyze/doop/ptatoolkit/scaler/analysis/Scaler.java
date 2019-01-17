@@ -52,9 +52,9 @@ public class Scaler {
                     String context = triple.getSecond();
                     long nContexts = triple.getThird();
                     long accumuPTSSize = getAccumulativePTSSizeOf(method);
-//                    System.out.printf("#\t%s\t{%s}\t%d\t%d\n",
-//                            method.toString(), context,
-//                            nContexts, nContexts * accumuPTSSize);
+                    System.out.printf("#\t%s\t{%s}\t%d\t%d\n",
+                            method.toString(), context,
+                            nContexts, nContexts * accumuPTSSize);
                     worstCaseVPT.getAndAdd(nContexts * accumuPTSSize);
                     numberOfMethods.getAndIncrement();
                 });
