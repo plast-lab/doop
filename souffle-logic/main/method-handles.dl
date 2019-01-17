@@ -3,8 +3,9 @@
  *************************************************************/
 
 .type MethodType = mainAnalysis.Value
+.type ParamTypes = symbol
 .decl MethodType_ParamType(?mt:MethodType, ?index:number, ?pType:Type)
-.decl MethodType_ParamTypes(?mt:MethodType, ?paramTypes:symbol)
+.decl MethodType_ParamTypes(?mt:MethodType, ?paramTypes:ParamTypes)
 .decl MethodType_ReturnType(?mt:MethodType, ?retType:Type)
 .decl MethodType_Arity(?mt:MethodType, ?arity:number)
 .decl Method_MethodType(?method:Method, ?mt:MethodType)
@@ -286,7 +287,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
 
 // Helper relation to only create direct method handles when no constant method
 // handles are found. Used when computing the handle to store in a variable.
-.decl AssignMethodHandleToVarRequest(?method:Method, ?paramTypes:symbol, ?retType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?ret:Var)
+.decl AssignMethodHandleToVarRequest(?method:Method, ?paramTypes:ParamTypes, ?retType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?ret:Var)
 // Case 1: method handle constant exists.
 VarPointsTo(?hctx, ?mh, ?ctx, ?var) :-
   AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?var),
@@ -356,7 +357,7 @@ MethodFinder(?invo, ?ret) :-
 #ifdef REFLECTION
 
 // Direct method handle lookup.
-.decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type, ?paramTypes:symbol)
+.decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type, ?paramTypes:ParamTypes)
 
 MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
 DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
