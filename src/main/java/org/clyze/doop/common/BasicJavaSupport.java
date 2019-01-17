@@ -3,6 +3,7 @@ package org.clyze.doop.common;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Map;
 import java.util.HashSet;
@@ -31,7 +32,7 @@ public class BasicJavaSupport {
     }
 
     /**
-     * Helper method to read classes and property files from input archives.
+     * Helper method to read classes and resources from input archives.
      *
      * @param parameters the list of all the given parameters
      *
@@ -80,7 +81,16 @@ public class BasicJavaSupport {
                     }
                 } else if (entryName.endsWith(".properties")) {
                     propertyProvider.addProperties(jarFile.getInputStream(entry), filename);
-                } /* Skip non-class files and non-property files */
+                } else if (parameters._scanNativeCode && entryName.endsWith(".so")) {
+                    File tmpDir = Files.createTempDirectory("native-lib").toFile();
+                    tmpDir.deleteOnExit();
+                    String tmpName = entryName.replaceAll(File.separator, "_");
+                    File libTmpFile = new File(tmpDir, tmpName);
+                    libTmpFile.deleteOnExit();
+                    Files.copy(jarFile.getInputStream(entry), libTmpFile.toPath());
+                    File outDir = new File(parameters.getOutputDir());
+                    NativeScanner.scan("nm", "objdump", libTmpFile, outDir);
+                }
             }
         }
     }

@@ -245,6 +245,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
+					id: "SCAN_NATIVE_CODE",
+					name: "scan-native-code",
+					description: "Scan native code for specific patterns.",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "DACAPO",
 					name: "dacapo",
 					description: "Load additional logic for DaCapo (2006) benchmarks properties.",

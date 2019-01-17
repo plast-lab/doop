@@ -382,6 +382,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--dex"]
         }
 
+        if (options.SCAN_NATIVE_CODE.value) {
+            params += ["--scan-native-code"]
+        }
+
         params.addAll(["--log-dir", Doop.doopLog])
         params.addAll(["-d", factsDir.toString()] + inputArgs)
         deps.addAll(platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>)
