@@ -19,18 +19,15 @@ import org.objectweb.asm.ClassReader;
  */
 public class BasicJavaSupport {
 
-    protected final Set<String> classesInApplicationJars;
-    protected final Set<String> classesInLibraryJars;
-    protected final Set<String> classesInDependencyJars;
-    private final Map<String, Set<ArtifactEntry>> artifactToClassMap;
-    private final PropertyProvider propertyProvider;
+    protected final Set<String> classesInApplicationJars = new HashSet<>();
+    protected final Set<String> classesInLibraryJars = new HashSet<>();
+    protected final Set<String> classesInDependencyJars = new HashSet<>();
+    private final Map<String, Set<ArtifactEntry>> artifactToClassMap = new ConcurrentHashMap<>();
+    private final PropertyProvider propertyProvider = new PropertyProvider();
+    private final Parameters parameters;
 
-    public BasicJavaSupport() {
-        this.classesInApplicationJars = new HashSet<>();
-        this.classesInLibraryJars = new HashSet<>();
-        this.classesInDependencyJars = new HashSet<>();
-        this.propertyProvider = new PropertyProvider();
-        this.artifactToClassMap = new ConcurrentHashMap<>();
+    public BasicJavaSupport(Parameters parameters) {
+        this.parameters = parameters;
     }
 
     /**
@@ -39,7 +36,7 @@ public class BasicJavaSupport {
      * @param parameters the list of all the given parameters
      *
      */
-    public void preprocessInputs(Parameters parameters) throws IOException {
+    public void preprocessInputs() throws IOException {
         for (String filename : parameters.getInputs()) {
             System.out.println("Preprocessing application: " + filename);
             preprocessInput(classesInApplicationJars, filename);
