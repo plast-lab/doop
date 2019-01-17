@@ -50,13 +50,17 @@ class SoufflePythonAnalysis extends DoopAnalysis{
             def generatedFile = script.compile(analysis, outDir, cacheDir,
                     options.SOUFFLE_PROFILE.value as boolean,
                     options.SOUFFLE_DEBUG.value as boolean,
+                    options.SOUFFLE_PROVENANCE.value as boolean,
+                    options.SOUFFLE_LIVE_PROFILE.value as boolean,
                     options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
                     options.X_CONTEXT_REMOVER.value as boolean)
 
             script.run(generatedFile, factsDir, outDir,
                     options.SOUFFLE_JOBS.value as int,
                     (options.X_MONITORING_INTERVAL.value as long) * 1000,
-                    monitorClosure)
+                    monitorClosure,
+                    options.SOUFFLE_PROVENANCE.value as boolean,
+                    options.SOUFFLE_LIVE_PROFILE.value as boolean)
 
         }
 

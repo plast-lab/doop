@@ -23,8 +23,8 @@ public class Scaler {
     private ContextComputer bottomLine;
     private Map<Method, Integer> ptsSize = new HashMap<>();
     /** Total Scalability Threshold */
-    private long tst = 2000000;
-    private List<Triple<Method, String, Integer>> results;
+    private long tst = 20_000_000;
+    private List<Triple<Method, String, Long>> results;
 
     public Scaler(PointsToAnalysis pta) {
         this.pta = pta;
@@ -34,11 +34,9 @@ public class Scaler {
 
     public Map<Method, String> selectContext() {
         results = new ArrayList<>();
-        System.out.println("Given TST value: " +
-                ANSIColor.BOLD + ANSIColor.GREEN + tst + ANSIColor.RESET);
+        System.out.println("Given TST value: " + ANSIColor.BOLD + ANSIColor.GREEN + tst + ANSIColor.RESET);
         long st = binarySearch(reachableMethods, tst);
-        System.out.println("Selected ST value: " +
-                ANSIColor.BOLD + ANSIColor.GREEN + st + ANSIColor.RESET);
+        System.out.println("Selected ST value: " + ANSIColor.BOLD + ANSIColor.GREEN + st + ANSIColor.RESET);
         Map<Method, String> analysisMap = new HashMap<>();
         reachableMethods.forEach(method ->
                 analysisMap.put(method, selectContextFor(method, st)));
@@ -54,9 +52,9 @@ public class Scaler {
                     String context = triple.getSecond();
                     long nContexts = triple.getThird();
                     long accumuPTSSize = getAccumulativePTSSizeOf(method);
-                    System.out.printf("# %s\t{%s}\t%d\t%d\n",
-                            method.toString(), context,
-                            nContexts, nContexts * accumuPTSSize);
+//                    System.out.printf("#\t%s\t{%s}\t%d\t%d\n",
+//                            method.toString(), context,
+//                            nContexts, nContexts * accumuPTSSize);
                     worstCaseVPT.getAndAdd(nContexts * accumuPTSSize);
                     numberOfMethods.getAndIncrement();
                 });
@@ -77,7 +75,7 @@ public class Scaler {
         this.tst = tst;
     }
 
-    public int getAccumulativePTSSizeOf(Method method) {
+    public long getAccumulativePTSSizeOf(Method method) {
 
         return pta.getMethodTotalVPTMap().get(method);
     }
@@ -87,10 +85,11 @@ public class Scaler {
         System.out.println("Total Reachable Methods: " + reachableMethods.size());
         // From the most precise analysis to the least precise analysis
 
+        ContextComputer _2ObjectContextComputer = new _2ObjectContextComputer(pta, oag);
         ctxComputers = new ContextComputer[] {
-                new _2ObjectContextComputer(pta, oag),
-                new _2TypeContextComputer(pta, oag),
-                new _1TypeContextComputer(pta, oag),
+                _2ObjectContextComputer,
+                new _2TypeContextComputer(pta, oag, _2ObjectContextComputer),
+                new _1TypeContextComputer(pta, oag, _2ObjectContextComputer),
         };
 
         bottomLine = new _InsensitiveContextComputer(pta);
@@ -145,8 +144,7 @@ public class Scaler {
     }
 
     private long getFactor(Method method, ContextComputer cc) {
-        return ((long) cc.contextNumberOf(method))
-                * ((long) getAccumulativePTSSizeOf(method));
+        return cc.contextNumberOf(method) * getAccumulativePTSSizeOf(method);
     }
 
     private long getTotalAccumulativePTS(Set<Method> methods,

@@ -35,7 +35,7 @@ public class ScalerRank {
 	private ContextComputer[] ctxComputers;
 	private ContextComputer bottomLine;
 	private long tst = 900000000;
-	private List<Triple<Method, String, Integer>> results;
+	private List<Triple<Method, String, Long>> results;
 
 	public ScalerRank(PointsToAnalysis pta) {
 		this.pta = pta;
@@ -46,15 +46,15 @@ public class ScalerRank {
 	private void init() {
 
 		// From the most precise analysis to the least precise analysis
-		ctxComputers = new ContextComputer[] {
-				new _2ObjectContextComputer(pta, oag),
-				new _2TypeContextComputer(pta, oag),
-				new _1TypeContextComputer(pta, oag),
-		};
-		bottomLine = new _InsensitiveContextComputer(pta);
-		reachableMethods = rank().stream()
-				.filter(Method::isInstance)
-				.collect(Collectors.toSet());
+//		ctxComputers = new ContextComputer[] {
+//				new _2ObjectContextComputer(pta, oag),
+//				new _2TypeContextComputer(pta, oag),
+//				new _1TypeContextComputer(pta, oag),
+//		};
+//		bottomLine = new _InsensitiveContextComputer(pta);
+//		reachableMethods = rank().stream()
+//				.filter(Method::isInstance)
+//				.collect(Collectors.toSet());
 	}
 
 	public static boolean ASC = true;
@@ -157,7 +157,7 @@ public class ScalerRank {
 						String context = triple.getSecond();
 						long nContexts = triple.getThird();
 						long accumuPTSSize = getAccumulativePTSSizeOf(method);
-						System.out.printf("# %s\t{%s}\t%d\t%d\n",
+						System.out.printf("#\t%s\t{%s}\t%d\t%d\n",
 								method.toString(), context,
 								nContexts, nContexts * accumuPTSSize);
 					});

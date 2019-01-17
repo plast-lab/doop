@@ -10,7 +10,7 @@ import org.clyze.doop.ptatoolkit.doop.factory.TypeFactory;
 import org.clyze.doop.ptatoolkit.doop.factory.VariableFactory;
 import org.clyze.doop.ptatoolkit.pta.basic.*;
 import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
-import org.clyze.doop.ptatoolkit.util.MutableInteger;
+import org.clyze.doop.ptatoolkit.util.MutableLong;
 import org.clyze.doop.ptatoolkit.util.Timer;
 
 import java.io.File;
@@ -41,9 +41,9 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
         if (option.equals("scaler")) {
             initScalerPostProcessing();
         }
-        else {
-            initScalerRankPostProcessing();
-        }
+//        else {
+//            initScalerRankPostProcessing();
+//        }
         ptaTimer.stop();
     }
 
@@ -70,10 +70,10 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     }
 
     @Override
-    public int pointsToSetSizeOf(Variable var) {
+    public long pointsToSetSizeOf(Variable var) {
         if (var.hasAttribute(PTS_SIZE)) {
-            MutableInteger size = (MutableInteger) var.getAttribute(PTS_SIZE);
-            return size.intValue();
+            MutableLong size = (MutableLong) var.getAttribute(PTS_SIZE);
+            return size.longValue();
         } else {
             return 0;
         }
@@ -142,38 +142,32 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
                 .map(list -> list.get(0))
                 .collect(Collectors.toSet());
         computeAllocatedObjects(objFactory, mtdFactory);
-
         buildCalleesAndCallers(mtdFactory);
-
         buildMethodsInvokedOnObjects(mtdFactory);
-
         buildReceiverObjects();
-
         buildDeclaringAllocationType(objFactory, typeFactory);
-
         buildDeclaredVariables(mtdFactory, varFactory);
-
         buildDeclaringType(mtdFactory, typeFactory);
         buildMethodTotalVPTMap(mtdFactory);
     }
 
 
-    private void initScalerRankPostProcessing() {
-        TypeFactory typeFactory = new TypeFactory();
-
-        varFactory = new VariableFactory();
-        objFactory = new ObjFactory();
-
-        MethodFactory mtdFactory = new MethodFactory(db, varFactory);
-        Set<String> interestingVarNames = new HashSet<>();
-
-        buildPointsToSet(varFactory, objFactory, interestingVarNames);
-        buildMethodNeighborsMap(mtdFactory);
-        buildCalleesAndCallers(mtdFactory);
-
-        buildMethodTotalVPTMap(mtdFactory);
-        buildDeclaringType(mtdFactory, typeFactory);
-    }
+//    private void initScalerRankPostProcessing() {
+//        TypeFactory typeFactory = new TypeFactory();
+//
+//        varFactory = new VariableFactory();
+//        objFactory = new ObjFactory();
+//
+//        MethodFactory mtdFactory = new MethodFactory(db, varFactory);
+//        Set<String> interestingVarNames = new HashSet<>();
+//
+//        buildPointsToSet(varFactory, objFactory, interestingVarNames);
+//        buildMethodNeighborsMap(mtdFactory);
+//        buildCalleesAndCallers(mtdFactory);
+//
+//        buildMethodTotalVPTMap(mtdFactory);
+//        buildDeclaringType(mtdFactory, typeFactory);
+//    }
 
     /**
      * Build points-to sets of interesting variables. This method also computes
@@ -202,15 +196,14 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
 
     private void increasePointsToSetSizeOf(Variable var) {
         if (var.hasAttribute(PTS_SIZE)) {
-            MutableInteger size = (MutableInteger) var.getAttribute(PTS_SIZE);
+            MutableLong size = (MutableLong) var.getAttribute(PTS_SIZE);
             size.increase();
         } else {
-            var.setAttribute(PTS_SIZE, new MutableInteger(1));
+            var.setAttribute(PTS_SIZE, new MutableLong(1));
         }
     }
 
-    private void computeAllocatedObjects(ObjFactory objFactory,
-                                         MethodFactory mtdFactory) {
+    private void computeAllocatedObjects(ObjFactory objFactory, MethodFactory mtdFactory) {
         db.query(Query.OBJECT_IN).forEachRemaining(list -> {
             String objName = list.get(0);
             if (isNormalObject(objName)) {
@@ -267,6 +260,9 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
                 .map(m -> (InstanceMethod) m)
                 .forEach(instMtd -> {
                     Variable thisVar = instMtd.getThis();
+                    if (pointsToSetOf(thisVar).isEmpty()) {
+                        System.out.println("ERROR_- EMPTY RECEIVER this: " + thisVar);
+                    }
                     pointsToSetOf(thisVar).forEach(obj -> {
                         obj.addToAttributeSet(MTD_ON, instMtd);
                     });
@@ -302,9 +298,7 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
         db.query(Query.VAR_IN).forEachRemaining(list -> {
             Variable var = varFactory.get(list.get(0));
             Method inMethod = mtdFactory.get(list.get(1));
-            if (inMethod.isInstance()) { // ignore static methods
                 inMethod.addToAttributeSet(VARS_IN, var);
-            }
         });
     }
 

@@ -1,13 +1,10 @@
 package org.clyze.doop.ptatoolkit.scaler.analysis;
 
-import org.clyze.doop.ptatoolkit.Global;
-import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.pta.basic.Obj;
+import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class _2ObjectContextComputer extends ContextComputer {
@@ -23,28 +20,28 @@ public class _2ObjectContextComputer extends ContextComputer {
     }
 
     @Override
-    protected int computeContextNumberOf(Method method) {
+    protected long computeContextNumberOf(Method method) {
         visited = new HashSet<>();
-        visited.add(method);
 
         if (method.isInstance()) {
             if (pta.receiverObjectsOf(method).isEmpty()) {
-                if (Global.isDebug()) {
-                    System.out.printf("Empty receiver: %s\n", method.toString());
-                }
+                System.out.printf("2object - Empty receiver: %s\n", method.toString());
                 return 1;
             }
         }
 
         Set<Obj> totalPreds = getPreds(method);
+        long contextNumber = totalPreds.size();
 
-        return totalPreds.size();
+        return  contextNumber > 0? contextNumber: 1;
     }
 
     private Set<Obj> getPreds(Method method) {
         Set<Obj> totalPreds = new HashSet<>();
 
         if (method.isInstance()) {
+            visited.add(method);
+
             for (Obj recv : pta.receiverObjectsOf(method)) {
                 Set<Obj> preds = oag.predsOf(recv);
                 if (!preds.isEmpty()) {

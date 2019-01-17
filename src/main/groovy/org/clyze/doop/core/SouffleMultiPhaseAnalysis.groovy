@@ -55,6 +55,8 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()
+		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
+		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
 		if (!options.X_STOP_AT_FACTS.value) {
 			compilationFuture = executorService.submit(new Callable<File>() {
 				@Override
@@ -63,6 +65,8 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 					def generatedFile = script.compile(preAnalysis, outDir, cacheDir,
 							options.SOUFFLE_PROFILE.value as boolean,
 							options.SOUFFLE_DEBUG.value as boolean,
+							provenance,
+							liveProf,
 							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
 							options.X_CONTEXT_REMOVER.value as boolean)
 					log.info "[Task COMPILE Done]"
@@ -98,6 +102,7 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 		Driver scalerMain = new Driver()
 		scalerMain.runScaler(factsDir, database)
 		//scalerMain.runScaler(factsDir, database)
+		options.X_START_AFTER_FACTS.value = factsDir
 		options.CONFIGURATION.value = "FullyGuidedContextSensitiveConfiguration"
 		options.SCALER_PRE_ANALYSIS.value = null
 		executor = new Executor(outDir, commandsEnv)
@@ -120,6 +125,8 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 					def generatedFile = script.compile(analysis, outDir, cacheDir,
 							options.SOUFFLE_PROFILE.value as boolean,
 							options.SOUFFLE_DEBUG.value as boolean,
+							provenance,
+							liveProf,
 							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
 							options.X_CONTEXT_REMOVER.value as boolean)
 					log.info "[Task COMPILE Done]"
@@ -135,7 +142,7 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 
 			def generatedFile = compilationFuture.get()
 			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
+					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance, liveProf)
 
 			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 			runtimeMetricsFile.createNewFile()

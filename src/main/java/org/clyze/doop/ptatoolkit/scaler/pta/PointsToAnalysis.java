@@ -32,7 +32,7 @@ public interface PointsToAnalysis {
      * @return the size of (i.e., number of objects in)
      * points-to set of var
      */
-    int pointsToSetSizeOf(Variable var);
+    long pointsToSetSizeOf(Variable var);
 
     /**
      *

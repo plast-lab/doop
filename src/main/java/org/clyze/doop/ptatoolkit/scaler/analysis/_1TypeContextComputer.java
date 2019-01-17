@@ -1,9 +1,8 @@
 package org.clyze.doop.ptatoolkit.scaler.analysis;
 
-import org.clyze.doop.ptatoolkit.Global;
+import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.pta.basic.Obj;
 import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
-import org.clyze.doop.ptatoolkit.pta.basic.Method;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -11,8 +10,8 @@ import java.util.Set;
 public class _1TypeContextComputer extends ContextComputer {
     private Set<Method> visited = new HashSet<>();
 
-    _1TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
-        super(pta, oag);
+    _1TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
+	    super(pta, oag, worstCaseContextComputer);
     }
 
     @Override
@@ -21,29 +20,31 @@ public class _1TypeContextComputer extends ContextComputer {
     }
 
     @Override
-    protected int computeContextNumberOf(Method method) {
+    protected long computeContextNumberOf(Method method) {
         visited = new HashSet<>();
-        visited.add(method);
         Set<Obj> totalReceiverObjects = getReceiverObjects(method);
         if (method.isInstance()) {
             if (totalReceiverObjects.isEmpty()) {
-                if (Global.isDebug()) {
-                    System.out.printf("Empty receiver: %s\n", method.toString());
-                }
+                System.out.printf("1type- Empty receiver: %s\n", method.toString());
                 return 1;
             }
         }
+        else {
+            return worstCaseContextComputer.contextNumberOf(method);
+        }
+        long contextNumber = totalReceiverObjects.stream()
+                .map(pta::declaringAllocationTypeOf)
+                .distinct()
+                .count();
 
-        return (int) totalReceiverObjects.stream()
-                    .map(pta::declaringAllocationTypeOf)
-                    .distinct()
-                    .count();
+        return contextNumber > 0? contextNumber: 1;
     }
 
     private Set<Obj> getReceiverObjects(Method method) {
         Set<Obj> totalReceiverObjects = new HashSet<>();
         if (method.isInstance()) {
-            pta.receiverObjectsOf(method);
+            visited.add(method);
+            totalReceiverObjects.addAll(pta.receiverObjectsOf(method));
         }
         else {
             for (Method caller : pta.callersOf(method)) {
