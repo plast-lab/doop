@@ -7,6 +7,7 @@ import static org.clyze.doop.common.PredicateFile.*;
 
 public class NativeScanner {
     final static boolean debug = false;
+    final static boolean check = false;
 
     public static void scan(String nmCmd, String objdumpCmd,
                             File libFile, File outDir) {
@@ -24,7 +25,8 @@ public class NativeScanner {
             System.out.println("== Processing library: " + lib + " ==");
 
             List<String> lines = parseLib(nmCmd, lib, true);
-            checkSymbols(lines, lib);
+            if (check)
+                checkSymbols(lines, lib);
 
             SortedMap<Long, String> libEntryPoints = new TreeMap<>();
             for (String line : lines) {
@@ -137,14 +139,12 @@ public class NativeScanner {
                 referencesGetMethodID = true;
         }
 
-        if (referencesGetMethodID) {
+        if (referencesGetMethodID)
             System.out.println("Library references GetMethodID(): " + lib);
-        } else if (referencesGetFieldID) {
+        else if (referencesGetFieldID)
             System.out.println("Library references GetFieldID(): " + lib);
-        } else {
+        else
             System.out.println("Library seems to not contain interesting JNIEnv calls: " + lib);
-            // continue;
-        }
     }
 
     private static void processLib(String objdumpCmd, File outDir, String lib,
