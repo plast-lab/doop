@@ -20,6 +20,13 @@ public abstract class ContextComputer {
         computeContext();
     }
 
+    ContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
+        this.pta = pta;
+        this.oag = oag;
+        this.worstCaseContextComputer = worstCaseContextComputer;
+        computeContext();
+    }
+
     public long contextNumberOf(Method method) {
         Long contextNumber = method2ctxNumber.get(method);
         if (contextNumber == null) {

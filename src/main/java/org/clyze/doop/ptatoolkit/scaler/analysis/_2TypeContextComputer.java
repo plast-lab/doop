@@ -12,13 +12,7 @@ public class _2TypeContextComputer extends ContextComputer {
 
 
     _2TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
-        super(pta, oag);
-        if (worstCaseContextComputer == null) {
-            System.out.println("WORST CASE CONTEXT COMPUTER NULL");
-
-        }
-        this.worstCaseContextComputer = worstCaseContextComputer;
-
+        super(pta, oag, worstCaseContextComputer);
     }
 
     @Override
@@ -37,10 +31,7 @@ public class _2TypeContextComputer extends ContextComputer {
             }
         }
         else {
-            if (worstCaseContextComputer == null) {
-                System.out.println("WORST CASE CONTEXT COMPUTER NULL");
-            }
-            return worstCaseContextComputer.contextNumberOf(method);
+            return this.worstCaseContextComputer.contextNumberOf(method);
         }
 
         long contextNumber = getContexts(method).size();

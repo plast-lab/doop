@@ -11,9 +11,7 @@ public class _1TypeContextComputer extends ContextComputer {
     private Set<Method> visited = new HashSet<>();
 
     _1TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
-        super(pta, oag);
-        this.worstCaseContextComputer = worstCaseContextComputer;
-
+	    super(pta, oag, worstCaseContextComputer);
     }
 
     @Override
