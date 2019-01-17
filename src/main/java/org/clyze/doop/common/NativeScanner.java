@@ -105,12 +105,16 @@ public class NativeScanner {
 
         int firstSpaceIndex = prefix.indexOf(" ");
         long addr = -1;
-        if (firstSpaceIndex != -1)
+        if (firstSpaceIndex != -1) {
+            String field = prefix.substring(0, firstSpaceIndex);
+            if (field.charAt(0) == '\'')
+                field = field.substring(1);
             try {
-                addr = Long.parseLong(prefix.substring(0, firstSpaceIndex), 16);
+                addr = Long.parseLong(field, 16);
             } catch (NumberFormatException ex) {
-                System.err.println("Cannot compute address[0.." + firstSpaceIndex + "] for line containing: " + prefix);
+                System.err.println("Cannot compute address[0.." + firstSpaceIndex + "] for field: " + field);
             }
+        }
 
         String method = prefix.substring(lastSpaceIndex + 1);
         if (method.startsWith("_JNIEnv::"))
