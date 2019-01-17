@@ -75,3 +75,6 @@
 
 .decl DiagnosticForLSP(?file:File, ?severity:symbol, ?startLine:number, ?startCol:number, ?endLine:number, ?endCol:number, ?message:symbol)
 .output DiagnosticForLSP
+
+.decl HoverInfoForLSP(?file:File, ?ctx:configuration.Context, ?index:number, ?startLine:number, ?startCol:number, ?endLine:number, ?endCol:number, ?message:symbol)
+.output HoverInfoForLSP
