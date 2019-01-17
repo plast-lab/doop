@@ -23,7 +23,7 @@ public class NativeScanner {
             //     return;
             System.out.println("== Processing library: " + lib + " ==");
 
-            List<String> lines = parseLib(nmCmd, lib);
+            List<String> lines = parseLib(nmCmd, lib, true);
             checkSymbols(lines, lib);
 
             SortedMap<Long, String> libEntryPoints = new TreeMap<>();
@@ -40,25 +40,41 @@ public class NativeScanner {
 
     /**
      * Reads all dynamic symbols from a library that contain the
-     * substring "JNI". Matching results are passed through c++filt.
+     * substring "JNI". Matching results may be passed through
+     * c++filt.
+     *
+     * @param nmCmd     the command to run the "nm" tool
+     * @param lib       the path to the dynamic library
+     * @param demangle  if true, nm does the demangling, otherwise
+     *                  we use c++filt
+     * @return          a list of lines containing entry points
      */
-    private static List<String> parseLib(String nmCmd, String lib) throws IOException {
-        final String CPPFILT = "c++filt";
-
+    private static List<String> parseLib(String nmCmd, String lib,
+                                         boolean demangle) throws IOException {
         List<String> ids = new LinkedList<>();
-        ProcessBuilder nmBuilder = new ProcessBuilder(nmCmd, "--dynamic", lib);
+        ProcessBuilder nmBuilder;
+        if (demangle)
+            nmBuilder = new ProcessBuilder(nmCmd, "--dynamic", "--demangle", lib);
+        else
+            nmBuilder = new ProcessBuilder(nmCmd, "--dynamic", lib);
         for (String nmLine : runCommand(nmBuilder)) {
             if (!nmLine.contains("JNI"))
                 continue;
-            ProcessBuilder cppfilt = new ProcessBuilder(CPPFILT, "'" + nmLine + "'");
-            List<String> lines = runCommand(cppfilt);
-            if (lines.size() == 1)
-                ids.add(lines.get(0));
-            else {
-                String out = lines.stream().map(Object::toString).collect(Collectors.joining(", "));
-                System.err.println("Error: cannot process " + CPPFILT + " output: " + out);
-                // Add original line.
+            if (demangle)
                 ids.add(nmLine);
+            else {
+                // Call separate tool to do name demangling.
+                final String CPPFILT = "c++filt";
+                ProcessBuilder cppfilt = new ProcessBuilder(CPPFILT, "'" + nmLine + "'");
+                List<String> lines = runCommand(cppfilt);
+                if (lines.size() == 1)
+                    ids.add(lines.get(0));
+                else {
+                    String out = lines.stream().map(Object::toString).collect(Collectors.joining(", "));
+                    System.err.println("Error: cannot process " + CPPFILT + " output: " + out);
+                    // Add original line.
+                    ids.add(nmLine);
+                }
             }
         }
         return ids;
