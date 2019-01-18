@@ -76,5 +76,6 @@
 .decl DiagnosticForLSP(?file:File, ?severity:symbol, ?startLine:number, ?startCol:number, ?endLine:number, ?endCol:number, ?message:symbol)
 .output DiagnosticForLSP
 
-.decl HoverInfoForLSP(?file:File, ?ctx:configuration.Context, ?index:number, ?startLine:number, ?startCol:number, ?endLine:number, ?endCol:number, ?message:symbol)
+//The message is split in messagePart, valuePart. The first may contain markdown tags and the second may contain doops values that contain '<' and '>' that we may need to escape
+.decl HoverInfoForLSP(?file:File, ?ctx:configuration.Context, ?index:number, ?startLine:number, ?startCol:number, ?endLine:number, ?endCol:number, ?messagePart:symbol, ?valuePart:symbol)
 .output HoverInfoForLSP

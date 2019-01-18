@@ -217,12 +217,22 @@ DiagnosticForLSP(?file, "Error", ?startLine, ?endLine, ?startColumn, ?endColumn,
   ?errorMsg = cat(cat(cat(cat(cat("Function invocation of function ", ?tofunction), " has "), to_string(?totalParams)), " params while function arity is "), to_string(?arity)),
   Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
 
-HoverInfoForLSP(?file, ?callerCtx, 0, ?startLine, ?endLine, ?startColumn, ?endColumn, ?hoverMsg):-
+HoverInfoForLSP(?file, ?callerCtx, 0, ?startLine, ?endLine, ?startColumn, ?endColumn, ?hoverMsg, ?tofunction):-
   CallGraphEdge(?callerCtx, ?insn, _, ?tofunction),
-  ?hoverMsg = cat("Function invocation resolves to ", ?tofunction),
+  ?hoverMsg = "Function invocation resolves to ",
   Instruction_Function(?insn, ?function),
   Function_DeclaredInFile(?function, ?file),
   Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
+
+
+HoverInfoForLSP(?file, ?callerCtx, 1 + ?index, ?startLine, ?endLine, ?startColumn, ?endColumn, ?hoverMsg, ?value):-
+  ResolvedActualParamValue(?callerCtx, ?insn, ?tofunction, ?paramName, _, ?value),
+  ?hoverMsg = cat("Argument ", cat(?paramName, " has value: ")),
+  FormalParam(?index, ?paramName, ?tofunction, _),
+  Instruction_Function(?insn, ?function),
+  Function_DeclaredInFile(?function, ?file),
+  Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
+
 
 //----------------------------------------------------------------------------------------------------------------------
 //                              CHECKING IF ALL REQUIRED PARAMS ARE PRESENT
