@@ -10,6 +10,9 @@
 .decl MethodType_Arity(?mt:MethodType, ?arity:number)
 .decl Method_MethodType(?method:Method, ?mt:MethodType)
 
+// Relation to mark all method types created initially.
+.decl isInitialMethodType(?mt:MethodType)
+
 // For every method type constant in the constant pool, create a method type.
 MethodType_ParamType(?mt, ?idx, ?type)  :- _MethodTypeConstantParam(?mt, ?idx, ?type).
 MethodType_Arity(?mt, ?arity)           :- MethodTypeConstant_Arity(?mt, ?arity).
@@ -21,6 +24,7 @@ MethodType_ParamTypes(?mt, ?paramTypes) :- MethodTypeConstant_ParamTypes(?mt, ?p
 
 // For every method, create a method type.
 MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
+isInitialMethodType(?mt),
 Method_MethodType(?method, ?mt),
 MethodType_ParamTypes(?mt, ?paramTypes),
 MethodType_Arity(?mt, ?arity),
@@ -59,29 +63,28 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
 // MethodType API entry points. The actual logic: every methodType()
 // invocation picks all descriptors that match.
 
-.decl ReachableMethodTypeN(?invo:MethodInvocation, ?caller:Method, ?callerCtx:configuration.Context)
-ReachableMethodTypeN(?invo, ?caller, ?callerCtx) :-
-  MTEntryPoint(_, ?invo, _),
-  Instruction_Method(?invo, ?caller),
-  ReachableContext(?callerCtx, ?caller).
+.decl ReachableMethodTypeN(?id:number, ?invo:MethodInvocation, ?ctx:configuration.Context)
+ReachableMethodTypeN(?id, ?invo, ?ctx) :-
+  MTEntryPoint(?id, ?invo, _),
+  Instruction_Method(?invo, ?method),
+  ReachableContext(?ctx, ?method).
 
-.decl MT_ReturnType(?invo:MethodInvocation, ?type:Type)
+.decl MT_ReturnType(?invo:MethodInvocation, ?ctx:configuration.Context, ?type:Type)
 .decl MT_ParamValue(?invo:MethodInvocation, ?index:number, ?classValue:Value)
 
 // The first argument to methodType() is always the return type.
-MT_ReturnType(?invo, ?type) :-
-  ReachableMethodTypeN(?invo, _, _),
+MT_ReturnType(?invo, ?ctx, ?type) :-
+  ReachableMethodTypeN(_, ?invo, ?ctx),
   ActualParam(0, ?invo, ?param),
-  VarPointsTo(_, ?classValue, _, ?param),
+  VarPointsTo(_, ?classValue, ?ctx, ?param),
   ReifiedClass(?type, ?classValue).
 
 // MethodType2, MethodType4: second parameter.
 MT_ParamValue(?invo, 0, ?classValue) :-
-  ( MTEntryPoint(2, ?invo, _) ; MTEntryPoint(4, ?invo, _) ),
-  Instruction_Method(?invo, ?caller),
-  ReachableContext(_, ?caller),
+  ReachableMethodTypeN(?id, ?invo, ?ctx),
+  (?id = 2 ; ?id = 4),
   ActualParam(1, ?invo, ?param),
-  VarPointsTo(_, ?classValue, _, ?param).
+  VarPointsTo(_, ?classValue, ?ctx, ?param).
 
 // MethodType1 lacks a parameter, so we use a dummy value instead.
 #define MT_NOARGS_VALUE "<mock dummy methodType() class for first argument>"
@@ -91,47 +94,58 @@ MT_ParamValue(?invo, 0, MT_NOARGS_VALUE) :-
 
 // Helper relation to treat 'void' and 'java.lang.Void' as the same
 // type in descriptors.
-.decl InvoReturnTypeMatchesMethodType(?invo:MethodInvocation, ?mt:MethodType, ?retType:Type)
+.decl InvoReturnTypeMatch(?invo:MethodInvocation, ?ctx:configuration.Context, ?retType:Type)
 
-InvoReturnTypeMatchesMethodType(?invo, ?mt, ?retType) :-
-  MT_ReturnType(?invo, "java.lang.Void"),
-  MethodType_ReturnType(?mt, ?retType),
-  ?retType = "void".
-InvoReturnTypeMatchesMethodType(?invo, ?mt, ?retType) :-
-  MT_ReturnType(?invo, ?retType),
-  MethodType_ReturnType(?mt, ?retType).
+InvoReturnTypeMatch(?invo, ?ctx, "void") :-
+  MT_ReturnType(?invo, ?ctx, "java.lang.Void").
+InvoReturnTypeMatch(?invo, ?ctx, ?retType) :-
+  MT_ReturnType(?invo, ?ctx, ?retType).
 
-.decl MTCallMatchesTypes(?invo:MethodInvocation, ?paramTypes:symbol, ?retType:Type)
+.decl MTCallMatch(?invo:MethodInvocation, ?ctx:configuration.Context, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
 
 // MethodType1.
-MTCallMatchesTypes(?invo, ?paramTypes, ?retType) :-
+MTCallMatch(?invo, ?ctx, "()", ?retType, 0) :-
   MTEntryPoint(1, ?invo, _),
-  InvoReturnTypeMatchesMethodType(?invo, ?mt, ?retType),
-  MT_ParamValue(?invo, 0, MT_NOARGS_VALUE),
-  MethodType_Arity(?mt, 0),
-  ?paramTypes = "()".
+  InvoReturnTypeMatch(?invo, ?ctx, ?retType),
+  MT_ParamValue(?invo, 0, MT_NOARGS_VALUE).
 
 // MethodType2.
-MTCallMatchesTypes(?invo, ?paramTypes, ?retType) :-
+MTCallMatch(?invo, ?ctx, ?paramTypes, ?retType, 1) :-
   MTEntryPoint(2, ?invo, _),
-  InvoReturnTypeMatchesMethodType(?invo, ?mt, ?retType),
+  InvoReturnTypeMatch(?invo, ?ctx, ?retType),
   MT_ParamValue(?invo, 0, ?classValue0),
   ReifiedClass(?pType0, ?classValue0),
-  MethodType_ParamType(?mt, 0, ?pType0),
-  MethodType_Arity(?mt, 1),
   ?paramTypes = cat("(", cat(?pType0, ")")).
 
 
+// Make methodType() invocations return values.
+.decl AssignMethodType(?hctx:configuration.HContext, ?mt:MethodType, ?ctx:configuration.Context, ?ret:Var, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
 
-
-// Make methodType() return special descriptors.
-MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
-VarPointsTo(?hctx, ?mt, ?callerCtx, ?ret) :-
-  ReachableMethodTypeN(?invo, ?caller, ?callerCtx),
-  MTCallMatchesTypes(?invo, ?paramTypes, ?retType),
+AssignMethodType(?hctx, ?mt, ?ctx, ?ret, ?paramTypes, ?retType, ?arity) :-
+  MTCallMatch(?invo, ?ctx, ?paramTypes, ?retType, ?arity),
   AssignReturnValue(?invo, ?ret),
   ?mt = METHOD_TYPE(?paramTypes, ?retType),
   isImmutableHContext(?hctx).
+
+// If the method type has been created during the preprocessing
+// initial phase, reuse it.
+VarPointsTo(?hctx, ?mt, ?ctx, ?ret) :-
+  AssignMethodType(?hctx, ?mt, ?ctx, ?ret, _, _, _),
+  isInitialMethodType(?mt).
+
+// Invent new method types if we are not sure they already exist from
+// the preprocessing initial phase.
+MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
+MethodType_Arity(?mt, ?arity),
+MethodType_ParamTypes(?mt, ?paramTypes),
+MethodType_ReturnType(?mt, ?retType),
+VarPointsTo(?hctx, ?mt, ?ctx, ?ret) :-
+  AssignMethodType(?hctx, ?mt, ?ctx, ?ret, ?paramTypes, ?retType, ?arity),
+  !isInitialMethodType(?mt),
+  Var_DeclaringMethod(?ret, ?method),
+  Method_DeclaringType(?method, ?type),
+  ApplicationClass(?type).
+
 
 #endif // REFLECTION
 #endif // REFLECTION_METHOD_HANDLES
@@ -149,6 +163,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
 
 // For every method handle constant, create a method type.
 MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
+isInitialMethodType(?mt),
 MethodHandle_Method(?methodHandle, ?method),
 MethodHandle_MethodType(?methodHandle, ?mt),
 MethodType_Arity(?mt, ?arity),
@@ -295,7 +310,6 @@ VarPointsTo(?hctx, ?mh, ?ctx, ?var) :-
   MethodHandleConstant_ParamTypes(?mh, ?paramTypes),
   MethodHandleConstant_ReturnType(?mh, ?retType).
 // Case 2: method handle constant not found, invent a mock object.
-MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
 MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
 MethodHandle_Method(?dmh, ?method),
 MethodHandle_MethodType(?dmh, ?mt),
@@ -359,7 +373,6 @@ MethodFinder(?invo, ?ret) :-
 // Direct method handle lookup.
 .decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type, ?paramTypes:ParamTypes)
 
-MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
 DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
   Method_DeclaringType(?method, ?type),
   Method_SimpleName(?method, ?id),
