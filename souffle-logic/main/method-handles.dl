@@ -117,6 +117,14 @@ MTCallMatch(?invo, ?ctx, ?paramTypes, ?retType, 1) :-
   ReifiedClass(?pType0, ?classValue0),
   ?paramTypes = cat("(", cat(?pType0, ")")).
 
+// MethodType5.
+MTCallMatch(?invo, ?ctx, ?argParamTypes, ?retType, ?arity) :-
+  ReachableMethodTypeN(5, ?invo, ?ctx),
+  InvoReturnTypeMatch(?invo, ?ctx, ?retType),
+  ActualParam(1, ?invo, ?param),
+  VarPointsTo(_, ?mtArg, ?ctx, ?param),
+  MethodType_ParamTypes(?mtArg, ?argParamTypes),
+  MethodType_Arity(?mtArg, ?arity).
 
 // Make methodType() invocations return values.
 .decl AssignMethodType(?hctx:configuration.HContext, ?mt:MethodType, ?ctx:configuration.Context, ?ret:Var, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
