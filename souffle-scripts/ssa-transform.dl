@@ -1102,7 +1102,7 @@ LowerBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
    LowerBoundTypeUpToConstraint(?var, ?typeBefore, ?stmtPrev),
    NextConstraintForVar(?var, ?stmtPrev, ?stmt),
    LowerBoundTypeForConstraint(?var, ?typeCur, ?stmt),
-   GreatestCommonDescendant(?typeBefore, ?typeCur, ?type).
+   LeastCommonAncestor(?typeBefore, ?typeCur, ?type).
 
 LowerBoundTypeForAllConstraints(?var, ?type) :-
    LowerBoundTypeUpToConstraint(?var, ?type, ?stmt),
@@ -1121,7 +1121,7 @@ UpperBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
    UpperBoundTypeUpToConstraint(?var, ?typeBefore, ?stmtPrev),
    NextConstraintForVar(?var, ?stmtPrev, ?stmt),
    UpperBoundTypeForConstraint(?var, ?typeCur, ?stmt),
-   LeastCommonAncestor(?typeBefore, ?typeCur, ?type).
+   GreatestCommonDescendant(?typeBefore, ?typeCur, ?type).
 
 UpperBoundTypeForAllConstraints(?var, ?type) :-
    UpperBoundTypeUpToConstraint(?var, ?type, ?stmt),
@@ -1130,9 +1130,10 @@ UpperBoundTypeForAllConstraints(?var, ?type) :-
 // Take both bounds into account
 TypeCompatibleWithAllConstraints(?var, ?type) :-
    LowerBoundTypeForAllConstraints(?var, ?lowerType),
-   SubtypeOf(?lowerType, ?type),
    UpperBoundTypeForAllConstraints(?var, ?upperType),
+   SubtypeOf(?lowerType, ?type),
    SubtypeOf(?type, ?upperType).
+ .plan 1:(2,1,3,4)
 
 // And now, let's encode the constraints themselves
 
