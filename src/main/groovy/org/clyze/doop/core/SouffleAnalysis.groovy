@@ -41,6 +41,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()
 		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
+		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
 		if (!options.X_STOP_AT_FACTS.value) {
 			compilationFuture = executorService.submit(new Callable<File>() {
 				@Override
@@ -50,6 +51,7 @@ class SouffleAnalysis extends DoopAnalysis {
 							options.SOUFFLE_PROFILE.value as boolean,
 							options.SOUFFLE_DEBUG.value as boolean,
 							provenance,
+							liveProf,
 							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
 							options.X_CONTEXT_REMOVER.value as boolean)
 					log.info "[Task COMPILE Done]"
@@ -72,6 +74,7 @@ class SouffleAnalysis extends DoopAnalysis {
 						options.SOUFFLE_PROFILE.value as boolean,
 						options.SOUFFLE_DEBUG.value as boolean,
 						provenance,
+						liveProf,
 						options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
 						options.X_CONTEXT_REMOVER.value as boolean)
 				script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
@@ -83,7 +86,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
 			def generatedFile = compilationFuture.get()
 			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance)
+					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance, liveProf)
 
 			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 			runtimeMetricsFile.createNewFile()

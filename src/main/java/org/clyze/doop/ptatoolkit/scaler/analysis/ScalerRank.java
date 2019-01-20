@@ -1,6 +1,5 @@
 package org.clyze.doop.ptatoolkit.scaler.analysis;
 
-import Jama.Matrix;
 import org.clyze.doop.ptatoolkit.Global;
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
@@ -32,11 +31,11 @@ public class ScalerRank {
 	 */
 	private static final double DAMPING_FACTOR_DEFAULT = 0.0d;
 	private final ObjectAllocationGraph oag;
-	private Set<Method> instanceMethods;
+	private Set<Method> reachableMethods;
 	private ContextComputer[] ctxComputers;
 	private ContextComputer bottomLine;
-	private long tst = 30000000;
-	private List<Triple<Method, String, Integer>> results;
+	private long tst = 900000000;
+	private List<Triple<Method, String, Long>> results;
 
 	public ScalerRank(PointsToAnalysis pta) {
 		this.pta = pta;
@@ -47,80 +46,29 @@ public class ScalerRank {
 	private void init() {
 
 		// From the most precise analysis to the least precise analysis
-		ctxComputers = new ContextComputer[] {
-				new _2ObjectContextComputer(pta, oag),
-				new _2TypeContextComputer(pta, oag),
-				new _1TypeContextComputer(pta, oag),
-		};
-		bottomLine = new _InsensitiveContextComputer(pta);
-		instanceMethods = rank().stream()
-				.filter(Method::isInstance)
-				.collect(Collectors.toSet());
+//		ctxComputers = new ContextComputer[] {
+//				new _2ObjectContextComputer(pta, oag),
+//				new _2TypeContextComputer(pta, oag),
+//				new _1TypeContextComputer(pta, oag),
+//		};
+//		bottomLine = new _InsensitiveContextComputer(pta);
+//		reachableMethods = rank().stream()
+//				.filter(Method::isInstance)
+//				.collect(Collectors.toSet());
 	}
 
 	public static boolean ASC = true;
 	public static boolean DESC = false;
 
 	private Set<Method> rank() {
-//		//Creating  Arrays Representing Equations
-//		int totalMethods = pta.getMethodIdMap().keySet().size();
-//		double[][] array = new double[totalMethods][totalMethods];
-//		double[][] vector = new double[totalMethods][1];
-//
-//		for (int i = 0; i < totalMethods; i++) {
-//			array[i][i] = 1.0;
-//
-//			Method method = pta.getMethodIdMap().inverse().get(i);
-//			Set<Method> neighborSet = pta.getMethodNeighborMap().get(method);
-//			if (neighborSet != null) {
-//				for (Method neighbor : neighborSet) {
-//					int neighborIndex = pta.getMethodIdMap().get(neighbor);
-//					array[i][neighborIndex] = +1.0 / neighborSet.size();
-//				}
-//			}
-//			else {
-//				System.out.println("Warning -- " + method);
-//			}
-//
-//			//vector[i] = pta.getMethodTotalVPTMap().get(method);
-//			vector[i][0] = 1.0;
-//		}
-//
-//		for (int n = 0; n < 10; n++) {
-//			//Creating Matrix Objects with arrays
-//			Matrix lhs = new Matrix(array);
-//			Matrix rhs = new Matrix(vector);
-//
-//			//Calculate Solved Matrix
-//			Matrix ans = lhs.times(rhs);
-//
-//			vector = ans.getArray();
-//		}
-//
-//		//Printing Answers
-//		System.out.println(Arrays.deepToString(vector));
 		scores = new HashMap<>();
 		int max_iterations = MAX_ITERATIONS_DEFAULT;
 		// initialization
 		int totalMethods = pta.getMethodIdMap().keySet().size();
-		boolean weighted = false;
-		Map<Method, Double> weights;
-        if (weighted) {
-			weights = new HashMap<>(totalMethods);
-		} else {
-			weights = Collections.emptyMap();
-		}
-
-		double initScore = 1.0d / totalMethods;
 		for (Method m : pta.getMethodIdMap().keySet()) {
+			double initScore = getFactor(m, ctxComputers[0]);
 			scores.put(m, initScore);
-//			if (weighted) {
-//				double sum = 0;
-//				for (E e : g.outgoingEdgesOf(m)) {
-//					sum += g.getEdgeWeight(e);
-//				}
-//				weights.put(m, sum);
-//			}
+
 		}
 
 		// run PageRank
@@ -142,21 +90,11 @@ public class ScalerRank {
 			maxChange = 0d;
 			for (Method v : pta.getMethodIdMap().keySet()) {
 				double contribution = 0d;
-
-//				if (weighted) {
-//					for (E e : g.incomingEdgesOf(v)) {
-//						V w = Graphs.getOppositeVertex(g, e, v);
-//						contribution +=
-//								DAMPING_FACTOR_DEFAULT * scores.get(w) * g.getEdgeWeight(e) / weights.get(w);
-//					}
-//				} else {
-				    if (pta.getMethodNeighborMap().get(v) != null) {
-					    for (Method m : pta.getMethodNeighborMap().get(v)) {
-						    //V w = Graphs.getOppositeVertex(g, e, v);
-						    contribution += (DAMPING_FACTOR_DEFAULT * scores.get(m) * pta.getMethodTotalVPTMap().get(m))/pta.getMethodNeighborMap().get(m).size();
-					    }
-				    }
-//				}
+				if (pta.getMethodNeighborMap().get(v) != null) {
+					for (Method m : pta.getMethodNeighborMap().get(v)) {
+						contribution += (DAMPING_FACTOR_DEFAULT * scores.get(m) * getFactor(m, ctxComputers[0]))/pta.getMethodNeighborMap().get(m).size();
+					}
+				}
 
 				double vOldValue = scores.get(v);
 				double vNewValue = r + contribution;
@@ -174,7 +112,7 @@ public class ScalerRank {
 		}
 		for (Method m : scores.keySet()) {
 			if (pta.getMethodTotalVPTMap().get(m) != 0) {
-				scores.put(m, scores.get(m)*pta.getMethodTotalVPTMap().get(m));
+				scores.put(m, scores.get(m)*getFactor(m, ctxComputers[0]));
 			}
 		}
 
@@ -203,11 +141,11 @@ public class ScalerRank {
 		}
 		System.out.println("Given TST value: " +
 				ANSIColor.BOLD + ANSIColor.GREEN + tst + ANSIColor.RESET);
-		long st = binarySearch(instanceMethods, tst);
+		long st = binarySearch(reachableMethods, tst);
 		System.out.println("Selected ST value: " +
 				ANSIColor.BOLD + ANSIColor.GREEN + st + ANSIColor.RESET);
 		Map<Method, String> analysisMap = new HashMap<>();
-		instanceMethods.forEach(method ->
+		reachableMethods.forEach(method ->
 				analysisMap.put(method, selectContextFor(method, st)));
 		if (Global.isDebug()) {
 			results.stream()
@@ -219,7 +157,7 @@ public class ScalerRank {
 						String context = triple.getSecond();
 						long nContexts = triple.getThird();
 						long accumuPTSSize = getAccumulativePTSSizeOf(method);
-						System.out.printf("# %s\t{%s}\t%d\t%d\n",
+						System.out.printf("#\t%s\t{%s}\t%d\t%d\n",
 								method.toString(), context,
 								nContexts, nContexts * accumuPTSSize);
 					});
@@ -245,7 +183,7 @@ public class ScalerRank {
 
 	/**
 	 * Search the suitable tst such that the accumulative size
-	 * of context-sensitive points to sets of given instanceMethods is less
+	 * of context-sensitive points to sets of given reachableMethods is less
 	 * than given tst.
 	 * @param methods
 	 * @param tst Total Scalability Threshold
@@ -253,7 +191,7 @@ public class ScalerRank {
 	 */
 	private long binarySearch(Set<Method> methods, long tst) {
 		// Select the max value and make it as end
-		long end = instanceMethods.stream()
+		long end = reachableMethods.stream()
 				.mapToLong(m -> getFactor(m, ctxComputers[0]))
 				.max()
 				.getAsLong();

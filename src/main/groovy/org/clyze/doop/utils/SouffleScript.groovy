@@ -27,14 +27,14 @@ class SouffleScript {
 
 	File compile(File origScriptFile, File outDir, File cacheDir,
                  boolean profile = false, boolean debug = false,
-                 boolean provenance = false,
+                 boolean provenance = false, boolean liveProf = false,
                  boolean forceRecompile = true, boolean removeContext = false) {
 
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
 
 		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
-		def c2 = c1 + profile.toString() + provenance.toString()
+		def c2 = c1 + profile.toString() + provenance.toString() + liveProf.toString()
 		def checksum = CheckSum.checksum(c2, DoopAnalysisFactory.HASH_ALGO)
 		def cacheFile = new File(cacheDir, checksum)
 
@@ -54,6 +54,8 @@ class SouffleScript {
 				compilationCommand << ("-r${outDir}/report.html" as String)
 			if (provenance)
 				compilationCommand << ("--provenance=1" as String)
+			if (liveProf)
+				compilationCommand << ("--live-profile" as String)
 
 			log.info "Compiling Datalog to C++ program and executable"
 			log.debug "Compilation command: $compilationCommand"
@@ -91,17 +93,22 @@ class SouffleScript {
 	}
 
 	def run(File cacheFile, File factsDir, File outDir,
-	        int jobs, long monitoringInterval, Closure monitorClosure, boolean provenance = false, boolean profile = false) {
+	        int jobs, long monitoringInterval, Closure monitorClosure,
+			boolean provenance = false, boolean liveProf = false,
+			boolean profile = false) {
 
 		def db = new File(outDir, "database")
+		deleteQuietly(db)
+		db.mkdirs()
 
 		def executionCommand = "$cacheFile -j$jobs -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
 		if (profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 
 		def cmd = executionCommand.join(" ")
-		if (provenance) {
-			println "This process will now exit, run this command to browse provenance: rlwrap ${cmd}"
+		if (provenance || liveProf) {
+			def mode = provenance ? "provenance" : (liveProf ? "live profiling" : "unknown")
+			println "This process will now exit, run this command to run the analysis with the requested interactive mode (${mode}): rlwrap ${cmd}"
 			throw new DoopErrorCodeException(22)
 		}
 

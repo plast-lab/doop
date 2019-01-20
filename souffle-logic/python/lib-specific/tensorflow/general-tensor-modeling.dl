@@ -134,6 +134,22 @@ ListOfConstsAtIndexPointsTo(?hctx, ?tensorVal, ?index, ?indexValue):-
 
 
 //----------------------------------------------------------------------------------------------------------------------
+//                                              WARNINGS / ERRORS
+//----------------------------------------------------------------------------------------------------------------------
+
+DiagnosticForLSP(?file, "Warning", ?startLine, ?endLine, ?startColumn, ?endColumn, ?warnMsg):-
+  TensorOperationWarning(_, ?insn, _, ?warnMsg),
+  Instruction_Function(?insn, ?function),
+  Function_DeclaredInFile(?function, ?file),
+  Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
+
+DiagnosticForLSP(?file, "Error", ?startLine, ?endLine, ?startColumn, ?endColumn, ?errorMsg):-
+  TensorOperationError(_, ?insn, _, ?errorMsg),
+  Instruction_Function(?insn, ?function),
+  Function_DeclaredInFile(?function, ?file),
+  Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
+
+//----------------------------------------------------------------------------------------------------------------------
 //                                              IMPRECISION METRICS
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -220,3 +236,42 @@ TensorFlowsToTensorOp(?argHctx, ?argVal, ?ctx, ?resultVal):-
 TensorFlowsToSelf(?ctx, ?op):-
   TensorFlowsToTensorOp(?hctx, ?op, ?ctx, ?op),
   configuration.RecordContextResponse(?ctx, ?op, _, ?hctx).
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              CONCAT TENSOR SHAPE INFO
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl TensorShapeInfo(?hctx:configuration.HContext, ?val:Value, ?shapeStr:symbol)
+.output TensorShapeInfo
+
+.decl TensorShapeConcatDims(?hctx:configuration.HContext, ?val:Value, ?concatdims:symbol)
+.output TensorShapeConcatDims
+
+.decl TensorShapeConcatUpToDim(?hctx:configuration.HContext, ?val:Value, ?concatdims:symbol, ?upToDim:number)
+.output TensorShapeConcatUpToDim
+
+.decl PossibleDimValue_Representation(?val:Value, ?repr:symbol)
+.output PossibleDimValue_Representation
+
+PossibleDimValue_Representation(?numConstVal, ?repr):-
+  isIntConstantValue(?numConstVal),
+  Value_Num(?numConstVal, ?numConst),
+  ?repr = cat("[", cat(?numConst,"]")).
+
+PossibleDimValue_Representation(?none, "[None]"):-
+  isNoneValue(?none).
+
+TensorShapeConcatUpToDim(?hctx, ?tensorShape, ?str, 0):-
+  TensorShapeListContent(?hctx, ?tensorShape, 0, ?indexValue),
+  PossibleDimValue_Representation(?indexValue, ?str).
+
+TensorShapeConcatUpToDim(?hctx, ?tensorShape, ?str, ?index):-
+  TensorShapeListContent(?hctx, ?tensorShape, ?index, ?indexValue),
+  PossibleDimValue_Representation(?indexValue, ?currDimStr),
+  TensorShapeConcatUpToDim(?hctx, ?tensorShape, ?prevDimsStr, ?index - 1),
+  ?str = cat(?prevDimsStr, ?currDimStr).
+
+TensorShapeInfo(?hctx, ?tensor, ?DimsStr):-
+  TensorShape(?hctx, ?tensor, ?shapeHctx, ?shapeVal),
+  TensorShapeListLength(?shapeHctx, ?shapeVal, ?len),
+  TensorShapeConcatUpToDim(?shapeHctx, ?shapeVal, ?DimsStr, ?len -1).

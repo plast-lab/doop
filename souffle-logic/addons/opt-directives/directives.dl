@@ -17,6 +17,7 @@ MethodToRemove(?method) :-
   ApplicationMethod(?method),
   !SpecialMethodToKeep(?method),
   !mainAnalysis.ReachableContext(_, ?method),
+  !basic.PossibleNativeCodeTargetMethod(?method, _),
 //  !Method_Modifier("abstract", ?method),
   !Method_Modifier("native", ?method),
   (basic.MethodOverridesOther(?method, _);
@@ -138,18 +139,81 @@ ReachableMethodOnlyUsedInSingleInvocationTarget(?method) :-
 
 /*** Inlining ***/
 
+//the number of invocations of an inline candidate
+.decl InvocationCount(?method:Method, ?n:number)
+
+InvocationCount(?method, ?n) :-
+  ApplicationMethod(?method),
+//  !Method_Modifier("native", ?method),
+  ?n = count:{ContextInsensitiveCallGraphEdge(_, ?method)}.
+
+.output InvocationCount
+
 .decl ApplicationMethod_Size(?method:Method, ?size:number)
+ApplicationMethod_Size(?method, ?size) :-
+  ApplicationMethod(?method),
+  Method_Modifier("final", ?method),
+  !Method_Modifier("native", ?method),
+  ?size = count:{Instruction_Method(_, ?method)}.
 
 ApplicationMethod_Size(?method, ?size) :-
   ApplicationMethod(?method),
+  !Method_Modifier("native", ?method),
   ?size = count:{Instruction_Method(_, ?method)}.
 
 .decl SmallApplicationMethod(?method:Method)
 
 SmallApplicationMethod(?method) :-
-  ApplicationMethod_Size(?method, ?size), ?size < 30.
+  ApplicationMethod_Size(?method, ?size),
+  InvocationCount(?method, 1),
+  ?size < 20.
+
+SmallApplicationMethod(?method) :-
+  ApplicationMethod_Size(?method, ?size),
+  InvocationCount(?method, 2),
+  ?size < 10.
+
+SmallApplicationMethod(?method) :-
+  ApplicationMethod_Size(?method, ?size),
+  InvocationCount(?method, 3),
+  ?size < 6.
+
+SmallApplicationMethod(?method) :-
+  ApplicationMethod_Size(?method, ?size),
+  ?size < 3.
 
 .output SmallApplicationMethod
+
+//virtual callsites that call two different methods
+//with up to five instructions
+.decl DoubleInvocationTarget(?invocation:MethodInvocation, ?target:Method)
+
+DoubleInvocationTarget(?invocation, ?target) :-
+  InvocationTarget_Count(?invocation, 2),
+  mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target),
+  ApplicationMethod_Size(?target, ?size),
+  ?size < 10.
+
+.output DoubleInvocationTarget
+
+//virtual callsites that call three different methods
+//with up to three instructions each  
+.decl TripleInvocationTarget(?invocation:MethodInvocation, ?target:Method)
+
+TripleInvocationTarget(?invocation, ?target) :-
+  InvocationTarget_Count(?invocation, 3),
+  mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target),
+  ApplicationMethod_Size(?target, ?size),
+  ?size < 4.
+
+.output TripleInvocationTarget
+
+//maximum caller size
+.decl CallerSize(?caller:Method)
+
+CallerSize(?caller) :- 
+  ApplicationMethod_Size(?caller, ?size),
+  ?size < 32768.
 
 .decl InvocationToInline(?invocation:MethodInvocation, ?target:Method)
 
@@ -157,14 +221,26 @@ InvocationToInline(?invocation, ?target) :-
   SmallApplicationMethod(?target),
   SingleInvocationTarget(?invocation, ?target),
   Instruction_Method(?invocation, ?invocationMethod),
-  ApplicationMethod(?invocationMethod).
+  CallerSize(?invocationMethod).
 
+InvocationToInline(?invocation, ?target) :-
+  DoubleInvocationTarget(?invocation, ?target),
+  2 = count:{DoubleInvocationTarget(?invocation, _)},
+  Instruction_Method(?invocation, ?invocationMethod),
+  CallerSize(?invocationMethod).
+
+InvocationToInline(?invocation, ?target) :-
+  TripleInvocationTarget(?invocation, ?target),
+  3 = count:{TripleInvocationTarget(?invocation, _)},
+  Instruction_Method(?invocation, ?invocationMethod),
+  CallerSize(?invocationMethod).  
+ 
 InvocationToInline(?invocation, ?target) :-
   SmallApplicationMethod(?target),
   (isStaticMethodInvocation_Insn(?invocation);
    isSpecialMethodInvocation_Insn(?invocation)),
   mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target),
   Instruction_Method(?invocation, ?invocationMethod),
-  ApplicationMethod(?invocationMethod).
+  CallerSize(?invocationMethod).  
 
 .output InvocationToInline

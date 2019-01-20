@@ -28,7 +28,7 @@ One important directory in that repository is `JREs`. It can be used for the `DO
 
 Doop only supports invocations from its home directory. The main options when running Doop are the analysis and the jar(s) options. For example, for a context-insensitive analysis on a jar file we issue:
 
-    $ ./doop --platform java_7 -a context-insensitive -i com.example.some.jar
+    $ ./doop --platform java_8 -a context-insensitive -i com.example.some.jar
 
 ### Common command line options
 To see the list of available options (and valid argument values in certain cases), issue:
@@ -70,7 +70,7 @@ $ ./doop -i ./lib/asm-debug-all-4.1.jar      [local file]
 ```
 
 #### PLATFORM (--platform)
-Optional --- default: java_7. The platform to use for the analysis. The possible Java options are java_N where N is the java version (3, 4, 5, 6, 7 etc.). Java 8 is currently not supported. The android options are android_N_V where N is the Android version (20, 21, 22, 23, 24, 25 etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom built platforms).
+Optional --- default: java_8. The platform to use for the analysis. The possible Java options are java_N where N is the java version (3, 4, 5, 6, 7, 8 etc.). The android options are android_N_V where N is the Android version (20, 21, 22, 23, 24, 25 etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom built platforms).
 
 Example:
 
@@ -143,7 +143,7 @@ In order to use LogicBlox instead of the Soufflé engine you can provide the --l
 Normally, on each invocation of Doop the underlying build system will check for newer versions of all dependency libraries.
 Sometimes, it might be desirable to invoke doop in an offline mode. There is an alternative script for this purpose.
 
-    $ ./doopOffline --platform java_7 -a context-insensitive -i com.example.some.jar
+    $ ./doopOffline --platform java_8 -a context-insensitive -i com.example.some.jar
 
 ### Building Doop distribution
 

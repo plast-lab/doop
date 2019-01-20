@@ -32,7 +32,7 @@ public interface PointsToAnalysis {
      * @return the size of (i.e., number of objects in)
      * points-to set of var
      */
-    int pointsToSetSizeOf(Variable var);
+    long pointsToSetSizeOf(Variable var);
 
     /**
      *
@@ -57,6 +57,13 @@ public interface PointsToAnalysis {
      * @return the callee methods of method
      */
     Set<Method> calleesOf(Method method);
+
+    /**
+     *
+     * @param method
+     * @return the caller methods of method
+     */
+    Set<Method> callersOf(Method method);
 
     /**
      *

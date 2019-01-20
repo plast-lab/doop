@@ -40,6 +40,13 @@ Invocation_Parts(?invocation, ?simplename, ?descriptor, ?basetype, 1) :-
     Method_DeclaringType(?signature, ?basetype).
 
 Invocation_Parts(?invocation, ?simplename, ?descriptor, ?basetype, 0) :-
+    isDynamicMethodInvocation_Insn(?invocation),
+    DynamicMethodInvocation_Bootstrap(?invocation, ?signature),
+    Method_SimpleName(?signature, ?simplename),
+    Method_Descriptor(?signature, ?descriptor),
+    Method_DeclaringType(?signature, ?basetype).
+
+Invocation_Parts(?invocation, ?simplename, ?descriptor, ?basetype, 0) :-
     VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
     VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
     VirtualMethodInvocation_Base(?invocation, ?base),

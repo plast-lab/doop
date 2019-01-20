@@ -106,8 +106,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             factsDir = new File(outDir, "facts")
 
         database = new File(outDir, "database")
-        deleteQuietly(database)
-        database.mkdirs()
 
         executor = new Executor(outDir, commandsEnvironment)
         cpp = new CPreprocessor(this, executor)
@@ -202,14 +200,31 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 } else if (options.WALA_FACT_GEN.value) {
                     runFrontEnd(tmpDirs, FrontEnd.WALA, null)
                 } else if (options.DEX_FACT_GEN.value) {
-                    // Run Soot in platform-only mode for fact generation, to
-                    // fill in non .dex facts and the type hierarchy.
-                    options.X_FACTS_SUBSET.value = "PLATFORM"
-                    runFrontEnd(tmpDirs, FrontEnd.SOOT, null)
-                    CHA cha = new CHA()
-                    fillCHAFromSootFacts(cha)
-                    options.X_FACTS_SUBSET.value = null
-                    runFrontEnd(tmpDirs, FrontEnd.DEX, cha)
+                    runFrontEnd(tmpDirs, FrontEnd.DEX, new CHA())
+                    // // Step 1. Run Soot in platform-only mode for fact
+                    // // generation, to fill in non .dex facts and the type
+                    // // hierarchy. Pur results in <factsDir>.
+                    // options.X_FACTS_SUBSET.value = "PLATFORM"
+                    // runFrontEnd(tmpDirs, FrontEnd.SOOT, null)
+                    // // Step 2. Read CHA information from Soot run.
+                    // CHA cha = new CHA()
+                    // fillCHAFromSootFacts(cha)
+                    // // Step 3. Run Dex front end with CHA information.
+                    // File origFactsDir = factsDir
+                    // File nonSSAFactsDir = new File("${factsDir}/nonSSA")
+                    // log.info "Creating non-SSA facts directory ${nonSSAFactsDir}"
+                    // nonSSAFactsDir.mkdirs()
+                    // factsDir = nonSSAFactsDir
+                    // options.X_FACTS_SUBSET.value = null
+                    // runFrontEnd(tmpDirs, FrontEnd.DEX, cha)
+                    // factsDir = origFactsDir
+                    // // Step 4. Run SSA transformation in nonSSAFactsDir,
+                    // // output in ssaFactsDir.
+                    // // ...
+                    // // Step 5. Merge factsDir + ssaFactsDir. This can also be
+                    // // done in Datalog, either as merged output in step 4 or
+                    // // with extra support in import-facts.dl.
+                    // // ...
                 } else {
                     runFrontEnd(tmpDirs, FrontEnd.SOOT, null)
                 }
@@ -365,6 +380,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         if (options.DEX_FACT_GEN.value) {
             params += ["--dex"]
+        }
+
+        if (options.SCAN_NATIVE_CODE.value) {
+            params += ["--scan-native-code"]
         }
 
         params.addAll(["--log-dir", Doop.doopLog])

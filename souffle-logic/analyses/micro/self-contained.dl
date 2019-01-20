@@ -25,7 +25,7 @@
 .decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
 .decl Method_ReturnType(?method:Method, ?returnType:Type)
 .decl Method_SimpleName(?method:Method, ?simpleName:symbol)
-.decl Method_Params(?method:Method, ?params:symbol)
+.decl Method_ParamTypes(?method:Method, ?params:symbol)
 .decl Method_Descriptor(?method:Method, ?descriptor:MethodDescriptor)
 .decl Method_Modifier(?mod:Modifier, ?method:Method)
 .input Method_Modifier(IO="file", filename="Method-Modifier.facts", delimiter="\t")
@@ -194,13 +194,13 @@ MethodInvocation_Method(?instruction, ?signature) :-
 .decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol, ?arity:number)
 .input _Method(IO="file", filename="Method.facts", delimiter="\t")
 Method_SimpleName(?method, ?simplename),
-Method_Params(?method, ?params),
+Method_ParamTypes(?method, ?params),
 Method_DeclaringType(?method, ?declaringType),
 Method_ReturnType(?method, ?returnType) :-
   _Method(?method, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor, ?arity).
 Method_Descriptor(?method, ?descriptor) :-
   Method_ReturnType(?method, ?returnType),
-  Method_Params(?method, ?params),
+  Method_ParamTypes(?method, ?params),
   ?descriptor = cat(?returnType, ?params).
 .decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
 .input _StoreInstanceField(IO="file", filename="StoreInstanceField.facts", delimiter="\t")

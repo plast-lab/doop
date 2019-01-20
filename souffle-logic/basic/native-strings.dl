@@ -1,0 +1,8 @@
+.decl PossibleNativeCodeTargetMethod(?method:Method, ?file:symbol)
+.output PossibleNativeCodeTargetMethod
+
+PossibleNativeCodeTargetMethod(?method, ?file) :-
+  _NativeMethodTypeCandidate(?file, ?descriptor),
+  _NativeNameCandidate(?file, ?name),
+  Method_SimpleName(?method, ?name),
+  Method_JVMDescriptor(?method, ?descriptor).

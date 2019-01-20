@@ -97,8 +97,8 @@ class TestUtils {
 		findPair(analysis, "Server_Invocation_Values", local, 1, value, 2)
 	}
 
-	static void invokedynamicCGE(Analysis analysis, String instr, String meth) {
-		findPair(analysis, "mainAnalysis.InvokedynamicCallGraphEdge", instr, 1, meth, 3)
+	static void methodHandleCGE(Analysis analysis, String instr, String meth) {
+		findPair(analysis, "mainAnalysis.MethodHandleCallGraphEdge", instr, 1, meth, 3)
 	}
 
 	static void lambdaCGE(Analysis analysis, String instr, String meth) {
@@ -106,7 +106,7 @@ class TestUtils {
 	}
 
 	static void linkObjectIsLambda(Analysis analysis, String linkObject, String desc) {
-		findPair(analysis, 'mainAnalysis.LambdaCallSite', linkObject, 2, desc, 6)
+		findPair(analysis, 'mainAnalysis.LambdaObject', linkObject, 1, desc, 5)
 	}
 
 	static void proxyCGE(Analysis analysis, String instr, String meth) {

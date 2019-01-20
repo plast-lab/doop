@@ -72,7 +72,7 @@ ImplicitReachable("<java.lang.ref.Finalizer: void runFinalizer()>").
 ForcedReachable(?m) :- TestNGAnnotatedMethod(?m).
 ForcedReachable(?m) :- JUnitAnnotatedMethod(?m).
 ForcedReachable(?m) :- JUnitGenerator(?m).
-ForcedReachable(?m) :- JUnitTestCaseMethod(?m).
+ForcedReachable(?m) :- JUnitTestMethod(?m, _).
 ForcedReachable(?m) :- EvoSuiteEntryPoint(?m).
 #endif // DISCOVER_TESTS
 

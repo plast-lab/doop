@@ -10,7 +10,6 @@ import spock.lang.Specification
 abstract class DoopBenchmark extends Specification {
 	final static String DOOP_BENCHMARKS = "DOOP_BENCHMARKS"
 	static String doopBenchmarksDir
-	Analysis analysis
 
 	def setupSpec() {
 		Doop.initDoopFromEnv()

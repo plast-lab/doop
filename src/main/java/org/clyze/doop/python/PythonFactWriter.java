@@ -2,6 +2,7 @@ package org.clyze.doop.python;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.ir.ssa.*;
+import com.ibm.wala.cast.loader.AstMethod;
 import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
 import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.cast.python.ssa.PythonPropertyRead;
@@ -461,14 +462,17 @@ public class PythonFactWriter {
 
     //TODO: This needs work for pythons positional params!!!!!!!!!!!!
     private void writeActualParams(IMethod inMethod, IR ir, PythonInvokeInstruction instruction, String invokeExprRepr, Session session, TypeInference typeInference) {
+        int totalNumberOfParams = 0;
         if (instruction.isStatic()) {
             //for (int i = 0; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 0; i < instruction.getNumberOfPositionalParameters(); i++) {
+                totalNumberOfParams++;
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
                 _db.add(ACTUAL_POSITIONAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
             }
             List<String> keywords = instruction.getKeywords();
             for (int i = 0; i < instruction.getNumberOfKeywordParameters(); i++) {
+                totalNumberOfParams++;
                 Local l = createLocal(ir, instruction, instruction.getUse(i + instruction.getNumberOfPositionalParameters()), typeInference);
                 _db.add(ACTUAL_KEYWORD_PARAMETER, str(i), invokeExprRepr,keywords.get(i), _rep.local(inMethod, l));
             }
@@ -476,15 +480,18 @@ public class PythonFactWriter {
         else {
             //for (int i = 1; i < instruction.getNumberOfParameters(); i++) {
             for (int i = 1; i < instruction.getNumberOfPositionalParameters(); i++) {
+                totalNumberOfParams++;
                 Local l = createLocal(ir, instruction, instruction.getUse(i), typeInference);
                 _db.add(ACTUAL_POSITIONAL_PARAMETER, str(i-1), invokeExprRepr, _rep.local(inMethod, l));
             }
             List<String> keywords = instruction.getKeywords();
             for (int i = 0; i < instruction.getNumberOfKeywordParameters(); i++) {
+                totalNumberOfParams++;
                 Local l = createLocal(ir, instruction, instruction.getUse(i + instruction.getNumberOfPositionalParameters()), typeInference);
                 _db.add(ACTUAL_KEYWORD_PARAMETER, str(i-1), invokeExprRepr,keywords.get(i), _rep.local(inMethod, l));
             }
         }
+        _db.add(FUNCTION_INV_TOTAL_PARAMS, invokeExprRepr, str(totalNumberOfParams));
     }
 
     void writeAssignComparison(IMethod m, SSAComparisonInstruction instruction, Local left, Local op1, Local op2, Session session) {
@@ -556,7 +563,7 @@ public class PythonFactWriter {
     private String writePythonInvokeHelper(IMethod inMethod, IR ir, PythonInvokeInstruction instruction, Session session, TypeInference typeInference) {
         String methodId = _rep.signature(inMethod);
 
-        String insn = _rep.functionInvoke(inMethod, session);
+        String insn = _rep.functionInvoke(inMethod, instruction, session);
         writeActualParams(inMethod, ir, instruction, insn, session, typeInference);
 
         int index = session.calcInstructionNumber(instruction);
@@ -603,6 +610,19 @@ public class PythonFactWriter {
         }
 
         return insn;
+    }
+
+    void writeFunctionSourcePosition(AstMethod meth){
+        IMethod.SourcePosition sourceInfo = meth.getSourcePosition();
+        int firstLine = 0, firstColumn =0 ,lastLine =0 ,lastColumn =0;
+        String function = _rep.signature(meth);
+        if (sourceInfo != null) {
+            firstLine = sourceInfo.getFirstLine();
+            firstColumn = sourceInfo.getFirstCol();
+            lastLine = sourceInfo.getLastLine();
+            lastColumn = sourceInfo.getLastCol();
+        }
+        _db.add(FUNCTION_SOURCE_POSITION, function, str(firstLine),str(firstColumn),str(lastLine),str(lastColumn));
     }
 
     void writeInstructionSourcePosition(IMethod inMethod, IR ir, SSAInstruction instruction, Session session)

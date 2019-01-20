@@ -19,28 +19,22 @@ JUnitGenerator(?testGen) :-
   Method_DeclaringType(?testGen, ?t),
   Method_ReturnType(?testGen, "junit.framework.Test").
 
-// Subclassing JUnit's TestCase usually indicates a test case.
-.decl TestCase(?t:ClassType, ?tInstance:Value)
-.decl JUnitTestCaseMethod(?m:Method)
+.decl JUnitTestMethod(?m:Method, ?tInstance:Value)
 
 #define TEST_INSTANCE(t) cat("Test instance for ", t)
 
 // Create a mock instance for "this".
-MockValueConsMacro(TEST_INSTANCE(?t), ?t),
-TestCase(?t, TEST_INSTANCE(?t)) :-
-  isClassType(?junitTestCase),
-  ?junitTestCase = "junit.framework.TestCase",
-  basic.SubtypeOf(?t, ?junitTestCase),
+MockValueConsMacro(?testInstance, ?t),
+JUnitTestMethod(?m, ?testInstance) :-
+  JUnitAnnotatedMethod(?m),
   Method_DeclaringType(?m, ?t),
-  Method_SimpleName(?m, "setUp").
+  ?testInstance = TEST_INSTANCE(?t).
 
-JUnitTestCaseMethod(?m),
-VarPointsTo(?hctx, ?tInstance, ?ctx, ?this) :-
-  TestCase(?t, ?tInstance),
+VarPointsTo(?hctx, ?testInstance, ?ctx, ?this) :-
+  JUnitTestMethod(?m, ?testInstance),
   ThisVar(?m, ?this),
   isImmutableContext(?ctx),
-  isImmutableHContext(?hctx),
-  Method_DeclaringType(?m, ?t).
+  isImmutableHContext(?hctx).
 
 .decl EvoSuiteEntryPoint(?m:Method)
 

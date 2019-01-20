@@ -306,7 +306,7 @@ public class PythonRepresentation {
     String instruction(IMethod inMethod, SSAInstruction instruction, SessionCounter counter, int index)
     {
         if(instruction instanceof PythonInvokeInstruction)
-            return functionInvoke(inMethod, counter);
+            return functionInvoke(inMethod, (PythonInvokeInstruction) instruction, counter);
         else if(instruction instanceof SSAAbstractInvokeInstruction){
             if(((SSAAbstractInvokeInstruction) instruction).isStatic() && ((SSAAbstractInvokeInstruction) instruction).getDeclaredTarget().getName().toString().equals("import"))
             {
@@ -318,9 +318,11 @@ public class PythonRepresentation {
         return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
     }
 
-    String functionInvoke(IMethod inMethod, SessionCounter counter)
+    String functionInvoke(IMethod inMethod, PythonInvokeInstruction insn, SessionCounter counter)
     {
-        return signature(inMethod) + "/invoke/" + counter.nextNumber("invoke");
+        //TODO: REVISIT THIS AT SOME POINT
+        //return signature(inMethod) + "/invoke/" + counter.nextNumber("invoke");
+        return signature(inMethod) + "/invoke/" + insn.iindex;
     }
 
     //Will become obsolete

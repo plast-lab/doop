@@ -15,12 +15,13 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 006 (hello world) / test additional command line options"() {
 		when:
-		analyzeTest("006-hello-world", ["--coarse-grained-allocation-sites",
-                                        "--cs-library", "--Xextra-metrics",
-                                        "--dont-report-phantoms", "--cfg",
-                                        "--symbolic-reasoning",
-                                        "--thorough-fact-gen", "--sanity",
-                                        "--platform", "java_8"])
+		Analysis analysis = analyzeTest("006-hello-world",
+										["--coarse-grained-allocation-sites",
+										 "--cs-library", "--Xextra-metrics",
+										 "--dont-report-phantoms", "--cfg",
+										 "--symbolic-reasoning",
+										 "--thorough-fact-gen", "--sanity",
+										 "--platform", "java_8"])
 
 		then:
 		noSanityErrors(analysis)
@@ -30,7 +31,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 012 (interface fields)"() {
 		when:
-		analyzeTest("012-interface-fields", ["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
+		Analysis analysis = analyzeTest("012-interface-fields", ["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
 
 		then:
 		staticFieldPointsTo(analysis, '<Y: Y fooooooooo>', '<Y: void <clinit>()>/new Y$1/0')
@@ -40,8 +41,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 013 (enums)"() {
 		when:
-		analyzeTest("013-enums", ["--reflection-classic", "--generate-jimple",
-								  "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
+		Analysis analysis = analyzeTest("013-enums", ["--reflection-classic", "--generate-jimple", "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"])
 
 		then:
 		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Enums array for Main$UndeletablePrefKey>')

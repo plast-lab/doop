@@ -20,6 +20,8 @@ public final class Attribute {
 
     static final String CALLEE = "Callee";
 
+    static final String CALLER = "Caller";
+
     public static final String OBJECT_ASSIGNED = "Object assigned";
 
     static final String DECLARING_TYPE = "Declaring type";

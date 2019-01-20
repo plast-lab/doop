@@ -81,7 +81,7 @@ public class WalaInvoker {
             WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._extractMoreStrings, rep);
             WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
-            BasicJavaSupport java = new BasicJavaSupport();
+            BasicJavaSupport java = new BasicJavaSupport(walaParameters);
 
             if (walaParameters._android) {
                 WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);
@@ -95,7 +95,7 @@ public class WalaInvoker {
             else
                 cache = new AnalysisCacheImpl();
 
-            java.preprocessInputs(walaParameters);
+            java.preprocessInputs();
             walaFactWriter.writePreliminaryFacts(java, walaParameters);
             db.flush();
 

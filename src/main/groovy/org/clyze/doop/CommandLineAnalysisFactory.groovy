@@ -32,7 +32,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	static final String USER_SUPPLIED_ID = "The id of the analysis (if not specified, the id will be created " +
 			"automatically). Permitted characters include letters, digits, " +
 			"${EXTRA_ID_CHARACTERS.collect { "'$it'" }.join(', ')}."
-	static final String USAGE = "doop [OPTION]... -- [BLOXBATCH OPTION]..."
+	static final String USAGE = "doop -i <INPUT> -a <NAME> [OPTION]..."
 	static final int WIDTH = 120
 
 	static final AnalysisFamily FAMILY = DoopAnalysisFamily.instance

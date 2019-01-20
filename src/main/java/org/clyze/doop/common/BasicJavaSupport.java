@@ -3,6 +3,7 @@ package org.clyze.doop.common;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Map;
 import java.util.HashSet;
@@ -19,27 +20,24 @@ import org.objectweb.asm.ClassReader;
  */
 public class BasicJavaSupport {
 
-    protected final Set<String> classesInApplicationJars;
-    protected final Set<String> classesInLibraryJars;
-    protected final Set<String> classesInDependencyJars;
-    private final Map<String, Set<ArtifactEntry>> artifactToClassMap;
-    private final PropertyProvider propertyProvider;
+    protected final Set<String> classesInApplicationJars = new HashSet<>();
+    protected final Set<String> classesInLibraryJars = new HashSet<>();
+    protected final Set<String> classesInDependencyJars = new HashSet<>();
+    private final Map<String, Set<ArtifactEntry>> artifactToClassMap = new ConcurrentHashMap<>();
+    private final PropertyProvider propertyProvider = new PropertyProvider();
+    private final Parameters parameters;
 
-    public BasicJavaSupport() {
-        this.classesInApplicationJars = new HashSet<>();
-        this.classesInLibraryJars = new HashSet<>();
-        this.classesInDependencyJars = new HashSet<>();
-        this.propertyProvider = new PropertyProvider();
-        this.artifactToClassMap = new ConcurrentHashMap<>();
+    public BasicJavaSupport(Parameters parameters) {
+        this.parameters = parameters;
     }
 
     /**
-     * Helper method to read classes and property files from input archives.
+     * Helper method to read classes and resources from input archives.
      *
      * @param parameters the list of all the given parameters
      *
      */
-    public void preprocessInputs(Parameters parameters) throws IOException {
+    public void preprocessInputs() throws IOException {
         for (String filename : parameters.getInputs()) {
             System.out.println("Preprocessing application: " + filename);
             preprocessInput(classesInApplicationJars, filename);
@@ -83,7 +81,16 @@ public class BasicJavaSupport {
                     }
                 } else if (entryName.endsWith(".properties")) {
                     propertyProvider.addProperties(jarFile.getInputStream(entry), filename);
-                } /* Skip non-class files and non-property files */
+                } else if (parameters._scanNativeCode && entryName.endsWith(".so")) {
+                    File tmpDir = Files.createTempDirectory("native-lib").toFile();
+                    tmpDir.deleteOnExit();
+                    String tmpName = entryName.replaceAll(File.separator, "_");
+                    File libTmpFile = new File(tmpDir, tmpName);
+                    libTmpFile.deleteOnExit();
+                    Files.copy(jarFile.getInputStream(entry), libTmpFile.toPath());
+                    File outDir = new File(parameters.getOutputDir());
+                    NativeScanner.scan("nm", "objdump", libTmpFile, outDir);
+                }
             }
         }
     }

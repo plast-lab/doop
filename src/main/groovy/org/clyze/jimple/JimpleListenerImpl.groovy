@@ -284,8 +284,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	// This follows how Representation.dynamicInvokeIdMiddle() works.
 	String dynamicInvokeMiddlePart(InvokeStmtContext ctx) {
 		def bootName = "${ctx.methodSig().IDENTIFIER(0).text}.${ctx.methodSig().IDENTIFIER(2).text}"
-		def dynamicName = ctx.STRING().text
-		def invoId = DynamicMethodInvocation.genericId(bootName, dynamicName)
+		def dynamicName = ctx.STRING().text.replaceAll('"', '')
+		def invoId = DynamicMethodInvocation.genericId(getClassName(bootName), dynamicName)
 		def c = methodInvoCounters[invoId] as int
 		methodInvoCounters[invoId] = c + 1
 		return "${method.doopId}/${invoId}/$c"
