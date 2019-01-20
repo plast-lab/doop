@@ -134,4 +134,14 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		where:
 		analysisName << TEST_ANALYSES
 	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test FutureExample2"() {
+		when:
+		Analysis analysis = analyzeTest("invokedynamic-FutureExample2", ["--platform", "java_8" ], "2-object-sensitive+heap")
+
+		then:
+		methodIsReachable(analysis, '<example.Computation: java.lang.Integer computation()>')
+	}
 }
