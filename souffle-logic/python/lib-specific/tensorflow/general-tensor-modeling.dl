@@ -275,3 +275,20 @@ TensorShapeInfo(?hctx, ?tensor, ?DimsStr):-
   TensorShape(?hctx, ?tensor, ?shapeHctx, ?shapeVal),
   TensorShapeListLength(?shapeHctx, ?shapeVal, ?len),
   TensorShapeConcatUpToDim(?shapeHctx, ?shapeVal, ?DimsStr, ?len -1).
+
+HoverInfoForLSP(?file, ?callerCtx, 1 + ?index, ?startLine, ?endLine, ?startColumn, ?endColumn, ?hoverMsg, ?DimsStr):-
+  ResolvedActualParamValue(?callerCtx, ?insn, ?tofunction, ?paramName, ?hctx, ?tensorVal),
+  TensorShapeInfo(?hctx, ?tensorVal, ?DimsStr),
+  ?hoverMsg = cat("Tensor argument <b>", cat(?paramName, "</b> has shape: ")),
+  FormalParam(?index, ?paramName, ?tofunction, _),
+  Instruction_Function(?insn, ?function),
+  Function_DeclaredInFile(?function, ?file),
+  Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
+
+HoverInfoForLSP(?file, ?ctx, 20, ?startLine, ?endLine, ?startColumn, ?endColumn, ?hoverMsg, ?DimsStr):-
+  TensorOpOutputWithHctx(?ctx, ?insn, ?hctx, ?outTensorVal),
+  TensorShapeInfo(?hctx, ?outTensorVal, ?DimsStr),
+  ?hoverMsg = "Output tensor has shape: ",
+  Instruction_Function(?insn, ?function),
+  Function_DeclaredInFile(?function, ?file),
+  Instruction_SourcePosition(?insn, ?startLine, ?endLine, ?startColumn, ?endColumn).
