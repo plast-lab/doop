@@ -270,6 +270,7 @@ VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
   Var_Type(?var, ?varType),
   CompatibleTypes(?retType, ?varType).
 
+// Model MethodHandle.asType().
 MockValueConsMacro(?adapterMH, "java.lang.invoke.MethodHandle"),
 MethodHandle_Method(?adapterMH, ?mhMethod),
 MethodHandle_MethodType(?adapterMH, ?mt),
