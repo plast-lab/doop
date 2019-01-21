@@ -52,7 +52,7 @@ public class WalaInvoker {
 //            classPath.append(":").append(walaParameters.getLibraries().get(i));
 //        }
 
-        System.out.println("WALA classpath:" + classPath);
+        System.out.println("WALA classpath: " + classPath);
         for (String lib : walaParameters.getPlatformLibs())
             System.out.println("Platform Library: " + lib);
 
