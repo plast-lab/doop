@@ -438,7 +438,7 @@ DynamicMethodInvocation_DynArity(?instruction, ?dynArity) :-
   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method).
 
 .decl _DynamicMethodInvocation_DynParamType(?invocation:DynamicMethodInvocation_Insn, ?idx:number, ?pType:symbol)
-.input _DynamicMethodInvocation_DynParamType(IO="file", filename="DynamicMethodInvocation-Param.facts", delimiter="\t")
+.input _DynamicMethodInvocation_DynParamType(IO="file", filename="DynamicMethodInvocation-ParamType.facts", delimiter="\t")
 
 // Opaque method invocations
 

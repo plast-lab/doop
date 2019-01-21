@@ -48,7 +48,7 @@ public enum PredicateFile
     DIRECT_SUPER_CLASS("DirectSuperclass"),
     DUMMY_IF_VAR("DummyIfVar"),
     DYNAMIC_METHOD_INV("DynamicMethodInvocation"),
-    DYNAMIC_METHOD_INV_PARAM("DynamicMethodInvocation-Param"),
+    DYNAMIC_METHOD_INV_PARAM_TYPE("DynamicMethodInvocation-ParamType"),
     EMPTY_ARRAY("EmptyArray"),
     ENTER_MONITOR("EnterMonitor"),
     EXCEPT_HANDLER_PREV("ExceptionHandler-Previous"),
