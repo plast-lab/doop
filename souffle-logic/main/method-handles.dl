@@ -76,7 +76,7 @@ ReachableMethodTypeN(?id, ?invo, ?ctx) :-
 MT_ReturnType(?invo, ?hctx, ?ctx, ?type) :-
   ReachableMethodTypeN(_, ?invo, ?ctx),
   ActualParam(0, ?invo, ?param),
-  VarPointsTo(_, ?classValue, ?ctx, ?param),
+  VarPointsTo(?hctx, ?classValue, ?ctx, ?param),
   ReifiedClass(?type, ?classValue).
 
 // MethodType2, MethodType4: second parameter.
