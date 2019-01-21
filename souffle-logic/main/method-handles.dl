@@ -69,11 +69,11 @@ ReachableMethodTypeN(?id, ?invo, ?ctx) :-
   Instruction_Method(?invo, ?method),
   ReachableContext(?ctx, ?method).
 
-.decl MT_ReturnType(?invo:MethodInvocation, ?ctx:configuration.Context, ?type:Type)
+.decl MT_ReturnType(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?type:Type)
 .decl MT_ParamValue(?invo:MethodInvocation, ?index:number, ?classValue:Value)
 
 // The first argument to methodType() is always the return type.
-MT_ReturnType(?invo, ?ctx, ?type) :-
+MT_ReturnType(?invo, ?hctx, ?ctx, ?type) :-
   ReachableMethodTypeN(_, ?invo, ?ctx),
   ActualParam(0, ?invo, ?param),
   VarPointsTo(_, ?classValue, ?ctx, ?param),
@@ -94,33 +94,33 @@ MT_ParamValue(?invo, 0, MT_NOARGS_VALUE) :-
 
 // Helper relation to treat 'void' and 'java.lang.Void' as the same
 // type in descriptors.
-.decl InvoReturnTypeMatch(?invo:MethodInvocation, ?ctx:configuration.Context, ?retType:Type)
+.decl InvoReturnTypeMatch(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?retType:Type)
 
-InvoReturnTypeMatch(?invo, ?ctx, "void") :-
-  MT_ReturnType(?invo, ?ctx, "java.lang.Void").
-InvoReturnTypeMatch(?invo, ?ctx, ?retType) :-
-  MT_ReturnType(?invo, ?ctx, ?retType).
+InvoReturnTypeMatch(?invo, ?hctx, ?ctx, "void") :-
+  MT_ReturnType(?invo, ?hctx, ?ctx, "java.lang.Void").
+InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType) :-
+  MT_ReturnType(?invo, ?hctx, ?ctx, ?retType).
 
-.decl MTCallMatch(?invo:MethodInvocation, ?ctx:configuration.Context, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
+.decl MTCallMatch(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
 
 // MethodType1.
-MTCallMatch(?invo, ?ctx, "()", ?retType, 0) :-
+MTCallMatch(?invo, ?hctx, ?ctx, "()", ?retType, 0) :-
   MTEntryPoint(1, ?invo, _),
-  InvoReturnTypeMatch(?invo, ?ctx, ?retType),
+  InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
   MT_ParamValue(?invo, 0, MT_NOARGS_VALUE).
 
 // MethodType2.
-MTCallMatch(?invo, ?ctx, ?paramTypes, ?retType, 1) :-
+MTCallMatch(?invo, ?hctx, ?ctx, ?paramTypes, ?retType, 1) :-
   MTEntryPoint(2, ?invo, _),
-  InvoReturnTypeMatch(?invo, ?ctx, ?retType),
+  InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
   MT_ParamValue(?invo, 0, ?classValue0),
   ReifiedClass(?pType0, ?classValue0),
   ?paramTypes = cat("(", cat(?pType0, ")")).
 
 // MethodType5.
-MTCallMatch(?invo, ?ctx, ?argParamTypes, ?retType, ?arity) :-
+MTCallMatch(?invo, ?hctx, ?ctx, ?argParamTypes, ?retType, ?arity) :-
   ReachableMethodTypeN(5, ?invo, ?ctx),
-  InvoReturnTypeMatch(?invo, ?ctx, ?retType),
+  InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
   ActualParam(1, ?invo, ?param),
   VarPointsTo(_, ?mtArg, ?ctx, ?param),
   MethodType_ParamTypes(?mtArg, ?argParamTypes),
@@ -130,10 +130,9 @@ MTCallMatch(?invo, ?ctx, ?argParamTypes, ?retType, ?arity) :-
 .decl AssignMethodType(?hctx:configuration.HContext, ?mt:MethodType, ?ctx:configuration.Context, ?ret:Var, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
 
 AssignMethodType(?hctx, ?mt, ?ctx, ?ret, ?paramTypes, ?retType, ?arity) :-
-  MTCallMatch(?invo, ?ctx, ?paramTypes, ?retType, ?arity),
+  MTCallMatch(?invo, ?hctx, ?ctx, ?paramTypes, ?retType, ?arity),
   AssignReturnValue(?invo, ?ret),
-  ?mt = METHOD_TYPE(?paramTypes, ?retType),
-  isImmutableHContext(?hctx).
+  ?mt = METHOD_TYPE(?paramTypes, ?retType).
 
 // If the method type has been created during the preprocessing
 // initial phase, reuse it.
@@ -512,13 +511,12 @@ VarPointsTo(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
   ?mockArray = MOCK_ARRAY(?invokedynamic).
 
 // Normal handling for the last three arguments of the bootstrap method, shifted.
-VarPointsTo(?immHctx, ?val, ?calleeCtx, ?formal) :-
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
   !Method_Modifier("varargs", ?bootMethod),
   FormalParam(?idx + 3, ?bootMethod, ?formal),
   BootstrapParam(?idx, ?invokedynamic, ?actual),
-  VarPointsTo(_, ?val, _, ?actual),
-  isImmutableHContext(?immHctx).
+  VarPointsTo(?hctx, ?val, _, ?actual).
 
 .type CallSite = mainAnalysis.Value
 .decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?dynRetType:Type, ?ctx:configuration.Context)
@@ -616,20 +614,19 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 // Record more information about the call site to model the metafactory result
 // and return the mock lambda object.
 MockValueConsMacro(?lambda, ?dynRetType),
-VarPointsTo(?immHctx, ?lambda, ?callerCtx, ?ret),
+VarPointsTo(?hctx, ?lambda, ?callerCtx, ?ret),
 LambdaObject(?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?desc, ?callerCtx) :-
   ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType, ?callerCtx),
   DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
   BootstrapParam(1, ?invokedynamic, ?handleVar),
-  VarPointsTo(_, ?handleVal, ?callerCtx, ?handleVar),
+  VarPointsTo(?hctx, ?handleVal, ?callerCtx, ?handleVar),
   MethodHandleConstant_Method(?handleVal, ?implMethod),
   // Used to generate friendly description for the lambda.
   Method_SimpleName(?implMethod, ?handleMeth),
   Method_DeclaringType(?implMethod, ?handleType),
   ?desc = LAMBDA_ALT_VAL(?invokedynamic, ?dynRetType, ?handleType, ?handleMeth, ?implMethod, ?dynName),
   ?lambda = LAMBDA(?invokedynamic, ?dynRetType),
-  AssignReturnValue(?invokedynamic, ?ret),
-  isImmutableHContext(?immHctx).
+  AssignReturnValue(?invokedynamic, ?ret).
 
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
 
@@ -776,11 +773,10 @@ Class_getMembers(?sig, ?hctx, ?ctx, ?ret, ?class) :-
   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
   (?sig = GET_DECLARED_CONSTRUCTORS ; ?sig = GET_DECLARED_METHODS),
   ReachableContext(?ctx, ?method),
-  VarPointsTo(_, ?classValue, ?ctx, ?base),
+  VarPointsTo(?hctx, ?classValue, ?ctx, ?base),
   ReifiedClass(?class, ?classValue),
   ApplicationClass(?class),
-  AssignReturnValue(?invo, ?ret),
-  isImmutableHContext(?hctx).
+  AssignReturnValue(?invo, ?ret).
 
 MockValueConsMacro(?mockConstructors, "java.lang.reflect.Constructor[]"),
 VarPointsTo(?hctx, ?mockConstructors, ?ctx, ?ret),
