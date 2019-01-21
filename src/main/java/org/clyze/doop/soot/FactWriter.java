@@ -810,7 +810,7 @@ class FactWriter extends JavaFactWriter {
         SootMethodRef exprMethodRef = expr.getMethodRef();
         String simpleName = Representation.simpleName(exprMethodRef);
         String declClass = exprMethodRef.declaringClass().getName();
-        checkAndMarkMethodHandleInvocation(declClass, simpleName);
+        checkAndMarkMethodHandleInvocation(insn, declClass, simpleName);
 
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
         if (tag != null) {

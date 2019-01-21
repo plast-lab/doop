@@ -302,7 +302,7 @@ public abstract class JavaFactWriter {
 
     // Signature-polymorphic invoke* methods of MethodHandle should be
     // recorded for special treatment.
-    protected void checkAndMarkMethodHandleInvocation(String declClass, String simpleName) {
+    protected void checkAndMarkMethodHandleInvocation(String insn, String declClass, String simpleName) {
         if (declClass.equals("java.lang.invoke.MethodHandle") &&
             (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
              simpleName.equals("invokeBasic")))
