@@ -1048,6 +1048,11 @@ public class WalaFactWriter extends JavaFactWriter {
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
         IClass targetClass = cha.lookupClass(targetRef.getDeclaringClass());
 
+        // Uncomment and fix to handle method handle invocations.
+        // String simpleName = "";
+        // String declClass = "";
+        // checkAndMarkMethodHandleInvocation(declClass, simpleName);
+
         if(targetClass == null) {
             //System.out.println("Failed to find class: " + fixTypeString(targetRef.getDeclaringClass().getName().toString()) + " in class chierarchy.");
             writePhantomType(targetRef.getDeclaringClass());

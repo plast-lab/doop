@@ -807,15 +807,10 @@ class FactWriter extends JavaFactWriter {
 
         writeActualParams(inMethod, stmt, expr, insn, session);
 
-        // Signature-polymorphic invoke* methods of MethodHandle
-        // should be recorded for special treatment.
         SootMethodRef exprMethodRef = expr.getMethodRef();
         String simpleName = Representation.simpleName(exprMethodRef);
         String declClass = exprMethodRef.declaringClass().getName();
-        if (declClass.equals("java.lang.invoke.MethodHandle") &&
-            (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
-             simpleName.equals("invokeBasic")))
-            _db.add(METHOD_HANDLE_INVOCATION, insn, simpleName);
+        checkAndMarkMethodHandleInvocation(declClass, simpleName);
 
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
         if (tag != null) {
