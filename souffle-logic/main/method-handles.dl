@@ -126,6 +126,15 @@ MTCallMatch(?invo, ?hctx, ?ctx, ?argParamTypes, ?retType, ?arity) :-
   MethodType_ParamTypes(?mtArg, ?argParamTypes),
   MethodType_Arity(?mtArg, ?arity).
 
+// MethodType3/MethodType4/MethodType6. Here we do not try to reason about the
+// parameter types but return a wildcard; this will be attached to the mock
+// method type and trigger imprecise matching in the method finder.
+#define WILDCARD_PARAM_TYPES "(--all-types--)"
+MTCallMatch(?invo, ?hctx, ?ctx, WILDCARD_PARAM_TYPES, ?retType, 0) :-
+  MTEntryPoint(?id, ?invo, _),
+  (?id = 3 ; ?id = 4 ; ?id = 6),
+  InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType).
+
 // Make methodType() invocations return values.
 .decl AssignMethodType(?hctx:configuration.HContext, ?mt:MethodType, ?ctx:configuration.Context, ?ret:Var, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
 
@@ -379,7 +388,7 @@ MethodFinder(?invo, ?ret) :-
 
 // Direct method handle lookup.
 .decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type, ?paramTypes:ParamTypes)
-
+// Look up method handle with a normal method type.
 DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
   Method_DeclaringType(?method, ?type),
   Method_SimpleName(?method, ?id),
@@ -388,6 +397,15 @@ DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
   MethodType_ReturnType(?mt, ?retType),
   MethodType_ParamTypes(?mt, ?paramTypes),
   ?mt = METHOD_TYPE(?paramTypes, ?retType).
+// Look up method handle with a return-type-only method type.
+DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
+  Method_DeclaringType(?method, ?type),
+  Method_SimpleName(?method, ?id),
+  Method_ReturnType(?method, ?retType),
+  Method_ParamTypes(?method, ?paramTypes),
+  MethodType_ReturnType(?mt, ?retType),
+  MethodType_ParamTypes(?mt, WILDCARD_PARAM_TYPES),
+  ?mt = METHOD_TYPE(WILDCARD_PARAM_TYPES, ?retType).
 
 // Create VarPointsTo for return values of method finders.
 AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-

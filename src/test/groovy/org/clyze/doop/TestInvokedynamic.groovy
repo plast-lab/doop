@@ -106,6 +106,13 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		// test4
 		varPointsTo(analysis, '<Main: void test4()>/methDD_mh4#_68', '<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
 		methodIsReachable(analysis, '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
+		// test5
+		varPointsTo(analysis, '<Main: void test5()>/mType#_81', 'method type (--all-types--)java.lang.Double')
+		varPointsTo(analysis, '<Main: void test5()>/methDD_mh5#_82', '<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
+		methodIsReachable(analysis, '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
+		// test6
+		varPointsTo(analysis, '<Main: void test6_aux(java.lang.invoke.MethodType)>/add3_mh6#_104', '<computed direct method handle for <A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>>')
+		methodIsReachable(analysis, '<A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>')
 		// test7
 		varPointsTo(analysis, '<Main: void test7()>/mType1#_114', 'method type (java.lang.Double)java.lang.String')
 		varPointsTo(analysis, '<Main: void test7()>/mType2#_115', 'method type (java.lang.Double)java.lang.Double')
