@@ -112,7 +112,7 @@ public class PythonInvoker {
                     } catch (NullPointerException ex) {
 
                     }
-                    //System.out.println("class: " + klass.toString() + " in file:" + sourceFileName);
+                    //System.out.println("class: " + klass.toString() + " in file: " + sourceFileName);
                     Collection<? extends IMethod> methods = klass.getDeclaredMethods();
                     for (IMethod m : methods) {
                         m.getName();

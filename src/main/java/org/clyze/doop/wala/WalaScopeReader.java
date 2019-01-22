@@ -111,7 +111,7 @@ class WalaScopeReader {
         try {
             multiDex = DexFileFactory.loadDexContainer(apkFile, Opcodes.forApi(API));
             for (String dexEntry : multiDex.getDexEntryNames()) {
-                System.out.println("Adding dex file: " +dexEntry + " of file:" + fileName);
+                System.out.println("Adding dex file: " +dexEntry + " of file: " + fileName);
                 scope.addToScope(loader, new DexFileModule(apkFile, dexEntry, API));
             }
         } catch (IOException e){

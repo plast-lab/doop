@@ -65,7 +65,7 @@ public class PythonIREngine {
                 try {
                     modules.add(new SourceURLModule(new URL("file://" + absolutePath)));
                 }catch(MalformedURLException ex) {
-                    System.err.println("Failed to create module for file " + absolutePath + "\nexception:" + ex);
+                    System.err.println("Failed to create module for file " + absolutePath + "\nexception: " + ex);
                 }
             }
             else{
@@ -81,7 +81,7 @@ public class PythonIREngine {
                                 modules.add(new SourceURLModule(new URL("file://" + absolutePath)));
                                 System.out.println("Added file " + absolutePath);
                             } catch (MalformedURLException ex) {
-                                System.err.println("Failed to create module for file " + absolutePath + "\nexception:" + ex);
+                                System.err.println("Failed to create module for file " + absolutePath + "\nexception: " + ex);
                             }
                         } else {
                             //Maybe do something with .c or .h files at some point
