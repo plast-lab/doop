@@ -10,6 +10,10 @@
 MainClass(?class) :-
   _MainClass(?class).
 
+// ClassArtifact
+.decl _ClassArtifact(?artifact:symbol, ?className:symbol, ?subArtifact:symbol)
+.input _ClassArtifact(IO="file", filename="Class-Artifact.facts", delimiter="\t")
+
 // NormalHeap
 
 .decl _NormalHeap(?id:symbol, ?type:symbol)

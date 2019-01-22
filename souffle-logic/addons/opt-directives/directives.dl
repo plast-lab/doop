@@ -215,24 +215,52 @@ CallerSize(?caller) :-
   ApplicationMethod_Size(?caller, ?size),
   ?size < 32768.
 
+// Uncommment the following to disable inlining over .dex boundaries.
+// #define NOINLINE_OVER_DEX_BOUNDARIES
+
+#ifdef NOINLINE_OVER_DEX_BOUNDARIES
+.decl METHODS_INLINE_COMPATIBLE(?a:Method, ?b:Method)
+.output METHODS_INLINE_COMPATIBLE
+
+METHODS_INLINE_COMPATIBLE(?a, ?b) :-
+  ApplicationMethod(?a),
+  Method_DeclaringType(?a, ?t),
+  ApplicationMethod(?b),
+  Method_DeclaringType(?b, ?t).
+
+METHODS_INLINE_COMPATIBLE(?a, ?b) :-
+  ApplicationMethod(?a),
+  Method_DeclaringType(?a, ?t1),
+  ApplicationMethod(?b),
+  Method_DeclaringType(?b, ?t2),
+  ?t1 != ?t2,
+  _ClassArtifact(?artifact, ?a, ?subArtifact),
+  _ClassArtifact(?artifact, ?b, ?subArtifact).
+#else
+#define METHODS_INLINE_COMPATIBLE(a, b) 1=1
+#endif // NOINLINE_OVER_DEX_BOUNDARIES
+
 .decl InvocationToInline(?invocation:MethodInvocation, ?target:Method)
 
 InvocationToInline(?invocation, ?target) :-
   SmallApplicationMethod(?target),
   SingleInvocationTarget(?invocation, ?target),
   Instruction_Method(?invocation, ?invocationMethod),
+  METHODS_INLINE_COMPATIBLE(?invocationMethod, ?target),
   CallerSize(?invocationMethod).
 
 InvocationToInline(?invocation, ?target) :-
   DoubleInvocationTarget(?invocation, ?target),
   2 = count:{DoubleInvocationTarget(?invocation, _)},
   Instruction_Method(?invocation, ?invocationMethod),
+  METHODS_INLINE_COMPATIBLE(?invocationMethod, ?target),
   CallerSize(?invocationMethod).
 
 InvocationToInline(?invocation, ?target) :-
   TripleInvocationTarget(?invocation, ?target),
   3 = count:{TripleInvocationTarget(?invocation, _)},
   Instruction_Method(?invocation, ?invocationMethod),
+  METHODS_INLINE_COMPATIBLE(?invocationMethod, ?target),
   CallerSize(?invocationMethod).  
  
 InvocationToInline(?invocation, ?target) :-
@@ -241,6 +269,7 @@ InvocationToInline(?invocation, ?target) :-
    isSpecialMethodInvocation_Insn(?invocation)),
   mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target),
   Instruction_Method(?invocation, ?invocationMethod),
+  METHODS_INLINE_COMPATIBLE(?invocationMethod, ?target),
   CallerSize(?invocationMethod).  
 
 .output InvocationToInline
