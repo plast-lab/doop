@@ -985,9 +985,9 @@ class FactWriter extends JavaFactWriter {
     }
 
     static class SigInfo {
-        public int arity;
-        public String retType;
-        public String paramTypes;
+        public final int arity;
+        public final String retType;
+        public final String paramTypes;
         public SigInfo(SootMethodRef ref, boolean reverse) {
             List<Type> paramTypes = ref.parameterTypes();
             if (reverse)
