@@ -15,26 +15,32 @@ class TestInvokedynamic extends ServerAnalysisTests {
 
 	// @spock.lang.Ignore
 	@Unroll
-	def "Server analysis test 107 (lambdas)"(String analysisName) {
+	def "Server analysis test 107 (lambdas)"(String analysisName, boolean wala) {
 		when:
 		Analysis analysis = analyzeTest("107-lambdas",
 										["--platform", "java_8", "--Xserver-logic",
 										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 										 "--thorough-fact-gen", "--sanity",
-										 "--generate-jimple"],
-										analysisName)
+										 "--generate-jimple"] +
+										(wala ? ["--wala-fact-gen"] : []),
+										analysisName,
+										"107-lambdas" + (wala ? "-wala" : ""))
 
 		then:
-		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/intWriter#_13', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::apply/0::: java.util.function.Function::: (Mock)::: lambda object of type java.util.function.Function')
+		varPointsToQ(analysis,
+					 (wala ? '<Main: void main(java.lang.String[])>/v14' : '<Main: void main(java.lang.String[])>/intWriter#_13'),
+					 '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::apply/0::: java.util.function.Function::: (Mock)::: lambda object of type java.util.function.Function')
 		linkObjectIsLambda(analysis, '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::apply/0::: java.util.function.Function::: (Mock)::: lambda object of type java.util.function.Function', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::apply/0::: java.util.function.Function::: (Mock)::: reference Main::lambda$main$0 from <Main: java.lang.String lambda$main$0(java.lang.Integer)> wrapped as java.util.function.Function.apply')
 		lambdaCGE(analysis, '<Main: void main(java.lang.String[])>/java.util.function.Function.apply/0', '<Main: java.lang.String lambda$main$0(java.lang.Integer)>')
 		invoValue(analysis, '<A: java.lang.Integer lambda$new$0(java.lang.Integer,java.lang.Integer,java.lang.Integer)>/java.lang.Integer.compareTo/0', '<java.lang.Integer: int compareTo(java.lang.Integer)>')
 		invoValue(analysis, '<A: java.lang.Integer lambda$new$0(java.lang.Integer,java.lang.Integer,java.lang.Integer)>/java.lang.Integer.compareTo/1', '<java.lang.Integer: int compareTo(java.lang.Integer)>')
 		methodIsReachable(analysis, '<java.lang.invoke.InnerClassLambdaMetafactory: java.lang.invoke.CallSite buildCallSite()>')
-		noSanityErrors(analysis)
+		if (!wala)
+			noSanityErrors(analysis)
 
 		where:
 		analysisName << TEST_ANALYSES
+		wala << [true, false]
 	}
 
 	// @spock.lang.Ignore
