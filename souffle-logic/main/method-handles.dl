@@ -22,6 +22,9 @@ MethodType_ParamTypes(?mt, ?paramTypes) :- MethodTypeConstant_ParamTypes(?mt, ?p
 #define METHOD_TYPE(paramTypes, retType) \
   cat("method type ", cat(paramTypes, retType))
 
+#ifdef REFLECTION_METHOD_HANDLES
+#ifdef REFLECTION
+
 // For every method, create a method type.
 MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
 isInitialMethodType(?mt),
@@ -37,9 +40,6 @@ MethodType_ParamType(?mt, ?index, ?pType) :-
   Method_MethodType(?method, ?mt),
   FormalParam(?index, ?method, ?var),
   _Var_Type(?var, ?pType).
-
-#ifdef REFLECTION_METHOD_HANDLES
-#ifdef REFLECTION
 
 // Model of MethodType.returnType().
 VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
