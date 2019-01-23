@@ -359,9 +359,6 @@ AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret
   Method_ReturnType(?method, ?retType),
   AssignReturnValue(?invo, ?ret).
 
-#endif // REFLECTION
-#endif // REFLECTION_METHOD_HANDLES
-
 // Method lookup methods.
 
 .decl FindVirtual(?invo:MethodInvocation)
@@ -383,9 +380,6 @@ MethodFinder(?invo, ?ret) :-
   VarPointsTo(_, ?baseVal, _, ?lookup),
   !Value_Null(?baseVal),
   AssignReturnValue(?invo, ?ret).
-
-#ifdef REFLECTION_METHOD_HANDLES
-#ifdef REFLECTION
 
 // Direct method handle lookup.
 .decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type, ?paramTypes:ParamTypes)
