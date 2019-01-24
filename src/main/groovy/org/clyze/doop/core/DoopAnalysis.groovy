@@ -389,6 +389,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         params.addAll(["--log-dir", Doop.doopLog])
         params.addAll(["-d", factsDir.toString()] + inputArgs)
         deps.addAll(platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>)
+        params.addAll(deps)
 
         if (frontEnd == FrontEnd.SOOT) {
             runSoot(platform, deps, platforms, params)
@@ -402,7 +403,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runSoot(String platform, Collection<String> deps, List<File> platforms, Collection<String> params) {
-        params += [ "--full" ] + deps
+        params += [ "--full" ]
 
         if (platform == "android") {
             // This uses all platformLibs.
@@ -542,8 +543,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         } else if (platform != "java") {
             throw new RuntimeException("Unsupported platform: ${platform}")
         }
-
-        params = params + deps
 
         log.debug "Params of wala: ${params.join(' ')}"
 

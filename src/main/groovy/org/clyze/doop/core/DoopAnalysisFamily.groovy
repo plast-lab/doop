@@ -107,7 +107,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "PLATFORM",
 					name: "platform",
 					argName: "PLATFORM",
-					description: "The platform on which to perform the analysis. For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). Default: ${DEFAULT_JAVA_PLATFORM}.",
+					description: "The platform on which to perform the analysis. For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK), 'fulljars' (a custom Android build), or 'apks' (custom Dalvik equivalent). Default: ${DEFAULT_JAVA_PLATFORM}.",
 					value: DEFAULT_JAVA_PLATFORM,
 					validValues: DoopAnalysisFactory.availablePlatforms,
 					forCacheID: true,
