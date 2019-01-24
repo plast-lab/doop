@@ -539,6 +539,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 break;
             case ADD_INT:
             case SUB_INT:
+            case RSUB_INT:
             case MUL_INT:
             case DIV_INT:
             case REM_INT:
@@ -620,7 +621,6 @@ class DexMethodFactWriter extends JavaFactWriter {
                 break;
             }
             case ADD_INT_LIT16:
-            case RSUB_INT:
             case MUL_INT_LIT16:
             case DIV_INT_LIT16:
             case REM_INT_LIT16:
