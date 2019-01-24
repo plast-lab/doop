@@ -20,8 +20,6 @@ public class NativeScanner {
 
         try {
             String lib = libFile.getCanonicalPath();
-            // if (!lib.contains("libubermaps-gl"))
-            //     return;
             System.out.println("== Processing library: " + lib + " ==");
 
             List<String> lines = parseLib(nmCmd, lib, true);
