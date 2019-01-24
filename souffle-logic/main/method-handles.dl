@@ -203,7 +203,7 @@ MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, ?name) :-
   ReachableContext(?callerCtx, ?containingMethod),
   VarPointsTo(_, ?mh, ?callerCtx, ?base),
   MethodHandle_Method(?mh, ?method),
-  // TODO: context sensitivity in the callee.
+  // REVIEW: context sensitivity in the callee.
   isImmutableContext(?calleeCtx).
 ReachableContext(?calleeCtx, ?method) :-
   MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?method, _, _).
