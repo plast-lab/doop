@@ -1,5 +1,6 @@
 package org.clyze.doop.soot;
 
+import com.google.common.collect.Lists;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
@@ -334,7 +335,7 @@ class FactWriter extends JavaFactWriter {
         String heap = methodHandleConstant(handleMethod);
         String methodId = writeMethod(m);
 
-        SigInfo si = new SigInfo(constant.getMethodRef());
+        SigInfo si = new SigInfo(constant.getMethodRef(), false);
         writeMethodHandleConstant(heap, handleMethod, si.retType, si.paramTypes, si.arity);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
     }
@@ -766,14 +767,18 @@ class FactWriter extends JavaFactWriter {
     }
 
     private void writeActualParams(SootMethod inMethod, Stmt stmt, InvokeExpr expr, String invokeExprRepr, Session session) {
-        for(int i = 0; i < expr.getArgCount(); i++) {
-            Value v = writeActualParam(inMethod, stmt, expr, session, expr.getArg(i), i);
+        boolean isInvokedynamic = (expr instanceof DynamicInvokeExpr);
+        int count = expr.getArgCount();
+        for (int i = 0; i < count; i++) {
+            // Undo Soot's reverse order of invokedynamic arguments.
+            Value arg = isInvokedynamic ? expr.getArg(count-i-1) : expr.getArg(i);
+            Value v = writeActualParam(inMethod, stmt, expr, session, arg, i);
             if (v instanceof Local)
                 writeActualParam(i, invokeExprRepr, _rep.local(inMethod, (Local)v));
             else
                 throw new RuntimeException("Actual parameter is not a local: " + v + " " + v.getClass());
         }
-        if (expr instanceof DynamicInvokeExpr) {
+        if (isInvokedynamic) {
             DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
             for (int j = 0; j < di.getBootstrapArgCount(); j++) {
                 Value v = di.getBootstrapArg(j);
@@ -801,6 +806,11 @@ class FactWriter extends JavaFactWriter {
         String methodId = writeMethod(inMethod);
 
         writeActualParams(inMethod, stmt, expr, insn, session);
+
+        SootMethodRef exprMethodRef = expr.getMethodRef();
+        String simpleName = Representation.simpleName(exprMethodRef);
+        String declClass = exprMethodRef.declaringClass().getName();
+        checkAndMarkMethodHandleInvocation(insn, declClass, simpleName);
 
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
         if (tag != null) {
@@ -840,7 +850,7 @@ class FactWriter extends JavaFactWriter {
 
     private void writeDynamicInvoke(DynamicInvokeExpr di, int index, String insn, String methodId) {
         SootMethodRef dynInfo = di.getMethodRef();
-        SigInfo dynSig = new SigInfo(dynInfo);
+        SigInfo dynSig = new SigInfo(dynInfo, true);
         for (int pIdx = 0; pIdx < dynSig.arity; pIdx++)
             writeInvokedynamicParameterType(insn, pIdx, dynInfo.parameterType(pIdx).toString());
         writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynSig.retType, dynSig.arity, dynSig.paramTypes, di.getHandleTag(), methodId);
@@ -975,16 +985,21 @@ class FactWriter extends JavaFactWriter {
     }
 
     static class SigInfo {
-        public int arity;
-        public String retType;
-        public String paramTypes;
-        public SigInfo(SootMethodRef ref) {
-            this.arity = ref.parameterTypes().size();
+        public final int arity;
+        public final String retType;
+        public final String paramTypes;
+        public SigInfo(SootMethodRef ref, boolean reverse) {
+            List<Type> paramTypes = ref.parameterTypes();
+            if (reverse)
+                paramTypes = Lists.reverse(paramTypes);
+
+            this.arity = paramTypes.size();
             this.retType = ref.returnType().toString();
 
-            StringBuffer dpTypes = new StringBuffer("(");
-            ref.parameterTypes().forEach(p -> dpTypes.append(p.toString()));
-            this.paramTypes = dpTypes.append(")").toString();
+            StringJoiner joiner = new StringJoiner(",");
+            paramTypes.forEach(p -> joiner.add(p.toString()));
+            StringBuffer sb = new StringBuffer("(").append(joiner.toString());
+            this.paramTypes = sb.append(")").toString();
         }
     }
 }

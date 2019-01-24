@@ -11,8 +11,6 @@ import static org.clyze.doop.TestUtils.*
  */
 class PlatformTest extends Specification {
 
-    Analysis analysis
-
     @Unroll
     def "Platform test [#platform]"(String platform) {
         when:
@@ -21,7 +19,7 @@ class PlatformTest extends Specification {
                              "--id", "dry-run-${platform}",
                              "--platform", platform,
                              "--Xdry-run"])
-        analysis = Main.analysis
+        Analysis analysis = Main.analysis
 
         then:
         metaExists(analysis)

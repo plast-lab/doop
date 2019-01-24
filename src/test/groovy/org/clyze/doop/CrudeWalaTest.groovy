@@ -10,13 +10,11 @@ import static org.clyze.doop.TestUtils.*
  */
 class CrudeWalaTest extends Specification {
 
-	Analysis analysis
-
 	@Unroll
 	def "Crude testing WALA fact generation and analysis"() {
 		when:
 		Main.main((String[])["-i", Artifacts.ANTLR_JAR, "-a", "context-insensitive", "--id", "antlr-wala", "--dacapo", "--wala-fact-gen", "--platform", "java_8"])
-		analysis = Main.analysis
+		Analysis analysis = Main.analysis
 
 		then:
 		relationHasApproxSize(analysis, "CallGraphEdge", 73000)

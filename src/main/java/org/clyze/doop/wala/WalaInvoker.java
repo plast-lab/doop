@@ -52,7 +52,7 @@ public class WalaInvoker {
 //            classPath.append(":").append(walaParameters.getLibraries().get(i));
 //        }
 
-        System.out.println("WALA classpath:" + classPath);
+        System.out.println("WALA classpath: " + classPath);
         for (String lib : walaParameters.getPlatformLibs())
             System.out.println("Platform Library: " + lib);
 
@@ -81,7 +81,7 @@ public class WalaInvoker {
             WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._extractMoreStrings, rep);
             WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
-            BasicJavaSupport java = new BasicJavaSupport();
+            BasicJavaSupport java = new BasicJavaSupport(walaParameters);
 
             if (walaParameters._android) {
                 WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);
@@ -95,7 +95,7 @@ public class WalaInvoker {
             else
                 cache = new AnalysisCacheImpl();
 
-            java.preprocessInputs(walaParameters);
+            java.preprocessInputs();
             walaFactWriter.writePreliminaryFacts(java, walaParameters);
             db.flush();
 
@@ -125,11 +125,11 @@ public class WalaInvoker {
             driver.generateInParallel(classesSet);
 
             if (walaFactWriter.getNumberOfPhantomTypes() > 0)
-                System.out.println("WARNING: Input contains phantom types. \nNumber of phantom types:" + walaFactWriter.getNumberOfPhantomTypes());
+                System.out.println("WARNING: Input contains phantom types. \nNumber of phantom types: " + walaFactWriter.getNumberOfPhantomTypes());
             if (walaFactWriter.getNumberOfPhantomMethods() > 0)
-                System.out.println("WARNING: Input contains phantom methods. \nNumber of phantom methods:" + walaFactWriter.getNumberOfPhantomMethods());
+                System.out.println("WARNING: Input contains phantom methods. \nNumber of phantom methods: " + walaFactWriter.getNumberOfPhantomMethods());
             if (walaFactWriter.getNumberOfPhantomBasedMethods() > 0)
-                System.out.println("WARNING: Input contains phantom based methods. \nNumber of phantom based methods:" + walaFactWriter.getNumberOfPhantomBasedMethods());
+                System.out.println("WARNING: Input contains phantom based methods. \nNumber of phantom based methods: " + walaFactWriter.getNumberOfPhantomBasedMethods());
 
             walaFactWriter.writeLastFacts(java);
 

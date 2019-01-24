@@ -10,6 +10,10 @@
 MainClass(?class) :-
   _MainClass(?class).
 
+// ClassArtifact
+.decl _ClassArtifact(?artifact:symbol, ?className:symbol, ?subArtifact:symbol)
+.input _ClassArtifact(IO="file", filename="Class-Artifact.facts", delimiter="\t")
+
 // NormalHeap
 
 .decl _NormalHeap(?id:symbol, ?type:symbol)
@@ -83,7 +87,7 @@ HeapAllocation_Type(?id, "java.lang.invoke.MethodHandle") :-
 
 // MethodTypeConstant
 
-.decl _MethodTypeConstant(?id:symbol, ?arity:number, ?retType:symbol)
+.decl _MethodTypeConstant(?id:symbol, ?arity:number, ?retType:symbol, ?paramTypes:symbol)
 .input _MethodTypeConstant(IO="file", filename="MethodTypeConstant.facts", delimiter="\t")
 
 isHeapAllocation(?id),
@@ -91,11 +95,18 @@ isMethodTypeConstant(?id),
 HeapAllocation_Type(?id, "java.lang.invoke.MethodType"),
 MethodTypeConstant_Arity(?id, ?arity),
 MethodTypeConstant_ReturnType(?id, ?retType),
+MethodTypeConstant_ParamTypes(?id, ?paramTypes),
 OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodType") :-
-  _MethodTypeConstant(?id, ?arity, ?retType).
+  _MethodTypeConstant(?id, ?arity, ?retType, ?paramTypes).
 
 .decl _MethodTypeConstantParam(?id:symbol, ?idx:number, ?type:symbol)
 .input _MethodTypeConstantParam(IO="file", filename="MethodTypeConstantParam.facts", delimiter="\t")
+
+.decl _NativeMethodTypeCandidate(?file:symbol, ?descriptor:symbol)
+.input _NativeMethodTypeCandidate(IO="file", filename="NativeMethodTypeCandidate.facts", delimiter="\t")
+
+.decl _NativeNameCandidate(?file:symbol, ?name:symbol)
+.input _NativeNameCandidate(IO="file", filename="NativeNameCandidate.facts", delimiter="\t")
 
 // EmptyArray
 
@@ -431,7 +442,7 @@ DynamicMethodInvocation_DynArity(?instruction, ?dynArity) :-
   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method).
 
 .decl _DynamicMethodInvocation_DynParamType(?invocation:DynamicMethodInvocation_Insn, ?idx:number, ?pType:symbol)
-.input _DynamicMethodInvocation_DynParamType(IO="file", filename="DynamicMethodInvocation-Param.facts", delimiter="\t")
+.input _DynamicMethodInvocation_DynParamType(IO="file", filename="DynamicMethodInvocation-ParamType.facts", delimiter="\t")
 
 // Opaque method invocations
 
@@ -441,6 +452,10 @@ isOpaqueInstruction(?instruction) :-
    _VirtualMethodInvocation(?instruction, _, ?signature, _, _)),
   isOpaqueMethod(?signature).
 
+// Method handle invocation
+
+.decl _MethodHandleInvocation(?invocation:symbol, ?simpleName:symbol)
+.input _MethodHandleInvocation(IO="file", filename="MethodHandleInvocation.facts", delimiter="\t")
 
 // Throw
 
@@ -495,7 +510,7 @@ ExceptionHandler_End(?handler, ?end) :-
 isMethod(?method),
 isJVMDescriptor(?jvmDescriptor),
 Method_SimpleName(?method, ?simplename),
-Method_Params(?method, ?params),
+Method_ParamTypes(?method, ?params),
 Method_DeclaringType(?method, ?declaringType),
 Method_JVMDescriptor(?method, ?jvmDescriptor),
 Method_Arity(?method, ?arity),
@@ -505,7 +520,7 @@ Method_ReturnType(?method, ?returnType) :-
 isMethodDescriptor(?descriptor),
 Method_Descriptor(?method, ?descriptor) :-
   Method_ReturnType(?method, ?returnType),
-  Method_Params(?method, ?params),
+  Method_ParamTypes(?method, ?params),
   ?descriptor = cat(?returnType, ?params).
 
 // StoreInstanceField

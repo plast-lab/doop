@@ -230,7 +230,7 @@ public abstract class JavaFactWriter {
     }
 
     protected void writeInvokedynamicParameterType(String insn, int paramIndex, String type) {
-        _db.add(DYNAMIC_METHOD_INV_PARAM, insn, str(paramIndex), type);
+        _db.add(DYNAMIC_METHOD_INV_PARAM_TYPE, insn, str(paramIndex), type);
     }
 
     protected void writeAssignLocal(String insn, int index, String from, String to, String methodId) {
@@ -245,13 +245,16 @@ public abstract class JavaFactWriter {
         int rParen = mt.indexOf(")");
         int arity = 0;
         if (mt.startsWith("(") && (rParen != -1)) {
-            String[] paramTypes = mt.substring(1, rParen).split(",");
+            // We write out the parameters part of the signature without the
+            // parentheses, so that types can be added at both ends.
+            String params = mt.substring(1, rParen);
+            String[] paramTypes = params.split(",");
             arity = paramTypes.length;
             for (int idx = 0; idx < arity; idx++) {
                 _db.add(METHOD_TYPE_CONSTANT_PARAM, mt, str(idx), paramTypes[idx]);
             }
             String retType = mt.substring(rParen + 1, mt.length());
-            _db.add(METHOD_TYPE_CONSTANT, mt, str(arity), retType);
+            _db.add(METHOD_TYPE_CONSTANT, mt, str(arity), retType, params);
         } else
             System.err.println("Warning: cannot process method type " + mt);
     }
@@ -295,5 +298,14 @@ public abstract class JavaFactWriter {
             System.out.println("Phantom method: " + m);
             writePhantomMethod(m);
         }
+    }
+
+    // Signature-polymorphic invoke* methods of MethodHandle should be
+    // recorded for special treatment.
+    protected void checkAndMarkMethodHandleInvocation(String insn, String declClass, String simpleName) {
+        if (declClass.equals("java.lang.invoke.MethodHandle") &&
+            (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
+             simpleName.equals("invokeBasic")))
+            _db.add(METHOD_HANDLE_INVOCATION, insn, simpleName);
     }
 }

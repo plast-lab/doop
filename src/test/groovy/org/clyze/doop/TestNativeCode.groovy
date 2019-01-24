@@ -11,10 +11,10 @@ class TestNativeCode extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 009 (native code)"() {
 		when:
-		analyzeTest("009-native", ["--simulate-native-returns"])
+		Analysis analysis = analyzeTest("009-native", [ "--simulate-native-returns", "--generate-jimple", "--scan-native-code"])
 
 		then:
-		varPointsTo(analysis, '<HelloJNI: void main(java.lang.String[])>/obj#_34', '<native java.lang.Object value allocated in <HelloJNI: java.lang.Object newJNIObj()>>')
-		varPointsTo(analysis, '<HelloJNI: void main(java.lang.String[])>/list#_43', '<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0')
+		varPointsTo(analysis, '<HelloJNI: void main(java.lang.String[])>/obj#_47', '<native java.lang.Object value allocated in <HelloJNI: java.lang.Object newJNIObj()>>')
+		varPointsTo(analysis, '<HelloJNI: void main(java.lang.String[])>/list#_56', '<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0')
 	}
 }

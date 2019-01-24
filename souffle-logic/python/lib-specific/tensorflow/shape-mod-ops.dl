@@ -181,6 +181,9 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
   ListOfConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, ?index, "<num-constant(int):-1>"),
   ReshapeOperationReplaceMinus1WithVal(?ctx, ?insn, ?reshapeOpVal, ?indexValue).
 
+TensorOperationWarning(?ctx, ?insn, ?reshapeOpVal, "reshape operation batch contamination."):-
+  ReshapeOperationBatchContamination(?ctx, ?insn, ?reshapeOpVal).
+
 
 //----------------------------------------------------------------------------------------------------------------------
 //                                              SQUEEZE OP

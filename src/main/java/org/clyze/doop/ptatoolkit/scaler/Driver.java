@@ -57,37 +57,43 @@ public class Driver {
         writeScalerResults(scalerResults, scalerOutput);
     }
 
-    public static void runScalerRank(File factsDir, File database) throws FileNotFoundException {
-        PointsToAnalysis pta = new DoopPointsToAnalysis(database, "scalerRank");
-        if (Global.isDebug()) {
-            System.out.printf("%d objects in (pre) points-to analysis.\n",
-                    pta.allObjects().size());
-        }
-
-        Timer scalerTimer = new Timer("Scaler Timer");
-        System.out.println(ANSIColor.BOLD + ANSIColor.YELLOW + "Scaler Rank starts ..." + ANSIColor.RESET);
-        scalerTimer.start();
-        ScalerRank scalerRank = new ScalerRank(pta);
-
-
-        Map<Method, String> scalerResults = scalerRank.selectContext();
-
-        File scalerOutput = new File(factsDir, "SpecialContextSensitivityMethod.facts");
-        System.out.printf("Writing Scaler method context sensitivities to %s...\n",
-                scalerOutput.getPath());
-        writeScalerResults(scalerResults, scalerOutput);
-    }
+//    public static void runScalerRank(File factsDir, File database) throws FileNotFoundException {
+//        PointsToAnalysis pta = new DoopPointsToAnalysis(database, "scalerRank");
+//        if (Global.isDebug()) {
+//            System.out.printf("%d objects in (pre) points-to analysis.\n",
+//                    pta.allObjects().size());
+//        }
+//
+//        Timer scalerTimer = new Timer("Scaler Timer");
+//        System.out.println(ANSIColor.BOLD + ANSIColor.YELLOW + "Scaler Rank starts ..." + ANSIColor.RESET);
+//        scalerTimer.start();
+//        //Scaler scalerRank = new ScalerRank(pta);
+//
+//        scalerTimer.stop();
+//        System.out.print(ANSIColor.BOLD + ANSIColor.YELLOW +
+//                "Scaler finishes, analysis time: " + ANSIColor.RESET);
+//        System.out.print(ANSIColor.BOLD + ANSIColor.GREEN);
+//        System.out.printf("%.2fs", scalerTimer.inSecond());
+//        System.out.println(ANSIColor.RESET);
+//
+//
+//        //Map<Method, String> scalerResults = scalerRank.selectContext();
+//
+//        File scalerOutput = new File(factsDir, "SpecialContextSensitivityMethod.facts");
+//        System.out.printf("Writing Scaler method context sensitivities to %s...\n",
+//                scalerOutput.getPath());
+//        writeScalerResults(scalerResults, scalerOutput);
+//    }
 
     private static void outputMethodContext(PointsToAnalysis pta, ContextComputer cc, Scaler scaler) {
         System.out.println("Method context, analysis: " + cc.getAnalysisName());
         pta.reachableMethods().stream()
-                .filter(Method::isInstance)
-                .sorted((m1, m2) -> cc.contextNumberOf(m2) - cc.contextNumberOf(m1))
+                .sorted((m1, m2) -> Long.compare(cc.contextNumberOf(m2), cc.contextNumberOf(m1)))
                 .forEach(m -> {
-                    System.out.printf("%s\t%d\tcontexts\t%d ",
+                    System.out.printf("%s\t%ld\tcontexts\t%ld ",
                             m.toString(), cc.contextNumberOf(m),
-                            ((long) cc.contextNumberOf(m))
-                                    * ((long) scaler.getAccumulativePTSSizeOf(m)));
+                            cc.contextNumberOf(m)
+                                    * scaler.getAccumulativePTSSizeOf(m));
                     if (Global.isListContext()) {
                         System.out.print(cc.contextNumberOf(m));
                     }
@@ -98,19 +104,18 @@ public class Driver {
     private static void outputContextByType(PointsToAnalysis pta, ContextComputer cc) {
         System.out.println("Type context, analysis: " + cc.getAnalysisName());
         Map<Type, List<Method>> group = pta.reachableMethods().stream()
-                .filter(Method::isInstance)
                 .collect(Collectors.groupingBy(pta::declaringTypeOf));
-        Map<Type, Integer> typeContext = new HashMap<>();
+        Map<Type, Long> typeContext = new HashMap<>();
         group.forEach((type, methods) -> {
-            int contextSum = methods.stream()
-                    .mapToInt(cc::contextNumberOf)
+            long contextSum = methods.stream()
+                    .mapToLong(cc::contextNumberOf)
                     .sum();
             typeContext.put(type, contextSum);
         });
         typeContext.entrySet()
                 .stream()
-                .sorted((e1, e2) -> e2.getValue() - e1.getValue())
-                .forEach(e -> System.out.printf("%s: %d contexts\n",
+                .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
+                .forEach(e -> System.out.printf("%s: %ld contexts\n",
                         e.getKey(), e.getValue()));
     }
 

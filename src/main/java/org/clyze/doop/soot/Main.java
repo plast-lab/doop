@@ -75,8 +75,8 @@ public class Main {
         //soot.options.Options.v().set_drop_bodies_after_load(true);
         Options.v().set_keep_line_number(true);
 
-        BasicJavaSupport_Soot java = new BasicJavaSupport_Soot();
-        java.preprocessInputs(sootParameters);
+        BasicJavaSupport_Soot java = new BasicJavaSupport_Soot(sootParameters);
+        java.preprocessInputs();
 
         AndroidSupport_Soot android = null;
 

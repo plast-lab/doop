@@ -19,7 +19,7 @@ public class _InsensitiveContextComputer extends ContextComputer {
     }
 
     @Override
-    protected int computeContextNumberOf(Method method) {
+    protected long computeContextNumberOf(Method method) {
         return 1;
     }
 }

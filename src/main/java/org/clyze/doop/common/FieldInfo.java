@@ -8,7 +8,7 @@ public class FieldInfo {
     public final String type;
     public final String name;
 
-    public FieldInfo(String t, String n) {
+    protected FieldInfo(String t, String n) {
         this.type = t;
         this.name = n;
     }

@@ -18,6 +18,7 @@ public class Parameters {
     private String _logDir = null;
     private String _extraSensitiveControls = "";
     private ClassFilter applicationClassFilter;
+    public boolean _scanNativeCode = false;
     public boolean _android = false;
     public Integer _cores = null;
     public String _entryPoints = null;
@@ -210,6 +211,9 @@ public class Parameters {
             break;
         case "--dex":
             this._dex = true;
+            break;
+        case "--scan-native-code":
+            this._scanNativeCode = true;
             break;
         default:
             return -1;

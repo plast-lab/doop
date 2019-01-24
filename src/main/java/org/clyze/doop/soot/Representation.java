@@ -61,7 +61,7 @@ public class Representation extends JavaRepresentation {
         return escaped ? n.substring(1, n.length()-1) : n;
     }
 
-    private static String simpleName(SootMethodRef m) {
+    static String simpleName(SootMethodRef m) {
         return m.name();
     }
 

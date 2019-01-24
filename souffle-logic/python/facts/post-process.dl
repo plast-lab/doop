@@ -15,6 +15,10 @@ isMethod(?function):-
     _Function(?function, _, ?par, _ ,_),
     isClassType(?par).
 
+isConstructorMethod(?method):-
+  isMethod(?method),
+  Function_SimpleName(?method, "__init__").
+
   GlobalAccessInsn_Scope(?insn, ?scope):-
     isGlobalAccess_Insn(?insn),
     Instruction_Function(?insn, ?fun),

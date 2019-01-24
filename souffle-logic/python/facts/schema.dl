@@ -57,12 +57,13 @@
 .decl isFunction(?m:Function)
 .decl isComprehensionFunction(?m:Function)
 .decl isModeledFunction(?m:Function)
-
+.decl isConstructorMethod(?m:Function)
 
 .decl Function_SimpleName(?function:Function, ?simpleName:symbol)
 .decl Function_Arity(?function:Function, ?arity:number)
 .decl Function_NumOfRequiredParams(?function:Function, ?numOfParams:number)
 .decl Function_DeclaredInFile(?function:Function, ?file:File)
+.decl Function_SourcePosition(?function:Function, ?startLine:number, ?endLine:number, ?startColumn:number, ?endColumn:number)
 
 .decl FormalParam(?index:number, ?paramName:symbol, ?function:Function, ?var:Var)
 .decl FormalParam_DefaultValForName(?function:Function,?paramName:symbol, ?from:Var)
@@ -180,7 +181,6 @@
 .type OpaqueInstruction               = Instruction
 
 .decl isUnsupportedInstruction(?insn:UnsupportedInstruction)
-.decl isOpaqueInstruction(?insn:OpaqueInstruction)
 
 //-----------------------------------------------------------------------------
 
@@ -285,6 +285,7 @@
 
 // Function Invocation
 .decl FunctionInvocation_Base(?invocation:FunctionInvocation_Insn, ?base:Var)
+.decl FunctionInvocation_NumberOfActualParams(?invocation:FunctionInvocation_Insn, ?total:number)
 
 //-----------------------------------------------------------------------------
 // [Import]

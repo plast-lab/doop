@@ -10,13 +10,11 @@ import static org.clyze.doop.TestUtils.*
  */
 class OpenProgramsTest extends Specification {
 
-	Analysis analysis
-
 	@Unroll
 	def "Testing support for open programs"() {
 		when:
 		Main.main((String[])["-i", "org.apache.ivy:ivy:2.3.0", "-a", "context-insensitive", "--id", "ivy-open-programs", "--open-programs", "concrete-types", "--Xstats-full", "--platform", "java_7"])
-		analysis = Main.analysis
+		Analysis analysis = Main.analysis
 
 		then:
 		metricIsApprox(analysis, "call graph edges (INS)", 371_681)

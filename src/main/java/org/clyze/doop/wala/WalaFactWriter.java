@@ -1048,6 +1048,12 @@ public class WalaFactWriter extends JavaFactWriter {
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
         IClass targetClass = cha.lookupClass(targetRef.getDeclaringClass());
 
+        // Uncomment and fix to handle method handle invocations.
+        // String insn = "";
+        // String simpleName = "";
+        // String declClass = "";
+        // checkAndMarkMethodHandleInvocation(insn, declClass, simpleName);
+
         if(targetClass == null) {
             //System.out.println("Failed to find class: " + fixTypeString(targetRef.getDeclaringClass().getName().toString()) + " in class chierarchy.");
             writePhantomType(targetRef.getDeclaringClass());
@@ -1123,12 +1129,12 @@ public class WalaFactWriter extends JavaFactWriter {
 //            MethodReference dynInfo = instruction.getDeclaredTarget();
             StringBuilder parameterTypes = new StringBuilder();
             for (int i = 0; i < targetRef.getNumberOfParameters(); i++) {
-                if (i==0) {
-                    parameterTypes.append(fixTypeString(targetRef.getParameterType(i).toString()));
-                }
-                else {
-                    parameterTypes.append(", ").append(fixTypeString(targetRef.getParameterType(i).toString()));
-                }
+                String paramType = fixTypeString(targetRef.getParameterType(i).toString());
+                writeInvokedynamicParameterType(insn, i, paramType);
+                if (i==0)
+                    parameterTypes.append(paramType);
+                else
+                    parameterTypes.append(", ").append(paramType);
             }
             String sig = getBootstrapSig(((SSAInvokeDynamicInstruction) instruction).getBootstrap(),inMethod.getClassHierarchy());
             int dynArity = targetRef.getNumberOfParameters();

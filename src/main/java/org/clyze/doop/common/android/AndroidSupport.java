@@ -9,6 +9,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.JavaFactWriter;
+import org.clyze.doop.common.NativeScanner;
 import org.clyze.doop.common.Parameters;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
@@ -46,6 +47,8 @@ public abstract class AndroidSupport {
         // R class linker used for AAR inputs.
         RLinker rLinker = RLinker.getInstance();
 
+        String decodeDir = parameters.getOutputDir() + File.separator + "decoded";
+
         // We merge the information from all resource files, not just
         // the application's. There are Android apps that use
         // components (e.g. activities) from AAR libraries.
@@ -55,7 +58,7 @@ public abstract class AndroidSupport {
                 System.out.println("Processing application resources in " + i);
                 if (isApk && parameters.getDecodeApk()) {
                     System.out.println("Decoding...");
-                    decodeApk(new File(i), parameters.getOutputDir() + File.separator + "decoded");
+                    decodeApk(new File(i), decodeDir);
                 }
                 try {
                     AppResources resources = processAppResources(i);
@@ -70,6 +73,9 @@ public abstract class AndroidSupport {
 
         printCollectedComponents();
 
+        if (parameters._scanNativeCode)
+            scanNativeLibs(decodeDir);
+
         // Produce a JAR of the missing R classes.
         String generatedR = rLinker.linkRs(parameters._rOutDir, tmpDirs);
         if (generatedR != null) {
@@ -83,8 +89,42 @@ public abstract class AndroidSupport {
 
         List<String> inputs = parameters.getInputs();
         int inputsSize = inputs.size();
-        if (inputsSize > 0)
+        if (inputsSize > 0) {
+            System.err.println("WARNING: only the first input will be analyzed.");
             inputs.subList(1, inputsSize).clear();
+        }
+    }
+
+    private void scanNativeLibs(String decodeDir) {
+        File decodeDirFile = new File(decodeDir);
+        if (decodeDirFile.exists()) {
+            System.out.println("Scanning native code in " + decodeDir);
+            List<File> nativeLibs = new LinkedList<>();
+            findNativeLibs(nativeLibs, decodeDirFile);
+            System.out.println("Found " + nativeLibs.size() + " native libraries.");
+
+            String envVar = "ANDROID_NDK_PREBUILTS";
+            String ndkPrebuilts = System.getenv(envVar);
+            if (ndkPrebuilts == null) {
+                System.err.println("Error: environment variable " + envVar + " is not set, it should point to the toolchain of the Android NDK, e.g., '/path/to/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/arm-linux-androideabi/bin'");
+                return;
+            }
+            String nmCmd = ndkPrebuilts + "/nm";
+            String objdumpCmd = ndkPrebuilts + "/objdump";
+            File outDir = new File(parameters.getOutputDir());
+            for (File libFile : nativeLibs)
+                NativeScanner.scan(nmCmd, objdumpCmd, libFile, outDir);
+        } else
+            System.err.println("Error: decode directory " + decodeDir + " not found");
+    }
+
+    private static void findNativeLibs(Collection<File> libs, File dir) {
+        for (File f : dir.listFiles()) {
+            if (f.isFile() && (f.getName().endsWith(".so")))
+                libs.add(f);
+            else if (f.isDirectory())
+                findNativeLibs(libs, f);
+        }
     }
 
     protected void processAppResources(String input, AppResources manifest, Map<String, String> pkgs, RLinker rLinker) {

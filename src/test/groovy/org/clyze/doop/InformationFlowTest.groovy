@@ -1,5 +1,6 @@
 package org.clyze.doop
 
+import org.clyze.analysis.Analysis
 import org.clyze.doop.core.Doop
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
@@ -19,7 +20,7 @@ class InformationFlowTest extends DoopBenchmark {
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
 		Main.main((String[])args)
-		analysis = Main.analysis
+		Analysis analysis = Main.analysis
 
         then:
         relationHasApproxSize(analysis, "AppTaintedVar", 2663)
