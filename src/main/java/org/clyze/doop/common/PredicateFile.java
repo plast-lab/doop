@@ -99,6 +99,7 @@ public enum PredicateFile
     SENSITIVE_LAYOUT_CONTROL("SensitiveLayoutControl"),
     SERVICE("Service"),
     SPECIAL_METHOD_INV("SpecialMethodInvocation"),
+    STATEMENT_TYPE("StatementType"),
     STATIC_METHOD_INV("StaticMethodInvocation"),
     STORE_ARRAY_INDEX("StoreArrayIndex"),
     STORE_INST_FIELD("StoreInstanceField"),

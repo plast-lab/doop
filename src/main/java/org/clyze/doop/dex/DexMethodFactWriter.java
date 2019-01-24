@@ -579,7 +579,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 int regDest = tri.getRegisterA();
                 int regSource1 = tri.getRegisterB();
                 int regSource2 = tri.getRegisterC();
-                writeBinopThreeReg(regDest, regSource1, regSource2, index);
+                writeBinopThreeReg(regDest, regSource1, regSource2, op, index);
                 break;
             }
             case ADD_INT_2ADDR:
@@ -617,7 +617,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 TwoRegisterInstruction tri = (TwoRegisterInstruction)instr;
                 int regDestAndSource1 = tri.getRegisterA();
                 int regSource2 = tri.getRegisterB();
-                writeBinopThreeReg(regDestAndSource1, regDestAndSource1, regSource2, index);
+                writeBinopThreeReg(regDestAndSource1, regDestAndSource1, regSource2, op, index);
                 break;
             }
             case ADD_INT_LIT16:
@@ -638,7 +638,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case SHL_INT_LIT8:
             case SHR_INT_LIT8:
             case USHR_INT_LIT8:
-                writeBinopTwoRegPlusLit((TwoRegisterInstruction)instr, index);
+                writeBinopTwoRegPlusLit((TwoRegisterInstruction)instr, op, index);
                 break;
             case MOVE_EXCEPTION:
                 exceptionMoves.add(new MoveExceptionInfo(((OneRegisterInstruction)instr).getRegisterA(), currentInstrAddr, index));
@@ -840,19 +840,70 @@ class DexMethodFactWriter extends JavaFactWriter {
         _db.add(ARRAY_INSN_INDEX, insn, local(indexReg));
     }
 
-    private void writeBinopTwoRegPlusLit(TwoRegisterInstruction tri, int index) {
+    private void writeBinopTwoRegPlusLit(TwoRegisterInstruction tri, Opcode op, int index) {
         int regDest = tri.getRegisterA();
         int regSource = tri.getRegisterB();
         String insn = instructionId("assign", index);
         writeAssignBinop(insn, index, local(regDest), methId);
         writeAssignOperFrom(insn, L_OP, local(regSource));
+        writeStatementType(insn, op);
     }
 
-    private void writeBinopThreeReg(int regDest, int regSource1, int regSource2, int index) {
+    private void writeBinopThreeReg(int regDest, int regSource1, int regSource2, Opcode op, int index) {
         String insn = instructionId("assign", index);
         writeAssignBinop(insn, index, local(regDest), methId);
         writeAssignOperFrom(insn, L_OP, local(regSource1));
         writeAssignOperFrom(insn, R_OP, local(regSource2));
+        writeStatementType(insn, op);
+    }
+
+    /**
+     * Given an instruction and its opcode, write facts about the instruction type.
+     *
+     * @param insn   the instruction id
+     * @param op     the instruction opcode
+     */
+    private void writeStatementType(String insn, Opcode op) {
+        String type = null;
+        switch (op) {
+        case ADD_INT: case SUB_INT: case  MUL_INT : case  DIV_INT:
+        case REM_INT: case AND_INT: case   OR_INT : case  XOR_INT:
+        case SHL_INT: case SHR_INT: case USHR_INT : case RSUB_INT:
+        case ADD_INT_2ADDR: case  SUB_INT_2ADDR: case MUL_INT_2ADDR:
+        case DIV_INT_2ADDR: case  REM_INT_2ADDR: case AND_INT_2ADDR:
+        case  OR_INT_2ADDR: case  XOR_INT_2ADDR: case SHL_INT_2ADDR:
+        case SHR_INT_2ADDR: case USHR_INT_2ADDR:
+        case ADD_INT_LIT16: case MUL_INT_LIT16: case DIV_INT_LIT16:
+        case REM_INT_LIT16: case AND_INT_LIT16: case  OR_INT_LIT16:
+        case XOR_INT_LIT16:
+        case ADD_INT_LIT8: case RSUB_INT_LIT8: case  MUL_INT_LIT8:
+        case DIV_INT_LIT8: case  REM_INT_LIT8: case  AND_INT_LIT8:
+        case  OR_INT_LIT8: case  XOR_INT_LIT8: case  SHL_INT_LIT8:
+        case SHR_INT_LIT8: case USHR_INT_LIT8:
+            type = "int"; break;
+        case ADD_LONG: case SUB_LONG: case  MUL_LONG : case DIV_LONG:
+        case REM_LONG: case AND_LONG: case   OR_LONG : case XOR_LONG:
+        case SHL_LONG: case SHR_LONG: case USHR_LONG : case CMP_LONG:
+        case ADD_LONG_2ADDR: case  SUB_LONG_2ADDR: case MUL_LONG_2ADDR:
+        case DIV_LONG_2ADDR: case  REM_LONG_2ADDR: case AND_LONG_2ADDR:
+        case  OR_LONG_2ADDR: case  XOR_LONG_2ADDR: case SHL_LONG_2ADDR:
+        case SHR_LONG_2ADDR: case USHR_LONG_2ADDR:
+            type = "long"; break;
+        case ADD_FLOAT: case  SUB_FLOAT : case  MUL_FLOAT : case DIV_FLOAT:
+        case REM_FLOAT: case CMPL_FLOAT : case CMPG_FLOAT :
+        case ADD_FLOAT_2ADDR: case SUB_FLOAT_2ADDR: case MUL_FLOAT_2ADDR:
+        case DIV_FLOAT_2ADDR: case REM_FLOAT_2ADDR:
+            type = "float"; break;
+        case ADD_DOUBLE: case  SUB_DOUBLE : case  MUL_DOUBLE: case DIV_DOUBLE:
+        case REM_DOUBLE: case CMPL_DOUBLE : case CMPG_DOUBLE:
+        case ADD_DOUBLE_2ADDR: case SUB_DOUBLE_2ADDR: case MUL_DOUBLE_2ADDR:
+        case DIV_DOUBLE_2ADDR: case REM_DOUBLE_2ADDR:
+            type = "double"; break;
+        }
+        if (type == null)
+            System.err.println("Cannot determine statement type for instruction " + insn);
+        else
+            _db.add(STATEMENT_TYPE, insn, type);
     }
 
     private void writeAssignCast(OneRegisterInstruction ori, ReferenceInstruction ri, int index) {
