@@ -14,6 +14,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_FACTS = "Fact generation"
 	private static final String GROUP_REFLECTION = "Reflection"
 	private static final String GROUP_ENGINE = "Datalog engine"
+	private static final String GROUP_NATIVE = "Native code"
 	private static final String GROUP_PYTHON = "Python"
 
 	@Override
@@ -241,12 +242,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SIMULATE_NATIVE_RETURNS",
 					name: "simulate-native-returns",
+					group: GROUP_NATIVE,
 					description: "Assume native methods return mock objects.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "SCAN_NATIVE_CODE",
 					name: "scan-native-code",
+					group: GROUP_NATIVE,
 					description: "Scan native code for specific patterns.",
 					forPreprocessor: true
 			),
