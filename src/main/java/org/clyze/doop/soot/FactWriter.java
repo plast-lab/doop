@@ -998,8 +998,7 @@ class FactWriter extends JavaFactWriter {
 
             StringJoiner joiner = new StringJoiner(",");
             paramTypes.forEach(p -> joiner.add(p.toString()));
-            StringBuffer sb = new StringBuffer("(").append(joiner.toString());
-            this.paramTypes = sb.append(")").toString();
+            this.paramTypes = joiner.toString();
         }
     }
 }

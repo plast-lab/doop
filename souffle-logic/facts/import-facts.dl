@@ -521,7 +521,7 @@ isMethodDescriptor(?descriptor),
 Method_Descriptor(?method, ?descriptor) :-
   Method_ReturnType(?method, ?returnType),
   Method_ParamTypes(?method, ?params),
-  ?descriptor = cat(?returnType, ?params).
+  ?descriptor = cat(?returnType, cat("(", cat(?params, ")"))).
 
 // StoreInstanceField
 

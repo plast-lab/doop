@@ -20,7 +20,7 @@ MethodType_ReturnType(?mt, ?retType)    :- MethodTypeConstant_ReturnType(?mt, ?r
 MethodType_ParamTypes(?mt, ?paramTypes) :- MethodTypeConstant_ParamTypes(?mt, ?paramTypes).
 
 #define METHOD_TYPE(paramTypes, retType) \
-  cat("method type ", cat(paramTypes, retType))
+  cat("method type (", cat(paramTypes, cat(")", retType)))
 
 #ifdef REFLECTION_METHOD_HANDLES
 #ifdef REFLECTION
@@ -104,18 +104,17 @@ InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType) :-
 .decl MTCallMatch(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
 
 // MethodType1.
-MTCallMatch(?invo, ?hctx, ?ctx, "()", ?retType, 0) :-
+MTCallMatch(?invo, ?hctx, ?ctx, "", ?retType, 0) :-
   MTEntryPoint(1, ?invo, _),
   InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
   MT_ParamValue(?invo, 0, MT_NOARGS_VALUE).
 
 // MethodType2.
-MTCallMatch(?invo, ?hctx, ?ctx, ?paramTypes, ?retType, 1) :-
+MTCallMatch(?invo, ?hctx, ?ctx, ?pType0, ?retType, 1) :-
   MTEntryPoint(2, ?invo, _),
   InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
   MT_ParamValue(?invo, 0, ?classValue0),
-  ReifiedClass(?pType0, ?classValue0),
-  ?paramTypes = cat("(", cat(?pType0, ")")).
+  ReifiedClass(?pType0, ?classValue0).
 
 // MethodType5.
 MTCallMatch(?invo, ?hctx, ?ctx, ?argParamTypes, ?retType, ?arity) :-
@@ -129,7 +128,7 @@ MTCallMatch(?invo, ?hctx, ?ctx, ?argParamTypes, ?retType, ?arity) :-
 // MethodType3/MethodType4/MethodType6. Here we do not try to reason about the
 // parameter types but return a wildcard; this will be attached to the mock
 // method type and trigger imprecise matching in the method finder.
-#define WILDCARD_PARAM_TYPES "(--all-types--)"
+#define WILDCARD_PARAM_TYPES "--all-types--"
 MTCallMatch(?invo, ?hctx, ?ctx, WILDCARD_PARAM_TYPES, ?retType, 0) :-
   MTEntryPoint(?id, ?invo, _),
   (?id = 3 ; ?id = 4 ; ?id = 6),

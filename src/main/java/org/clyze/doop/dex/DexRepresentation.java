@@ -16,7 +16,7 @@ class DexRepresentation {
     }
 
     public static String methodId(String declClass, String retType, String name, String paramsSig) {
-        return "<" + declClass + ": " + retType + " " + name + paramsSig + ">";
+        return "<" + declClass + ": " + retType + " " + name + "(" + paramsSig + ")>";
     }
 
     public static String thisVarId(String methId) {
@@ -36,7 +36,7 @@ class DexRepresentation {
         String retType = TypeUtils.raiseTypeId(jvmRetType);
 
         StringBuilder jvmParamsSig = new StringBuilder();
-        StringBuilder paramsSig = new StringBuilder("(");
+        StringBuilder paramsSig = new StringBuilder();
         boolean firstParam = true;
         List<? extends CharSequence> paramTypes = m.getParameterTypes();
         for (CharSequence pt : paramTypes) {
@@ -48,7 +48,6 @@ class DexRepresentation {
                 paramsSig.append(',');
             paramsSig.append(TypeUtils.raiseTypeId(pt.toString()));
         }
-        paramsSig.append(')');
         String paramsSigStr = paramsSig.toString();
 
         String simpleName = m.getName();

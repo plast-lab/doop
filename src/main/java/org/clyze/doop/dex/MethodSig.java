@@ -38,7 +38,7 @@ class MethodSig {
         List<String> paramTypes0 = methodRef.getParameterTypes();
         int paramTypesCount = paramTypes0.size();
         this.paramTypes = new String[paramTypesCount];
-        StringBuilder paramTypesSig = new StringBuilder("(");
+        StringBuilder paramTypesSig = new StringBuilder();
         for (int i = 0; i < paramTypesCount; i++) {
             String pType = TypeUtils.raiseTypeId(paramTypes0.get(i));
             this.paramTypes[i] = pType;
@@ -46,8 +46,7 @@ class MethodSig {
                 paramTypesSig.append(",");
             paramTypesSig.append(pType);
         }
-        String pTypesSig = paramTypesSig.append(")").toString();
-        this.sig = DexRepresentation.methodId(declClass, retType, name, pTypesSig);
+        this.sig = DexRepresentation.methodId(declClass, retType, name, paramTypesSig.toString());
     }
 
     public String getMid() {
