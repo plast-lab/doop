@@ -228,28 +228,44 @@ BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
 CompatibleTypes(?t, ?tConv) :- basic.SubtypeOf(?tConv, ?t).
 CompatibleTypes(?t, ?tConv) :- BoxTypeConversion(?t, ?tConv).
 
-// Pass arguments to static methods.
-VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
-  Method_Modifier("static", ?method),
-  ActualParam(?idx, ?invo, ?actual),
-  VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
-  FormalParam(?idx, ?method, ?formal),
-  Var_Type(?actual, ?actualType),
-  Var_Type(?formal, ?formalType),
-  CompatibleTypes(?actualType, ?formalType).
-
+// Record parameter passing, to be used for conversions (e.g., auto-boxing).
+.decl MethodHandleCGE_Arg(?callerCtx:configuration.Context, ?calleeCtx:configuration.Context, ?actual:Var, ?formal:Var, ?actualType:Type, ?formalType:Type, ?name:symbol)
 // Pass arguments to instance methods (first argument becomes the receiver).
-VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
+MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, ?name) :-
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, ?name),
   !Method_Modifier("static", ?method),
   ActualParam(?idx, ?invo, ?actual),
   ?idx > 0,
-  VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
   FormalParam(?idx - 1, ?method, ?formal),
   Var_Type(?actual, ?actualType),
-  Var_Type(?formal, ?formalType),
-  CompatibleTypes(?actualType, ?formalType).
+  Var_Type(?formal, ?formalType).
+// Pass arguments to static methods.
+MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, ?name) :-
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, ?name),
+  Method_Modifier("static", ?method),
+  ActualParam(?idx, ?invo, ?actual),
+  FormalParam(?idx, ?method, ?formal),
+  Var_Type(?actual, ?actualType),
+  Var_Type(?formal, ?formalType).
+
+// This rule covers exact matching of argument types.
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+  MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, _),
+  VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
+  basic.SubtypeOf(?actualType, ?formalType).
+
+#ifdef REFLECTION_METHOD_HANDLES
+// This rule covers boxing of arguments for MethodHandle.invoke(). Since the
+// original arguments are primitive values, VarPointsTo may not be available.
+// This is an expensive rule and is thus guarded for the full reflective case.
+VarPointsTo(?immHctx, ?val, ?calleeCtx, ?formal) :-
+  MethodHandleCGE_Arg(_, ?calleeCtx, _, ?formal, ?actualType, ?formalType, "invoke"),
+  BoxTypeConversion(?actualType, ?formalType),
+  BoxAllocation(?val, ?formalType),
+  isImmutableHContext(?immHctx).
+#endif // REFLECTION_METHOD_HANDLES
+
+// Pass receiver to instance methods.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?this) :-
   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
   !Method_Modifier("static", ?method),

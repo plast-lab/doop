@@ -128,6 +128,7 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		methodIsReachable(analysis, '<A: java.lang.invoke.CallSite bootstrap2(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>')
 		varPointsTo(analysis, '<A: java.lang.invoke.CallSite bootstrap2(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>/caller#_0', 'mock method handles lookup object for type InvokedynamicClass')
 		methodIsReachable(analysis, '<A: java.lang.invoke.CallSite bootstrap3(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>')
+		varPointsTo(analysis, '<A: java.lang.Double doubleIdentity(java.lang.Double)>/d#_0', 'mock box allocation for type java.lang.Double')
 	}
 
 	// @spock.lang.Ignore
