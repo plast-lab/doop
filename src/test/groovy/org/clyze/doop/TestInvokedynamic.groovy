@@ -93,6 +93,7 @@ class TestInvokedynamic extends ServerAnalysisTests {
 										 // "--Xserver-logic",
 										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 										 "--thorough-fact-gen", "--sanity",
+										 "--Xstats-none",
 										 "--reflection-classic", "--reflection-method-handles"])
 
 		then:
