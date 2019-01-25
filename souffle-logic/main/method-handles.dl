@@ -790,7 +790,7 @@ VarPointsTo(?hctx, ?mockObj, ?calleeCtx, ?thisVar) :-
 #ifdef REFLECTION
 
 /**
- * Naive model of Class.getDeclaredConstructors() without back-propagation of
+ * Naive model of Class.getDeclaredConstructors() without backpropagation of
  * special values. Needed since the invokedynamic handling does not propagate
  * these special values up to their uses.
  */
