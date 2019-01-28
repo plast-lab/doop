@@ -101,35 +101,42 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		varPointsTo(analysis, '<Main: void test1()>/lookup#_29', 'mock method handles lookup object for type Main')
 		varPointsTo(analysis, '<Main: void test1()>/mType#_30', 'method type (java.lang.String)void')
 		varPointsTo(analysis, '<Main: void test1()>/println2out#_37', '<computed direct method handle for <java.io.PrintStream: void println(java.lang.String)>>')
+		methodHandleCGE(analysis, '<Main: void test1()>/java.lang.invoke.MethodHandle.invokeExact/0', '<java.io.PrintStream: void println(java.lang.String)>')
+		methodHandleCGE(analysis, '<Main: void test1()>/java.lang.invoke.MethodHandle.invokeExact/1', '<java.io.PrintStream: void println(java.lang.String)>')
 		// test2
 		varPointsTo(analysis, '<Main: void test2()>/staticMeth_mh#_46', '<computed direct method handle for <A: java.lang.Integer staticMeth()>>')
 		varPointsTo(analysis, '<Main: void test2()>/ret#_48', '<A: java.lang.Integer staticMeth()>/new java.lang.Integer/0')
-		methodIsReachable(analysis, '<A: java.lang.Integer staticMeth()>')
+		methodHandleCGE(analysis, '<Main: void test2()>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: java.lang.Integer staticMeth()>')
 		// test3
 		varPointsTo(analysis, '<Main: void test3()>/methI_mh#_58', '<computed direct method handle for <A: void methI(java.lang.Integer)>>')
 		varPointsTo(analysis, '<A: void methI(java.lang.Integer)>/i#_0', '<Main: void test3()>/new java.lang.Integer/0')
 		varPointsTo(analysis, '<A: void methI(java.lang.Integer)>/this#_0', '<Main: void test3()>/new A/0')
-		methodIsReachable(analysis, '<A: void methI(java.lang.Integer)>')
+		methodHandleCGE(analysis, '<Main: void test3()>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: void methI(java.lang.Integer)>')
 		// test4
 		varPointsTo(analysis, '<Main: void test4()>/methDD_mh4#_68', '<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
-		methodIsReachable(analysis, '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
+		methodHandleCGE(analysis, '<Main: void test4()>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
+		methodHandleCGE(analysis, '<Main: void test4()>/java.lang.invoke.MethodHandle.invoke/0', '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
 		// test5
 		varPointsTo(analysis, '<Main: void test5()>/mType#_81', 'method type (--all-types--)java.lang.Double')
 		varPointsTo(analysis, '<Main: void test5()>/methDD_mh5#_82', '<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
-		methodIsReachable(analysis, '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
+		methodHandleCGE(analysis, '<Main: void test5()>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
 		// test6
 		varPointsTo(analysis, '<Main: void test6_aux(java.lang.invoke.MethodType)>/add3_mh6#_104', '<computed direct method handle for <A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>>')
-		methodIsReachable(analysis, '<A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>')
+		methodHandleCGE(analysis, '<Main: void test6_aux(java.lang.invoke.MethodType)>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>')
 		// test7
 		varPointsTo(analysis, '<Main: void test7()>/mType1#_114', 'method type (java.lang.Double)java.lang.String')
 		varPointsTo(analysis, '<Main: void test7()>/mType2#_115', 'method type (java.lang.Double)java.lang.Double')
+		methodHandleCGE(analysis, '<Main: void test7()>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
 		// testInvokedynamic
 		methodIsReachable(analysis, '<A: java.lang.invoke.CallSite bootstrap(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>')
 		methodHandleCGE(analysis, '<InvokedynamicClass: void run()>/invokedynamic_bootstrap::print/0', '<A: void print(A)>')
 		methodIsReachable(analysis, '<A: java.lang.invoke.CallSite bootstrap2(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>')
 		varPointsTo(analysis, '<A: java.lang.invoke.CallSite bootstrap2(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>/caller#_0', 'mock method handles lookup object for type InvokedynamicClass')
+		methodHandleCGE(analysis, '<InvokedynamicClass: void run()>/invokedynamic_bootstrap2::print/0', '<A: void print(A)>')
 		methodIsReachable(analysis, '<A: java.lang.invoke.CallSite bootstrap3(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>')
 		varPointsTo(analysis, '<A: java.lang.Double doubleIdentity(java.lang.Double)>/d#_0', 'mock box allocation for type java.lang.Double')
+		methodIsReachable(analysis, '<A: java.lang.invoke.CallSite bootstrap4(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>')
+		methodHandleCGE(analysis, '<InvokedynamicClass: void run()>/invokedynamic_bootstrap4::print2/0', '<A: void print2(A)>')
 	}
 
 	// @spock.lang.Ignore

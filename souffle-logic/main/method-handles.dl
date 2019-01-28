@@ -25,7 +25,9 @@ MethodType_ParamTypes(?mt, ?paramTypes) :- MethodTypeConstant_ParamTypes(?mt, ?p
 #ifdef REFLECTION_METHOD_HANDLES
 #ifdef REFLECTION
 
-// For every method, create a method type.
+// For every method, create a method type. We treat static and non-static
+// methods similarly here, since the method types without receivers may still be
+// encountered (and be arguments to method finders).
 MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
 isInitialMethodType(?mt),
 Method_MethodType(?method, ?mt),
@@ -40,6 +42,40 @@ MethodType_ParamType(?mt, ?index, ?pType) :-
   Method_MethodType(?method, ?mt),
   FormalParam(?index, ?method, ?var),
   _Var_Type(?var, ?pType).
+
+// For non-static methods, also create a method type that contains the receiver
+// type as the first argument. Only the initial method types are considered.
+.decl CreatePreMethodTypeForMethod(?method:Method, ?mt:MethodType, ?mtConv:MethodType, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
+CreatePreMethodTypeForMethod(?method, ?mt, ?mtConv, ?thisTypeStr, ?retType, 1) :-
+  Method_MethodType(?method, ?mt),
+  !Method_Modifier("static", ?method),
+  isInitialMethodType(?mt),
+  Method_DeclaringType(?method, ?thisType),
+  MethodType_ParamTypes(?mt, ""),
+  MethodType_ReturnType(?mt, ?retType),
+  ?thisTypeStr = cat("", ?thisType),
+  ?mtConv = METHOD_TYPE(?thisType, ?retType).
+CreatePreMethodTypeForMethod(?method, ?mt, ?mtConv, ?paramTypesConv, ?retType, ?arity) :-
+  Method_MethodType(?method, ?mt),
+  !Method_Modifier("static", ?method),
+  isInitialMethodType(?mt),
+  Method_DeclaringType(?method, ?thisType),
+  MethodType_ParamTypes(?mt, ?paramTypes),
+  MethodType_ReturnType(?mt, ?retType),
+  Method_Arity(?method, ?arity),
+  ?arity > 0,
+  ?paramTypesConv = cat(?thisType, cat(",", ?paramTypes)),
+  ?mtConv = METHOD_TYPE(?paramTypesConv, ?retType).
+
+// The construction logic for prepended-receiver method types.
+.decl EquivalentWithPrependedReceiver(?mt:MethodType, ?mtConv:MethodType)
+MockValueConsMacro(?mtConv, "java.lang.invoke.MethodType"),
+EquivalentWithPrependedReceiver(?mt, ?mtConv),
+Method_MethodType(?method, ?mtConv),
+MethodType_ParamTypes(?mtConv, ?paramTypes),
+MethodType_ReturnType(?mtConv, ?retType),
+MethodType_Arity(?mtConv, ?arity) :-
+  CreatePreMethodTypeForMethod(?method, ?mt, ?mtConv, ?paramTypes, ?retType, ?arity).
 
 // Model of MethodType.returnType().
 VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
@@ -174,6 +210,9 @@ HeapAllocation_ContextInsensitive(?heap) :-
 
 .type MethodHandle = mainAnalysis.Value
 .decl MethodHandle_Method(?methodHandle:MethodHandle, ?method:Method)
+// Returns a method type for a method handle. This is not a function: a method
+// handle may, for example, contain both a method type that only mentions the
+// original method arguments and a method type that also includes the receiver.
 .decl MethodHandle_MethodType(?mh:MethodHandle, ?mt:MethodType)
 
 // For every method handle constant, create a method type.
@@ -376,21 +415,17 @@ AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret
 
 // Method lookup methods.
 
-.decl FindVirtual(?invo:MethodInvocation)
-FindVirtual(?invo) :-
+.decl FindVirtual(?invo:MethodInvocation, ?ret:Var)
+FindVirtual(?invo, ?ret) :-
   MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findVirtual(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>"),
-  Instruction_Method(?invo, ?caller),
-  ReachableContext(_, ?caller).
+  VirtualMethodInvocation_Base(?invo, ?lookup),
+  VarPointsTo(_, ?baseVal, _, ?lookup),
+  !Value_Null(?baseVal),
+  AssignReturnValue(?invo, ?ret).
 
-.decl FindStatic(?invo:MethodInvocation)
-FindStatic(?invo) :-
+.decl FindStatic(?invo:MethodInvocation, ?ret:Var)
+FindStatic(?invo, ?ret) :-
   MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findStatic(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>"),
-  Instruction_Method(?invo, ?caller),
-  ReachableContext(_, ?caller).
-
-.decl MethodFinder(?invo:MethodInvocation, ?ret:Var)
-MethodFinder(?invo, ?ret) :-
-  ( FindStatic(?invo) ; FindVirtual(?invo) ),
   VirtualMethodInvocation_Base(?invo, ?lookup),
   VarPointsTo(_, ?baseVal, _, ?lookup),
   !Value_Null(?baseVal),
@@ -418,16 +453,33 @@ DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
   ?mt = METHOD_TYPE(WILDCARD_PARAM_TYPES, ?retType).
 
 // Create VarPointsTo for return values of method finders.
-AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
-  MethodFinder(?invo, ?ret),
+.decl FindMethod(?invo:MethodInvocation, ?type:Type, ?id:symbol, ?mt:MethodType, ?hctx:configuration.HContext, ?ctx:configuration.Context)
+FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
+  (FindStatic(?invo, _) ; FindVirtual(?invo, _)),
   ActualParam(0, ?invo, ?classParam),
   VarPointsTo(?hctx, ?classValue, ?ctx, ?classParam),
   ReifiedClass(?type, ?classValue),
   ActualParam(1, ?invo, ?stringParam),
   VarPointsTo(_, ?id, _, ?stringParam),
   ActualParam(2, ?invo, ?mtParam),
-  VarPointsTo(_, ?mt, _, ?mtParam),
+  VarPointsTo(_, ?mt, _, ?mtParam).
+
+// Compute result of findStatic().
+AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
+  FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx),
+  FindStatic(?invo, ?ret),
   DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes).
+// Compute result of findVirtual(). This transforms the method type to an
+// equivalent that also contains the receiver as a first argument.
+AssignMethodHandleToVarRequest(?method, ?paramTypesConv, ?retType, ?hctx, ?ctx, ?ret) :-
+  FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx),
+  FindVirtual(?invo, ?ret),
+  DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes),
+  !Method_Modifier("static", ?method),
+  // Reconstruct method type to prepend receiver (since ?mt may contain wildcard
+  // parameter types).
+  EquivalentWithPrependedReceiver(METHOD_TYPE(?paramTypes, ?retType), ?mtConv),
+  MethodType_ParamTypes(?mtConv, ?paramTypesConv).
 
 #endif // REFLECTION
 #endif // REFLECTION_METHOD_HANDLES
