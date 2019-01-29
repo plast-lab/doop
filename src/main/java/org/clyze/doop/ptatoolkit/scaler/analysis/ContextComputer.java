@@ -1,26 +1,26 @@
 package org.clyze.doop.ptatoolkit.scaler.analysis;
 
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
-import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
+import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public abstract class ContextComputer {
 
-    protected final PointsToAnalysis pta;
+    protected final DoopPointsToAnalysis pta;
     final ObjectAllocationGraph oag;
     private Map<Method, Long> method2ctxNumber = new HashMap<>();
     protected ContextComputer worstCaseContextComputer;
 
 
-    ContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
+    ContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag) {
         this.pta = pta;
         this.oag = oag;
         computeContext();
     }
 
-    ContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
+    ContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
         this.pta = pta;
         this.oag = oag;
         this.worstCaseContextComputer = worstCaseContextComputer;

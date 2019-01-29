@@ -1,5 +1,6 @@
 package org.clyze.doop.ptatoolkit.scaler.analysis;
 
+import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
 
@@ -9,7 +10,7 @@ import org.clyze.doop.ptatoolkit.pta.basic.Method;
  */
 public class _InsensitiveContextComputer extends ContextComputer {
 
-    _InsensitiveContextComputer(PointsToAnalysis pta) {
+    _InsensitiveContextComputer(DoopPointsToAnalysis pta) {
         super(pta, null);
     }
 

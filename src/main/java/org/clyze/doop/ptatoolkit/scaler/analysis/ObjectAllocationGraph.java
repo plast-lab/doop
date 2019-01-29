@@ -35,15 +35,13 @@ public class ObjectAllocationGraph implements DirectedGraph<Obj> {
 
     private void init() {
         Map<Obj, Set<Method>> invokedMethods = computeInvokedMethods();
-        invokedMethods.forEach((obj, methods) -> {
-            methods.stream()
-                    .map(pta::objectsAllocatedIn)
-                    .flatMap(Collection::stream)
-                    .forEach(o -> {
-                        obj.addToAttributeSet(SUCCS, o);
-                        o.addToAttributeSet(PREDS, obj);
-                    });
-        });
+        invokedMethods.forEach((obj, methods) -> methods.stream()
+                .map(pta::objectsAllocatedIn)
+                .flatMap(Collection::stream)
+                .forEach(o -> {
+                    obj.addToAttributeSet(SUCCS, o);
+                    o.addToAttributeSet(PREDS, obj);
+                }));
     }
 
     private Map<Obj, Set<Method>> computeInvokedMethods() {

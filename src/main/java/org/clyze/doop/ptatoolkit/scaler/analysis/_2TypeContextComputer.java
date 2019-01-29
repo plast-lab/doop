@@ -3,7 +3,7 @@ package org.clyze.doop.ptatoolkit.scaler.analysis;
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.pta.basic.Obj;
 import org.clyze.doop.ptatoolkit.pta.basic.Type;
-import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
+import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 
 import java.util.*;
 
@@ -11,7 +11,7 @@ public class _2TypeContextComputer extends ContextComputer {
     private Set<Method> visited = null;
 
 
-    _2TypeContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
+    _2TypeContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
         super(pta, oag, worstCaseContextComputer);
     }
 
@@ -50,6 +50,8 @@ public class _2TypeContextComputer extends ContextComputer {
                                 pta.declaringAllocationTypeOf(pred),
                                 pta.declaringAllocationTypeOf(recv)));
                     }
+                    Type immutableContext = pta.typeFactory.get("Immutable context");
+                    contexts.add(Arrays.asList(immutableContext, pta.declaringAllocationTypeOf(recv)));
                 } else {
                     // without allocator, back to 1-type
                     contexts.add(Collections.singletonList(
