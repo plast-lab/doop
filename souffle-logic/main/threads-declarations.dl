@@ -1,3 +1,11 @@
 .decl RunningThread(?hctx:configuration.HContext, ?value:Value)
 
 .decl ReachableCurrentThreadInvocation(?callerCtx:configuration.Context, ?local:Var)
+
+.decl FakeInvocation_ThreadGroupInit(?invo: MethodInvocation)
+
+.decl FakeInvocation_MainThreadInit(?invo: MethodInvocation)
+
+.decl FakeInvocation_SystemThreadGroupInit(?invo: MethodInvocation)
+
+.decl FakeInvocation_ThreadStart(?hctx:configuration.HContext, ?value:Value, ?invo:MethodInvocation)

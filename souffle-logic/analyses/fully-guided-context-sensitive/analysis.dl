@@ -215,4 +215,11 @@
 
     .output MethodTotalVPT
 
+    .decl MethodContext(?method: Method, ?ctx1: ContextComponent, ?ctx2: ContextComponent)
+
+    MethodContext(?method, ?ctx1, ?ctx2) :-
+      mainAnalysis.ReachableContext(?ctx, ?method),
+      ?ctx = [?ctx1, ?ctx2].
+
+    .output MethodContext
 }

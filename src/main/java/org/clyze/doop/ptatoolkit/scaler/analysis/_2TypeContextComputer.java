@@ -46,9 +46,10 @@ public class _2TypeContextComputer extends ContextComputer {
                 Set<Obj> preds = oag.predsOf(recv);
                 if (!preds.isEmpty()) {
                     for (Obj pred : preds) {
-                        contexts.add(Arrays.asList(
-                                pta.declaringAllocationTypeOf(pred),
-                                pta.declaringAllocationTypeOf(recv)));
+                        // Too strict, the allocating method of the predecessor method of the receiver may be analyzed with 2-object
+                        // contexts.add(Arrays.asList(pta.declaringAllocationTypeOf(pred), pta.declaringAllocationTypeOf(recv)));
+                        Type mockTypeForObject = pta.typeFactory.get("Mock type " + pred);
+                        contexts.add(Arrays.asList(mockTypeForObject, pta.declaringAllocationTypeOf(recv)));
                     }
                     Type immutableContext = pta.typeFactory.get("Immutable context");
                     contexts.add(Arrays.asList(immutableContext, pta.declaringAllocationTypeOf(recv)));
@@ -65,6 +66,8 @@ public class _2TypeContextComputer extends ContextComputer {
                 if (!visited.contains(caller)) {
                     visited.add(caller);
                     contexts.addAll(getContexts(caller));
+                    Type immutableContextComponent = pta.typeFactory.get("Immutable context");
+                    contexts.add(Arrays.asList(immutableContextComponent, immutableContextComponent));
                 }
             }
             return contexts;

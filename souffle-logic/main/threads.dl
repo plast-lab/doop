@@ -17,7 +17,8 @@ RunningThread(?hctx, ?value) :-
  * 1.5 and JRE 1.6 Thread.start() is defined in Java and there is native method
  * start0.
  */
-configuration.ThreadStartContextRequest(?callerCtx, ?hctx, ?value) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?run) :-
+    FakeInvocation_ThreadStart(?hctx, ?value, ?invo),
 #if defined(JRE13) || defined(JRE14)
     ?start = "<java.lang.Thread: void start()>",
 #else
@@ -26,7 +27,7 @@ configuration.ThreadStartContextRequest(?callerCtx, ?hctx, ?value) :-
     ThisVar(?start, ?startThis),
     VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis),
     Value_Type(?value, ?valuetype),
-    basic.MethodLookup("run", "void()", ?valuetype, _).
+    basic.MethodLookup("run", "void()", ?valuetype, ?run).
  
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?run),
@@ -43,8 +44,8 @@ RunningThread(?hctx, ?value)
     Value_Type(?value, ?valuetype),
     basic.MethodLookup("run", "void()", ?valuetype, ?run),
     ThisVar(?run, ?runThis), 
-    configuration.ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-    configuration.ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?calleeCtx).
+    configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?run),
+    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
 
 /**
  * Thread.currentThread() return running threads
@@ -73,8 +74,12 @@ ReachableCurrentThreadInvocation(?callerCtx, ?local) :-
  * create_initial_thread_group).
  */
 
-configuration.StartupContextRequest(?hctx, ?value) :-
-    SystemThreadGroup(?hctx, ?value).
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature) :-
+    SystemThreadGroup(?hctx, ?value),
+    isImmutableContext(?callerCtx),
+    FakeInvocation_ThreadGroupInit(?invo),
+    ?signature = "<java.lang.ThreadGroup: void <init>()>".
+
 
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature),
@@ -82,8 +87,8 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
     ?signature = "<java.lang.ThreadGroup: void <init>()>",
     ThisVar(?signature, ?this),
     SystemThreadGroup(?hctx, ?value),
-    configuration.StartupContextRequest(?hctx, ?value),
-    configuration.StartupContextResponse(?hctx, ?value, ?calleeCtx).
+    configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature),
+    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
 
 /**
  * Initialization of the main thread group
@@ -96,8 +101,11 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
  * TODO: set the "main" argument.
  */
 
-configuration.StartupContextRequest(?hctx, ?value) :-
-    MainThreadGroup(?hctx, ?value).
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature) :-
+    MainThreadGroup(?hctx, ?value),
+    isImmutableContext(?callerCtx),
+    FakeInvocation_ThreadGroupInit(?invo),
+    ?signature = "<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>".
 
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature),
@@ -108,8 +116,8 @@ VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
     MainThreadGroup(?hctx, ?value),
     FormalParam(0, ?signature, ?groupParam),
     SystemThreadGroup(?groupHCtx, ?group),
-    configuration.StartupContextRequest(?hctx, ?value),
-    configuration.StartupContextResponse(?hctx, ?value, ?calleeCtx).
+    configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature),
+    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
 
 /**
  * Initialization of the main thread
@@ -121,8 +129,11 @@ VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
  * TODO: set the "main" argument.
  */
 
-configuration.StartupContextRequest(?hctx, ?value) :-
-    MainThread(?hctx, ?value).
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature) :-
+    MainThread(?hctx, ?value),
+    isImmutableContext(?callerCtx),
+    FakeInvocation_MainThreadInit(?invo),
+    ?signature = "<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>".
 
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature),
@@ -133,8 +144,29 @@ VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
     MainThread(?hctx, ?value),
     FormalParam(0, ?signature, ?groupParam),
     MainThreadGroup(?groupHCtx, ?group),
-    configuration.StartupContextRequest(?hctx, ?value),
-    configuration.StartupContextResponse(?hctx, ?value, ?calleeCtx).
+    configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature),
+    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
 
 #endif
 
+FakeInvocation_ThreadGroupInit(?invo),
+PlusMethodInvocation(?invo) :-
+  ?invo = "<thread-group-init>/0".
+
+FakeInvocation_MainThreadInit(?invo),
+PlusMethodInvocation(?invo) :-
+  ?invo = "<main-thread-init>/0".
+
+FakeInvocation_SystemThreadGroupInit(?invo),
+PlusMethodInvocation(?invo) :-
+  ?invo = "<system-thread-group-init>/0".
+
+FakeInvocation_ThreadStart(?hctx, ?value, cat(cat("<thread-start ", ?value), ">")),
+PlusMethodInvocation(cat("thread-start ", ?value)) :-
+  #if defined(JRE13) || defined(JRE14)
+      ?start = "<java.lang.Thread: void start()>",
+  #else
+      ?start = "<java.lang.Thread: void start0()>",
+  #endif
+      ThisVar(?start, ?startThis),
+      VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis).

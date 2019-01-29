@@ -22,7 +22,7 @@ public class Scaler {
     private ContextComputer bottomLine;
     private Map<Method, Integer> ptsSize = new HashMap<>();
     /** Total Scalability Threshold */
-    private long tst = 300_000_000;
+    private long tst = 500_000_000;
     private List<Triple<Method, String, Long>> results;
 
     public Scaler(DoopPointsToAnalysis pta) {
