@@ -607,7 +607,9 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
 .type CallSite = mainAnalysis.Value
 .decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?ctx:configuration.Context)
 
-// Record CallSite metadata.
+// Record CallSite metadata. This rule handles the return values of bootstrap
+// methods without checking types: according to the JVM spec, the return type of
+// a bootstrap method need not be java.lang.invoke.CallSite.
 InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?callerCtx) :-
   ReachableInvokedynamic(?invokedynamic, ?dynName, _, ?callerCtx),
   DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
