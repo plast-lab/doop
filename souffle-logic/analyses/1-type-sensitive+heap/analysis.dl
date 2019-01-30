@@ -29,21 +29,6 @@
     ?ctx = [?type],
     ?hctx = [?type].
 
-  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-    Value_DeclaringType(?value, ?type),
-    ?newCtx = [?type].
-
-  StartupContextResponse(?hctx, ?value, ?newCtx) :-
-    StartupContextRequest(?hctx, ?value),
-    Value_DeclaringType(?value, ?type),
-    ?newCtx = [?type].
-
-  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
-    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-    Value_DeclaringType(?value, ?type),
-    ?newCtx = [?type].
-
   InitContextResponse(?type, ?ctx) :-
     InitContextRequest(?type),
     ?ctx = [?type].

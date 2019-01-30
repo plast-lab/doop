@@ -28,28 +28,6 @@
     ?hctx = [?ctxType2],
     ?ctxType1 = ?ctxType1.
 
-  // For this analysis the context of a method call corresponds to the
-  // invocation site of the method.
-
-  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-    ?hctx = [?hctxType],
-    Value_DeclaringType(?value, ?type),
-    ?newCtx = [?hctxType, ?type].
-
-  StartupContextResponse(?hctx, ?value, ?newCtx) :-
-    StartupContextRequest(?hctx, ?value),
-    ?hctx = [?hctxType],
-    Value_DeclaringType(?value, ?type),
-    ?newCtx = [?hctxType, ?type].
-
-  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
-    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-    ?callerCtx = [?ctxType1, ?ctxType2],
-    Value_DeclaringType(?value, ?type),
-    ?newCtx = [?ctxType2, ?type],
-    ?ctxType1 = ?ctxType1.
-
   InitContextResponse(?value, ?ctx) :-
     InitContextRequest(?value),
     ?ctx = [?value, ?value].

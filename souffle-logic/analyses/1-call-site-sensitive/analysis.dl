@@ -28,23 +28,6 @@
   RecordContextRequest(?ctx, ?value, ?var),      
     ?hctx = UNIQUE_HCONTEXT.
 
-  // For this analysis the context of a method call corresponds to the
-  // invocation site of the method.
-
-  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-    ?newCtx = ?callerCtx.
-
-  StartupContextResponse(?hctx, ?value, ?newCtx) :-
-    StartupContextRequest(?hctx, ?value),
-    StartupInvocation(?invocation),
-    ?newCtx = [?invocation].
-
-  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
-    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-    FakeInvocation_RegisterFinalize(?value, ?invocation),
-    ?newCtx = [?invocation].
-
   InitContextResponse(?invocation, ?ctx) :-
     InitContextRequest(?invocation),
     ?ctx = [?invocation].

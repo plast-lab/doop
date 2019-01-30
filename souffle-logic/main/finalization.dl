@@ -14,21 +14,6 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register
   FormalParam(0, ?register, ?formal),
   VarPointsTo(?hctx, ?heapValue, ?ctx, ?formal).
 
-/*isHContext(?newHCtx),
-VarPointsTo(?newHCtx, ?heapValue, ?newCtx, ?formal) :-
-  FakeInvocation_RegisterFinalize(?heapValue, ?fakeinvo),
-  basic.AllocatedObjectSupportsFinalize(?heapValue, ?inmethod),
-  (!(HeapAllocation_Merge(?heapValue, _));
-  HeapAllocation_Merge(?heapValue, ?heapValue)),  // the object retains its identity
-  ReachableContext(?callerCtx, ?inmethod),
-  ?register = "<java.lang.ref.Finalizer: void register(java.lang.Object)>",
-  isMethod(?register),
-  FormalParam(0, ?register, ?formal),
-  configuration.RecordContextRequest(?callerCtx, ?heapValue, ?formal),
-  configuration.RecordContextResponse(?callerCtx, ?heapValue, ?formal, ?newHCtx),
-  configuration.FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?heapValue),
-  configuration.FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?heapValue, ?newCtx).*/
-
 FakeInvocation_RegisterFinalize0(?val2, cat("<register-finalize ", cat(?val1, cat( "/", cat(?val2, "  >"))))),
 PlusMethodInvocation(cat("<register-finalize ", cat(?val1, cat( "/", cat(?val2, "  >"))))) :-
     basic.AllocatedObjectSupportsFinalize(?val2, ?val1),

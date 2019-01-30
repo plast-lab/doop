@@ -9,8 +9,9 @@ public abstract class InstanceMethod extends Method {
     protected InstanceMethod(Variable thisVar,
                              Collection<Variable> params,
                              Collection<Variable> retVars,
-                             boolean isPrivate) {
-        super(params, retVars, isPrivate);
+                             boolean isPrivate,
+                             boolean isImplicitReachable) {
+        super(params, retVars, isPrivate, isImplicitReachable);
         this.thisVar = thisVar;
     }
 

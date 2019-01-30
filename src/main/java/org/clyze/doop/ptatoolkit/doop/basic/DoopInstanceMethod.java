@@ -16,9 +16,9 @@ public class DoopInstanceMethod extends InstanceMethod {
 
     public DoopInstanceMethod(
             String sig, Variable thisVar, Collection<Variable> params,
-            Collection<Variable> retVars, boolean isPrivate,
+            Collection<Variable> retVars, boolean isPrivate, boolean isImplicitReachable,
             int id) {
-        super(thisVar, params, retVars, isPrivate);
+        super(thisVar, params, retVars, isPrivate, isImplicitReachable);
         this.sig = sig;
         this.id = id;
         if (params != null) {

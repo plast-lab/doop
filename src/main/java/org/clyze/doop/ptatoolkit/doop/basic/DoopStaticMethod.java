@@ -14,8 +14,9 @@ public class DoopStaticMethod extends StaticMethod {
                             Collection<Variable> params,
                             Collection<Variable> retVars,
                             boolean isPrivate,
+                            boolean isImplicitReachable,
                             int id) {
-        super(params, retVars, isPrivate);
+        super(params, retVars, isPrivate, isImplicitReachable);
         this.sig = sig;
         this.id = id;
     }

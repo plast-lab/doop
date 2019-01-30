@@ -33,26 +33,6 @@
     ?ctxElement1 = ?ctxElement1,
     ?ctxElement2 = ?ctxElement2.
 
-  // For this analysis the context of a method call corresponds to the
-  // invocation site of the method.
-
-  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-    ?hctx = [?hctxValue],
-    ?newCtx = [NO_INVOCATION_CONTEXT, ?hctxValue, ?value].
-
-  StartupContextResponse(?hctx, ?value, ?newCtx) :-
-    StartupContextRequest(?hctx, ?value),
-    ?hctx = [?hctxValue],
-    ?newCtx = [NO_INVOCATION_CONTEXT, ?hctxValue, ?value].
-
-  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
-    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-    ?callerCtx = [?callerCtxElement1, ?callerCtxElement2, ?callerCtxValue],
-    ?newCtx = [NO_INVOCATION_CONTEXT, ?callerCtxValue, ?value],
-    ?callerCtxElement1 = ?callerCtxElement1,
-    ?callerCtxElement2 = ?callerCtxElement2.
-
   InitContextResponse(?value, ?ctx) :-
     InitContextRequest(?value),
     ?ctx = [NO_INVOCATION_CONTEXT, ?value, ?value].
@@ -60,6 +40,4 @@
   InitHContextResponse(?value, ?hctx) :-
     InitHContextRequest(?value),
     ?hctx = [?value].
-
-
 }

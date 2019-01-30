@@ -2,13 +2,11 @@ package org.clyze.doop.ptatoolkit.scaler.analysis;
 
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.pta.basic.Obj;
+import org.clyze.doop.ptatoolkit.pta.basic.Type;
 import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class _2ObjectContextComputer extends ContextComputer {
     private Set<Method> visited = null;
@@ -32,14 +30,21 @@ public class _2ObjectContextComputer extends ContextComputer {
                 return 1;
             }
         }
-        List<Obj> totalPreds = getPreds(method);
+        Set<List<Obj>> totalPreds = getContexts(method);
         long contextNumber = totalPreds.size();
 
         return  contextNumber > 0? contextNumber: 1;
     }
 
-    private List<Obj> getPreds(Method method) {
-        List<Obj> totalPreds = new ArrayList<>();
+    private Set<List<Obj>> getContexts(Method method) {
+        if (methodToContextMap.containsKey(method)) {
+            return methodToContextMap.get(method);
+        }
+
+        Set<List<Obj>> contexts = new HashSet<>();
+        if (method.isImplicitReachable()) {
+            contexts.add(Arrays.asList(super.pta.objFactory.get("immutable context"), super.pta.objFactory.get("immutable context")));
+        }
 
         if (method.isInstance()) {
             visited.add(method);
@@ -47,23 +52,27 @@ public class _2ObjectContextComputer extends ContextComputer {
             for (Obj recv : pta.receiverObjectsOf(method)) {
                 Set<Obj> preds = oag.predsOf(recv);
                 if (!preds.isEmpty()) {
-                    totalPreds.addAll(preds);
-                    totalPreds.add(super.pta.objFactory.get("immutable context" + recv));
+                    for (Obj pred : preds) {
+                        contexts.add(Arrays.asList(super.pta.objFactory.get(pred.toString()), super.pta.objFactory.get(recv.toString())));
+                        contexts.add(Arrays.asList(super.pta.objFactory.get("immutable context" + recv), super.pta.objFactory.get(recv.toString())));
+                    }
                 } else {
                     // without allocator, back to 1-object
-                    totalPreds.add(recv);
+                    contexts.add(Collections.singletonList(super.pta.objFactory.get(recv.toString())));
                 }
             }
+            methodToContextMap.put(method, contexts);
         }
         else {
             for (Method caller : pta.callersOf(method)) {
                 if (!visited.contains(caller)) {
                     visited.add(caller);
-                    totalPreds.addAll(getPreds(caller));
-                    totalPreds.add(super.pta.objFactory.get("initial immutable context"));
+                    contexts.addAll(getContexts(caller));
+                    contexts.add(Arrays.asList(super.pta.objFactory.get("immutable context"), super.pta.objFactory.get("immutable context")));
                 }
             }
+            methodToContextMap.put(method, contexts);
         }
-        return totalPreds;
+        return contexts;
     }
 }

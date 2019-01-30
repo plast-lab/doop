@@ -40,6 +40,10 @@ public class _2TypeContextComputer extends ContextComputer {
 
     private Set<List<Type>> getContexts(Method method) {
         Set<List<Type>> contexts = new HashSet<>();
+
+        if (method.isImplicitReachable()) {
+            contexts.add(Arrays.asList(super.pta.typeFactory.get("immutable context"), super.pta.typeFactory.get("immutable context")));
+        }
         if (method.isInstance()) {
             visited.add(method);
             for (Obj recv : pta.receiverObjectsOf(method)) {
@@ -48,10 +52,10 @@ public class _2TypeContextComputer extends ContextComputer {
                     for (Obj pred : preds) {
                         // Too strict, the allocating method of the predecessor method of the receiver may be analyzed with 2-object
                         // contexts.add(Arrays.asList(pta.declaringAllocationTypeOf(pred), pta.declaringAllocationTypeOf(recv)));
-                        Type mockTypeForObject = pta.typeFactory.get("Mock type " + pred);
+                        Type mockTypeForObject = pta.typeFactory.get("object as type " + pred);
                         contexts.add(Arrays.asList(mockTypeForObject, pta.declaringAllocationTypeOf(recv)));
                     }
-                    Type immutableContext = pta.typeFactory.get("Immutable context");
+                    Type immutableContext = pta.typeFactory.get("immutable context");
                     contexts.add(Arrays.asList(immutableContext, pta.declaringAllocationTypeOf(recv)));
                 } else {
                     // without allocator, back to 1-type
@@ -66,7 +70,7 @@ public class _2TypeContextComputer extends ContextComputer {
                 if (!visited.contains(caller)) {
                     visited.add(caller);
                     contexts.addAll(getContexts(caller));
-                    Type immutableContextComponent = pta.typeFactory.get("Immutable context");
+                    Type immutableContextComponent = pta.typeFactory.get("immutable context");
                     contexts.add(Arrays.asList(immutableContextComponent, immutableContextComponent));
                 }
             }
