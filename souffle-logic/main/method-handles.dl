@@ -354,7 +354,8 @@ VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret) :-
 
 #ifdef REFLECTION_METHOD_HANDLES
 
-// Model of MethodHandles.lookup().
+// Model of MethodHandles.lookup(). This is a caller sensitive method and thus
+// its result must record the caller class.
 MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
 MHLookup_Type(?mockMHLookup, ?type),
 VarPointsTo(?immHctx, ?mockMHLookup, ?immCtx, ?ret) :-
