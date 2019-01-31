@@ -317,7 +317,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?this) :-
   ThisVar(?method, ?this),
   Var_Type(?actual, ?actualType),
   Var_Type(?this, ?thisType),
-  CompatibleTypes(?actualType, ?thisType).
+  basic.SubtypeOf(?actualType, ?thisType).
 
 // Get return value.
 VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
