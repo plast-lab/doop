@@ -14,6 +14,9 @@
 #error "light-reflection-glue.dl is not compatible with full reflection support"
 #endif
 
+#include "classloading.dl"
+#include "native-reflection.dl"
+
 // ** Pattern 1: local reflective method invocation **
 
 // Taken from reflection/declarations.dl.
@@ -123,3 +126,22 @@ VarPointsTo(?hctx, NewInstanceMockObj(?type), ?ctx, ?thisVar) :-
   Method_SimpleName(?init, "<init>"),
   ThisVar(?init, ?thisVar),
   isImmutableContext(?calleeCtx).
+
+// ** Pattern 3: reading the "TYPE" fields of the basic types **
+
+VarPointsTo(?immHCtx, ?classVal, ?ctx, ?to) :-
+  _LoadStaticField(_, _, ?to, ?signature, ?method),
+  ( ?type = "java.lang.Void"
+  ; ?type = "java.lang.Boolean"
+  ; ?type = "java.lang.Byte"
+  ; ?type = "java.lang.Character"
+  ; ?type = "java.lang.Double"
+  ; ?type = "java.lang.Float"
+  ; ?type = "java.lang.Integer"
+  ; ?type = "java.lang.Long"
+  ; ?type = "java.lang.Short"
+  ; ?type = "java.lang.Void"),
+  ?signature = cat("<", cat(?type, ": java.lang.Class TYPE>")),
+  ReachableContext(?ctx, ?method),
+  ReifiedClass(?type, ?classVal),
+  isImmutableHContext(?immHCtx).

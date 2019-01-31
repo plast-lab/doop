@@ -76,7 +76,7 @@ MethodType_ReturnType(?mtConv, ?retType),
 MethodType_Arity(?mtConv, ?arity) :-
   CreatePreMethodTypeForMethod(?method, ?mt, ?mtConv, ?paramTypes, ?retType, ?arity).
 
-#ifdef REFLECTION
+#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 
 // Model of MethodType.returnType().
 VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
@@ -97,7 +97,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
   ReifiedClass(?pType, ?classValue),
   AssignReturnValue(?invo, ?ret).
 
-#endif // REFLECTION
+#endif // REFLECTION || LIGHT_REFLECTION_GLUE
 
 // MethodType API entry points. The actual logic: every methodType()
 // invocation picks all descriptors that match.
@@ -111,14 +111,14 @@ ReachableMethodTypeN(?id, ?invo, ?ctx) :-
 .decl MT_ReturnType(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?type:Type)
 .decl MT_ParamValue(?invo:MethodInvocation, ?index:number, ?classValue:Value)
 
-#ifdef REFLECTION
+#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 // The first argument to methodType() is always the return type.
 MT_ReturnType(?invo, ?hctx, ?ctx, ?type) :-
   ReachableMethodTypeN(_, ?invo, ?ctx),
   ActualParam(0, ?invo, ?param),
   VarPointsTo(?hctx, ?classValue, ?ctx, ?param),
   ReifiedClass(?type, ?classValue).
-#endif // REFLECTION
+#endif // REFLECTION || LIGHT_REFLECTION_GLUE
 
 // MethodType2, MethodType4: second parameter.
 MT_ParamValue(?invo, 0, ?classValue) :-
@@ -150,14 +150,14 @@ MTCallMatch(?invo, ?hctx, ?ctx, "", ?retType, 0) :-
   InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
   MT_ParamValue(?invo, 0, MT_NOARGS_VALUE).
 
-#ifdef REFLECTION
+#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 // MethodType2.
 MTCallMatch(?invo, ?hctx, ?ctx, ?pType0, ?retType, 1) :-
   MTEntryPoint(2, ?invo, _),
   InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
   MT_ParamValue(?invo, 0, ?classValue0),
   ReifiedClass(?pType0, ?classValue0).
-#endif // REFLECTION
+#endif // REFLECTION || LIGHT_REFLECTION_GLUE
 
 // MethodType5.
 MTCallMatch(?invo, ?hctx, ?ctx, ?argParamTypes, ?retType, ?arity) :-
@@ -376,7 +376,7 @@ CreateMHLookup("java.lang.Object", ?ctx, ?ret) :-
   ReachableContext(?ctx, ?method),
   AssignReturnValue(?invo, ?ret).
 
-#ifdef REFLECTION
+#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 // Model of MethodHandles.Lookup.lookupClass().
 VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
   _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>", ?base, ?method),
@@ -385,7 +385,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
   MHLookup_Type(?mhLookup, ?type),
   ReifiedClass(?type, ?classValue),
   AssignReturnValue(?invo, ?ret).
-#endif // REFLECTION
+#endif // REFLECTION || LIGHT_REFLECTION_GLUE
 
 // Helper relation to only create direct method handles when no constant method
 // handles are found. Used when computing the handle to store in a variable.
@@ -470,7 +470,7 @@ DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
   MethodType_ParamTypes(?mt, WILDCARD_PARAM_TYPES),
   ?mt = METHOD_TYPE(WILDCARD_PARAM_TYPES, ?retType).
 
-#ifdef REFLECTION
+#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 // Create VarPointsTo for return values of method finders.
 .decl FindMethod(?invo:MethodInvocation, ?type:Type, ?id:symbol, ?mt:MethodType, ?hctx:configuration.HContext, ?ctx:configuration.Context)
 FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
@@ -482,7 +482,7 @@ FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
   VarPointsTo(_, ?id, _, ?stringParam),
   ActualParam(2, ?invo, ?mtParam),
   VarPointsTo(_, ?mt, _, ?mtParam).
-#endif // REFLECTION
+#endif // REFLECTION || LIGHT_REFLECTION_GLUE
 
 // Compute result of findStatic().
 AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
