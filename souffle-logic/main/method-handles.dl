@@ -354,18 +354,27 @@ VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret) :-
 
 #ifdef REFLECTION_METHOD_HANDLES
 
-// Model of MethodHandles.lookup(). This is a caller sensitive method and thus
-// its result must record the caller class.
+.decl CreateMHLookup(?type:Type, ?ctx:configuration.Context, ?ret:Var)
 MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
 MHLookup_Type(?mockMHLookup, ?type),
-VarPointsTo(?immHctx, ?mockMHLookup, ?immCtx, ?ret) :-
+VarPointsTo(?immHctx, ?mockMHLookup, ?ctx, ?ret) :-
+  CreateMHLookup(?type, ?ctx, ?ret),
+  isImmutableHContext(?immHctx),
+  ?mockMHLookup = MOCK_MH_LOOKUP(?type).
+
+// Model of MethodHandles.lookup(). This is a caller sensitive method and thus
+// its result must record the caller class.
+CreateMHLookup(?type, ?ctx, ?ret) :-
   _StaticMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup lookup()>", ?method),
   ReachableContext(?ctx, ?method),
   Method_DeclaringType(?method, ?type),
-  AssignReturnValue(?invo, ?ret),
-  isImmutableContext(?immCtx),
-  isImmutableHContext(?immHctx),
-  ?mockMHLookup = MOCK_MH_LOOKUP(?type).
+  AssignReturnValue(?invo, ?ret).
+
+// Model of MethodHandles.publicLookup(). We assume the caller class is Object.
+CreateMHLookup("java.lang.Object", ?ctx, ?ret) :-
+  _StaticMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup publicLookup()>", ?method),
+  ReachableContext(?ctx, ?method),
+  AssignReturnValue(?invo, ?ret).
 
 #ifdef REFLECTION
 // Model of MethodHandles.Lookup.lookupClass().

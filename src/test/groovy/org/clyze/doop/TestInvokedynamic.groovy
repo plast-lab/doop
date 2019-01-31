@@ -123,6 +123,7 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		// test6
 		varPointsTo(analysis, '<Main: void test6_aux(java.lang.invoke.MethodType)>/add3_mh6#_104', '<computed direct method handle for <A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>>')
 		methodHandleCGE(analysis, '<Main: void test6_aux(java.lang.invoke.MethodType)>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>')
+		varPointsTo(analysis, '<Main: void test6_aux(java.lang.invoke.MethodType)>/lookup#_103', 'mock method handles lookup object for type java.lang.Object')
 		// test7
 		varPointsTo(analysis, '<Main: void test7()>/mType1#_114', 'method type (java.lang.Double)java.lang.String')
 		varPointsTo(analysis, '<Main: void test7()>/mType2#_115', 'method type (java.lang.Double)java.lang.Double')
@@ -148,7 +149,6 @@ class TestInvokedynamic extends ServerAnalysisTests {
 										["--platform", "java_8"] + (wala ? ["--wala-fact-gen"] : []),
 										analysisName,
 										"invokedynamic-ForEach" + (wala ? "-wala" : ""))
-
 
 		then:
 		methodIsReachable(analysis, '<example_foreach.ForEach: void printTheList()>')
