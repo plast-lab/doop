@@ -75,7 +75,6 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?receiver) :-
   mainAnalysis.isImmutableHContext(?hctx),
   ValueForReceiverInContext(?ctx, ?receiver, ?value).
-  .plan 1:(2,1)
 
 .decl MockObject(?value:mainAnalysis.Value, ?type:Type)
 .decl MockObjFromOpenProgramEntryPoint(?value:mainAnalysis.Value)
