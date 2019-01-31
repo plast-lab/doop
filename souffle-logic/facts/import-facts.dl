@@ -10,6 +10,10 @@
 MainClass(?class) :-
   _MainClass(?class).
 
+// ClassArtifact
+.decl _ClassArtifact(?artifact:symbol, ?className:symbol, ?subArtifact:symbol)
+.input _ClassArtifact(IO="file", filename="Class-Artifact.facts", delimiter="\t")
+
 // NormalHeap
 
 .decl _NormalHeap(?id:symbol, ?type:symbol)
@@ -438,7 +442,7 @@ DynamicMethodInvocation_DynArity(?instruction, ?dynArity) :-
   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method).
 
 .decl _DynamicMethodInvocation_DynParamType(?invocation:DynamicMethodInvocation_Insn, ?idx:number, ?pType:symbol)
-.input _DynamicMethodInvocation_DynParamType(IO="file", filename="DynamicMethodInvocation-Param.facts", delimiter="\t")
+.input _DynamicMethodInvocation_DynParamType(IO="file", filename="DynamicMethodInvocation-ParamType.facts", delimiter="\t")
 
 // Opaque method invocations
 
@@ -517,7 +521,7 @@ isMethodDescriptor(?descriptor),
 Method_Descriptor(?method, ?descriptor) :-
   Method_ReturnType(?method, ?returnType),
   Method_ParamTypes(?method, ?params),
-  ?descriptor = cat(?returnType, ?params).
+  ?descriptor = cat(?returnType, cat("(", cat(?params, ")"))).
 
 // StoreInstanceField
 

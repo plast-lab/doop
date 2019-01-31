@@ -10,13 +10,16 @@ public abstract class Method extends AttributeElement {
 	private final Collection<Variable> params;
 	private final Collection<Variable> retVars;
 	private final boolean isPrivate;
+	private final boolean isImplicitReachable;
 
 	protected Method(Collection<Variable> params,
 					 Collection<Variable> retVars,
-					 boolean isPrivate) {
+					 boolean isPrivate,
+	                 boolean isImplicitReachable) {
 		this.params = params;
 		this.retVars = retVars;
 		this.isPrivate = isPrivate;
+		this.isImplicitReachable = isImplicitReachable;
 	}
 
 	public Collection<Variable> getParameters() {
@@ -41,4 +44,6 @@ public abstract class Method extends AttributeElement {
 	}
 
 	public boolean isPrivate() { return isPrivate; }
+
+	public boolean isImplicitReachable() { return isImplicitReachable; }
 }

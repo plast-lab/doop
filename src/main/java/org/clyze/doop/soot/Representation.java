@@ -72,13 +72,11 @@ public class Representation extends JavaRepresentation {
     static String params(SootMethod m) {
         StringBuilder builder = new StringBuilder();
         int count = m.getParameterCount();
-        builder.append("(");
         for(int i = 0; i < count; i++) {
             builder.append(m.getParameterType(i));
             if (i != count - 1)
                 builder.append(",");
         }
-        builder.append(")");
         return builder.toString();
     }
 

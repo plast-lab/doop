@@ -34,25 +34,6 @@ RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
   ?hctx = [?ctxValue],
   ?ctxType = ?ctxType.
 
-ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-  ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-  ?hctx = [?hctxValue],
-  Value_DeclaringType(?hctxValue, ?type),
-  ?newCtx = [?type, ?value].
-
-StartupContextResponse(?hctx, ?value, ?newCtx) :-                      
-  StartupContextRequest(?hctx, ?value),
-  ?hctx = [?hctxValue], 
-  Value_DeclaringType(?hctxValue, ?type),
-  ?newCtx = [?type, ?value].
-
-FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
-  FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-  ?callerCtx = [?callerCtxType, ?callerCtxValue],
-  Value_DeclaringType(?callerCtxValue, ?type),
-  ?newCtx = [?type, ?value],
-  ?callerCtxType = ?callerCtxType.
-
 InitContextResponse(?value, ?ctx) :-
   InitContextRequest(?value),
   ?ctx = ["java.lang.String", ?value].

@@ -36,20 +36,6 @@
     RecordContextRequest(?ctx, ?value, ?var),
     ?hctx = UNIQUE_HCONTEXT.
 
-  // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
-  // have the same logic as plain Merge for this analysis.
-  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-    ?newCtx = UNIQUE_CONTEXT.
-
-  StartupContextResponse(?hctx, ?value, ?calleeCtx) :-
-    StartupContextRequest(?hctx, ?value),
-    ?calleeCtx = UNIQUE_CONTEXT.
-              
-  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?calleeCtx) :-
-    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-    ?calleeCtx = UNIQUE_CONTEXT.
-
   InitContextResponse(?s, ?ctx) :-
     ?ctx = UNIQUE_CONTEXT,
     InitContextRequest(?s).

@@ -227,7 +227,9 @@ HoverInfoForLSP(?file, ?callerCtx, 0, ?startLine, ?endLine, ?startColumn, ?endCo
 
 HoverInfoForLSP(?file, ?callerCtx, 1 + ?index, ?startLine, ?endLine, ?startColumn, ?endColumn, ?hoverMsg, ?value):-
   ResolvedActualParamValue(?callerCtx, ?insn, ?tofunction, ?paramName, _, ?value),
-  ?hoverMsg = cat("Argument ", cat(?paramName, " has value: ")),
+  Value_Type(?value, ?type),
+  ?type != "<tensorflow.Tensor>",
+  ?hoverMsg = cat("Argument <b>", cat(?paramName, "</b> has value: ")),
   FormalParam(?index, ?paramName, ?tofunction, _),
   Instruction_Function(?insn, ?function),
   Function_DeclaredInFile(?function, ?file),

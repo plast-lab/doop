@@ -691,7 +691,7 @@ _Method(?ref, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor,
 +Method:JVMDescriptor[?x] = ?jvmDescriptor,
 +Method:ReturnType[?x] = ?returnType <-
    _Method(?ref, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor, ?arity),
-   ?descriptor = ?returnType + ?params.
+   ?descriptor = ?returnType + "(" + ?params + ")".
 
 // StoreInstanceField
 

@@ -29,26 +29,6 @@
     ?hctx = [?ctxType2, ?ctxType3],
     ?ctxType1 = ?ctxType1.
 
-  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-    ?hctx = [?hctxType1, ?hctxType2],
-    Value_DeclaringType(?value, ?type),
-    ?newCtx = [?hctxType1, ?hctxType2, ?type],
-    ?hctxType1 = ?hctxType1.
-
-  StartupContextResponse(?hctx, ?value, ?newCtx) :-
-    StartupContextRequest(?hctx, ?value),
-    ?hctx = [?hctxType1, ?hctxType2],
-    Value_DeclaringType(?value, ?type),
-    ?newCtx = [?hctxType1, ?hctxType2, ?type].
-
-  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
-    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-    ?callerCtx = [?callerCtxType1, ?callerCtxType2, ?callerCtxType3],
-    Value_DeclaringType(?value, ?type),  
-    ?newCtx = [?callerCtxType2, ?callerCtxType3, ?type],
-    ?callerCtxType1 = ?callerCtxType1.
-
   InitContextResponse(?value, ?ctx) :-
     InitContextRequest(?value),
     ?ctx = [?value, ?value, "java.lang.String"].

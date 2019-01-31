@@ -230,7 +230,7 @@ public abstract class JavaFactWriter {
     }
 
     protected void writeInvokedynamicParameterType(String insn, int paramIndex, String type) {
-        _db.add(DYNAMIC_METHOD_INV_PARAM, insn, str(paramIndex), type);
+        _db.add(DYNAMIC_METHOD_INV_PARAM_TYPE, insn, str(paramIndex), type);
     }
 
     protected void writeAssignLocal(String insn, int index, String from, String to, String methodId) {
@@ -298,5 +298,14 @@ public abstract class JavaFactWriter {
             System.out.println("Phantom method: " + m);
             writePhantomMethod(m);
         }
+    }
+
+    // Signature-polymorphic invoke* methods of MethodHandle should be
+    // recorded for special treatment.
+    protected void checkAndMarkMethodHandleInvocation(String insn, String declClass, String simpleName) {
+        if (declClass.equals("java.lang.invoke.MethodHandle") &&
+            (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
+             simpleName.equals("invokeBasic")))
+            _db.add(METHOD_HANDLE_INVOCATION, insn, simpleName);
     }
 }

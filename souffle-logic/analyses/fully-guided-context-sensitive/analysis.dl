@@ -129,23 +129,6 @@
     //     SpecialContextSensitivityMethod(?method, "context-insensitive"),
     //     isImmutableHContext(?hctx).
 
-    // Plain handling for special context requests
-    ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-        ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-        ?hctx = [?hctxValue],
-        ?newCtx = [?hctxValue, ?value].
-
-    StartupContextResponse(?hctx, ?value, ?newCtx) :-
-        StartupContextRequest(?hctx, ?value),
-        ?hctx = [?hctxValue],
-        ?newCtx = [?hctxValue, ?value].
-
-    FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
-        FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-        ?callerCtx = [?callerCtxValue1, ?callerCtxValue2],
-        ?newCtx = [?callerCtxValue2, ?value],
-        ?callerCtxValue1 = ?callerCtxValue1.
-
     InitContextResponse(?value, ?ctx) :-
         InitContextRequest(?value),
         ?ctx = [?value, ?value].
@@ -215,4 +198,11 @@
 
     .output MethodTotalVPT
 
+    .decl MethodContext(?method: Method, ?ctx1: ContextComponent, ?ctx2: ContextComponent)
+
+    MethodContext(?method, ?ctx1, ?ctx2) :-
+      mainAnalysis.ReachableContext(?ctx, ?method),
+      ?ctx = [?ctx1, ?ctx2].
+
+    .output MethodContext
 }

@@ -9,15 +9,6 @@
   .decl RecordContextRequest(?callerCtx:configuration.Context, ?value:Value, ?var:Var)
   .decl RecordContextResponse(?callerCtx:configuration.Context, ?value:Value, ?var:Var, ?hctx:configuration.HContext)
 
-  .decl ThreadStartContextRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?value:Value)
-  .decl ThreadStartContextResponse(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?value:Value, ?calleeCtx:Context)
-
-  .decl StartupContextRequest(?hctx:configuration.HContext, ?value:Value)
-  .decl StartupContextResponse(?hctx:configuration.HContext, ?value:Value, ?calleeCtx:Context)
-
-  .decl FinalizerRegisterContextRequest(?callerCtx:configuration.Context, ?inmethod:Method, ?value:Value)
-  .decl FinalizerRegisterContextResponse(?callerCtx:configuration.Context, ?inmethod:Method, ?value:Value, ?newCtx:Context)
-
   .decl InitContextRequest(?symbol:symbol)
   .decl InitContextResponse(?symbol:symbol, ?context:Context)
 

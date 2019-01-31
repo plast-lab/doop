@@ -15,8 +15,8 @@ For trouble-free configuration:
 * The `DOOP_OUT` environment variable could point to the output files directory (optional, defaults to `out`).
 * The `DOOP_CACHE` environment variable could point to the cached facts directory (optional, defaults to `cache`).
 * The `DOOP_LOG` environment variable could point to a log output directory (optional, defaults to `build/logs`).
-* The `LOGICBLOX_HOME` environment variable **should** point to the `logicblox` directory of the engine, if you want to use LogicBlox.
-
+* The `LOGICBLOX_HOME` environment variable should point to the `logicblox` directory of the engine, if you want to use LogicBlox.
+* The `APKTOOL_HOME` environment variable should point to the location of Apktool, if option `--decode-apk` is to be used for Android apps.
 
 ## Benchmarks & Platform Lib
 
@@ -119,6 +119,12 @@ to process this file, as follows:
 You can also override the options from a properties file with options from the command line. For example:
 
     $ ./doop -p /path/to/file.properties -a context-insensitive --platform java_6
+
+#### Native code scanner (--scan-native-code)
+This option makes Doop scan the native dynamic libraries bundled in .jar or .apk inputs, to find possible calls from JNI code to Java code.
+
+* For Java programs, this functionality assumes that standard command-line tools are available (such as `nm` or `strings`).
+* For Android programs, the following environment variables must be set: `APKTOOL_HOME` (see above) and `ANDROID_NDK_PREBUILTS` (a path to the toolchain of an Android NDK installation, such as `/path/to/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/arm-linux-androideabi/bin`).
 
 ### Soufflé multithreading
 

@@ -89,8 +89,10 @@ public abstract class AndroidSupport {
 
         List<String> inputs = parameters.getInputs();
         int inputsSize = inputs.size();
-        if (inputsSize > 0)
+        if (inputsSize > 0) {
+            System.err.println("WARNING: only the first input will be analyzed.");
             inputs.subList(1, inputsSize).clear();
+        }
     }
 
     private void scanNativeLibs(String decodeDir) {

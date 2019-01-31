@@ -6,8 +6,8 @@ import java.util.stream.Collectors;
 import static org.clyze.doop.common.PredicateFile.*;
 
 public class NativeScanner {
-    final static boolean debug = false;
-    final static boolean check = false;
+    private final static boolean debug = false;
+    private final static boolean check = false;
 
     public static void scan(String nmCmd, String objdumpCmd,
                             File libFile, File outDir) {
@@ -20,8 +20,6 @@ public class NativeScanner {
 
         try {
             String lib = libFile.getCanonicalPath();
-            // if (!lib.contains("libubermaps-gl"))
-            //     return;
             System.out.println("== Processing library: " + lib + " ==");
 
             List<String> lines = parseLib(nmCmd, lib, true);
@@ -234,7 +232,7 @@ public class NativeScanner {
         return true;
     }
 
-    static boolean isMethodType(String line) {
+    private static boolean isMethodType(String line) {
         char[] chars = line.toCharArray();
         if ((chars[0] != '(') || (!line.contains(")")))
             return false;
@@ -255,7 +253,7 @@ public class NativeScanner {
         System.out.println("[" + addr + "] " + eps.get(addr));
     }
 
-    static List<String> runCommand(ProcessBuilder builder) throws IOException {
+    private static List<String> runCommand(ProcessBuilder builder) throws IOException {
         builder.redirectErrorStream(true);
         Process process = builder.start();
         InputStream is = process.getInputStream();

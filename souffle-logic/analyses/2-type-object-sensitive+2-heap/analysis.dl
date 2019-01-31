@@ -26,30 +26,6 @@
     ?ctx = [?ctxType, ?ctxValue],
     ?hctx = [?ctxType, ?ctxValue].
 
-  // For this analysis the context of a method call corresponds to the
-  // invocation site of the method.
-
-  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-    ?hctx = [?hctxType, ?hctxValue],
-    Value_DeclaringType(?hctxValue, ?type),
-    ?newCtx = [?type, ?value],
-    ?hctxType = ?hctxType.
-
-  StartupContextResponse(?hctx, ?value, ?newCtx) :-
-    StartupContextRequest(?hctx, ?value),
-    ?hctx = [?hctxType, ?hctxValue],
-    Value_DeclaringType(?hctxValue, ?type),
-    ?newCtx = [?type, ?value],
-    ?hctxType = ?hctxType.
-
-  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
-    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-    ?callerCtx = [?ctxType, ?ctxValue],
-    Value_DeclaringType(?ctxValue, ?type),
-    ?newCtx = [?type, ?value],
-    ?ctxType = ?ctxType.
-
   InitContextResponse(?value, ?ctx) :-
     InitContextRequest(?value),
     ?ctx = ["Java.lang.String", ?value].

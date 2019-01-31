@@ -807,15 +807,10 @@ class FactWriter extends JavaFactWriter {
 
         writeActualParams(inMethod, stmt, expr, insn, session);
 
-        // Signature-polymorphic invoke* methods of MethodHandle
-        // should be recorded for special treatment.
         SootMethodRef exprMethodRef = expr.getMethodRef();
         String simpleName = Representation.simpleName(exprMethodRef);
         String declClass = exprMethodRef.declaringClass().getName();
-        if (declClass.equals("java.lang.invoke.MethodHandle") &&
-            (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
-             simpleName.equals("invokeBasic")))
-            _db.add(METHOD_HANDLE_INVOCATION, insn, simpleName);
+        checkAndMarkMethodHandleInvocation(insn, declClass, simpleName);
 
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
         if (tag != null) {
@@ -990,9 +985,9 @@ class FactWriter extends JavaFactWriter {
     }
 
     static class SigInfo {
-        public int arity;
-        public String retType;
-        public String paramTypes;
+        public final int arity;
+        public final String retType;
+        public final String paramTypes;
         public SigInfo(SootMethodRef ref, boolean reverse) {
             List<Type> paramTypes = ref.parameterTypes();
             if (reverse)
@@ -1003,8 +998,7 @@ class FactWriter extends JavaFactWriter {
 
             StringJoiner joiner = new StringJoiner(",");
             paramTypes.forEach(p -> joiner.add(p.toString()));
-            StringBuffer sb = new StringBuffer("(").append(joiner.toString());
-            this.paramTypes = sb.append(")").toString();
+            this.paramTypes = joiner.toString();
         }
     }
 }

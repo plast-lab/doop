@@ -104,11 +104,11 @@ SpecialMethodFromObject(?method, ?objMethod) :-
   !Method_Modifier("static", ?method),
   Method_SimpleName(?method, ?simple),
   ((?simple = "hashCode", Method_ReturnType(?method, "int"),
-    Method_ParamTypes(?method, "()")) ;
+    Method_ParamTypes(?method, "")) ;
    (?simple = "equals", Method_ReturnType(?method, "boolean"),
-    Method_ParamTypes(?method, "(java.lang.Object)")) ;
+    Method_ParamTypes(?method, "java.lang.Object")) ;
    (?simple = "toString", Method_ReturnType(?method, "java.lang.String"),
-    Method_ParamTypes(?method, "()"))),
+    Method_ParamTypes(?method, ""))),
   Method_DeclaringType(?objMethod, "java.lang.Object"),
   Method_SimpleName(?objMethod, ?simple).
 
