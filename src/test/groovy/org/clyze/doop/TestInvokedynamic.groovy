@@ -85,16 +85,24 @@ class TestInvokedynamic extends ServerAnalysisTests {
 
 	// @spock.lang.Ignore
 	@Unroll
-	def "Server analysis test 115 (invokedynamic, method handles/types)"() {
+	def "Server analysis test 115 (invokedynamic, method handles/types)"(boolean fullReflection) {
 		when:
-		Analysis analysis = analyzeTest("115-invokedynamic",
-										["--platform", "java_8",
+		String analysisName = "context-insensitive";
+		List reflectionOpts = fullReflection ?
+							  ["--reflection-classic"] :
+							  ["--light-reflection-glue", "--distinguish-all-string-constants"]
+		List options = ["--platform", "java_8", "--cache",
 										 "--generate-jimple",
 										 // "--Xserver-logic",
 										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 										 "--thorough-fact-gen", "--sanity",
 										 "--Xstats-none",
-										 "--reflection-classic", "--reflection-method-handles"])
+										 "--reflection-method-handles"] + reflectionOpts
+		String analysisId = "115-invokedynamic" + (fullReflection ? "" : "-light-refl")
+		Analysis analysis = analyzeTest("115-invokedynamic",
+										options,
+										analysisName,
+										analysisId)
 
 		then:
 		// test1
@@ -138,6 +146,9 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		varPointsTo(analysis, '<A: java.lang.Double doubleIdentity(java.lang.Double)>/d#_0', 'mock box allocation for type java.lang.Double')
 		methodIsReachable(analysis, '<A: java.lang.invoke.CallSite bootstrap4(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>')
 		methodHandleCGE(analysis, '<InvokedynamicClass: void run()>/invokedynamic_bootstrap4::print2/0', '<A: void print2(A)>')
+
+		where:
+		fullReflection << [true, false]
 	}
 
 	// @spock.lang.Ignore

@@ -1,4 +1,4 @@
-#ifdef REFLECTION
+#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 
 .decl ClassLoaderMethod(?method:Method, ?argIdx:number)
 .output ClassLoaderMethod
@@ -58,4 +58,4 @@ OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class returnType()>").
 OPAQUE_METHOD("<java.lang.Class: java.lang.String getNameNative()>").
 #endif // ANDROID
 
-#endif // REFLECTION
+#endif // REFLECTION || LIGHT_REFLECTION_GLUE

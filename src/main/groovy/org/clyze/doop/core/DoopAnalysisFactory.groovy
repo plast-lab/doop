@@ -364,7 +364,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
 		}
 
-		if (options.REFLECTION_METHOD_HANDLES.value && !options.REFLECTION_CLASSIC.value) {
+		if (options.REFLECTION_METHOD_HANDLES.value &&
+			!options.REFLECTION_CLASSIC.value && !options.LIGHT_REFLECTION_GLUE.value) {
+			throw new RuntimeException("Error: option " + options.REFLECTION_METHOD_HANDLES.name + " needs one of: " +
+                                       "--${options.REFLECTION_CLASSIC.name} --${options.LIGHT_REFLECTION_GLUE.name}")
+
 			println("Option --" + options.REFLECTION_METHOD_HANDLES.name + " turns on --" + options.REFLECTION_CLASSIC.name)
 			options.REFLECTION_CLASSIC.value = true
 		}

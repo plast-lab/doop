@@ -1,6 +1,7 @@
 // A collection of rules for java.lang.ClassLoader and
 // platform-specific class-loading functionality.
 
+#ifdef REFLECTION
 /*************************************************************
  * java.lang.ClassLoader.getResource
  *
@@ -17,6 +18,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   isType(?type),
   ?type = "java.net.URL",
   ReflectiveAllocation(?invocation, ?type, ?value).
+#endif // REFLECTION
 
 /*************************************************************
  * Class-loading methods
