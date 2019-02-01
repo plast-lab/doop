@@ -236,18 +236,32 @@ MethodType_ReturnType(?mt, ?retType) :-
 
 // Invocations of a MethodHandle. These can either be explicit calls to
 // MethodHandle.invoke()/invokeExact() or implicit calls via invokedynamic.
-.decl MethodHandleCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?mh:MethodHandle, ?name:symbol)
 
-MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, ?name) :-
+.decl MethodHandleCallGraphEdge_Candidate(?callerCtx:configuration.Context, ?i:MethodInvocation, ?m:Method, ?mh:MethodHandle, ?name:symbol)
+MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name) :-
   // Permit treatment of invoke methods as opaque.
   (_VirtualMethodInvocation(?invo, _, _, ?base, ?containingMethod) ;
    _SpecialMethodInvocation(?invo, _, _, ?base, ?containingMethod)),
   _MethodHandleInvocation(?invo, ?name),
   ReachableContext(?callerCtx, ?containingMethod),
   VarPointsTo(_, ?mh, ?callerCtx, ?base),
-  MethodHandle_Method(?mh, ?method),
+  MethodHandle_Method(?mh, ?method).
+
+.decl MethodHandleCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?mh:MethodHandle, ?name:symbol)
+configuration.StaticContextRequest(?callerCtx, ?invo) :-
+  MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, _, _),
+  Method_Modifier("static", ?method).
+// Call-graph edges for static method handle invocations.
+MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, ?name) :-
+  configuration.StaticContextResponse(?callerCtx, ?invo, ?calleeCtx),
+  MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name).
+// Call-graph edges for non-static method handle invocations.
+MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, ?name) :-
+  MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name),
+  !Method_Modifier("static", ?method),
   // REVIEW: context sensitivity in the callee.
   isImmutableContext(?calleeCtx).
+
 ReachableContext(?calleeCtx, ?method) :-
   MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?method, _, _).
 
