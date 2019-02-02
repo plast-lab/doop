@@ -71,8 +71,14 @@ public class PythonFactWriter {
         return result;
     }
 
+    void writeRootFolder(){
+        _db.add(PROJECT_ROOT_FOLDER, _rep.getRoot());
+    }
+
     String writeMethod(IMethod m) {
         String result = _rep.signature(m);
+        String simpleName = _rep.simpleName(m);
+        String sourceFileName = _rep.sourceFileName(m);
         String par = result;
         if(par.contains(":"))
             par = result.substring(0, result.lastIndexOf(":")).concat(">");
@@ -107,10 +113,32 @@ public class PythonFactWriter {
         }
 
         _db.add(STRING_RAW, result, result);
-        _db.add(FUNCTION, result, _rep.simpleName(m), par, arity, _rep.sourceFileName(m));
-        if(_rep.simpleName(m).startsWith("comprehension"))
+        _db.add(FUNCTION, result, simpleName, par, arity, sourceFileName);
+
+        if(simpleName.startsWith("comprehension"))
             _db.add(COMPREHENSION_FUNCTION, result);
+
+        if(result.equals(sourceFileName))
+            writeGlobalFunction(m);
+
         return result;
+    }
+
+    void writeGlobalFunction(IMethod globalFun){
+        String funOrFileRep = _rep.signature(globalFun);
+        String fileDeclaredInFolder = funOrFileRep.substring(0, funOrFileRep.lastIndexOf("/")).concat(">");
+        String fileName = funOrFileRep.substring(funOrFileRep.lastIndexOf("/") + 1, funOrFileRep.length() - 4);
+
+        _db.add(GLOBAL_FUNCTION, funOrFileRep);
+        _db.add(FILE_DECLAREDING_PACKAGE, funOrFileRep, fileName, fileDeclaredInFolder);
+
+        if(! _rep.packageExists(fileDeclaredInFolder)){
+            _rep.addPackage(fileDeclaredInFolder);
+            String declFolderDeclFolder = fileDeclaredInFolder.substring(0, fileDeclaredInFolder.lastIndexOf("/")).concat(">");
+            String declFolderName = fileDeclaredInFolder.substring(fileDeclaredInFolder.lastIndexOf("/") + 1, fileDeclaredInFolder.length() - 1);
+            _db.add(PACKAGE_DECLAREDING_PACKAGE, fileDeclaredInFolder, declFolderName, declFolderDeclFolder);
+        }
+
     }
 
     public String writeField(IField f) {

@@ -15,7 +15,10 @@ import org.clyze.doop.common.SessionCounter;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.python.utils.PythonUtils.fixNewType;
@@ -36,6 +39,7 @@ public class PythonRepresentation {
      */
     private Map<String, Integer> _handlerNumOfScopes = new ConcurrentHashMap<>();
 
+    private SortedSet<String> packages = Collections.synchronizedSortedSet(new TreeSet<>());
     private String _fileName;
     // Make it a trivial singleton.
     private static PythonRepresentation _repr;
@@ -55,6 +59,18 @@ public class PythonRepresentation {
         return "<class " + className + ">";
     }
 
+    boolean packageExists(String pack){
+        return packages.contains(pack);
+    }
+
+    void addPackage(String pack){
+        packages.add(pack);
+    }
+
+    String getRoot(){
+        //return packages.first();
+        return packages.last();
+    }
 
     String classConstant(TypeReference t) {
         return "<class " + fixType(t) + ">";

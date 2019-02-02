@@ -1,7 +1,3 @@
-.decl isModule(?module:Module)
-
-.decl Module_DeclaringModule(?module: Module, ?declModule: Module)
-.decl Function_Module(?function:Function, ?module: Module)
 .decl ClassType_Module(?class:ClassType, ?module: Module)
 
 .decl VarPointsToModule(?hctx:configuration.HContext, ?val: Value, ?ctx:configuration.Context, ?var:Var)

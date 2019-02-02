@@ -387,8 +387,19 @@ WriteToCollectionInsn_From(?insn, ?from):-
 Function_SimpleName(?function, ?simplename),
 Function_Arity(?function, ?arity),
 isFile(?file),
+isModule(?file),
+Function_Module(?function, ?file),
 Function_DeclaredInFile(?function, ?file):-
   _Function(?function, ?simplename, ?declaringType, ?arity, ?file).
+
+.decl _File_DeclaringPackage(?file:symbol, ?declModule:symbol)
+.input _File_DeclaringPackage(IO="file", filename="File-DeclaringPackage.facts", delimiter="\t")
+
+isFile(?file),
+isModule(?file),
+isModule(?module),
+Module_DeclaringModule(?file, ?module):-
+  _File_DeclaringPackage(?file, ?module).
 
 
 // StoreInstanceField
