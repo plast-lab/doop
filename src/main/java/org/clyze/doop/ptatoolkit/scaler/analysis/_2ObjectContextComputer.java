@@ -39,10 +39,12 @@ public class _2ObjectContextComputer extends ContextComputer {
 
         Set<List<Obj>> totalContexts = getContexts(method);
         for (List<Obj> contexts : totalContexts) {
-            System.out.println(method + "\t" + contexts.get(0) + "\t" + contexts.get(1));
+            //System.out.println(method + "\t" + contexts.get(0) + "\t" + contexts.get(1));
             writer.println(method + "\t" + contexts.get(0) + "\t" + contexts.get(1));
 
         }
+        methodToContextMap.put(method, totalContexts);
+
         long contextNumber = totalContexts.size();
 
         return  contextNumber > 0? contextNumber: 1;
@@ -58,8 +60,8 @@ public class _2ObjectContextComputer extends ContextComputer {
             contexts.add(Arrays.asList(super.pta.objFactory.get("<<immutable context>>"), super.pta.objFactory.get("<<immutable context>>")));
         }
 
+        visited.add(method);
         if (method.isInstance()) {
-            visited.add(method);
 
             for (Obj recv : pta.receiverObjectsOf(method)) {
                 Set<Obj> preds = oag.predsOf(recv);
@@ -78,17 +80,20 @@ public class _2ObjectContextComputer extends ContextComputer {
             methodToContextMap.put(method, contexts);
         }
         else {
+            if (method.toString().contains("<java.util.Arrays: int[] copyOf(int[],int)>"))
+                System.out.println("visited size: " + visited.size());
             for (Method caller : pta.callersOf(method)) {
-                if (method.equals("<java.util.Arrays: int[] copyOf(int[],int)>")) {
-                    System.out.println("Checking caller: " + caller);
-                }
                 if (!visited.contains(caller)) {
                     visited.add(caller);
+                    if (method.toString().contains("<java.util.Arrays: int[] copyOf(int[],int)>"))
+                        System.out.println("Checking caller: " + caller + " contexts: " + getContexts(caller).size());
                     contexts.addAll(getContexts(caller));
+                } else {
+                    if (method.toString().contains("<java.util.Arrays: int[] copyOf(int[],int)>"))
+                        System.out.println("Checking caller: " + caller + " - already visited");
                 }
             }
             contexts.add(Arrays.asList(super.pta.objFactory.get("<<immutable context>>"), super.pta.objFactory.get("<<immutable context>>")));
-            methodToContextMap.put(method, contexts);
         }
         return contexts;
     }
