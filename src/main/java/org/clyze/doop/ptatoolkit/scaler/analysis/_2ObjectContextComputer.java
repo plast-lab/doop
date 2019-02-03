@@ -54,7 +54,9 @@ public class _2ObjectContextComputer extends ContextComputer {
                 if (!preds.isEmpty()) {
                     for (Obj pred : preds) {
                         contexts.add(Arrays.asList(super.pta.objFactory.get(pred.toString()), super.pta.objFactory.get(recv.toString())));
-                        contexts.add(Arrays.asList(super.pta.objFactory.get("immutable context" + recv), super.pta.objFactory.get(recv.toString())));
+                        contexts.add(Arrays.asList(super.pta.objFactory.get("immutable context"), super.pta.objFactory.get(recv.toString())));
+                        contexts.add(Arrays.asList(super.pta.objFactory.get("immutable hcontext"), super.pta.objFactory.get(recv.toString())));
+
                     }
                 } else {
                     // without allocator, back to 1-object

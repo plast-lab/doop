@@ -57,6 +57,8 @@ public class _2TypeContextComputer extends ContextComputer {
                     }
                     Type immutableContext = pta.typeFactory.get("immutable context");
                     contexts.add(Arrays.asList(immutableContext, pta.declaringAllocationTypeOf(recv)));
+                    Type immutableHContext = pta.typeFactory.get("immutable hcontext");
+                    contexts.add(Arrays.asList(immutableHContext, pta.declaringAllocationTypeOf(recv)));
                 } else {
                     // without allocator, back to 1-type
                     contexts.add(Collections.singletonList(
