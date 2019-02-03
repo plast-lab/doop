@@ -22,7 +22,7 @@ public class Scaler {
     private ContextComputer bottomLine;
     private Map<Method, Integer> ptsSize = new HashMap<>();
     /** Total Scalability Threshold */
-    private long tst = 1_000_000_000L;
+    private long tst = 200_000_000L;
     private List<Triple<Method, String, Long>> results;
 
     public Scaler(DoopPointsToAnalysis pta) {
@@ -90,7 +90,9 @@ public class Scaler {
                 new _2TypeContextComputer(pta, oag, _2ObjectContextComputer),
                 new _1TypeContextComputer(pta, oag, _2ObjectContextComputer),
         };
-
+        ctxComputers[0].computeContext();
+        ctxComputers[1].computeContext();
+        ctxComputers[2].computeContext();
         bottomLine = new _InsensitiveContextComputer(pta);
     }
 

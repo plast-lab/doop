@@ -6,6 +6,7 @@ import org.clyze.doop.ptatoolkit.pta.basic.Type;
 import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 
+import java.io.*;
 import java.util.*;
 
 public class _2ObjectContextComputer extends ContextComputer {
@@ -13,6 +14,11 @@ public class _2ObjectContextComputer extends ContextComputer {
 
     _2ObjectContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag) {
         super(pta, oag);
+        try {
+            writer = new PrintWriter("scaler-two-object.csv");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -30,8 +36,14 @@ public class _2ObjectContextComputer extends ContextComputer {
                 return 1;
             }
         }
-        Set<List<Obj>> totalPreds = getContexts(method);
-        long contextNumber = totalPreds.size();
+
+        Set<List<Obj>> totalContexts = getContexts(method);
+        for (List<Obj> contexts : totalContexts) {
+            System.out.println(method + "\t" + contexts.get(0) + "\t" + contexts.get(1));
+            writer.println(method + "\t" + contexts.get(0) + "\t" + contexts.get(1));
+
+        }
+        long contextNumber = totalContexts.size();
 
         return  contextNumber > 0? contextNumber: 1;
     }
@@ -43,7 +55,7 @@ public class _2ObjectContextComputer extends ContextComputer {
 
         Set<List<Obj>> contexts = new HashSet<>();
         if (method.isImplicitReachable()) {
-            contexts.add(Arrays.asList(super.pta.objFactory.get("immutable context"), super.pta.objFactory.get("immutable context")));
+            contexts.add(Arrays.asList(super.pta.objFactory.get("<<immutable context>>"), super.pta.objFactory.get("<<immutable context>>")));
         }
 
         if (method.isInstance()) {
@@ -54,25 +66,28 @@ public class _2ObjectContextComputer extends ContextComputer {
                 if (!preds.isEmpty()) {
                     for (Obj pred : preds) {
                         contexts.add(Arrays.asList(super.pta.objFactory.get(pred.toString()), super.pta.objFactory.get(recv.toString())));
-                        contexts.add(Arrays.asList(super.pta.objFactory.get("immutable context"), super.pta.objFactory.get(recv.toString())));
-                        contexts.add(Arrays.asList(super.pta.objFactory.get("immutable hcontext"), super.pta.objFactory.get(recv.toString())));
+                        contexts.add(Arrays.asList(super.pta.objFactory.get("<<immutable context>>"), super.pta.objFactory.get(recv.toString())));
+                        contexts.add(Arrays.asList(super.pta.objFactory.get("<<immutable hcontext>>"), super.pta.objFactory.get(recv.toString())));
 
                     }
                 } else {
                     // without allocator, back to 1-object
-                    contexts.add(Collections.singletonList(super.pta.objFactory.get(recv.toString())));
+                    contexts.add(Arrays.asList(super.pta.objFactory.get("<<immutable hcontext>>"), super.pta.objFactory.get(recv.toString())));
                 }
             }
             methodToContextMap.put(method, contexts);
         }
         else {
             for (Method caller : pta.callersOf(method)) {
+                if (method.equals("<java.util.Arrays: int[] copyOf(int[],int)>")) {
+                    System.out.println("Checking caller: " + caller);
+                }
                 if (!visited.contains(caller)) {
                     visited.add(caller);
                     contexts.addAll(getContexts(caller));
-                    contexts.add(Arrays.asList(super.pta.objFactory.get("immutable context"), super.pta.objFactory.get("immutable context")));
                 }
             }
+            contexts.add(Arrays.asList(super.pta.objFactory.get("<<immutable context>>"), super.pta.objFactory.get("<<immutable context>>")));
             methodToContextMap.put(method, contexts);
         }
         return contexts;

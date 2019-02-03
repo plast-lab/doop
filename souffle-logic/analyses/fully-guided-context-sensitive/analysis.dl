@@ -47,10 +47,6 @@
         ?hctx = [?elem].
 
     .decl SpecialContextElement(value:symbol)
-    SpecialContextElement("<<initial-context>>").
-    SpecialContextElement("<<jvm-startup-context>>").
-    SpecialContextElement("<<jvm-startup-hcontext>>").
-    SpecialContextElement("<<clinit-context>>").
     SpecialContextElement("<<immutable-context>>").
     SpecialContextElement("<<immutable-hcontext>>").
 
