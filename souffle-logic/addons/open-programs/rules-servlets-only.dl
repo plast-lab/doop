@@ -21,7 +21,7 @@ AllConcreteImplementations(?class, ?class) :-
   !ClassModifier("abstract", ?class).
 
 .decl ConcreteImplementationsOrd(?staticType:Type, ?classOrd:number)
-.decl ConcreteImplementations(?staticType:Type, ?class:Type)
+.decl ConcreteImplementations(?staticType:Tnype, ?class:Type)
 
 ConcreteImplementationsOrd(?staticType, ?classOrd) :-
   AllConcreteImplementations(_, ?staticType),

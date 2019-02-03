@@ -28,8 +28,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
 	static final String HASH_ALGO = "SHA-256"
 	static final availableConfigurations = [
-			"twophase-A"                         : "TwoPhaseAConfiguration",
-			"twophase-B"                         : "TwoPhaseBConfiguration",
 			"dependency-analysis"                : "TwoObjectSensitivePlusHeapConfiguration",
 			"context-insensitive"                : "ContextInsensitiveConfiguration",
 			"context-insensitive-plus"           : "ContextInsensitivePlusConfiguration",
@@ -364,11 +362,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
 		}
 
-		if (options.REFLECTION_METHOD_HANDLES.value &&
-			!options.REFLECTION_CLASSIC.value && !options.LIGHT_REFLECTION_GLUE.value) {
-			throw new RuntimeException("Error: option " + options.REFLECTION_METHOD_HANDLES.name + " needs one of: " +
-                                       "--${options.REFLECTION_CLASSIC.name} --${options.LIGHT_REFLECTION_GLUE.name}")
-
+		if (options.REFLECTION_METHOD_HANDLES.value && !options.REFLECTION_CLASSIC.value) {
 			println("Option --" + options.REFLECTION_METHOD_HANDLES.name + " turns on --" + options.REFLECTION_CLASSIC.name)
 			options.REFLECTION_CLASSIC.value = true
 		}
