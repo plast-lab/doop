@@ -39,7 +39,7 @@ public class PythonRepresentation {
      */
     private Map<String, Integer> _handlerNumOfScopes = new ConcurrentHashMap<>();
 
-    private SortedSet<String> packages = Collections.synchronizedSortedSet(new TreeSet<>());
+
     private String _fileName;
     // Make it a trivial singleton.
     private static PythonRepresentation _repr;
@@ -59,18 +59,6 @@ public class PythonRepresentation {
         return "<class " + className + ">";
     }
 
-    boolean packageExists(String pack){
-        return packages.contains(pack);
-    }
-
-    void addPackage(String pack){
-        packages.add(pack);
-    }
-
-    String getRoot(){
-        //return packages.first();
-        return packages.last();
-    }
 
     String classConstant(TypeReference t) {
         return "<class " + fixType(t) + ">";
