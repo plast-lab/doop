@@ -9,7 +9,7 @@ import java.util.*;
 
 public class _2TypeContextComputer extends ContextComputer {
     private Set<Method> visited = null;
-
+    private Map<Method, Set<List<Type>>> methodToContextMap = new HashMap<>();
 
     _2TypeContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
         super(pta, oag, worstCaseContextComputer);
@@ -33,9 +33,12 @@ public class _2TypeContextComputer extends ContextComputer {
         else {
             return this.worstCaseContextComputer.contextNumberOf(method);
         }
+        Set<List<Type>> totalContexts = getContexts(method);
 
-        long contextNumber = getContexts(method).size();
-        return  contextNumber > 0? contextNumber : 1;
+        if (!methodToContextMap.containsKey(method))
+            methodToContextMap.put(method, totalContexts);
+
+        return  totalContexts.size() > 0? totalContexts.size() : 1;
     }
 
     private Set<List<Type>> getContexts(Method method) {
@@ -44,6 +47,9 @@ public class _2TypeContextComputer extends ContextComputer {
         if (method.isImplicitReachable()) {
             contexts.add(Arrays.asList(super.pta.typeFactory.get("<<immutable context>>"), super.pta.typeFactory.get("<<immutable context>>")));
         }
+        if (methodToContextMap.containsKey(method))
+            return methodToContextMap.get(method);
+
         if (method.isInstance()) {
             visited.add(method);
             for (Obj recv : pta.receiverObjectsOf(method)) {

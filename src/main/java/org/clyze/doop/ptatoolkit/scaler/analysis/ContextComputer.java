@@ -17,7 +17,6 @@ public abstract class ContextComputer {
     final ObjectAllocationGraph oag;
     private Map<Method, Long> method2ctxNumber = new HashMap<>();
     ContextComputer worstCaseContextComputer;
-    Map<Method, Set<List<Obj>>> methodToContextMap = new HashMap<>();
     PrintWriter writer = null;
 
     ContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag) {

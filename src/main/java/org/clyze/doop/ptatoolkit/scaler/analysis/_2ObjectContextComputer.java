@@ -11,6 +11,8 @@ import java.util.*;
 
 public class _2ObjectContextComputer extends ContextComputer {
     private Set<Method> visited = null;
+    private Map<Method, Set<List<Obj>>> methodToContextMap = new HashMap<>();
+
 
     _2ObjectContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag) {
         super(pta, oag);
@@ -43,7 +45,8 @@ public class _2ObjectContextComputer extends ContextComputer {
             writer.println(method + "\t" + contexts.get(0) + "\t" + contexts.get(1));
 
         }
-        methodToContextMap.put(method, totalContexts);
+        if (!methodToContextMap.containsKey(method))
+            methodToContextMap.put(method, totalContexts);
 
         long contextNumber = totalContexts.size();
 
@@ -77,7 +80,6 @@ public class _2ObjectContextComputer extends ContextComputer {
                     contexts.add(Arrays.asList(super.pta.objFactory.get("<<immutable hcontext>>"), super.pta.objFactory.get(recv.toString())));
                 }
             }
-            methodToContextMap.put(method, contexts);
         }
         else {
             if (method.toString().contains("<java.util.Arrays: int[] copyOf(int[],int)>"))
