@@ -48,12 +48,19 @@
 
 //-----------------------------------------------------------------------------
 
+.type Package
+.decl isPackage(package:Package)
+
+.decl Package_DeclaringPackage(?pack: Package, ?packageName:symbol, ?declPackage: Package)
+
+//-----------------------------------------------------------------------------
+
 .type Module = File
 .type Scope = File | Function | Module
 
 .decl isModule(?module:Module)
 .decl isModeledModule(?module:Module)
-.decl Module_DeclaringModule(?module: Module, ?declModule: Module)
+.decl Module_DeclaringPackage(?module: Module, ?moduleName:symbol, ?declPackage: Package)
 
 
 //-----------------------------------------------------------------------------

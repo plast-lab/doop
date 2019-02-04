@@ -3,15 +3,57 @@
 .decl VarPointsToModule(?hctx:configuration.HContext, ?val: Value, ?ctx:configuration.Context, ?var:Var)
 
 .decl VarPointsToFunction(?hctx:configuration.HContext, ?val: Value, ?ctx:configuration.Context, ?var:Var)
+
+.decl PackageCanImportPackage(?package:Package, ?importName:symbol, ?importedPackage:Package)
+
+.decl ModuleCanImportModule(?importingModule:Module, ?importName:symbol, ?importedModule:Module)
+
+
 .output VarPointsToFunction
 .output isFunction
 
 .output VarPointsToModule
 .output isModule
+.output PackageCanImportPackage
+.output ModuleCanImportModule
+
+PackageCanImportPackage(?importingPackage, ?importName, ?importedPackage):-
+  Package_DeclaringPackage(?importedPackage, ?importName, ?importingPackage).
+
+PackageCanImportPackage(?importingPackage, ?importName, ?importedPackage):-
+  PackageCanImportPackage(?importingPackage, ?tempName, ?tempPackage),
+  Package_DeclaringPackage(?importedPackage, ?name, ?tempPackage),
+  ?importName = cat(?tempName, cat( ".", ?name)).
+
+ModuleCanImportModule(?importingModule, ?importName, ?importedModule):-
+  Module_DeclaringPackage(?importingModule, _, ?package),
+  Module_DeclaringPackage(?importedModule, ?importName, ?package),
+  ?importedModule != ?importingModule.
+
+ModuleCanImportModule(?importingModule, ?importName, ?importedModule):-
+  Module_DeclaringPackage(?importingModule, _, ?importingPackage),
+  PackageCanImportPackage(?importingPackage, ?importName, ?importedPackage),
+  Module_DeclaringPackage(?importedModule, "__init__", ?importedPackage).
+
+ModuleCanImportModule(?importingModule, ?importName, ?importedModule):-
+  Module_DeclaringPackage(?importingModule, _, ?importingModulePackage),
+  PackageCanImportPackage(?importingModulePackage, ?importToPackName, ?importedModulePackage),
+  Module_DeclaringPackage(?importedModule, ?moduleName, ?importedModulePackage),
+  ?importName = cat(?importToPackName, cat( ".", ?moduleName)).
 
 VarPointsToModule(?hctx, ?module, ?ctx, ?var):-
   VarPointsTo(?hctx, ?module, ?ctx, ?var),
   isModule(?module).
+
+VarPointsTo(?hctx, ?module, ?ctx, ?var):-
+  ReachableContext(?ctx, ?function),
+  Instruction_Function(?insn, ?function),
+  Function_Module(?function, ?importingModule),
+  isImportInstruction(?insn),
+  ImportInsn_ModuleName(?insn, ?importName),
+  AssignInstruction_To(?insn, ?var),
+  ModuleCanImportModule(?importingModule, ?importName, ?module),
+  isImmutableHContext(?hctx).
 
 VarPointsTo(?hctx, ?module, ?ctx, ?var):-
   Reachable(?function),
@@ -21,7 +63,7 @@ VarPointsTo(?hctx, ?module, ?ctx, ?var):-
   ImportInsn_ModuleName(?insn, ?name),
   AssignInstruction_To(?insn, ?var),
   ?module = cat(cat("<",?name),">"),
-  isModule(?module),
+  isModeledModule(?module),
   isImmutableHContext(?hctx).
 
 //TODO: REVIEW THIS, USING IMPORT FOR THE DEFAULT IMPORT FUNCTIONS OF WALA FOR NOW

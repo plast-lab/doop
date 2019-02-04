@@ -392,14 +392,27 @@ Function_Module(?function, ?file),
 Function_DeclaredInFile(?function, ?file):-
   _Function(?function, ?simplename, ?declaringType, ?arity, ?file).
 
-.decl _File_DeclaringPackage(?file:symbol, ?declModule:symbol)
+//File - Declaring Package
+
+.decl _File_DeclaringPackage(?file:symbol, ?name:symbol, ?declPackage:symbol)
 .input _File_DeclaringPackage(IO="file", filename="File-DeclaringPackage.facts", delimiter="\t")
 
 isFile(?file),
 isModule(?file),
-isModule(?module),
-Module_DeclaringModule(?file, ?module):-
-  _File_DeclaringPackage(?file, ?module).
+isPackage(?declPackage),
+Module_DeclaringPackage(?file, ?name, ?declPackage):-
+  _File_DeclaringPackage(?file, ?name, ?declPackage).
+
+
+//File - Declaring Package
+
+.decl _Package_DeclaringPackage(?file:symbol, ?name:symbol, ?declPackage:symbol)
+.input _Package_DeclaringPackage(IO="file", filename="Package-DeclaringPackage.facts", delimiter="\t")
+
+isPackage(?pack),
+isPackage(?declPackage),
+Package_DeclaringPackage(?pack, ?name, ?declPackage):-
+  _Package_DeclaringPackage(?pack, ?name, ?declPackage).
 
 
 // StoreInstanceField
