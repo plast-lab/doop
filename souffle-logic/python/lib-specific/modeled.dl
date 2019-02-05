@@ -17,7 +17,8 @@ GlobalNamePointsTo(?hctx, ?mockVal, ?declModule, ?name):-
   isImmutableHContext(?hctx).
 
 isModule(?module),
-Module_DeclaringModule(?module, ?declModule),
+isModeledModule(?module),
+//Module_DeclaringModule(?module, ?declModule),
 GlobalNamePointsTo(?hctx, ?module, ?declModule, ?name):-
   ModeledModule(?module, ?name, ?declModule),
   isImmutableHContext(?hctx).

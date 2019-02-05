@@ -26,8 +26,7 @@ import org.clyze.doop.python.utils.PythonPredicateFile;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.python.utils.PythonPredicateFile.*;
@@ -43,6 +42,8 @@ public class PythonFactWriter {
     //Used in writeType()
     private Map<String, String> _typeMap;
 
+    private SortedSet<String> packages;
+
     //Used for logging various messages
     protected Log logger;
     PythonFactWriter(PythonDatabase db) {
@@ -50,6 +51,7 @@ public class PythonFactWriter {
         _rep = PythonRepresentation.getRepresentation();
         _typeMap = new ConcurrentHashMap<>();
         logger =  LogFactory.getLog(getClass());
+        packages = Collections.synchronizedSortedSet(new TreeSet<>());
     }
 
     private String str(int i) {
@@ -71,8 +73,14 @@ public class PythonFactWriter {
         return result;
     }
 
+    void writeRootFolder(){
+        _db.add(PROJECT_ROOT_FOLDER, getRoot());
+    }
+
     String writeMethod(IMethod m) {
         String result = _rep.signature(m);
+        String simpleName = _rep.simpleName(m);
+        String sourceFileName = _rep.sourceFileName(m);
         String par = result;
         if(par.contains(":"))
             par = result.substring(0, result.lastIndexOf(":")).concat(">");
@@ -107,10 +115,33 @@ public class PythonFactWriter {
         }
 
         _db.add(STRING_RAW, result, result);
-        _db.add(FUNCTION, result, _rep.simpleName(m), par, arity, _rep.sourceFileName(m));
-        if(_rep.simpleName(m).startsWith("comprehension"))
+        _db.add(FUNCTION, result, simpleName, par, arity, sourceFileName);
+
+        if(simpleName.startsWith("comprehension"))
             _db.add(COMPREHENSION_FUNCTION, result);
+
+        if(result.equals(sourceFileName))
+            writeGlobalFunction(m);
+
         return result;
+    }
+
+    void writeGlobalFunction(IMethod globalFun){
+        String funOrFileRep = _rep.signature(globalFun);
+        String fileDeclaredInFolder = funOrFileRep.substring(0, funOrFileRep.lastIndexOf("/")).concat(">");
+        String fileName = funOrFileRep.substring(funOrFileRep.lastIndexOf("/") + 1, funOrFileRep.length() - 4);
+
+        _db.add(GLOBAL_FUNCTION, funOrFileRep);
+        _db.add(FILE_DECLAREDING_PACKAGE, funOrFileRep, fileName, fileDeclaredInFolder);
+
+        System.out.println("PACKAGE " + fileDeclaredInFolder + " RESULT " + packageExists(fileDeclaredInFolder));
+        if(! packageExists(fileDeclaredInFolder)){
+            addPackage(fileDeclaredInFolder);
+            String declFolderDeclFolder = fileDeclaredInFolder.substring(0, fileDeclaredInFolder.lastIndexOf("/")).concat(">");
+            String declFolderName = fileDeclaredInFolder.substring(fileDeclaredInFolder.lastIndexOf("/") + 1, fileDeclaredInFolder.length() - 1);
+            _db.add(PACKAGE_DECLAREDING_PACKAGE, fileDeclaredInFolder, declFolderName, declFolderDeclFolder);
+        }
+
     }
 
     public String writeField(IField f) {
@@ -650,5 +681,18 @@ public class PythonFactWriter {
     void writeError(PythonPredicateFile predFile, String fileName, String... args)
     {
         _db.add(predFile, fileName, args);
+    }
+
+    boolean packageExists(String pack){
+        return packages.contains(pack);
+    }
+
+    void addPackage(String pack){
+        packages.add(pack);
+    }
+
+    String getRoot(){
+        //return packages.first();
+        return packages.last();
     }
 }

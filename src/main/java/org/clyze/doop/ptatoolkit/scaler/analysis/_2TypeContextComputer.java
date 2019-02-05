@@ -9,7 +9,7 @@ import java.util.*;
 
 public class _2TypeContextComputer extends ContextComputer {
     private Set<Method> visited = null;
-
+    private Map<Method, Set<List<Type>>> methodToContextMap = new HashMap<>();
 
     _2TypeContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
         super(pta, oag, worstCaseContextComputer);
@@ -33,17 +33,23 @@ public class _2TypeContextComputer extends ContextComputer {
         else {
             return this.worstCaseContextComputer.contextNumberOf(method);
         }
+        Set<List<Type>> totalContexts = getContexts(method);
 
-        long contextNumber = getContexts(method).size();
-        return  contextNumber > 0? contextNumber : 1;
+        if (!methodToContextMap.containsKey(method))
+            methodToContextMap.put(method, totalContexts);
+
+        return  totalContexts.size() > 0? totalContexts.size() : 1;
     }
 
     private Set<List<Type>> getContexts(Method method) {
         Set<List<Type>> contexts = new HashSet<>();
 
         if (method.isImplicitReachable()) {
-            contexts.add(Arrays.asList(super.pta.typeFactory.get("immutable context"), super.pta.typeFactory.get("immutable context")));
+            contexts.add(Arrays.asList(super.pta.typeFactory.get("<<immutable context>>"), super.pta.typeFactory.get("<<immutable context>>")));
         }
+        if (methodToContextMap.containsKey(method))
+            return methodToContextMap.get(method);
+
         if (method.isInstance()) {
             visited.add(method);
             for (Obj recv : pta.receiverObjectsOf(method)) {
@@ -52,11 +58,12 @@ public class _2TypeContextComputer extends ContextComputer {
                     for (Obj pred : preds) {
                         // Too strict, the allocating method of the predecessor method of the receiver may be analyzed with 2-object
                         // contexts.add(Arrays.asList(pta.declaringAllocationTypeOf(pred), pta.declaringAllocationTypeOf(recv)));
-                        Type mockTypeForObject = pta.typeFactory.get("object as type " + pred);
-                        contexts.add(Arrays.asList(mockTypeForObject, pta.declaringAllocationTypeOf(recv)));
+                        contexts.add(Arrays.asList(pta.declaringAllocationTypeOf(pred), pta.declaringAllocationTypeOf(recv)));
                     }
-                    Type immutableContext = pta.typeFactory.get("immutable context");
+                    Type immutableContext = pta.typeFactory.get("<<immutable context>>");
                     contexts.add(Arrays.asList(immutableContext, pta.declaringAllocationTypeOf(recv)));
+                    Type immutableHContext = pta.typeFactory.get("<<immutable hcontext>>");
+                    contexts.add(Arrays.asList(immutableHContext, pta.declaringAllocationTypeOf(recv)));
                 } else {
                     // without allocator, back to 1-type
                     contexts.add(Collections.singletonList(
@@ -70,7 +77,7 @@ public class _2TypeContextComputer extends ContextComputer {
                 if (!visited.contains(caller)) {
                     visited.add(caller);
                     contexts.addAll(getContexts(caller));
-                    Type immutableContextComponent = pta.typeFactory.get("immutable context");
+                    Type immutableContextComponent = pta.typeFactory.get("<<immutable context>>");
                     contexts.add(Arrays.asList(immutableContextComponent, immutableContextComponent));
                 }
             }

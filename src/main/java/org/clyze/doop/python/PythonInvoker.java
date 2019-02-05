@@ -134,6 +134,7 @@ public class PythonInvoker {
                 factWriter.writeError(PythonPredicateFile.ERROR_OR_EXCEPTON, inputFile, t.toString());
             }
         }
+        factWriter.writeRootFolder();
         System.out.println("Failed for " + numOfFailures + " out of " + parameters._inputs.size() + " python script files.");
         System.out.println("Empty Class Hierarchy for " + numOfEmptyCha + " out of " + parameters._inputs.size() + " python script files.");
 

@@ -49,9 +49,12 @@ public class ObjectAllocationGraph implements DirectedGraph<Obj> {
         pta.allObjects().forEach(obj -> {
             Set<Method> methods = new HashSet<>();
             Queue<Method> queue = new LinkedList<>(pta.methodsInvokedOn(obj));
+
             while (!queue.isEmpty()) {
                 Method method = queue.poll();
                 methods.add(method);
+
+                /* Propagate to all static methods called by method invoked on obj */
                 pta.calleesOf(method).stream()
                         .filter(m -> m.isStatic() && !methods.contains(m))
                         .forEach(queue::offer);

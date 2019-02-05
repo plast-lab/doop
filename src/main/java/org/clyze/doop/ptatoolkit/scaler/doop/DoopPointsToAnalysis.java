@@ -152,24 +152,6 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
         buildMethodTotalVPTMap(mtdFactory);
     }
 
-
-//    private void initScalerRankPostProcessing() {
-//        TypeFactory typeFactory = new TypeFactory();
-//
-//        varFactory = new VariableFactory();
-//        objFactory = new ObjFactory();
-//
-//        MethodFactory mtdFactory = new MethodFactory(db, varFactory);
-//        Set<String> interestingVarNames = new HashSet<>();
-//
-//        buildPointsToSet(varFactory, objFactory, interestingVarNames);
-//        buildMethodNeighborsMap(mtdFactory);
-//        buildCalleesAndCallers(mtdFactory);
-//
-//        buildMethodTotalVPTMap(mtdFactory);
-//        buildDeclaringType(mtdFactory, typeFactory);
-//    }
-
     /**
      * Build points-to sets of interesting variables. This method also computes
      * the size of points-to set for each variable (in instance method).

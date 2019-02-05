@@ -28,8 +28,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
 	static final String HASH_ALGO = "SHA-256"
 	static final availableConfigurations = [
-			"twophase-A"                         : "TwoPhaseAConfiguration",
-			"twophase-B"                         : "TwoPhaseBConfiguration",
 			"dependency-analysis"                : "TwoObjectSensitivePlusHeapConfiguration",
 			"context-insensitive"                : "ContextInsensitiveConfiguration",
 			"context-insensitive-plus"           : "ContextInsensitivePlusConfiguration",
@@ -367,10 +365,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		if (options.REFLECTION_METHOD_HANDLES.value &&
 			!options.REFLECTION_CLASSIC.value && !options.LIGHT_REFLECTION_GLUE.value) {
 			throw new RuntimeException("Error: option " + options.REFLECTION_METHOD_HANDLES.name + " needs one of: " +
-                                       "--${options.REFLECTION_CLASSIC.name} --${options.LIGHT_REFLECTION_GLUE.name}")
-
-			println("Option --" + options.REFLECTION_METHOD_HANDLES.name + " turns on --" + options.REFLECTION_CLASSIC.name)
-			options.REFLECTION_CLASSIC.value = true
+									   "--${options.REFLECTION_CLASSIC.name} --${options.LIGHT_REFLECTION_GLUE.name}")
 		}
 
 		if (options.REFLECTION_CLASSIC.value) {
@@ -472,6 +467,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 					options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
 					options.REFLECTION_REFINED_OBJECTS.value) {
 				log.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
+			} else if (options.LIGHT_REFLECTION_GLUE.value) {
+				log.warn "\nWARNING: Handling of simple Java reflection patterns only!\n"
 			} else if (options.TAMIFLEX.value) {
 				log.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
 			} else {

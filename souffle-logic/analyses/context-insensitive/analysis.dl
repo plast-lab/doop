@@ -28,20 +28,14 @@
     * used in. For a context-insensitive pointer analysis we just
     * generate constant contexts.
     */
-
-  #define UNIQUE_CONTEXT  "<<unique-context>>"
-  #define UNIQUE_HCONTEXT "<<unique-hcontext>>"
-
   RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
     RecordContextRequest(?ctx, ?value, ?var),
-    ?hctx = UNIQUE_HCONTEXT.
+    isImmutableHContext(?hctx).
 
-  InitContextResponse(?s, ?ctx) :-
-    ?ctx = UNIQUE_CONTEXT,
+  InitContextResponse(?s, ?s) :-
     InitContextRequest(?s).
 
-  InitHContextResponse(?s, ?hctx) :-
-    ?hctx = UNIQUE_HCONTEXT,
+  InitHContextResponse(?s, ?s) :-
     InitHContextRequest(?s).
 
   #ifdef HEAPDLS

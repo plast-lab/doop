@@ -15,7 +15,10 @@ import org.clyze.doop.common.SessionCounter;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.python.utils.PythonUtils.fixNewType;
@@ -35,6 +38,7 @@ public class PythonRepresentation {
      * We use it when we need to produce Exception_Handler_Previous facts and need to find the last exception handler of a block
      */
     private Map<String, Integer> _handlerNumOfScopes = new ConcurrentHashMap<>();
+
 
     private String _fileName;
     // Make it a trivial singleton.
