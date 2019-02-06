@@ -12,24 +12,15 @@ RunningThread(?hctx, ?value) :-
  *
  * TODO: generalize to a redirect virtual method invocation. This takes too
  * much code.
+ * anantoni: In order to avoid creating a fake invocation to Thread.run we just
+ * propagate the callee context of Thread.start(). This may lead to imprecision.
+ * This would be equivalent to creating a context requestusing the receiver value
+ * of Thread.start()/@this and the invocation to Thread.start().
  *
  * In JRE 1.3 and JRE 1.4 the Thread.start() method itself is native. In JRE
  * 1.5 and JRE 1.6 Thread.start() is defined in Java and there is native method
  * start0.
  */
-configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?run) :-
-    FakeInvocation_ThreadStart(?hctx, ?value, ?invo),
-#if defined(JRE13) || defined(JRE14)
-    ?start = "<java.lang.Thread: void start()>",
-#else
-    ?start = "<java.lang.Thread: void start0()>",
-#endif
-    ThisVar(?start, ?startThis),
-    VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis),
-    Value_Type(?value, ?valuetype),
-    basic.MethodLookup("run", "void()", ?valuetype, ?run).
- 
-isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?run),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?runThis),
 RunningThread(?hctx, ?value) 
@@ -40,13 +31,11 @@ RunningThread(?hctx, ?value)
     ?start = "<java.lang.Thread: void start0()>",
 #endif
     ThisVar(?start, ?startThis),
+    CallGraphEdge(?callerCtx, _, ?calleeCtx, ?start),
     VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis),
     Value_Type(?value, ?valuetype),
     basic.MethodLookup("run", "void()", ?valuetype, ?run),
-    ThisVar(?run, ?runThis), 
-    configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?run),
-    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
-
+    ThisVar(?run, ?runThis).
 /**
  * Thread.currentThread() return running threads
  *
@@ -160,13 +149,3 @@ PlusMethodInvocation(?invo) :-
 FakeInvocation_SystemThreadGroupInit(?invo),
 PlusMethodInvocation(?invo) :-
   ?invo = "<system-thread-group-init>/0".
-
-FakeInvocation_ThreadStart(?hctx, ?value, cat(cat("<thread-start ", ?value), ">")),
-PlusMethodInvocation(cat("thread-start ", ?value)) :-
-  #if defined(JRE13) || defined(JRE14)
-      ?start = "<java.lang.Thread: void start()>",
-  #else
-      ?start = "<java.lang.Thread: void start0()>",
-  #endif
-      ThisVar(?start, ?startThis),
-      VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis).
