@@ -1,5 +1,4 @@
 .decl PossibleNativeCodeTargetMethod(?method:Method, ?file:symbol)
-.output PossibleNativeCodeTargetMethod
 
 PossibleNativeCodeTargetMethod(?method, ?file) :-
   _NativeMethodTypeCandidate(?file, ?descriptor),
