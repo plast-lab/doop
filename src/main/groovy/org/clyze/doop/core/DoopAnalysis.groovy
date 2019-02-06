@@ -495,7 +495,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     } else {
                         redo = true
                         factGenRun += 1
-                        println "Errors happened, restarting fact generation (run #${factGenRun})."
+                        println "Errors occurred, restarting fact generation (run #${factGenRun})."
                     }
                     // We cannot add to current facts: non-deterministic names
                     // from different runs blow up relations (e.g., VarPointsTo).
