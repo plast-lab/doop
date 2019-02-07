@@ -370,3 +370,8 @@ VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return) :-
   (isClassType(?t) ; isArrayType(?t)),
   isImmutableHContext(?hctx).
 #endif // SIMULATE_NATIVE_RETURNS
+
+// Reachability for methods discovered by the native code scanner.
+ReachableContext(?immCtx, ?method) :-
+  basic.PossibleNativeCodeTargetMethod(?method, _),
+  isImmutableContext(?immCtx).

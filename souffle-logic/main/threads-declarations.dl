@@ -8,4 +8,4 @@
 
 .decl FakeInvocation_SystemThreadGroupInit(?invo: MethodInvocation)
 
-.decl FakeInvocation_ThreadStart(?hctx:configuration.HContext, ?value:Value, ?invo:MethodInvocation)
+.decl FakeInvocation_ThreadStart(?invo: MethodInvocation)

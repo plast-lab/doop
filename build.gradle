@@ -69,7 +69,7 @@ dependencies {
 
     compile "org.clyze:clue-common:3.8.+",
             "org.clyze:deepdoop:0.9.+",
-            "org.codehaus.groovy:groovy-all:2.4.13:indy",       // Groovy
+            "org.codehaus.groovy:groovy-all:2.5.5",             // Groovy
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
@@ -123,7 +123,7 @@ dependencies {
     // JimpleParser
     antlr   "org.antlr:antlr4:4.5.1-1"
     compile "org.antlr:antlr4-runtime:4.5.1-1"
-    testCompile "org.spockframework:spock-core:1.0-groovy-2.4"
+    testCompile "org.spockframework:spock-core:1.2-groovy-2.5"
 }
 
 applicationDistribution.from(file("$projectDir/logic")) {
