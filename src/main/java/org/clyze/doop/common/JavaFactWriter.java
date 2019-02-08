@@ -206,6 +206,10 @@ public abstract class JavaFactWriter {
         _db.add(IF, insn, str(index), str(indexTo), methodId);
     }
 
+    protected void writeIfConstant(String insn, String branch, String cons) {
+        _db.add(IF_CONSTANT, insn, branch, cons);
+    }
+
     protected void writeIfVar(String insn, String branch, String local) {
         _db.add(IF_VAR, insn, branch, local);
     }
@@ -220,6 +224,10 @@ public abstract class JavaFactWriter {
 
     protected void writeAssignOperFrom(String insn, String branch, String local) {
         _db.add(ASSIGN_OPER_FROM, insn, branch, local);
+    }
+
+    protected void writeAssignOperFromConstant(String insn, String branch, String value) {
+        _db.add(ASSIGN_OPER_FROM_CONSTANT, insn, branch, value);
     }
 
     protected void writeInvokedynamic(String insn, int index, String bootSig, String dynName, String dynRetType, int dynArity, String dynParamTypes, int tag, String methodId) {

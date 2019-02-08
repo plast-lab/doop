@@ -164,10 +164,9 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 
 		if (options.SYMBOLIC_REASONING.value) {
-			def symbolicReasoningPath ="${Doop.souffleAddonsPath}/symbolic-reasoning"
-			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/const-type-infer.dl")
-			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/constant-folding.dl")
-            //cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/constant-propagation.dl")
+            def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
+            cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
+            cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/arithmetic-axioms.dl")
 		}
 
 		String openProgramsRules = options.OPEN_PROGRAMS.value
