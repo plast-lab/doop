@@ -145,7 +145,7 @@ class DoopAddons {
             setter.invoke(null, sep);
             System.err.println("Using separator for fresh variables in Soot: " + sep);
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-            ex.printStackTrace();
+            // ex.printStackTrace();
             System.err.println("Using default fresh variable separator in Soot.");
         }
     }
