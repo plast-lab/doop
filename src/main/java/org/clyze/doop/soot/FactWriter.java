@@ -181,14 +181,11 @@ class FactWriter extends JavaFactWriter {
 
     void writeAssignInvoke(SootMethod inMethod, Stmt stmt, Local to, InvokeExpr expr, Session session) {
         String insn = writeInvokeHelper(inMethod, stmt, expr, session);
-
         _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
     }
 
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session) {
         String heap = _rep.heapAlloc(m, expr, session);
-
-
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
 
         if (expr instanceof NewArrayExpr) {
