@@ -99,6 +99,7 @@ public class Main {
             Options.v().set_src_prec(Options.src_prec_class);
 
         Scene scene = Scene.v();
+        DoopAddons.setSeparator();
         List<String> inputs = sootParameters.getInputs();
         for (String input : inputs) {
             String inputFormat = input.endsWith(".jar")? "archive" : "file";
