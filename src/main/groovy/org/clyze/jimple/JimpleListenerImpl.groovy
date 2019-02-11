@@ -109,7 +109,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				"<${klass.doopId}: $type $name>", //doopId
 				type,
 				klass.doopId, //declaringClassDoopId
-				ctx.modifier().any() { hasToken(it, "static") }
+				ctx.modifier().any() { it.text == "static" }
 		)
 	}
 
