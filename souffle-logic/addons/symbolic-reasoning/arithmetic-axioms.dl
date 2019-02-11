@@ -1,0 +1,33 @@
+.decl Equal(?expr1: Expr, ?expr2: Expr)
+.output Equal
+
+Equal(?expr1, ?expr2) :-
+    ResolveExpr(_, ?var1, ?expr1),
+    ResolveExpr(_, ?var2, ?expr2),
+    ?var1 != ?var2,
+    ?expr1 = ?expr2.
+
+// commutative property
+Equal(?expr1, ?expr2) :-
+    ResolveExpr(_, ?var1, ?expr1),
+    ResolveExpr(_, ?var2, ?expr2),
+    ?var1 != ?var2,
+    ?expr1 = [?op, ?type, ?exprL, ?exprR],
+    ?expr2 = [?op, ?type, ?exprR, ?exprL].
+
+// associative property
+Equal(?expr1, ?expr2) :-
+    ResolveExpr(_, ?var1, ?expr1),
+    ResolveExpr(_, ?var2, ?expr2),
+    ?var1 != ?var2,
+    ?expr1 = [?op, ?type, [?opx, ?type, ?exprLL, ?exprLR], ?exprR],
+    ?expr2 = [?op, ?type, ?exprLL, [?opx, ?type, ?exprLR, ?exprR]].
+    
+// distributive property
+Equal(?expr1, ?expr2) :-
+    ResolveExpr(_, ?var1, ?expr1),
+    ResolveExpr(_, ?var2, ?expr2),
+    ?var1 != ?var2,
+    ?opX = "*", ?opY = "+",
+    ?expr1 = [?opX, ?type, ?exprX, [?opY, ?type, ?exprRx, ?exprRy]],
+    ?expr2 = [?opY, ?type, [?opX, ?type, ?exprX, ?exprRx], [?opX, ?type, ?exprX, ?exprRy]].

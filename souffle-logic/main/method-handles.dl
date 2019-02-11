@@ -8,7 +8,6 @@
 .decl MethodType_ParamTypes(?mt:MethodType, ?paramTypes:ParamTypes)
 .decl MethodType_ReturnType(?mt:MethodType, ?retType:Type)
 .decl MethodType_Arity(?mt:MethodType, ?arity:number)
-.decl Method_MethodType(?method:Method, ?mt:MethodType)
 
 // Relation to mark all method types created initially.
 .decl isInitialMethodType(?mt:MethodType)
@@ -23,6 +22,8 @@ MethodType_ParamTypes(?mt, ?paramTypes) :- MethodTypeConstant_ParamTypes(?mt, ?p
   cat("method type (", cat(paramTypes, cat(")", retType)))
 
 #ifdef REFLECTION_METHOD_HANDLES
+
+.decl Method_MethodType(?method:Method, ?mt:MethodType)
 
 // For every method, create a method type. We treat static and non-static
 // methods similarly here, since the method types without receivers may still be

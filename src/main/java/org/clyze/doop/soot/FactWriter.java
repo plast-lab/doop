@@ -539,14 +539,20 @@ class FactWriter extends JavaFactWriter {
             else if (condition instanceof LtExpr)
                 writeOperatorAt(insn, "<");
 
-            // TODO: create table entry for constants (?)
             if (condition.getOp1() instanceof Local) {
                 Local op1 = (Local) condition.getOp1();
                 writeIfVar(insn, L_OP, _rep.local(m, op1));
+            } else if (condition.getOp1() instanceof NumericConstant) {
+                NumericConstant op1 = (NumericConstant) condition.getOp1();
+                writeIfConstant(insn, L_OP, op1.toString());
             }
+
             if (condition.getOp2() instanceof Local) {
                 Local op2 = (Local) condition.getOp2();
                 writeIfVar(insn, R_OP, _rep.local(m, op2));
+            } else if (condition.getOp2() instanceof NumericConstant) {
+                NumericConstant op2 = (NumericConstant)condition.getOp2();
+                writeIfConstant(insn, R_OP, op2.toString());
             }
         }
     }
@@ -901,11 +907,17 @@ class FactWriter extends JavaFactWriter {
         if (right.getOp1() instanceof Local) {
             Local op1 = (Local) right.getOp1();
             writeAssignOperFrom(insn, L_OP, _rep.local(m, op1));
+        } else if (right.getOp1() instanceof NumericConstant) {
+            NumericConstant cons = (NumericConstant) right.getOp1();
+            writeAssignOperFromConstant(insn, L_OP, cons.toString());
         }
 
         if (right.getOp2() instanceof Local) {
             Local op2 = (Local) right.getOp2();
             writeAssignOperFrom(insn, R_OP, _rep.local(m, op2));
+        } else if (right.getOp2() instanceof NumericConstant) {
+            NumericConstant cons = (NumericConstant) right.getOp2();
+            writeAssignOperFromConstant(insn, R_OP, cons.toString());
         }
     }
 

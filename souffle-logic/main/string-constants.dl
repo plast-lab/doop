@@ -503,6 +503,40 @@ string_upper("8", "8"). string_upper("9", "9").
     char = "."; \
     char = "$")))
 
+// Intermediate relations to avoid substr() warnings (too many warnings
+// may stall the executor that Doop uses to run the analysis binary).
+.decl ValidSuffixForType(?className:symbol, ?index:number, ?length:number)
+ValidSuffixForType(?className, ?index, ?length) :-
+  isReferenceType(?className),
+  ClassIterationTrick(?index),
+  ?nameLength = strlen(?className),
+  ?length = ?nameLength - ?index,
+  ?length > 0.
+.decl ValidSuffixForMethod(?method:Method, ?methodName:symbol, ?index:number, ?length:number)
+ValidSuffixForMethod(?method, ?methodName, ?index, ?length) :-
+  Method_SimpleName(?method, ?methodName),
+  MemberSuffixIterationTrick(?index),
+  ?nameLength = strlen(?methodName),
+  ?length = ?nameLength - ?index,
+  ?length > 0.
+.decl ValidSuffixForField(?field:Field, ?fieldName:symbol, ?index:number, ?length:number)
+ValidSuffixForField(?field, ?fieldName, ?index, ?length) :-
+  Field_SimpleName(?field, ?fieldName),
+  MemberSuffixIterationTrick(?index),
+  ?nameLength = strlen(?fieldName),
+  ?length = ?nameLength - ?index,
+  ?length > 0.
+.decl ValidPrefixForMethod(?method:Method, ?methodName:symbol, ?length:number)
+ValidPrefixForMethod(?method, ?methodName, ?length) :-
+  Method_SimpleName(?method, ?methodName),
+  MemberPrefixIterationTrick(?length),
+  strlen(?methodName) > ?length.
+.decl ValidPrefixForField(?field:Field, ?fieldName:symbol, ?length:number)
+ValidPrefixForField(?field, ?fieldName, ?length) :-
+  Field_SimpleName(?field, ?fieldName),
+  MemberPrefixIterationTrick(?length),
+  strlen(?fieldName) > ?length.
+
 .decl ClassNameSuffix(?suffix:symbol, ?classname:ReferenceType)
 .decl MethodNameSuffix(?suffix:symbol, ?sig:Method)
 .decl MethodNamePrefix(?prefix:symbol, ?sig:Method)
@@ -510,34 +544,24 @@ string_upper("8", "8"). string_upper("9", "9").
 .decl FieldNamePrefix(?prefix:symbol, ?sig:Field)
 
 // Precompute proper suffixes. Crucial for efficiency.
-ClassNameSuffix(substr(?className, strlen(?className) - ?length, ?length), ?className) :-
-  isReferenceType(?className),
-  ClassIterationTrick(?length),
-  strlen(?className) > ?length,
-  StringChangesCaseBeforePosition(strlen(?className) - ?length, ?className).
+ClassNameSuffix(substr(?className, ?index, ?length), ?className) :-
+  ValidSuffixForType(?className, ?index, ?length),
+  StringChangesCaseBeforePosition(?index, ?className).
 
-MethodNameSuffix(substr(?methodName, strlen(?methodName) - ?length, ?length), ?sig) :-
-  Method_SimpleName(?sig, ?methodName),
-  MemberSuffixIterationTrick(?length),
-  strlen(?methodName) > ?length,
-  StringChangesCaseBeforePosition(strlen(?methodName) - ?length, ?methodName).
+MethodNameSuffix(substr(?methodName, ?index, ?length), ?sig) :-
+  ValidSuffixForMethod(?sig, ?methodName, ?index, ?length),
+  StringChangesCaseBeforePosition(?index, ?methodName).
 
 MethodNamePrefix(substr(?methodName, 0, ?length), ?sig) :-
-  Method_SimpleName(?sig, ?methodName),
-  MemberPrefixIterationTrick(?length),
-  strlen(?methodName) > ?length,
+  ValidPrefixForMethod(?sig, ?methodName, ?length),
   StringChangesCaseAfterPosition(?length - 1, ?methodName).
 
-FieldNameSuffix(substr(?fieldName, strlen(?fieldName) - ?length, ?length), ?sig) :-
-  Field_SimpleName(?sig, ?fieldName),
-  MemberSuffixIterationTrick(?length),
-  strlen(?fieldName) > ?length,
-  StringChangesCaseBeforePosition(strlen(?fieldName) - ?length, ?fieldName).
+FieldNameSuffix(substr(?fieldName, ?index, ?length), ?sig) :-
+  ValidSuffixForField(?sig, ?fieldName, ?index, ?length),
+  StringChangesCaseBeforePosition(?index, ?fieldName).
 
 FieldNamePrefix(substr(?fieldName, 0, ?length), ?sig) :-
-  Field_SimpleName(?sig, ?fieldName),
-  MemberPrefixIterationTrick(?length),
-  strlen(?fieldName) > ?length,
+  ValidPrefixForField(?sig, ?fieldName, ?length),
   StringChangesCaseAfterPosition(?length - 1, ?fieldName).
 
 //// Too costly!

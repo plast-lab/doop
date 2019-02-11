@@ -187,6 +187,22 @@ AssignInstruction_To(?instruction, ?to) :-
 AssignOper_From(?instruction, ?pos, ?from) :-
   _AssignOperFrom(?instruction, ?pos, ?from).
 
+// AssignOperFromConstant
+
+.decl _AssignOperFromConstant(?instruction:symbol, ?pos: number, ?from:symbol)
+.input _AssignOperFrom(IO="file", filename="AssignOperFromConstant.facts", delimiter="\t")
+
+AssignOper_FromConstant(?instruction, ?pos, ?from) :-
+    _AssignOperFromConstant(?instruction, ?pos, ?from).
+
+// IfConstant
+
+.decl _IfConstant(?instruction:symbol, ?pos:number, ?cons:symbol)
+.input _IfConstant(IO="file", filename="IfConstant.facts", delimeter="\t")
+
+If_Constant(?instruction, ?pos, ?cons) :-
+    _IfConstant(?instruction, ?pos, ?cons).
+
 
 // IfVar
 
