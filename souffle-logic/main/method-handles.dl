@@ -826,7 +826,6 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
   VarPointsTo(?hctx, ?val, _, ?actual),
   Value_Type(?val, ?valType),
-  Var_Type(?actual, ?actualType),
   Var_Type(?formal, ?formalType),
   // Check type compatibility (including (un)boxing).
   basic.SubtypeOf(?valType, ?formalType).
