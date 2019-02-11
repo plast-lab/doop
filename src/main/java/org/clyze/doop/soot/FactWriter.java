@@ -860,13 +860,16 @@ class FactWriter extends JavaFactWriter {
     }
 
     private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {
-        if (v instanceof StringConstant)
-            v = writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
-        else if (v instanceof ClassConstant)
-            v = writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
-        else if (v instanceof NumericConstant)
-            v = writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
-
+        if (v instanceof Constant) {
+            if (v instanceof StringConstant)
+                v = writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
+            else if (v instanceof ClassConstant)
+                v = writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
+            else if (v instanceof NumericConstant)
+                v = writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
+            else
+                System.err.println("ERROR: unknown type of immediate: " + v.getClass());
+        }
         return v;
     }
 
