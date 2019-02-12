@@ -162,6 +162,8 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexVal):-
   ?index < ?len,
   TensorShapeListContent(?shapeListHctx1, ?shapeList1, ?index, ?indexVal).
 
+TensorOperationError(?ctx, ?insn, ?scewlOp, "Invalid axes for softmax_cross_entropy_with_logits operation."):-
+  SoftmaxCrEntrWLogitsOpInvalidAxes(?ctx, ?insn, ?scewlOp).
 
 //----------------------------------------------------------------------------------------------------------------------
 //                                              ARGMAX / ARGMIN
@@ -224,6 +226,13 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index - 1, ?indexVal):-
   TensorOpOutputShape(?ctx, ?insn, ?argMaxMinOp, ?shapeHctx, ?tensorShapeVal),
   TensorOperation_NameToVal(?ctx, ?argMaxMinOp, "input", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?index, ?indexVal).
+
+
+TensorOperationWarning(?ctx, ?insn, ?argMaxMinOp, ?msg):-
+  ArgMaxMinOpAxisDimIsOneWarning(?ctx, ?insn, ?argMaxMinOp),
+  ArgMaxMinOpAxisNum(?ctx, ?insn, ?argMaxMinOp, ?axisNum),
+  ?msg = cat(cat("Argmax/Argmix operation warning: Axis ", to_string(?axisNum)), " has a dimension size of 1.").
+
 //----------------------------------------------------------------------------------------------------------------------
 //                                              INCORRECTLY MODELED OPS
 //----------------------------------------------------------------------------------------------------------------------

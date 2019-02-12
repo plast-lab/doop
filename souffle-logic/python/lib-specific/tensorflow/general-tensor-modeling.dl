@@ -241,14 +241,11 @@ TensorFlowsToSelf(?ctx, ?op):-
 //                                              CONCAT TENSOR SHAPE INFO
 //----------------------------------------------------------------------------------------------------------------------
 
-.decl TensorShapeInfo(?hctx:configuration.HContext, ?val:Value, ?shapeStr:symbol)
-.output TensorShapeInfo
+.decl TensorLikeObjectShapeInfo(?hctx:configuration.HContext, ?val:Value, ?shapeStr:symbol)
+.output TensorLikeObjectShapeInfo
 
-.decl TensorShapeConcatDims(?hctx:configuration.HContext, ?val:Value, ?concatdims:symbol)
-.output TensorShapeConcatDims
-
-.decl TensorShapeConcatUpToDim(?hctx:configuration.HContext, ?val:Value, ?concatdims:symbol, ?upToDim:number)
-.output TensorShapeConcatUpToDim
+.decl TensorLikeObjectShapeConcatUpToDim(?hctx:configuration.HContext, ?val:Value, ?concatdims:symbol, ?upToDim:number)
+.output TensorLikeObjectShapeConcatUpToDim
 
 .decl PossibleDimValue_Representation(?val:Value, ?repr:symbol)
 .output PossibleDimValue_Representation
@@ -261,24 +258,25 @@ PossibleDimValue_Representation(?numConstVal, ?repr):-
 PossibleDimValue_Representation(?none, "[None]"):-
   isNoneValue(?none).
 
-TensorShapeConcatUpToDim(?hctx, ?tensorShape, ?str, 0):-
-  TensorShapeListContent(?hctx, ?tensorShape, 0, ?indexValue),
+TensorLikeObjectShapeConcatUpToDim(?hctx, ?tensorLike, ?str, 0):-
+  TensorLikeObjectShapeListContent(?hctx, ?tensorLike, 0, ?indexValue),
   PossibleDimValue_Representation(?indexValue, ?str).
 
-TensorShapeConcatUpToDim(?hctx, ?tensorShape, ?str, ?index):-
-  TensorShapeListContent(?hctx, ?tensorShape, ?index, ?indexValue),
+TensorLikeObjectShapeConcatUpToDim(?hctx, ?tensorLike, ?str, ?index):-
+  TensorLikeObjectShapeListContent(?hctx, ?tensorLike, ?index, ?indexValue),
   PossibleDimValue_Representation(?indexValue, ?currDimStr),
-  TensorShapeConcatUpToDim(?hctx, ?tensorShape, ?prevDimsStr, ?index - 1),
+  TensorLikeObjectShapeConcatUpToDim(?hctx, ?tensorLike, ?prevDimsStr, ?index - 1),
   ?str = cat(?prevDimsStr, ?currDimStr).
 
-TensorShapeInfo(?hctx, ?tensor, ?DimsStr):-
-  TensorShape(?hctx, ?tensor, ?shapeHctx, ?shapeVal),
-  TensorShapeListLength(?shapeHctx, ?shapeVal, ?len),
-  TensorShapeConcatUpToDim(?shapeHctx, ?shapeVal, ?DimsStr, ?len -1).
+TensorLikeObjectShapeInfo(?hctx, ?tensorLike, ?DimsStr):-
+  //TensorShape(?hctx, ?tensor, ?shapeHctx, ?shapeVal),
+  TensorLikeObjectShapeListLength(?hctx, ?tensorLike, ?len),
+  TensorLikeObjectShapeConcatUpToDim(?hctx, ?tensorLike, ?DimsStr, ?len -1).
 
 HoverInfoForLSP(?file, ?callerCtx, 1 + ?index, ?startLine, ?endLine, ?startColumn, ?endColumn, ?hoverMsg, ?DimsStr):-
   ResolvedActualParamValue(?callerCtx, ?insn, ?tofunction, ?paramName, ?hctx, ?tensorVal),
-  TensorShapeInfo(?hctx, ?tensorVal, ?DimsStr),
+  Value_Type(?tensorVal, "<tensorflow.Tensor>"),
+  TensorLikeObjectShapeInfo(?hctx, ?tensorVal, ?DimsStr),
   ?hoverMsg = cat("Tensor argument <b>", cat(?paramName, "</b> has shape: ")),
   FormalParam(?index, ?paramName, ?tofunction, _),
   Instruction_Function(?insn, ?function),
@@ -287,7 +285,7 @@ HoverInfoForLSP(?file, ?callerCtx, 1 + ?index, ?startLine, ?endLine, ?startColum
 
 HoverInfoForLSP(?file, ?ctx, 20, ?startLine, ?endLine, ?startColumn, ?endColumn, ?hoverMsg, ?DimsStr):-
   TensorOpOutputWithHctx(?ctx, ?insn, ?hctx, ?outTensorVal),
-  TensorShapeInfo(?hctx, ?outTensorVal, ?DimsStr),
+  TensorLikeObjectShapeInfo(?hctx, ?outTensorVal, ?DimsStr),
   ?hoverMsg = "Output tensor has shape: ",
   Instruction_Function(?insn, ?function),
   Function_DeclaredInFile(?function, ?file),
