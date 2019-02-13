@@ -396,7 +396,8 @@ ConvOperation_DimResBeforeStrides(?ctx, ?insn, ?newVal, ?dim, ?resBeforeStrides)
   ConvOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, ?tensorValForDimNum, ?kernelSizeValForDimNum, _),
   ConvOrPoolOperation_PaddingValid(?ctx, ?insn, ?newVal),
-  ?resBeforeStrides = ?tensorValForDimNum + 1 - ?kernelSizeValForDimNum.
+  ?resBeforeStrides = ?tensorValForDimNum + 1 - ?kernelSizeValForDimNum,
+  ?resBeforeStrides > 0.
 
 
 NonBinopNewIntConstantValue(?dimRes, ?valNumStr),
@@ -516,7 +517,8 @@ PoolOperation_DimResBeforeStrides(?ctx, ?insn, ?newVal, ?dim, ?resBeforeStrides)
   PoolOperation(?ctx, ?insn, ?newVal),
   ConvOrPoolOperation_GetNumbersForDim(?ctx, ?insn, ?newVal, ?dim, ?tensorValForDimNum, ?kernelSizeValForDimNum, _),
   ConvOrPoolOperation_PaddingValid(?ctx, ?insn, ?newVal),
-  ?resBeforeStrides = ?tensorValForDimNum + 1 - ?kernelSizeValForDimNum.
+  ?resBeforeStrides = ?tensorValForDimNum + 1 - ?kernelSizeValForDimNum,
+  ?resBeforeStrides > 0.
 
 
 NonBinopNewIntConstantValue(?dimRes, ?valNumStr),
