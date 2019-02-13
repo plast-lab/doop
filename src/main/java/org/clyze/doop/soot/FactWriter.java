@@ -337,6 +337,23 @@ class FactWriter extends JavaFactWriter {
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
     }
 
+    private void writeAssignMethodTypeConstant(SootMethod m, Stmt stmt, Local l, MethodType constant, Session session) {
+        int index = session.calcUnitNumber(stmt);
+        String insn = _rep.instruction(m, stmt, index);
+        String methodId = writeMethod(m);
+        String retType = constant.getReturnType().toString();
+        List<Type> paramTypesList = constant.getParameterTypes();
+        int arity = paramTypesList.size();
+        String[] paramTypes = new String[arity];
+        int idx = 0;
+        for (Type t : paramTypesList)
+            paramTypes[idx++] = t.toString();
+        writeMethodTypeConstant(retType, paramTypes, null);
+        String params = concatenate(paramTypes);
+        String mt = "(" + params + ")" + retType;
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), mt, _rep.local(m, l), methodId, "0");
+    }
+
     void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstant constant, Session session) {
         writeAssignClassConstant(m, stmt, l, new ClassConstantInfo(constant), session);
     }
@@ -748,6 +765,13 @@ class FactWriter extends JavaFactWriter {
         return l;
     }
 
+    Local writeMethodTypeConstantExpression(SootMethod inMethod, Stmt stmt, MethodType constant, Session session) {
+        // introduce a new temporary variable
+        Local l = freshLocal(inMethod, "$methodtypeconstant", RefType.v("java.lang.invoke.MethodType"), session);
+        writeAssignMethodTypeConstant(inMethod, stmt, l, constant, session);
+        return l;
+    }
+
     private Value writeActualParam(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session, Value v, int idx) {
         if (v instanceof StringConstant)
             return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
@@ -757,6 +781,8 @@ class FactWriter extends JavaFactWriter {
             return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
         else if (v instanceof MethodHandle)
             return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
+        else if (v instanceof MethodType)
+            return writeMethodTypeConstantExpression(inMethod, stmt, (MethodType) v, session);
         else if (v instanceof NullConstant) {
             // Giving the type of the formal argument to be used in the creation of
             // temporary var for the actual argument (whose value is null).
