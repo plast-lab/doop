@@ -181,9 +181,11 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, ?indexValue):-
   ListOfConstsAtIndexPointsTo(?dimListHctx, ?dimListArgVal, ?index, "<num-constant(int):-1>"),
   ReshapeOperationReplaceMinus1WithVal(?ctx, ?insn, ?reshapeOpVal, ?indexValue).
 
-TensorOperationWarning(?ctx, ?insn, ?reshapeOpVal, "reshape operation batch contamination."):-
+TensorOperationWarning(?ctx, ?insn, ?reshapeOpVal, "Reshape operation batch contamination."):-
   ReshapeOperationBatchContamination(?ctx, ?insn, ?reshapeOpVal).
 
+TensorOperationError(?ctx, ?insn, ?reshapeOpVal, "Reshape operation invalid."):-
+  ReshapeOperationInvalid(?ctx, ?insn, ?reshapeOpVal).
 
 //----------------------------------------------------------------------------------------------------------------------
 //                                              SQUEEZE OP
@@ -288,6 +290,10 @@ TensorShapeListContent(?shapeHctx, ?tensorShapeVal, ?index, "<num-constant(int):
   ?index = ?dim,
   TensorOpOutputShape(?ctx, ?insn, ?expDimsVal, ?shapeHctx, ?tensorShapeVal).
 
+
+TensorOperationError(?ctx, ?insn, ?expDimsVal, "Expand dims operation, invalid axis num."):-
+  ExpandDimsInvalidAxisNum(?ctx, ?insn, ?expDimsVal).
+
 //----------------------------------------------------------------------------------------------------------------------
 //                                              REVERSE OP
 //----------------------------------------------------------------------------------------------------------------------
@@ -349,6 +355,14 @@ TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
   ValidTransposeOp(?ctx, ?insn, ?transposeOpVal, ?len),
   TensorOpOutputShape(?ctx, ?insn, ?transposeOpVal, ?shapeHctx, ?tensorShapeVal).
 
+TensorOperationError(?ctx, ?insn, ?transposeOpVal, "Transpose operation, tensor shape like and the perm arg list have different lengths."):-
+  TransposeOp(?ctx, ?insn, ?transposeOpVal),
+  TensorOperation_NameToVal(?ctx, ?transposeOpVal, "a", ?tensorHctx, ?tensorArgVal),
+  TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len1),
+  TensorOperation_NameToVal(?ctx, ?transposeOpVal, "perm", ?permListHctx, ?perList),
+  ListOfIntConsts(?permListHctx, ?perList),
+  ListOfConstsLength(?permListHctx, ?perList, ?len2),
+  ?len1 != ?len2.
 
 //----------------------------------------------------------------------------------------------------------------------
 //                                              SET SHAPE OP
@@ -369,11 +383,11 @@ TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
 .decl SetShapeOpValidForDim(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?setShapeOpVal:Value, ?dim:number, ?valForDim:Value)
 .output SetShapeOpValidForDim
 
-.decl SetShapeOpInvalidForDim(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?setShapeOpVal:Value, ?dim:number)
+.decl SetShapeOpInvalidForDim(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?setShapeOpVal:Value, ?dim:number, ?setShapeValForDim:Value, ?tensorShapeValForDim:Value)
 .output SetShapeOpInvalidForDim
 
-.decl SetShapeOpInvalid(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?setShapeOpVal:Value)
-.output SetShapeOpInvalid
+.decl SetShapeOpInvalidShapeLengths(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?setShapeOpVal:Value)
+.output SetShapeOpInvalidShapeLengths
 
 .decl SetShapeOpSameListLen(?ctx:configuration.Context, ?insn:FunctionInvocation_Insn, ?setShapeOpVal:Value)
 .output SetShapeOpSameListLen
@@ -397,7 +411,7 @@ SetShapeOpValidCorrectTypeArgs(?ctx, ?insn, ?setShapeOpVal):-
   TensorLikeObjectShapeListLength(?tensorHctx, ?tensorArgVal, ?len1),
   ListOfConstsLength(?shapeListHctx, ?shapeList, ?len2).
 
-SetShapeOpInvalid(?ctx, ?insn, ?setShapeOpVal):-
+SetShapeOpInvalidShapeLengths(?ctx, ?insn, ?setShapeOpVal):-
   SetShapeOpShapeListLengths(?ctx, ?insn, ?setShapeOpVal, ?len1, ?len2),
   ?len1 != ?len2.
 
@@ -409,7 +423,7 @@ SetShapeOpValidForDim(?ctx, ?insn, ?setShapeOpVal, ?dim, ?shapeValForDim):-
   ListOfConstsAtIndexPointsTo(?shapeListHctx, ?shapeList, ?dim, ?shapeValForDim),
   (?shapeValForDim = ?tensorValForDim ; ?tensorValForDim = "<None>").
 
-SetShapeOpInvalidForDim(?ctx, ?insn, ?setShapeOpVal, ?dim):-
+SetShapeOpInvalidForDim(?ctx, ?insn, ?setShapeOpVal, ?dim, ?shapeValForDim, ?tensorValForDim):-
   SetShapeOpShapeListLengths(?ctx, ?insn, ?setShapeOpVal, ?len, ?len),
   TensorOperation_NameToVal(?ctx, ?setShapeOpVal, "self", ?tensorHctx, ?tensorArgVal),
   TensorLikeObjectShapeListContent(?tensorHctx, ?tensorArgVal, ?dim, ?tensorValForDim),
@@ -446,3 +460,14 @@ TensorShape(?tensorHctx, ?tensorArgVal, ?newShapeHctx, ?newShape):-
   SetShapeOpSameListLen(?ctx, ?insn, ?setShapeOpVal),
   TensorOperation_NameToVal(?ctx, ?setShapeOpVal, "self", ?tensorHctx, ?tensorArgVal),
   TensorOpOutputShape(?ctx, ?insn, ?setShapeOpVal, ?newShapeHctx, ?newShape).
+
+TensorOperationError(?ctx, ?insn, ?setShapeOpVal, ?msg):-
+  SetShapeOpInvalidShapeLengths(?ctx, ?insn, ?setShapeOpVal),
+  SetShapeOpShapeListLengths(?ctx, ?insn, ?setShapeOpVal, ?len1, ?len2),
+  ?msg = cat(cat(cat(cat("Set shape operation invalid, tensor of shape with rank: ", to_string(?len1)), " attempted to be set to shape with rank: "), to_string(?len2)), ".").
+
+TensorOperationError(?ctx, ?insn, ?setShapeOpVal, ?msg):-
+  SetShapeOpInvalidForDim(?ctx, ?insn, ?setShapeOpVal, ?dim, ?setShapeValForDim, ?tensorValForDim),
+  PossibleDimValue_Representation(?setShapeValForDim, ?setValRepr),
+  PossibleDimValue_Representation(?tensorValForDim, ?tensValRepr),
+  ?msg = cat(cat(cat(cat(cat(cat("Set shape operation invalid, dim ", to_string(?dim)), " with value "), ?tensValRepr), " attempted to be set to value "), ?setValRepr), ".").

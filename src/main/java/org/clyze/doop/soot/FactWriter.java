@@ -181,14 +181,11 @@ class FactWriter extends JavaFactWriter {
 
     void writeAssignInvoke(SootMethod inMethod, Stmt stmt, Local to, InvokeExpr expr, Session session) {
         String insn = writeInvokeHelper(inMethod, stmt, expr, session);
-
         _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
     }
 
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session) {
         String heap = _rep.heapAlloc(m, expr, session);
-
-
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
 
         if (expr instanceof NewArrayExpr) {
@@ -338,6 +335,23 @@ class FactWriter extends JavaFactWriter {
         SigInfo si = new SigInfo(constant.getMethodRef(), false);
         writeMethodHandleConstant(heap, handleMethod, si.retType, si.paramTypes, si.arity);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
+    }
+
+    private void writeAssignMethodTypeConstant(SootMethod m, Stmt stmt, Local l, MethodType constant, Session session) {
+        int index = session.calcUnitNumber(stmt);
+        String insn = _rep.instruction(m, stmt, index);
+        String methodId = writeMethod(m);
+        String retType = constant.getReturnType().toString();
+        List<Type> paramTypesList = constant.getParameterTypes();
+        int arity = paramTypesList.size();
+        String[] paramTypes = new String[arity];
+        int idx = 0;
+        for (Type t : paramTypesList)
+            paramTypes[idx++] = t.toString();
+        writeMethodTypeConstant(retType, paramTypes, null);
+        String params = concatenate(paramTypes);
+        String mt = "(" + params + ")" + retType;
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), mt, _rep.local(m, l), methodId, "0");
     }
 
     void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstant constant, Session session) {
@@ -751,6 +765,13 @@ class FactWriter extends JavaFactWriter {
         return l;
     }
 
+    Local writeMethodTypeConstantExpression(SootMethod inMethod, Stmt stmt, MethodType constant, Session session) {
+        // introduce a new temporary variable
+        Local l = freshLocal(inMethod, "$methodtypeconstant", RefType.v("java.lang.invoke.MethodType"), session);
+        writeAssignMethodTypeConstant(inMethod, stmt, l, constant, session);
+        return l;
+    }
+
     private Value writeActualParam(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session, Value v, int idx) {
         if (v instanceof StringConstant)
             return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
@@ -760,6 +781,8 @@ class FactWriter extends JavaFactWriter {
             return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
         else if (v instanceof MethodHandle)
             return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
+        else if (v instanceof MethodType)
+            return writeMethodTypeConstantExpression(inMethod, stmt, (MethodType) v, session);
         else if (v instanceof NullConstant) {
             // Giving the type of the formal argument to be used in the creation of
             // temporary var for the actual argument (whose value is null).
@@ -863,13 +886,16 @@ class FactWriter extends JavaFactWriter {
     }
 
     private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {
-        if (v instanceof StringConstant)
-            v = writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
-        else if (v instanceof ClassConstant)
-            v = writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
-        else if (v instanceof NumericConstant)
-            v = writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
-
+        if (v instanceof Constant) {
+            if (v instanceof StringConstant)
+                v = writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
+            else if (v instanceof ClassConstant)
+                v = writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
+            else if (v instanceof NumericConstant)
+                v = writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
+            else
+                System.err.println("ERROR: unknown type of immediate: " + v.getClass());
+        }
         return v;
     }
 

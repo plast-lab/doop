@@ -132,4 +132,22 @@ class DoopAddons {
             return true;
         }
     }
+
+    public static final String LOCAL_SEPARATOR = "_$$A_";
+
+    /**
+     * Call setSeparator() on Soot to set the fresh variable separator
+     * (needed to discover the original names of SSA-transformed locals).
+     */
+    public static void setSeparator() {
+        try {
+            Method setter = Class.forName("soot.shimple.internal.ShimpleBodyBuilder").getDeclaredMethod("setSeparator", String.class);
+            setter.setAccessible(true);
+            setter.invoke(null, LOCAL_SEPARATOR);
+            System.err.println("Using separator for fresh variables in Soot: " + LOCAL_SEPARATOR);
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+            // ex.printStackTrace();
+            System.err.println("Using default fresh variable separator in Soot.");
+        }
+    }
 }

@@ -91,7 +91,7 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		List reflectionOpts = fullReflection ?
 							  ["--reflection-classic"] :
 							  ["--light-reflection-glue", "--distinguish-all-string-constants"]
-		List options = ["--platform", "java_8", "--cache",
+		List options = ["--platform", "java_8",
 										 "--generate-jimple",
 										 // "--Xserver-logic",
 										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",

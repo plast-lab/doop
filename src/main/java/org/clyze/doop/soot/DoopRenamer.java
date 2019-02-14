@@ -27,9 +27,10 @@ class DoopRenamer {
                     Value value = valueBox.getValue();
                     if (value instanceof  Local) {
                         Local defVar = (Local) value;
-                        if (!(defVar.getName().startsWith("$") || (defVar.getName().startsWith("tmp$"))) && !(transformedLocals.contains(defVar))) {
+                        String name = defVar.getName();
+                        if (!(name.startsWith("$") || (name.startsWith("tmp$"))) && !(transformedLocals.contains(defVar))) {
                             transformedLocals.add(defVar);
-                            defVar.setName(defVar.getName() + "#_" + linenumberToRegister);
+                            defVar.setName(name + "#_" + linenumberToRegister);
                         }
                     }
                 }

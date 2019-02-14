@@ -122,10 +122,10 @@ TfBroadcastingOpResultShapeListContent(?ctx, ?insn, ?broadcastingOp, ?index, ?in
   (?indexVal2 = "<num-constant(int):1>", ?indexVal = ?indexVal1)
   ).
 
-TensorOperationError(?ctx, ?insn, ?broadcastingOp, "shapes of operands cannot be broadcast."):-
+TensorOperationError(?ctx, ?insn, ?broadcastingOp, "Shapes of operands cannot be broadcast."):-
   TfBroadcastingOpCannotBroadcast(?ctx, ?insn, ?broadcastingOp).
 
-TensorOperationWarning(?ctx, ?insn, ?broadcastingOp, "broadcast warning, check output shape."):-
+TensorOperationWarning(?ctx, ?insn, ?broadcastingOp, "Tensor broadcasting warning, check output shape."):-
   TfBroadcastingOpBroadcastWarning(?ctx, ?insn, ?broadcastingOp).
 
 
@@ -233,7 +233,7 @@ TfMatMulOpRowsNColsCompatible(?ctx, ?insn, ?matMulOp):-
 TensorOperationError(?ctx, ?insn, ?matMulOp, "matmul argument tensors have different ranks."):-
   TfMatMulOpDifferentNumOfDims(?ctx, ?insn, ?matMulOp).
 
-TensorOperationError(?ctx, ?insn, ?matMulOp, "tensors cannot be multiplied(dimensions do not match)."):-
+TensorOperationError(?ctx, ?insn, ?matMulOp, "Tensors cannot be multiplied(dimensions do not match)."):-
   TfMatMulOpIncompatible(?ctx, ?insn, ?matMulOp).
 
 TfMatMulOpIncompatible(?ctx, ?insn, ?matMulOp):-

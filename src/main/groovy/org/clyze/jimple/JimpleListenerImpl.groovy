@@ -61,15 +61,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		inInterface = hasToken(ctx, "interface")
 
 		def modifier = ctx.modifier()
-		boolean isEnum      = modifier? modifier.any { hasToken(it, "enum") }   : false
-		boolean isStatic    = modifier? modifier.any { hasToken(it, "static") } : false
+		boolean isEnum      = modifier? modifier.any { it.text == "enum" }   : false
+		boolean isStatic    = modifier? modifier.any { it.text == "static" } : false
 		boolean isInner     = false
 		boolean isAnonymous = false
-		boolean isAbstract  = hasToken(ctx, "abstract")
-		boolean isFinal     = false
-		boolean isPublic    = false
-		boolean isProtected = false
-		boolean isPrivate   = false
+		boolean isAbstract  = modifier? modifier.any { it.text == "abstract" } : false
+		boolean isFinal     = modifier? modifier.any { it.text == "final" } : false
+		boolean isPublic    = modifier? modifier.any { it.text == "public" } : false
+		boolean isProtected = modifier? modifier.any { it.text == "protected" } : false
+		boolean isPrivate   = modifier? modifier.any { it.text == "private" } : false
 
 		klass = new Klass(
 				position,
@@ -109,7 +109,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				"<${klass.doopId}: $type $name>", //doopId
 				type,
 				klass.doopId, //declaringClassDoopId
-				ctx.modifier().any() { hasToken(it, "static") }
+				ctx.modifier().any() { it.text == "static" }
 		)
 	}
 
@@ -128,15 +128,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def endline = ctx.methodBody() ? getLastToken(ctx.methodBody()).symbol.line : line
 
 		def modifier = ctx.modifier()
-		boolean isStatic       = modifier ? modifier.any { hasToken(it, "static") } : false
+		boolean isStatic       = modifier ? modifier.any { it.text == "static" } : false
 		boolean isAbstract     = modifier ? modifier.any { it.text == "abstract" } : false
 		boolean isNative       = modifier ? modifier.any { it.text == "native" } : false
-		boolean isSynchronized = false
-		boolean isFinal        = false
+		boolean isSynchronized = modifier ? modifier.any { it.text == "synchronized" } : false
+		boolean isFinal        = modifier ? modifier.any { it.text == "final" } : false
 		boolean isSynthetic    = false
-		boolean isPublic       = false
-		boolean isProtected    = false
-		boolean isPrivate      = false
+		boolean isPublic       = modifier ? modifier.any { it.text == "public" } : false
+		boolean isProtected    = modifier ? modifier.any { it.text == "protected" } : false
+		boolean isPrivate      = modifier ? modifier.any { it.text == "private" } : false
 
 		method = new Method(
 				position,

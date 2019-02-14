@@ -1,6 +1,9 @@
 package org.clyze.doop.soot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import org.clyze.doop.common.Driver;
 import soot.*;
@@ -41,15 +44,8 @@ class FactGenerator implements Runnable {
         for (SootClass _sootClass : _sootClasses) {
             _writer.writeClassOrInterfaceType(_sootClass);
 
-            int modifiers = _sootClass.getModifiers();
-            if(Modifier.isAbstract(modifiers))
-                _writer.writeClassModifier(_sootClass, "abstract");
-            if(Modifier.isFinal(modifiers))
-                _writer.writeClassModifier(_sootClass, "final");
-            if(Modifier.isPublic(modifiers))
-                _writer.writeClassModifier(_sootClass, "public");
-            if(Modifier.isPrivate(modifiers))
-                _writer.writeClassModifier(_sootClass, "private");
+            for (String mod : getModifiers(_sootClass.getModifiers(), false))
+                _writer.writeClassModifier(_sootClass, mod);
 
             // the isInterface condition prevents Object as superclass of interface
             if (_sootClass.hasSuperclass() && !_sootClass.isInterface()) {
@@ -95,13 +91,38 @@ class FactGenerator implements Runnable {
         _writer.writeField(f);
         _writer.writeFieldInitialValue(f);
 
-        // Take the modifiers from Soot, so that we are robust against
-        // changes of the JVM spec.
-        String[] modifiers = Modifier.toString(f.getModifiers()).split(" ");
-        for (String m : modifiers)
+        for (String m : getModifiers(f.getModifiers(), false))
             _writer.writeFieldModifier(f, m);
     }
 
+    /**
+     * Given a JVM representation of the modifiers of a method/field/property,
+     * return a representation of String tokens.
+     *
+     * @param modifiers    the modifiers integer
+     * @param isMethod     "true" if the modifiers concern a method, "false" otherwise
+     */
+    private static Collection<String> getModifiers(int modifiers, boolean isMethod) {
+        // Take the modifiers from Soot, so that we are robust against
+        // changes of the JVM spec.
+        String[] modifierStrings = Modifier.toString(modifiers).split(" ");
+        // Fix modifiers that mean different things for methods.
+        if (isMethod)
+            for (int i = 0; i < modifierStrings.length; i++)
+                if ("transient".equals(modifierStrings[i]))
+                    modifierStrings[i] = "varargs";
+                else if ("volatile".equals(modifierStrings[i]))
+                    modifierStrings[i] = "bridge";
+        // Handle modifiers that are not in the Modifier.toString() output.
+        List<String> ret = new ArrayList<>(Arrays.asList(modifierStrings));
+        if(Modifier.isSynthetic(modifiers))
+            ret.add("synthetic");
+        if(Modifier.isConstructor(modifiers))
+            ret.add("constructor");
+        if(Modifier.isDeclaredSynchronized(modifiers))
+            ret.add("declared-synchronized");
+        return ret;
+    }
 
     /* Check if a Type refers to a phantom class */
     private boolean isPhantom(Type t) {
@@ -154,16 +175,8 @@ class FactGenerator implements Runnable {
         if (isPhantomBased(m))
             _writer.writePhantomBasedMethod(m);
 
-        // Take the modifiers from Soot, so that we are robust against changes
-        // of the JVM spec. Some modifiers still need special handling.
-        String[] modifiers = Modifier.toString(m.getModifiers()).split(" ");
-        for (String mod : modifiers)
-            if ("volatile".equals(mod))
-                _writer.writeMethodModifier(m, "bridge");  // volatile = bridge for methods
-            else if ("transient".equals(mod))
-                _writer.writeMethodModifier(m, "varargs"); // transient = varargs for methods
-            else
-                _writer.writeMethodModifier(m, mod);
+        for (String mod : getModifiers(m.getModifiers(), true))
+            _writer.writeMethodModifier(m, mod);
 
         if(!m.isStatic())
         {
