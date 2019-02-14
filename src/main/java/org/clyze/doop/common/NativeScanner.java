@@ -209,9 +209,9 @@ public class NativeScanner {
         // Write out facts.
         try (Database db = new Database(outDir);) {
             for (String mt : methodTypes)
-                db.add(NATIVE_METHODTYPE_CANDIDATE, lib, mt);
+                db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", mt);
             for (String n : names)
-                db.add(NATIVE_NAME_CANDIDATE, lib, n);
+                db.add(NATIVE_NAME_CANDIDATE, lib, "-", n);
             eps.forEach ((Long addr, String name) ->
                          db.add(NATIVE_LIB_ENTRY_POINT, name, String.valueOf(addr)));
         }
