@@ -180,12 +180,14 @@ public class NativeScanner {
                     System.out.println(".rodata section: offset = " + offset + ", size = " + size);
 
                     Map<Long, String> symbols = new HashMap<>();
+                    // Read section from the library.
                     RandomAccessFile raf = new RandomAccessFile(lib, "r");
                     raf.seek(offset);
                     byte[] bytes = new byte[size];
                     raf.readFully(bytes);
                     rodata = new Section(offset, size, bytes);
                     System.out.println("Section fully read.");
+                    System.out.println(rodata.toString());
                     break;
                 }
             }
@@ -276,6 +278,33 @@ class Section {
         this.offset = offset;
         this.size = size;
         this.data = data;
+    }
+
+    /**
+     * Scan the 'data' buffer for NULL-terminated strings.
+     *
+     * @return a collection of the strings found
+     */
+    Map<Long, String> strings() {
+        String foundString = "";
+        Map<Long, String> foundStrings = new TreeMap<>();
+        long addr = offset;
+        for (int i = 0; i < data.length; i++)
+            if (data[i] == 0) {
+                if (!foundString.equals("")) {
+                    foundStrings.put(addr, foundString);
+                    foundString = "";
+                }
+                addr = offset + i + 1;
+            } else
+                foundString += (char)data[i];
+        return foundStrings;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Section [offset = " + offset + ", size = " + size + "]\n");
+        strings().forEach((Long addr, String s) -> sb.append(addr + ": String '" + s + "'\n"));
+        return sb.toString();
     }
 }
 
