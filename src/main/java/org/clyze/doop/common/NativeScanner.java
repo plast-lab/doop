@@ -223,8 +223,8 @@ public class NativeScanner {
         char[] chars = line.toCharArray();
         for (int i = 0; i < line.length(); i++) {
             char c = chars[i];
-            if ((c != '$') && (c != '/') && (c != ';') &&
-                (c != '<') && (c != '>') && (c != '_') &&
+            if ((c != '$') && (c != '/') && (c != '_') &&
+                (c != '<') && (c != '>') &&
                 !Character.isLetterOrDigit(c)) {
                 if (debug)
                     System.err.println("Rejecting char '" + c + "' : " + line);
