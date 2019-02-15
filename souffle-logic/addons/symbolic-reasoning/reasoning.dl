@@ -1,0 +1,22 @@
+.decl ExprImpliesOther(expr1: Expr, expr2: Expr)
+.output ExprImpliesOther
+
+// Axioms and inference rules for boolean expressions
+
+// Every expression implies itself
+ExprImpliesOther(expr1, expr1) :-
+  isBooleanExpr(expr1).
+
+// A && B => A and A && B => B
+ExprImpliesOther(expr, left),
+ExprImpliesOther(expr, right) :-
+  isBooleanExpr(expr),
+  expr = ["&&", "boolean", left, right],
+  expr = ["&", "boolean", left, right].
+
+// A => A || B and B => A || B
+ExprImpliesOther(left, expr),
+ExprImpliesOther(right, expr) :-
+  isBooleanExpr(expr),
+  expr = ["||", "boolean", left, right],
+  expr = ["|", "boolean", left, right].

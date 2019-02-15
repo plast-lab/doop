@@ -114,7 +114,7 @@ isExpr(?expr) :-
     ?expr = [?op, ?type, ?lExpr, ?rExpr],
     ?out = cat("(", cat(?out1, cat(")", cat(?op, cat("(", cat(?out2, ")")))))).
 
-// If Conditions
+// If Conditions - Var_Var
 
 ToString(?expr, ?out),
 ResolveExpr(?meth, ?var, ?expr),
@@ -122,7 +122,6 @@ isExpr(?expr) :-
     Instruction_Method(?inst, ?meth),
     DummyIf_Var(?inst, ?var),
     isIf_Insn(?inst),
-    Var_Type(?var, ?type),
     If_Var(?inst, ?pos1, ?right1),
     If_Var(?inst, ?pos2, ?right2),
     ?pos1 < ?pos2,
@@ -131,5 +130,21 @@ isExpr(?expr) :-
     ResolveExpr(_, ?right2, ?rExpr),
     ToString(?lExpr, ?out1),
     ToString(?rExpr, ?out2),
-    ?expr = [?op, ?type, ?lExpr, ?rExpr],
+    ?expr = [?op, "boolean", ?lExpr, ?rExpr],
     ?out = cat("(", cat(?out1, cat(")", cat(?op, cat("(", cat(?out2, ")")))))).
+
+// If Conditions - Var_Const
+ToString(?expr, ?out),
+ResolveExpr(?meth, ?var, ?expr),
+isExpr(?expr) :-
+    Instruction_Method(?inst, ?meth),
+    DummyIf_Var(?inst, ?var),
+    isIf_Insn(?inst),
+    If_Var(?inst, ?pos1, ?right1),
+    If_Constant(?inst, ?pos2, ?right2),
+    ?pos1 < ?pos2,
+    _OperatorAt(?inst, ?op),
+    ResolveExpr(_, ?right1, ?lExpr),
+    ToString(?lExpr, ?out1),
+    ?expr = [?op, "boolean", ?lExpr, [?right2, "boolean", nil, nil]],
+    ?out = cat("(", cat(?out1, cat(")", cat(?op, cat("(", cat(?right2, ")")))))).
