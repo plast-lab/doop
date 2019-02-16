@@ -18,6 +18,8 @@ For trouble-free configuration:
 * The `LOGICBLOX_HOME` environment variable should point to the `logicblox` directory of the engine, if you want to use LogicBlox.
 * The `APKTOOL_HOME` environment variable should point to the location of Apktool, if option `--decode-apk` is to be used for Android apps.
 
+There is also a support mailing list: doop-support@googlegroups.com
+
 ## Benchmarks & Platform Lib
 
 For a variety of benchmarks, you could clone (or download) the [doop-benchmarks](https://bitbucket.org/yanniss/doop-benchmarks) repository.
