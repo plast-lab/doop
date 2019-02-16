@@ -180,12 +180,14 @@ public class NativeScanner {
                     System.out.println(".rodata section: offset = " + offset + ", size = " + size);
 
                     Map<Long, String> symbols = new HashMap<>();
+                    // Read section from the library.
                     RandomAccessFile raf = new RandomAccessFile(lib, "r");
                     raf.seek(offset);
                     byte[] bytes = new byte[size];
                     raf.readFully(bytes);
                     rodata = new Section(offset, size, bytes);
                     System.out.println("Section fully read.");
+                    System.out.println(rodata.toString());
                     break;
                 }
             }
@@ -209,9 +211,9 @@ public class NativeScanner {
         // Write out facts.
         try (Database db = new Database(outDir);) {
             for (String mt : methodTypes)
-                db.add(NATIVE_METHODTYPE_CANDIDATE, lib, mt);
+                db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", mt);
             for (String n : names)
-                db.add(NATIVE_NAME_CANDIDATE, lib, n);
+                db.add(NATIVE_NAME_CANDIDATE, lib, "-", n);
             eps.forEach ((Long addr, String name) ->
                          db.add(NATIVE_LIB_ENTRY_POINT, name, String.valueOf(addr)));
         }
@@ -221,8 +223,8 @@ public class NativeScanner {
         char[] chars = line.toCharArray();
         for (int i = 0; i < line.length(); i++) {
             char c = chars[i];
-            if ((c != '$') && (c != '/') && (c != ';') &&
-                (c != '<') && (c != '>') && (c != '_') &&
+            if ((c != '$') && (c != '/') && (c != '_') &&
+                (c != '<') && (c != '>') &&
                 !Character.isLetterOrDigit(c)) {
                 if (debug)
                     System.err.println("Rejecting char '" + c + "' : " + line);
@@ -276,6 +278,33 @@ class Section {
         this.offset = offset;
         this.size = size;
         this.data = data;
+    }
+
+    /**
+     * Scan the 'data' buffer for NULL-terminated strings.
+     *
+     * @return a collection of the strings found
+     */
+    Map<Long, String> strings() {
+        String foundString = "";
+        Map<Long, String> foundStrings = new TreeMap<>();
+        long addr = offset;
+        for (int i = 0; i < data.length; i++)
+            if (data[i] == 0) {
+                if (!foundString.equals("")) {
+                    foundStrings.put(addr, foundString);
+                    foundString = "";
+                }
+                addr = offset + i + 1;
+            } else
+                foundString += (char)data[i];
+        return foundStrings;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Section [offset = " + offset + ", size = " + size + "]\n");
+        strings().forEach((Long addr, String s) -> sb.append(addr + ": String '" + s + "'\n"));
+        return sb.toString();
     }
 }
 

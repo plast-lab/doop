@@ -17,7 +17,7 @@ MethodToRemove(?method) :-
   ApplicationMethod(?method),
   !SpecialMethodToKeep(?method),
   !mainAnalysis.ReachableContext(_, ?method),
-  !basic.PossibleNativeCodeTargetMethod(?method, _),
+  !basic.PossibleNativeCodeTargetMethod(?method, _, _),
 //  !Method_Modifier("abstract", ?method),
   !Method_Modifier("native", ?method),
   (basic.MethodOverridesOther(?method, _);

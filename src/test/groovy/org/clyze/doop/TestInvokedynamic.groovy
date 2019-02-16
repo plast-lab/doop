@@ -76,7 +76,7 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		varPointsTo(analysis, '<java.lang.String: int compareToIgnoreCase(java.lang.String)>/l1#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new java.lang.String/0')
 		varPointsTo(analysis, '<java.lang.String: int compareToIgnoreCase(java.lang.String)>/l1#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new java.lang.String/1')
 		// Test constructor reference (HashSet::new).
-		varPointsTo(analysis, '<MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/$r0', 'mock java.util.HashSet constructed by constructor reference at <MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/java.util.function.Supplier.get/0')
+		varPointsTo(analysis, '<MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/result#_52', 'mock java.util.HashSet constructed by constructor reference at <MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/java.util.function.Supplier.get/0')
 		noSanityErrors(analysis)
 
 		where:
@@ -94,7 +94,7 @@ class TestInvokedynamic extends ServerAnalysisTests {
 		List options = ["--platform", "java_8",
 										 "--generate-jimple",
 										 // "--Xserver-logic",
-										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/TestInvokedynamic.dl",
 										 "--thorough-fact-gen", "--sanity",
 										 "--Xstats-none",
 										 "--reflection-method-handles"] + reflectionOpts
@@ -106,46 +106,46 @@ class TestInvokedynamic extends ServerAnalysisTests {
 
 		then:
 		// test1
-		varPointsTo(analysis, '<Main: void test1()>/lookup#_29', 'mock method handles lookup object for type Main')
-		varPointsTo(analysis, '<Main: void test1()>/mType#_30', 'method type (java.lang.String)void')
-		varPointsTo(analysis, '<Main: void test1()>/println2out#_37', '<computed direct method handle for <java.io.PrintStream: void println(java.lang.String)>>')
-		methodHandleCGE(analysis, '<Main: void test1()>/java.lang.invoke.MethodHandle.invokeExact/0', '<java.io.PrintStream: void println(java.lang.String)>')
-		methodHandleCGE(analysis, '<Main: void test1()>/java.lang.invoke.MethodHandle.invokeExact/1', '<java.io.PrintStream: void println(java.lang.String)>')
+		testSucceeds(analysis, "test1.1")
+		testSucceeds(analysis, "test1.2")
+		testSucceeds(analysis, "test1.3")
+		testSucceeds(analysis, "test1.4")
+		testSucceeds(analysis, "test1.5")
 		// test2
-		varPointsTo(analysis, '<Main: void test2()>/staticMeth_mh#_46', '<computed direct method handle for <A: java.lang.Integer staticMeth()>>')
-		varPointsTo(analysis, '<Main: void test2()>/ret#_48', '<A: java.lang.Integer staticMeth()>/new java.lang.Integer/0')
-		methodHandleCGE(analysis, '<Main: void test2()>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: java.lang.Integer staticMeth()>')
+		testSucceeds(analysis, "test2.1")
+		testSucceeds(analysis, "test2.2")
+		testSucceeds(analysis, "test2.3")
 		// test3
-		varPointsTo(analysis, '<Main: void test3()>/methI_mh#_58', '<computed direct method handle for <A: void methI(java.lang.Integer)>>')
-		varPointsTo(analysis, '<A: void methI(java.lang.Integer)>/i#_0', '<Main: void test3()>/new java.lang.Integer/0')
-		varPointsTo(analysis, '<A: void methI(java.lang.Integer)>/this#_0', '<Main: void test3()>/new A/0')
-		methodHandleCGE(analysis, '<Main: void test3()>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: void methI(java.lang.Integer)>')
+		testSucceeds(analysis, "test3.1")
+		testSucceeds(analysis, "test3.2")
+		testSucceeds(analysis, "test3.3")
+		testSucceeds(analysis, "test3.4")
 		// test4
-		varPointsTo(analysis, '<Main: void test4()>/methDD_mh4#_68', '<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
-		methodHandleCGE(analysis, '<Main: void test4()>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
-		methodHandleCGE(analysis, '<Main: void test4()>/java.lang.invoke.MethodHandle.invoke/0', '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
+		testSucceeds(analysis, "test4.1")
+		testSucceeds(analysis, "test4.2")
+		testSucceeds(analysis, "test4.3")
 		// test5
-		varPointsTo(analysis, '<Main: void test5()>/mType#_81', 'method type (--all-types--)java.lang.Double')
-		varPointsTo(analysis, '<Main: void test5()>/methDD_mh5#_82', '<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>')
-		methodHandleCGE(analysis, '<Main: void test5()>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
+		testSucceeds(analysis, "test5.1")
+		testSucceeds(analysis, "test5.2")
+		testSucceeds(analysis, "test5.3")
 		// test6
-		varPointsTo(analysis, '<Main: void test6_aux(java.lang.invoke.MethodType)>/add3_mh6#_104', '<computed direct method handle for <A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>>')
-		methodHandleCGE(analysis, '<Main: void test6_aux(java.lang.invoke.MethodType)>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>')
-		varPointsTo(analysis, '<Main: void test6_aux(java.lang.invoke.MethodType)>/lookup#_103', 'mock method handles lookup object for type java.lang.Object')
+		testSucceeds(analysis, "test6.1")
+		testSucceeds(analysis, "test6.2")
+		testSucceeds(analysis, "test6.3")
 		// test7
-		varPointsTo(analysis, '<Main: void test7()>/mType1#_114', 'method type (java.lang.Double)java.lang.String')
-		varPointsTo(analysis, '<Main: void test7()>/mType2#_115', 'method type (java.lang.Double)java.lang.Double')
-		methodHandleCGE(analysis, '<Main: void test7()>/java.lang.invoke.MethodHandle.invokeExact/0', '<A: java.lang.Double doubleIdentity(java.lang.Double)>')
+		testSucceeds(analysis, "test7.1")
+		testSucceeds(analysis, "test7.2")
+		testSucceeds(analysis, "test7.3")
 		// testInvokedynamic
-		methodIsReachable(analysis, '<A: java.lang.invoke.CallSite bootstrap(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>')
-		methodHandleCGE(analysis, '<InvokedynamicClass: void run()>/invokedynamic_bootstrap::print/0', '<A: void print(A)>')
-		methodIsReachable(analysis, '<A: java.lang.invoke.CallSite bootstrap2(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>')
-		varPointsTo(analysis, '<A: java.lang.invoke.CallSite bootstrap2(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>/caller#_0', 'mock method handles lookup object for type InvokedynamicClass')
-		methodHandleCGE(analysis, '<InvokedynamicClass: void run()>/invokedynamic_bootstrap2::print/0', '<A: void print(A)>')
-		methodIsReachable(analysis, '<A: java.lang.invoke.CallSite bootstrap3(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>')
-		varPointsTo(analysis, '<A: java.lang.Double doubleIdentity(java.lang.Double)>/d#_0', 'mock box allocation for type java.lang.Double')
-		methodIsReachable(analysis, '<A: java.lang.invoke.CallSite bootstrap4(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>')
-		methodHandleCGE(analysis, '<InvokedynamicClass: void run()>/invokedynamic_bootstrap4::print2/0', '<A: void print2(A)>')
+		testSucceeds(analysis, "testID.1")
+		testSucceeds(analysis, "testID.2")
+		testSucceeds(analysis, "testID.3")
+		testSucceeds(analysis, "testID.4")
+		testSucceeds(analysis, "testID.5")
+		testSucceeds(analysis, "testID.6")
+		testSucceeds(analysis, "testID.7")
+		testSucceeds(analysis, "testID.8")
+		testSucceeds(analysis, "testID.9")
 
 		where:
 		fullReflection << [true, false]
