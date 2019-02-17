@@ -53,7 +53,10 @@ OUTPUT_STATS_DEFAULT(TensorHasMoreThanOneShape_Insens)
 .decl ImpreciseTensorShapeList_Insens(?shape:Value)
 OUTPUT_STATS_DEFAULT(ImpreciseTensorShapeList_Insens)
 
-.decl TensorOperationProducesOutput_Insens(?insn:FunctionInvocation_Insn, ?tensor:Value)
+.decl TensorOperationProducesOutput_Insens(?insn:FunctionInvocation_Insn)
+OUTPUT_STATS_DEFAULT(TensorOperationProducesOutput_Insens)
+
+.decl TensorOperationProducesOutput_ValueIns(?ctx:mainAnalysis.configuration.Context, ?insn:FunctionInvocation_Insn)
 OUTPUT_STATS_DEFAULT(TensorOperationProducesOutput_Insens)
 
 .decl TensorOperationError_Insens(?insn:FunctionInvocation_Insn, ?tensor:Value, ?msg:symbol)

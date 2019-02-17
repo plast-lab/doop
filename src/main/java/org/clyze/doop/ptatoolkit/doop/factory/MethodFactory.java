@@ -15,6 +15,7 @@ public class MethodFactory extends ElementFactory<Method> {
     private final Map<String, Set<Variable>> sig2params = new HashMap<>();
     private final Map<String, Set<Variable>> sig2ret = new HashMap<>();
     private final Set<String> privateMethods = new HashSet<>();
+    private final Set<String> implicitReachableMethods = new HashSet<>();
 
     public MethodFactory(DataBase db, VariableFactory varFactory) {
         db.query(Query.THIS_VAR).forEachRemaining(list -> {
@@ -48,6 +49,11 @@ public class MethodFactory extends ElementFactory<Method> {
                 privateMethods.add(sig);
             }
         });
+
+        db.query(Query.IMPLICITREACHABLE).forEachRemaining(list -> {
+            String sig = list.get(0);
+            implicitReachableMethods.add(sig);
+        });
     }
 
     @Override
@@ -64,10 +70,10 @@ public class MethodFactory extends ElementFactory<Method> {
         boolean isPrivate = privateMethods.contains(sig);
         if (thisVar != null) { // sig represents an instance method
             return new DoopInstanceMethod(sig, thisVar, params, retVars,
-                    isPrivate, ++count);
+                    isPrivate, implicitReachableMethods.contains(sig), ++count);
         } else { // sig represents a static method
             return new DoopStaticMethod(sig, params, retVars,
-                    isPrivate, ++count);
+                    isPrivate, implicitReachableMethods.contains(sig), ++count);
         }
     }
 

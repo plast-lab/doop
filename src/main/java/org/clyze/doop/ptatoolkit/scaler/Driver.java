@@ -5,7 +5,6 @@ import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.pta.basic.Type;
 import org.clyze.doop.ptatoolkit.scaler.analysis.ContextComputer;
 import org.clyze.doop.ptatoolkit.scaler.analysis.Scaler;
-import org.clyze.doop.ptatoolkit.scaler.analysis.ScalerRank;
 import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 import org.clyze.doop.ptatoolkit.util.ANSIColor;
@@ -24,7 +23,7 @@ public class Driver {
 
 
     public static void runScaler(File factsDir, File database) throws FileNotFoundException {
-        PointsToAnalysis pta = new DoopPointsToAnalysis(database, "scaler");
+        DoopPointsToAnalysis pta = new DoopPointsToAnalysis(database, "scaler");
         if (Global.isDebug()) {
             System.out.printf("%d objects in (pre) points-to analysis.\n",
                     pta.allObjects().size());

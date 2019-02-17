@@ -260,6 +260,7 @@
 
 .decl DummyIf_Var(?insn:If_Insn, ?Var:Var)
 .decl If_Var(?insn:If_Insn, ?pos:number, ?var:Var)
+.decl If_Constant(?insn:If_Insn, ?pos: number, ?cons: NumConstant)
 .decl Throw_Var(?insn:Throw_Insn, ?var:Var)
 .decl Goto_Target(?insn:Goto_Insn, ?index:number)
 .decl If_Target(?insn:If_Insn, ?index:number)
@@ -373,6 +374,9 @@
 
 // Assign expression vars
 .decl AssignOper_From(?insn:AssignOper_Insn, ?pos:number, ?from:Var)
+
+// Assign constants
+.decl AssignOper_FromConstant(?insn:AssignOper_Insn, ?pos: number, ?from:NumConstant)
 
 // Assign Heap Allocation
 .decl AssignHeapAllocation_Heap(?insn:AssignHeapAllocation_Insn, ?heap:HeapAllocation)

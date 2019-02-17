@@ -8,6 +8,7 @@
 isModule("<BUILTIN_SCOPE>").
 
 isModule("<random>").
+isModeledModule("<random>").
 
 VarPointsTo(?hctx, "<None>", ?ctx, "<BUILTIN_SCOPE>/noneDefVar"):-
   isImmutableContext(?ctx),

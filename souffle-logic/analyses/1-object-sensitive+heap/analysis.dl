@@ -29,21 +29,6 @@
     ?ctx = [?ctxValue], 
     ?hctx = [?ctxValue].
 
-  // For this analysis the context of a method call corresponds to the
-  // invocation site of the method.
-
-  ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-    ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-    ?newCtx = [?value].
-
-  StartupContextResponse(?hctx, ?value, ?newCtx) :-
-    StartupContextRequest(?hctx, ?value),
-    ?newCtx = [?value].
-
-  FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?newCtx) :-
-    FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-    ?newCtx = [?value].
-
   InitContextResponse(?value, ?ctx) :-
     InitContextRequest(?value),
     ?ctx = [?value].

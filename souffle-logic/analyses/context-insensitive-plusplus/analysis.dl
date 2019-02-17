@@ -57,23 +57,6 @@ RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
 //  ?ctx = [?component],
 //  ?hctx = [?component].
 
-// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
-// have the same logic as plain Merge for this analysis.
-ThreadStartContextResponse(?callerCtx, ?hctx, ?value, ?newCtx) :-
-  ThreadStartContextRequest(?callerCtx, ?hctx, ?value),
-  UContext(?newCtxComp),
-  ?newCtx = [?newCtxComp].
-
-StartupContextResponse(?hctx, ?value, ?calleeCtx) :-
-  StartupContextRequest(?hctx, ?value),
-  UContext(?calleeCtxComp),
-  ?calleeCtx = [?calleeCtxComp].
-
-FinalizerRegisterContextResponse(?callerCtx, ?inmethod, ?value, ?calleeCtx) :-
-  FinalizerRegisterContextRequest(?callerCtx, ?inmethod, ?value),
-  UContext(?calleeCtxComp),
-  ?calleeCtx = [?calleeCtxComp].
-
 InitContextResponse(?s, ?ctx) :-
   ?ctx = [?comp],
   UContext(?comp),

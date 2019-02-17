@@ -60,6 +60,17 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def className = getClassName(qualifiedName)
 		inInterface = hasToken(ctx, "interface")
 
+		def modifier = ctx.modifier()
+		boolean isEnum      = modifier? modifier.any { it.text == "enum" }   : false
+		boolean isStatic    = modifier? modifier.any { it.text == "static" } : false
+		boolean isInner     = false
+		boolean isAnonymous = false
+		boolean isAbstract  = modifier? modifier.any { it.text == "abstract" } : false
+		boolean isFinal     = modifier? modifier.any { it.text == "final" } : false
+		boolean isPublic    = modifier? modifier.any { it.text == "public" } : false
+		boolean isProtected = modifier? modifier.any { it.text == "protected" } : false
+		boolean isPrivate   = modifier? modifier.any { it.text == "private" } : false
+
 		klass = new Klass(
 				position,
 				filename,
@@ -67,11 +78,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				packageName,
 				qualifiedName,
 				inInterface,
-				ctx.modifier().any() { hasToken(it, "enum") },
-				ctx.modifier().any() { hasToken(it, "static") },
-				false, //isInner, missing?
-				false, //isAnonymous, missing?
-				hasToken(ctx, "abstract")
+				isEnum,
+				isStatic,
+				isInner,
+				isAnonymous,
+				isAbstract,
+				isFinal,
+				isPublic,
+				isProtected,
+				isPrivate
 		)
 		processor.call klass
 
@@ -94,7 +109,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				"<${klass.doopId}: $type $name>", //doopId
 				type,
 				klass.doopId, //declaringClassDoopId
-				ctx.modifier().any() { hasToken(it, "static") }
+				ctx.modifier().any() { it.text == "static" }
 		)
 	}
 
@@ -112,6 +127,17 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		def endline = ctx.methodBody() ? getLastToken(ctx.methodBody()).symbol.line : line
 
+		def modifier = ctx.modifier()
+		boolean isStatic       = modifier ? modifier.any { it.text == "static" } : false
+		boolean isAbstract     = modifier ? modifier.any { it.text == "abstract" } : false
+		boolean isNative       = modifier ? modifier.any { it.text == "native" } : false
+		boolean isSynchronized = modifier ? modifier.any { it.text == "synchronized" } : false
+		boolean isFinal        = modifier ? modifier.any { it.text == "final" } : false
+		boolean isSynthetic    = false
+		boolean isPublic       = modifier ? modifier.any { it.text == "public" } : false
+		boolean isProtected    = modifier ? modifier.any { it.text == "protected" } : false
+		boolean isPrivate      = modifier ? modifier.any { it.text == "private" } : false
+
 		method = new Method(
 				position,
 				filename,
@@ -121,10 +147,16 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				"<${klass.doopId}: $retType $name($params)>", //doopId
 				null, //params, TODO
 				paramTypeNames as String[],
-				ctx.modifier().any() { hasToken(it, "static") },
+				isStatic,
 				inInterface,
-				ctx.modifier()?.any { it.text == "abstract" },
-				ctx.modifier()?.any { it.text == "native" },
+				isAbstract,
+				isNative,
+				isSynchronized,
+				isFinal,
+				isSynthetic,
+				isPublic,
+				isProtected,
+				isPrivate,
 				new Position(line, endline, 0, 0)
 		)		
 

@@ -13,6 +13,7 @@ AllCallGraphEdge(?from, ?to) :- ReflectiveCallGraphEdge(_, ?from, _, ?to).
 AllCallGraphEdge(?from, ?to) :- TamiflexCallGraphEdge(_, ?from, _, ?to).
 #endif
 
+.output ImplicitReachable(IO="file",filename="IMPLICITREACHABLE.csv",delimiter="\t")
 
 .decl CallSiteIn(?invo:MethodInvocation, ?method:Method)
 .output CallSiteIn(IO="file",filename="CALLSITEIN.csv",delimiter="\t")

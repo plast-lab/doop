@@ -1,30 +1,33 @@
 package org.clyze.doop.ptatoolkit.scaler.analysis;
 
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
-import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
+import org.clyze.doop.ptatoolkit.pta.basic.Obj;
+import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class ContextComputer {
 
-    protected final PointsToAnalysis pta;
+    protected final DoopPointsToAnalysis pta;
     final ObjectAllocationGraph oag;
     private Map<Method, Long> method2ctxNumber = new HashMap<>();
-    protected ContextComputer worstCaseContextComputer;
+    ContextComputer worstCaseContextComputer;
+    PrintWriter writer = null;
 
-
-    ContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag) {
+    ContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag) {
         this.pta = pta;
         this.oag = oag;
-        computeContext();
     }
 
-    ContextComputer(PointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
+    ContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
         this.pta = pta;
         this.oag = oag;
         this.worstCaseContextComputer = worstCaseContextComputer;
-        computeContext();
     }
 
     public long contextNumberOf(Method method) {
@@ -40,7 +43,7 @@ public abstract class ContextComputer {
 
     protected abstract long computeContextNumberOf(Method method);
 
-    private void computeContext() {
+    void computeContext() {
         for (Method method : pta.reachableMethods()) {
             method2ctxNumber.put(method, computeContextNumberOf(method));
         }

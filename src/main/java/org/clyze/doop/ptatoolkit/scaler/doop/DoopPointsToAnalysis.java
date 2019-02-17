@@ -30,7 +30,8 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     private BiMap<Method, Integer> methodIdMap;
     // The following factories may be used by iterators
     private VariableFactory varFactory;
-    private ObjFactory objFactory;
+    public ObjFactory objFactory;
+    public TypeFactory typeFactory;
     private Set<String> specialObjects;
 
     public DoopPointsToAnalysis(File database, String option) {
@@ -120,7 +121,7 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     }
 
     private void initScalerPostProcessing() {
-        TypeFactory typeFactory = new TypeFactory();
+        typeFactory = new TypeFactory();
         varFactory = new VariableFactory();
         objFactory = new ObjFactory();
         MethodFactory mtdFactory = new MethodFactory(db, varFactory);
@@ -150,24 +151,6 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
         buildDeclaringType(mtdFactory, typeFactory);
         buildMethodTotalVPTMap(mtdFactory);
     }
-
-
-//    private void initScalerRankPostProcessing() {
-//        TypeFactory typeFactory = new TypeFactory();
-//
-//        varFactory = new VariableFactory();
-//        objFactory = new ObjFactory();
-//
-//        MethodFactory mtdFactory = new MethodFactory(db, varFactory);
-//        Set<String> interestingVarNames = new HashSet<>();
-//
-//        buildPointsToSet(varFactory, objFactory, interestingVarNames);
-//        buildMethodNeighborsMap(mtdFactory);
-//        buildCalleesAndCallers(mtdFactory);
-//
-//        buildMethodTotalVPTMap(mtdFactory);
-//        buildDeclaringType(mtdFactory, typeFactory);
-//    }
 
     /**
      * Build points-to sets of interesting variables. This method also computes

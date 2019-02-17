@@ -1,5 +1,6 @@
 
 isModule("<numpy>").
+isModeledModule("<numpy>").
 
 ModeledModule("<numpy.random>", "random", "<numpy>").
 

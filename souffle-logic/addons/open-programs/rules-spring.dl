@@ -3,34 +3,46 @@
 
 // Methods with these annotations are servlet entry points
 .decl ServletMethodEP(m: Method)
-ServletMethodEP(?meth) :-
-    (Method_Annotation(?meth, "org.springframework.web.bind.annotation.RequestMapping");
-     Method_Annotation(?meth, "javax.ws.rs.DELETE");
-     Method_Annotation(?meth, "javax.ws.rs.GET");
-     Method_Annotation(?meth, "javax.ws.rs.HEAD");
-     Method_Annotation(?meth, "javax.ws.rs.OPTIONS");
-     Method_Annotation(?meth, "javax.ws.rs.POST");
-     Method_Annotation(?meth, "javax.ws.rs.PUT")).
+ServletMethodEP(?method) :-
+    (Method_Annotation(?method, "org.springframework.web.bind.annotation.RequestMapping");
+     Method_Annotation(?method, "javax.ws.rs.DELETE");
+     Method_Annotation(?method, "javax.ws.rs.GET");
+     Method_Annotation(?method, "javax.ws.rs.HEAD");
+     Method_Annotation(?method, "javax.ws.rs.OPTIONS");
+     Method_Annotation(?method, "javax.ws.rs.POST");
+     Method_Annotation(?method, "javax.ws.rs.PUT")).
 
 // Create a context for servlet EPs
-mainAnalysis.configuration.StartupContextRequest(?hctx, ?val) :-
-    ServletMethodEP(?meth),
-    ?val = cat("SERVLET ::: ", ?meth),
-    mainAnalysis.isValue(?val),
-    mainAnalysis.isImmutableHContext(?hctx).
+mainAnalysis.configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?method) :-
+    ServletMethodEP(?method),
+    ?value = cat("SERVLET ::: ", ?method),
+    mainAnalysis.isValue(?value),
+    MockInvocationForServletEntryPoint(?value, ?method, ?invo),
+    mainAnalysis.isImmutableHContext(?hctx),
+    mainAnalysis.isImmutableContext(?callerCtx).
+
+.decl MockInvocationForServletEntryPoint(?value:mainAnalysis.Value, ?method:Method, ?invo:MethodInvocation)
+
+MockInvocationForServletEntryPoint(?value, ?method, cat(cat(cat("<mock-invo-ep ", ?value), ?method), ">")),
+PlusMethodInvocation(cat(cat(cat("<mock-invo-ep ", ?value), ?method), ">")) :-
+  ServletMethodEP(?method),
+  ?value = cat("SERVLET ::: ", ?method),
+  mainAnalysis.isValue(?value).
 
 // Mark as entry points with above context
-PossibleOpenProgramEntryPoint(?className, ?meth),
-mainAnalysis.ReachableContext(?ctx, ?meth) :-
-    ServletMethodEP(?meth),
-    Method_DeclaringType(?meth, ?className),
-    ?val = cat("SERVLET ::: ", ?meth),
-    mainAnalysis.isValue(?val),
+PossibleOpenProgramEntryPoint(?className, ?method),
+mainAnalysis.ReachableContext(?calleeCtx, ?method) :-
+    ServletMethodEP(?method),
+    Method_DeclaringType(?method, ?className),
+    ?value = cat("SERVLET ::: ", ?method),
+    mainAnalysis.isValue(?value),
     mainAnalysis.isImmutableHContext(?hctx),
-    mainAnalysis.configuration.StartupContextResponse(?hctx, ?val, ?ctx).
+    mainAnalysis.isImmutableContext(?callerCtx),
+    mainAnalysis.configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?method),
+    mainAnalysis.configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
 
 // Create mock object for the startup context
-mainAnalysis.isValue(cat("SERVLET ::: ", ?meth)) :- isMethod(?meth), ServletMethodEP(?meth).
+mainAnalysis.isValue(cat("SERVLET ::: ", ?method)) :- isMethod(?method), ServletMethodEP(?method).
 
 // Mock dependency injection through autowired fields
 mainAnalysis_MockValueConsMacro(cat(?fld, " :: AUTOWIRED"), ?type),

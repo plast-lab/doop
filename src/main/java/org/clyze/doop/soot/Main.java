@@ -99,6 +99,7 @@ public class Main {
             Options.v().set_src_prec(Options.src_prec_class);
 
         Scene scene = Scene.v();
+        DoopAddons.setSeparator();
         List<String> inputs = sootParameters.getInputs();
         for (String input : inputs) {
             String inputFormat = input.endsWith(".jar")? "archive" : "file";
@@ -170,18 +171,6 @@ public class Main {
             System.err.println("Error: not all bodies retrieved.");
         }
 
-        logDebug("Checking class heaps for missing types...");
-        Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
-        if (unrecorded.size() > 0) {
-            // If option is set, fail and notify caller that fact generation
-            // must run again with these classes added.
-            if (sootParameters._failOnMissingClasses) {
-                throw new MissingClassesException(unrecorded.toArray(new String[0]));
-            } else {
-                System.err.println("Warning: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
-            }
-        }
-
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
             boolean reportPhantoms = sootParameters.getReportPhantoms();
             boolean moreStrings = sootParameters._extractMoreStrings;
@@ -228,6 +217,19 @@ public class Main {
                     DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
                 }
             }
+
+            logDebug("Checking class heaps for missing types...");
+            Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
+            if (unrecorded.size() > 0) {
+                // If option is set, fail and notify caller that fact generation
+                // must run again with these classes added.
+                if (sootParameters._failOnMissingClasses) {
+                    throw new MissingClassesException(unrecorded.toArray(new String[0]));
+                } else {
+                    System.err.println("Warning: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
+                }
+            }
+
 
             writer.writeLastFacts(java);
         } finally {

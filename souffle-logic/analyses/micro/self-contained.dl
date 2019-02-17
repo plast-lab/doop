@@ -201,7 +201,7 @@ Method_ReturnType(?method, ?returnType) :-
 Method_Descriptor(?method, ?descriptor) :-
   Method_ReturnType(?method, ?returnType),
   Method_ParamTypes(?method, ?params),
-  ?descriptor = cat(?returnType, ?params).
+  ?descriptor = cat(?returnType, cat("(", cat(?params, ")"))).
 .decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
 .input _StoreInstanceField(IO="file", filename="StoreInstanceField.facts", delimiter="\t")
 Instruction_Method(?instruction, ?method),

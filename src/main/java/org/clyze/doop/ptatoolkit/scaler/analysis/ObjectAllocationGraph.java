@@ -35,15 +35,13 @@ public class ObjectAllocationGraph implements DirectedGraph<Obj> {
 
     private void init() {
         Map<Obj, Set<Method>> invokedMethods = computeInvokedMethods();
-        invokedMethods.forEach((obj, methods) -> {
-            methods.stream()
-                    .map(pta::objectsAllocatedIn)
-                    .flatMap(Collection::stream)
-                    .forEach(o -> {
-                        obj.addToAttributeSet(SUCCS, o);
-                        o.addToAttributeSet(PREDS, obj);
-                    });
-        });
+        invokedMethods.forEach((obj, methods) -> methods.stream()
+                .map(pta::objectsAllocatedIn)
+                .flatMap(Collection::stream)
+                .forEach(o -> {
+                    obj.addToAttributeSet(SUCCS, o);
+                    o.addToAttributeSet(PREDS, obj);
+                }));
     }
 
     private Map<Obj, Set<Method>> computeInvokedMethods() {
@@ -51,9 +49,12 @@ public class ObjectAllocationGraph implements DirectedGraph<Obj> {
         pta.allObjects().forEach(obj -> {
             Set<Method> methods = new HashSet<>();
             Queue<Method> queue = new LinkedList<>(pta.methodsInvokedOn(obj));
+
             while (!queue.isEmpty()) {
                 Method method = queue.poll();
                 methods.add(method);
+
+                /* Propagate to all static methods called by method invoked on obj */
                 pta.calleesOf(method).stream()
                         .filter(m -> m.isStatic() && !methods.contains(m))
                         .forEach(queue::offer);

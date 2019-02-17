@@ -1,4 +1,5 @@
 isModule("<tensorflow>").
+isModeledModule("<tensorflow>").
 
 //------------------------------------------------------
 //                    TENSOR DATA TYPES

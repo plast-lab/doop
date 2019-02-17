@@ -6,8 +6,9 @@ public abstract class StaticMethod extends Method {
 
     protected StaticMethod(Collection<Variable> params,
                            Collection<Variable> retVars,
-                           boolean isPrivate) {
-        super(params, retVars, isPrivate);
+                           boolean isPrivate,
+                           boolean isImplicitReachable) {
+        super(params, retVars, isPrivate, isImplicitReachable);
     }
 
     @Override

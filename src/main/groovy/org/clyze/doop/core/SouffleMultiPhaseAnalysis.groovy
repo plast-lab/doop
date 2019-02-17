@@ -18,10 +18,10 @@ import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 import static org.apache.commons.io.FilenameUtils.getBaseName
 
-@CompileStatic
+//@CompileStatic
 @InheritConstructors
 @Log4j
-@TypeChecked
+//@TypeChecked
 class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 
 	File preAnalysis
@@ -97,7 +97,7 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 		} finally {
 			executorService.shutdownNow()
 		}
-
+		printStats()
 		//Scaler Execution
 		Driver scalerMain = new Driver()
 		scalerMain.runScaler(factsDir, database)
@@ -342,5 +342,28 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 		def file = new File(this.outDir, "database/${query}.csv")
 		if (!file.exists()) throw new FileNotFoundException(file.canonicalPath)
 		file.eachLine { outputLineProcessor.call(it.replaceAll("\t", ", ")) }
+	}
+
+	void printStats() {
+		def lines = []
+
+
+		def file = new File("${this.outDir}/database/Stats_Runtime.csv")
+		file.eachLine { String line -> lines << line.replace("\t", ", ") }
+
+		log.info "-- Runtime metrics --"
+		lines.sort()*.split(", ").each {
+			printf("%-80s %,d\n", it[0], it[1] as long)
+		}
+
+			lines = []
+
+			file = new File("${this.outDir}/database/Stats_Metrics.csv")
+			file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
+
+			log.info "-- Statistics --"
+			lines.sort()*.split(", ").each {
+				printf("%-80s %,d\n", it[1], it[2] as long)
+			}
 	}
 }

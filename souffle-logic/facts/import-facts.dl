@@ -102,10 +102,10 @@ OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodType") :-
 .decl _MethodTypeConstantParam(?id:symbol, ?idx:number, ?type:symbol)
 .input _MethodTypeConstantParam(IO="file", filename="MethodTypeConstantParam.facts", delimiter="\t")
 
-.decl _NativeMethodTypeCandidate(?file:symbol, ?descriptor:symbol)
+.decl _NativeMethodTypeCandidate(?lib:symbol, ?function:symbol, ?descriptor:symbol)
 .input _NativeMethodTypeCandidate(IO="file", filename="NativeMethodTypeCandidate.facts", delimiter="\t")
 
-.decl _NativeNameCandidate(?file:symbol, ?name:symbol)
+.decl _NativeNameCandidate(?lib:symbol, ?function:symbol, ?name:symbol)
 .input _NativeNameCandidate(IO="file", filename="NativeNameCandidate.facts", delimiter="\t")
 
 // EmptyArray
@@ -186,6 +186,22 @@ AssignInstruction_To(?instruction, ?to) :-
 
 AssignOper_From(?instruction, ?pos, ?from) :-
   _AssignOperFrom(?instruction, ?pos, ?from).
+
+// AssignOperFromConstant
+
+.decl _AssignOperFromConstant(?instruction:symbol, ?pos: number, ?from:symbol)
+.input _AssignOperFrom(IO="file", filename="AssignOperFromConstant.facts", delimiter="\t")
+
+AssignOper_FromConstant(?instruction, ?pos, ?from) :-
+    _AssignOperFromConstant(?instruction, ?pos, ?from).
+
+// IfConstant
+
+.decl _IfConstant(?instruction:symbol, ?pos:number, ?cons:symbol)
+.input _IfConstant(IO="file", filename="IfConstant.facts", delimeter="\t")
+
+If_Constant(?instruction, ?pos, ?cons) :-
+    _IfConstant(?instruction, ?pos, ?cons).
 
 
 // IfVar
@@ -521,7 +537,7 @@ isMethodDescriptor(?descriptor),
 Method_Descriptor(?method, ?descriptor) :-
   Method_ReturnType(?method, ?returnType),
   Method_ParamTypes(?method, ?params),
-  ?descriptor = cat(?returnType, ?params).
+  ?descriptor = cat(?returnType, cat("(", cat(?params, ")"))).
 
 // StoreInstanceField
 

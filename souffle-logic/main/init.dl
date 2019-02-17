@@ -88,9 +88,9 @@ NotSpecialObject(?value) :-
   Value_Num(?value, _).
 
 configuration.InitContextRequest("<<immutable-context>>").
-configuration.InitContextRequest("<<initial-context>>").
-configuration.InitContextRequest("<<jvm-startup-context>>").
-configuration.InitContextRequest("<<clinit-context>>").
+//configuration.InitContextRequest("<<initial-context>>").
+//configuration.InitContextRequest("<<jvm-startup-context>>").
+//configuration.InitContextRequest("<<clinit-context>>").
 
 isImmutableContext(?ctx),
 isContext(?ctx) :-
@@ -98,7 +98,7 @@ isContext(?ctx) :-
   configuration.InitContextRequest(?s),
   configuration.InitContextResponse(?s, ?ctx).
 
-isInitialContext(?ctx),
+/*isInitialContext(?ctx),
 isContext(?ctx) :-
   ?s = "<<initial-context>>",
   configuration.InitContextRequest(?s),
@@ -115,16 +115,16 @@ isContext(?ctx) :-
   ?s = "<<clinit-context>>",
   configuration.InitContextRequest(?s),
   configuration.InitContextResponse(?s, ?ctx).
-
+*/
 // The main method is reachable
 ApplicationEntryPoint(?method),
 ReachableContext(?initialContext, ?method) :-
-  isInitialContext(?initialContext),
+  isImmutableContext(?initialContext),
   basic.MainMethodDeclaration(?method).
 
 // Implicitly reachable methods are invoked by the JVM on startup.
-ReachableContext(?jvmStartUpContext, ?method) :-
-  isJVMStartupContext(?jvmStartUpContext),
+ReachableContext(?ctx, ?method) :-
+  isImmutableContext(?ctx),
   ImplicitReachable(?method).
 
 // Forced reachable methods are invoked by unknown callers.
@@ -135,12 +135,12 @@ ReachableContext(?ctx, ?method) :-
 // If a class needs to be initialized, then its class initializer is invoked
 // Note: InitializedClass already deals with superclasses that need initialization
 ReachableContext(?clinitContext, ?clinit) :-
-  isClinitContext(?clinitContext),
+  isImmutableContext(?clinitContext),
   InitializedClass(?class),
   ClassInitializer(?class, ?clinit).
 
 configuration.InitHContextRequest("<<immutable-hcontext>>").
-configuration.InitHContextRequest("<<jvm-startup-hcontext>>").
+//configuration.InitHContextRequest("<<jvm-startup-hcontext>>").
 
 isImmutableHContext(?hctx),
 isHContext(?hctx) :-
@@ -148,24 +148,24 @@ isHContext(?hctx) :-
   configuration.InitHContextRequest(?s),
   configuration.InitHContextResponse(?s, ?hctx).
 
-isJVMStartupHContext(?hctx),
-isHContext(?hctx) :-
+/*isJVMStartupHContext(?hctx),
+  isHContext(?hctx) :-
   ?s = "<<jvm-startup-hcontext>>",
   configuration.InitHContextRequest(?s),
-  configuration.InitHContextResponse(?s, ?hctx).
+  configuration.InitHContextResponse(?s, ?hctx).*/
 
 // Create initial objects with their heap contexts
 SystemThreadGroup(?hctx, ?alloc) :-
-  isJVMStartupHContext(?hctx),
+  isImmutableHContext(?hctx),
   ?alloc = "<<system-thread-group>>",
   isValue(?alloc).
 
 MainThreadGroup(?hctx, ?alloc) :-
-  isJVMStartupHContext(?hctx),
+  isImmutableHContext(?hctx),
   ?alloc = "<<main-thread-group>>",
   isValue(?alloc).
 
 MainThread(?hctx, ?alloc) :-
-  isJVMStartupHContext(?hctx),
+  isImmutableHContext(?hctx),
   ?alloc = "<<main-thread>>",
   isValue(?alloc).

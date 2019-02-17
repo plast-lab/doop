@@ -48,8 +48,20 @@
 
 //-----------------------------------------------------------------------------
 
-.type Module
+.type Package
+.decl isPackage(package:Package)
+
+.decl Package_DeclaringPackage(?pack: Package, ?packageName:symbol, ?declPackage: Package)
+
+//-----------------------------------------------------------------------------
+
+.type Module = File
 .type Scope = File | Function | Module
+
+.decl isModule(?module:Module)
+.decl isModeledModule(?module:Module)
+.decl Module_DeclaringPackage(?module: Module, ?moduleName:symbol, ?declPackage: Package)
+
 
 //-----------------------------------------------------------------------------
 .type Function = Type
@@ -63,6 +75,7 @@
 .decl Function_Arity(?function:Function, ?arity:number)
 .decl Function_NumOfRequiredParams(?function:Function, ?numOfParams:number)
 .decl Function_DeclaredInFile(?function:Function, ?file:File)
+.decl Function_Module(?function:Function, ?module: Module)
 .decl Function_SourcePosition(?function:Function, ?startLine:number, ?endLine:number, ?startColumn:number, ?endColumn:number)
 
 .decl FormalParam(?index:number, ?paramName:symbol, ?function:Function, ?var:Var)

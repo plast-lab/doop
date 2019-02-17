@@ -1,11 +1,12 @@
 package org.clyze.doop.ptatoolkit.scaler.analysis;
 
-import org.clyze.doop.ptatoolkit.Global;
-import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
+import org.clyze.doop.ptatoolkit.pta.basic.Method;
+import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 import org.clyze.doop.ptatoolkit.util.ANSIColor;
 import org.clyze.doop.ptatoolkit.util.Triple;
-import org.clyze.doop.ptatoolkit.pta.basic.Method;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -16,23 +17,23 @@ import java.util.stream.Collectors;
  */
 public class Scaler {
 
-    private final PointsToAnalysis pta;
+    private final DoopPointsToAnalysis pta;
     private final ObjectAllocationGraph oag;
     private Set<Method> reachableMethods;
     private ContextComputer[] ctxComputers;
     private ContextComputer bottomLine;
     private Map<Method, Integer> ptsSize = new HashMap<>();
     /** Total Scalability Threshold */
-    private long tst = 20_000_000;
+    private long tst = 500_000_000L;
     private List<Triple<Method, String, Long>> results;
 
-    public Scaler(PointsToAnalysis pta) {
+    public Scaler(DoopPointsToAnalysis pta) {
         this.pta = pta;
         this.oag = new ObjectAllocationGraph(pta);
         init();
     }
 
-    public Map<Method, String> selectContext() {
+    public Map<Method, String> selectContext() throws FileNotFoundException {
         results = new ArrayList<>();
         System.out.println("Given TST value: " + ANSIColor.BOLD + ANSIColor.GREEN + tst + ANSIColor.RESET);
         long st = binarySearch(reachableMethods, tst);
@@ -42,7 +43,9 @@ public class Scaler {
                 analysisMap.put(method, selectContextFor(method, st)));
         AtomicLong worstCaseVPT = new AtomicLong(0);
         AtomicLong numberOfMethods = new AtomicLong(0);
-        //if (Global.isDebug()) {
+
+        final PrintWriter writer = new PrintWriter("scaler-predictions");
+
         results.stream()
                 .sorted(Comparator.comparing(Triple::getThird))
                 .collect(Collectors.toCollection(LinkedList::new))
@@ -52,13 +55,14 @@ public class Scaler {
                     String context = triple.getSecond();
                     long nContexts = triple.getThird();
                     long accumuPTSSize = getAccumulativePTSSizeOf(method);
-                    System.out.printf("#\t%s\t{%s}\t%d\t%d\n",
+                    writer.printf("#\t%s\t{%s}\t%d\t%d\n",
                             method.toString(), context,
                             nContexts, nContexts * accumuPTSSize);
                     worstCaseVPT.getAndAdd(nContexts * accumuPTSSize);
                     numberOfMethods.getAndIncrement();
                 });
         //}
+        writer.close();
         System.out.println("Total worst case VPT: " + worstCaseVPT + " for " + numberOfMethods + " methods");
         return analysisMap;
     }
@@ -91,8 +95,11 @@ public class Scaler {
                 new _2TypeContextComputer(pta, oag, _2ObjectContextComputer),
                 new _1TypeContextComputer(pta, oag, _2ObjectContextComputer),
         };
-
+        ctxComputers[0].computeContext();
+        ctxComputers[1].computeContext();
+        ctxComputers[2].computeContext();
         bottomLine = new _InsensitiveContextComputer(pta);
+        bottomLine.computeContext();
     }
 
     /**

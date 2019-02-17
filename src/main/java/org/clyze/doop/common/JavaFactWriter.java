@@ -206,6 +206,10 @@ public abstract class JavaFactWriter {
         _db.add(IF, insn, str(index), str(indexTo), methodId);
     }
 
+    protected void writeIfConstant(String insn, String branch, String cons) {
+        _db.add(IF_CONSTANT, insn, branch, cons);
+    }
+
     protected void writeIfVar(String insn, String branch, String local) {
         _db.add(IF_VAR, insn, branch, local);
     }
@@ -220,6 +224,10 @@ public abstract class JavaFactWriter {
 
     protected void writeAssignOperFrom(String insn, String branch, String local) {
         _db.add(ASSIGN_OPER_FROM, insn, branch, local);
+    }
+
+    protected void writeAssignOperFromConstant(String insn, String branch, String value) {
+        _db.add(ASSIGN_OPER_FROM_CONSTANT, insn, branch, value);
     }
 
     protected void writeInvokedynamic(String insn, int index, String bootSig, String dynName, String dynRetType, int dynArity, String dynParamTypes, int tag, String methodId) {
@@ -241,20 +249,53 @@ public abstract class JavaFactWriter {
         _db.add(ACTUAL_PARAMETER, str(index), invo, var);
     }
 
+    /**
+     * Write a method type constant.
+     *
+     * @param retType     the return type of the method type
+     * @param paramTypes  the parameter types of the method type
+     * @param pamas       a String representation of the parameter
+     *                    types (if null, it is reconstructed)
+     */
+    protected void writeMethodTypeConstant(String retType, String[] paramTypes,
+                                           String params) {
+        if (params == null)
+            params = concatenate(paramTypes);
+        String mt = "(" + params + ")" + retType;
+        int arity = paramTypes.length;
+        for (int idx = 0; idx < arity; idx++)
+            _db.add(METHOD_TYPE_CONSTANT_PARAM, mt, str(idx), paramTypes[idx]);
+        _db.add(METHOD_TYPE_CONSTANT, mt, str(arity), retType, params);
+    }
+
+    protected String concatenate(String[] elems) {
+        int num = elems.length;
+        if (num == 0)
+            return "";
+        StringBuilder sb = new StringBuilder(elems[0]);
+        for (int idx = 1; idx < num; idx++) {
+            sb.append(',');
+            sb.append(elems[idx]);
+        }
+        String ret = sb.toString();
+        return ret;
+    }
+
+    /**
+     * Write a method type constant given as a string representation.
+     *
+     * @param mt     the method type (such as "(java.lang.Object,int)void")
+     */
     protected void writeMethodTypeConstant(String mt) {
         int rParen = mt.indexOf(")");
         int arity = 0;
         if (mt.startsWith("(") && (rParen != -1)) {
+            String retType = mt.substring(rParen + 1, mt.length());
             // We write out the parameters part of the signature without the
             // parentheses, so that types can be added at both ends.
             String params = mt.substring(1, rParen);
             String[] paramTypes = params.split(",");
-            arity = paramTypes.length;
-            for (int idx = 0; idx < arity; idx++) {
-                _db.add(METHOD_TYPE_CONSTANT_PARAM, mt, str(idx), paramTypes[idx]);
-            }
-            String retType = mt.substring(rParen + 1, mt.length());
-            _db.add(METHOD_TYPE_CONSTANT, mt, str(arity), retType, params);
+            writeMethodTypeConstant(retType, paramTypes, params);
         } else
             System.err.println("Warning: cannot process method type " + mt);
     }

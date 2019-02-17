@@ -81,18 +81,16 @@ class WalaRepresentation extends JavaRepresentation {
         return f.getName().toString();
     }
 
-    //Method descriptors using Soot-like format.
-    //Should maybe cache these as well.
+    // Method descriptors using Soot-like format.
+    // Should maybe cache these as well.
     static String params(MethodReference methodReference) {
         StringBuilder builder = new StringBuilder();
         int count = methodReference.getNumberOfParameters();
-        builder.append("(");
         for(int i = 0; i < count; i++) {
             builder.append(fixTypeString(methodReference.getParameterType(i).toString()));
             if(i != count - 1)
                 builder.append(",");
         }
-        builder.append(")");
         return builder.toString();
     }
 
