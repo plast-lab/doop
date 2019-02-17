@@ -203,59 +203,6 @@ PhiAssign(?phi_var, ?arity, ?block) :-
     ?arity = count : MayPredecessorBBModuloThrow(_, ?block),
     ?phi_var = cat(cat(?var, "_phi_"), to_string(?index)).
     
-.decl BBFollowsSimilarDef(?block:symbol, ?instr:symbol, ?def:symbol)
-
-BBFollowsSimilarDef(?block, ?instr, ?original) :-
-    PhiAssign(?phi_var, _, ?instr),
-    SSA_Alias(?phi_var, ?original),
-    SSA_AssignToOriginal(?follow, ?original),
-    BasicBlockHead(?instr, ?block),
-    BasicBlockHead(?follow, ?block),
-    Instruction_Index(?instr, ?i),
-    Instruction_Index(?follow, ?j),
-    ?i < ?j.
-
-BBFollowsSimilarDef(?block, ?instr, ?original) :-
-    SSA_AssignToOriginal(?instr, ?original),
-    SSA_AssignToOriginal(?follow, ?original),
-    BasicBlockHead(?instr, ?block),
-    BasicBlockHead(?follow, ?block),
-    Instruction_Index(?instr, ?i),
-    Instruction_Index(?follow, ?j),
-    ?i < ?j.
-
-.decl BBLocalOutDefs(?block:symbol, ?def:symbol)
-
-BBLocalOutDefs(?block, ?def) :-
-    BasicBlockBegin(?block),
-    PhiAssign(?def, _, ?block),
-    SSA_Alias(?def, ?original),
-    !SSA_AssignToOriginal(?block, ?original),
-    !BBFollowsSimilarDef(?block, ?block, ?original).
-
-BBLocalOutDefs(?block, ?def) :-
-    BasicBlockBegin(?block),
-    BasicBlockHead(?assgn, ?block),
-    SSA_AssignToOriginal(?assgn, ?original),
-    SSA_AssignDetails(?assgn, ?original, _, ?def, _),
-    !BBFollowsSimilarDef(?block, ?assgn, ?original).
-
-BBLocalOutDefs(?block, ?def) :-
-    BasicBlockBegin(?block),
-    Instruction_Index(?block, 1),
-    Instruction_Method(?block, ?method),
-    (SSA_FormalParam(_, ?method, ?def);
-    SSA_ThisVar(?method, ?def)),
-    SSA_Alias(?def, ?origin),
-    !ContainsAssignment(?block, ?origin).
-
-.decl ExistsLocalDef(?block:symbol, ?def:symbol)
-ExistsLocalDef(?block, ?original) :-
-    BBLocalOutDefs(?block, ?def),
-    SSA_Alias(?def, ?original).
-
-.decl BBOutDefs(?block:symbol, ?def:symbol)
-
 .decl BasicBlockOutDefs(?block:symbol, ?ssa_var:symbol, ?origin:symbol)
 
 BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
@@ -268,15 +215,6 @@ BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
     SSA_AssignDetails(?end, _, _, ?ssa_var, _),
     SSA_Alias(?ssa_var, ?origin).
 
-BBOutDefs(?block, ?def) :-
-    BBLocalOutDefs(?block, ?def).
-
-BBOutDefs(?block, ?prev_def) :-
-    MayPredecessorBBModuloThrow(?pred, ?block),
-    BBOutDefs(?pred, ?prev_def),
-    SSA_Alias(?prev_def, ?original),
-    !ExistsLocalDef(?block, ?original).
-
 // Two defs are similar, if they are both renames of the same
 // variable in the original program.
 .decl SimilarDefs(?def_1:symbol, ?def_2:symbol)
@@ -287,14 +225,9 @@ SimilarDefs(?def_1, ?def_2) :-
 
 .decl SimilarOutDefs(?block:symbol, ?def:symbol, ?out_def:symbol)
 
-SimilarOutDefs(?block, ?def, ?out_def) :-
-    BBOutDefs(?block, ?out_def),
-    SimilarDefs(?def, ?out_def).
-
-// This causes a recursive cycle with negation.
-//SimilarOutDefs(?block, ?def, ?out_def) :-
-//    BasicBlockOutDefs(?block, ?out_def, _),
-//    SimilarDefs(?def, ?out_def).
+SimilarOutDefs(?block, ?def1, ?def2) :-
+    BasicBlockOutDefs(?block, ?def1, ?origin),
+    BasicBlockOutDefs(?def, ?def2, ?origin).
 
 // These instructions create chains of assignments, at the head of each block.
 // This is a helper relation to assist the final assignment operation, which 
@@ -308,15 +241,14 @@ SimilarOutDefs(?block, ?def, ?out_def) :-
 // Many PhiChunks in the same basic block, consist of a PhiHeader.
 .decl PhiHeader(?block:symbol)
 
+// EXPERIMENTAL
 PhiChunk(?phi_var),
 PhiHeader(?dst_block),
-PhiPseudoAssign(?phi_var, ?phi_arg, ?src_block, ?dst_block, ?pseudoname) :-
+PhiPseudoAssign(?phi_var, ?phi_arg, "", ?dst_block, ?pseudoname) :-
     PhiAssign(?phi_var, _, ?dst_block),
-    MayPredecessorBBModuloThrow(?src_block, ?dst_block),
-    SimilarOutDefs(?src_block, ?phi_var, ?phi_arg),
-    Instruction_Index(?src_block, ?src_idx),
-    Instruction_Index(?dst_block, ?dst_idx),
-    ?pseudoname = cat(?phi_var, cat("_", to_string(?src_idx))).
+    ReachingDef(?dst_block, ?phi_arg, ?origin_var),
+    SSA_Alias(?phi_var, ?origin_var),
+    ?pseudoname = cat(?phi_var, cat("_", ?phi_arg)).
 
 // TODO: Are the initial checks needed?
 .decl ExistsPseudoAssignBetween(?prev:symbol, ?next:symbol)
@@ -446,15 +378,6 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
 // outwards defs of any of the predecessor basic blocks (the defs will all be the same,
 // otherwise there would be a Phi Assignment in the Phi header).
 
-// Old
-//ReachingDef(?insn, ?ssa_var, ?origin) :-
-//    BasicBlockBegin(?insn),
-//    !ExistsDefInPhiHeader(?insn, _, ?origin),
-//    SSA_Alias(?saa_var, ?origin),
-//    MayPredecessorBBModuloThrow(?pred, ?insn),
-//    SimilarOutDefs(?pred, _, ?ssa_var).
-
-// Based on new
 ReachingDef(?insn, ?ssa_var, ?origin) :-
     BasicBlockOutDefs(?pred, ?ssa_var, ?origin),
     MayPredecessorBBModuloThrow(?pred, ?insn),
@@ -481,11 +404,14 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
 // If an instruction is the first instruction in a method, then all formal paramters and
 // the "this" register are reaching defs to that instruction.
 ReachingDef(?insn, ?ssa_var, ?origin) :-
-    SSA_InstructionIndex(?insn, 1),
+    Instruction_Index(?insn, 1),
     Instruction_Method(?insn, ?method),
     (SSA_FormalParam(_, ?method, ?ssa_var);
     SSA_ThisVar(?method, ?ssa_var)),
-    SSA_Alias(?ssa_var, ?origin).
+    SSA_Alias(?ssa_var, ?origin),
+    !ExistsDefInPhiHeader(?insn, _, ?origin).
+
+.output ReachingDef
 
 .decl NewIndexMapping(?old:number, ?new:number, ?method:symbol)
 .output NewIndexMapping
