@@ -10,6 +10,7 @@
     ?right: Expr
 ]
 
+
 .decl ResolveExpr(?meth: Method, ?var: symbol, ?expr: Expr)
 .decl ToString(?expr: Expr, ?out: symbol)
 .decl isBooleanExpr(?expr: Expr)
@@ -29,6 +30,7 @@
  *  2) Field loads
  *  3) Static class fields
  *  4) Catch blocks
+ *  TODO: Phi expressions?
  **/
 
 isBooleanExpr(?expr) :-
@@ -147,4 +149,4 @@ isExpr(?expr) :-
     ResolveExpr(_, ?right1, ?lExpr),
     ToString(?lExpr, ?out1),
     ?expr = [?op, "boolean", ?lExpr, [?right2, "boolean", nil, nil]],
-    ?out = cat("(", cat(?out1, cat(")", cat(?op, cat("(", cat(?right2, ")")))))).
+    ?out = cat("(", cat(?out1, cat(")", cat(?op, ?right2)))).
