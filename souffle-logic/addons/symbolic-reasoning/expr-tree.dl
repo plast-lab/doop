@@ -1,3 +1,5 @@
+//#define DEBUG 0
+
 .type SymbolicInput = Var | MethodInvocation
 .type Operator = symbol
 
@@ -12,14 +14,20 @@
 
 
 .decl ResolveExpr(?meth: Method, ?var: symbol, ?expr: Expr)
-.decl ToString(?expr: Expr, ?out: symbol)
+
+#ifdef DEBUG
+    .decl ToString(?expr: Expr, ?out: symbol)
+#endif
+
 .decl isBooleanExpr(?expr: Expr)
 .decl isInputExpr(?expr: Expr)
 .decl isExpr(?expr: Expr)
 //.decl MethodSymbolicInput(?meth: Method, ?input: SymbolicInput)
 
 .output ResolveExpr
+#ifdef DEBUG
 .output ToString
+#endif
 .output isBooleanExpr
 .output isInputExpr
 .output isExpr
@@ -40,7 +48,9 @@ isBooleanExpr(?expr) :-
 
 // Method Parameters
 
-ToString(?expr, ?param),
+#ifdef DEBUG
+    ToString(?expr, ?param),
+#endif
 ResolveExpr(?meth, ?param, ?expr),
 isInputExpr(?expr) :-
     FormalParam(_, ?meth, ?param),
@@ -49,7 +59,9 @@ isInputExpr(?expr) :-
 
 // Method Invocation result
 
+#ifdef DEBUG
 ToString(?expr, ?methInvo),
+#endif
 ResolveExpr(?meth, ?var, ?expr),
 isInputExpr(?expr) :-
     Instruction_Method(?methInvo, ?meth),
@@ -62,7 +74,9 @@ isInputExpr(?expr) :-
 // Load instance/static fields
 
 ResolveExpr(?meth, ?var, ?expr),
+#ifdef DEBUG
 ToString(?expr, ?base),
+#endif
 isInputExpr(?expr) :-
     Instruction_Method(?inst, ?meth),
     isLoadInstanceField_Insn(?inst),
@@ -73,19 +87,27 @@ isInputExpr(?expr) :-
 
 // Assign Local
 
+#ifdef DEBUG
 ToString(?expr, ?out),
+#endif
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
     Instruction_Method(?inst, ?meth),
     AssignInstruction_To(?inst, ?var),
     Var_Type(?var, ?type),
     AssignLocal_From(?inst, ?from),
+#ifdef DEBUG
     ResolveExpr(_, ?from, ?expr),
     ToString(?expr, ?out).
+#else
+    ResolveExpr(_, ?from, ?expr).
+#endif
 
 // Assign Unary
 
+#ifdef DEBUG
 ToString([?op, ?type, ?rExpr, nil], ?out),
+#endif
 ResolveExpr(?meth, ?var, [?op, ?type, ?rExpr, nil]),
 isExpr([?op, ?type, ?rExpr, nil]) :-
     AssignInstruction_To(?inst, ?var),
@@ -93,13 +115,19 @@ isExpr([?op, ?type, ?rExpr, nil]) :-
     Var_Type(?var, ?type),
     AssignOper_From(?inst, _, ?right),
     _OperatorAt(?inst, ?op),
+#ifdef DEBUG
     ResolveExpr(?meth, ?right, ?rExpr),
     ToString(?rExpr, ?out),
     ?out = cat(?op, cat(" ", ?out)).
+#else
+    ResolveExpr(?meth, ?right, ?rExpr).
+#endif
 
 // Assign Binary
 
+#ifdef DEBUG
 ToString(?expr, ?out),
+#endif
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
     AssignInstruction_To(?inst, ?var),
@@ -109,16 +137,24 @@ isExpr(?expr) :-
     AssignOper_From(?inst, ?pos2, ?right2),
     ?pos1 < ?pos2,
     _OperatorAt(?inst, ?op),
+#ifdef DEBUG
     ResolveExpr(?meth, ?right1, ?rExpr),
     ResolveExpr(?meth, ?right2, ?lExpr),
     ToString(?lExpr, ?out1),
     ToString(?rExpr, ?out2),
     ?expr = [?op, ?type, ?lExpr, ?rExpr],
     ?out = cat("(", cat(?out1, cat(")", cat(?op, cat("(", cat(?out2, ")")))))).
+#else
+    ResolveExpr(?meth, ?right1, ?rExpr),
+    ResolveExpr(?meth, ?right2, ?lExpr),
+    ?expr = [?op, ?type, ?lExpr, ?rExpr].
+#endif
 
 // If Conditions - Var_Var
 
+#ifdef DEBUG
 ToString(?expr, ?out),
+#endif
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
     Instruction_Method(?inst, ?meth),
@@ -128,15 +164,23 @@ isExpr(?expr) :-
     If_Var(?inst, ?pos2, ?right2),
     ?pos1 < ?pos2,
     _OperatorAt(?inst, ?op),
+#ifdef DEBUG
     ResolveExpr(_, ?right1, ?lExpr),
     ResolveExpr(_, ?right2, ?rExpr),
     ToString(?lExpr, ?out1),
     ToString(?rExpr, ?out2),
     ?expr = [?op, "boolean", ?lExpr, ?rExpr],
     ?out = cat("(", cat(?out1, cat(")", cat(?op, cat("(", cat(?out2, ")")))))).
+#else
+    ResolveExpr(_, ?right1, ?lExpr),
+    ResolveExpr(_, ?right2, ?rExpr),
+    ?expr = [?op, "boolean", ?lExpr, ?rExpr].
+#endif
 
 // If Conditions - Var_Const
+#ifdef DEBUG
 ToString(?expr, ?out),
+#endif
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
     Instruction_Method(?inst, ?meth),
@@ -146,7 +190,12 @@ isExpr(?expr) :-
     If_Constant(?inst, ?pos2, ?right2),
     ?pos1 < ?pos2,
     _OperatorAt(?inst, ?op),
+#ifdef DEBUG
     ResolveExpr(_, ?right1, ?lExpr),
     ToString(?lExpr, ?out1),
     ?expr = [?op, "boolean", ?lExpr, [?right2, "boolean", nil, nil]],
     ?out = cat("(", cat(?out1, cat(")", cat(?op, ?right2)))).
+#else
+    ResolveExpr(_, ?right1, ?lExpr),
+    ?expr = [?op, "boolean", ?lExpr, [?right2, "boolean", nil, nil]].
+#endif

@@ -1,0 +1,8 @@
+.decl PathExpression(meth: Method, inst: Instruction, expr: Expr)
+.output PathExpression
+
+PathExpression(meth, inst, expr) :-
+    Instruction_Method(inst, meth),
+    isIf_Insn(inst),
+    DummyIf_Var(inst, var),
+    ResolveExpr(meth, var, expr).

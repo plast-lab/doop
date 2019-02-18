@@ -1,40 +1,25 @@
 .decl ExprImpliesOther(expr1: Expr, expr2: Expr)
 .output ExprImpliesOther
 
-.decl StringExprImpliesOther(expr1:symbol, expr2:symbol)
-.output StringExprImpliesOther
-
 // Axioms and inference rules for boolean expressions
 
 // Every expression implies itself
 
-ExprImpliesOther(expr1, expr1),
-StringExprImpliesOther(?out, ?out) :-
-  isBooleanExpr(expr1), ToString(expr1, ?out).
+ExprImpliesOther(expr1, expr1) :-
+  isBooleanExpr(expr1).
 
 // A && B => A and A && B => B
 ExprImpliesOther(expr, left),
-ExprImpliesOther(expr, right),
-StringExprImpliesOther(exprOut, leftOut),
-StringExprImpliesOther(exprOut, rightOut) :-
+ExprImpliesOther(expr, right) :-
   isBooleanExpr(expr),
   (expr = ["&&", "boolean", left, right]
     ;
-  expr = ["&", "boolean", left, right]),
-  ToString(expr, exprOut), 
-  ToString(left, leftOut),
-  ToString(right, rightOut).
+  expr = ["&", "boolean", left, right]).
 
 // A => A || B and B => A || B
-StringExprImpliesOther(leftOut, exprOut),
-StringExprImpliesOther(rightOut, exprOut),
 ExprImpliesOther(left, expr),
 ExprImpliesOther(right, expr) :-
   isBooleanExpr(expr),
   (expr = ["||", "boolean", left, right]
     ;
-  expr = ["|", "boolean", left, right]),
-  ToString(expr, exprOut), 
-  ToString(left, leftOut),
-  ToString(right, rightOut).
-
+  expr = ["|", "boolean", left, right]).
