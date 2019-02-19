@@ -770,9 +770,8 @@ class FactWriter extends JavaFactWriter {
         String declClass = exprMethodRef.declaringClass().getName();
 
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
-        if (tag != null) {
+        if (tag != null)
             _db.add(METHOD_INV_LINE, insn, str(tag.getLineNumber()));
-        }
 
         if (expr instanceof DynamicInvokeExpr) {
             writeDynamicInvoke((DynamicInvokeExpr)expr, index, insn, methodId);

@@ -28,9 +28,9 @@ class DoopAddons {
         // The old coffi front-end is not thread-safe
         boolean runSeq = (_cores == null) || Options.v().coffi();
         int threadNum = runSeq ? 1 : _cores;
-        CountingThreadPoolExecutor executor =  new CountingThreadPoolExecutor(threadNum,
-                                                                              threadNum, 30, TimeUnit.SECONDS,
-                                                                              new LinkedBlockingQueue<>());
+        CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(threadNum,
+                                                                             threadNum, 30, TimeUnit.SECONDS,
+                                                                             new LinkedBlockingQueue<>());
         Iterator<SootClass> clIt = Scene.v().getClasses().snapshotIterator();
         while( clIt.hasNext() ) {
             SootClass cl = clIt.next();
