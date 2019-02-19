@@ -10,7 +10,7 @@ import static org.clyze.doop.TestUtils.*
  * Test handling of invokedynamic (method handles, method types, bootstrap methods).
  */
 class TestInvokedynamic extends ServerAnalysisTests {
-	@spock.lang.Ignore
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 115 (invokedynamic, method handles/types)"(boolean fullReflection) {
 		when:

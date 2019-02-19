@@ -13,7 +13,7 @@ import static org.clyze.doop.TestUtils.*
 class TestLambdasMethodReferences extends ServerAnalysisTests {
     final static String[] TEST_ANALYSES = [ "context-insensitive", "1-object-sensitive+heap" ]
 
-	@spock.lang.Ignore
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 107 (lambdas)"(String analysisName, boolean wala) {
 		when:
@@ -43,7 +43,7 @@ class TestLambdasMethodReferences extends ServerAnalysisTests {
 		wala << [true, false]
 	}
 
-	@spock.lang.Ignore
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 104 (method references)"(String analysisName) {
 		when:
@@ -83,7 +83,7 @@ class TestLambdasMethodReferences extends ServerAnalysisTests {
 		analysisName << TEST_ANALYSES
 	}
 
-	@spock.lang.Ignore
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test ForEach"(boolean wala) {
 		when:
@@ -100,7 +100,7 @@ class TestLambdasMethodReferences extends ServerAnalysisTests {
 		wala << [true, false]
 	}
 
-	@spock.lang.Ignore
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test FutureExample"(String analysisName) {
 		when:
