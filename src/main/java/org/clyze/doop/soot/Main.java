@@ -214,8 +214,12 @@ public class Main {
                         forceResolveClasses(allClassNames, jimpleClasses, scene);
                         System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
                     }
+
+                    // Write classes, following package hierarchy.
+                    boolean structured = DoopAddons.checkSetHierarchyDirs();
                     driver.writeInParallel(jimpleClasses);
-                    DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
+                    if (!structured)
+                        DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
                 }
             }
 

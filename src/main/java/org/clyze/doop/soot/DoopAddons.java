@@ -84,8 +84,32 @@ class DoopAddons {
     }
 
     /**
-     * Upstream Soot does not structure generated Jimple by package, which is
-     * expected by the server.
+     * Set the "hierachy_dirs" property of Soot to true, so that generated
+     * Jimple follows package structure. This handles Jimple generation for
+     * very long class names (https://github.com/Sable/soot/pull/1006).
+     *
+     * @return true if the property could be enabled, false otherwise
+     */
+    private boolean checkSetHierarchyDirs() {
+        Options opts = Options.v();
+        try {
+            Method shd = opts.getClass().getDeclaredMethod("set_hierarchy_dirs", Boolean.class);
+            shd.setAccessible(true);
+            shd.invoke(opts, true);
+            System.err.println("Soot: hierarchy_dirs set.");
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
+     * Some versions of Soot do not structure generated Jimple by package, which
+     * is expected by the server. This method simulates (so that the server
+     * works), but does not address the failing long class names bug (see
+     * checkSetHierarchyDirs() above), since it runs after files are written.
+     *
+     * @param outDir  the directory to be restructured, containing .shimple files
      */
     public static void structureJimpleFiles(String outDir) {
         boolean movedMsg = false;
