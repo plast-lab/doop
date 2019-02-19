@@ -90,7 +90,7 @@ class DoopAddons {
      *
      * @return true if the property could be enabled, false otherwise
      */
-    private boolean checkSetHierarchyDirs() {
+    public static boolean checkSetHierarchyDirs() {
         Options opts = Options.v();
         try {
             Method shd = opts.getClass().getDeclaredMethod("set_hierarchy_dirs", Boolean.class);
