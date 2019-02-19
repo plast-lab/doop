@@ -32,10 +32,12 @@
     RecordContextRequest(?ctx, ?value, ?var),
     isImmutableHContext(?hctx).
 
-  InitContextResponse(?s, ?s) :-
+  InitContextResponse(?s, ?ctx) :-
+    ?ctx = "<<immutable-context>>",
     InitContextRequest(?s).
 
-  InitHContextResponse(?s, ?s) :-
+  InitHContextResponse(?s, ?hctx) :-
+    ?hctx = "<<immutable-hcontext>>",
     InitHContextRequest(?s).
 
   #ifdef HEAPDLS
