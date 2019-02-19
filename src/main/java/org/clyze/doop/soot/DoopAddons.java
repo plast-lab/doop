@@ -174,4 +174,21 @@ class DoopAddons {
             System.err.println("Using default fresh variable separator in Soot.");
         }
     }
+
+    private static boolean polymorphicHandling_msg = false;
+    public static boolean polymorphicHandling(String declClass, String simpleName) {
+        try {
+            Method hc = Class.forName("soot.PolymorphicMethodRef").getDeclaredMethod("handlesClass", String.class);
+            hc.setAccessible(true);
+            return (boolean)hc.invoke(null, declClass);
+        } catch (Throwable t) {
+            if (!polymorphicHandling_msg) {
+                polymorphicHandling_msg = true;
+                System.err.println("Warning: Soot does not contain PolymorphicMethodRef.handlesClass(), using custom method.");
+            }
+            return (declClass.equals("java.lang.invoke.MethodHandle") &&
+                    (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
+                     simpleName.equals("invokeBasic")));
+        }
+    }
 }

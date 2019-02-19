@@ -792,7 +792,7 @@ class FactWriter extends JavaFactWriter {
 
     // Special handling for polymorphic-signature methods.
     private String invokeMethodSig(String insn, String declClass, String simpleName, SootMethodRef exprMethodRef, InvokeExpr expr) {
-        if (PolymorphicMethodRef.handlesClass(declClass)) {
+        if (!simpleName.equals("<init>") && DoopAddons.polymorphicHandling(declClass, simpleName)) {
             _db.add(POLYMORPHIC_INVOCATION, insn, simpleName);
             return _rep.signature(exprMethodRef);
         } else

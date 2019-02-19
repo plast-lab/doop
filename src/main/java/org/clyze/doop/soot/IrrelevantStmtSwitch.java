@@ -58,7 +58,8 @@ class IrrelevantStmtSwitch implements StmtSwitch
         else {
             SootMethodRef exprMethodRef = expr.getMethodRef();
             String declClass = exprMethodRef.declaringClass().getName();
-            if (PolymorphicMethodRef.handlesClass(declClass)) {
+            String simpleName = exprMethodRef.name();
+            if (DoopAddons.polymorphicHandling(declClass, simpleName)) {
                 relevant = true;
             } else
                 inspectMethod(expr.getMethod());
