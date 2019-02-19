@@ -768,30 +768,36 @@ class FactWriter extends JavaFactWriter {
         SootMethodRef exprMethodRef = expr.getMethodRef();
         String simpleName = Representation.simpleName(exprMethodRef);
         String declClass = exprMethodRef.declaringClass().getName();
-        checkAndMarkMethodHandleInvocation(insn, declClass, simpleName);
 
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
         if (tag != null) {
             _db.add(METHOD_INV_LINE, insn, str(tag.getLineNumber()));
         }
 
-        if (expr instanceof StaticInvokeExpr) {
-            _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), methodId);
-        }
-        else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr) {
-            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
-        }
-        else if (expr instanceof SpecialInvokeExpr) {
-            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
-        }
-        else if (expr instanceof DynamicInvokeExpr) {
+        if (expr instanceof DynamicInvokeExpr) {
             writeDynamicInvoke((DynamicInvokeExpr)expr, index, insn, methodId);
-        }
-        else {
-            throw new RuntimeException("Cannot handle invoke expr: " + expr);
+        } else {
+            String methodSig = invokeMethodSig(insn, declClass, simpleName, exprMethodRef, expr);
+            if (expr instanceof StaticInvokeExpr)
+                _db.add(STATIC_METHOD_INV, insn, str(index), methodSig, methodId);
+            else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr)
+                _db.add(VIRTUAL_METHOD_INV, insn, str(index), methodSig, _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
+            else if (expr instanceof SpecialInvokeExpr)
+                _db.add(SPECIAL_METHOD_INV, insn, str(index), methodSig, _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
+            else
+                throw new RuntimeException("Cannot handle invoke expr: " + expr);
         }
 
         return insn;
+    }
+
+    // Special handling for polymorphic-signature methods.
+    private String invokeMethodSig(String insn, String declClass, String simpleName, SootMethodRef exprMethodRef, InvokeExpr expr) {
+        if (PolymorphicMethodRef.handlesClass(declClass)) {
+            _db.add(POLYMORPHIC_INVOCATION, insn, simpleName);
+            return _rep.signature(exprMethodRef);
+        } else
+            return _rep.signature(expr.getMethod());
     }
 
     private String getBootstrapSig(DynamicInvokeExpr di) {

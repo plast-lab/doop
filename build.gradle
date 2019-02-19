@@ -88,7 +88,8 @@ dependencies {
             // "ca.mcgill.sable:soot:3.1.0",
             // Doop's Soot fork.
             // "ext:sootclasses:3.2.7",
-            "ext:sootclasses:3.2.0.MINIMAL",
+            // "ext:sootclasses:3.2.0.MINIMAL",
+            "ext:sootclasses:trunk.20190219",
             "ext:soot-infoflow:2.5.1",
             "ext:soot-infoflow-android:2.5.1",
             // https://mvnrepository.com/artifact/gov.nist.math/jama
