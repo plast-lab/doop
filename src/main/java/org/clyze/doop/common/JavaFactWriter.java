@@ -288,7 +288,6 @@ public abstract class JavaFactWriter {
      */
     protected void writeMethodTypeConstant(String mt) {
         int rParen = mt.indexOf(")");
-        int arity = 0;
         if (mt.startsWith("(") && (rParen != -1)) {
             String retType = mt.substring(rParen + 1, mt.length());
             // We write out the parameters part of the signature without the

@@ -327,7 +327,7 @@ class FactWriter extends JavaFactWriter {
         writeAssignClassConstant(m, stmt, l, new ClassConstantInfo(constant), session);
     }
 
-    void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstantInfo info, Session session) {
+    private void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstantInfo info, Session session) {
         if (info.isMethodType)
             writeMethodTypeConstant(info.heap);
         else
@@ -944,10 +944,10 @@ class FactWriter extends JavaFactWriter {
     }
 
     static class SigInfo {
-        public final int arity;
-        public final String retType;
-        public final String paramTypes;
-        public SigInfo(SootMethodRef ref, boolean reverse) {
+        final int arity;
+        final String retType;
+        final String paramTypes;
+        SigInfo(SootMethodRef ref, boolean reverse) {
             List<Type> paramTypes = ref.parameterTypes();
             if (reverse)
                 paramTypes = Lists.reverse(paramTypes);

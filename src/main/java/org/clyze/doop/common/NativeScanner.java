@@ -271,9 +271,9 @@ public class NativeScanner {
 
 // A representation of the strings section in the binary.
 class Section {
-    final int offset;
-    final int size;
-    final byte[] data;
+    private final int offset;
+    private final int size;
+    private final byte[] data;
     public Section(int offset, int size, byte[] data) {
         this.offset = offset;
         this.size = size;
