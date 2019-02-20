@@ -25,7 +25,7 @@ class TestInvokedynamic extends ServerAnalysisTests {
 										 "--thorough-fact-gen", "--sanity",
 										 "--Xstats-none",
 										 "--reflection-method-handles"] + reflectionOpts
-		String analysisId = "115-invokedynamic" + (fullReflection ? "" : "-light-refl")
+		String analysisId = "test-115-invokedynamic" + (fullReflection ? "" : "-light-refl")
 		Analysis analysis = analyzeTest("115-invokedynamic",
 										options,
 										analysisName,

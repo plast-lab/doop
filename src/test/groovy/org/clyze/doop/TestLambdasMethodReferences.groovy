@@ -24,7 +24,7 @@ class TestLambdasMethodReferences extends ServerAnalysisTests {
 										 "--generate-jimple"] +
 										(wala ? ["--wala-fact-gen"] : []),
 										analysisName,
-										"107-lambdas" + (wala ? "-wala" : ""))
+										"test-107-lambdas" + (wala ? "-wala" : ""))
 
 		then:
 		varPointsToQ(analysis,
@@ -91,7 +91,7 @@ class TestLambdasMethodReferences extends ServerAnalysisTests {
 		Analysis analysis = analyzeTest("invokedynamic-ForEach",
 										["--platform", "java_8"] + (wala ? ["--wala-fact-gen"] : []),
 										analysisName,
-										"invokedynamic-ForEach" + (wala ? "-wala" : ""))
+										"test-invokedynamic-ForEach" + (wala ? "-wala" : ""))
 
 		then:
 		methodIsReachable(analysis, '<example_foreach.ForEach: void printTheList()>')
