@@ -148,7 +148,6 @@ public class NativeScanner {
     private static void processLib(String objdumpCmd, File outDir, String lib,
                                    SortedMap<Long, String> eps) throws IOException {
         System.out.println("Finding .rodata header");
-        Section rodata = null;
 
         ProcessBuilder builder = new ProcessBuilder(objdumpCmd, "--headers", lib);
         int sizeIdx = -1;
@@ -185,7 +184,7 @@ public class NativeScanner {
                     raf.seek(offset);
                     byte[] bytes = new byte[size];
                     raf.readFully(bytes);
-                    rodata = new Section(offset, size, bytes);
+                    Section rodata = new Section(offset, size, bytes);
                     System.out.println("Section fully read.");
                     System.out.println(rodata.toString());
                     break;
@@ -262,7 +261,7 @@ public class NativeScanner {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 
         List<String> lines = new LinkedList<>();
-        String line = null;
+        String line;
         while ((line = reader.readLine()) != null)
             lines.add(line);
         return lines;
@@ -286,24 +285,24 @@ class Section {
      * @return a collection of the strings found
      */
     Map<Long, String> strings() {
-        String foundString = "";
+        StringBuilder foundString = new StringBuilder();
         Map<Long, String> foundStrings = new TreeMap<>();
         long addr = offset;
         for (int i = 0; i < data.length; i++)
             if (data[i] == 0) {
-                if (!foundString.equals("")) {
-                    foundStrings.put(addr, foundString);
-                    foundString = "";
+                if (!foundString.toString().equals("")) {
+                    foundStrings.put(addr, foundString.toString());
+                    foundString = new StringBuilder();
                 }
                 addr = offset + i + 1;
             } else
-                foundString += (char)data[i];
+                foundString.append((char) data[i]);
         return foundStrings;
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder("Section [offset = " + offset + ", size = " + size + "]\n");
-        strings().forEach((Long addr, String s) -> sb.append(addr + ": String '" + s + "'\n"));
+        strings().forEach((Long addr, String s) -> sb.append(addr).append(": String '").append(s).append("'\n"));
         return sb.toString();
     }
 }

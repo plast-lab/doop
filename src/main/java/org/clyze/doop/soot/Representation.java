@@ -6,7 +6,6 @@ import org.clyze.persistent.model.doop.DynamicMethodInvocation;
 import soot.*;
 import soot.jimple.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
