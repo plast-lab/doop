@@ -125,7 +125,7 @@ public class NativeScanner {
             return new EntryPoint(method, addr);
     }
 
-    private static void checkSymbols(Collection<String> lines, String lib) {
+    private static void checkSymbols(Iterable<String> lines, String lib) {
         boolean referencesGetMethodID = false;
         boolean referencesGetFieldID = false;
         for (String line : lines) {
@@ -146,7 +146,7 @@ public class NativeScanner {
     }
 
     private static void processLib(String objdumpCmd, File outDir, String lib,
-                                   SortedMap<Long, String> eps) throws IOException {
+                                   Map<Long, String> eps) throws IOException {
         System.out.println("Finding .rodata header");
 
         ProcessBuilder builder = new ProcessBuilder(objdumpCmd, "--headers", lib);
@@ -194,8 +194,8 @@ public class NativeScanner {
 
         System.out.println("Gathering strings from " + lib + "...");
         ProcessBuilder builderStrings = new ProcessBuilder("strings", lib);
-        List<String> methodTypes = new LinkedList<>();
-        List<String> names = new LinkedList<>();
+        Collection<String> methodTypes = new LinkedList<>();
+        Collection<String> names = new LinkedList<>();
         for (String line : runCommand(builderStrings)) {
             if (isMethodType(line))
                 methodTypes.add(line);
