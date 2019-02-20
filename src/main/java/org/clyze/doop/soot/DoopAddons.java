@@ -93,7 +93,7 @@ class DoopAddons {
     public static boolean checkSetHierarchyDirs() {
         Options opts = Options.v();
         try {
-            Method shd = opts.getClass().getDeclaredMethod("set_hierarchy_dirs", Boolean.class);
+            Method shd = opts.getClass().getDeclaredMethod("set_hierarchy_dirs", boolean.class);
             shd.setAccessible(true);
             shd.invoke(opts, true);
             System.err.println("Soot: hierarchy_dirs set.");
