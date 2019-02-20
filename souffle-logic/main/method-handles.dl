@@ -528,7 +528,9 @@ VarPointsTo(?hctx, ?value, ?callerCtx, ?ret) :-
   Method_DeclaringType(?method, ?type),
   isImmutableHContext(?hctx),
   ?value = cat(?type, cat(" value constructed by method handle ", ?mh)),
-  AssignReturnValue(?invo, ?ret).
+  AssignReturnValue(?invo, ?ret),
+  Var_Type(?ret, ?retType),
+  basic.SubtypeOf(?type, ?retType).
 
 /*************************************************************
  * Generic invokedynamic
