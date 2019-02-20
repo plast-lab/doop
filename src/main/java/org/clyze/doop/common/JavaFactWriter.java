@@ -277,8 +277,7 @@ public abstract class JavaFactWriter {
             sb.append(',');
             sb.append(elems[idx]);
         }
-        String ret = sb.toString();
-        return ret;
+        return sb.toString();
     }
 
     /**

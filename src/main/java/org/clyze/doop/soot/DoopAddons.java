@@ -157,7 +157,7 @@ class DoopAddons {
         }
     }
 
-    public static final String LOCAL_SEPARATOR = "_$$A_";
+    private static final String LOCAL_SEPARATOR = "_$$A_";
 
     /**
      * Call setSeparator() on Soot to set the fresh variable separator

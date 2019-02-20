@@ -209,7 +209,7 @@ public class NativeScanner {
         System.out.println("Possible method/class names: " + namesCount);
 
         // Write out facts.
-        try (Database db = new Database(outDir);) {
+        try (Database db = new Database(outDir)) {
             for (String mt : methodTypes)
                 db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", mt);
             for (String n : names)

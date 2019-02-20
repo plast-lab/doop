@@ -694,7 +694,7 @@ class FactWriter extends JavaFactWriter {
         return l;
     }
 
-    Local writeMethodTypeConstantExpression(SootMethod inMethod, Stmt stmt, MethodType constant, Session session) {
+    private Local writeMethodTypeConstantExpression(SootMethod inMethod, Stmt stmt, MethodType constant, Session session) {
         // introduce a new temporary variable
         Local l = freshLocal(inMethod, "$methodtypeconstant", RefType.v("java.lang.invoke.MethodType"), session);
         writeAssignMethodTypeConstant(inMethod, stmt, l, constant, session);
@@ -961,11 +961,11 @@ class FactWriter extends JavaFactWriter {
         }
     }
 
-    public InstrInfo calcInstrInfo(SootMethod m, Stmt stmt, Session session) {
+    private InstrInfo calcInstrInfo(SootMethod m, Stmt stmt, Session session) {
         return new InstrInfo(m, stmt, session, true);
     }
 
-    public InstrInfo getInstrInfo(SootMethod m, Stmt stmt, Session session) {
+    private InstrInfo getInstrInfo(SootMethod m, Stmt stmt, Session session) {
         return new InstrInfo(m, stmt, session, false);
     }
 
@@ -973,7 +973,7 @@ class FactWriter extends JavaFactWriter {
         final int index;
         final String insn;
         final String methodId;
-        protected InstrInfo(SootMethod m, Stmt stmt, Session session, boolean calc) {
+        InstrInfo(SootMethod m, Stmt stmt, Session session, boolean calc) {
             if (calc)
                 this.index = session.calcUnitNumber(stmt);
             else

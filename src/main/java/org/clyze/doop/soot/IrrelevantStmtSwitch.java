@@ -52,7 +52,7 @@ class IrrelevantStmtSwitch implements StmtSwitch
             inspectInvoke(stmt.getInvokeExpr());
     }
 
-    public void inspectInvoke(InvokeExpr expr) {
+    private void inspectInvoke(InvokeExpr expr) {
         if (expr instanceof DynamicInvokeExpr)
             inspectBootstrapMethod((DynamicInvokeExpr)expr);
         else {
