@@ -22,7 +22,7 @@ import soot.options.Options;
 /**
  * This class gathers modified functionality that Doop needs from Soot.
  */
-class DoopAddons {
+public class DoopAddons {
 
     public static void retrieveAllSceneClassesBodies(Integer _cores) {
         // The old coffi front-end is not thread-safe
