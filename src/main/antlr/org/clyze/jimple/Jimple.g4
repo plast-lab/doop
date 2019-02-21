@@ -95,6 +95,12 @@ allocationStmt
 methodSig
 	: '<' IDENTIFIER ':' IDENTIFIER IDENTIFIER '(' identifierList? ')' '>' ;
 
+methodHandle
+	: STRING methodSig ;
+
+methodType
+	: IDENTIFIER IDENTIFIER? '(' identifierList? ')' ;
+
 dynamicMethodSig
 	: '<' IDENTIFIER '(' identifierList? ')' '>' ;
 
@@ -108,6 +114,8 @@ value
 	| STRING
 	| 'class' STRING
 	| 'handle:' methodSig
+	| 'methodhandle:' methodHandle
+	| 'methodtype:' methodType
 	;
 
 valueList
