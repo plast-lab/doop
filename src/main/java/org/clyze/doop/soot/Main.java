@@ -216,10 +216,13 @@ public class Main {
                     }
 
                     // Write classes, following package hierarchy.
+                    Options.v().set_output_dir(DoopAddons.jimpleDir(outDir));
                     boolean structured = DoopAddons.checkSetHierarchyDirs();
                     driver.writeInParallel(jimpleClasses);
                     if (!structured)
                         DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
+                    // Revert to standard output dir for the rest of the code.
+                    Options.v().set_output_dir(outDir);
                 }
             }
 

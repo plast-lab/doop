@@ -103,6 +103,10 @@ class DoopAddons {
         }
     }
 
+    public static String jimpleDir(String outDir) {
+        return outDir + File.separatorChar + "jimple";
+    }
+
     /**
      * Some versions of Soot do not structure generated Jimple by package, which
      * is expected by the server. This method simulates (so that the server
@@ -113,7 +117,7 @@ class DoopAddons {
      */
     public static void structureJimpleFiles(String outDir) {
         boolean movedMsg = false;
-        String jimpleDirPath = outDir + File.separatorChar + "jimple";
+        String jimpleDirPath = jimpleDir(outDir);
         File[] outDirFiles = new File(outDir).listFiles();
         if (outDirFiles == null)
             return;
