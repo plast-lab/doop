@@ -175,6 +175,14 @@ class DoopAddons {
         }
     }
 
+    /**
+     * Clients of Doop can read the separator to be able to reason
+     * about local names in generated Jimple.
+     */
+    public static String getSeparator() {
+        return LOCAL_SEPARATOR;
+    }
+
     private static boolean polymorphicHandling_msg = false;
     public static boolean polymorphicHandling(String declClass, String simpleName) {
         try {
