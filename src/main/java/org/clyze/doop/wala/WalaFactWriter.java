@@ -1046,17 +1046,12 @@ public class WalaFactWriter extends JavaFactWriter {
 
         IClassHierarchy cha = inMethod.getClassHierarchy();
         MethodReference targetRef = instruction.getCallSite().getDeclaredTarget();
-        IClass targetClass = cha.lookupClass(targetRef.getDeclaringClass());
-
-        // Uncomment and fix to handle method handle invocations.
-        // String insn = "";
-        // String simpleName = "";
-        // String declClass = "";
-        // checkAndMarkMethodHandleInvocation(insn, declClass, simpleName);
+        TypeReference declClassRef = targetRef.getDeclaringClass();
+        IClass targetClass = cha.lookupClass(declClassRef);
 
         if(targetClass == null) {
-            //System.out.println("Failed to find class: " + fixTypeString(targetRef.getDeclaringClass().getName().toString()) + " in class chierarchy.");
-            writePhantomType(targetRef.getDeclaringClass());
+            //System.out.println("Failed to find class: " + fixTypeString(declClassRef.getName().toString()) + " in class chierarchy.");
+            writePhantomType(declClassRef);
             writePhantomMethod(targetRef);
         }
         else if( targetClass.isArrayClass())
@@ -1125,6 +1120,7 @@ public class WalaFactWriter extends JavaFactWriter {
         if(sourceLineNum != -1)
             _db.add(METHOD_INV_LINE, insn, str(sourceLineNum));
 
+        String simpleName = targetRef.getName().toString();
         if (instruction instanceof SSAInvokeDynamicInstruction) { //Had to put these first because wala considers them static
 //            MethodReference dynInfo = instruction.getDeclaredTarget();
             StringBuilder parameterTypes = new StringBuilder();
@@ -1138,24 +1134,24 @@ public class WalaFactWriter extends JavaFactWriter {
             String sig = getBootstrapSig(((SSAInvokeDynamicInstruction) instruction).getBootstrap(),inMethod.getClassHierarchy());
             int dynArity = targetRef.getNumberOfParameters();
             // TODO: we do not write the tag of the method handle.
-            writeInvokedynamic(insn, index, sig, targetRef.getName().toString(), fixTypeString(targetRef.getReturnType().toString()), dynArity, parameterTypes.toString(), -1, methodId);
-        }
-        else if (instruction.isStatic()) {
-            _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
-            //_db.add(STATIC_METHOD_INV, insn, _rep.signature(targetRef), methodId);
-        }
-        else if (instruction.isDispatch()) {
-            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
-            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
-            //_db.add(VIRTUAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
-        }
-        else if (instruction.isSpecial()) {
-            Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
-            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
-            //_db.add(SPECIAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
-        }
-        else {
-            throw new RuntimeException("Cannot handle invoke instruction: " + instruction);
+            writeInvokedynamic(insn, index, sig, simpleName, fixTypeString(targetRef.getReturnType().toString()), dynArity, parameterTypes.toString(), -1, methodId);
+        } else {
+            // Mark polymorphic invocations.
+            if (JavaFactWriter.polymorphicHandling(fixTypeString(declClassRef.toString()), simpleName))
+                _db.add(POLYMORPHIC_INVOCATION, insn, simpleName);
+            if (instruction.isStatic()) {
+                _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(targetRef), methodId);
+                //_db.add(STATIC_METHOD_INV, insn, _rep.signature(targetRef), methodId);
+            } else if (instruction.isDispatch()) {
+                Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
+                _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
+                //_db.add(VIRTUAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
+            } else if (instruction.isSpecial()) {
+                Local l = createLocal(ir, instruction, instruction.getReceiver(),typeInference);
+                _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(targetRef), _rep.local(inMethod, l), methodId);
+                //_db.add(SPECIAL_METHOD_INV, insn, _rep.signature(targetRef), methodId);
+            } else
+                throw new RuntimeException("Cannot handle invoke instruction: " + instruction);
         }
 
         return insn;

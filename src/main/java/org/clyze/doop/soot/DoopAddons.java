@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.JavaFactWriter;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
@@ -198,9 +199,7 @@ public class DoopAddons {
                 polymorphicHandling_msg = true;
                 System.err.println("Warning: Soot does not contain PolymorphicMethodRef.handlesClass(), using custom method.");
             }
-            return (declClass.equals("java.lang.invoke.MethodHandle") &&
-                    (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
-                     simpleName.equals("invokeBasic")));
+            return JavaFactWriter.polymorphicHandling(declClass, simpleName);
         }
     }
 }

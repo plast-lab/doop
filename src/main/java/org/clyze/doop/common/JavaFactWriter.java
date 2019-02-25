@@ -337,4 +337,19 @@ public abstract class JavaFactWriter {
             writePhantomMethod(m);
         }
     }
+
+    /**
+     * Mark polymorphic methods. This currently recognizes a fixed
+     * list of methods.
+     *
+     * @param declClass    the declaring class of the target method
+     * @param simpleName   the name of the method
+     *
+     * @return true        if the method is polymorphic, false otherwise
+     */
+    public static boolean polymorphicHandling(String declClass, String simpleName) {
+        return (declClass.equals("java.lang.invoke.MethodHandle") &&
+                (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
+                 simpleName.equals("invokeBasic")));
+    }
 }
