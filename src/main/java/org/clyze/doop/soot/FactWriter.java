@@ -715,7 +715,7 @@ class FactWriter extends JavaFactWriter {
         else if (v instanceof NullConstant) {
             // Giving the type of the formal argument to be used in the creation of
             // temporary var for the actual argument (whose value is null).
-            Type argType = expr.getMethodRef().getParameterType(idx);
+            Type argType = expr.getMethodRef().parameterType(idx);
             return writeNullExpression(inMethod, stmt, argType, session);
         } else if (v instanceof Constant)
             throw new RuntimeException("Value has unknown constant type: " + v);
@@ -767,7 +767,7 @@ class FactWriter extends JavaFactWriter {
 
         SootMethodRef exprMethodRef = expr.getMethodRef();
         String simpleName = Representation.simpleName(exprMethodRef);
-        String declClass = exprMethodRef.getDeclaringClass().getName();
+        String declClass = exprMethodRef.declaringClass().getName();
 
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
         if (tag != null)
@@ -801,7 +801,7 @@ class FactWriter extends JavaFactWriter {
 
     private String getBootstrapSig(DynamicInvokeExpr di) {
         SootMethodRef bootstrapMeth = di.getBootstrapMethodRef();
-        if (bootstrapMeth.getDeclaringClass().isPhantom()) {
+        if (bootstrapMeth.declaringClass().isPhantom()) {
             String bootstrapSig = Representation.signature(bootstrapMeth);
             if (_reportPhantoms)
                 System.out.println("Bootstrap method is phantom: " + bootstrapSig);
@@ -815,8 +815,8 @@ class FactWriter extends JavaFactWriter {
         SootMethodRef dynInfo = di.getMethodRef();
         SigInfo dynSig = new SigInfo(dynInfo, true);
         for (int pIdx = 0; pIdx < dynSig.arity; pIdx++)
-            writeInvokedynamicParameterType(insn, pIdx, dynInfo.getParameterType(pIdx).toString());
-        writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.getName(), dynSig.retType, dynSig.arity, dynSig.paramTypes, di.getHandleTag(), methodId);
+            writeInvokedynamicParameterType(insn, pIdx, dynInfo.parameterType(pIdx).toString());
+        writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.name(), dynSig.retType, dynSig.arity, dynSig.paramTypes, di.getHandleTag(), methodId);
     }
 
     private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {
@@ -948,12 +948,12 @@ class FactWriter extends JavaFactWriter {
         final String retType;
         final String paramTypes;
         SigInfo(SootMethodRef ref, boolean reverse) {
-            List<Type> paramTypes = ref.getParameterTypes();
+            List<Type> paramTypes = ref.parameterTypes();
             if (reverse)
                 paramTypes = Lists.reverse(paramTypes);
 
             this.arity = paramTypes.size();
-            this.retType = ref.getReturnType().toString();
+            this.retType = ref.returnType().toString();
 
             StringJoiner joiner = new StringJoiner(",");
             paramTypes.forEach(p -> joiner.add(p.toString()));
