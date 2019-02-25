@@ -63,8 +63,10 @@ public class Main {
         Options.v().set_output_dir(outDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
         Options.v().setPhaseOption("jb", "model-lambdametafactory:false");
+        if (sootParameters._ignoreFactGenErrors)
+            Options.v().set_ignore_resolution_errors(true);
 
-        if (sootParameters._ignoreWrongStaticness)
+        if (sootParameters._ignoreWrongStaticness || sootParameters._ignoreFactGenErrors)
             Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
 
         if (sootParameters._ssa) {
