@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +20,7 @@ import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.Value;
 import soot.options.Options;
 
 /**
@@ -201,5 +204,48 @@ public class DoopAddons {
             }
             return JavaFactWriter.polymorphicHandling(declClass, simpleName);
         }
+    }
+
+    /**
+     * Since MethodType was introduced in Soot 3.2, to maintain
+     * compatibility with earlier versions, we introduce a reflective
+     * layer and our own custom MethodType class.
+     */
+    public static MethodType methodType(Value v) {
+	try {
+	    Class<?> mtClass = Class.forName("soot.jimple.MethodType");
+	    // Dynamic instanceof check.
+	    Object methodType = mtClass.cast(v);
+	    Method getRetType = mtClass.getDeclaredMethod("getReturnType");
+	    getRetType.setAccessible(true);
+	    String retType = getRetType.invoke(methodType).toString();
+	    Method getParamTypes = mtClass.getDeclaredMethod("getParameterTypes");
+	    getParamTypes.setAccessible(true);
+	    Object paramTypesObj = getParamTypes.invoke(methodType);
+	    if (!(paramTypesObj instanceof List))
+		return null;
+	    List<?> paramTypesT = (List<?>)paramTypesObj;
+	    List<String> paramTypes = new LinkedList<>();
+	    for (Object t : paramTypesT)
+		paramTypes.add(t.toString());
+	    return new MethodType(retType, paramTypes);
+	} catch (Exception ex) {
+	    return null;
+	}
+    }
+
+    public static class MethodType {
+	final String returnType;
+	final List<String> parameterTypes;
+	public MethodType(String retType, List<String> paramTypes) {
+	    this.returnType = retType;
+	    this.parameterTypes = paramTypes;
+	}
+	public String getReturnType() {
+	    return returnType;
+	}
+	public List<String> getParameterTypes() {
+	    return parameterTypes;
+	}
     }
 }

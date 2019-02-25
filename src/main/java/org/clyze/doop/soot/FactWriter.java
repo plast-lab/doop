@@ -308,15 +308,13 @@ class FactWriter extends JavaFactWriter {
         _db.add(ASSIGN_HEAP_ALLOC, ii.insn, str(ii.index), heap, _rep.local(m, l), ii.methodId, "0");
     }
 
-    private void writeAssignMethodTypeConstant(SootMethod m, Stmt stmt, Local l, MethodType constant, Session session) {
+    private void writeAssignMethodTypeConstant(SootMethod m, Stmt stmt, Local l, DoopAddons.MethodType constant, Session session) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
-        String retType = constant.getReturnType().toString();
-        List<Type> paramTypesList = constant.getParameterTypes();
+        String retType = constant.getReturnType();
+        List<String> paramTypesList = constant.getParameterTypes();
         int arity = paramTypesList.size();
         String[] paramTypes = new String[arity];
-        int idx = 0;
-        for (Type t : paramTypesList)
-            paramTypes[idx++] = t.toString();
+	paramTypes = paramTypesList.toArray(paramTypes);
         writeMethodTypeConstant(retType, paramTypes, null);
         String params = concatenate(paramTypes);
         String mt = "(" + params + ")" + retType;
@@ -694,7 +692,7 @@ class FactWriter extends JavaFactWriter {
         return l;
     }
 
-    private Local writeMethodTypeConstantExpression(SootMethod inMethod, Stmt stmt, MethodType constant, Session session) {
+    private Local writeMethodTypeConstantExpression(SootMethod inMethod, Stmt stmt, DoopAddons.MethodType constant, Session session) {
         // introduce a new temporary variable
         Local l = freshLocal(inMethod, "$methodtypeconstant", RefType.v("java.lang.invoke.MethodType"), session);
         writeAssignMethodTypeConstant(inMethod, stmt, l, constant, session);
@@ -702,7 +700,10 @@ class FactWriter extends JavaFactWriter {
     }
 
     private Value writeActualParam(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session, Value v, int idx) {
-        if (v instanceof StringConstant)
+	DoopAddons.MethodType mt = DoopAddons.methodType(v);
+	if (mt != null)
+	    return writeMethodTypeConstantExpression(inMethod, stmt, mt, session);
+	else if (v instanceof StringConstant)
             return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
         else if (v instanceof ClassConstant)
             return writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
@@ -710,8 +711,6 @@ class FactWriter extends JavaFactWriter {
             return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
         else if (v instanceof MethodHandle)
             return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
-        else if (v instanceof MethodType)
-            return writeMethodTypeConstantExpression(inMethod, stmt, (MethodType) v, session);
         else if (v instanceof NullConstant) {
             // Giving the type of the formal argument to be used in the creation of
             // temporary var for the actual argument (whose value is null).
