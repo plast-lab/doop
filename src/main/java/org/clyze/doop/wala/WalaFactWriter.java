@@ -1131,10 +1131,9 @@ public class WalaFactWriter extends JavaFactWriter {
             for (int i = 0; i < targetRef.getNumberOfParameters(); i++) {
                 String paramType = fixTypeString(targetRef.getParameterType(i).toString());
                 writeInvokedynamicParameterType(insn, i, paramType);
-                if (i==0)
-                    parameterTypes.append(paramType);
-                else
-                    parameterTypes.append(", ").append(paramType);
+                if (i!=0)
+                    parameterTypes.append(", ");
+                parameterTypes.append(paramType);
             }
             String sig = getBootstrapSig(((SSAInvokeDynamicInstruction) instruction).getBootstrap(),inMethod.getClassHierarchy());
             int dynArity = targetRef.getNumberOfParameters();
