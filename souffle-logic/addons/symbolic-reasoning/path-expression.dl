@@ -2,91 +2,17 @@
 
 // Declarations
 
-.decl NegateOp(after: Operator, before: Operator)
-
 // Enumeration of predecessors in order
-
-.decl FirstPredOfInsnInMethodOrdinal(meth: Method, first: number, insn: Instruction)
-.decl FirstPredOfInsnInMethod(meth: Method, first: Instruction, insn: Instruction)
-.decl LastPredOfInsnInMethodOrdinal(meth: Method, first: number, insn: Instruction)
-.decl LastPredOfInsnInMethod(meth: Method, first: Instruction, insn: Instruction)
-.decl NotNextPredOfInsnInMethod(meth: Method, prev: Instruction, next: Instruction, insn: Instruction)
-.decl NextPredOfInsnInMethod(meth: Method, prev: Instruction, next: Instruction, insn:Instruction)
 
 .decl BuildPathExprBefore(meth:Method, prev:Instruction, exprBase: Expr, insn:Instruction)
 .decl PathExpressionBefore(meth:Method, insn: Instruction, pathExpr: Expr)
 .decl PathExpressionAfter(meth: Method, insn: Instruction, pathExpr: Expr)
 
 // Debugging
-.output FirstPredOfInsnInMethod
-.output LastPredOfInsnInMethod
-.output NextPredOfInsnInMethod
+
 .output BuildPathExprBefore
 .output PathExpressionBefore
 .output PathExpressionAfter
-
-// Facts for NegateOp
-
-NegateOp("==", "!=").
-NegateOp("!=", "==").
-
-NegateOp("<", ">=").
-NegateOp(">", "<=").
-
-NegateOp(">=", "<").
-NegateOp("<=", ">").
-
-// Rules
-
-/*
- * Multiple predecessors may flow up to this statement, thus we need
- * to enumerate all possible predecessors in order to build the
- * corresponding path expression, before the instruction.
- */
-
-// Pick the predecessor with the minimum ord value as the first predecessor
-
-FirstPredOfInsnInMethodOrdinal(meth, firstOrd, insn) :-
-    Instruction_Method(insn, meth),
-    firstOrd = min ord(prev): MayPredecessorModuloThrow(prev, insn).
-
-FirstPredOfInsnInMethod(meth, first, insn) :-
-    Instruction_Method(insn, meth),
-    MayPredecessorModuloThrow(first, insn),
-    min_ord = ord(first),
-    FirstPredOfInsnInMethodOrdinal(meth, min_ord, insn).
-
-// Pick the predecessor with the maximum ord value as the last predecessor
-
-LastPredOfInsnInMethodOrdinal(meth, lastOrd, insn) :-
-    Instruction_Method(insn, meth),
-    lastOrd = max ord(prev): MayPredecessorModuloThrow(prev, insn).
-
-LastPredOfInsnInMethod(meth, last, insn) :-
-    Instruction_Method(insn, meth),
-    MayPredecessorModuloThrow(last, insn),
-    max_ord = ord(last),
-    LastPredOfInsnInMethodOrdinal(meth, max_ord, insn).
-
-// Pick as next predecessor of insn the instruction with the least
-// greater ord number, compared to the prev predecessor
-
-NotNextPredOfInsnInMethod(meth, prev, next, insn) :-
-    Instruction_Method(insn, meth),
-    MayPredecessorModuloThrow(prev, insn),
-    MayPredecessorModuloThrow(next, insn),
-    MayPredecessorModuloThrow(nextPossible, insn),
-    ord(prev) < ord(next),
-    ord(prev) < ord(nextPossible),
-    ord(nextPossible) < ord(next).
-
-NextPredOfInsnInMethod(meth, prev, next, insn) :-
-    Instruction_Method(insn, meth),
-    MayPredecessorModuloThrow(prev, insn),
-    MayPredecessorModuloThrow(next, insn),
-    ord(prev) < ord(next),
-    !NotNextPredOfInsnInMethod(meth, prev, next, insn).
-
 
 // TODO: Check last pred logic
 
