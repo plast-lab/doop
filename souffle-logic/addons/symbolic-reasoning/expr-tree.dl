@@ -1,4 +1,4 @@
-//#define DEBUG 0
+#define DEBUG
 
 .type SymbolicInput = Var | MethodInvocation
 .type Operator = symbol
@@ -55,12 +55,13 @@ ResolveExpr(?meth, ?param, ?expr),
 isInputExpr(?expr) :-
     FormalParam(_, ?meth, ?param),
     Var_Type(?param, ?type),
+    Type_boolean(?type),
     ?expr = [?param, ?type, nil, nil].
 
 // Method Invocation result
 
 #ifdef DEBUG
-ToString(?expr, ?methInvo),
+ToString(?expr, ?var),
 #endif
 ResolveExpr(?meth, ?var, ?expr),
 isInputExpr(?expr) :-
@@ -69,21 +70,22 @@ isInputExpr(?expr) :-
     MethodInvocation_Method(?methInvo, ?methSig),
     AssignReturnValue(?methInvo, ?var),
     Method_ReturnType(?methSig, ?type),
-    ?expr = [?methInvo, ?type, nil, nil].
+    Type_boolean(?type),
+    ?expr = [?var, ?type, nil, nil].
 
 // Load instance/static fields
 
 ResolveExpr(?meth, ?var, ?expr),
 #ifdef DEBUG
-ToString(?expr, ?base),
+ToString(?expr, ?to),
 #endif
 isInputExpr(?expr) :-
     Instruction_Method(?inst, ?meth),
     isLoadInstanceField_Insn(?inst),
     LoadInstanceField_To(?inst, ?var),
-    LoadInstanceField_Base(?inst, ?base),
-    Var_Type(?base, ?type),
-    ?expr = [?base, ?type, nil, nil].
+    Var_Type(?to, ?type),
+    Type_boolean(?type),
+    ?expr = [?to, ?type, nil, nil].
 
 // Assign Local
 
@@ -95,6 +97,7 @@ isExpr(?expr) :-
     Instruction_Method(?inst, ?meth),
     AssignInstruction_To(?inst, ?var),
     Var_Type(?var, ?type),
+    Type_boolean(?type),
     AssignLocal_From(?inst, ?from),
 #ifdef DEBUG
     ResolveExpr(_, ?from, ?expr),
@@ -113,6 +116,7 @@ isExpr([?op, ?type, ?rExpr, nil]) :-
     AssignInstruction_To(?inst, ?var),
     isAssignUnop_Insn(?inst),
     Var_Type(?var, ?type),
+    Type_boolean(?type),
     AssignOper_From(?inst, _, ?right),
     _OperatorAt(?inst, ?op),
 #ifdef DEBUG
@@ -132,6 +136,7 @@ ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
     AssignInstruction_To(?inst, ?var),
     Var_Type(?var, ?type),
+    Type_boolean(?type),
     isAssignBinop_Insn(?inst),
     AssignOper_From(?inst, ?pos1, ?right1),
     AssignOper_From(?inst, ?pos2, ?right2),

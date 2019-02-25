@@ -1,8 +1,214 @@
-.decl PathExpression(meth: Method, inst: Instruction, expr: Expr)
-.output PathExpression
+#define DEBUG
 
-PathExpression(meth, inst, expr) :-
-    Instruction_Method(inst, meth),
-    isIf_Insn(inst),
-    DummyIf_Var(inst, var),
-    ResolveExpr(meth, var, expr).
+// Declarations
+
+.decl NegateOp(after: Operator, before: Operator)
+
+// Enumeration of predecessors in order
+
+.decl FirstPredOfInsnInMethodOrdinal(meth: Method, first: number, insn: Instruction)
+.decl FirstPredOfInsnInMethod(meth: Method, first: Instruction, insn: Instruction)
+.decl LastPredOfInsnInMethodOrdinal(meth: Method, first: number, insn: Instruction)
+.decl LastPredOfInsnInMethod(meth: Method, first: Instruction, insn: Instruction)
+.decl NotNextPredOfInsnInMethod(meth: Method, prev: Instruction, next: Instruction, insn: Instruction)
+.decl NextPredOfInsnInMethod(meth: Method, prev: Instruction, next: Instruction, insn:Instruction)
+
+.decl BuildPathExprBefore(meth:Method, prev:Instruction, exprBase: Expr, insn:Instruction)
+.decl PathExpressionBefore(meth:Method, insn: Instruction, pathExpr: Expr)
+.decl PathExpressionAfter(meth: Method, insn: Instruction, pathExpr: Expr)
+
+// Debugging
+.output FirstPredOfInsnInMethod
+.output LastPredOfInsnInMethod
+.output NextPredOfInsnInMethod
+.output BuildPathExprBefore
+.output PathExpressionBefore
+.output PathExpressionAfter
+
+// Facts for NegateOp
+
+NegateOp("==", "!=").
+NegateOp("!=", "==").
+
+NegateOp("<", ">=").
+NegateOp(">", "<=").
+
+NegateOp(">=", "<").
+NegateOp("<=", ">").
+
+// Rules
+
+/*
+ * Multiple predecessors may flow up to this statement, thus we need
+ * to enumerate all possible predecessors in order to build the
+ * corresponding path expression, before the instruction.
+ */
+
+// Pick the predecessor with the minimum ord value as the first predecessor
+
+FirstPredOfInsnInMethodOrdinal(meth, firstOrd, insn) :-
+    Instruction_Method(insn, meth),
+    firstOrd = min ord(prev): MayPredecessorModuloThrow(prev, insn).
+
+FirstPredOfInsnInMethod(meth, first, insn) :-
+    Instruction_Method(insn, meth),
+    MayPredecessorModuloThrow(first, insn),
+    min_ord = ord(first),
+    FirstPredOfInsnInMethodOrdinal(meth, min_ord, insn).
+
+// Pick the predecessor with the maximum ord value as the last predecessor
+
+LastPredOfInsnInMethodOrdinal(meth, lastOrd, insn) :-
+    Instruction_Method(insn, meth),
+    lastOrd = max ord(prev): MayPredecessorModuloThrow(prev, insn).
+
+LastPredOfInsnInMethod(meth, last, insn) :-
+    Instruction_Method(insn, meth),
+    MayPredecessorModuloThrow(last, insn),
+    max_ord = ord(last),
+    LastPredOfInsnInMethodOrdinal(meth, max_ord, insn).
+
+// Pick as next predecessor of insn the instruction with the least
+// greater ord number, compared to the prev predecessor
+
+NotNextPredOfInsnInMethod(meth, prev, next, insn) :-
+    Instruction_Method(insn, meth),
+    MayPredecessorModuloThrow(prev, insn),
+    MayPredecessorModuloThrow(next, insn),
+    MayPredecessorModuloThrow(nextPossible, insn),
+    ord(prev) < ord(next),
+    ord(prev) < ord(nextPossible),
+    ord(nextPossible) < ord(next).
+
+NextPredOfInsnInMethod(meth, prev, next, insn) :-
+    Instruction_Method(insn, meth),
+    MayPredecessorModuloThrow(prev, insn),
+    MayPredecessorModuloThrow(next, insn),
+    ord(prev) < ord(next),
+    !NotNextPredOfInsnInMethod(meth, prev, next, insn).
+
+
+// TODO: Check last pred logic
+
+// Base case: path expression before insn starts with the expression
+// flowing from the first predecessor in the enumeration
+
+//BuildPathExprBefore(meth, first, exprBase, insn) :-
+//    FirstPredOfInsnInMethod(meth, first, insn),
+//    PathExpressionAfter(meth, first, exprBase).
+//
+//// Path expression before disjunction is enhanced with the next
+//// predecessor path expression.
+//
+//#ifdef DEBUG
+//ToString(pathExpr, cat(out, cat(" || ", outE))),
+//#endif
+//BuildPathExprBefore(meth, next, pathExpr, insn) :-
+//    Instruction_Method(insn, meth),
+//    BuildPathExprBefore(meth, prev, expr, insn),
+//    !LastPredOfInsnInMethod(meth, prev, insn),
+//    NextPredOfInsnInMethod(meth, prev, next, insn),
+//    PathExpressionAfter(meth, next, exprPrev),
+//    #ifdef DEBUG
+//    ToString(exprPrev, out),
+//    ToString(expr, outE),
+//    #endif
+//    pathExpr = ["||", "boolean", exprPrev, expr].
+//
+//isExpr(pathExpr),
+//PathExpressionBefore(meth, insn, pathExpr) :-
+//    LastPredOfInsnInMethod(meth, last, insn),
+//    BuildPathExprBefore(meth, last, pathExpr, insn).
+//
+/*
+ * Path expressions after instructions are distinguished into two disjoint
+ * cases.
+ *  1) if-statements that increment the path expression with the
+ *     if-condition bool expression
+ *  2) any statement, excluding if-statements that leave the path
+ *     expression as it is
+ */
+
+//// Base case: Symbolic input expressions
+//
+//PathExpressionAfter(meth, insn, expr) :-
+//    Instruction_Method(insn, meth),
+//    (AssignInstruction_To(insn, var) ; AssignReturnValue(insn, var)),
+//    ResolveExpr(meth, var, expr),
+//    isInputExpr(expr),
+//    isBooleanExpr(expr).
+
+// if-stmts case
+// TODO: include if-condition expression
+//
+
+//#ifdef DEBUG
+//ToString(pathExpr1, out1),
+//ToString(pathExpr2, out2),
+//ToString(negatedConditionExpr, out3),
+//#endif
+//isExpr(pathExpr1),
+//isExpr(pathExpr2),
+//isExpr(negatedConditionExpr),
+//PathExpressionAfter(meth, insn, pathExpr1),
+//PathExpressionAfter(meth, insn, pathExpr2) :-
+//    Instruction_Method(insn, meth),
+//    isIf_Insn(insn),
+//    PathExpressionBefore(meth, insn, pathExpr),
+//    DummyIf_Var(insn, dummyVar),
+//    ResolveExpr(meth, dummyVar, conditionExpr),
+//    conditionExpr = [op, type, exprLeft, exprRight],
+//    NegateOp(op, negatedOp),
+//    negatedConditionExpr = [negatedOp, type, exprLeft, exprRight],
+//    pathExpr1 = ["&&", "boolean", conditionExpr, pathExpr],
+//#ifndef DEBUG
+//    pathExpr2 = ["&&", "boolean", negatedConditionExpr, pathExpr].
+//#else
+//    pathExpr2 = ["&&", "boolean", negatedConditionExpr, pathExpr],
+//    ToString(pathExpr, out),
+//    ToString(conditionExpr, outC),
+//    ToString(exprL, outL),
+//    ToString(exprR, outR),
+//    out3 = cat(outL, cat(negatedOp, outR)),
+//    out1 = cat(outC, cat(" && ", out)),
+//    out2 = cat(out3, cat(" && ", out)).
+//#endif
+
+// If no path expression before, path expressions are built given
+// branch conditions
+
+//#ifdef DEBUG
+//ToString(negatedConditionExpr, out3),
+//#endif
+//isExpr(negatedConditionExpr),
+//PathExpressionAfter(meth, insn, conditionExpr),
+//PathExpressionAfter(meth, insn, negatedConditionExpr) :-
+//    Instruction_Method(insn, meth),
+//    isIf_Insn(insn),
+//    DummyIf_Var(insn, dummyVar),
+//    ResolveExpr(meth, dummyVar, conditionExpr),
+//    conditionExpr = [op, type, exprLeft, exprRight],
+//    NegateOp(op, negatedOp),
+//#ifndef DEBUG
+//    negatedConditionExpr = [negatedOp, type, exprLeft, exprRight],
+//#else
+//    negatedConditionExpr = [negatedOp, type, exprLeft, exprRight],
+//    ToString(exprL, outL),
+//    ToString(exprR, outR),
+//    out3 = cat(outL, cat(negatedOp, outR)).
+//#endif
+
+// any statement excluding if-stmts
+
+//#ifdef DEBUG
+//ToString(pathExpr, out),
+//#endif
+//PathExpressionAfter(meth, insn, pathExpr) :-
+//    Instruction_Method(insn, meth),
+//    !isIf_Insn(insn),
+//#ifdef DEBUG
+//    PathExpressionBefore(meth, insn, pathExpr),
+//    ToString(pathExpr, out).
+//#else
+//    PathExpressionBefore(meth, insn, pathExpr).
+//#endif
