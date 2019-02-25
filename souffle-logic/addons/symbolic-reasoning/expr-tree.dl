@@ -1,6 +1,6 @@
 #define DEBUG
 
-.type SymbolicInput = Var | MethodInvocation
+.type SymbolicInput = Var | MethodInvocation | NumConstant
 .type Operator = symbol
 
 .type Base = SymbolicInput | Operator
@@ -185,6 +185,7 @@ isExpr(?expr) :-
 // If Conditions - Var_Const
 #ifdef DEBUG
 ToString(?expr, ?out),
+ToString(?constExpr, ?right2),
 #endif
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
@@ -195,12 +196,13 @@ isExpr(?expr) :-
     If_Constant(?inst, ?pos2, ?right2),
     ?pos1 < ?pos2,
     _OperatorAt(?inst, ?op),
+    ?constExpr = [?right2, "boolean", nil, nil],
 #ifdef DEBUG
     ResolveExpr(_, ?right1, ?lExpr),
     ToString(?lExpr, ?out1),
-    ?expr = [?op, "boolean", ?lExpr, [?right2, "boolean", nil, nil]],
+    ?expr = [?op, "boolean", ?lExpr, ?constExpr],
     ?out = cat("(", cat(?out1, cat(")", cat(?op, ?right2)))).
 #else
     ResolveExpr(_, ?right1, ?lExpr),
-    ?expr = [?op, "boolean", ?lExpr, [?right2, "boolean", nil, nil]].
+    ?expr = [?op, "boolean", ?lExpr, ?constExpr].
 #endif
