@@ -152,6 +152,8 @@ public class NativeScanner {
         ProcessBuilder builder = new ProcessBuilder(objdumpCmd, "--headers", lib);
         int sizeIdx = -1;
         int offsetIdx = -1;
+		Section rodata = null;
+
         List<String> lines = runCommand(builder);
         for (String line : lines) {
             // Autodetect column positions.
@@ -184,9 +186,11 @@ public class NativeScanner {
                     raf.seek(offset);
                     byte[] bytes = new byte[size];
                     raf.readFully(bytes);
-                    Section rodata = new Section(offset, size, bytes);
+
+                    rodata = new Section(offset, size, bytes);
                     System.out.println("Section fully read.");
                     System.out.println(rodata.toString());
+
                     break;
                 }
             }
@@ -207,15 +211,26 @@ public class NativeScanner {
         int namesCount = names.size();
         System.out.println("Possible method/class names: " + namesCount);
 
+       	//new-code-start
+		// Find in which function every string is used
+		Map<String,List<String>> stringsInFunctions = findStringsInFunctions(rodata.getFoundStrings(), eps, lib);
+
         // Write out facts.
         try (Database db = new Database(outDir)) {
             for (String mt : methodTypes)
-                db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", mt);
-            for (String n : names)
-                db.add(NATIVE_NAME_CANDIDATE, lib, "-", n);
+				if (stringsInFunctions.get(mt) != null)
+		            for(String function : stringsInFunctions.get(mt))
+						db.add(NATIVE_METHODTYPE_CANDIDATE, lib, function, mt);
+
+			for (String n : names)
+				if (stringsInFunctions.get(n) != null)
+		            for (String function : stringsInFunctions.get(n))
+						db.add(NATIVE_NAME_CANDIDATE, lib, function, n);
+
             eps.forEach ((Long addr, String name) ->
                          db.add(NATIVE_LIB_ENTRY_POINT, name, String.valueOf(addr)));
         }
+		//new-code-end
     }
 
     private static boolean isName(String line) {
@@ -266,6 +281,74 @@ public class NativeScanner {
             lines.add(line);
         return lines;
     }
+
+	//new-code-start
+	/**
+	 * reading output of gdb command, disassembling functions( e.g. : gdb <libname> , disassemble <function-name> )
+	 * return ouput of disassemble <function name>
+	 **/
+	private static List<String> runGdbCommand(ProcessBuilder gdbBuilder, String function) throws IOException {
+        List<String> lines = new ArrayList<String>();
+
+        Process proc = gdbBuilder.start();
+        OutputStream out = proc.getOutputStream();
+        InputStream in = proc.getInputStream();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+
+		String line;
+        while(true) {
+            line = reader.readLine();
+			if(!reader.ready())
+				break;
+		}
+
+		String cmd = "disassemble " + function;
+		writer.write(cmd);
+		writer.newLine();
+		writer.flush();
+		writer.close();
+		BufferedReader newReader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+		while((line = newReader.readLine()) != null)
+			lines.add(line);
+
+		return lines;
+    }
+
+	/**
+	 *	return in which functions every found string belongs
+	 **/
+	private static Map<String,List<String>> findStringsInFunctions(Map<Long, String> foundStrings, Map<Long, String> eps, String lib) {
+
+		Map<String, List<String>> stringsInFunctions = new HashMap<>();
+		for (Map.Entry<Long,String> entry : eps.entrySet()) {
+					
+			try {
+				ProcessBuilder gdbBuilder = new ProcessBuilder("gdb", lib);
+		
+				for (String line : runGdbCommand(gdbBuilder, entry.getValue())) {
+					if ( line.contains("#")) {
+						Long address = Long.parseLong(line.substring(line.lastIndexOf('x')+1),16);
+						String str = foundStrings.get(address);
+
+						if ( stringsInFunctions.get(str) != null ) {
+							stringsInFunctions.get(str).add(entry.getValue());
+						} else {
+							List<String> functions = new ArrayList<String>();
+							functions.add(entry.getValue());
+							stringsInFunctions.put(str, functions);
+						}
+					}
+				}				
+			} catch (IOException ex) {
+            	ex.printStackTrace();
+        	}
+		}
+		
+		return stringsInFunctions;
+	}
+	//new-code-end
 }
 
 // A representation of the strings section in the binary.
@@ -273,6 +356,10 @@ class Section {
     private final int offset;
     private final int size;
     private final byte[] data;
+	//new-code-start
+	private Map<Long,String> foundStrings;
+	//new-code-end
+
     public Section(int offset, int size, byte[] data) {
         this.offset = offset;
         this.size = size;
@@ -297,6 +384,8 @@ class Section {
                 addr = offset + i + 1;
             } else
                 foundString.append((char) data[i]);
+
+		this.foundStrings = foundStrings;
         return foundStrings;
     }
 
@@ -305,6 +394,12 @@ class Section {
         strings().forEach((Long addr, String s) -> sb.append(addr).append(": String '").append(s).append("'\n"));
         return sb.toString();
     }
+
+	//new-code-start
+	public Map<Long, String> getFoundStrings() {
+		return this.foundStrings;
+	}
+	//new-code-end
 }
 
 class EntryPoint {
