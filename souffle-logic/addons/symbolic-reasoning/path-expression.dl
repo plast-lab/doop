@@ -2,7 +2,7 @@
 
 // Declarations
 
-// Enumeration of predecessors in order
+// Enumeration of ?predecessors in order
 
 .decl BuildPathExprBefore(?meth:Method, prev:Instruction, ?exprBase: Expr, ?insn:Instruction)
 .decl PathExpressionBefore(?meth:Method, ?insn: Instruction, ?pathExpr: Expr)
@@ -104,55 +104,48 @@ PathExpressionAfterTrue(?meth, ?insn, ?pathExpr) :-
 /* Path ?expression before building */
 
 // Base case: path ?expression before ?insn starts with the ?expression
-// flowing from the first predecessor in the enumeration
+// flowing from the first ?predecessor in the enumeration
 
-// Single predecessor case
-
-PathExpressionBefore(?meth, ?insn, ?exprBase) :-
-    FirstPredOfInsnInMethod(?meth, pred, ?insn),
-    LastPredOfInsnInMethod(?meth, pred, ?insn),
-    isIf_Insn(pred),
-    PathExpressionAfterFalse(?meth, pred, ?exprBase).
+// Single ?predecessor case
 
 PathExpressionBefore(?meth, ?insn, ?exprBase) :-
-    FirstPredOfInsnInMethod(?meth, pred, ?insn),
-    LastPredOfInsnInMethod(?meth, pred, ?insn),
-    !isIf_Insn(pred),
-    PathExpressionAfterTrue(?meth, pred, ?exprBase).
+    SinglePredOfInsnInMethod(?pred, ?insn, ?meth),
+    isIf_Insn(?pred),
+    PathExpressionAfterFalse(?meth, ?pred, ?exprBase).
 
-// Multiple predecessors case
+PathExpressionBefore(?meth, ?insn, ?exprBase) :-
+    SinglePredOfInsnInMethod(?pred, ?insn, ?meth),
+    !isIf_Insn(?pred),
+    PathExpressionAfterTrue(?meth, ?pred, ?exprBase).
+
+// Multiple ?predecessors case
 
 // Base
 
-BuildPathExprBefore(?meth, pred,  ?expr, ?insn) :-
-    FirstPredOfInsnInMethod(?meth, pred, ?insn),
-    !LastPredOfInsnInMethod(?meth, pred, ?insn),
-    isIf_Insn(pred),
+BuildPathExprBefore(?meth, ?pred,  ?expr, ?insn) :-
+    FirstOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth),
+    isIf_Insn(?pred),
     IsJumpTarget(?insn),
-    PathExpressionAfterTrue(?meth, pred, ?expr).
+    PathExpressionAfterTrue(?meth, ?pred, ?expr).
 
-BuildPathExprBefore(?meth, pred, ?expr, ?insn) :-
-    FirstPredOfInsnInMethod(?meth, pred, ?insn),
-    !LastPredOfInsnInMethod(?meth, pred, ?insn),
-    isIf_Insn(pred),
+BuildPathExprBefore(?meth, ?pred, ?expr, ?insn) :-
+    FirstOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth),
+    isIf_Insn(?pred),
     !IsJumpTarget(?insn),
-    PathExpressionAfterFalse(?meth, pred, ?expr).
+    PathExpressionAfterFalse(?meth, ?pred, ?expr).
 
-BuildPathExprBefore(?meth, pred,  ?expr, ?insn) :-
-    FirstPredOfInsnInMethod(?meth, pred, ?insn),
-    !LastPredOfInsnInMethod(?meth, pred, ?insn),
-    !isIf_Insn(pred),
-    PathExpressionAfterTrue(?meth, pred, ?expr).
+BuildPathExprBefore(?meth, ?pred,  ?expr, ?insn) :-
+    FirstOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth),
+    !isIf_Insn(?pred),
+    PathExpressionAfterTrue(?meth, ?pred, ?expr).
 
 
 #ifdef DEBUG
 ToString(?pathExpr, cat(?out, cat(" || ", ?outE))),
 #endif
 BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
-    Instruction_Method(?insn, ?meth),
-    BuildPathExprBefore(?meth, prev, ?expr, ?insn),
-    !LastPredOfInsnInMethod(?meth, prev, ?insn),
-    NextPredOfInsnInMethod(?meth, prev, ?next, ?insn),
+    NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
+    BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
     !isIf_Insn(?next),
     PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
     #ifdef DEBUG
@@ -165,10 +158,8 @@ BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
 ToString(?pathExpr, cat(?out, cat(" || ", ?outE))),
 #endif
 BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
-    Instruction_Method(?insn, ?meth),
-    BuildPathExprBefore(?meth, prev, ?expr, ?insn),
-    !LastPredOfInsnInMethod(?meth, prev, ?insn),
-    NextPredOfInsnInMethod(?meth, prev, ?next, ?insn),
+    NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
+    BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
     isIf_Insn(?next),
     IsJumpTarget(?insn),
     PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
@@ -182,10 +173,8 @@ BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
 ToString(?pathExpr, cat(?out, cat(" || ", ?outE))),
 #endif
 BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
-    Instruction_Method(?insn, ?meth),
-    BuildPathExprBefore(?meth, prev, ?expr, ?insn),
-    !LastPredOfInsnInMethod(?meth, prev, ?insn),
-    NextPredOfInsnInMethod(?meth, prev, ?next, ?insn),
+    NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
+    BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
     isIf_Insn(?next),
     !IsJumpTarget(?insn),
     PathExpressionAfterFalse(?meth, ?next, ?exprPrev),
@@ -196,6 +185,5 @@ BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
     ?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
 
 PathExpressionBefore(?meth, ?insn, ?pathExpr) :-
-    !FirstPredOfInsnInMethod(?meth, pred, ?insn),
-    LastPredOfInsnInMethod(?meth, pred, ?insn),
-    BuildPathExprBefore(?meth, pred, ?pathExpr, ?insn).
+    LastOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth),
+    BuildPathExprBefore(?meth, ?pred, ?pathExpr, ?insn).

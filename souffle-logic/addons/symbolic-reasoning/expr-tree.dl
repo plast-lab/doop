@@ -12,7 +12,6 @@
     ?right: Expr
 ]
 
-
 .decl ResolveExpr(?meth: Method, ?var: symbol, ?expr: Expr)
 
 #ifdef DEBUG
@@ -155,6 +154,8 @@ isExpr(?expr) :-
     ?expr = [?op, ?type, ?lExpr, ?rExpr].
 #endif
 
+
+
 // If Conditions - Var_Var
 
 #ifdef DEBUG
@@ -162,13 +163,7 @@ ToString(?expr, ?out),
 #endif
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    Instruction_Method(?inst, ?meth),
-    DummyIf_Var(?inst, ?var),
-    isIf_Insn(?inst),
-    If_Var(?inst, ?pos1, ?right1),
-    If_Var(?inst, ?pos2, ?right2),
-    ?pos1 < ?pos2,
-    _OperatorAt(?inst, ?op),
+    IfVarVar(_, ?var, ?meth, ?right1, ?right2, ?op),
 #ifdef DEBUG
     ResolveExpr(_, ?right1, ?lExpr),
     ResolveExpr(_, ?right2, ?rExpr),
@@ -182,20 +177,16 @@ isExpr(?expr) :-
     ?expr = [?op, "boolean", ?lExpr, ?rExpr].
 #endif
 
+
 // If Conditions - Var_Const
+
 #ifdef DEBUG
 ToString(?expr, ?out),
 ToString(?constExpr, ?right2),
 #endif
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    Instruction_Method(?inst, ?meth),
-    DummyIf_Var(?inst, ?var),
-    isIf_Insn(?inst),
-    If_Var(?inst, ?pos1, ?right1),
-    If_Constant(?inst, ?pos2, ?right2),
-    ?pos1 < ?pos2,
-    _OperatorAt(?inst, ?op),
+    IfVarConst(_, ?var, ?meth, ?right1, ?right2, ?op),
     ?constExpr = [?right2, "boolean", nil, nil],
 #ifdef DEBUG
     ResolveExpr(_, ?right1, ?lExpr),

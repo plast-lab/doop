@@ -9,6 +9,14 @@
 
 .decl NegateOp(after: Operator, before: Operator)
 
+.decl IfVarVar(?inst: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: Var, ?op: Operator)
+.decl IfVarConst(?inst: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: NumConstant, ?op: Operator)
+
+.decl SinglePredOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)
+.decl FirstOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method) 
+.decl NextOfMultiplePredsOfInsnInMethod(?next: Instruction, ?prev: Instruction, ?insn: Instruction, ?meth: Method)
+.decl LastOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method) 
+
 .output FirstPredOfInsnInMethod
 .output LastPredOfInsnInMethod
 .output NextPredOfInsnInMethod
@@ -76,3 +84,53 @@ NextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn) :-
     MayPredecessorModuloThrow(?next, ?insn),
     ord(?prev) < ord(?next),
     !NotNextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn).
+
+
+// Determine expr operands for if-statements
+
+IfVarVar(?inst, ?var, ?meth, ?right1, ?right2, ?op) :-
+    Instruction_Method(?inst, ?meth),
+    DummyIf_Var(?inst, ?var),
+    isIf_Insn(?inst),
+    If_Var(?inst, ?pos1, ?right1),
+    If_Var(?inst, ?pos2, ?right2),
+    ?pos1 < ?pos2,
+    _OperatorAt(?inst, ?op).
+
+IfVarConst(?inst, ?var, ?meth, ?right1, ?right2, ?op) :-
+    Instruction_Method(?inst, ?meth),
+    DummyIf_Var(?inst, ?var),
+    isIf_Insn(?inst),
+    If_Var(?inst, ?pos1, ?right1),
+    If_Constant(?inst, ?pos2, ?right2),
+    ?pos1 < ?pos2,
+    _OperatorAt(?inst, ?op).
+
+// Single Pred
+
+SinglePredOfInsnInMethod(?pred, ?insn, ?meth) :-
+    Instruction_Method(?insn, ?meth),
+    FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
+    LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+
+// Multiple Preds - First
+
+FirstOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth) :-
+    Instruction_Method(?insn, ?meth),
+    FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
+    !LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+
+// Multiple Preds - Next
+
+NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth) :-
+    Instruction_Method(?insn, ?meth),
+    !LastPredOfInsnInMethod(?meth, ?prev, ?insn),
+    NextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn).
+
+// Multiple Preds - Last
+
+LastOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth) :-
+    Instruction_Method(?insn, ?meth),
+    !FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
+    LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+   
