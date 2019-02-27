@@ -33,9 +33,6 @@ public class BasicJavaSupport {
 
     /**
      * Helper method to read classes and resources from input archives.
-     *
-     * @param parameters the list of all the given parameters
-     *
      */
     public void preprocessInputs() throws IOException {
         for (String filename : parameters.getInputs()) {

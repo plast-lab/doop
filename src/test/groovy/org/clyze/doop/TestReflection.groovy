@@ -13,7 +13,7 @@ class TestReflection extends ServerAnalysisTests {
 		when:
 		Analysis analysis = analyzeTest("016-reflection",
 										["--reflection-classic", "--reflection-dynamic-proxies",
-										 "--gen-opt-directives", "--Xserver-logic",
+										 "--gen-opt-directives", "--Xserver-logic", "--generate-jimple",
 										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 										 "--thorough-fact-gen", "--sanity",
 										 "--platform", "java_8"])
@@ -43,7 +43,7 @@ class TestReflection extends ServerAnalysisTests {
 										 "--thorough-fact-gen", "--sanity",
 										 "--platform", "java_8"],
 										'context-insensitive',
-										'016-reflection-glue')
+										'test-016-reflection-glue')
 
 		then:
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/cA#_31', '<class A>')

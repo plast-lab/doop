@@ -27,7 +27,7 @@ class FactWriter extends JavaFactWriter {
     private final Representation _rep;
     private final Map<String, Type> _varTypeMap = new ConcurrentHashMap<>();
     private final boolean _reportPhantoms;
-    private final Set<Object> seenPhantoms = new HashSet<>();
+    private final Collection<Object> seenPhantoms = new HashSet<>();
 
     FactWriter(Database db, boolean moreStrings,
                Representation rep, boolean reportPhantoms) {
@@ -36,30 +36,32 @@ class FactWriter extends JavaFactWriter {
         _reportPhantoms = reportPhantoms;
     }
 
+    String methodSig(SootMethod m, String methodRaw) {
+        if (methodRaw == null)
+            methodRaw = _rep.signature(m);
+        return hashMethodNameIfLong(methodRaw);
+    }
+
     String writeMethod(SootMethod m) {
         String methodRaw = _rep.signature(m);
-        String methodId = hashMethodNameIfLong(methodRaw);
+        String methodId = methodSig(m, methodRaw);
         String arity = Integer.toString(m.getParameterCount());
 
         _db.add(STRING_RAW, methodId, methodRaw);
         _db.add(METHOD, methodId, _rep.simpleName(m), Representation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
-            for (AnnotationTag aTag : vTag.getAnnotations()) {
+            for (AnnotationTag aTag : vTag.getAnnotations())
                 writeMethodAnnotation(methodId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
-            }
         }
         if (m.getTag("VisibilityParameterAnnotationTag") != null) {
             VisibilityParameterAnnotationTag vTag = (VisibilityParameterAnnotationTag) m.getTag("VisibilityParameterAnnotationTag");
 
             ArrayList<VisibilityAnnotationTag> annList = vTag.getVisibilityAnnotations();
-            for (int i = 0; i < annList.size(); i++) {
-                if (annList.get(i) != null) {
-                    for (AnnotationTag aTag : annList.get(i).getAnnotations()) {
+            for (int i = 0; i < annList.size(); i++)
+                if (annList.get(i) != null)
+                    for (AnnotationTag aTag : annList.get(i).getAnnotations())
                         _db.add(PARAM_ANNOTATION, methodId, str(i), soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
-                    }
-                }
-            }
         }
         return methodId;
     }
@@ -129,14 +131,14 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writePhantomMethod(SootMethod m) {
-        String sig = writeMethod(m);
+        String sig = methodSig(m, null);
         if (_reportPhantoms)
             System.out.println("Method " + sig + " is phantom.");
         writePhantomMethod(sig);
     }
 
     void writePhantomBasedMethod(SootMethod m) {
-        String sig = writeMethod(m);
+        String sig = methodSig(m, null);
         if (_reportPhantoms)
             System.out.println("Method signature " + sig + " contains phantom types.");
         _db.add(PHANTOM_BASED_METHOD, sig);
@@ -308,15 +310,13 @@ class FactWriter extends JavaFactWriter {
         _db.add(ASSIGN_HEAP_ALLOC, ii.insn, str(ii.index), heap, _rep.local(m, l), ii.methodId, "0");
     }
 
-    private void writeAssignMethodTypeConstant(SootMethod m, Stmt stmt, Local l, MethodType constant, Session session) {
+    private void writeAssignMethodTypeConstant(SootMethod m, Stmt stmt, Local l, DoopAddons.MethodType constant, Session session) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
-        String retType = constant.getReturnType().toString();
-        List<Type> paramTypesList = constant.getParameterTypes();
+        String retType = constant.getReturnType();
+        List<String> paramTypesList = constant.getParameterTypes();
         int arity = paramTypesList.size();
         String[] paramTypes = new String[arity];
-        int idx = 0;
-        for (Type t : paramTypesList)
-            paramTypes[idx++] = t.toString();
+	paramTypes = paramTypesList.toArray(paramTypes);
         writeMethodTypeConstant(retType, paramTypes, null);
         String params = concatenate(paramTypes);
         String mt = "(" + params + ")" + retType;
@@ -327,7 +327,7 @@ class FactWriter extends JavaFactWriter {
         writeAssignClassConstant(m, stmt, l, new ClassConstantInfo(constant), session);
     }
 
-    void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstantInfo info, Session session) {
+    private void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstantInfo info, Session session) {
         if (info.isMethodType)
             writeMethodTypeConstant(info.heap);
         else
@@ -423,8 +423,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeMethodModifier(SootMethod m, String modifier) {
-        String methodId = writeMethod(m);
-        _db.add(METHOD_MODIFIER, modifier, methodId);
+        _db.add(METHOD_MODIFIER, modifier, methodSig(m, null));
     }
 
     void writeReturn(SootMethod m, Stmt stmt, Local l, Session session) {
@@ -440,10 +439,9 @@ class FactWriter extends JavaFactWriter {
     // The return var of native methods is exceptional, in that it does not
     // correspond to a return instruction.
     void writeNativeReturnVar(SootMethod m) {
-        String methodId = writeMethod(m);
-
         if (!(m.getReturnType() instanceof VoidType)) {
             String var = _rep.nativeReturnVar(m);
+            String methodId = methodSig(m, null);
             _db.add(NATIVE_RETURN_VAR, var, methodId);
             writeLocal(var, writeType(m.getReturnType()), methodId);
         }
@@ -468,9 +466,8 @@ class FactWriter extends JavaFactWriter {
         session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
         String insn = _rep.instruction(m, stmt, index);
-        String methodId = writeMethod(m);
 
-        writeIf(insn, index, indexTo, methodId);
+        writeIf(insn, index, indexTo, methodSig(m, null));
 
         Value condStmt = stmt.getCondition();
         if (condStmt instanceof ConditionExpr) {
@@ -542,7 +539,7 @@ class FactWriter extends JavaFactWriter {
 
         Local l = (Local) v;
         String insn = _rep.instruction(inMethod, stmt, stmtIndex);
-        String methodId = writeMethod(inMethod);
+        String methodId = methodSig(inMethod, null);
 
         _db.add(LOOKUP_SWITCH, insn, str(stmtIndex), _rep.local(inMethod, l), methodId);
 
@@ -563,7 +560,7 @@ class FactWriter extends JavaFactWriter {
     void writeUnsupported(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.unsupported(m, stmt, index);
-        String methodId = writeMethod(m);
+        String methodId = methodSig(m, null);
         _db.add(UNSUPPORTED_INSTRUCTION, insn, str(index), methodId);
     }
 
@@ -573,7 +570,7 @@ class FactWriter extends JavaFactWriter {
     void writeThrow(SootMethod m, Unit unit, Local l, Session session) {
         int index = session.calcUnitNumber(unit);
         String insn = _rep.throwLocal(m, l, session);
-        String methodId = writeMethod(m);
+        String methodId = methodSig(m, null);
         _db.add(THROW, insn, str(index), _rep.local(m, l), methodId);
     }
 
@@ -618,18 +615,18 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeThisVar(SootMethod m) {
-        String methodId = writeMethod(m);
+        String methodId = methodSig(m, null);
         String thisVar = _rep.thisVar(m);
         String type = writeType(m.getDeclaringClass());
         writeThisVar(methodId, thisVar, type);
     }
 
     void writeMethodDeclaresException(SootMethod m, SootClass exception) {
-        writeMethodDeclaresException(writeMethod(m), writeType(exception));
+        writeMethodDeclaresException(methodSig(m, null), writeType(exception));
     }
 
     void writeFormalParam(SootMethod m, int i) {
-        String methodId = writeMethod(m);
+        String methodId = methodSig(m, null);
         String var = _rep.param(m, i);
         String type = writeType(m.getParameterType(i));
         writeFormalParam(methodId, var, type, i);
@@ -646,7 +643,7 @@ class FactWriter extends JavaFactWriter {
             _varTypeMap.put(local, type);
         }
 
-        writeLocal(local, writeType(type), writeMethod(m));
+        writeLocal(local, writeType(type), methodSig(m, null));
     }
 
     private Local freshLocal(SootMethod inMethod, String basename, Type type, Session session) {
@@ -694,7 +691,7 @@ class FactWriter extends JavaFactWriter {
         return l;
     }
 
-    Local writeMethodTypeConstantExpression(SootMethod inMethod, Stmt stmt, MethodType constant, Session session) {
+    private Local writeMethodTypeConstantExpression(SootMethod inMethod, Stmt stmt, DoopAddons.MethodType constant, Session session) {
         // introduce a new temporary variable
         Local l = freshLocal(inMethod, "$methodtypeconstant", RefType.v("java.lang.invoke.MethodType"), session);
         writeAssignMethodTypeConstant(inMethod, stmt, l, constant, session);
@@ -702,7 +699,10 @@ class FactWriter extends JavaFactWriter {
     }
 
     private Value writeActualParam(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session, Value v, int idx) {
-        if (v instanceof StringConstant)
+	DoopAddons.MethodType mt = DoopAddons.methodType(v);
+	if (mt != null)
+	    return writeMethodTypeConstantExpression(inMethod, stmt, mt, session);
+	else if (v instanceof StringConstant)
             return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
         else if (v instanceof ClassConstant)
             return writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
@@ -710,8 +710,6 @@ class FactWriter extends JavaFactWriter {
             return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
         else if (v instanceof MethodHandle)
             return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
-        else if (v instanceof MethodType)
-            return writeMethodTypeConstantExpression(inMethod, stmt, (MethodType) v, session);
         else if (v instanceof NullConstant) {
             // Giving the type of the formal argument to be used in the creation of
             // temporary var for the actual argument (whose value is null).
@@ -761,37 +759,42 @@ class FactWriter extends JavaFactWriter {
     private String writeInvokeHelper(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.invoke(inMethod, expr, session);
-        String methodId = writeMethod(inMethod);
+        String inMethodId = methodSig(inMethod, null);
 
         writeActualParams(inMethod, stmt, expr, insn, session);
 
         SootMethodRef exprMethodRef = expr.getMethodRef();
         String simpleName = Representation.simpleName(exprMethodRef);
         String declClass = exprMethodRef.declaringClass().getName();
-        checkAndMarkMethodHandleInvocation(insn, declClass, simpleName);
 
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
-        if (tag != null) {
+        if (tag != null)
             _db.add(METHOD_INV_LINE, insn, str(tag.getLineNumber()));
-        }
 
-        if (expr instanceof StaticInvokeExpr) {
-            _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), methodId);
-        }
-        else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr) {
-            _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
-        }
-        else if (expr instanceof SpecialInvokeExpr) {
-            _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
-        }
-        else if (expr instanceof DynamicInvokeExpr) {
-            writeDynamicInvoke((DynamicInvokeExpr)expr, index, insn, methodId);
-        }
-        else {
-            throw new RuntimeException("Cannot handle invoke expr: " + expr);
+        if (expr instanceof DynamicInvokeExpr) {
+            writeDynamicInvoke((DynamicInvokeExpr)expr, index, insn, inMethodId);
+        } else {
+            String methodSig = invokeMethodSig(insn, declClass, simpleName, exprMethodRef, expr);
+            if (expr instanceof StaticInvokeExpr)
+                _db.add(STATIC_METHOD_INV, insn, str(index), methodSig, inMethodId);
+            else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr)
+                _db.add(VIRTUAL_METHOD_INV, insn, str(index), methodSig, _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), inMethodId);
+            else if (expr instanceof SpecialInvokeExpr)
+                _db.add(SPECIAL_METHOD_INV, insn, str(index), methodSig, _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), inMethodId);
+            else
+                throw new RuntimeException("Cannot handle invoke expr: " + expr);
         }
 
         return insn;
+    }
+
+    // Special handling for polymorphic-signature methods.
+    private String invokeMethodSig(String insn, String declClass, String simpleName, SootMethodRef exprMethodRef, InvokeExpr expr) {
+        if (!simpleName.equals("<init>") && DoopAddons.polymorphicHandling(declClass, simpleName)) {
+            _db.add(POLYMORPHIC_INVOCATION, insn, simpleName);
+            return Representation.signature(exprMethodRef);
+        } else
+            return _rep.signature(expr.getMethod());
     }
 
     private String getBootstrapSig(DynamicInvokeExpr di) {
@@ -939,10 +942,10 @@ class FactWriter extends JavaFactWriter {
     }
 
     static class SigInfo {
-        public final int arity;
-        public final String retType;
-        public final String paramTypes;
-        public SigInfo(SootMethodRef ref, boolean reverse) {
+        final int arity;
+        final String retType;
+        final String paramTypes;
+        SigInfo(SootMethodRef ref, boolean reverse) {
             List<Type> paramTypes = ref.parameterTypes();
             if (reverse)
                 paramTypes = Lists.reverse(paramTypes);
@@ -956,11 +959,11 @@ class FactWriter extends JavaFactWriter {
         }
     }
 
-    public InstrInfo calcInstrInfo(SootMethod m, Stmt stmt, Session session) {
+    private InstrInfo calcInstrInfo(SootMethod m, Stmt stmt, Session session) {
         return new InstrInfo(m, stmt, session, true);
     }
 
-    public InstrInfo getInstrInfo(SootMethod m, Stmt stmt, Session session) {
+    private InstrInfo getInstrInfo(SootMethod m, Stmt stmt, Session session) {
         return new InstrInfo(m, stmt, session, false);
     }
 
@@ -968,13 +971,13 @@ class FactWriter extends JavaFactWriter {
         final int index;
         final String insn;
         final String methodId;
-        protected InstrInfo(SootMethod m, Stmt stmt, Session session, boolean calc) {
+        InstrInfo(SootMethod m, Stmt stmt, Session session, boolean calc) {
             if (calc)
                 this.index = session.calcUnitNumber(stmt);
             else
                 this.index = session.getUnitNumber(stmt);
             this.insn = _rep.instruction(m, stmt, index);
-            this.methodId = writeMethod(m);
+            this.methodId = methodSig(m, null);
         }
     }
 }

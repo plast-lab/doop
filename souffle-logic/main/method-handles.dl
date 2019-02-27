@@ -243,7 +243,7 @@ MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name) :-
   // Permit treatment of invoke methods as opaque.
   (_VirtualMethodInvocation(?invo, _, _, ?base, ?containingMethod) ;
    _SpecialMethodInvocation(?invo, _, _, ?base, ?containingMethod)),
-  _MethodHandleInvocation(?invo, ?name),
+  _PolymorphicInvocation(?invo, ?name),
   ReachableContext(?callerCtx, ?containingMethod),
   VarPointsTo(_, ?mh, ?callerCtx, ?base),
   MethodHandle_Method(?mh, ?method).
@@ -528,7 +528,9 @@ VarPointsTo(?hctx, ?value, ?callerCtx, ?ret) :-
   Method_DeclaringType(?method, ?type),
   isImmutableHContext(?hctx),
   ?value = cat(?type, cat(" value constructed by method handle ", ?mh)),
-  AssignReturnValue(?invo, ?ret).
+  AssignReturnValue(?invo, ?ret),
+  Var_Type(?ret, ?retType),
+  basic.SubtypeOf(?type, ?retType).
 
 /*************************************************************
  * Generic invokedynamic

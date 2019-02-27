@@ -468,10 +468,10 @@ isOpaqueInstruction(?instruction) :-
    _VirtualMethodInvocation(?instruction, _, ?signature, _, _)),
   isOpaqueMethod(?signature).
 
-// Method handle invocation
+// Polymorphic-signature method invocation
 
-.decl _MethodHandleInvocation(?invocation:symbol, ?simpleName:symbol)
-.input _MethodHandleInvocation(IO="file", filename="MethodHandleInvocation.facts", delimiter="\t")
+.decl _PolymorphicInvocation(?invocation:symbol, ?simpleName:symbol)
+.input _PolymorphicInvocation(IO="file", filename="PolymorphicInvocation.facts", delimiter="\t")
 
 // Throw
 

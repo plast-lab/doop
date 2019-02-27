@@ -62,8 +62,11 @@ public class Main {
 
         Options.v().set_output_dir(outDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
+        Options.v().setPhaseOption("jb", "model-lambdametafactory:false");
+        if (sootParameters._ignoreFactGenErrors)
+            Options.v().set_ignore_resolution_errors(true);
 
-        if (sootParameters._ignoreWrongStaticness)
+        if (sootParameters._ignoreWrongStaticness || sootParameters._ignoreFactGenErrors)
             Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
 
         if (sootParameters._ssa) {
@@ -213,8 +216,15 @@ public class Main {
                         forceResolveClasses(allClassNames, jimpleClasses, scene);
                         System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
                     }
+
+                    // Write classes, following package hierarchy.
+                    Options.v().set_output_dir(DoopAddons.jimpleDir(outDir));
+                    boolean structured = DoopAddons.checkSetHierarchyDirs();
                     driver.writeInParallel(jimpleClasses);
-                    DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
+                    if (!structured)
+                        DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
+                    // Revert to standard output dir for the rest of the code.
+                    Options.v().set_output_dir(outDir);
                 }
             }
 
@@ -229,7 +239,6 @@ public class Main {
                     System.err.println("Warning: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
                 }
             }
-
 
             writer.writeLastFacts(java);
         } finally {
