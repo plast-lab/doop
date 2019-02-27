@@ -192,10 +192,13 @@ public class DoopAddons {
     }
 
     private static boolean polymorphicHandling_msg = false;
+    private static Method hc;
     public static boolean polymorphicHandling(String declClass, String simpleName) {
         try {
-            Method hc = Class.forName("soot.PolymorphicMethodRef").getDeclaredMethod("handlesClass", String.class);
-            hc.setAccessible(true);
+            if (hc == null) {
+                Method hc = Class.forName("soot.PolymorphicMethodRef").getDeclaredMethod("handlesClass", String.class);
+                hc.setAccessible(true);
+            }
             return (boolean)hc.invoke(null, declClass);
         } catch (Throwable t) {
             if (!polymorphicHandling_msg) {
@@ -206,32 +209,40 @@ public class DoopAddons {
         }
     }
 
+    private static Class<?> mtClass;
+    private static Method getRetType;
+    private static Method getParamTypes;
     /**
      * Since MethodType was introduced in Soot 3.2, to maintain
      * compatibility with earlier versions, we introduce a reflective
      * layer and our own custom MethodType class.
      */
     public static MethodType methodType(Value v) {
-	try {
-	    Class<?> mtClass = Class.forName("soot.jimple.MethodType");
-	    // Dynamic instanceof check.
-	    Object methodType = mtClass.cast(v);
-	    Method getRetType = mtClass.getDeclaredMethod("getReturnType");
-	    getRetType.setAccessible(true);
-	    String retType = getRetType.invoke(methodType).toString();
-	    Method getParamTypes = mtClass.getDeclaredMethod("getParameterTypes");
-	    getParamTypes.setAccessible(true);
-	    Object paramTypesObj = getParamTypes.invoke(methodType);
-	    if (!(paramTypesObj instanceof List))
-		return null;
-	    List<?> paramTypesT = (List<?>)paramTypesObj;
-	    List<String> paramTypes = new LinkedList<>();
-	    for (Object t : paramTypesT)
-		paramTypes.add(t.toString());
-	    return new MethodType(retType, paramTypes);
-	} catch (Exception ex) {
-	    return null;
-	}
+        final String METHODTYPE = "soot.jimple.MethodType";
+        if (!(METHODTYPE.equals(v.getClass().getName())))
+            return null;
+        try {
+            if (mtClass == null) {
+                mtClass = Class.forName(METHODTYPE);
+                getRetType = mtClass.getDeclaredMethod("getReturnType");
+                getRetType.setAccessible(true);
+                getParamTypes = mtClass.getDeclaredMethod("getParameterTypes");
+                getParamTypes.setAccessible(true);
+            }
+            // Dynamic instanceof check.
+            Object methodType = mtClass.cast(v);
+            String retType = getRetType.invoke(methodType).toString();
+            Object paramTypesObj = getParamTypes.invoke(methodType);
+            if (!(paramTypesObj instanceof List))
+                return null;
+            List<?> paramTypesT = (List<?>)paramTypesObj;
+            List<String> paramTypes = new LinkedList<>();
+            for (Object t : paramTypesT)
+                paramTypes.add(t.toString());
+            return new MethodType(retType, paramTypes);
+        } catch (Exception ex) {
+            return null;
+        }
     }
 
     public static class MethodType {
