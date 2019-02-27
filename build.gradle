@@ -82,14 +82,17 @@ dependencies {
             "com.google.guava:guava:27.0-jre",
             // "ext:apktool:2.3.3",                                // needed for decoding APK inputs (optional)
 
-            // Soot
-            "ext:AXMLPrinter:2.0",
-            // Upstream stable version, to be used instead of ext:sootclasses.
-            // "ca.mcgill.sable:soot:3.1.0",
-            // Doop's Soot fork.
+            // Soot - choose one of the following:
+            // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.
             // "ext:sootclasses:3.2.7",
-            // "ext:sootclasses:3.2.0.MINIMAL",
-            "ext:sootclasses:trunk.20190219",
+            // (b) Upstream stable Soot version.
+            // "ca.mcgill.sable:soot:3.1.0",
+            // (c) Upstream 3.x + minimal changes (mostly equivalent to our fork).
+            "ext:sootclasses:3.1.0.MINIMAL",
+            // (d) Latest tested nightly build.
+            // "ext:sootclasses:trunk.20190225",
+
+            "ext:AXMLPrinter:2.0",
             "ext:soot-infoflow:2.5.1",
             "ext:soot-infoflow-android:2.5.1",
             // https://mvnrepository.com/artifact/gov.nist.math/jama
