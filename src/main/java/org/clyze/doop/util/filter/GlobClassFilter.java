@@ -73,13 +73,14 @@ public class GlobClassFilter implements ClassFilter {
                     return true;
             }
 
-        if (packages != null)
+        if (packages != null) {
             if (pkgName == null)
                 pkgName = getPackageName(className);
             for (String pkg : packages) {
                 if (pkgName.equalsIgnoreCase(pkg))
                     return true;
             }
+	}
         return false;
     }
 }
