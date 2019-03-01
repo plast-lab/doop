@@ -402,7 +402,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     String writeField(SootField f) {
-        String fieldId = Representation.signature(f);
+        String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getDeclaringClass()), Representation.simpleName(f), writeType(f.getType()));
         if (f.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) f.getTag("VisibilityAnnotationTag");
@@ -905,7 +905,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeFieldInitialValue(SootField f) {
-        String fieldId = Representation.signature(f);
+        String fieldId = _rep.signature(f);
         List<Tag> tagList = f.getTags();
         for (Tag tag : tagList)
             if (tag instanceof ConstantValueTag) {
