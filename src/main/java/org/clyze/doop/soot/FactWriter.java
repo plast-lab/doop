@@ -362,10 +362,10 @@ class FactWriter extends JavaFactWriter {
         writeInstanceField(m, stmt, f, base, to, session, LOAD_INST_FIELD);
     }
 
-    private void writeInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local var, Session session, PredicateFile storeInstField) {
+    private void writeInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local var, Session session, PredicateFile storeOrLoadInstField) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
         String fieldId = writeField(f);
-        _db.add(storeInstField, ii.insn, str(ii.index), _rep.local(m, var), _rep.local(m, base), fieldId, ii.methodId);
+        _db.add(storeOrLoadInstField, ii.insn, str(ii.index), _rep.local(m, var), _rep.local(m, base), fieldId, ii.methodId);
     }
 
     void writeStoreStaticField(SootMethod m, Stmt stmt, SootField f, Local from, Session session) {
