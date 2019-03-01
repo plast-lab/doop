@@ -28,6 +28,7 @@ public class Parameters {
     public boolean _ignoreFactGenErrors = false;
     private boolean _decodeApk = false;
     public boolean _extractMoreStrings = false;
+    public boolean _writeArtifactsMap = false;
     private boolean _reportPhantoms = true;
     public boolean _dex = false;
 
@@ -205,6 +206,9 @@ public class Parameters {
             break;
         case "--extract-more-strings":
             _extractMoreStrings = true;
+            break;
+        case "--write-artifacts-map":
+            _writeArtifactsMap = true;
             break;
         case "--dont-report-phantoms":
             this._reportPhantoms = false;

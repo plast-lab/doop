@@ -109,7 +109,7 @@ class DexMethodFactWriter extends JavaFactWriter {
 
     DexMethodFactWriter(DexBackedMethod dexMethod, Database _db, boolean moreStrings,
                         Map<String, MethodSig> cachedMethodDescriptors) {
-        super(_db, moreStrings);
+        super(_db, moreStrings, true);
         this.m = dexMethod;
         this.cachedMethodDescriptors = cachedMethodDescriptors;
         this.methId = DexRepresentation.methodId(m, mf);

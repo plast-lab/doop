@@ -177,8 +177,9 @@ public class Main {
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
             boolean reportPhantoms = sootParameters.getReportPhantoms();
             boolean moreStrings = sootParameters._extractMoreStrings;
+            boolean artifacts = sootParameters._writeArtifactsMap;
             Representation rep = new Representation();
-            FactWriter writer = new FactWriter(db, moreStrings, rep, reportPhantoms);
+            FactWriter writer = new FactWriter(db, moreStrings, artifacts, rep, reportPhantoms);
             ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, reportPhantoms);
             SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors);
             factory.setDriver(driver);

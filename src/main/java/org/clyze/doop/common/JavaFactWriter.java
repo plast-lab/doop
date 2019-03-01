@@ -15,10 +15,13 @@ public abstract class JavaFactWriter {
     protected static final String R_OP = "2";
     protected final Database _db;
     protected final boolean _extractMoreStrings;
+    protected final boolean _writeArtifactsMap;
 
-    protected JavaFactWriter(Database db, boolean extractMoreStrings) {
+    protected JavaFactWriter(Database db, boolean extractMoreStrings,
+                             boolean writeArtifactsMap) {
         this._db = db;
         this._extractMoreStrings = extractMoreStrings;
+        this._writeArtifactsMap = writeArtifactsMap;
     }
 
     public static String str(int i) {
@@ -133,12 +136,14 @@ public abstract class JavaFactWriter {
      * @param java  the object supporting basic Java functionality
      */
     public void writeLastFacts(BasicJavaSupport java) {
-        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
+        if (_writeArtifactsMap) {
+            Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
 
-        System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
-        for (String artifact : artifactToClassMap.keySet())
-            for (ArtifactEntry ae : artifactToClassMap.get(artifact))
-                writeClassArtifact(artifact, ae.className, ae.subArtifact);
+            System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
+            for (String artifact : artifactToClassMap.keySet())
+                for (ArtifactEntry ae : artifactToClassMap.get(artifact))
+                    writeClassArtifact(artifact, ae.className, ae.subArtifact);
+        }
     }
 
     // The extra sensitive controls are given as a String

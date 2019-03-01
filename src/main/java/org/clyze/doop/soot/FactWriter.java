@@ -29,9 +29,9 @@ class FactWriter extends JavaFactWriter {
     private final boolean _reportPhantoms;
     private final Collection<Object> seenPhantoms = new HashSet<>();
 
-    FactWriter(Database db, boolean moreStrings,
+    FactWriter(Database db, boolean moreStrings, boolean artifacts,
                Representation rep, boolean reportPhantoms) {
-        super(db, moreStrings);
+        super(db, moreStrings, artifacts);
         _rep = rep;
         _reportPhantoms = reportPhantoms;
     }

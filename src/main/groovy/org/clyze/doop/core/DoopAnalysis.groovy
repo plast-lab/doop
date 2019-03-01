@@ -386,6 +386,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--scan-native-code"]
         }
 
+	if (options.X_SERVER_LOGIC.value || options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
+            params += ["--write-artifacts-map"]
+	}
+
         params.addAll(["--log-dir", Doop.doopLog])
         params.addAll(["-d", factsDir.toString()] + inputArgs)
         deps.addAll(platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>)
