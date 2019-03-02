@@ -175,12 +175,12 @@ public class Main {
         }
 
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
-            boolean reportPhantoms = sootParameters.getReportPhantoms();
+            boolean reportPhantoms = sootParameters._reportPhantoms;
             boolean moreStrings = sootParameters._extractMoreStrings;
             boolean artifacts = sootParameters._writeArtifactsMap;
             Representation rep = new Representation();
             FactWriter writer = new FactWriter(db, moreStrings, artifacts, rep, reportPhantoms);
-            ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, reportPhantoms);
+            ThreadFactory factory = new ThreadFactory(writer, sootParameters);
             SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors);
             factory.setDriver(driver);
 
@@ -198,7 +198,7 @@ public class Main {
                     if (dummyMain == null)
                         throw new RuntimeException("Internal error: could not compute dummy main() with FlowDroid");
                     System.out.println("Generated dummy main method " + dummyMain.getName() + "()");
-                    driver.generateMethod(dummyMain, writer, sootParameters._ssa, reportPhantoms);
+                    driver.generateMethod(dummyMain, writer, reportPhantoms, sootParameters);
                 }
 
                 // avoids a concurrent modification exception, since we may

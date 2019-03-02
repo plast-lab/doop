@@ -19,6 +19,7 @@ public class SootParameters extends Parameters {
     String _androidJars = null;
     private boolean _runFlowdroid = false;
     private boolean _toStdout = false;
+    public boolean _lowMem = false;
     private final Collection<String> extraClassesToResolve = new ArrayList<>();
 
     public boolean isApplicationClass(SootClass klass) {

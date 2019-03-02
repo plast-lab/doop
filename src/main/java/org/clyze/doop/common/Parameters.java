@@ -29,7 +29,7 @@ public class Parameters {
     private boolean _decodeApk = false;
     public boolean _extractMoreStrings = false;
     public boolean _writeArtifactsMap = false;
-    private boolean _reportPhantoms = true;
+    public boolean _reportPhantoms = true;
     public boolean _dex = false;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
@@ -113,10 +113,6 @@ public class Parameters {
 
     public boolean getDecodeApk() {
         return _decodeApk;
-    }
-
-    public boolean getReportPhantoms() {
-        return _reportPhantoms;
     }
 
     public static int shift(String[] args, int index) throws DoopErrorCodeException {
