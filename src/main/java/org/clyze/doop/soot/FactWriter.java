@@ -414,7 +414,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeFieldModifier(SootField f, String modifier) {
-        String fieldId = Representation.signature(f);
+        String fieldId = _rep.signature(f);
         _db.add(FIELD_MODIFIER, modifier, fieldId);
     }
 
