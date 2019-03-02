@@ -211,9 +211,16 @@ public class NativeScanner {
         int namesCount = names.size();
         System.out.println("Possible method/class names: " + namesCount);
 
-       	//new-code-start
-		// Find in which function every string is used
-		Map<String,List<String>> stringsInFunctions = findStringsInFunctions(rodata.getFoundStrings(), eps, lib);
+        //new-code-start
+        // Find in which function every string is used
+        Map<String,List<String>> stringsInFunctions = null;
+
+        try {
+            stringsInFunctions = findStringsInFunctions(rodata.getFoundStrings(), eps, lib);
+        } catch (Exception ex) {
+            System.err.println("Cannot find strings in functions, aborting native scanner.");
+            return;
+        }
 
         // Write out facts.
         try (Database db = new Database(outDir)) {
