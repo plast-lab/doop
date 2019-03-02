@@ -224,15 +224,19 @@ public class NativeScanner {
 
         // Write out facts.
         try (Database db = new Database(outDir)) {
-            for (String mt : methodTypes)
-				if (stringsInFunctions.get(mt) != null)
-		            for(String function : stringsInFunctions.get(mt))
-						db.add(NATIVE_METHODTYPE_CANDIDATE, lib, function, mt);
+            for (String mt : methodTypes) {
+                List<String> strings = stringsInFunctions.get(mt);
+                if (strings != null)
+                    for (String function : strings)
+                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, function, mt);
+            }
 
-			for (String n : names)
-				if (stringsInFunctions.get(n) != null)
-		            for (String function : stringsInFunctions.get(n))
-						db.add(NATIVE_NAME_CANDIDATE, lib, function, n);
+            for (String n : names) {
+                List<String> strings = stringsInFunctions.get(n);
+                if (strings != null)
+                    for (String function : strings)
+                        db.add(NATIVE_NAME_CANDIDATE, lib, function, n);
+            }
 
             eps.forEach ((Long addr, String name) ->
                          db.add(NATIVE_LIB_ENTRY_POINT, name, String.valueOf(addr)));
