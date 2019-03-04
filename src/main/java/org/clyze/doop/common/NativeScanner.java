@@ -11,7 +11,28 @@ public class NativeScanner {
 
     // The supported architectures.
     public enum Arch {
-        X86_64, AARCH64
+        X86_64, AARCH64;
+
+        public static Arch autodetect(String libFilePath) throws IOException {
+            ProcessBuilder pb = new ProcessBuilder("file", libFilePath);
+            Arch arch = null;
+            for (String line : NativeScanner.runCommand(pb)) {
+                if (line.contains("80386") || line.contains("x86-64")) {
+                    arch = NativeScanner.Arch.X86_64;
+                    break;
+                } else if (line.contains("aarch64")) {
+                    arch = NativeScanner.Arch.AARCH64;
+                    break;
+                }
+            }
+            if (arch != null)
+                System.out.println("Detected architecture of " + libFilePath + " is " + arch);
+            else {
+                arch = NativeScanner.Arch.AARCH64;
+                System.out.println("Could not determine architecture of " + libFilePath + ", using default: " + arch);
+            }
+            return arch;
+        }
     }
 
     public static void scan(String nmCmd, String objdumpCmd,
@@ -294,7 +315,7 @@ public class NativeScanner {
         System.out.println("[" + addr + "] " + eps.get(addr));
     }
 
-    private static List<String> runCommand(ProcessBuilder builder) throws IOException {
+    public static List<String> runCommand(ProcessBuilder builder) throws IOException {
         if (debug)
             System.err.println("Running external command: " + String.join(" ", builder.command()));
         builder.redirectErrorStream(true);
