@@ -113,7 +113,7 @@ public abstract class AndroidSupport {
                 try {
                     // Auto-detect architecture.
                     Arch arch = Arch.autodetect(libFile.getCanonicalPath());
-                    if (arch == Arch.AARCH64) {
+                    if ((arch == Arch.ARMEABI) || (arch == Arch.AARCH64)) {
                         if (ndkPrebuilts == null) {
                             System.err.println("Error: environment variable " + envVar + " is not set, it should point to the toolchain of the Android NDK, e.g., '/path/to/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/arm-linux-androideabi/bin'");
                             continue;

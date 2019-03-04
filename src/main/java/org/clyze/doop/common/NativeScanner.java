@@ -11,7 +11,7 @@ public class NativeScanner {
 
     // The supported architectures.
     public enum Arch {
-        X86_64, AARCH64;
+        X86_64, AARCH64, ARMEABI;
 
         public static Arch autodetect(String libFilePath) throws IOException {
             ProcessBuilder pb = new ProcessBuilder("file", libFilePath);
@@ -22,6 +22,9 @@ public class NativeScanner {
                     break;
                 } else if (line.contains("aarch64")) {
                     arch = NativeScanner.Arch.AARCH64;
+                    break;
+                } else if (line.contains("ARM") || line.contains("EABI")) {
+                    arch = NativeScanner.Arch.ARMEABI;
                     break;
                 }
             }
@@ -347,6 +350,8 @@ public class NativeScanner {
                             System.out.println("gdb disassemble string: '" + str + "' -> " + address);
                         stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
                     } else if (arch.equals(Arch.AARCH64)) {
+                        // System.out.println("TODO: handling of gdb output line: " + line);
+                    } else if (arch.equals(Arch.ARMEABI)) {
                         // System.out.println("TODO: handling of gdb output line: " + line);
                     } else if (debug)
                         System.out.println("Ignoring gdb output line: " + line);
