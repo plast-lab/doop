@@ -663,7 +663,7 @@ RewriteGoto(?insn, ?index, ?to, ?inmethod) :-
     isGoto_Insn(?insn),
     Instruction_Method(?insn, ?inmethod),
     Goto_Target(?insn, ?old_to),
-    NewIndexMapping(?old_to, ?to, ?inmethod).
+    NewBBStart(?old_to, ?to, ?inmethod).
 
 .decl RewriteIf(?insn:symbol, ?index:number, ?to:number, ?inmethod:symbol)
 .output RewriteIf(filename="If.facts")
@@ -673,7 +673,7 @@ RewriteIf(?insn, ?index, ?to, ?inmethod) :-
     isIf_Insn(?insn),
     Instruction_Method(?insn, ?inmethod),
     If_Target(?insn, ?old_to),
-    NewIndexMapping(?old_to, ?to, ?inmethod).
+    NewBBStart(?old_to, ?to, ?inmethod).
 
 .decl RewriteIfVar(?insn:symbol, ?pos:number, ?var:symbol)
 .output RewriteIfVar(filename="IfVar.facts")
@@ -735,7 +735,7 @@ RewriteLookupSwitch(?insn, ?index, ?key, ?inmethod) :-
 RewriteLookupSwitch_Target(?insn, ?value, ?target) :-
     _LookupSwitch_Target(?insn, ?value, ?target_old),
     Instruction_Method(?insn, ?method),
-    NewIndexMapping(?target_old, ?target, ?method).
+    NewBBStart(?target_old, ?target, ?method).
 
 .decl RewriteLookupSwitch_DefaultTarget(?insn:symbol, ?target:number)
 .output RewriteLookupSwitch_DefaultTarget(filename="LookupSwitch-Default.facts")
@@ -743,7 +743,7 @@ RewriteLookupSwitch_Target(?insn, ?value, ?target) :-
 RewriteLookupSwitch_DefaultTarget(?insn, ?target) :-
     _LookupSwitch_DefaultTarget(?insn, ?target_old),
     Instruction_Method(?insn, ?method),
-    NewIndexMapping(?target_old, ?target, ?method).
+    NewBBStart(?target_old, ?target, ?method).
 
 .decl RewriteReturn(?insn:symbol, ?index:number, ?var:symbol, ?inmethod:symbol)
 .output RewriteReturn(filename="Return.facts")
@@ -838,7 +838,7 @@ RewriteTableSwitch(?insn, ?index, ?key, ?inmethod) :-
 RewriteTableSwitch_Target(?insn, ?value, ?target) :-
     _TableSwitch_Target(?insn, ?value, ?target_old),
     Instruction_Method(?insn, ?method),
-    NewIndexMapping(?target_old, ?target, ?method).
+    NewBBStart(?target_old, ?target, ?method).
 
 .decl RewriteTableSwitch_DefaultTarget(?insn:symbol, ?target:number)
 .output RewriteTableSwitch_DefaultTarget(filename="TableSwitch-Default.facts")
@@ -846,7 +846,7 @@ RewriteTableSwitch_Target(?insn, ?value, ?target) :-
 RewriteTableSwitch_DefaultTarget(?insn, ?target) :-
     _TableSwitch_DefaultTarget(?insn, ?target_old),
     Instruction_Method(?insn, ?method),
-    NewIndexMapping(?target_old, ?target, ?method).
+    NewBBStart(?target_old, ?target, ?method).
 
 .decl RewriteThrow(?insn:symbol, ?index:number, ?var:symbol, ?method:symbol)
 .output RewriteThrow(filename="Throw.facts")
