@@ -167,7 +167,7 @@ class SouffleAnalysis extends DoopAnalysis {
             def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
             cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
 			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/util.dl")
-            cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/reasoning.dl")
+            //cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/reasoning.dl")
             cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/path-expression.dl")
 		}
 
