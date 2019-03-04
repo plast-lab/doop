@@ -1,5 +1,7 @@
 package org.clyze.doop
 
+import groovy.cli.commons.CliBuilder
+import groovy.cli.commons.OptionAccessor
 import org.apache.commons.cli.GnuParser
 import org.apache.commons.cli.HelpFormatter
 import org.apache.commons.cli.Option
