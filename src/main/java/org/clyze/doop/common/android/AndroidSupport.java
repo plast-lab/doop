@@ -10,6 +10,7 @@ import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.NativeScanner;
+import org.clyze.doop.common.NativeScanner.Arch;
 import org.clyze.doop.common.Parameters;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
@@ -105,15 +106,29 @@ public abstract class AndroidSupport {
 
             String envVar = "ANDROID_NDK_PREBUILTS";
             String ndkPrebuilts = System.getenv(envVar);
-            if (ndkPrebuilts == null) {
-                System.err.println("Error: environment variable " + envVar + " is not set, it should point to the toolchain of the Android NDK, e.g., '/path/to/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/arm-linux-androideabi/bin'");
-                return;
-            }
-            String nmCmd = ndkPrebuilts + "/nm";
-            String objdumpCmd = ndkPrebuilts + "/objdump";
+            String nmCmd = null;
+            String objdumpCmd = null;
             File outDir = new File(parameters.getOutputDir());
-            for (File libFile : nativeLibs)
-                NativeScanner.scan(nmCmd, objdumpCmd, libFile, outDir);
+            for (File libFile : nativeLibs) {
+                try {
+                    // Auto-detect architecture.
+                    Arch arch = Arch.autodetect(libFile.getCanonicalPath());
+                    if ((arch == Arch.ARMEABI) || (arch == Arch.AARCH64)) {
+                        if (ndkPrebuilts == null) {
+                            System.err.println("Error: environment variable " + envVar + " is not set, it should point to the toolchain of the Android NDK, e.g., '/path/to/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/arm-linux-androideabi/bin'");
+                            continue;
+                        }
+                        nmCmd = ndkPrebuilts + "/nm";
+                        objdumpCmd = ndkPrebuilts + "/objdump";
+                    } else {
+                        nmCmd = "nm";
+                        objdumpCmd = "objdump";
+                    }
+                    NativeScanner.scan(nmCmd, objdumpCmd, libFile, outDir, arch);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
         } else
             System.err.println("Error: decode directory " + decodeDir + " not found");
     }
