@@ -113,7 +113,7 @@ public abstract class AndroidSupport {
             String objdumpCmd = ndkPrebuilts + "/objdump";
             File outDir = new File(parameters.getOutputDir());
             for (File libFile : nativeLibs)
-                NativeScanner.scan(nmCmd, objdumpCmd, libFile, outDir);
+                NativeScanner.scan(nmCmd, objdumpCmd, libFile, outDir, NativeScanner.Arch.AARCH64);
         } else
             System.err.println("Error: decode directory " + decodeDir + " not found");
     }

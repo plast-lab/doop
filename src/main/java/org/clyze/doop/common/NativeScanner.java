@@ -9,11 +9,17 @@ public class NativeScanner {
     private final static boolean debug = false;
     private final static boolean check = false;
 
+    // The supported architectures.
+    public enum Arch {
+        X86_64, AARCH64
+    }
+
     public static void scan(String nmCmd, String objdumpCmd,
-                            File libFile, File outDir) {
+                            File libFile, File outDir, Arch arch) {
 
         if (debug) {
             System.out.println("== Native scanner ==");
+            System.out.println("arch = " + arch);
             System.out.println("nmCmd = " + nmCmd);
             System.out.println("objdumpCmd = " + objdumpCmd);
         }
@@ -21,8 +27,9 @@ public class NativeScanner {
         try {
             String lib = libFile.getCanonicalPath();
             System.out.println("== Processing library: " + lib + " ==");
-
-            List<String> lines = parseLib(nmCmd, lib, true);
+            // Demangling interacts poorly with libraries lacking
+            // symbol tables and is thus turned off.
+            List<String> lines = parseLib(nmCmd, lib, false);
             if (check)
                 checkSymbols(lines, lib);
 
@@ -32,7 +39,7 @@ public class NativeScanner {
                 if (ep != null)
                     libEntryPoints.put(ep.addr, ep.name);
             }
-            processLib(objdumpCmd, outDir, lib, libEntryPoints);
+            processLib(objdumpCmd, outDir, lib, libEntryPoints, arch);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -60,22 +67,19 @@ public class NativeScanner {
         for (String nmLine : runCommand(nmBuilder)) {
             if (!nmLine.contains("JNI"))
                 continue;
-            if (demangle)
-                ids.add(nmLine);
-            else {
-                // Call separate tool to do name demangling.
-                final String CPPFILT = "c++filt";
-                ProcessBuilder cppfilt = new ProcessBuilder(CPPFILT, "'" + nmLine + "'");
-                List<String> lines = runCommand(cppfilt);
-                if (lines.size() == 1)
-                    ids.add(lines.get(0));
-                else {
-                    String out = lines.stream().map(Object::toString).collect(Collectors.joining(", "));
-                    System.err.println("Error: cannot process " + CPPFILT + " output: " + out);
-                    // Add original line.
-                    ids.add(nmLine);
-                }
-            }
+            ids.add(nmLine);
+            // // Call separate tool to do name demangling.
+            // final String CPPFILT = "c++filt";
+            // ProcessBuilder cppfilt = new ProcessBuilder(CPPFILT, "'" + nmLine + "'");
+            // List<String> lines = runCommand(cppfilt);
+            // if (lines.size() == 1)
+            //     ids.add(lines.get(0));
+            // else {
+            //     String out = lines.stream().map(Object::toString).collect(Collectors.joining(", "));
+            //     System.err.println("Error: cannot process " + CPPFILT + " output: " + out);
+            //     // Add original line.
+            //     ids.add(nmLine);
+            // }
         }
         return ids;
     }
@@ -146,8 +150,9 @@ public class NativeScanner {
     }
 
     private static void processLib(String objdumpCmd, File outDir, String lib,
-                                   Map<Long, String> eps) throws IOException {
-        System.out.println("Finding .rodata header");
+                                   Map<Long, String> eps, Arch arch) throws IOException {
+        final String stringsSection = ".rodata";
+        System.out.println("Finding " + stringsSection + " header");
 
         ProcessBuilder builder = new ProcessBuilder(objdumpCmd, "--headers", lib);
         int sizeIdx = -1;
@@ -167,9 +172,9 @@ public class NativeScanner {
                 if (offsetIdx0 != -1)
                     offsetIdx = offsetIdx0;
             }
-            if (line.contains(".rodata")) {
+            if (line.contains(stringsSection)) {
                 if ((sizeIdx == -1) || (offsetIdx == -1)) {
-                    System.err.println("Error, cannot find .rodata from output:");
+                    System.err.println("Error, cannot find section " + stringsSection + " from output:");
                     for (String l : lines)
                         System.out.println(l);
                     return;
@@ -178,7 +183,7 @@ public class NativeScanner {
                     int offsetEndIdx = line.indexOf(' ', offsetIdx);
                     int size = (int)Long.parseLong(line.substring(sizeIdx, sizeEndIdx), 16);
                     int offset = (int)Long.parseLong(line.substring(offsetIdx, offsetEndIdx), 16);
-                    System.out.println(".rodata section: offset = " + offset + ", size = " + size);
+                    System.out.println(stringsSection + " section: offset = " + offset + ", size = " + size);
 
                     Map<Long, String> symbols = new HashMap<>();
                     // Read section from the library.
@@ -189,11 +194,17 @@ public class NativeScanner {
 
                     rodata = new Section(offset, size, bytes);
                     System.out.println("Section fully read.");
-                    System.out.println(rodata.toString());
+                    if (debug)
+                        System.out.println(rodata.toString());
 
                     break;
                 }
             }
+        }
+
+        if (rodata == null) {
+            System.out.println("Library " + lib + " does not contain a " + stringsSection + " section.");
+            return;
         }
 
         System.out.println("Gathering strings from " + lib + "...");
@@ -212,11 +223,12 @@ public class NativeScanner {
         System.out.println("Possible method/class names: " + namesCount);
 
         // Find in which function every string is used
-        Map<String,List<String>> stringsInFunctions = null;
+        Map<String, List<String>> stringsInFunctions = null;
 
         try {
-            stringsInFunctions = findStringsInFunctions(rodata.strings(), eps, lib);
+            stringsInFunctions = findStringsInFunctions(rodata.strings(), eps, lib, arch);
         } catch (Exception ex) {
+            ex.printStackTrace();
             System.err.println("Cannot find strings in functions, aborting native scanner.");
             return;
         }
@@ -228,6 +240,8 @@ public class NativeScanner {
                 if (strings != null)
                     for (String function : strings)
                         db.add(NATIVE_METHODTYPE_CANDIDATE, lib, function, mt);
+                else
+                    db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", mt);
             }
 
             for (String n : names) {
@@ -235,6 +249,8 @@ public class NativeScanner {
                 if (strings != null)
                     for (String function : strings)
                         db.add(NATIVE_NAME_CANDIDATE, lib, function, n);
+                else
+                    db.add(NATIVE_NAME_CANDIDATE, lib, "-", n);
             }
 
             eps.forEach ((Long addr, String name) ->
@@ -279,7 +295,8 @@ public class NativeScanner {
     }
 
     private static List<String> runCommand(ProcessBuilder builder) throws IOException {
-        System.err.println("Running external command: " + String.join(" ", builder.command()));
+        if (debug)
+            System.err.println("Running external command: " + String.join(" ", builder.command()));
         builder.redirectErrorStream(true);
         Process process = builder.start();
         InputStream is = process.getInputStream();
@@ -295,19 +312,21 @@ public class NativeScanner {
     /**
      *  return in which functions every found string belongs
      **/
-    private static Map<String,List<String>> findStringsInFunctions(Map<Long, String> foundStrings, Map<Long, String> eps, String lib) {
+    private static Map<String,List<String>> findStringsInFunctions(Map<Long, String> foundStrings, Map<Long, String> eps, String lib, Arch arch) {
         Map<String, List<String>> stringsInFunctions = new HashMap<>();
         for (Map.Entry<Long, String> entry : eps.entrySet()) {
             try {
                 String function = entry.getValue();
                 ProcessBuilder gdbBuilder = new ProcessBuilder("gdb", "-batch", "-ex", "disassemble " + function, lib);
                 for (String line : runCommand(gdbBuilder))
-                    if (line.contains("#")) {
+                    if (arch.equals(Arch.X86_64) && line.contains("#")) {
                         Long address = Long.parseLong(line.substring(line.lastIndexOf('x') + 1), 16);
                         String str = foundStrings.get(address);
                         if (debug)
-			    System.out.println("gdb disassemble string: '" + str + "' -> " + address);
+                            System.out.println("gdb disassemble string: '" + str + "' -> " + address);
                         stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                    } else if (arch.equals(Arch.AARCH64)) {
+                        // System.out.println("TODO: handling of gdb output line: " + line);
                     } else if (debug)
                         System.out.println("Ignoring gdb output line: " + line);
             } catch (IOException ex) {

@@ -88,7 +88,7 @@ public class BasicJavaSupport {
                     libTmpFile.deleteOnExit();
                     Files.copy(jarFile.getInputStream(entry), libTmpFile.toPath());
                     File outDir = new File(parameters.getOutputDir());
-                    NativeScanner.scan("nm", "objdump", libTmpFile, outDir);
+                    NativeScanner.scan("nm", "objdump", libTmpFile, outDir, NativeScanner.Arch.X86_64);
                 }
             }
         }
