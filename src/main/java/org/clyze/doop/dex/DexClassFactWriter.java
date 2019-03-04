@@ -29,7 +29,7 @@ class DexClassFactWriter extends JavaFactWriter {
     public String superClass;
 
     DexClassFactWriter(Database db, boolean moreStrings) {
-        super(db, moreStrings);
+        super(db, moreStrings, true);
     }
 
     public void generateFacts(DexBackedClassDef dexClass, String className,

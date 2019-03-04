@@ -29,9 +29,9 @@ class FactWriter extends JavaFactWriter {
     private final boolean _reportPhantoms;
     private final Collection<Object> seenPhantoms = new HashSet<>();
 
-    FactWriter(Database db, boolean moreStrings,
+    FactWriter(Database db, boolean moreStrings, boolean artifacts,
                Representation rep, boolean reportPhantoms) {
-        super(db, moreStrings);
+        super(db, moreStrings, artifacts);
         _rep = rep;
         _reportPhantoms = reportPhantoms;
     }
@@ -362,10 +362,10 @@ class FactWriter extends JavaFactWriter {
         writeInstanceField(m, stmt, f, base, to, session, LOAD_INST_FIELD);
     }
 
-    private void writeInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local var, Session session, PredicateFile storeInstField) {
+    private void writeInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local var, Session session, PredicateFile storeOrLoadInstField) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
         String fieldId = writeField(f);
-        _db.add(storeInstField, ii.insn, str(ii.index), _rep.local(m, var), _rep.local(m, base), fieldId, ii.methodId);
+        _db.add(storeOrLoadInstField, ii.insn, str(ii.index), _rep.local(m, var), _rep.local(m, base), fieldId, ii.methodId);
     }
 
     void writeStoreStaticField(SootMethod m, Stmt stmt, SootField f, Local from, Session session) {
@@ -402,7 +402,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     String writeField(SootField f) {
-        String fieldId = Representation.signature(f);
+        String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getDeclaringClass()), Representation.simpleName(f), writeType(f.getType()));
         if (f.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) f.getTag("VisibilityAnnotationTag");
@@ -414,7 +414,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeFieldModifier(SootField f, String modifier) {
-        String fieldId = writeField(f);
+        String fieldId = _rep.signature(f);
         _db.add(FIELD_MODIFIER, modifier, fieldId);
     }
 
@@ -905,7 +905,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeFieldInitialValue(SootField f) {
-        String fieldId = Representation.signature(f);
+        String fieldId = _rep.signature(f);
         List<Tag> tagList = f.getTags();
         for (Tag tag : tagList)
             if (tag instanceof ConstantValueTag) {

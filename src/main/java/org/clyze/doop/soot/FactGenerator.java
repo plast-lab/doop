@@ -23,14 +23,16 @@ class FactGenerator implements Runnable {
     private final boolean _ssa;
     private final Set<SootClass> _sootClasses;
     private final boolean _reportPhantoms;
+    private final SootParameters sootParameters;
     private final Driver _driver;
 
-    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses, boolean reportPhantoms, Driver driver)
+    FactGenerator(FactWriter writer, Set<SootClass> sootClasses, Driver driver, SootParameters sootParameters)
     {
         this._writer = writer;
-        this._ssa = ssa;
         this._sootClasses = sootClasses;
-        this._reportPhantoms = reportPhantoms;
+        this.sootParameters = sootParameters;
+        this._ssa = sootParameters._ssa;
+        this._reportPhantoms = sootParameters._reportPhantoms;
         this._driver = driver;
     }
 
@@ -210,15 +212,20 @@ class FactGenerator implements Runnable {
                 System.err.println("Found method without active body: " + m.getSignature());
             }
 
-            Body b = m.getActiveBody();
+            Body b0 = m.getActiveBody();
             try {
-                if (b != null) {
+                if (b0 != null) {
+                    Body b = b0;
                     if (_ssa) {
                         b = Shimple.v().newBody(b);
                         m.setActiveBody(b);
                     }
                     DoopRenamer.transform(b);
                     generate(m, b, session);
+                    // If the Shimple body is not needed anymore, put
+                    // back original body. This saves some memory.
+                    if (sootParameters._lowMem && !sootParameters._generateJimple)
+                        m.setActiveBody(b0);
                 }
             } catch (RuntimeException ex) {
                 System.err.println("Fact generation failed for method " + m.getSignature() + ".");

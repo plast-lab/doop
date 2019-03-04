@@ -89,7 +89,7 @@ public class DexInvoker {
             }
 
             writer.writeLastFacts(java);
-            cha.conclude(db, writer, dexParams.getReportPhantoms());
+            cha.conclude(db, writer, dexParams._reportPhantoms);
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new DoopErrorCodeException(17, ex);

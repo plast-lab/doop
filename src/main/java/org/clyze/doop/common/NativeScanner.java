@@ -211,21 +211,32 @@ public class NativeScanner {
         int namesCount = names.size();
         System.out.println("Possible method/class names: " + namesCount);
 
-       	//new-code-start
-		// Find in which function every string is used
-		Map<String,List<String>> stringsInFunctions = findStringsInFunctions(rodata.getFoundStrings(), eps, lib);
+        //new-code-start
+        // Find in which function every string is used
+        Map<String,List<String>> stringsInFunctions = null;
+
+        try {
+            stringsInFunctions = findStringsInFunctions(rodata.getFoundStrings(), eps, lib);
+        } catch (Exception ex) {
+            System.err.println("Cannot find strings in functions, aborting native scanner.");
+            return;
+        }
 
         // Write out facts.
         try (Database db = new Database(outDir)) {
-            for (String mt : methodTypes)
-				if (stringsInFunctions.get(mt) != null)
-		            for(String function : stringsInFunctions.get(mt))
-						db.add(NATIVE_METHODTYPE_CANDIDATE, lib, function, mt);
+            for (String mt : methodTypes) {
+                List<String> strings = stringsInFunctions.get(mt);
+                if (strings != null)
+                    for (String function : strings)
+                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, function, mt);
+            }
 
-			for (String n : names)
-				if (stringsInFunctions.get(n) != null)
-		            for (String function : stringsInFunctions.get(n))
-						db.add(NATIVE_NAME_CANDIDATE, lib, function, n);
+            for (String n : names) {
+                List<String> strings = stringsInFunctions.get(n);
+                if (strings != null)
+                    for (String function : strings)
+                        db.add(NATIVE_NAME_CANDIDATE, lib, function, n);
+            }
 
             eps.forEach ((Long addr, String name) ->
                          db.add(NATIVE_LIB_ENTRY_POINT, name, String.valueOf(addr)));

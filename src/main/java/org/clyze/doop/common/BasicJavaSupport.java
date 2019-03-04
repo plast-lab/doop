@@ -71,8 +71,10 @@ public class BasicJavaSupport {
                         ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
                         String className = reader.getClassName().replace("/", ".");
                         classSet.add(className);
-                        String artifact = (new File(jarFile.getName())).getName();
-                        registerArtifactClass(artifact, className, "-");
+                        if (parameters._writeArtifactsMap) {
+                            String artifact = (new File(jarFile.getName())).getName();
+                            registerArtifactClass(artifact, className, "-");
+                        }
                     } catch (Exception e) {
                         System.err.println("Error while preprocessing entry \"" + entryName + "\", it will be ignored.");
                     }
