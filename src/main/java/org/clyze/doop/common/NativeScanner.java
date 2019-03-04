@@ -152,7 +152,7 @@ public class NativeScanner {
         ProcessBuilder builder = new ProcessBuilder(objdumpCmd, "--headers", lib);
         int sizeIdx = -1;
         int offsetIdx = -1;
-		Section rodata = null;
+        Section rodata = null;
 
         List<String> lines = runCommand(builder);
         for (String line : lines) {
@@ -211,12 +211,11 @@ public class NativeScanner {
         int namesCount = names.size();
         System.out.println("Possible method/class names: " + namesCount);
 
-        //new-code-start
         // Find in which function every string is used
         Map<String,List<String>> stringsInFunctions = null;
 
         try {
-            stringsInFunctions = findStringsInFunctions(rodata.getFoundStrings(), eps, lib);
+            stringsInFunctions = findStringsInFunctions(rodata.strings(), eps, lib);
         } catch (Exception ex) {
             System.err.println("Cannot find strings in functions, aborting native scanner.");
             return;
@@ -241,7 +240,6 @@ public class NativeScanner {
             eps.forEach ((Long addr, String name) ->
                          db.add(NATIVE_LIB_ENTRY_POINT, name, String.valueOf(addr)));
         }
-		//new-code-end
     }
 
     private static boolean isName(String line) {
@@ -281,6 +279,7 @@ public class NativeScanner {
     }
 
     private static List<String> runCommand(ProcessBuilder builder) throws IOException {
+        System.err.println("Running external command: " + String.join(" ", builder.command()));
         builder.redirectErrorStream(true);
         Process process = builder.start();
         InputStream is = process.getInputStream();
@@ -293,73 +292,30 @@ public class NativeScanner {
         return lines;
     }
 
-	//new-code-start
-	/**
-	 * reading output of gdb command, disassembling functions( e.g. : gdb <libname> , disassemble <function-name> )
-	 * return ouput of disassemble <function name>
-	 **/
-	private static List<String> runGdbCommand(ProcessBuilder gdbBuilder, String function) throws IOException {
-        List<String> lines = new ArrayList<String>();
-
-        Process proc = gdbBuilder.start();
-        OutputStream out = proc.getOutputStream();
-        InputStream in = proc.getInputStream();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
-
-		String line;
-        while(true) {
-            line = reader.readLine();
-			if(!reader.ready())
-				break;
-		}
-
-		String cmd = "disassemble " + function;
-		writer.write(cmd);
-		writer.newLine();
-		writer.flush();
-		writer.close();
-		BufferedReader newReader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-
-		while((line = newReader.readLine()) != null)
-			lines.add(line);
-
-		return lines;
+    /**
+     *  return in which functions every found string belongs
+     **/
+    private static Map<String,List<String>> findStringsInFunctions(Map<Long, String> foundStrings, Map<Long, String> eps, String lib) {
+        Map<String, List<String>> stringsInFunctions = new HashMap<>();
+        for (Map.Entry<Long, String> entry : eps.entrySet()) {
+            try {
+                String function = entry.getValue();
+                ProcessBuilder gdbBuilder = new ProcessBuilder("gdb", "-batch", "-ex", "disassemble " + function, lib);
+                for (String line : runCommand(gdbBuilder))
+                    if (line.contains("#")) {
+                        Long address = Long.parseLong(line.substring(line.lastIndexOf('x') + 1), 16);
+                        String str = foundStrings.get(address);
+                        if (debug)
+			    System.out.println("gdb disassemble string: '" + str + "' -> " + address);
+                        stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                    } else if (debug)
+                        System.out.println("Ignoring gdb output line: " + line);
+            } catch (IOException ex) {
+                System.err.println("Could not run gdb: " + ex.getMessage());
+            }
+        }
+        return stringsInFunctions;
     }
-
-	/**
-	 *	return in which functions every found string belongs
-	 **/
-	private static Map<String,List<String>> findStringsInFunctions(Map<Long, String> foundStrings, Map<Long, String> eps, String lib) {
-
-		Map<String, List<String>> stringsInFunctions = new HashMap<>();
-		for (Map.Entry<Long,String> entry : eps.entrySet()) {
-					
-			try {
-				ProcessBuilder gdbBuilder = new ProcessBuilder("gdb", lib);
-		
-				for (String line : runGdbCommand(gdbBuilder, entry.getValue())) {
-					if ( line.contains("#")) {
-						Long address = Long.parseLong(line.substring(line.lastIndexOf('x')+1),16);
-						String str = foundStrings.get(address);
-
-						if ( stringsInFunctions.get(str) != null ) {
-							stringsInFunctions.get(str).add(entry.getValue());
-						} else {
-							List<String> functions = new ArrayList<String>();
-							functions.add(entry.getValue());
-							stringsInFunctions.put(str, functions);
-						}
-					}
-				}				
-			} catch (IOException ex) {
-            	ex.printStackTrace();
-        	}
-		}
-		
-		return stringsInFunctions;
-	}
-	//new-code-end
 }
 
 // A representation of the strings section in the binary.
@@ -367,9 +323,7 @@ class Section {
     private final int offset;
     private final int size;
     private final byte[] data;
-	//new-code-start
-	private Map<Long,String> foundStrings;
-	//new-code-end
+    private Map<Long, String> foundStrings;
 
     public Section(int offset, int size, byte[] data) {
         this.offset = offset;
@@ -383,21 +337,21 @@ class Section {
      * @return a collection of the strings found
      */
     Map<Long, String> strings() {
-        StringBuilder foundString = new StringBuilder();
-        Map<Long, String> foundStrings = new TreeMap<>();
-        long addr = offset;
-        for (int i = 0; i < data.length; i++)
-            if (data[i] == 0) {
-                if (!foundString.toString().equals("")) {
-                    foundStrings.put(addr, foundString.toString());
-                    foundString = new StringBuilder();
-                }
-                addr = offset + i + 1;
-            } else
-                foundString.append((char) data[i]);
-
-		this.foundStrings = foundStrings;
-        return foundStrings;
+        if (this.foundStrings == null) {
+            this.foundStrings = new TreeMap<>();
+            StringBuilder foundString = new StringBuilder();
+            long addr = offset;
+            for (int i = 0; i < data.length; i++)
+                if (data[i] == 0) {
+                    if (!foundString.toString().equals("")) {
+                        foundStrings.put(addr, foundString.toString());
+                        foundString = new StringBuilder();
+                    }
+                    addr = offset + i + 1;
+                } else
+                    foundString.append((char) data[i]);
+        }
+        return this.foundStrings;
     }
 
     public String toString() {
@@ -405,12 +359,6 @@ class Section {
         strings().forEach((Long addr, String s) -> sb.append(addr).append(": String '").append(s).append("'\n"));
         return sb.toString();
     }
-
-	//new-code-start
-	public Map<Long, String> getFoundStrings() {
-		return this.foundStrings;
-	}
-	//new-code-end
 }
 
 class EntryPoint {
