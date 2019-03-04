@@ -20,7 +20,9 @@
 // Type info for renamed ssa variables.
 .decl SSA_Type(?var:symbol, ?type:symbol)
 .output SSA_Type(filename="Var-Type.facts")
-.output Method_Descriptor
+
+.output BasicBlockBegin
+.output MayPredecessorBBModuloThrow
 
 // Helper relation to factor out some code.
 .decl SSA_AssignDetails(?instr:symbol, ?to:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
@@ -370,6 +372,18 @@ ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin) :-
 
 .decl InDefs(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
 
+InDefs(?insn, ?ssa_var, ?origin) :- 
+    BasicBlockOutDefs(?pred, ?ssa_var, ?origin),
+    MayPredecessorBBModuloThrow(?pred, ?insn),
+    BasicBlockBegin(?insn).
+
+InDefs(?insn, ?ssa_var, ?origin) :- 
+    Instruction_Index(?insn, 1),
+    Instruction_Method(?insn, ?method),
+    (SSA_FormalParam(_, ?method, ?ssa_var);
+    SSA_ThisVar(?method, ?ssa_var)),
+    SSA_Alias(?ssa_var, ?origin).
+
 // If an instruction is the first instruction in a basic block, and a ssa defintion
 // for origin exists in the Phi Header, then that def is the reaching def.
 ReachingDef(?insn, ?ssa_var, ?origin) :-
@@ -386,18 +400,6 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
     MayPredecessorBBModuloThrow(?pred, ?insn),
     BasicBlockBegin(?insn),
     !ExistsDefInPhiHeader(?insn, _, ?origin).
-
-InDefs(?insn, ?ssa_var, ?origin) :- 
-    BasicBlockOutDefs(?pred, ?ssa_var, ?origin),
-    MayPredecessorBBModuloThrow(?pred, ?insn),
-    BasicBlockBegin(?insn).
-
-InDefs(?insn, ?ssa_var, ?origin) :- 
-    Instruction_Index(?insn, 1),
-    Instruction_Method(?insn, ?method),
-    (SSA_FormalParam(_, ?method, ?ssa_var);
-    SSA_ThisVar(?method, ?ssa_var)),
-    SSA_Alias(?ssa_var, ?origin).
 
 // If an instruction is not the first instruction in a basic block, and the previous
 // instuction is not an assignment with LHS an ssa rename of origin, then the reaching
@@ -435,6 +437,22 @@ NewIndexMapping(?old, ?new, ?method) :-
     Instruction_Index(?insn, ?old),
     Instruction_Method(?insn, ?method),
     SSA_InstructionIndex(?insn, ?new).
+
+.decl NewBBStart(?old:number, ?new:number, ?method:symbol)
+.output NewBBStart
+
+NewBBStart(?old, ?new, ?method) :-
+    NewIndexMapping(?old, ?new, ?method),
+    Instruction_Index(?insn, ?old),
+    Instruction_Method(?insn, ?method),
+    BasicBlockBegin(?insn),
+    !PhiHeaderStart(?insn, _).
+
+NewBBStart(?old, ?new, ?method) :- 
+    Instruction_Method(?insn_old, ?method),
+    Instruction_Index(?insn_old, ?old),
+    PhiHeaderStart(?insn_old, ?insn_new),
+    SSA_InstructionIndex(?insn_new, ?new).
 
 // Rule rewriting
 .decl RewriteArrayInitialValueFromLocal(?insn:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?from:symbol, ?baseHeap:symbol, ?inmethod:symbol)
