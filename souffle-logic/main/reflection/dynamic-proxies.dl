@@ -189,7 +189,7 @@ CallToMethodOfProxyObject(?hctx, ?value, ?ctx, ?invo) :-
 // constructor calls super.<init>(handlerObj).
 .decl ProxyInit(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?proxy:Value, ?init:Method)
 ReachableContext(?calleeCtx, ?init),
-VarPointsTo(?handlerHctx, ?handlerObj, ?calleeCtx, ?h) :-
+VarPointsTo(?hctx, ?handlerObj, ?calleeCtx, ?h) :-
    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?proxy, ?calleeCtx),
    ProxyInit(?callerCtx, ?hctx, ?invo, ?proxy, ?init),
    ProxyObject_Handler(?handlerObj, ?proxy),
