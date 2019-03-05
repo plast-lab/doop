@@ -1,13 +1,13 @@
 /* Models the dynamic proxies of Java.
 
-   There are two ways to create a dynamic proxy instance_
+   There are two ways to create a dynamic proxy instance:
 
    (1) G obj = (G)Proxy.newProxyInstance(c, i, h);
    (2) G obj = (G)Proxy.getProxyClass(c, i)
                        .getConstructor(InvocationHandler.class)
                        .newInstance(h);
 
-   Compared to the spec, we have the following restrictions_
+   Compared to the spec, we have the following restrictions:
 
    (a) We create a single proxy per interface; if the user passes many
    interfaces, the analysis generates all possible single-interface
@@ -15,12 +15,12 @@
 
    (b) We don't distinguish between different positions in the
    interface array and thus we don't use these Proxy properties
-   (http_//docs.oracle.com/javase/8/docs/api/java/lang/reflect/Proxy.html)_
+   (http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/Proxy.html):
 
      - "No two elements in the interfaces array may refer to identical
        Class objects."
 
-     - "the order of the specified proxy interfaces is significant_
+     - "the order of the specified proxy interfaces is significant:
        two requests for a proxy class with the same combination of
        interfaces but in a different order will result in two distinct
        proxy classes"
@@ -52,7 +52,7 @@ java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, ?handler, ?interfaces) :-
 ArrayContentsPointToInterface(?iface, ?hctx, ?arrayValue) :-
    ArrayIndexPointsTo(_, ?interfaceVal, ?hctx, ?arrayValue),
    ReifiedClass(?iface, ?interfaceVal),
-//// Old version_ syntactic meta-object instead of semantic
+//// Old version: syntactic meta-object instead of semantic
 //   ClassHeap_InstanceType[Value_Heap[?interfaceVal]] = ?iface,
    isInterfaceType(?iface).
 
@@ -76,7 +76,7 @@ VarPointsTo(?hctxImmutable, ?proxyClassObj, ?ctx, ?ret) :-
 
 // Create a new heap allocation per
 // (newProxyInstance call, interface type) pair.
-//// REVIEW_ ideally these should be allocated context sensitively, i.e.,
+//// REVIEW: ideally these should be allocated context sensitively, i.e.,
 //// call RecordMacro, and use the calling ?ctx as argument.
 .decl ProxyClassInstance(?iface:InterfaceType, ?invo:MethodInvocation, ?value:Value)
 
@@ -140,7 +140,7 @@ PrimitiveFormalOfInterface(?meth, ?formal, ?formalType) :-
 // boxing occurs in the method. This simulates codeWrapArgument() of
 // sun.misc.ProxyGenerator, which calls the valueOf() method of the
 // appropriate wrapper type for every argument of a primitive type.
-// REVIEW_ contexts (as above)?
+// REVIEW: contexts (as above)?
 .decl BoxAllocationOfPrimitiveFormal(?formal:Var, ?value:Value)
 
 MockValueConsMacro(cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">"), ?boxType),
@@ -150,7 +150,7 @@ BoxAllocationOfPrimitiveFormal(?formal, cat(cat(cat(cat(cat(cat("<boxed ", ?boxT
 
 // Return var of newProxyInstance should point to the appropriate
 // dynamic proxy object.
-//// REVIEW_ as above, have a real heap context instead of immutable?
+//// REVIEW: as above, have a real heap context instead of immutable?
 VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
    java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, _, ?interfaces),
    VarPointsTo(?hctx, ?interfacesVal, ?ctx, ?interfaces),
@@ -272,7 +272,7 @@ ArgArrayAndActualArg(?argsArrValue, ?methSig, ?actual) :-
    ProxyCallArgArray(?invo, ?methSig, ?argsArrValue),
    ActualParam(_, ?invo, ?actual).
 
-// Populate args array_
+// Populate args array:
 // (a) Reference-type arguments go in directly.
 ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx2, ?arrValue) :-
    ArgArrayAndActualArg(?arrValue, _, ?actual),
@@ -286,14 +286,14 @@ ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx, ?arrValue) :-
    FormalParam(_, ?methSig, ?formal),
    BoxAllocationOfPrimitiveFormal(?formal, ?actualVal),
    isImmutableHContext(?hctx).
-// REVIEW_ contexts.
+// REVIEW: contexts.
 
 #endif // REFLECTION
 
 ReachableContext(?calleeCtx, ?callee) :-
    ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
-// Handle return values_ connect the return value of handler.invoke()
+// Handle return values: connect the return value of handler.invoke()
 // to the return value of the wrapped method. The exceptions mandated
 // by the spec are handled elsewhere (in exceptions.dl); here we only
 // record the internal invoke() return variable for use there.
