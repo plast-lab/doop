@@ -160,16 +160,17 @@ VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
 
 .decl ProxyObject_Invocation(?value:Value, ?invo:MethodInvocation)
 .decl ProxyObject_Handler(?handlerObj:Value, ?value:Value)
-.decl ProxyObject_HandlerHctx(?hctxHandler:configuration.HContext, ?value:Value)
+.decl ProxyObject_HandlerHctx(?handlerHctx:configuration.HContext, ?value:Value)
+.decl ProxyObject_HandlerCtx(?handlerCtx:configuration.Context, ?value:Value)
 .decl ProxyObject_Interface(?value:Value, ?iface:InterfaceType)
-
 
 ProxyObject_Invocation(?value, ?invo),
 ProxyObject_Handler(?handlerObj, ?value),
-ProxyObject_HandlerHctx(?hctxHandler, ?value),
+ProxyObject_HandlerHctx(?handlerHctx, ?value),
+ProxyObject_HandlerCtx(?handlerCtx, ?value),
 ProxyObject_Interface(?value, ?iface) :-
    java_lang_reflect_Proxy_newProxyInstance(?invo, _, ?handler, _),
-   VarPointsTo(?hctxHandler, ?handlerObj, _, ?handler),
+   VarPointsTo(?handlerHctx, ?handlerObj, ?handlerCtx, ?handler),
    ProxyClassInstance(?iface, ?invo, ?value).
 
 
@@ -186,14 +187,21 @@ CallToMethodOfProxyObject(?hctx, ?value, ?ctx, ?invo) :-
 
 // Since dynamic proxies are subclasses of java.lang.reflect.Proxy, their
 // constructor calls super.<init>(handlerObj).
+.decl ProxyInit(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?proxy:Value, ?init:Method)
 ReachableContext(?calleeCtx, ?init),
-VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?h) :-
-   isImmutableContext(?calleeCtx),
-   ?init = "<java.lang.reflect.Proxy: void <init>(java.lang.reflect.InvocationHandler)>",
-   FormalParam(0, ?init, ?h),
+VarPointsTo(?handlerHctx, ?handlerObj, ?calleeCtx, ?h) :-
+   configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?proxy, ?calleeCtx),
+   ProxyInit(?callerCtx, ?hctx, ?invo, ?proxy, ?init),
    ProxyObject_Handler(?handlerObj, ?proxy),
-   ProxyObject_HandlerHctx(?hctxHandler, ?proxy).
+   FormalParam(0, ?init, ?h).
+ProxyInit(?callerCtx, ?hctx, ?invo, ?proxy, ?init),
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?proxy, ?init) :-
+   ?init = "<java.lang.reflect.Proxy: void <init>(java.lang.reflect.InvocationHandler)>",
+   ProxyObject_Invocation(?proxy, ?invo),
+   ProxyObject_HandlerCtx(?callerCtx, ?proxy),
+   ProxyObject_HandlerHctx(?hctx, ?proxy).
 
+// Single-tuple relation to avoid repeated lookup.
 .decl ProxyInvoke(?invokeMethName:symbol, ?invokeMethDescriptor:symbol)
 ProxyInvoke(?invokeMethName, ?invokeMethDescriptor) :-
    ?invoke = "<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>",
@@ -206,11 +214,11 @@ ProxyInvoke(?invokeMethName, ?invokeMethDescriptor) :-
 .decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)
 
 ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
-VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this),
+VarPointsTo(?handlerHctx, ?handlerObj, ?calleeCtx, ?this),
 HandledProxy(?newProxyInstanceInvo, ?handlerType) :-
    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx),
    ProxyCallGraphEdgeCandidate(?callerCtx, ?invo, ?value, ?handlerInvokeMeth),
-   ProxyObject_HandlerHctx(?hctxHandler, ?value),
+   ProxyObject_HandlerHctx(?handlerHctx, ?value),
    ProxyObject_Handler(?handlerObj, ?value),
    Value_Type(?handlerObj, ?handlerType),
    ThisVar(?handlerInvokeMeth, ?this),
