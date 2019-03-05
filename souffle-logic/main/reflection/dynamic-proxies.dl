@@ -176,12 +176,12 @@ ProxyObject_Interface(?value, ?iface) :-
 // And the clincher: if a method gets invoked on a proxy object, simulate
 // a call to the proxy object handler's "invoke" method, with the right
 // arguments passed in.
-.decl CallToMethodOfProxyObject(?value:Value, ?ctx:configuration.Context, ?invo:MethodInvocation)
+.decl CallToMethodOfProxyObject(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?invo:MethodInvocation)
 
-CallToMethodOfProxyObject(?value, ?ctx, ?invo) :-
+CallToMethodOfProxyObject(?hctx, ?value, ?ctx, ?invo) :-
    isVirtualMethodInvocation_Insn(?invo),
    VirtualMethodInvocation_Base(?invo, ?base),
-   VarPointsTo(_, ?value, ?ctx, ?base),
+   VarPointsTo(?hctx, ?value, ?ctx, ?base),
    ProxyObject_Invocation(?value, _).
 
 // Since dynamic proxies are subclasses of java.lang.reflect.Proxy, their
@@ -194,28 +194,33 @@ VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?h) :-
    ProxyObject_Handler(?handlerObj, ?proxy),
    ProxyObject_HandlerHctx(?hctxHandler, ?proxy).
 
-//// REVIEW
-// #ifdef REFLECTION_CONTEXT_SENSITIVITY
-// ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx), ...
+.decl ProxyInvoke(?invokeMethName:symbol, ?invokeMethDescriptor:symbol)
+ProxyInvoke(?invokeMethName, ?invokeMethDescriptor) :-
+   ?invoke = "<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>",
+   Method_SimpleName(?invoke, ?invokeMethName),
+   Method_Descriptor(?invoke, ?invokeMethDescriptor).
+
 .decl ProxyCallGraphEdge(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerInvokeMeth:Method)
+.decl ProxyCallGraphEdgeCandidate(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?value:Value, ?handlerInvokeMeth:Method)
 
 .decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)
 
 ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
 VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this),
-HandledProxy(?newProxyInstanceInvo, ?handlerType)
-:-
-   isImmutableContext(?calleeCtx),
-   CallToMethodOfProxyObject(?value, ?callerCtx, ?invo),
-   ProxyObject_Handler(?handlerObj, ?value),
+HandledProxy(?newProxyInstanceInvo, ?handlerType) :-
+   configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx),
+   ProxyCallGraphEdgeCandidate(?callerCtx, ?invo, ?value, ?handlerInvokeMeth),
    ProxyObject_HandlerHctx(?hctxHandler, ?value),
+   ProxyObject_Handler(?handlerObj, ?value),
    Value_Type(?handlerObj, ?handlerType),
-   ?invoke = "<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>",
-   Method_SimpleName(?invoke, ?invokeMethName),
-   Method_Descriptor(?invoke, ?invokeMethDescriptor),
-   basic.MethodLookup(?invokeMethName, ?invokeMethDescriptor, ?handlerType, ?handlerInvokeMeth),
    ThisVar(?handlerInvokeMeth, ?this),
    ProxyObject_Invocation(?value, ?newProxyInstanceInvo).
+
+ProxyCallGraphEdgeCandidate(?callerCtx, ?invo, ?value, ?handlerInvokeMeth),
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?handlerInvokeMeth) :-
+   CallToMethodOfProxyObject(?hctx, ?value, ?callerCtx, ?invo),
+   ProxyInvoke(?invokeMethName, ?invokeMethDescriptor),
+   basic.MethodLookup(?invokeMethName, ?invokeMethDescriptor, ?handlerType, ?handlerInvokeMeth).
 
 #ifdef REFLECTION
 
@@ -226,7 +231,7 @@ VarPointsTo(?hctx, ?methValue, ?calleeCtx, ?methArg),
 VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg),
 ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) :-
    ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
-   CallToMethodOfProxyObject(?proxyValue, ?callerCtx, ?invo),
+   CallToMethodOfProxyObject(_, ?proxyValue, ?callerCtx, ?invo),
    FormalParam(0, ?handlerInvokeMeth, ?proxyArg),
    FormalParam(1, ?handlerInvokeMeth, ?methArg),
    FormalParam(2, ?handlerInvokeMeth, ?argsArg),
@@ -242,7 +247,7 @@ VarPointsTo(?hctx, ?objMethValue, ?calleeCtx, ?methArg),
 VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg),
 ProxyCallArgArray(?invo, ?objMethSig, ?argsArrValue) :-
    ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
-   CallToMethodOfProxyObject(?proxyValue, ?callerCtx, ?invo),
+   CallToMethodOfProxyObject(_, ?proxyValue, ?callerCtx, ?invo),
    FormalParam(0, ?handlerInvokeMeth, ?proxyArg),
    FormalParam(1, ?handlerInvokeMeth, ?methArg),
    FormalParam(2, ?handlerInvokeMeth, ?argsArg),
