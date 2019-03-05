@@ -597,6 +597,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 			//Information-flow, etc.
 			new AnalysisOption<String>(
+					id: "DISABLE_POINTS_TO",
+					name: "disable-points-to",
+					description: "Disable (most) points-to analysis reasoning. This should only be combined with analyses that compensate (e.g., types-only).",
+					forPreprocessor: true
+			),
+			new AnalysisOption<String>(
 					id: "FEATHERWEIGHT_ANALYSIS",
 					name: "featherweight-analysis",
 					description: "Perform a featherweight analysis (global state and complex objects immutable).",

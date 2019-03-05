@@ -1,4 +1,5 @@
 
+#ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?argArray, ?ctx, ?args),
 ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
    isImmutableHContext(?hctx),
@@ -7,6 +8,7 @@ ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
    FormalParam(0, ?mainMethod, ?args),
    MainMethodArgArray(?argArray),
    MainMethodArgArrayContent(?argArrayContent).
+#endif // DISABLE_POINTS_TO
 
 /**
  *

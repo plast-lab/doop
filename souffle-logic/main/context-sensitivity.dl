@@ -1,8 +1,30 @@
 #include "init.dl"
 
 /**
- * Generic context-sensitive pointer analysis
+ * Generic context-sensitive pointer analysis, and more
  */
+
+
+/**
+ * Reachable values: useful even when points-to analysis is limited
+ */
+
+.decl ReachableValue(?hctx:configuration.HContext, ?value: Value)
+
+ReachableValue(?hctx, ?heapValue) :-
+  AssignContextInsensitiveHeapAllocation(?heapValue, _, ?inmethod),
+  ReachableContext(_, ?inmethod),
+  isImmutableHContext(?hctx).
+
+isHContext(?newHCtx),
+ReachableValue(?newHCtx, ?heapValue) :-
+  configuration.RecordContextRequest(?ctx, ?heapValue, ?var),
+  configuration.RecordContextResponse(?ctx, ?heapValue, ?var, ?newHCtx).
+
+.decl TypeHasReachableValue(?valueType: Type)
+TypeHasReachableValue(?valueType) :-
+  ReachableValue(_, ?value),
+  Value_Type(?value, ?valueType).
 
 
 /**
@@ -13,7 +35,8 @@ configuration.RecordContextRequest(?ctx, ?heapValue, ?var) :-
   AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod).
 
-isHContext(?newHCtx),
+#ifndef DISABLE_POINTS_TO
+
 VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
   configuration.RecordContextRequest(?ctx, ?heapValue, ?var),
   configuration.RecordContextResponse(?ctx, ?heapValue, ?var, ?newHCtx).
@@ -51,6 +74,8 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
    Value_Num(?value, ?const),
    isImmutableHContext(?hctx).
 
+#endif  // DISABLE_POINTS_TO
+
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
 
@@ -62,18 +87,17 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
  * Cast assignments
  */
 
-.decl OptAssignCast(?type:Type, ?to:Var, ?from:Var)
-
-OptAssignCast(?type, ?to, ?from) :-
-  Reachable(?inmethod),
-  AssignCast(?type, ?from, ?to, ?inmethod).
-
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   OptAssignCast(?type, ?to, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value_Type(?value, ?valuetype),
   basic.SupertypeOf(?type, ?valuetype).
  .plan 2:(3,2,1,4)
+
+.decl OptAssignCast(?type:Type, ?to:Var, ?from:Var)
+OptAssignCast(?type, ?to, ?from) :-
+  Reachable(?inmethod),
+  AssignCast(?type, ?from, ?to, ?inmethod).
 
 /**
  * Load/Store instance fields
@@ -87,7 +111,7 @@ StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
   StoreInstanceField(?from, ?base, ?signature, _),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
-#ifndef FEATHERWEIGHT_ANALYSIS
+#if !defined(FEATHERWEIGHT_ANALYSIS) && !defined(DISABLE_POINTS_TO)
 //// Much slower in Souffle, for large analyses
 // VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 //   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
@@ -109,14 +133,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-#else
-// FEATHERWEIGHT_ANALYSIS
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-#endif
 
-#ifndef FEATHERWEIGHT_ANALYSIS
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
@@ -125,6 +142,11 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
  .plan 1:(2,1,3), 2:(3,2,1)
 
 #else
+#if defined(FEATHERWEIGHT_ANALYSIS)
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
 .decl NoInformationOnSignature(?signature: Field)
 .output NoInformationOnSignature
@@ -149,7 +171,9 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   NotSpecialObject(?value),
   !Value_Null(?basevalue).
 .plan 1:(3,2,1,4,5,6)
-#endif
+#endif // FEATHERWEIGHT_ANALYSIS
+#endif // !(FEATHERWEIGHT_ANALYSIS) && !(DISABLE_POINTS_TO)
+
 
 #if defined(HEAPDLS) || defined(IMPORT_DYNAMIC_FACTS)
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
@@ -185,7 +209,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 /**
  * Store static fields
  */
-#ifndef FEATHERWEIGHT_ANALYSIS
+#if !defined(FEATHERWEIGHT_ANALYSIS) && !defined(DISABLE_POINTS_TO)
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   ReachableStoreStaticFieldFrom(?from),
   StoreStaticField(?from, ?signature, _),
@@ -205,7 +229,8 @@ ReachableStoreStaticFieldFrom(?from) :-
   Reachable(?inmethod),
   StoreStaticField(?from, _, ?inmethod).
 
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(DISABLE_POINTS_TO)
+
 /**
  * Store default value in static field (Android-only!)
  */
@@ -234,7 +259,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
   isImmutableContext(?ctx),
   isImmutableHContext(?hctx).
 
-#endif // ANDROID
+#endif // ANDROID && !DISABLE_POINTS_TO
 
 /**
  * Load array index
@@ -305,7 +330,7 @@ ReachableLoadArrayIndexBase(?base) :-
 
 .decl OptStoreIntoArray(?hctx:configuration.HContext, ?value:Value, ?basehctx:configuration.HContext, ?basevalue:Value)
 
-#ifndef FEATHERWEIGHT_ANALYSIS
+#if !defined(FEATHERWEIGHT_ANALYSIS) && !defined(DISABLE_POINTS_TO)
 OptStoreIntoArray(?hctx, ?value, ?basehctx, ?basevalue) :-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from).
@@ -472,25 +497,20 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   ThisVar(?tomethod, ?this),
   ZipperPrecisionCriticalMethod(?tomethod).
-#ifndef X_CONTEXT_REMOVER
-// .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5)
-#endif
 
 VarPointsTo(?hctx, ?value, ?immCtx, ?this) :-
   configuration.ContextRequest(_, ?hctx, ?invocation, ?value, ?tomethod),
   isImmutableContext(?immCtx),
   ThisVar(?tomethod, ?this),
   !ZipperPrecisionCriticalMethod(?tomethod).
-#ifndef X_CONTEXT_REMOVER
-// .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5)
-#endif
 
 #else
 
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
-  ThisVar(?tomethod, ?this).
+  ThisVar(?tomethod, ?this),
+  !Value_Null(?value).
 #ifndef X_CONTEXT_REMOVER
  .plan 1:(2,1,3)
 #endif
@@ -554,7 +574,8 @@ VarPointsTo(?hctx, ?value, ?immCtx, ?this) :-
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
-  ThisVar(?tomethod, ?this).
+  ThisVar(?tomethod, ?this),
+  !Value_Null(?value).
 #ifndef X_CONTEXT_REMOVER
   .plan 1:(2,1,3)
 #endif
@@ -569,3 +590,4 @@ ReachableContext(?ctx, ?method) :-
 
 Reachable(?method) :-
   ReachableContext(_, ?method).
+

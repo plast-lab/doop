@@ -110,6 +110,12 @@ Stats_Simple_PolymorphicCallSite(?from) :-
   Stats_Simple_VirtualTargets(?from, ?size),
   ?size > 1.
 
+/// Too slow for large programs!
+// Stats_Simple_PolymorphicCallSite(?from) :-
+//   Stats_Simple_VirtualCallGraphEdge(?from, ?to1),
+//   Stats_Simple_VirtualCallGraphEdge(?from, ?to2),
+//   ord(?to1) < ord(?to2).
+  
 Stats_Simple_NullVirtualMethodInvocation(?invocation) :-
   mainAnalysis.Value_Null(?null),
   Stats_Simple_InsensVarPointsTo(?null, ?base),

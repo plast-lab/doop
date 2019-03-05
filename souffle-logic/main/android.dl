@@ -285,11 +285,16 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 
 // REVIEW: be liberal: if an object is a listener, and it is instantiated
 // in the application, then consider it to flow to the library.
-ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
-LibraryReachableAppListenerType(?ofType) :-
+ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType) :-
   ReachableApplicationObjectOfType(?hctx, ?value, ?ofType),
   AndroidApplicationListenerClass(?ofType).
 
+TypeHasApplicationObjectFlowingToLibrary(?ofType),
+LibraryReachableAppListenerType(?ofType) :-
+  TypeHasReachableApplicationObject(?ofType),
+  AndroidApplicationListenerClass(?ofType).
+
+  
 // Same if the class constant object of a listener is instantiated
 // somewhere, explicitly (via <className>.class).
 // REVIEW: for extra soundness, we can consider all ReifiedClass objects.
@@ -303,10 +308,16 @@ ListenerClassConstantValue(?classHeap, ?type) :-
 #define MOCK_LISTENER(t) cat("<mock android listener-like object ", cat(?type, ">"))
 
 ApplicationObjectFlowingToLibrary(?hctx, MOCK_LISTENER(?type), ?type),
-MockValueConsMacro(MOCK_LISTENER(?type), ?type),
-LibraryReachableAppListenerType(?type) :-
+MockValueConsMacro(MOCK_LISTENER(?type), ?type) :-
   ListenerClassConstantValue(?classHeap, ?type),
-  VarPointsTo(?hctx, ?classHeap, _, _).
+  (VarPointsTo(?hctx, ?classHeap, _, _);
+   ReachableValue(?hctx, ?classHeap)).
+
+TypeHasApplicationObjectFlowingToLibrary(?type),
+LibraryReachableAppListenerType(?type) :-
+  ListenerClassConstantValue(_, ?type),
+  TypeHasReachableValue(?type).
+
 
 // Just for debugging
 .output ApplicationObjectFlowingToLibrary
@@ -386,11 +397,14 @@ ForcedReachableAndroidContext(?ctx, ?methConcrete) :-
 .decl LibraryReachableAppPackableClass(?class:ClassType)
 // REVIEW: be liberal: if an object is a binder, and it is instantiated
 // in the application, then consider it to flow to the library.
-ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
-LibraryReachableAppPackableClass(?ofType) :-
+ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType) :-
   ReachableApplicationObjectOfType(?hctx, ?value, ?ofType),
   AndroidApplicationPackableClass(?ofType).
 
+TypeHasApplicationObjectFlowingToLibrary(?ofType),
+LibraryReachableAppPackableClass(?ofType) :-
+  TypeHasReachableApplicationObject(?ofType),
+  AndroidApplicationPackableClass(?ofType).
 
 ////////////////////////////////////////////////////////////////////////
 // But more importantly: backwards reasoning (reflection-like) for calls
@@ -424,12 +438,14 @@ SpecialMissingPackableValue(?invo, ?value) :-
   AppInvoReturningLibraryPackable(?invo, ?retType),
   ?value = cat(cat("<special object for missing packable values ", ?invo), ">").
 
+#ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   SpecialMissingPackableValue(?invocation, ?value),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   isImmutableHContext(?hctx),
   AssignReturnValue(?invocation, ?return).
+#endif // DISABLE_POINTS_TO
 
 MockValueConsMacro(?value, ?concreteType),
 VarPointsTo(?hctx, ?value, ?ctx, ?to),
@@ -451,7 +467,7 @@ ReifiedAndroidObjectValue(?value, ?concreteType) :-
 **/
 
 ForcedReachableAndroidContext(?ctx, ?runmeth) :-
-  ReachableApplicationObjectOfType(_, _, ?type),
+  TypeHasReachableApplicationObject(?type),
   Method_SimpleName(?runmeth, "run"),
   basic.MethodDeclaredOrInherited(?runmeth, ?type),
   isImmutableContext(?ctx).
@@ -479,7 +495,7 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
   basic.ConcreteMethodDeclared(?meth, ?class),
   (Method_Modifier("protected", ?meth);
    Method_Modifier("public", ?meth)),
-  ReachableApplicationObjectOfType(_, _, ?class),
+  TypeHasReachableApplicationObject(?class),
   WebClientType(?class),
   isImmutableContext(?ctx).
 
@@ -508,7 +524,6 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
   //Method_Annotation(?meth,"android.webkit.JavascriptInterface"),
   isImmutableContext(?ctx).
 
-
 /**
  * General-purpose handling of all forced-reachable methods. Make their
  * mocking as complete as possible. This uses the earlier ForcedReachable...
@@ -524,6 +539,7 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
   Method_SimpleName(?meth, "<init>"),
   isImmutableContext(?ctx).
 
+#ifndef DISABLE_POINTS_TO
 // For all the above forced reachable methods, supply a receiver
 // object of the appropriate type. Either mock object ...
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
@@ -607,7 +623,7 @@ ReifiedApplicationAndCompatibleVar(?value, ?var) :-
   ReifiedComponent(?type, ?value),
   AndroidApplication(?type),
   Var_Type(?var, ?type).
-
+#endif // DISABLE_POINTS_TO
 
 /**
  * View and fragment retrieval by id
@@ -686,6 +702,7 @@ MultiDimensionalArrayTemp(cat(cat(?invocation, ":"), ?type), ?invocation, ?type,
   AssignReturnValue(?invocation, ?from),
   OptAssignCast(?type, _, ?from).
 
+#ifndef DISABLE_POINTS_TO
 UninitialisedArray(?hctx, ?value, ?invocation, ?type),
 VarPointsTo(?hctx, ?value, ?ctx, ?from) :-
   MultiDimensionalArrayTemp(?value, ?invocation, ?type, ?ctx, ?from),
@@ -700,6 +717,7 @@ ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?baseva
   ComponentType(?type, ?arrayType),
   isArrayType(?arrayType),
   UninitialisedArray(?hctx, ?basevalue, ?invocation, ?type).
+#endif // DISABLE_POINTS_TO
 
 
 /**
@@ -914,6 +932,12 @@ ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) :-
   _AndroidApplicationValue(?value, ?ofType),
   VarPointsTo(?hctx, ?value, _, _).
 
+// and similar info for type-based analyses
+TypeHasReachableApplicationObject(?type) :-
+  TypeHasReachableValue(?type),
+  AndroidApplicationClass(?type).
+
+
 .decl _AndroidLibraryVar(?var:Var)
 _AndroidLibraryVar(?var) :-
   AndroidLibraryType(?libraryType),
@@ -926,3 +950,18 @@ ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType) :-
   _AndroidLibraryVar(?var),
   VarPointsTo(?hctx, ?value, _, ?var),
   _AndroidApplicationValue(?value, ?ofType).
+
+.decl _AndroidReachableLibraryVarOfType(?var:Var, ?varType:Type)
+_AndroidReachableLibraryVarOfType(?var, ?varType) :-
+  _AndroidLibraryVar(?var),
+  Var_DeclaringMethod(?var, ?method),
+  Reachable(?method),
+  Var_Type(?var, ?varType).
+
+// REVIEW: currently this is unused. It faithfully mimicks the
+// ApplicationObjectFlowingToLibrary logic, but for types. But
+// no further logic seems to be enabled by types alone.
+TypeHasApplicationObjectFlowingToLibrary(?type) :-
+  _AndroidReachableLibraryVarOfType(_, ?varType),
+  basic.SubtypeOf(?type, ?varType),
+  TypeHasReachableApplicationObject(?type).

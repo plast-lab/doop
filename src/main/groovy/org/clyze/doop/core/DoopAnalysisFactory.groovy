@@ -29,6 +29,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	static final String HASH_ALGO = "SHA-256"
 	static final availableConfigurations = [
 			"dependency-analysis"                : "TwoObjectSensitivePlusHeapConfiguration",
+			"types-only"                         : "TypesOnlyConfiguration",
 			"context-insensitive"                : "ContextInsensitiveConfiguration",
 			"context-insensitive-plus"           : "ContextInsensitivePlusConfiguration",
 			"context-insensitive-plusplus"       : "ContextInsensitivePlusPlusConfiguration",
