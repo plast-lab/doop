@@ -144,8 +144,7 @@ PrimitiveFormalOfInterface(?meth, ?formal, ?formalType) :-
 .decl BoxAllocationOfPrimitiveFormal(?formal:Var, ?value:Value)
 
 MockValueConsMacro(cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">"), ?boxType),
-BoxAllocationOfPrimitiveFormal(?formal, cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">"))
- :-
+BoxAllocationOfPrimitiveFormal(?formal, cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">")) :-
    PrimitiveFormalOfInterface(?meth, ?formal, ?formalType),
    PrimitiveType_Boxed(?formalType, ?boxType).
 
@@ -168,8 +167,7 @@ VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
 ProxyObject_Invocation(?value, ?invo),
 ProxyObject_Handler(?handlerObj, ?value),
 ProxyObject_HandlerHctx(?hctxHandler, ?value),
-ProxyObject_Interface(?value, ?iface)
-:-
+ProxyObject_Interface(?value, ?iface) :-
    java_lang_reflect_Proxy_newProxyInstance(?invo, _, ?handler, _),
    VarPointsTo(?hctxHandler, ?handlerObj, _, ?handler),
    ProxyClassInstance(?iface, ?invo, ?value).
@@ -289,8 +287,7 @@ ReachableContext(?calleeCtx, ?callee) :-
 .decl ProxyInvokeResult(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerReturnVar:Var)
 
 VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret),
-ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
-:-
+ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar) :-
    ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
    ReturnVar(?handlerReturnVar, ?handlerInvokeMeth),
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?handlerReturnVar),
