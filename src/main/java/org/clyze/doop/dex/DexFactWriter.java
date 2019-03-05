@@ -16,7 +16,7 @@ class DexFactWriter extends JavaFactWriter {
     private final CHA cha;
 
     DexFactWriter(Database db, boolean moreStrings, CHA cha) {
-        super(db, moreStrings);
+        super(db, moreStrings, true);
         this.cha = cha;
         this.cachedMethodDescriptors = new ConcurrentHashMap<>();
     }

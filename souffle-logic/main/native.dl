@@ -375,5 +375,5 @@ VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return) :-
 
 // Reachability for methods discovered by the native code scanner.
 ReachableContext(?immCtx, ?method) :-
-  basic.PossibleNativeCodeTargetMethod(?method, _),
+  basic.PossibleNativeCodeTargetMethod(?method, _, _),
   isImmutableContext(?immCtx).

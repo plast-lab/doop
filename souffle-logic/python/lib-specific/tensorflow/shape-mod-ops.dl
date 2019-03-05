@@ -399,6 +399,8 @@ TensorOperation_NameToVal(?ctx, ?setShapeOpVal, "shape", ?shapeListHctx, ?shapeL
 SetShapeOp(?ctx, ?insn, ?setShapeOpVal):-
   FunctionInvResolvesTo(?ctx, ?insn, _, _, "<tensorflow.Tensor.set_shape>"),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.Tensor.set_shape>", "self", ?tensorHctx, ?tensorArgVal),
+  TensorOpOutputWithHctx(?someCtx, ?someInsn, ?tensorHctx, ?tensorArgVal),
+  (?someCtx != ?ctx ; ?someInsn != ?insn),
   ResolvedActualParamValue(?ctx, ?insn, "<tensorflow.Tensor.set_shape>", "shape", ?shapeListHctx, ?shapeList),
   ?setShapeOpVal = TwoInValTensorValMacro("set_shape", ?insn, ?tensorArgVal, ?shapeList).
 
@@ -456,10 +458,17 @@ TensorShapeListLength(?shapeHctx, ?tensorShapeVal, ?len):-
 SetShapeOpSameListLen(?ctx, ?insn, ?setShapeOpVal):-
   SetShapeOpShapeListLengths(?ctx, ?insn, ?setShapeOpVal, ?len, ?len).
 
-TensorShape(?tensorHctx, ?tensorArgVal, ?newShapeHctx, ?newShape):-
+//TensorShape(?tensorHctx, ?tensorArgVal, ?newShapeHctx, ?newShape):-
+//  SetShapeOpSameListLen(?ctx, ?insn, ?setShapeOpVal),
+//  TensorOperation_NameToVal(?ctx, ?setShapeOpVal, "self", ?tensorHctx, ?tensorArgVal),
+//  TensorOpOutputShape(?ctx, ?insn, ?setShapeOpVal, ?newShapeHctx, ?newShape).
+
+
+VarPointsTo(?newValHctx, ?newTensorVal, ?oldVarCtx, ?oldVar):-
   SetShapeOpSameListLen(?ctx, ?insn, ?setShapeOpVal),
   TensorOperation_NameToVal(?ctx, ?setShapeOpVal, "self", ?tensorHctx, ?tensorArgVal),
-  TensorOpOutputShape(?ctx, ?insn, ?setShapeOpVal, ?newShapeHctx, ?newShape).
+  TensorOpOutputWithHctx(?ctx, ?insn, ?newValHctx, ?newTensorVal),
+  VarPointsTo(?tensorHctx, ?tensorArgVal, ?oldVarCtx, ?oldVar).
 
 TensorOperationError(?ctx, ?insn, ?setShapeOpVal, ?msg):-
   SetShapeOpInvalidShapeLengths(?ctx, ?insn, ?setShapeOpVal),

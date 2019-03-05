@@ -109,7 +109,7 @@ class DexMethodFactWriter extends JavaFactWriter {
 
     DexMethodFactWriter(DexBackedMethod dexMethod, Database _db, boolean moreStrings,
                         Map<String, MethodSig> cachedMethodDescriptors) {
-        super(_db, moreStrings);
+        super(_db, moreStrings, true);
         this.m = dexMethod;
         this.cachedMethodDescriptors = cachedMethodDescriptors;
         this.methId = DexRepresentation.methodId(m, mf);
@@ -237,7 +237,6 @@ class DexMethodFactWriter extends JavaFactWriter {
         // Step 2: match every queued MOVE_EXCEPTION against its handler. This
         // resolves the "formal" of exception handlers and is optional: some
         // handlers may not have MOVE_EXCEPTION opcodes (but e.g., a GOTO).
-        Map<Handler, String> handlerInsnId = new HashMap<>();
         for (MoveExceptionInfo mei : exceptionMoves) {
             List<Handler> containingHandlers = Handler.findHandlerStartingAt(handlers, mei.address);
             if (containingHandlers.isEmpty()) {
@@ -254,7 +253,6 @@ class DexMethodFactWriter extends JavaFactWriter {
                     if (handlerIndex != mei.index)
                         System.err.println("Warning: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
                     String insn = instructionId(handlerMid(hi.excType), handlerIndex);
-                    handlerInsnId.put(hi, insn);
                     writeExceptionHandlerFormal(insn, localA);
                 } catch (Handler.IndexException ex) {
                     System.err.println("Error: " + ex.getMessage());

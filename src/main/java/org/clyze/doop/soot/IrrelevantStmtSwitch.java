@@ -22,7 +22,7 @@ class IrrelevantStmtSwitch implements StmtSwitch
             // hand side is an invoke expression of a method of a
             // phantom class.
             else if (right instanceof InvokeExpr)
-                inspectMethod(((InvokeExpr)right).getMethod());
+                inspectInvoke((InvokeExpr)right);
         }
     }
 
@@ -48,11 +48,20 @@ class IrrelevantStmtSwitch implements StmtSwitch
 
     public void caseInvokeStmt(InvokeStmt stmt) {
         relevant = true;
-        if (Options.v().allow_phantom_refs()) {
-            InvokeExpr expr = stmt.getInvokeExpr();
-            if (expr instanceof DynamicInvokeExpr)
-                inspectBootstrapMethod((DynamicInvokeExpr)expr);
-            else
+        if (Options.v().allow_phantom_refs())
+            inspectInvoke(stmt.getInvokeExpr());
+    }
+
+    private void inspectInvoke(InvokeExpr expr) {
+        if (expr instanceof DynamicInvokeExpr)
+            inspectBootstrapMethod((DynamicInvokeExpr)expr);
+        else {
+            SootMethodRef exprMethodRef = expr.getMethodRef();
+            String declClass = exprMethodRef.declaringClass().getName();
+            String simpleName = exprMethodRef.name();
+            if (DoopAddons.polymorphicHandling(declClass, simpleName)) {
+                relevant = true;
+            } else
                 inspectMethod(expr.getMethod());
         }
     }

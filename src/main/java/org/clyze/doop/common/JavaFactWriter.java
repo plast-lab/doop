@@ -1,6 +1,5 @@
 package org.clyze.doop.common;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
@@ -16,10 +15,13 @@ public abstract class JavaFactWriter {
     protected static final String R_OP = "2";
     protected final Database _db;
     protected final boolean _extractMoreStrings;
+    protected final boolean _writeArtifactsMap;
 
-    protected JavaFactWriter(Database db, boolean extractMoreStrings) {
+    protected JavaFactWriter(Database db, boolean extractMoreStrings,
+                             boolean writeArtifactsMap) {
         this._db = db;
         this._extractMoreStrings = extractMoreStrings;
+        this._writeArtifactsMap = writeArtifactsMap;
     }
 
     public static String str(int i) {
@@ -134,12 +136,14 @@ public abstract class JavaFactWriter {
      * @param java  the object supporting basic Java functionality
      */
     public void writeLastFacts(BasicJavaSupport java) {
-        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
+        if (_writeArtifactsMap) {
+            Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
 
-        System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
-        for (String artifact : artifactToClassMap.keySet())
-            for (ArtifactEntry ae : artifactToClassMap.get(artifact))
-                writeClassArtifact(artifact, ae.className, ae.subArtifact);
+            System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
+            for (String artifact : artifactToClassMap.keySet())
+                for (ArtifactEntry ae : artifactToClassMap.get(artifact))
+                    writeClassArtifact(artifact, ae.className, ae.subArtifact);
+        }
     }
 
     // The extra sensitive controls are given as a String
@@ -254,7 +258,7 @@ public abstract class JavaFactWriter {
      *
      * @param retType     the return type of the method type
      * @param paramTypes  the parameter types of the method type
-     * @param pamas       a String representation of the parameter
+     * @param params      a String representation of the parameter
      *                    types (if null, it is reconstructed)
      */
     protected void writeMethodTypeConstant(String retType, String[] paramTypes,
@@ -277,8 +281,7 @@ public abstract class JavaFactWriter {
             sb.append(',');
             sb.append(elems[idx]);
         }
-        String ret = sb.toString();
-        return ret;
+        return sb.toString();
     }
 
     /**
@@ -288,9 +291,8 @@ public abstract class JavaFactWriter {
      */
     protected void writeMethodTypeConstant(String mt) {
         int rParen = mt.indexOf(")");
-        int arity = 0;
         if (mt.startsWith("(") && (rParen != -1)) {
-            String retType = mt.substring(rParen + 1, mt.length());
+            String retType = mt.substring(rParen + 1);
             // We write out the parameters part of the signature without the
             // parentheses, so that types can be added at both ends.
             String params = mt.substring(1, rParen);
@@ -341,12 +343,18 @@ public abstract class JavaFactWriter {
         }
     }
 
-    // Signature-polymorphic invoke* methods of MethodHandle should be
-    // recorded for special treatment.
-    protected void checkAndMarkMethodHandleInvocation(String insn, String declClass, String simpleName) {
-        if (declClass.equals("java.lang.invoke.MethodHandle") &&
-            (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
-             simpleName.equals("invokeBasic")))
-            _db.add(METHOD_HANDLE_INVOCATION, insn, simpleName);
+    /**
+     * Mark polymorphic methods. This currently recognizes a fixed
+     * list of methods.
+     *
+     * @param declClass    the declaring class of the target method
+     * @param simpleName   the name of the method
+     *
+     * @return true        if the method is polymorphic, false otherwise
+     */
+    public static boolean polymorphicHandling(String declClass, String simpleName) {
+        return (declClass.equals("java.lang.invoke.MethodHandle") &&
+                (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
+                 simpleName.equals("invokeBasic")));
     }
 }

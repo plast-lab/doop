@@ -142,6 +142,12 @@ class TestUtils {
 		assert true == find(analysis, "Reachable", meth, true)
 	}
 
+	// Check that a test (defined in logic) succeeds.
+	static void testSucceeds(Analysis analysis, String id) {
+		log("testSucceeds(${id})")
+		assert true == find(analysis, "TestId", id, true)
+	}
+
 	static void findPair(Analysis analysis, String relation,
 						 String s1, int idx1, String s2, int idx2) {
 		boolean found = false

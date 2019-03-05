@@ -475,6 +475,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			} else {
 				log.warn "\nWARNING: Handling of Java reflection is disabled!\n"
 			}
+		} else if (options.REFLECTION_HIGH_SOUNDNESS_MODE.value) {
+			options.EXTRACT_MORE_STRINGS.value = true
 		}
 
 		options.values().each {

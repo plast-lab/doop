@@ -11,3 +11,8 @@
 #ifdef REFLECTION_DYNAMIC_PROXIES
 .output mainAnalysis.ProxyCallGraphEdge
 #endif // REFLECTION_DYNAMIC_PROXIES
+
+#define varPointsTo(v, h) mainAnalysis.VarPointsTo(_, h, _, v)
+#define methodHandleCGE(i, m) mainAnalysis.MethodHandleCallGraphEdge(_, i, _, m, _, _)
+#define proxyCGE(i, m) mainAnalysis.ProxyCallGraphEdge(_, i, _, m)
+#define reachable(m) mainAnalysis.Reachable(m)
