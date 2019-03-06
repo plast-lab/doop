@@ -182,7 +182,6 @@ DFPlus(?dBlock, ?block, ?var) :-
     ContainsAssignment(?dBlock, ?var),
     DominanceFrontier(?dBlock, ?block).
 
-// TODO: Review this
 DFPlus(?block, ?dfblock, ?var) :-
     DFPlus(?block, ?block_1, ?var),
     DominanceFrontier(?block_1, ?dfblock).
@@ -197,13 +196,12 @@ ContainsAssignment(?dBlock, ?var) :-
 // ?phi_var is the new phi variable name that will be generated,
 // ?block is the basic block (represented by it's first instr) where
 // the Phi Instruction will be inserted.
-.decl PhiAssign(?phi_var:symbol, ?arity:number, ?block:symbol)
+.decl PhiAssign(?phi_var:symbol, ?block:symbol)
 
 SSA_Alias(?phi_var, ?var),
-PhiAssign(?phi_var, ?arity, ?block) :-
+PhiAssign(?phi_var, ?block) :-
     DFPlus(_, ?block, ?var),
     Instruction_Index(?block, ?index),
-    ?arity = count : MayPredecessorBBModuloThrow(_, ?block),
     ?phi_var = cat(cat(?var, "_phi_"), to_string(?index)).
     
 .decl BasicBlockOutDefs(?block:symbol, ?ssa_var:symbol, ?origin:symbol)
@@ -247,7 +245,7 @@ SimilarOutDefs(?block, ?def1, ?def2) :-
 PhiChunk(?phi_var),
 PhiHeader(?dst_block),
 PhiPseudoAssign(?phi_var, ?phi_arg, ?dst_block, ?pseudoname) :-
-    PhiAssign(?phi_var, _, ?dst_block),
+    PhiAssign(?phi_var, ?dst_block),
     InDefs(?dst_block, ?phi_arg, ?origin_var),
     SSA_Alias(?phi_var, ?origin_var),
     ?pseudoname = cat(?phi_var, cat("_", ?phi_arg)).
@@ -361,7 +359,7 @@ SSA_InstructionIndex(?insn, ?index + 1) :-
 
 ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin) :-
     BasicBlockHead(?insn, ?head),
-    PhiAssign(?ssa_var, _, ?head),
+    PhiAssign(?ssa_var, ?head),
     SSA_Alias(?ssa_var, ?origin).
 
 // This is a simple calculation of the reaching SSA definitions (ssa_var),
