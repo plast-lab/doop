@@ -216,20 +216,6 @@ BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
     SSA_AssignDetails(?end, _, _, ?ssa_var, _),
     SSA_Alias(?ssa_var, ?origin).
 
-// Two defs are similar, if they are both renames of the same
-// variable in the original program.
-.decl SimilarDefs(?def_1:symbol, ?def_2:symbol)
-
-SimilarDefs(?def_1, ?def_2) :-
-    SSA_Alias(?def_1, ?original),
-    SSA_Alias(?def_2, ?original).
-
-.decl SimilarOutDefs(?block:symbol, ?def:symbol, ?out_def:symbol)
-
-SimilarOutDefs(?block, ?def1, ?def2) :-
-    BasicBlockOutDefs(?block, ?def1, ?origin),
-    BasicBlockOutDefs(?block, ?def2, ?origin).
-
 // These instructions create chains of assignments, at the head of each block.
 // This is a helper relation to assist the final assignment operation, which 
 // will require linking the assignments with the rest of the code.
