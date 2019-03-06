@@ -28,6 +28,31 @@ import soot.options.Options;
  */
 public class DoopAddons {
 
+    private static Method hc = null;
+    private static final String METHODTYPE = "soot.jimple.MethodType";
+    private static Class<?> mtClass = null;
+    private static Method getRetType = null;
+    private static Method getParamTypes = null;
+
+    /**
+     * Check and load classes before parallel fact generation or
+     * synchronized/locking during classloading can cause deadlocks.
+     */
+    static {
+        try {
+            hc = Class.forName("soot.PolymorphicMethodRef").getDeclaredMethod("handlesClass", String.class);
+            hc.setAccessible(true);
+        } catch (ClassNotFoundException | NoSuchMethodException ex) { }
+
+        try {
+            mtClass = Class.forName(METHODTYPE);
+            getRetType = mtClass.getDeclaredMethod("getReturnType");
+            getRetType.setAccessible(true);
+            getParamTypes = mtClass.getDeclaredMethod("getParameterTypes");
+            getParamTypes.setAccessible(true);
+        } catch (ClassNotFoundException | NoSuchMethodException ex) { }
+    }
+
     public static void retrieveAllSceneClassesBodies(Integer _cores) {
         // The old coffi front-end is not thread-safe
         boolean runSeq = (_cores == null) || Options.v().coffi();
@@ -195,57 +220,43 @@ public class DoopAddons {
     }
 
     private static boolean polymorphicHandling_msg = false;
-    private static Method hc;
     public static boolean polymorphicHandling(String declClass, String simpleName) {
         try {
-            if (hc == null) {
-                hc = Class.forName("soot.PolymorphicMethodRef").getDeclaredMethod("handlesClass", String.class);
-                hc.setAccessible(true);
-            }
-            return (boolean)hc.invoke(null, declClass);
-        } catch (Throwable t) {
-            if (!polymorphicHandling_msg) {
-                polymorphicHandling_msg = true;
-                System.err.println("Warning: Soot does not contain PolymorphicMethodRef.handlesClass(), using custom method.");
-            }
-            return JavaFactWriter.polymorphicHandling(declClass, simpleName);
+            if (hc != null)
+                return (boolean)hc.invoke(null, declClass);
+        } catch (IllegalAccessException | InvocationTargetException ex) { }
+
+        if (!polymorphicHandling_msg) {
+            polymorphicHandling_msg = true;
+            System.err.println("Warning: Soot does not contain PolymorphicMethodRef.handlesClass(), using custom method.");
         }
+        return JavaFactWriter.polymorphicHandling(declClass, simpleName);
     }
 
-    private static Class<?> mtClass;
-    private static Method getRetType;
-    private static Method getParamTypes;
     /**
      * Since MethodType was introduced in Soot 3.2, to maintain
      * compatibility with earlier versions, we introduce a reflective
      * layer and our own custom MethodType class.
      */
     public static MethodType methodType(Value v) {
-        final String METHODTYPE = "soot.jimple.MethodType";
         if (!(METHODTYPE.equals(v.getClass().getName())))
             return null;
         try {
-            if (mtClass == null) {
-                mtClass = Class.forName(METHODTYPE);
-                getRetType = mtClass.getDeclaredMethod("getReturnType");
-                getRetType.setAccessible(true);
-                getParamTypes = mtClass.getDeclaredMethod("getParameterTypes");
-                getParamTypes.setAccessible(true);
+            if (mtClass != null) {
+                // Dynamic instanceof check.
+                Object methodType = mtClass.cast(v);
+                String retType = getRetType.invoke(methodType).toString();
+                Object paramTypesObj = getParamTypes.invoke(methodType);
+                if (!(paramTypesObj instanceof List))
+                    return null;
+                List<?> paramTypesT = (List<?>)paramTypesObj;
+                List<String> paramTypes = new LinkedList<>();
+                for (Object t : paramTypesT)
+                    paramTypes.add(t.toString());
+                return new MethodType(retType, paramTypes);
             }
-            // Dynamic instanceof check.
-            Object methodType = mtClass.cast(v);
-            String retType = getRetType.invoke(methodType).toString();
-            Object paramTypesObj = getParamTypes.invoke(methodType);
-            if (!(paramTypesObj instanceof List))
-                return null;
-            List<?> paramTypesT = (List<?>)paramTypesObj;
-            List<String> paramTypes = new LinkedList<>();
-            for (Object t : paramTypesT)
-                paramTypes.add(t.toString());
-            return new MethodType(retType, paramTypes);
-        } catch (Exception ex) {
-            return null;
-        }
+        } catch (IllegalAccessException | InvocationTargetException ex) { }
+        return null;
     }
 
     public static class MethodType {
