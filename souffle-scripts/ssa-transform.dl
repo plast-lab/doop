@@ -235,7 +235,7 @@ SimilarOutDefs(?block, ?def1, ?def2) :-
 // These instructions create chains of assignments, at the head of each block.
 // This is a helper relation to assist the final assignment operation, which 
 // will require linking the assignments with the rest of the code.
-.decl PhiPseudoAssign(?phi_var:symbol, ?def:symbol, ?src_block:symbol, ?dst_block:symbol, ?pseudoname:symbol)
+.decl PhiPseudoAssign(?phi_var:symbol, ?def:symbol, ?dst_block:symbol, ?pseudoname:symbol)
 
 // Many assigns on the same phi var, consist of a PhiChunk. These are unique, since 
 // phi_var is unique (SSA naming).
@@ -244,10 +244,9 @@ SimilarOutDefs(?block, ?def1, ?def2) :-
 // Many PhiChunks in the same basic block, consist of a PhiHeader.
 .decl PhiHeader(?block:symbol)
 
-// EXPERIMENTAL
 PhiChunk(?phi_var),
 PhiHeader(?dst_block),
-PhiPseudoAssign(?phi_var, ?phi_arg, "", ?dst_block, ?pseudoname) :-
+PhiPseudoAssign(?phi_var, ?phi_arg, ?dst_block, ?pseudoname) :-
     PhiAssign(?phi_var, _, ?dst_block),
     InDefs(?dst_block, ?phi_arg, ?origin_var),
     SSA_Alias(?phi_var, ?origin_var),
@@ -256,9 +255,9 @@ PhiPseudoAssign(?phi_var, ?phi_arg, "", ?dst_block, ?pseudoname) :-
 // TODO: Are the initial checks needed?
 .decl ExistsPseudoAssignBetween(?prev:symbol, ?next:symbol)
 ExistsPseudoAssignBetween(?prev, ?next) :-
-    PhiPseudoAssign(?phi, _, _, ?block, ?prev),
-    PhiPseudoAssign(?phi, _, _, ?block, ?next),
-    PhiPseudoAssign(?phi, _, _, ?block, ?mid),
+    PhiPseudoAssign(?phi, _, ?block, ?prev),
+    PhiPseudoAssign(?phi, _, ?block, ?next),
+    PhiPseudoAssign(?phi, _, ?block, ?mid),
     ord(?prev) < ord(?next),
     ord(?prev) < ord(?mid),
     ord(?mid)  < ord(?next).
@@ -266,9 +265,9 @@ ExistsPseudoAssignBetween(?prev, ?next) :-
 .decl ExistsPhiChunkBetween(?prev:symbol, ?next:symbol)
 
 ExistsPhiChunkBetween(?prev, ?next) :-
-    PhiPseudoAssign(?prev, _, _, ?block, _),
-    PhiPseudoAssign(?next, _, _, ?block, _),
-    PhiPseudoAssign(?mid, _, _, ?block, _),
+    PhiPseudoAssign(?prev, _, ?block, _),
+    PhiPseudoAssign(?next, _, ?block, _),
+    PhiPseudoAssign(?mid, _, ?block, _),
     ord(?prev) < ord(?next),
     ord(?prev) < ord(?mid),
     ord(?mid)  < ord(?next).
@@ -282,29 +281,29 @@ ExistsPhiChunkBetween(?prev, ?next) :-
 // Link PhiChunk assignments
 SSANext(?prev, ?next),
 PhiChunkNext(?prev, ?next) :-
-    PhiPseudoAssign(?chunk, _, _, ?block, ?prev),
-    PhiPseudoAssign(?chunk, _, _, ?block, ?next),
+    PhiPseudoAssign(?chunk, _, ?block, ?prev),
+    PhiPseudoAssign(?chunk, _, ?block, ?next),
     ord(?prev) < ord(?next),
     !ExistsPseudoAssignBetween(?prev, ?next).
 
 .decl PhiChunkStart(?phi_chunk:symbol, ?start:symbol)
 
 PhiChunkStart(?phi_chunk, ?start) :-
-    PhiPseudoAssign(?phi_chunk, _, _, _, ?start),
+    PhiPseudoAssign(?phi_chunk, _, _, ?start),
     !PhiChunkNext(_, ?start).
 
 .decl PhiChunkEnd(?phi_chunk:symbol, ?end:symbol)
 
 PhiChunkEnd(?phi_chunk, ?end) :-
-    PhiPseudoAssign(?phi_chunk, _, _, _, ?end),
+    PhiPseudoAssign(?phi_chunk, _, _, ?end),
     !PhiChunkNext(?end, _).
 
 .decl PhiHeaderNext(?prev:symbol, ?next:symbol)
 
 SSANext(?prev_end, ?next_start),
 PhiHeaderNext(?prev, ?next) :-
-    PhiPseudoAssign(?prev, _, _, ?phi_header, _),
-    PhiPseudoAssign(?next, _, _, ?phi_header, _),
+    PhiPseudoAssign(?prev, _, ?phi_header, _),
+    PhiPseudoAssign(?next, _, ?phi_header, _),
     PhiChunkEnd(?prev, ?prev_end),
     PhiChunkStart(?next, ?next_start),
     ord(?prev) < ord(?next),
@@ -313,7 +312,7 @@ PhiHeaderNext(?prev, ?next) :-
 .decl PhiHeaderStart(?phi_chunk:symbol, ?start:symbol)
 
 PhiHeaderStart(?phi_header, ?start) :-
-    PhiPseudoAssign(?start_chunk, _, _, ?phi_header, _),
+    PhiPseudoAssign(?start_chunk, _, ?phi_header, _),
     PhiChunkStart(?start_chunk, ?start),
     !PhiHeaderNext(_, ?start_chunk).
 
@@ -321,7 +320,7 @@ PhiHeaderStart(?phi_header, ?start) :-
 
 SSANext(?end, ?phi_header),
 PhiHeaderEnd(?phi_header, ?end) :-
-    PhiPseudoAssign(?end_chunk, _, _, ?phi_header, _),
+    PhiPseudoAssign(?end_chunk, _, ?phi_header, _),
     PhiChunkEnd(?end_chunk, ?end),
     !PhiHeaderNext(?end_chunk, _).
 
@@ -339,7 +338,7 @@ isInstruction(?insn) :-
     Instruction_Method(?insn, _).
 
 isInstruction(?insn) :-
-    PhiPseudoAssign(_, _, _, _, ?insn).
+    PhiPseudoAssign(_, _, _, ?insn).
 
 // Simple index calculation, based on the SSANext relation.
 .decl SSA_InstructionIndex(?insn:symbol, ?index:number)
@@ -567,7 +566,7 @@ RewriteAssignLocal(?insn, ?index, ?to, ?from, ?inmethod) :-
     ReachingDef(?insn, ?from, ?from_origin).
 
 RewriteAssignLocal(?insnid, ?index, ?to, ?from, ?inmethod) :-
-    PhiPseudoAssign(?to, ?from, _, ?block, ?insn),
+    PhiPseudoAssign(?to, ?from, ?block, ?insn),
     Instruction_Method(?block, ?inmethod),
     SSA_InstructionIndex(?insn, ?index),
     ?insnid = cat(?inmethod, cat("/phiassign/instruction", to_string(?index))).
