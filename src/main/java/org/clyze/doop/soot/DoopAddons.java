@@ -196,7 +196,7 @@ public class DoopAddons {
     public static boolean polymorphicHandling(String declClass, String simpleName) {
         try {
             if (hc == null) {
-                Method hc = Class.forName("soot.PolymorphicMethodRef").getDeclaredMethod("handlesClass", String.class);
+                hc = Class.forName("soot.PolymorphicMethodRef").getDeclaredMethod("handlesClass", String.class);
                 hc.setAccessible(true);
             }
             return (boolean)hc.invoke(null, declClass);
