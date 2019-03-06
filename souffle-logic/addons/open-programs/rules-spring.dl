@@ -50,7 +50,6 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, cat(?fld, " :: AUTOWIRED"), ?fld, ?bas
   Field_Annotation(?fld, "org.springframework.beans.factory.annotation.Autowired"),
   Field_DeclaringType(?fld, ?decltype),
   mainAnalysis.Value_Type(?basevalue, ?decltype),
-  (mainAnalysis.VarPointsTo(?basehctx, ?basevalue, _, _);
-   mainAnalysis.ReachableValue(?basehctx, ?basevalue)),
+  mainAnalysis.ReachableValue(?basehctx, ?basevalue),
   Field_Type(?fld, ?type),
   mainAnalysis.isImmutableHContext(?hctx).

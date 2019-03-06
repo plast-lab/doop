@@ -17,8 +17,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?
 
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?val, ?fld, ?basehctx, ?basevalue) :-
   // TODO optimize this rule
-  (mainAnalysis.VarPointsTo(?basehctx, ?basevalue, _, _);
-   mainAnalysis.ReachableValue(?basehctx, ?basevalue)),
+  mainAnalysis.ReachableValue(?basehctx, ?basevalue),
   mainAnalysis.Value_Type(?basevalue, ?declType),
   BeanIoCField(?declType, ?fldSimple, ?type),
   mainAnalysis_MockValueConsMacro(?val, ?type),

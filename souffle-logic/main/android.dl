@@ -310,8 +310,7 @@ ListenerClassConstantValue(?classHeap, ?type) :-
 ApplicationObjectFlowingToLibrary(?hctx, MOCK_LISTENER(?type), ?type),
 MockValueConsMacro(MOCK_LISTENER(?type), ?type) :-
   ListenerClassConstantValue(?classHeap, ?type),
-  (VarPointsTo(?hctx, ?classHeap, _, _);
-   ReachableValue(?hctx, ?classHeap)).
+  ReachableValue(?hctx, ?classHeap).
 
 TypeHasApplicationObjectFlowingToLibrary(?type),
 LibraryReachableAppListenerType(?type) :-
