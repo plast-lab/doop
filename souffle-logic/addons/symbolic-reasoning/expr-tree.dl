@@ -1,4 +1,4 @@
-#define DEBUG
+// #define DEBUG
 
 .type SymbolicInput = Var | MethodInvocation | NumConstant
 .type Operator = symbol
@@ -43,7 +43,7 @@
 isBooleanExpr(?expr) :-
     (isInputExpr(?expr) ; isExpr(?expr)),
     ?expr = [?op, ?type, ?rExpr, ?lExpr],
-    ?type = "boolean".
+    Type_boolean(?type).
 
 // Method Parameters
 
@@ -76,15 +76,15 @@ isInputExpr(?expr) :-
 
 ResolveExpr(?meth, ?var, ?expr),
 #ifdef DEBUG
-ToString(?expr, ?to),
+ToString(?expr, ?var),
 #endif
 isInputExpr(?expr) :-
     Instruction_Method(?inst, ?meth),
     isLoadInstanceField_Insn(?inst),
     LoadInstanceField_To(?inst, ?var),
-    Var_Type(?to, ?type),
+    Var_Type(?var, ?type),
     Type_boolean(?type),
-    ?expr = [?to, ?type, nil, nil].
+    ?expr = [?var, ?type, nil, nil].
 
 // Assign Local
 

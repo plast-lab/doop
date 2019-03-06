@@ -29,6 +29,7 @@ ThrowPointsTo(?hctx, ?value, ?ctx, ?method) :-
  .plan 1:(2,1,3,4,5)
 //#endif
 
+#ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?value, ?ctx, ?param) :-
   Instruction_Throws(?hctx, ?value, ?ctx, ?insn),
   Value_Type(?value, ?valueType),
@@ -42,6 +43,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?param) :-
 //#ifdef INFORMATION_FLOW
  .plan 1:(2,1,3,4,5,6,7)
 //#endif
+#endif // DISABLE_POINTS_TO
 
 ///////////////////////////////////////////////////////////////////////////////
 

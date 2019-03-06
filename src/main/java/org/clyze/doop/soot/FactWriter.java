@@ -699,10 +699,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     private Value writeActualParam(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session, Value v, int idx) {
-	DoopAddons.MethodType mt = DoopAddons.methodType(v);
-	if (mt != null)
-	    return writeMethodTypeConstantExpression(inMethod, stmt, mt, session);
-	else if (v instanceof StringConstant)
+        if (v instanceof StringConstant)
             return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
         else if (v instanceof ClassConstant)
             return writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
@@ -715,9 +712,13 @@ class FactWriter extends JavaFactWriter {
             // temporary var for the actual argument (whose value is null).
             Type argType = expr.getMethodRef().parameterType(idx);
             return writeNullExpression(inMethod, stmt, argType, session);
-        } else if (v instanceof Constant)
-            throw new RuntimeException("Value has unknown constant type: " + v);
-        else if (!(v instanceof JimpleLocal))
+        } else if (v instanceof Constant) {
+            DoopAddons.MethodType mt = DoopAddons.methodType(v);
+            if (mt != null)
+                return writeMethodTypeConstantExpression(inMethod, stmt, mt, session);
+            else
+                throw new RuntimeException("Value has unknown constant type: " + v);
+        } else if (!(v instanceof JimpleLocal))
             System.err.println("Warning: value has unknown non-constant type: " + v.getClass().getName());
         return v;
     }

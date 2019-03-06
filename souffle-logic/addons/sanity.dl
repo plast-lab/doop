@@ -44,6 +44,9 @@ Sanity("11", "Instruction is not a concrete instruction", ?c) :-
 Sanity("12", "Value has no declaring type", ?c) :-
   ?c = count : ValueHasNoDeclaringType(_).
 
+Sanity("13", "Duplicate context requests", ?c) :-
+  ?c = count : mainAnalysis.DuplicateContextRequest(_).
+
 .decl VarHasNoType(var:Var)
 .output VarHasNoType
 

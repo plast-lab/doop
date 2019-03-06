@@ -103,17 +103,9 @@ public abstract class AndroidSupport {
             findNativeLibs(nativeLibs, decodeDirFile);
             System.out.println("Found " + nativeLibs.size() + " native libraries.");
 
-            String envVar = "ANDROID_NDK_PREBUILTS";
-            String ndkPrebuilts = System.getenv(envVar);
-            if (ndkPrebuilts == null) {
-                System.err.println("Error: environment variable " + envVar + " is not set, it should point to the toolchain of the Android NDK, e.g., '/path/to/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/arm-linux-androideabi/bin'");
-                return;
-            }
-            String nmCmd = ndkPrebuilts + "/nm";
-            String objdumpCmd = ndkPrebuilts + "/objdump";
             File outDir = new File(parameters.getOutputDir());
             for (File libFile : nativeLibs)
-                NativeScanner.scan(nmCmd, objdumpCmd, libFile, outDir);
+                NativeScanner.scanLib(libFile, outDir);
         } else
             System.err.println("Error: decode directory " + decodeDir + " not found");
     }

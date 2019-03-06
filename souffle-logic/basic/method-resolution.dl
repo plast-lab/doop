@@ -9,8 +9,8 @@ ResolveInvocation(?type, ?invocation, ?tomethod) :-
     VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
     VirtualMethodInvocation_Base(?invocation, ?base),
     Var_Type(?base, ?basetype),
-    MethodLookup(?simplename, ?descriptor, ?type, ?tomethod),
-    SubtypeOf(?type, ?basetype).
+    SubtypeOf(?type, ?basetype),
+    MethodLookup(?simplename, ?descriptor, ?type, ?tomethod).
 
 ResolveInvocation(?basetype, ?invocation, ?tomethod) :-
     SuperMethodInvocation_SimpleName(?invocation, ?simplename),

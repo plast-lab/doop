@@ -65,11 +65,14 @@ compileGroovy {
     groovyOptions.optimizationOptions.indy = true
 }
 
+def groovyVersion="2.5.5"
+
 dependencies {
 
     compile "org.clyze:clue-common:3.8.+",
             "org.clyze:deepdoop:0.9.+",
-            "org.codehaus.groovy:groovy-all:2.5.5",             // Groovy
+            "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
+            "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
@@ -91,6 +94,8 @@ dependencies {
             "ext:sootclasses:3.1.0.MINIMAL",
             // (d) Latest tested nightly build.
             // "ext:sootclasses:trunk.20190225",
+            // (e) Soot for Java 9.
+            // "ca.mcgill.sable:soot-j9:4.0.0-SNAPSHOT",
 
             "ext:AXMLPrinter:2.0",
             "ext:soot-infoflow:2.5.1",
