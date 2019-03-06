@@ -20,7 +20,7 @@ plugins {
     id 'net.researchgate.release' version '2.6.0'
 }
 
-applicationDefaultJvmArgs = ["-Xmx32000m", "-Xss2000m"]
+applicationDefaultJvmArgs = ["-Xmx12000m", "-Xss2000m"]
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
