@@ -94,6 +94,8 @@ dependencies {
             "ext:sootclasses:3.1.0.MINIMAL",
             // (d) Latest tested nightly build.
             // "ext:sootclasses:trunk.20190225",
+            // (e) Soot for Java 9.
+            // "ca.mcgill.sable:soot-j9:4.0.0-SNAPSHOT",
 
             "ext:AXMLPrinter:2.0",
             "ext:soot-infoflow:2.5.1",
