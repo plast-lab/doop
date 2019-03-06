@@ -8,9 +8,11 @@ import static org.clyze.doop.common.PredicateFile.*;
 public class NativeScanner {
     private final static boolean debug = false;
     private final static boolean check = false;
+    private static final String envVar = "ANDROID_NDK_PREBUILTS";
+    private static final String ndkPrebuilts = System.getenv(envVar);
 
     // The supported architectures.
-    public enum Arch {
+    enum Arch {
         X86_64, AARCH64, ARMEABI;
 
         public static Arch autodetect(String libFilePath) throws IOException {
@@ -18,13 +20,13 @@ public class NativeScanner {
             Arch arch = null;
             for (String line : NativeScanner.runCommand(pb)) {
                 if (line.contains("80386") || line.contains("x86-64")) {
-                    arch = NativeScanner.Arch.X86_64;
+                    arch = Arch.X86_64;
                     break;
                 } else if (line.contains("aarch64")) {
-                    arch = NativeScanner.Arch.AARCH64;
+                    arch = Arch.AARCH64;
                     break;
                 } else if (line.contains("ARM") || line.contains("EABI")) {
-                    arch = NativeScanner.Arch.ARMEABI;
+                    arch = Arch.ARMEABI;
                     break;
                 }
             }
@@ -36,6 +38,26 @@ public class NativeScanner {
             }
             return arch;
         }
+    }
+
+    public static void scanLib(File libFile, File outDir) {
+        String nmCmd = null;
+        String objdumpCmd = null;
+        try {
+            // Auto-detect architecture.
+            Arch arch = Arch.autodetect(libFile.getCanonicalPath());
+            if (((arch == Arch.ARMEABI) || (arch == Arch.AARCH64)) && (ndkPrebuilts != null)) {
+                nmCmd = ndkPrebuilts + "/nm";
+                objdumpCmd = ndkPrebuilts + "/objdump";
+            } else {
+                nmCmd = "nm";
+                objdumpCmd = "objdump";
+            }
+            scan(nmCmd, objdumpCmd, libFile, outDir, arch);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
     }
 
     public static void scan(String nmCmd, String objdumpCmd,
