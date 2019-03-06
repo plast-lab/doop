@@ -179,23 +179,14 @@ BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
 // will require linking the assignments with the rest of the code.
 .decl PhiPseudoAssign(?phi_var:symbol, ?def:symbol, ?dst_block:symbol, ?pseudoname:symbol)
 
-// Many assigns on the same phi var, consist of a PhiChunk. These are unique, since 
-// phi_var is unique (SSA naming).
-.decl PhiChunk(?phi_var:symbol)
-
-// Many PhiChunks in the same basic block, consist of a PhiHeader.
-.decl PhiHeader(?block:symbol)
-
-PhiChunk(?phi_var),
-PhiHeader(?dst_block),
 PhiPseudoAssign(?phi_var, ?phi_arg, ?dst_block, ?pseudoname) :-
     PhiAssign(?phi_var, ?dst_block),
     InDefs(?dst_block, ?phi_arg, ?origin_var),
     SSA_Alias(?phi_var, ?origin_var),
     ?pseudoname = cat(?phi_var, cat("_", ?phi_arg)).
 
-// TODO: Are the initial checks needed?
 .decl ExistsPseudoAssignBetween(?prev:symbol, ?next:symbol)
+
 ExistsPseudoAssignBetween(?prev, ?next) :-
     PhiPseudoAssign(?phi, _, ?block, ?prev),
     PhiPseudoAssign(?phi, _, ?block, ?next),
