@@ -188,7 +188,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SANITY",
 					name: "sanity",
-					description: "Load additional logic for sanity checks."
+					description: "Load additional logic for sanity checks.",
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "CACHE",
