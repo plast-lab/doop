@@ -297,11 +297,8 @@ ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin) :-
     PhiAssign(?ssa_var, ?head),
     SSA_Alias(?ssa_var, ?origin).
 
-// This is a simple calculation of the reaching SSA definitions (ssa_var),
-// at a given instruction (insn), for a given origin variable (not ssa-renamed,
-// as seen in the original program).
-.decl ReachingDef(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
 
+// Calculates the InDefs at every basic block.
 .decl InDefs(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
 
 InDefs(?insn, ?ssa_var, ?origin) :- 
@@ -315,6 +312,11 @@ InDefs(?insn, ?ssa_var, ?origin) :-
     (SSA_FormalParam(_, ?method, ?ssa_var);
     SSA_ThisVar(?method, ?ssa_var)),
     SSA_Alias(?ssa_var, ?origin).
+
+// This is a simple calculation of the reaching SSA definitions (ssa_var),
+// at a given instruction (insn), for a given origin variable (not ssa-renamed,
+// as seen in the original program).
+.decl ReachingDef(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
 
 // If an instruction is the first instruction in a basic block, and a ssa defintion
 // for origin exists in the Phi Header, then that def is the reaching def.
