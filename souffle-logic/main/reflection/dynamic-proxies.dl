@@ -235,11 +235,6 @@ HandledProxy(?newProxyInstanceInvo, ?handlerType) :-
    ThisVar(?handlerInvokeMeth, ?this),
    ProxyObject_Invocation(?value, ?newProxyInstanceInvo).
 
-ProxyCallGraphEdgeCandidate(?callerCtx, ?invo, ?value, ?handlerInvokeMeth),
-configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?handlerInvokeMeth) :-
-   CallToMethodOfProxyObject(?hctx, ?value, ?callerCtx, ?invo),
-   ProxyInvoke(?invokeMethName, ?invokeMethDescriptor),
-   basic.MethodLookup(?invokeMethName, ?invokeMethDescriptor, ?handlerType, ?handlerInvokeMeth).
 
 #ifdef REFLECTION
 
