@@ -447,6 +447,13 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   AssignReturnValue(?invocation, ?return).
 #endif // DISABLE_POINTS_TO
 
+// counterpart of the above, to also cover analyses without points-to
+ReachableValue(?hctx, ?value) :-
+  SpecialMissingPackableValue(?invocation, ?value),
+  Instruction_Method(?invocation, ?inmethod),
+  Reachable(?inmethod),
+  isImmutableHContext(?hctx).
+
 MockValueConsMacro(?value, ?concreteType),
 VarPointsTo(?hctx, ?value, ?ctx, ?to),
 ReifiedAndroidObjectValue(?value, ?concreteType) :-
@@ -531,6 +538,19 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
  * exist anyway.
 **/
 
+#ifdef DISABLE_POINTS_TO
+// The (looser) counterpart of all the rules that use
+// ReifiedAndroidObjectValue, to also cover the case of no points-to
+// reasoning. We rarely enable logic just for the case of no-points-to
+// reasoning. But this rule is imprecise: it does not replicate the
+// full preconditions upon which a ReifiedAndroidObjectValue ends up
+// in a VPT set. Therefore we want to use this loose rule only when we
+// don't do normal points-to reasoning.
+ReachableValue(?hctx, ?value) :-
+  ReifiedAndroidObjectValue(?value, _),
+  isImmutableHContext(?hctx).
+#endif
+
 // Link the two concepts: if an object is a ReifiedAndroidObjectValue,
 // make its constructors ForcedReachable.
 ForcedReachableAndroidContext(?ctx, ?meth) :-
@@ -552,6 +572,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
 #ifndef X_CONTEXT_REMOVER
   .plan 1:(4,1,2,3,5)
 #endif
+
+
 
 // ... or a plain reachable object flowing to the library.
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
@@ -965,3 +987,4 @@ TypeHasApplicationObjectFlowingToLibrary(?type) :-
   _AndroidReachableLibraryVarOfType(_, ?varType),
   basic.SubtypeOf(?type, ?varType),
   TypeHasReachableApplicationObject(?type).
+
