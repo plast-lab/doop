@@ -888,6 +888,13 @@ ObfuscationOn() :-
   ?allCount = count : ApplicationClass(_),
   ?unobfCount < ?allCount / 2.
 
+// Second heuristic for telling obfuscation is on. The number of total
+// unobfuscated methods is small (less than a quarter of app methods)!
+ObfuscationOn() :-
+  ?unobfCount = count : UnobfuscatedMethod(_),
+  ?allCount = count : ApplicationMethod(_),
+  ?unobfCount < ?allCount / 4.
+
 // If obfuscation is on, then treat all unobfuscated method names as
 // entry points: the programmer probably had a "keep" specification for
 // them. Note that Keep* are both input and derived predicates.
