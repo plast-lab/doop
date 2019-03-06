@@ -37,6 +37,27 @@ RunningThread(?hctx, ?value)
     basic.MethodLookup("run", "void()", ?valuetype, ?run),
     ThisVar(?run, ?runThis).
 
+// The following is ridiculously imprecise but probably needed for some
+// semblance of soundness. Therefore, only enable for non-points-to analyses.
+#ifdef DISABLE_POINTS_TO
+.decl _ReachableValuesWithRunMethod(?hctx:configuration.HContext, ?value:Value, ?run:Method)
+_ReachableValuesWithRunMethod(?hctx, ?value, ?run) :-
+    ReachableValue(?hctx, ?value),
+    Value_Type(?value, ?valuetype),
+    basic.MethodLookup("run", "void()", ?valuetype, ?run).
+
+ReachableContext(?calleeCtx, ?run),
+RunningThread(?hctx, ?value) :-
+#if defined(JRE13) || defined(JRE14)
+    ?start = "<java.lang.Thread: void start()>",
+#else
+    ?start = "<java.lang.Thread: void start0()>",
+#endif // defined(JRE13) || defined(JRE14)
+    ReachableContext(?calleeCtx, ?start),
+    _ReachableValuesWithRunMethod(?hctx, ?value, ?run).
+#endif // DISABLE_POINTS_TO
+
+
 #ifndef DISABLE_POINTS_TO
 /**
  * Thread.currentThread() return running threads

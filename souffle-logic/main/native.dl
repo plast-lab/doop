@@ -363,9 +363,12 @@ ReachableNativeMethodInvocation(?ctx, ?invo, ?nativeMethod) :-
 
 #define NativeReturnValId(t, m) cat("<native ", cat(t, cat(" value allocated in ", cat(m, ">"))))
 
+#ifndef DISABLE_POINTS_TO
+VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return),
+#endif
 NativeMethodReturningValue(?m, ?t, ?return, NativeReturnValId(?t, ?m)),
 MockValueConsMacro(NativeReturnValId(?t, ?m), ?t),
-VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return) :-
+ReachableValue(?hctx, NativeReturnValId(?t, ?m)) :-
   ReachableNativeMethodInvocation(?ctx, _, ?m),
   NativeReturnVar(?return, ?m),
   Var_Type(?return, ?t),

@@ -21,6 +21,15 @@ ReachableValue(?newHCtx, ?heapValue) :-
   configuration.RecordContextRequest(?ctx, ?heapValue, ?var),
   configuration.RecordContextResponse(?ctx, ?heapValue, ?var, ?newHCtx).
 
+// REVIEW: a catch-all hack: there are still corners where the logic is centered
+// around VarPointsTo. Cover them as best as one can, by inferring ReachableValue.
+// Ideally, this rule will be deprecated in the long term, by carefully going over
+// all current logic and adding counterparts to the VarPointsTo-inferring rules
+// to also produce useful information (e.g., ReachableValue) when points-to
+// analysis is disabled.
+ReachableValue(?hctx, ?value) :-
+  VarPointsTo(?hctx, ?value, _, _).
+
 .decl TypeHasReachableValue(?valueType: Type)
 TypeHasReachableValue(?valueType) :-
   ReachableValue(_, ?value),

@@ -11,7 +11,8 @@ HeapAllocation_Keep(?heap) :-
  * the DaCapo benchmarks. The value is used afterwards reflectively to create a
  * new object.
  */
-VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to) :-
+VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to),
+ReachableValue(?hctx, ?classNameHeap) :-
   Dacapo(?classNameHeap, ?dacapoMethod),
   MethodInvocation_Method(?invo, ?dacapoMethod),
   VirtualMethodInvocation_Base(?invo, ?base),
