@@ -83,36 +83,6 @@ SSA_Alias(cat(?original, cat("_", "0")), ?original),
 SSA_ThisVar(?method, cat(?original, cat("_", "0"))) :-
     ThisVar(?method, ?original).
 
-.decl SSA_AssignHeapAllocation(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-
-SSA_AssignHeapAllocation(?instr, ?index, ?ssa_name, ?method) :-
-    isAssignHeapAllocation_Insn(?instr),
-    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
-
-.decl SSA_AssignLocal(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-
-SSA_AssignLocal(?instr, ?index, ?ssa_name, ?method) :-
-    isAssignLocal_Insn(?instr),
-    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
-
-.decl SSA_AssignBinop(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-
-SSA_AssignBinop(?instr, ?index, ?ssa_name, ?method) :-
-    isAssignBinop_Insn(?instr),
-    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
-
-.decl SSA_AssignUnop(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-
-SSA_AssignUnop(?instr, ?index, ?ssa_name, ?method) :-
-    isAssignUnop_Insn(?instr),
-    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
-
-.decl SSA_AssignCast(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-
-SSA_AssignCast(?instr, ?index, ?ssa_name, ?method) :-
-    isAssignCast_Insn(?instr),
-    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
-
 .decl SSA_AssignCastNumConstant(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
 
 SSA_AssignCastNumConstant(?instr, ?index, ?ssa_name, ?method) :-
@@ -147,18 +117,6 @@ SSA_AssignInstanceOf(?instr, ?index, ?ssa_name, ?method) :-
     
 SSA_LoadArrayIndex(?insn, ?index, ?ssa_name, ?method) :-
     isLoadArrayIndex_Insn(?insn),
-    SSA_AssignDetails(?insn, _, ?index, ?ssa_name, ?method).
-    
-.decl SSA_LoadInstanceField(?insn:symbol, ?index:number, ?to:symbol, ?method:symbol)
-    
-SSA_LoadInstanceField(?insn, ?index, ?ssa_name, ?method) :-
-    isLoadInstanceField_Insn(?insn),
-    SSA_AssignDetails(?insn, _, ?index, ?ssa_name, ?method).
-
-.decl SSA_LoadStaticField(?insn:symbol, ?index:number, ?to:symbol, ?method:symbol)
-
-SSA_LoadStaticField(?insn, ?index, ?ssa_name, ?method) :-
-    isLoadStaticField_Insn(?insn),
     SSA_AssignDetails(?insn, _, ?index, ?ssa_name, ?method).
     
 // Simple implementation of the mathematical definition of strict
@@ -472,7 +430,8 @@ RewriteActualParam(?index, ?invocation, ?var) :-
 .output RewriteAssignBinop(filename="AssignBinop.facts")
 
 RewriteAssignBinop(?insn, ?index, ?to, ?inmethod) :-
-    SSA_AssignBinop(?insn, _, ?to, ?inmethod),
+    isAssignBinop_Insn(?insn),
+    SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index).
 
 .decl RewriteAssignCast(?insn:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
@@ -483,7 +442,8 @@ ConstraintForVar(?from, ?insn),
 LowerBoundTypeForConstraint(?to, ?type, ?insn),
 UpperBoundTypeForConstraint(?from, ?type, ?insn),
 RewriteAssignCast(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
-    SSA_AssignCast(?insn, _, ?to, ?inmethod),
+    isAssignCast_Insn(?instr),
+    SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
     AssignCast_Type(?insn, ?type),
     AssignCast_From(?insn, ?from_origin),
     SSA_InstructionIndex(?insn, ?index),
@@ -544,7 +504,8 @@ RewriteAssignInstanceOf(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
 .output RewriteAssignLocal(filename="AssignLocal.facts")
 
 RewriteAssignLocal(?insn, ?index, ?to, ?from, ?inmethod) :-
-    SSA_AssignLocal(?insn, _, ?to, ?inmethod),
+    isAssignLocal_Insn(?instr),
+    SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index),
     AssignLocal_From(?insn, ?from_origin),
     ReachingDef(?insn, ?from, ?from_origin).
@@ -619,7 +580,8 @@ RewriteAssignReturnValue(?invocation, ?to) :-
 .output RewriteAssignUnop(filename="AssignUnop.facts")
 
 RewriteAssignUnop(?insn, ?index, ?to, ?inmethod) :-
-    SSA_AssignUnop(?insn, _, ?to, ?inmethod),
+    isAssignUnop_Insn(?insn),
+    SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index).
 
 .decl RewriteEnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
