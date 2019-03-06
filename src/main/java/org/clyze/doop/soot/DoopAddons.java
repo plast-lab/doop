@@ -74,11 +74,14 @@ public class DoopAddons {
     }
 
     // Call non-public method: PackManager.v().writeClass(sootClass)
+    private static Method wC;
     public static void writeClass(SootClass sootClass) throws DoopErrorCodeException {
         PackManager pm = PackManager.v();
         try {
-            Method wC = pm.getClass().getDeclaredMethod("writeClass", SootClass.class);
-            wC.setAccessible(true);
+            if (wC == null) {
+                wC = pm.getClass().getDeclaredMethod("writeClass", SootClass.class);
+                wC.setAccessible(true);
+            }
             wC.invoke(pm, sootClass);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             System.err.println("Could not call Soot method writeClass(): ");
