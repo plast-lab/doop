@@ -1,75 +1,40 @@
-// #define DEBUG
 
-.type SymbolicInput = Var | MethodInvocation | NumConstant
-.type Operator = symbol
-
-.type Base = SymbolicInput | Operator
-
-.type Expr = [
-    ?base: Base,
-    ?type: PrimitiveType,
-    ?left: Expr,
-    ?right: Expr
-]
-
-.decl ResolveExpr(?meth: Method, ?var: symbol, ?expr: Expr)
-
-#ifdef DEBUG
-    .decl ToString(?expr: Expr, ?out: symbol)
-#endif
-
-.decl isBooleanExpr(?expr: Expr)
-.decl isInputExpr(?expr: Expr)
-.decl isExpr(?expr: Expr)
-//.decl MethodSymbolicInput(?meth: Method, ?input: SymbolicInput)
-
-.output ResolveExpr
-#ifdef DEBUG
-.output ToString
-#endif
-.output isBooleanExpr
-.output isInputExpr
-.output isExpr
-//.output MethodSymbolicInput
-
-/** Input expressions are coming from
+/* Input expressions are coming from
  *  1) Method parameters
  *  2) Field loads
  *  3) Static class fields
  *  4) Catch blocks
- *  TODO: Phi expressions?
- **/
-
-isBooleanExpr(?expr) :-
-    (isInputExpr(?expr) ; isExpr(?expr)),
-    ?expr = [?op, ?type, ?rExpr, ?lExpr],
-    Type_boolean(?type).
+ */
 
 // Method Parameters
 
 #ifdef DEBUG
-    ToString(?expr, ?param),
-#endif
-ResolveExpr(?meth, ?param, ?expr),
+ToString(?expr, ?param),
+#endif // DEBUG
+ResolveExpr(?meth, ?var, ?expr),
 isInputExpr(?expr) :-
+    isAssignLocal_Insn(?insn),
+    AssignLocal_From(?insn, ?param),
     FormalParam(_, ?meth, ?param),
     Var_Type(?param, ?type),
     Type_boolean(?type),
+    AssignInstruction_To(?insn, ?var),
+    Instruction_Method(?insn, ?meth),
     ?expr = [?param, ?type, nil, nil].
 
 // Method Invocation result
 
 #ifdef DEBUG
 ToString(?expr, ?var),
-#endif
+#endif // DEBUG
 ResolveExpr(?meth, ?var, ?expr),
 isInputExpr(?expr) :-
-    Instruction_Method(?methInvo, ?meth),
     isMethodInvocation(?methInvo),
     MethodInvocation_Method(?methInvo, ?methSig),
-    AssignReturnValue(?methInvo, ?var),
     Method_ReturnType(?methSig, ?type),
     Type_boolean(?type),
+    Instruction_Method(?methInvo, ?meth),
+    AssignReturnValue(?methInvo, ?var),
     ?expr = [?var, ?type, nil, nil].
 
 // Load instance/static fields
@@ -77,82 +42,96 @@ isInputExpr(?expr) :-
 ResolveExpr(?meth, ?var, ?expr),
 #ifdef DEBUG
 ToString(?expr, ?var),
-#endif
+#endif // DEBUG
 isInputExpr(?expr) :-
-    Instruction_Method(?inst, ?meth),
-    isLoadInstanceField_Insn(?inst),
-    LoadInstanceField_To(?inst, ?var),
+    isLoadInstanceField_Insn(?insn),
+    LoadInstanceField_To(?insn, ?var),
     Var_Type(?var, ?type),
     Type_boolean(?type),
+    Instruction_Method(?insn, ?meth),
     ?expr = [?var, ?type, nil, nil].
 
-// Assign Local
+// Assign Num Constant
 
+#ifdef DEBUG
+ToString(?expr, ?const),
+#endif // DEBUG
+ResolveExpr(?meth, ?var, ?expr),
+isInputExpr(?expr) :-
+    isAssignNumConstant_Insn(?insn),
+    AssignInstruction_To(?insn, ?var),
+    Var_Type(?var, ?type),
+    Type_boolean(?type),
+    Instruction_Method(?insn, ?meth),
+    AssignNumConstant_Id(?insn, ?const),
+    ?expr = [?const, ?type, nil, nil].
+
+//// Assign Local
+//
+//#ifdef DEBUG
+//ToString(?expr, ?out),
+//#endif // DEBUG
+//ResolveExpr(?meth, ?var, ?expr),
+//isExpr(?expr) :-
+//    Instruction_Method(?insn, ?meth),
+//    isAssignLocal_Insn(?insn),
+//    AssignInstruction_To(?insn, ?var),
+//    Var_Type(?var, ?type),
+//    Type_boolean(?type),
+////    c = count: AssignInstruction_To(_, ?var),
+////    c = 1,
+//    AssignLocal_From(?insn, ?from),
+//#ifdef DEBUG
+//    ToString(?expr, ?out),
+//#endif // DEBUG
+//    ResolveExpr(?meth, ?from, ?expr).
+//
+//
+//// Assign Unary
+//
 #ifdef DEBUG
 ToString(?expr, ?out),
-#endif
+#endif // DEBUG
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    Instruction_Method(?inst, ?meth),
-    AssignInstruction_To(?inst, ?var),
+    isAssignUnop_Insn(?insn),
+    AssignInstruction_To(?insn, ?var),
     Var_Type(?var, ?type),
     Type_boolean(?type),
-    AssignLocal_From(?inst, ?from),
-#ifdef DEBUG
-    ResolveExpr(_, ?from, ?expr),
-    ToString(?expr, ?out).
-#else
-    ResolveExpr(_, ?from, ?expr).
-#endif
-
-// Assign Unary
-
-#ifdef DEBUG
-ToString([?op, ?type, ?rExpr, nil], ?out),
-#endif
-ResolveExpr(?meth, ?var, [?op, ?type, ?rExpr, nil]),
-isExpr([?op, ?type, ?rExpr, nil]) :-
-    AssignInstruction_To(?inst, ?var),
-    isAssignUnop_Insn(?inst),
-    Var_Type(?var, ?type),
-    Type_boolean(?type),
-    AssignOper_From(?inst, _, ?right),
-    _OperatorAt(?inst, ?op),
-#ifdef DEBUG
+    Instruction_Method(?insn, ?meth),
+    AssignOper_From(?insn, _, ?right),
+    _OperatorAt(?insn, ?op),
     ResolveExpr(?meth, ?right, ?rExpr),
+#ifdef DEBUG
     ToString(?rExpr, ?out),
-    ?out = cat(?op, cat(" ", ?out)).
-#else
-    ResolveExpr(?meth, ?right, ?rExpr).
-#endif
+    ?out = cat(?op, cat(" ", ?out)),
+#endif // DEBUG
+    ?expr = [?op, ?type, ?rExpr, nil].
 
 // Assign Binary
 
 #ifdef DEBUG
 ToString(?expr, ?out),
-#endif
+#endif // DEBUG
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    AssignInstruction_To(?inst, ?var),
+    isAssignBinop_Insn(?insn),
+    AssignInstruction_To(?insn, ?var),
     Var_Type(?var, ?type),
     Type_boolean(?type),
-    isAssignBinop_Insn(?inst),
-    AssignOper_From(?inst, ?pos1, ?right1),
-    AssignOper_From(?inst, ?pos2, ?right2),
+    Instruction_Method(?insn, ?meth),
+    AssignOper_From(?insn, ?pos1, ?right1),
+    AssignOper_From(?insn, ?pos2, ?right2),
     ?pos1 < ?pos2,
-    _OperatorAt(?inst, ?op),
-#ifdef DEBUG
+    _OperatorAt(?insn, ?op),
     ResolveExpr(?meth, ?right1, ?rExpr),
     ResolveExpr(?meth, ?right2, ?lExpr),
+#ifdef DEBUG
     ToString(?lExpr, ?out1),
     ToString(?rExpr, ?out2),
-    ?expr = [?op, ?type, ?lExpr, ?rExpr],
-    ?out = cat("(", cat(?out1, cat(")", cat(?op, cat("(", cat(?out2, ")")))))).
-#else
-    ResolveExpr(?meth, ?right1, ?rExpr),
-    ResolveExpr(?meth, ?right2, ?lExpr),
+    ?out = cat("(", cat(?out1, cat(")", cat(?op, cat("(", cat(?out2, ")")))))),
+#endif // DEBUG
     ?expr = [?op, ?type, ?lExpr, ?rExpr].
-#endif
 
 
 
@@ -160,22 +139,19 @@ isExpr(?expr) :-
 
 #ifdef DEBUG
 ToString(?expr, ?out),
-#endif
+#endif // DEBUG
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
     IfVarVar(_, ?var, ?meth, ?right1, ?right2, ?op),
+    ResolveExpr(?meth, ?right1, ?lExpr),
+    ResolveExpr(?meth, ?right2, ?rExpr),
 #ifdef DEBUG
-    ResolveExpr(_, ?right1, ?lExpr),
-    ResolveExpr(_, ?right2, ?rExpr),
     ToString(?lExpr, ?out1),
     ToString(?rExpr, ?out2),
     ?expr = [?op, "boolean", ?lExpr, ?rExpr],
-    ?out = cat("(", cat(?out1, cat(")", cat(?op, cat("(", cat(?out2, ")")))))).
-#else
-    ResolveExpr(_, ?right1, ?lExpr),
-    ResolveExpr(_, ?right2, ?rExpr),
+    ?out = cat("(", cat(?out1, cat(")", cat(?op, cat("(", cat(?out2, ")")))))),
+#endif // DEBUG
     ?expr = [?op, "boolean", ?lExpr, ?rExpr].
-#endif
 
 
 // If Conditions - Var_Const
@@ -183,17 +159,14 @@ isExpr(?expr) :-
 #ifdef DEBUG
 ToString(?expr, ?out),
 ToString(?constExpr, ?right2),
-#endif
+#endif // DEBUG
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
     IfVarConst(_, ?var, ?meth, ?right1, ?right2, ?op),
     ?constExpr = [?right2, "boolean", nil, nil],
+    ResolveExpr(?meth, ?right1, ?lExpr),
 #ifdef DEBUG
-    ResolveExpr(_, ?right1, ?lExpr),
     ToString(?lExpr, ?out1),
-    ?expr = [?op, "boolean", ?lExpr, ?constExpr],
-    ?out = cat("(", cat(?out1, cat(")", cat(?op, ?right2)))).
-#else
-    ResolveExpr(_, ?right1, ?lExpr),
+    ?out = cat("(", cat(?out1, cat(")", cat(?op, ?right2)))),
+#endif // DEBUG
     ?expr = [?op, "boolean", ?lExpr, ?constExpr].
-#endif
