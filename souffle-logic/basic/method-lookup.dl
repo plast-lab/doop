@@ -19,6 +19,49 @@ MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
     MethodLookup(?simplename, ?descriptor, ?supertype, ?method),
     ! MethodImplemented(?simplename, ?descriptor, ?type, _).
 
+#ifdef SANITY
+
+// Helper relation to filter out covariant methods.
+.decl CovariantMethods(?meth1:Method, ?meth2:Method)
+.output CovariantMethods
+CovariantMethods(?meth, ?methSub) :-
+  basic.SubtypeOf(?typeSub, ?type),
+  Method_DeclaringType(?meth, ?type),
+  Method_DeclaringType(?methSub, ?typeSub),
+  Method_SimpleName(?meth, ?name),
+  Method_SimpleName(?methSub, ?name),
+  Method_Descriptor(?meth, ?descriptor),
+  Method_Descriptor(?methSub, ?descriptor),
+  Method_ReturnType(?meth, ?retType),
+  Method_ReturnType(?methSub, ?retTypeSub),
+  basic.SubtypeOfDifferent(?retTypeSub, ?retType).
+CovariantMethods(?meth, ?methSub) :-
+  CovariantMethods(?methSub, ?meth).
+
+// Method lookup should be a function of the first three arguments
+// (simple name, descriptor, type).
+.decl DuplicateMethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method1:Method, ?method2:Method)
+.output DuplicateMethodLookup
+DuplicateMethodLookup(?simplename, ?descriptor, ?type, ?method1, ?method2):-
+  MethodLookup(?simplename, ?descriptor, ?type, ?method1),
+  MethodLookup(?simplename, ?descriptor, ?type, ?method2),
+  ?method1 != ?method2,
+  ?simplename != "<init>",
+  ?simplename != "<clinit>",
+  !CovariantMethods(?method1, ?method2).
+
+.decl DuplicateMethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method1:Method, ?method2:Method)
+.output DuplicateMethodImplemented
+DuplicateMethodImplemented(?simplename, ?descriptor, ?type, ?method1, ?method2):-
+  MethodImplemented(?simplename, ?descriptor, ?type, ?method1),
+  MethodImplemented(?simplename, ?descriptor, ?type, ?method2),
+  ?method1 != ?method2,
+  ?simplename != "<init>",
+  ?simplename != "<clinit>",
+  !CovariantMethods(?method1, ?method2).
+
+#endif // SANITY
+
 /**
  * Method overriding
  *
@@ -60,6 +103,12 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
     Method_DeclaringType(?method, ?type),
     ! Method_Modifier("abstract", ?method).
 
+// This is currently commented out: it clutters method implementation resolution
+// (more than one results for the same lookup) but it doesn't improve soundness
+// (the bridge methods of javac are enough help for computing reachability).
+
+// #define COVARIANCE_MULTIPLE_RESOLUTION
+#ifdef COVARIANCE_MULTIPLE_RESOLUTION
 #ifndef FEATHERWEIGHT_ANALYSIS
 
 // Logic that finds overridden methods with covariant return types.
@@ -136,3 +185,4 @@ MethodImplemented(?name, ?descriptor, ?type, ?comethod) :-
     Method_Descriptor(?method, ?descriptor).
 
 #endif // FEATHERWEIGHT_ANALYSIS
+#endif // COVARIANCE_MULTIPLE_RESOLUTION
