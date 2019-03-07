@@ -430,10 +430,6 @@ RewriteAssignBinop(?insn, ?index, ?to, ?inmethod) :-
 .decl RewriteAssignCast(?insn:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .output RewriteAssignCast(filename="AssignCast.facts")
 
-ConstraintForVar(?to, ?insn),
-ConstraintForVar(?from, ?insn),
-LowerBoundTypeForConstraint(?to, ?type, ?insn),
-UpperBoundTypeForConstraint(?from, ?type, ?insn),
 RewriteAssignCast(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
     isAssignCast_Insn(?instr),
     SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
@@ -445,9 +441,6 @@ RewriteAssignCast(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
 .decl RewriteAssignCastNull(?insn:symbol, ?index:number, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .output RewriteAssignCastNull(filename="AssignCastNull.facts")
 
-SSA_Type(?to, ?type),
-ConstraintForVar(?to, ?insn),
-LowerBoundTypeForConstraint(?to, ?type, ?insn),
 RewriteAssignCastNull(?insn, ?index, ?to, ?type, ?inmethod) :-
     SSA_AssignCastNull(?insn, _, ?to, ?inmethod),
     AssignCast_Type(?insn, ?type),
@@ -456,7 +449,6 @@ RewriteAssignCastNull(?insn, ?index, ?to, ?type, ?inmethod) :-
 .decl RewriteAssignCastNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .output RewriteAssignCastNumConstant(filename="AssignCastNumConstant.facts")
 
-SSA_Type(?to, ?type),
 RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod) :-
     SSA_AssignCastNumConstant(?insn, _, ?to, ?inmethod),
     AssignCast_Type(?insn, ?type),
@@ -466,9 +458,6 @@ RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod) :-
 .decl RewriteAssignHeapAllocation(?insn:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)
 .output RewriteAssignHeapAllocation(filename="AssignHeapAllocation.facts")
 
-SSA_Type(?to, ?type),
-ConstraintForVar(?to, ?insn),
-LowerBoundTypeForConstraint(?to, ?type, ?insn),
 RewriteAssignHeapAllocation(?insn, ?index, ?heap, ?to, ?inmethod, ?linenumber) :-
     _AssignHeapAllocation(?insn, _, ?heap, ?to_origin, ?inmethod, ?linenumber),
     HeapAllocation_Type(?heap, ?type),
@@ -485,7 +474,6 @@ RewriteAssignOperFrom(?insn, ?pos, ?from) :-
 .decl RewriteAssignInstanceOf(?insn:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .output RewriteAssignInstanceOf(filename="AssignInstanceOf.facts")
 
-SSA_Type(?to, ?type),
 RewriteAssignInstanceOf(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
     SSA_AssignInstanceOf(?insn, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index),
@@ -543,7 +531,6 @@ RewriteExceptionHandler(?handler, ?method, ?index, ?type, ?begin, ?end) :-
     NewIndexMapping(?begin_old, ?begin, ?method),
     NewIndexMapping(?end_old, ?end, ?method).
 
-SSA_Type(?var, ?type),
 RewriteExceptionHandler_FormalParam(?handler, ?var) :-
     isExceptionHandler(?handler),
     ExceptionHandler_Type(?handler, ?type),
@@ -560,9 +547,6 @@ RewriteAssignNumConstant(?insn, ?index, ?const, ?to, ?inmethod) :-
 .decl RewriteAssignReturnValue(?invocation:symbol, ?to:symbol)
 .output RewriteAssignReturnValue(filename="AssignReturnValue.facts")
 
-SSA_Type(?to, ?type),
-ConstraintForVar(?to, ?invocation),
-LowerBoundTypeForConstraint(?to, ?type, ?invocation),
 RewriteAssignReturnValue(?invocation, ?to) :-
     SSA_AssignDetails(?invocation, ?to_origin, _, ?to, _),
     AssignReturnValue(?invocation, ?to_origin),
@@ -632,32 +616,19 @@ RewriteLoadArrayIndex(?insn, ?index, ?to, ?base, ?inmethod) :-
 .decl RewriteLoadInstanceField(?insn:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
 .output RewriteLoadInstanceField(filename="LoadInstanceField.facts")
 
-// TODO: Lower bound on base object as well? (until field is shadowed)
-SSA_Type(?to, ?type),
-ConstraintForVar(?to, ?insn),
-ConstraintForVar(?base, ?insn),
-LowerBoundTypeForConstraint(?to, ?type, ?insn),
-UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn),
 RewriteLoadInstanceField(?insn, ?index, ?to, ?base, ?signature, ?inmethod) :-
-    _LoadInstanceField(?insn, _, ?to_origin, ?base_origin, ?signature, ?inmethod),
-    _Field(?signature, _, _, ?type),
-    Field_DeclaringType(?signature, ?declaring_type),
+    _LoadInstanceField(?insn, _, _, ?base_origin, ?signature, ?inmethod),
     SSA_InstructionIndex(?insn, ?index),
-    SSA_AssignDetails(?insn, ?to_original, _, ?to, _),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
     ReachingDef(?insn, ?base, ?base_origin).
 
 .decl RewriteLoadStaticField(?insn:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)
 .output RewriteLoadStaticField(filename="LoadStaticField.facts")
 
-SSA_Type(?to, ?type),
-ConstraintForVar(?to, ?insn),
-LowerBoundTypeForConstraint(?to, ?type, ?insn),
 RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
     _LoadStaticField(?insn, _, ?to_origin, ?signature, ?inmethod),
-    Field_Type(?signature, ?type),
     SSA_InstructionIndex(?insn, ?index),
-    SSA_AssignDetails(?insn, ?to_original, _, ?to, _),
-    FieldInstruction_Signature(?insn, ?signature).
+    SSA_AssignDetails(?insn, ?to_original, _, ?to, _).
 
 .decl RewriteLookupSwitch(?insn:symbol, ?index:number, ?key:symbol, ?method:symbol)
 .output RewriteLookupSwitch(filename="LookupSwitch.facts")
@@ -686,13 +657,10 @@ RewriteLookupSwitch_DefaultTarget(?insn, ?target) :-
 .decl RewriteReturn(?insn:symbol, ?index:number, ?var:symbol, ?inmethod:symbol)
 .output RewriteReturn(filename="Return.facts")
 
-ConstraintForVar(?var, ?insn),
-UpperBoundTypeForConstraint(?var, ?type, ?insn),
 RewriteReturn(?insn, ?index, ?var, ?inmethod) :-
     SSA_InstructionIndex(?insn, ?index),
     Instruction_Method(?insn, ?inmethod),
     ReturnNonvoid_Var(?insn, ?var_origin),
-    Method_ReturnType(?inmethod, ?type),
     ReachingDef(?insn, ?var, ?var_origin).
 
 .decl RewriteReturnVoid(?insn:symbol, ?index:number, ?inmethod:symbol)
@@ -730,15 +698,8 @@ RewriteStoreArrayIndex(?insn, ?index, ?from, ?base, ?inmethod) :-
 .decl RewriteStoreInstanceField(?insn:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
 .output RewriteStoreInstanceField(filename="StoreInstanceField.facts")
 
-// TODO: Lower bound on base object as well? (until field is shadowed)
-ConstraintForVar(?from, ?insn),
-ConstraintForVar(?base, ?insn),
-UpperBoundTypeForConstraint(?from, ?type, ?insn),
-UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn),
 RewriteStoreInstanceField(?insn, ?index, ?from, ?base, ?signature, ?inmethod) :-
     _StoreInstanceField(?insn, _, ?from_origin, ?base_origin, ?signature, ?inmethod),
-    Field_DeclaringType(?signature, ?declaring_type),
-    Field_Type(?signature, ?type),
     SSA_InstructionIndex(?insn, ?index),
     ReachingDef(?insn, ?from, ?from_origin),
     ReachingDef(?insn, ?base, ?base_origin).
@@ -746,11 +707,8 @@ RewriteStoreInstanceField(?insn, ?index, ?from, ?base, ?signature, ?inmethod) :-
 .decl RewriteStoreStaticField(?insn:symbol, ?index:number, ?from:symbol, ?signature:symbol, ?method:symbol)
 .output RewriteStoreStaticField(filename="StoreStaticField.facts")
 
-ConstraintForVar(?from, ?insn),
-UpperBoundTypeForConstraint(?from, ?type, ?insn),
 RewriteStoreStaticField(?insn, ?index, ?from, ?signature, ?inmethod) :-
     _StoreStaticField(?insn, _, ?from_origin, ?signature, ?inmethod),
-    Field_Type(?signature, ?type),
     SSA_InstructionIndex(?insn, ?index),
     ReachingDef(?insn, ?from, ?from_origin).
 
@@ -815,25 +773,6 @@ RewriteVirtualMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
 RewriteVarDeclaringMethod(?var, ?method) :-
     Var_DeclaringMethod(?var_origin, ?method),
     SSA_Alias(?var, ?var_origin).
-
-.output SSA_FormalParam(filename="FormalParam.facts")
-.output SSA_ThisVar(filename="ThisVar.facts")
-
-// Transitive rule
-SSA_Type(?to, ?type) :-
-    RewriteAssignLocal(_, _, ?to, ?from, _),
-    SSA_Type(?from, ?type).
-
-SSA_Type(?to, ?type) :-
-    SSA_FormalParam(_, _, ?to),
-    SSA_Alias(?to, ?to_origin),
-    Var_Type(?to_origin, ?type).
-
-SSA_Type(?to, ?type) :-
-    SSA_ThisVar(_, ?to),
-    SSA_Alias(?to, ?to_origin),
-    Var_Type(?to_origin, ?type).
-
 
 // Type inference rules WIP.
 
@@ -1103,4 +1042,71 @@ UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
     RewriteThrow(?stmt, _, ?var, ?method),
     Method_DeclaresException(?type, ?method).
 
+// Logic for cast instructions
+
+ConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    RewriteAssignCast(?insn, _, _, ?to, ?type, _).
+
+ConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    RewriteAssignCastNull(?insn, _, ?to, ?type, _).
+
+// TODO
+// RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod)
+
+// Logic for heap allocations
+
+ConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    RewriteAssignHeapAllocation(?insn, _, ?heap, ?to, _, _),
+    HeapAllocation_Type(?heap, ?type).
+
+// TODO
+// RewriteAssignInstanceOf(?insn, ?index, ?from, ?to, ?type, ?inmethod)
+
+// Logic for return assignment
+
+ConstraintForVar(?to, ?invocation),
+LowerBoundTypeForConstraint(?to, ?type, ?invocation) :-
+    RewriteAssignReturnValue(?invocation, ?to),
+    MethodInvocation_Method(?invocation, ?signature),
+    Method_ReturnType(?signature, ?type).
+
+// Logic for field loads
+
+ConstraintForVar(?to, ?insn),
+ConstraintForVar(?base, ?insn),
+LowerBoundTypeForConstraint(?to, ?field_type, ?insn),
+UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn) :-
+    RewriteLoadInstanceField(?insn, _, ?to, ?base, ?signature, _),
+    Field_Type(?signature, ?field_type),
+    Field_DeclaringType(?signature, ?declaring_type).
+
+ConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    RewriteLoadStaticField(?insn, _, ?to, ?signature, _),
+    Field_Type(?signature, ?type).
+
+// Logic for field stores
+
+ConstraintForVar(?from, ?insn),
+ConstraintForVar(?base, ?insn),
+UpperBoundTypeForConstraint(?from, ?field_type, ?insn),
+UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn) :-
+    RewriteStoreInstanceField(?insn, _, ?from, ?base, ?signature, _),
+    Field_DeclaringType(?signature, ?declaring_type),
+    Field_Type(?signature, ?field_type).
+
+ConstraintForVar(?from, ?insn),
+UpperBoundTypeForConstraint(?from, ?type, ?insn) :-
+    RewriteStoreStaticField(?insn, _, ?from, ?signature, _),
+    Field_Type(?signature, ?type).
+
+// Logic for return instructions
+
+ConstraintForVar(?var, ?insn),
+UpperBoundTypeForConstraint(?var, ?type, ?insn) :-
+    RewriteReturn(?insn, _, ?var, ?method),
+    Method_ReturnType(?method, ?type).
 #endif
