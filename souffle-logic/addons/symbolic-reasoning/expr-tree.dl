@@ -14,7 +14,7 @@ isInputExpr(?expr) :-
     AssignLocal_From(?insn, ?param),
     FormalParam(_, ?meth, ?param),
     Var_Type(?param, ?type),
-    Type_boolean(?type),
+    isPrimitiveType(?type),
     AssignInstruction_To(?insn, ?var),
     Instruction_Method(?insn, ?meth),
     ?expr = [?param, ?type, nil, nil].
@@ -26,7 +26,7 @@ isInputExpr(?expr) :-
     isMethodInvocation(?methInvo),
     MethodInvocation_Method(?methInvo, ?methSig),
     Method_ReturnType(?methSig, ?type),
-    Type_boolean(?type),
+    isPrimitiveType(?type),
     Instruction_Method(?methInvo, ?meth),
     AssignReturnValue(?methInvo, ?var),
     ?expr = [?var, ?type, nil, nil].
@@ -38,7 +38,7 @@ isInputExpr(?expr) :-
     isLoadInstanceField_Insn(?insn),
     LoadInstanceField_To(?insn, ?var),
     Var_Type(?var, ?type),
-    Type_boolean(?type),
+    isPrimitiveType(?type),
     Instruction_Method(?insn, ?meth),
     ?expr = [?var, ?type, nil, nil].
 
@@ -49,7 +49,7 @@ isInputExpr(?expr) :-
     isAssignNumConstant_Insn(?insn),
     AssignInstruction_To(?insn, ?var),
     Var_Type(?var, ?type),
-    Type_boolean(?type),
+    isPrimitiveType(?type),
     Instruction_Method(?insn, ?meth),
     AssignNumConstant_Id(?insn, ?const),
     ?expr = [?const, ?type, nil, nil].
@@ -65,7 +65,7 @@ isInputExpr(?expr) :-
 //    isAssignLocal_Insn(?insn),
 //    AssignInstruction_To(?insn, ?var),
 //    Var_Type(?var, ?type),
-//    Type_boolean(?type),
+//    isPrimitiveType(?type),
 ////    c = count: AssignInstruction_To(_, ?var),
 ////    c = 1,
 //    AssignLocal_From(?insn, ?from),
@@ -81,7 +81,7 @@ isExpr(?expr) :-
     isAssignUnop_Insn(?insn),
     AssignInstruction_To(?insn, ?var),
     Var_Type(?var, ?type),
-    Type_boolean(?type),
+    isPrimitiveType(?type),
     Instruction_Method(?insn, ?meth),
     AssignOper_From(?insn, _, ?right),
     _OperatorAt(?insn, ?op),
@@ -95,7 +95,7 @@ isExpr(?expr) :-
     isAssignBinop_Insn(?insn),
     AssignInstruction_To(?insn, ?var),
     Var_Type(?var, ?type),
-    Type_boolean(?type),
+    isPrimitiveType(?type),
     Instruction_Method(?insn, ?meth),
     AssignOper_From(?insn, ?pos1, ?right1),
     AssignOper_From(?insn, ?pos2, ?right2),
