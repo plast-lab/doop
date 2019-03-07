@@ -522,18 +522,17 @@ RewriteDynamicMethodInvocation(?insn, ?index, ?bootSignature, ?dynName, ?dynRetT
 .decl RewriteExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?begin:number, ?end:number)
 .output RewriteExceptionHandler(filename="ExceptionHandler.facts")
 
-.decl RewriteExceptionHandler_FormalParam(?handler:symbol, ?var:symbol)
-.output RewriteExceptionHandler_FormalParam(filename="ExceptionHandler-FormalParam.facts")
-
 RewriteExceptionHandler(?handler, ?method, ?index, ?type, ?begin, ?end) :-
     _ExceptionHandler(?handler, ?method, _, ?type, ?begin_old, ?end_old),
     SSA_InstructionIndex(?handler, ?index),
     NewIndexMapping(?begin_old, ?begin, ?method),
     NewIndexMapping(?end_old, ?end, ?method).
 
+.decl RewriteExceptionHandler_FormalParam(?handler:symbol, ?var:symbol)
+.output RewriteExceptionHandler_FormalParam(filename="ExceptionHandler-FormalParam.facts")
+
 RewriteExceptionHandler_FormalParam(?handler, ?var) :-
     isExceptionHandler(?handler),
-    ExceptionHandler_Type(?handler, ?type),
     SSA_AssignDetails(?handler, _, _, ?var, _).
 
 .decl RewriteAssignNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)
@@ -776,6 +775,10 @@ RewriteVarDeclaringMethod(?var, ?method) :-
 
 // Type inference rules WIP.
 
+#define TYPE_INFERENCE
+
+#ifdef TYPE_INFERENCE
+
 // The Assign relation models the assignment, in a general way:
 //  1) ?var1 := ?var2; (local assigment)
 //  2) f(?var, ...); (argument passing [formal param = actual param])
@@ -813,26 +816,7 @@ RewriteVarDeclaringMethod(?var, ?method) :-
 
 .decl TypeCompatibleWithAllConstraints(?var:symbol, ?type:symbol)
 
-.decl DirectSuperType(?subtype:symbol, ?supertype:symbol)
-
-#define TYPE_INFERENCE
-
-#ifdef TYPE_INFERENCE
-
-.output LowerBoundTypeForConstraint
-.output UpperBoundTypeForConstraint
-.output TypeCompatibleWithAllConstraints
 .output HasKnownType
-.output SubtypeOf
-.output Assign
-.output isReferenceType
-.output DirectSuperType
-
-DirectSuperType(?subtype, ?supertype) :-
-    DirectSuperclass(?subtype, ?supertype).
-
-DirectSuperType(?subtype, ?supertype) :-
-    DirectSuperinterface(?subtype, ?supertype).
 
 SubtypeOf(?t, "java.lang.Object") :-
     isReferenceType(?t).
@@ -847,7 +831,6 @@ Assign(?invocation, ?var1, ?var2) :-
     RewriteActualParam(?index, ?invocation, ?var2),
     SSA_FormalParam(?index, ?method, ?var1).
 
-
 // ?var1[index] = ?var2
 AssignArray(?stmt, ?var1, ?var2) :-
     RewriteStoreArrayIndex(?stmt, _, ?var2, ?var1, _).
@@ -859,16 +842,17 @@ ConstraintForVar(?var2, ?stmt) :-
 // Static type of formal params is known.
 HasKnownType(?var, ?type) :-
     SSA_FormalParam(_, _, ?var),
-    SSA_Type(?var, ?type).
+    SSA_Alias(?var, ?var_origin),
+    Var_Type(?var_origin, ?type).
 
 // Static type of this vars is known.
 HasKnownType(?var, ?type) :-
-    SSA_ThisVar(_, ?var),
-    SSA_Type(?var, ?type).
+    SSA_ThisVar(?method, ?var),
+    Method_DeclaringType(?method, ?type).
 
 HasKnownType(?var, ?type) :-
-    RewriteExceptionHandler_FormalParam(_, ?var),
-    SSA_Type(?var, ?type).
+    RewriteExceptionHandler_FormalParam(?handler, ?var),
+    ExceptionHandler_Type(?handler, ?type).
 
 // Some simple ordering relations over constraints, for forall definition
 NotFirstConstraintForVar(?var, ?stmt) :-
