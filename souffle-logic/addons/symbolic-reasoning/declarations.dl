@@ -1,4 +1,4 @@
-// #define DEBUG
+#define DEBUG
 
 /* Types */
 
@@ -15,6 +15,9 @@
 ]
 
 /* Various util predicate declarations */
+
+.decl isOperator(?op: Operator)
+.decl isSymbolicInput(?symbInput: SymbolicInput)
 
 .decl FirstIfInsnInMethod(?insn: Instruction, ?meth: Method)
 .decl IfsInMethod(?insn: Instruction, ?meth: Method)
@@ -54,15 +57,14 @@
 .decl PathExpressionAfterTrue(?meth: Method, ?insn: Instruction, ?pathExpr: Expr)
 .decl PathExpressionAfterFalse(?meth: Method, ?insn: Instruction, ?pathExpr: Expr)
 
+.output isBooleanExpr
 .output ResolveExpr
 #ifdef DEBUG
 .output ToString
 #endif
-.output isBooleanExpr
-.output isInputExpr
-.output isExpr
+// .output isInputExpr
+// .output isExpr
 
-//.output BuildPathExprBefore
 .output PathExpressionBefore
 .output PathExpressionAfterTrue
 .output PathExpressionAfterFalse

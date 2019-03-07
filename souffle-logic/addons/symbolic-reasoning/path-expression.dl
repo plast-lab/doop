@@ -11,9 +11,6 @@
 // If no path expression before, path ?expressions are built given
 // branch conditions
 
-#ifdef DEBUG
-ToString(?expr, ?out3),
-#endif // DEBUG
 PathExpressionAfterTrue(?meth, ?insn, ?conditionExpr),
 PathExpressionAfterFalse(?meth, ?insn, ?expr) :-
     Instruction_Method(?insn, ?meth),
@@ -23,22 +20,14 @@ PathExpressionAfterFalse(?meth, ?insn, ?expr) :-
     ResolveExpr(?meth, ?dummyVar, ?conditionExpr),
     ?conditionExpr = [?op, ?type, ?exprLeft, ?exprRight],
     NegateOp(?op, ?negatedOp),
-#ifdef DEBUG
-    ToString(?exprLeft, ?outL),
-    ToString(?exprRight, ?outR),
-    ?out3 = cat(?outL, cat(?negatedOp, ?outR)),
-#endif // DEBUG
     ?expr = [?negatedOp, ?type, ?exprLeft, ?exprRight].
 
 
 // Include if-conditions to path ?expressions computed up to the current if-statement
 
-#ifdef DEBUG
-    ToString(?pathExpr1, ?out1),
-    ToString(?pathExpr2, ?out2),
-    ToString(?negatedConditionExpr, ?out3),
-#endif // DEBUG
 isExpr(?negatedConditionExpr),
+isExpr(?pathExpr1),
+isExpr(?pathExpr2),
 PathExpressionAfterTrue(?meth, ?insn, ?pathExpr1),
 PathExpressionAfterFalse(?meth, ?insn, ?pathExpr2) :-
     PathExpressionBefore(?meth, ?insn, ?pathExpr),
@@ -48,16 +37,7 @@ PathExpressionAfterFalse(?meth, ?insn, ?pathExpr2) :-
     ?conditionExpr = [?op, ?type, ?exprLeft, ?exprRight],
     NegateOp(?op, ?negatedOp),
     ?negatedConditionExpr = [?negatedOp, ?type, ?exprLeft, ?exprRight],
-    ?pathExpr1 = ["&&", "boolean", ?conditionExpr, ?pathExpr],
-#ifdef DEBUG
-    ToString(?pathExpr, ?out),
-    ToString(?conditionExpr, ?outC),
-    ToString(?exprLeft, ?outL),
-    ToString(?exprRight, ?outR),
-    ?out3 = cat(?outL, cat(?negatedOp, ?outR)),
-    ?out1 = cat(?outC, cat(" && ", ?out)).
-    ?out2 = cat(?out3, cat(" && ", ?out)),
-#endif // DEBUG // DEBUG
+    ?pathExpr1 = ["&&", ?type, ?conditionExpr, ?pathExpr],
     ?pathExpr2 = ["&&", ?type, ?negatedConditionExpr, ?pathExpr].
 
 // Any statement excluding if-stmts
@@ -106,48 +86,27 @@ BuildPathExprBefore(?meth, ?pred,  ?expr, ?insn) :-
     PathExpressionAfterTrue(?meth, ?pred, ?expr).
 
 
-#ifdef DEBUG
-ToString(?pathExpr, cat(?out, cat(" || ", ?outE))),
-#endif // DEBUG
 BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
     NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
     BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
     !isIf_Insn(?next),
     PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
-    #ifdef DEBUG
-    ToString(?exprPrev, ?out),
-    ToString(?expr, ?outE),
-    #endif // DEBUG
     ?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
 
-#ifdef DEBUG
-ToString(?pathExpr, cat(?out, cat(" || ", ?outE))),
-#endif // DEBUG
 BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
     NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
     BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
     isIf_Insn(?next),
     IsJumpTarget(?insn),
     PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
-    #ifdef DEBUG
-    ToString(?exprPrev, ?out),
-    ToString(?expr, ?outE),
-    #endif // DEBUG
     ?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
 
-#ifdef DEBUG
-ToString(?pathExpr, cat(?out, cat(" || ", ?outE))),
-#endif // DEBUG
 BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
     NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
     BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
     isIf_Insn(?next),
     !IsJumpTarget(?insn),
     PathExpressionAfterFalse(?meth, ?next, ?exprPrev),
-    #ifdef DEBUG
-    ToString(?exprPrev, ?out),
-    ToString(?expr, ?outE),
-    #endif // DEBUG
     ?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
 
 isExpr(?pathExpr),
