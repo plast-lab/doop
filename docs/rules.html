@@ -461,30 +461,34 @@
 <li> .decl Stats_Simple_Application_DynamicCallGraphEdge(?invocation:Instruction, ?toMeth:Method)</li>
 <li> .decl Stats_Simple_Application_InsensCallGraphEdge(?invocation:Instruction, ?toMeth:Method)</li>
 </ul>
-<h2> addons/symbolic-reasoning/const-type-infer.dl </h2>
+<h2> addons/symbolic-reasoning/declarations.dl </h2>
 <ul>
-<li> .decl BoolConstant(?instr:symbol, ?var:symbol, ?value:number, ?meth:symbol)</li>
-<li> .decl IntConstant(?instr:symbol, ?var:symbol, ?value:number, ?method:symbol, ?type:symbol)</li>
-</ul>
-<h2> addons/symbolic-reasoning/constant-folding.dl </h2>
-<ul>
-<li> .decl AssignBinary(?instr:symbol, ?var: symbol, ?left:number, ?right:number, ?meth:symbol, ?prev_use1:number, ?prev_use2:number)</li>
-<li> .decl AssignBinaryNonZeroRight(?instr:symbol, ?var:symbol, ?left:number, ?right:number, ?meth:symbol, ?prev_use1:number, ?prev_use2:number)</li>
-<li> .decl AssignUnary(?instr:symbol, ?var:symbol, ?value:number, ?meth:symbol, ?use:number)</li>
-<li> .decl IntConstFolding(?instruction:symbol, ?variable:symbol, ?value:number, ?meth:symbol, ?use:number)</li>
-<li> .decl IntNonZeroConstFolding(?instruction:symbol, ?variable:symbol, ?value:number, ?meth:symbol, ?use:number)</li>
-</ul>
-<h2> addons/symbolic-reasoning/expr-tree.dl </h2>
-<ul>
+<li> .decl BuildPathExprBefore(?meth:Method, prev:Instruction, ?exprBase: Expr, ?insn:Instruction)</li>
+<li> .decl FirstIfInsnInMethod(?insn: Instruction, ?meth: Method)</li>
+<li> .decl FirstOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)</li>
+<li> .decl FirstPredOfInsnInMethod(?meth: Method, ?first: Instruction, ?insn: Instruction)</li>
+<li> .decl FirstPredOfInsnInMethodOrdinal(?meth: Method, ?first: number, ?insn: Instruction)</li>
+<li> .decl IfVarConst(?inst: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: NumConstant, ?op: Operator)</li>
+<li> .decl IfVarVar(?inst: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: Var, ?op: Operator)</li>
+<li> .decl IfsInMethod(?insn: Instruction, ?meth: Method)</li>
+<li> .decl LastOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)</li>
+<li> .decl LastPredOfInsnInMethod(?meth: Method, ?first: Instruction, ?insn: Instruction)</li>
+<li> .decl LastPredOfInsnInMethodOrdinal(?meth: Method, ?first: number, ?insn: Instruction)</li>
+<li> .decl NegateOp(after: Operator, before: Operator)</li>
+<li> .decl NextOfMultiplePredsOfInsnInMethod(?next: Instruction, ?prev: Instruction, ?insn: Instruction, ?meth: Method)</li>
+<li> .decl NextPredOfInsnInMethod(?meth: Method, ?prev: Instruction, ?next: Instruction, ?insn:Instruction)</li>
+<li> .decl NotNextPredOfInsnInMethod(?meth: Method, ?prev: Instruction, ?next: Instruction, ?insn: Instruction)</li>
+<li> .decl PathExpressionAfterFalse(?meth: Method, ?insn: Instruction, ?pathExpr: Expr)</li>
+<li> .decl PathExpressionAfterTrue(?meth: Method, ?insn: Instruction, ?pathExpr: Expr)</li>
+<li> .decl PathExpressionBefore(?meth:Method, ?insn: Instruction, ?pathExpr: Expr)</li>
 <li> .decl ResolveExpr(?meth: Method, ?var: symbol, ?expr: Expr)</li>
+<li> .decl SinglePredOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)</li>
 <li> .decl ToString(?expr: Expr, ?out: symbol)</li>
 <li> .decl isBooleanExpr(?expr: Expr)</li>
 <li> .decl isExpr(?expr: Expr)</li>
 <li> .decl isInputExpr(?expr: Expr)</li>
-</ul>
-<h2> addons/symbolic-reasoning/path-expressions.dl </h2>
-<ul>
-<li> .decl PathExpression(meth: Method, inst: Instruction, expr: Expr)</li>
+<li> .decl isOperator(?op: Operator)</li>
+<li> .decl isSymbolicInput(?symbInput: SymbolicInput)</li>
 </ul>
 <h2> addons/symbolic-reasoning/reasoning.dl </h2>
 <ul>
@@ -520,6 +524,10 @@
 <li> .decl TamiflexInvocationFirstParam(?calleeCtx:configuration.Context, ?formal:Var, ?callerCtx:configuration.Context, ?argsParam:Var)</li>
 </ul>
 <h2> addons/testing/TestInvokedynamic.dl </h2>
+<ul>
+<li> .decl TestId(?id:symbol)</li>
+</ul>
+<h2> addons/testing/TestReflection.dl </h2>
 <ul>
 <li> .decl TestId(?id:symbol)</li>
 </ul>
@@ -951,6 +959,10 @@
 <li> .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)</li>
 <li> .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)</li>
 </ul>
+<h2> analyses/types-only/analysis.dl </h2>
+<ul>
+<li> .decl OptReachableTypeResolveInvocation(?invocation:MethodInvocation, ?tomethod:Method)</li>
+</ul>
 <h2> basic/basic.dl </h2>
 <ul>
 <li> .decl MainMethodDeclaration(?method:Method)</li>
@@ -985,12 +997,18 @@
 </ul>
 <h2> basic/method-lookup.dl </h2>
 <ul>
+<li> .decl CovariantMethods(?meth1:Method, ?meth2:Method)</li>
+<li> .decl DuplicateMethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method1:Method, ?method2:Method)</li>
+<li> .decl DuplicateMethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method1:Method, ?method2:Method)</li>
 <li> .decl MethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)</li>
+<li> .decl MethodImplementedModuloCovariance(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)</li>
 <li> .decl MethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)</li>
 <li> .decl MethodMightBeCovariantBridge(?bridge:Method, ?meth:Method)</li>
 <li> .decl MethodNotCovariantBridge(?meth1:Method, ?meth2:Method)</li>
 <li> .decl MethodOverridesOther(?methodSub:Method, ?methodSuper:Method)</li>
 <li> .decl Method_CovariantBridge(?bridge:Method, ?cometh:Method)</li>
+<li> .decl _BridgeMethod(?bridge:Method, ?name:symbol, ?type:Type)</li>
+<li> .decl _MethodMatchingBridge(?meth:Method, ?bridge:Method, ?bridgetype:Type)</li>
 </ul>
 <h2> basic/method-resolution.dl </h2>
 <ul>
@@ -1443,6 +1461,8 @@
 <li> .decl ReifiedLayoutControl(?type:Type, ?id:NumConstant, ?value:Value)</li>
 <li> .decl ReifiedLibraryObject(?type:Type, ?value:Value)</li>
 <li> .decl SensitiveLayoutControlValue(?value:Value)</li>
+<li> .decl TypeHasApplicationObjectFlowingToLibrary(?ofType:Type)</li>
+<li> .decl TypeHasReachableApplicationObject(?type:Type)</li>
 <li> .decl UninitialisedArray(?hctx:configuration.HContext, ?value:Value, ?invocation:MethodInvocation, ?type:Type)</li>
 <li> .decl VarsAtInvocationRetrievingLayoutControl(?ret:Var, ?var:Var)</li>
 <li> .decl ViewRetrievalByArg0MethodInvocation(?invo:MethodInvocation)</li>
@@ -1474,6 +1494,7 @@
 <li> .decl _ActivityVar(?var:Var)</li>
 <li> .decl _AndroidApplicationValue(?value:Value, ?ofType:Type)</li>
 <li> .decl _AndroidLibraryVar(?var:Var)</li>
+<li> .decl _AndroidReachableLibraryVarOfType(?var:Var, ?varType:Type)</li>
 <li> .decl _ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)</li>
 <li> .decl _NotMostRefinedType(?type:Type)</li>
 <li> .decl _OnEventMethod(?meth:Method)</li>
@@ -1547,8 +1568,10 @@
 <li> .decl ReachableLoadArrayIndexBase(?base:Var)</li>
 <li> .decl ReachableStoreArrayIndexBase(?base:Var)</li>
 <li> .decl ReachableStoreStaticFieldFrom(?from:Var)</li>
+<li> .decl ReachableValue(?hctx:configuration.HContext, ?value: Value)</li>
 <li> .decl Temp1(?value:Value, ?var:Var)</li>
 <li> .decl Temp2(?ctx:configuration.Context, ?var:Var, ?hctx:configuration.HContext, ?value:Value)</li>
+<li> .decl TypeHasReachableValue(?valueType: Type)</li>
 </ul>
 <h2> main/dynamicanalysis.dl </h2>
 <ul>
@@ -1615,6 +1638,13 @@
 <li> .decl LocalVarFlow(?to:Var, ?from:Var)</li>
 <li> .decl ReturnFlowMethodInvocationParam(?param:Var, ?invo:MethodInvocation)</li>
 <li> .decl StoreFlowThroughHeap(?to:Var, from:Var)</li>
+</ul>
+<h2> main/lists.dl </h2>
+<ul>
+<li> .decl LinkedListNode(?list:Value, ?idx:number, ?node:Value)</li>
+<li> .decl LinkedListNodePointsTo(?list:Value, ?idx:number, ?node:Value, ?val:Value)</li>
+<li> .decl ListElementPointsTo(?list:Value, ?val:Value)</li>
+<li> .decl MonitoredList(?list:Value)</li>
 </ul>
 <h2> main/main.dl </h2>
 <ul>
@@ -1764,21 +1794,30 @@
 <li> .decl ArgArrayOfProxyMethod(?meth:Method, ?invo:MethodInvocation, ?value:Value)</li>
 <li> .decl ArrayContentsPointToInterface(?iface:ClassType, ?hctx:configuration.HContext, ?arrayValue:Value)</li>
 <li> .decl BoxAllocationOfPrimitiveFormal(?formal:Var, ?value:Value)</li>
-<li> .decl CallToMethodOfProxyObject(?value:Value, ?ctx:configuration.Context, ?invo:MethodInvocation)</li>
+<li> .decl CallToMethodOfProxyObject(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?invo:MethodInvocation)</li>
+<li> .decl DuplicateProxyCallGraphEdgeCandidate_HandlerType(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?handlerObj:Value, ?handlerType1:Type, ?handlerType2:Type)</li>
+<li> .decl DuplicateProxyCallGraphEdgeCandidate_Meth(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?handlerObj:Value, ?handlerInvokeMeth1:Method, ?handlerInvokeMeth2:Method)</li>
+<li> .decl DuplicateProxyCallGraphEdgeCandidate_Value(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?handlerObj:Value, ?value1:Value, ?value2:Value)</li>
 <li> .decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)</li>
 <li> .decl MethodOfInterface(?meth:Method, ?iface:InterfaceType)</li>
 <li> .decl PrimitiveFormalOfInterface(?meth:Method, ?formal:Var, ?formalType:PrimitiveType)</li>
 <li> .decl ProxyCallArgArray(?invo:MethodInvocation, ?methSig:Method, ?argsArrValue:Value)</li>
 <li> .decl ProxyCallGraphEdge(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerInvokeMeth:Method)</li>
+<li> .decl ProxyCallGraphEdgeCandidate(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?handlerObj:Value, ?handlerInvokeMeth:Method, ?value:Value, ?handlerType:Type)</li>
 <li> .decl ProxyClass(?class:ClassType)</li>
 <li> .decl ProxyClassInstance(?iface:InterfaceType, ?invo:MethodInvocation, ?value:Value)</li>
 <li> .decl ProxyClassOfInterface(?iface:InterfaceType, ?class:ClassType)</li>
+<li> .decl ProxyInit(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?handlerObj:Value, ?init:Method)</li>
+<li> .decl ProxyInvoke(?invokeMethName:symbol, ?invokeMethDescriptor:symbol)</li>
 <li> .decl ProxyInvokeResult(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerReturnVar:Var)</li>
-<li> .decl ProxyObject_Handler(?handlerObj:Value, ?value:Value)</li>
-<li> .decl ProxyObject_HandlerHctx(?hctxHandler:configuration.HContext, ?value:Value)</li>
+<li> .decl ProxyObject_Handler(?value:Value, ?handlerObj:Value)</li>
+<li> .decl ProxyObject_HandlerCtx(?value:Value, ?handlerCtx:configuration.Context)</li>
+<li> .decl ProxyObject_HandlerHctx(?value:Value, ?handlerHctx:configuration.HContext)</li>
 <li> .decl ProxyObject_Interface(?value:Value, ?iface:InterfaceType)</li>
 <li> .decl ProxyObject_Invocation(?value:Value, ?invo:MethodInvocation)</li>
 <li> .decl SpecialMethodFromObject(?method:Method, ?objMethod:Method)</li>
+<li> .decl Trace4(?m1:Method, ?i1:Instruction, ?m2:Method, ?i2:Instruction, ?m3:Method, ?i3:Instruction, ?m4:Method)</li>
+<li> .decl isProxyObject(?value:Value)</li>
 <li> .decl java_lang_reflect_Proxy_getProxyClass(?invo:MethodInvocation, ?ret:Var, ?interfaces:Var)</li>
 <li> .decl java_lang_reflect_Proxy_newProxyInstance(?invo:MethodInvocation, ?ret:Var, ?handler:Var, ?interfaces:Var)</li>
 </ul>
@@ -2046,6 +2085,10 @@
 <li> .decl FakeInvocation_ThreadStart(?invo: MethodInvocation)</li>
 <li> .decl ReachableCurrentThreadInvocation(?callerCtx:configuration.Context, ?local:Var)</li>
 <li> .decl RunningThread(?hctx:configuration.HContext, ?value:Value)</li>
+</ul>
+<h2> main/threads.dl </h2>
+<ul>
+<li> .decl _ReachableValuesWithRunMethod(?hctx:configuration.HContext, ?value:Value, ?run:Method)</li>
 </ul>
 <h2> main/zipper-pre-analysis.dl </h2>
 <ul>
@@ -2642,4 +2685,4 @@
 <li> .decl isUnboundMethodOrFunctionObjectAllocation(?h: FunctionObjectAllocation)</li>
 <li> .decl isValue(?value:Value)</li>
 </ul>
-<p>Timestamp: 2019-02-20 15:40:18.693017</p></body></html>
+<p>Timestamp: 2019-03-08 17:46:35.165343</p></body></html>
