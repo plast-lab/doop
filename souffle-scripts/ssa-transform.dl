@@ -83,42 +83,6 @@ SSA_Alias(cat(?original, cat("_", "0")), ?original),
 SSA_ThisVar(?method, cat(?original, cat("_", "0"))) :-
     ThisVar(?method, ?original).
 
-.decl SSA_AssignCastNumConstant(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-
-SSA_AssignCastNumConstant(?instr, ?index, ?ssa_name, ?method) :-
-    isAssignCastNumConstant_Insn(?instr),
-    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
-
-.decl SSA_AssignCastNull(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-
-SSA_AssignCastNull(?instr, ?index, ?ssa_name, ?method) :-
-    isAssignCastNull_Insn(?instr),
-    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
-
-.decl SSA_AssignNull(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-
-SSA_AssignNull(?instr, ?index, ?ssa_name, ?method) :-
-    isAssignNull_Insn(?instr),
-    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
-
-.decl SSA_AssignNumConstant(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-
-SSA_AssignNumConstant(?instr, ?index, ?ssa_name, ?method) :-
-    isAssignNumConstant_Insn(?instr),
-    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
-
-.decl SSA_AssignInstanceOf(?instr:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
-
-SSA_AssignInstanceOf(?instr, ?index, ?ssa_name, ?method) :-
-    isAssignInstanceOf_Insn(?instr),
-    SSA_AssignDetails(?instr, _, ?index, ?ssa_name, ?method).
-
-.decl SSA_LoadArrayIndex(?insn:symbol, ?index:number, ?to:symbol, ?method:symbol)
-    
-SSA_LoadArrayIndex(?insn, ?index, ?ssa_name, ?method) :-
-    isLoadArrayIndex_Insn(?insn),
-    SSA_AssignDetails(?insn, _, ?index, ?ssa_name, ?method).
-    
 // Simple implementation of the mathematical definition of strict
 // domination.
 .decl StrictlyDominates(?dominator:symbol, ?block:symbol)
@@ -264,8 +228,6 @@ SSANext(?prev, ?next) :-
 SSANext(?prev, ?next) :-
     Instruction_Next(?prev, ?next),
     !PhiHeaderStart(?next, _).
-
-.decl isInstr(?insn:symbol)
 
 isInstruction(?insn) :-
     Instruction_Method(?insn, _).
@@ -431,10 +393,8 @@ RewriteAssignBinop(?insn, ?index, ?to, ?inmethod) :-
 .output RewriteAssignCast(filename="AssignCast.facts")
 
 RewriteAssignCast(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
-    isAssignCast_Insn(?instr),
-    SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
-    AssignCast_Type(?insn, ?type),
-    AssignCast_From(?insn, ?from_origin),
+    _AssignCast(?insn, _, ?from_origin, _, ?type, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
     SSA_InstructionIndex(?insn, ?index),
     ReachingDef(?insn, ?from, ?from_origin).
 
@@ -442,17 +402,16 @@ RewriteAssignCast(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
 .output RewriteAssignCastNull(filename="AssignCastNull.facts")
 
 RewriteAssignCastNull(?insn, ?index, ?to, ?type, ?inmethod) :-
-    SSA_AssignCastNull(?insn, _, ?to, ?inmethod),
-    AssignCast_Type(?insn, ?type),
+    _AssignCastNull(?insn, _, _, ?type, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
     SSA_InstructionIndex(?insn, ?index).
 
 .decl RewriteAssignCastNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .output RewriteAssignCastNumConstant(filename="AssignCastNumConstant.facts")
 
 RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod) :-
-    SSA_AssignCastNumConstant(?insn, _, ?to, ?inmethod),
-    AssignCast_Type(?insn, ?type),
-    AssignCastNumConstant_Id(?insn, ?const),
+    _AssignCastNumConstant(?insn, _, ?const, _, ?type, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
     SSA_InstructionIndex(?insn, ?index).
 
 .decl RewriteAssignHeapAllocation(?insn:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)
@@ -460,7 +419,6 @@ RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod) :-
 
 RewriteAssignHeapAllocation(?insn, ?index, ?heap, ?to, ?inmethod, ?linenumber) :-
     _AssignHeapAllocation(?insn, _, ?heap, ?to_origin, ?inmethod, ?linenumber),
-    HeapAllocation_Type(?heap, ?type),
     SSA_InstructionIndex(?insn, ?index),
     SSA_AssignDetails(?insn, ?to_origin, _, ?to, _).
 
@@ -475,17 +433,16 @@ RewriteAssignOperFrom(?insn, ?pos, ?from) :-
 .output RewriteAssignInstanceOf(filename="AssignInstanceOf.facts")
 
 RewriteAssignInstanceOf(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
-    SSA_AssignInstanceOf(?insn, _, ?to, ?inmethod),
+    _AssignInstanceOf(?insn, _, ?from_origin, _, ?type, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
     SSA_InstructionIndex(?insn, ?index),
-    AssignInstanceOf_From(?insn, ?from_origin),
-    AssignInstanceOf_Type(?insn, ?type),
     ReachingDef(?insn, ?from, ?from_origin).
 
 .decl RewriteAssignLocal(?insn:symbol, ?index:number, ?to:symbol, ?from:symbol, ?inmethod:symbol)
 .output RewriteAssignLocal(filename="AssignLocal.facts")
 
 RewriteAssignLocal(?insn, ?index, ?to, ?from, ?inmethod) :-
-    isAssignLocal_Insn(?instr),
+    isAssignLocal_Insn(?insn),
     SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index),
     AssignLocal_From(?insn, ?from_origin),
@@ -501,7 +458,8 @@ RewriteAssignLocal(?insnid, ?index, ?to, ?from, ?inmethod) :-
 .output RewriteAssignNull(filename="AssignNull.facts")
 
 RewriteAssignNull(?insn, ?index, ?to, ?inmethod) :-
-    SSA_AssignNull(?insn, _, ?to, ?inmethod),
+    isAssignNull_Insn(?insn),
+    SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index).
 
 .decl RewriteBootstrapParam(?index:number, ?invocation:symbol, ?var:symbol)
@@ -539,18 +497,16 @@ RewriteExceptionHandler_FormalParam(?handler, ?var) :-
 .output RewriteAssignNumConstant(filename="AssignNumConstant.facts")
 
 RewriteAssignNumConstant(?insn, ?index, ?const, ?to, ?inmethod) :-
-    SSA_AssignNumConstant(?insn, _, ?to, ?inmethod),
-    SSA_InstructionIndex(?insn, ?index),
-    AssignNumConstant_Id(?insn, ?const).
+    _AssignNumConstant(?insn, _, ?const, _, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
+    SSA_InstructionIndex(?insn, ?index).
 
 .decl RewriteAssignReturnValue(?invocation:symbol, ?to:symbol)
 .output RewriteAssignReturnValue(filename="AssignReturnValue.facts")
 
 RewriteAssignReturnValue(?invocation, ?to) :-
     SSA_AssignDetails(?invocation, ?to_origin, _, ?to, _),
-    AssignReturnValue(?invocation, ?to_origin),
-    MethodInvocation_Method(?invocation, ?signature),
-    Method_ReturnType(?signature, ?type).
+    AssignReturnValue(?invocation, ?to_origin).
 
 .decl RewriteAssignUnop(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
 .output RewriteAssignUnop(filename="AssignUnop.facts")
@@ -607,9 +563,9 @@ RewriteIfVar(?insn, ?pos, ?var) :-
 .output RewriteLoadArrayIndex(filename="LoadArrayIndex.facts")
 
 RewriteLoadArrayIndex(?insn, ?index, ?to, ?base, ?inmethod) :-
-    SSA_LoadArrayIndex(?insn, _, ?to, ?inmethod),
+    _LoadArrayIndex(?insn, _, _, ?base_origin, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
     SSA_InstructionIndex(?insn, ?index),
-    LoadArrayIndex_Base(?insn, ?base_origin),
     ReachingDef(?insn, ?base, ?base_origin).
 
 .decl RewriteLoadInstanceField(?insn:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
@@ -625,9 +581,9 @@ RewriteLoadInstanceField(?insn, ?index, ?to, ?base, ?signature, ?inmethod) :-
 .output RewriteLoadStaticField(filename="LoadStaticField.facts")
 
 RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
-    _LoadStaticField(?insn, _, ?to_origin, ?signature, ?inmethod),
+    _LoadStaticField(?insn, _, _, ?signature, ?inmethod),
     SSA_InstructionIndex(?insn, ?index),
-    SSA_AssignDetails(?insn, ?to_original, _, ?to, _).
+    SSA_AssignDetails(?insn, _, _, ?to, _).
 
 .decl RewriteLookupSwitch(?insn:symbol, ?index:number, ?key:symbol, ?method:symbol)
 .output RewriteLookupSwitch(filename="LookupSwitch.facts")
