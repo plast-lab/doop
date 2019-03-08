@@ -103,12 +103,8 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
     Method_DeclaringType(?method, ?type),
     ! Method_Modifier("abstract", ?method).
 
-// This is currently commented out: it clutters method implementation resolution
-// (more than one results for the same lookup) but it doesn't improve soundness
-// (the bridge methods of javac are enough help for computing reachability).
-
-// #define COVARIANCE_MULTIPLE_RESOLUTION
-#ifdef COVARIANCE_MULTIPLE_RESOLUTION
+// Covariant method resolution, used to "go to definition" in server mode.
+#ifdef X_SERVER_LOGIC
 #ifndef FEATHERWEIGHT_ANALYSIS
 
 // Logic that finds overridden methods with covariant return types.
@@ -177,12 +173,16 @@ Method_CovariantBridge(?bridge, ?cometh) :-
    Method_ReturnType(?cometh, ?coRetType),
    SubtypeOfDifferent(?coRetType, ?retType).
 
-// Register covariant methods in MethodImplemented.
-MethodImplemented(?name, ?descriptor, ?type, ?comethod) :-
-    MethodImplemented(?name, _, ?type, ?comethod),
+.decl MethodImplementedModuloCovariance(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
+
+// Superset of MethodImplemented, also containing covariant methods.
+MethodImplementedModuloCovariance(?name, ?descriptor, ?type, ?method) :-
+    MethodImplemented(?name, ?descriptor, ?type, ?method).
+MethodImplementedModuloCovariance(?name, ?descriptor, ?type, ?comethod) :-
+    MethodImplementedModuloCovariance(?name, _, ?type, ?comethod),
     Method_CovariantBridge(?method, ?comethod),
     Method_SimpleName(?method, ?name),
     Method_Descriptor(?method, ?descriptor).
 
 #endif // FEATHERWEIGHT_ANALYSIS
-#endif // COVARIANCE_MULTIPLE_RESOLUTION
+#endif // X_SERVER_LOGIC
