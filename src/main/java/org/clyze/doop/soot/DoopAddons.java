@@ -28,6 +28,7 @@ import soot.options.Options;
  */
 public class DoopAddons {
 
+    private static Object lock = new Object();
     private static Method hc = null;
     private static final String METHODTYPE = "soot.jimple.MethodType";
     private static Class<?> mtClass = null;
@@ -104,8 +105,12 @@ public class DoopAddons {
         PackManager pm = PackManager.v();
         try {
             if (wC == null) {
-                wC = pm.getClass().getDeclaredMethod("writeClass", SootClass.class);
-                wC.setAccessible(true);
+                synchronized (lock) {
+                    if (wC == null) {
+                        wC = pm.getClass().getDeclaredMethod("writeClass", SootClass.class);
+                        wC.setAccessible(true);
+                    }
+                }
             }
             wC.invoke(pm, sootClass);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
