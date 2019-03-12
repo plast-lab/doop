@@ -201,6 +201,7 @@ class TestUtils {
 		relationIsEmpty(analysis, "ValueIsNeitherHeapNorNonHeap")
 		relationIsEmpty(analysis, "ClassTypeIsInterfaceType")
 		relationIsEmpty(analysis, "PrimitiveTypeIsReferenceType")
+		relationIsEmpty(analysis, "basic.DuplicateMethodImplemented")
 	}
 
 	static void log(String msg) {
