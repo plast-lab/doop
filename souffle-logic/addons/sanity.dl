@@ -45,7 +45,7 @@ Sanity("12", "Value has no declaring type", ?c) :-
   ?c = count : ValueHasNoDeclaringType(_).
 
 Sanity("13", "Duplicate context requests", ?c) :-
-  ?c = count : mainAnalysis.DuplicateContextRequest(_).
+  ?c = count : mainAnalysis.DuplicateContextRequest(_, _, _, _, _, _).
 
 Sanity("14", "Duplicate method implementation", ?c) :-
   ?c = count : basic.DuplicateMethodImplemented(_, _, _, _, _).
