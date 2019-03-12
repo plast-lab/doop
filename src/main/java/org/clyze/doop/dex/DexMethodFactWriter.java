@@ -109,7 +109,7 @@ class DexMethodFactWriter extends JavaFactWriter {
 
     DexMethodFactWriter(DexBackedMethod dexMethod, Database _db, boolean moreStrings,
                         Map<String, MethodSig> cachedMethodDescriptors) {
-        super(_db, moreStrings);
+        super(_db, moreStrings, true);
         this.m = dexMethod;
         this.cachedMethodDescriptors = cachedMethodDescriptors;
         this.methId = DexRepresentation.methodId(m, mf);
@@ -237,7 +237,6 @@ class DexMethodFactWriter extends JavaFactWriter {
         // Step 2: match every queued MOVE_EXCEPTION against its handler. This
         // resolves the "formal" of exception handlers and is optional: some
         // handlers may not have MOVE_EXCEPTION opcodes (but e.g., a GOTO).
-        Map<Handler, String> handlerInsnId = new HashMap<>();
         for (MoveExceptionInfo mei : exceptionMoves) {
             List<Handler> containingHandlers = Handler.findHandlerStartingAt(handlers, mei.address);
             if (containingHandlers.isEmpty()) {
@@ -254,7 +253,6 @@ class DexMethodFactWriter extends JavaFactWriter {
                     if (handlerIndex != mei.index)
                         System.err.println("Warning: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
                     String insn = instructionId(handlerMid(hi.excType), handlerIndex);
-                    handlerInsnId.put(hi, insn);
                     writeExceptionHandlerFormal(insn, localA);
                 } catch (Handler.IndexException ex) {
                     System.err.println("Error: " + ex.getMessage());
@@ -1054,6 +1052,32 @@ class DexMethodFactWriter extends JavaFactWriter {
         return componentType;
     }
 
+    private int[] processActualParams(int[] actual, String[] paramTypes) {
+        ArrayList<Integer> ret = new ArrayList<>();
+
+        // Formal param type index
+        int j = 0;
+
+        // Actual param index
+        int i = 0;
+
+        while(j < paramTypes.length) {
+            String type = paramTypes[j];
+
+            ret.add(actual[i]);
+
+            // If formal param type is wide, skip the next arg in actual params since
+            // it's the second register of the pair
+            if (DexUtils.regSizeOf(type) == 2)
+                i++;
+
+            i++;
+            j++;
+        }
+
+        return ret.stream().mapToInt(Integer::intValue).toArray();
+    }
+
     private void writeInvoke(Instruction instr, Opcode op, int index) {
         ReferenceInstruction ri = (ReferenceInstruction)instr;
         DexBackedMethodReference mRef = (DexBackedMethodReference)ri.getReference();
@@ -1076,7 +1100,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         }
 
 //        System.out.println("argRegs = " + objReturnInfo.argRegs);
-        int[] argRegs = objReturnInfo.argRegs;
+        int[] argRegs = processActualParams(objReturnInfo.argRegs, mSig.paramTypes);
         for (int argPos = 0; argPos < argRegs.length; argPos++)
             writeActualParam(argStartPos + argPos, insn, local(argRegs[argPos]));
 

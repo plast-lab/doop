@@ -32,7 +32,7 @@ class TestUtils {
 	 * require reading (lots of) data.
 	 */
 	static void relationIsEmpty(Analysis analysis, String relation) {
-		log("relationIsEmpty")
+		log("relationIsEmpty(${relation})")
 		assert Files.size((new File("${analysis.database}/${relation}.csv")).toPath()) == 0
 	}
 
@@ -113,6 +113,11 @@ class TestUtils {
 	static void methodHandleCGE(Analysis analysis, String instr, String meth) {
 		log("methodHandleCGE")
 		findPair(analysis, "mainAnalysis.MethodHandleCallGraphEdge", instr, 1, meth, 3)
+	}
+
+	static void normalCGE(Analysis analysis, String instr, String meth) {
+		log("CallGraphEdge")
+		findPair(analysis, "CallGraphEdge", instr, 1, meth, 3)
 	}
 
 	static void lambdaCGE(Analysis analysis, String instr, String meth) {
@@ -196,6 +201,7 @@ class TestUtils {
 		relationIsEmpty(analysis, "ValueIsNeitherHeapNorNonHeap")
 		relationIsEmpty(analysis, "ClassTypeIsInterfaceType")
 		relationIsEmpty(analysis, "PrimitiveTypeIsReferenceType")
+		relationIsEmpty(analysis, "basic.DuplicateMethodImplemented")
 	}
 
 	static void log(String msg) {

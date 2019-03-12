@@ -1,0 +1,115 @@
+
+/*
+ * Path ?expressions after instructions are distinguished into two disjoint
+ * cases.
+ *  1) if-statements that increment the path ?expression with the
+ *     if-condition bool ?expression
+ *  2) any statement, excluding if-statements that leave the path
+ *     ?expression as it is
+ */
+
+// If no path expression before, path ?expressions are built given
+// branch conditions
+
+PathExpressionAfterTrue(?meth, ?insn, ?conditionExpr),
+PathExpressionAfterFalse(?meth, ?insn, ?expr) :-
+    Instruction_Method(?insn, ?meth),
+    isIf_Insn(?insn),
+    DummyIf_Var(?insn, ?dummyVar),
+    FirstIfInsnInMethod(?insn, ?meth),
+    ResolveExpr(?meth, ?dummyVar, ?conditionExpr),
+    ?conditionExpr = [?op, ?type, ?exprLeft, ?exprRight],
+    NegateOp(?op, ?negatedOp),
+    ?expr = [?negatedOp, ?type, ?exprLeft, ?exprRight].
+
+
+// Include if-conditions to path ?expressions computed up to the current if-statement
+
+isExpr(?negatedConditionExpr),
+isExpr(?pathExpr1),
+isExpr(?pathExpr2),
+PathExpressionAfterTrue(?meth, ?insn, ?pathExpr1),
+PathExpressionAfterFalse(?meth, ?insn, ?pathExpr2) :-
+    PathExpressionBefore(?meth, ?insn, ?pathExpr),
+    isIf_Insn(?insn),
+    DummyIf_Var(?insn, ?dummyVar),
+    ResolveExpr(?meth, ?dummyVar, ?conditionExpr),
+    ?conditionExpr = [?op, ?type, ?exprLeft, ?exprRight],
+    NegateOp(?op, ?negatedOp),
+    ?negatedConditionExpr = [?negatedOp, ?type, ?exprLeft, ?exprRight],
+    ?pathExpr1 = ["&&", ?type, ?conditionExpr, ?pathExpr],
+    ?pathExpr2 = ["&&", ?type, ?negatedConditionExpr, ?pathExpr].
+
+// Any statement excluding if-stmts
+
+PathExpressionAfterTrue(?meth, ?insn, ?pathExpr) :-
+    PathExpressionBefore(?meth, ?insn, ?pathExpr),
+    !isIf_Insn(?insn).
+
+/* Path ?expression before building */
+
+// Base case: path ?expression before ?insn starts with the ?expression
+// flowing from the first ?predecessor in the enumeration
+
+// Single ?predecessor case
+
+PathExpressionBefore(?meth, ?insn, ?exprBase) :-
+    SinglePredOfInsnInMethod(?pred, ?insn, ?meth),
+    isIf_Insn(?pred),
+    PathExpressionAfterFalse(?meth, ?pred, ?exprBase).
+
+PathExpressionBefore(?meth, ?insn, ?exprBase) :-
+    SinglePredOfInsnInMethod(?pred, ?insn, ?meth),
+    !isIf_Insn(?pred),
+    PathExpressionAfterTrue(?meth, ?pred, ?exprBase).
+
+
+// Multiple ?predecessors case
+
+// Base
+
+BuildPathExprBefore(?meth, ?pred,  ?expr, ?insn) :-
+    FirstOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth),
+    isIf_Insn(?pred),
+    IsJumpTarget(?insn),
+    PathExpressionAfterTrue(?meth, ?pred, ?expr).
+
+BuildPathExprBefore(?meth, ?pred, ?expr, ?insn) :-
+    FirstOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth),
+    isIf_Insn(?pred),
+    !IsJumpTarget(?insn),
+    PathExpressionAfterFalse(?meth, ?pred, ?expr).
+
+BuildPathExprBefore(?meth, ?pred,  ?expr, ?insn) :-
+    FirstOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth),
+    !isIf_Insn(?pred),
+    PathExpressionAfterTrue(?meth, ?pred, ?expr).
+
+
+BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
+    NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
+    BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
+    !isIf_Insn(?next),
+    PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
+    ?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
+
+BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
+    NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
+    BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
+    isIf_Insn(?next),
+    IsJumpTarget(?insn),
+    PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
+    ?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
+
+BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
+    NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
+    BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
+    isIf_Insn(?next),
+    !IsJumpTarget(?insn),
+    PathExpressionAfterFalse(?meth, ?next, ?exprPrev),
+    ?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
+
+isExpr(?pathExpr),
+PathExpressionBefore(?meth, ?insn, ?pathExpr) :-
+    LastOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth),
+    BuildPathExprBefore(?meth, ?pred, ?pathExpr, ?insn).

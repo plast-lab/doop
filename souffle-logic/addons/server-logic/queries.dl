@@ -259,7 +259,7 @@ Server_Method_Subtype(?method, ?subMethod) :-
   basic.SubtypeOfDifferent(?subType, ?type),
   _Valid_Interesting_Type(?type),
   _Valid_Interesting_Type(?subType),
-  basic.MethodImplemented(?name, _, ?subType, ?subMethod),
+  basic.MethodImplementedModuloCovariance(?name, _, ?subType, ?subMethod),
   basic.MethodLookup(?name, ?desc, ?subType, ?subMethod).
 
 

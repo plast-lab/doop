@@ -1,5 +1,6 @@
 package org.clyze.doop.core
 
+import groovy.cli.commons.OptionAccessor
 import groovy.util.logging.Log4j
 import org.clyze.analysis.AnalysisOption
 import org.clyze.analysis.BooleanAnalysisOption

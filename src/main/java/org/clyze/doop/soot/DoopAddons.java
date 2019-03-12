@@ -9,28 +9,58 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.JavaFactWriter;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.Value;
 import soot.options.Options;
 
 /**
  * This class gathers modified functionality that Doop needs from Soot.
  */
-class DoopAddons {
+public class DoopAddons {
+
+    private static Object lock = new Object();
+    private static Method hc = null;
+    private static final String METHODTYPE = "soot.jimple.MethodType";
+    private static Class<?> mtClass = null;
+    private static Method getRetType = null;
+    private static Method getParamTypes = null;
+
+    /**
+     * Check and load classes before parallel fact generation or
+     * synchronized/locking during classloading can cause deadlocks.
+     */
+    static {
+        try {
+            hc = Class.forName("soot.PolymorphicMethodRef").getDeclaredMethod("handlesClass", String.class);
+            hc.setAccessible(true);
+        } catch (ClassNotFoundException | NoSuchMethodException ex) { }
+
+        try {
+            mtClass = Class.forName(METHODTYPE);
+            getRetType = mtClass.getDeclaredMethod("getReturnType");
+            getRetType.setAccessible(true);
+            getParamTypes = mtClass.getDeclaredMethod("getParameterTypes");
+            getParamTypes.setAccessible(true);
+        } catch (ClassNotFoundException | NoSuchMethodException ex) { }
+    }
 
     public static void retrieveAllSceneClassesBodies(Integer _cores) {
         // The old coffi front-end is not thread-safe
         boolean runSeq = (_cores == null) || Options.v().coffi();
         int threadNum = runSeq ? 1 : _cores;
-        CountingThreadPoolExecutor executor =  new CountingThreadPoolExecutor(threadNum,
-                                                                              threadNum, 30, TimeUnit.SECONDS,
-                                                                              new LinkedBlockingQueue<>());
+        CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(threadNum,
+                                                                             threadNum, 30, TimeUnit.SECONDS,
+                                                                             new LinkedBlockingQueue<>());
         Iterator<SootClass> clIt = Scene.v().getClasses().snapshotIterator();
         while( clIt.hasNext() ) {
             SootClass cl = clIt.next();
@@ -70,11 +100,18 @@ class DoopAddons {
     }
 
     // Call non-public method: PackManager.v().writeClass(sootClass)
+    private static Method wC;
     public static void writeClass(SootClass sootClass) throws DoopErrorCodeException {
         PackManager pm = PackManager.v();
         try {
-            Method wC = pm.getClass().getDeclaredMethod("writeClass", SootClass.class);
-            wC.setAccessible(true);
+            if (wC == null) {
+                synchronized (lock) {
+                    if (wC == null) {
+                        wC = pm.getClass().getDeclaredMethod("writeClass", SootClass.class);
+                        wC.setAccessible(true);
+                    }
+                }
+            }
             wC.invoke(pm, sootClass);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             System.err.println("Could not call Soot method writeClass(): ");
@@ -84,12 +121,40 @@ class DoopAddons {
     }
 
     /**
-     * Upstream Soot does not structure generated Jimple by package, which is
-     * expected by the server.
+     * Set the "hierachy_dirs" property of Soot to true, so that generated
+     * Jimple follows package structure. This handles Jimple generation for
+     * very long class names (https://github.com/Sable/soot/pull/1006).
+     *
+     * @return true if the property could be enabled, false otherwise
+     */
+    public static boolean checkSetHierarchyDirs() {
+        Options opts = Options.v();
+        try {
+            Method shd = opts.getClass().getDeclaredMethod("set_hierarchy_dirs", boolean.class);
+            shd.setAccessible(true);
+            shd.invoke(opts, true);
+            System.err.println("Soot: hierarchy_dirs set.");
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    public static String jimpleDir(String outDir) {
+        return outDir + File.separatorChar + "jimple";
+    }
+
+    /**
+     * Some versions of Soot do not structure generated Jimple by package, which
+     * is expected by the server. This method simulates (so that the server
+     * works), but does not address the failing long class names bug (see
+     * checkSetHierarchyDirs() above), since it runs after files are written.
+     *
+     * @param outDir  the directory to be restructured, containing .shimple files
      */
     public static void structureJimpleFiles(String outDir) {
         boolean movedMsg = false;
-        String jimpleDirPath = outDir + File.separatorChar + "jimple";
+        String jimpleDirPath = jimpleDir(outDir);
         File[] outDirFiles = new File(outDir).listFiles();
         if (outDirFiles == null)
             return;
@@ -133,7 +198,7 @@ class DoopAddons {
         }
     }
 
-    public static final String LOCAL_SEPARATOR = "_$$A_";
+    private static final String LOCAL_SEPARATOR = "_$$A_";
 
     /**
      * Call setSeparator() on Soot to set the fresh variable separator
@@ -149,5 +214,68 @@ class DoopAddons {
             // ex.printStackTrace();
             System.err.println("Using default fresh variable separator in Soot.");
         }
+    }
+
+    /**
+     * Clients of Doop can read the separator to be able to reason
+     * about local names in generated Jimple.
+     */
+    public static String getSeparator() {
+        return LOCAL_SEPARATOR;
+    }
+
+    private static boolean polymorphicHandling_msg = false;
+    public static boolean polymorphicHandling(String declClass, String simpleName) {
+        try {
+            if (hc != null)
+                return (boolean)hc.invoke(null, declClass);
+        } catch (IllegalAccessException | InvocationTargetException ex) { }
+
+        if (!polymorphicHandling_msg) {
+            polymorphicHandling_msg = true;
+            System.err.println("Warning: Soot does not contain PolymorphicMethodRef.handlesClass(), using custom method.");
+        }
+        return JavaFactWriter.polymorphicHandling(declClass, simpleName);
+    }
+
+    /**
+     * Since MethodType was introduced in Soot 3.2, to maintain
+     * compatibility with earlier versions, we introduce a reflective
+     * layer and our own custom MethodType class.
+     */
+    public static MethodType methodType(Value v) {
+        if (!(METHODTYPE.equals(v.getClass().getName())))
+            return null;
+        try {
+            if (mtClass != null) {
+                // Dynamic instanceof check.
+                Object methodType = mtClass.cast(v);
+                String retType = getRetType.invoke(methodType).toString();
+                Object paramTypesObj = getParamTypes.invoke(methodType);
+                if (!(paramTypesObj instanceof List))
+                    return null;
+                List<?> paramTypesT = (List<?>)paramTypesObj;
+                List<String> paramTypes = new LinkedList<>();
+                for (Object t : paramTypesT)
+                    paramTypes.add(t.toString());
+                return new MethodType(retType, paramTypes);
+            }
+        } catch (IllegalAccessException | InvocationTargetException ex) { }
+        return null;
+    }
+
+    public static class MethodType {
+	final String returnType;
+	final List<String> parameterTypes;
+	public MethodType(String retType, List<String> paramTypes) {
+	    this.returnType = retType;
+	    this.parameterTypes = paramTypes;
+	}
+	public String getReturnType() {
+	    return returnType;
+	}
+	public List<String> getParameterTypes() {
+	    return parameterTypes;
+	}
     }
 }

@@ -33,9 +33,6 @@ public class BasicJavaSupport {
 
     /**
      * Helper method to read classes and resources from input archives.
-     *
-     * @param parameters the list of all the given parameters
-     *
      */
     public void preprocessInputs() throws IOException {
         for (String filename : parameters.getInputs()) {
@@ -74,14 +71,16 @@ public class BasicJavaSupport {
                         ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
                         String className = reader.getClassName().replace("/", ".");
                         classSet.add(className);
-                        String artifact = (new File(jarFile.getName())).getName();
-                        registerArtifactClass(artifact, className, "-");
+                        if (parameters._writeArtifactsMap) {
+                            String artifact = (new File(jarFile.getName())).getName();
+                            registerArtifactClass(artifact, className, "-");
+                        }
                     } catch (Exception e) {
                         System.err.println("Error while preprocessing entry \"" + entryName + "\", it will be ignored.");
                     }
                 } else if (entryName.endsWith(".properties")) {
                     propertyProvider.addProperties(jarFile.getInputStream(entry), filename);
-                } else if (parameters._scanNativeCode && entryName.endsWith(".so")) {
+                } else if (parameters._scanNativeCode && entryName.endsWith(".so") && !filename.endsWith(".apk")) {
                     File tmpDir = Files.createTempDirectory("native-lib").toFile();
                     tmpDir.deleteOnExit();
                     String tmpName = entryName.replaceAll(File.separator, "_");
@@ -89,7 +88,7 @@ public class BasicJavaSupport {
                     libTmpFile.deleteOnExit();
                     Files.copy(jarFile.getInputStream(entry), libTmpFile.toPath());
                     File outDir = new File(parameters.getOutputDir());
-                    NativeScanner.scan("nm", "objdump", libTmpFile, outDir);
+                    NativeScanner.scanLib(libTmpFile, outDir);
                 }
             }
         }

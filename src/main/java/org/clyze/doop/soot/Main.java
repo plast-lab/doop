@@ -62,8 +62,11 @@ public class Main {
 
         Options.v().set_output_dir(outDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
+        Options.v().setPhaseOption("jb", "model-lambdametafactory:false");
+        if (sootParameters._ignoreFactGenErrors)
+            Options.v().set_ignore_resolution_errors(true);
 
-        if (sootParameters._ignoreWrongStaticness)
+        if (sootParameters._ignoreWrongStaticness || sootParameters._ignoreFactGenErrors)
             Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
 
         if (sootParameters._ssa) {
@@ -172,11 +175,12 @@ public class Main {
         }
 
         try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
-            boolean reportPhantoms = sootParameters.getReportPhantoms();
+            boolean reportPhantoms = sootParameters._reportPhantoms;
             boolean moreStrings = sootParameters._extractMoreStrings;
+            boolean artifacts = sootParameters._writeArtifactsMap;
             Representation rep = new Representation();
-            FactWriter writer = new FactWriter(db, moreStrings, rep, reportPhantoms);
-            ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, reportPhantoms);
+            FactWriter writer = new FactWriter(db, moreStrings, artifacts, rep, reportPhantoms);
+            ThreadFactory factory = new ThreadFactory(writer, sootParameters);
             SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors);
             factory.setDriver(driver);
 
@@ -194,7 +198,7 @@ public class Main {
                     if (dummyMain == null)
                         throw new RuntimeException("Internal error: could not compute dummy main() with FlowDroid");
                     System.out.println("Generated dummy main method " + dummyMain.getName() + "()");
-                    driver.generateMethod(dummyMain, writer, sootParameters._ssa, reportPhantoms);
+                    driver.generateMethod(dummyMain, writer, reportPhantoms, sootParameters);
                 }
 
                 // avoids a concurrent modification exception, since we may
@@ -213,8 +217,15 @@ public class Main {
                         forceResolveClasses(allClassNames, jimpleClasses, scene);
                         System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
                     }
+
+                    // Write classes, following package hierarchy.
+                    Options.v().set_output_dir(DoopAddons.jimpleDir(outDir));
+                    boolean structured = DoopAddons.checkSetHierarchyDirs();
                     driver.writeInParallel(jimpleClasses);
-                    DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
+                    if (!structured)
+                        DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
+                    // Revert to standard output dir for the rest of the code.
+                    Options.v().set_output_dir(outDir);
                 }
             }
 
@@ -229,7 +240,6 @@ public class Main {
                     System.err.println("Warning: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
                 }
             }
-
 
             writer.writeLastFacts(java);
         } finally {

@@ -28,7 +28,8 @@ public class Parameters {
     public boolean _ignoreFactGenErrors = false;
     private boolean _decodeApk = false;
     public boolean _extractMoreStrings = false;
-    private boolean _reportPhantoms = true;
+    public boolean _writeArtifactsMap = false;
+    public boolean _reportPhantoms = true;
     public boolean _dex = false;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
@@ -112,10 +113,6 @@ public class Parameters {
 
     public boolean getDecodeApk() {
         return _decodeApk;
-    }
-
-    public boolean getReportPhantoms() {
-        return _reportPhantoms;
     }
 
     public static int shift(String[] args, int index) throws DoopErrorCodeException {
@@ -205,6 +202,9 @@ public class Parameters {
             break;
         case "--extract-more-strings":
             _extractMoreStrings = true;
+            break;
+        case "--write-artifacts-map":
+            _writeArtifactsMap = true;
             break;
         case "--dont-report-phantoms":
             this._reportPhantoms = false;

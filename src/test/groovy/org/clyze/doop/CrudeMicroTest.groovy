@@ -20,7 +20,6 @@ class CrudeMicroTest extends Specification {
 		relationHasApproxSize(analysis, "ApplicationMethod", 2680)
 		relationHasApproxSize(analysis, "ArrayIndexPointsTo", 7497)
 		relationHasApproxSize(analysis, "Assign", 32658)
-		relationHasApproxSize(analysis, "basic.ResolveInvocation", 3992396)
 		relationHasApproxSize(analysis, "CallGraphEdge", 13873)
 		relationHasApproxSize(analysis, "InstanceFieldPointsTo", 539551)
 		relationHasApproxSize(analysis, "StaticFieldPointsTo", 783)

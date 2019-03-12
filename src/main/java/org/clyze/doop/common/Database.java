@@ -33,22 +33,32 @@ public class Database implements Closeable, Flushable {
 
     private String addColumn(String column) {
         // Quote some special characters.
-        StringBuilder sb = new StringBuilder();
-        for (char c : column.toCharArray())
-            switch (c) {
-                case '\"':
+        final char SLASH = '\"';
+        final char EOL = '\n';
+        final char TAB = '\t';
+        if ((column.indexOf(SLASH) >= 0) ||
+            (column.indexOf(EOL)   >= 0) ||
+            (column.indexOf(TAB)   >= 0)) {
+            // Assume at most 5 special characters will be rewritten
+            // before updating the capacity.
+            StringBuilder sb = new StringBuilder(column.length() + 5);
+            for (char c : column.toCharArray())
+                switch (c) {
+                case SLASH:
                     sb.append("\\\\\"");
                     break;
-                case '\n':
+                case EOL:
                     sb.append("\\\\n");
                     break;
-                case '\t':
+                case TAB:
                     sb.append("\\\\t");
                     break;
                 default:
                     sb.append(c);
-            }
-        return sb.toString();
+                }
+            return sb.toString();
+        } else
+            return column;
     }
 
     public void add(PredicateFile predicateFile, String arg, String... args) {

@@ -65,11 +65,14 @@ compileGroovy {
     groovyOptions.optimizationOptions.indy = true
 }
 
+def groovyVersion="2.5.5"
+
 dependencies {
 
     compile "org.clyze:clue-common:3.8.+",
             "org.clyze:deepdoop:0.9.+",
-            "org.codehaus.groovy:groovy-all:2.5.5",             // Groovy
+            "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
+            "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
@@ -82,13 +85,19 @@ dependencies {
             "com.google.guava:guava:27.0-jre",
             // "ext:apktool:2.3.3",                                // needed for decoding APK inputs (optional)
 
-            // Soot
-            "ext:AXMLPrinter:2.0",
-            // Upstream stable version, to be used instead of ext:sootclasses.
-            // "ca.mcgill.sable:soot:3.1.0",
-            // Doop's Soot fork.
+            // Soot - choose one of the following:
+            // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.
             // "ext:sootclasses:3.2.7",
-            "ext:sootclasses:3.2.0.MINIMAL",
+            // (b) Upstream stable Soot version.
+            // "ca.mcgill.sable:soot:3.1.0",
+            // (c) Upstream 3.x + minimal changes (mostly equivalent to our fork).
+            "ext:sootclasses:3.1.0.MINIMAL",
+            // (d) Latest tested nightly build.
+            // "ext:sootclasses:trunk.20190225",
+            // (e) Soot for Java 9.
+            // "ca.mcgill.sable:soot-j9:4.0.0-SNAPSHOT",
+
+            "ext:AXMLPrinter:2.0",
             "ext:soot-infoflow:2.5.1",
             "ext:soot-infoflow-android:2.5.1",
             // https://mvnrepository.com/artifact/gov.nist.math/jama
@@ -218,7 +227,7 @@ compileJava {
 
 test {
     // failFast = true
-    maxParallelForks = 3
+    maxParallelForks = 1
     forkEvery = 1
     jvmArgs '-XX:ReservedCodeCacheSize=1g'
     testLogging {

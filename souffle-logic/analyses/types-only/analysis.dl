@@ -1,0 +1,93 @@
+// WARNING: This is not like the rest of the analyses! Use only if you
+// know what you are doing, maintain with care.
+
+// This analysis is a simple HACK, so it may be quite sensitive to the
+// form of the rest of the code. It short-circuits lots of the
+// inferences, merging all the objects and using a type-based
+// resolution instead.
+
+// IMPORTANT: this is meant to be used with --disable-points-to
+// (preprocessor flag DISABLE_POINTS_TO) so that field store
+// reasoning is also short-circuited.
+
+// Context-wise it's an insensitive analysis 
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
+.comp TypesOnlyConfiguration : AbstractConfiguration {
+
+  .decl OptReachableTypeResolveInvocation(?invocation:MethodInvocation, ?tomethod:Method)
+  OptReachableTypeResolveInvocation(?invocation, ?tomethod) :-
+    TypeHasReachableValue(?valuetype),  // the value arises *anywhere*
+    basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod).
+  
+  // First, supplement call-graph reasoning with type-based resolution
+  ContextRequest(?callerCtx, ?hctxNull, ?invocation, ?null, ?tomethod) :-
+    OptVirtualMethodInvocationBase(?invocation, _),  // implies Reachable
+    OptReachableTypeResolveInvocation(?invocation, ?tomethod),
+    Value_Null(?null), // avoid creating too many requests-responses
+    isImmutableHContext(?hctxNull),
+    isImmutableContext(?callerCtx). // correct only in this context
+   .plan 1:(2,1,3,4,5)
+  
+  ContextRequest(?callerCtx, ?hctxNull, ?invocation, ?null, ?tomethod) :-
+    ReachableContext(?callerCtx, ?inmethod),
+    Instruction_Method(?invocation, ?inmethod),
+    (SuperMethodInvocation_Base(?invocation, _);
+     SpecialMethodInvocation_Base(?invocation, _)),
+    MethodInvocation_Method(?invocation, ?tomethod),
+    Value_Null(?null), // avoid creating too many requests-responses
+    isImmutableHContext(?hctxNull).
+
+  // Short-circuits the object merging reasoning, makes all of them be
+  // merged per type.
+  TypeToHeap(?heap, ?type) :-
+    (isArrayType(?type); isReferenceType(?type)),
+    HeapAllocation_Type(?heap, ?type).
+  
+  AllocationShouldBeMergedGlobally(?type) :-
+    AllocationsPerType(?type, ?n),
+    ?n > 1.
+
+  // This analysis has no context for either method calls or heap objects.
+  // This is emulated by creating a single Context object and a single HContext
+  // object, which are used everywhere.
+  .type Context
+  .type HContext
+         
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ?calleeCtx = ?callerCtx,
+    ?tomethod = ?tomethod.
+
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?calleeCtx = ?callerCtx.
+      
+   /**
+    * Some library modules are generically defined, and need the macro
+    * definitions for the context-sensitive pointer analysis they are
+    * used in. For a context-insensitive pointer analysis we just
+    * generate constant contexts.
+    */
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),
+    isImmutableHContext(?hctx).
+
+  InitContextResponse(?s, ?s) :-
+    InitContextRequest(?s).
+
+  InitHContextResponse(?s, ?s) :-
+    InitHContextRequest(?s).
+
+  #ifdef HEAPDLS
+    DynamicContextToHContext(?hctx, ?dynCtx) :-
+      isDynamicContext(?dynCtx),
+      isImmutableHContext(?hctx).
+
+    DynamicContextToContext(?ctx, ?dynCtx) :-
+      isDynamicContext(?dynCtx),
+      isImmutableContext(?ctx).
+  #endif
+}

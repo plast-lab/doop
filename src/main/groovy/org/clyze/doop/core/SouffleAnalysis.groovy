@@ -161,12 +161,16 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${infoFlowPath}/delta.dl")
 			cpp.includeAtEnd("$analysis", "${infoFlowPath}/rules.dl")
 			cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
+
 		}
 
 		if (options.SYMBOLIC_REASONING.value) {
             def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/declarations.dl")
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/util.dl")
             cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
-            cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/reasoning.dl")
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/path-expression.dl")
+            // cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/reasoning.dl")
 		}
 
 		String openProgramsRules = options.OPEN_PROGRAMS.value

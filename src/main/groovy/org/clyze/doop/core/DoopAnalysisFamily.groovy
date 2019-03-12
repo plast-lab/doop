@@ -188,7 +188,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SANITY",
 					name: "sanity",
-					description: "Load additional logic for sanity checks."
+					description: "Load additional logic for sanity checks.",
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "CACHE",
@@ -594,6 +595,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			/* End Souffle related options */
 
 			//Information-flow, etc.
+			new AnalysisOption<String>(
+					id: "DISABLE_POINTS_TO",
+					name: "disable-points-to",
+					description: "Disable (most) points-to analysis reasoning. This should only be combined with analyses that compensate (e.g., types-only).",
+					forPreprocessor: true
+			),
 			new AnalysisOption<String>(
 					id: "FEATHERWEIGHT_ANALYSIS",
 					name: "featherweight-analysis",

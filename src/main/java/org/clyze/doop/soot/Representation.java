@@ -6,12 +6,12 @@ import org.clyze.persistent.model.doop.DynamicMethodInvocation;
 import soot.*;
 import soot.jimple.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Representation extends JavaRepresentation {
     private final Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
+    private final Map<SootField, String> _fieldSigRepr = new ConcurrentHashMap<>();
     private final Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
     private final Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
 
@@ -29,9 +29,7 @@ public class Representation extends JavaRepresentation {
 
     String signature(SootMethod m) {
         String result = _methodSigRepr.get(m);
-
-        if(result == null)
-        {
+        if (result == null) {
             result = stripQuotes(m.getSignature());
             _methodSigRepr.put(m, result);
         }
@@ -39,8 +37,13 @@ public class Representation extends JavaRepresentation {
         return result;
     }
 
-    static String signature(SootField f) {
-        return stripQuotes(f.getSignature());
+    String signature(SootField f) {
+        String result = _fieldSigRepr.get(f);
+        if (result == null) {
+            result = stripQuotes(f.getSignature());
+            _fieldSigRepr.put(f, result);
+        }
+        return result;
     }
 
     static String signature(SootMethodRef mRef) {

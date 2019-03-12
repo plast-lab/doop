@@ -29,6 +29,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	static final String HASH_ALGO = "SHA-256"
 	static final availableConfigurations = [
 			"dependency-analysis"                : "TwoObjectSensitivePlusHeapConfiguration",
+			"types-only"                         : "TypesOnlyConfiguration",
 			"context-insensitive"                : "ContextInsensitiveConfiguration",
 			"context-insensitive-plus"           : "ContextInsensitivePlusConfiguration",
 			"context-insensitive-plusplus"       : "ContextInsensitivePlusPlusConfiguration",
@@ -338,6 +339,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			log.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
 		}
 
+		if (options.ANALYSIS.value == "types-only" && !options.DISABLE_POINTS_TO.value) {
+			log.warn "\nWARNING, types-only analysis chosen without disabling points-to reasoning. Disabling it, since this is likely what you want.\n"
+			options.DISABLE_POINTS_TO.value = true
+		}
+        
 		if (options.SOUFFLE_PROVENANCE.value &&
 				options.SOUFFLE_LIVE_PROFILE.value) {
 			throw new RuntimeException("Error: options --" + options.SOUFFLE_PROVENANCE.name + " and --" + options.SOUFFLE_LIVE_PROFILE.name + " are mutually exclusive.\n")
@@ -409,21 +415,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
-		if (options.X_DRY_RUN.value) {
-			options.X_STATS_NONE.value = true
-
-			// Also test the server logic if the analysis supports it.
-			switch (options.ANALYSIS.value) {
-				case "sound-may-point-to":
-				case "micro":
-					break
-				default:
-					options.X_SERVER_LOGIC.value = true
-			}
-
-			if (options.CACHE.value) {
-				log.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
-			}
+		if (options.X_DRY_RUN.value && options.CACHE.value) {
+			log.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
 		}
 
 		if (options.APP_REGEX.value &&

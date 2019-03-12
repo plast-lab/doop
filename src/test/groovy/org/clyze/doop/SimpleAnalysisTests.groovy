@@ -19,7 +19,6 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 										["--coarse-grained-allocation-sites",
 										 "--cs-library", "--Xextra-metrics",
 										 "--dont-report-phantoms", "--cfg",
-										 "--symbolic-reasoning",
 										 "--thorough-fact-gen", "--sanity",
 										 "--platform", "java_8"])
 
@@ -28,6 +27,23 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 	}
 
 	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test 011 (variance)"() {
+		when:
+		Analysis analysis = analyzeTest("011-variance",
+										["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+										 "--generate-jimple",
+										 "--thorough-fact-gen", "--sanity"])
+
+		then:
+		normalCGE(analysis, '<Main: void main(java.lang.String[])>/I.meth1/0', '<Test: java.lang.Object meth1(Clazz)>')
+		normalCGE(analysis, '<Main: void main(java.lang.String[])>/I.meth1/1', '<Test: java.lang.Object meth1(Clazz)>')
+		normalCGE(analysis, '<Main: void main(java.lang.String[])>/I.meth2/0', '<Test: Clazz meth2(java.lang.Object)>')
+		methodIsReachable(analysis, '<Test: SubClazz meth2(java.lang.Object)>')
+		noSanityErrors(analysis)
+	}
+
+	@spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 012 (interface fields)"() {
 		when:
