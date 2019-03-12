@@ -129,3 +129,83 @@ VarPointsTo(?hctx, ?mockVal, ?ctx, ?var):-
   AssignInstruction_To(?insn, ?var),
   isImmutableHContext(?hctx),
   ?mockVal = "<num-constant(int):0>".
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                                  ARGPARSE
+//----------------------------------------------------------------------------------------------------------------------
+
+.decl ArgParseValueDefaultNamespace(?argVal:Value, ?argHctx:configuration.HContext, ?nameSpaceVal:Value)
+.output ArgParseValueDefaultNamespace
+
+.decl RawString_RemoveDashes(?before:StringConstant, ?after:symbol)
+.output RawString_RemoveDashes
+
+RawString_RemoveDashes(?before, ?before):-
+  Value_String(_, ?before),
+  !contains("-" ,?before).
+
+RawString_RemoveDashes(?before, ?after):-
+  Value_String(_, ?before),
+  contains("-" ,?before),
+  ?after = substr(?before, 1, strlen(?before)),
+  !contains("-" ,?after).
+
+RawString_RemoveDashes(?before, ?after):-
+  Value_String(_, ?before),
+  contains("--" ,?before),
+  ?after = substr(?before, 2, strlen(?before)),
+  !contains("-" ,?after).
+
+isModule("<argparse>").
+isModeledModule("<argparse>").
+
+VarPointsTo(?hctx, "<None>", ?ctx, "<argparse>/noneDefVal") :-
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
+
+ModeledClass("<argparse.ArgumentParser>", "ArgumentParser", "<argparse>").
+
+ModeledMethod("<argparse.ArgumentParser.__init__>", "__init__", "<argparse.ArgumentParser>", "<argparse>").
+
+ModeledMethod("<argparse.ArgumentParser.add_argument>", "add_argument", "<argparse.ArgumentParser>", "<argparse>").
+FormalParam(0, "self", "<argparse.ArgumentParser.add_argument>", "<argparse.ArgumentParser.add_argument>/mockParam1").
+FormalParam(1, "nameOrFlags", "<argparse.ArgumentParser.add_argument>", "<argparse.ArgumentParser.add_argument>/mockParam2").
+FormalParam(2, "action", "<argparse.ArgumentParser.add_argument>", "<argparse.ArgumentParser.add_argument>/mockParam3").
+FormalParam(3, "nargs", "<argparse.ArgumentParser.add_argument>", "<argparse.ArgumentParser.add_argument>/mockParam4").
+FormalParam(4, "const", "<argparse.ArgumentParser.add_argument>", "<argparse.ArgumentParser.add_argument>/mockParam5").
+FormalParam(5, "default", "<argparse.ArgumentParser.add_argument>", "<argparse.ArgumentParser.add_argument>/mockParam6").
+FormalParam(6, "type", "<argparse.ArgumentParser.add_argument>", "<argparse.ArgumentParser.add_argument>/mockParam7").
+
+FormalParam_DefaultValForName("<argparse.ArgumentParser.add_argument>", ?name, "<argparse>/noneDefVal"):-
+  FormalParam(?index, ?name, "<argparse.ArgumentParser.add_argument>", _),
+  ?index > 1.
+
+ModeledMethod("<argparse.ArgumentParser.parse_args>", "parse_args", "<argparse.ArgumentParser>", "<argparse>").
+FormalParam(0, "self", "<argparse.ArgumentParser.parse_args>", "<argparse.ArgumentParser.parse_args>/mockParam1").
+FormalParam(1, "args", "<argparse.ArgumentParser.parse_args>", "<argparse.ArgumentParser.parse_args>/mockParam2").
+FormalParam(2, "namespace", "<argparse.ArgumentParser.parse_args>", "<argparse.ArgumentParser.parse_args>/mockParam3").
+
+FormalParam_DefaultValForName("<argparse.ArgumentParser.parse_args>", "args", "<argparse>/noneDefVal").
+FormalParam_DefaultValForName("<argparse.ArgumentParser.parse_args>", "namespace", "<argparse>/noneDefVal").
+
+ArgParseValueDefaultNamespace(?val, ?hctx, ?namespaceVal):-
+  Value_Type(?val, "<argparse.ArgumentParser>"),
+  isClassInstanceAllocation(?val),
+  VarPointsTo(?hctx, ?val, _, _),
+  ?namespaceVal = cat(cat("<default-namespace-of", ?val),">").
+
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?argParseHctx, ?namespaceVal):-
+  ArgParseValueDefaultNamespace(?argParseInstanceVal, ?argParseHctx, ?namespaceVal),
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<argparse.ArgumentParser.add_argument>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<argparse.ArgumentParser.add_argument>", "self", ?argParseHctx, ?argParseInstanceVal),
+  ResolvedActualParamValue(?ctx, ?insn, "<argparse.ArgumentParser.add_argument>", "nameOrFlags", _, ?nameVal),
+  ResolvedActualParamValue(?ctx, ?insn, "<argparse.ArgumentParser.add_argument>", "default", ?hctx, ?value),
+  Value_String(?nameVal, ?nameStr),
+  RawString_RemoveDashes(?nameStr, ?signature).
+
+VarPointsTo(?argParseHctx, ?namespaceVal, ?ctx, ?var):-
+  ArgParseValueDefaultNamespace(?argParseInstanceVal, ?argParseHctx, ?namespaceVal),
+  FunctionInvResolvesTo(?ctx, ?insn, _, _, "<argparse.ArgumentParser.parse_args>"),
+  ResolvedActualParamValue(?ctx, ?insn, "<argparse.ArgumentParser.parse_args>", "self", ?argParseHctx, ?argParseInstanceVal),
+  AssignInstruction_To(?insn, ?var).
