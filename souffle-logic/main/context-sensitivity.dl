@@ -601,12 +601,14 @@ Reachable(?method) :-
   ReachableContext(_, ?method).
 
 #ifdef SANITY
-.decl DuplicateContextRequest(?id:symbol) // ?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?obj:Value, ?meth1:Method, ?meth2:Method)
+.decl DuplicateContextRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?obj:Value, ?meth1:Method, ?meth2:Method)
 .output DuplicateContextRequest
 
-DuplicateContextRequest(?id) :-
+DuplicateContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth1, ?meth2) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth1),
   configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth2),
   ?meth1 != ?meth2,
-  ?id = cat(?callerCtx, cat(" ", cat(?hctx, cat(" ", cat(?invo, cat(" ", cat(?obj, cat(" ", cat(?meth1, cat(" ", ?meth2)))))))))).
+  !Value_Null(?obj),
+  // Exclude duplicate method lookup due to covariance.
+  !basic.CovariantMethods(?meth1, ?meth2).
 #endif // SANITY

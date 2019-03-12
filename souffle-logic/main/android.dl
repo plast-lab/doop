@@ -259,14 +259,14 @@ AndroidApplicationListenerClass(?class) :-
   ListenerType(?class).
 
 PublicOnMethodOfReachableListener(?meth) :-
-  basic.MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
+  basic.MethodDeclaredOrInherited(?meth, ?class),
   _OnEventMethod(?meth),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfReachableListener(?meth) :-
-  basic.MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
+  basic.MethodDeclaredOrInherited(?meth, ?class),
   _OnEventMethod(?meth),
   Method_Modifier("protected", ?meth).
 
@@ -385,8 +385,8 @@ AndroidApplicationPackableClass(?class) :-
 
 .decl ReachableAppPackableMethodOverridingLib(?methConcrete:Method)
 ReachableAppPackableMethodOverridingLib(?methConcrete) :-
-  basic.MethodDeclaredOrInherited(?methConcrete, ?class),
   LibraryReachableAppPackableClass(?class),
+  basic.MethodDeclaredOrInherited(?methConcrete, ?class),
   AppMethodOverridesAndroidLibraryMethod(?methConcrete, _).
 
 ForcedReachableAndroidContext(?ctx, ?methConcrete) :-
@@ -887,6 +887,13 @@ ObfuscationOn() :-
   ?unobfCount = count : UnobfuscatedApplicationClass(_),
   ?allCount = count : ApplicationClass(_),
   ?unobfCount < ?allCount / 2.
+
+// Second heuristic for telling obfuscation is on. The number of total
+// unobfuscated methods is small (less than a quarter of app methods)!
+ObfuscationOn() :-
+  ?unobfCount = count : UnobfuscatedMethod(_),
+  ?allCount = count : ApplicationMethod(_),
+  ?unobfCount < ?allCount / 4.
 
 // If obfuscation is on, then treat all unobfuscated method names as
 // entry points: the programmer probably had a "keep" specification for

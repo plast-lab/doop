@@ -415,21 +415,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
-		if (options.X_DRY_RUN.value) {
-			options.X_STATS_NONE.value = true
-
-			// Also test the server logic if the analysis supports it.
-			switch (options.ANALYSIS.value) {
-				case "sound-may-point-to":
-				case "micro":
-					break
-				default:
-					options.X_SERVER_LOGIC.value = true
-			}
-
-			if (options.CACHE.value) {
-				log.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
-			}
+		if (options.X_DRY_RUN.value && options.CACHE.value) {
+			log.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
 		}
 
 		if (options.APP_REGEX.value &&

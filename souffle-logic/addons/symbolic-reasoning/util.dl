@@ -1,29 +1,74 @@
-// Declarations
+#define DEBUG
 
-.decl FirstPredOfInsnInMethodOrdinal(?meth: Method, ?first: number, ?insn: Instruction)
-.decl FirstPredOfInsnInMethod(?meth: Method, ?first: Instruction, ?insn: Instruction)
-.decl LastPredOfInsnInMethodOrdinal(?meth: Method, ?first: number, ?insn: Instruction)
-.decl LastPredOfInsnInMethod(?meth: Method, ?first: Instruction, ?insn: Instruction)
-.decl NotNextPredOfInsnInMethod(?meth: Method, ?prev: Instruction, ?next: Instruction, ?insn: Instruction)
-.decl NextPredOfInsnInMethod(?meth: Method, ?prev: Instruction, ?next: Instruction, ?insn:Instruction)
+#ifdef DEBUG
 
-.decl NegateOp(after: Operator, before: Operator)
+ToString(?expr, ?out) :-
+//    ResolveExpr(_, _, ?expr),
+    isInputExpr(?expr),
+    ?expr = [?base, ?type, ?exprL, ?exprR],
+    ?out = ?base.
+ToString(?expr, ?out) :-
+//    ResolveExpr(_, _, ?expr),
+    isExpr(?expr),
+    isOperator(?base),
+    ?expr = [?base, ?type, ?exprLeft, nil],
+    ToString(?exprLeft, ?outLeft),
+    ?out = cat(?base, ?outLeft).
+ToString(?expr, ?out) :-
+//    ResolveExpr(_, _, ?expr),
+    isExpr(?expr),
+    isOperator(?base),
+    ?expr = [?base, ?type, ?exprLeft, ?exprRight],
+    ToString(?exprLeft, ?outLeft),
+    ToString(?exprRight, ?outRight),
+    ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
+ToString(?expr, ?out) :-
+    isExpr(?expr),
+//    PathExpressionBefore(_, _, ?expr),
+    isOperator(?base),
+    ?expr = [?base, ?type, ?exprLeft, ?exprRight],
+    ToString(?exprLeft, ?outLeft),
+    ToString(?exprRight, ?outRight),
+    ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
+ToString(?expr, ?out) :-
+ //   PathExpressionAfterTrue(_, _, ?expr),
+    isExpr(?expr),
+    isOperator(?base),
+    ?expr = [?base, ?type, ?exprLeft, ?exprRight],
+    ToString(?exprLeft, ?outLeft),
+    ToString(?exprRight, ?outRight),
+    ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
+ToString(?expr, ?out) :-
+//    PathExpressionAfterFalse(_, _, ?expr),
+    isExpr(?expr),
+    isOperator(?base),
+    ?expr = [?base, ?type, ?exprLeft, ?exprRight],
+    ToString(?exprLeft, ?outLeft),
+    ToString(?exprRight, ?outRight),
+    ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
 
-.decl IfVarVar(?inst: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: Var, ?op: Operator)
-.decl IfVarConst(?inst: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: NumConstant, ?op: Operator)
+#endif
 
-.decl SinglePredOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)
-.decl FirstOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method) 
-.decl NextOfMultiplePredsOfInsnInMethod(?next: Instruction, ?prev: Instruction, ?insn: Instruction, ?meth: Method)
-.decl LastOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method) 
+isExpr(?expr) :-
+    PathExpressionAfterTrue(_, _, ?expr).
+isExpr(?expr) :-
+    PathExpressionAfterFalse(_, _, ?expr).
 
-.output FirstPredOfInsnInMethod
-.output LastPredOfInsnInMethod
-.output NextPredOfInsnInMethod
+isBooleanExpr(?expr) :-
+    (isInputExpr(?expr) ; isExpr(?expr)),
+    ?expr = [?op, ?type, ?rExpr, ?lExpr],
+    Type_boolean(?type).
 
-// Facts
+isOperator("&&").
+isOperator("||").
+isOperator("==").
+isOperator("!=").
+isOperator("<").
+isOperator(">").
+isOperator(">=").
+isOperator("<=").
 
-// Facts for NegateOp
+/* Facts for NegateOp */
 
 NegateOp("==", "!=").
 NegateOp("!=", "==").
@@ -34,7 +79,7 @@ NegateOp(">", "<=").
 NegateOp(">=", "<").
 NegateOp("<=", ">").
 
-// Rules
+/* Rules */
 
 /*
  * Multiple predecessors may flow up to this statement, thus we need
@@ -43,6 +88,16 @@ NegateOp("<=", ">").
  */
 
 // Pick the predecessor with the minimum ord value as the ?first predecessor
+
+FirstIfInsnInMethod(?insn, ?meth) :-
+    Instruction_Method(?insn, ?meth),
+    minOrd = min ord(?insn): IfsInMethod(?insn, ?meth),
+    ord(?insn) = minOrd.
+
+IfsInMethod(?pred, ?meth) :-
+    Instruction_Method(?insn, ?meth),
+    BBHeadInMethod(?insn, ?meth),
+    SinglePredOfInsnInMethod(?pred, ?insn, ?meth).
 
 FirstPredOfInsnInMethodOrdinal(?meth, ?firstOrd, ?insn) :-
     Instruction_Method(?insn, ?meth),
@@ -133,4 +188,3 @@ LastOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth) :-
     Instruction_Method(?insn, ?meth),
     !FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
     LastPredOfInsnInMethod(?meth, ?pred, ?insn).
-   

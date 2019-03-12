@@ -163,7 +163,7 @@ mainAnalysis.configuration.ContextRequest(?callerCtx, ?immutablehctx, ?invo, ?va
   mainAnalysis.isImmutableHContext(?immutablehctx),
   mainAnalysis.isImmutableContext(?callerCtx).
 
-.decl MockInvocationForEntryPoint(?value:Value, ?method:Method, ?invo:MethodInvocation)
+.decl MockInvocationForEntryPoint(?value:mainAnalysis.Value, ?method:Method, ?invo:MethodInvocation)
 
 MockInvocationForEntryPoint(?value, ?method, cat(cat(cat("<mock-invo ", ?value), ?method), ">")),
 PlusMethodInvocation(cat(cat(cat("<mock-invo ", ?value), ?method), ">")) :-

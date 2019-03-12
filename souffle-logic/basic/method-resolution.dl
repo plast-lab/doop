@@ -2,7 +2,7 @@
  * Encodes a CHA callgraph, effectively
  */
 .decl ResolveInvocation(?type:Type, ?invocation:MethodInvocation, ?tomethod:Method)
-.output ResolveInvocation
+//.output ResolveInvocation
         
 ResolveInvocation(?type, ?invocation, ?tomethod) :-
     VirtualMethodInvocation_SimpleName(?invocation, ?simplename),

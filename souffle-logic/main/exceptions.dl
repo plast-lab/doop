@@ -1,3 +1,4 @@
+#ifndef DISABLE_POINTS_TO
 Instruction_Throws(?hctx, ?value, ?ctx, ?insn) :-
   Throw(?insn, ?var),
   VarPointsTo(?hctx, ?value, ?ctx, ?var).
@@ -29,7 +30,6 @@ ThrowPointsTo(?hctx, ?value, ?ctx, ?method) :-
  .plan 1:(2,1,3,4,5)
 //#endif
 
-#ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?value, ?ctx, ?param) :-
   Instruction_Throws(?hctx, ?value, ?ctx, ?insn),
   Value_Type(?value, ?valueType),

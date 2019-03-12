@@ -19,13 +19,24 @@ class DryRuns extends Specification {
 	@Unroll
 	def "Test analysis compilation"(String analysisName) {
 		when:
-		// Some analyses do not support full stats.
-		String stats = ((analysisName == "micro") || (analysisName == "sound-may-point-to")) ? "--Xstats-none" : "--Xstats-full"
-		Main.main((String[])["-i", Artifacts.HELLO_JAR,
-							 "-a", analysisName,
-							 "--id", "dry-run-${analysisName}", "--cache",
-							 "--Xdry-run", "--souffle-force-recompile",
-							 stats])
+		// Some analyses do not support full stats or server logic.
+		List<String> extraOpts
+		switch (analysisName) {
+		case 'micro':
+		case 'sound-may-point-to':
+			extraOpts = ["--Xstats-none" ]
+			break
+		case 'types-only':
+			extraOpts = ['--Xstats-full', '--Xserver-logic', '--disable-points-to' ]
+			break
+		default:
+			extraOpts = ["--Xstats-full", "--Xserver-logic" ]
+		}
+		Main.main((String[])(["-i", Artifacts.HELLO_JAR,
+							  "-a", analysisName,
+							  "--id", "dry-run-${analysisName}", "--cache",
+							  "--Xdry-run", "--souffle-force-recompile"] +
+							  extraOpts))
 		Analysis analysis = Main.analysis
 
         then:
