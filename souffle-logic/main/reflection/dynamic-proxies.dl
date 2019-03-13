@@ -80,11 +80,12 @@ VarPointsTo(?hctxImmutable, ?proxyClassObj, ?ctx, ?ret) :-
 //// call RecordMacro, and use the calling ?ctx as argument.
 .decl ProxyClassInstance(?iface:InterfaceType, ?invo:MethodInvocation, ?value:Value)
 
-MockValueConsMacro(cat(cat(cat(cat("<proxy object for interface ", ?iface), " at "), ?invo), ">"), ?proxyClass),
-ProxyClassInstance(?iface, ?invo, cat(cat(cat(cat("<proxy object for interface ", ?iface), " at "), ?invo), ">")) :-
+MockValueConsMacro(?proxyObject, ?proxyClass),
+ProxyClassInstance(?iface, ?invo, ?proxyObject) :-
    java_lang_reflect_Proxy_newProxyInstance(?invo, _, _, _),
    isInterfaceType(?iface),
-   ProxyClassOfInterface(?iface, ?proxyClass).
+   ProxyClassOfInterface(?iface, ?proxyClass),
+   ?proxyObject = cat(cat(cat(cat("<proxy object for interface ", ?iface), " at "), ?invo), ">").
 
 .decl MethodOfInterface(?meth:Method, ?iface:InterfaceType)
 
@@ -113,18 +114,21 @@ SpecialMethodFromObject(?method, ?objMethod) :-
   Method_SimpleName(?objMethod, ?simple).
 
 .decl ArgArrayOfProxyMethod(?meth:Method, ?invo:MethodInvocation, ?value:Value)
+#define ARG_ARRAY(meth, invo) cat(cat(cat(cat("<argument array for proxied method ", meth), " at "), invo), ">")
 
-MockValueConsMacro(cat(cat(cat(cat("<argument array for proxied method ", ?meth), " at "), ?invo), ">"), "java.lang.Object[]"),
-ArgArrayOfProxyMethod(?meth, ?invo, cat(cat(cat(cat("<argument array for proxied method ", ?meth), " at "), ?invo), ">")) :-
-   ProxyClassInstance(?iface, ?invo, _),
-   MethodOfInterface(?meth, ?iface).
-
-// Copy of rule above for special Object methods.
-MockValueConsMacro(cat(cat(cat(cat("<argument array for proxied method ", ?objMeth), " at "), ?invo), ">"), "java.lang.Object[]"),
-ArgArrayOfProxyMethod(?objMeth, ?invo, cat(cat(cat(cat("<argument array for proxied method ", ?objMeth), " at "), ?invo), ">")) :-
+MockValueConsMacro(?argArray, "java.lang.Object[]"),
+ArgArrayOfProxyMethod(?meth, ?invo, ?argArray) :-
    ProxyClassInstance(?iface, ?invo, _),
    MethodOfInterface(?meth, ?iface),
-   SpecialMethodFromObject(?meth, ?objMeth).
+   ?argArray = ARG_ARRAY(?meth, ?invo).
+
+// Copy of rule above for special Object methods.
+MockValueConsMacro(?argArray, "java.lang.Object[]"),
+ArgArrayOfProxyMethod(?objMeth, ?invo, ?argArray) :-
+   ProxyClassInstance(?iface, ?invo, _),
+   MethodOfInterface(?meth, ?iface),
+   SpecialMethodFromObject(?meth, ?objMeth),
+   ?argArray = ARG_ARRAY(?objMeth, ?invo).
 
 .decl PrimitiveFormalOfInterface(?meth:Method, ?formal:Var, ?formalType:PrimitiveType)
 
@@ -143,10 +147,11 @@ PrimitiveFormalOfInterface(?meth, ?formal, ?formalType) :-
 // REVIEW: contexts (as above)?
 .decl BoxAllocationOfPrimitiveFormal(?formal:Var, ?value:Value)
 
-MockValueConsMacro(cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">"), ?boxType),
-BoxAllocationOfPrimitiveFormal(?formal, cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">")) :-
+MockValueConsMacro(?boxedArg, ?boxType),
+BoxAllocationOfPrimitiveFormal(?formal, ?boxedArg) :-
    PrimitiveFormalOfInterface(?meth, ?formal, ?formalType),
-   PrimitiveType_Boxed(?formalType, ?boxType).
+   PrimitiveType_Boxed(?formalType, ?boxType),
+   ?boxedArg = cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">").
 
 // Return var of newProxyInstance should point to the appropriate
 // dynamic proxy object.
