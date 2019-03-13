@@ -32,14 +32,16 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 		when:
 		Analysis analysis = analyzeTest("011-variance",
 										["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-										 "--generate-jimple",
+										 "--generate-jimple", "--Xserver-logic",
 										 "--thorough-fact-gen", "--sanity"])
 
 		then:
-		normalCGE(analysis, '<Main: void main(java.lang.String[])>/I.meth1/0', '<Test: java.lang.Object meth1(Clazz)>')
-		normalCGE(analysis, '<Main: void main(java.lang.String[])>/I.meth1/1', '<Test: java.lang.Object meth1(Clazz)>')
-		normalCGE(analysis, '<Main: void main(java.lang.String[])>/I.meth2/0', '<Test: Clazz meth2(java.lang.Object)>')
+		invoValue(analysis, '<Main: void main(java.lang.String[])>/I.meth1/0', '<Test: java.lang.Object meth1(Clazz)>')
+		invoValue(analysis, '<Main: void main(java.lang.String[])>/I.meth1/1', '<Test: java.lang.Object meth1(Clazz)>')
+		invoValue(analysis, '<Main: void main(java.lang.String[])>/I.meth2/0', '<Test: Clazz meth2(java.lang.Object)>')
+		invoValue(analysis, '<Main: void main(java.lang.String[])>/I.meth2/0', '<Test: SubClazz meth2(java.lang.Object)>')
 		methodIsReachable(analysis, '<Test: SubClazz meth2(java.lang.Object)>')
+		methodSub(analysis, '<I: Clazz meth2(java.lang.Object)>', '<Test: SubClazz meth2(java.lang.Object)>')
 		noSanityErrors(analysis)
 	}
 
