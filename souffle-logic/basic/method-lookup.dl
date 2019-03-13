@@ -103,8 +103,8 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
     Method_DeclaringType(?method, ?type),
     ! Method_Modifier("abstract", ?method).
 
-// Covariant method resolution, used to "go to definition" in server mode.
-#ifdef X_SERVER_LOGIC
+// Covariant method resolution, used to "go to definition" in server mode. Also
+// used by the standalone CHA script.
 #ifndef FEATHERWEIGHT_ANALYSIS
 
 // Logic that finds overridden methods with covariant return types.
@@ -185,4 +185,3 @@ MethodImplementedModuloCovariance(?name, ?descriptor, ?type, ?comethod) :-
     Method_Descriptor(?method, ?descriptor).
 
 #endif // FEATHERWEIGHT_ANALYSIS
-#endif // X_SERVER_LOGIC
