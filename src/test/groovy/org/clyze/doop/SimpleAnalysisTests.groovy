@@ -43,7 +43,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 		noSanityErrors(analysis)
 	}
 
-	@spock.lang.Ignore
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 012 (interface fields)"() {
 		when:
