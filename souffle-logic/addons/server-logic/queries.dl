@@ -305,12 +305,6 @@ Server_Invocation_Values(?fromMethod, ?invo, ?toMethod) :-
   mainAnalysis.AnyCallGraphEdge(?invo, ?toMethod),
   Instruction_Method(?invo, ?fromMethod).
 
-#ifdef REFLECTION
-Server_Invocation_Values(?fromMethod, ?invo, ?toMethod) :-
-  mainAnalysis.ReflectiveCallGraphEdge(_, ?invo, _, ?toMethod),
-  Instruction_Method(?invo, ?fromMethod).
-#endif // REFLECTION
-
 Server_ClassCallsClass(?fromClass, ?toClass) :-
   Server_Invocation_Values(?fromMethod, _, ?toMethod),
   Method_DeclaringType(?fromMethod, ?fromClass),
