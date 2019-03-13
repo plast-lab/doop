@@ -39,6 +39,7 @@
 .decl LastOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)
 
 .decl isBooleanExpr(?expr: Expr)
+.decl isArithmeticExpr(?expr: Expr)
 .decl isInputExpr(?expr: Expr)
 .decl isExpr(?expr: Expr)
 
@@ -58,12 +59,13 @@
 .decl PathExpressionAfterFalse(?meth: Method, ?insn: Instruction, ?pathExpr: Expr)
 
 .output isBooleanExpr
+.output isArithmeticExpr
 .output ResolveExpr
 #ifdef DEBUG
 .output ToString
 #endif
-// .output isInputExpr
-// .output isExpr
+.output isInputExpr
+.output isExpr
 
 .output PathExpressionBefore
 .output PathExpressionAfterTrue

@@ -59,6 +59,17 @@ isBooleanExpr(?expr) :-
     ?expr = [?op, ?type, ?rExpr, ?lExpr],
     Type_boolean(?type).
 
+isArithmeticExpr(?expr) :-
+    (isInputExpr(?expr) ; isExpr(?expr)),
+    ?expr = [?op, ?type, ?rExpr, ?lExpr],
+    (Type_byte(?type) ;
+     Type_char(?type) ;
+     Type_short(?type) ;
+     Type_int(?type) ;
+     Type_long(?type) ;
+     Type_float(?type) ;
+     Type_double(?type)).
+
 isOperator("&&").
 isOperator("||").
 isOperator("==").
