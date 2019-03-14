@@ -33,7 +33,7 @@ isInputExpr(?expr) :-
     AssignReturnValue(?methInvo, ?var),
     ?expr = [?var, ?type, nil, nil].
 
-// Load instance fields
+// Load insnance fields
 
 ResolveExpr(?meth, ?var, ?expr),
 isInputExpr(?expr) :-
@@ -99,18 +99,40 @@ isExpr(?expr) :-
 
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    isAssignBinop_Insn(?insn),
-    AssignInstruction_To(?insn, ?var),
+    AssignBinaryVarVar(_, ?var, ?meth, ?right1, ?right2, ?op),
     Var_Type(?var, ?type),
     isPrimitiveType(?type),
-    Instruction_Method(?insn, ?meth),
-    AssignOper_From(?insn, ?pos1, ?right1),
-    AssignOper_From(?insn, ?pos2, ?right2),
-    ?pos1 < ?pos2,
-    _OperatorAt(?insn, ?op),
     ResolveExpr(?meth, ?right1, ?rExpr),
     ResolveExpr(?meth, ?right2, ?lExpr),
     ?expr = [?op, ?type, ?lExpr, ?rExpr].
+
+ResolveExpr(?meth, ?var, ?expr),
+isExpr(?expr) :-
+    AssignBinaryVarConst(_, ?var, ?meth, ?right1, ?right2, ?op),
+    Var_Type(?var, ?type),
+    isPrimitiveType(?type),
+    ResolveExpr(?meth, ?right1, ?lExpr),
+    ?constR = [?right2, ?type, nil, nil],
+    ?expr = [?op, ?type, ?lExpr, ?constR].
+
+ResolveExpr(?meth, ?var, ?expr),
+isExpr(?expr) :-
+    AssignBinaryConstVar(_, ?var, ?meth, ?right1, ?right2, ?op),
+    Var_Type(?var, ?type),
+    isPrimitiveType(?type),
+    ResolveExpr(?meth, ?right2, ?rExpr),
+    ?constL = [?right1, ?type, nil, nil],
+    ?expr = [?op, ?type, ?constL, ?rExpr].
+
+ResolveExpr(?meth, ?var, ?expr),
+isExpr(?expr) :-
+    AssignBinaryConstConst(_, ?var, ?meth, ?right1, ?right2, ?op),
+    Var_Type(?var, ?type),
+    isPrimitiveType(?type),
+    ?constL = [?right1, ?type, nil, nil],
+    ?constR = [?right2, ?type, nil, nil],
+    ?expr = [?op, ?type, ?constL, ?constR].
+
 
 // If Conditions - Var_Var
 
@@ -123,7 +145,6 @@ isExpr(?expr) :-
 
 // If Conditions - Var_Const
 
-isExpr(?constExpr),
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
     IfVarConst(_, ?var, ?meth, ?right1, ?right2, ?op),

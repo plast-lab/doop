@@ -95,7 +95,7 @@ NegateOp("<=", ">").
 /*
  * Multiple predecessors may flow up to this statement, thus we need
  * to enumerate all possible predecessors in order to build the
- * corresponding path expression, before the instruction.
+ * corresponding path expression, before the insnruction.
  */
 
 // Pick the predecessor with the minimum ord value as the ?first predecessor
@@ -132,7 +132,7 @@ LastPredOfInsnInMethod(?meth, ?last, ?insn) :-
     ?max_ord = ord(?last),
     LastPredOfInsnInMethodOrdinal(?meth, ?max_ord, ?insn).
 
-// Pick as ?next predecessor of ?insn the instruction with the least
+// Pick as ?next predecessor of ?insn the insnruction with the least
 // greater ord number, compared to the ?prev predecessor
 
 NotNextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn) :-
@@ -151,26 +151,71 @@ NextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn) :-
     ord(?prev) < ord(?next),
     !NotNextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn).
 
+// Determine expr operands for binary expression assignments
 
-// Determine expr operands for if-statements
-
-IfVarVar(?inst, ?var, ?meth, ?right1, ?right2, ?op) :-
-    Instruction_Method(?inst, ?meth),
-    DummyIf_Var(?inst, ?var),
-    isIf_Insn(?inst),
-    If_Var(?inst, ?pos1, ?right1),
-    If_Var(?inst, ?pos2, ?right2),
+AssignBinaryVarVar(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
+    isAssignBinop_Insn(?insn),
+    AssignInstruction_To(?insn, ?var),
+    Var_Type(?var, ?type),
+    isPrimitiveType(?type),
+    Instruction_Method(?insn, ?meth),
+    AssignOper_From(?insn, ?pos1, ?right1),
+    AssignOper_From(?insn, ?pos2, ?right2),
     ?pos1 < ?pos2,
-    _OperatorAt(?inst, ?op).
+    _OperatorAt(?insn, ?op).
 
-IfVarConst(?inst, ?var, ?meth, ?right1, ?right2, ?op) :-
-    Instruction_Method(?inst, ?meth),
-    DummyIf_Var(?inst, ?var),
-    isIf_Insn(?inst),
-    If_Var(?inst, ?pos1, ?right1),
-    If_Constant(?inst, ?pos2, ?right2),
+AssignBinaryConstVar(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
+    isAssignBinop_Insn(?insn),
+    AssignInstruction_To(?insn, ?var),
+    Var_Type(?var, ?type),
+    isPrimitiveType(?type),
+    Instruction_Method(?insn, ?meth),
+    AssignOper_FromConstant(?insn, ?pos1, ?right1),
+    AssignOper_From(?insn, ?pos2, ?right2),
     ?pos1 < ?pos2,
-    _OperatorAt(?inst, ?op).
+    _OperatorAt(?insn, ?op).
+
+AssignBinaryVarConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
+    isAssignBinop_Insn(?insn),
+    AssignInstruction_To(?insn, ?var),
+    Var_Type(?var, ?type),
+    isPrimitiveType(?type),
+    Instruction_Method(?insn, ?meth),
+    AssignOper_From(?insn, ?pos1, ?right1),
+    AssignOper_FromConstant(?insn, ?pos2, ?right2),
+    ?pos1 < ?pos2,
+    _OperatorAt(?insn, ?op).
+   
+AssignBinaryConstConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
+    isAssignBinop_Insn(?insn),
+    AssignInstruction_To(?insn, ?var),
+    Var_Type(?var, ?type),
+    isPrimitiveType(?type),
+    Instruction_Method(?insn, ?meth),
+    AssignOper_FromConstant(?insn, ?pos1, ?right1),
+    AssignOper_FromConstant(?insn, ?pos2, ?right2),
+    ?pos1 < ?pos2,
+    _OperatorAt(?insn, ?op).
+
+// Determine expr operands for if-statement conditionskk
+
+IfVarVar(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
+    Instruction_Method(?insn, ?meth),
+    DummyIf_Var(?insn, ?var),
+    isIf_Insn(?insn),
+    If_Var(?insn, ?pos1, ?right1),
+    If_Var(?insn, ?pos2, ?right2),
+    ?pos1 < ?pos2,
+    _OperatorAt(?insn, ?op).
+
+IfVarConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
+    Instruction_Method(?insn, ?meth),
+    DummyIf_Var(?insn, ?var),
+    isIf_Insn(?insn),
+    If_Var(?insn, ?pos1, ?right1),
+    If_Constant(?insn, ?pos2, ?right2),
+    ?pos1 < ?pos2,
+    _OperatorAt(?insn, ?op).
 
 // Single Pred
 

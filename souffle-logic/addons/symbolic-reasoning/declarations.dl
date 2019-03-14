@@ -30,8 +30,14 @@
 
 .decl NegateOp(after: Operator, before: Operator)
 
-.decl IfVarVar(?inst: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: Var, ?op: Operator)
-.decl IfVarConst(?inst: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: NumConstant, ?op: Operator)
+.decl AssignBinaryVarVar(?insn:Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: Var, ?op: Operator)
+.decl AssignBinaryVarConst(?insn:Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: NumConstant, ?op: Operator)
+.decl AssignBinaryConstVar(?insn:Instruction, ?var: Var, ?meth: Method, ?right1: NumConstant, ?right2: Var, ?op: Operator)
+.decl AssignBinaryConstConst(?insn:Instruction, ?var: Var, ?meth: Method, ?right1: NumConstant, ?right2: NumConstant, ?op: Operator)
+
+
+.decl IfVarVar(?insn: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: Var, ?op: Operator)
+.decl IfVarConst(?insn: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: NumConstant, ?op: Operator)
 
 .decl SinglePredOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)
 .decl FirstOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)
