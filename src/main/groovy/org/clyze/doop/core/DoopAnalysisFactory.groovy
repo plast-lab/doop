@@ -436,6 +436,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
+		if (options.X_SERVER_LOGIC.value || options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
+		   options.GENERATE_ARTIFACTS_MAP.value = true
+		}
+
 		// If no stats option is given, select default stats.
 		if (!options.X_STATS_FULL.value && !options.X_STATS_DEFAULT.value &&
 				!options.X_STATS_NONE.value && !options.X_STATS_AROUND.value) {

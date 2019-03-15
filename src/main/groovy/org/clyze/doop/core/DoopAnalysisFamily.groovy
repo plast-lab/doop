@@ -241,6 +241,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
+					id: "GENERATE_ARTIFACTS_MAP",
+					name: "generate-artifacts-map",
+					group: GROUP_FACTS,
+					description: "Generate artifacts map.",
+					value: false,
+					cli: false
+			),
+			new BooleanAnalysisOption(
 					id: "SIMULATE_NATIVE_RETURNS",
 					name: "simulate-native-returns",
 					group: GROUP_NATIVE,

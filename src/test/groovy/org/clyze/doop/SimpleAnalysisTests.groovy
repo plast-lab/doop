@@ -32,18 +32,20 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 		when:
 		Analysis analysis = analyzeTest("011-variance",
 										["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-										 "--generate-jimple",
+										 "--generate-jimple", "--Xserver-logic",
 										 "--thorough-fact-gen", "--sanity"])
 
 		then:
-		normalCGE(analysis, '<Main: void main(java.lang.String[])>/I.meth1/0', '<Test: java.lang.Object meth1(Clazz)>')
-		normalCGE(analysis, '<Main: void main(java.lang.String[])>/I.meth1/1', '<Test: java.lang.Object meth1(Clazz)>')
-		normalCGE(analysis, '<Main: void main(java.lang.String[])>/I.meth2/0', '<Test: Clazz meth2(java.lang.Object)>')
+		invoValue(analysis, '<Main: void main(java.lang.String[])>/I.meth1/0', '<Test: java.lang.Object meth1(Clazz)>')
+		invoValue(analysis, '<Main: void main(java.lang.String[])>/I.meth1/1', '<Test: java.lang.Object meth1(Clazz)>')
+		invoValue(analysis, '<Main: void main(java.lang.String[])>/I.meth2/0', '<Test: Clazz meth2(java.lang.Object)>')
+		invoValue(analysis, '<Main: void main(java.lang.String[])>/I.meth2/0', '<Test: SubClazz meth2(java.lang.Object)>')
 		methodIsReachable(analysis, '<Test: SubClazz meth2(java.lang.Object)>')
+		methodSub(analysis, '<I: Clazz meth2(java.lang.Object)>', '<Test: SubClazz meth2(java.lang.Object)>')
 		noSanityErrors(analysis)
 	}
 
-	@spock.lang.Ignore
+	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 012 (interface fields)"() {
 		when:
@@ -62,5 +64,23 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 		then:
 		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Enums array for Main$UndeletablePrefKey>')
 		arrayIndexPointsTo(analysis, '<Enums array for Main$UndeletablePrefKey>', '<Main$UndeletablePrefKey: void <clinit>()>/new Main$UndeletablePrefKey/0', true)
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test 017 (annotations)"() {
+		when:
+		Analysis analysis = analyzeTest("017-annotations",
+										["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+										 "--generate-jimple", "--Xserver-logic",
+										 "--reflection-classic",
+										 "--thorough-fact-gen", "--sanity"])
+
+		then:
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/cAnnotations#_16', '<annotations array for type Main at <Main: void main(java.lang.String[])>/java.lang.Class.getDeclaredAnnotations/0>')
+		arrayIndexPointsTo(analysis, '<annotations array for type Main at <Main: void main(java.lang.String[])>/java.lang.Class.getDeclaredAnnotations/0>', '<annotation TypeAnnotation for Main>', true)
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/mAnnotations#8#_23', '<annotations array for method <Main: void annotation()> at <Main: void main(java.lang.String[])>/java.lang.reflect.Method.getDeclaredAnnotations/0>')
+		arrayIndexPointsTo(analysis, '<annotations array for method <Main: void annotation()> at <Main: void main(java.lang.String[])>/java.lang.reflect.Method.getDeclaredAnnotations/0>', '<annotation MethodAnnotation for <Main: void annotation()>>')
+		// noSanityErrors(analysis)
 	}
 }

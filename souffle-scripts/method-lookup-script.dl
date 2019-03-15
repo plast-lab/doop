@@ -28,6 +28,13 @@ MethodLookupExt(?simplename, ?descriptor, ?type, ?method, 0) :-
     MethodLookup(?simplename, ?descriptor, ?type, ?method),
     !SingleDispatch(?method).
 
+MethodLookupExt(?simplename, ?descriptor, ?type, ?toMethod, ?isSingleDispatch) :-
+    MethodLookupExt(?simplename, ?descriptor, ?type, ?bridge, ?isSingleDispatch),
+    Method_DeclaringType(?bridge, ?type),
+    Method_SimpleName(?bridge, ?name),
+    Method_Descriptor(?bridge, ?desc),
+    MethodImplementedModuloCovariance(?name, ?desc, ?type, ?toMethod).
+
 .decl Invocation_Parts(?invocation:MethodInvocation, ?simplename:symbol, ?descriptor:symbol, ?basetype:Type, ?isSingleDispatch:number)
 .output Invocation_Parts
 

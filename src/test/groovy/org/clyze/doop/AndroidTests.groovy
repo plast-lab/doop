@@ -37,6 +37,27 @@ class AndroidTests extends DoopBenchmark {
 
 	// @spock.lang.Ignore
 	@Unroll
+	def "Types-only Android analysis test"() {
+		when:
+		List args = ["-i", Artifacts.ANDROIDTERM_APK,
+					 "-a", "types-only", "--Xserver-logic",
+					 "--platform", "android_25_fulljars",
+					 "--id", "test-android-androidterm-types-only",
+					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+					 "--gen-opt-directives", "--decode-apk",
+					 "--thorough-fact-gen", "--sanity",
+					 "--scan-native-code", "--simulate-native-returns",
+					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
+		Main.main((String[])args)
+		Analysis analysis = Main.analysis
+
+		then:
+		methodIsReachable(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>')
+		noSanityErrors(analysis)
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
 	def "Featherweight/HeapDL Android analysis test"() {
 		when:
 		List args = ["-i", Artifacts.ANDROIDTERM_APK,

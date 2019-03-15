@@ -591,6 +591,33 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   ReflectiveAllocation(?invocation, ?type, ?value).
 
 /*************************************************************
+ * java.lang.Class.get[Declared]Annotations()
+ *
+ *   public Annotation[] getAnnotations()
+ *   public Annotation[] getDeclaredAnnotations()
+ *
+ *************************************************************/
+
+.decl PopulateAnnotationsForType(?annotationsArray:Value, ?type:Type, ?hctx:configuration.HContext)
+
+MockValueConsMacro(?annotationsArray, "java.lang.annotation.Annotation[]"),
+VarPointsTo(?hctx, ?annotationsArray, ?ctx, ?to),
+PopulateAnnotationsForType(?annotationsArray, ?type, ?hctx) :-
+( java_lang_Class_getAnnotations(?invocation, ?to, ?from) ;
+  java_lang_Class_getDeclaredAnnotations(?invocation, ?to, ?from)),
+  VarPointsTo(?hctx, ?classValue, ?ctx, ?from),
+  ReifiedClass(?type, ?classValue),
+  // Spec: each invocation creates a new annotation array.
+  ?annotationsArray = cat("<annotations array for type ", cat(?type, cat(" at ", cat(?invocation, ">")))),
+  isImmutableHContext(?hctx).
+
+MockValueConsMacro(?annotationValue, "java.lang.annotation.Annotation"),
+ArrayIndexPointsTo(?hctx, ?annotationValue, ?hctx, ?annotationsArray) :-
+  PopulateAnnotationsForType(?annotationsArray, ?type, ?hctx),
+  Class_Annotation(?type, ?annotation),
+  ?annotationValue = cat("<annotation ", cat(?annotation, cat(" for ", cat(?type, ">")))).
+
+/*************************************************************
  * Auxiliaries
  *************************************************************/
 .decl NumberOfClassesMatchingConstant(?constant:StringConstant, ?n:number)
