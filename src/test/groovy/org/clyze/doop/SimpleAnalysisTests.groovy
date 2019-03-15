@@ -79,7 +79,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 		then:
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/cAnnotations#_16', '<annotations array for type Main at <Main: void main(java.lang.String[])>/java.lang.Class.getDeclaredAnnotations/0>')
 		arrayIndexPointsTo(analysis, '<annotations array for type Main at <Main: void main(java.lang.String[])>/java.lang.Class.getDeclaredAnnotations/0>', '<annotation TypeAnnotation for Main>', true)
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/mAnnotations#8#_23', '<annotations array for method <Main: void annotation()> at <Main: void main(java.lang.String[])>/java.lang.reflect.Method.getDeclaredAnnotations/0>')
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/mAnnotations#8#_23', '<annotations array for method <Main: void annotation()> at <Main: void main(java.lang.String[])>/java.lang.reflect.Method.getDeclaredAnnotations/0>')
 		arrayIndexPointsTo(analysis, '<annotations array for method <Main: void annotation()> at <Main: void main(java.lang.String[])>/java.lang.reflect.Method.getDeclaredAnnotations/0>', '<annotation MethodAnnotation for <Main: void annotation()>>')
 		// noSanityErrors(analysis)
 	}
