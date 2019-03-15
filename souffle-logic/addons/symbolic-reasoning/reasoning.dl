@@ -12,14 +12,48 @@ ExprImpliesOther(expr1, expr1) :-
 ExprImpliesOther(expr, left),
 ExprImpliesOther(expr, right) :-
   isBooleanExpr(expr),
-  (expr = ["&&", "boolean", left, right]
-    ;
-  expr = ["&", "boolean", left, right]).
+  expr = ["&&", "boolean", left, right].
+
+// A && B => B && A
+ExprImpliesOther(expr, exprOther) :-
+  isBooleanExpr(expr),
+  expr = ["&&", "boolean", left, right],
+  exprOther = ["&&", "boolean", right, left].  
 
 // A => A || B and B => A || B
 ExprImpliesOther(left, expr),
 ExprImpliesOther(right, expr) :-
   isBooleanExpr(expr),
-  (expr = ["||", "boolean", left, right]
-    ;
-  expr = ["|", "boolean", left, right]).
+  expr = ["||", "boolean", left, right].
+
+// A || B => B || A
+ExprImpliesOther(expr, exprOther) :-
+  isBooleanExpr(expr),
+  expr = ["||", "boolean", left, right],
+  exprOther = ["||", "boolean", right, left].
+
+
+/*
+/////////// ===========================================
+/// Above are axioms, below are inference rules
+///////////
+ExprImpliesOther(expr, exprOther) :-
+  ExprImpliesOther(expr, exprInterm),
+  ExprImpliesOther(exprInterm, exprOther).
+
+// A => B and A => C implies A => B && C
+
+// B => A and C => A implies B || C => A
+
+// A => B and ExprIsNegationOfOther(B, B') and ExprIsNegationOfOther(A, A') implies B' => A'
+
+// ExprIsAlwaysFalse(B) implies B => A
+// ExprIsAlwaysTrue(B) implies A => B
+
+
+///// ????
+// ExprIsAlwaysFalse (x <= x, x <= x+1, 2 < 3, ...)
+// ExprIsAlwaysTrue
+// ExprIsNegationOfOther
+
+*/
