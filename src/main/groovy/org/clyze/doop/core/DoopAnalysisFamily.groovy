@@ -938,7 +938,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				Doop.initDoopFromEnv()
 			}
 		} catch (e) {
-			println "Error initializing Doop."
+			println "Error initializing Doop: Souffle logic path not found, set DOOP_HOME."
 		}
 		analysesFor(Doop.souffleAnalysesPath, "analysis.dl")
 	}
@@ -949,7 +949,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				Doop.initDoopFromEnv()
 			}
 		} catch (e) {
-			println "Error initializing Doop."
+			println "Error initializing Doop: LB logic path not found, set DOOP_HOME."
 		}
 		analysesFor(Doop.analysesPath, "analysis.logic")
 	}
