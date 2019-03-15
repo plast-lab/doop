@@ -358,51 +358,76 @@ public class NativeScanner {
     /**
      *  return in which functions every found string belongs
      **/
-    private static Map<String,List<String>> findStringsInFunctions(Map<Long, String> foundStrings, Map<Long, String> eps, String lib, Arch arch) {
-        Long pageAddress = null;
-	Map<String, List<String>> stringsInFunctions = new HashMap<>();
+    private static Map<String,List<String>> findStringsInFunctions(Map<Long,String> foundStrings, Map<Long, String> eps, String lib, Arch arch) {
+        if (arch.equals(Arch.X86_64))
+            return findStringsInX86_64(foundStrings, eps, lib);
+        else if (arch.equals(Arch.AARCH64))
+            return findStringsInAARCH64(foundStrings, eps, lib);
+        else if (arch.equals(Arch.ARMEABI)) {
+            System.out.println("TODO: handling of gdb output: ");
+            return null;
+        }
+
+        return null;
+    }
+
+    private static Map<String,List<String>> findStringsInX86_64(Map<Long,String> foundStrings, Map<Long, String> eps, String lib) {
+         Map<String,List<String>> stringsInFunctions = new HashMap<>();
+
         for (Map.Entry<Long, String> entry : eps.entrySet()) {
             try {
                 String function = entry.getValue();
                 ProcessBuilder gdbBuilder = new ProcessBuilder("gdb", "-batch", "-ex", "disassemble " + function, lib);
                 for (String line : runCommand(gdbBuilder)) {
-
-		    if (arch.equals(Arch.X86_64) && line.contains("# 0x")) {
-			String string = line.substring(line.lastIndexOf('#') + 2);
+                    if (line.contains("# 0x")) {
+                        String string = line.substring(line.lastIndexOf('#') + 2);
                         if (string.matches("^0x[0-9a-f]+$")) {
                             Long address = Long.parseLong(string.substring(string.lastIndexOf('x')+1),16);
-			    String str = foundStrings.get(address);
-			    if (debug)
+                            String str = foundStrings.get(address);
+                            if (debug)
                                 System.out.println("gdb disassemble string: '" + str + "' -> " + address);
                             stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
-			}
-                    } else if (arch.equals(Arch.AARCH64)) {
-			String[] lineSplit = line.split("\\s+");
-			if (line.contains("adrp")) {
-			    for (String string : lineSplit) {
-				if (string.matches("^0x[0-9a-f]+$")) {
-				    pageAddress = Long.parseLong(string.substring(string.lastIndexOf('x') + 1),16);
-				    if(debug)
-					System.out.println(string + " --> Page address: " + pageAddress);
-				}
-			    }
-			} else if (line.contains("add") && pageAddress != null) {
-			    for (String string : lineSplit) {
-                                if (string.matches("^#0x[0-9a-f]+$")) {
-                                    Long address = pageAddress + Long.parseLong(string.substring(string.lastIndexOf('x') + 1),16);
-				    String str = foundStrings.get(address);
-	                            if (debug)
-        	                        System.out.println("gdb disassemble string: '" + str + "' -> " + address);
-                	            stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
-				}
-			    }
-			} else
-			    pageAddress = null;
-                    } else if (arch.equals(Arch.ARMEABI)) {
-                        // System.out.println("TODO: handling of gdb output line: " + line);
-                    } else if (debug)
-                        System.out.println("Ignoring gdb output line: " + line);
-		}
+                        }
+                    }
+                }
+            } catch (IOException ex) {
+                System.err.println("Could not run gdb: " + ex.getMessage());
+            }
+        }
+        return stringsInFunctions;
+    }
+
+    private static Map<String,List<String>> findStringsInAARCH64(Map<Long,String> foundStrings, Map<Long, String> eps, String lib) {
+        Long pageAddress = null;
+        Map<String,List<String>> stringsInFunctions = new HashMap<>();
+
+        for (Map.Entry<Long, String> entry : eps.entrySet()) {
+            try {
+                String function = entry.getValue();
+                ProcessBuilder gdbBuilder = new ProcessBuilder("gdb", "-batch", "-ex", "disassemble " + function, lib);
+                for (String line : runCommand(gdbBuilder)) {
+                    String[] lineSplit = line.split("\\s+");
+                    if (line.contains("adrp")) {
+                        for (String string : lineSplit) {
+                            if (string.matches("^0x[0-9a-f]+$")) {
+                                pageAddress = Long.parseLong(string.substring(string.lastIndexOf('x') + 1),16);
+                                if(debug)
+                                    System.out.println(string + " --> Page address: " + pageAddress);
+                            }
+                        }
+                    } else if (line.contains("add") && pageAddress != null) {
+                        for (String string : lineSplit) {
+                            if (string.matches("^#0x[0-9a-f]+$")) {
+                                Long address = pageAddress + Long.parseLong(string.substring(string.lastIndexOf('x') + 1),16);
+                                String str = foundStrings.get(address);
+                                if (debug)
+                                    System.out.println("gdb disassemble string: '" + str + "' -> " + address);
+                                stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                            }
+                        }
+                    } else
+                        pageAddress = null;
+                }
             } catch (IOException ex) {
                 System.err.println("Could not run gdb: " + ex.getMessage());
             }
