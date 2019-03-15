@@ -65,4 +65,22 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Enums array for Main$UndeletablePrefKey>')
 		arrayIndexPointsTo(analysis, '<Enums array for Main$UndeletablePrefKey>', '<Main$UndeletablePrefKey: void <clinit>()>/new Main$UndeletablePrefKey/0', true)
 	}
+
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test 017 (annotations)"() {
+		when:
+		Analysis analysis = analyzeTest("017-annotations",
+										["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+										 "--generate-jimple", "--Xserver-logic",
+										 "--reflection-classic",
+										 "--thorough-fact-gen", "--sanity"])
+
+		then:
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/cAnnotations#_16', '<annotations array for type Main at <Main: void main(java.lang.String[])>/java.lang.Class.getDeclaredAnnotations/0>')
+		arrayIndexPointsTo(analysis, '<annotations array for type Main at <Main: void main(java.lang.String[])>/java.lang.Class.getDeclaredAnnotations/0>', '<annotation TypeAnnotation for Main>', true)
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/mAnnotations#8#_23', '<annotations array for method <Main: void annotation()> at <Main: void main(java.lang.String[])>/java.lang.reflect.Method.getDeclaredAnnotations/0>')
+		arrayIndexPointsTo(analysis, '<annotations array for method <Main: void annotation()> at <Main: void main(java.lang.String[])>/java.lang.reflect.Method.getDeclaredAnnotations/0>', '<annotation MethodAnnotation for <Main: void annotation()>>')
+		// noSanityErrors(analysis)
+	}
 }

@@ -116,6 +116,12 @@ java_lang_Class_getComponentType(?to, ?from) :-
 java_lang_Class_getSuperclass(?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Class getSuperclass()>").
 
+java_lang_Class_getAnnotations(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.annotation.Annotation[] getAnnotations()>").
+
+java_lang_Class_getDeclaredAnnotations(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.annotation.Annotation[] getDeclaredAnnotations()>").
+
 // // (YS) Old style: Makes no sense to me. The type should not be there. This is just
 // // allocating too many useless arrays. Changed it throughout.
 // CreateReflectiveAllocationMacro(?invocation, ?type, ?arrayType, ?arrayHeapStr),
@@ -266,6 +272,9 @@ java_lang_reflect_Method_invoke(?invocation, ?method) :-
   isMethod("<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
   MethodInvocation_Method(?invocation, "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
   VirtualMethodInvocation_Base(?invocation, ?method).
+
+java_lang_reflect_Method_getDeclaredAnnotations(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Method: java.lang.annotation.Annotation[] getDeclaredAnnotations()>").
 
 // We use a distinct value abstraction for every java.lang.Class, i.e., for
 // every class type that appears in the bytecode, for example '<class

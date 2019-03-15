@@ -36,3 +36,28 @@ ReflectiveAssignReturnValue(?invocation, ?var) :-
 ReflectiveActualParams(?invocation, ?argsParam) :-
   java_lang_reflect_Method_invoke(?invocation, _),
   ActualParam(1, ?invocation, ?argsParam).
+
+/*************************************************************
+ * java.lang.reflect.Method.getDeclaredAnnotations()
+ *
+ *   public Annotation[] getDeclaredAnnotations()
+ *
+ *************************************************************/
+
+.decl PopulateAnnotationsForMethod(?annotationsArray:Value, ?method:Method, ?hctx:configuration.HContext)
+
+MockValueConsMacro(?annotationsArray, "java.lang.annotation.Annotation[]"),
+VarPointsTo(?hctx, ?annotationsArray, ?ctx, ?to),
+PopulateAnnotationsForMethod(?annotationsArray, ?method, ?hctx) :-
+  java_lang_reflect_Method_getDeclaredAnnotations(?invocation, ?to, ?from),
+  VarPointsTo(?hctx, ?methodValue, ?ctx, ?from),
+  ReifiedMethod(?method, ?methodValue),
+  // Spec: each invocation creates a new annotation array.
+  ?annotationsArray = cat("<annotations array for method ", cat(?method, cat(" at ", cat(?invocation, ">")))),
+  isImmutableHContext(?hctx).
+
+MockValueConsMacro(?annotationValue, "java.lang.annotation.Annotation"),
+ArrayIndexPointsTo(?hctx, ?annotationValue, ?hctx, ?annotationsArray) :-
+  PopulateAnnotationsForMethod(?annotationsArray, ?method, ?hctx),
+  Method_Annotation(?method, ?annotation),
+  ?annotationValue = cat("<annotation ", cat(?annotation, cat(" for ", cat(?method, ">")))).
