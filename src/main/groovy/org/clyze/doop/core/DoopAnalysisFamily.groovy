@@ -29,6 +29,10 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	@Override
 	Map<String, AnalysisOption> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
 
+	public AnalysisOption getOptionByName(String n) {
+		SUPPORTED_OPTIONS.find { it.name == n }
+	}
+
 	private static List<AnalysisOption> SUPPORTED_OPTIONS = [
 			/* Start Main options */
 			new AnalysisOption<String>(
