@@ -365,7 +365,7 @@ public class NativeScanner {
             return findStringsInAARCH64(foundStrings, eps, lib);
         else if (arch.equals(Arch.ARMEABI)) {
             System.out.println("TODO: handling of gdb output: ");
-            return null;
+            return new HashMap<>();
         }
 
         return null;
