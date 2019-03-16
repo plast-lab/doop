@@ -17,10 +17,10 @@ class OpenProgramsTest extends Specification {
 		Analysis analysis = Main.analysis
 
 		then:
-		metricIsApprox(analysis, "call graph edges (INS)", 371_681)
-		metricIsApprox(analysis, "reachable methods (INS)", 60_496)
-		metricIsApprox(analysis, "array index points-to (INS)", 467_360)
-		metricIsApprox(analysis, "instance field points-to (INS)", 5_384_015)
-		metricIsApprox(analysis, "var points-to (INS)", 64_934_743)
+		metricIsApprox(analysis, "call graph edges (INS)", 449_742)
+		metricIsApprox(analysis, "reachable methods (INS)", 67_412)
+		metricIsApprox(analysis, "array index points-to (INS)", 531_103)
+		metricIsApprox(analysis, "instance field points-to (INS)", 6_055_773)
+		metricIsApprox(analysis, "var points-to (INS)", 69_132_048)
 	}
 }
