@@ -397,35 +397,31 @@ public class NativeScanner {
     }
 
     private static Map<String,List<String>> findStringsInAARCH64(Map<Long,String> foundStrings, Map<Long, String> eps, String lib) {
-        Long pageAddress = null;
         Map<String,List<String>> stringsInFunctions = new HashMap<>();
-
+        Pattern adrpPattern = Pattern.compile("^.*adrp\\s+([a-z0-9]+)[,]\\s[0][x]([a-f0-9]+)$");
+        Pattern addPattern = Pattern.compile("^.*add\\s+([a-z0-9]+)[,]\\s([a-z0-9]+)[,]\\s[#][0][x]([a-f0-9]+)$");
+        Pattern movPattern = Pattern.compile("^.*mov\\s+([a-z0-9]+)[,]\\s([a-z0-9]+)$");
+        Matcher m = null;
+        Map<String,String> registers = new HashMap<>();
         for (Map.Entry<Long, String> entry : eps.entrySet()) {
             try {
                 String function = entry.getValue();
                 ProcessBuilder gdbBuilder = new ProcessBuilder("gdb", "-batch", "-ex", "disassemble " + function, lib);
                 for (String line : runCommand(gdbBuilder)) {
-                    String[] lineSplit = line.split("\\s+");
-                    if (line.contains("adrp")) {
-                        for (String string : lineSplit) {
-                            if (string.matches("^0x[0-9a-f]+$")) {
-                                pageAddress = Long.parseLong(string.substring(string.lastIndexOf('x') + 1),16);
-                                if(debug)
-                                    System.out.println(string + " --> Page address: " + pageAddress);
-                            }
-                        }
-                    } else if (line.contains("add") && pageAddress != null) {
-                        for (String string : lineSplit) {
-                            if (string.matches("^#0x[0-9a-f]+$")) {
-                                Long address = pageAddress + Long.parseLong(string.substring(string.lastIndexOf('x') + 1),16);
-                                String str = foundStrings.get(address);
-                                if (debug)
-                                    System.out.println("gdb disassemble string: '" + str + "' -> " + address);
-                                stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
-                            }
-                        }
-                    } else
-                        pageAddress = null;
+                    m = adrpPattern.matcher(line);
+                    if (m.find())
+                        registers.put(m.group(1),m.group(2));
+                    m = addPattern.matcher(line);
+                    if (m.find() && registers.containsKey(m.group(2))) {
+                        Long address = Long.parseLong(registers.get(m.group(2)),16) + Long.parseLong(m.group(3),16);
+                        String str = foundStrings.get(address);
+                        if (debug)
+                            System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                        stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                    }
+                    m = movPattern.matcher(line);
+                    if (m.find() && registers.containsKey(m.group(2)))
+                        registers.put(m.group(1),registers.get(m.group(2)));
                 }
             } catch (IOException ex) {
                 System.err.println("Could not run gdb: " + ex.getMessage());
