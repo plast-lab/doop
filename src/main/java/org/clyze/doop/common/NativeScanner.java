@@ -2,6 +2,7 @@ package org.clyze.doop.common;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.*;
 import java.util.stream.Collectors;
 import static org.clyze.doop.common.PredicateFile.*;
 
@@ -372,22 +373,20 @@ public class NativeScanner {
     }
 
     private static Map<String,List<String>> findStringsInX86_64(Map<Long,String> foundStrings, Map<Long, String> eps, String lib) {
-         Map<String,List<String>> stringsInFunctions = new HashMap<>();
-
+        Map<String,List<String>> stringsInFunctions = new HashMap<>();
+        Pattern leaPattern = Pattern.compile("^.*lea.*[#]\\s[0][x]([a-f0-9]+)$");
         for (Map.Entry<Long, String> entry : eps.entrySet()) {
             try {
                 String function = entry.getValue();
                 ProcessBuilder gdbBuilder = new ProcessBuilder("gdb", "-batch", "-ex", "disassemble " + function, lib);
                 for (String line : runCommand(gdbBuilder)) {
-                    if (line.contains("# 0x")) {
-                        String string = line.substring(line.lastIndexOf('#') + 2);
-                        if (string.matches("^0x[0-9a-f]+$")) {
-                            Long address = Long.parseLong(string.substring(string.lastIndexOf('x')+1),16);
-                            String str = foundStrings.get(address);
-                            if (debug)
-                                System.out.println("gdb disassemble string: '" + str + "' -> " + address);
-                            stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
-                        }
+                    Matcher m = leaPattern.matcher(line);
+                    if (m.find()) {
+                        Long address = Long.parseLong(m.group(1),16);
+                        String str = foundStrings.get(address);
+                        if (debug)
+                            System.out.println("gdb disassemble string: '" + str + "' -> " + address);
+                        stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
                     }
                 }
             } catch (IOException ex) {
