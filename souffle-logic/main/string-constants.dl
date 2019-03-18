@@ -834,6 +834,9 @@ AllocationShouldBeMergedPerClass(?type, ?class) :-
     AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
       AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
       ?n > 1,
+      #ifdef REFLECTION
+      ?heaptype != "java.lang.Class",
+      #endif // REFLECTION
       Method_DeclaringType(?meth, ?class),
       SpecialLibraryClass(?class).
 
