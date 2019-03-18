@@ -87,9 +87,9 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
    HeapRepresentative(?heapRepr, ?heap));
   (?heapRepr = "<<string-builder>>",
    HeapRepresentative(?heapRepr, ?heap));
+  // (?heapRepr = "<<class-metaobject>>",
+  //  HeapRepresentative(?heapRepr, ?heap));
   (?heapRepr = "<<pystring-object>>",
-   HeapRepresentative(?heapRepr, ?heap));
-  (?heapRepr = "<<class-metaobject>>",
    HeapRepresentative(?heapRepr, ?heap)).
 
 .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
