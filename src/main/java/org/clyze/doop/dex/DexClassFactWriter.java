@@ -48,7 +48,7 @@ class DexClassFactWriter extends JavaFactWriter {
         writeClassOrInterfaceType(dexClass, className);
 
         for (DexBackedAnnotation annotation : dexClass.getAnnotations())
-            _db.add(CLASS_ANNOTATION, className, TypeUtils.raiseTypeId(annotation.getType()));
+            _db.add(TYPE_ANNOTATION, className, TypeUtils.raiseTypeId(annotation.getType()));
     }
 
     private void writeClassOrInterfaceType(ClassDef dexClass, String className) {
