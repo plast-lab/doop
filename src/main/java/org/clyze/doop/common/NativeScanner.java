@@ -372,10 +372,8 @@ public class NativeScanner {
             return findStringsInX86_64(foundStrings, eps, lib);
         else if (arch.equals(Arch.AARCH64))
             return findStringsInAARCH64(foundStrings, eps, lib);
-        else if (arch.equals(Arch.ARMEABI)) {
-            System.out.println("TODO: handling of gdb output: ");
+        else if (arch.equals(Arch.ARMEABI))
             return findStringsInARMEABI(objdumpCmd, foundStrings, lib);
-        }
 
         return null;
     }
