@@ -126,7 +126,7 @@ You can also override the options from a properties file with options from the c
 This option makes Doop scan the native dynamic libraries bundled in .jar or .apk inputs, to find possible calls from JNI code to Java code.
 
 * For Java programs, this functionality assumes that standard command-line tools are available (such as `nm` or `strings`).
-* For Android programs, the following environment variables must be set: `APKTOOL_HOME` (see above) and `ARMEABI_TOOLCHAIN`/`AARCH64_TOOLCHAIN` (a path to the toolchain of an Android NDK installation, such as `/path/to/android-ndk/toolchains/arm-linux-androideabi`).
+* For Android programs, the following environment variables must be set: `APKTOOL_HOME` (see above) and `ARMEABI_TOOLCHAIN`/`AARCH64_TOOLCHAIN` (a path to the toolchain of an Android NDK installation, such as `/path/to/toolchain/arm-linux-androideabi`).
 
 ### Soufflé multithreading
 
