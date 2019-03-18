@@ -279,6 +279,9 @@ java_lang_reflect_Method_invoke(?invocation, ?method) :-
 java_lang_reflect_Method_getDeclaredAnnotations(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Method: java.lang.annotation.Annotation[] getDeclaredAnnotations()>").
 
+java_lang_reflect_Method_getParameterAnnotations(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Method: java.lang.annotation.Annotation[][] getParameterAnnotations()>").
+
 // We use a distinct value abstraction for every java.lang.Class, i.e., for
 // every class type that appears in the bytecode, for example '<class
 // java.lang.String>'. The predicate ReifiedClass is used to look up the value

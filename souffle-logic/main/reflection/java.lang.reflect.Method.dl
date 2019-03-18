@@ -61,3 +61,31 @@ ArrayIndexPointsTo(?hctx, ?annotationValue, ?hctx, ?annotationsArray) :-
   PopulateAnnotationsForMethod(?annotationsArray, ?method, ?hctx),
   Method_Annotation(?method, ?annotation),
   ?annotationValue = cat("<annotation ", cat(?annotation, cat(" for ", cat(?method, ">")))).
+
+/*************************************************************
+ * java.lang.reflect.Method.getParameterAnnotations()
+ *
+ *   public Annotation[][] getParameterAnnotations()
+ *
+ *************************************************************/
+
+.decl PopulateParameterAnnotationsForMethod(?annotationsArray:Value, ?method:Method, ?hctx:configuration.HContext, ?invocation:MethodInvocation)
+
+MockValueConsMacro(?annotationsArray, "java.lang.annotation.Annotation[][]"),
+VarPointsTo(?hctx, ?annotationsArray, ?ctx, ?to),
+PopulateParameterAnnotationsForMethod(?annotationsArray, ?method, ?hctx, ?invocation) :-
+  java_lang_reflect_Method_getParameterAnnotations(?invocation, ?to, ?from),
+  VarPointsTo(?hctx, ?methodValue, ?ctx, ?from),
+  ReifiedMethod(?method, ?methodValue),
+  // Spec: each invocation creates a new annotation array.
+  ?annotationsArray = cat("<method parameter annotations array for method ", cat(?method, cat(" at ", cat(?invocation, ">")))),
+  isImmutableHContext(?hctx).
+
+MockValueConsMacro(?paramAnnotations, "java.lang.annotation.Annotation[]"),
+ArrayIndexPointsTo(?hctx, ?paramAnnotations, ?hctx, ?annotationsArray),
+MockValueConsMacro(?annotationValue, "java.lang.annotation.Annotation"),
+ArrayIndexPointsTo(?hctx, ?annotationValue, ?hctx, ?paramAnnotations) :-
+  PopulateParameterAnnotationsForMethod(?annotationsArray, ?method, ?hctx, ?invocation),
+  Param_Annotation(?method, ?i, ?annotation),
+  ?paramAnnotations = cat("<parameter annotations array for parameter ", cat(?annotation, cat(" at ", cat(?invocation, ">")))),
+  ?annotationValue = cat("<annotation ", cat(?annotation, cat(" for parameter ", cat(to_string(?i), cat(" of method ", cat(?method, ">")))))).
