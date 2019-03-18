@@ -366,7 +366,7 @@ public class NativeScanner {
             return findStringsInAARCH64(foundStrings, eps, lib);
         else if (arch.equals(Arch.ARMEABI)) {
             System.out.println("TODO: handling of gdb output: ");
-            return new HashMap<>();
+            return findStringsInARMEABI(foundStrings, lib);
         }
 
         return null;
@@ -426,6 +426,62 @@ public class NativeScanner {
             } catch (IOException ex) {
                 System.err.println("Could not run gdb: " + ex.getMessage());
             }
+        }
+        return stringsInFunctions;
+    }
+
+    private static Map<String,List<String>> findStringsInARMEABI(Map<Long,String> foundStrings, String lib) {
+        String function = null, programCounter = null;
+        Pattern funPattern = Pattern.compile(".*[<](.*)[>][:]$");
+        Pattern insPattern = Pattern.compile("^\\s([a-f0-9]+)[:]\\s+([a-f0-9]+)\\s+[.]?(\\w+)(.*)$");
+        Pattern ldrPattern = Pattern.compile("^\\s+(\\w+).*\\bpc.*[;]\\s([a-f0-9]+).*$");
+        Pattern addPattern = Pattern.compile("^\\s+(\\w+)[,]\\s(\\w+)[,]\\s(\\w+)$");
+        Pattern movPattern = Pattern.compile("^\\s+(\\w+)[,]\\s(\\w+)$");
+        Matcher m = null;
+        Map<String,String> registers = null, words = new HashMap<>();
+        Map<String,List<String>> stringsInFunctions = new HashMap<>();
+        ProcessBuilder objdumpBuilder = new ProcessBuilder("/home/leonidast/X/arm-linux-androideabi/bin/objdump", "-j", ".text", "-d", lib);
+        try {
+            for (String line : runCommand(objdumpBuilder)) {
+                m = insPattern.matcher(line);
+                if (m.find() && m.group(3).equals("word"))
+                    words.put(m.group(1),m.group(2));
+            }
+            for (String line : runCommand(objdumpBuilder)) {
+                m = funPattern.matcher(line);
+                if (m.find()) {
+                    function = m.group(1);
+                    registers = new HashMap<String,String>();
+                    //System.out.println("new function " + function);
+                    continue;
+                }
+                m = insPattern.matcher(line);
+                if (m.find()) {
+                    registers.put("pc",m.group(1));
+                    String instruction = m.group(4);
+                    if (m.group(3).equals("ldr")) {
+                        m = ldrPattern.matcher(instruction);
+                        if (m.find())
+                            registers.put(m.group(1),words.get(m.group(2)));
+                    } else if (m.group(3).equals("add")) {
+                        m = addPattern.matcher(instruction);
+                        if (m.find() && registers.containsKey(m.group(2)) && registers.containsKey(m.group(3))) {
+                            Long address = Long.parseLong(registers.get(m.group(2)), 16) + Long.parseLong("8", 16);
+                            address += Long.parseLong(registers.get(m.group(3)), 16);
+                            String str = foundStrings.get(address);
+                            if (debug)
+                                System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                            stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                        }
+                    } else if (m.group(3).equals("mov")) {
+                        m = movPattern.matcher(instruction);
+                        if (m.find() && registers.containsKey(m.group(2)))
+                            registers.put(m.group(1),registers.get(m.group(2)));
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            System.err.println("Could not run objdump: " + ex.getMessage());
         }
         return stringsInFunctions;
     }
