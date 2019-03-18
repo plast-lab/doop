@@ -9,8 +9,10 @@ import static org.clyze.doop.common.PredicateFile.*;
 public class NativeScanner {
     private final static boolean debug = false;
     private final static boolean check = false;
-    private static final String envVar = "ANDROID_NDK_PREBUILTS";
-    private static final String ndkPrebuilts = System.getenv(envVar);
+    private static final String envVarARMEABI = "ARMEABI_TOOLCHAIN";
+    private static final String toolchainARMEABI = System.getenv(envVarARMEABI);
+    private static final String envVarAARCH64 = "AARCH64_TOOLCHAIN";
+    private static final String toolchainAARCH64 = System.getenv(envVarAARCH64);
 
     // The supported architectures.
     enum Arch {
@@ -42,17 +44,23 @@ public class NativeScanner {
     }
 
     public static void scanLib(File libFile, File outDir) {
-        String nmCmd = null;
-        String objdumpCmd = null;
         try {
             // Auto-detect architecture.
             Arch arch = Arch.autodetect(libFile.getCanonicalPath());
-            if (((arch == Arch.ARMEABI) || (arch == Arch.AARCH64)) && (ndkPrebuilts != null)) {
-                nmCmd = ndkPrebuilts + "/nm";
-                objdumpCmd = ndkPrebuilts + "/objdump";
-            } else {
-                nmCmd = "nm";
-                objdumpCmd = "objdump";
+            String nmCmd = "nm";
+            String objdumpCmd = "objdump";
+            if (arch == Arch.ARMEABI) {
+                if (toolchainARMEABI != null) {
+                    nmCmd = toolchainARMEABI + "/bin/nm";
+                    objdumpCmd = toolchainARMEABI + "/bin/objdump";
+                } else
+                    System.err.println("No ARMEABI toolchain found, set " + envVarARMEABI + ". Using system nm/objdump.");
+            } else if (arch == Arch.AARCH64) {
+                if (toolchainAARCH64 != null) {
+                    nmCmd = toolchainAARCH64 + "/bin/nm";
+                    objdumpCmd = toolchainAARCH64 + "/bin/objdump";
+                } else
+                    System.err.println("No AARCH64 toolchain found, set " + envVarAARCH64 + ". Using system nm/objdump.");
             }
             scan(nmCmd, objdumpCmd, libFile, outDir, arch);
         } catch (IOException ex) {
@@ -273,7 +281,7 @@ public class NativeScanner {
         Map<String, List<String>> stringsInFunctions = null;
 
         try {
-            stringsInFunctions = findStringsInFunctions(rodata.strings(), eps, lib, arch);
+            stringsInFunctions = findStringsInFunctions(objdumpCmd, rodata.strings(), eps, lib, arch);
         } catch (Exception ex) {
             ex.printStackTrace();
             System.err.println("Cannot find strings in functions, aborting native scanner.");
@@ -359,14 +367,14 @@ public class NativeScanner {
     /**
      *  return in which functions every found string belongs
      **/
-    private static Map<String,List<String>> findStringsInFunctions(Map<Long,String> foundStrings, Map<Long, String> eps, String lib, Arch arch) {
+    private static Map<String,List<String>> findStringsInFunctions(String objdumpCmd, Map<Long,String> foundStrings, Map<Long, String> eps, String lib, Arch arch) {
         if (arch.equals(Arch.X86_64))
             return findStringsInX86_64(foundStrings, eps, lib);
         else if (arch.equals(Arch.AARCH64))
             return findStringsInAARCH64(foundStrings, eps, lib);
         else if (arch.equals(Arch.ARMEABI)) {
             System.out.println("TODO: handling of gdb output: ");
-            return findStringsInARMEABI(foundStrings, lib);
+            return findStringsInARMEABI(objdumpCmd, foundStrings, lib);
         }
 
         return null;
@@ -430,7 +438,7 @@ public class NativeScanner {
         return stringsInFunctions;
     }
 
-    private static Map<String,List<String>> findStringsInARMEABI(Map<Long,String> foundStrings, String lib) {
+    private static Map<String,List<String>> findStringsInARMEABI(String objdumpCmd, Map<Long,String> foundStrings, String lib) {
         String function = null, programCounter = null;
         Pattern funPattern = Pattern.compile(".*[<](.*)[>][:]$");
         Pattern insPattern = Pattern.compile("^\\s([a-f0-9]+)[:]\\s+([a-f0-9]+)\\s+[.]?(\\w+)(.*)$");
@@ -440,7 +448,8 @@ public class NativeScanner {
         Matcher m = null;
         Map<String,String> registers = null, words = new HashMap<>();
         Map<String,List<String>> stringsInFunctions = new HashMap<>();
-        ProcessBuilder objdumpBuilder = new ProcessBuilder("/home/leonidast/X/arm-linux-androideabi/bin/objdump", "-j", ".text", "-d", lib);
+
+        ProcessBuilder objdumpBuilder = new ProcessBuilder(objdumpCmd, "-j", ".text", "-d", lib);
         try {
             for (String line : runCommand(objdumpBuilder)) {
                 m = insPattern.matcher(line);
