@@ -65,6 +65,8 @@
 
 .decl java_lang_reflect_Field_get_base(?invocation:MethodInvocation, ?base:Var)
 
+.decl java_lang_reflect_Field_getDeclaredAnnotations(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
 .decl java_lang_reflect_Field_set(?invocation:MethodInvocation, ?from:Var, ?field:Var)
 
 .decl java_lang_reflect_Field_set_base(?invocation:MethodInvocation, ?base:Var)
