@@ -36,24 +36,24 @@ ExprImpliesOther(?expr, ?exprOther) :-
 
 // A && (B || C) => (A && B) || (A && C)
 
+isBooleanExpr(?exprOther),
 ExprImpliesOther(?expr, ?exprOther) :-
     isBooleanExpr(?expr),
     ?expr = ["&&", "boolean", ?exprA, ?exprOr],
     ?exprOr = ["||", "boolean", ?exprB, ?exprC],
     ?exprLeft = ["&&", "boolean", ?exprA, ?exprB],
     ?exprRight = ["&&", "boolean", ?exprA, ?exprC],
-    ?exprOther = ["||", "boolean", ?exprLeft, ?exprRight],
-    isBooleanExpr(?exprOther).
+    ?exprOther = ["||", "boolean", ?exprLeft, ?exprRight].
 
 // (A && B) || (A && C) => A && (B || C)
 
+isBooleanExpr(?exprOther),
 ExprImpliesOther(?expr, ?exprOther) :-
     isBooleanExpr(?expr),
     ?expr = ["||", "boolean", ?exprLeft, ?exprRight],
     ?exprLeft = ["&&", "boolean", ?exprA, ?exprB],
     ?exprRight = ["&&", "boolean", ?exprA, ?exprC],
-    ?exprOther = ["&&", "boolean", ?exprA, ["||", "boolean", ?exprB, ?exprC]],
-    isBooleanExpr(?exprOther).
+    ?exprOther = ["&&", "boolean", ?exprA, ["||", "boolean", ?exprB, ?exprC]].
 
 // A || (B && C) => (A || B) && (A || C)
 
@@ -62,8 +62,7 @@ ExprImpliesOther(?expr, ?exprOther) :-
     ?expr = ["||", "boolean", ?exprA, ["&&", "boolean", ?exprB, ?exprC]],
     ?exprLeft = ["||", "boolean", ?exprA, ?exprB],
     ?exprRight = ["||", "boolean", ?exprA, ?exprC],
-    ?exprOther = ["&&", "boolean", ?exprLeft, ?exprRight],
-    isBooleanExpr(?exprOther).
+    ?exprOther = ["&&", "boolean", ?exprLeft, ?exprRight].
 
 // (A || B) && (A || C) => A || (B && C)
 
@@ -71,20 +70,32 @@ ExprImpliesOther(?expr, ?exprOther) :-
     isBooleanExpr(?expr),
     ?expr = ["&&", "boolean", ["||", "boolean", ?exprA, ?exprB], ["||", "boolean", ?exprA, ?exprC]],
     ?exprRight = ["&&", "boolean", ?exprB, ?exprC],
-    ?exprOther = ["||", "boolean", ?exprA, ?exprRight],
-    isBooleanExpr(?exprOther).
+    ?exprOther = ["||", "boolean", ?exprA, ?exprRight].
 
 /*
 /////////// ===========================================
 /// Above are axioms, below are inference rules
 ///////////
+
+// A => B and B => C implies A => C
+
 ExprImpliesOther(?expr, ?exprOther) :-
-  ExprImpliesOther(?expr, ?exprInterm),
-  ExprImpliesOther(?exprInterm, ?exprOther).
+    ExprImpliesOther(?expr, ?exprInter),
+    ExprImpliesOther(?exprInter, ?exprOther).
 
 // A => B and A => C implies A => B && C
 
+ExprImpliesOther(?expr, ?exprOther) :-
+    ExprImpliesOther(?expr, ?exprB),
+    ExprImpliesOther(?expr, ?exprA),
+    ?exprOther = ["&&", "boolean", ?exprB, ?exprC].
+
 // B => A and C => A implies B || C => A
+
+ExprImpliesOther(?exprLeft, ?exprA) :-
+    ExprImpliesOther(?exprB, ?exprA),
+    ExprImpliesOther(?exprC, ?exprA),
+    ?exprLeft = ["||", "boolean", ?exprB, ?exprC].
 
 // A => B and ExprIsNegationOfOther(B, B') and ExprIsNegationOfOther(A, A') implies B' => A'
 
