@@ -514,7 +514,7 @@
 #endif
 
 // Annotations
-.decl Class_Annotation(?class:ClassType, ?annotation:Annotation)
+.decl Type_Annotation(?type:ReferenceType, ?annotation:Annotation)
 .decl Method_Annotation(?method:Method, ?annotation:Annotation)
 .decl Field_Annotation(?fld:Field, ?annotation:Annotation)
 .decl Param_Annotation(?method:Method, ?index:number, ?annotation:Annotation)

@@ -354,10 +354,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			throw new RuntimeException("Error: options --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
 		}
 
-		if (options.SCAN_NATIVE_CODE.value && options.ANDROID.value) {
-			options.DECODE_APK.value = true
-		}
-
 		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
 			options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
 			options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false

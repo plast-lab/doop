@@ -125,8 +125,8 @@ You can also override the options from a properties file with options from the c
 #### Native code scanner (--scan-native-code)
 This option makes Doop scan the native dynamic libraries bundled in .jar or .apk inputs, to find possible calls from JNI code to Java code.
 
-* For Java programs, this functionality assumes that standard command-line tools are available (such as `nm` or `strings`).
-* For Android programs, the following environment variables must be set: `APKTOOL_HOME` (see above) and `ANDROID_NDK_PREBUILTS` (a path to the toolchain of an Android NDK installation, such as `/path/to/android-ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/arm-linux-androideabi/bin`).
+* For Java programs, this functionality assumes that standard command-line tools are available (such as `nm`, `objdump`, or `strings`).
+* For Android programs containing ARM native code, at least one the following environment variables must be set: `ARMEABI_TOOLCHAIN`/`AARCH64_TOOLCHAIN`. Each such variable points to the corresponding architecture directory inside the toolchain of an Android NDK installation, such as `/path/to/toolchain/arm-linux-androideabi`. Consult Android documentation for generating such a [standalone toolchain](https://developer.android.com/ndk/guides/standalone_toolchain).
 
 ### Soufflé multithreading
 

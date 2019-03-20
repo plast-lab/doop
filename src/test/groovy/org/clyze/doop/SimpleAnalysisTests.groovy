@@ -77,10 +77,19 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 										 "--thorough-fact-gen", "--sanity"])
 
 		then:
-		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/cAnnotations#_16', '<annotations array for type Main at <Main: void main(java.lang.String[])>/java.lang.Class.getDeclaredAnnotations/0>')
-		arrayIndexPointsTo(analysis, '<annotations array for type Main at <Main: void main(java.lang.String[])>/java.lang.Class.getDeclaredAnnotations/0>', '<annotation TypeAnnotation for Main>', true)
-		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/mAnnotations#8#_23', '<annotations array for method <Main: void annotation()> at <Main: void main(java.lang.String[])>/java.lang.reflect.Method.getDeclaredAnnotations/0>')
-		arrayIndexPointsTo(analysis, '<annotations array for method <Main: void annotation()> at <Main: void main(java.lang.String[])>/java.lang.reflect.Method.getDeclaredAnnotations/0>', '<annotation MethodAnnotation for <Main: void annotation()>>')
+		// type annotations
+		varPointsToQ(analysis, '<Main: void testClassAnnotations(java.lang.Class)>/cAnnotations#_28', '<annotations array for type Main at <Main: void testClassAnnotations(java.lang.Class)>/java.lang.Class.getDeclaredAnnotations/0>')
+		arrayIndexPointsTo(analysis, '<annotations array for type Main at <Main: void testClassAnnotations(java.lang.Class)>/java.lang.Class.getDeclaredAnnotations/0>', '<annotation TypeAnnotation for Main>', true)
+		// method annotations
+		varPointsToQ(analysis, '<Main: void testMethodAndParameterAnnotations(java.lang.Class)>/mAnnotations#_48', '<annotations array for method <Main: void annotation(java.lang.String)> at <Main: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getDeclaredAnnotations/0>')
+		arrayIndexPointsTo(analysis, '<annotations array for method <Main: void annotation(java.lang.String)> at <Main: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getDeclaredAnnotations/0>', '<annotation MethodAnnotation for <Main: void annotation(java.lang.String)>>', true)
+		// field annotations
+		varPointsToQ(analysis, '<Main: void testFieldAnnotations(java.lang.Class)>/fAnnotations#_38', '<annotations array for field <Main: java.lang.String field> at <Main: void testFieldAnnotations(java.lang.Class)>/java.lang.reflect.Field.getDeclaredAnnotations/0>')
+		arrayIndexPointsTo(analysis, '<annotations array for field <Main: java.lang.String field> at <Main: void testFieldAnnotations(java.lang.Class)>/java.lang.reflect.Field.getDeclaredAnnotations/0>', '<annotation FieldAnnotation for <Main: java.lang.String field>>', true)
+		// parameter annotations
+		varPointsToQ(analysis, '<Main: void testMethodAndParameterAnnotations(java.lang.Class)>/pAnnotations#6#_53', '<method parameter annotations array for method <Main: void annotation(java.lang.String)> at <Main: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getParameterAnnotations/0>')
+		arrayIndexPointsTo(analysis, '<method parameter annotations array for method <Main: void annotation(java.lang.String)> at <Main: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getParameterAnnotations/0>', '<parameter annotations array for parameter ParameterAnnotation at <Main: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getParameterAnnotations/0>', true)
+		arrayIndexPointsTo(analysis, '<parameter annotations array for parameter ParameterAnnotation at <Main: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getParameterAnnotations/0>', '<annotation ParameterAnnotation for parameter 0 of method <Main: void annotation(java.lang.String)>>', true)
 		// noSanityErrors(analysis)
 	}
 }

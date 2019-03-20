@@ -193,20 +193,27 @@ class TestUtils {
 	}
 
 	static void noSanityErrors(Analysis analysis) {
+		noSanityErrors(analysis, true)
+	}
+	static void noSanityErrors(Analysis analysis, boolean checkPointsTo) {
 		log("noSanityErrors")
 		relationIsEmpty(analysis, "VarHasNoType")
 		relationIsEmpty(analysis, "TypeIsNotConcreteType")
 		relationIsEmpty(analysis, "InstructionIsNotConcreteInstruction")
 		relationIsEmpty(analysis, "ValueHasNoType")
 		relationIsEmpty(analysis, "ValueHasNoDeclaringType")
-		relationIsEmpty(analysis, "NotReachableVarPointsTo")
-		relationIsEmpty(analysis, "VarPointsToWronglyTypedValue")
-		relationIsEmpty(analysis, "VarPointsToMergedHeap")
-		relationIsEmpty(analysis, "HeapAllocationHasNoType")
-		relationIsEmpty(analysis, "ValueIsNeitherHeapNorNonHeap")
 		relationIsEmpty(analysis, "ClassTypeIsInterfaceType")
 		relationIsEmpty(analysis, "PrimitiveTypeIsReferenceType")
 		relationIsEmpty(analysis, "basic.DuplicateMethodImplemented")
+		if (checkPointsTo) {
+			relationIsEmpty(analysis, "NotReachableVarPointsTo")
+			relationIsEmpty(analysis, "VarPointsToWronglyTypedValue")
+			relationIsEmpty(analysis, "VarPointsToMergedHeap")
+			relationIsEmpty(analysis, "HeapAllocationHasNoType")
+			relationIsEmpty(analysis, "ValueIsNeitherHeapNorNonHeap")
+		} else {
+			println("Skipping points-to sanity checks.")
+		}
 	}
 
 	static void log(String msg) {

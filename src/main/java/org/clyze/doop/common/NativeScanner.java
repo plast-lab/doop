@@ -2,14 +2,17 @@ package org.clyze.doop.common;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.*;
 import java.util.stream.Collectors;
 import static org.clyze.doop.common.PredicateFile.*;
 
 public class NativeScanner {
     private final static boolean debug = false;
     private final static boolean check = false;
-    private static final String envVar = "ANDROID_NDK_PREBUILTS";
-    private static final String ndkPrebuilts = System.getenv(envVar);
+    private static final String envVarARMEABI = "ARMEABI_TOOLCHAIN";
+    private static final String toolchainARMEABI = System.getenv(envVarARMEABI);
+    private static final String envVarAARCH64 = "AARCH64_TOOLCHAIN";
+    private static final String toolchainAARCH64 = System.getenv(envVarAARCH64);
 
     // The supported architectures.
     enum Arch {
@@ -41,17 +44,23 @@ public class NativeScanner {
     }
 
     public static void scanLib(File libFile, File outDir) {
-        String nmCmd = null;
-        String objdumpCmd = null;
         try {
             // Auto-detect architecture.
             Arch arch = Arch.autodetect(libFile.getCanonicalPath());
-            if (((arch == Arch.ARMEABI) || (arch == Arch.AARCH64)) && (ndkPrebuilts != null)) {
-                nmCmd = ndkPrebuilts + "/nm";
-                objdumpCmd = ndkPrebuilts + "/objdump";
-            } else {
-                nmCmd = "nm";
-                objdumpCmd = "objdump";
+            String nmCmd = "nm";
+            String objdumpCmd = "objdump";
+            if (arch == Arch.ARMEABI) {
+                if (toolchainARMEABI != null) {
+                    nmCmd = toolchainARMEABI + "/bin/nm";
+                    objdumpCmd = toolchainARMEABI + "/bin/objdump";
+                } else
+                    System.err.println("No ARMEABI toolchain found, set " + envVarARMEABI + ". Using system nm/objdump.");
+            } else if (arch == Arch.AARCH64) {
+                if (toolchainAARCH64 != null) {
+                    nmCmd = toolchainAARCH64 + "/bin/nm";
+                    objdumpCmd = toolchainAARCH64 + "/bin/objdump";
+                } else
+                    System.err.println("No AARCH64 toolchain found, set " + envVarAARCH64 + ". Using system nm/objdump.");
             }
             scan(nmCmd, objdumpCmd, libFile, outDir, arch);
         } catch (IOException ex) {
@@ -272,7 +281,7 @@ public class NativeScanner {
         Map<String, List<String>> stringsInFunctions = null;
 
         try {
-            stringsInFunctions = findStringsInFunctions(rodata.strings(), eps, lib, arch);
+            stringsInFunctions = findStringsInFunctions(objdumpCmd, rodata.strings(), eps, lib, arch);
         } catch (Exception ex) {
             ex.printStackTrace();
             System.err.println("Cannot find strings in functions, aborting native scanner.");
@@ -358,54 +367,128 @@ public class NativeScanner {
     /**
      *  return in which functions every found string belongs
      **/
-    private static Map<String,List<String>> findStringsInFunctions(Map<Long, String> foundStrings, Map<Long, String> eps, String lib, Arch arch) {
-        Long pageAddress = null;
-	Map<String, List<String>> stringsInFunctions = new HashMap<>();
+    private static Map<String,List<String>> findStringsInFunctions(String objdumpCmd, Map<Long,String> foundStrings, Map<Long, String> eps, String lib, Arch arch) {
+        if (arch.equals(Arch.X86_64))
+            return findStringsInX86_64(foundStrings, eps, lib);
+        else if (arch.equals(Arch.AARCH64))
+            return findStringsInAARCH64(foundStrings, eps, lib);
+        else if (arch.equals(Arch.ARMEABI))
+            return findStringsInARMEABI(objdumpCmd, foundStrings, lib);
+
+        return null;
+    }
+
+    private static Map<String,List<String>> findStringsInX86_64(Map<Long,String> foundStrings, Map<Long, String> eps, String lib) {
+        Map<String,List<String>> stringsInFunctions = new HashMap<>();
+        Pattern leaPattern = Pattern.compile("^.*lea.*[#]\\s[0][x]([a-f0-9]+)$");
         for (Map.Entry<Long, String> entry : eps.entrySet()) {
             try {
                 String function = entry.getValue();
                 ProcessBuilder gdbBuilder = new ProcessBuilder("gdb", "-batch", "-ex", "disassemble " + function, lib);
                 for (String line : runCommand(gdbBuilder)) {
-
-		    if (arch.equals(Arch.X86_64) && line.contains("# 0x")) {
-			String string = line.substring(line.lastIndexOf('#') + 2);
-                        if (string.matches("^0x[0-9a-f]+$")) {
-                            Long address = Long.parseLong(string.substring(string.lastIndexOf('x')+1),16);
-			    String str = foundStrings.get(address);
-			    if (debug)
-                                System.out.println("gdb disassemble string: '" + str + "' -> " + address);
-                            stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
-			}
-                    } else if (arch.equals(Arch.AARCH64)) {
-			String[] lineSplit = line.split("\\s+");
-			if (line.contains("adrp")) {
-			    for (String string : lineSplit) {
-				if (string.matches("^0x[0-9a-f]+$")) {
-				    pageAddress = Long.parseLong(string.substring(string.lastIndexOf('x') + 1),16);
-				    if(debug)
-					System.out.println(string + " --> Page address: " + pageAddress);
-				}
-			    }
-			} else if (line.contains("add") && pageAddress != null) {
-			    for (String string : lineSplit) {
-                                if (string.matches("^#0x[0-9a-f]+$")) {
-                                    Long address = pageAddress + Long.parseLong(string.substring(string.lastIndexOf('x') + 1),16);
-				    String str = foundStrings.get(address);
-	                            if (debug)
-        	                        System.out.println("gdb disassemble string: '" + str + "' -> " + address);
-                	            stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
-				}
-			    }
-			} else
-			    pageAddress = null;
-                    } else if (arch.equals(Arch.ARMEABI)) {
-                        // System.out.println("TODO: handling of gdb output line: " + line);
-                    } else if (debug)
-                        System.out.println("Ignoring gdb output line: " + line);
-		}
+                    Matcher m = leaPattern.matcher(line);
+                    if (m.find()) {
+                        Long address = Long.parseLong(m.group(1),16);
+                        String str = foundStrings.get(address);
+                        if (debug)
+                            System.out.println("gdb disassemble string: '" + str + "' -> " + address);
+                        stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                    }
+                }
             } catch (IOException ex) {
                 System.err.println("Could not run gdb: " + ex.getMessage());
             }
+        }
+        return stringsInFunctions;
+    }
+
+    private static Map<String,List<String>> findStringsInAARCH64(Map<Long,String> foundStrings, Map<Long, String> eps, String lib) {
+        Map<String,List<String>> stringsInFunctions = new HashMap<>();
+        Pattern adrpPattern = Pattern.compile("^.*adrp\\s+([a-z0-9]+)[,]\\s[0][x]([a-f0-9]+)$");
+        Pattern addPattern = Pattern.compile("^.*add\\s+([a-z0-9]+)[,]\\s([a-z0-9]+)[,]\\s[#][0][x]([a-f0-9]+)$");
+        Pattern movPattern = Pattern.compile("^.*mov\\s+([a-z0-9]+)[,]\\s([a-z0-9]+)$");
+        Matcher m = null;
+        Map<String,String> registers = new HashMap<>();
+        for (Map.Entry<Long, String> entry : eps.entrySet()) {
+            try {
+                String function = entry.getValue();
+                ProcessBuilder gdbBuilder = new ProcessBuilder("gdb", "-batch", "-ex", "disassemble " + function, lib);
+                for (String line : runCommand(gdbBuilder)) {
+                    m = adrpPattern.matcher(line);
+                    if (m.find())
+                        registers.put(m.group(1),m.group(2));
+                    m = addPattern.matcher(line);
+                    if (m.find() && registers.containsKey(m.group(2))) {
+                        Long address = Long.parseLong(registers.get(m.group(2)),16) + Long.parseLong(m.group(3),16);
+                        String str = foundStrings.get(address);
+                        if (debug)
+                            System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                        stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                    }
+                    m = movPattern.matcher(line);
+                    if (m.find() && registers.containsKey(m.group(2)))
+                        registers.put(m.group(1),registers.get(m.group(2)));
+                }
+            } catch (IOException ex) {
+                System.err.println("Could not run gdb: " + ex.getMessage());
+            }
+        }
+        return stringsInFunctions;
+    }
+
+    private static Map<String,List<String>> findStringsInARMEABI(String objdumpCmd, Map<Long,String> foundStrings, String lib) {
+        String function = null, programCounter = null;
+        Pattern funPattern = Pattern.compile(".*[<](.*)[>][:]$");
+        Pattern insPattern = Pattern.compile("^\\s([a-f0-9]+)[:]\\s+([a-f0-9]+)\\s+[.]?(\\w+)(.*)$");
+        Pattern ldrPattern = Pattern.compile("^\\s+(\\w+).*\\bpc.*[;]\\s([a-f0-9]+).*$");
+        Pattern addPattern = Pattern.compile("^\\s+(\\w+)[,]\\s(\\w+)[,]\\s(\\w+)$");
+        Pattern movPattern = Pattern.compile("^\\s+(\\w+)[,]\\s(\\w+)$");
+        Matcher m = null;
+        Map<String,String> registers = null, words = new HashMap<>();
+        Map<String,List<String>> stringsInFunctions = new HashMap<>();
+
+        ProcessBuilder objdumpBuilder = new ProcessBuilder(objdumpCmd, "-j", ".text", "-d", lib);
+        try {
+            for (String line : runCommand(objdumpBuilder)) {
+                m = insPattern.matcher(line);
+                if (m.find() && m.group(3).equals("word"))
+                    words.put(m.group(1),m.group(2));
+            }
+            for (String line : runCommand(objdumpBuilder)) {
+                m = funPattern.matcher(line);
+                if (m.find()) {
+                    function = m.group(1);
+                    registers = new HashMap<String,String>();
+                    //System.out.println("new function " + function);
+                    continue;
+                }
+                m = insPattern.matcher(line);
+                if (m.find()) {
+                    registers.put("pc",m.group(1));
+                    String instruction = m.group(4);
+                    if (m.group(3).equals("ldr")) {
+                        m = ldrPattern.matcher(instruction);
+                        if (m.find())
+                            registers.put(m.group(1),words.get(m.group(2)));
+                    } else if (m.group(3).equals("add")) {
+                        m = addPattern.matcher(instruction);
+                        if (m.find() && registers.containsKey(m.group(2)) && registers.containsKey(m.group(3))) {
+                            Long address = Long.parseLong(registers.get(m.group(2)), 16) + Long.parseLong("8", 16);
+                            address += Long.parseLong(registers.get(m.group(3)), 16);
+                            String str = foundStrings.get(address);
+                            if (debug)
+                                System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                            stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                        }
+                    } else if (m.group(3).equals("mov")) {
+                        m = movPattern.matcher(instruction);
+                        if (m.find() && registers.containsKey(m.group(2)))
+                            registers.put(m.group(1),registers.get(m.group(2)));
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            System.err.println("Could not run objdump: " + ex.getMessage());
         }
         return stringsInFunctions;
     }

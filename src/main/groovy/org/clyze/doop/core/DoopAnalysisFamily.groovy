@@ -29,6 +29,10 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	@Override
 	Map<String, AnalysisOption> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
 
+	public AnalysisOption getOptionByName(String n) {
+		SUPPORTED_OPTIONS.find { it.name == n }
+	}
+
 	private static List<AnalysisOption> SUPPORTED_OPTIONS = [
 			/* Start Main options */
 			new AnalysisOption<String>(
@@ -938,7 +942,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				Doop.initDoopFromEnv()
 			}
 		} catch (e) {
-			println "Error initializing Doop."
+			println "Error initializing Doop: Souffle logic path not found, set DOOP_HOME."
 		}
 		analysesFor(Doop.souffleAnalysesPath, "analysis.dl")
 	}
@@ -949,7 +953,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				Doop.initDoopFromEnv()
 			}
 		} catch (e) {
-			println "Error initializing Doop."
+			println "Error initializing Doop: LB logic path not found, set DOOP_HOME."
 		}
 		analysesFor(Doop.analysesPath, "analysis.logic")
 	}

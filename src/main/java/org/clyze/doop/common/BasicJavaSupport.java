@@ -80,7 +80,7 @@ public class BasicJavaSupport {
                     }
                 } else if (entryName.endsWith(".properties")) {
                     propertyProvider.addProperties(jarFile.getInputStream(entry), filename);
-                } else if (parameters._scanNativeCode && entryName.endsWith(".so") && !filename.endsWith(".apk")) {
+                } else if (parameters._scanNativeCode && entryName.endsWith(".so")) {
                     File tmpDir = Files.createTempDirectory("native-lib").toFile();
                     tmpDir.deleteOnExit();
                     String tmpName = entryName.replaceAll(File.separator, "_");

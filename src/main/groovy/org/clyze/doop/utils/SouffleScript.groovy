@@ -53,7 +53,8 @@ class SouffleScript {
 			if (debug)
 				compilationCommand << ("-r${outDir}/report.html" as String)
 			if (provenance)
-				compilationCommand << ("--provenance=1" as String)
+				// Another possible mode is 'explore' but does not support history.
+				compilationCommand << ("--provenance=explain" as String)
 			if (liveProf)
 				compilationCommand << ("--live-profile" as String)
 

@@ -614,7 +614,7 @@ PopulateAnnotationsForType(?annotationsArray, ?type, ?hctx) :-
 MockValueConsMacro(?annotationValue, "java.lang.annotation.Annotation"),
 ArrayIndexPointsTo(?hctx, ?annotationValue, ?hctx, ?annotationsArray) :-
   PopulateAnnotationsForType(?annotationsArray, ?type, ?hctx),
-  Class_Annotation(?type, ?annotation),
+  Type_Annotation(?type, ?annotation),
   ?annotationValue = cat("<annotation ", cat(?annotation, cat(" for ", cat(?type, ">")))).
 
 /*************************************************************

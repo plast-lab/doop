@@ -53,7 +53,7 @@ class AndroidTests extends DoopBenchmark {
 
 		then:
 		methodIsReachable(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>')
-		noSanityErrors(analysis)
+		noSanityErrors(analysis, false)
 	}
 
 	// @spock.lang.Ignore

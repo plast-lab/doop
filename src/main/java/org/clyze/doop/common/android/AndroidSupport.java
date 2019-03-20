@@ -73,9 +73,6 @@ public abstract class AndroidSupport {
 
         printCollectedComponents();
 
-        if (parameters._scanNativeCode)
-            scanNativeLibs(decodeDir);
-
         // Produce a JAR of the missing R classes.
         String generatedR = rLinker.linkRs(parameters._rOutDir, tmpDirs);
         if (generatedR != null) {
@@ -92,30 +89,6 @@ public abstract class AndroidSupport {
         if (inputsSize > 0) {
             System.err.println("WARNING: only the first input will be analyzed.");
             inputs.subList(1, inputsSize).clear();
-        }
-    }
-
-    private void scanNativeLibs(String decodeDir) {
-        File decodeDirFile = new File(decodeDir);
-        if (decodeDirFile.exists()) {
-            System.out.println("Scanning native code in " + decodeDir);
-            List<File> nativeLibs = new LinkedList<>();
-            findNativeLibs(nativeLibs, decodeDirFile);
-            System.out.println("Found " + nativeLibs.size() + " native libraries.");
-
-            File outDir = new File(parameters.getOutputDir());
-            for (File libFile : nativeLibs)
-                NativeScanner.scanLib(libFile, outDir);
-        } else
-            System.err.println("Error: decode directory " + decodeDir + " not found");
-    }
-
-    private static void findNativeLibs(Collection<File> libs, File dir) {
-        for (File f : dir.listFiles()) {
-            if (f.isFile() && (f.getName().endsWith(".so")))
-                libs.add(f);
-            else if (f.isDirectory())
-                findNativeLibs(libs, f);
         }
     }
 

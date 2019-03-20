@@ -268,6 +268,9 @@ java_lang_reflect_Field_set_base(?invocation, ?base) :-
   isVirtualMethodInvocation_Insn(?invocation),
   ActualParam(0, ?invocation, ?base).
 
+java_lang_reflect_Field_getDeclaredAnnotations(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Field: java.lang.annotation.Annotation[] getDeclaredAnnotations()>").
+
 java_lang_reflect_Method_invoke(?invocation, ?method) :-
   isMethod("<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
   MethodInvocation_Method(?invocation, "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
@@ -275,6 +278,9 @@ java_lang_reflect_Method_invoke(?invocation, ?method) :-
 
 java_lang_reflect_Method_getDeclaredAnnotations(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Method: java.lang.annotation.Annotation[] getDeclaredAnnotations()>").
+
+java_lang_reflect_Method_getParameterAnnotations(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Method: java.lang.annotation.Annotation[][] getParameterAnnotations()>").
 
 // We use a distinct value abstraction for every java.lang.Class, i.e., for
 // every class type that appears in the bytecode, for example '<class
