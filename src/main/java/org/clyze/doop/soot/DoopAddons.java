@@ -155,14 +155,16 @@ public class DoopAddons {
     public static void structureJimpleFiles(String outDir) {
         boolean movedMsg = false;
         String jimpleDirPath = jimpleDir(outDir);
-        File[] outDirFiles = new File(outDir).listFiles();
-        if (outDirFiles == null)
+        File[] jimpleDirFiles = new File(jimpleDirPath).listFiles();
+        if (jimpleDirFiles == null) {
+            System.err.println("Output directory " + jimpleDirPath + " is empty, cannot restructure Jimple files.");
             return;
+        }
 
         final String JIMPLE_EXT = ".shimple";
 
         int dirsCreated = 0;
-        for (File f : outDirFiles) {
+        for (File f : jimpleDirFiles) {
             String fName = f.getName();
             if (fName.endsWith(JIMPLE_EXT)) {
                 if (!movedMsg) {
