@@ -183,7 +183,6 @@ VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
 .decl CallToMethodOfProxyObject(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?invo:MethodInvocation)
 
 CallToMethodOfProxyObject(?hctx, ?value, ?ctx, ?invo) :-
-   isVirtualMethodInvocation_Insn(?invo),
    VirtualMethodInvocation_Base(?invo, ?base),
    VarPointsTo(?hctx, ?value, ?ctx, ?base),
    isProxyObject(?value).
