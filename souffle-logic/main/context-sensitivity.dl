@@ -609,6 +609,15 @@ DuplicateContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth1, ?meth2) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth2),
   ?meth1 != ?meth2,
   !Value_Null(?obj),
+#ifdef REFLECTION_DYNAMIC_PROXIES
+  // Exclude invocation handlers. Problematic corner case: invocations x.m()
+  // where m() comes from java.lang.Object and x points to both (a) an
+  // invocation handler <h> and (b) a proxy using <h>. Both context requests use
+  // <h> as the context "value" but the first will resolve the target method to
+  // m() from Object, while the second will pick the invoke() of the handler.
+  Value_Type(?obj, ?objType),
+  !basic.SubtypeOf(?objType, "java.lang.reflect.InvocationHandler"),
+#endif // REFLECTION_DYNAMIC_PROXIES
   // Exclude duplicate method lookup due to covariance.
   !basic.CovariantMethods(?meth1, ?meth2).
 
