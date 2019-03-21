@@ -611,4 +611,14 @@ DuplicateContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth1, ?meth2) :-
   !Value_Null(?obj),
   // Exclude duplicate method lookup due to covariance.
   !basic.CovariantMethods(?meth1, ?meth2).
+
+.decl DuplicateContextResponse(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?obj:Value, ?calleeCtx1:configuration.Context, ?calleeCtx2:configuration.Context)
+.output DuplicateContextResponse
+
+DuplicateContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx1, ?calleeCtx2) :-
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, _),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx1),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx2),
+  ?calleeCtx1 != ?calleeCtx2.
+
 #endif // SANITY

@@ -47,8 +47,14 @@ Sanity("12", "Value has no declaring type", ?c) :-
 Sanity("13", "Duplicate context requests", ?c) :-
   ?c = count : mainAnalysis.DuplicateContextRequest(_, _, _, _, _, _).
 
-Sanity("14", "Duplicate method implementation", ?c) :-
+Sanity("14", "Duplicate context responses", ?c) :-
+  ?c = count : mainAnalysis.DuplicateContextResponse(_, _, _, _, _, _).
+
+Sanity("15", "Duplicate method implementation", ?c) :-
   ?c = count : basic.DuplicateMethodImplemented(_, _, _, _, _).
+
+Sanity("16", "Duplicate method lookup", ?c) :-
+  ?c = count : basic.DuplicateMethodLookup(_, _, _, _, _).
 
 .decl VarHasNoType(var:Var)
 .output VarHasNoType
