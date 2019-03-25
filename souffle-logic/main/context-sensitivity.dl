@@ -171,7 +171,18 @@ ConstructorVar(?var) :-
   ApplicationMethod(?meth),
   basic.ClassConstructor(?meth, _).
 
+// anantoni: This seems to be the most efficient version of the commented out rule below
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  ConstructorVar(?from),
+  NoInformationOnSignature(?signature),
+  Value_byDynamicHeap(_, ?value),
+  NotSpecialObject(?value),
+  !Value_Null(?basevalue).
+//.plan 1:(2,1,3,4,5,6)
+/**
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   ConstructorVar(?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
@@ -179,7 +190,8 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   Value_byDynamicHeap(_, ?value),
   NotSpecialObject(?value),
   !Value_Null(?basevalue).
-.plan 1:(3,2,1,4,5,6)
+  .plan 1:(3,2,1,4,5,6)
+**/
 #endif // FEATHERWEIGHT_ANALYSIS
 #endif // !(FEATHERWEIGHT_ANALYSIS) && !(DISABLE_POINTS_TO)
 
