@@ -66,9 +66,10 @@
 
 /* Reasoner */
 
-.decl ExprImpliesOther(?expr1: Expr, ?expr2: Expr)
+.decl ExprImpliesOther(?expr: Expr, ?exprOther: Expr)
 .decl ExprIsAlwaysTrue(?expr: Expr)
 .decl ExprIsAlwaysFalse(?expr: Expr)
+.decl ExprIsNegationOfOther(?expr: Expr, ?exprOther: Expr)
 
 .output isBooleanExpr
 .output isArithmeticExpr
@@ -84,3 +85,4 @@
 .output PathExpressionAfterFalse
 
 .output ExprImpliesOther
+.output ExprIsNegationOfOther
