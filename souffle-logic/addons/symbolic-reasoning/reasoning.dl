@@ -151,6 +151,25 @@ ExprImpliesOther(?exprOther, ?expr) :-
 		ExprIsAlwaysTrue(?expr),
 		isBooleanExpr(?exprOther).
 
+//
+//// A => (B || false)  implies  A => B
+//
+
+ExprImpliesOther(?expr, ?exprOther) :-
+        ExprImpliesOther(?expr, ?exprCompOther),
+        ?exprCompOther = ["||", ?type, ?exprOther, ?exprFalse],
+        ExprIsAlwaysFalse(?exprFalse).
+
+//
+//// (Α && true) => B implies A => B
+//
+
+ExprImpliesOther(?expr, ?exprOther) :-
+        ExprImpliesOther(?exprCompOther, ?exprOther),
+        ?exprCompOther = ["&&", ?type, ?expr, ?exprTrue],
+        ExprIsAlwaysFalse(?exprTrue).
+
+
 ///////
 //// ExprIsAlwaysFalse (x <= x, x <= x+1, 2 < 3, ...)
 //// ExprIsAlwaysTrue
