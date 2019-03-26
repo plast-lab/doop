@@ -167,8 +167,7 @@ ExprImpliesOther(?expr, ?exprOther) :-
 ExprImpliesOther(?expr, ?exprOther) :-
         ExprImpliesOther(?exprCompOther, ?exprOther),
         ?exprCompOther = ["&&", ?type, ?expr, ?exprTrue],
-        ExprIsAlwaysFalse(?exprTrue).
-
+        ExprIsAlwaysTrue(?exprTrue).
 
 ///////
 //// ExprIsAlwaysFalse (x <= x, x <= x+1, 2 < 3, ...)
@@ -177,10 +176,10 @@ ExprImpliesOther(?expr, ?exprOther) :-
 //
 
 ExprIsNegationOfOther(?expr, ?exprOther) :-
-		(ResolveExpr(?meth, _, ?expr) ;
-		 PathExpressionAfterTrue(?meth, _, ?expr) ;
-		 PathExpressionAfterFalse(?meth, _, ?expr)),
-		isBooleanExpr(?exprOther),
+    (ResolveExpr(?meth, _, ?expr) ;
+    PathExpressionAfterTrue(?meth, _, ?expr) ;
+    PathExpressionAfterFalse(?meth, _, ?expr)),
+    isBooleanExpr(?exprOther),
     NegateOp(?op, ?negatedOp),
     ?expr = [?op, ?type, ?exprLeft, ?exprRight],
     ?exprOther = [?negatedOp, ?type, ?exprLeft, ?exprRight].
