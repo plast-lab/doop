@@ -518,3 +518,4 @@
 .decl Method_Annotation(?method:Method, ?annotation:Annotation)
 .decl Field_Annotation(?fld:Field, ?annotation:Annotation)
 .decl Param_Annotation(?method:Method, ?index:number, ?annotation:Annotation)
+.decl AnnotationElement(?annotationKind:symbol, ?element:symbol, ?parentId:symbol, ?id:symbol, ?name:symbol, ?value1:symbol, ?value2:symbol)

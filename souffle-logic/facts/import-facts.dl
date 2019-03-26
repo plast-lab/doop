@@ -902,6 +902,9 @@ isAnnotation(?annotation) :-
     Field_Annotation(_, ?annotation);
     Param_Annotation(_, _, ?annotation).
 
+// Annotation elements
+.input AnnotationElement(IO="file", filename="AnnotationElement.facts", delimiter="\t")
+
 // Phantom types/methods and phantom-based methods.
 .decl PhantomType(?t:Type)
 .input PhantomType(IO="file", filename="PhantomType.facts", delimiter="\t")
