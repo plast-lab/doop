@@ -385,7 +385,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "TENSOR_SHAPE_ANALYSIS",
 					name: "tensor-shape-analysis",
 					group: GROUP_PYTHON,
-					description: "Enable tensor shape analysis for python.",
+					description: "Enable tensor shape analysis for Python.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -605,7 +605,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SOUFFLE_RUN_INTERPRETED",
 					name: "souffle-run-interpreted",
 					group: GROUP_ENGINE,
-					description: "Run souffle in interpreted mode (currently only for python analyses)."
+					description: "Run souffle in interpreted mode (currently only for Python analyses)."
 			),
 			/* End Souffle related options */
 
@@ -781,30 +781,30 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_SERVER_LOGIC",
 					name: "Xserver-logic",
-					description: "Run server queries under addons/server-logic",
+					description: "Run server queries under addons/server-logic.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_SERVER_CHA",
 					name: "Xserver-cha",
-					description: "Run server queries related to CHA"
+					description: "Run server queries related to CHA."
 			),
 			new BooleanAnalysisOption(
 					id: "X_EXTRA_METRICS",
 					name: "Xextra-metrics",
-					description: "Run extra metrics logic under addons/statistics",
+					description: "Run extra metrics logic under addons/statistics.",
 					forPreprocessor: false
 			),
 			new BooleanAnalysisOption(
 					id: "X_ORACULAR_HEURISTICS",
 					name: "Xoracular-heuristics",
-					description: "Run sensitivity heuristics logic under addons/oracular",
+					description: "Run sensitivity heuristics logic under addons/oracular.",
 					forPreprocessor: false
 			),
 			new BooleanAnalysisOption(
 					id: "X_CONTEXT_DEPENDENCY_HEURISTIC",
 					name: "Xcontext-dependency-heuristic",
-					description: "Run context dependency heuristics logic under addons/oracular",
+					description: "Run context dependency heuristics logic under addons/oracular.",
 					forPreprocessor: false
 			),
 			new AnalysisOption<String>(
