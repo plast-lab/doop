@@ -210,6 +210,7 @@ class TestUtils {
 		relationIsEmpty(analysis, "mainAnalysis.DuplicateContextResponse")
 		if (checkPointsTo) {
 			relationIsEmpty(analysis, "NotReachableVarPointsTo")
+			relationIsEmpty(analysis, "FieldPointsToWronglyTypedValue")
 			relationIsEmpty(analysis, "VarPointsToWronglyTypedValue")
 			relationIsEmpty(analysis, "VarPointsToMergedHeap")
 			relationIsEmpty(analysis, "HeapAllocationHasNoType")

@@ -56,6 +56,10 @@ Sanity("15", "Duplicate method implementation", ?c) :-
 Sanity("16", "Duplicate method lookup", ?c) :-
   ?c = count : basic.DuplicateMethodLookup(_, _, _, _, _).
 
+// Every field in {Instance|Static}PointsTo points to correctly typed values
+Sanity("17", "Field in {Static|Instance}FieldPointsTo points to wrongly typed values", ?c) :-
+  ?c = count : FieldPointsToWronglyTypedValue(_, _, _, _).
+
 .decl VarHasNoType(var:Var)
 .output VarHasNoType
 
@@ -106,6 +110,21 @@ VarPointsToWronglyTypedValue(?var, ?varType, ?value, ?valueType) :-
   !ForceValueCompatibility(?varType, ?value, ?valueType),
 #endif // ANDROID
   !ForceTypeCompatibility(?valueType, ?varType).
+
+.decl FieldPointsToWronglyTypedValue(?field:Field, ?fieldType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
+.output FieldPointsToWronglyTypedValue
+
+FieldPointsToWronglyTypedValue(?field, ?fieldType, ?value, ?valueType) :-
+  mainAnalysis.Value_Type(?value, ?valueType),
+  (mainAnalysis.InstanceFieldPointsTo(_, ?value, ?field, _, _);
+   mainAnalysis.StaticFieldPointsTo(_, ?value, ?field)),
+  Field_Type(?field, ?fieldType),
+  !basic.SubtypeOf(?valueType, ?fieldType),
+#ifdef ANDROID
+  !ForceValueCompatibility(?fieldType, ?value, ?valueType),
+#endif // ANDROID
+  !ForceTypeCompatibility(?valueType, ?fieldType).
+
 
 .decl VarPointsToMergedHeap(?var:Var, ?value:mainAnalysis.Value)
 .output VarPointsToMergedHeap
