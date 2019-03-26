@@ -16,6 +16,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_ENGINE = "Datalog engine"
 	private static final String GROUP_NATIVE = "Native code"
 	private static final String GROUP_PYTHON = "Python"
+	private static final String GROUP_INFORMATION_FLOW = "Information flow"
 
 	@Override
 	String getName() { "doop" }
@@ -627,6 +628,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "INFORMATION_FLOW",
 					name: "information-flow",
+					group: GROUP_INFORMATION_FLOW,
 					argName: "APPLICATION_PLATFORM",
 					description: "Load additional logic to perform information flow analysis.",
 					validValues: informationFlowPlatforms(Doop.addonsPath, Doop.souffleAddonsPath),
@@ -635,12 +637,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "INFORMATION_FLOW_HIGH_SOUNDNESS",
 					name: "information-flow-high-soundness",
+					group: GROUP_INFORMATION_FLOW,
 					description: "Enter high soundness mode for information flow microbenchmarks.",
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
 					id: "INFORMATION_FLOW_EXTRA_CONTROLS",
 					name: "information-flow-extra-controls",
+					group: GROUP_INFORMATION_FLOW,
 					argName: "CONTROLS",
 					description: "Load additional sensitive layout control from string triplets \"id1,type1,parent_id1,...\".",
 					changesFacts: true,
