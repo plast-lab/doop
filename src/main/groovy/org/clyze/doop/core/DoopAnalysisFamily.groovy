@@ -622,6 +622,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Perform a featherweight analysis (global state and complex objects immutable).",
 					forPreprocessor: true
 			),
+            new AnalysisOption<String>(
+                    id: "CONSTANT_FOLDING",
+                    name: "constant-folding",
+                    description: "Constant folding logic"
+            ),
 			new AnalysisOption<String>(
 					id: "SYMBOLIC_REASONING",
 					name: "symbolic-reasoning",

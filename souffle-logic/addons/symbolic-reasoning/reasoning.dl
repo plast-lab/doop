@@ -184,7 +184,6 @@ ExprIsNegationOfOther(?expr, ?exprOther) :-
     ?expr = [?op, ?type, ?exprLeft, ?exprRight],
     ?exprOther = [?negatedOp, ?type, ?exprLeft, ?exprRight].
 
-
 //
 //// ExprIsAlwaysTrue
 //

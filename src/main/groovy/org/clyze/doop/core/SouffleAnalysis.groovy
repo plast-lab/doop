@@ -164,6 +164,13 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		}
 
+        if (options.CONSTANT_FOLDING.value) {
+            def constantFoldingPath = "${Doop.souffleAddonsPath}/constant-folding"
+            cpp.includeAtEnd("$analysis", "${constantFoldingPath}/declarations.dl")
+            cpp.includeAtEnd("$analysis", "${constantFoldingPath}/const-type-infer.dl")
+            cpp.includeAtEnd("$analysis", "${constantFoldingPath}/constant-folding.dl")
+        }
+
 		if (options.SYMBOLIC_REASONING.value) {
             def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
 			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/declarations.dl")
