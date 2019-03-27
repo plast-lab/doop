@@ -169,9 +169,7 @@ ExprImpliesOther(?expr, ?exprOther) :-
         ?exprCompOther = ["&&", ?type, ?expr, ?exprTrue],
         ExprIsAlwaysTrue(?exprTrue).
 
-///////
-//// ExprIsAlwaysFalse (x <= x, x <= x+1, 2 < 3, ...)
-//// ExprIsAlwaysTrue
+//
 //// ExprIsNegationOfOther
 //
 
@@ -179,7 +177,27 @@ ExprIsNegationOfOther(?expr, ?exprOther) :-
     (ResolveExpr(?meth, _, ?expr) ;
     PathExpressionAfterTrue(?meth, _, ?expr) ;
     PathExpressionAfterFalse(?meth, _, ?expr)),
-    isBooleanExpr(?exprOther),
+		(ResolveExpr(?meth, _, ?exprOther) ;
+    PathExpressionAfterTrue(?meth, _, ?exprOther) ;
+    PathExpressionAfterFalse(?meth, _, ?exprOther)),
     NegateOp(?op, ?negatedOp),
     ?expr = [?op, ?type, ?exprLeft, ?exprRight],
     ?exprOther = [?negatedOp, ?type, ?exprLeft, ?exprRight].
+
+
+//
+//// ExprIsAlwaysTrue
+//
+
+ExprIsAlwaysTrue(?expr) :-
+		isBooleanExpr(?expr),
+		?expr = ["1", "boolean", nil, nil].
+
+//
+//// ExprIsAlwaysFalse
+//
+
+ExprIsAlwaysFalse(?expr) :-
+		isBooleanExpr(?expr),
+		?expr = ["0", "boolean", nil, nil].
+
