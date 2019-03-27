@@ -32,7 +32,10 @@ class SouffleScript {
 
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
-
+        String ldLibPath = System.getenv("LD_LIBRARY_PATH");
+        if(ldLibPath != null) {
+            executor.execute("ln -s $ldLibPath/libfunctors.so libfunctors.so".split().toList()) { log.info it }
+        }
 		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
 		def c2 = c1 + profile.toString() + provenance.toString() + liveProf.toString()
 		def checksum = CheckSum.checksum(c2, DoopAnalysisFactory.HASH_ALGO)
