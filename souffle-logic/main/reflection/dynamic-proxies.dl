@@ -213,8 +213,6 @@ ProxyInvoke(?invokeMethName, ?invokeMethDescriptor) :-
 // Helper relation to connect context requests with responses.
 .decl ProxyCallGraphEdgeCandidate(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?handlerObj:Value, ?handlerInvokeMeth:Method, ?value:Value, ?handlerType:Type)
 
-
-// TODO: commenting out this rule, makes sanity errors go away.
 ProxyCallGraphEdgeCandidate(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, ?value, ?handlerType),
 configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, 0) :-
    CallToMethodOfProxyObject(?hctx, ?value, ?callerCtx, ?invo),
