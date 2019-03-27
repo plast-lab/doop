@@ -547,7 +547,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		Map<String, String> env = [:]
 		env.putAll(System.getenv())
-
+		env.ANALYSIS_OUT =  "${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}/database" as String
 		env.LC_ALL = "en_US.UTF-8"
 
 		if (options.LB3.value) {
