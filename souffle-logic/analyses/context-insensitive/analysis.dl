@@ -14,7 +14,7 @@
   .type HContext
          
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?calleeCtx = ?callerCtx,
     ?tomethod = ?tomethod.
 

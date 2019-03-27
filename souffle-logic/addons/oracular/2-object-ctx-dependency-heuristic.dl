@@ -15,7 +15,7 @@ MethodContextDependsOnMethod(?method1, ?method3) :-
   ?callerCtx = ?calleeCtx.
  
 MethodContextDependsOnMethod(?method, ?allocatingMethod) :-
-   mainAnalysis.configuration.ContextRequest(_, _, _, ?value, ?method),
+   mainAnalysis.configuration.ContextRequest(_, _, _, ?value, ?method, _),
    mainAnalysis.AssignNormalHeapAllocation(?value, _, ?allocatingMethod),
    mainAnalysis.ReachableContext(_, ?allocatingMethod).
 

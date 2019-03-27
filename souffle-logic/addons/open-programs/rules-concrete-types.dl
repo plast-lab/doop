@@ -156,7 +156,7 @@ mainAnalysis.VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) :-
 // due to having mock objects flowing everywhere,
 // see implementation in 2objH
 // see scalable (but less sound) implementation in partioned-2objH
-mainAnalysis.configuration.ContextRequest(?callerCtx, ?immutablehctx, ?invo, ?value, ?method) :-
+mainAnalysis.configuration.ContextRequest(?callerCtx, ?immutablehctx, ?invo, ?value, ?method, 1) :-
   MockObjectForType(?value, ?class),
   Method_DeclaringType(?method, ?class),
   MockInvocationForEntryPoint(?value, ?method, ?invo),
@@ -189,7 +189,7 @@ ContextForOpenProgramEntryPoint(?calleeCtx, ?method) :-
 #else
   mainAnalysis.isImmutableContext(?callerCtx),
   mainAnalysis.configuration.ContextResponse(?callerCtx, ?immutablehctx, ?invo, ?value, ?calleeCtx),
-  mainAnalysis.configuration.ContextRequest(?callerCtx, ?immutablehctx, ?invo, ?value, ?method),
+  mainAnalysis.configuration.ContextRequest(?callerCtx, ?immutablehctx, ?invo, ?value, ?method, 1),
 #endif
 #endif
   OpenProgramEntryPoint(?method).

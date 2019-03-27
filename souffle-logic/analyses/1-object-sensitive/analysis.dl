@@ -18,7 +18,7 @@
 .decl ContextToHContext(?ctx:Context, ?hctx:HContext)
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?calleeCtx = [?value],
     ?tomethod = ?tomethod.             
 

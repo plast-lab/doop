@@ -503,7 +503,7 @@ OptVirtualMethodInvocationBase(?invocation, ?base) :-
 // new context objects by employing arbitrary logic, and communicates
 // back to the main analysis the results of context creation using
 // ContextResponse.
-configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 1) :-
   OptVirtualMethodInvocationBase(?invocation, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   Value_Type(?value, ?valuetype),
@@ -514,13 +514,13 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod) 
 #ifdef ZIPPER
 
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, _),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   ThisVar(?tomethod, ?this),
   ZipperPrecisionCriticalMethod(?tomethod).
 
 VarPointsTo(?hctx, ?value, ?immCtx, ?this) :-
-  configuration.ContextRequest(_, ?hctx, ?invocation, ?value, ?tomethod),
+  configuration.ContextRequest(_, ?hctx, ?invocation, ?value, ?tomethod, _),
   isImmutableContext(?immCtx),
   ThisVar(?tomethod, ?this),
   !ZipperPrecisionCriticalMethod(?tomethod).
@@ -528,7 +528,7 @@ VarPointsTo(?hctx, ?value, ?immCtx, ?this) :-
 #else
 
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, _),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   ThisVar(?tomethod, ?this),
   !Value_Null(?value).
@@ -549,7 +549,7 @@ OptSuperMethodInvocationBase(?invocation, ?base) :-
   Instruction_Method(?invocation, ?inmethod),
   SuperMethodInvocation_Base(?invocation, ?base).
 
-configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 1) :-
   OptSuperMethodInvocationBase(?invocation, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   MethodInvocation_Method(?invocation, ?tomethod).
@@ -565,7 +565,7 @@ OptSpecialMethodInvocationBase(?invocation, ?base) :-
   Instruction_Method(?invocation, ?inmethod),
   SpecialMethodInvocation_Base(?invocation, ?base).
 
-configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 1) :-
   OptSpecialMethodInvocationBase(?invocation, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   MethodInvocation_Method(?invocation, ?tomethod).
@@ -584,8 +584,8 @@ Reachable(?method) :-
 .output DuplicateContextRequest
 
 DuplicateContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth1, ?meth2) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth1),
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth2),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth1, _),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth2, _),
   ?meth1 != ?meth2,
   !Value_Null(?obj),
 #ifdef REFLECTION_DYNAMIC_PROXIES
@@ -604,7 +604,7 @@ DuplicateContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth1, ?meth2) :-
 .output DuplicateContextResponse
 
 DuplicateContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx1, ?calleeCtx2) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, _),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, _, _),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx1),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx2),
   ?calleeCtx1 != ?calleeCtx2.

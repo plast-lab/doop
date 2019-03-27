@@ -191,7 +191,7 @@ CallToMethodOfProxyObject(?hctx, ?value, ?ctx, ?invo) :-
 // constructor calls super.<init>(handlerObj).
 .decl ProxyInit(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?handlerObj:Value, ?init:Method)
 ProxyInit(?callerCtx, ?hctx, ?invo, ?handlerObj, ?init),
-configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?init) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?init, 0) :-
    ?init = "<java.lang.reflect.Proxy: void <init>(java.lang.reflect.InvocationHandler)>",
    ProxyObject_Invocation(?proxy, ?invo),
    ProxyObject_Handler(?proxy, ?handlerObj),
@@ -216,7 +216,7 @@ ProxyInvoke(?invokeMethName, ?invokeMethDescriptor) :-
 
 // TODO: commenting out this rule, makes sanity errors go away.
 ProxyCallGraphEdgeCandidate(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, ?value, ?handlerType),
-configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, 0) :-
    CallToMethodOfProxyObject(?hctx, ?value, ?callerCtx, ?invo),
    ProxyObject_Handler(?value, ?handlerObj),
    Value_Type(?handlerObj, ?handlerType),
@@ -227,12 +227,9 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvo
 .decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)
 
 ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
-VarPointsTo(?handlerHctx, ?handlerObj, ?calleeCtx, ?this),
 HandledProxy(?newProxyInstanceInvo, ?handlerType) :-
    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?handlerObj, ?calleeCtx),
    ProxyCallGraphEdgeCandidate(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, ?value, ?handlerType),
-   ProxyObject_HandlerHctx(?value, ?handlerHctx),
-   ThisVar(?handlerInvokeMeth, ?this),
    ProxyObject_Invocation(?value, ?newProxyInstanceInvo).
 
 

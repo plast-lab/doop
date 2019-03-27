@@ -13,7 +13,7 @@ ServletMethodEP(?method) :-
      Method_Annotation(?method, "javax.ws.rs.PUT")).
 
 // Create a context for servlet EPs
-mainAnalysis.configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?method) :-
+mainAnalysis.configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?method, 1) :-
     ServletMethodEP(?method),
     ?value = cat("SERVLET ::: ", ?method),
     mainAnalysis.isValue(?value),
@@ -38,7 +38,7 @@ mainAnalysis.ReachableContext(?calleeCtx, ?method) :-
     mainAnalysis.isValue(?value),
     mainAnalysis.isImmutableHContext(?hctx),
     mainAnalysis.isImmutableContext(?callerCtx),
-    mainAnalysis.configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?method),
+    mainAnalysis.configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?method, 1),
     mainAnalysis.configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
 
 // Create mock object for the startup context
