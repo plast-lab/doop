@@ -357,4 +357,24 @@ public abstract class JavaFactWriter {
                 (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
                  simpleName.equals("invokeBasic")));
     }
+
+    /**
+     * Write an annotation element.
+     *
+     * @param annotationKind   the kind of the construct annotated by the annotation
+     *                         (for example, "method" or "type")
+     * @param annotatedElement the element annotated (for example, a method ID)
+     * @param parentId         the ID of the parent element
+     * @param thisId           the ID of this element
+     * @param name             the name of this element (may be null)
+     * @param value1           the value of this element
+     * @param value2           an extra value (for some annotation types) or null
+     */
+    protected void writeAnnotationElement(String annotationKind, String annotatedElement, String parentId, String thisId, String name, String value1, String value2) {
+        if (name == null)
+            name = "-";
+        if (value2 == null)
+            value2 = "-";
+        _db.add(ANNOTATION_ELEMENT, annotationKind, annotatedElement, parentId, thisId, name, value1, value2);
+    }
 }

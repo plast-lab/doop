@@ -15,7 +15,7 @@
   .type HContext = [ value:mainAnalysis.Value ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxValue],
     ?calleeCtx = [NO_INVOCATION_CONTEXT, ?hctxValue, ?value],
     ?tomethod = ?tomethod.

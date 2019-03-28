@@ -64,6 +64,13 @@
 .decl PathExpressionAfterTrue(?meth: Method, ?insn: Instruction, ?pathExpr: Expr)
 .decl PathExpressionAfterFalse(?meth: Method, ?insn: Instruction, ?pathExpr: Expr)
 
+/* Reasoner */
+
+.decl ExprImpliesOther(?expr: Expr, ?exprOther: Expr)
+.decl ExprIsAlwaysTrue(?expr: Expr)
+.decl ExprIsAlwaysFalse(?expr: Expr)
+.decl ExprIsNegationOfOther(?expr: Expr, ?exprOther: Expr)
+
 .output isBooleanExpr
 .output isArithmeticExpr
 .output ResolveExpr
@@ -76,3 +83,8 @@
 .output PathExpressionBefore
 .output PathExpressionAfterTrue
 .output PathExpressionAfterFalse
+
+.output ExprImpliesOther
+.output ExprIsNegationOfOther
+.output ExprIsAlwaysFalse
+.output ExprIsAlwaysTrue

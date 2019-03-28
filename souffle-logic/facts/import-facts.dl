@@ -190,7 +190,7 @@ AssignOper_From(?instruction, ?pos, ?from) :-
 // AssignOperFromConstant
 
 .decl _AssignOperFromConstant(?instruction:symbol, ?pos: number, ?from:symbol)
-.input _AssignOperFrom(IO="file", filename="AssignOperFromConstant.facts", delimiter="\t")
+.input _AssignOperFromConstant(IO="file", filename="AssignOperFromConstant.facts", delimiter="\t")
 
 AssignOper_FromConstant(?instruction, ?pos, ?from) :-
     _AssignOperFromConstant(?instruction, ?pos, ?from).
@@ -901,6 +901,9 @@ isAnnotation(?annotation) :-
     Method_Annotation(_, ?annotation);
     Field_Annotation(_, ?annotation);
     Param_Annotation(_, _, ?annotation).
+
+// Annotation elements
+.input AnnotationElement(IO="file", filename="AnnotationElement.facts", delimiter="\t")
 
 // Phantom types/methods and phantom-based methods.
 .decl PhantomType(?t:Type)

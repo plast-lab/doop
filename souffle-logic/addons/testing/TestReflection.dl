@@ -23,5 +23,8 @@ TestId("test1.9") :-
   varPointsTo("<Main: void main(java.lang.String[])>/bFieldValB#_53", "<A: void <init>()>/new B/0").
 TestId("test1.10") :-
   varPointsTo("<Main: void testProxies()>/g#_109", "<proxy object for interface G at <Main: void testProxies()>/java.lang.reflect.Proxy.newProxyInstance/0>").
+
+#ifdef REFLECTION_DYNAMIC_PROXIES
 TestId("test1.11") :-
   proxyCGE("<Main: void testProxies()>/G.countInteger/0", "<DHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>").
+#endif // REFLECTION_DYNAMIC_PROXIES

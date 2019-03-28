@@ -10,6 +10,7 @@ import org.clyze.utils.Helper
 
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
+import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
@@ -32,6 +33,8 @@ class SouffleScript {
 
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
+
+		detectFunctors()
 
 		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
 		def c2 = c1 + profile.toString() + provenance.toString() + liveProf.toString()
@@ -168,4 +171,34 @@ class SouffleScript {
         return [compilationTime, executionTime]
     }
 
+	// Detect libfunctors.so and create corresponding symbolic link.
+	private void detectFunctors() {
+		String envVar = "LD_LIBRARY_PATH"
+		String ldLibPath = System.getenv(envVar)
+		if(ldLibPath != null) {
+			def libfunctors = null
+			ldLibPath.split(File.pathSeparator).each {
+				File f = new File("${it}/libfunctors.so")
+				if (f.exists()) {
+					libfunctors = f.canonicalPath
+				}
+			}
+			if (libfunctors != null) {
+				try {
+					Path target = FileSystems.default.getPath(libfunctors)
+					Path link = FileSystems.default.getPath("libfunctors.so")
+					Files.createSymbolicLink(target, link)
+					log.debug "Created symbolic link: ${link} -> ${target}"
+				} catch (UnsupportedOperationException ignored) {
+					log.debug "Filesystem does not support symbolic link for file ${libfunctors}"
+					// Fallback (non-portable).
+					// executor.execute("ln -s ${libfunctors} libfunctors.so".split().toList()) { log.info it }
+				} catch (FileAlreadyExistsException) {
+					log.info "Warning: could not create ${link}, file already exists."
+				}
+			} else {
+				log.debug "Warning: no libfunctors.so in environment variable ${envVar} = '${ldLibPath}'"
+			}
+		}
+	}
 }

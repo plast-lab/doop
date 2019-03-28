@@ -205,8 +205,12 @@ class TestUtils {
 		relationIsEmpty(analysis, "ClassTypeIsInterfaceType")
 		relationIsEmpty(analysis, "PrimitiveTypeIsReferenceType")
 		relationIsEmpty(analysis, "basic.DuplicateMethodImplemented")
+		relationIsEmpty(analysis, "basic.DuplicateMethodLookup")
+		relationIsEmpty(analysis, "mainAnalysis.DuplicateContextRequest")
+		relationIsEmpty(analysis, "mainAnalysis.DuplicateContextResponse")
 		if (checkPointsTo) {
 			relationIsEmpty(analysis, "NotReachableVarPointsTo")
+			relationIsEmpty(analysis, "FieldPointsToWronglyTypedValue")
 			relationIsEmpty(analysis, "VarPointsToWronglyTypedValue")
 			relationIsEmpty(analysis, "VarPointsToMergedHeap")
 			relationIsEmpty(analysis, "HeapAllocationHasNoType")

@@ -3,16 +3,16 @@
 // For every interface, we create a dummy dynamic proxy class.
 // TODO Proxy classes are public only if all their interfaces are
 // public, otherwise they are non-public (i.e. no modifier).
-isType(cat("$Proxy$for$", ?interface)),
+isType(?proxy),
 isType("java.lang.reflect.Proxy"),
 isClassType("java.lang.reflect.Proxy"),
-isClassType(cat("$Proxy$for$", ?interface)),
+isClassType(?proxy),
 isReferenceType("java.lang.reflect.Proxy"),
-isReferenceType(cat("$Proxy$for$", ?interface)),
-ProxyClass(cat("$Proxy$for$", ?interface)),
-// BBProxyClass(cat("$ByteBuddyProxy$for$", ?interface)),
-ClassModifier("final", cat("$Proxy$for$", ?interface)),
-DirectSuperclass(cat("$Proxy$for$", ?interface), "java.lang.reflect.Proxy"),
-DirectSuperinterface(cat("$Proxy$for$", ?interface), ?interface) :-
-  isInterfaceType(?interface).
+isReferenceType(?proxy),
+ProxyClass(?proxy),
+ClassModifier("final", ?proxy),
+DirectSuperclass(?proxy, "java.lang.reflect.Proxy"),
+DirectSuperinterface(?proxy, ?interface) :-
+  isInterfaceType(?interface),
+  ?proxy = cat("$Proxy$for$", ?interface).
 #endif // REFLECTION_DYNAMIC_PROXIES

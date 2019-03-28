@@ -1,59 +1,202 @@
-.decl ExprImpliesOther(expr1: Expr, expr2: Expr)
-.output ExprImpliesOther
+// Axioms and inference rules for boolean ?expressions
 
-// Axioms and inference rules for boolean expressions
+// Every ?expression implies itself
 
-// Every expression implies itself
+ExprImpliesOther(?expr1, ?expr1) :-
+  isBooleanExpr(?expr1).
 
-ExprImpliesOther(expr1, expr1) :-
-  isBooleanExpr(expr1).
-
+//
 // A && B => A and A && B => B
-ExprImpliesOther(expr, left),
-ExprImpliesOther(expr, right) :-
-  isBooleanExpr(expr),
-  expr = ["&&", "boolean", left, right].
+//
 
+ExprImpliesOther(?expr, ?left),
+ExprImpliesOther(?expr, ?right) :-
+  ?expr = ["&&", "boolean", ?left, ?right],
+  isBooleanExpr(?expr).
+
+//
 // A && B => B && A
-ExprImpliesOther(expr, exprOther) :-
-  isBooleanExpr(expr),
-  expr = ["&&", "boolean", left, right],
-  exprOther = ["&&", "boolean", right, left].  
+//
 
+ExprImpliesOther(?expr, ?exprOther) :-
+  ?expr = ["&&", "boolean", ?left, ?right],
+  isBooleanExpr(?expr),
+  ?exprOther = ["&&", "boolean", ?right, ?left].
+
+//
 // A => A || B and B => A || B
-ExprImpliesOther(left, expr),
-ExprImpliesOther(right, expr) :-
-  isBooleanExpr(expr),
-  expr = ["||", "boolean", left, right].
+//
 
+ExprImpliesOther(?left, ?expr),
+ExprImpliesOther(?right, ?expr) :-
+  ?expr = ["||", "boolean", ?left, ?right],
+  isBooleanExpr(?expr).
+
+//
 // A || B => B || A
-ExprImpliesOther(expr, exprOther) :-
-  isBooleanExpr(expr),
-  expr = ["||", "boolean", left, right],
-  exprOther = ["||", "boolean", right, left].
+//
+
+ExprImpliesOther(?expr, ?exprOther) :-
+  ?expr = ["||", "boolean", ?left, ?right],
+  isBooleanExpr(?expr),
+  ?exprOther = ["||", "boolean", ?right, ?left].
+
+/* Distributive property rules */
+
+//
+// A && (B || C) => (A && B) || (A && C)
+//
+
+isExpr(?exprOther),
+isExpr(?exprLeft),
+isExpr(?exprRight),
+ExprImpliesOther(?expr, ?exprOther) :-
+    ?expr = ["&&", "boolean", ?exprA, ?exprOr],
+    isBooleanExpr(?expr),
+    ?exprOr = ["||", "boolean", ?exprB, ?exprC],
+    ?exprLeft = ["&&", "boolean", ?exprA, ?exprB],
+    ?exprRight = ["&&", "boolean", ?exprA, ?exprC],
+    ?exprOther = ["||", "boolean", ?exprLeft, ?exprRight].
+
+//
+// (A && B) || (A && C) => A && (B || C)
+//
+
+isExpr(?exprOther),
+isExpr(?exprNRight),
+ExprImpliesOther(?expr, ?exprOther) :-
+    ?expr = ["||", "boolean", ?exprLeft, ?exprRight],
+    isBooleanExpr(?expr),
+    ?exprLeft = ["&&", "boolean", ?exprA, ?exprB],
+    ?exprRight = ["&&", "boolean", ?exprA, ?exprC],
+    ?exprNRight =["||", "boolean", ?exprB, ?exprC],
+    ?exprOther = ["&&", "boolean", ?exprA, ?exprNRight].
+
+//
+// A || (B && C) => (A || B) && (A || C)
+//
+
+ExprImpliesOther(?expr, ?exprOther) :-
+    ?expr = ["||", "boolean", ?exprA, ["&&", "boolean", ?exprB, ?exprC]],
+    isBooleanExpr(?expr),
+    ?exprLeft = ["||", "boolean", ?exprA, ?exprB],
+    ?exprRight = ["||", "boolean", ?exprA, ?exprC],
+    ?exprOther = ["&&", "boolean", ?exprLeft, ?exprRight].
+
+//
+// (A || B) && (A || C) => A || (B && C)
+//
+
+ExprImpliesOther(?expr, ?exprOther) :-
+    ?expr = ["&&", "boolean", ["||", "boolean", ?exprA, ?exprB], ["||", "boolean", ?exprA, ?exprC]],
+    isBooleanExpr(?expr),
+    ?exprRight = ["&&", "boolean", ?exprB, ?exprC],
+    ?exprOther = ["||", "boolean", ?exprA, ?exprRight].
 
 
-/*
 /////////// ===========================================
 /// Above are axioms, below are inference rules
 ///////////
-ExprImpliesOther(expr, exprOther) :-
-  ExprImpliesOther(expr, exprInterm),
-  ExprImpliesOther(exprInterm, exprOther).
 
-// A => B and A => C implies A => B && C
+//
+// A => B and B => C implies A => C
+//
 
-// B => A and C => A implies B || C => A
+ExprImpliesOther(?expr, ?exprOther) :-
+    ExprImpliesOther(?expr, ?exprInter),
+    ExprImpliesOther(?exprInter, ?exprOther).
 
-// A => B and ExprIsNegationOfOther(B, B') and ExprIsNegationOfOther(A, A') implies B' => A'
+//
+//// A => B and A => C implies A => B && C
+//
 
-// ExprIsAlwaysFalse(B) implies B => A
-// ExprIsAlwaysTrue(B) implies A => B
+ExprImpliesOther(?exprA, ?exprOther) :-
+    ?exprOther = ["&&", "boolean", ?exprB, ?exprC],
+    isBooleanExpr(?exprOther),
+    ExprImpliesOther(?exprA, ?exprB),
+    ExprImpliesOther(?exprA, ?exprC).
 
+//
+//// B => A and C => A implies B || C => A
+//
 
-///// ????
-// ExprIsAlwaysFalse (x <= x, x <= x+1, 2 < 3, ...)
-// ExprIsAlwaysTrue
-// ExprIsNegationOfOther
+ExprImpliesOther(?exprLeft, ?exprA) :-
+    ?exprLeft = ["||", "boolean", ?exprB, ?exprC],
+    isBooleanExpr(?exprLeft),
+		ExprImpliesOther(?exprB, ?exprA),
+    ExprImpliesOther(?exprC, ?exprA).
 
-*/
+//
+//// A => B and ExprIsNegationOfOther(B, B') and ExprIsNegationOfOther(A, A') implies B' => A'
+//
+
+ExprImpliesOther(?exprBP, ?exprAP) :-
+    ExprImpliesOther(?exprA, ?exprB),
+    ExprIsNegationOfOther(?exprB, ?exprBP),
+    ExprIsNegationOfOther(?exprA, ?exprAP).
+
+//
+//// ExprIsAlwaysFalse(B) implies B => A
+//
+
+ExprImpliesOther(?expr, ?exprOther) :-
+		ExprIsAlwaysFalse(?expr),
+		isBooleanExpr(?exprOther).
+
+//
+//// ExprIsAlwaysTrue(B) implies A => B
+//
+
+ExprImpliesOther(?exprOther, ?expr) :-
+		ExprIsAlwaysTrue(?expr),
+		isBooleanExpr(?exprOther).
+
+//
+//// A => (B || false)  implies  A => B
+//
+
+ExprImpliesOther(?expr, ?exprOther) :-
+        ExprImpliesOther(?expr, ?exprCompOther),
+        ?exprCompOther = ["||", ?type, ?exprOther, ?exprFalse],
+        ExprIsAlwaysFalse(?exprFalse).
+
+//
+//// (Α && true) => B implies A => B
+//
+
+ExprImpliesOther(?expr, ?exprOther) :-
+        ExprImpliesOther(?exprCompOther, ?exprOther),
+        ?exprCompOther = ["&&", ?type, ?expr, ?exprTrue],
+        ExprIsAlwaysTrue(?exprTrue).
+
+//
+//// ExprIsNegationOfOther
+//
+
+ExprIsNegationOfOther(?expr, ?exprOther) :-
+    (ResolveExpr(?meth, _, ?expr) ;
+    PathExpressionAfterTrue(?meth, _, ?expr) ;
+    PathExpressionAfterFalse(?meth, _, ?expr)),
+		(ResolveExpr(?meth, _, ?exprOther) ;
+    PathExpressionAfterTrue(?meth, _, ?exprOther) ;
+    PathExpressionAfterFalse(?meth, _, ?exprOther)),
+    NegateOp(?op, ?negatedOp),
+    ?expr = [?op, ?type, ?exprLeft, ?exprRight],
+    ?exprOther = [?negatedOp, ?type, ?exprLeft, ?exprRight].
+
+//
+//// ExprIsAlwaysTrue
+//
+
+ExprIsAlwaysTrue(?expr) :-
+		isBooleanExpr(?expr),
+		?expr = ["1", "boolean", nil, nil].
+
+//
+//// ExprIsAlwaysFalse
+//
+
+ExprIsAlwaysFalse(?expr) :-
+		isBooleanExpr(?expr),
+		?expr = ["0", "boolean", nil, nil].
+
