@@ -34,12 +34,14 @@ public class DoopAddons {
     private static Class<?> mtClass = null;
     private static Method getRetType = null;
     private static Method getParamTypes = null;
+    private static PackManager pm;
+    private static Method wC;
 
     /**
      * Check and load classes before parallel fact generation or
      * synchronized/locking during classloading can cause deadlocks.
      */
-    static {
+    static void initReflectiveAccess() {
         try {
             hc = Class.forName("soot.PolymorphicMethodRef").getDeclaredMethod("handlesClass", String.class);
             hc.setAccessible(true);
@@ -52,6 +54,14 @@ public class DoopAddons {
             getParamTypes = mtClass.getDeclaredMethod("getParameterTypes");
             getParamTypes.setAccessible(true);
         } catch (ClassNotFoundException | NoSuchMethodException ex) { }
+
+        pm = PackManager.v();
+        try {
+            wC = pm.getClass().getDeclaredMethod("writeClass", SootClass.class);
+            wC.setAccessible(true);
+        } catch (NoSuchMethodException ex) {
+            ex.printStackTrace();
+        }
     }
 
     public static void retrieveAllSceneClassesBodies(Integer _cores) {
@@ -87,7 +97,6 @@ public class DoopAddons {
 
     // Call non-public method: PackManager.v().retrieveAllBodies()
     public static void retrieveAllBodies() throws DoopErrorCodeException {
-        PackManager pm = PackManager.v();
         try {
             Method rAB = pm.getClass().getDeclaredMethod("retrieveAllBodies");
             rAB.setAccessible(true);
@@ -100,20 +109,10 @@ public class DoopAddons {
     }
 
     // Call non-public method: PackManager.v().writeClass(sootClass)
-    private static Method wC;
     public static void writeClass(SootClass sootClass) throws DoopErrorCodeException {
-        PackManager pm = PackManager.v();
         try {
-            if (wC == null) {
-                synchronized (lock) {
-                    if (wC == null) {
-                        wC = pm.getClass().getDeclaredMethod("writeClass", SootClass.class);
-                        wC.setAccessible(true);
-                    }
-                }
-            }
             wC.invoke(pm, sootClass);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+        } catch (IllegalAccessException | InvocationTargetException ex) {
             System.err.println("Could not call Soot method writeClass(): ");
             ex.printStackTrace();
             throw new DoopErrorCodeException(12, ex);

@@ -185,7 +185,12 @@ VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
 CallToMethodOfProxyObject(?hctx, ?value, ?ctx, ?invo) :-
    VirtualMethodInvocation_Base(?invo, ?base),
    VarPointsTo(?hctx, ?value, ?ctx, ?base),
-   isProxyObject(?value).
+   isProxyObject(?value),
+   MethodInvocation_Method(?invo, ?sig),
+   // Methods marked "final" in java.lang.Object cannot be proxied. The Object
+   // superclass is the only place where "final" methods can be encountered;
+   // the interfaces do not allow such methods.
+   !Method_Modifier("final", ?sig).
 
 // Since dynamic proxies are subclasses of java.lang.reflect.Proxy, their
 // constructor calls super.<init>(handlerObj).
