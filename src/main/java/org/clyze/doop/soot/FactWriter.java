@@ -133,6 +133,11 @@ class FactWriter extends JavaFactWriter {
         } else if (ae instanceof AnnotationClassElem) {
             AnnotationClassElem ace = (AnnotationClassElem)ae;
             writeAnnotationElement(targetType, target, parentId, thisId, ace.getName(), TypeUtils.raiseTypeId(ace.getDesc()), "-");
+        } else if (ae instanceof AnnotationAnnotationElem) {
+            AnnotationAnnotationElem aae = (AnnotationAnnotationElem)ae;
+            // Write a dummy annotation node, followed by its contents.
+            writeAnnotationElement(targetType, target, parentId, thisId, "INNER-ANNOTATION", "-", null);
+            writeAnnotationElements(targetType, target, thisId, aae.getValue().getElems());
         } else
             System.out.println("Warning: unknown annotation element, type: '" + ae.getClass() + "', name: '" + ae.getName() + "'");
     }
