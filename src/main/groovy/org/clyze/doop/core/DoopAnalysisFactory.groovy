@@ -159,8 +159,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	}
 
 	// This method may not be static, see [Note] above.
+	private String getOutputDirectory(Map<String, AnalysisOption> options) {
+		return "${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}";
+	}
+
+	// This method may not be static, see [Note] above.
 	protected File createOutputDirectory(Map<String, AnalysisOption> options) {
-		def outDir = new File("${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}")
+		def outDir = new File(getOutputDirectory(options))
 		FileUtils.deleteQuietly(outDir)
 		outDir.mkdirs()
 		FileOps.findDirOrThrow(outDir, "Could not create analysis directory: ${outDir}")
@@ -547,7 +552,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		Map<String, String> env = [:]
 		env.putAll(System.getenv())
-		env.ANALYSIS_OUT =  "${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}/database" as String
+		env.ANALYSIS_OUT = "${getOutputDirectory(options)}/database" as String
 		env.LC_ALL = "en_US.UTF-8"
 
 		if (options.LB3.value) {
