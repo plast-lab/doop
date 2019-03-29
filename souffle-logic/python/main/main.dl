@@ -1,4 +1,3 @@
-.functor logVPT(number, symbol, number, symbol):number
 .type NumConstantValue
 .type BoolConstantValue
 .type NoneConstantValue
@@ -6,6 +5,7 @@
 .type Value = HeapAllocation | NumConstantValue | BoolConstantValue | Module | NoneConstantValue
 
 .comp BasicContextSensitivity<Configuration> {
+
   #include "main-declarations.dl"
   #include "export.dl"
   #include "imports.dl"
@@ -58,31 +58,6 @@
     ?s = "<<immutable-hcontext>>",
     configuration.InitHContextRequest(?s),
     configuration.InitHContextResponse(?s, ?hctx).
-
-#if(1)
-.decl ctxToNum(?ctx:configuration.Context, ?strCtx:number)
-.output ctxToNum
-
-.decl hctxToNum(?hctx:configuration.HContext, ?strCtx:number)
-.output hctxToNum
-
-ctxToNum(?hctx, $):-
-  isContext(?hctx).
-
-hctxToNum(?hctx, $):-
-  isHContext(?hctx).
-
-.decl FunctorOut(?out:symbol)
-.output FunctorOut
-
-FunctorOut(?value):-
-  VarPointsTo(?hctx, ?value, ?ctx, ?var),
-  hctxToNum(?hctx, ?hctxNum),
-  ctxToNum(?ctx, ?ctxNum),
-  ?resNum = @logVPT(?hctxNum, ?value, ?ctxNum, ?var),
-  ?resNum = 1.
-
-#endif
 
   isNoneValue("<None>").
 
