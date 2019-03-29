@@ -607,6 +607,18 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_ENGINE,
 					description: "Run souffle in interpreted mode (currently only for Python analyses)."
 			),
+			new BooleanAnalysisOption(
+					id: "SOUFFLE_USE_FUNCTORS",
+					name: "souffle-use-functors",
+					group: GROUP_ENGINE,
+					description: "Enale the use of user defined functors in Souffle."
+			),
+			new BooleanAnalysisOption(
+					id: "SOUFFLE_INCREMENTAL_OUTPUT",
+					name: "souffle-incremental-output",
+					group: GROUP_ENGINE,
+					description: "Use the functor for incremental output in Souffle."
+			),
 			/* End Souffle related options */
 
 			//Information-flow, etc.

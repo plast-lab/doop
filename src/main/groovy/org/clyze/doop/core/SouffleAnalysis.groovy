@@ -53,7 +53,8 @@ class SouffleAnalysis extends DoopAnalysis {
 							provenance,
 							liveProf,
 							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-							options.X_CONTEXT_REMOVER.value as boolean)
+							options.X_CONTEXT_REMOVER.value as boolean,
+							options.SOUFFLE_USE_FUNCTORS.value as boolean)
 					log.info "[Task COMPILE Done]"
 					return generatedFile
 				}
@@ -100,6 +101,10 @@ class SouffleAnalysis extends DoopAnalysis {
 	}
 
 	void initDatabase() {
+		//functor declarations need to be first
+		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/souffle-incremental-output/functor-declarations.dl")
+		}
 		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-sensitive-schema.dl")
 		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-insensitive-schema.dl")
@@ -153,6 +158,10 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl")
 			cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl", commonMacros)
 			cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros)
+		}
+
+		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/souffle-incremental-output/incr-output.dl")
 		}
 
 		if (options.INFORMATION_FLOW.value) {

@@ -29,12 +29,14 @@ class SouffleScript {
 	File compile(File origScriptFile, File outDir, File cacheDir,
                  boolean profile = false, boolean debug = false,
                  boolean provenance = false, boolean liveProf = false,
-                 boolean forceRecompile = true, boolean removeContext = false) {
+                 boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
 
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
 
-		detectFunctors()
+		if (useFunctors) {
+			detectFunctors(outDir)
+		}
 
 		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
 		def c2 = c1 + profile.toString() + provenance.toString() + liveProf.toString()
@@ -172,7 +174,7 @@ class SouffleScript {
     }
 
 	// Detect libfunctors.so and create corresponding symbolic link.
-	private void detectFunctors() {
+	private void detectFunctors(File outDir) {
 		String envVar = "LD_LIBRARY_PATH"
 		String ldLibPath = System.getenv(envVar)
 		if(ldLibPath != null) {
@@ -186,8 +188,8 @@ class SouffleScript {
 			if (libfunctors != null) {
 				try {
 					Path target = FileSystems.default.getPath(libfunctors)
-					Path link = FileSystems.default.getPath("libfunctors.so")
-					Files.createSymbolicLink(target, link)
+					Path link = FileSystems.default.getPath(outDir.getAbsolutePath() + "/libfunctors.so")
+					Files.createSymbolicLink(link, target)
 					log.debug "Created symbolic link: ${link} -> ${target}"
 				} catch (UnsupportedOperationException ignored) {
 					log.debug "Filesystem does not support symbolic link for file ${libfunctors}"
