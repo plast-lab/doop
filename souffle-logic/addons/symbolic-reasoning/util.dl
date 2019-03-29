@@ -3,19 +3,16 @@
 #ifdef DEBUG
 
 ToString(?expr, ?out) :-
-//    ResolveExpr(_, _, ?expr),
     isInputExpr(?expr),
     ?expr = [?base, ?type, ?exprL, ?exprR],
     ?out = ?base.
 ToString(?expr, ?out) :-
-//    ResolveExpr(_, _, ?expr),
     isExpr(?expr),
     isOperator(?base),
     ?expr = [?base, ?type, ?exprLeft, nil],
     ToString(?exprLeft, ?outLeft),
     ?out = cat(?base, ?outLeft).
 ToString(?expr, ?out) :-
-//    ResolveExpr(_, _, ?expr),
     isExpr(?expr),
     isOperator(?base),
     ?expr = [?base, ?type, ?exprLeft, ?exprRight],
@@ -24,14 +21,12 @@ ToString(?expr, ?out) :-
     ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
 ToString(?expr, ?out) :-
     isExpr(?expr),
-//    PathExpressionBefore(_, _, ?expr),
     isOperator(?base),
     ?expr = [?base, ?type, ?exprLeft, ?exprRight],
     ToString(?exprLeft, ?outLeft),
     ToString(?exprRight, ?outRight),
     ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
 ToString(?expr, ?out) :-
- //   PathExpressionAfterTrue(_, _, ?expr),
     isExpr(?expr),
     isOperator(?base),
     ?expr = [?base, ?type, ?exprLeft, ?exprRight],
@@ -39,7 +34,6 @@ ToString(?expr, ?out) :-
     ToString(?exprRight, ?outRight),
     ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
 ToString(?expr, ?out) :-
-//    PathExpressionAfterFalse(_, _, ?expr),
     isExpr(?expr),
     isOperator(?base),
     ?expr = [?base, ?type, ?exprLeft, ?exprRight],

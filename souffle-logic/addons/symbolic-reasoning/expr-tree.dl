@@ -105,6 +105,7 @@ isExpr(?expr) :-
   ResolveExpr(?meth, ?right2, ?lExpr),
   ?expr = [?op, ?type, ?lExpr, ?rExpr].
 
+isInputExpr(?constR),
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
   AssignBinaryVarConst(_, ?var, ?meth, ?right1, ?right2, ?op),
@@ -123,13 +124,26 @@ isExpr(?expr) :-
   ?constL = [?right1, ?type, nil, nil],
   ?expr = [?op, ?type, ?constL, ?rExpr].
 
-ResolveExpr(?meth, ?var, ?expr),
-isExpr(?expr) :-
+LeftExpr(?var, ?op, ?constL),
+isInputExpr(?constL) :- 
   AssignBinaryConstConst(_, ?var, ?meth, ?right1, ?right2, ?op),
   Var_Type(?var, ?type),
   isPrimitiveType(?type),
-  ?constL = [?right1, ?type, nil, nil],
-  ?constR = [?right2, ?type, nil, nil],
+  ?constL = [?right1, ?type, nil, nil].
+
+RightExpr(?var, ?op, ?constR),
+isInputExpr(?constR) :- 
+  AssignBinaryConstConst(_, ?var, ?meth, ?right1, ?right2, ?op),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  ?constR = [?right2, ?type, nil, nil].
+
+ResolveExpr(?meth, ?var, ?expr),
+isExpr(?expr) :-
+  LeftExpr(?var, ?op, ?constL),
+  RightExpr(?var, ?op, ?constR),
+  Var_Type(?var, ?type),
+  Var_DeclaringMethod(?var, ?meth),
   ?expr = [?op, ?type, ?constL, ?constR].
 
 
