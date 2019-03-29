@@ -50,6 +50,9 @@ ToString(?expr, ?out) :-
 #endif
 
 isExpr(?expr) :-
+    PathExpressionBefore(_, _, ?expr).
+
+isExpr(?expr) :-
     PathExpressionAfterTrue(_, _, ?expr).
 isExpr(?expr) :-
     PathExpressionAfterFalse(_, _, ?expr).
@@ -70,14 +73,37 @@ isArithmeticExpr(?expr) :-
      Type_float(?type) ;
      Type_double(?type)).
 
+// Boolean operators
+
 isOperator("&&").
 isOperator("||").
+
+// Relational operators
+
 isOperator("==").
 isOperator("!=").
 isOperator("<").
 isOperator(">").
 isOperator(">=").
 isOperator("<=").
+
+// Arithmetic operators
+
+isOperator("+").
+isOperator("-").
+isOperator("*").
+isOperator("/").
+isOperator("%").
+
+// Bitwise operators
+
+isOperator("&").
+isOperator("|").
+isOperator("^").
+isOperator("~").
+isOperator("<<").
+isOperator(">>").
+isOperator(">>>").
 
 /* Facts for NegateOp */
 

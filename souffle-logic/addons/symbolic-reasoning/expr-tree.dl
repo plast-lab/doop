@@ -3,8 +3,7 @@
  *  1) Method parameters
  *  2) Field loads
  *  3) Static class fields
- *  4) Catch blocks
- *  5) Num Constant assignments
+ *  4) Num Constant assignments
  *
  */
 
@@ -12,142 +11,143 @@
 
 ResolveExpr(?meth, ?var, ?expr),
 isInputExpr(?expr) :-
-    isAssignLocal_Insn(?insn),
-    AssignLocal_From(?insn, ?param),
-    FormalParam(_, ?meth, ?param),
-    Var_Type(?param, ?type),
-    isPrimitiveType(?type),
-    AssignInstruction_To(?insn, ?var),
-    Instruction_Method(?insn, ?meth),
-    ?expr = [?param, ?type, nil, nil].
+	isAssignLocal_Insn(?insn),
+  AssignLocal_From(?insn, ?param),
+  FormalParam(_, ?meth, ?param),
+  Var_Type(?param, ?type),
+  isPrimitiveType(?type),
+  AssignInstruction_To(?insn, ?var),
+  Instruction_Method(?insn, ?meth),
+  ?expr = [?param, ?type, nil, nil].
 
 // Method Invocation result
 
 ResolveExpr(?meth, ?var, ?expr),
 isInputExpr(?expr) :-
-    isMethodInvocation(?methInvo),
-    MethodInvocation_Method(?methInvo, ?methSig),
-    Method_ReturnType(?methSig, ?type),
-    isPrimitiveType(?type),
-    Instruction_Method(?methInvo, ?meth),
-    AssignReturnValue(?methInvo, ?var),
-    ?expr = [?var, ?type, nil, nil].
+  isMethodInvocation(?methInvo),
+  MethodInvocation_Method(?methInvo, ?methSig),
+  Method_ReturnType(?methSig, ?type),
+  isPrimitiveType(?type),
+  Instruction_Method(?methInvo, ?meth),
+  AssignReturnValue(?methInvo, ?var),
+  ?expr = [?var, ?type, nil, nil].
 
-// Load insnance fields
+// Load instance fields
 
 ResolveExpr(?meth, ?var, ?expr),
 isInputExpr(?expr) :-
-    isLoadInstanceField_Insn(?insn),
-    LoadInstanceField_To(?insn, ?var),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    Instruction_Method(?insn, ?meth),
-    ?expr = [?var, ?type, nil, nil].
+  isLoadInstanceField_Insn(?insn),
+  LoadInstanceField_To(?insn, ?var),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  Instruction_Method(?insn, ?meth),
+  ?expr = [?var, ?type, nil, nil].
 
 // Load static fields
 
 ResolveExpr(?meth, ?var, ?expr),
 isInputExpr(?expr) :-
-    isLoadStaticField_Insn(?insn),
-    LoadStaticField_To(?insn, ?var),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    Instruction_Method(?insn, ?meth),
-    ?expr = [?var, ?type, nil, nil].
+  isLoadStaticField_Insn(?insn),
+  LoadStaticField_To(?insn, ?var),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  Instruction_Method(?insn, ?meth),
+  ?expr = [?var, ?type, nil, nil].
 
 // Assign Num Constant
 
 ResolveExpr(?meth, ?var, ?expr),
 isInputExpr(?expr) :-
-    isAssignNumConstant_Insn(?insn),
-    AssignInstruction_To(?insn, ?var),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    Instruction_Method(?insn, ?meth),
-    AssignNumConstant_Id(?insn, ?const),
-    ?expr = [?const, ?type, nil, nil].
+  isAssignNumConstant_Insn(?insn),
+  AssignInstruction_To(?insn, ?var),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  Instruction_Method(?insn, ?meth),
+  AssignNumConstant_Id(?insn, ?const),
+  ?expr = [?const, ?type, nil, nil].
 
 // Assign Local
 
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    Instruction_Method(?insn, ?meth),
-    isAssignLocal_Insn(?insn),
-    AssignInstruction_To(?insn, ?var),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    c = count: AssignInstruction_To(_, ?var),
-    c = 1,
-    AssignLocal_From(?insn, ?from),
-    ResolveExpr(?meth, ?from, ?expr).
+  Instruction_Method(?insn, ?meth),
+  isAssignLocal_Insn(?insn),
+  AssignInstruction_To(?insn, ?var),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  c = count: AssignInstruction_To(_, ?var),
+  c = 1,
+  AssignLocal_From(?insn, ?from),
+  ResolveExpr(?meth, ?from, ?expr).
 
 // Assign Unary
 
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    isAssignUnop_Insn(?insn),
-    AssignInstruction_To(?insn, ?var),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    Instruction_Method(?insn, ?meth),
-    AssignOper_From(?insn, _, ?right),
-    _OperatorAt(?insn, ?op),
-    ResolveExpr(?meth, ?right, ?rExpr),
-    ?expr = [?op, ?type, ?rExpr, nil].
+  isAssignUnop_Insn(?insn),
+  AssignInstruction_To(?insn, ?var),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  Instruction_Method(?insn, ?meth),
+  AssignOper_From(?insn, _, ?right),
+  _OperatorAt(?insn, ?op),
+  ResolveExpr(?meth, ?right, ?rExpr),
+  ?expr = [?op, ?type, ?rExpr, nil].
 
 // Assign Binary
 
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    AssignBinaryVarVar(_, ?var, ?meth, ?right1, ?right2, ?op),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    ResolveExpr(?meth, ?right1, ?rExpr),
-    ResolveExpr(?meth, ?right2, ?lExpr),
-    ?expr = [?op, ?type, ?lExpr, ?rExpr].
+  AssignBinaryVarVar(_, ?var, ?meth, ?right1, ?right2, ?op),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  ResolveExpr(?meth, ?right1, ?rExpr),
+  ResolveExpr(?meth, ?right2, ?lExpr),
+  ?expr = [?op, ?type, ?lExpr, ?rExpr].
 
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    AssignBinaryVarConst(_, ?var, ?meth, ?right1, ?right2, ?op),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    ResolveExpr(?meth, ?right1, ?lExpr),
-    ?constR = [?right2, ?type, nil, nil],
-    ?expr = [?op, ?type, ?lExpr, ?constR].
+  AssignBinaryVarConst(_, ?var, ?meth, ?right1, ?right2, ?op),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  ResolveExpr(?meth, ?right1, ?lExpr),
+  ?constR = [?right2, ?type, nil, nil],
+  ?expr = [?op, ?type, ?lExpr, ?constR].
 
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    AssignBinaryConstVar(_, ?var, ?meth, ?right1, ?right2, ?op),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    ResolveExpr(?meth, ?right2, ?rExpr),
-    ?constL = [?right1, ?type, nil, nil],
-    ?expr = [?op, ?type, ?constL, ?rExpr].
+  AssignBinaryConstVar(_, ?var, ?meth, ?right1, ?right2, ?op),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  ResolveExpr(?meth, ?right2, ?rExpr),
+  ?constL = [?right1, ?type, nil, nil],
+  ?expr = [?op, ?type, ?constL, ?rExpr].
 
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    AssignBinaryConstConst(_, ?var, ?meth, ?right1, ?right2, ?op),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    ?constL = [?right1, ?type, nil, nil],
-    ?constR = [?right2, ?type, nil, nil],
-    ?expr = [?op, ?type, ?constL, ?constR].
+  AssignBinaryConstConst(_, ?var, ?meth, ?right1, ?right2, ?op),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  ?constL = [?right1, ?type, nil, nil],
+  ?constR = [?right2, ?type, nil, nil],
+  ?expr = [?op, ?type, ?constL, ?constR].
 
 
 // If Conditions - Var_Var
 
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    IfVarVar(_, ?var, ?meth, ?right1, ?right2, ?op),
-    ResolveExpr(?meth, ?right1, ?lExpr),
-    ResolveExpr(?meth, ?right2, ?rExpr),
-    ?expr = [?op, "boolean", ?lExpr, ?rExpr].
+  IfVarVar(_, ?var, ?meth, ?right1, ?right2, ?op),
+  ResolveExpr(?meth, ?right1, ?lExpr),
+  ResolveExpr(?meth, ?right2, ?rExpr),
+  ?expr = [?op, "boolean", ?lExpr, ?rExpr].
 
 // If Conditions - Var_Const
 
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
-    IfVarConst(_, ?var, ?meth, ?right1, ?right2, ?op),
-    ?constExpr = [?right2, "boolean", nil, nil],
-    ResolveExpr(?meth, ?right1, ?lExpr),
-    ?expr = [?op, "boolean", ?lExpr, ?constExpr].
+  IfVarConst(_, ?var, ?meth, ?right1, ?right2, ?op),
+	Var_Type(?right1, ?type),
+  ?constExpr = [?right2, ?type, nil, nil],
+  ResolveExpr(?meth, ?right1, ?lExpr),
+  ?expr = [?op, "boolean", ?lExpr, ?constExpr].
