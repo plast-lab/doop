@@ -420,7 +420,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 writeLoadOrStoreArrayIndex((ThreeRegisterInstruction)instr, index, LOAD_ARRAY_INDEX);
                 break;
             case ARRAY_LENGTH:
-                writeAssignUnop((TwoRegisterInstruction)instr, index);
+                writeAssignUnop((TwoRegisterInstruction)instr, index, op);
                 break;
             case FILL_ARRAY_DATA:
                 handleFillArrayData(instr, index);
@@ -667,7 +667,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case INT_TO_BYTE:
             case INT_TO_CHAR:
             case INT_TO_SHORT:
-                writeAssignUnop((TwoRegisterInstruction)instr, index);
+                writeAssignUnop((TwoRegisterInstruction)instr, index, op);
                 break;
             case NOP:
                 break;
@@ -862,7 +862,8 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param op     the instruction opcode
      */
     private void writeStatementType(String insn, Opcode op) {
-        String type = null;
+        String in_type  = null;
+        String out_type = null;
         switch (op) {
         case ADD_INT: case SUB_INT: case  MUL_INT : case  DIV_INT:
         case REM_INT: case AND_INT: case   OR_INT : case  XOR_INT:
@@ -878,7 +879,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         case DIV_INT_LIT8: case  REM_INT_LIT8: case  AND_INT_LIT8:
         case  OR_INT_LIT8: case  XOR_INT_LIT8: case  SHL_INT_LIT8:
         case SHR_INT_LIT8: case USHR_INT_LIT8:
-            type = "int"; break;
+            in_type = "int32"; out_type = "int32"; break;
         case ADD_LONG: case SUB_LONG: case  MUL_LONG : case DIV_LONG:
         case REM_LONG: case AND_LONG: case   OR_LONG : case XOR_LONG:
         case SHL_LONG: case SHR_LONG: case USHR_LONG : case CMP_LONG:
@@ -886,22 +887,62 @@ class DexMethodFactWriter extends JavaFactWriter {
         case DIV_LONG_2ADDR: case  REM_LONG_2ADDR: case AND_LONG_2ADDR:
         case  OR_LONG_2ADDR: case  XOR_LONG_2ADDR: case SHL_LONG_2ADDR:
         case SHR_LONG_2ADDR: case USHR_LONG_2ADDR:
-            type = "long"; break;
+            in_type = "long"; out_type = "long";  break;
         case ADD_FLOAT: case  SUB_FLOAT : case  MUL_FLOAT : case DIV_FLOAT:
         case REM_FLOAT: case CMPL_FLOAT : case CMPG_FLOAT :
         case ADD_FLOAT_2ADDR: case SUB_FLOAT_2ADDR: case MUL_FLOAT_2ADDR:
         case DIV_FLOAT_2ADDR: case REM_FLOAT_2ADDR:
-            type = "float"; break;
+            in_type = "float"; out_type = "float"; break;
         case ADD_DOUBLE: case  SUB_DOUBLE : case  MUL_DOUBLE: case DIV_DOUBLE:
         case REM_DOUBLE: case CMPL_DOUBLE : case CMPG_DOUBLE:
         case ADD_DOUBLE_2ADDR: case SUB_DOUBLE_2ADDR: case MUL_DOUBLE_2ADDR:
         case DIV_DOUBLE_2ADDR: case REM_DOUBLE_2ADDR:
-            type = "double"; break;
+            in_type = "double"; out_type = "double"; break;
+
+        // Unops
+        case NEG_INT:   case NOT_INT:
+            in_type = "int32"; out_type = "int32"; break;
+        case NEG_LONG:  case NOT_LONG:
+            in_type = "long"; out_type = "long"; break;
+        case NEG_FLOAT:
+            in_type = "float"; out_type = "float"; break;
+        case NEG_DOUBLE:
+            in_type = "double"; out_type = "double"; break;
+        case INT_TO_LONG:
+            in_type = "int32"; out_type = "long"; break;
+        case INT_TO_FLOAT:
+            in_type = "int32"; out_type = "float"; break;
+        case INT_TO_DOUBLE:
+            in_type = "int32"; out_type = "float"; break;
+        case INT_TO_BYTE:
+            in_type = "int32"; out_type = "byte"; break;
+        case INT_TO_CHAR:
+            in_type = "int32"; out_type = "char"; break;
+        case INT_TO_SHORT:
+            in_type = "int32"; out_type = "short"; break;
+        case LONG_TO_INT:
+            in_type = "long"; out_type = "int32"; break;
+        case LONG_TO_FLOAT:
+            in_type = "long"; out_type = "float"; break;
+        case LONG_TO_DOUBLE:
+            in_type = "long"; out_type = "double"; break;
+        case FLOAT_TO_INT:
+            in_type = "float"; out_type = "int"; break;
+        case FLOAT_TO_LONG:
+            in_type = "float"; out_type = "long"; break;
+        case FLOAT_TO_DOUBLE:
+            in_type = "float"; out_type = "double"; break;
+        case DOUBLE_TO_INT:
+            in_type = "double"; out_type = "int"; break;
+        case DOUBLE_TO_LONG:
+            in_type = "double"; out_type = "long"; break;
+        case DOUBLE_TO_FLOAT:
+            in_type = "double"; out_type = "float"; break;
         }
-        if (type == null)
+        if (in_type == null || out_type == null)
             System.err.println("Cannot determine statement type for instruction " + insn);
         else
-            _db.add(STATEMENT_TYPE, insn, type);
+            _db.add(STATEMENT_TYPE, insn, in_type, out_type);
     }
 
     private void writeAssignCast(OneRegisterInstruction ori, ReferenceInstruction ri, int index) {
@@ -927,6 +968,13 @@ class DexMethodFactWriter extends JavaFactWriter {
     private void writeEnterMonitor(int registerA, int index) {
         String insn = instructionId("enter-monitor", index);
         _db.add(ENTER_MONITOR, insn, str(index), local(registerA), methId);
+    }
+
+    private void writeAssignUnop(TwoRegisterInstruction tri, int index, Opcode op) {
+        writeAssignUnop(tri, index);
+
+        String insn = instructionId("assign", index);
+        writeStatementType(insn, op);
     }
 
     private void writeAssignUnop(TwoRegisterInstruction tri, int index) {

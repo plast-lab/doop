@@ -15,7 +15,7 @@ FACTS_IN=${ANDROID_IN}
 FACTS_OUT=${ANDROID_OUT}
 SSA_TRANSFORMER=$(realpath souffle-scripts/ssa-transform.dl)
 
-./doop -i ${APP} -a context-insensitive --id ${APP_NAME}-dex-facts --platform android_25_fulljars --dex --Xstop-at-facts ${FACTS_IN} --Xfacts-subset APP --cache 
+./doopOffline -i ${APP} -a context-insensitive --id ${APP_NAME}-dex-facts --platform android_25_fulljars --dex --Xstop-at-facts ${FACTS_IN} --Xfacts-subset APP --cache 
 
 ./gradlew souffleScript -Pargs="${SSA_TRANSFORMER} ${FACTS_IN} ${FACTS_OUT} ${DOOP_HOME}/cache 26 true false false false"
 

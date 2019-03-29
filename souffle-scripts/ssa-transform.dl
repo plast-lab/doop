@@ -774,8 +774,111 @@ RewriteVarDeclaringMethod(?var, ?method) :-
 
 .output HasKnownType
 
-SubtypeOf(?t, "java.lang.Object") :-
+// Custom subtype relation, to provide domain specific knowledge
+.decl mSubtypeOf(?s:symbol, ?t:symbol)
+
+// Subtyping for reference types is the same in Dalvik
+mSubtypeOf(?s, ?t) :-
+    SubtypeOf(?s, ?t),
+    isReferenceType(?s).
+
+// Assert that all reference types are subtypes of java.lang.Object
+mSubtypeOf(?t, "java.lang.Object") :-
     isReferenceType(?t).
+
+.decl isInt32Top(?t:symbol)
+.decl isInt32Bottom(?t:symbol)
+
+.decl isPrimitive32Top(?t:symbol)
+.decl isPrimitive32Bottom(?t:symbol)
+
+.decl isPrimitive64Top(?t:symbol)
+.decl isPrimitive64Bottom(?t:symbol)
+
+isInt32Top("int32.Top").
+isInt32Bottom("int32.Bottom").
+
+isPrimitive32Top("primitive32.Top").
+isPrimitive32Bottom("primitive32.Bottom").
+
+isPrimitive64Top("primitive64.Top").
+isPrimitive64Bottom("primitive64.Bottom").
+
+.decl isInt32Primitive(?t:symbol)
+.decl isGuardInt32(?t:symbol)
+.decl isGuardPrimitive32(?t:symbol)
+.decl mPrimitives(?t:symbol)
+.decl isGuardPrimitive(?t:symbol)
+
+isGuardPrimitive(?t) :-
+    isPrimitive64Top(?t);
+    isPrimitive64Bottom(?t).
+
+isGuardPrimitive(?t),
+isGuardInt32(?t) :-
+    isInt32Top(?t);
+    isInt32Bottom(?t).
+
+isGuardPrimitive(?t),
+isGuardPrimitive32(?t) :-
+    isPrimitive32Top(?t);
+    isPrimitive32Bottom(?t).
+
+isType(?t),
+mPrimitives(?t) :-
+    isPrimitiveType(?t);
+    isGuardPrimitive32(?t);
+    isGuardInt32(?t);
+    isPrimitive64Top(?t);
+    isPrimitive64Bottom(?t).
+
+isInt32Primitive(?t) :-
+    Type_int(?t);
+    Type_char(?t);
+    Type_byte(?t);
+    Type_short(?t);
+    Type_boolean(?t).
+
+// Creating our primitive pseudo-hierarchy
+mSubtypeOf(?s, ?t) :-
+    isInt32Top(?s),
+    isPrimitive32Top(?t).
+
+mSubtypeOf(?s, ?t) :-
+    Type_float(?s),
+    isPrimitive32Top(?t).
+
+mSubtypeOf(?s, ?t) :-
+    isInt32Primitive(?s),
+    isInt32Top(?t).
+
+mSubtypeOf(?s, ?t) :-
+    isInt32Bottom(?s),
+    isInt32Primitive(?t).
+
+mSubtypeOf(?s, ?t) :-
+    isPrimitive32Bottom(?s),
+    isInt32Bottom(?t).
+
+mSubtypeOf(?s, ?t) :-
+    isPrimitive32Bottom(?s),
+    Type_float(?t).
+
+mSubtypeOf(?s, ?t) :-
+    (Type_long(?s); Type_double(?s)),
+    isPrimitive64Top(?t).
+
+mSubtypeOf(?s, ?t) :-
+    isPrimitive64Bottom(?s),
+    (Type_long(?t); Type_double(?t)).
+
+// Transitivity for our primitive subclass relation
+mSubtypeOf(?s, ?t) :-
+    mPrimitives(?s),
+    mSubtypeOf(?s, ?c),
+    mSubtypeOf(?c, ?t).
+
+.output mSubtypeOf
 
 // ?var1 := ?var2
 Assign(?stmt, ?var1, ?var2) :-
@@ -837,14 +940,14 @@ FirstConstraintForVar(?var, ?stmt) :-
    
 // Least upper bound on types lattice
 CommonAncestor(?type1, ?type2, ?supertype) :-
-   SubtypeOf(?type1, ?supertype),
-   SubtypeOf(?type2, ?supertype).
+   mSubtypeOf(?type1, ?supertype),
+   mSubtypeOf(?type2, ?supertype).
 
 NotLeastCommonAncestor(?type1, ?type2, ?supertype) :-
    CommonAncestor(?type1, ?type2, ?supertype),
    CommonAncestor(?type1, ?type2, ?otherSupertype),
    ?supertype != ?otherSupertype,
-   SubtypeOf(?otherSupertype, ?supertype).
+   mSubtypeOf(?otherSupertype, ?supertype).
 
 LeastCommonAncestor(?type1, ?type2, ?common) :-
    CommonAncestor(?type1, ?type2, ?common),
@@ -852,14 +955,14 @@ LeastCommonAncestor(?type1, ?type2, ?common) :-
 
 // Greatest lower bound on types lattice
 CommonDescendant(?type1, ?type2, ?subtype) :-
-   SubtypeOf(?subtype, ?type1),
-   SubtypeOf(?subtype, ?type2).
+   mSubtypeOf(?subtype, ?type1),
+   mSubtypeOf(?subtype, ?type2).
 
 NotGreatestCommonDescendant(?type1, ?type2, ?subtype) :-
    CommonDescendant(?type1, ?type2, ?subtype),
    CommonDescendant(?type1, ?type2, ?otherSubtype),
    ?subtype != ?otherSubtype,
-   SubtypeOf(?subtype, ?otherSubtype).
+   mSubtypeOf(?subtype, ?otherSubtype).
 
 GreatestCommonDescendant(?type1, ?type2, ?common) :-
    CommonDescendant(?type1, ?type2, ?common),
@@ -908,8 +1011,8 @@ UpperBoundTypeForAllConstraints(?var, ?type) :-
 TypeCompatibleWithAllConstraints(?var, ?type) :-
    LowerBoundTypeForAllConstraints(?var, ?lowerType),
    UpperBoundTypeForAllConstraints(?var, ?upperType),
-   SubtypeOf(?lowerType, ?type),
-   SubtypeOf(?type, ?upperType).
+   mSubtypeOf(?lowerType, ?type),
+   mSubtypeOf(?type, ?upperType).
  .plan 1:(2,1,3,4)
 
 // And now, let's encode the constraints themselves
@@ -1049,4 +1152,6 @@ ConstraintForVar(?var, ?insn),
 UpperBoundTypeForConstraint(?var, ?type, ?insn) :-
     RewriteReturn(?insn, _, ?var, ?method),
     Method_ReturnType(?method, ?type).
+
+// Encoding constraints for binops/unops
 #endif

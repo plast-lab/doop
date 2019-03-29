@@ -183,7 +183,7 @@ SubtypeOf(?s, ?t) :-
     isReferenceType(?t),
     ?t != ?s.
 
-
+#ifndef TYPE_INFERENCE
 /**
  * Subtyping among Primitive Types
  */
@@ -210,6 +210,7 @@ SubtypeOf(?s, ?t) :-
 SubtypeOf(?s, ?t) :-
     Type_byte(?s),
     Type_short(?t).
+#endif
 
 /**
  * Each type is a subtype / supertype of itself
