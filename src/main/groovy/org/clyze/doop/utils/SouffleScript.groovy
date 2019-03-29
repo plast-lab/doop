@@ -5,6 +5,7 @@ import groovy.util.logging.Log4j
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.utils.CheckSum
+import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 import org.clyze.utils.Helper
 
@@ -26,13 +27,19 @@ class SouffleScript {
 	long compilationTime = 0L
 	long executionTime = 0L
 
+	void preprocess(File output, File input) {
+		CPreprocessor cpp = new CPreprocessor(executor)
+		cpp.disableLineMarkers().enableLogOutput()
+		cpp.preprocessIfExists(output.canonicalPath, input.canonicalPath)
+	}
+
 	File compile(File origScriptFile, File outDir, File cacheDir,
                  boolean profile = false, boolean debug = false,
                  boolean provenance = false, boolean liveProf = false,
                  boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
 
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
-		executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
+		preprocess(scriptFile, origScriptFile)
 
 		if (useFunctors) {
 			detectFunctors(outDir)
@@ -133,7 +140,7 @@ class SouffleScript {
                    boolean removeContext = false) {
 
         def scriptFile = File.createTempFile("gen_", ".dl", outDir)
-        executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
+		preprocess(scriptFile, origScriptFile)
 
         def db = new File(outDir, "database")
         deleteQuietly(db)
