@@ -872,6 +872,10 @@ mSubtypeOf(?s, ?t) :-
     isPrimitive64Bottom(?s),
     (Type_long(?t); Type_double(?t)).
 
+// Reflexivity for our primitive subclass relation
+mSubtypeOf(?t, ?t) :-
+    mPrimitives(?t).
+
 // Transitivity for our primitive subclass relation
 mSubtypeOf(?s, ?t) :-
     mPrimitives(?s),
@@ -1154,4 +1158,105 @@ UpperBoundTypeForConstraint(?var, ?type, ?insn) :-
     Method_ReturnType(?method, ?type).
 
 // Encoding constraints for binops/unops
+
+.decl StatementType(?insn:symbol, ?in_type:symbol, ?out_type:symbol)
+.input StatementType(IO="file", filename="StatementType.facts", delimiter="\t")
+
+.decl PrimOp(?insn:symbol, ?to:symbol, ?from:symbol)
+
+PrimOp(?insn, ?to, ?from) :-
+    RewriteAssignUnop(?insn, _, ?to, _),
+    RewriteAssignOperFrom(?insn, _, ?from).
+
+PrimOp(?insn, ?to, ?from) :-
+    RewriteAssignBinop(?insn, _, ?to, _),
+    RewriteAssignOperFrom(?insn, _, ?from).
+
+.decl Integer32Constraint(?var:symbol, ?insn:symbol)
+
+ConstraintForVar(?var, ?insn),
+UpperBoundTypeForConstraint(?var, ?type, ?insn) :-
+    Integer32Constraint(?var, ?insn),
+    isInt32Top(?type).
+
+ConstraintForVar(?var, ?insn),
+LowerBoundTypeForConstraint(?var, ?type, ?insn) :-
+    Integer32Constraint(?var, ?insn),
+    isInt32Bottom(?type).
+
+Integer32Constraint(?to, ?insn) :-
+    PrimOp(?insn, ?to, _),
+    StatementType(?insn, _, "int32").
+
+Integer32Constraint(?from, ?insn) :-
+    PrimOp(?insn, _, ?from),
+    StatementType(?insn, "int32", _).
+
+ConstraintForVar(?to, ?insn),
+UpperBoundTypeForConstraint(?to, ?type, ?insn) :-
+    PrimOp(?insn, ?to, _),
+    StatementType(?insn, _, ?type),
+    ?type != "int32".
+
+ConstraintForVar(?from, ?insn),
+UpperBoundTypeForConstraint(?from, ?type, ?insn) :-
+    PrimOp(?insn, _, ?from),
+    StatementType(?insn, ?type, _),
+    ?type != "int32".
+
+ConstraintForVar(?from, ?insn),
+LowerBoundTypeForConstraint(?from, ?type, ?insn) :-
+    PrimOp(?insn, _, ?from),
+    StatementType(?insn, ?t, _),
+    Type_float(?t),
+    isPrimitive32Bottom(?type).
+
+ConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    PrimOp(?insn, ?to, _),
+    StatementType(?insn, _, ?t),
+    Type_float(?t),
+    isPrimitive32Bottom(?type).
+
+ConstraintForVar(?from, ?insn),
+LowerBoundTypeForConstraint(?from, ?type, ?insn) :-
+    PrimOp(?insn, _, ?from),
+    StatementType(?insn, ?t, _),
+    (Type_long(?t); Type_double(?t)),
+    isPrimitive64Bottom(?type).
+
+ConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    PrimOp(?insn, ?to, _),
+    StatementType(?insn, _, ?t),
+    (Type_long(?t); Type_double(?t)),
+    isPrimitive64Bottom(?type).
+
+.decl ExistsNonGuardType(?var:symbol)
+
+ExistsNonGuardType(?var) :-
+    isType(?type),
+    !isGuardPrimitive(?type),
+    TypeCompatibleWithAllConstraints(?var, ?type).
+
+.decl NonGuardCompatibleTypes(?var:symbol, ?type:symbol)
+
+NonGuardCompatibleTypes(?var, ?type) :-
+    TypeCompatibleWithAllConstraints(?var, ?type),
+    !isGuardPrimitive(?type).
+
+SSA_Type(?var, ?minType) :-
+    ExistsNonGuardType(?var),
+    ?minTypeOrd = min ord(?t) : NonGuardCompatibleTypes(?var, ?t),
+    isType(?minType),
+    ?minTypeOrd = ord(?minType).
+    
+SSA_Type(?var, "int") :-
+    !ExistsNonGuardType(?var),
+    TypeCompatibleWithAllConstraints(?var, _).
+
+.output UpperBoundTypeForConstraint
+.output LowerBoundTypeForConstraint
+.output NonGuardCompatibleTypes
+
 #endif
