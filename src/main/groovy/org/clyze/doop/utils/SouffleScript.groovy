@@ -193,9 +193,10 @@ class SouffleScript {
 				}
 			}
 			if (libfunctors != null) {
+				String libName = "libfunctors.so"
 				try {
 					Path target = FileSystems.default.getPath(libfunctors)
-					Path link = FileSystems.default.getPath(outDir.getAbsolutePath() + "/libfunctors.so")
+					Path link = FileSystems.default.getPath(outDir.getAbsolutePath() + File.separator + libName)
 					Files.createSymbolicLink(link, target)
 					log.debug "Created symbolic link: ${link} -> ${target}"
 				} catch (UnsupportedOperationException ignored) {
@@ -203,10 +204,10 @@ class SouffleScript {
 					// Fallback (non-portable).
 					// executor.execute("ln -s ${libfunctors} libfunctors.so".split().toList()) { log.info it }
 				} catch (FileAlreadyExistsException) {
-					log.info "Warning: could not create ${link}, file already exists."
+					log.info "Warning: could not create link to ${libName}, file already exists."
 				}
 			} else {
-				log.debug "Warning: no libfunctors.so in environment variable ${envVar} = '${ldLibPath}'"
+				log.debug "Warning: no ${libName} in environment variable ${envVar} = '${ldLibPath}'"
 			}
 		}
 	}
