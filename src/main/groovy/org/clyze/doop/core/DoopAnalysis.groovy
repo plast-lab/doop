@@ -622,6 +622,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         String jar = inputFiles[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
+        if (jarExt.toLowerCase() == 'apk') {
+            log.info "Error: jphantom does not support .apk inputs"
+            throw new DoopErrorCodeException(23)
+        }
         String newJar = "${jarName}-complemented.${jarExt}"
         String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
         log.debug "Params of jphantom: ${params.join(' ')}"
