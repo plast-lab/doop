@@ -11,7 +11,7 @@
 #include "threads-declarations.dl"
 #ifdef ANDROID
 #include "android.dl"
-#endif
+#endif // ANDROID
 
 #include "string-concat.dl"
 #include "exceptions.dl"
@@ -19,14 +19,14 @@
 
 #if defined(REFLECTION)
 #include "reflection/declarations.dl"
-#endif
+#endif // REFLECTION
 
 #ifdef SCALER_PRE_ANALYSIS
 #include "scaler-pre-analysis.dl"
-#endif
+#endif // SCALER_PRE_ANALYSIS
 #ifdef ZIPPER_PRE_ANALYSIS
 #include "zipper-pre-analysis.dl"
-#endif
+#endif // ZIPPER_PRE_ANALYSIS
 
   .decl FakeInvocation_RegisterFinalize0(?heap:HeapAllocation, ?invo:MethodInvocation)
 
@@ -73,7 +73,7 @@
 #elif defined(LIGHT_REFLECTION_GLUE)
 #include "reflection/light-Class.dl"
 #include "reflection/light-reflection-glue.dl"
-#endif
+#endif // REFLECTION / LIGHT_REFLECTION_GLUE
 
 // Dynamic proxies supports two kinds of reflection: standard reflection and
 // light reflection (just Class object handling or light-reflection-glue).
