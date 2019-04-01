@@ -74,6 +74,13 @@ isOperator("||").
 
 // Relational operators
 
+isRelationalOperator("==").
+isRelationalOperator("!=").
+isRelationalOperator("<").
+isRelationalOperator(">").
+isRelationalOperator(">=").
+isRelationalOperator("<=").
+
 isOperator("==").
 isOperator("!=").
 isOperator("<").

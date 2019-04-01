@@ -1,0 +1,36 @@
+
+// Transitivity
+
+.decl Transitive(?expr: Expr)
+.output Transitive
+
+isExpr(?exprOther),
+Transitive(?exprOther),
+ExprImpliesOther(?expr, ?exprOther) :-
+  isBooleanExpr(?expr),
+  ?expr = ["&&", "boolean", ?expr1, ?expr2],
+  isRelationalOperator(?op),
+  ?expr1 = [?op, ?type, ?exprX, ?exprY],
+  ?expr2 = [?op, ?type, ?exprY, ?exprZ],
+  ?exprOther = [?op, ?type, ?exprX, ?exprZ].
+
+// // Reflexivity
+
+// ExprIsAlwaysTrue(?expr) :-
+//   isArithmeticExpr(?expr),
+//   ?expr = [?op, ?type, ?exprL, ?exprR],
+//   (?op = "<=" ; ?op = "==" ; ?op = ">=").
+
+// // Various
+
+// ExprImpliesOther(?expr, ?exprOther) :-
+//   isArithmeticExpr(?expr),
+//   ?expr = ["<", ?type, ?exprX, ?exprY],
+//   ?exprOther = ["<=", ?type, ?exprX, ?exprY],
+//   isArithmeticExpr(?exprOther).
+
+// ExprImpliesOther(?expr, ?exprOther) :-
+//   isArithmeticExpr(?expr),
+//   ?expr = [">", ?type, ?exprX, ?exprY],
+//   ?exprOther = [">=", ?type, ?exprX, ?exprY],
+//   isArithmeticExpr(?exprOther).
