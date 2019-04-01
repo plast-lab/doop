@@ -17,6 +17,7 @@
 /* Various util predicate declarations */
 
 .decl isOperator(?op: Operator)
+.decl isRelationalOperator(?op: Operator)
 .decl isSymbolicInput(?symbInput: SymbolicInput)
 
 .decl FirstIfInsnInMethod(?insn: Instruction, ?meth: Method)

@@ -187,6 +187,7 @@ class SouffleAnalysis extends DoopAnalysis {
             cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
 			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/path-expression.dl")
             cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/boolean-reasoning.dl")
+						cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/arithmetic-reasoning.dl")
 		}
 
 		String openProgramsRules = options.OPEN_PROGRAMS.value
