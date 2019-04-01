@@ -91,7 +91,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argInputType: InputType.LIBRARY,
 					isMandatory: false
 			),
-			new AnalysisOption<String>(
+			new AnalysisOption<List<String>>(
 					id: "PLATFORMS",
 					name: "platform-files",
 					multipleValues: true,
