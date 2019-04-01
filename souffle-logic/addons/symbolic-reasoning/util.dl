@@ -171,6 +171,34 @@ NextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn) :-
     ord(?prev) < ord(?next),
     !NotNextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn).
 
+// Single Pred
+
+SinglePredOfInsnInMethod(?pred, ?insn, ?meth) :-
+    Instruction_Method(?insn, ?meth),
+    FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
+    LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+
+// Multiple Preds - First
+
+FirstOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth) :-
+    Instruction_Method(?insn, ?meth),
+    FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
+    !LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+
+// Multiple Preds - Next
+
+NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth) :-
+    Instruction_Method(?insn, ?meth),
+    !LastPredOfInsnInMethod(?meth, ?prev, ?insn),
+    NextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn).
+
+// Multiple Preds - Last
+
+LastOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth) :-
+    Instruction_Method(?insn, ?meth),
+    !FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
+    LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+
 // Determine expr operands for binary expression assignments
 
 AssignBinaryVarVar(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
@@ -217,7 +245,7 @@ AssignBinaryConstConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
     ?pos1 < ?pos2,
     _OperatorAt(?insn, ?op).
 
-// Determine expr operands for if-statement conditionskk
+// Determi0ne expr operands for if-statement conditionskk
 
 IfVarVar(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
     Instruction_Method(?insn, ?meth),
@@ -237,30 +265,16 @@ IfVarConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
     ?pos1 < ?pos2,
     _OperatorAt(?insn, ?op).
 
-// Single Pred
+// Expression Method
 
-SinglePredOfInsnInMethod(?pred, ?insn, ?meth) :-
-    Instruction_Method(?insn, ?meth),
-    FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
-    LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+Expression_Method(?expr, ?meth) :-
+	ResolveExpr(?meth, ?var, ?expr).
 
-// Multiple Preds - First
+Expression_Method(?expr, ?meth) :-
+	PathExpressionAfterTrue(?meth, ?insn, ?expr).
 
-FirstOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth) :-
-    Instruction_Method(?insn, ?meth),
-    FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
-    !LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+Expression_Method(?expr, ?meth) :-
+	PathExpressionAfterFalse(?meth, ?insn, ?expr).
 
-// Multiple Preds - Next
-
-NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth) :-
-    Instruction_Method(?insn, ?meth),
-    !LastPredOfInsnInMethod(?meth, ?prev, ?insn),
-    NextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn).
-
-// Multiple Preds - Last
-
-LastOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth) :-
-    Instruction_Method(?insn, ?meth),
-    !FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
-    LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+Expression_Method(?expr, ?meth) :-
+	PathExpressionBefore(?meth, ?insn, ?expr).
