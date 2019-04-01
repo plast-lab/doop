@@ -38,7 +38,6 @@
 .decl LeftExpr(?var: Var, ?op: Operator, ?constL: Expr)
 .decl RightExpr(?var: Var, ?op: Operator, ?constR: Expr)
 
-
 .decl IfVarVar(?insn: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: Var, ?op: Operator)
 .decl IfVarConst(?insn: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: NumConstant, ?op: Operator)
 
@@ -55,6 +54,10 @@
 #ifdef DEBUG
 .decl ToString(?expr: Expr, ?out: symbol)
 #endif
+
+/* Expression method */
+
+.decl Expression_Method(?expr: Expr, ?meth: Method)
 
 /* Expression tree construction declarations */
 
@@ -77,6 +80,8 @@
 .output isBooleanExpr
 .output isArithmeticExpr
 .output ResolveExpr
+.output Expression_Method
+
 #ifdef DEBUG
 .output ToString
 #endif

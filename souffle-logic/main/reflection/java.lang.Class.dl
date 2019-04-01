@@ -19,9 +19,9 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :-
   isImmutableHContext(?hctx),
   Value_Type(?value, ?type),
   ReifiedClass(?type, ?classValue).
-  #ifdef INFORMATION_FLOW
+#ifdef INFORMATION_FLOW
   .plan 2:(4,2,1,3,5)
-  #endif
+#endif // INFORMATION_FLOW
 /*************************************************************
  * java.lang.Class.forName
  *
@@ -97,12 +97,12 @@ VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   ReifiedClass(?className, ?classValue),
   isStringConstant(?className),
   Value_isHeap(?className).
-  #ifdef INFORMATION_FLOW
+#ifdef INFORMATION_FLOW
   .plan 2:(6,5,4,3,2,1)
-  #endif
-  #ifndef X_CONTEXT_REMOVER
+#endif // INFORMATION_FLOW
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5,6)
-  #endif
+#endif // !X_CONTEXT_REMOVER
 
 /*************************************************************
  * java.lang.Class.getSimpleName

@@ -131,7 +131,7 @@
   .output Before_AccessPathMayPointTo
   .output AccessPathMayPointTo
 
-  #include "must-alias.dl"
+#include "must-alias.dl"
   .init MustAliasAnalysis = DummyMustAlias
 
   .init MustPointToAnalysis = MustPointToParameter
