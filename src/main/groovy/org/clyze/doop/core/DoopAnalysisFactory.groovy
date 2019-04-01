@@ -354,6 +354,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			throw new RuntimeException("Error: options --" + options.SOUFFLE_PROVENANCE.name + " and --" + options.SOUFFLE_LIVE_PROFILE.name + " are mutually exclusive.\n")
 		}
 
+		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
+			options.SOUFFLE_USE_FUNCTORS.value = true
+		}
+
 		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value &&
 				options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
 			throw new RuntimeException("Error: options --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")

@@ -35,6 +35,9 @@
 .decl AssignBinaryConstVar(?insn:Instruction, ?var: Var, ?meth: Method, ?right1: NumConstant, ?right2: Var, ?op: Operator)
 .decl AssignBinaryConstConst(?insn:Instruction, ?var: Var, ?meth: Method, ?right1: NumConstant, ?right2: NumConstant, ?op: Operator)
 
+.decl LeftExpr(?var: Var, ?op: Operator, ?constL: Expr)
+.decl RightExpr(?var: Var, ?op: Operator, ?constR: Expr)
+
 
 .decl IfVarVar(?insn: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: Var, ?op: Operator)
 .decl IfVarConst(?insn: Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: NumConstant, ?op: Operator)
