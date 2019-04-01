@@ -1,1 +1,3 @@
 .functor logVPT(number, symbol, number, symbol):number
+.functor logCGE(number, symbol, number, symbol):number
+.functor logOther(symbol):number
