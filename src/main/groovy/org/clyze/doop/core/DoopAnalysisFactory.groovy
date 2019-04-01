@@ -189,11 +189,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				.findAll { it.forCacheID }
 				.collect { it as String }
 
-		Collection<String> checksums = []
-		checksums += options.INPUTS.value.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
-		checksums += options.LIBRARIES.value.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
-		checksums += options.HEAPDLS.value.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
-		checksums += options.PLATFORMS.value.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
+		Collection<String> checksums = DoopAnalysisFamily.getAllInputs(options)
+			.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy")
 			checksums += [CheckSum.checksum(new File(options.TAMIFLEX.value as String), HASH_ALGO)]

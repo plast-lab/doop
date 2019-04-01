@@ -670,16 +670,16 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
     }
 
+    // Generate the text of the "meta" file of the cached facts directory.
     protected String cacheMeta() {
-        Collection<String> inputJars = inputFiles.collect {
-            File file -> file.toString()
-        }
+        Collection<String> inputs = DoopAnalysisFamily.getAllInputs(options)
+            .collect { it.toString() }
         Collection<String> cacheOptions = options.values().findAll {
             it.forCacheID
         }.collect {
             AnalysisOption option -> option.toString()
         }.sort()
-        return (inputJars + cacheOptions).join("\n")
+        return (inputs + cacheOptions).join("\n")
     }
 
     /**

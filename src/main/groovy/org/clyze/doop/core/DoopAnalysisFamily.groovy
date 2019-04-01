@@ -108,7 +108,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "HEAPDLS",
 					argInputType: InputType.HEAPDL,
 					forCacheID: true,
-					changesFacts: true,
 					forPreprocessor: true,
 			),
 			new AnalysisOption<String>(
@@ -136,7 +135,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Specify the main class(es) separated by spaces.",
 					value: [],
 					multipleValues: true,
-					changesFacts: true
+					forCacheID: true
 			),
 			new AnalysisOption<String>(
 					id: "CONFIGURATION",
@@ -152,7 +151,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "import-partitions",
 					argName: "FILE",
 					description: "Specify the partitions.",
-					changesFacts: true,
+					forCacheID: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
@@ -163,7 +162,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "FILE",
 					argInputType: InputType.MISC,
 					forCacheID: true,
-					changesFacts: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
@@ -171,8 +169,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "entry-points",
 					argName: "FILE",
 					forCacheID: true,
-					description: "Entry points (Proguard seed file or doop method IDs).",
-					changesFacts: true,
+					description: "Entry points (Proguard seed file or doop method IDs)."
 			),
 			new AnalysisOption<String>(
 					id: "SPECIAL_CONTEXT_SENSITIVITY_METHODS",
@@ -180,8 +177,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "FILE",
 					description: "Use a file that specifies special context sensitivity for some methods.",
 					forPreprocessor: true,	
-					forCacheID: true,
-					changesFacts: true
+					forCacheID: true
 			),
 			new AnalysisOption<String>(
 					id: "USER_DEFINED_PARTITIONS",
@@ -189,8 +185,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "FILE",
 					description: "Use a file that specifies the partitions of the analyzed program.",
 					forPreprocessor: true,
-					forCacheID: true,
-					changesFacts: true
+					forCacheID: true
 			),
 			new BooleanAnalysisOption(
 					id: "SANITY",
@@ -319,16 +314,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "regex",
 					argName: "EXPRESSION",
 					description: "A regex expression for the Java package names of the analyzed application.",
-					forCacheID: true,
-					changesFacts: true
+					forCacheID: true
 			),
 			new AnalysisOption<String>(
 					id: "AUTO_APP_REGEX_MODE",
 					name: "auto-app-regex-mode",
 					argName: "MODE",
 					description: "When no app regex is given, either compute an app regex for the first input ('first') or for all inputs ('all').",
-					forCacheID: true,
-					changesFacts: true
+					forCacheID: true
 			),
 			new BooleanAnalysisOption(
 					id: "ANDROID",
@@ -367,7 +360,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "FILE",
 					argInputType: InputType.MISC,
 					forCacheID: true,
-					changesFacts: true,
 					forPreprocessor: true
 			),
 			/* End Zipper related options */
@@ -378,7 +370,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "single-file-analysis",
 					group: GROUP_PYTHON,
 					description: "Flag to be passed to WALAs IR translator to produce IR that makes the analysis of a single script file easier.",
-					changesFacts: true,
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
@@ -667,7 +658,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "CONTROLS",
 					description: "Load additional sensitive layout control from string triplets \"id1,type1,parent_id1,...\".",
 					forCacheID: true,
-					changesFacts: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption(
@@ -1017,4 +1007,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 								.collect { it + " (LB-only)" })
 		return platforms.sort()
 	}
+
+    static Collection<File> getAllInputs(Map<String, AnalysisOption> options) {
+        Collection<File> inputs = [] as List
+        inputs += options.INPUTS.value
+        inputs += options.LIBRARIES.value
+        inputs += options.HEAPDLS.value
+        inputs += options.PLATFORMS.value
+        return inputs
+    }
 }
