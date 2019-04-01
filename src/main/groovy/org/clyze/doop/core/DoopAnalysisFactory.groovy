@@ -409,14 +409,20 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
 				!options.HEAPDLS.value && !options.ANDROID.value &&
-				!options.DACAPO.value && !options.DACAPO_BACH.value &&
-				!options.X_START_AFTER_FACTS.value) {
+				!options.DACAPO.value && !options.DACAPO_BACH.value) {
 			if (options.DISCOVER_MAIN_METHODS.value) {
 				log.info "WARNING: No main class was found. Using --${options.DISCOVER_MAIN_METHODS.name}"
 			} else {
-				log.info "WARNING: No main class was found. This will trigger open-program analysis!"
-				if (!options.OPEN_PROGRAMS.value)
-					options.OPEN_PROGRAMS.value = "concrete-types"
+				if (options.X_START_AFTER_FACTS.value) {
+					if (!options.OPEN_PROGRAMS.value) {
+						throw new RuntimeException("Error: no main class was found and option --${options.OPEN_PROGRAMS.name} is missing.")
+					}
+				} else {
+					log.info "WARNING: No main class was found. This will trigger open-program analysis!"
+					if (!options.OPEN_PROGRAMS.value) {
+						options.OPEN_PROGRAMS.value = "concrete-types"
+					}
+				}
 			}
 		}
 
