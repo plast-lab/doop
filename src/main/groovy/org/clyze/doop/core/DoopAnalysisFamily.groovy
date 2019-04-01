@@ -666,6 +666,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_INFORMATION_FLOW,
 					argName: "CONTROLS",
 					description: "Load additional sensitive layout control from string triplets \"id1,type1,parent_id1,...\".",
+					forCacheID: true,
 					changesFacts: true,
 					forPreprocessor: true
 			),
