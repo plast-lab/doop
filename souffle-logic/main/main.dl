@@ -1,31 +1,32 @@
 #include "main-declarations.dl"
 
 .comp AbstractContextSensitivity<Configuration> {
-  #ifdef ANDROID
-  #include "android-declarations.dl"
-  #endif
-  #include "class-initialization-declarations.dl"
-  #include "exceptions-declarations.dl"
-  #include "implicit-reachable-declarations.dl"
-  #include "threads-declarations.dl"
-  #ifdef ANDROID
-    #include "android.dl"
-  #endif
+// Do not indent: this breaks some cpp versions.
+#ifdef ANDROID
+#include "android-declarations.dl"
+#endif
+#include "class-initialization-declarations.dl"
+#include "exceptions-declarations.dl"
+#include "implicit-reachable-declarations.dl"
+#include "threads-declarations.dl"
+#ifdef ANDROID
+#include "android.dl"
+#endif
 
-  #include "string-concat.dl"
-  #include "exceptions.dl"
-  #include "method-handles.dl"
+#include "string-concat.dl"
+#include "exceptions.dl"
+#include "method-handles.dl"
 
-  #if defined(REFLECTION)
-    #include "reflection/declarations.dl"
-  #endif
+#if defined(REFLECTION)
+#include "reflection/declarations.dl"
+#endif
 
-  #ifdef SCALER_PRE_ANALYSIS
-    #include "scaler-pre-analysis.dl"
-  #endif
-  #ifdef ZIPPER_PRE_ANALYSIS
-    #include "zipper-pre-analysis.dl"
-  #endif
+#ifdef SCALER_PRE_ANALYSIS
+#include "scaler-pre-analysis.dl"
+#endif
+#ifdef ZIPPER_PRE_ANALYSIS
+#include "zipper-pre-analysis.dl"
+#endif
 
   .decl FakeInvocation_RegisterFinalize0(?heap:HeapAllocation, ?invo:MethodInvocation)
 
@@ -60,40 +61,40 @@
   // [Miscellaneous]
   .decl Value_Null(?null:Value)
 
-  #include "context-sensitivity-declarations.dl"
-  #include "../commonMacros.dl"
-  #include "prologue.dl"
-  #include "context-sensitivity.dl"
-  #include "full-call-graph.dl"
-  #include "export.dl"
+#include "context-sensitivity-declarations.dl"
+#include "../commonMacros.dl"
+#include "prologue.dl"
+#include "context-sensitivity.dl"
+#include "full-call-graph.dl"
+#include "export.dl"
 
-  #if defined(REFLECTION)
-    #include "reflection/rules.dl"
-  #elif defined(LIGHT_REFLECTION_GLUE)
-    #include "reflection/light-Class.dl"
-    #include "reflection/light-reflection-glue.dl"
-  #endif
+#if defined(REFLECTION)
+#include "reflection/rules.dl"
+#elif defined(LIGHT_REFLECTION_GLUE)
+#include "reflection/light-Class.dl"
+#include "reflection/light-reflection-glue.dl"
+#endif
 
-  // Dynamic proxies supports two kinds of reflection: standard reflection and
-  // light reflection (just Class object handling or light-reflection-glue).
-  #if defined(REFLECTION_DYNAMIC_PROXIES)
-    // If no reflection support is available, at least handle Class objects.
-    #if !defined(REFLECTION) && !defined(LIGHT_REFLECTION_GLUE)
-      #include "reflection/light-Class.dl"
-    #endif
-    #include "reflection/dynamic-proxies.dl"
-    #include "reflection/dynamic-proxies-delta.dl"
-  #endif // REFLECTION_DYNAMIC_PROXIES
+// Dynamic proxies supports two kinds of reflection: standard reflection and
+// light reflection (just Class object handling or light-reflection-glue).
+#ifdef REFLECTION_DYNAMIC_PROXIES
+// If no reflection support is available, at least handle Class objects.
+#if !defined(REFLECTION) && !defined(LIGHT_REFLECTION_GLUE)
+#include "reflection/light-Class.dl"
+#endif // !REFLECTION && !LIGHT_REFLECTION_GLUE
+#include "reflection/dynamic-proxies.dl"
+#include "reflection/dynamic-proxies-delta.dl"
+#endif // REFLECTION_DYNAMIC_PROXIES
 
-  #ifdef TAMIFLEX
-     #include "../addons/tamiflex/declarations.dl"
-     #include "../addons/tamiflex/rules.dl"
-  #endif
-  #if defined(DACAPO) || defined(DACAPO_BACH)
-     #include "../addons/dacapo/rules.dl"
-  #endif
+#ifdef TAMIFLEX
+#include "../addons/tamiflex/declarations.dl"
+#include "../addons/tamiflex/rules.dl"
+#endif // TAMIFLEX
+#if defined(DACAPO) || defined(DACAPO_BACH)
+#include "../addons/dacapo/rules.dl"
+#endif // DACAPO || DACAPO_BACH
 
-  #include "phantom-dead.dl"
+#include "phantom-dead.dl"
 
   .init configuration = Configuration
 }

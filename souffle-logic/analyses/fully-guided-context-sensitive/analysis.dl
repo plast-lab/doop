@@ -11,8 +11,8 @@
 // Again, this may trigger creation of a new object.
 .comp FullyGuidedContextSensitiveConfiguration : AbstractConfiguration {
 
-  #define NO_CONTEXT_ELEMENT "<<immutable-context>>"
-
+// Do not indent: this breaks some cpp versions.
+#define NO_CONTEXT_ELEMENT "<<immutable-context>>"
 
   // In this analysis, the real context is a pair of Values and the real
   // heap context a single Value.

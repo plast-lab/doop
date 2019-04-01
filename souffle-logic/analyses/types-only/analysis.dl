@@ -81,7 +81,7 @@
   InitHContextResponse(?s, ?s) :-
     InitHContextRequest(?s).
 
-  #ifdef HEAPDLS
+#ifdef HEAPDLS
     DynamicContextToHContext(?hctx, ?dynCtx) :-
       isDynamicContext(?dynCtx),
       isImmutableHContext(?hctx).
@@ -89,5 +89,5 @@
     DynamicContextToContext(?ctx, ?dynCtx) :-
       isDynamicContext(?dynCtx),
       isImmutableContext(?ctx).
-  #endif
+#endif // HEAPDLS
 }
