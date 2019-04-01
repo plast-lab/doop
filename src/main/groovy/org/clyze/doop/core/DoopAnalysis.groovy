@@ -562,7 +562,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      * @return        the value of the field or false if the field does not exist
      */
     boolean isFatal(ClassLoader loader, Throwable t) {
-        return getThrowableField(loader, t, 'org.clyze.doop.common.DoopErrorCodeException', 'fatal') as boolean
+        Boolean b = getThrowableField(loader, t, 'org.clyze.doop.common.DoopErrorCodeException', 'fatal')
+        return b ? b as boolean : false
     }
 
     private static void alsoResolve(Collection<String> params, Collection<String> extraClasses) {
