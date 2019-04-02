@@ -797,7 +797,7 @@ LambdaCaptured(?invokedynamic, ?val, ?idx, ?hctx) :-
 // Call-graph edge: method call on lambda object -> implementing
 // method.  For simplicity, the callee context is trivial. For proper
 // context sensitivity, we must model all combinations of calling
-// contexts with implementing-method staticness.
+// contexts with implementing-method static-ness.
 LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
   LambdaObject(_, ?lambda, ?dynName, _, ?implMethod, _, _),
   VarPointsTo(_, ?lambda, ?callerCtx, ?var),
