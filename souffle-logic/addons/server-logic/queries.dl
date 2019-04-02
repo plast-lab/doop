@@ -330,11 +330,11 @@ Server_ClassCallsClass(?fromClass, ?toClass) :-
 _AppVirtual(?invo) :-
   // Use facts so that opaque method invocations are also recognized.
   _VirtualMethodInvocation(?invo, _, _, _, ?method),
-  ApplicationMethod(?method).
+  isOpaqueMethod(?method).
 
 _AppVirtual_Resolved(?invo) :-
   _AppVirtual(?invo),
-  mainAnalysis.CallGraphEdge(_, ?invo, _, _).
+  mainAnalysis.AnyCallGraphEdge(_, ?invo, _, _).
 
 _AppReachable(?method) :-
   mainAnalysis.Reachable(?method),

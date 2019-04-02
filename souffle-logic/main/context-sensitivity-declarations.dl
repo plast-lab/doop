@@ -28,6 +28,7 @@
  * Call graph
  */
 .decl CallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?method:Method) overridable
+.decl OpaqueCallGraphEdge(?invocation:MethodInvocation, ?method:Method)
 
 /**
  * Reachable

@@ -111,6 +111,7 @@ VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
  *************************************************************/
 
 // This is an opaque invocation, so we read its facts directly.
+OpaqueCallGraphEdge(?invocation, ?method),
 VarPointsTo(?hctx, ?simpleName, ?ctx, ?return) :-
   ReachableContext(?ctx, ?caller),
   _VirtualMethodInvocation(?invocation, _, ?method, ?base, ?caller),
@@ -132,6 +133,7 @@ VarPointsTo(?hctx, ?simpleName, ?ctx, ?return) :-
 .decl Enums(?enumsArray:Value, ?enumType:Type, ?ctx:configuration.Context, ?return:Var)
 
 // This is an opaque invocation, so we read its facts directly.
+OpaqueCallGraphEdge(?invocation, ?method),
 Enums(?enumsArray, ?enumType, ?ctx, ?return),
 MockValueConsMacro(?enumsArray, cat(?enumType, "[]")) :-
   ReachableContext(?ctx, ?caller),

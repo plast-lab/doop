@@ -5,6 +5,10 @@
 // signatures in various places in analysis logic. This helps with
 // difficult methods that only contribute noise to the analysis and
 // thus the analysis should never enter them.
+//
+// A rule handling an opaque method invocation should:
+// (a) Use the imported facts directly (e.g., _VirtualMethodInvocation).
+// (b) Create call-graph edges manually via OpaqueCallGraphEdge.
 
 #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 
@@ -59,8 +63,10 @@ OPAQUE_METHOD("<java.lang.Class: java.lang.String getSimpleName()>").
 OPAQUE_METHOD("<java.lang.Class: java.lang.Object[] getEnumConstants()>").
 OPAQUE_METHOD("<java.lang.invoke.MethodHandle: java.lang.invoke.MethodHandle asType(java.lang.invoke.MethodType)>").
 OPAQUE_METHOD("<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup lookup()>").
+OPAQUE_METHOD("<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup publicLookup()>").
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>").
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class returnType()>").
+OPAQUE_METHOD("<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>").
 
 #ifdef ANDROID
 OPAQUE_METHOD("<java.lang.Class: java.lang.String getNameNative()>").
