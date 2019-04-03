@@ -173,21 +173,21 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		}
 
-        if (options.CONSTANT_FOLDING.value) {
-            def constantFoldingPath = "${Doop.souffleAddonsPath}/constant-folding"
-            cpp.includeAtEnd("$analysis", "${constantFoldingPath}/declarations.dl")
-            cpp.includeAtEnd("$analysis", "${constantFoldingPath}/const-type-infer.dl")
-            cpp.includeAtEnd("$analysis", "${constantFoldingPath}/constant-folding.dl")
-        }
+    if (options.CONSTANT_FOLDING.value) {
+        def constantFoldingPath = "${Doop.souffleAddonsPath}/constant-folding"
+        cpp.includeAtEnd("$analysis", "${constantFoldingPath}/declarations.dl")
+        cpp.includeAtEnd("$analysis", "${constantFoldingPath}/const-type-infer.dl")
+        cpp.includeAtEnd("$analysis", "${constantFoldingPath}/constant-folding.dl")
+    }
 
 		if (options.SYMBOLIC_REASONING.value) {
-            def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
+      def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
 			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/declarations.dl")
 			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/util.dl")
-            cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
+      cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
 			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/path-expression.dl")
-            cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/boolean-reasoning.dl")
-						cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/arithmetic-reasoning.dl")
+      // cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/boolean-reasoning.dl")
+			// cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/arithmetic-reasoning.dl")
 		}
 
 		String openProgramsRules = options.OPEN_PROGRAMS.value

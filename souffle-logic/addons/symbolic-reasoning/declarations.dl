@@ -49,7 +49,6 @@
 
 .decl isBooleanExpr(?expr: Expr)
 .decl isArithmeticExpr(?expr: Expr)
-.decl isInputExpr(?expr: Expr)
 .decl isExpr(?expr: Expr)
 
 #ifdef DEBUG
@@ -88,7 +87,6 @@
 #ifdef DEBUG
 .output ToString
 #endif
-.output isInputExpr
 .output isExpr
 
 .output BuildPathExprBefore

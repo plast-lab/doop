@@ -11,7 +11,7 @@
 // If no path expression before, path ?expressions are built given
 // branch conditions
 
-isExpr(?expr),
+// isExpr(?expr),
 PathExpressionAfterTrue(?meth, ?insn, ?conditionExpr),
 PathExpressionAfterFalse(?meth, ?insn, ?expr) :-
   Instruction_Method(?insn, ?meth),
@@ -26,8 +26,8 @@ PathExpressionAfterFalse(?meth, ?insn, ?expr) :-
 // Include if-conditions to path ?expressions computed up to the current if-statement
 
 isExpr(?negatedConditionExpr),
-isExpr(?pathExpr1),
-isExpr(?pathExpr2),
+// isExpr(?pathExpr1),
+// isExpr(?pathExpr2),
 PathExpressionAfterTrue(?meth, ?insn, ?pathExpr1),
 PathExpressionAfterFalse(?meth, ?insn, ?pathExpr2) :-
   PathExpressionBefore(?meth, ?insn, ?pathExpr),
@@ -94,24 +94,23 @@ BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
 .plan 1:(3,2,1)
 
 
-BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
-	BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
-	IsJumpTarget(?insn),
-	NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
-	isIf_Insn(?next),
-	PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
-	?pathExpr = ["||", "boolean", ?expr, ?exprPrev].
-.plan 1:(5,3,4,2,1)
+// BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
+// 	BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
+// 	IsJumpTarget(?insn),
+// 	NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
+// 	isIf_Insn(?next),
+// 	PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
+// 	?pathExpr = ["||", "boolean", ?expr, ?exprPrev].
+// .plan 1:(5,3,4,2,1)
 
-//Buggy rule:
-//BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
-//	 BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
-//	 NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
-//	 isIf_Insn(?next),
-//	 IsJumpTarget(?insn),
-//	 PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
-//	 ?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
-// .plan 1:(5,2,3,4,1)
+BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
+	 BuildPathExprBefore(?meth, ?prev, ?expr, ?insn),
+	 NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
+	 isIf_Insn(?next),
+	 IsJumpTarget(?insn),
+	 PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
+	 ?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
+.plan 1:(5,2,3,4,1)
 
 BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
   NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),

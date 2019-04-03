@@ -168,7 +168,7 @@ isExpr(?expr) :-
   ?expr = [?op, "boolean", ?lExpr, ?rExpr].
 
 // If Conditions - Var_Const
-
+isExpr(?constExpr),
 ResolveExpr(?meth, ?var, ?expr),
 isExpr(?expr) :-
   IfVarConst(_, ?var, ?meth, ?right1, ?right2, ?op),

@@ -3,69 +3,55 @@
 #ifdef DEBUG
 
 ToString(?expr, ?out) :-
-    isInputExpr(?expr),
-    ?expr = [?base, ?type, ?exprL, ?exprR],
-    ?out = ?base.
+  isExpr(?expr),
+  ?expr = [?base, ?type, nil, nil],
+  ?out = ?base.
 ToString(?expr, ?out) :-
-    isExpr(?expr),
-    isOperator(?base),
-    ?expr = [?base, ?type, ?exprLeft, nil],
-    ToString(?exprLeft, ?outLeft),
-    ?out = cat(?base, ?outLeft).
+  isExpr(?expr),
+  isOperator(?base),
+  ?expr = [?base, ?type, ?exprLeft, ?exprRight],
+  ToString(?exprLeft, ?outLeft),
+  ToString(?exprRight, ?outRight),
+  ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
 ToString(?expr, ?out) :-
-    isExpr(?expr),
-    isOperator(?base),
-    ?expr = [?base, ?type, ?exprLeft, ?exprRight],
-    ToString(?exprLeft, ?outLeft),
-    ToString(?exprRight, ?outRight),
-    ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
-ToString(?expr, ?out) :-
-    isExpr(?expr),
-    isOperator(?base),
-    ?expr = [?base, ?type, ?exprLeft, ?exprRight],
-    ToString(?exprLeft, ?outLeft),
-    ToString(?exprRight, ?outRight),
-    ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
-ToString(?expr, ?out) :-
-    isExpr(?expr),
-    isOperator(?base),
-    ?expr = [?base, ?type, ?exprLeft, ?exprRight],
-    ToString(?exprLeft, ?outLeft),
-    ToString(?exprRight, ?outRight),
-    ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
-ToString(?expr, ?out) :-
-    isExpr(?expr),
-    isOperator(?base),
-    ?expr = [?base, ?type, ?exprLeft, ?exprRight],
-    ToString(?exprLeft, ?outLeft),
-    ToString(?exprRight, ?outRight),
-    ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
+  isExpr(?expr),
+  isOperator(?base),
+  ?expr = [?base, ?type, ?exprLeft, nil],
+  ToString(?exprLeft, ?outLeft),
+  ?out = cat(?base, cat(" ", ?outLeft)).
+
+// ToString(?expr, ?out) :-
+//   isExpr(?expr),
+//   isOperator(?base),
+//   ?exprLeft = [?b1, ?t1, nil, nil],
+//   ?exprRight = [?b2, ?t2, nil, nil],
+//   ?expr = [?base, ?type, ?exprLeft, ?exprRight],
+//   ?out = cat(?b1, cat(" ", cat(?base, cat(" ", ?b2)))).
 
 #endif
 
 isExpr(?expr) :-
-    PathExpressionBefore(_, _, ?expr).
-
+  PathExpressionBefore(_, _, ?expr).
 isExpr(?expr) :-
-    PathExpressionAfterTrue(_, _, ?expr).
+  PathExpressionAfterTrue(_, _, ?expr).
 isExpr(?expr) :-
-    PathExpressionAfterFalse(_, _, ?expr).
+  PathExpressionAfterFalse(_, _, ?expr).
 
 isBooleanExpr(?expr) :-
-    (isInputExpr(?expr) ; isExpr(?expr)),
-    ?expr = [?op, ?type, ?rExpr, ?lExpr],
-    Type_boolean(?type).
+  isExpr(?expr),
+  ?expr = [?op, ?type, ?rExpr, ?lExpr],
+  Type_boolean(?type).
 
 isArithmeticExpr(?expr) :-
-    (isInputExpr(?expr) ; isExpr(?expr)),
-    ?expr = [?op, ?type, ?rExpr, ?lExpr],
-    (Type_byte(?type) ;
-     Type_char(?type) ;
-     Type_short(?type) ;
-     Type_int(?type) ;
-     Type_long(?type) ;
-     Type_float(?type) ;
-     Type_double(?type)).
+  isExpr(?expr),
+  ?expr = [?op, ?type, ?rExpr, ?lExpr],
+  (Type_byte(?type) ;
+   Type_char(?type) ;
+   Type_short(?type) ;
+   Type_int(?type) ;
+   Type_long(?type) ;
+   Type_float(?type) ;
+   Type_double(?type)).
 
 // Boolean operators
 
@@ -128,149 +114,154 @@ NegateOp("<=", ">").
 // Pick the predecessor with the minimum ord value as the ?first predecessor
 
 FirstIfInsnInMethod(?insn, ?meth) :-
-    Instruction_Method(?insn, ?meth),
-    minOrd = min ord(?insn): IfsInMethod(?insn, ?meth),
-    ord(?insn) = minOrd.
+  Instruction_Method(?insn, ?meth),
+  minOrd = min ord(?insn): IfsInMethod(?insn, ?meth),
+  ord(?insn) = minOrd.
 
 IfsInMethod(?pred, ?meth) :-
-    Instruction_Method(?insn, ?meth),
-    BBHeadInMethod(?insn, ?meth),
-    SinglePredOfInsnInMethod(?pred, ?insn, ?meth).
+  Instruction_Method(?insn, ?meth),
+  BBHeadInMethod(?insn, ?meth),
+  SinglePredOfInsnInMethod(?pred, ?insn, ?meth).
 
 FirstPredOfInsnInMethodOrdinal(?meth, ?firstOrd, ?insn) :-
-    Instruction_Method(?insn, ?meth),
-    ?firstOrd = min ord(?prev): MayPredecessorModuloThrow(?prev, ?insn).
+  Instruction_Method(?insn, ?meth),
+  ?firstOrd = min ord(?prev): MayPredecessorModuloThrow(?prev, ?insn).
 
 FirstPredOfInsnInMethod(?meth, ?first, ?insn) :-
-    Instruction_Method(?insn, ?meth),
-    MayPredecessorModuloThrow(?first, ?insn),
-    ?min_ord = ord(?first),
-    FirstPredOfInsnInMethodOrdinal(?meth, ?min_ord, ?insn).
+  Instruction_Method(?insn, ?meth),
+  MayPredecessorModuloThrow(?first, ?insn),
+  ?min_ord = ord(?first),
+  FirstPredOfInsnInMethodOrdinal(?meth, ?min_ord, ?insn).
 
 // Pick the predecessor with the maximum ord value as the ?last predecessor
 
 LastPredOfInsnInMethodOrdinal(?meth, ?lastOrd, ?insn) :-
-    Instruction_Method(?insn, ?meth),
-    ?lastOrd = max ord(?prev): MayPredecessorModuloThrow(?prev, ?insn).
+  Instruction_Method(?insn, ?meth),
+  ?lastOrd = max ord(?prev): MayPredecessorModuloThrow(?prev, ?insn).
 
 LastPredOfInsnInMethod(?meth, ?last, ?insn) :-
-    Instruction_Method(?insn, ?meth),
-    MayPredecessorModuloThrow(?last, ?insn),
-    ?max_ord = ord(?last),
-    LastPredOfInsnInMethodOrdinal(?meth, ?max_ord, ?insn).
+  Instruction_Method(?insn, ?meth),
+  MayPredecessorModuloThrow(?last, ?insn),
+  ?max_ord = ord(?last),
+  LastPredOfInsnInMethodOrdinal(?meth, ?max_ord, ?insn).
 
 // Pick as ?next predecessor of ?insn the insnruction with the least
 // greater ord number, compared to the ?prev predecessor
 
 NotNextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn) :-
-    Instruction_Method(?insn, ?meth),
-    MayPredecessorModuloThrow(?prev, ?insn),
-    MayPredecessorModuloThrow(?next, ?insn),
-    MayPredecessorModuloThrow(?nextPossible, ?insn),
-    ord(?prev) < ord(?next),
-    ord(?prev) < ord(?nextPossible),
-    ord(?nextPossible) < ord(?next).
+  Instruction_Method(?insn, ?meth),
+  MayPredecessorModuloThrow(?prev, ?insn),
+  MayPredecessorModuloThrow(?next, ?insn),
+  MayPredecessorModuloThrow(?nextPossible, ?insn),
+  ord(?prev) < ord(?next),
+  ord(?prev) < ord(?nextPossible),
+  ord(?nextPossible) < ord(?next).
 
 NextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn) :-
-    Instruction_Method(?insn, ?meth),
-    MayPredecessorModuloThrow(?prev, ?insn),
-    MayPredecessorModuloThrow(?next, ?insn),
-    ord(?prev) < ord(?next),
-    !NotNextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn).
+  Instruction_Method(?insn, ?meth),
+  MayPredecessorModuloThrow(?prev, ?insn),
+  MayPredecessorModuloThrow(?next, ?insn),
+  ord(?prev) < ord(?next),
+  !NotNextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn).
 
 // Single Pred
 
 SinglePredOfInsnInMethod(?pred, ?insn, ?meth) :-
-    Instruction_Method(?insn, ?meth),
-    FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
-    LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+  Instruction_Method(?insn, ?meth),
+  FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
+  LastPredOfInsnInMethod(?meth, ?pred, ?insn).
 
 // Multiple Preds - First
 
 FirstOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth) :-
-    Instruction_Method(?insn, ?meth),
-    FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
-    !LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+  Instruction_Method(?insn, ?meth),
+  FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
+  !LastPredOfInsnInMethod(?meth, ?pred, ?insn).
 
 // Multiple Preds - Next
 
 NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth) :-
-    Instruction_Method(?insn, ?meth),
-    !LastPredOfInsnInMethod(?meth, ?prev, ?insn),
-    NextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn).
+  Instruction_Method(?insn, ?meth),
+  !LastPredOfInsnInMethod(?meth, ?prev, ?insn),
+  NextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn).
 
 // Multiple Preds - Last
 
 LastOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth) :-
-    Instruction_Method(?insn, ?meth),
-    !FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
-    LastPredOfInsnInMethod(?meth, ?pred, ?insn).
+  Instruction_Method(?insn, ?meth),
+  !FirstPredOfInsnInMethod(?meth, ?pred, ?insn),
+  LastPredOfInsnInMethod(?meth, ?pred, ?insn).
 
 // Determine expr operands for binary expression assignments
 
 AssignBinaryVarVar(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
-    isAssignBinop_Insn(?insn),
-    AssignInstruction_To(?insn, ?var),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    Instruction_Method(?insn, ?meth),
-    AssignOper_From(?insn, ?pos1, ?right1),
-    AssignOper_From(?insn, ?pos2, ?right2),
-    ?pos1 < ?pos2,
-    _OperatorAt(?insn, ?op).
+  isAssignBinop_Insn(?insn),
+  AssignInstruction_To(?insn, ?var),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  Instruction_Method(?insn, ?meth),
+  AssignOper_From(?insn, ?pos1, ?right1),
+  AssignOper_From(?insn, ?pos2, ?right2),
+  ?pos1 < ?pos2,
+  _OperatorAt(?insn, ?op).
 
 AssignBinaryConstVar(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
-    isAssignBinop_Insn(?insn),
-    AssignInstruction_To(?insn, ?var),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    Instruction_Method(?insn, ?meth),
-    AssignOper_FromConstant(?insn, ?pos1, ?right1),
-    AssignOper_From(?insn, ?pos2, ?right2),
-    ?pos1 < ?pos2,
-    _OperatorAt(?insn, ?op).
+  isAssignBinop_Insn(?insn),
+  AssignInstruction_To(?insn, ?var),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  Instruction_Method(?insn, ?meth),
+  AssignOper_FromConstant(?insn, ?pos1, ?right1),
+  AssignOper_From(?insn, ?pos2, ?right2),
+  ?pos1 < ?pos2,
+  _OperatorAt(?insn, ?op).
 
 AssignBinaryVarConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
-    isAssignBinop_Insn(?insn),
-    AssignInstruction_To(?insn, ?var),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    Instruction_Method(?insn, ?meth),
-    AssignOper_From(?insn, ?pos1, ?right1),
-    AssignOper_FromConstant(?insn, ?pos2, ?right2),
-    ?pos1 < ?pos2,
-    _OperatorAt(?insn, ?op).
+  isAssignBinop_Insn(?insn),
+  AssignInstruction_To(?insn, ?var),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  Instruction_Method(?insn, ?meth),
+  AssignOper_From(?insn, ?pos1, ?right1),
+  AssignOper_FromConstant(?insn, ?pos2, ?right2),
+  ?pos1 < ?pos2,
+  _OperatorAt(?insn, ?op).
    
 AssignBinaryConstConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
-    isAssignBinop_Insn(?insn),
-    AssignInstruction_To(?insn, ?var),
-    Var_Type(?var, ?type),
-    isPrimitiveType(?type),
-    Instruction_Method(?insn, ?meth),
-    AssignOper_FromConstant(?insn, ?pos1, ?right1),
-    AssignOper_FromConstant(?insn, ?pos2, ?right2),
-    ?pos1 < ?pos2,
-    _OperatorAt(?insn, ?op).
+  isAssignBinop_Insn(?insn),
+  AssignInstruction_To(?insn, ?var),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  Instruction_Method(?insn, ?meth),
+  AssignOper_FromConstant(?insn, ?pos1, ?right1),
+  AssignOper_FromConstant(?insn, ?pos2, ?right2),
+  ?pos1 < ?pos2,
+  _OperatorAt(?insn, ?op).
 
-// Determi0ne expr operands for if-statement conditionskk
+// Determine expr operands for if-statement conditionskk
 
 IfVarVar(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
-    Instruction_Method(?insn, ?meth),
-    DummyIf_Var(?insn, ?var),
-    isIf_Insn(?insn),
-    If_Var(?insn, ?pos1, ?right1),
-    If_Var(?insn, ?pos2, ?right2),
-    ?pos1 < ?pos2,
-    _OperatorAt(?insn, ?op).
+  Instruction_Method(?insn, ?meth),
+  DummyIf_Var(?insn, ?var),
+  isIf_Insn(?insn),
+  If_Var(?insn, ?pos1, ?right1),
+  If_Var(?insn, ?pos2, ?right2),
+  Var_Type(?right1, ?type),
+  Var_Type(?right2, ?type),
+  isPrimitiveType(?type),
+  ?pos1 < ?pos2,
+  _OperatorAt(?insn, ?op).
 
 IfVarConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
-    Instruction_Method(?insn, ?meth),
-    DummyIf_Var(?insn, ?var),
-    isIf_Insn(?insn),
-    If_Var(?insn, ?pos1, ?right1),
-    If_Constant(?insn, ?pos2, ?right2),
-    ?pos1 < ?pos2,
-    _OperatorAt(?insn, ?op).
+  Instruction_Method(?insn, ?meth),
+  DummyIf_Var(?insn, ?var),
+  isIf_Insn(?insn),
+  If_Var(?insn, ?pos1, ?right1),
+  Var_Type(?right1, ?type),
+  isPrimitiveType(?type),
+  If_Constant(?insn, ?pos2, ?right2),
+  ?pos1 < ?pos2,
+  _OperatorAt(?insn, ?op).
 
 // Expression Method
 
@@ -287,21 +278,18 @@ Expression_Method(?expr, ?meth) :-
   PathExpressionBefore(?meth, ?insn, ?expr).
 
 Sanity(?expr) :-
-  (isExpr(?expr) ; isInputExpr(?expr)),
+  isExpr(?expr),
   ?expr = [?base, ?type, nil, nil].
 
 Sanity(?expr) :-
   isExpr(?expr),
   ?expr = [?op, ?type, ?exprL, nil],
-  (isExpr(?exprL) ; isInputExpr(?exprL)).
-
-Sanity(?expr) :-
-  isExpr(?expr),
-  ?expr = [?op, ?type, nil, ?exprR],
-  (isExpr(?exprR) ; isInputExpr(?exprR)).
+  isOperator(?op),
+  isExpr(?exprL).
 
 Sanity(?expr) :-
   isExpr(?expr),
   ?expr = [?op, ?type, ?exprL, ?exprR],
-  (isExpr(?exprL) ; isInputExpr(?exprL)),
-  (isExpr(?exprR) ; isInputExpr(?exprR)).
+  isOperator(?op),
+  isExpr(?exprL),
+  isExpr(?exprR).
