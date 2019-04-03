@@ -55,6 +55,8 @@
 #ifdef DEBUG
 .decl ToString(?expr: Expr, ?out: symbol)
 #endif
+.decl Sanity(?expr: Expr)
+.output Sanity
 
 /* Expression method */
 
@@ -89,6 +91,7 @@
 .output isInputExpr
 .output isExpr
 
+.output BuildPathExprBefore
 .output PathExpressionBefore
 .output PathExpressionAfterTrue
 .output PathExpressionAfterFalse

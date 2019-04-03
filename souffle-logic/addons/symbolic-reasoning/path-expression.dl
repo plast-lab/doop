@@ -90,7 +90,7 @@ BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
 	NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
   !isIf_Insn(?next),
   PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
-  ?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
+  ?pathExpr = ["||", "boolean", ?expr, ?exprPrev].
 .plan 1:(3,2,1)
 
 
@@ -100,10 +100,8 @@ BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
 	NextOfMultiplePredsOfInsnInMethod(?next, ?prev, ?insn, ?meth),
 	isIf_Insn(?next),
 	PathExpressionAfterTrue(?meth, ?next, ?exprPrev),
-	?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
+	?pathExpr = ["||", "boolean", ?expr, ?exprPrev].
 .plan 1:(5,3,4,2,1)
-
-
 
 //Buggy rule:
 //BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
@@ -121,8 +119,9 @@ BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
   isIf_Insn(?next),
   !IsJumpTarget(?insn),
   PathExpressionAfterFalse(?meth, ?next, ?exprPrev),
-  ?pathExpr = ["||", "boolean", ?exprPrev, ?expr].
+  ?pathExpr = ["||", "boolean", ?expr, ?exprPrev].
 
+isExpr(?pathExpr),
 PathExpressionBefore(?meth, ?insn, ?pathExpr) :-
   LastOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth),
   BuildPathExprBefore(?meth, ?pred, ?pathExpr, ?insn).

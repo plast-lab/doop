@@ -275,13 +275,33 @@ IfVarConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
 // Expression Method
 
 Expression_Method(?expr, ?meth) :-
-	ResolveExpr(?meth, ?var, ?expr).
+  ResolveExpr(?meth, ?var, ?expr).
 
 Expression_Method(?expr, ?meth) :-
-	PathExpressionAfterTrue(?meth, ?insn, ?expr).
+  PathExpressionAfterTrue(?meth, ?insn, ?expr).
 
 Expression_Method(?expr, ?meth) :-
-	PathExpressionAfterFalse(?meth, ?insn, ?expr).
+  PathExpressionAfterFalse(?meth, ?insn, ?expr).
 
 Expression_Method(?expr, ?meth) :-
-	PathExpressionBefore(?meth, ?insn, ?expr).
+  PathExpressionBefore(?meth, ?insn, ?expr).
+
+Sanity(?expr) :-
+  (isExpr(?expr) ; isInputExpr(?expr)),
+  ?expr = [?base, ?type, nil, nil].
+
+Sanity(?expr) :-
+  isExpr(?expr),
+  ?expr = [?op, ?type, ?exprL, nil],
+  (isExpr(?exprL) ; isInputExpr(?exprL)).
+
+Sanity(?expr) :-
+  isExpr(?expr),
+  ?expr = [?op, ?type, nil, ?exprR],
+  (isExpr(?exprR) ; isInputExpr(?exprR)).
+
+Sanity(?expr) :-
+  isExpr(?expr),
+  ?expr = [?op, ?type, ?exprL, ?exprR],
+  (isExpr(?exprL) ; isInputExpr(?exprL)),
+  (isExpr(?exprR) ; isInputExpr(?exprR)).
