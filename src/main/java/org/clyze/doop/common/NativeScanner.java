@@ -504,62 +504,66 @@ public class NativeScanner {
                         System.out.println("new function " + function);
                     continue;
                 }
-                m = insPattern.matcher(line);
-                if (m.find()) {
-                    registers.put("pc",m.group(1));
-                    String instruction = m.group(5);
-                    if (m.group(4).equals("ldr")) {
-                        m = ldrPattern.matcher(instruction);
-                        if (m.find()) {
-                            String addr = m.group(2);
-                            String nextAddr = Integer.toHexString(Integer.parseInt(addr,16)+Integer.parseInt("2",16));
-                            String value = null;
-                            if (addressCode.containsKey(nextAddr))
-                                value = addressCode.get(nextAddr)+addressCode.get(addr);
-                            else
-                                value = addressCode.get(addr);
-                            registers.put(m.group(1), value);
+                try {
+                    m = insPattern.matcher(line);
+                    if (m.find()) {
+                        registers.put("pc",m.group(1));
+                        String instruction = m.group(5);
+                        if (m.group(4).equals("ldr")) {
+                            m = ldrPattern.matcher(instruction);
+                            if (m.find()) {
+                                String addr = m.group(2);
+                                String nextAddr = Integer.toHexString(Integer.parseInt(addr,16)+Integer.parseInt("2",16));
+                                String value = null;
+                                if (addressCode.containsKey(nextAddr))
+                                    value = addressCode.get(nextAddr)+addressCode.get(addr);
+                                else
+                                    value = addressCode.get(addr);
+                                registers.put(m.group(1), value);
+                            }
+                        } else if (m.group(4).equals("ldr.w")) {
+                            m = ldrwPattern.matcher(instruction);
+                            if (m.find()) {
+                                String addr = m.group(2);
+                                String nextAddr = Integer.toHexString(Integer.parseInt(addr,16)+Integer.parseInt("2",16));
+                                String value = null;
+                                if (addressCode.containsKey(nextAddr))
+                                    value = addressCode.get(nextAddr)+addressCode.get(addr);
+                                else
+                                    value = addressCode.get(addr);
+                                registers.put(m.group(1), value);
+                            }
+                        } else if (m.group(4).contains("add") || m.group(4).equals("adr")) {
+                            m = addPattern.matcher(instruction);
+                            if (m.find() && registers.containsKey(m.group(1)) && registers.containsKey(m.group(2))) {
+                                Long address = Long.parseLong(registers.get(m.group(2)), 16);
+                                if (!m.group(3).equals("")) {
+                                    if (!registers.containsKey(m.group(3)))
+                                        if (m.group(4).contains("#"))
+                                            address += Long.parseLong(m.group(4).substring(m.group(4).lastIndexOf('#')),16);
+                                        else
+                                            continue;
+                                    address += Long.parseLong(registers.get(m.group(3)), 16);
+                                } else
+                                    address += Long.parseLong(registers.get(m.group(1)), 16);
+                                Integer len = Long.toHexString(address).length();
+                                if (len>registers.get(m.group(1)).length() && len>registers.get(m.group(2)).length())
+                                    address = Long.parseLong(Long.toHexString(address).substring(1),16);
+                                registers.put(m.group(1),Long.toHexString(address));
+                                address += Long.parseLong("4",16);
+                                String str = foundStrings.get(address);
+                                if (debug)
+                                    System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                                stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                            }
+                        } else if (m.group(4).equals("mov")) {
+                            m = movPattern.matcher(instruction);
+                            if (m.find() && registers.containsKey(m.group(2)))
+                                registers.put(m.group(1),registers.get(m.group(2)));
                         }
-                    } else if (m.group(4).equals("ldr.w")) {
-                        m = ldrwPattern.matcher(instruction);
-                        if (m.find()) {
-                            String addr = m.group(2);
-                            String nextAddr = Integer.toHexString(Integer.parseInt(addr,16)+Integer.parseInt("2",16));
-                            String value = null;
-                            if (addressCode.containsKey(nextAddr))
-                                value = addressCode.get(nextAddr)+addressCode.get(addr);
-                            else
-                                value = addressCode.get(addr);
-                            registers.put(m.group(1), value);
-                        }
-                    } else if (m.group(4).contains("add") || m.group(4).equals("adr")) {
-                        m = addPattern.matcher(instruction);
-                        if (m.find() && registers.containsKey(m.group(1)) && registers.containsKey(m.group(2))) {
-                            Long address = Long.parseLong(registers.get(m.group(2)), 16);
-                            if (!m.group(3).equals("")) {
-                                if (!registers.containsKey(m.group(3)))
-                                    if (m.group(4).contains("#"))
-                                        address += Long.parseLong(m.group(4).substring(m.group(4).lastIndexOf('#')),16);
-                                    else
-                                        continue;
-                                address += Long.parseLong(registers.get(m.group(3)), 16);
-                            } else
-                                address += Long.parseLong(registers.get(m.group(1)), 16);
-                            Integer len = Long.toHexString(address).length();
-                            if (len>registers.get(m.group(1)).length() && len>registers.get(m.group(2)).length())
-                                address = Long.parseLong(Long.toHexString(address).substring(1),16);
-                            registers.put(m.group(1),Long.toHexString(address));
-                            address += Long.parseLong("4",16);
-                            String str = foundStrings.get(address);
-                            if (debug)
-                                System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
-                            stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
-                        }
-                    } else if (m.group(4).equals("mov")) {
-                        m = movPattern.matcher(instruction);
-                        if (m.find() && registers.containsKey(m.group(2)))
-                            registers.put(m.group(1),registers.get(m.group(2)));
                     }
+                } catch (NumberFormatException ex) {
+                    System.err.println("Number format error '" + ex.getMessage() + "' in line: " + line);
                 }
             }
         } catch (IOException ex) {
