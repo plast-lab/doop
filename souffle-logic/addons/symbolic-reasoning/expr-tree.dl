@@ -68,8 +68,7 @@ isExpr(?expr) :-
 
 // Assign Local
 
-ResolveExpr(?meth, ?var, ?expr),
-isExpr(?expr) :-
+ResolveExpr(?meth, ?var, ?expr) :-
   Instruction_Method(?insn, ?meth),
   isAssignLocal_Insn(?insn),
   AssignInstruction_To(?insn, ?var),
@@ -144,6 +143,7 @@ isExpr(?expr) :-
   LeftExpr(?var, ?op, ?constL),
   RightExpr(?var, ?op, ?constR),
   Var_Type(?var, ?type),
+  isPrimitiveType(?type),
   Var_DeclaringMethod(?var, ?meth),
   ?expr = [?op, ?type, ?constL, ?constR].
 

@@ -1,4 +1,4 @@
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 
@@ -20,16 +20,10 @@ ToString(?expr, ?out) :-
   ToString(?exprLeft, ?outLeft),
   ?out = cat(?base, cat(" ", ?outLeft)).
 
-// ToString(?expr, ?out) :-
-//   isExpr(?expr),
-//   isOperator(?base),
-//   ?exprLeft = [?b1, ?t1, nil, nil],
-//   ?exprRight = [?b2, ?t2, nil, nil],
-//   ?expr = [?base, ?type, ?exprLeft, ?exprRight],
-//   ?out = cat(?b1, cat(" ", cat(?base, cat(" ", ?b2)))).
-
 #endif
 
+isExpr(?expr) :-
+BuildPathExprBefore(_, _, ?expr, _).
 isExpr(?expr) :-
   PathExpressionBefore(_, _, ?expr).
 isExpr(?expr) :-
@@ -279,6 +273,7 @@ Expression_Method(?expr, ?meth) :-
 
 Sanity(?expr) :-
   isExpr(?expr),
+  !isOperator(?base),
   ?expr = [?base, ?type, nil, nil].
 
 Sanity(?expr) :-
@@ -286,6 +281,7 @@ Sanity(?expr) :-
   ?expr = [?op, ?type, ?exprL, nil],
   isOperator(?op),
   isExpr(?exprL).
+
 
 Sanity(?expr) :-
   isExpr(?expr),

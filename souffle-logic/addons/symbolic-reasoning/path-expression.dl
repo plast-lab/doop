@@ -11,7 +11,7 @@
 // If no path expression before, path ?expressions are built given
 // branch conditions
 
-// isExpr(?expr),
+isExpr(?expr),
 PathExpressionAfterTrue(?meth, ?insn, ?conditionExpr),
 PathExpressionAfterFalse(?meth, ?insn, ?expr) :-
   Instruction_Method(?insn, ?meth),
@@ -26,8 +26,6 @@ PathExpressionAfterFalse(?meth, ?insn, ?expr) :-
 // Include if-conditions to path ?expressions computed up to the current if-statement
 
 isExpr(?negatedConditionExpr),
-// isExpr(?pathExpr1),
-// isExpr(?pathExpr2),
 PathExpressionAfterTrue(?meth, ?insn, ?pathExpr1),
 PathExpressionAfterFalse(?meth, ?insn, ?pathExpr2) :-
   PathExpressionBefore(?meth, ?insn, ?pathExpr),
@@ -120,7 +118,6 @@ BuildPathExprBefore(?meth, ?next, ?pathExpr, ?insn) :-
   PathExpressionAfterFalse(?meth, ?next, ?exprPrev),
   ?pathExpr = ["||", "boolean", ?expr, ?exprPrev].
 
-isExpr(?pathExpr),
 PathExpressionBefore(?meth, ?insn, ?pathExpr) :-
   LastOfMultiplePredsOfInsnInMethod(?pred, ?insn, ?meth),
   BuildPathExprBefore(?meth, ?pred, ?pathExpr, ?insn).
