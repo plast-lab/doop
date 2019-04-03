@@ -5,3 +5,12 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   _NativeNameCandidate(?file, ?function, ?name),
   Method_SimpleName(?method, ?name),
   Method_JVMDescriptor(?method, ?descriptor).
+
+// // Crude over-approximation for strings used in unknown positions:
+// // assume matching methods are called from any function.
+// PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
+//   _NativeMethodTypeCandidate(?file, "-", ?descriptor),
+//   _NativeNameCandidate(?file, "-", ?name),
+//   _NativeLibEntryPoint(?file, ?function, _),
+//   Method_SimpleName(?method, ?name),
+//   Method_JVMDescriptor(?method, ?descriptor).
