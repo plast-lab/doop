@@ -102,6 +102,11 @@ OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodType") :-
 .decl _MethodTypeConstantParam(?id:symbol, ?idx:number, ?type:symbol)
 .input _MethodTypeConstantParam(IO="file", filename="MethodTypeConstantParam.facts", delimiter="\t")
 
+// Native code facts
+
+.decl _NativeLibEntryPoint(?lib:symbol, ?function:symbol, ?addr:symbol)
+.input _NativeLibEntryPoint(IO="file", filename="NativeLibEntryPoint.facts", delimiter="\t")
+
 .decl _NativeMethodTypeCandidate(?lib:symbol, ?function:symbol, ?descriptor:symbol)
 .input _NativeMethodTypeCandidate(IO="file", filename="NativeMethodTypeCandidate.facts", delimiter="\t")
 
