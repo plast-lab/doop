@@ -16,7 +16,7 @@ public class NativeScanner {
 
     // The supported architectures.
     enum Arch {
-        X86_64, AARCH64, ARMEABI;
+        X86_64, AARCH64, ARMEABI, MIPS;
 
         public static Arch autodetect(String libFilePath) throws IOException {
             ProcessBuilder pb = new ProcessBuilder("file", libFilePath);
@@ -30,6 +30,9 @@ public class NativeScanner {
                     break;
                 } else if (line.contains("ARM") || line.contains("EABI")) {
                     arch = Arch.ARMEABI;
+                    break;
+                } else if (line.contains("MIPS")) {
+                    arch = Arch.MIPS;
                     break;
                 }
             }
@@ -280,11 +283,17 @@ public class NativeScanner {
         // Find in which function every string is used
         Map<String, List<String>> stringsInFunctions = null;
 
+        boolean success = false;
         try {
             stringsInFunctions = findStringsInFunctions(objdumpCmd, rodata.strings(), eps, lib, arch);
+            if (stringsInFunctions != null)
+                success = true;
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.err.println("Cannot find strings in functions, aborting native scanner.");
+        }
+
+        if (!success) {
+            System.err.println("Cannot find strings in " + lib + ", aborting.");
             return;
         }
 
@@ -378,7 +387,7 @@ public class NativeScanner {
             Map<String, List<String>> eabi7 = findStringsInARMEABIv7a(objdumpCmd, foundStrings, lib);
             return mergeMaps(eabi, eabi7);
         }
-
+        System.err.println("Architecture not supported: " + arch);
         return null;
     }
 
