@@ -309,7 +309,7 @@ public class NativeScanner {
             }
 
             eps.forEach ((Long addr, String name) ->
-                         db.add(NATIVE_LIB_ENTRY_POINT, name, String.valueOf(addr)));
+                         db.add(NATIVE_LIB_ENTRY_POINT, lib, name, String.valueOf(addr)));
         }
     }
 
