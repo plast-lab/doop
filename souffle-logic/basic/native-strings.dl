@@ -14,3 +14,9 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
 //   _NativeLibEntryPoint(?file, ?function, _),
 //   Method_SimpleName(?method, ?name),
 //   Method_JVMDescriptor(?method, ?descriptor).
+
+.decl PossibleNativeCodeTargetMethodLocalized(?method:Method, ?function:symbol, ?file:symbol)
+
+PossibleNativeCodeTargetMethodLocalized(?method, ?function, ?file) :-
+  PossibleNativeCodeTargetMethod(?method, ?function, ?file),
+  ?function != "-".
