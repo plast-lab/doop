@@ -372,11 +372,34 @@ public class NativeScanner {
             return findStringsInX86_64(foundStrings, eps, lib);
         else if (arch.equals(Arch.AARCH64))
             return findStringsInAARCH64(foundStrings, eps, lib);
-        else if (arch.equals(Arch.ARMEABI))
-            //return findStringsInARMEABI(objdumpCmd, foundStrings, lib);
-            return findStringsInARMEABIv7a(objdumpCmd, foundStrings, lib);
+        else if (arch.equals(Arch.ARMEABI)) {
+            // Fuse results for both armeabi/armeabi-v7a.
+            Map<String, List<String>> eabi = findStringsInARMEABI(objdumpCmd, foundStrings, lib);
+            Map<String, List<String>> eabi7 = findStringsInARMEABIv7a(objdumpCmd, foundStrings, lib);
+            return mergeMaps(eabi, eabi7);
+        }
 
         return null;
+    }
+
+    /**
+     * Merge two maps from keys to collections of values. Parameters may be mutated.
+     */
+    private static Map<String, List<String>> mergeMaps(Map<String, List<String>> map1,
+                                                       Map<String, List<String>> map2) {
+        Map<String,List<String>> ret = map1;
+        for (Map.Entry<String, List<String>> entry : map2.entrySet()) {
+            String key = entry.getKey();
+            List<String> existing = map1.get(key);
+            if (existing == null)
+                ret.put(key, entry.getValue());
+            else {
+                List<String> newValue = ret.get(key);
+                newValue.addAll(entry.getValue());
+                ret.put(key, newValue);
+            }
+        }
+        return ret;
     }
 
     private static Map<String,List<String>> findStringsInX86_64(Map<Long,String> foundStrings, Map<Long, String> eps, String lib) {
