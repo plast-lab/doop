@@ -609,12 +609,16 @@ public class NativeScanner {
                     } else if (m.group(3).equals("add")) {
                         m = addPattern.matcher(instruction);
                         if (m.find() && registers.containsKey(m.group(2)) && registers.containsKey(m.group(3))) {
-                            Long address = Long.parseLong(registers.get(m.group(2)), 16) + Long.parseLong("8", 16);
-                            address += Long.parseLong(registers.get(m.group(3)), 16);
-                            String str = foundStrings.get(address);
-                            if (debug)
-                                System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
-                            stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                            try {
+                                Long address = Long.parseLong(registers.get(m.group(2)), 16) + Long.parseLong("8", 16);
+                                address += Long.parseLong(registers.get(m.group(3)), 16);
+                                String str = foundStrings.get(address);
+                                if (debug)
+                                    System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                                stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                            } catch (NumberFormatException ex) {
+                                System.err.println("Number format error '" + ex.getMessage() + "' in line: " + line);
+                            }
                         }
                     } else if (m.group(3).equals("mov")) {
                         m = movPattern.matcher(instruction);
