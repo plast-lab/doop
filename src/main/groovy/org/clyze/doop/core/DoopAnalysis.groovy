@@ -452,6 +452,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--failOnMissingClasses"]
         }
 
+        if (options.X_LOW_MEM.value) {
+            params += ["--lowMem"]
+        }
+
         log.debug "Params of soot: ${params.join(' ')}"
 
         factGenTime = Helper.timing {

@@ -8,10 +8,10 @@
 .type Base = SymbolicInput | Operator
 
 .type Expr = [
-    ?base: Base,
-    ?type: PrimitiveType,
-    ?left: Expr,
-    ?right: Expr
+  ?base: Base,
+  ?type: PrimitiveType,
+  ?left: Expr,
+  ?right: Expr
 ]
 
 /* Various util predicate declarations */
@@ -30,6 +30,7 @@
 .decl NextPredOfInsnInMethod(?meth: Method, ?prev: Instruction, ?next: Instruction, ?insn:Instruction)
 
 .decl NegateOp(after: Operator, before: Operator)
+.decl NegationOfConditionAtIfInsn(cond: Expr, negatedCond: Expr, ?insn: Instruction)
 
 .decl AssignBinaryVarVar(?insn:Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: Var, ?op: Operator)
 .decl AssignBinaryVarConst(?insn:Instruction, ?var: Var, ?meth: Method, ?right1: Var, ?right2: NumConstant, ?op: Operator)
