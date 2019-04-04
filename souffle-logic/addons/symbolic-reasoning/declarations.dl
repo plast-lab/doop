@@ -1,4 +1,4 @@
-#define DEBUG
+// #define DEBUG
 
 /* Types */
 
@@ -47,14 +47,22 @@
 .decl NextOfMultiplePredsOfInsnInMethod(?next: Instruction, ?prev: Instruction, ?insn: Instruction, ?meth: Method)
 .decl LastOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)
 
+#ifdef DEBUG
+.output SinglePredOfInsnInMethod
+.output FirstOfMultiplePredsOfInsnInMethod
+.output NextOfMultiplePredsOfInsnInMethod
+.output LastOfMultiplePredsOfInsnInMethod
+#endif
+
 .decl isBooleanExpr(?expr: Expr)
 .decl isArithmeticExpr(?expr: Expr)
-.decl isInputExpr(?expr: Expr)
 .decl isExpr(?expr: Expr)
 
 #ifdef DEBUG
 .decl ToString(?expr: Expr, ?out: symbol)
 #endif
+.decl Sanity(?expr: Expr)
+.output Sanity
 
 /* Expression method */
 
@@ -86,9 +94,9 @@
 #ifdef DEBUG
 .output ToString
 #endif
-.output isInputExpr
 .output isExpr
 
+.output BuildPathExprBefore
 .output PathExpressionBefore
 .output PathExpressionAfterTrue
 .output PathExpressionAfterFalse

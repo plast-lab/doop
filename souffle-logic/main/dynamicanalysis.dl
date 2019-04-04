@@ -293,6 +293,14 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
     DynamicContextToContext(?ctx, ?dctx),
     DynamicVarPointsTo(?hctx, ?heap, ?dctx, ?var).
 
-#endif
+#endif // HEAPDL_DYNAMICVARPOINTSTO
 
 isHeapAllocation(?heap), HeapAllocation_Type(?heap, ?type), OriginalHeapAllocation_Type(?heap, ?type) :- _DynamicNormalHeapAllocation(_, _, ?type, ?heap).
+
+// Helper relation to match dynamic call-graph edges against edges
+// computed by the native scanner.
+.decl NativeCodeTargetMethodObservedByHeapDL(?toMethod:Method, ?fromMethod:Method, ?function:symbol)
+NativeCodeTargetMethodObservedByHeapDL(?toMethod, ?fromMethod, ?function) :-
+  basic.PossibleNativeCodeTargetMethod(?toMethod, ?function, _),
+  DynamicCallGraphEdge(_, ?toMethod, _, _, ?fromMethod),
+  Method_Modifier("native", ?fromMethod).

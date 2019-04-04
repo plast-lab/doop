@@ -11,6 +11,34 @@ SpecialMethodToKeep(?method) :-
   Method_SimpleName(?method, ?name),
   (?name = "values" ; ?name = "valueOf").
 
+// R nested class names (https://developer.android.com/reference/android/R).
+.decl RClass(?r:symbol)
+RClass("R$anim").    RClass("R$animator").  RClass("R$array").
+RClass("R$attr").    RClass("R$bool").      RClass("R$color").
+RClass("R$dimen").   RClass("R$drawable").  RClass("R$fraction").
+RClass("R$id").      RClass("R$integer").   RClass("R$interpolator").
+RClass("R$layout").  RClass("R$menu").      RClass("R$mipmap").
+RClass("R$plurals"). RClass("R$raw").       RClass("R$string").
+RClass("R$style").   RClass("R$styleable"). RClass("R$transition").
+RClass("R$xml").
+
+// Keep methods from R classes. Usually constructors/class initializers.
+SpecialMethodToKeep(?method) :-
+  Method_DeclaringType(?method, ?type),
+  isClassType(?type),
+  (RClass(?type); ?type = "R").
+SpecialMethodToKeep(?method) :-
+  Method_DeclaringType(?method, ?type),
+  isClassType(?type),
+  RClass(?r),
+  (?rTypePart = cat(".", ?r) ; ?rTypePart = cat("$", ?r)),
+  contains(?rTypePart, ?type).
+SpecialMethodToKeep(?method) :-
+  Method_DeclaringType(?method, ?type),
+  isClassType(?type),
+  (?r = ".R" ; ?r = "$R"),
+  substr(?type, strlen(?type) - 2, 2) = ?r.
+
 // Output for dead method removal.
 .decl MethodToRemove(?method:Method)
 MethodToRemove(?method) :-

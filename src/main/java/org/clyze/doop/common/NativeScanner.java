@@ -16,7 +16,7 @@ public class NativeScanner {
 
     // The supported architectures.
     enum Arch {
-        X86_64, AARCH64, ARMEABI;
+        X86_64, AARCH64, ARMEABI, MIPS;
 
         public static Arch autodetect(String libFilePath) throws IOException {
             ProcessBuilder pb = new ProcessBuilder("file", libFilePath);
@@ -30,6 +30,9 @@ public class NativeScanner {
                     break;
                 } else if (line.contains("ARM") || line.contains("EABI")) {
                     arch = Arch.ARMEABI;
+                    break;
+                } else if (line.contains("MIPS")) {
+                    arch = Arch.MIPS;
                     break;
                 }
             }
@@ -280,11 +283,17 @@ public class NativeScanner {
         // Find in which function every string is used
         Map<String, List<String>> stringsInFunctions = null;
 
+        boolean success = false;
         try {
             stringsInFunctions = findStringsInFunctions(objdumpCmd, rodata.strings(), eps, lib, arch);
+            if (stringsInFunctions != null)
+                success = true;
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.err.println("Cannot find strings in functions, aborting native scanner.");
+        }
+
+        if (!success) {
+            System.err.println("Cannot find strings in " + lib + ", aborting.");
             return;
         }
 
@@ -309,7 +318,7 @@ public class NativeScanner {
             }
 
             eps.forEach ((Long addr, String name) ->
-                         db.add(NATIVE_LIB_ENTRY_POINT, name, String.valueOf(addr)));
+                         db.add(NATIVE_LIB_ENTRY_POINT, lib, name, String.valueOf(addr)));
         }
     }
 
@@ -372,10 +381,34 @@ public class NativeScanner {
             return findStringsInX86_64(foundStrings, eps, lib);
         else if (arch.equals(Arch.AARCH64))
             return findStringsInAARCH64(foundStrings, eps, lib);
-        else if (arch.equals(Arch.ARMEABI))
-            return findStringsInARMEABI(objdumpCmd, foundStrings, lib);
-
+        else if (arch.equals(Arch.ARMEABI)) {
+            // Fuse results for both armeabi/armeabi-v7a.
+            Map<String, List<String>> eabi = findStringsInARMEABI(objdumpCmd, foundStrings, lib);
+            Map<String, List<String>> eabi7 = findStringsInARMEABIv7a(objdumpCmd, foundStrings, lib);
+            return mergeMaps(eabi, eabi7);
+        }
+        System.err.println("Architecture not supported: " + arch);
         return null;
+    }
+
+    /**
+     * Merge two maps from keys to collections of values. Parameters may be mutated.
+     */
+    private static Map<String, List<String>> mergeMaps(Map<String, List<String>> map1,
+                                                       Map<String, List<String>> map2) {
+        Map<String,List<String>> ret = map1;
+        for (Map.Entry<String, List<String>> entry : map2.entrySet()) {
+            String key = entry.getKey();
+            List<String> existing = map1.get(key);
+            if (existing == null)
+                ret.put(key, entry.getValue());
+            else {
+                List<String> newValue = ret.get(key);
+                newValue.addAll(entry.getValue());
+                ret.put(key, newValue);
+            }
+        }
+        return ret;
     }
 
     private static Map<String,List<String>> findStringsInX86_64(Map<Long,String> foundStrings, Map<Long, String> eps, String lib) {
@@ -436,6 +469,118 @@ public class NativeScanner {
         return stringsInFunctions;
     }
 
+    private static Map<String,List<String>> findStringsInARMEABIv7a(String objdumpCmd, Map<Long,String> foundStrings, String lib) {
+        String function = null, programCounter = null;
+        Pattern addrCodePattern = Pattern.compile("^\\s+([a-f0-9]+)[:]\\s+([a-f0-9]+)\\s?([a-f0-9]*)\\s+.*$");
+        Pattern funPattern = Pattern.compile("^.*[<](.*)[>][:]$");
+        Pattern insPattern = Pattern.compile("^\\s+([a-f0-9]+)[:]\\s+([a-f0-9]+)\\s?([a-f0-9]*)\\s+(\\w+[.]?\\w+)(.*)$");
+        Pattern ldrPattern = Pattern.compile("^\\s+(\\w+)[,]\\s.*\\bpc.*[;]\\s[(]([a-f0-9]+).*$");
+        Pattern ldrwPattern = Pattern.compile("^\\s+(\\w+)[,]\\s.*\\bpc.*[;]\\s([a-f0-9]+).*$");
+        Pattern addPattern = Pattern.compile("^\\s(\\w+)[,]\\s(\\w+)[,]?\\s?(\\w*)(.*)$");
+        Pattern movPattern = Pattern.compile("^\\s(\\w+)[,]\\s(\\w+)$");
+        Matcher m = null;
+        Map<String,String> registers = null, addressCode = new HashMap<>();
+        Map<String,List<String>> stringsInFunctions = new HashMap<>();
+
+        ProcessBuilder objdumpBuilder = new ProcessBuilder(objdumpCmd, "-j", ".text", "-d", lib);
+        try {
+            for (String line : runCommand(objdumpBuilder)) {
+                m = addrCodePattern.matcher(line);
+                if (m.find()) {
+                    if (!m.group(3).equals("")) {
+                        String nextAddr = Integer.toHexString(Integer.parseInt(m.group(1),16)+Integer.parseInt("2",16));
+                        addressCode.put(m.group(1),m.group(2));
+                        addressCode.put(nextAddr,m.group(3));
+                    } else {
+                        if (m.group(2).length()==4)
+                            addressCode.put(m.group(1),m.group(2));
+                        else {
+                            addressCode.put(m.group(1),m.group(2).substring(0,4));
+                            String nextAddr = Integer.toHexString(Integer.parseInt(m.group(1),16)+Integer.parseInt("2",16));
+                            addressCode.put(nextAddr, m.group(2).substring(4,8));
+                        }
+                    }
+                }
+            }
+            for (String line : runCommand(objdumpBuilder)) {
+                m = funPattern.matcher(line);
+                if (m.find()) {
+                    function = m.group(1);
+                    if (function.contains("@"))
+                        function = function.substring(0, function.indexOf('@'));
+                    registers = new HashMap<String,String>();
+                    if (debug)
+                        System.out.println("new function " + function);
+                    continue;
+                }
+                try {
+                    m = insPattern.matcher(line);
+                    if (m.find()) {
+                        registers.put("pc",m.group(1));
+                        String instruction = m.group(5);
+                        if (m.group(4).equals("ldr")) {
+                            m = ldrPattern.matcher(instruction);
+                            if (m.find()) {
+                                String addr = m.group(2);
+                                String nextAddr = Integer.toHexString(Integer.parseInt(addr,16)+Integer.parseInt("2",16));
+                                String value = null;
+                                if (addressCode.containsKey(nextAddr))
+                                    value = addressCode.get(nextAddr)+addressCode.get(addr);
+                                else
+                                    value = addressCode.get(addr);
+                                registers.put(m.group(1), value);
+                            }
+                        } else if (m.group(4).equals("ldr.w")) {
+                            m = ldrwPattern.matcher(instruction);
+                            if (m.find()) {
+                                String addr = m.group(2);
+                                String nextAddr = Integer.toHexString(Integer.parseInt(addr,16)+Integer.parseInt("2",16));
+                                String value = null;
+                                if (addressCode.containsKey(nextAddr))
+                                    value = addressCode.get(nextAddr)+addressCode.get(addr);
+                                else
+                                    value = addressCode.get(addr);
+                                registers.put(m.group(1), value);
+                            }
+                        } else if (m.group(4).contains("add") || m.group(4).equals("adr")) {
+                            m = addPattern.matcher(instruction);
+                            if (m.find() && registers.containsKey(m.group(1)) && registers.containsKey(m.group(2))) {
+                                Long address = Long.parseLong(registers.get(m.group(2)), 16);
+                                if (!m.group(3).equals("")) {
+                                    if (!registers.containsKey(m.group(3)))
+                                        if (m.group(4).contains("#"))
+                                            address += Long.parseLong(m.group(4).substring(m.group(4).lastIndexOf('#')),16);
+                                        else
+                                            continue;
+                                    address += Long.parseLong(registers.get(m.group(3)), 16);
+                                } else
+                                    address += Long.parseLong(registers.get(m.group(1)), 16);
+                                Integer len = Long.toHexString(address).length();
+                                if (len>registers.get(m.group(1)).length() && len>registers.get(m.group(2)).length())
+                                    address = Long.parseLong(Long.toHexString(address).substring(1),16);
+                                registers.put(m.group(1),Long.toHexString(address));
+                                address += Long.parseLong("4",16);
+                                String str = foundStrings.get(address);
+                                if (debug)
+                                    System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                                stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                            }
+                        } else if (m.group(4).equals("mov")) {
+                            m = movPattern.matcher(instruction);
+                            if (m.find() && registers.containsKey(m.group(2)))
+                                registers.put(m.group(1),registers.get(m.group(2)));
+                        }
+                    }
+                } catch (NumberFormatException ex) {
+                    System.err.println("Number format error '" + ex.getMessage() + "' in line: " + line);
+                }
+            }
+        } catch (IOException ex) {
+            System.err.println("Could not run objdump: " + ex.getMessage());
+        }
+        return stringsInFunctions;
+    }
+
     private static Map<String,List<String>> findStringsInARMEABI(String objdumpCmd, Map<Long,String> foundStrings, String lib) {
         String function = null, programCounter = null;
         Pattern funPattern = Pattern.compile(".*[<](.*)[>][:]$");
@@ -473,12 +618,16 @@ public class NativeScanner {
                     } else if (m.group(3).equals("add")) {
                         m = addPattern.matcher(instruction);
                         if (m.find() && registers.containsKey(m.group(2)) && registers.containsKey(m.group(3))) {
-                            Long address = Long.parseLong(registers.get(m.group(2)), 16) + Long.parseLong("8", 16);
-                            address += Long.parseLong(registers.get(m.group(3)), 16);
-                            String str = foundStrings.get(address);
-                            if (debug)
-                                System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
-                            stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                            try {
+                                Long address = Long.parseLong(registers.get(m.group(2)), 16) + Long.parseLong("8", 16);
+                                address += Long.parseLong(registers.get(m.group(3)), 16);
+                                String str = foundStrings.get(address);
+                                if (debug)
+                                    System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                                stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<String>()).add(function);
+                            } catch (NumberFormatException ex) {
+                                System.err.println("Number format error '" + ex.getMessage() + "' in line: " + line);
+                            }
                         }
                     } else if (m.group(3).equals("mov")) {
                         m = movPattern.matcher(instruction);
