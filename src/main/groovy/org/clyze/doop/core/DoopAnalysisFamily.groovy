@@ -836,6 +836,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use symbolic links instead of copying cached facts.",
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "X_LOW_MEM",
+					name: "Xlow-mem",
+					group: GROUP_FACTS,
+					description: "Use less memory. Does not support all options."
+			),
 			new AnalysisOption<String>(
 					id: "X_START_AFTER_FACTS",
 					name: "Xstart-after-facts",

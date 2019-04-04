@@ -63,6 +63,13 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
 
+		def generatedFile = null
+		// Don't run in parallel if low on memory
+		if (options.X_LOW_MEM.value) {
+			generatedFile = compilationFuture.get()
+			System.gc()
+		}
+
 		try {
 			log.info "[Task FACTS...]"
 			generateFacts()
@@ -71,21 +78,23 @@ class SouffleAnalysis extends DoopAnalysis {
 			if (options.X_SERVER_CHA.value) {
 				log.info "[CHA...]"
 				def methodLookupFile = new File("${Doop.doopHome}/souffle-scripts/method-lookup-script.dl")
-				def generatedFile = script.compile(methodLookupFile, outDir, cacheDir,
+				def generatedFile0 = script.compile(methodLookupFile, outDir, cacheDir,
 						options.SOUFFLE_PROFILE.value as boolean,
 						options.SOUFFLE_DEBUG.value as boolean,
 						provenance,
 						liveProf,
 						options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
 						options.X_CONTEXT_REMOVER.value as boolean)
-				script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+				script.run(generatedFile0, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
 						(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance)
 				log.info "[CHA Done]"
 			}
 
 			if (options.X_STOP_AT_FACTS.value) return
 
-			def generatedFile = compilationFuture.get()
+			if (!options.X_LOW_MEM.value) {
+				generatedFile = compilationFuture.get()
+			}
 			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
 					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance, liveProf)
 
