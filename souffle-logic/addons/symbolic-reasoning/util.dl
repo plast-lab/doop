@@ -1,29 +1,52 @@
-// #define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 
 ToString(?expr, ?out) :-
   isExpr(?expr),
+  !isOperator(?base),
   ?expr = [?base, ?type, nil, nil],
   ?out = ?base.
-ToString(?expr, ?out) :-
-  isExpr(?expr),
-  isOperator(?base),
-  ?expr = [?base, ?type, ?exprLeft, ?exprRight],
-  ToString(?exprLeft, ?outLeft),
-  ToString(?exprRight, ?outRight),
-  ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
+
 ToString(?expr, ?out) :-
   isExpr(?expr),
   isOperator(?base),
   ?expr = [?base, ?type, ?exprLeft, nil],
+  isExpr(?exprLeft),
   ToString(?exprLeft, ?outLeft),
   ?out = cat(?base, cat(" ", ?outLeft)).
 
+ToString(?expr, ?out) :-
+  isExpr(?expr),
+  isOperator(?base),
+  ?expr = [?base, ?type, ?exprLeft, ?exprRight],
+  isExpr(?exprLeft),
+  isExpr(?exprRight),
+  ToString(?exprLeft, ?outLeft),
+  ToString(?exprRight, ?outRight),
+  ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
 #endif
 
+Sanity(?expr) :-
+  isExpr(?expr),
+  !isOperator(?base),
+  ?expr = [?base, ?type, nil, nil].
+
+Sanity(?expr) :-
+  isExpr(?expr),
+  ?expr = [?op, ?type, ?exprL, nil],
+  isOperator(?op),
+  isExpr(?exprL).
+
+Sanity(?expr) :-
+  isExpr(?expr),
+  ?expr = [?op, ?type, ?exprL, ?exprR],
+  isOperator(?op),
+  isExpr(?exprL),
+  isExpr(?exprR).
+
 isExpr(?expr) :-
-BuildPathExprBefore(_, _, ?expr, _).
+  BuildPathExprBefore(_, _, ?expr, _).
 isExpr(?expr) :-
   PathExpressionBefore(_, _, ?expr).
 isExpr(?expr) :-
@@ -270,22 +293,3 @@ Expression_Method(?expr, ?meth) :-
 
 Expression_Method(?expr, ?meth) :-
   PathExpressionBefore(?meth, ?insn, ?expr).
-
-Sanity(?expr) :-
-  isExpr(?expr),
-  !isOperator(?base),
-  ?expr = [?base, ?type, nil, nil].
-
-Sanity(?expr) :-
-  isExpr(?expr),
-  ?expr = [?op, ?type, ?exprL, nil],
-  isOperator(?op),
-  isExpr(?exprL).
-
-
-Sanity(?expr) :-
-  isExpr(?expr),
-  ?expr = [?op, ?type, ?exprL, ?exprR],
-  isOperator(?op),
-  isExpr(?exprL),
-  isExpr(?exprR).

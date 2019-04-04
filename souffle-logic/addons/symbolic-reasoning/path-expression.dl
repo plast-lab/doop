@@ -49,12 +49,19 @@ PathExpressionAfterTrue(?meth, ?insn, ?pathExpr) :-
 // Base case: path ?expression before ?insn starts with the ?expression
 // flowing from the first ?predecessor in the enumeration
 
-// Single ?predecessor case
+// Single predecessor case
+
+PathExpressionBefore(?meth, ?insn, ?exprBase) :-
+  PathExpressionAfterTrue(?meth, ?pred, ?exprBase),
+  SinglePredOfInsnInMethod(?pred, ?insn, ?meth),
+  isIf_Insn(?pred),
+  IsJumpTarget(?insn).
 
 PathExpressionBefore(?meth, ?insn, ?exprBase) :-
   PathExpressionAfterFalse(?meth, ?pred, ?exprBase),
   SinglePredOfInsnInMethod(?pred, ?insn, ?meth),
-  isIf_Insn(?pred).
+  isIf_Insn(?pred),
+  !IsJumpTarget(?insn).
 
 PathExpressionBefore(?meth, ?insn, ?exprBase) :-
   PathExpressionAfterTrue(?meth, ?pred, ?exprBase),

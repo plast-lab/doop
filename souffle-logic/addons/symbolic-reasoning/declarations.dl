@@ -47,6 +47,13 @@
 .decl NextOfMultiplePredsOfInsnInMethod(?next: Instruction, ?prev: Instruction, ?insn: Instruction, ?meth: Method)
 .decl LastOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)
 
+#ifdef DEBUG
+.output SinglePredOfInsnInMethod
+.output FirstOfMultiplePredsOfInsnInMethod
+.output NextOfMultiplePredsOfInsnInMethod
+.output LastOfMultiplePredsOfInsnInMethod
+#endif
+
 .decl isBooleanExpr(?expr: Expr)
 .decl isArithmeticExpr(?expr: Expr)
 .decl isExpr(?expr: Expr)
