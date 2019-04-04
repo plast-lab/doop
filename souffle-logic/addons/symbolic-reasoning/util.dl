@@ -1,4 +1,9 @@
-#define DEBUG
+#include "declarations.dl"
+
+// Should be used only with a relatively small set of
+// input facts, otherwise the computation would lead
+// to segmentation violation due to the multiple
+// concatenations...
 
 #ifdef DEBUG
 
@@ -10,21 +15,19 @@ ToString(?expr, ?out) :-
 
 ToString(?expr, ?out) :-
   isExpr(?expr),
-  isOperator(?base),
-  ?expr = [?base, ?type, ?exprLeft, nil],
+  isOperator(?op),
+  ?expr = [?op, ?type, ?exprLeft, nil],
   isExpr(?exprLeft),
   ToString(?exprLeft, ?outLeft),
-  ?out = cat(?base, cat(" ", ?outLeft)).
+  ?out = cat(?op, cat(" ", ?outLeft)).
 
 ToString(?expr, ?out) :-
   isExpr(?expr),
-  isOperator(?base),
-  ?expr = [?base, ?type, ?exprLeft, ?exprRight],
-  isExpr(?exprLeft),
-  isExpr(?exprRight),
+  isOperator(?op),
+  ?expr = [?op, ?type, ?exprLeft, ?exprRight],
   ToString(?exprLeft, ?outLeft),
   ToString(?exprRight, ?outRight),
-  ?out = cat(?outLeft, cat(" ", cat(?base, cat(" ", ?outRight)))).
+  ?out = cat(?outLeft, cat(" ", cat(?op, cat(" ", ?outRight)))).
 #endif
 
 Sanity(?expr) :-
