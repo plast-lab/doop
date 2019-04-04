@@ -126,6 +126,20 @@ NegateOp("<=", ">").
 /* Rules */
 
 /*
+ * Rule to negate a condition expression
+ */
+
+isExpr(?negatedCond),
+NegationOfConditionAtIfInsn(?cond, ?negatedCond, ?insn) :-
+	Instruction_Method(?insn, ?meth),
+	isIf_Insn(?insn),
+	DummyIf_Var(?insn, ?dummyVar),
+	ResolveExpr(?meth, ?dummyVar, ?cond),
+	?cond = [?op, ?type, ?exprLeft, ?exprRight],
+	NegateOp(?op, ?negatedOp),
+	?negatedCond = [?negatedOp, ?type, ?exprLeft, ?exprRight].
+
+/*
  * Multiple predecessors may flow up to this statement, thus we need
  * to enumerate all possible predecessors in order to build the
  * corresponding path expression, before the insnruction.
@@ -287,12 +301,11 @@ IfVarConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
 
 Expression_Method(?expr, ?meth) :-
   ResolveExpr(?meth, ?var, ?expr).
-
+Expression_Method(?expr, ?meth) :-
+  BuildPathExprBefore(?meth, _, ?expr, _). 
 Expression_Method(?expr, ?meth) :-
   PathExpressionAfterTrue(?meth, ?insn, ?expr).
-
 Expression_Method(?expr, ?meth) :-
   PathExpressionAfterFalse(?meth, ?insn, ?expr).
-
 Expression_Method(?expr, ?meth) :-
   PathExpressionBefore(?meth, ?insn, ?expr).
