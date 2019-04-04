@@ -63,7 +63,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
 
-		def generatedFile = null
+		def generatedFile
 		// Don't run in parallel if low on memory
 		if (options.X_LOW_MEM.value) {
 			generatedFile = compilationFuture.get()
