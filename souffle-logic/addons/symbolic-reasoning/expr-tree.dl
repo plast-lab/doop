@@ -4,7 +4,7 @@
  *  2) Field loads
  *  3) Static class fields
  *  4) Num Constant assignments
- *
+ *  5) Phi instructions
  */
 
 // Method Parameters
@@ -66,7 +66,30 @@ isExpr(?expr) :-
   AssignNumConstant_Id(?insn, ?const),
   ?expr = [?const, ?type, nil, nil].
 
-// Assign Local
+// AssignLocal for phi instructions
+
+/*
+ *
+ * Phi-expressions are considered to be
+ * symbolic inputs. That is, a phi
+ * assignment to a variable is handled
+ * just like formal parameters, field
+ * loads etc
+ *
+ */
+
+isExpr(?expr),
+ResolveExpr(?meth, ?var, ?expr) :-
+  Instruction_Method(?insn, ?meth),
+  isAssignLocal_Insn(?insn),
+  AssignInstruction_To(?insn, ?var),
+  Var_Type(?var, ?type),
+  isPrimitiveType(?type),
+  c = count: AssignInstruction_To(_, ?var),
+  c > 1,
+  ?expr = [?var, ?type, nil, nil].
+
+// Assign Local for non-phi instructions
 
 ResolveExpr(?meth, ?var, ?expr) :-
   Instruction_Method(?insn, ?meth),
@@ -78,6 +101,7 @@ ResolveExpr(?meth, ?var, ?expr) :-
   c = 1,
   AssignLocal_From(?insn, ?from),
   ResolveExpr(?meth, ?from, ?expr).
+
 
 // Assign Unary
 
