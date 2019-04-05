@@ -221,7 +221,7 @@ class InvokedynamicGenerator implements Opcodes {
         cw.visitEnd();
 
         byte[] bytes = cw.toByteArray();
-        String file = invokedynamicClass + ".class";
+        String file = "build/classes/java/main/" + invokedynamicClass + ".class";
         System.out.println("Invokedynamic bytecode saved: " + file);
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(bytes);

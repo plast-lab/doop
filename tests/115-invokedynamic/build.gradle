@@ -44,12 +44,6 @@ jar {
     }
     version null
 }
-
-task packageTest {
-    description 'Package invokedynamic test'
-    group = 'Other'
-    def cmd = "jar -uf ./build/libs/115-invokedynamic.jar InvokedynamicClass.class"
-    cmd.execute()
-}
-packageTest.dependsOn jar
-packageTest.dependsOn run
+// To generate the JAR, we must first run the program to generate the
+// missing class.
+jar.dependsOn run
