@@ -338,7 +338,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case CONST_HIGH16: {
                 int reg = ((OneRegisterInstruction)instr).getRegisterA();
                 int lit = ((NarrowLiteralInstruction)instr).getNarrowLiteral();
-                writeAssignNumConstant(reg, String.valueOf(lit), index);
+                writeAssignNumConstant(reg, String.valueOf(lit), index, op);
                 if (lit == 0)
                     zeroedArraySizeRegister = new ZeroedRegister(index, reg);
                 else if ((zeroedArraySizeRegister != null) && ( zeroedArraySizeRegister.reg == reg))
@@ -351,13 +351,13 @@ class DexMethodFactWriter extends JavaFactWriter {
             case CONST_WIDE_32: {
                 int reg = ((OneRegisterInstruction)instr).getRegisterA();
                 long lit = ((WideLiteralInstruction)instr).getWideLiteral();
-                writeAssignNumConstant(reg, String.valueOf(lit), index);
+                writeAssignNumConstant(reg, String.valueOf(lit), index, op);
                 break;
             }
             case CONST_WIDE_HIGH16: {
                 int reg = ((OneRegisterInstruction) instr).getRegisterA();
                 @SuppressWarnings("UnnecessaryLocalVariable") long signExtendedVal64 = ((LongHatLiteralInstruction) instr).getHatLiteral();
-                writeAssignNumConstant(reg, String.valueOf(signExtendedVal64), index);
+                writeAssignNumConstant(reg, String.valueOf(signExtendedVal64), index, op);
                 break;
             }
 
@@ -484,7 +484,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case MOVE_OBJECT:
             case MOVE_OBJECT_FROM16:
             case MOVE_OBJECT_16:
-                writeAssignLocal((TwoRegisterInstruction) instr, index);
+                writeAssignLocal((TwoRegisterInstruction) instr, index, op);
                 break;
             case INSTANCE_OF:
                 writeAssignInstanceOf((TwoRegisterInstruction)instr, (ReferenceInstruction)instr, index);
@@ -865,6 +865,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         String in_type  = null;
         String out_type = null;
         switch (op) {
+        // Binops
         case ADD_INT: case SUB_INT: case  MUL_INT : case  DIV_INT:
         case REM_INT: case AND_INT: case   OR_INT : case  XOR_INT:
         case SHL_INT: case SHR_INT: case USHR_INT : case RSUB_INT:
@@ -938,6 +939,32 @@ class DexMethodFactWriter extends JavaFactWriter {
             in_type = "double"; out_type = "long"; break;
         case DOUBLE_TO_FLOAT:
             in_type = "double"; out_type = "float"; break;
+
+        // Moves
+        case MOVE:
+        case MOVE_FROM16:
+        case MOVE_16:
+            in_type = "prim32"; out_type = "prim32"; break;
+        case MOVE_WIDE:
+        case MOVE_WIDE_FROM16:
+        case MOVE_WIDE_16:
+            in_type = "prim64"; out_type = "prim64"; break;
+        case MOVE_OBJECT:
+        case MOVE_OBJECT_FROM16:
+        case MOVE_OBJECT_16:
+            in_type = "obj"; out_type = "obj"; break;
+
+        // Move constants
+        case CONST_4:
+        case CONST_16:
+        case CONST:
+        case CONST_HIGH16:
+            in_type = "32bit"; out_type = "32bit"; break;
+
+        case CONST_WIDE:
+        case CONST_WIDE_16:
+        case CONST_WIDE_32:
+            in_type = "64bit"; out_type = "64bit"; break;
         }
         if (in_type == null || out_type == null)
             System.err.println("Cannot determine statement type for instruction " + insn);
@@ -995,6 +1022,11 @@ class DexMethodFactWriter extends JavaFactWriter {
         String from = local(tri.getRegisterB());
         String className = raiseTypeId(((DexBackedTypeReference)ri.getReference()).getType());
         _db.add(ASSIGN_INSTANCE_OF, insn, str(index), from, to, className, methId);
+    }
+
+    private void writeAssignLocal(TwoRegisterInstruction tri, int index, Opcode op) {
+        writeAssignLocal(tri, index);
+        writeStatementType(instructionId("assign", index), op);
     }
 
     private void writeAssignLocal(TwoRegisterInstruction tri, int index) {
@@ -1227,6 +1259,13 @@ class DexMethodFactWriter extends JavaFactWriter {
         // Consume zeroed register information.
         zeroedArraySizeRegister = null;
         return b;
+    }
+
+    private void writeAssignNumConstant(int reg, String constant, int index, Opcode op) {
+        writeAssignNumConstant(reg, constant, index);
+
+        String insn = instructionId("assign", index);
+        //writeStatementType(insn, op);
     }
 
     private void writeAssignNumConstant(int reg, String constant, int index) {

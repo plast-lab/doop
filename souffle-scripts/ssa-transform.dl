@@ -462,6 +462,38 @@ RewriteAssignNull(?insn, ?index, ?to, ?inmethod) :-
     SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
     SSA_InstructionIndex(?insn, ?index).
 
+RewriteAssignNull(?insn, ?index, ?to, ?inmethod) :-
+    isZeroAssignTo(?insn, ?to),
+    SSA_Type(?to, ?type),
+    isReferenceType(?type),
+    SSA_AssignDetails(?insn, _, _, _, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index).
+
+.decl RewriteAssignNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)
+.output RewriteAssignNumConstant(filename="AssignNumConstant.facts")
+
+.decl SSA_AssignNumConstant(?insn:symbol, ?to:symbol, ?const:symbol, ?inmethod:symbol)
+SSA_AssignNumConstant(?insn, ?to, ?const, ?inmethod) :-
+    _AssignNumConstant(?insn, _, ?const, _, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _).
+
+// Fallback rule, if type inference failed to resolve any type for ?to.
+RewriteAssignNumConstant(?insn, ?index, ?const, ?to, ?inmethod) :-
+    SSA_AssignNumConstant(?insn, ?to, ?const, ?inmethod),
+    !SSA_Type(?to, _),
+    SSA_InstructionIndex(?insn, ?index).
+
+// If we assign a num consant, and the resolved type is not a reference type, then it belongs here.
+RewriteAssignNumConstant(?insn, ?index, ?const, ?to, ?inmethod) :-
+    SSA_AssignNumConstant(?insn, ?to, ?const, ?inmethod),
+    SSA_Type(?to, ?type),
+    !isReferenceType(?type),
+    SSA_InstructionIndex(?insn, ?index).
+
+.decl isZeroAssignTo(?insn:symbol, ?to:symbol)
+isZeroAssignTo(?insn, ?to) :-
+    SSA_AssignNumConstant(?insn, ?to, "0", _).
+
 .decl RewriteBootstrapParam(?index:number, ?invocation:symbol, ?var:symbol)
 .output RewriteBootstrapParam(filename="BootstrapParam.facts")
 
@@ -492,14 +524,6 @@ RewriteExceptionHandler(?handler, ?method, ?index, ?type, ?begin, ?end) :-
 RewriteExceptionHandler_FormalParam(?handler, ?var) :-
     isExceptionHandler(?handler),
     SSA_AssignDetails(?handler, _, _, ?var, _).
-
-.decl RewriteAssignNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)
-.output RewriteAssignNumConstant(filename="AssignNumConstant.facts")
-
-RewriteAssignNumConstant(?insn, ?index, ?const, ?to, ?inmethod) :-
-    _AssignNumConstant(?insn, _, ?const, _, ?inmethod),
-    SSA_AssignDetails(?insn, _, _, ?to, _),
-    SSA_InstructionIndex(?insn, ?index).
 
 .decl RewriteAssignReturnValue(?invocation:symbol, ?to:symbol)
 .output RewriteAssignReturnValue(filename="AssignReturnValue.facts")
@@ -889,10 +913,11 @@ Assign(?stmt, ?var1, ?var2) :-
     RewriteAssignLocal(?stmt, _, ?var1, ?var2, _).
 
 // f(?var1)
-Assign(?invocation, ?var1, ?var2) :-
+Assign(?assign_id, ?var1, ?var2) :-
     MethodInvocation_Method(?invocation, ?method),
     RewriteActualParam(?index, ?invocation, ?var2),
-    SSA_FormalParam(?index, ?method, ?var1).
+    SSA_FormalParam(?index, ?method, ?var1),
+    ?assign_id = cat(?invocation, cat("/arg_", to_string(?index))).
 
 // ?var1[index] = ?var2
 AssignArray(?stmt, ?var1, ?var2) :-
@@ -1118,7 +1143,8 @@ ConstraintForVar(?to, ?invocation),
 LowerBoundTypeForConstraint(?to, ?type, ?invocation) :-
     RewriteAssignReturnValue(?invocation, ?to),
     MethodInvocation_Method(?invocation, ?signature),
-    Method_ReturnType(?signature, ?type).
+    Method_ReturnType(?signature, ?type),
+    ?assign_id = cat(?invocation, "/return").
 
 // Logic for field loads
 
@@ -1231,6 +1257,23 @@ LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     StatementType(?insn, _, ?t),
     (Type_long(?t); Type_double(?t)),
     isPrimitive64Bottom(?type).
+
+ConstraintForVar(?to, ?insn),
+UpperBoundTypeForConstraint(?to, ?type, ?insn) :-
+    SSA_AssignNumConstant(?insn, ?to, _, _),
+    StatementType(?insn, _, "32bit"),
+    isPrimitive32Top(?type).
+
+ConstraintForVar(?to, ?insn),
+UpperBoundTypeForConstraint(?to, "java.lang.Object", ?insn) :-
+    SSA_AssignNumConstant(?insn, ?to, "0", _),
+    StatementType(?insn, _, "32bit").
+
+ConstraintForVar(?to, ?insn),
+UpperBoundTypeForConstraint(?to, ?type, ?insn) :-
+    SSA_AssignNumConstant(?insn, ?to, ?const, _),
+    StatementType(?insn, _, "64bit"),
+    isPrimitive64Top(?type).
 
 .decl ExistsNonGuardType(?var:symbol)
 
