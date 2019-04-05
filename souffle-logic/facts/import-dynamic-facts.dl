@@ -277,3 +277,28 @@ DynamicVarPointsTo(?hctx, ?heap, ?ctx, ?sootVar) :-
     contains(?dumpedVar, ?sootVar). // match soot var name with dumped var name
 
 #endif
+
+/** Register declaring type for dynamic heap allocations **/
+
+mainAnalysis.Value_DeclaringType(?heap, ?type) :-
+   _DynamicNormalHeapAllocation(_, ?method, _, ?heap),
+   Method_DeclaringType(?method, ?type).
+
+.decl DynamicHeapId(?heap:symbol)
+DynamicHeapId(?heap) :- _DynamicArrayIndexPointsTo(_, ?heap).
+DynamicHeapId(?heap) :- _DynamicInstanceFieldPointsTo(_, _, _, ?heap).
+DynamicHeapId(?heap) :- _DynamicStaticFieldPointsTo(_, _, ?heap).
+DynamicHeapId(?heap) :- _DynamicNormalHeapAllocation(_, _, _, ?heap).
+DynamicHeapId(?heap) :- _DynamicNormalHeapObject(?heap, _, _).
+
+#ifndef REFLECTION
+// Naive handling of declaring type for class metaobjects (when reflection support is disabled).
+mainAnalysis.Value_DeclaringType(?heap, "java.lang.Class") :-
+   DynamicHeapId(?heap),
+   substr(?heap, 0, 7) = "<class ".
+#endif // REFLECTION
+
+// For unknown objects, assume declaring type is Object (similar to mock values).
+mainAnalysis.Value_DeclaringType(?heap, "java.lang.Object") :-
+   DynamicHeapId(?heap),
+   substr(?heap, 0, 8) = "Unknown:".

@@ -19,9 +19,9 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :-
   isImmutableHContext(?hctx),
   Value_Type(?value, ?type),
   ReifiedClass(?type, ?classValue).
-  #ifdef INFORMATION_FLOW
+#ifdef INFORMATION_FLOW
   .plan 2:(4,2,1,3,5)
-  #endif
+#endif // INFORMATION_FLOW
 /*************************************************************
  * java.lang.Class.forName
  *
@@ -97,12 +97,12 @@ VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   ReifiedClass(?className, ?classValue),
   isStringConstant(?className),
   Value_isHeap(?className).
-  #ifdef INFORMATION_FLOW
+#ifdef INFORMATION_FLOW
   .plan 2:(6,5,4,3,2,1)
-  #endif
-  #ifndef X_CONTEXT_REMOVER
+#endif // INFORMATION_FLOW
+#ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1,4,5,6)
-  #endif
+#endif // !X_CONTEXT_REMOVER
 
 /*************************************************************
  * java.lang.Class.getSimpleName
@@ -111,6 +111,7 @@ VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
  *************************************************************/
 
 // This is an opaque invocation, so we read its facts directly.
+OpaqueCallGraphEdge(?invocation, ?method),
 VarPointsTo(?hctx, ?simpleName, ?ctx, ?return) :-
   ReachableContext(?ctx, ?caller),
   _VirtualMethodInvocation(?invocation, _, ?method, ?base, ?caller),
@@ -132,6 +133,7 @@ VarPointsTo(?hctx, ?simpleName, ?ctx, ?return) :-
 .decl Enums(?enumsArray:Value, ?enumType:Type, ?ctx:configuration.Context, ?return:Var)
 
 // This is an opaque invocation, so we read its facts directly.
+OpaqueCallGraphEdge(?invocation, ?method),
 Enums(?enumsArray, ?enumType, ?ctx, ?return),
 MockValueConsMacro(?enumsArray, cat(?enumType, "[]")) :-
   ReachableContext(?ctx, ?caller),
@@ -589,6 +591,33 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   isType(?type),
   ?type = "java.lang.ClassLoader",
   ReflectiveAllocation(?invocation, ?type, ?value).
+
+/*************************************************************
+ * java.lang.Class.get[Declared]Annotations()
+ *
+ *   public Annotation[] getAnnotations()
+ *   public Annotation[] getDeclaredAnnotations()
+ *
+ *************************************************************/
+
+.decl PopulateAnnotationsForType(?annotationsArray:Value, ?type:Type, ?hctx:configuration.HContext)
+
+MockValueConsMacro(?annotationsArray, "java.lang.annotation.Annotation[]"),
+VarPointsTo(?hctx, ?annotationsArray, ?ctx, ?to),
+PopulateAnnotationsForType(?annotationsArray, ?type, ?hctx) :-
+( java_lang_Class_getAnnotations(?invocation, ?to, ?from) ;
+  java_lang_Class_getDeclaredAnnotations(?invocation, ?to, ?from)),
+  VarPointsTo(?hctx, ?classValue, ?ctx, ?from),
+  ReifiedClass(?type, ?classValue),
+  // Spec: each invocation creates a new annotation array.
+  ?annotationsArray = cat("<annotations array for type ", cat(?type, cat(" at ", cat(?invocation, ">")))),
+  isImmutableHContext(?hctx).
+
+MockValueConsMacro(?annotationValue, "java.lang.annotation.Annotation"),
+ArrayIndexPointsTo(?hctx, ?annotationValue, ?hctx, ?annotationsArray) :-
+  PopulateAnnotationsForType(?annotationsArray, ?type, ?hctx),
+  Type_Annotation(?type, ?annotation),
+  ?annotationValue = cat("<annotation ", cat(?annotation, cat(" for ", cat(?type, ">")))).
 
 /*************************************************************
  * Auxiliaries

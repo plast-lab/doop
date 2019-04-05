@@ -386,9 +386,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--scan-native-code"]
         }
 
-	if (options.X_SERVER_LOGIC.value || options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
+        if (options.GENERATE_ARTIFACTS_MAP.value) {
             params += ["--write-artifacts-map"]
-	}
+        }
 
         params.addAll(["--log-dir", Doop.doopLog])
         params.addAll(["-d", factsDir.toString()] + inputArgs)
@@ -452,6 +452,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--failOnMissingClasses"]
         }
 
+        if (options.X_LOW_MEM.value) {
+            params += ["--lowMem"]
+        }
+
         log.debug "Params of soot: ${params.join(' ')}"
 
         factGenTime = Helper.timing {
@@ -476,6 +480,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     redo = false
                     Helper.execJavaNoCatch(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
                 } catch (Throwable t) {
+                    if (isFatal(loader, t)) {
+                        throw new RuntimeException("Fatal error, see log for details.")
+                    }
                     // Try to restart fact generation a limited number of times
                     // (e.g., if Soot randomly fails or classes are missing).
                     String[] extraClasses = checkMissingClasses(loader, t)
@@ -513,25 +520,54 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.info "Soot fact generation time: ${factGenTime}"
     }
 
-    // Since Soot runs in a different class loader, we cannot do
-    // instanceof checks but have to resort to string checks to find
-    // the type of thrown exceptions.
-    //
-    // @param loader  the class loader
-    // @param t       a throwable to be checked
-    // @return        if t is a MissingClassesException, field
-    //                'classes' is returned here, otherwise null.
-    String[] checkMissingClasses(ClassLoader loader, Throwable t) {
+    /** Reads the value of a field of a Throwable object thrown by a
+     *  different class loader via an InvocationTargetException.
+     *  Since Soot runs in a different class loader, we cannot do
+     *  instanceof checks but have to resort to string checks to
+     *  find the type of thrown exceptions.
+     *
+     * @param loader     the class loader
+     * @param t          the throwable to check
+     * @param className  the name of the (sub-)class of the Throwable
+     * @param fieldName  the name of the field
+     * @return           the value of the field, or null if the field
+     *                   does not exist
+     */
+    Object getThrowableField(ClassLoader loader, Throwable t, String className, String fieldName) {
         if (t instanceof InvocationTargetException) {
-            final String MISSING_CLASSES = 'org.clyze.doop.soot.MissingClassesException'
             Throwable cause = ((InvocationTargetException)t).getTargetException() as Throwable
-            if (cause.getClass().getName() == MISSING_CLASSES) {
-                Field classesFld = loader.loadClass(MISSING_CLASSES).getDeclaredField("classes")
+            if (cause.getClass().getName() == className) {
+                Field classesFld = loader.loadClass(className).getDeclaredField(fieldName)
                 classesFld.setAccessible(true)
-                return classesFld.get(cause) as String[]
+                return classesFld.get(cause)
             }
         }
         return null
+    }
+
+
+    /**
+     * Read the 'classes' field of MissingClassesException.
+     *
+     * @param loader  the class loader
+     * @param t       the throwable to check
+     *  @return       if t is a MissingClassesException, field
+     *                'classes' is returned here, otherwise null.
+     */
+    String[] checkMissingClasses(ClassLoader loader, Throwable t) {
+        return getThrowableField(loader, t, 'org.clyze.doop.soot.MissingClassesException', 'classes') as String[]
+    }
+
+    /**
+     * Read the 'fatal' field of a DoopErrorCodeException.
+     *
+     * @param loader  the class loader
+     * @param t       the throwable to check
+     * @return        the value of the field or false if the field does not exist
+     */
+    boolean isFatal(ClassLoader loader, Throwable t) {
+        Boolean b = getThrowableField(loader, t, 'org.clyze.doop.common.DoopErrorCodeException', 'fatal')
+        return b ? b as boolean : false
     }
 
     private static void alsoResolve(Collection<String> params, Collection<String> extraClasses) {
@@ -622,6 +658,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         String jar = inputFiles[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
+        if (jarExt.toLowerCase() == 'apk') {
+            log.info "Error: jphantom does not support .apk inputs"
+            throw new DoopErrorCodeException(23)
+        }
         String newJar = "${jarName}-complemented.${jarExt}"
         String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
         log.debug "Params of jphantom: ${params.join(' ')}"
@@ -634,16 +674,16 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
     }
 
+    // Generate the text of the "meta" file of the cached facts directory.
     protected String cacheMeta() {
-        Collection<String> inputJars = inputFiles.collect {
-            File file -> file.toString()
-        }
+        Collection<String> inputs = DoopAnalysisFamily.getAllInputs(options)
+            .collect { it.toString() }
         Collection<String> cacheOptions = options.values().findAll {
             it.forCacheID
         }.collect {
             AnalysisOption option -> option.toString()
         }.sort()
-        return (inputJars + cacheOptions).join("\n")
+        return (inputs + cacheOptions).join("\n")
     }
 
     /**

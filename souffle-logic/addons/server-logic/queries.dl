@@ -249,18 +249,14 @@ Server_Method_Subtype(?method, ?subMethod) :-
   Method_SimpleName(?subMethod, ?name),
   Method_Descriptor(?subMethod, ?desc).
 
-// Rule to handle covariant return types.
+// Rule to handle covariant return types (so that the user does not
+// land on an invisible bridge method in Java sources).
 Server_Method_Subtype(?method, ?subMethod) :-
-  Method_DeclaringType(?method, ?type),
-  Method_SimpleName(?method, ?name),
-  Method_Descriptor(?method, ?desc),
-  ?name != "<clinit>",
-  ?name != "<init>",
-  basic.SubtypeOfDifferent(?subType, ?type),
-  _Valid_Interesting_Type(?type),
-  _Valid_Interesting_Type(?subType),
-  basic.MethodImplementedModuloCovariance(?name, _, ?subType, ?subMethod),
-  basic.MethodLookup(?name, ?desc, ?subType, ?subMethod).
+  Server_Method_Subtype(?method, ?bridge),
+  Method_DeclaringType(?bridge, ?type),
+  Method_SimpleName(?bridge, ?name),
+  Method_Descriptor(?bridge, ?desc),
+  basic.MethodImplementedModuloCovariance(?name, ?desc, ?type, ?subMethod).
 
 
 // All the methods reachable from a method (transitive call-graph)
@@ -305,11 +301,14 @@ Server_Invocation_Values(?fromMethod, ?invo, ?toMethod) :-
   mainAnalysis.AnyCallGraphEdge(?invo, ?toMethod),
   Instruction_Method(?invo, ?fromMethod).
 
-#ifdef REFLECTION
+// Augment invocation values with targets of invoked covariant
+// bridges (which are invisible in the case of Java sources).
 Server_Invocation_Values(?fromMethod, ?invo, ?toMethod) :-
-  mainAnalysis.ReflectiveCallGraphEdge(_, ?invo, _, ?toMethod),
-  Instruction_Method(?invo, ?fromMethod).
-#endif // REFLECTION
+  Server_Invocation_Values(?fromMethod, ?invo, ?bridge),
+  Method_DeclaringType(?bridge, ?type),
+  Method_SimpleName(?bridge, ?name),
+  Method_Descriptor(?bridge, ?desc),
+  basic.MethodImplementedModuloCovariance(?name, ?desc, ?type, ?toMethod).
 
 Server_ClassCallsClass(?fromClass, ?toClass) :-
   Server_Invocation_Values(?fromMethod, _, ?toMethod),
@@ -329,13 +328,12 @@ Server_ClassCallsClass(?fromClass, ?toClass) :-
 .decl _AppReachable(?method:Method)
 
 _AppVirtual(?invo) :-
-  // Use facts so that opaque method invocations are also recognized.
   _VirtualMethodInvocation(?invo, _, _, _, ?method),
   ApplicationMethod(?method).
 
 _AppVirtual_Resolved(?invo) :-
   _AppVirtual(?invo),
-  mainAnalysis.CallGraphEdge(_, ?invo, _, _).
+  mainAnalysis.AnyCallGraphEdge(?invo, _).
 
 _AppReachable(?method) :-
   mainAnalysis.Reachable(?method),

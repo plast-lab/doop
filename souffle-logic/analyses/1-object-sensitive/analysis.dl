@@ -18,7 +18,7 @@
 .decl ContextToHContext(?ctx:Context, ?hctx:HContext)
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?calleeCtx = [?value],
     ?tomethod = ?tomethod.             
 
@@ -30,7 +30,8 @@
     isContext(?ctx),
     ?ctx = [?value].
 
-  #define UNIQUE_HCONTEXT "<<unique-hcontext>>"
+// Do not indent: this breaks some cpp versions.
+#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
 
   RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
     RecordContextRequest(?ctx, ?value, ?var),      

@@ -5,11 +5,13 @@ import groovy.util.logging.Log4j
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.utils.CheckSum
+import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 import org.clyze.utils.Helper
 
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
+import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
@@ -25,13 +27,23 @@ class SouffleScript {
 	long compilationTime = 0L
 	long executionTime = 0L
 
+	void preprocess(File output, File input) {
+		CPreprocessor cpp = new CPreprocessor(executor)
+		cpp.disableLineMarkers().enableLogOutput()
+		cpp.preprocessIfExists(output.canonicalPath, input.canonicalPath)
+	}
+
 	File compile(File origScriptFile, File outDir, File cacheDir,
                  boolean profile = false, boolean debug = false,
                  boolean provenance = false, boolean liveProf = false,
-                 boolean forceRecompile = true, boolean removeContext = false) {
+                 boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
 
 		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
-		executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
+		preprocess(scriptFile, origScriptFile)
+
+		if (useFunctors) {
+			detectFunctors(outDir)
+		}
 
 		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
 		def c2 = c1 + profile.toString() + provenance.toString() + liveProf.toString()
@@ -53,7 +65,8 @@ class SouffleScript {
 			if (debug)
 				compilationCommand << ("-r${outDir}/report.html" as String)
 			if (provenance)
-				compilationCommand << ("--provenance=1" as String)
+				// Another possible mode is 'explore' but does not support history.
+				compilationCommand << ("--provenance=explain" as String)
 			if (liveProf)
 				compilationCommand << ("--live-profile" as String)
 
@@ -127,7 +140,7 @@ class SouffleScript {
                    boolean removeContext = false) {
 
         def scriptFile = File.createTempFile("gen_", ".dl", outDir)
-        executor.execute("cpp -P $origScriptFile $scriptFile".split().toList()) { log.info it }
+		preprocess(scriptFile, origScriptFile)
 
         def db = new File(outDir, "database")
         deleteQuietly(db)
@@ -167,4 +180,35 @@ class SouffleScript {
         return [compilationTime, executionTime]
     }
 
+	// Detect libfunctors.so and create corresponding symbolic link.
+	private void detectFunctors(File outDir) {
+		String envVar = "LD_LIBRARY_PATH"
+		String ldLibPath = System.getenv(envVar)
+		if(ldLibPath != null) {
+			def libfunctors = null
+			ldLibPath.split(File.pathSeparator).each {
+				File f = new File("${it}/libfunctors.so")
+				if (f.exists()) {
+					libfunctors = f.canonicalPath
+				}
+			}
+			if (libfunctors != null) {
+				String libName = "libfunctors.so"
+				try {
+					Path target = FileSystems.default.getPath(libfunctors)
+					Path link = FileSystems.default.getPath(outDir.getAbsolutePath() + File.separator + libName)
+					Files.createSymbolicLink(link, target)
+					log.debug "Created symbolic link: ${link} -> ${target}"
+				} catch (UnsupportedOperationException ignored) {
+					log.debug "Filesystem does not support symbolic link for file ${libfunctors}"
+					// Fallback (non-portable).
+					// executor.execute("ln -s ${libfunctors} libfunctors.so".split().toList()) { log.info it }
+				} catch (FileAlreadyExistsException) {
+					log.info "Warning: could not create link to ${libName}, file already exists."
+				}
+			} else {
+				log.debug "Warning: no ${libName} in environment variable ${envVar} = '${ldLibPath}'"
+			}
+		}
+	}
 }

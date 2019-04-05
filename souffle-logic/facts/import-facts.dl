@@ -102,6 +102,11 @@ OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodType") :-
 .decl _MethodTypeConstantParam(?id:symbol, ?idx:number, ?type:symbol)
 .input _MethodTypeConstantParam(IO="file", filename="MethodTypeConstantParam.facts", delimiter="\t")
 
+// Native code facts
+
+.decl _NativeLibEntryPoint(?lib:symbol, ?function:symbol, ?addr:symbol)
+.input _NativeLibEntryPoint(IO="file", filename="NativeLibEntryPoint.facts", delimiter="\t")
+
 .decl _NativeMethodTypeCandidate(?lib:symbol, ?function:symbol, ?descriptor:symbol)
 .input _NativeMethodTypeCandidate(IO="file", filename="NativeMethodTypeCandidate.facts", delimiter="\t")
 
@@ -190,7 +195,7 @@ AssignOper_From(?instruction, ?pos, ?from) :-
 // AssignOperFromConstant
 
 .decl _AssignOperFromConstant(?instruction:symbol, ?pos: number, ?from:symbol)
-.input _AssignOperFrom(IO="file", filename="AssignOperFromConstant.facts", delimiter="\t")
+.input _AssignOperFromConstant(IO="file", filename="AssignOperFromConstant.facts", delimiter="\t")
 
 AssignOper_FromConstant(?instruction, ?pos, ?from) :-
     _AssignOperFromConstant(?instruction, ?pos, ?from).
@@ -887,8 +892,8 @@ isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.
 
 
 // Annotations
-// Method
-.input Class_Annotation(IO="file", filename="Class-Annotation.facts", delimiter="\t")
+// Type
+.input Type_Annotation(IO="file", filename="Type-Annotation.facts", delimiter="\t")
 // Method
 .input Method_Annotation(IO="file", filename="Method-Annotation.facts", delimiter="\t")
 // Field
@@ -897,10 +902,13 @@ isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.
 .input Param_Annotation(IO="file", filename="Param-Annotation.facts", delimiter="\t")
 
 isAnnotation(?annotation) :-
-    Class_Annotation(?class, ?annotation);
-    Method_Annotation(?meth, ?annotation);
-    Field_Annotation(?field, ?annotation);
-    Param_Annotation(?meth, ?i, ?annotation).
+    Type_Annotation(_, ?annotation);
+    Method_Annotation(_, ?annotation);
+    Field_Annotation(_, ?annotation);
+    Param_Annotation(_, _, ?annotation).
+
+// Annotation elements
+.input AnnotationElement(IO="file", filename="AnnotationElement.facts", delimiter="\t")
 
 // Phantom types/methods and phantom-based methods.
 .decl PhantomType(?t:Type)

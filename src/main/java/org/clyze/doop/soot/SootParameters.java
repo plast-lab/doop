@@ -40,7 +40,7 @@ public class SootParameters extends Parameters {
         case "--full":
             if (this._mode != null) {
                 System.err.println("error: duplicate mode argument");
-                throw new DoopErrorCodeException(1);
+                throw new DoopErrorCodeException(1, null, true);
             }
             this._mode = SootParameters.Mode.FULL;
             break;
@@ -78,6 +78,9 @@ public class SootParameters extends Parameters {
         case "--failOnMissingClasses":
             _failOnMissingClasses = true;
             break;
+        case "--lowMem":
+            _lowMem = true;
+            break;
         case "-h":
         case "--help":
         case "-help":
@@ -103,6 +106,7 @@ public class SootParameters extends Parameters {
             System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails");
             System.err.println("  --no-facts                            Don't generate facts (just empty files -- used for debugging)");
             System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot");
+            System.err.println("  --lowMem                              Consume less memory.");
             System.err.println("  --failOnMissingClasses                Terminate if classes are missing");
             System.err.println("  --also-resolve <class>                Force resolution of class that may not be found automatically.");
             System.err.println("  --log-dir <dir>                       Write logs in directory <dir>.");
@@ -132,17 +136,20 @@ public class SootParameters extends Parameters {
 
         if (_toStdout && !_generateJimple) {
             System.err.println("error: --stdout must be used with --generate-jimple");
-            throw new DoopErrorCodeException(7);
+            throw new DoopErrorCodeException(7, null, true);
         } else if (_toStdout && getOutputDir() != null) {
             System.err.println("error: --stdout and -d options are not compatible");
-            throw new DoopErrorCodeException(2);
+            throw new DoopErrorCodeException(2, null, true);
         } else if ((getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
                 (!_android)) {
             System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
-            throw new DoopErrorCodeException(3);
+            throw new DoopErrorCodeException(3, null, true);
+        } else if (_lowMem && _generateJimple) {
+            System.err.println("Warning: --lowMem is not compatible with --generate-jimple and will be ignored");
+            _lowMem = false;
         } else if (_android && _androidJars == null) {
             System.err.println("internal error: bad configuration for Android analysis mode, missing Android .jar");
-            throw new DoopErrorCodeException(21);
+            throw new DoopErrorCodeException(21, null, true);
         }
 
         if (!_toStdout && getOutputDir() == null)

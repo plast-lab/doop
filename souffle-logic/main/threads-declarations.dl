@@ -7,5 +7,3 @@
 .decl FakeInvocation_MainThreadInit(?invo: MethodInvocation)
 
 .decl FakeInvocation_SystemThreadGroupInit(?invo: MethodInvocation)
-
-.decl FakeInvocation_ThreadStart(?invo: MethodInvocation)

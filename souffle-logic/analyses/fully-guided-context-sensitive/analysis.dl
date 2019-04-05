@@ -11,8 +11,8 @@
 // Again, this may trigger creation of a new object.
 .comp FullyGuidedContextSensitiveConfiguration : AbstractConfiguration {
 
-  #define NO_CONTEXT_ELEMENT "<<immutable-context>>"
-
+// Do not indent: this breaks some cpp versions.
+#define NO_CONTEXT_ELEMENT "<<immutable-context>>"
 
   // In this analysis, the real context is a pair of Values and the real
   // heap context a single Value.
@@ -43,7 +43,7 @@
 
     .decl HContextElement(elem:symbol)
     HContextElement(?elem) :-
-        ContextRequest(_, ?hctx, _, _, _),
+        ContextRequest(_, ?hctx, _, _, _, _),
         ?hctx = [?elem].
 
     .decl SpecialContextElement(value:symbol)
@@ -53,7 +53,7 @@
     // 2-object
     TwoObjectMethod(?tomethod),
     ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
         SpecialContextSensitivityMethod(?tomethod, "2-object"),
         ?hctx = [?hctxValue],
         ?calleeCtx = [?hctxValue, ?value].
@@ -62,7 +62,7 @@
     // // 2-type
     TwoTypeMethod(?tomethod),
     ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
         SpecialContextSensitivityMethod(?tomethod, "2-type"),
         ?hctx = [?hctxValue],
         ToTypeString(?hctxValue, ?type1),
@@ -72,7 +72,7 @@
     // // 1-type
     OneTypeMethod(?tomethod),
     ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
         SpecialContextSensitivityMethod(?tomethod, "1-type"),
         Value_DeclaringType(?value, ?type),
         ?calleeCtx = [NO_CONTEXT_ELEMENT, ?type].
@@ -80,7 +80,7 @@
     // context-insensitive
     ContextInsensitiveMethod(?tomethod),
     ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+        ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
         SpecialContextSensitivityMethod(?tomethod, "context-insensitive"),
         isImmutableContext(?calleeCtx).
 

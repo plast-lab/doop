@@ -23,7 +23,7 @@
     basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod).
   
   // First, supplement call-graph reasoning with type-based resolution
-  ContextRequest(?callerCtx, ?hctxNull, ?invocation, ?null, ?tomethod) :-
+  ContextRequest(?callerCtx, ?hctxNull, ?invocation, ?null, ?tomethod, 1) :-
     OptVirtualMethodInvocationBase(?invocation, _),  // implies Reachable
     OptReachableTypeResolveInvocation(?invocation, ?tomethod),
     Value_Null(?null), // avoid creating too many requests-responses
@@ -31,7 +31,7 @@
     isImmutableContext(?callerCtx). // correct only in this context
    .plan 1:(2,1,3,4,5)
   
-  ContextRequest(?callerCtx, ?hctxNull, ?invocation, ?null, ?tomethod) :-
+  ContextRequest(?callerCtx, ?hctxNull, ?invocation, ?null, ?tomethod, 1) :-
     ReachableContext(?callerCtx, ?inmethod),
     Instruction_Method(?invocation, ?inmethod),
     (SuperMethodInvocation_Base(?invocation, _);
@@ -57,7 +57,7 @@
   .type HContext
          
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?calleeCtx = ?callerCtx,
     ?tomethod = ?tomethod.
 
@@ -81,7 +81,7 @@
   InitHContextResponse(?s, ?s) :-
     InitHContextRequest(?s).
 
-  #ifdef HEAPDLS
+#ifdef HEAPDLS
     DynamicContextToHContext(?hctx, ?dynCtx) :-
       isDynamicContext(?dynCtx),
       isImmutableHContext(?hctx).
@@ -89,5 +89,5 @@
     DynamicContextToContext(?ctx, ?dynCtx) :-
       isDynamicContext(?dynCtx),
       isImmutableContext(?ctx).
-  #endif
+#endif // HEAPDLS
 }

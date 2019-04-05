@@ -5,10 +5,16 @@ package org.clyze.doop.common;
 public class DoopErrorCodeException extends Exception {
 
     private final int errorCode;
+    public boolean fatal = false;
 
     public DoopErrorCodeException(int errorCode, Throwable original) {
         super("Doop error " + errorCode, original);
         this.errorCode = errorCode;
+    }
+
+    public DoopErrorCodeException(int errorCode, Throwable original, boolean fatal) {
+        this(errorCode, original);
+        this.fatal = fatal;
     }
 
     public DoopErrorCodeException(int errorCode) {

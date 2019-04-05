@@ -80,11 +80,12 @@ VarPointsTo(?hctxImmutable, ?proxyClassObj, ?ctx, ?ret) :-
 //// call RecordMacro, and use the calling ?ctx as argument.
 .decl ProxyClassInstance(?iface:InterfaceType, ?invo:MethodInvocation, ?value:Value)
 
-MockValueConsMacro(cat(cat(cat(cat("<proxy object for interface ", ?iface), " at "), ?invo), ">"), ?proxyClass),
-ProxyClassInstance(?iface, ?invo, cat(cat(cat(cat("<proxy object for interface ", ?iface), " at "), ?invo), ">")) :-
+MockValueConsMacro(?proxyObject, ?proxyClass),
+ProxyClassInstance(?iface, ?invo, ?proxyObject) :-
    java_lang_reflect_Proxy_newProxyInstance(?invo, _, _, _),
    isInterfaceType(?iface),
-   ProxyClassOfInterface(?iface, ?proxyClass).
+   ProxyClassOfInterface(?iface, ?proxyClass),
+   ?proxyObject = cat(cat(cat(cat("<proxy object for interface ", ?iface), " at "), ?invo), ">").
 
 .decl MethodOfInterface(?meth:Method, ?iface:InterfaceType)
 
@@ -113,18 +114,21 @@ SpecialMethodFromObject(?method, ?objMethod) :-
   Method_SimpleName(?objMethod, ?simple).
 
 .decl ArgArrayOfProxyMethod(?meth:Method, ?invo:MethodInvocation, ?value:Value)
+#define ARG_ARRAY(meth, invo) cat(cat(cat(cat("<argument array for proxied method ", meth), " at "), invo), ">")
 
-MockValueConsMacro(cat(cat(cat(cat("<argument array for proxied method ", ?meth), " at "), ?invo), ">"), "java.lang.Object[]"),
-ArgArrayOfProxyMethod(?meth, ?invo, cat(cat(cat(cat("<argument array for proxied method ", ?meth), " at "), ?invo), ">")) :-
-   ProxyClassInstance(?iface, ?invo, _),
-   MethodOfInterface(?meth, ?iface).
-
-// Copy of rule above for special Object methods.
-MockValueConsMacro(cat(cat(cat(cat("<argument array for proxied method ", ?objMeth), " at "), ?invo), ">"), "java.lang.Object[]"),
-ArgArrayOfProxyMethod(?objMeth, ?invo, cat(cat(cat(cat("<argument array for proxied method ", ?objMeth), " at "), ?invo), ">")) :-
+MockValueConsMacro(?argArray, "java.lang.Object[]"),
+ArgArrayOfProxyMethod(?meth, ?invo, ?argArray) :-
    ProxyClassInstance(?iface, ?invo, _),
    MethodOfInterface(?meth, ?iface),
-   SpecialMethodFromObject(?meth, ?objMeth).
+   ?argArray = ARG_ARRAY(?meth, ?invo).
+
+// Copy of rule above for special Object methods.
+MockValueConsMacro(?argArray, "java.lang.Object[]"),
+ArgArrayOfProxyMethod(?objMeth, ?invo, ?argArray) :-
+   ProxyClassInstance(?iface, ?invo, _),
+   MethodOfInterface(?meth, ?iface),
+   SpecialMethodFromObject(?meth, ?objMeth),
+   ?argArray = ARG_ARRAY(?objMeth, ?invo).
 
 .decl PrimitiveFormalOfInterface(?meth:Method, ?formal:Var, ?formalType:PrimitiveType)
 
@@ -143,20 +147,11 @@ PrimitiveFormalOfInterface(?meth, ?formal, ?formalType) :-
 // REVIEW: contexts (as above)?
 .decl BoxAllocationOfPrimitiveFormal(?formal:Var, ?value:Value)
 
-MockValueConsMacro(cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">"), ?boxType),
-BoxAllocationOfPrimitiveFormal(?formal, cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">")) :-
+MockValueConsMacro(?boxedArg, ?boxType),
+BoxAllocationOfPrimitiveFormal(?formal, ?boxedArg) :-
    PrimitiveFormalOfInterface(?meth, ?formal, ?formalType),
-   PrimitiveType_Boxed(?formalType, ?boxType).
-
-// Return var of newProxyInstance should point to the appropriate
-// dynamic proxy object.
-//// REVIEW: as above, have a real heap context instead of immutable?
-VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
-   java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, _, ?interfaces),
-   VarPointsTo(?hctx, ?interfacesVal, ?ctx, ?interfaces),
-   ArrayContentsPointToInterface(?iface, ?hctx, ?interfacesVal),
-   ProxyClassInstance(?iface, ?invo, ?value),
-   isImmutableHContext(?hctxImmutable).
+   PrimitiveType_Boxed(?formalType, ?boxType),
+   ?boxedArg = cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">").
 
 .decl isProxyObject(?value:Value)
 .decl ProxyObject_Invocation(?value:Value, ?invo:MethodInvocation)
@@ -165,16 +160,22 @@ VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
 .decl ProxyObject_HandlerCtx(?value:Value, ?handlerCtx:configuration.Context)
 .decl ProxyObject_Interface(?value:Value, ?iface:InterfaceType)
 
+// Return var of newProxyInstance should point to the appropriate
+// dynamic proxy object.
+//// REVIEW: as above, have a real heap context instead of immutable?
 isProxyObject(?value),
 ProxyObject_Invocation(?value, ?invo),
 ProxyObject_Handler(?value, ?handlerObj),
 ProxyObject_HandlerHctx(?value, ?handlerHctx),
-ProxyObject_HandlerCtx(?value, ?handlerCtx),
-ProxyObject_Interface(?value, ?iface) :-
-   java_lang_reflect_Proxy_newProxyInstance(?invo, _, ?handler, _),
-   VarPointsTo(?handlerHctx, ?handlerObj, ?handlerCtx, ?handler),
-   ProxyClassInstance(?iface, ?invo, ?value).
-
+ProxyObject_HandlerCtx(?value, ?ctx),
+ProxyObject_Interface(?value, ?iface),
+VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
+   java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, ?handler, ?interfaces),
+   VarPointsTo(?handlerHctx, ?handlerObj, ?ctx, ?handler),
+   VarPointsTo(?hctx, ?interfacesVal, ?ctx, ?interfaces),
+   ArrayContentsPointToInterface(?iface, ?hctx, ?interfacesVal),
+   ProxyClassInstance(?iface, ?invo, ?value),
+   isImmutableHContext(?hctxImmutable).
 
 // And the clincher: if a method gets invoked on a proxy object, simulate
 // a call to the proxy object handler's "invoke" method, with the right
@@ -182,16 +183,20 @@ ProxyObject_Interface(?value, ?iface) :-
 .decl CallToMethodOfProxyObject(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?invo:MethodInvocation)
 
 CallToMethodOfProxyObject(?hctx, ?value, ?ctx, ?invo) :-
-   isVirtualMethodInvocation_Insn(?invo),
    VirtualMethodInvocation_Base(?invo, ?base),
    VarPointsTo(?hctx, ?value, ?ctx, ?base),
-   isProxyObject(?value).
+   isProxyObject(?value),
+   MethodInvocation_Method(?invo, ?sig),
+   // Methods marked "final" in java.lang.Object cannot be proxied. The Object
+   // superclass is the only place where "final" methods can be encountered;
+   // the interfaces do not allow such methods.
+   !Method_Modifier("final", ?sig).
 
 // Since dynamic proxies are subclasses of java.lang.reflect.Proxy, their
 // constructor calls super.<init>(handlerObj).
-.decl ProxyInit(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?handlerObj:Value, ?init:Method)
-ProxyInit(?callerCtx, ?hctx, ?invo, ?handlerObj, ?init),
-configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?init) :-
+.decl ProxyInit(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?proxy:Value, ?handlerObj:Value, ?init:Method)
+ProxyInit(?callerCtx, ?hctx, ?invo, ?proxy, ?handlerObj, ?init),
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?proxy, ?init, 0) :-
    ?init = "<java.lang.reflect.Proxy: void <init>(java.lang.reflect.InvocationHandler)>",
    ProxyObject_Invocation(?proxy, ?invo),
    ProxyObject_Handler(?proxy, ?handlerObj),
@@ -199,8 +204,8 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?init) :-
    ProxyObject_HandlerHctx(?proxy, ?hctx).
 ReachableContext(?calleeCtx, ?init),
 VarPointsTo(?hctx, ?handlerObj, ?calleeCtx, ?h) :-
-   configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?handlerObj, ?calleeCtx),
-   ProxyInit(?callerCtx, ?hctx, ?invo, ?handlerObj, ?init),
+   configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?proxy, ?calleeCtx),
+   ProxyInit(?callerCtx, ?hctx, ?invo, ?proxy, ?handlerObj, ?init),
    FormalParam(0, ?init, ?h).
 
 // Single-tuple relation to avoid repeated lookup.
@@ -213,10 +218,8 @@ ProxyInvoke(?invokeMethName, ?invokeMethDescriptor) :-
 // Helper relation to connect context requests with responses.
 .decl ProxyCallGraphEdgeCandidate(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?handlerObj:Value, ?handlerInvokeMeth:Method, ?value:Value, ?handlerType:Type)
 
-
-// TODO: commenting out this rule, makes sanity errors go away.
 ProxyCallGraphEdgeCandidate(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, ?value, ?handlerType),
-configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth) :-
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, 0) :-
    CallToMethodOfProxyObject(?hctx, ?value, ?callerCtx, ?invo),
    ProxyObject_Handler(?value, ?handlerObj),
    Value_Type(?handlerObj, ?handlerType),
@@ -227,12 +230,9 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvo
 .decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)
 
 ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
-VarPointsTo(?handlerHctx, ?handlerObj, ?calleeCtx, ?this),
 HandledProxy(?newProxyInstanceInvo, ?handlerType) :-
    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?handlerObj, ?calleeCtx),
    ProxyCallGraphEdgeCandidate(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, ?value, ?handlerType),
-   ProxyObject_HandlerHctx(?value, ?handlerHctx),
-   ThisVar(?handlerInvokeMeth, ?this),
    ProxyObject_Invocation(?value, ?newProxyInstanceInvo).
 
 

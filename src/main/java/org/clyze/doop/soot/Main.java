@@ -60,6 +60,8 @@ public class Main {
             throw new DoopErrorCodeException(18);
         }
 
+        DoopAddons.initReflectiveAccess();
+
         Options.v().set_output_dir(outDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
         Options.v().setPhaseOption("jb", "model-lambdametafactory:false");

@@ -87,9 +87,9 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
    HeapRepresentative(?heapRepr, ?heap));
   (?heapRepr = "<<string-builder>>",
    HeapRepresentative(?heapRepr, ?heap));
+  // (?heapRepr = "<<class-metaobject>>",
+  //  HeapRepresentative(?heapRepr, ?heap));
   (?heapRepr = "<<pystring-object>>",
-   HeapRepresentative(?heapRepr, ?heap));
-  (?heapRepr = "<<class-metaobject>>",
    HeapRepresentative(?heapRepr, ?heap)).
 
 .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
@@ -353,11 +353,11 @@ PreClassNameMatchingStringConstantExact_Type(?type, ?string) :-
      // library classes are known and in known packages. Makes no sense
      // to access them via .getClass
 #endif
-  // #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
-  // #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
-  //   NonTrivialStringConstant(?string),
-  // #endif
-  // #endif
+// #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+// #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
+//   NonTrivialStringConstant(?string),
+// #endif !INFORMATION_FLOW_HIGH_SOUNDNESS
+// #endif !REFLECTION_HIGH_SOUNDNESS_MODE
   ord(?type) = ord(?string).
 
 .decl PreMethodNameMatchingStringConstant(?heap:HeapAllocation)
@@ -824,21 +824,23 @@ AllocationShouldBeMergedPerClass(?type, ?class) :-
  *************************************************************/
 
 #ifndef CONTEXT_SENSITIVE_LIBRARY_ANALYSIS
-  #include "special-library.dl"
+#include "special-library.dl"
   HeapAllocation_ContextInsensitive(?heap) :-
     SpecialLibraryObject(?heap),
     !HeapRepresentative(_, ?heap).
 
-  #ifdef MERGE_LIBRARY_OBJECTS_PER_METHOD
-
+#ifdef MERGE_LIBRARY_OBJECTS_PER_METHOD
     AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
       AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
       ?n > 1,
+#ifdef REFLECTION
+      ?heaptype != "java.lang.Class",
+#endif // REFLECTION
       Method_DeclaringType(?meth, ?class),
       SpecialLibraryClass(?class).
 
-  #endif
-#endif
+#endif // MERGE_LIBRARY_OBJECTS_PER_METHOD
+#endif // !CONTEXT_SENSITIVE_LIBRARY_ANALYSIS
 
 /*************************************************************
  * String buffers and builders

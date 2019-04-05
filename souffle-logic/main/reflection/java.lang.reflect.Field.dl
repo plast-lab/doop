@@ -69,3 +69,28 @@ ReflectiveStoreInstanceField(?ctx, ?from, ?signature, ?ctx, ?base) :-
   ReflectiveStoreField(?invocation, ?signature, ?ctx, ?from),
   ! Field_Modifier("static", ?signature),
   java_lang_reflect_Field_set_base(?invocation, ?base).
+
+/*************************************************************
+ * java.lang.reflect.Field.getDeclaredAnnotations()
+ *
+ *   public Annotation[] getDeclaredAnnotations()
+ *
+ *************************************************************/
+
+.decl PopulateAnnotationsForField(?annotationsArray:Value, ?field:Field, ?hctx:configuration.HContext)
+
+MockValueConsMacro(?annotationsArray, "java.lang.annotation.Annotation[]"),
+VarPointsTo(?hctx, ?annotationsArray, ?ctx, ?to),
+PopulateAnnotationsForField(?annotationsArray, ?field, ?hctx) :-
+  java_lang_reflect_Field_getDeclaredAnnotations(?invocation, ?to, ?from),
+  VarPointsTo(?hctx, ?fieldValue, ?ctx, ?from),
+  ReifiedField(?field, ?fieldValue),
+  // Spec: each invocation creates a new annotation array.
+  ?annotationsArray = cat("<annotations array for field ", cat(?field, cat(" at ", cat(?invocation, ">")))),
+  isImmutableHContext(?hctx).
+
+MockValueConsMacro(?annotationValue, "java.lang.annotation.Annotation"),
+ArrayIndexPointsTo(?hctx, ?annotationValue, ?hctx, ?annotationsArray) :-
+  PopulateAnnotationsForField(?annotationsArray, ?field, ?hctx),
+  Field_Annotation(?field, ?annotation),
+  ?annotationValue = cat("<annotation ", cat(?annotation, cat(" for ", cat(?field, ">")))).

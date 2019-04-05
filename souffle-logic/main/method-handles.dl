@@ -80,8 +80,10 @@ MethodType_Arity(?mtConv, ?arity) :-
 #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 
 // Model of MethodType.returnType().
+OpaqueCallGraphEdge(?invo, ?sig),
 VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
-  _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodType: java.lang.Class returnType()>", ?base, ?method),
+  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
+  ?sig = "<java.lang.invoke.MethodType: java.lang.Class returnType()>",
   ReachableContext(?ctx, ?method),
   VarPointsTo(?hctx, ?mt, ?ctx, ?base),
   MethodType_ReturnType(?mt, ?retType),
@@ -90,8 +92,10 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
 
 // Imprecise model of MethodType.parameterType(), since we do not track
 // primitive values (for its argument).
+OpaqueCallGraphEdge(?invo, ?sig),
 VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
-  _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>", ?base, ?method),
+  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
+  ?sig = "<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>",
   ReachableContext(?ctx, ?method),
   VarPointsTo(?hctx, ?mt, ?ctx, ?base),
   MethodType_ParamType(?mt, _, ?pType),
@@ -104,8 +108,9 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
 // invocation picks all descriptors that match.
 
 .decl ReachableMethodTypeN(?id:number, ?invo:MethodInvocation, ?ctx:configuration.Context)
+OpaqueCallGraphEdge(?invo, ?mtEntryPoint),
 ReachableMethodTypeN(?id, ?invo, ?ctx) :-
-  MTEntryPoint(?id, ?invo, _),
+  MTEntryPoint(?id, ?invo, ?mtEntryPoint),
   Instruction_Method(?invo, ?method),
   ReachableContext(?ctx, ?method).
 
@@ -351,6 +356,7 @@ VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
   CompatibleTypes(?retType, ?varType).
 
 // Model MethodHandle.asType().
+OpaqueCallGraphEdge(?invo, ?sig),
 MockValueConsMacro(?adapterMH, "java.lang.invoke.MethodHandle"),
 MethodHandle_Method(?adapterMH, ?mhMethod),
 MethodHandle_MethodType(?adapterMH, ?mt),
@@ -387,8 +393,10 @@ MHLookup_Type(?mockMHLookup, ?type) :-
 
 // Model of MethodHandles.lookup(). This is a caller sensitive method and thus
 // its result must record the caller class.
+OpaqueCallGraphEdge(?invo, ?sig),
 CreateMHLookup(?type, ?ctx, ?ret) :-
-  _StaticMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup lookup()>", ?method),
+  _StaticMethodInvocation(?invo, _, ?sig, ?method),
+  ?sig = "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup lookup()>",
   ReachableContext(?ctx, ?method),
   Method_DeclaringType(?method, ?type),
   AssignReturnValue(?invo, ?ret).
@@ -797,7 +805,7 @@ LambdaCaptured(?invokedynamic, ?val, ?idx, ?hctx) :-
 // Call-graph edge: method call on lambda object -> implementing
 // method.  For simplicity, the callee context is trivial. For proper
 // context sensitivity, we must model all combinations of calling
-// contexts with implementing-method staticness.
+// contexts with implementing-method static-ness.
 LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
   LambdaObject(_, ?lambda, ?dynName, _, ?implMethod, _, _),
   VarPointsTo(_, ?lambda, ?callerCtx, ?var),

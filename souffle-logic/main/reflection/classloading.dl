@@ -24,6 +24,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
  * Class-loading methods
  *************************************************************/
 
+OpaqueCallGraphEdge(?invocation, ?method),
 VarPointsTo(?hctx, ?classValue, ?callerCtx, ?classResultVar) :-
   ReachableContext(?callerCtx, ?caller),
   (_StaticMethodInvocation(?invocation, _, ?method, ?caller);

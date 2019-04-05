@@ -114,7 +114,7 @@
   // or invocation in primary partition and method in no partition
   // or invocation in no partition and method in primary partition
   ContextResponse(callerCtx, hctx, invo, value, calleeCtx) :-
-    ContextRequest(callerCtx, hctx, invo, value, tomethod),
+    ContextRequest(callerCtx, hctx, invo, value, tomethod, _),
     ((MethodInPrimaryPartition(tomethod),
       InvocationInPrimaryPartition(invo));
      (MethodInPrimaryPartition(tomethod),
@@ -131,7 +131,7 @@
   // or target method in non primary partition and invocation in no partition
   // or target method in non primary partition and invocation in non primary partition
   ContextResponse(callerCtx, hctx, invo,value, calleeCtx) :-
-    ContextRequest(callerCtx, hctx, invo, value, tomethod),
+    ContextRequest(callerCtx, hctx, invo, value, tomethod, _),
     MethodInNonPrimaryPartition(tomethod),
     (InvocationInPrimaryPartition(invo);
      InvocationInNonPrimaryPartition(invo);
@@ -141,7 +141,7 @@
   // Case 3: target method in primary partition and invocation in non primary partition
   // or target method in no partition and invocation in no partition
   ContextResponse(callerCtx, hctx, invo, value, calleeCtx) :-
-    ContextRequest(callerCtx, hctx, invo, value, tomethod),
+    ContextRequest(callerCtx, hctx, invo, value, tomethod, _),
     (MethodInPrimaryPartition(tomethod);
      MethodInNoPartition(tomethod)),
     InvocationInNonPrimaryPartition(invo),

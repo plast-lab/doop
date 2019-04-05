@@ -12,7 +12,7 @@
   .type HContext = [ type:Type ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxType],
     Value_DeclaringType(?value, ?type),
     ?calleeCtx = [?hctxType, ?type],

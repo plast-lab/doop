@@ -1,5 +1,9 @@
 .comp BasicContextSensitivity<Configuration> : AbstractContextSensitivity<Configuration> {
 
+configuration.StaticContextRequest(?callerCtx, ?invocation) :-
+  ReachableContext(?callerCtx, ?inmethod),
+  StaticMethodInvocation(?invocation, _, ?inmethod).
+
 // The main analysis is merely looking up the previously created
 // context objects.
 
@@ -11,7 +15,7 @@
 // special invocation
 isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 1),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   ZipperPrecisionCriticalMethod(?tomethod).
 #ifndef X_CONTEXT_REMOVER
@@ -19,7 +23,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
 #endif
 
 CallGraphEdge(?callerCtx, ?invocation, ?immCtx, ?tomethod) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 1),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),   
   isImmutableContext(?immCtx),
   !ZipperPrecisionCriticalMethod(?tomethod).
@@ -28,10 +32,6 @@ CallGraphEdge(?callerCtx, ?invocation, ?immCtx, ?tomethod) :-
 #endif
 
 // static invocation
-
-configuration.StaticContextRequest(?callerCtx, ?invocation) :-
-  ReachableContext(?callerCtx, ?inmethod),
-  StaticMethodInvocation(?invocation, _, ?inmethod).
 
 isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
@@ -50,20 +50,16 @@ CallGraphEdge(?callerCtx, ?invocation, ?immCtx, ?tomethod) :-
 
 isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 1),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx).
 #ifndef X_CONTEXT_REMOVER
  .plan 1:(2,1)
 #endif
-
-configuration.StaticContextRequest(?callerCtx, ?invocation) :-
-  ReachableContext(?callerCtx, ?inmethod),
-  StaticMethodInvocation(?invocation, _, ?inmethod).
 
 isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
   configuration.StaticContextResponse(?callerCtx, ?invocation, ?calleeCtx),
   MethodInvocation_Method(?invocation, ?tomethod).
 
-#endif // #ifdef ZIPPER
+#endif // ZIPPER
 }

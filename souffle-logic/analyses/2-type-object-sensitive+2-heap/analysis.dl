@@ -10,7 +10,7 @@
   .type HContext = [ type:Type, value:mainAnalysis.Value ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxType, ?hctxValue],
     Value_DeclaringType(?hctxValue, ?type),
     ?calleeCtx = [?type, ?value],

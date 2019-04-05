@@ -159,8 +159,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	}
 
 	// This method may not be static, see [Note] above.
+	private String getOutputDirectory(Map<String, AnalysisOption> options) {
+		return "${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}";
+	}
+
+	// This method may not be static, see [Note] above.
 	protected File createOutputDirectory(Map<String, AnalysisOption> options) {
-		def outDir = new File("${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}")
+		def outDir = new File(getOutputDirectory(options))
 		FileUtils.deleteQuietly(outDir)
 		outDir.mkdirs()
 		FileOps.findDirOrThrow(outDir, "Could not create analysis directory: ${outDir}")
@@ -184,11 +189,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				.findAll { it.forCacheID }
 				.collect { it as String }
 
-		Collection<String> checksums = []
-		checksums += options.INPUTS.value.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
-		checksums += options.LIBRARIES.value.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
-		checksums += options.HEAPDLS.value.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
-		checksums += options.PLATFORMS.value.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
+		Collection<String> checksums = DoopAnalysisFamily.getAllInputs(options)
+			.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy")
 			checksums += [CheckSum.checksum(new File(options.TAMIFLEX.value as String), HASH_ALGO)]
@@ -349,13 +351,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			throw new RuntimeException("Error: options --" + options.SOUFFLE_PROVENANCE.name + " and --" + options.SOUFFLE_LIVE_PROFILE.name + " are mutually exclusive.\n")
 		}
 
+		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
+			options.SOUFFLE_USE_FUNCTORS.value = true
+		}
+
 		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value &&
 				options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
 			throw new RuntimeException("Error: options --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
-		}
-
-		if (options.SCAN_NATIVE_CODE.value && options.ANDROID.value) {
-			options.DECODE_APK.value = true
 		}
 
 		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
@@ -404,14 +406,20 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
 				!options.HEAPDLS.value && !options.ANDROID.value &&
-				!options.DACAPO.value && !options.DACAPO_BACH.value &&
-				!options.X_START_AFTER_FACTS.value) {
+				!options.DACAPO.value && !options.DACAPO_BACH.value) {
 			if (options.DISCOVER_MAIN_METHODS.value) {
 				log.info "WARNING: No main class was found. Using --${options.DISCOVER_MAIN_METHODS.name}"
 			} else {
-				log.info "WARNING: No main class was found. This will trigger open-program analysis!"
-				if (!options.OPEN_PROGRAMS.value)
-					options.OPEN_PROGRAMS.value = "concrete-types"
+				if (options.X_START_AFTER_FACTS.value) {
+					if (!options.OPEN_PROGRAMS.value) {
+						throw new RuntimeException("Error: no main class was found and option --${options.OPEN_PROGRAMS.name} is missing.")
+					}
+				} else {
+					log.info "WARNING: No main class was found. This will trigger open-program analysis!"
+					if (!options.OPEN_PROGRAMS.value) {
+						options.OPEN_PROGRAMS.value = "concrete-types"
+					}
+				}
 			}
 		}
 
@@ -434,6 +442,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				println "Server logic enabled, turning on optimization directives"
 				options.GENERATE_OPTIMIZATION_DIRECTIVES.value = true
 			}
+		}
+
+		if (options.X_SERVER_LOGIC.value || options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
+		   options.GENERATE_ARTIFACTS_MAP.value = true
 		}
 
 		// If no stats option is given, select default stats.
@@ -547,7 +559,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		Map<String, String> env = [:]
 		env.putAll(System.getenv())
-
+		env.ANALYSIS_OUT = "${getOutputDirectory(options)}/database" as String
 		env.LC_ALL = "en_US.UTF-8"
 
 		if (options.LB3.value) {

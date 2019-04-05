@@ -6,6 +6,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.PredicateFile;
 import org.clyze.doop.common.SessionCounter;
+import org.clyze.doop.util.TypeUtils;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
@@ -51,8 +52,10 @@ class FactWriter extends JavaFactWriter {
         _db.add(METHOD, methodId, _rep.simpleName(m), Representation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
-            for (AnnotationTag aTag : vTag.getAnnotations())
+            for (AnnotationTag aTag : vTag.getAnnotations()) {
                 writeMethodAnnotation(methodId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                writeAnnotationElements("method", methodId, null, aTag.getElems());
+            }
         }
         if (m.getTag("VisibilityParameterAnnotationTag") != null) {
             VisibilityParameterAnnotationTag vTag = (VisibilityParameterAnnotationTag) m.getTag("VisibilityParameterAnnotationTag");
@@ -60,8 +63,13 @@ class FactWriter extends JavaFactWriter {
             ArrayList<VisibilityAnnotationTag> annList = vTag.getVisibilityAnnotations();
             for (int i = 0; i < annList.size(); i++)
                 if (annList.get(i) != null)
-                    for (AnnotationTag aTag : annList.get(i).getAnnotations())
-                        _db.add(PARAM_ANNOTATION, methodId, str(i), soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                    for (AnnotationTag aTag : annList.get(i).getAnnotations()) {
+                        String paramIdx = str(i);
+                        _db.add(PARAM_ANNOTATION, methodId, paramIdx, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                        String paramId = methodId + "::parameter#" + paramIdx;
+                        writeAnnotationElements("param", paramId, null, aTag.getElems());
+                    }
+
         }
         return methodId;
     }
@@ -83,9 +91,65 @@ class FactWriter extends JavaFactWriter {
         if (c.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
-                _db.add(CLASS_ANNOTATION, classStr, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                _db.add(TYPE_ANNOTATION, classStr, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                writeAnnotationElements("type", classStr, null, aTag.getElems());
             }
         }
+    }
+
+    /**
+     * Write an annotation element. Annotation elements may be nested, so we
+     * have to generate facts that describe their structure as well.
+     *
+     * @param target    the language construct that is annotated (e.g., "method")
+     * @param parentId  the ID of the parent of the annotation (or "0" for root)
+     * @param id        the annotation ID (e.g., an index to distinguish from siblings)
+     * @param ae        the annotation element
+     */
+    private void writeAnnotationElement(String targetType, String target, String parentId, String thisId, AnnotationElem ae) {
+        if (ae instanceof AnnotationArrayElem) {
+            writeAnnotationElements(targetType, target, thisId, ((AnnotationArrayElem)ae).getValues());
+        } else if (ae instanceof AnnotationEnumElem) {
+            AnnotationEnumElem enumElem = (AnnotationEnumElem)ae;
+            writeAnnotationElement(targetType, target, parentId, thisId, enumElem.getName(), TypeUtils.raiseTypeId(enumElem.getTypeName()), enumElem.getConstantName());
+        } else if (ae instanceof AnnotationStringElem) {
+            AnnotationStringElem ase = (AnnotationStringElem)ae;
+            writeAnnotationElement(targetType, target, parentId, thisId, ase.getName(), ase.getValue(), "-");
+        } else if (ae instanceof AnnotationBooleanElem) {
+            AnnotationBooleanElem abe = (AnnotationBooleanElem)ae;
+            writeAnnotationElement(targetType, target, parentId, thisId, abe.getName(), String.valueOf(abe.getValue()), "-");
+        } else if (ae instanceof AnnotationFloatElem) {
+            AnnotationFloatElem afe = (AnnotationFloatElem)ae;
+            writeAnnotationElement(targetType, target, parentId, thisId, afe.getName(), String.valueOf(afe.getValue()), "-");
+        } else if (ae instanceof AnnotationLongElem) {
+            AnnotationLongElem ale = (AnnotationLongElem)ae;
+            writeAnnotationElement(targetType, target, parentId, thisId, ale.getName(), String.valueOf(ale.getValue()), "-");
+        } else if (ae instanceof AnnotationDoubleElem) {
+            AnnotationDoubleElem ade = (AnnotationDoubleElem)ae;
+            writeAnnotationElement(targetType, target, parentId, thisId, ade.getName(), String.valueOf(ade.getValue()), "-");
+        } else if (ae instanceof AnnotationIntElem) {
+            AnnotationIntElem aie = (AnnotationIntElem)ae;
+            writeAnnotationElement(targetType, target, parentId, thisId, aie.getName(), str(aie.getValue()), "-");
+        } else if (ae instanceof AnnotationClassElem) {
+            AnnotationClassElem ace = (AnnotationClassElem)ae;
+            writeAnnotationElement(targetType, target, parentId, thisId, ace.getName(), TypeUtils.raiseTypeId(ace.getDesc()), "-");
+        } else if (ae instanceof AnnotationAnnotationElem) {
+            AnnotationAnnotationElem aae = (AnnotationAnnotationElem)ae;
+            // Write a dummy annotation node, followed by its contents.
+            writeAnnotationElement(targetType, target, parentId, thisId, "INNER-ANNOTATION", "-", null);
+            writeAnnotationElements(targetType, target, thisId, aae.getValue().getElems());
+        } else
+            System.out.println("Warning: unknown annotation element, type: '" + ae.getClass() + "', name: '" + ae.getName() + "'");
+    }
+
+    // Helper method used by writeAnnotationElement().
+    private void writeAnnotationElements(String targetType, String target, String parentId,
+                                         Collection<AnnotationElem> elements) {
+        if (parentId == null)
+            parentId = "0";
+        int id = 0;
+        for (AnnotationElem ae : elements)
+            writeAnnotationElement(targetType, target, parentId, parentId + "." + (id++), ae);
     }
 
     void writeDirectSuperclass(SootClass sub, SootClass sup) {
@@ -408,6 +472,7 @@ class FactWriter extends JavaFactWriter {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) f.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
                 _db.add(FIELD_ANNOTATION, fieldId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                writeAnnotationElements("field", fieldId, null, aTag.getElems());
             }
         }
         return fieldId;

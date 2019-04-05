@@ -53,7 +53,8 @@ class SouffleAnalysis extends DoopAnalysis {
 							provenance,
 							liveProf,
 							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-							options.X_CONTEXT_REMOVER.value as boolean)
+							options.X_CONTEXT_REMOVER.value as boolean,
+							options.SOUFFLE_USE_FUNCTORS.value as boolean)
 					log.info "[Task COMPILE Done]"
 					return generatedFile
 				}
@@ -61,6 +62,13 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 
 		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
+
+		def generatedFile
+		// Don't run in parallel if low on memory
+		if (options.X_LOW_MEM.value) {
+			generatedFile = compilationFuture.get()
+			System.gc()
+		}
 
 		try {
 			log.info "[Task FACTS...]"
@@ -70,21 +78,23 @@ class SouffleAnalysis extends DoopAnalysis {
 			if (options.X_SERVER_CHA.value) {
 				log.info "[CHA...]"
 				def methodLookupFile = new File("${Doop.doopHome}/souffle-scripts/method-lookup-script.dl")
-				def generatedFile = script.compile(methodLookupFile, outDir, cacheDir,
+				def generatedFile0 = script.compile(methodLookupFile, outDir, cacheDir,
 						options.SOUFFLE_PROFILE.value as boolean,
 						options.SOUFFLE_DEBUG.value as boolean,
 						provenance,
 						liveProf,
 						options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
 						options.X_CONTEXT_REMOVER.value as boolean)
-				script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+				script.run(generatedFile0, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
 						(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance)
 				log.info "[CHA Done]"
 			}
 
 			if (options.X_STOP_AT_FACTS.value) return
 
-			def generatedFile = compilationFuture.get()
+			if (!options.X_LOW_MEM.value) {
+				generatedFile = compilationFuture.get()
+			}
 			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
 					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance, liveProf)
 
@@ -100,6 +110,10 @@ class SouffleAnalysis extends DoopAnalysis {
 	}
 
 	void initDatabase() {
+		//functor declarations need to be first
+		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/souffle-incremental-output/functor-declarations.dl")
+		}
 		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-sensitive-schema.dl")
 		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-insensitive-schema.dl")
@@ -155,6 +169,10 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros)
 		}
 
+		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/souffle-incremental-output/incr-output.dl")
+		}
+
 		if (options.INFORMATION_FLOW.value) {
 			def infoFlowPath = "${Doop.souffleAddonsPath}/information-flow"
 			cpp.includeAtEnd("$analysis", "${infoFlowPath}/declarations.dl")
@@ -164,13 +182,20 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		}
 
+    if (options.CONSTANT_FOLDING.value) {
+        def constantFoldingPath = "${Doop.souffleAddonsPath}/constant-folding"
+        cpp.includeAtEnd("$analysis", "${constantFoldingPath}/declarations.dl")
+        cpp.includeAtEnd("$analysis", "${constantFoldingPath}/const-type-infer.dl")
+        cpp.includeAtEnd("$analysis", "${constantFoldingPath}/constant-folding.dl")
+    }
+
 		if (options.SYMBOLIC_REASONING.value) {
-            def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
-			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/declarations.dl")
+      def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
 			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/util.dl")
-            cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
+      cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
 			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/path-expression.dl")
-            // cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/reasoning.dl")
+      cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/boolean-reasoning.dl")
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/arithmetic-reasoning.dl")
 		}
 
 		String openProgramsRules = options.OPEN_PROGRAMS.value

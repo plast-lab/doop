@@ -34,7 +34,7 @@ public class DexInvoker {
             Helper.tryInitLogging("DEBUG", dexParams.getLogDir(), true);
         } catch (IOException ex) {
             System.err.println("Warning: could not initialize logging");
-            throw new DoopErrorCodeException(18);
+            throw new DoopErrorCodeException(18, null, true);
         }
 
         Log logger = LogFactory.getLog(DexInvoker.class);

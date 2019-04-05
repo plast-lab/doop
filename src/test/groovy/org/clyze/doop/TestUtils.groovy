@@ -105,9 +105,14 @@ class TestUtils {
 		findPair(analysis, "Server_Var_Values", local, 1, value, 2)
 	}
 
-	static void invoValue(Analysis analysis, String local, String value) {
+	static void invoValue(Analysis analysis, String invo, String toMethod) {
 		log("invoValue")
-		findPair(analysis, "Server_Invocation_Values", local, 1, value, 2)
+		findPair(analysis, "Server_Invocation_Values", invo, 1, toMethod, 2)
+	}
+
+	static void methodSub(Analysis analysis, String method, String subMethod) {
+		log("methodSub")
+		findPair(analysis, "Server_Method_Subtype", method, 0, subMethod, 1)
 	}
 
 	static void methodHandleCGE(Analysis analysis, String instr, String meth) {
@@ -188,20 +193,31 @@ class TestUtils {
 	}
 
 	static void noSanityErrors(Analysis analysis) {
+		noSanityErrors(analysis, true)
+	}
+	static void noSanityErrors(Analysis analysis, boolean checkPointsTo) {
 		log("noSanityErrors")
 		relationIsEmpty(analysis, "VarHasNoType")
 		relationIsEmpty(analysis, "TypeIsNotConcreteType")
 		relationIsEmpty(analysis, "InstructionIsNotConcreteInstruction")
 		relationIsEmpty(analysis, "ValueHasNoType")
 		relationIsEmpty(analysis, "ValueHasNoDeclaringType")
-		relationIsEmpty(analysis, "NotReachableVarPointsTo")
-		relationIsEmpty(analysis, "VarPointsToWronglyTypedValue")
-		relationIsEmpty(analysis, "VarPointsToMergedHeap")
-		relationIsEmpty(analysis, "HeapAllocationHasNoType")
-		relationIsEmpty(analysis, "ValueIsNeitherHeapNorNonHeap")
 		relationIsEmpty(analysis, "ClassTypeIsInterfaceType")
 		relationIsEmpty(analysis, "PrimitiveTypeIsReferenceType")
 		relationIsEmpty(analysis, "basic.DuplicateMethodImplemented")
+		relationIsEmpty(analysis, "basic.DuplicateMethodLookup")
+		relationIsEmpty(analysis, "mainAnalysis.DuplicateContextRequest")
+		relationIsEmpty(analysis, "mainAnalysis.DuplicateContextResponse")
+		if (checkPointsTo) {
+			relationIsEmpty(analysis, "NotReachableVarPointsTo")
+			relationIsEmpty(analysis, "FieldPointsToWronglyTypedValue")
+			relationIsEmpty(analysis, "VarPointsToWronglyTypedValue")
+			relationIsEmpty(analysis, "VarPointsToMergedHeap")
+			relationIsEmpty(analysis, "HeapAllocationHasNoType")
+			relationIsEmpty(analysis, "ValueIsNeitherHeapNorNonHeap")
+		} else {
+			println("Skipping points-to sanity checks.")
+		}
 	}
 
 	static void log(String msg) {

@@ -138,7 +138,7 @@ public class WalaFactWriter extends JavaFactWriter {
             Collection<Annotation> annotations = c.getAnnotations();
             if (annotations != null) {
                 for (Annotation annotation : annotations) {
-                    _db.add(CLASS_ANNOTATION, classStr, fixTypeString(annotation.getType().toString()));
+                    _db.add(TYPE_ANNOTATION, classStr, fixTypeString(annotation.getType().toString()));
                 }
             }
         }

@@ -5,7 +5,8 @@
 
 .comp SelectiveTwoObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
 
-  #define NO_INVOCATION_CONTEXT "<<no-call-site-context>>"
+// Do not indent: this breaks some cpp versions.
+#define NO_INVOCATION_CONTEXT "<<no-call-site-context>>"
 
   // The real context is a pair of Value AND a MethodInvocation (for
   // static calls) sometimes.  The real heap context is a single Value.
@@ -15,7 +16,7 @@
   .type HContext = [ value:mainAnalysis.Value ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxValue],
     ?calleeCtx = [NO_INVOCATION_CONTEXT, ?hctxValue, ?value],
     ?tomethod = ?tomethod.
