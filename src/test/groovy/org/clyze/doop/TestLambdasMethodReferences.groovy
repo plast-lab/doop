@@ -7,8 +7,7 @@ import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
 
 /**
- * Test code using lambdas and method
- * references.
+ * Test code using lambdas and method references.
  */
 class TestLambdasMethodReferences extends ServerAnalysisTests {
     final static String[] TEST_ANALYSES = [ "context-insensitive", "1-object-sensitive+heap" ]
@@ -17,14 +16,16 @@ class TestLambdasMethodReferences extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 107 (lambdas)"(String analysisName, boolean wala) {
 		when:
-		Analysis analysis = analyzeTest("107-lambdas",
-										["--platform", "java_8", "--Xserver-logic",
-										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-										 "--thorough-fact-gen", "--sanity",
-										 "--generate-jimple"] +
-										(wala ? ["--wala-fact-gen"] : []),
-										analysisName,
-										"test-107-lambdas" + (wala ? "-wala" : ""))
+		String id = "test-107-lambdas" + (wala ? "-wala" : "")
+		Analysis analysis =
+			analyzeBuiltinTest("107-lambdas",
+							   ["--platform", "java_8", "--Xserver-logic",
+								"--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+								"--thorough-fact-gen", "--sanity",
+								"--generate-jimple"] +
+							   (wala ? ["--wala-fact-gen"] : []),
+							   analysisName,
+							   id)
 
 		then:
 		varPointsToQ(analysis,
@@ -81,46 +82,5 @@ class TestLambdasMethodReferences extends ServerAnalysisTests {
 
 		where:
 		analysisName << TEST_ANALYSES
-	}
-
-	// @spock.lang.Ignore
-	@Unroll
-	def "Server analysis test ForEach"(boolean wala) {
-		when:
-		String analysisName = "context-insensitive";
-		Analysis analysis = analyzeTest("invokedynamic-ForEach",
-										["--platform", "java_8"] + (wala ? ["--wala-fact-gen"] : []),
-										analysisName,
-										"test-invokedynamic-ForEach" + (wala ? "-wala" : ""))
-
-		then:
-		methodIsReachable(analysis, '<example_foreach.ForEach: void printTheList()>')
-
-		where:
-		wala << [true, false]
-	}
-
-	// @spock.lang.Ignore
-	@Unroll
-	def "Server analysis test FutureExample"(String analysisName) {
-		when:
-		Analysis analysis = analyzeTest("invokedynamic-FutureExample", ["--platform", "java_8"], analysisName)
-
-		then:
-		varPointsTo(analysis, '<java.util.concurrent.FutureTask: void run()>/l1#_261', '<example_foreach.FutureExample: void useFuture()>/invokedynamic_metafactory::call/0::: java.util.concurrent.Callable::: (Mock)::: lambda object of type java.util.concurrent.Callable')
-		methodIsReachable(analysis, '<example_foreach.FutureExample: java.lang.Integer doComputation()>')
-
-		where:
-		analysisName << TEST_ANALYSES
-	}
-
-	// @spock.lang.Ignore
-	@Unroll
-	def "Server analysis test FutureExample2"() {
-		when:
-		Analysis analysis = analyzeTest("invokedynamic-FutureExample2", ["--platform", "java_8"], "2-object-sensitive+heap")
-
-		then:
-		methodIsReachable(analysis, '<example.Computation: java.lang.Integer computation()>')
 	}
 }

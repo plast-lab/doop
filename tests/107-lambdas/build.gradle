@@ -1,0 +1,42 @@
+buildscript {
+    //configurations.classpath.resolutionStrategy.cacheChangingModulesFor(0, 'seconds')
+    configurations.all {
+        //This is required for SNAPSHOT dependencies
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+        //This is required for dependencies using the "+" notation
+        resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
+        maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'application'
+
+group = 'org.clyze'
+description = """org.clyze:107-lambdas"""
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+mainClassName = "Main"
+
+jar {
+  manifest {
+    attributes 'Main-Class': mainClassName
+  }
+}
+
+// Use 'gradle run' to record the lambdas.
+run {
+    jvmArgs '-Djdk.internal.lambda.dumpProxyClasses=lambdas'
+}
