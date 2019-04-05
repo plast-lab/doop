@@ -7,3 +7,5 @@ if ((gradle.parent == null) && hasProperty("use_composite_builds") && use_compos
 }
 
 enableFeaturePreview('STABLE_PUBLISHING')
+
+include 'tests:115-invokedynamic'

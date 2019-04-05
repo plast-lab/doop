@@ -9,7 +9,7 @@ import static org.clyze.doop.TestUtils.*
 /**
  * Test handling of invokedynamic (method handles, method types, bootstrap methods).
  */
-class TestInvokedynamic extends ServerAnalysisTests {
+class TestInvokedynamic extends DoopSpec {
 	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 115 (invokedynamic, method handles/types)"(boolean fullReflection) {
@@ -26,10 +26,10 @@ class TestInvokedynamic extends ServerAnalysisTests {
 										 "--Xstats-none",
 										 "--reflection-method-handles"] + reflectionOpts
 		String analysisId = "test-115-invokedynamic" + (fullReflection ? "" : "-light-refl")
-		Analysis analysis = analyzeTest("115-invokedynamic",
-										options,
-										analysisName,
-										analysisId)
+		Analysis analysis = analyzeBuiltinTest("115-invokedynamic",
+											   options,
+											   analysisName,
+											   analysisId)
 
 		then:
 		// test1
