@@ -236,6 +236,9 @@ test {
     environment.DOOP_HOME = projectDir
     environment.HOME = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx"))).toString()
 }
+test.dependsOn('tests:104-method-references:jar')
+test.dependsOn('tests:107-lambdas:jar')
+test.dependsOn('tests:115-invokedynamic:jar')
 
 task fullClean {
     description 'Clean everything, including caches and analysis results.'

@@ -48,12 +48,6 @@
 .decl NextOfMultiplePredsOfInsnInMethod(?next: Instruction, ?prev: Instruction, ?insn: Instruction, ?meth: Method)
 .decl LastOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)
 
-#ifdef DEBUG
-.output SinglePredOfInsnInMethod
-.output FirstOfMultiplePredsOfInsnInMethod
-.output NextOfMultiplePredsOfInsnInMethod
-.output LastOfMultiplePredsOfInsnInMethod
-#endif
 
 .decl isBooleanExpr(?expr: Expr)
 .decl isArithmeticExpr(?expr: Expr)
@@ -91,16 +85,19 @@
 .output isArithmeticExpr
 .output ResolveExpr
 .output Expression_Method
+.output isExpr
 
 #ifdef DEBUG
 .output ToString
-#endif
-.output isExpr
-
+.output SinglePredOfInsnInMethod
+.output FirstOfMultiplePredsOfInsnInMethod
+.output NextOfMultiplePredsOfInsnInMethod
+.output LastOfMultiplePredsOfInsnInMethod
 .output BuildPathExprBefore
 .output PathExpressionBefore
 .output PathExpressionAfterTrue
 .output PathExpressionAfterFalse
+#endif
 
 .output ExprImpliesOther
 .output ExprIsNegationOfOther
