@@ -48,12 +48,13 @@ class TestLambdasMethodReferences extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 104 (method references)"(String analysisName) {
 		when:
-		Analysis analysis = analyzeTest("104-method-references",
-										["--platform", "java_8",
-										 "--thorough-fact-gen", "--sanity",
-										 "--generate-jimple",
-										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"],
-										analysisName)
+		Analysis analysis =
+			analyzeBuiltinTest("104-method-references",
+							   ["--platform", "java_8",
+								"--thorough-fact-gen", "--sanity",
+								"--generate-jimple",
+								"--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"],
+							   analysisName)
 
 		then:
 		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/c1#_15', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::accept/0::: java.util.function.Consumer::: (Mock)::: lambda object of type java.util.function.Consumer')
