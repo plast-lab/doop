@@ -9,7 +9,7 @@ import static org.clyze.doop.TestUtils.*
 /**
  * Test code using lambdas and method references.
  */
-class TestLambdasMethodReferences extends ServerAnalysisTests {
+class TestLambdasMethodReferences extends DoopSpec {
     final static String[] TEST_ANALYSES = [ "context-insensitive", "1-object-sensitive+heap" ]
 
 	// @spock.lang.Ignore
