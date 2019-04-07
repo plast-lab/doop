@@ -1,2 +1,2 @@
 #!/bin/bash
-eval './gradlew run -Pargs="'$@'" --offline'
+eval './gradlew :run -Pargs="'$@'" --offline'
