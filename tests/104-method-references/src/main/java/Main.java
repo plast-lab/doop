@@ -5,11 +5,6 @@ import java.util.Arrays;
 
 public class Main {
 
-    private static class Null {
-
-        void foo() { System.out.println("ASDAS"); }
-    }
-
     public static void main(String[] args) {
         // Direct uses of method references.
         Consumer<Integer> c1 = A::meth1234;
