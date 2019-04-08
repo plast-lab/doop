@@ -926,7 +926,8 @@ AssignArray(?stmt, ?var1, ?var2) :-
     RewriteStoreArrayIndex(?stmt, _, ?var2, ?var1, _).
 
 ConstraintForVar(?var1, ?stmt),
-ConstraintForVar(?var2, ?stmt) :- 
+ConstraintForVar(?var2, ?stmt),
+UpperConstraintForVar(?var2, ?stmt) :-
     Assign(?stmt, ?var1, ?var2).
 
 // Static type of formal params is known.
@@ -1002,7 +1003,39 @@ FirstUpperConstraintForVar(?var, ?stmt) :-
    UpperConstraintForVar(?var, ?stmt),
    !NotFirstUpperConstraintForVar(?var, ?stmt).
 
-   
+.decl NotFirstLowerConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl FirstLowerConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl NotLastLowerConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl LaterLowerConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtLater:symbol)
+.decl NextLowerConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtNext:symbol)
+
+.decl LowerConstraintForVar(?var:symbol, ?stmt:symbol)
+
+// Testing fix FirstLowerConstraintForVar
+NotFirstLowerConstraintForVar(?var, ?stmt) :-
+   LowerConstraintForVar(?var, ?stmt),
+   LowerConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) < ord(?stmt).
+
+NotLastLowerConstraintForVar(?var, ?stmt) :-
+   LowerConstraintForVar(?var, ?stmt),
+   LowerConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) > ord(?stmt).
+
+LaterLowerConstraintForVar(?var, ?stmt, ?stmtLater) :-
+   LowerConstraintForVar(?var, ?stmt),
+   LowerConstraintForVar(?var, ?stmtLater),
+   ord(?stmtLater) > ord(?stmt).
+
+NextLowerConstraintForVar(?var, ?stmt, ?stmtNext) :-
+   LaterLowerConstraintForVar(?var, ?stmt, ?stmtNext),
+   ?stmtNextOrd = min ord(?stmtLater) : LaterLowerConstraintForVar(?var, ?stmt, ?stmtLater),
+   ord(?stmtNext) = ?stmtNextOrd.
+
+FirstLowerConstraintForVar(?var, ?stmt) :-
+   LowerConstraintForVar(?var, ?stmt),
+   !NotFirstLowerConstraintForVar(?var, ?stmt).
+
 // Least upper bound on types lattice
 CommonAncestor(?type1, ?type2, ?supertype) :-
    mSubtypeOf(?type1, ?supertype),
@@ -1043,17 +1076,17 @@ LowerBoundTypeForAllConstraints(?var, ?type) :-
 LowerBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
    !HasKnownType(?var, _),
    LowerBoundTypeForConstraint(?var, ?type, ?stmt),
-   FirstConstraintForVar(?var, ?stmt).
+   FirstLowerConstraintForVar(?var, ?stmt).
    
 LowerBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
    LowerBoundTypeUpToConstraint(?var, ?typeBefore, ?stmtPrev),
-   NextConstraintForVar(?var, ?stmtPrev, ?stmt),
+   NextLowerConstraintForVar(?var, ?stmtPrev, ?stmt),
    LowerBoundTypeForConstraint(?var, ?typeCur, ?stmt),
    LeastCommonAncestor(?typeBefore, ?typeCur, ?type).
 
 LowerBoundTypeForAllConstraints(?var, ?type) :-
    LowerBoundTypeUpToConstraint(?var, ?type, ?stmt),
-   !NextConstraintForVar(?var, ?stmt, _).
+   !NextLowerConstraintForVar(?var, ?stmt, _).
 
 // Similarly for upper bounds
 UpperBoundTypeForAllConstraints(?var, ?type) :-
@@ -1062,17 +1095,17 @@ UpperBoundTypeForAllConstraints(?var, ?type) :-
 UpperBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
    !HasKnownType(?var, _),
    UpperBoundTypeForConstraint(?var, ?type, ?stmt),
-   FirstConstraintForVar(?var, ?stmt).
+   FirstUpperConstraintForVar(?var, ?stmt).
    
 UpperBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
    UpperBoundTypeUpToConstraint(?var, ?typeBefore, ?stmtPrev),
-   NextConstraintForVar(?var, ?stmtPrev, ?stmt),
+   NextUpperConstraintForVar(?var, ?stmtPrev, ?stmt),
    UpperBoundTypeForConstraint(?var, ?typeCur, ?stmt),
    GreatestCommonDescendant(?typeBefore, ?typeCur, ?type).
 
 UpperBoundTypeForAllConstraints(?var, ?type) :-
    UpperBoundTypeUpToConstraint(?var, ?type, ?stmt),
-   !NextConstraintForVar(?var, ?stmt, _).
+   !NextUpperConstraintForVar(?var, ?stmt, _).
 
 // Take both bounds into account
 TypeCompatibleWithAllConstraints(?var, ?type) :-
@@ -1089,11 +1122,9 @@ LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
    Assign(?stmt, ?var, ?varOther),
    TypeCompatibleWithAllConstraints(?varOther, ?type).
 
-UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
    Assign(?stmt, ?var, _).
 
-UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
    Assign(?stmt, ?varOther, ?var),
    TypeCompatibleWithAllConstraints(?varOther, ?type).
@@ -1103,7 +1134,9 @@ LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
 
 // Logic for array stores
 ConstraintForVar(?to, ?stmt),
-ConstraintForVar(?base, ?stmt) :-
+ConstraintForVar(?base, ?stmt),
+LowerConstraintForVar(?to, ?stmt),
+UpperConstraintForVar(?base, ?stmt) :-
     RewriteStoreArrayIndex(?stmt, _, ?to, ?base, _).
 
 LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
@@ -1111,11 +1144,9 @@ LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
     TypeCompatibleWithAllConstraints(?varOther, ?t),
     ?type = cat(?t, "[]").
 
-UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
    AssignArray(?stmt, ?var, _).
 
-UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
     AssignArray(?stmt, ?varOther, ?var),
     TypeCompatibleWithAllConstraints(?varOther, ?t),
@@ -1126,7 +1157,9 @@ LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
 
 // Logic for array loads
 ConstraintForVar(?to, ?stmt),
-ConstraintForVar(?base, ?stmt) :-
+ConstraintForVar(?base, ?stmt),
+UpperConstraintForVar(?to, ?stmt),
+LowerConstraintForVar(?base, ?stmt) :-
     RewriteLoadArrayIndex(?stmt, _, ?to, ?base, _).
 
 LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
@@ -1134,11 +1167,9 @@ LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
     TypeCompatibleWithAllConstraints(?varOther, ?t),
     ComponentType(?t, ?type).
 
-UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
     RewriteLoadArrayIndex(?stmt, _, ?var, _, _).
 
-UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
     RewriteLoadArrayIndex(?stmt, _, ?varOther, ?var, _),
     TypeCompatibleWithAllConstraints(?varOther, ?t),
@@ -1151,11 +1182,9 @@ LowerBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
 LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
     RewriteThrow(?stmt, _, ?var, _).
 
-UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, "java.lang.Throwable", ?stmt) :-
     RewriteThrow(?stmt, _, ?var, _).
 
-UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
     RewriteThrow(?stmt, _, ?var, ?method),
     Method_DeclaresException(?type, ?method).
@@ -1163,10 +1192,12 @@ UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
 // Logic for cast instructions
 
 ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
 LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     RewriteAssignCast(?insn, _, _, ?to, ?type, _).
 
 ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
 LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     RewriteAssignCastNull(?insn, _, ?to, ?type, _).
 
@@ -1176,6 +1207,7 @@ LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
 // Logic for heap allocations
 
 ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
 LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     RewriteAssignHeapAllocation(?insn, _, ?heap, ?to, _, _),
     HeapAllocation_Type(?heap, ?type).
@@ -1186,6 +1218,7 @@ LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
 // Logic for return assignment
 
 ConstraintForVar(?to, ?invocation),
+LowerConstraintForVar(?to, ?invocation),
 LowerBoundTypeForConstraint(?to, ?type, ?invocation) :-
     RewriteAssignReturnValue(?invocation, ?to),
     MethodInvocation_Method(?invocation, ?signature),
@@ -1194,8 +1227,10 @@ LowerBoundTypeForConstraint(?to, ?type, ?invocation) :-
 
 // Logic for field loads
 
+// TODO: Review this again, do we need to differentiate between base and from constraint ids (what if they are the same)
 ConstraintForVar(?to, ?insn),
 ConstraintForVar(?base, ?insn),
+LowerConstraintForVar(?to, ?insn),
 UpperConstraintForVar(?base, ?insn),
 LowerBoundTypeForConstraint(?to, ?field_type, ?insn),
 UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn) :-
@@ -1204,11 +1239,14 @@ UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn) :-
     Field_DeclaringType(?signature, ?declaring_type).
 
 ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
 LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     RewriteLoadStaticField(?insn, _, ?to, ?signature, _),
     Field_Type(?signature, ?type).
 
 // Logic for field stores
+
+// TODO: Review this again, do we need to differentiate between base and from constraint ids (what if they are the same)
 
 ConstraintForVar(?from, ?insn),
 ConstraintForVar(?base, ?insn),
@@ -1253,6 +1291,7 @@ UpperBoundTypeForConstraint(?var, ?t, "init_constraint") :-
     ConstraintForVar(?var, _),
     UpperGlobalConstraint(?t).
 
+LowerConstraintForVar(?var, "init_constraint"),
 LowerBoundTypeForConstraint(?var, ?t, "init_constraint") :-
     ConstraintForVar(?var, _),
     LowerGlobalConstraint(?t).
