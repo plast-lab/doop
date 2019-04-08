@@ -22,12 +22,12 @@
 //   ?expr1 = [?op, ?type, ?exprX, ?exprY],
 //   ?expr2 = [?op, ?type, ?exprY, ?exprZ],
 //   ?exprOther = [?op, ?type, ?exprX, ?exprZ],
-//   isArithmeticExpr(?exprOther).
+//   isBooleanExpr(?exprOther).
 
 // Reflexivity
 
 ExprIsAlwaysTrue(?expr) :-
-  (isArithmeticExpr(?expr) ; isBooleanExpr(?expr)),
+  isBooleanExpr(?expr),
   ?expr = [?op, ?type, ?exprInner, ?exprInner],
   (?op = "<=" ; ?op = "==" ; ?op = ">=").
 
@@ -39,7 +39,7 @@ ExprImpliesOther(?expr, ?exprOther) :-
   ?expr1 = [">=", ?type, ?exprX, ?exprY],
   ?expr2 = [">=", ?type, ?exprY, ?exprX],
   ?exprOther = ["==", ?type, ?exprX, ?exprY],
-  isArithmeticExpr(?exprOther).
+  isBooleanExpr(?exprOther).
 
 ExprImpliesOther(?expr, ?exprOther) :-
   isBooleanExpr(?expr),
@@ -47,28 +47,28 @@ ExprImpliesOther(?expr, ?exprOther) :-
   ?expr1 = ["<=", ?type, ?exprX, ?exprY],
   ?expr2 = ["<=", ?type, ?exprY, ?exprX],
   ?exprOther = ["==", ?type, ?exprX, ?exprY],
-  isArithmeticExpr(?exprOther).
+  isBooleanExpr(?exprOther).
 
 // Various
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isArithmeticExpr(?expr),
+  isBooleanExpr(?expr),
   ?expr = ["<", ?type, ?exprX, ?exprY],
   ?exprOther = ["<=", ?type, ?exprX, ?exprY],
-  isArithmeticExpr(?exprOther).
+  isBooleanExpr(?exprOther).
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isArithmeticExpr(?expr),
+  isBooleanExpr(?expr),
   ?expr = [">", ?type, ?exprX, ?exprY],
   ?exprOther = [">=", ?type, ?exprX, ?exprY],
-  isArithmeticExpr(?exprOther).
+  isBooleanExpr(?exprOther).
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isArithmeticExpr(?expr),
+  isBooleanExpr(?expr),
   (?op = ">" ; ?op = "<"),
   ?expr = [?op, ?type, ?exprX, ?exprY],
   ?exprOther = ["!=", ?type, ?exprX, ?exprY],
-  isArithmeticExpr(?exprOther).
+  isBooleanExpr(?exprOther).
 
 ExprIsAlwaysFalse(?expr) :-
   isBooleanExpr(?expr),
@@ -77,14 +77,14 @@ ExprIsAlwaysFalse(?expr) :-
   ?expr2 = [">=", ?type, ?exprX, ?exprY].
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isArithmeticExpr(?expr),
+  isBooleanExpr(?expr),
   ?expr = ["<=", ?type, ?exprX, ?exprY],
   ?exprOther = ["||", "boolean", ?exprL, ?exprR],
   ?exprL = ["<", ?type, ?exprX, ?exprY],
   ?exprR = ["==", ?type, ?exprX, ?exprY].
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isArithmeticExpr(?expr),
+  isBooleanExpr(?expr),
   ?expr = [">=", ?type, ?exprX, ?exprY],
   ?exprOther = ["||", "boolean", ?exprL, ?exprR],
   ?exprL = [">", ?type, ?exprX, ?exprY],
