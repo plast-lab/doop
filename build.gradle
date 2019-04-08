@@ -148,6 +148,14 @@ applicationDistribution.from(projectDir) {
     include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
 }
 
+def testSubprojects = [ '104-method-references', '107-lambdas', '115-invokedynamic' ]
+
+testSubprojects.each {
+    def path = "tests/${it}/build/libs"
+    applicationDistribution.from(file("$projectDir/${path}")) { into path }
+}
+
+
 run {
     //debug true
     // We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
@@ -236,9 +244,7 @@ test {
     environment.DOOP_HOME = projectDir
     environment.HOME = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx"))).toString()
 }
-test.dependsOn('tests:104-method-references:jar')
-test.dependsOn('tests:107-lambdas:jar')
-test.dependsOn('tests:115-invokedynamic:jar')
+testSubprojects.each { test.dependsOn("tests:${it}:jar") }
 
 task fullClean {
     description 'Clean everything, including caches and analysis results.'
