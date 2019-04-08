@@ -27,8 +27,8 @@ ExprImpliesOther(?expr, ?exprOther) :-
 // Reflexivity
 
 ExprIsAlwaysTrue(?expr) :-
-  isArithmeticExpr(?expr),
-  ?expr = [?op, ?type, ?exprL, ?exprR],
+  (isArithmeticExpr(?expr) ; isBooleanExpr(?expr)),
+  ?expr = [?op, ?type, ?exprInner, ?exprInner],
   (?op = "<=" ; ?op = "==" ; ?op = ">=").
 
 // Anti-Symmetry
