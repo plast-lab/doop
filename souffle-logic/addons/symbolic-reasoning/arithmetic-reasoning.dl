@@ -14,15 +14,15 @@
   *
  **/
 
-Transitive(?exprOther),
-ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExpr(?expr),
-  ?expr = ["&&", "boolean", ?expr1, ?expr2],
-  isRelationalOperator(?op),
-  ?expr1 = [?op, ?type, ?exprX, ?exprY],
-  ?expr2 = [?op, ?type, ?exprY, ?exprZ],
-  ?exprOther = [?op, ?type, ?exprX, ?exprZ],
-  isArithmeticExpr(?exprOther).
+// Transitive(?exprOther),
+// ExprImpliesOther(?expr, ?exprOther) :-
+//   isBooleanExpr(?expr),
+//   ?expr = ["&&", "boolean", ?expr1, ?expr2],
+//   isRelationalOperator(?op),
+//   ?expr1 = [?op, ?type, ?exprX, ?exprY],
+//   ?expr2 = [?op, ?type, ?exprY, ?exprZ],
+//   ?exprOther = [?op, ?type, ?exprX, ?exprZ],
+//   isArithmeticExpr(?exprOther).
 
 // Reflexivity
 
