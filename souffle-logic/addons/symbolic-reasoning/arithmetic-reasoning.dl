@@ -1,9 +1,17 @@
-// Transitivity
+/*
+ * The reasoning performed under the following rules is said
+ * to be arithmetic due to the fact that the expressions
+ * considered here mostly (may) consist of relational operators 
+ * between arithmetic expressions.
+ *
+ */
 
-// temp relation for debugging 
+// Temp relation for debugging 
 
 .decl Transitive(?expr: Expr)
 .output Transitive
+
+// Transitivity
 
 /**
   * Captures every possible transitive rule,
@@ -14,36 +22,29 @@
   *
  **/
 
-// Transitive(?exprOther),
-// ExprImpliesOther(?expr, ?exprOther) :-
-//   isBooleanExpr(?expr),
-//   ?expr = ["&&", "boolean", ?expr1, ?expr2],
-//   isRelationalOperator(?op),
-//   ?expr1 = [?op, ?type, ?exprX, ?exprY],
-//   ?expr2 = [?op, ?type, ?exprY, ?exprZ],
-//   ?exprOther = [?op, ?type, ?exprX, ?exprZ],
-//   isBooleanExpr(?exprOther).
+Transitive(?exprOther),
+ExprImpliesOther(?expr, ?exprOther) :-
+  isBooleanExprLeftRight(?exprOther, ?exprX, ?exprZ, ?op),
+  isRelationalOperator(?op),
+  isTransitiveBooleanConjunction(?expr, ?exprX, ?exprZ, ?op).
 
 // Reflexivity
 
 ExprIsAlwaysTrue(?expr) :-
-  isBooleanExpr(?expr),
-  ?expr = [?op, ?type, ?exprInner, ?exprInner],
+  isBooleanExprLeftRight(?expr, ?exprInner, ?exprInner, ?op),
   (?op = "<=" ; ?op = "==" ; ?op = ">=").
 
 // Anti-Symmetry
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExpr(?expr),
-  ?expr = ["&&", "boolean", ?expr1, ?expr2],
+  isBooleanExprLeftRight(?expr, ?expr1, ?expr2, "&&"),
   ?expr1 = [">=", ?type, ?exprX, ?exprY],
   ?expr2 = [">=", ?type, ?exprY, ?exprX],
   ?exprOther = ["==", ?type, ?exprX, ?exprY],
   isBooleanExpr(?exprOther).
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExpr(?expr),
-  ?expr = ["&&", "boolean", ?expr1, ?expr2],
+  isBooleanExprLeftRight(?expr, ?expr1, ?expr2, "&&"),
   ?expr1 = ["<=", ?type, ?exprX, ?exprY],
   ?expr2 = ["<=", ?type, ?exprY, ?exprX],
   ?exprOther = ["==", ?type, ?exprX, ?exprY],
@@ -52,40 +53,42 @@ ExprImpliesOther(?expr, ?exprOther) :-
 // Various
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExpr(?expr),
   ?expr = ["<", ?type, ?exprX, ?exprY],
+  isBooleanExpr(?expr),
   ?exprOther = ["<=", ?type, ?exprX, ?exprY],
   isBooleanExpr(?exprOther).
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExpr(?expr),
   ?expr = [">", ?type, ?exprX, ?exprY],
+  isBooleanExpr(?expr),
   ?exprOther = [">=", ?type, ?exprX, ?exprY],
   isBooleanExpr(?exprOther).
 
 ExprImpliesOther(?expr, ?exprOther) :-
+  ?expr = [?op, ?type, ?exprX, ?exprY],
   isBooleanExpr(?expr),
   (?op = ">" ; ?op = "<"),
-  ?expr = [?op, ?type, ?exprX, ?exprY],
   ?exprOther = ["!=", ?type, ?exprX, ?exprY],
   isBooleanExpr(?exprOther).
 
 ExprIsAlwaysFalse(?expr) :-
-  isBooleanExpr(?expr),
-  ?expr = ["&&", "boolean", ?expr1, ?expr2],
   ?expr1 = ["<", ?type, ?exprX, ?exprY],
-  ?expr2 = [">=", ?type, ?exprX, ?exprY].
+  ?expr2 = [">=", ?type, ?exprX, ?exprY],
+  ?expr = ["&&", "boolean", ?expr1, ?expr2],
+  isBooleanExpr(?expr).
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExpr(?expr),
   ?expr = ["<=", ?type, ?exprX, ?exprY],
+  isBooleanExpr(?expr),
   ?exprOther = ["||", "boolean", ?exprL, ?exprR],
   ?exprL = ["<", ?type, ?exprX, ?exprY],
-  ?exprR = ["==", ?type, ?exprX, ?exprY].
+  ?exprR = ["==", ?type, ?exprX, ?exprY],
+  isBooleanExpr(?exprOther).
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExpr(?expr),
   ?expr = [">=", ?type, ?exprX, ?exprY],
+  isBooleanExpr(?expr),
   ?exprOther = ["||", "boolean", ?exprL, ?exprR],
   ?exprL = [">", ?type, ?exprX, ?exprY],
-  ?exprR = ["==", ?type, ?exprX, ?exprY].
+  ?exprR = ["==", ?type, ?exprX, ?exprY],
+  isBooleanExpr(?exprOther).
