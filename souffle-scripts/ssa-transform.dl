@@ -796,6 +796,8 @@ RewriteVarDeclaringMethod(?var, ?method) :-
 
 .decl TypeCompatibleWithAllConstraints(?var:symbol, ?type:symbol)
 
+.output GreatestCommonDescendant
+.output LeastCommonAncestor
 .output HasKnownType
 
 // Custom subtype relation, to provide domain specific knowledge
@@ -966,6 +968,40 @@ NextConstraintForVar(?var, ?stmt, ?stmtNext) :-
 FirstConstraintForVar(?var, ?stmt) :-
    ConstraintForVar(?var, ?stmt),
    !NotFirstConstraintForVar(?var, ?stmt).
+
+.decl NotFirstUpperConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl FirstUpperConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl NotLastUpperConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl LaterUpperConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtLater:symbol)
+.decl NextUpperConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtNext:symbol)
+
+.decl UpperConstraintForVar(?var:symbol, ?stmt:symbol)
+
+// Testing fix FirstUpperConstraintForVar
+NotFirstUpperConstraintForVar(?var, ?stmt) :-
+   UpperConstraintForVar(?var, ?stmt),
+   UpperConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) < ord(?stmt).
+
+NotLastUpperConstraintForVar(?var, ?stmt) :-
+   UpperConstraintForVar(?var, ?stmt),
+   UpperConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) > ord(?stmt).
+
+LaterUpperConstraintForVar(?var, ?stmt, ?stmtLater) :-
+   UpperConstraintForVar(?var, ?stmt),
+   UpperConstraintForVar(?var, ?stmtLater),
+   ord(?stmtLater) > ord(?stmt).
+
+NextUpperConstraintForVar(?var, ?stmt, ?stmtNext) :-
+   LaterUpperConstraintForVar(?var, ?stmt, ?stmtNext),
+   ?stmtNextOrd = min ord(?stmtLater) : LaterUpperConstraintForVar(?var, ?stmt, ?stmtLater),
+   ord(?stmtNext) = ?stmtNextOrd.
+
+FirstUpperConstraintForVar(?var, ?stmt) :-
+   UpperConstraintForVar(?var, ?stmt),
+   !NotFirstUpperConstraintForVar(?var, ?stmt).
+
    
 // Least upper bound on types lattice
 CommonAncestor(?type1, ?type2, ?supertype) :-
@@ -982,6 +1018,7 @@ LeastCommonAncestor(?type1, ?type2, ?common) :-
    CommonAncestor(?type1, ?type2, ?common),
    !NotLeastCommonAncestor(?type1, ?type2, ?common).
 
+
 // Greatest lower bound on types lattice
 CommonDescendant(?type1, ?type2, ?subtype) :-
    mSubtypeOf(?subtype, ?type1),
@@ -996,6 +1033,7 @@ NotGreatestCommonDescendant(?type1, ?type2, ?subtype) :-
 GreatestCommonDescendant(?type1, ?type2, ?common) :-
    CommonDescendant(?type1, ?type2, ?common),
    !NotGreatestCommonDescendant(?type1, ?type2, ?common).
+
 
 // If we know a declared type, that's enough!
 LowerBoundTypeForAllConstraints(?var, ?type) :-
@@ -1051,9 +1089,11 @@ LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
    Assign(?stmt, ?var, ?varOther),
    TypeCompatibleWithAllConstraints(?varOther, ?type).
 
+UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
    Assign(?stmt, ?var, _).
 
+UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
    Assign(?stmt, ?varOther, ?var),
    TypeCompatibleWithAllConstraints(?varOther, ?type).
@@ -1071,9 +1111,11 @@ LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
     TypeCompatibleWithAllConstraints(?varOther, ?t),
     ?type = cat(?t, "[]").
 
+UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
    AssignArray(?stmt, ?var, _).
 
+UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
     AssignArray(?stmt, ?varOther, ?var),
     TypeCompatibleWithAllConstraints(?varOther, ?t),
@@ -1092,9 +1134,11 @@ LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
     TypeCompatibleWithAllConstraints(?varOther, ?t),
     ComponentType(?t, ?type).
 
+UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
     RewriteLoadArrayIndex(?stmt, _, ?var, _, _).
 
+UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
     RewriteLoadArrayIndex(?stmt, _, ?varOther, ?var, _),
     TypeCompatibleWithAllConstraints(?varOther, ?t),
@@ -1107,9 +1151,11 @@ LowerBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
 LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
     RewriteThrow(?stmt, _, ?var, _).
 
+UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, "java.lang.Throwable", ?stmt) :-
     RewriteThrow(?stmt, _, ?var, _).
 
+UpperConstraintForVar(?var, ?stmt),
 UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
     RewriteThrow(?stmt, _, ?var, ?method),
     Method_DeclaresException(?type, ?method).
@@ -1150,6 +1196,7 @@ LowerBoundTypeForConstraint(?to, ?type, ?invocation) :-
 
 ConstraintForVar(?to, ?insn),
 ConstraintForVar(?base, ?insn),
+UpperConstraintForVar(?base, ?insn),
 LowerBoundTypeForConstraint(?to, ?field_type, ?insn),
 UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn) :-
     RewriteLoadInstanceField(?insn, _, ?to, ?base, ?signature, _),
@@ -1165,6 +1212,8 @@ LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
 
 ConstraintForVar(?from, ?insn),
 ConstraintForVar(?base, ?insn),
+UpperConstraintForVar(?base, ?insn),
+UpperConstraintForVar(?from, ?insn),
 UpperBoundTypeForConstraint(?from, ?field_type, ?insn),
 UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn) :-
     RewriteStoreInstanceField(?insn, _, ?from, ?base, ?signature, _),
@@ -1172,6 +1221,7 @@ UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn) :-
     Field_Type(?signature, ?field_type).
 
 ConstraintForVar(?from, ?insn),
+UpperConstraintForVar(?from, ?insn),
 UpperBoundTypeForConstraint(?from, ?type, ?insn) :-
     RewriteStoreStaticField(?insn, _, ?from, ?signature, _),
     Field_Type(?signature, ?type).
@@ -1179,9 +1229,34 @@ UpperBoundTypeForConstraint(?from, ?type, ?insn) :-
 // Logic for return instructions
 
 ConstraintForVar(?var, ?insn),
+UpperConstraintForVar(?var, ?insn),
 UpperBoundTypeForConstraint(?var, ?type, ?insn) :-
     RewriteReturn(?insn, _, ?var, ?method),
     Method_ReturnType(?method, ?type).
+
+.decl UpperGlobalConstraint(?type:symbol)
+
+UpperGlobalConstraint(?t) :-
+    ?t = "java.lang.Object";
+    isPrimitive32Top(?t);
+    isPrimitive64Top(?t).
+
+.decl LowerGlobalConstraint(?type:symbol)
+
+LowerGlobalConstraint(?t) :-
+    ?t = "null_type";
+    isPrimitive32Bottom(?t);
+    isPrimitive64Bottom(?t).
+
+UpperConstraintForVar(?var, "init_constraint"),
+UpperBoundTypeForConstraint(?var, ?t, "init_constraint") :-
+    ConstraintForVar(?var, _),
+    UpperGlobalConstraint(?t).
+
+LowerBoundTypeForConstraint(?var, ?t, "init_constraint") :-
+    ConstraintForVar(?var, _),
+    LowerGlobalConstraint(?t).
+
 
 // Encoding constraints for binops/unops
 
@@ -1201,6 +1276,7 @@ PrimOp(?insn, ?to, ?from) :-
 .decl Integer32Constraint(?var:symbol, ?insn:symbol)
 
 ConstraintForVar(?var, ?insn),
+UpperConstraintForVar(?var, ?insn),
 UpperBoundTypeForConstraint(?var, ?type, ?insn) :-
     Integer32Constraint(?var, ?insn),
     isInt32Top(?type).
@@ -1219,12 +1295,14 @@ Integer32Constraint(?from, ?insn) :-
     StatementType(?insn, "int32", _).
 
 ConstraintForVar(?to, ?insn),
+UpperConstraintForVar(?to, ?insn),
 UpperBoundTypeForConstraint(?to, ?type, ?insn) :-
     PrimOp(?insn, ?to, _),
     StatementType(?insn, _, ?type),
     ?type != "int32".
 
 ConstraintForVar(?from, ?insn),
+UpperConstraintForVar(?from, ?insn),
 UpperBoundTypeForConstraint(?from, ?type, ?insn) :-
     PrimOp(?insn, _, ?from),
     StatementType(?insn, ?type, _),
@@ -1259,21 +1337,21 @@ LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     isPrimitive64Bottom(?type).
 
 ConstraintForVar(?to, ?insn),
-UpperBoundTypeForConstraint(?to, ?type, ?insn) :-
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     SSA_AssignNumConstant(?insn, ?to, _, _),
     StatementType(?insn, _, "32bit"),
-    isPrimitive32Top(?type).
+    isPrimitive32Bottom(?type).
 
 ConstraintForVar(?to, ?insn),
-UpperBoundTypeForConstraint(?to, "java.lang.Object", ?insn) :-
+LowerBoundTypeForConstraint(?to, "null_type", ?insn) :-
     SSA_AssignNumConstant(?insn, ?to, "0", _),
     StatementType(?insn, _, "32bit").
 
 ConstraintForVar(?to, ?insn),
-UpperBoundTypeForConstraint(?to, ?type, ?insn) :-
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     SSA_AssignNumConstant(?insn, ?to, ?const, _),
     StatementType(?insn, _, "64bit"),
-    isPrimitive64Top(?type).
+    isPrimitive64Bottom(?type).
 
 .decl ExistsNonGuardType(?var:symbol)
 
@@ -1298,8 +1376,26 @@ SSA_Type(?var, "int") :-
     !ExistsNonGuardType(?var),
     TypeCompatibleWithAllConstraints(?var, _).
 
+// Hack
+Instruction_Next(?insn, ?next) :-
+    Instruction_Method(?insn, ?inMethod),
+    Instruction_Index(?insn, ?i),
+    AssignReturnValue(?insn, _),
+    OptInstructionFromMethodIndex(?inMethod, ?i + 2, ?next).
+
+GreatestCommonDescendant(?a, ?b, ?gcd) :-
+    GreatestCommonDescendant(?b, ?a, ?gcd).
+
+LeastCommonAncestor(?a, ?b, ?lca) :-
+    LeastCommonAncestor(?b, ?a, ?lca).
+    
+.output TypeCompatibleWithAllConstraints
 .output UpperBoundTypeForConstraint
 .output LowerBoundTypeForConstraint
+.output LowerBoundTypeForAllConstraints
+.output UpperBoundTypeForAllConstraints
+.output Instruction_Index
 .output NonGuardCompatibleTypes
+.output SSANext
 
 #endif

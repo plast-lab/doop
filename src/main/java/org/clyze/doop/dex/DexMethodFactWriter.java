@@ -1265,7 +1265,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         writeAssignNumConstant(reg, constant, index);
 
         String insn = instructionId("assign", index);
-        //writeStatementType(insn, op);
+        writeStatementType(insn, op);
     }
 
     private void writeAssignNumConstant(int reg, String constant, int index) {
