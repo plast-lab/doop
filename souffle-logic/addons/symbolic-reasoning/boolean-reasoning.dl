@@ -105,6 +105,7 @@ ExprImpliesOther(?expr, ?exprOther) :-
 ExprImpliesOther(?expr, ?exprOther) :-
   ExprImpliesOther(?expr, ?exprInter),
   ExprImpliesOther(?exprInter, ?exprOther).
+ .plan 1:(2,1)
 
 //
 //// A => B and A => C implies A => B && C
@@ -115,6 +116,7 @@ ExprImpliesOther(?exprA, ?exprOther) :-
   isBooleanExpr(?exprOther),
   ExprImpliesOther(?exprA, ?exprB),
   ExprImpliesOther(?exprA, ?exprC).
+ .plan 1:(1,3,2)
 
 //
 //// B => A and C => A implies B || C => A
@@ -125,6 +127,7 @@ ExprImpliesOther(?exprLeft, ?exprA) :-
   isBooleanExpr(?exprLeft),
 	ExprImpliesOther(?exprB, ?exprA),
   ExprImpliesOther(?exprC, ?exprA).
+ .plan 1:(1,3,2)
 
 //
 //// A => B and ExprIsNegationOfOther(B, B') and ExprIsNegationOfOther(A, A') implies B' => A'
