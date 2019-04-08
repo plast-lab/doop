@@ -40,55 +40,42 @@ ExprImpliesOther(?expr, ?exprOther) :-
   isBooleanExprLeftRight(?expr, ?expr1, ?expr2, "&&"),
   ?expr1 = [">=", ?type, ?exprX, ?exprY],
   ?expr2 = [">=", ?type, ?exprY, ?exprX],
-  ?exprOther = ["==", ?type, ?exprX, ?exprY],
-  isBooleanExpr(?exprOther).
+  isBooleanExprLeftRight(?exprOther, ?exprX, ?exprY, "==").
 
 ExprImpliesOther(?expr, ?exprOther) :-
   isBooleanExprLeftRight(?expr, ?expr1, ?expr2, "&&"),
   ?expr1 = ["<=", ?type, ?exprX, ?exprY],
   ?expr2 = ["<=", ?type, ?exprY, ?exprX],
-  ?exprOther = ["==", ?type, ?exprX, ?exprY],
-  isBooleanExpr(?exprOther).
+  isBooleanExprLeftRight(?exprOther, ?exprX, ?exprY, "==").
 
 // Various
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  ?expr = ["<", ?type, ?exprX, ?exprY],
-  isBooleanExpr(?expr),
-  ?exprOther = ["<=", ?type, ?exprX, ?exprY],
-  isBooleanExpr(?exprOther).
+  isBooleanExprLeftRight(?expr, ?exprX, ?exprY, "<"),
+  isBooleanExprLeftRight(?exprOther, ?exprX, ?exprY, "<=").
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  ?expr = [">", ?type, ?exprX, ?exprY],
-  isBooleanExpr(?expr),
-  ?exprOther = [">=", ?type, ?exprX, ?exprY],
-  isBooleanExpr(?exprOther).
+  isBooleanExprLeftRight(?expr, ?exprX, ?exprY, ">"),
+  isBooleanExprLeftRight(?exprOther, ?exprX, ?exprY, ">=").
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  ?expr = [?op, ?type, ?exprX, ?exprY],
-  isBooleanExpr(?expr),
+  isBooleanExprLeftRight(?expr, ?exprX, ?exprY, ?op),
   (?op = ">" ; ?op = "<"),
-  ?exprOther = ["!=", ?type, ?exprX, ?exprY],
-  isBooleanExpr(?exprOther).
+  isBooleanExprLeftRight(?exprOther, ?exprX, ?exprY, "!=").
 
 ExprIsAlwaysFalse(?expr) :-
   ?expr1 = ["<", ?type, ?exprX, ?exprY],
   ?expr2 = [">=", ?type, ?exprX, ?exprY],
-  ?expr = ["&&", "boolean", ?expr1, ?expr2],
-  isBooleanExpr(?expr).
+  isBooleanExprLeftRight(?expr, ?expr1, ?expr2, "&&").
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  ?expr = ["<=", ?type, ?exprX, ?exprY],
-  isBooleanExpr(?expr),
-  ?exprOther = ["||", "boolean", ?exprL, ?exprR],
+  isBooleanExprLeftRight(?expr, ?exprX, ?exprY, "<="),
   ?exprL = ["<", ?type, ?exprX, ?exprY],
   ?exprR = ["==", ?type, ?exprX, ?exprY],
-  isBooleanExpr(?exprOther).
+  isBooleanExprLeftRight(?exprOther, ?exprL, ?exprR, "||").
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  ?expr = [">=", ?type, ?exprX, ?exprY],
-  isBooleanExpr(?expr),
-  ?exprOther = ["||", "boolean", ?exprL, ?exprR],
+  isBooleanExprLeftRight(?expr, ?exprX, ?exprY, ">="),
   ?exprL = [">", ?type, ?exprX, ?exprY],
   ?exprR = ["==", ?type, ?exprX, ?exprY],
-  isBooleanExpr(?exprOther).
+  isBooleanExprLeftRight(?exprOther, ?exprL, ?exprR, "||").
