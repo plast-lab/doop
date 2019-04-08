@@ -4,12 +4,12 @@
 
 .type SymbolicInput = Var | MethodInvocation | NumConstant
 .type Operator = symbol
-
+.type ExpressionType = PrimitiveType | ReferenceType
 .type Base = SymbolicInput | Operator
 
 .type Expr = [
   ?base: Base,
-  ?type: PrimitiveType,
+  ?type: ExpressionType,
   ?left: Expr,
   ?right: Expr
 ]
