@@ -4,6 +4,10 @@
  * considered here mostly (may) consist of relational operators 
  * between arithmetic expressions.
  *
+ * *Implication* rhs are constrained to be among the previously
+ * computed boolean expressions, just like lhs. We may want to
+ * relax this constraint in the future. The same holds for
+ * boolean reasoning, apart from distributive property rules.
  */
 
 // Temp relation for debugging 
