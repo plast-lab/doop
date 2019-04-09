@@ -15,8 +15,8 @@ abstract class DoopSpec extends Specification {
 	Analysis analyzeTest(String test, String jar, List<String> extraArgs, String analysisName = "context-insensitive", String id = null) {
 		String analysisId = id ?: "test-${test}"
 		List args = ["-i", jar,
-					 "-a", analysisName, // "--Xserver-logic",
-					 "--id", analysisId, "--generate-jimple",
+					 "-a", analysisName,
+					 "--id", analysisId,
 					 "--Xstats-full"] + extraArgs
 		Main.main2((String[])args)
 		return Main.analysis

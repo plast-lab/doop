@@ -429,7 +429,8 @@ class FactWriter extends JavaFactWriter {
     private void writeInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local var, Session session, PredicateFile storeOrLoadInstField) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
         String fieldId = writeField(f);
-        _db.add(storeOrLoadInstField, ii.insn, str(ii.index), _rep.local(m, var), _rep.local(m, base), fieldId, ii.methodId);
+        if (fieldId != null)
+            _db.add(storeOrLoadInstField, ii.insn, str(ii.index), _rep.local(m, var), _rep.local(m, base), fieldId, ii.methodId);
     }
 
     void writeStoreStaticField(SootMethod m, Stmt stmt, SootField f, Local from, Session session) {
@@ -443,7 +444,8 @@ class FactWriter extends JavaFactWriter {
     private void writeStaticField(SootMethod m, Stmt stmt, SootField f, Local var, Session session, PredicateFile staticFieldFacts) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
         String fieldId = writeField(f);
-        _db.add(staticFieldFacts, ii.insn, str(ii.index), _rep.local(m, var), fieldId, ii.methodId);
+        if (fieldId != null)
+            _db.add(staticFieldFacts, ii.insn, str(ii.index), _rep.local(m, var), fieldId, ii.methodId);
     }
 
     void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, Local arrIndex, Session session) {
@@ -466,6 +468,10 @@ class FactWriter extends JavaFactWriter {
     }
 
     String writeField(SootField f) {
+        if (f == null) {
+            System.err.println("WARNING: null field encountered.");
+            return null;
+        }
         String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getDeclaringClass()), Representation.simpleName(f), writeType(f.getType()));
         if (f.getTag("VisibilityAnnotationTag") != null) {

@@ -309,3 +309,11 @@ Expression_Method(?expr, ?meth) :-
   PathExpressionAfterFalse(?meth, ?insn, ?expr).
 Expression_Method(?expr, ?meth) :-
   PathExpressionBefore(?meth, ?insn, ?expr).
+
+isBooleanExprLeftRight(?expr, ?exprX, ?exprZ, ?op) :-
+  ?expr = [?op, ?type, ?exprX, ?exprZ],
+  isBooleanExpr(?expr).
+
+isTransitiveBooleanConjunction(?expr, ?exprX, ?exprZ, ?op) :-
+   ?expr = ["&&", "boolean", [?op, ?type, ?exprX, ?exprY], [?op, ?type, ?exprY, ?exprZ]],
+   isBooleanExpr(?expr).

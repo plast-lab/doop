@@ -20,6 +20,10 @@
 .decl isRelationalOperator(?op: Operator)
 .decl isSymbolicInput(?symbInput: SymbolicInput)
 
+
+.decl isBooleanExprLeftRight(?exprOther: Expr, ?exprX: Expr, ?exprY: Expr, ?op: Operator)
+.decl isTransitiveBooleanConjunction(?expr: Expr, ?exprX: Expr, ?exprZ: Expr, ?op: Operator)
+
 .decl FirstIfInsnInMethod(?insn: Instruction, ?meth: Method)
 .decl IfsInMethod(?insn: Instruction, ?meth: Method)
 .decl FirstPredOfInsnInMethodOrdinal(?meth: Method, ?first: number, ?insn: Instruction)
