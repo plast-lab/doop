@@ -850,18 +850,58 @@ Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
   LambdaCaptured(?invokedynamic, _, 0, _).
 
+// Invocation argument to be passed to implementing method.
+.decl LambdaArg(?calleeCtx:configuration.Context, ?formal:Var, ?formalType:Type, ?actual:Var, ?invokedynamic:DynamicMethodInvocation_Insn)
+
 // Pass invocation arguments to the implementing method.
-VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic) :-
   LambdaCallGraphEdge(_, ?i, ?calleeCtx, ?implMethod, ?lambda),
   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
-  LambdaObject(_, ?lambda, _, ?K, ?implMethod, _),
+  LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
   ActualParam(?idx, ?i, ?actual),
   FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
+  Var_Type(?formal, ?formalType).
+
+// Argument passing case #1: check type compatibility.
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+  LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, _),
   VarPointsTo(?hctx, ?val, _, ?actual),
   Value_Type(?val, ?valType),
-  Var_Type(?formal, ?formalType),
-  // Check type compatibility (including (un)boxing).
   basic.SubtypeOf(?valType, ?formalType).
+
+// Argument passing case #2: autoboxing for some function types.
+.decl BoxingFunction(?functionType:ReferenceType, ?primType:Type, ?refType:ReferenceType)
+BoxingFunction(?intArgLambdaType, "int", "java.lang.Integer") :-
+  ?intArgLambdaType = "java.util.function.IntBinaryOperator";
+  ?intArgLambdaType = "java.util.function.IntConsumer";
+  ?intArgLambdaType = "java.util.function.IntFunction";
+  ?intArgLambdaType = "java.util.function.IntPredicate";
+  ?intArgLambdaType = "java.util.function.IntToDoubleFunction";
+  ?intArgLambdaType = "java.util.function.IntToLongFunction";
+  ?intArgLambdaType = "java.util.function.IntUnaryOperator".
+BoxingFunction(?longArgLambdaType, "long", "java.lang.Long") :-
+  ?longArgLambdaType = "java.util.function.LongBinaryOperator";
+  ?longArgLambdaType = "java.util.function.LongConsumer";
+  ?longArgLambdaType = "java.util.function.LongFunction";
+  ?longArgLambdaType = "java.util.function.LongPredicate";
+  ?longArgLambdaType = "java.util.function.LongToDoubleFunction";
+  ?longArgLambdaType = "java.util.function.LongToIntFunction";
+  ?longArgLambdaType = "java.util.function.LongUnaryOperator".
+BoxingFunction(?doubleArgLambdaType, "double", "java.lang.Double") :-
+  ?doubleArgLambdaType = "java.util.function.DoubleBinaryOperator";
+  ?doubleArgLambdaType = "java.util.function.DoubleConsumer";
+  ?doubleArgLambdaType = "java.util.function.DoubleFunction";
+  ?doubleArgLambdaType = "java.util.function.DoublePredicate";
+  ?doubleArgLambdaType = "java.util.function.DoubleToIntFunction";
+  ?doubleArgLambdaType = "java.util.function.DoubleToLongFunction";
+  ?doubleArgLambdaType = "java.util.function.DoubleUnaryOperator".
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+  LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic),
+  ReachableLambdaMetafactoryInvoke(?invokedynamic, _, ?dynRetType, _),
+  Var_Type(?actual, ?primType),
+  BoxingFunction(?dynRetType, ?primType, ?formalType),
+  BoxAllocation(?val, ?formalType),
+  isImmutableHContext(?hctx).
 
 #ifndef DISABLE_POINTS_TO
 // Pass captured arguments to the implementing method.
