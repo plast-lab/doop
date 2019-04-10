@@ -168,11 +168,9 @@ ExprImpliesOther(?expr, ?exprOther) :-
 //
 
 ExprIsNegationOfOther(?expr, ?exprOther) :-
-  Expression_Method(?expr, ?meth),
-  Expression_Method(?exprOther, ?meth),
-  NegateOp(?op, ?negatedOp),
-  ?expr = [?op, ?type, ?exprLeft, ?exprRight],
-  ?exprOther = [?negatedOp, ?type, ?exprLeft, ?exprRight].
+  isBooleanExprLeftRight(?expr, ?exprLeft, ?exprRight, ?op),
+  isBooleanExprLeftRight(?exprOther, ?exprLeft, ?exprRight, ?negatedOp),
+  NegateOp(?op, ?negatedOp).
 
 ExprIsNegationOfOther(?expr, ?exprOther) :-
 	?expr = ["1", "boolean", nil, nil],
