@@ -41,45 +41,45 @@ ExprIsAlwaysTrue(?expr) :-
 // Anti-Symmetry
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExprLeftRight(?expr, ?expr1, ?expr2, "&&"),
+  isBooleanExprLeftRightInMethod(?expr, ?expr1, ?expr2, "&&", ?meth),
   ?expr1 = [">=", ?type, ?exprX, ?exprY],
   ?expr2 = [">=", ?type, ?exprY, ?exprX],
-  isBooleanExprLeftRight(?exprOther, ?exprX, ?exprY, "==").
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprX, ?exprY, "==", ?meth).
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExprLeftRight(?expr, ?expr1, ?expr2, "&&"),
+  isBooleanExprLeftRightInMethod(?expr, ?expr1, ?expr2, "&&", ?meth),
   ?expr1 = ["<=", ?type, ?exprX, ?exprY],
   ?expr2 = ["<=", ?type, ?exprY, ?exprX],
-  isBooleanExprLeftRight(?exprOther, ?exprX, ?exprY, "==").
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprX, ?exprY, "==", ?meth).
 
 // Various
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExprLeftRight(?expr, ?exprX, ?exprY, "<"),
-  isBooleanExprLeftRight(?exprOther, ?exprX, ?exprY, "<=").
+  isBooleanExprLeftRightInMethod(?expr, ?exprX, ?exprY, "<", ?meth),
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprX, ?exprY, "<=", ?meth).
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExprLeftRight(?expr, ?exprX, ?exprY, ">"),
-  isBooleanExprLeftRight(?exprOther, ?exprX, ?exprY, ">=").
+  isBooleanExprLeftRightInMethod(?expr, ?exprX, ?exprY, ">", ?meth),
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprX, ?exprY, ">=", ?meth).
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExprLeftRight(?expr, ?exprX, ?exprY, ?op),
+  isBooleanExprLeftRightInMethod(?expr, ?exprX, ?exprY, ?op, ?meth),
   (?op = ">" ; ?op = "<"),
-  isBooleanExprLeftRight(?exprOther, ?exprX, ?exprY, "!=").
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprX, ?exprY, "!=", ?meth).
 
 ExprIsAlwaysFalse(?expr) :-
   ?expr1 = ["<", ?type, ?exprX, ?exprY],
   ?expr2 = [">=", ?type, ?exprX, ?exprY],
-  isBooleanExprLeftRight(?expr, ?expr1, ?expr2, "&&").
+  isBooleanExprLeftRightInMethod(?expr, ?expr1, ?expr2, "&&", ?meth).
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExprLeftRight(?expr, ?exprX, ?exprY, "<="),
+  isBooleanExprLeftRightInMethod(?expr, ?exprX, ?exprY, "<=", ?meth),
   ?exprL = ["<", ?type, ?exprX, ?exprY],
   ?exprR = ["==", ?type, ?exprX, ?exprY],
-  isBooleanExprLeftRight(?exprOther, ?exprL, ?exprR, "||").
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprL, ?exprR, "||", ?meth).
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  isBooleanExprLeftRight(?expr, ?exprX, ?exprY, ">="),
+  isBooleanExprLeftRightInMethod(?expr, ?exprX, ?exprY, ">=", ?meth),
   ?exprL = [">", ?type, ?exprX, ?exprY],
   ?exprR = ["==", ?type, ?exprX, ?exprY],
-  isBooleanExprLeftRight(?exprOther, ?exprL, ?exprR, "||").
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprL, ?exprR, "||", ?meth).
