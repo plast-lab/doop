@@ -878,7 +878,8 @@ BoxingFunction(?intArgLambdaType, "int", "java.lang.Integer") :-
   ?intArgLambdaType = "java.util.function.IntPredicate";
   ?intArgLambdaType = "java.util.function.IntToDoubleFunction";
   ?intArgLambdaType = "java.util.function.IntToLongFunction";
-  ?intArgLambdaType = "java.util.function.IntUnaryOperator".
+  ?intArgLambdaType = "java.util.function.IntUnaryOperator";
+  ?intArgLambdaType = "java.util.function.ObjIntConsumer".
 BoxingFunction(?longArgLambdaType, "long", "java.lang.Long") :-
   ?longArgLambdaType = "java.util.function.LongBinaryOperator";
   ?longArgLambdaType = "java.util.function.LongConsumer";
@@ -886,7 +887,8 @@ BoxingFunction(?longArgLambdaType, "long", "java.lang.Long") :-
   ?longArgLambdaType = "java.util.function.LongPredicate";
   ?longArgLambdaType = "java.util.function.LongToDoubleFunction";
   ?longArgLambdaType = "java.util.function.LongToIntFunction";
-  ?longArgLambdaType = "java.util.function.LongUnaryOperator".
+  ?longArgLambdaType = "java.util.function.LongUnaryOperator";
+  ?longArgLambdaType = "java.util.function.ObjLongConsumer".
 BoxingFunction(?doubleArgLambdaType, "double", "java.lang.Double") :-
   ?doubleArgLambdaType = "java.util.function.DoubleBinaryOperator";
   ?doubleArgLambdaType = "java.util.function.DoubleConsumer";
@@ -894,7 +896,8 @@ BoxingFunction(?doubleArgLambdaType, "double", "java.lang.Double") :-
   ?doubleArgLambdaType = "java.util.function.DoublePredicate";
   ?doubleArgLambdaType = "java.util.function.DoubleToIntFunction";
   ?doubleArgLambdaType = "java.util.function.DoubleToLongFunction";
-  ?doubleArgLambdaType = "java.util.function.DoubleUnaryOperator".
+  ?doubleArgLambdaType = "java.util.function.DoubleUnaryOperator";
+  ?doubleArgLambdaType = "java.util.function.ObjDoubleConsumer".
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic),
   ReachableLambdaMetafactoryInvoke(?invokedynamic, _, ?dynRetType, _),
