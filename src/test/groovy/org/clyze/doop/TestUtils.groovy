@@ -79,12 +79,10 @@ class TestUtils {
 	}
 	// Simpler overloaded version.
 	static void varPointsTo(Analysis analysis, String local, String value) {
-		log("varPointsTo('${local}') -> ${value}")
 		varPointsTo(analysis, local, value, false)
 	}
 	// Simpler overloaded version.
 	static void varPointsToQ(Analysis analysis, String local, String value) {
-		log("varPointsToQ('${local}') -> ${value}")
 		varPointsTo(analysis, local, value, true)
 	}
 
