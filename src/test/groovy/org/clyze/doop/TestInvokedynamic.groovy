@@ -58,18 +58,22 @@ class TestInvokedynamic extends DoopSpec {
 		feature 'Calling non-static method handles with MethodHandle.invokeExact().'
 		testSucceeds(analysis, "test3.4")
 		// test4
+		feature 'Support for method handles with non-void types and <methodType(Class, Class)>.'
 		testSucceeds(analysis, "test4.1")
 		testSucceeds(analysis, "test4.2")
 		testSucceeds(analysis, "test4.3")
 		// test5
+		feature 'Support for <methodType(Class, Class[])>.'
 		testSucceeds(analysis, "test5.1")
 		testSucceeds(analysis, "test5.2")
 		testSucceeds(analysis, "test5.3")
 		// test6
+		feature 'Support for <methodType(Class, Class, Class...)> and <methodType(Class, List)>.'
 		testSucceeds(analysis, "test6.1")
 		testSucceeds(analysis, "test6.2")
 		testSucceeds(analysis, "test6.3")
 		// test7
+		feature 'Support for <methodType(Class, MethodType)>.'
 		testSucceeds(analysis, "test7.1")
 		testSucceeds(analysis, "test7.2")
 		testSucceeds(analysis, "test7.3")
