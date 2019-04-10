@@ -216,6 +216,10 @@ class TestUtils {
 	}
 
 	static void log(String msg) {
-		println("Running check: ${msg}")
+		println "Running check: ${msg}"
+	}
+
+	static void feature(String msg) {
+		println "Feature: ${msg}"
 	}
 }
