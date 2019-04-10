@@ -61,18 +61,18 @@ TestId("test7.3") :-
 TestId("testID.1") :-
   reachable("<A: java.lang.invoke.CallSite bootstrap(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>").
 TestId("testID.2") :-
-  methodHandleCGE("<InvokedynamicClass: void run()>/invokedynamic_bootstrap::print/0", "<A: void print(A)>").
-TestId("testID.3") :-
   reachable("<A: java.lang.invoke.CallSite bootstrap2(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>").
-TestId("testID.4") :-
-  varPointsTo("<A: java.lang.invoke.CallSite bootstrap2(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>/caller#_0", "mock method handles lookup object for type InvokedynamicClass").
-TestId("testID.5") :-
-  methodHandleCGE("<InvokedynamicClass: void run()>/invokedynamic_bootstrap2::print/0", "<A: void print(A)>").
-TestId("testID.6") :-
+TestId("testID.3") :-
   reachable("<A: java.lang.invoke.CallSite bootstrap3(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>").
-TestId("testID.7") :-
-  varPointsTo("<A: java.lang.Double doubleIdentity(java.lang.Double)>/d#_0", "mock box allocation for type java.lang.Double").
-TestId("testID.8") :-
+TestId("testID.4") :-
   reachable("<A: java.lang.invoke.CallSite bootstrap4(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>").
-TestId("testID.9") :-
+TestId("testID.5") :-
+  methodHandleCGE("<InvokedynamicClass: void run()>/invokedynamic_bootstrap::print/0", "<A: void print(A)>").
+TestId("testID.6") :-
+  methodHandleCGE("<InvokedynamicClass: void run()>/invokedynamic_bootstrap2::print/0", "<A: void print(A)>").
+TestId("testID.7") :-
   methodHandleCGE("<InvokedynamicClass: void run()>/invokedynamic_bootstrap4::print2/0", "<A: void print2(A)>").
+TestId("testID.8") :-
+  varPointsTo("<A: java.lang.invoke.CallSite bootstrap2(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>/caller#_0", "mock method handles lookup object for type InvokedynamicClass").
+TestId("testID.9") :-
+  varPointsTo("<A: java.lang.Double doubleIdentity(java.lang.Double)>/d#_0", "mock box allocation for type java.lang.Double").

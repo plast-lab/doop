@@ -760,7 +760,9 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
   cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
 
 .type Lambda = mainAnalysis.Value
-.decl LambdaObject(?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:Lambda, ?dynName:symbol, ?K:number, ?implMethod:Method, ?desc:symbol, ?ctx:configuration.Context)
+// TODO: Field ?ctx is currently unused, should be used in the
+// LambdaCallGraphEdge rule for context sensitivity.
+.decl LambdaObject(?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:Lambda, ?dynName:symbol, ?K:number, ?implMethod:Method, ?ctx:configuration.Context)
 
 #define LAMBDA(invokedynamic, type) \
   cat(invokedynamic, cat("::: ", cat(type, cat("::: (Mock)::: ", cat("lambda object of type ", type)))))
@@ -769,7 +771,7 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 // and return the mock lambda object.
 MockValueConsMacro(?lambda, ?dynRetType),
 VarPointsTo(?hctx, ?lambda, ?callerCtx, ?ret),
-LambdaObject(?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?desc, ?callerCtx) :-
+LambdaObject(?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?callerCtx) :-
   ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType, ?callerCtx),
   DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
   BootstrapParam(1, ?invokedynamic, ?handleVar),
@@ -778,8 +780,8 @@ LambdaObject(?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?desc, ?callerC
   // Used to generate friendly description for the lambda.
   Method_SimpleName(?implMethod, ?handleMeth),
   Method_DeclaringType(?implMethod, ?handleType),
-  ?desc = LAMBDA_ALT_VAL(?invokedynamic, ?dynRetType, ?handleType, ?handleMeth, ?implMethod, ?dynName),
-  ?lambda = LAMBDA(?invokedynamic, ?dynRetType),
+  ?lambda = LAMBDA_ALT_VAL(?invokedynamic, ?dynRetType, ?handleType, ?handleMeth, ?implMethod, ?dynName),
+  // ?lambda = LAMBDA(?invokedynamic, ?dynRetType),
   AssignReturnValue(?invokedynamic, ?ret).
 
 /** Phase 2: Capture (invoke CallSite, return functional object) **/
@@ -807,7 +809,7 @@ LambdaCaptured(?invokedynamic, ?val, ?idx, ?hctx) :-
 // context sensitivity, we must model all combinations of calling
 // contexts with implementing-method static-ness.
 LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
-  LambdaObject(_, ?lambda, ?dynName, _, ?implMethod, _, _),
+  LambdaObject(_, ?lambda, ?dynName, _, ?implMethod, _),
   VarPointsTo(_, ?lambda, ?callerCtx, ?var),
   VirtualMethodInvocation_Base(?i, ?var),
   VirtualMethodInvocation_SimpleName(?i, ?dynName),
@@ -828,7 +830,7 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
 CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda) :-
   LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
   !Method_Modifier("static", ?implMethod),
-  LambdaObject(?invokedynamic, ?lambda, _, _, ?implMethod, _, _),
+  LambdaObject(?invokedynamic, ?lambda, _, _, ?implMethod, _),
   ThisVar(?implMethod, ?this),
   Var_Type(?this, ?thisType).
 
@@ -837,7 +839,7 @@ CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeC
 // static methods take all K arguments before N ones.
 .decl Params_ReceiverShiftRight(?lambda:Lambda, ?implMethod:Method, ?shiftK:number, ?shiftN:number)
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
-  LambdaObject(_, ?lambda, _, _, ?implMethod, _, _),
+  LambdaObject(_, ?lambda, _, _, ?implMethod, _),
   Method_Modifier("static", ?implMethod).
 // No bootstrap arguments = an actual argument will be used for 'this'.
 Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
@@ -848,25 +850,68 @@ Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
   LambdaCaptured(?invokedynamic, _, 0, _).
 
+// Invocation argument to be passed to implementing method.
+.decl LambdaArg(?calleeCtx:configuration.Context, ?formal:Var, ?formalType:Type, ?actual:Var, ?invokedynamic:DynamicMethodInvocation_Insn)
+
 // Pass invocation arguments to the implementing method.
-VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic) :-
   LambdaCallGraphEdge(_, ?i, ?calleeCtx, ?implMethod, ?lambda),
   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
-  LambdaObject(_, ?lambda, _, ?K, ?implMethod, _, _),
+  LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
   ActualParam(?idx, ?i, ?actual),
   FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
+  Var_Type(?formal, ?formalType).
+
+// Argument passing case #1: check type compatibility.
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+  LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, _),
   VarPointsTo(?hctx, ?val, _, ?actual),
   Value_Type(?val, ?valType),
-  Var_Type(?formal, ?formalType),
-  // Check type compatibility (including (un)boxing).
   basic.SubtypeOf(?valType, ?formalType).
+
+// Argument passing case #2: autoboxing for some function types.
+.decl BoxingFunction(?functionType:ReferenceType, ?primType:Type, ?refType:ReferenceType)
+BoxingFunction(?intArgLambdaType, "int", "java.lang.Integer") :-
+  ?intArgLambdaType = "java.util.function.IntBinaryOperator";
+  ?intArgLambdaType = "java.util.function.IntConsumer";
+  ?intArgLambdaType = "java.util.function.IntFunction";
+  ?intArgLambdaType = "java.util.function.IntPredicate";
+  ?intArgLambdaType = "java.util.function.IntToDoubleFunction";
+  ?intArgLambdaType = "java.util.function.IntToLongFunction";
+  ?intArgLambdaType = "java.util.function.IntUnaryOperator";
+  ?intArgLambdaType = "java.util.function.ObjIntConsumer".
+BoxingFunction(?longArgLambdaType, "long", "java.lang.Long") :-
+  ?longArgLambdaType = "java.util.function.LongBinaryOperator";
+  ?longArgLambdaType = "java.util.function.LongConsumer";
+  ?longArgLambdaType = "java.util.function.LongFunction";
+  ?longArgLambdaType = "java.util.function.LongPredicate";
+  ?longArgLambdaType = "java.util.function.LongToDoubleFunction";
+  ?longArgLambdaType = "java.util.function.LongToIntFunction";
+  ?longArgLambdaType = "java.util.function.LongUnaryOperator";
+  ?longArgLambdaType = "java.util.function.ObjLongConsumer".
+BoxingFunction(?doubleArgLambdaType, "double", "java.lang.Double") :-
+  ?doubleArgLambdaType = "java.util.function.DoubleBinaryOperator";
+  ?doubleArgLambdaType = "java.util.function.DoubleConsumer";
+  ?doubleArgLambdaType = "java.util.function.DoubleFunction";
+  ?doubleArgLambdaType = "java.util.function.DoublePredicate";
+  ?doubleArgLambdaType = "java.util.function.DoubleToIntFunction";
+  ?doubleArgLambdaType = "java.util.function.DoubleToLongFunction";
+  ?doubleArgLambdaType = "java.util.function.DoubleUnaryOperator";
+  ?doubleArgLambdaType = "java.util.function.ObjDoubleConsumer".
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+  LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic),
+  ReachableLambdaMetafactoryInvoke(?invokedynamic, _, ?dynRetType, _),
+  Var_Type(?actual, ?primType),
+  BoxingFunction(?dynRetType, ?primType, ?formalType),
+  BoxAllocation(?val, ?formalType),
+  isImmutableHContext(?hctx).
 
 #ifndef DISABLE_POINTS_TO
 // Pass captured arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, _),
-  LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _, _),
+  LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
   LambdaCaptured(?invokedynamic, ?val, ?idx, ?hctx),
   ?idx + ?shiftK <= ?K,
   FormalParam(?idx - ?shiftK, ?implMethod, ?formal),

@@ -79,12 +79,10 @@ class TestUtils {
 	}
 	// Simpler overloaded version.
 	static void varPointsTo(Analysis analysis, String local, String value) {
-		log("varPointsTo('${local}') -> ${value}")
 		varPointsTo(analysis, local, value, false)
 	}
 	// Simpler overloaded version.
 	static void varPointsToQ(Analysis analysis, String local, String value) {
-		log("varPointsToQ('${local}') -> ${value}")
 		varPointsTo(analysis, local, value, true)
 	}
 
@@ -128,11 +126,6 @@ class TestUtils {
 	static void lambdaCGE(Analysis analysis, String instr, String meth) {
 		log("lambdaCGE('${instr}') -> ${meth}")
 		findPair(analysis, "mainAnalysis.LambdaCallGraphEdge", instr, 1, meth, 3)
-	}
-
-	static void linkObjectIsLambda(Analysis analysis, String linkObject, String desc) {
-		log("linkObjectIsLambda('${linkObject}') = ${desc}")
-		findPair(analysis, 'mainAnalysis.LambdaObject', linkObject, 1, desc, 5)
 	}
 
 	static void proxyCGE(Analysis analysis, String instr, String meth) {
@@ -221,6 +214,10 @@ class TestUtils {
 	}
 
 	static void log(String msg) {
-		println("Running check: ${msg}")
+		println "Running check: ${msg}"
+	}
+
+	static void feature(String msg) {
+		println "Feature: ${msg}"
 	}
 }
