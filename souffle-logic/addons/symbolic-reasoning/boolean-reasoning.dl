@@ -135,7 +135,9 @@ ExprImpliesOther(?exprBP, ?exprAP) :-
 
 ExprImpliesOther(?expr, ?exprOther) :-
 	ExprIsAlwaysFalse(?expr),
-	isBooleanExpr(?exprOther).
+  isBooleanExprLeftRightInMethod(?expr, _, _, _, ?meth),
+  isBooleanExprLeftRightInMethod(?exprOther, _, _, _, ?meth).
+
 
 //
 //// ExprIsAlwaysTrue(B) implies A => B
@@ -143,7 +145,8 @@ ExprImpliesOther(?expr, ?exprOther) :-
 
 ExprImpliesOther(?exprOther, ?expr) :-
 	ExprIsAlwaysTrue(?expr),
-	isBooleanExpr(?exprOther).
+  isBooleanExprLeftRightInMethod(?expr, _, _, _, ?meth),
+  isBooleanExprLeftRightInMethod(?exprOther, _, _, _, ?meth).
 
 //
 //// A => (B || false)  implies  A => B
@@ -175,8 +178,8 @@ ExprIsNegationOfOther(?expr, ?exprOther) :-
 ExprIsNegationOfOther(?expr, ?exprOther) :-
 	?expr = ["1", "boolean", nil, nil],
  	?exprOther = ["0", "boolean", nil, nil],
-	isBooleanExpr(?expr),
-	isBooleanExpr(?expr).
+  isBooleanExprLeftRightInMethod(?expr, _, _, _, ?meth),
+  isBooleanExprLeftRightInMethod(?exprOther, _, _, _, ?meth).
 
 //
 //// ExprIsAlwaysTrue
