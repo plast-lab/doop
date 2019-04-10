@@ -35,8 +35,10 @@ class TestLambdasMethodReferences extends DoopSpec {
 
 		println "Feature: Creating lambdas that can access values of the outside environment (forming closures)."
 		def value = '<java.util.stream.StreamSupport: java.util.stream.IntStream intStream(java.util.Spliterator$OfInt,boolean)>/new java.util.stream.IntPipeline$Head/0'
-		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/is#_10', value)
-		varPointsToQ(analysis, '<Main: java.lang.Integer lambda$main$2(java.util.stream.IntStream,java.lang.Integer)>/is#_0', value)
+		def localVar = '<Main: void main(java.lang.String[])>/' + (wala ? 'v12' : 'is#_10')
+		def captVar = '<Main: java.lang.Integer lambda$main$2(java.util.stream.IntStream,java.lang.Integer)>/' + (wala ? 'v1' : 'is#_0')
+		varPointsToQ(analysis, localVar, value)
+		varPointsToQ(analysis, captVar, value)
 
 		lambdaCGE(analysis, '<Main: void main(java.lang.String[])>/java.util.function.Function.apply/0', '<Main: java.lang.String lambda$main$0(java.lang.Integer)>')
 		invoValue(analysis, '<A: java.lang.Integer lambda$new$0(java.lang.Integer,java.lang.Integer,java.lang.Integer)>/java.lang.Integer.compareTo/0', '<java.lang.Integer: int compareTo(java.lang.Integer)>')
