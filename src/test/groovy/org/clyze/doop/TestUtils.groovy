@@ -130,11 +130,6 @@ class TestUtils {
 		findPair(analysis, "mainAnalysis.LambdaCallGraphEdge", instr, 1, meth, 3)
 	}
 
-	static void linkObjectIsLambda(Analysis analysis, String linkObject, String desc) {
-		log("linkObjectIsLambda('${linkObject}') = ${desc}")
-		findPair(analysis, 'mainAnalysis.LambdaObject', linkObject, 1, desc, 5)
-	}
-
 	static void proxyCGE(Analysis analysis, String instr, String meth) {
 		log("proxyCGE('${instr}') -> ${meth}")
 		findPair(analysis, "mainAnalysis.ProxyCallGraphEdge", instr, 1, meth, 3)
@@ -221,6 +216,10 @@ class TestUtils {
 	}
 
 	static void log(String msg) {
-		println("Running check: ${msg}")
+		println "Running check: ${msg}"
+	}
+
+	static void feature(String msg) {
+		println "Feature: ${msg}"
 	}
 }

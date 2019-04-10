@@ -22,6 +22,7 @@
 
 
 .decl isBooleanExprLeftRight(?exprOther: Expr, ?exprX: Expr, ?exprY: Expr, ?op: Operator)
+.decl isBooleanExprLeftRightInMethod(?expr: Expr, ?exprX: Expr, ?exprZ: Expr, ?op: Operator, ?meth: Method)
 .decl isTransitiveBooleanConjunction(?expr: Expr, ?exprX: Expr, ?exprZ: Expr, ?op: Operator)
 
 .decl FirstIfInsnInMethod(?insn: Instruction, ?meth: Method)
@@ -55,6 +56,7 @@
 
 .decl isBooleanExpr(?expr: Expr)
 .decl isArithmeticExpr(?expr: Expr)
+.decl isReferenceExpr(?expr: Expr)
 .decl isExpr(?expr: Expr)
 
 #ifdef DEBUG
