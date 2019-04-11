@@ -194,6 +194,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
+					id: "NO_STANDARD_EXPORTS",
+					name: "no-standard-exports",
+					description: "Do not export standard relations.",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "CACHE",
 					name: "cache",
 					group: GROUP_FACTS,
