@@ -34,7 +34,7 @@ class MiscLambdaTests extends ServerAnalysisTests {
 		Analysis analysis = analyzeTest("invokedynamic-FutureExample", ["--platform", "java_8"], analysisName)
 
 		then:
-		varPointsTo(analysis, '<java.util.concurrent.FutureTask: void run()>/l1#_261', '<example_foreach.FutureExample: void useFuture()>/invokedynamic_metafactory::call/0::: java.util.concurrent.Callable::: (Mock)::: lambda object of type java.util.concurrent.Callable')
+		varPointsTo(analysis, '<java.util.concurrent.FutureTask: void run()>/l1#_261', '<example_foreach.FutureExample: void useFuture()>/invokedynamic_metafactory::call/0::: java.util.concurrent.Callable::: (Mock)::: reference example_foreach.FutureExample::lambda$useFuture$0 from <example_foreach.FutureExample: java.lang.Integer lambda$useFuture$0()> wrapped as java.util.concurrent.Callable.call')
 		methodIsReachable(analysis, '<example_foreach.FutureExample: java.lang.Integer doComputation()>')
 
 		where:
