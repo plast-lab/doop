@@ -365,7 +365,7 @@ ReachableNativeMethodInvocation(?ctx, ?invo, ?nativeMethod) :-
 
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return),
-#endif
+#endif // DISABLE_POINTS_TO
 NativeMethodReturningValue(?m, ?t, ?return, NativeReturnValId(?t, ?m)),
 MockValueConsMacro(NativeReturnValId(?t, ?m), ?t),
 ReachableValue(?hctx, NativeReturnValId(?t, ?m)) :-
@@ -376,7 +376,33 @@ ReachableValue(?hctx, NativeReturnValId(?t, ?m)) :-
   isImmutableHContext(?hctx).
 #endif // SIMULATE_NATIVE_RETURNS
 
+// Process methods found by the native scanner. This includes mocking of arguments.
+
+#ifdef ANDROID
+
+// TODO: For Android, reuse relation ForcedReachableAndroidContext from android.dl.
+
+#else
+
 // Reachability for methods discovered by the native code scanner.
-ReachableContext(?immCtx, ?method) :-
-  basic.PossibleNativeCodeTargetMethod(?method, _, _),
+.decl ReachableContextFromNative(?ctx:configuration.Context, ?method:Method, ?function:symbol, ?file:symbol)
+
+ReachableContextFromNative(?immCtx, ?method, ?function, ?file) :-
+  basic.PossibleNativeCodeTargetMethod(?method, ?function, ?file),
   isImmutableContext(?immCtx).
+
+#ifndef DISABLE_POINTS_TO
+// Mock arguments for methods called from native code.
+MockValueConsMacro(?mockId, ?frmType),
+VarPointsTo(?immHCtx, ?mockId, ?ctx, ?frm) :-
+  ReachableContextFromNative(?ctx, ?method, ?function, ?file),
+  FormalParam(_, ?method, ?frm),
+  _Var_Type(?frm, ?frmType),
+  isImmutableHContext(?immHCtx),
+  ?mockId = cat("<mock native object of type ", cat(?frmType, cat(" from ", cat(?file, cat(":", cat(?function, ">")))))).
+#endif // DISABLE_POINTS_TO
+
+ReachableContext(?immCtx, ?method) :-
+  ReachableContextFromNative(?immCtx, ?method, _, _).
+
+#endif // ANDROID
