@@ -203,7 +203,7 @@ AssignOper_FromConstant(?instruction, ?pos, ?from) :-
 // IfConstant
 
 .decl _IfConstant(?instruction:symbol, ?pos:number, ?cons:symbol)
-.input _IfConstant(IO="file", filename="IfConstant.facts", delimeter="\t")
+.input _IfConstant(IO="file", filename="IfConstant.facts", delimiter="\t")
 
 If_Constant(?instruction, ?pos, ?cons) :-
     _IfConstant(?instruction, ?pos, ?cons).

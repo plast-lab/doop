@@ -25,10 +25,12 @@ MainMethodDeclaration(?method) :-
    Method_Modifier("static", ?method).
 
 #ifdef ANDROID
-// Android apps start by running ActivityThread.main().
+// Android apps start by running ActivityThread.main() or other
+// internal entry points.
 // TODO: this rule should only fire when analyzing an APK, not an AAR.
 MainMethodDeclaration(?method) :-
-  ?method = "<android.app.ActivityThread: void main(java.lang.String[])>",
+  ( ?method = "<android.app.ActivityThread: void main(java.lang.String[])>"
+  ; ?method = "<com.android.internal.os.RuntimeInit: void main(java.lang.String[])>"),
   isMethod(?method).
 #endif // ANDROID
 
