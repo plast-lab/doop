@@ -384,9 +384,12 @@ ReachableValue(?hctx, NativeReturnValId(?t, ?m)) :-
 
 #else
 
+// Simple mocking for non-Android code.
+
 // Reachability for methods discovered by the native code scanner.
 .decl ReachableContextFromNative(?ctx:configuration.Context, ?method:Method, ?function:symbol, ?file:symbol)
 
+ReachableContext(?immCtx, ?method),
 ReachableContextFromNative(?immCtx, ?method, ?function, ?file) :-
   basic.PossibleNativeCodeTargetMethod(?method, ?function, ?file),
   isImmutableContext(?immCtx).
@@ -400,9 +403,15 @@ VarPointsTo(?immHCtx, ?mockId, ?ctx, ?frm) :-
   _Var_Type(?frm, ?frmType),
   isImmutableHContext(?immHCtx),
   ?mockId = cat("<mock native object of type ", cat(?frmType, cat(" from ", cat(?file, cat(":", cat(?function, ">")))))).
-#endif // DISABLE_POINTS_TO
 
-ReachableContext(?immCtx, ?method) :-
-  ReachableContextFromNative(?immCtx, ?method, _, _).
+// Mock 'this' for methods called from native code.
+MockValueConsMacro(?mockId, ?type),
+VarPointsTo(?immHCtx, ?mockId, ?ctx, ?this) :-
+  ReachableContextFromNative(?ctx, ?method, ?function, ?file),
+  ThisVar(?method, ?this),
+  _Var_Type(?this, ?type),
+  isImmutableHContext(?immHCtx),
+  ?mockId = cat("<mock receiver of type ", cat(?frmType, cat(" from ", cat(?file, cat(":", cat(?function, ">")))))).
+#endif // DISABLE_POINTS_TO
 
 #endif // ANDROID
