@@ -66,11 +66,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	DoopAnalysis newAnalysis(AnalysisFamily family, Map<String, AnalysisOption> options) {
 		def context
 		def platformName = options.PLATFORM.value as String
-		if (platformName.contains("python"))
+		if (platformName.contains("python")) {
 			context = new DefaultInputResolutionContext(DefaultInputResolutionContext.PYTHON_RESOLVER)
-
-		else
-			context = new DefaultInputResolutionContext()
+		} else {
+			context = newJavaDefaultInputResolutionContext()
+		}
 		context.add(options.INPUTS.value as List<String>, InputType.INPUT)
 		context.add(options.LIBRARIES.value as List<String>, InputType.LIBRARY)
 
@@ -494,8 +494,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 	}
 
+	static DefaultInputResolutionContext newJavaDefaultInputResolutionContext() {
+		return new DefaultInputResolutionContext(DefaultInputResolutionContext.defaultResolver(new File(Doop.doopTmp)))
+	}
+
 	static File resolveAsInput(String filePath) {
-		def context = new DefaultInputResolutionContext()
+		def context = newJavaDefaultInputResolutionContext()
 		context.add(filePath, InputType.INPUT)
 		context.resolve()
 		context.allInputs.first()

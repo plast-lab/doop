@@ -251,8 +251,10 @@ task fullClean {
     doLast {
         def out   = System.getenv('DOOP_OUT')   ?: "$projectDir/out"
         def cache = System.getenv('DOOP_CACHE') ?: "$projectDir/cache"
+        def tmp   = System.getenv('DOOP_TMP')   ?: "$projectDir/tmp"
         file(out      ).list().each { f -> delete "$out/$f" }
         file(cache    ).list().each { f -> delete "$cache/$f" }
+        file(tmp      ).list().each { f -> delete "$tmp/$f" }
         file('results').list().each { f -> delete "results/$f" }
         org.apache.commons.io.FileUtils.deleteQuietly(new File('last-analysis'))
     }
