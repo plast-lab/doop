@@ -411,7 +411,7 @@ VarPointsTo(?immHCtx, ?mockId, ?ctx, ?this) :-
   ThisVar(?method, ?this),
   _Var_Type(?this, ?type),
   isImmutableHContext(?immHCtx),
-  ?mockId = cat("<mock receiver of type ", cat(?frmType, cat(" from ", cat(?file, cat(":", cat(?function, ">")))))).
+  ?mockId = cat("<mock receiver of type ", cat(?type, cat(" from ", cat(?file, cat(":", cat(?function, ">")))))).
 #endif // DISABLE_POINTS_TO
 
 #endif // ANDROID
