@@ -15,7 +15,7 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 			// The order matters
 			new FileResolver(),
 			new DirectoryResolver(),
-			new URLResolver(tmpDir),
+			new URLResolver(tmpDir, true),
 			new IvyResolver())
 	}
 
