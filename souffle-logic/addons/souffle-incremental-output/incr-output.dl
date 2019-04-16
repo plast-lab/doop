@@ -1,47 +1,30 @@
-#if(1)
 .decl ctxToNum(?ctx:mainAnalysis.configuration.Context, ?strCtx:number)
 .output ctxToNum
 
 .decl hctxToNum(?ctx:mainAnalysis.configuration.HContext, ?strCtx:number)
 .output hctxToNum
 
-ctxToNum(?ctx, $):-
-  mainAnalysis.isContext(?ctx).
+ctxToNum(?ctx, ?ctxNum):-
+  mainAnalysis.isContext(?ctx),
+  ?ctxNum = ord(?ctx).
 
-hctxToNum(?hctx, $):-
-  mainAnalysis.isHContext(?hctx).
+hctxToNum(?hctx, ?hctxNum):-
+  mainAnalysis.isHContext(?hctx),
+  ?hctxNum = ord(?hctx).
 
-.decl FunctorOut(?out:symbol)
-.output FunctorOut
-
-/*FunctorOut(?value):-
-  VarPointsTo(?hctx, ?value, ?ctx, ?var),
-  hctxToNum(?hctx, ?hctxNum),
-  ctxToNum(?ctx, ?ctxNum),
-  ?resNum = @logVPT(?hctxNum, ?value, ?ctxNum, ?var),
-  ?resNum = 1.
-*/
-/*
-.decl MyVPT(?hctxNum:number, ?value:Value, ?ctxNum:number, ?var:Variable)
-
-MyVPT(?hctxNum, ?value, ?ctxNum, ?var) :-
-  VarPointsTo(?hctx, ?value, ?ctx, ?var),
-  hctxToNum(?hctx, ?hctxNum),
-  ctxToNum(?ctx, ?ctxNum).
-
-VarPointsTo(?hctx, ?value, ?ctx, ?newVar):-
-  MyVPT(?hctxNum, ?value, ?ctxNum, ?var),
-  ?resNum = @logVPT(?hctxNum, ?value, ?ctxNum, ?var),
-  ?resNum = 1,
-  ?newVar = to_string(?resNum).
-*/
 
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?newVar):-
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var),
-  //hctxToNum(?hctx, ?hctxNum),
-  //ctxToNum(?ctx, ?ctxNum),
-  ?resNum = @logVPT(0, ?value, 1, ?var),
+  ?hctxNum = ord(?hctx),
+  ?ctxNum = ord(?ctx),
+  ?resNum = @logVPT(?hctxNum, ?value, ?ctxNum, ?var),
   ?resNum != 0,
   ?newVar = to_string(?resNum).
 
-#endif
+
+mainAnalysis.CallGraphEdge(?callerCtx, ?invocation, ?callerCtx, ?tofunction):-
+  mainAnalysis.CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tofunction),
+  ?callerCtxNum = ord(?callerCtx),
+  ?calleeCtxNum = ord(?calleeCtx),
+  ?resNum = @logCGE(?callerCtxNum, ?invocation, ?calleeCtxNum, ?tofunction),
+  ?resNum != 0.
