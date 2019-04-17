@@ -244,7 +244,12 @@ test {
     environment.DOOP_HOME = projectDir
     environment.HOME = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx"))).toString()
 }
-testSubprojects.each { test.dependsOn("tests:${it}:jar") }
+
+task buildTests {
+    description 'Build test subprojects.'
+}
+testSubprojects.each { buildTests.dependsOn("tests:${it}:jar") }
+test.dependsOn buildTests
 
 task fullClean {
     description 'Clean everything, including caches and analysis results.'
