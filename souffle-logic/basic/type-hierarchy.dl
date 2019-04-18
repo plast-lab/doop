@@ -183,6 +183,7 @@ SubtypeOf(?s, ?t) :-
     isReferenceType(?t),
     ?t != ?s.
 
+// Disable when performing type inference for Dalvik (Tsatiris)
 #ifndef TYPE_INFERENCE
 /**
  * Subtyping among Primitive Types
