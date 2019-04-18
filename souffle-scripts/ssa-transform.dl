@@ -20,9 +20,7 @@
 // Type info for renamed ssa variables.
 .decl SSA_Type(?var:symbol, ?type:symbol)
 .output SSA_Type(filename="Var-Type.facts")
-
-.output BasicBlockBegin
-.output MayPredecessorBBModuloThrow
+.decl SSA_TypeOrd(?var:symbol, ?typeId:number)
 
 // Helper relation to factor out some code.
 .decl SSA_AssignDetails(?instr:symbol, ?to:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
@@ -324,10 +322,7 @@ ReachingDef(?insn, ?ssa_var, ?origin) :-
     SSA_Alias(?ssa_var, ?origin),
     !ExistsDefInPhiHeader(?insn, _, ?origin).
 
-.output InDefs
-
 .decl NewIndexMapping(?old:number, ?new:number, ?method:symbol)
-.output NewIndexMapping
 
 NewIndexMapping(?old, ?new, ?method) :-
     Instruction_Index(?insn, ?old),
@@ -335,19 +330,18 @@ NewIndexMapping(?old, ?new, ?method) :-
     SSA_InstructionIndex(?insn, ?new).
 
 .decl NewBBStart(?old:number, ?new:number, ?method:symbol)
-.output NewBBStart
 
 NewBBStart(?old, ?new, ?method) :-
-    NewIndexMapping(?old, ?new, ?method),
+    BasicBlockBegin(?insn),
+    !PhiHeaderStart(?insn, _),
     Instruction_Index(?insn, ?old),
     Instruction_Method(?insn, ?method),
-    BasicBlockBegin(?insn),
-    !PhiHeaderStart(?insn, _).
+    NewIndexMapping(?old, ?new, ?method).
 
 NewBBStart(?old, ?new, ?method) :- 
+    PhiHeaderStart(?insn_old, ?insn_new),
     Instruction_Method(?insn_old, ?method),
     Instruction_Index(?insn_old, ?old),
-    PhiHeaderStart(?insn_old, ?insn_new),
     SSA_InstructionIndex(?insn_new, ?new).
 
 // Rule rewriting
@@ -796,10 +790,6 @@ RewriteVarDeclaringMethod(?var, ?method) :-
 
 .decl TypeCompatibleWithAllConstraints(?var:symbol, ?type:symbol)
 
-.output GreatestCommonDescendant
-.output LeastCommonAncestor
-.output HasKnownType
-
 // Custom subtype relation, to provide domain specific knowledge
 .decl mSubtypeOf(?s:symbol, ?t:symbol)
 
@@ -908,17 +898,19 @@ mSubtypeOf(?s, ?t) :-
     mSubtypeOf(?s, ?c),
     mSubtypeOf(?c, ?t).
 
-.output mSubtypeOf
 
 // ?var1 := ?var2
 Assign(?stmt, ?var1, ?var2) :-
     RewriteAssignLocal(?stmt, _, ?var1, ?var2, _).
 
-// f(?var1)
-Assign(?assign_id, ?var1, ?var2) :-
+// f(?var)
+ConstraintForVar(?var, ?assign_id),
+UpperConstraintForVar(?var, ?assign_id),
+UpperBoundTypeForConstraint(?var, ?type, ?assign_id) :-
     MethodInvocation_Method(?invocation, ?method),
-    RewriteActualParam(?index, ?invocation, ?var2),
-    SSA_FormalParam(?index, ?method, ?var1),
+    RewriteActualParam(?index, ?invocation, ?var),
+    SSA_FormalParam(?index, ?method, ?var_formal),
+    Var_Type(?var_formal, ?type),
     ?assign_id = cat(?invocation, cat("/arg_", to_string(?index))).
 
 // ?var1[index] = ?var2
@@ -927,6 +919,7 @@ AssignArray(?stmt, ?var1, ?var2) :-
 
 ConstraintForVar(?var1, ?stmt),
 ConstraintForVar(?var2, ?stmt),
+LowerConstraintForVar(?var1, ?stmt),
 UpperConstraintForVar(?var2, ?stmt) :-
     Assign(?stmt, ?var1, ?var2).
 
@@ -1118,19 +1111,34 @@ TypeCompatibleWithAllConstraints(?var, ?type) :-
 // And now, let's encode the constraints themselves
 
 // Logic for assignments
+
+// Given var := varOther, type(var) is a supertype of type(varOther)
 LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
    Assign(?stmt, ?var, ?varOther),
    TypeCompatibleWithAllConstraints(?varOther, ?type).
 
-UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
-   Assign(?stmt, ?var, _).
+// 
+//UpperConstraintForVar(?var, ?stmt),
+//UpperBoundTypeForConstraint(?var, ?t, ?stmt) :-
+//    Assign(?stmt, ?var, _),
+//    UpperGlobalConstraint(?t).
 
+//UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
+//   Assign(?stmt, ?var, _).
+
+// Given varOther := var, type(var) is a subtype of type(varOther)
 UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
    Assign(?stmt, ?varOther, ?var),
    TypeCompatibleWithAllConstraints(?varOther, ?type).
 
-LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
-   Assign(?stmt, _, ?var).
+//UpperConstraintForVar(?var, ?stmt),
+//UpperBoundTypeForConstraint(?var, ?t, ?stmt) :-
+//    Assign(?stmt, _, ?var),
+//    LowerGlobalConstraint(?t).
+ 
+//LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
+//    Assign(?stmt, _, ?var).
+
 
 // Logic for array stores
 ConstraintForVar(?to, ?stmt),
@@ -1321,6 +1329,7 @@ UpperBoundTypeForConstraint(?var, ?type, ?insn) :-
     isInt32Top(?type).
 
 ConstraintForVar(?var, ?insn),
+LowerConstraintForVar(?var, ?insn),
 LowerBoundTypeForConstraint(?var, ?type, ?insn) :-
     Integer32Constraint(?var, ?insn),
     isInt32Bottom(?type).
@@ -1333,6 +1342,7 @@ Integer32Constraint(?from, ?insn) :-
     PrimOp(?insn, _, ?from),
     StatementType(?insn, "int32", _).
 
+// If statement type for primitive op is not a 32bit integer type
 ConstraintForVar(?to, ?insn),
 UpperConstraintForVar(?to, ?insn),
 UpperBoundTypeForConstraint(?to, ?type, ?insn) :-
@@ -1347,7 +1357,9 @@ UpperBoundTypeForConstraint(?from, ?type, ?insn) :-
     StatementType(?insn, ?type, _),
     ?type != "int32".
 
+// If statement type for primitive op is float
 ConstraintForVar(?from, ?insn),
+LowerConstraintForVar(?from, ?insn),
 LowerBoundTypeForConstraint(?from, ?type, ?insn) :-
     PrimOp(?insn, _, ?from),
     StatementType(?insn, ?t, _),
@@ -1355,13 +1367,16 @@ LowerBoundTypeForConstraint(?from, ?type, ?insn) :-
     isPrimitive32Bottom(?type).
 
 ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
 LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     PrimOp(?insn, ?to, _),
     StatementType(?insn, _, ?t),
     Type_float(?t),
     isPrimitive32Bottom(?type).
 
+// If statement type for primitive op is double or long
 ConstraintForVar(?from, ?insn),
+LowerConstraintForVar(?from, ?insn),
 LowerBoundTypeForConstraint(?from, ?type, ?insn) :-
     PrimOp(?insn, _, ?from),
     StatementType(?insn, ?t, _),
@@ -1369,24 +1384,31 @@ LowerBoundTypeForConstraint(?from, ?type, ?insn) :-
     isPrimitive64Bottom(?type).
 
 ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
 LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     PrimOp(?insn, ?to, _),
     StatementType(?insn, _, ?t),
     (Type_long(?t); Type_double(?t)),
     isPrimitive64Bottom(?type).
 
+// If statement type of num constant assign is 32bit
 ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
 LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     SSA_AssignNumConstant(?insn, ?to, _, _),
     StatementType(?insn, _, "32bit"),
     isPrimitive32Bottom(?type).
 
+// If statement type of num constant assign is 32bit and the constant is 0
 ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
 LowerBoundTypeForConstraint(?to, "null_type", ?insn) :-
     SSA_AssignNumConstant(?insn, ?to, "0", _),
     StatementType(?insn, _, "32bit").
 
+// If statement type of num constant assign is 64bit
 ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
 LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
     SSA_AssignNumConstant(?insn, ?to, ?const, _),
     StatementType(?insn, _, "64bit"),
@@ -1395,9 +1417,8 @@ LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
 .decl ExistsNonGuardType(?var:symbol)
 
 ExistsNonGuardType(?var) :-
-    isType(?type),
-    !isGuardPrimitive(?type),
-    TypeCompatibleWithAllConstraints(?var, ?type).
+    TypeCompatibleWithAllConstraints(?var, ?type),
+    !isGuardPrimitive(?type).
 
 .decl NonGuardCompatibleTypes(?var:symbol, ?type:symbol)
 
@@ -1405,21 +1426,25 @@ NonGuardCompatibleTypes(?var, ?type) :-
     TypeCompatibleWithAllConstraints(?var, ?type),
     !isGuardPrimitive(?type).
 
-SSA_Type(?var, ?minType) :-
+SSA_TypeOrd(?var, ?minTypeOrd) :-
     ExistsNonGuardType(?var),
-    ?minTypeOrd = min ord(?t) : NonGuardCompatibleTypes(?var, ?t),
-    isType(?minType),
-    ?minTypeOrd = ord(?minType).
+    ?minTypeOrd = min ord(?t) : NonGuardCompatibleTypes(?var, ?t).
     
+SSA_Type(?var, ?minType) :-
+    isType(?minType),
+    ?minTypeOrd = ord(?minType),
+    SSA_TypeOrd(?var, ?minTypeOrd).
+
 SSA_Type(?var, "int") :-
-    !ExistsNonGuardType(?var),
-    TypeCompatibleWithAllConstraints(?var, _).
+    TypeCompatibleWithAllConstraints(?var, _),
+    !ExistsNonGuardType(?var).
 
 // Hack
 Instruction_Next(?insn, ?next) :-
     Instruction_Method(?insn, ?inMethod),
     Instruction_Index(?insn, ?i),
     AssignReturnValue(?insn, _),
+    !OptInstructionFromMethodIndex(?inMethod, ?i + 1, _),
     OptInstructionFromMethodIndex(?inMethod, ?i + 2, ?next).
 
 GreatestCommonDescendant(?a, ?b, ?gcd) :-
@@ -1427,14 +1452,10 @@ GreatestCommonDescendant(?a, ?b, ?gcd) :-
 
 LeastCommonAncestor(?a, ?b, ?lca) :-
     LeastCommonAncestor(?b, ?a, ?lca).
-    
+
 .output TypeCompatibleWithAllConstraints
 .output UpperBoundTypeForConstraint
 .output LowerBoundTypeForConstraint
-.output LowerBoundTypeForAllConstraints
-.output UpperBoundTypeForAllConstraints
-.output Instruction_Index
-.output NonGuardCompatibleTypes
-.output SSANext
-
+.output mSubtypeOf
+    
 #endif
