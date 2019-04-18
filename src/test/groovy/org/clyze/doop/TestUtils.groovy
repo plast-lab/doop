@@ -10,7 +10,7 @@ import static org.clyze.utils.Helper.forEachLineIn
  */
 class TestUtils {
 	static void relationHasApproxSize(Analysis analysis, String relation, int expectedSize) {
-		log("relationHasApproxSize")
+		log("relationHasApproxSize(${relation}) = ${expectedSize}")
 		int actualSize = 0
 
 		forEachLineIn("${analysis.database}/${relation}.csv", { actualSize++ })
@@ -21,7 +21,7 @@ class TestUtils {
 	}
 
 	static void relationHasExactSize(Analysis analysis, String relation, int expectedSize) {
-		log("relationHasExactSize")
+		log("relationHasExactSize(${relation}) = ${expectedSize}")
 		int actualSize = 0
 		forEachLineIn("${analysis.database}/${relation}.csv", { actualSize++ })
 		assert actualSize == expectedSize
@@ -37,7 +37,7 @@ class TestUtils {
 	}
 
 	static void metricIsApprox(Analysis analysis, String metric, long expectedVal) {
-		log("metricIsApprox")
+		log("metricIsApprox(${metric}) = ${expectedVal}")
 		long actualVal = -1
 
 		String metrics = "${analysis.database}/Stats_Metrics.csv"
@@ -73,82 +73,75 @@ class TestUtils {
 	 * @param qualified	  if true, qualify relation name
 	 */
 	static void varPointsTo(Analysis analysis, String local, String value, boolean qualified) {
-		log("varPointsTo")
+		log("varPointsTo('${local}') -> ${value}")
 		String rel = qualified ? "mainAnalysis.VarPointsTo" : "VarPointsTo"
 		findPair(analysis, rel, local, 3, value, 1)
 	}
 	// Simpler overloaded version.
 	static void varPointsTo(Analysis analysis, String local, String value) {
-		log("varPointsTo")
 		varPointsTo(analysis, local, value, false)
 	}
 	// Simpler overloaded version.
 	static void varPointsToQ(Analysis analysis, String local, String value) {
-		log("varPointsToQ")
 		varPointsTo(analysis, local, value, true)
 	}
 
 	// Check that a static field points to a value.
 	static void staticFieldPointsTo(Analysis analysis, String fld, String value) {
-		log("staticFieldPointsTo")
+		log("staticFieldPointsTo('${fld}') -> ${value}")
 		findPair(analysis, "mainAnalysis.StaticFieldPointsTo", fld, 2, value, 1)
 	}
 
 	static void arrayIndexPointsTo(Analysis analysis, String baseValue, String value, boolean qualified) {
-		log("arrayIndexPointsTo")
+		log("arrayIndexPointsTo('${baseValue}') -> ${value}")
 		String rel = qualified ? "mainAnalysis.ArrayIndexPointsTo" : "ArrayIndexPointsTo"
 		findPair(analysis, rel, baseValue, 3, value, 1)
 	}
 
 	static void varValue(Analysis analysis, String local, String value) {
-		log("varValue")
+		log("varValue('${local}') -> ${value}")
 		findPair(analysis, "Server_Var_Values", local, 1, value, 2)
 	}
 
 	static void invoValue(Analysis analysis, String invo, String toMethod) {
-		log("invoValue")
+		log("invoValue('${invo}') -> ${toMethod}")
 		findPair(analysis, "Server_Invocation_Values", invo, 1, toMethod, 2)
 	}
 
 	static void methodSub(Analysis analysis, String method, String subMethod) {
-		log("methodSub")
+		log("methodSub('${method}', '${subMethod}')")
 		findPair(analysis, "Server_Method_Subtype", method, 0, subMethod, 1)
 	}
 
 	static void methodHandleCGE(Analysis analysis, String instr, String meth) {
-		log("methodHandleCGE")
+		log("methodHandleCGE('${instr}') -> ${meth}")
 		findPair(analysis, "mainAnalysis.MethodHandleCallGraphEdge", instr, 1, meth, 3)
 	}
 
 	static void normalCGE(Analysis analysis, String instr, String meth) {
-		log("CallGraphEdge")
+		log("CallGraphEdge('${instr}') -> ${meth}")
 		findPair(analysis, "CallGraphEdge", instr, 1, meth, 3)
 	}
 
 	static void lambdaCGE(Analysis analysis, String instr, String meth) {
-		log("lambdaCGE")
+		log("lambdaCGE('${instr}') -> ${meth}")
 		findPair(analysis, "mainAnalysis.LambdaCallGraphEdge", instr, 1, meth, 3)
 	}
 
-	static void linkObjectIsLambda(Analysis analysis, String linkObject, String desc) {
-		log("linkObjectIsLambda")
-		findPair(analysis, 'mainAnalysis.LambdaObject', linkObject, 1, desc, 5)
-	}
-
 	static void proxyCGE(Analysis analysis, String instr, String meth) {
-		log("proxyCGE")
+		log("proxyCGE('${instr}') -> ${meth}")
 		findPair(analysis, "mainAnalysis.ProxyCallGraphEdge", instr, 1, meth, 3)
 	}
 
 	// Check that an instance field points to a value.
 	static void instanceFieldPointsTo(Analysis analysis, String fld, String value) {
-		log("instanceFieldPointsTo")
+		log("instanceFieldPointsTo('${fld}') -> ${value}")
 		findPair(analysis, "mainAnalysis.InstanceFieldPointsTo", fld, 2, value, 1)
 	}
 
 	// Check that a method is reachable.
 	static void methodIsReachable(Analysis analysis, String meth) {
-		log("methodIsReachable")
+		log("methodIsReachable('${meth}')")
 		assert true == find(analysis, "Reachable", meth, true)
 	}
 
@@ -221,6 +214,10 @@ class TestUtils {
 	}
 
 	static void log(String msg) {
-		println("Running check: ${msg}")
+		println "Running check: ${msg}"
+	}
+
+	static void feature(String msg) {
+		println "Feature: ${msg}"
 	}
 }

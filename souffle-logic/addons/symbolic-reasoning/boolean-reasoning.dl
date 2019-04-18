@@ -9,37 +9,31 @@ ExprImpliesOther(?expr1, ?expr1) :-
 // A && B => A and A && B => B
 //
 
-ExprImpliesOther(?expr, ?left),
-ExprImpliesOther(?expr, ?right) :-
-  ?expr = ["&&", "boolean", ?left, ?right],
-  isBooleanExpr(?expr).
-
+ExprImpliesOther(?expr, ?exprLeft),
+ExprImpliesOther(?expr, ?exprRight) :-
+  isBooleanExprLeftRightInMethod(?expr, ?exprLeft, ?exprRight, "&&", ?meth).
 //
 // A && B => B && A
 //
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  ?expr = ["&&", "boolean", ?left, ?right],
-  isBooleanExpr(?expr),
-  ?exprOther = ["&&", "boolean", ?right, ?left].
+  isBooleanExprLeftRightInMethod(?expr, ?exprLeft, ?exprRight, "&&", ?meth),
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprRight, ?exprLeft, "&&", ?meth).
 
 //
 // A => A || B and B => A || B
 //
 
-ExprImpliesOther(?left, ?expr),
-ExprImpliesOther(?right, ?expr) :-
-  ?expr = ["||", "boolean", ?left, ?right],
-  isBooleanExpr(?expr).
-
+ExprImpliesOther(?exprLeft, ?expr),
+ExprImpliesOther(?exprRight, ?expr) :-
+  isBooleanExprLeftRightInMethod(?expr, ?exprLeft, ?exprRight, "||", ?meth).
 //
 // A || B => B || A
 //
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  ?expr = ["||", "boolean", ?left, ?right],
-  isBooleanExpr(?expr),
-  ?exprOther = ["||", "boolean", ?right, ?left].
+  isBooleanExprLeftRightInMethod(?expr, ?exprLeft, ?exprRight, "||", ?meth),
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprRight, ?exprLeft, "||", ?meth).
 
 /* Distributive property rules */
 
@@ -51,8 +45,7 @@ isExpr(?exprOther),
 isExpr(?exprLeft),
 isExpr(?exprRight),
 ExprImpliesOther(?expr, ?exprOther) :-
-  ?expr = ["&&", "boolean", ?exprA, ?exprOr],
-  isBooleanExpr(?expr),
+  isBooleanExprLeftRightInMethod(?expr, ?exprA, ?exprOr, "&&", ?meth),
   ?exprOr = ["||", "boolean", ?exprB, ?exprC],
   ?exprLeft = ["&&", "boolean", ?exprA, ?exprB],
   ?exprRight = ["&&", "boolean", ?exprA, ?exprC],
@@ -65,8 +58,7 @@ ExprImpliesOther(?expr, ?exprOther) :-
 isExpr(?exprOther),
 isExpr(?exprNRight),
 ExprImpliesOther(?expr, ?exprOther) :-
-  ?expr = ["||", "boolean", ?exprLeft, ?exprRight],
-  isBooleanExpr(?expr),
+  isBooleanExprLeftRightInMethod(?expr, ?exprLeft, ?exprRight, "||", ?meth),
   ?exprLeft = ["&&", "boolean", ?exprA, ?exprB],
   ?exprRight = ["&&", "boolean", ?exprA, ?exprC],
   ?exprNRight =["||", "boolean", ?exprB, ?exprC],
@@ -77,21 +69,22 @@ ExprImpliesOther(?expr, ?exprOther) :-
 //
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  ?expr = ["||", "boolean", ?exprA, ["&&", "boolean", ?exprB, ?exprC]],
-  isBooleanExpr(?expr),
+  ?exprFoo = ["&&", "boolean", ?exprB, ?exprC],
+  isBooleanExprLeftRightInMethod(?expr, ?exprA, ?exprFoo, "||", ?meth),
   ?exprLeft = ["||", "boolean", ?exprA, ?exprB],
   ?exprRight = ["||", "boolean", ?exprA, ?exprC],
-  ?exprOther = ["&&", "boolean", ?exprLeft, ?exprRight].
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprLeft, ?exprRight, "&&", ?meth).
 
 //
 // (A || B) && (A || C) => A || (B && C)
 //
 
 ExprImpliesOther(?expr, ?exprOther) :-
-  ?expr = ["&&", "boolean", ["||", "boolean", ?exprA, ?exprB], ["||", "boolean", ?exprA, ?exprC]],
-  isBooleanExpr(?expr),
+  ?expr1 = ["||", "boolean", ?exprA, ?exprB],
+  ?expr2 = ["||", "boolean", ?exprA, ?exprC],
+  isBooleanExprLeftRightInMethod(?expr, ?expr1, ?expr2, "&&", ?meth),
   ?exprRight = ["&&", "boolean", ?exprB, ?exprC],
-  ?exprOther = ["||", "boolean", ?exprA, ?exprRight].
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprA, ?exprRight, "||", ?meth).
 
 
 /////////// ===========================================
@@ -105,26 +98,27 @@ ExprImpliesOther(?expr, ?exprOther) :-
 ExprImpliesOther(?expr, ?exprOther) :-
   ExprImpliesOther(?expr, ?exprInter),
   ExprImpliesOther(?exprInter, ?exprOther).
+ .plan 1:(2,1)
 
 //
 //// A => B and A => C implies A => B && C
 //
 
 ExprImpliesOther(?exprA, ?exprOther) :-
-  ?exprOther = ["&&", "boolean", ?exprB, ?exprC],
-  isBooleanExpr(?exprOther),
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprB, ?exprC, "&&", ?meth),
   ExprImpliesOther(?exprA, ?exprB),
   ExprImpliesOther(?exprA, ?exprC).
+ .plan 1:(1,3,2)
 
 //
 //// B => A and C => A implies B || C => A
 //
 
 ExprImpliesOther(?exprLeft, ?exprA) :-
-  ?exprLeft = ["||", "boolean", ?exprB, ?exprC],
-  isBooleanExpr(?exprLeft),
+  isBooleanExprLeftRightInMethod(?exprLeft, ?exprB, ?exprC, "||", ?meth),
 	ExprImpliesOther(?exprB, ?exprA),
   ExprImpliesOther(?exprC, ?exprA).
+ .plan 1:(1,3,2)
 
 //
 //// A => B and ExprIsNegationOfOther(B, B') and ExprIsNegationOfOther(A, A') implies B' => A'
@@ -141,7 +135,9 @@ ExprImpliesOther(?exprBP, ?exprAP) :-
 
 ExprImpliesOther(?expr, ?exprOther) :-
 	ExprIsAlwaysFalse(?expr),
-	isBooleanExpr(?exprOther).
+  isBooleanExprLeftRightInMethod(?expr, _, _, _, ?meth),
+  isBooleanExprLeftRightInMethod(?exprOther, _, _, _, ?meth).
+
 
 //
 //// ExprIsAlwaysTrue(B) implies A => B
@@ -149,7 +145,8 @@ ExprImpliesOther(?expr, ?exprOther) :-
 
 ExprImpliesOther(?exprOther, ?expr) :-
 	ExprIsAlwaysTrue(?expr),
-	isBooleanExpr(?exprOther).
+  isBooleanExprLeftRightInMethod(?expr, _, _, _, ?meth),
+  isBooleanExprLeftRightInMethod(?exprOther, _, _, _, ?meth).
 
 //
 //// A => (B || false)  implies  A => B
@@ -174,17 +171,15 @@ ExprImpliesOther(?expr, ?exprOther) :-
 //
 
 ExprIsNegationOfOther(?expr, ?exprOther) :-
-  Expression_Method(?expr, ?meth),
-  Expression_Method(?exprOther, ?meth),
-  NegateOp(?op, ?negatedOp),
-  ?expr = [?op, ?type, ?exprLeft, ?exprRight],
-  ?exprOther = [?negatedOp, ?type, ?exprLeft, ?exprRight].
+  isBooleanExprLeftRightInMethod(?expr, ?exprLeft, ?exprRight, ?op, ?meth),
+  isBooleanExprLeftRightInMethod(?exprOther, ?exprLeft, ?exprRight, ?negatedOp, ?meth),
+  NegateOp(?op, ?negatedOp).
 
 ExprIsNegationOfOther(?expr, ?exprOther) :-
 	?expr = ["1", "boolean", nil, nil],
  	?exprOther = ["0", "boolean", nil, nil],
-	isBooleanExpr(?expr),
-	isBooleanExpr(?expr).
+  isBooleanExprLeftRightInMethod(?expr, _, _, _, ?meth),
+  isBooleanExprLeftRightInMethod(?exprOther, _, _, _, ?meth).
 
 //
 //// ExprIsAlwaysTrue

@@ -4,12 +4,12 @@
 
 .type SymbolicInput = Var | MethodInvocation | NumConstant
 .type Operator = symbol
-
+.type ExpressionType = PrimitiveType | ReferenceType
 .type Base = SymbolicInput | Operator
 
 .type Expr = [
   ?base: Base,
-  ?type: PrimitiveType,
+  ?type: ExpressionType,
   ?left: Expr,
   ?right: Expr
 ]
@@ -19,6 +19,11 @@
 .decl isOperator(?op: Operator)
 .decl isRelationalOperator(?op: Operator)
 .decl isSymbolicInput(?symbInput: SymbolicInput)
+
+
+.decl isBooleanExprLeftRight(?exprOther: Expr, ?exprX: Expr, ?exprY: Expr, ?op: Operator)
+.decl isBooleanExprLeftRightInMethod(?expr: Expr, ?exprX: Expr, ?exprZ: Expr, ?op: Operator, ?meth: Method)
+.decl isTransitiveBooleanConjunction(?expr: Expr, ?exprX: Expr, ?exprZ: Expr, ?op: Operator)
 
 .decl FirstIfInsnInMethod(?insn: Instruction, ?meth: Method)
 .decl IfsInMethod(?insn: Instruction, ?meth: Method)
@@ -48,15 +53,10 @@
 .decl NextOfMultiplePredsOfInsnInMethod(?next: Instruction, ?prev: Instruction, ?insn: Instruction, ?meth: Method)
 .decl LastOfMultiplePredsOfInsnInMethod(?pred: Instruction, ?insn: Instruction, ?meth: Method)
 
-#ifdef DEBUG
-.output SinglePredOfInsnInMethod
-.output FirstOfMultiplePredsOfInsnInMethod
-.output NextOfMultiplePredsOfInsnInMethod
-.output LastOfMultiplePredsOfInsnInMethod
-#endif
 
 .decl isBooleanExpr(?expr: Expr)
 .decl isArithmeticExpr(?expr: Expr)
+.decl isReferenceExpr(?expr: Expr)
 .decl isExpr(?expr: Expr)
 
 #ifdef DEBUG
@@ -91,16 +91,19 @@
 .output isArithmeticExpr
 .output ResolveExpr
 .output Expression_Method
+.output isExpr
 
 #ifdef DEBUG
 .output ToString
-#endif
-.output isExpr
-
+.output SinglePredOfInsnInMethod
+.output FirstOfMultiplePredsOfInsnInMethod
+.output NextOfMultiplePredsOfInsnInMethod
+.output LastOfMultiplePredsOfInsnInMethod
 .output BuildPathExprBefore
 .output PathExpressionBefore
 .output PathExpressionAfterTrue
 .output PathExpressionAfterFalse
+#endif
 
 .output ExprImpliesOther
 .output ExprIsNegationOfOther

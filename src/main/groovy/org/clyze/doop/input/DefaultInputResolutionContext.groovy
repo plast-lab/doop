@@ -9,13 +9,15 @@ import org.clyze.analysis.InputType
 @Log4j
 class DefaultInputResolutionContext implements InputResolutionContext {
 
-	static final ChainResolver DEFAULT_RESOLVER = new ChainResolver(
+	// The default resolver. Needs temporary directory for downloaded files.
+	static ChainResolver defaultResolver(File tmpDir) {
+		return new ChainResolver(
 			// The order matters
 			new FileResolver(),
 			new DirectoryResolver(),
-			new URLResolver(),
-			new IvyResolver()
-	)
+			new URLResolver(tmpDir, true),
+			new IvyResolver())
+	}
 
 	static final ChainResolver PYTHON_RESOLVER = new ChainResolver(
 			// The order matters
@@ -32,7 +34,7 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 	Map<InputType, List<String>> files = [:].withDefault { [] }
 	Map<InputType, Map<String, ResolvedInput>> resolvedFiles = [:].withDefault { [:] }
 
-	DefaultInputResolutionContext(ChainResolver resolver = DEFAULT_RESOLVER) {
+	DefaultInputResolutionContext(ChainResolver resolver) {
 		this.resolver = resolver
 	}
 

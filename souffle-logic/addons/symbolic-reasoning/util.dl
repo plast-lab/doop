@@ -49,13 +49,33 @@ Sanity(?expr) :-
   isExpr(?exprR).
 
 isExpr(?expr) :-
-  BuildPathExprBefore(_, _, ?expr, _).
+  ResolveExpr(_, _, ?expr).
 isExpr(?expr) :-
-  PathExpressionBefore(_, _, ?expr).
+  BuildPathExprBefore(_, _, ?expr, _).
 isExpr(?expr) :-
   PathExpressionAfterTrue(_, _, ?expr).
 isExpr(?expr) :-
   PathExpressionAfterFalse(_, _, ?expr).
+isExpr(?expr) :-
+  PathExpressionBefore(_, _, ?expr).
+isExpr(?negatedExpr) :-
+  NegationOfConditionAtIfInsn(?expr, ?negatedExpr, _).
+
+// Expression Method
+
+Expression_Method(?expr, ?meth) :-
+  ResolveExpr(?meth, ?var, ?expr).
+Expression_Method(?expr, ?meth) :-
+  BuildPathExprBefore(?meth, _, ?expr, _). 
+Expression_Method(?expr, ?meth) :-
+  PathExpressionAfterTrue(?meth, ?insn, ?expr).
+Expression_Method(?expr, ?meth) :-
+  PathExpressionAfterFalse(?meth, ?insn, ?expr).
+Expression_Method(?expr, ?meth) :-
+  PathExpressionBefore(?meth, ?insn, ?expr).
+Expression_Method(?negatedCond, ?meth) :-
+  NegationOfConditionAtIfInsn(?cond, ?negatedCond, ?insn),
+  Expression_Method(?cond, ?meth).
 
 isBooleanExpr(?expr) :-
   isExpr(?expr),
@@ -72,6 +92,11 @@ isArithmeticExpr(?expr) :-
    Type_long(?type) ;
    Type_float(?type) ;
    Type_double(?type)).
+
+isReferenceExpr(?expr) :-
+  isExpr(?expr),
+  ?expr = [?op, ?type, ?rExpr, ?lExpr],
+  isReferenceType(?type).
 
 // Boolean operators
 
@@ -232,7 +257,7 @@ AssignBinaryVarVar(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
   isAssignBinop_Insn(?insn),
   AssignInstruction_To(?insn, ?var),
   Var_Type(?var, ?type),
-  isPrimitiveType(?type),
+  (isPrimitiveType(?type) ; isReferenceType(?type)),
   Instruction_Method(?insn, ?meth),
   AssignOper_From(?insn, ?pos1, ?right1),
   AssignOper_From(?insn, ?pos2, ?right2),
@@ -243,7 +268,7 @@ AssignBinaryConstVar(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
   isAssignBinop_Insn(?insn),
   AssignInstruction_To(?insn, ?var),
   Var_Type(?var, ?type),
-  isPrimitiveType(?type),
+  (isPrimitiveType(?type) ; isReferenceType(?type)),
   Instruction_Method(?insn, ?meth),
   AssignOper_FromConstant(?insn, ?pos1, ?right1),
   AssignOper_From(?insn, ?pos2, ?right2),
@@ -254,7 +279,7 @@ AssignBinaryVarConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
   isAssignBinop_Insn(?insn),
   AssignInstruction_To(?insn, ?var),
   Var_Type(?var, ?type),
-  isPrimitiveType(?type),
+  (isPrimitiveType(?type) ; isReferenceType(?type)),
   Instruction_Method(?insn, ?meth),
   AssignOper_From(?insn, ?pos1, ?right1),
   AssignOper_FromConstant(?insn, ?pos2, ?right2),
@@ -265,7 +290,7 @@ AssignBinaryConstConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
   isAssignBinop_Insn(?insn),
   AssignInstruction_To(?insn, ?var),
   Var_Type(?var, ?type),
-  isPrimitiveType(?type),
+  (isPrimitiveType(?type) ; isReferenceType(?type)),
   Instruction_Method(?insn, ?meth),
   AssignOper_FromConstant(?insn, ?pos1, ?right1),
   AssignOper_FromConstant(?insn, ?pos2, ?right2),
@@ -282,7 +307,7 @@ IfVarVar(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
   If_Var(?insn, ?pos2, ?right2),
   Var_Type(?right1, ?type),
   Var_Type(?right2, ?type),
-  isPrimitiveType(?type),
+  (isPrimitiveType(?type) ; isReferenceType(?type)),
   ?pos1 < ?pos2,
   _OperatorAt(?insn, ?op).
 
@@ -292,20 +317,20 @@ IfVarConst(?insn, ?var, ?meth, ?right1, ?right2, ?op) :-
   isIf_Insn(?insn),
   If_Var(?insn, ?pos1, ?right1),
   Var_Type(?right1, ?type),
-  isPrimitiveType(?type),
+  (isPrimitiveType(?type) ; isReferenceType(?type)),
   If_Constant(?insn, ?pos2, ?right2),
   ?pos1 < ?pos2,
   _OperatorAt(?insn, ?op).
 
-// Expression Method
 
-Expression_Method(?expr, ?meth) :-
-  ResolveExpr(?meth, ?var, ?expr).
-Expression_Method(?expr, ?meth) :-
-  BuildPathExprBefore(?meth, _, ?expr, _). 
-Expression_Method(?expr, ?meth) :-
-  PathExpressionAfterTrue(?meth, ?insn, ?expr).
-Expression_Method(?expr, ?meth) :-
-  PathExpressionAfterFalse(?meth, ?insn, ?expr).
-Expression_Method(?expr, ?meth) :-
-  PathExpressionBefore(?meth, ?insn, ?expr).
+isBooleanExprLeftRight(?expr, ?exprX, ?exprZ, ?op) :-
+  ?expr = [?op, ?type, ?exprX, ?exprZ],
+  isBooleanExpr(?expr).
+
+isBooleanExprLeftRightInMethod(?expr, ?exprX, ?exprZ, ?op, ?meth) :-
+  ?expr = [?op, "boolean", ?exprX, ?exprZ],
+  Expression_Method(?expr, ?meth).
+
+isTransitiveBooleanConjunction(?expr, ?exprX, ?exprZ, ?op) :-
+   ?expr = ["&&", "boolean", [?op, ?type, ?exprX, ?exprY], [?op, ?type, ?exprY, ?exprZ]],
+   isBooleanExpr(?expr).
