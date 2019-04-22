@@ -70,8 +70,4 @@ OPAQUE_METHOD("<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupCla
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>").
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class returnType()>").
 
-#ifdef ANDROID
-OPAQUE_METHOD("<java.lang.Class: java.lang.String getNameNative()>").
-#endif // ANDROID
-
 #endif // REFLECTION || LIGHT_REFLECTION_GLUE
