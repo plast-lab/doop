@@ -62,14 +62,12 @@ isOpaqueMethod(?method) :- MTEntryPoint(_, _, ?method).
 OPAQUE_METHOD("<java.lang.Class: java.lang.String getSimpleName()>").
 OPAQUE_METHOD("<java.lang.Class: java.lang.Object[] getEnumConstants()>").
 OPAQUE_METHOD("<java.lang.invoke.MethodHandle: java.lang.invoke.MethodHandle asType(java.lang.invoke.MethodType)>").
+#ifdef REFLECTION_METHOD_HANDLES
 OPAQUE_METHOD("<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup lookup()>").
 OPAQUE_METHOD("<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup publicLookup()>").
+OPAQUE_METHOD("<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>").
+#endif // REFLECTION_METHOD_HANDLES
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>").
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class returnType()>").
-OPAQUE_METHOD("<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>").
-
-#ifdef ANDROID
-OPAQUE_METHOD("<java.lang.Class: java.lang.String getNameNative()>").
-#endif // ANDROID
 
 #endif // REFLECTION || LIGHT_REFLECTION_GLUE

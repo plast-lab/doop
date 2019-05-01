@@ -23,5 +23,8 @@ doop-nexgen.iml
 #emacs files
 *~
 
+#swp files
+*.swp
+
 #souffle profiler html output dir
 profiler_html

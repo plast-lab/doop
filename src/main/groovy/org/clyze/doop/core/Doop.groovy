@@ -27,6 +27,7 @@ class Doop {
 	static String doopOut
 	static String doopCache
 	static String doopLog
+	static String doopTmp
 	static String souffleAnalysesCache
 	static String logicPath
 	static String souffleLogicPath
@@ -41,12 +42,13 @@ class Doop {
 
 	/**
 	 * Initializes Doop.
-	 * @param homePath The doop home directory (sets the doopHome variable, required).
-	 * @param outPath The doop out directory (sets the doopOut variable, optional, defaults to 'out' under doopHome).
-	 * @param cachePath The doop cache directory (sets the doopCache variable, optional, defaults to 'cache' under doopHome).
-	 * @return The doop home directory.
+	 * @param homePath  The Doop home directory (sets the doopHome variable, required).
+	 * @param outPath	The Doop out directory (sets the doopOut variable, optional, defaults to 'out' under doopHome).
+	 * @param cachePath The Doop cache directory (sets the doopCache variable, optional, defaults to 'cache' under doopHome).
+	 * @param logPath	The Doop log directory (sets the doopLog variable, optional, defaults to 'build/logs' under doopHome).
+	 * @param tmpPath	The Doop tmp directory (sets the doopTmp variable, optional, defaults to 'tmp' under doopHome).
 	 */
-	static void initDoop(String homePath, String outPath, String cachePath, String logPath) {
+	static void initDoop(String homePath, String outPath, String cachePath, String logPath, String tmpPath) {
 		doopHome = homePath
 		if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
 		FileOps.findDirOrThrow(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
@@ -54,6 +56,7 @@ class Doop {
 		doopOut = outPath ?: "$doopHome/out"
 		doopCache = cachePath ?: "$doopHome/cache"
 		doopLog = logPath ?: "$doopHome/build/logs"
+		doopTmp = tmpPath ?: "$doopHome/tmp"
 		souffleAnalysesCache = "$doopCache/souffle-analyses"
 		logicPath = "$doopHome/logic"
 		souffleLogicPath = "$doopHome/souffle-logic"
@@ -66,7 +69,7 @@ class Doop {
 		soufflePythonPath = "$souffleLogicPath/python"
 		soufflePythonAnalysesPath = "$soufflePythonPath/analyses"
 
-		[doopOut, doopCache, doopLog, souffleAnalysesCache].each {
+		[doopOut, doopCache, doopLog, doopTmp, souffleAnalysesCache].each {
 			def f = new File(it)
 			f.mkdirs()
 			FileOps.findDirOrThrow(f, "Could not create directory: $it")
@@ -77,7 +80,7 @@ class Doop {
 	 * Initializes Doop using the default environment variables.
 	 */
 	static void initDoopFromEnv() {
-		Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"), System.getenv("DOOP_LOG"))
+		Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"), System.getenv("DOOP_LOG"), System.getenv("DOOP_TMP"))
 	}
 
 	/**

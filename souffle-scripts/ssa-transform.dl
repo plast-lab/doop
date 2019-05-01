@@ -1,0 +1,1461 @@
+#define ANDROID
+
+#import "../souffle-logic/facts/flow-sensitive-schema.dl"
+#import "../souffle-logic/facts/flow-insensitive-schema.dl"
+#import "../souffle-logic/facts/import-facts.dl"
+#import "../souffle-logic/facts/import-entities.dl"
+#import "../souffle-logic/addons/cfg-analysis/declarations.dl"
+#import "../souffle-logic/addons/cfg-analysis/analysis.dl"
+#import "../souffle-logic/basic/type-hierarchy.dl"
+#import "../souffle-logic/basic/method-lookup.dl"
+
+// If instr is an assignment found at instruction i in method meth
+// then create a new assignment fact with same RHS and LHS v_i,
+// where v is the name of the original variable.
+
+// Holds all ssa renames in the program for a given origin variable.
+// e.g. (v0_0, v0), (v0_1, v0) ... 
+.decl SSA_Alias(?ssa_name:symbol, ?original:symbol)
+
+// Type info for renamed ssa variables.
+.decl SSA_Type(?var:symbol, ?type:symbol)
+.output SSA_Type(filename="Var-Type.facts")
+.decl SSA_TypeOrd(?var:symbol, ?typeId:number)
+
+// Helper relation to factor out some code.
+.decl SSA_AssignDetails(?instr:symbol, ?to:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)
+
+// Aux relations
+.decl SSA_AssignToOriginal(?instr:symbol, ?original:symbol)
+
+.decl SSA_FormalParam(?index:number, ?method:symbol, ?ssa_name:symbol)
+.decl SSA_ThisVar(?method:symbol, ?ssa_name:symbol)
+
+SSA_AssignToOriginal(?instr, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
+SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    Instruction_Index(?instr, ?index),
+    AssignInstruction_To(?instr, ?to),
+    Instruction_Method(?instr, ?method).
+
+// Exception object assignment.
+SSA_AssignToOriginal(?instr, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
+SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    _ExceptionHandler(?instr, ?method, ?index, ?type, _, _),
+    ExceptionHandler_FormalParam(?instr, ?to).
+
+// Return value assignment.
+SSA_AssignToOriginal(?invocation, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
+SSA_AssignDetails(?invocation, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    Instruction_Index(?invocation, ?index),
+    AssignReturnValue(?invocation, ?to),
+    Instruction_Method(?invocation, ?method).
+
+// Load from array assignment.
+SSA_AssignToOriginal(?instr, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
+SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    _LoadArrayIndex(?instr, ?index, ?to, _, ?method).
+
+// Load from object field assignment.
+SSA_AssignToOriginal(?instr, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
+SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    _LoadInstanceField(?instr, ?index, ?to, _, _, ?method).
+
+// Load from static field assignment.
+SSA_AssignToOriginal(?instr, ?to),
+SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
+SSA_AssignDetails(?instr, ?to, ?index, cat(?to, cat("_", to_string(?index))), ?method) :-
+    _LoadStaticField(?instr, ?index, ?to, _, ?method).
+
+// Method formal params.
+SSA_Alias(cat(?original, cat("_", "0")), ?original),
+SSA_FormalParam(?index, ?method, cat(?original, cat("_", "0"))) :-
+    FormalParam(?index, ?method, ?original).
+
+// Method this var.
+SSA_Alias(cat(?original, cat("_", "0")), ?original),
+SSA_ThisVar(?method, cat(?original, cat("_", "0"))) :-
+    ThisVar(?method, ?original).
+
+// Simple implementation of the mathematical definition of strict
+// domination.
+.decl StrictlyDominates(?dominator:symbol, ?block:symbol)
+
+StrictlyDominates(?dominator, ?block) :-
+    Dominates(?dominator, ?block),
+    ?dominator != ?block.
+
+.decl DominanceFrontier(?dBlock:symbol, ?block:symbol)
+
+DominanceFrontier(?dBlock, ?block) :-
+    MayPredecessorBBModuloThrow(?pred, ?block),
+    Dominates(?dBlock, ?pred),
+    !StrictlyDominates(?dBlock, ?block).
+
+.decl DFPlus(?dBlock:symbol, ?block:symbol, ?var:symbol)
+
+DFPlus(?dBlock, ?block, ?var) :-
+    ContainsAssignment(?dBlock, ?var),
+    DominanceFrontier(?dBlock, ?block).
+
+DFPlus(?block, ?dfblock, ?var) :-
+    DFPlus(?block, ?block_1, ?var),
+    DominanceFrontier(?block_1, ?dfblock).
+
+.decl ContainsAssignment(?dBlock:symbol, ?var:symbol)
+
+ContainsAssignment(?dBlock, ?var) :-
+    BasicBlockHead(?insn, ?dBlock),
+    SSA_AssignDetails(?insn, ?var, _, _, _).
+
+// Phi Instrutions inserted at basic blocks.
+// ?phi_var is the new phi variable name that will be generated,
+// ?block is the basic block (represented by it's first instr) where
+// the Phi Instruction will be inserted.
+.decl PhiAssign(?phi_var:symbol, ?block:symbol)
+
+SSA_Alias(?phi_var, ?var),
+PhiAssign(?phi_var, ?block) :-
+    DFPlus(_, ?block, ?var),
+    Instruction_Index(?block, ?index),
+    ?phi_var = cat(cat(?var, "_phi_"), to_string(?index)).
+    
+.decl BasicBlockOutDefs(?block:symbol, ?ssa_var:symbol, ?origin:symbol)
+
+BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
+    ReachingDef(?end, ?ssa_var, ?origin),
+    BasicBlockTail(?block, ?end),
+    !SSA_AssignToOriginal(?end, ?origin).
+
+BasicBlockOutDefs(?block, ?ssa_var, ?origin) :-
+    BasicBlockTail(?block, ?end),
+    SSA_AssignDetails(?end, _, _, ?ssa_var, _),
+    SSA_Alias(?ssa_var, ?origin).
+
+// These instructions create chains of assignments, at the head of each block.
+// This is a helper relation to assist the final assignment operation, which 
+// will require linking the assignments with the rest of the code.
+.decl PhiPseudoAssign(?phi_var:symbol, ?def:symbol, ?dst_block:symbol, ?pseudoname:symbol)
+
+PhiPseudoAssign(?phi_var, ?phi_arg, ?dst_block, ?pseudoname) :-
+    PhiAssign(?phi_var, ?dst_block),
+    InDefs(?dst_block, ?phi_arg, ?origin_var),
+    SSA_Alias(?phi_var, ?origin_var),
+    ?pseudoname = cat(?phi_var, cat("_", ?phi_arg)).
+
+.decl ExistsPseudoAssignBetween(?prev:symbol, ?next:symbol)
+
+ExistsPseudoAssignBetween(?prev, ?next) :-
+    PhiPseudoAssign(?phi, _, ?block, ?prev),
+    PhiPseudoAssign(?phi, _, ?block, ?next),
+    PhiPseudoAssign(?phi, _, ?block, ?mid),
+    ord(?prev) < ord(?next),
+    ord(?prev) < ord(?mid),
+    ord(?mid)  < ord(?next).
+
+.decl ExistsPhiChunkBetween(?prev:symbol, ?next:symbol)
+
+ExistsPhiChunkBetween(?prev, ?next) :-
+    PhiPseudoAssign(?prev, _, ?block, _),
+    PhiPseudoAssign(?next, _, ?block, _),
+    PhiPseudoAssign(?mid, _, ?block, _),
+    ord(?prev) < ord(?next),
+    ord(?prev) < ord(?mid),
+    ord(?mid)  < ord(?next).
+
+// New next relation, since we need to include the new assignments that
+// are generated by the phi placement.
+.decl SSANext(?prev:symbol, ?next:symbol)
+
+.decl PhiChunkNext(?prev:symbol, ?next:symbol)
+
+// Link PhiChunk assignments
+SSANext(?prev, ?next),
+PhiChunkNext(?prev, ?next) :-
+    PhiPseudoAssign(?chunk, _, ?block, ?prev),
+    PhiPseudoAssign(?chunk, _, ?block, ?next),
+    ord(?prev) < ord(?next),
+    !ExistsPseudoAssignBetween(?prev, ?next).
+
+.decl PhiChunkStart(?phi_chunk:symbol, ?start:symbol)
+
+PhiChunkStart(?phi_chunk, ?start) :-
+    PhiPseudoAssign(?phi_chunk, _, _, ?start),
+    !PhiChunkNext(_, ?start).
+
+.decl PhiChunkEnd(?phi_chunk:symbol, ?end:symbol)
+
+PhiChunkEnd(?phi_chunk, ?end) :-
+    PhiPseudoAssign(?phi_chunk, _, _, ?end),
+    !PhiChunkNext(?end, _).
+
+.decl PhiHeaderNext(?prev:symbol, ?next:symbol)
+
+SSANext(?prev_end, ?next_start),
+PhiHeaderNext(?prev, ?next) :-
+    PhiPseudoAssign(?prev, _, ?phi_header, _),
+    PhiPseudoAssign(?next, _, ?phi_header, _),
+    PhiChunkEnd(?prev, ?prev_end),
+    PhiChunkStart(?next, ?next_start),
+    ord(?prev) < ord(?next),
+    !ExistsPhiChunkBetween(?prev, ?next).
+    
+.decl PhiHeaderStart(?phi_chunk:symbol, ?start:symbol)
+
+PhiHeaderStart(?phi_header, ?start) :-
+    PhiPseudoAssign(?start_chunk, _, ?phi_header, _),
+    PhiChunkStart(?start_chunk, ?start),
+    !PhiHeaderNext(_, ?start_chunk).
+
+.decl PhiHeaderEnd(?phi_chunk:symbol, ?end:symbol)
+
+SSANext(?end, ?phi_header),
+PhiHeaderEnd(?phi_header, ?end) :-
+    PhiPseudoAssign(?end_chunk, _, ?phi_header, _),
+    PhiChunkEnd(?end_chunk, ?end),
+    !PhiHeaderNext(?end_chunk, _).
+
+SSANext(?prev, ?next) :-
+    Instruction_Next(?prev, ?old_next),
+    PhiHeaderStart(?old_next, ?next).
+
+SSANext(?prev, ?next) :-
+    Instruction_Next(?prev, ?next),
+    !PhiHeaderStart(?next, _).
+
+isInstruction(?insn) :-
+    Instruction_Method(?insn, _).
+
+isInstruction(?insn) :-
+    PhiPseudoAssign(_, _, _, ?insn).
+
+// Simple index calculation, based on the SSANext relation.
+.decl SSA_InstructionIndex(?insn:symbol, ?index:number)
+
+// Base case; If the insn has no previous instruction, then its index
+// is one.
+SSA_InstructionIndex(?insn, 1) :-
+    isInstruction(?insn),
+    !SSANext(_, ?insn).
+
+// If the insn has a prev instruction and prev has index "index", then
+// insn has index "index  + 1".
+SSA_InstructionIndex(?insn, ?index + 1) :-
+    SSA_InstructionIndex(?prev, ?index),
+    SSANext(?prev, ?insn).
+
+// If the phi header for the basic block where insn is in, contains an phi
+// pseudo assignment on ssa_var, which is an ssa rename for origin.
+.decl ExistsDefInPhiHeader(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
+
+ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin) :-
+    BasicBlockHead(?insn, ?head),
+    PhiAssign(?ssa_var, ?head),
+    SSA_Alias(?ssa_var, ?origin).
+
+
+// Calculates the InDefs at every basic block.
+.decl InDefs(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
+
+InDefs(?insn, ?ssa_var, ?origin) :- 
+    BasicBlockOutDefs(?pred, ?ssa_var, ?origin),
+    MayPredecessorBBModuloThrow(?pred, ?insn),
+    BasicBlockBegin(?insn).
+
+InDefs(?insn, ?ssa_var, ?origin) :- 
+    Instruction_Index(?insn, 1),
+    Instruction_Method(?insn, ?method),
+    (SSA_FormalParam(_, ?method, ?ssa_var);
+    SSA_ThisVar(?method, ?ssa_var)),
+    SSA_Alias(?ssa_var, ?origin).
+
+// This is a simple calculation of the reaching SSA definitions (ssa_var),
+// at a given instruction (insn), for a given origin variable (not ssa-renamed,
+// as seen in the original program).
+.decl ReachingDef(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)
+
+// If an instruction is the first instruction in a basic block, and a ssa defintion
+// for origin exists in the Phi Header, then that def is the reaching def.
+ReachingDef(?insn, ?ssa_var, ?origin) :-
+    BasicBlockBegin(?insn),
+    ExistsDefInPhiHeader(?insn, ?ssa_var, ?origin).
+
+// If an instruction is the first instrution in a basic block, and there is no ssa
+// definition for origin in the Phi Header, then the reaching definition is in the
+// outwards defs of any of the predecessor basic blocks (the defs will all be the same,
+// otherwise there would be a Phi Assignment in the Phi header).
+
+ReachingDef(?insn, ?ssa_var, ?origin) :-
+    BasicBlockOutDefs(?pred, ?ssa_var, ?origin),
+    MayPredecessorBBModuloThrow(?pred, ?insn),
+    BasicBlockBegin(?insn),
+    !ExistsDefInPhiHeader(?insn, _, ?origin).
+
+// If an instruction is not the first instruction in a basic block, and the previous
+// instuction is not an assignment with LHS an ssa rename of origin, then the reaching
+// ssa definition for origin at insn is the same as the reaching ssa definition for origin
+// at prev (recursive definition).
+ReachingDef(?insn, ?ssa_var, ?origin) :-
+    ReachingDef(?prev, ?ssa_var, ?origin),
+    PrevInSameBasicBlock(?insn, ?prev),
+    !SSA_AssignToOriginal(?prev, ?origin).
+
+// If an instruction is not the first instruction in a basic block, and the previous
+// instuction is an assignment with LHS an ssa rename of origin, the the reaching ssa defition
+// for origin at insn is exactly that LHS ssa rename of origin.
+ReachingDef(?insn, ?ssa_var, ?origin) :-
+    PrevInSameBasicBlock(?insn, ?prev),
+    SSA_AssignDetails(?prev, _, _, ?ssa_var, _),
+    SSA_Alias(?ssa_var, ?origin).
+
+// If an instruction is the first instruction in a method, then all formal paramters and
+// the "this" register are reaching defs to that instruction.
+ReachingDef(?insn, ?ssa_var, ?origin) :-
+    Instruction_Index(?insn, 1),
+    Instruction_Method(?insn, ?method),
+    (SSA_FormalParam(_, ?method, ?ssa_var);
+    SSA_ThisVar(?method, ?ssa_var)),
+    SSA_Alias(?ssa_var, ?origin),
+    !ExistsDefInPhiHeader(?insn, _, ?origin).
+
+.decl NewIndexMapping(?old:number, ?new:number, ?method:symbol)
+
+NewIndexMapping(?old, ?new, ?method) :-
+    Instruction_Index(?insn, ?old),
+    Instruction_Method(?insn, ?method),
+    SSA_InstructionIndex(?insn, ?new).
+
+.decl NewBBStart(?old:number, ?new:number, ?method:symbol)
+
+NewBBStart(?old, ?new, ?method) :-
+    BasicBlockBegin(?insn),
+    !PhiHeaderStart(?insn, _),
+    Instruction_Index(?insn, ?old),
+    Instruction_Method(?insn, ?method),
+    NewIndexMapping(?old, ?new, ?method).
+
+NewBBStart(?old, ?new, ?method) :- 
+    PhiHeaderStart(?insn_old, ?insn_new),
+    Instruction_Method(?insn_old, ?method),
+    Instruction_Index(?insn_old, ?old),
+    SSA_InstructionIndex(?insn_new, ?new).
+
+// Rule rewriting
+.decl RewriteArrayInitialValueFromLocal(?insn:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?from:symbol, ?baseHeap:symbol, ?inmethod:symbol)
+.output RewriteArrayInitialValueFromLocal(filename="ArrayInitialValueFromLocal.facts")
+
+RewriteArrayInitialValueFromLocal(?insn, ?index, ?to, ?arrayIndex, ?from, ?baseHeap, ?inmethod) :-
+    ArrayInitialValueFromLocal(?insn, ?index, ?to_origin, ?arrayIndex, ?from_origin, ?baseHeap, ?inmethod),
+    ReachingDef(?insn, ?from, ?from_origin),
+    ReachingDef(?insn, ?to, ?to_origin).
+
+// Rule rewriting
+.decl RewriteArrayInitialValueFromConst(?insn:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol, ?inmethod:symbol)
+.output RewriteArrayInitialValueFromConst(filename="ArrayInitialValueFromConst.facts")
+
+RewriteArrayInitialValueFromConst(?insn, ?index, ?to, ?arrayIndex, ?const, ?baseHeap, ?inmethod) :-
+    ArrayInitialValueFromConst(?insn, ?index, ?var_origin, ?arrayIndex, ?const, ?baseHeap, ?inmethod),
+    ReachingDef(?insn, ?to, ?var_origin).
+
+.decl RewriteArrayInsnIndex(?insn:symbol, ?index:symbol)
+.output RewriteArrayInsnIndex(filename="ArrayInsnIndex.facts")
+
+RewriteArrayInsnIndex(?insn, ?index) :-
+    ArrayInsnIndex(?insn, ?index_origin),
+    ReachingDef(?insn, ?index, ?index_origin).
+
+.decl RewriteActualParam(?index:number, ?invocation:symbol, ?var:symbol)
+.output RewriteActualParam(filename="ActualParam.facts")
+
+RewriteActualParam(?index, ?invocation, ?var) :-
+    ActualParam(?index, ?invocation, ?var_origin),
+    ReachingDef(?invocation, ?var, ?var_origin).
+
+.decl RewriteAssignBinop(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
+.output RewriteAssignBinop(filename="AssignBinop.facts")
+
+RewriteAssignBinop(?insn, ?index, ?to, ?inmethod) :-
+    isAssignBinop_Insn(?insn),
+    SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index).
+
+.decl RewriteAssignCast(?insn:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
+.output RewriteAssignCast(filename="AssignCast.facts")
+
+RewriteAssignCast(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
+    _AssignCast(?insn, _, ?from_origin, _, ?type, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
+    SSA_InstructionIndex(?insn, ?index),
+    ReachingDef(?insn, ?from, ?from_origin).
+
+.decl RewriteAssignCastNull(?insn:symbol, ?index:number, ?to:symbol, ?type:symbol, ?inmethod:symbol)
+.output RewriteAssignCastNull(filename="AssignCastNull.facts")
+
+RewriteAssignCastNull(?insn, ?index, ?to, ?type, ?inmethod) :-
+    _AssignCastNull(?insn, _, _, ?type, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
+    SSA_InstructionIndex(?insn, ?index).
+
+.decl RewriteAssignCastNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
+.output RewriteAssignCastNumConstant(filename="AssignCastNumConstant.facts")
+
+RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod) :-
+    _AssignCastNumConstant(?insn, _, ?const, _, ?type, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
+    SSA_InstructionIndex(?insn, ?index).
+
+.decl RewriteAssignHeapAllocation(?insn:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)
+.output RewriteAssignHeapAllocation(filename="AssignHeapAllocation.facts")
+
+RewriteAssignHeapAllocation(?insn, ?index, ?heap, ?to, ?inmethod, ?linenumber) :-
+    _AssignHeapAllocation(?insn, _, ?heap, ?to_origin, ?inmethod, ?linenumber),
+    SSA_InstructionIndex(?insn, ?index),
+    SSA_AssignDetails(?insn, ?to_origin, _, ?to, _).
+
+.decl RewriteAssignOperFrom(?insn:symbol, ?pos:number, ?from:symbol)
+.output RewriteAssignOperFrom(filename="AssignOperFrom.facts")
+
+RewriteAssignOperFrom(?insn, ?pos, ?from) :-
+    AssignOper_From(?insn, ?pos, ?from_origin),
+    ReachingDef(?insn, ?from, ?from_origin).
+
+.decl RewriteAssignInstanceOf(?insn:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
+.output RewriteAssignInstanceOf(filename="AssignInstanceOf.facts")
+
+RewriteAssignInstanceOf(?insn, ?index, ?from, ?to, ?type, ?inmethod) :-
+    _AssignInstanceOf(?insn, _, ?from_origin, _, ?type, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
+    SSA_InstructionIndex(?insn, ?index),
+    ReachingDef(?insn, ?from, ?from_origin).
+
+.decl RewriteAssignLocal(?insn:symbol, ?index:number, ?to:symbol, ?from:symbol, ?inmethod:symbol)
+.output RewriteAssignLocal(filename="AssignLocal.facts")
+
+RewriteAssignLocal(?insn, ?index, ?to, ?from, ?inmethod) :-
+    isAssignLocal_Insn(?insn),
+    SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    AssignLocal_From(?insn, ?from_origin),
+    ReachingDef(?insn, ?from, ?from_origin).
+
+RewriteAssignLocal(?insnid, ?index, ?to, ?from, ?inmethod) :-
+    PhiPseudoAssign(?to, ?from, ?block, ?insn),
+    Instruction_Method(?block, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    ?insnid = cat(?inmethod, cat("/phiassign/instruction", to_string(?index))).
+
+.decl RewriteAssignNull(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
+.output RewriteAssignNull(filename="AssignNull.facts")
+
+RewriteAssignNull(?insn, ?index, ?to, ?inmethod) :-
+    isAssignNull_Insn(?insn),
+    SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index).
+
+RewriteAssignNull(?insn, ?index, ?to, ?inmethod) :-
+    isZeroAssignTo(?insn, ?to),
+    SSA_Type(?to, ?type),
+    isReferenceType(?type),
+    SSA_AssignDetails(?insn, _, _, _, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index).
+
+.decl RewriteAssignNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)
+.output RewriteAssignNumConstant(filename="AssignNumConstant.facts")
+
+.decl SSA_AssignNumConstant(?insn:symbol, ?to:symbol, ?const:symbol, ?inmethod:symbol)
+SSA_AssignNumConstant(?insn, ?to, ?const, ?inmethod) :-
+    _AssignNumConstant(?insn, _, ?const, _, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _).
+
+// Fallback rule, if type inference failed to resolve any type for ?to.
+RewriteAssignNumConstant(?insn, ?index, ?const, ?to, ?inmethod) :-
+    SSA_AssignNumConstant(?insn, ?to, ?const, ?inmethod),
+    !SSA_Type(?to, _),
+    SSA_InstructionIndex(?insn, ?index).
+
+// If we assign a num consant, and the resolved type is not a reference type, then it belongs here.
+RewriteAssignNumConstant(?insn, ?index, ?const, ?to, ?inmethod) :-
+    SSA_AssignNumConstant(?insn, ?to, ?const, ?inmethod),
+    SSA_Type(?to, ?type),
+    !isReferenceType(?type),
+    SSA_InstructionIndex(?insn, ?index).
+
+.decl isZeroAssignTo(?insn:symbol, ?to:symbol)
+isZeroAssignTo(?insn, ?to) :-
+    SSA_AssignNumConstant(?insn, ?to, "0", _).
+
+.decl RewriteBootstrapParam(?index:number, ?invocation:symbol, ?var:symbol)
+.output RewriteBootstrapParam(filename="BootstrapParam.facts")
+
+RewriteBootstrapParam(?index, ?invocation, ?var) :-
+    _BootstrapParam(_, ?invocation, ?var_origin),
+    SSA_InstructionIndex(?invocation, ?index),
+    ReachingDef(?invocation, ?var, ?var_origin).
+
+.decl RewriteDynamicMethodInvocation(?insn:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?tag:number, ?method:symbol)
+.output RewriteDynamicMethodInvocation(filename="DynamicMethodInvocation.facts")
+
+RewriteDynamicMethodInvocation(?insn, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _DynamicMethodInvocation(?insn, _, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?method).
+
+.decl RewriteExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?begin:number, ?end:number)
+.output RewriteExceptionHandler(filename="ExceptionHandler.facts")
+
+RewriteExceptionHandler(?handler, ?method, ?index, ?type, ?begin, ?end) :-
+    _ExceptionHandler(?handler, ?method, _, ?type, ?begin_old, ?end_old),
+    SSA_InstructionIndex(?handler, ?index),
+    NewIndexMapping(?begin_old, ?begin, ?method),
+    NewIndexMapping(?end_old, ?end, ?method).
+
+.decl RewriteExceptionHandler_FormalParam(?handler:symbol, ?var:symbol)
+.output RewriteExceptionHandler_FormalParam(filename="ExceptionHandler-FormalParam.facts")
+
+RewriteExceptionHandler_FormalParam(?handler, ?var) :-
+    isExceptionHandler(?handler),
+    SSA_AssignDetails(?handler, _, _, ?var, _).
+
+.decl RewriteAssignReturnValue(?invocation:symbol, ?to:symbol)
+.output RewriteAssignReturnValue(filename="AssignReturnValue.facts")
+
+RewriteAssignReturnValue(?invocation, ?to) :-
+    SSA_AssignDetails(?invocation, ?to_origin, _, ?to, _),
+    AssignReturnValue(?invocation, ?to_origin).
+
+.decl RewriteAssignUnop(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
+.output RewriteAssignUnop(filename="AssignUnop.facts")
+
+RewriteAssignUnop(?insn, ?index, ?to, ?inmethod) :-
+    isAssignUnop_Insn(?insn),
+    SSA_AssignDetails(?insn, _, _, ?to, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index).
+
+.decl RewriteEnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
+.output RewriteEnterMonitor(filename="EnterMonitor.facts")
+
+RewriteEnterMonitor(?insn, ?index, ?var, ?method) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _EnterMonitor(?insn, _, ?var_origin, ?method),
+    ReachingDef(?insn, ?var, ?var_origin).
+
+.decl RewriteExitMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
+.output RewriteExitMonitor(filename="ExitMonitor.facts")
+
+RewriteExitMonitor(?insn, ?index, ?var, ?method) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _ExitMonitor(?insn, _, ?var_origin, ?method),
+    ReachingDef(?insn, ?var, ?var_origin).
+
+.decl RewriteGoto(?insn:symbol, ?index:number, ?to:number, ?inmethod:symbol)
+.output RewriteGoto(filename="Goto.facts")
+
+RewriteGoto(?insn, ?index, ?to, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    isGoto_Insn(?insn),
+    Instruction_Method(?insn, ?inmethod),
+    Goto_Target(?insn, ?old_to),
+    NewBBStart(?old_to, ?to, ?inmethod).
+
+.decl RewriteIf(?insn:symbol, ?index:number, ?to:number, ?inmethod:symbol)
+.output RewriteIf(filename="If.facts")
+
+RewriteIf(?insn, ?index, ?to, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    isIf_Insn(?insn),
+    Instruction_Method(?insn, ?inmethod),
+    If_Target(?insn, ?old_to),
+    NewBBStart(?old_to, ?to, ?inmethod).
+
+.decl RewriteIfVar(?insn:symbol, ?pos:number, ?var:symbol)
+.output RewriteIfVar(filename="IfVar.facts")
+
+RewriteIfVar(?insn, ?pos, ?var) :- 
+    If_Var(?insn, ?pos, ?var_origin),
+    ReachingDef(?insn, ?var, ?var_origin).
+
+.decl RewriteLoadArrayIndex(?insn:symbol, ?index:number, ?to:symbol, ?base:symbol, ?method:symbol)
+.output RewriteLoadArrayIndex(filename="LoadArrayIndex.facts")
+
+RewriteLoadArrayIndex(?insn, ?index, ?to, ?base, ?inmethod) :-
+    _LoadArrayIndex(?insn, _, _, ?base_origin, ?inmethod),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
+    SSA_InstructionIndex(?insn, ?index),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteLoadInstanceField(?insn:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
+.output RewriteLoadInstanceField(filename="LoadInstanceField.facts")
+
+RewriteLoadInstanceField(?insn, ?index, ?to, ?base, ?signature, ?inmethod) :-
+    _LoadInstanceField(?insn, _, _, ?base_origin, ?signature, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    SSA_AssignDetails(?insn, _, _, ?to, _),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteLoadStaticField(?insn:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)
+.output RewriteLoadStaticField(filename="LoadStaticField.facts")
+
+RewriteLoadStaticField(?insn, ?index, ?to, ?signature, ?inmethod) :-
+    _LoadStaticField(?insn, _, _, ?signature, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    SSA_AssignDetails(?insn, _, _, ?to, _).
+
+.decl RewriteLookupSwitch(?insn:symbol, ?index:number, ?key:symbol, ?method:symbol)
+.output RewriteLookupSwitch(filename="LookupSwitch.facts")
+
+RewriteLookupSwitch(?insn, ?index, ?key, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _LookupSwitch(?insn, _, ?key_origin, ?inmethod),
+    ReachingDef(?insn, ?key, ?key_origin).
+
+.decl RewriteLookupSwitch_Target(?insn:symbol, ?value:number, ?target:number)
+.output RewriteLookupSwitch_Target(filename="LookupSwitch-Target.facts")
+
+RewriteLookupSwitch_Target(?insn, ?value, ?target) :-
+    _LookupSwitch_Target(?insn, ?value, ?target_old),
+    Instruction_Method(?insn, ?method),
+    NewBBStart(?target_old, ?target, ?method).
+
+.decl RewriteLookupSwitch_DefaultTarget(?insn:symbol, ?target:number)
+.output RewriteLookupSwitch_DefaultTarget(filename="LookupSwitch-Default.facts")
+
+RewriteLookupSwitch_DefaultTarget(?insn, ?target) :-
+    _LookupSwitch_DefaultTarget(?insn, ?target_old),
+    Instruction_Method(?insn, ?method),
+    NewBBStart(?target_old, ?target, ?method).
+
+.decl RewriteReturn(?insn:symbol, ?index:number, ?var:symbol, ?inmethod:symbol)
+.output RewriteReturn(filename="Return.facts")
+
+RewriteReturn(?insn, ?index, ?var, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    Instruction_Method(?insn, ?inmethod),
+    ReturnNonvoid_Var(?insn, ?var_origin),
+    ReachingDef(?insn, ?var, ?var_origin).
+
+.decl RewriteReturnVoid(?insn:symbol, ?index:number, ?inmethod:symbol)
+.output RewriteReturnVoid(filename="ReturnVoid.facts")
+
+RewriteReturnVoid(?insn, ?index, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    Instruction_Method(?insn, ?inmethod),
+    isReturnVoid_Insn(?insn).
+
+.decl RewriteSpecialMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
+.output RewriteSpecialMethodInvocation(filename="SpecialMethodInvocation.facts")
+
+RewriteSpecialMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _SpecialMethodInvocation(?insn, _, ?signature, ?base_origin, ?inmethod),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteStaticMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?method:symbol)
+.output RewriteStaticMethodInvocation(filename="StaticMethodInvocation.facts")
+
+RewriteStaticMethodInvocation(?insn, ?index, ?signature, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _StaticMethodInvocation(?insn, _, ?signature, ?inmethod).
+
+.decl RewriteStoreArrayIndex(?insn:symbol, ?index:number, ?from:symbol, ?base:symbol, ?method:symbol)
+.output RewriteStoreArrayIndex(filename="StoreArrayIndex.facts")
+
+RewriteStoreArrayIndex(?insn, ?index, ?from, ?base, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _StoreArrayIndex(?insn, _, ?from_origin, ?base_origin, ?inmethod),
+    ReachingDef(?insn, ?from, ?from_origin),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteStoreInstanceField(?insn:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
+.output RewriteStoreInstanceField(filename="StoreInstanceField.facts")
+
+RewriteStoreInstanceField(?insn, ?index, ?from, ?base, ?signature, ?inmethod) :-
+    _StoreInstanceField(?insn, _, ?from_origin, ?base_origin, ?signature, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    ReachingDef(?insn, ?from, ?from_origin),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteStoreStaticField(?insn:symbol, ?index:number, ?from:symbol, ?signature:symbol, ?method:symbol)
+.output RewriteStoreStaticField(filename="StoreStaticField.facts")
+
+RewriteStoreStaticField(?insn, ?index, ?from, ?signature, ?inmethod) :-
+    _StoreStaticField(?insn, _, ?from_origin, ?signature, ?inmethod),
+    SSA_InstructionIndex(?insn, ?index),
+    ReachingDef(?insn, ?from, ?from_origin).
+
+.decl RewriteSuperMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
+.output RewriteSuperMethodInvocation(filename="SuperMethodInvocation.facts")
+
+RewriteSuperMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _SuperMethodInvocation(?insn, _, ?signature, ?base_origin, ?inmethod),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteTableSwitch(?insn:symbol, ?index:number, ?key:symbol, ?method:symbol)
+.output RewriteTableSwitch(filename="TableSwitch.facts")
+
+RewriteTableSwitch(?insn, ?index, ?key, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _TableSwitch(?insn, _, ?key_origin, ?inmethod),
+    ReachingDef(?insn, ?key, ?key_origin).
+
+.decl RewriteTableSwitch_Target(?insn:symbol, ?value:number, ?target:number)
+.output RewriteTableSwitch_Target(filename="TableSwitch-Target.facts")
+
+RewriteTableSwitch_Target(?insn, ?value, ?target) :-
+    _TableSwitch_Target(?insn, ?value, ?target_old),
+    Instruction_Method(?insn, ?method),
+    NewBBStart(?target_old, ?target, ?method).
+
+.decl RewriteTableSwitch_DefaultTarget(?insn:symbol, ?target:number)
+.output RewriteTableSwitch_DefaultTarget(filename="TableSwitch-Default.facts")
+
+RewriteTableSwitch_DefaultTarget(?insn, ?target) :-
+    _TableSwitch_DefaultTarget(?insn, ?target_old),
+    Instruction_Method(?insn, ?method),
+    NewBBStart(?target_old, ?target, ?method).
+
+.decl RewriteThrow(?insn:symbol, ?index:number, ?var:symbol, ?method:symbol)
+.output RewriteThrow(filename="Throw.facts")
+
+RewriteThrow(?insn, ?index, ?var, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _Throw(?insn, _, ?var_origin, ?inmethod),
+    ReachingDef(?insn, ?var, ?var_origin).
+
+.decl RewriteThrowNull(?insn:symbol, ?index:number, ?method:symbol)
+.output RewriteThrowNull(filename="ThrowNull.facts")
+
+RewriteThrowNull(?insn, ?index, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _ThrowNull(?insn, _, ?inmethod).
+
+.decl RewriteVirtualMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
+.output RewriteVirtualMethodInvocation(filename="VirtualMethodInvocation.facts")
+
+RewriteVirtualMethodInvocation(?insn, ?index, ?signature, ?base, ?inmethod) :-
+    SSA_InstructionIndex(?insn, ?index),
+    _VirtualMethodInvocation(?insn, _, ?signature, ?base_origin, ?inmethod),
+    ReachingDef(?insn, ?base, ?base_origin).
+
+.decl RewriteVarDeclaringMethod(?var:symbol, ?method:symbol)
+.output RewriteVarDeclaringMethod(filename="Var-DeclaringMethod.facts")
+
+RewriteVarDeclaringMethod(?var, ?method) :-
+    Var_DeclaringMethod(?var_origin, ?method),
+    SSA_Alias(?var, ?var_origin).
+
+// Type inference rules WIP.
+
+#define TYPE_INFERENCE
+
+#ifdef TYPE_INFERENCE
+
+// The Assign relation models the assignment, in a general way:
+//  1) ?var1 := ?var2; (local assigment)
+//  2) f(?var, ...); (argument passing [formal param = actual param])
+.decl Assign(?stmt:symbol, ?var1:symbol, ?var2:symbol)
+
+.decl AssignArray(?stmt:symbol, ?var1:symbol, ?var2:symbol)
+
+.decl HasKnownType(?var:symbol, ?type:symbol)
+
+// The following relations are used to iterate over the constraints.
+.decl NotFirstConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl FirstConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl NotLastConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl LaterConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtLater:symbol)
+.decl NextConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtNext:symbol)
+
+// Relations for finding the least common ancestor/greatest common decendant of two
+// types in the type lattice.
+.decl CommonAncestor(?type1:symbol, ?type2:symbol, ?supertype:symbol)
+.decl NotLeastCommonAncestor(?type1:symbol, ?type2:symbol, ?supertype:symbol)
+.decl LeastCommonAncestor(?type1:symbol, ?type2:symbol, ?supertype:symbol)
+.decl CommonDescendant(?type1:symbol, ?type2:symbol, ?subtype:symbol)
+.decl NotGreatestCommonDescendant(?type1:symbol, ?type2:symbol, ?subtype:symbol)
+.decl GreatestCommonDescendant(?type1:symbol, ?type2:symbol, ?subtype:symbol)
+
+.decl LowerBoundTypeForAllConstraints(?var:symbol, ?type:symbol)
+.decl LowerBoundTypeUpToConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)
+.decl LowerBoundTypeForConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)
+
+.decl UpperBoundTypeForAllConstraints(?var:symbol, ?type:symbol)
+.decl UpperBoundTypeUpToConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)
+.decl UpperBoundTypeForConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)
+
+.decl ConstraintForVar(?var:symbol, ?stmt:symbol)
+
+.decl TypeCompatibleWithAllConstraints(?var:symbol, ?type:symbol)
+
+// Custom subtype relation, to provide domain specific knowledge
+.decl mSubtypeOf(?s:symbol, ?t:symbol)
+
+// Subtyping for reference types is the same in Dalvik
+mSubtypeOf(?s, ?t) :-
+    SubtypeOf(?s, ?t),
+    isReferenceType(?s).
+
+// Assert that all reference types are subtypes of java.lang.Object
+mSubtypeOf(?t, "java.lang.Object") :-
+    isReferenceType(?t).
+
+.decl isInt32Top(?t:symbol)
+.decl isInt32Bottom(?t:symbol)
+
+.decl isPrimitive32Top(?t:symbol)
+.decl isPrimitive32Bottom(?t:symbol)
+
+.decl isPrimitive64Top(?t:symbol)
+.decl isPrimitive64Bottom(?t:symbol)
+
+isInt32Top("int32.Top").
+isInt32Bottom("int32.Bottom").
+
+isPrimitive32Top("primitive32.Top").
+isPrimitive32Bottom("primitive32.Bottom").
+
+isPrimitive64Top("primitive64.Top").
+isPrimitive64Bottom("primitive64.Bottom").
+
+.decl isInt32Primitive(?t:symbol)
+.decl isGuardInt32(?t:symbol)
+.decl isGuardPrimitive32(?t:symbol)
+.decl mPrimitives(?t:symbol)
+.decl isGuardPrimitive(?t:symbol)
+
+isGuardPrimitive(?t) :-
+    isPrimitive64Top(?t);
+    isPrimitive64Bottom(?t).
+
+isGuardPrimitive(?t),
+isGuardInt32(?t) :-
+    isInt32Top(?t);
+    isInt32Bottom(?t).
+
+isGuardPrimitive(?t),
+isGuardPrimitive32(?t) :-
+    isPrimitive32Top(?t);
+    isPrimitive32Bottom(?t).
+
+isType(?t),
+mPrimitives(?t) :-
+    isPrimitiveType(?t);
+    isGuardPrimitive32(?t);
+    isGuardInt32(?t);
+    isPrimitive64Top(?t);
+    isPrimitive64Bottom(?t).
+
+isInt32Primitive(?t) :-
+    Type_int(?t);
+    Type_char(?t);
+    Type_byte(?t);
+    Type_short(?t);
+    Type_boolean(?t).
+
+// Creating our primitive pseudo-hierarchy
+mSubtypeOf(?s, ?t) :-
+    isInt32Top(?s),
+    isPrimitive32Top(?t).
+
+mSubtypeOf(?s, ?t) :-
+    Type_float(?s),
+    isPrimitive32Top(?t).
+
+mSubtypeOf(?s, ?t) :-
+    isInt32Primitive(?s),
+    isInt32Top(?t).
+
+mSubtypeOf(?s, ?t) :-
+    isInt32Bottom(?s),
+    isInt32Primitive(?t).
+
+mSubtypeOf(?s, ?t) :-
+    isPrimitive32Bottom(?s),
+    isInt32Bottom(?t).
+
+mSubtypeOf(?s, ?t) :-
+    isPrimitive32Bottom(?s),
+    Type_float(?t).
+
+mSubtypeOf(?s, ?t) :-
+    (Type_long(?s); Type_double(?s)),
+    isPrimitive64Top(?t).
+
+mSubtypeOf(?s, ?t) :-
+    isPrimitive64Bottom(?s),
+    (Type_long(?t); Type_double(?t)).
+
+// Reflexivity for our primitive subclass relation
+mSubtypeOf(?t, ?t) :-
+    mPrimitives(?t).
+
+// Transitivity for our primitive subclass relation
+mSubtypeOf(?s, ?t) :-
+    mPrimitives(?s),
+    mSubtypeOf(?s, ?c),
+    mSubtypeOf(?c, ?t).
+
+
+// ?var1 := ?var2
+Assign(?stmt, ?var1, ?var2) :-
+    RewriteAssignLocal(?stmt, _, ?var1, ?var2, _).
+
+// f(?var)
+ConstraintForVar(?var, ?assign_id),
+UpperConstraintForVar(?var, ?assign_id),
+UpperBoundTypeForConstraint(?var, ?type, ?assign_id) :-
+    MethodInvocation_Method(?invocation, ?method),
+    RewriteActualParam(?index, ?invocation, ?var),
+    SSA_FormalParam(?index, ?method, ?var_formal),
+    Var_Type(?var_formal, ?type),
+    ?assign_id = cat(?invocation, cat("/arg_", to_string(?index))).
+
+// ?var1[index] = ?var2
+AssignArray(?stmt, ?var1, ?var2) :-
+    RewriteStoreArrayIndex(?stmt, _, ?var2, ?var1, _).
+
+ConstraintForVar(?var1, ?stmt),
+ConstraintForVar(?var2, ?stmt),
+LowerConstraintForVar(?var1, ?stmt),
+UpperConstraintForVar(?var2, ?stmt) :-
+    Assign(?stmt, ?var1, ?var2).
+
+// Static type of formal params is known.
+HasKnownType(?var, ?type) :-
+    SSA_FormalParam(_, _, ?var),
+    SSA_Alias(?var, ?var_origin),
+    Var_Type(?var_origin, ?type).
+
+// Static type of this vars is known.
+HasKnownType(?var, ?type) :-
+    SSA_ThisVar(?method, ?var),
+    Method_DeclaringType(?method, ?type).
+
+HasKnownType(?var, ?type) :-
+    RewriteExceptionHandler_FormalParam(?handler, ?var),
+    ExceptionHandler_Type(?handler, ?type).
+
+// Some simple ordering relations over constraints, for forall definition
+NotFirstConstraintForVar(?var, ?stmt) :-
+   ConstraintForVar(?var, ?stmt),
+   ConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) < ord(?stmt).
+
+NotLastConstraintForVar(?var, ?stmt) :-
+   ConstraintForVar(?var, ?stmt),
+   ConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) > ord(?stmt).
+
+LaterConstraintForVar(?var, ?stmt, ?stmtLater) :-
+   ConstraintForVar(?var, ?stmt),
+   ConstraintForVar(?var, ?stmtLater),
+   ord(?stmtLater) > ord(?stmt).
+
+NextConstraintForVar(?var, ?stmt, ?stmtNext) :-
+   LaterConstraintForVar(?var, ?stmt, ?stmtNext),
+   ?stmtNextOrd = min ord(?stmtLater) : LaterConstraintForVar(?var, ?stmt, ?stmtLater),
+   ord(?stmtNext) = ?stmtNextOrd.
+
+FirstConstraintForVar(?var, ?stmt) :-
+   ConstraintForVar(?var, ?stmt),
+   !NotFirstConstraintForVar(?var, ?stmt).
+
+.decl NotFirstUpperConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl FirstUpperConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl NotLastUpperConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl LaterUpperConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtLater:symbol)
+.decl NextUpperConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtNext:symbol)
+
+.decl UpperConstraintForVar(?var:symbol, ?stmt:symbol)
+
+// Testing fix FirstUpperConstraintForVar
+NotFirstUpperConstraintForVar(?var, ?stmt) :-
+   UpperConstraintForVar(?var, ?stmt),
+   UpperConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) < ord(?stmt).
+
+NotLastUpperConstraintForVar(?var, ?stmt) :-
+   UpperConstraintForVar(?var, ?stmt),
+   UpperConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) > ord(?stmt).
+
+LaterUpperConstraintForVar(?var, ?stmt, ?stmtLater) :-
+   UpperConstraintForVar(?var, ?stmt),
+   UpperConstraintForVar(?var, ?stmtLater),
+   ord(?stmtLater) > ord(?stmt).
+
+NextUpperConstraintForVar(?var, ?stmt, ?stmtNext) :-
+   LaterUpperConstraintForVar(?var, ?stmt, ?stmtNext),
+   ?stmtNextOrd = min ord(?stmtLater) : LaterUpperConstraintForVar(?var, ?stmt, ?stmtLater),
+   ord(?stmtNext) = ?stmtNextOrd.
+
+FirstUpperConstraintForVar(?var, ?stmt) :-
+   UpperConstraintForVar(?var, ?stmt),
+   !NotFirstUpperConstraintForVar(?var, ?stmt).
+
+.decl NotFirstLowerConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl FirstLowerConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl NotLastLowerConstraintForVar(?var:symbol, ?stmt:symbol)
+.decl LaterLowerConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtLater:symbol)
+.decl NextLowerConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtNext:symbol)
+
+.decl LowerConstraintForVar(?var:symbol, ?stmt:symbol)
+
+// Testing fix FirstLowerConstraintForVar
+NotFirstLowerConstraintForVar(?var, ?stmt) :-
+   LowerConstraintForVar(?var, ?stmt),
+   LowerConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) < ord(?stmt).
+
+NotLastLowerConstraintForVar(?var, ?stmt) :-
+   LowerConstraintForVar(?var, ?stmt),
+   LowerConstraintForVar(?var, ?stmt2),
+   ord(?stmt2) > ord(?stmt).
+
+LaterLowerConstraintForVar(?var, ?stmt, ?stmtLater) :-
+   LowerConstraintForVar(?var, ?stmt),
+   LowerConstraintForVar(?var, ?stmtLater),
+   ord(?stmtLater) > ord(?stmt).
+
+NextLowerConstraintForVar(?var, ?stmt, ?stmtNext) :-
+   LaterLowerConstraintForVar(?var, ?stmt, ?stmtNext),
+   ?stmtNextOrd = min ord(?stmtLater) : LaterLowerConstraintForVar(?var, ?stmt, ?stmtLater),
+   ord(?stmtNext) = ?stmtNextOrd.
+
+FirstLowerConstraintForVar(?var, ?stmt) :-
+   LowerConstraintForVar(?var, ?stmt),
+   !NotFirstLowerConstraintForVar(?var, ?stmt).
+
+// Least upper bound on types lattice
+CommonAncestor(?type1, ?type2, ?supertype) :-
+   mSubtypeOf(?type1, ?supertype),
+   mSubtypeOf(?type2, ?supertype).
+
+NotLeastCommonAncestor(?type1, ?type2, ?supertype) :-
+   CommonAncestor(?type1, ?type2, ?supertype),
+   CommonAncestor(?type1, ?type2, ?otherSupertype),
+   ?supertype != ?otherSupertype,
+   mSubtypeOf(?otherSupertype, ?supertype).
+
+LeastCommonAncestor(?type1, ?type2, ?common) :-
+   CommonAncestor(?type1, ?type2, ?common),
+   !NotLeastCommonAncestor(?type1, ?type2, ?common).
+
+
+// Greatest lower bound on types lattice
+CommonDescendant(?type1, ?type2, ?subtype) :-
+   mSubtypeOf(?subtype, ?type1),
+   mSubtypeOf(?subtype, ?type2).
+
+NotGreatestCommonDescendant(?type1, ?type2, ?subtype) :-
+   CommonDescendant(?type1, ?type2, ?subtype),
+   CommonDescendant(?type1, ?type2, ?otherSubtype),
+   ?subtype != ?otherSubtype,
+   mSubtypeOf(?subtype, ?otherSubtype).
+
+GreatestCommonDescendant(?type1, ?type2, ?common) :-
+   CommonDescendant(?type1, ?type2, ?common),
+   !NotGreatestCommonDescendant(?type1, ?type2, ?common).
+
+
+// If we know a declared type, that's enough!
+LowerBoundTypeForAllConstraints(?var, ?type) :-
+   HasKnownType(?var, ?type).
+
+// Otherwise iterate
+LowerBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
+   !HasKnownType(?var, _),
+   LowerBoundTypeForConstraint(?var, ?type, ?stmt),
+   FirstLowerConstraintForVar(?var, ?stmt).
+   
+LowerBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
+   LowerBoundTypeUpToConstraint(?var, ?typeBefore, ?stmtPrev),
+   NextLowerConstraintForVar(?var, ?stmtPrev, ?stmt),
+   LowerBoundTypeForConstraint(?var, ?typeCur, ?stmt),
+   LeastCommonAncestor(?typeBefore, ?typeCur, ?type).
+
+LowerBoundTypeForAllConstraints(?var, ?type) :-
+   LowerBoundTypeUpToConstraint(?var, ?type, ?stmt),
+   !NextLowerConstraintForVar(?var, ?stmt, _).
+
+// Similarly for upper bounds
+UpperBoundTypeForAllConstraints(?var, ?type) :-
+   HasKnownType(?var, ?type).
+
+UpperBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
+   !HasKnownType(?var, _),
+   UpperBoundTypeForConstraint(?var, ?type, ?stmt),
+   FirstUpperConstraintForVar(?var, ?stmt).
+   
+UpperBoundTypeUpToConstraint(?var, ?type, ?stmt) :-
+   UpperBoundTypeUpToConstraint(?var, ?typeBefore, ?stmtPrev),
+   NextUpperConstraintForVar(?var, ?stmtPrev, ?stmt),
+   UpperBoundTypeForConstraint(?var, ?typeCur, ?stmt),
+   GreatestCommonDescendant(?typeBefore, ?typeCur, ?type).
+
+UpperBoundTypeForAllConstraints(?var, ?type) :-
+   UpperBoundTypeUpToConstraint(?var, ?type, ?stmt),
+   !NextUpperConstraintForVar(?var, ?stmt, _).
+
+// Take both bounds into account
+TypeCompatibleWithAllConstraints(?var, ?type) :-
+   LowerBoundTypeForAllConstraints(?var, ?lowerType),
+   UpperBoundTypeForAllConstraints(?var, ?upperType),
+   mSubtypeOf(?lowerType, ?type),
+   mSubtypeOf(?type, ?upperType).
+ .plan 1:(2,1,3,4)
+
+// And now, let's encode the constraints themselves
+
+// Logic for assignments
+
+// Given var := varOther, type(var) is a supertype of type(varOther)
+LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
+   Assign(?stmt, ?var, ?varOther),
+   TypeCompatibleWithAllConstraints(?varOther, ?type).
+
+// 
+//UpperConstraintForVar(?var, ?stmt),
+//UpperBoundTypeForConstraint(?var, ?t, ?stmt) :-
+//    Assign(?stmt, ?var, _),
+//    UpperGlobalConstraint(?t).
+
+//UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
+//   Assign(?stmt, ?var, _).
+
+// Given varOther := var, type(var) is a subtype of type(varOther)
+UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
+   Assign(?stmt, ?varOther, ?var),
+   TypeCompatibleWithAllConstraints(?varOther, ?type).
+
+//UpperConstraintForVar(?var, ?stmt),
+//UpperBoundTypeForConstraint(?var, ?t, ?stmt) :-
+//    Assign(?stmt, _, ?var),
+//    LowerGlobalConstraint(?t).
+ 
+//LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
+//    Assign(?stmt, _, ?var).
+
+
+// Logic for array stores
+ConstraintForVar(?to, ?stmt),
+ConstraintForVar(?base, ?stmt),
+LowerConstraintForVar(?to, ?stmt),
+UpperConstraintForVar(?base, ?stmt) :-
+    RewriteStoreArrayIndex(?stmt, _, ?to, ?base, _).
+
+LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
+    AssignArray(?stmt, ?var, ?varOther),
+    TypeCompatibleWithAllConstraints(?varOther, ?t),
+    ?type = cat(?t, "[]").
+
+UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
+   AssignArray(?stmt, ?var, _).
+
+UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
+    AssignArray(?stmt, ?varOther, ?var),
+    TypeCompatibleWithAllConstraints(?varOther, ?t),
+    ComponentType(?t, ?type).
+
+LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
+   AssignArray(?stmt, _, ?var).
+
+// Logic for array loads
+ConstraintForVar(?to, ?stmt),
+ConstraintForVar(?base, ?stmt),
+UpperConstraintForVar(?to, ?stmt),
+LowerConstraintForVar(?base, ?stmt) :-
+    RewriteLoadArrayIndex(?stmt, _, ?to, ?base, _).
+
+LowerBoundTypeForConstraint(?var, ?type, ?stmt) :-
+    RewriteLoadArrayIndex(?stmt, _, ?var, ?varOther, _),
+    TypeCompatibleWithAllConstraints(?varOther, ?t),
+    ComponentType(?t, ?type).
+
+UpperBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
+    RewriteLoadArrayIndex(?stmt, _, ?var, _, _).
+
+UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
+    RewriteLoadArrayIndex(?stmt, _, ?varOther, ?var, _),
+    TypeCompatibleWithAllConstraints(?varOther, ?t),
+    ComponentType(?type, ?t).
+
+LowerBoundTypeForConstraint(?var, "java.lang.Object", ?stmt) :-
+    RewriteLoadArrayIndex(?stmt, _, _, ?var, _).
+
+// Logic for exceptions
+LowerBoundTypeForConstraint(?var, "null_type", ?stmt) :-
+    RewriteThrow(?stmt, _, ?var, _).
+
+UpperBoundTypeForConstraint(?var, "java.lang.Throwable", ?stmt) :-
+    RewriteThrow(?stmt, _, ?var, _).
+
+UpperBoundTypeForConstraint(?var, ?type, ?stmt) :-
+    RewriteThrow(?stmt, _, ?var, ?method),
+    Method_DeclaresException(?type, ?method).
+
+// Logic for cast instructions
+
+ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    RewriteAssignCast(?insn, _, _, ?to, ?type, _).
+
+ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    RewriteAssignCastNull(?insn, _, ?to, ?type, _).
+
+// TODO
+// RewriteAssignCastNumConstant(?insn, ?index, ?const, ?to, ?type, ?inmethod)
+
+// Logic for heap allocations
+
+ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    RewriteAssignHeapAllocation(?insn, _, ?heap, ?to, _, _),
+    HeapAllocation_Type(?heap, ?type).
+
+// TODO
+// RewriteAssignInstanceOf(?insn, ?index, ?from, ?to, ?type, ?inmethod)
+
+// Logic for return assignment
+
+ConstraintForVar(?to, ?invocation),
+LowerConstraintForVar(?to, ?invocation),
+LowerBoundTypeForConstraint(?to, ?type, ?invocation) :-
+    RewriteAssignReturnValue(?invocation, ?to),
+    MethodInvocation_Method(?invocation, ?signature),
+    Method_ReturnType(?signature, ?type),
+    ?assign_id = cat(?invocation, "/return").
+
+// Logic for field loads
+
+// TODO: Review this again, do we need to differentiate between base and from constraint ids (what if they are the same)
+ConstraintForVar(?to, ?insn),
+ConstraintForVar(?base, ?insn),
+LowerConstraintForVar(?to, ?insn),
+UpperConstraintForVar(?base, ?insn),
+LowerBoundTypeForConstraint(?to, ?field_type, ?insn),
+UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn) :-
+    RewriteLoadInstanceField(?insn, _, ?to, ?base, ?signature, _),
+    Field_Type(?signature, ?field_type),
+    Field_DeclaringType(?signature, ?declaring_type).
+
+ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    RewriteLoadStaticField(?insn, _, ?to, ?signature, _),
+    Field_Type(?signature, ?type).
+
+// Logic for field stores
+
+// TODO: Review this again, do we need to differentiate between base and from constraint ids (what if they are the same)
+
+ConstraintForVar(?from, ?insn),
+ConstraintForVar(?base, ?insn),
+UpperConstraintForVar(?base, ?insn),
+UpperConstraintForVar(?from, ?insn),
+UpperBoundTypeForConstraint(?from, ?field_type, ?insn),
+UpperBoundTypeForConstraint(?base, ?declaring_type, ?insn) :-
+    RewriteStoreInstanceField(?insn, _, ?from, ?base, ?signature, _),
+    Field_DeclaringType(?signature, ?declaring_type),
+    Field_Type(?signature, ?field_type).
+
+ConstraintForVar(?from, ?insn),
+UpperConstraintForVar(?from, ?insn),
+UpperBoundTypeForConstraint(?from, ?type, ?insn) :-
+    RewriteStoreStaticField(?insn, _, ?from, ?signature, _),
+    Field_Type(?signature, ?type).
+
+// Logic for return instructions
+
+ConstraintForVar(?var, ?insn),
+UpperConstraintForVar(?var, ?insn),
+UpperBoundTypeForConstraint(?var, ?type, ?insn) :-
+    RewriteReturn(?insn, _, ?var, ?method),
+    Method_ReturnType(?method, ?type).
+
+.decl UpperGlobalConstraint(?type:symbol)
+
+UpperGlobalConstraint(?t) :-
+    ?t = "java.lang.Object";
+    isPrimitive32Top(?t);
+    isPrimitive64Top(?t).
+
+.decl LowerGlobalConstraint(?type:symbol)
+
+LowerGlobalConstraint(?t) :-
+    ?t = "null_type";
+    isPrimitive32Bottom(?t);
+    isPrimitive64Bottom(?t).
+
+UpperConstraintForVar(?var, "init_constraint"),
+UpperBoundTypeForConstraint(?var, ?t, "init_constraint") :-
+    ConstraintForVar(?var, _),
+    UpperGlobalConstraint(?t).
+
+LowerConstraintForVar(?var, "init_constraint"),
+LowerBoundTypeForConstraint(?var, ?t, "init_constraint") :-
+    ConstraintForVar(?var, _),
+    LowerGlobalConstraint(?t).
+
+
+// Encoding constraints for binops/unops
+
+.decl StatementType(?insn:symbol, ?in_type:symbol, ?out_type:symbol)
+.input StatementType(IO="file", filename="StatementType.facts", delimiter="\t")
+
+.decl PrimOp(?insn:symbol, ?to:symbol, ?from:symbol)
+
+PrimOp(?insn, ?to, ?from) :-
+    RewriteAssignUnop(?insn, _, ?to, _),
+    RewriteAssignOperFrom(?insn, _, ?from).
+
+PrimOp(?insn, ?to, ?from) :-
+    RewriteAssignBinop(?insn, _, ?to, _),
+    RewriteAssignOperFrom(?insn, _, ?from).
+
+.decl Integer32Constraint(?var:symbol, ?insn:symbol)
+
+ConstraintForVar(?var, ?insn),
+UpperConstraintForVar(?var, ?insn),
+UpperBoundTypeForConstraint(?var, ?type, ?insn) :-
+    Integer32Constraint(?var, ?insn),
+    isInt32Top(?type).
+
+ConstraintForVar(?var, ?insn),
+LowerConstraintForVar(?var, ?insn),
+LowerBoundTypeForConstraint(?var, ?type, ?insn) :-
+    Integer32Constraint(?var, ?insn),
+    isInt32Bottom(?type).
+
+Integer32Constraint(?to, ?insn) :-
+    PrimOp(?insn, ?to, _),
+    StatementType(?insn, _, "int32").
+
+Integer32Constraint(?from, ?insn) :-
+    PrimOp(?insn, _, ?from),
+    StatementType(?insn, "int32", _).
+
+// If statement type for primitive op is not a 32bit integer type
+ConstraintForVar(?to, ?insn),
+UpperConstraintForVar(?to, ?insn),
+UpperBoundTypeForConstraint(?to, ?type, ?insn) :-
+    PrimOp(?insn, ?to, _),
+    StatementType(?insn, _, ?type),
+    ?type != "int32".
+
+ConstraintForVar(?from, ?insn),
+UpperConstraintForVar(?from, ?insn),
+UpperBoundTypeForConstraint(?from, ?type, ?insn) :-
+    PrimOp(?insn, _, ?from),
+    StatementType(?insn, ?type, _),
+    ?type != "int32".
+
+// If statement type for primitive op is float
+ConstraintForVar(?from, ?insn),
+LowerConstraintForVar(?from, ?insn),
+LowerBoundTypeForConstraint(?from, ?type, ?insn) :-
+    PrimOp(?insn, _, ?from),
+    StatementType(?insn, ?t, _),
+    Type_float(?t),
+    isPrimitive32Bottom(?type).
+
+ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    PrimOp(?insn, ?to, _),
+    StatementType(?insn, _, ?t),
+    Type_float(?t),
+    isPrimitive32Bottom(?type).
+
+// If statement type for primitive op is double or long
+ConstraintForVar(?from, ?insn),
+LowerConstraintForVar(?from, ?insn),
+LowerBoundTypeForConstraint(?from, ?type, ?insn) :-
+    PrimOp(?insn, _, ?from),
+    StatementType(?insn, ?t, _),
+    (Type_long(?t); Type_double(?t)),
+    isPrimitive64Bottom(?type).
+
+ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    PrimOp(?insn, ?to, _),
+    StatementType(?insn, _, ?t),
+    (Type_long(?t); Type_double(?t)),
+    isPrimitive64Bottom(?type).
+
+// If statement type of num constant assign is 32bit
+ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    SSA_AssignNumConstant(?insn, ?to, _, _),
+    StatementType(?insn, _, "32bit"),
+    isPrimitive32Bottom(?type).
+
+// If statement type of num constant assign is 32bit and the constant is 0
+ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, "null_type", ?insn) :-
+    SSA_AssignNumConstant(?insn, ?to, "0", _),
+    StatementType(?insn, _, "32bit").
+
+// If statement type of num constant assign is 64bit
+ConstraintForVar(?to, ?insn),
+LowerConstraintForVar(?to, ?insn),
+LowerBoundTypeForConstraint(?to, ?type, ?insn) :-
+    SSA_AssignNumConstant(?insn, ?to, ?const, _),
+    StatementType(?insn, _, "64bit"),
+    isPrimitive64Bottom(?type).
+
+.decl ExistsNonGuardType(?var:symbol)
+
+ExistsNonGuardType(?var) :-
+    TypeCompatibleWithAllConstraints(?var, ?type),
+    !isGuardPrimitive(?type).
+
+.decl NonGuardCompatibleTypes(?var:symbol, ?type:symbol)
+
+NonGuardCompatibleTypes(?var, ?type) :-
+    TypeCompatibleWithAllConstraints(?var, ?type),
+    !isGuardPrimitive(?type).
+
+SSA_TypeOrd(?var, ?minTypeOrd) :-
+    ExistsNonGuardType(?var),
+    ?minTypeOrd = min ord(?t) : NonGuardCompatibleTypes(?var, ?t).
+    
+SSA_Type(?var, ?minType) :-
+    isType(?minType),
+    ?minTypeOrd = ord(?minType),
+    SSA_TypeOrd(?var, ?minTypeOrd).
+
+SSA_Type(?var, "int") :-
+    TypeCompatibleWithAllConstraints(?var, _),
+    !ExistsNonGuardType(?var).
+
+// Hack
+Instruction_Next(?insn, ?next) :-
+    Instruction_Method(?insn, ?inMethod),
+    Instruction_Index(?insn, ?i),
+    AssignReturnValue(?insn, _),
+    !OptInstructionFromMethodIndex(?inMethod, ?i + 1, _),
+    OptInstructionFromMethodIndex(?inMethod, ?i + 2, ?next).
+
+GreatestCommonDescendant(?a, ?b, ?gcd) :-
+    GreatestCommonDescendant(?b, ?a, ?gcd).
+
+LeastCommonAncestor(?a, ?b, ?lca) :-
+    LeastCommonAncestor(?b, ?a, ?lca).
+
+.output TypeCompatibleWithAllConstraints
+.output UpperBoundTypeForConstraint
+.output LowerBoundTypeForConstraint
+.output mSubtypeOf
+    
+#endif

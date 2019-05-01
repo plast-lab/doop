@@ -203,7 +203,7 @@ VarPointsTo(?hctx, ?mt, ?ctx, ?ret) :-
 // the preprocessing initial phase.
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?mt, ?ctx, ?ret),
-#endif
+#endif // DISABLE_POINTS_TO
 MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
 MethodType_Arity(?mt, ?arity),
 MethodType_ParamTypes(?mt, ?paramTypes),
@@ -384,7 +384,7 @@ VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret) :-
 .decl CreateMHLookup(?type:Type, ?ctx:configuration.Context, ?ret:Var)
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?immHctx, ?mockMHLookup, ?ctx, ?ret),
-#endif
+#endif // DISABLE_POINTS_TO
 MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
 MHLookup_Type(?mockMHLookup, ?type) :-
   CreateMHLookup(?type, ?ctx, ?ret),
@@ -402,15 +402,21 @@ CreateMHLookup(?type, ?ctx, ?ret) :-
   AssignReturnValue(?invo, ?ret).
 
 // Model of MethodHandles.publicLookup(). We assume the caller class is Object.
+OpaqueCallGraphEdge(?invo, ?sig),
 CreateMHLookup("java.lang.Object", ?ctx, ?ret) :-
-  _StaticMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup publicLookup()>", ?method),
+  _StaticMethodInvocation(?invo, _, ?sig, ?method),
+  ?sig = "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup publicLookup()>",
   ReachableContext(?ctx, ?method),
   AssignReturnValue(?invo, ?ret).
 
 #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 // Model of MethodHandles.Lookup.lookupClass().
-VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
-  _VirtualMethodInvocation(?invo, _, "<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>", ?base, ?method),
+#ifndef DISABLE_POINTS_TO
+VarPointsTo(?hctx, ?classValue, ?ctx, ?ret),
+#endif // DISABLE_POINTS_TO
+OpaqueCallGraphEdge(?invo, ?sig) :-
+  _VirtualMethodInvocation(?invo, _, ?ig, ?base, ?method),
+  ?sig = "<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>",
   ReachableContext(?ctx, ?method),
   VarPointsTo(?hctx, ?mhLookup, ?ctx, ?base),
   MHLookup_Type(?mhLookup, ?type),
@@ -434,7 +440,7 @@ VarPointsTo(?hctx, ?mh, ?ctx, ?var) :-
 // Case 2: method handle constant not found, invent a mock object.
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?dmh, ?ctx, ?var),
-#endif
+#endif // DISABLE_POINTS_TO
 MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
 MethodHandle_Method(?dmh, ?method),
 MethodHandle_MethodType(?dmh, ?mt) :-
@@ -545,7 +551,7 @@ AssignMethodHandleToVarRequest(?method, ?paramTypesConv, ?retType, ?hctx, ?ctx, 
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?thisVar),
 VarPointsTo(?hctx, ?value, ?callerCtx, ?ret),
-#endif
+#endif // DISABLE_POINTS_TO
 MockValueConsMacro(?value, ?type) :-
   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, _),
   Method_SimpleName(?method, "<init>"),
@@ -604,7 +610,7 @@ MethodType_ParamType(?mt, ?index, ?pType) :-
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?immHctx, ?mockMHLookup, ?calleeCtx, ?caller),
 VarPointsTo(?immHctx, ?mt, ?calleeCtx, ?invokedTypeParam),
-#endif
+#endif // DISABLE_POINTS_TO
 MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
 MHLookup_Type(?mockMHLookup, ?callerClass) :-
   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
@@ -946,7 +952,7 @@ VarPointsTo(?hctx, ?argValue, ?calleeCtx, ?this) :-
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?mockObj, ?callerCtx, ?var),
 VarPointsTo(?hctx, ?mockObj, ?calleeCtx, ?thisVar),
-#endif
+#endif // DISABLE_POINTS_TO
 MockValueConsMacro(?mockObj, ?type) :-
   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, _),
   Method_SimpleName(?implMethod, "<init>"),
@@ -982,7 +988,7 @@ Class_getMembers(?sig, ?hctx, ?ctx, ?ret, ?class) :-
 
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?mockConstructors, ?ctx, ?ret),
-#endif
+#endif // DISABLE_POINTS_TO
 MockValueConsMacro(?mockConstructors, "java.lang.reflect.Constructor[]"),
 FillConstructorsFromClass(?hctx, ?mockConstructors, ?class) :-
   Class_getMembers(GET_DECLARED_CONSTRUCTORS, ?hctx, ?ctx, ?ret, ?class),
@@ -997,7 +1003,7 @@ ArrayIndexPointsTo(?immHctx, ?constructor, ?hctx, ?mockConstructors) :-
 
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?mockMethods, ?ctx, ?ret),
-#endif
+#endif // DISABLE_POINTS_TO
 MockValueConsMacro(?mockMethods, "java.lang.reflect.Method[]"),
 FillConstructorsFromClass(?hctx, ?mockMethods, ?class) :-
   Class_getMembers(GET_DECLARED_METHODS, ?hctx, ?ctx, ?ret, ?class),
