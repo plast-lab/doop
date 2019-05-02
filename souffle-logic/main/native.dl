@@ -209,6 +209,7 @@ LoadArrayIndex(?base, ?to, ?inmethod) :-
  *
  **********************************************************************************/
 
+#ifndef VIA_DDLOG
 SimulateNativeAllocation(
   "<java.io.FileSystem: java.io.FileSystem getFileSystem()>",
   "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
@@ -298,6 +299,7 @@ SimulateNativeAllocation(
   "<sun.misc.Perf: java.nio.ByteBuffer createLong(java.lang.String,int,int,long)>/new java.nio.DirectByteBuffer/0",
   "<java.nio.DirectByteBuffer: void <init>()>").
 
+#endif // VIA_DDLOG
 
 /**********************************************************************************
  *

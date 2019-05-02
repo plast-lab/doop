@@ -1,3 +1,4 @@
+#ifndef VIA_DDLOG
 MockHeapConsMacro(?heap, ?type) :-
    ?heap = "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
    ?type = "java.io.UnixFileSystem".
@@ -82,3 +83,4 @@ MockHeapConsMacro(?heap, ?type) :-
 MockHeapConsMacro(?heap, ?type) :-
    ?heap ="<<immutable>>",
    ?type = "java.lang.Object".
+#endif // VIA_DDLOG

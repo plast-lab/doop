@@ -4,53 +4,20 @@
  * Implicitly reachable methods are invoked by the JVM on startup.
  */
 
-ImplicitReachable(?m) :-
-  ?m = "<java.lang.System: void initializeSystemClass()>",
-  isMethod(?m).
+#define IMPLICIT_REACHABLE(m) ImplicitReachable(m) :- isMethod(m)
 
-ImplicitReachable(?m) :-
-  ?m = "<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.Runnable)>",
-  isMethod(?m).
-
-ImplicitReachable(?m) :-
-  ?m = "<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>",
-  isMethod(?m).
-
-ImplicitReachable(?m) :-
-  ?m = "<java.lang.ThreadGroup: void <init>()>",
-  isMethod(?m).
-
-ImplicitReachable(?m) :-
-  ?m = "<java.lang.Thread: void exit()>",
-  isMethod(?m).
-
-ImplicitReachable(?m) :-
-  ?m = "<java.lang.ThreadGroup: void uncaughtException(java.lang.Thread,java.lang.Throwable)>",
-  isMethod(?m).
-
-ImplicitReachable(?m) :-
-  ?m = "<java.lang.ClassLoader: void <init>()>",
-  isMethod(?m).
-
-ImplicitReachable(?m) :-
-  ?m = "<java.lang.ClassLoader: java.lang.Class loadClassInternal(java.lang.String)>",
-  isMethod(?m).
-
-ImplicitReachable(?m) :-
-  ?m = "<java.lang.ClassLoader: void checkPackageAccess(java.lang.Class,java.security.ProtectionDomain)>",
-  isMethod(?m).
-
-ImplicitReachable(?m) :-
-  ?m = "<java.lang.ClassLoader: void addClass(java.lang.Class)>",
-  isMethod(?m).
-
-ImplicitReachable(?m) :-
-  ?m = "<java.lang.ClassLoader: long findNative(java.lang.ClassLoader,java.lang.String)>",
-  isMethod(?m).
-
-ImplicitReachable(?m) :-
-  ?m = "<java.security.PrivilegedActionException: void <init>(java.lang.Exception)>",
-  isMethod(?m).
+IMPLICIT_REACHABLE("<java.lang.System: void initializeSystemClass()>").
+IMPLICIT_REACHABLE("<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.Runnable)>").
+IMPLICIT_REACHABLE("<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>").
+IMPLICIT_REACHABLE("<java.lang.ThreadGroup: void <init>()>").
+IMPLICIT_REACHABLE("<java.lang.Thread: void exit()>").
+IMPLICIT_REACHABLE("<java.lang.ThreadGroup: void uncaughtException(java.lang.Thread,java.lang.Throwable)>").
+IMPLICIT_REACHABLE("<java.lang.ClassLoader: void <init>()>").
+IMPLICIT_REACHABLE("<java.lang.ClassLoader: java.lang.Class loadClassInternal(java.lang.String)>").
+IMPLICIT_REACHABLE("<java.lang.ClassLoader: void checkPackageAccess(java.lang.Class,java.security.ProtectionDomain)>").
+IMPLICIT_REACHABLE("<java.lang.ClassLoader: void addClass(java.lang.Class)>").
+IMPLICIT_REACHABLE("<java.lang.ClassLoader: long findNative(java.lang.ClassLoader,java.lang.String)>").
+IMPLICIT_REACHABLE("<java.security.PrivilegedActionException: void <init>(java.lang.Exception)>").
 
 /**
  * TODO: this method does not seems to be implicitly reachable. There is a
@@ -58,7 +25,7 @@ ImplicitReachable(?m) :-
  * from Runtime.runFinalization. runFinalizer is invoked from the FinalizerThread,
  * which the analysis should be able to figure out by itself.
 
-ImplicitReachable("<java.lang.ref.Finalizer: void runFinalizer()>").
+IMPLICIT_REACHABLE("<java.lang.ref.Finalizer: void runFinalizer()>").
 */
 
 #ifndef MICRO

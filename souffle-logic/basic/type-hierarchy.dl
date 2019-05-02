@@ -107,10 +107,12 @@ SubtypeOf(?s, ?t) :-
  * If S is an interface type, then
  * - If T is a class type, then T must be Object
  */
+#ifndef VIA_DDLOG
 SubtypeOf(?s, ?t) :-
     isInterfaceType(?s),
     isType(?t),
     ?t = "java.lang.Object".
+#endif // VIA_DDLOG
 
 /**
  * If T is an interface type, then
@@ -129,10 +131,12 @@ SubtypeOf(?s, ?t) :-
  *  components of type SC, then
  *  - If T is a class type, then T must be Object
  */
+#ifndef VIA_DDLOG
 SubtypeOf(?s, ?t) :-
     isArrayType(?s),
     isType(?t),
     ?t = "java.lang.Object".
+#endif // VIA_DDLOG
 
 /**
  *  If T is an array type TC[], that is, an array of components of type TC,
@@ -162,6 +166,7 @@ SubtypeOf(?s, ?t) :-
  *  If T is an interface type, T must be one of the interfaces implemented by
  *  arrays (2.15)
  */
+#ifndef VIA_DDLOG
 SubtypeOf(?s, ?t) :-
     isArrayType(?s),
     isInterfaceType(?t),
@@ -173,6 +178,7 @@ SubtypeOf(?s, ?t) :-
     isInterfaceType(?t),
     isType(?t),
     ?t = "java.io.Serializable".
+#endif // VIA_DDLOG
 
 
 /**
@@ -249,11 +255,12 @@ Subclassable(?type) :-
     Method_Modifier("protected", ?method),
     ! Unsubclassable(?type).
 
+#ifndef VIA_DDLOG
 ClassConstructor(method, type) :-
     MethodLookup(_, _, type, method),
     isMethod(method),
     match(".*<init>.*", method).
-
+#endif // VIA_DDLOG
 
 // ?class is implemented/extended by ?subClass
 .decl Class_InterestingSubtype(?class:ReferenceType, ?subClass:ReferenceType)

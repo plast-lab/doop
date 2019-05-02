@@ -1,6 +1,7 @@
 MethodHandleConstantConsMacro(?heap, ?method, "java.lang.invoke.MethodHandle") :-
    MethodHandleConstant_Method(?heap, ?method).
 
+#ifndef VIA_DDLOG
 MockHeapConsMacro(?null, ?type),
 HeapAllocation_Null(?null) :-
   ?null = "<<null pseudo heap>>",
@@ -15,6 +16,7 @@ MockHeapConsMacro(?heap, ?type),
 MainMethodArgArrayContent(?heap) :-
   ?heap = "<<main method array content>>",
   ?type = "java.lang.String".
+#endif // VIA_DDLOG
 
 ApplicationMethod(?method) :-
   Method_DeclaringType(?method, ?class),

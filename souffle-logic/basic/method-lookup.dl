@@ -38,6 +38,7 @@ MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
     !_MethodLookup_ImpossibleClosest(?simplename, ?descriptor, ?type, ?method).
 
 
+#ifndef VIA_DDLOG
 _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, 0) :-
     MethodImplemented(?simplename, ?descriptor, ?type, ?method).
 
@@ -46,6 +47,7 @@ _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, n + 1) :-
      DirectSuperinterface(?type, ?supertype)),
     _MethodLookup_WithLen(?simplename, ?descriptor, ?supertype, ?method, n),
     !MethodImplemented(?simplename, ?descriptor, ?type, _).
+#endif // VIA_DDLOG
 
 _MethodLookup_MoreThanOne(?simplename, ?descriptor, ?type) :-
     _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method1, _),
@@ -58,11 +60,13 @@ _MethodLookup_ClassResolution(?simplename, ?descriptor, ?type, ?method) :-
     Method_DeclaringType(?method, ?supertype),
     isClassType(?supertype).
 
+#ifndef VIA_DDLOG
 _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method) :-
     _MethodLookup_MoreThanOne(?simplename, ?descriptor, ?type),
     ?minLen = min ?len : { _MethodLookup_WithLen(?simplename, ?descriptor, ?type, _, ?len) },
     _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, ?minLen),
     !_MethodLookup_ClassResolution(?simplename, ?descriptor, ?type, _).
+#endif // VIA_DDLOG
 
 _MethodLookup_MultiClosestInterfaces(?simplename, ?descriptor, ?type) :-
     _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method1),
@@ -156,11 +160,13 @@ MethodOverridesOther(?methSub, ?methSuper) :-
  *      a direct superclass of array types, something we should do
  *      anyway.
  */
+#ifndef VIA_DDLOG
 MethodLookup(?simplename, ?descriptor, ?arraytype, ?method) :-
     isArrayType(?arraytype),
     isType(?objectType),
     MethodImplemented(?simplename, ?descriptor, ?objectType, ?method),
     ?objectType = "java.lang.Object".
+#endif // VIA_DDLOG
 
 MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
     Method_SimpleName(?method, ?simplename),

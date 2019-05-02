@@ -620,7 +620,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "VIA_DDLOG",
 					name: "via-ddlog",
 					group: GROUP_ENGINE,
-					description: "Convert and run Souffle with DDlog."
+					description: "Convert and run Souffle with DDlog.",
+					forPreprocessor: true
 			),
 			/* End Souffle related options */
 

@@ -370,10 +370,11 @@ isMethodInvocation(?instruction),
 MethodInvocation_Line(?instruction, ?line) :-
   _MethodInvocation_Line(?instruction, ?line).
 
+#ifndef VIA_DDLOG
 MethodInvocation_Base(?invocation, ?base) :-
   VirtualMethodInvocation_Base(?invocation, ?base) ;
   SpecialMethodInvocation_Base(?invocation, ?base).
-
+#endif // VIA_DDLOG
 
 
 // Static method invocation
@@ -467,11 +468,13 @@ DynamicMethodInvocation_DynArity(?instruction, ?dynArity) :-
 
 // Opaque method invocations
 
+#ifndef VIA_DDLOG
 isOpaqueInstruction(?instruction) :-
   (_StaticMethodInvocation(?instruction, _, ?signature, _);
    _SpecialMethodInvocation(?instruction, _, ?signature, _, _);
    _VirtualMethodInvocation(?instruction, _, ?signature, _, _)),
   isOpaqueMethod(?signature).
+#endif // VIA_DDLOG
 
 // Polymorphic-signature method invocation
 
@@ -538,11 +541,13 @@ Method_Arity(?method, ?arity),
 Method_ReturnType(?method, ?returnType) :-
   _Method(?method, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor, ?arity).
 
+#ifndef VIA_DDLOG
 isMethodDescriptor(?descriptor),
 Method_Descriptor(?method, ?descriptor) :-
   Method_ReturnType(?method, ?returnType),
   Method_ParamTypes(?method, ?params),
   ?descriptor = cat(?returnType, cat("(", cat(?params, ")"))).
+#endif // VIA_DDLOG
 
 // StoreInstanceField
 
@@ -864,6 +869,8 @@ isNumConstant(?const) :-
 
 #endif // ANDROID
 
+#ifndef VIA_DDLOG
+
 // Access Modifiers
 
 isModifier(?x), Modifier_abstract(?x) :- ?x = "abstract".
@@ -889,6 +896,7 @@ isType(?t), isReferenceType(?t), isNullType(?t), Type_null(?t) :- ?t = "null_typ
 
 isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.lang.Object".
 
+#endif // VIA_DDLOG
 
 
 // Annotations
@@ -901,11 +909,13 @@ isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.
 // Param
 .input Param_Annotation(IO="file", filename="Param-Annotation.facts", delimiter="\t")
 
+#ifndef VIA_DDLOG
 isAnnotation(?annotation) :-
     Type_Annotation(_, ?annotation);
     Method_Annotation(_, ?annotation);
     Field_Annotation(_, ?annotation);
     Param_Annotation(_, _, ?annotation).
+#endif // VIA_DDLOG
 
 // Annotation elements
 .input AnnotationElement(IO="file", filename="AnnotationElement.facts", delimiter="\t")
