@@ -3,7 +3,6 @@ package org.clyze.doop.utils
 import groovy.transform.TupleConstructor
 import groovy.util.logging.Log4j
 import org.clyze.doop.common.DoopErrorCodeException
-import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.utils.CheckSum
 import org.clyze.utils.CPreprocessor
@@ -210,6 +209,10 @@ class SouffleScript {
 		if (!ddlogDir) {
 			throw new DoopErrorCodeException(24, new RuntimeException("Environment variable ${DDLOG_DIR} is empty."))
 		}
+		String doopHome = System.getenv("DOOP_HOME")
+		if (!doopHome) {
+			throw new DoopErrorCodeException(24, new RuntimeException("Environment variable DOOP_HOME is empty."))
+		}
 
 		// Step 1: Convert facts and analysis logic.
 		String ddlogSouffleDir = "${ddlogDir}/tools"
@@ -217,7 +220,7 @@ class SouffleScript {
 			File from = new File(ddlogSouffleDir, it)
 			File to = new File(factsDir, it)
 			log.debug "COPY: ${from.canonicalPath} -> ${to.canonicalPath}"
-			Files.copy(from.toPath(), to.toPath())
+			Files.copy(from.toPath(), to.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
 		}
 		if (!scriptFile) {
 			throw new RuntimeException("Error: no script file, compile() must precede run().")
@@ -226,7 +229,7 @@ class SouffleScript {
 		String convertedLogicPrefix = "${outDir}/${convertedLogicName}" as String
 		String convertedLogic = "${convertedLogicPrefix}.dl" as String
 		String dat = "${factsDir}/dat" as String
-		def cmdConvert = ["${Doop.doopHome}/bin/run-in-dir.sh" as String,
+		def cmdConvert = ["${doopHome}/bin/run-in-dir.sh" as String,
 						  factsDir.canonicalPath,
 						  "${factsDir}/souffle-converter.py" as String,
 						  scriptFile.canonicalPath,
@@ -240,13 +243,13 @@ class SouffleScript {
 		String buildDir = "${convertedLogicPrefix}_ddlog" as String
 		def genTime = Helper.timing {
 			log.info "Compiling the analysis: code generation..."
-			def cmdGenRust = "${Doop.doopHome}/bin/run-in-dir.sh ${ddlogDir} stack run -- -i ${convertedLogic} --action=compile -L lib".split().toList()
+			def cmdGenRust = "${doopHome}/bin/run-in-dir.sh ${ddlogDir} stack run -- -i ${convertedLogic} --action=compile -L lib".split().toList()
 			executeCmd(cmdGenRust)
 		}
 		log.info "Time: ${genTime}"
 		def buildTime = Helper.timing {
 			log.info "Compiling the analysis: building (using ${jobs} jobs)..."
-			def cmdBuildRust = "${Doop.doopHome}/bin/run-in-dir.sh ${buildDir} cargo build -j ${jobs} --release".split().toList()
+			def cmdBuildRust = "${doopHome}/bin/run-in-dir.sh ${buildDir} cargo build -j ${jobs} --release".split().toList()
 			executeCmd(cmdBuildRust)
 		}
 		log.info "Time: ${buildTime}"
@@ -257,7 +260,7 @@ class SouffleScript {
 			def dump = "${db.canonicalPath}/dump"
 
 			// Hack: use script to get away with redirection.
-			def cmdRun = "${Doop.doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${buildDir}/target/release/${convertedLogicName}_cli -w ${jobs}".split().toList()
+			def cmdRun = "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${buildDir}/target/release/${convertedLogicName}_cli -w ${jobs}".split().toList()
 			executeCmd(cmdRun)
 		}
 		log.info "Time: ${runTime}"
