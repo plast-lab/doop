@@ -37,7 +37,7 @@ try {
     throw new DoopErrorCodeException(19)
 }
 
-def script = new SouffleScript(new Executor(outDir, env), viaDDlog)
+def script = new SouffleScript(new Executor(outDir, env), viaDDlog.toBoolean())
 def prof = profile.toBoolean()
 def prov = provenance.toBoolean()
 def liveProf = false
