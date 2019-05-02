@@ -1,3 +1,5 @@
 .functor logVPT(number, symbol, number, symbol):number
 .functor logCGE(number, symbol, number, symbol):number
-.functor logOther(symbol):number
+.functor logFPT(symbol):number
+.functor logRel(symbol, symbol):number
+.functor registerAtExitFunction(number):number
