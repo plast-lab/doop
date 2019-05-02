@@ -7,7 +7,7 @@ import org.clyze.utils.Helper
 
 if (args.size() < 7) {
     println "Usage:"
-    println "  ./gradlew souffleScript -Pargs='<scriptFilePath> <factsDirPath> <outDirPath> <cacheDirPath> <jobs> <profile> <debug> <provenance> <recompile>'"
+    println "  ./gradlew souffleScript -Pargs='<scriptFilePath> <factsDirPath> <outDirPath> <cacheDirPath> <jobs> <profile> <debug> <provenance> <recompile> <via-ddlog>'"
     println "Parameters:"
     println "  scriptFilePath   the Datalog file to evaluate"
     println "  factsDirPath     the directory containing the input facts"
@@ -18,10 +18,11 @@ if (args.size() < 7) {
     println "  debug            'true' or 'false'"
     println "  provenance       'true' or 'false'"
     println "  recompile        'true' or 'false'"
+    println "  via-ddlog        'true' or 'false'"
     return
 }
 
-def (String scriptFilePath, String factsDirPath, String outDirPath, String cacheDirPath, String jobs, String profile, String debug, String provenance, String recompile) = args
+def (String scriptFilePath, String factsDirPath, String outDirPath, String cacheDirPath, String jobs, String profile, String debug, String provenance, String recompile, String viaDDlog) = args
 def outDir = new File(outDirPath)
 outDir.mkdirs()
 def cacheDir = new File(cacheDirPath)
@@ -36,7 +37,7 @@ try {
     throw new DoopErrorCodeException(19)
 }
 
-def script = new SouffleScript(new Executor(outDir, env))
+def script = new SouffleScript(new Executor(outDir, env), viaDDlog)
 def prof = profile.toBoolean()
 def prov = provenance.toBoolean()
 def liveProf = false

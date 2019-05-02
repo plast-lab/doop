@@ -616,6 +616,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_ENGINE,
 					description: "Use the functor for incremental output in Souffle."
 			),
+			new BooleanAnalysisOption(
+					id: "VIA_DDLOG",
+					name: "via-ddlog",
+					group: GROUP_ENGINE,
+					description: "Convert and run Souffle with DDlog."
+			),
 			/* End Souffle related options */
 
 			//Information-flow, etc.
