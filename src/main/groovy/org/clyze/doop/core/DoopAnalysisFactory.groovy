@@ -404,6 +404,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.MUST_AFTER_MAY.value = true
 		}
 
+		if (options.X_LOW_MEM.value) {
+			options.X_SERIALIZE_FACTGEN_COMPILATION.value = true
+		}
+
 		if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
 				!options.HEAPDLS.value && !options.ANDROID.value &&
 				!options.DACAPO.value && !options.DACAPO_BACH.value) {

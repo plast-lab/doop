@@ -64,8 +64,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
 
 		def generatedFile
-		// Don't run in parallel if low on memory
-		if (options.X_LOW_MEM.value) {
+		if (options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 			generatedFile = compilationFuture.get()
 			System.gc()
 		}
@@ -92,7 +91,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
 			if (options.X_STOP_AT_FACTS.value) return
 
-			if (!options.X_LOW_MEM.value) {
+			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 				generatedFile = compilationFuture.get()
 			}
 			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,

@@ -848,6 +848,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_FACTS,
 					description: "Use less memory. Does not support all options."
 			),
+			new BooleanAnalysisOption(
+					id: "X_SERIALIZE_FACTGEN_COMPILATION",
+					name: "Xserialize-factgen-compilation",
+					group: GROUP_FACTS,
+					description: "Do not run fact generation and compilation in parallel.",
+					cli: false
+			),
 			new AnalysisOption<String>(
 					id: "X_START_AFTER_FACTS",
 					name: "Xstart-after-facts",
