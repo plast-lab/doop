@@ -50,11 +50,9 @@ MethodsOfSameOrSuperType(?method1, ?method2) :-
   MethodDeclaredOrInherited(?method1, ?class),
   MethodDeclaredOrInherited(?method2, ?class).
 
-#ifndef VIA_DDLOG
 .decl MethodsOfSameNonSDKType(?method1:Method, ?method2:Method, ?class:Type)
 MethodsOfSameNonSDKType(?method1, ?method2, ?class) :-
+  Method_DeclaringType(?method1, ?class),
   !match("java.*", ?class),
   !match("sun.*", ?class),
-  Method_DeclaringType(?method1, ?class),
   Method_DeclaringType(?method2, ?class).
-#endif // VIA_DDLOG

@@ -255,12 +255,10 @@ Subclassable(?type) :-
     Method_Modifier("protected", ?method),
     ! Unsubclassable(?type).
 
-#ifndef VIA_DDLOG
 ClassConstructor(method, type) :-
     MethodLookup(_, _, type, method),
     isMethod(method),
     match(".*<init>.*", method).
-#endif // VIA_DDLOG
 
 // ?class is implemented/extended by ?subClass
 .decl Class_InterestingSubtype(?class:ReferenceType, ?subClass:ReferenceType)
