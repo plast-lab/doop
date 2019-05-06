@@ -202,16 +202,21 @@ class SouffleScript {
 	 * @param factsDir	 the facts directory
 	 * @param outDir	 the output directory
 	 * @param db		 the database directory
+	 * @param jobs		 the number of jobs to use when compiling/running the analysis
 	 */
 	private void runWithDDlog(def factsDir, def outDir, def db, def jobs) {
 		String DDLOG_DIR = "DDLOG_DIR"
 		String ddlogDir = System.getenv(DDLOG_DIR)
 		if (!ddlogDir) {
 			throw new DoopErrorCodeException(24, new RuntimeException("Environment variable ${DDLOG_DIR} is empty."))
+		} else {
+			log.debug "Using DDlog in ${ddlogDir}"
 		}
 		String doopHome = System.getenv("DOOP_HOME")
 		if (!doopHome) {
 			throw new DoopErrorCodeException(24, new RuntimeException("Environment variable DOOP_HOME is empty."))
+		} else {
+			log.debug "Using Doop home: ${doopHome}"
 		}
 
 		// Step 1: Convert facts and analysis logic.
@@ -240,15 +245,16 @@ class SouffleScript {
 		executeCmd(cmdConvert)
 
 		// Step 2: Compile the analysis.
-		String buildDir = "${convertedLogicPrefix}_ddlog" as String
 		def genTime = Helper.timing {
 			log.info "Compiling the analysis: code generation..."
 			def cmdGenRust = "${doopHome}/bin/run-in-dir.sh ${ddlogDir} stack run -- -i ${convertedLogic} --action=compile -L lib".split().toList()
 			executeCmd(cmdGenRust)
 		}
 		log.info "Time: ${genTime}"
+		String buildDir = "${convertedLogicPrefix}_ddlog" as String
 		def buildTime = Helper.timing {
 			log.info "Compiling the analysis: building (using ${jobs} jobs)..."
+			log.debug "Build dir: ${buildDir}"
 			def cmdBuildRust = "${doopHome}/bin/run-in-dir.sh ${buildDir} cargo build -j ${jobs} --release".split().toList()
 			executeCmd(cmdBuildRust)
 		}
