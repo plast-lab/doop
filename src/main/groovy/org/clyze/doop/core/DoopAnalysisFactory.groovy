@@ -389,7 +389,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.LIGHT_REFLECTION_GLUE.value && options.REFLECTION.value) {
-			throw new RuntimeException("Error: option " + options.LIGHT_REFLECTION_GLUE.name + " is not supported when reflection support is enabled.")
+			throw new RuntimeException("Error: option --" + options.LIGHT_REFLECTION_GLUE.name + " is not supported when reflection support is enabled.")
 		}
 
 		if (options.TAMIFLEX.value) {
