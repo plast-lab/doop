@@ -176,7 +176,7 @@ public class Main {
             System.err.println("Error: not all bodies retrieved.");
         }
 
-        try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
+        try (Database db = new Database(new File(outDir))) {
             boolean reportPhantoms = sootParameters._reportPhantoms;
             boolean moreStrings = sootParameters._extractMoreStrings;
             boolean artifacts = sootParameters._writeArtifactsMap;
@@ -227,7 +227,7 @@ public class Main {
                     boolean structured = DoopAddons.checkSetHierarchyDirs();
                     driver.writeInParallel(jimpleClasses);
                     if (!structured)
-                        DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
+                        DoopAddons.structureJimpleFiles(outDir);
                     // Revert to standard output dir for the rest of the code.
                     Options.v().set_output_dir(outDir);
                 }
