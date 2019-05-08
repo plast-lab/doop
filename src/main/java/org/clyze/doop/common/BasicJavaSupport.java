@@ -57,15 +57,18 @@ public class BasicJavaSupport {
      */
     private void preprocessInput(Collection<String> classSet, String filename) throws IOException {
         JarEntry entry;
+        boolean isAar = filename.toLowerCase().endsWith(".aar");
+        boolean isJar = filename.toLowerCase().endsWith(".jar");
         try (JarInputStream jin = new JarInputStream(new FileInputStream(filename));
              JarFile jarFile = new JarFile(filename)) {
+            File outDir = new File(parameters.getOutputDir());
             /* List all JAR entries */
             while ((entry = jin.getNextJarEntry()) != null) {
                 /* Skip directories */
                 if (entry.isDirectory())
                     continue;
 
-                String entryName = entry.getName();
+                String entryName = entry.getName().toLowerCase();
                 if (entryName.endsWith(".class")) {
                     try {
                         ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
@@ -80,18 +83,40 @@ public class BasicJavaSupport {
                     }
                 } else if (entryName.endsWith(".properties")) {
                     propertyProvider.addProperties(jarFile.getInputStream(entry), filename);
+                } else if ((isJar || isAar) && entryName.endsWith(".xml")) {
+                    // We only handle .xml entries inside JAR archives here.
+                    // APK archives may contain binary XML and need decoding
+                    // (see 'decode apk' option).
+                    File xmlTmpFile = extractZipEntryAsFile("xml-file", jarFile, entry, entryName);
+                    try (Database db = new Database(outDir)) {
+                        XMLFactGenerator.processFile(xmlTmpFile, db, "");
+                    }
                 } else if (parameters._scanNativeCode && entryName.endsWith(".so")) {
-                    File tmpDir = Files.createTempDirectory("native-lib").toFile();
-                    tmpDir.deleteOnExit();
-                    String tmpName = entryName.replaceAll(File.separator, "_");
-                    File libTmpFile = new File(tmpDir, tmpName);
-                    libTmpFile.deleteOnExit();
-                    Files.copy(jarFile.getInputStream(entry), libTmpFile.toPath());
-                    File outDir = new File(parameters.getOutputDir());
+                    File libTmpFile = extractZipEntryAsFile("native-lib", jarFile, entry, entryName);
                     NativeScanner.scanLib(libTmpFile, outDir);
                 }
             }
         }
+    }
+
+    /**
+     * Helper method to extract an entry inside a JAR archive and save
+     * it as a file.
+     *
+     * @param tmpDirName   a name for the intermediate temporary directory
+     * @param jarFile      the JAR archive
+     * @param entry        the archive entry
+     * @param entryName    the name of the entry
+     * @return             the output file
+     */
+    private static File extractZipEntryAsFile(String tmpDirName, JarFile jarFile, JarEntry entry, String entryName) throws IOException {
+        File tmpDir = Files.createTempDirectory(tmpDirName).toFile();
+        tmpDir.deleteOnExit();
+        String tmpName = entryName.replaceAll(File.separator, "_");
+        File libTmpFile = new File(tmpDir, tmpName);
+        libTmpFile.deleteOnExit();
+        Files.copy(jarFile.getInputStream(entry), libTmpFile.toPath());
+        return libTmpFile;
     }
 
     public PropertyProvider getPropertyProvider() {

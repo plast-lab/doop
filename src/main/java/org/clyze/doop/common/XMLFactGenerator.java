@@ -12,18 +12,20 @@ import static org.clyze.doop.common.PredicateFile.*;
  * Convert XML data to facts.
  */
 public class XMLFactGenerator extends DefaultHandler {
+    static final boolean verbose = true;
+
     final XMLReader xmlReader;
     final Database db;
-    final String xmlPath;
+    final File xmlFile;
     final String relativePath;
     final Stack<Integer> parents = new Stack<>();
     private static final int ROOT_NODE = -1;
     int nodeId = 0;
 
-    private XMLFactGenerator(XMLReader xmlReader, Database db, String xmlPath, String topDir) {
+    private XMLFactGenerator(XMLReader xmlReader, Database db, File xmlFile, String topDir) {
         this.xmlReader = xmlReader;
         this.db = db;
-        this.xmlPath = xmlPath;
+        this.xmlFile = xmlFile;
         this.relativePath = trimXMLPath(topDir);
     }
 
@@ -41,43 +43,49 @@ public class XMLFactGenerator extends DefaultHandler {
             for (File f : files) {
                 if (f.isDirectory())
                     processDir(f, db, topDir);
-                else if (f.isFile())
+                else if (f.isFile()) {
                     try {
                         String filePath = f.getCanonicalPath();
                         if (filePath.toLowerCase().endsWith(".xml"))
-                            processFile(filePath, db, topDir);
-                    } catch (Exception ex) {
-                        System.out.println("Error parsing file: " + f);
+                            processFile(f, db, topDir);
+                    } catch (IOException ex) {
+                        System.err.println("Error parsing file: " + f);
                         ex.printStackTrace();
                     }
+                }
             }
     }
 
     /**
      * Process one XML file.
      *
-     * @param xmlPath  the XML file to process
-     * @param db      the database object to use
+     * @param xmlFile  the XML file to process
+     * @param db       the database object to use
      * @param topDir   the top directory to use when creating realtive
      *                 paths (a prefix of the directory path)
      */
-    public static void processFile(String xmlPath, Database db, String topDir)
-        throws ParserConfigurationException, SAXException, IOException {
-        System.out.println("Processing: " + xmlPath);
-        SAXParserFactory spf = SAXParserFactory.newInstance();
-        spf.setNamespaceAware(true);
-        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
-        XMLFactGenerator gen = new XMLFactGenerator(xmlReader, db, xmlPath, topDir);
-        gen.parse();
+    public static void processFile(File xmlFile, Database db, String topDir) {
+        try {
+            if (verbose)
+                System.out.println("Processing: " + xmlFile);
+            SAXParserFactory spf = SAXParserFactory.newInstance();
+            spf.setNamespaceAware(true);
+            XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+            XMLFactGenerator gen = new XMLFactGenerator(xmlReader, db, xmlFile, topDir);
+            gen.parse();
+        } catch (ParserConfigurationException | SAXException | IOException ex) {
+            System.err.println("Error parsing file: " + xmlFile);
+            ex.printStackTrace();
+        }
     }
 
     private void parse() throws IOException, SAXException {
         xmlReader.setContentHandler(this);
-        xmlReader.parse(convertToFileURL(xmlPath));
+        xmlReader.parse(convertToFileURL(xmlFile));
     }
 
-    private static String convertToFileURL(String filename) {
-        String path = new File(filename).getAbsolutePath();
+    private static String convertToFileURL(File file) {
+        String path = file.getAbsolutePath();
         if (File.separatorChar != '/')
             path = path.replace(File.separatorChar, '/');
         if (!path.startsWith("/"))
@@ -121,15 +129,12 @@ public class XMLFactGenerator extends DefaultHandler {
      * @return          a local XML path
      */
     private String trimXMLPath(String topDir) {
-        try {
-            topDir = new File(topDir).getCanonicalPath();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        topDir = new File(topDir).getAbsolutePath();
+        String xmlPath = xmlFile.getAbsolutePath();
         if (xmlPath.startsWith(topDir)) {
             return xmlPath.substring(topDir.length());
         } else {
-            System.err.println("Cannot trim XML path " + xmlPath + ", it does not start with " + topDir);
+            // System.err.println("Cannot trim XML path " + xmlPath + ", it does not start with " + topDir);
             return xmlPath;
         }
     }
