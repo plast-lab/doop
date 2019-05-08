@@ -1,60 +1,74 @@
 package org.clyze.doop.common;
 
+import java.util.*;
+import java.io.*;
 import javax.xml.parsers.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
-
-import java.util.*;
-import java.io.*;
+import static org.clyze.doop.common.JavaFactWriter.str;
+import static org.clyze.doop.common.PredicateFile.*;
 
 /**
  * Convert XML data to facts.
  */
 public class XMLFactGenerator extends DefaultHandler {
     final XMLReader xmlReader;
-    final JavaFactWriter writer;
+    final Database db;
     final String xmlPath;
     final String relativePath;
     final Stack<Integer> parents = new Stack<>();
     private static final int ROOT_NODE = -1;
     int nodeId = 0;
 
-    private XMLFactGenerator(XMLReader xmlReader, JavaFactWriter writer, String xmlPath, String topDir) {
+    private XMLFactGenerator(XMLReader xmlReader, Database db, String xmlPath, String topDir) {
         this.xmlReader = xmlReader;
-        this.writer = writer;
+        this.db = db;
         this.xmlPath = xmlPath;
         this.relativePath = trimXMLPath(topDir);
     }
 
     /**
      * Process a directory containing XML files. Also process subdirectories.
+     *
      * @param dir     the directory to process
-     * @param writer  the fact writer to use
+     * @param db      the database object to use
      * @param topDir  the top directory to use when creating realtive
      *                paths (a prefix of the directory path)
      */
-    public static void processDir(File dir, JavaFactWriter writer, String topDir) {
+    public static void processDir(File dir, Database db, String topDir) {
         File[] files = dir.listFiles();
         if (files != null)
             for (File f : files) {
                 if (f.isDirectory())
-                    processDir(f, writer, topDir);
+                    processDir(f, db, topDir);
                 else if (f.isFile())
                     try {
                         String filePath = f.getCanonicalPath();
-                        if (filePath.toLowerCase().endsWith(".xml")) {
-                            System.out.println("Processing: " + filePath);
-                            SAXParserFactory spf = SAXParserFactory.newInstance();
-                            spf.setNamespaceAware(true);
-                            XMLReader xmlReader = spf.newSAXParser().getXMLReader();
-                            XMLFactGenerator gen = new XMLFactGenerator(xmlReader, writer, filePath, topDir);
-                            gen.parse();
-                        }
+                        if (filePath.toLowerCase().endsWith(".xml"))
+                            processFile(filePath, db, topDir);
                     } catch (Exception ex) {
                         System.out.println("Error parsing file: " + f);
                         ex.printStackTrace();
                     }
             }
+    }
+
+    /**
+     * Process one XML file.
+     *
+     * @param xmlPath  the XML file to process
+     * @param db      the database object to use
+     * @param topDir   the top directory to use when creating realtive
+     *                 paths (a prefix of the directory path)
+     */
+    public static void processFile(String xmlPath, Database db, String topDir)
+        throws ParserConfigurationException, SAXException, IOException {
+        System.out.println("Processing: " + xmlPath);
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+        XMLFactGenerator gen = new XMLFactGenerator(xmlReader, db, xmlPath, topDir);
+        gen.parse();
     }
 
     private void parse() throws IOException, SAXException {
@@ -76,10 +90,10 @@ public class XMLFactGenerator extends DefaultHandler {
                              String qName, Attributes attrs) throws SAXException {
         nodeId++;
         int parentNodeId = parents.peek();
-        writer.writeXMLNode(relativePath, nodeId, parentNodeId, namespaceURI, localName, qName);
+        writeXMLNode(relativePath, nodeId, parentNodeId, namespaceURI, localName, qName);
         parents.push(nodeId);
         for (int idx = 0; idx < attrs.getLength(); idx++)
-            writer.writeXMLNodeAttribute(relativePath, nodeId, idx, attrs.getLocalName(idx), attrs.getQName(idx), attrs.getValue(idx));
+            writeXMLNodeAttribute(relativePath, nodeId, idx, attrs.getLocalName(idx), attrs.getQName(idx), attrs.getValue(idx));
     }
 
     @Override
@@ -118,5 +132,32 @@ public class XMLFactGenerator extends DefaultHandler {
             System.err.println("Cannot trim XML path " + xmlPath + ", it does not start with " + topDir);
             return xmlPath;
         }
+    }
+
+    /**
+     * Write XML node as facts tuple.
+     *
+     * @param file           the .xml file containing the node
+     * @param nodeId         a unique identifier for the node (per file)
+     * @param parentNodeId   a unique identifier for the parent node (per file)
+     * @param namespaceURI   the namespace URI
+     * @param localName      the local name of the node
+     * @param qName          the qualified name of the node
+     */
+    private void writeXMLNode(String file, int nodeId, int parentNodeId, String namespaceURI, String localName, String qName) {
+        db.add(XMLNode, file, str(nodeId), str(parentNodeId), namespaceURI, localName, qName);
+    }
+
+    /**
+     * Write XML node attribute as facts tuple.
+     *
+     * @param file           the .xml file containing the node for the attribute
+     * @param nodeId         a unique identifier for the node (per file)
+     * @param localName      the local name of the attribute
+     * @param qName          the qualified name of the attribute
+     * @param value          the value of the attribute
+     */
+    private void writeXMLNodeAttribute(String file, int nodeId, int idx, String localName, String qName, String value) {
+        db.add(XMLNodeAttribute, file, str(nodeId), str(idx), localName, qName, value);
     }
 }

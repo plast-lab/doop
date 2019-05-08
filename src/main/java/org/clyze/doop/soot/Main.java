@@ -191,7 +191,7 @@ public class Main {
 
             if (android != null) {
                 android.writeComponents(writer, sootParameters);
-                android.generateFactsForXML(writer, outDir);
+                android.generateFactsForXML(db, outDir);
             }
 
             if (!sootParameters.noFacts()) {

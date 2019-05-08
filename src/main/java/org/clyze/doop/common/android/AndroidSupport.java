@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
+import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.NativeScanner;
 import org.clyze.doop.common.Parameters;
@@ -179,13 +180,13 @@ public abstract class AndroidSupport {
     /**
      * Translate XML files to facts.
      *
-     * @param writer    the fact writer to use
+     * @param db      the database object to use
      * @param outDir    the output directory (the parent of the decode directories)
      */
-    public void generateFactsForXML(JavaFactWriter writer, String outDir) {
+    public void generateFactsForXML(Database db, String outDir) {
         for (String decodeDir : decodeDirs) {
             System.out.println("Processing XML in directory: " + decodeDir);
-            XMLFactGenerator.processDir(new File(decodeDir), writer, outDir);
+            XMLFactGenerator.processDir(new File(decodeDir), db, outDir);
         }
 
     }
