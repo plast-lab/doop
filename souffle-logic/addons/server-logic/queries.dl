@@ -61,6 +61,9 @@ Server_Type_Can_Access_Field(?class, ?fld) :-
   _Valid_Interesting_Type(?class),
   _Valid_Interesting_Type(?supertype).
 
+// Output relation needed for server queries on 'extends'/'implements'.
+.output basic.SubtypeOf
+
 // --Class //
 
 
