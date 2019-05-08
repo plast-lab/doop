@@ -189,8 +189,10 @@ public class Main {
             writer.writePreliminaryFacts(classes, java, sootParameters);
             db.flush();
 
-            if (android != null)
+            if (android != null) {
                 android.writeComponents(writer, sootParameters);
+                android.generateFactsForXML(writer, outDir);
+            }
 
             if (!sootParameters.noFacts()) {
                 scene.getOrMakeFastHierarchy();

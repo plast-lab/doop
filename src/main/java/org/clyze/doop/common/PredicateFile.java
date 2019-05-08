@@ -119,7 +119,9 @@ public enum PredicateFile
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
     VAR_TYPE("Var-Type"),
     VAR_DECLARING_METHOD("Var-DeclaringMethod"),
-    VIRTUAL_METHOD_INV("VirtualMethodInvocation");
+    VIRTUAL_METHOD_INV("VirtualMethodInvocation"),
+    XMLNode("XMLNode"),
+    XMLNodeAttribute("XMLNodeAttribute");
 
     private final String name;
 

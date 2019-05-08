@@ -377,4 +377,31 @@ public abstract class JavaFactWriter {
             value2 = "-";
         _db.add(ANNOTATION_ELEMENT, annotationKind, annotatedElement, parentId, thisId, name, value1, value2);
     }
+
+    /**
+     * Write XML node as facts tuple.
+     *
+     * @param file           the .xml file containing the node
+     * @param nodeId         a unique identifier for the node (per file)
+     * @param parentNodeId   a unique identifier for the parent node (per file)
+     * @param namespaceURI   the namespace URI
+     * @param localName      the local name of the node
+     * @param qName          the qualified name of the node
+     */
+    public void writeXMLNode(String file, int nodeId, int parentNodeId, String namespaceURI, String localName, String qName) {
+        _db.add(XMLNode, file, str(nodeId), str(parentNodeId), namespaceURI, localName, qName);
+    }
+
+    /**
+     * Write XML node attribute as facts tuple.
+     *
+     * @param file           the .xml file containing the node for the attribute
+     * @param nodeId         a unique identifier for the node (per file)
+     * @param localName      the local name of the attribute
+     * @param qName          the qualified name of the attribute
+     * @param value          the value of the attribute
+     */
+    public void writeXMLNodeAttribute(String file, int nodeId, int idx, String localName, String qName, String value) {
+        _db.add(XMLNodeAttribute, file, str(nodeId), str(idx), localName, qName, value);
+    }
 }

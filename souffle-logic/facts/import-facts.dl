@@ -925,3 +925,9 @@ isAnnotation(?annotation) :- Param_Annotation(_, _, ?annotation).
 .input PhantomMethod(IO="file", filename="PhantomMethod.facts", delimiter="\t")
 .decl PhantomBasedMethod(?m:Method)
 .input PhantomBasedMethod(IO="file", filename="PhantomBasedMethod.facts", delimiter="\t")
+
+// XML facts.
+.decl XMLNode(?file:symbol, ?nodeId:symbol, ?parentNodeId:symbol, ?namespaceURI:symbol, ?localName:symbol, ?qName:symbol)
+.input XMLNode(IO="file", filename="XMLNode.facts", delimiter="\t")
+.decl XMLNodeAttribute(?file:symbol, ?nodeId:symbol, ?index:symbol, ?localName:symbol, ?qName:symbol, ?value:symbol)
+.input XMLNodeAttribute(IO="file", filename="XMLNodeAttribute.facts", delimiter="\t")

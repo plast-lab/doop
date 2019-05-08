@@ -994,3 +994,10 @@ TypeHasApplicationObjectFlowingToLibrary(?type) :-
   basic.SubtypeOf(?type, ?varType),
   TypeHasReachableApplicationObject(?type).
 
+// Make all methods reachable for configured 'appComponentFactory' classes.
+ForcedReachableAndroidContext(?ctx, ?meth) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNodeAttribute(?manifest, ?applicationId, _, _, "android:appComponentFactory", ?appComponentFactoryClass),
+  basic.MethodDeclaredOrInherited(?meth, ?appComponentFactoryClass),
+  isImmutableContext(?ctx).

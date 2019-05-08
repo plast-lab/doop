@@ -11,6 +11,7 @@ import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.NativeScanner;
 import org.clyze.doop.common.Parameters;
+import org.clyze.doop.common.XMLFactGenerator;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
 
@@ -28,6 +29,7 @@ public abstract class AndroidSupport {
     private final Collection<String> appCallbackMethods = new HashSet<>();
     private final Set<LayoutControl> appUserControls = new HashSet<>();
     private final Map<String, AppResources> computedResources = new HashMap<>();
+    private final Set<String> decodeDirs = new HashSet<>();
 
     private final Log logger;
 
@@ -58,6 +60,7 @@ public abstract class AndroidSupport {
                 System.out.println("Processing application resources in " + i);
                 if (isApk && parameters.getDecodeApk()) {
                     System.out.println("Decoding...");
+                    decodeDirs.add(decodeDir);
                     decodeApk(new File(i), decodeDir);
                 }
                 try {
@@ -171,6 +174,20 @@ public abstract class AndroidSupport {
             }
         }
         writer.writeExtraSensitiveControls(parameters);
+    }
+
+    /**
+     * Translate XML files to facts.
+     *
+     * @param writer    the fact writer to use
+     * @param outDir    the output directory (the parent of the decode directories)
+     */
+    public void generateFactsForXML(JavaFactWriter writer, String outDir) {
+        for (String decodeDir : decodeDirs) {
+            System.out.println("Processing XML in directory: " + decodeDir);
+            XMLFactGenerator.processDir(new File(decodeDir), writer, outDir);
+        }
+
     }
 
     // Parses Android manifests. Supports binary and plain-text XML
