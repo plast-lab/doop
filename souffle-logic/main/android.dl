@@ -1035,3 +1035,23 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
   XMLNodeAttribute(?manifest, ?applicationId, _, _, "android:appComponentFactory", ?appComponentFactoryClass),
   basic.MethodDeclaredOrInherited(?meth, ?appComponentFactoryClass),
   isImmutableContext(?ctx).
+// Detect parent activities.
+.decl Activity_Parent(?type:ClassType, ?parentActivity:ClassType)
+Activity(?parentActivity),
+Activity_Parent(?type, ?parentActivity) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:parentActivityName", ?parentActivity).
+// Detect activity aliases.
+.decl Activity_Alias(?activity:ClassType, ?alias:symbol)
+Activity_Alias(?activity, ?alias) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity-alias"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?alias),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:targetActivity", ?activity).
+// Detect onClick handlers.
+CallbackMethod(?id) :-
+  XMLNodeAttribute(_, _, _, _, "android:onClick", ?id).
