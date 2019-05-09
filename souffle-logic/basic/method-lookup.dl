@@ -60,13 +60,11 @@ _MethodLookup_ClassResolution(?simplename, ?descriptor, ?type, ?method) :-
     Method_DeclaringType(?method, ?supertype),
     isClassType(?supertype).
 
-#ifndef VIA_DDLOG
 _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method) :-
     _MethodLookup_MoreThanOne(?simplename, ?descriptor, ?type),
     ?minLen = min ?len : { _MethodLookup_WithLen(?simplename, ?descriptor, ?type, _, ?len) },
     _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, ?minLen),
     !_MethodLookup_ClassResolution(?simplename, ?descriptor, ?type, _).
-#endif // VIA_DDLOG
 
 _MethodLookup_MultiClosestInterfaces(?simplename, ?descriptor, ?type) :-
     _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method1),

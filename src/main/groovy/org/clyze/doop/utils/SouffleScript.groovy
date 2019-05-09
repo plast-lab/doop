@@ -232,21 +232,18 @@ class SouffleScript {
 		}
 		String convertedLogicName = "converted_logic" as String
 		String convertedLogicPrefix = "${outDir}/${convertedLogicName}" as String
-		String convertedLogic = "${convertedLogicPrefix}.dl" as String
-		String dat = "${factsDir}/dat" as String
 		def cmdConvert = ["${doopHome}/bin/run-in-dir.sh" as String,
 						  factsDir.canonicalPath,
 						  "${factsDir}/souffle-converter.py" as String,
 						  scriptFile.canonicalPath,
-						  convertedLogic,
-						  dat,
-						  "${outDir}/log" as String ]
+						  convertedLogicPrefix ]
 		log.debug "Running conversion command: ${cmdConvert}"
 		executeCmd(cmdConvert)
 
 		// Step 2: Compile the analysis.
 		def genTime = Helper.timing {
 			log.info "Compiling the analysis: code generation..."
+			String convertedLogic = "${convertedLogicPrefix}.dl" as String
 			def cmdGenRust = "${doopHome}/bin/run-in-dir.sh ${ddlogDir} stack run -- -i ${convertedLogic} --action=compile -L lib".split().toList()
 			executeCmd(cmdGenRust)
 		}
@@ -264,6 +261,7 @@ class SouffleScript {
 		log.info "Running the analysis (using ${jobs} jobs)..."
 		def runTime = Helper.timing {
 			def dump = "${db.canonicalPath}/dump"
+			def dat = "${convertedLogicPrefix}.dat"
 
 			// Hack: use script to get away with redirection.
 			def cmdRun = "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${buildDir}/target/release/${convertedLogicName}_cli -w ${jobs}".split().toList()
