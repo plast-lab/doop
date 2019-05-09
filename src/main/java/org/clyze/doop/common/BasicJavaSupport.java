@@ -89,6 +89,7 @@ public class BasicJavaSupport {
                     // (see 'decode apk' option).
                     File xmlTmpFile = extractZipEntryAsFile("xml-file", jarFile, entry, entryName);
                     try (Database db = new Database(outDir)) {
+                        System.out.println("Processing XML entry (in " + filename + "): " + entryName);
                         XMLFactGenerator.processFile(xmlTmpFile, db, "");
                     }
                 } else if (parameters._scanNativeCode && entryName.endsWith(".so")) {

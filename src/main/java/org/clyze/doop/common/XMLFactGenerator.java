@@ -44,13 +44,11 @@ public class XMLFactGenerator extends DefaultHandler {
                 if (f.isDirectory())
                     processDir(f, db, topDir);
                 else if (f.isFile()) {
-                    try {
-                        String filePath = f.getCanonicalPath();
-                        if (filePath.toLowerCase().endsWith(".xml"))
-                            processFile(f, db, topDir);
-                    } catch (IOException ex) {
-                        System.err.println("Error parsing file: " + f);
-                        ex.printStackTrace();
+                    String filePath = f.getAbsolutePath();
+                    if (filePath.toLowerCase().endsWith(".xml")) {
+                        if (verbose)
+                            System.out.println("Processing: " + f);
+                        processFile(f, db, topDir);
                     }
                 }
             }
@@ -66,16 +64,13 @@ public class XMLFactGenerator extends DefaultHandler {
      */
     public static void processFile(File xmlFile, Database db, String topDir) {
         try {
-            if (verbose)
-                System.out.println("Processing: " + xmlFile);
             SAXParserFactory spf = SAXParserFactory.newInstance();
             spf.setNamespaceAware(true);
             XMLReader xmlReader = spf.newSAXParser().getXMLReader();
             XMLFactGenerator gen = new XMLFactGenerator(xmlReader, db, xmlFile, topDir);
             gen.parse();
         } catch (ParserConfigurationException | SAXException | IOException ex) {
-            System.err.println("Error parsing file: " + xmlFile);
-            ex.printStackTrace();
+            System.err.println("Error parsing " + xmlFile + ex.getMessage());
         }
     }
 
