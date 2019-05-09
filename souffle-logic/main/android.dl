@@ -1026,7 +1026,9 @@ ContentProvider(?type) :-
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?providerId, ?applicationId, _, _, "provider"),
   XMLNodeAttribute(?manifest, ?providerId, _, _, "android:name", ?type).
-// Make all methods reachable for configured 'appComponentFactory' classes.
+// Make all methods reachable for configured 'appComponentFactory'
+// classes. These classes may come from the platform, so we don't
+// register them in AndroidOriginalAppComponent/AndroidAppComponent.
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
