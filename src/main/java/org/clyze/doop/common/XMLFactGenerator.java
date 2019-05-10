@@ -12,7 +12,7 @@ import static org.clyze.doop.common.PredicateFile.*;
  * Convert XML data to facts.
  */
 public class XMLFactGenerator extends DefaultHandler {
-    static final boolean verbose = true;
+    static final boolean verbose = false;
 
     final XMLReader xmlReader;
     final Database db;
@@ -70,7 +70,7 @@ public class XMLFactGenerator extends DefaultHandler {
             XMLFactGenerator gen = new XMLFactGenerator(xmlReader, db, xmlFile, topDir);
             gen.parse();
         } catch (ParserConfigurationException | SAXException | IOException ex) {
-            System.err.println("Error parsing " + xmlFile + ex.getMessage());
+            System.err.println("Error parsing " + xmlFile + ": " + ex.getMessage());
         }
     }
 
