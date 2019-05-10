@@ -9,10 +9,12 @@ import static org.clyze.doop.common.JavaFactWriter.str;
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**
- * Convert XML data to facts.
+ * Convert XML data to facts. Converts some extra logic for
+ * Android-specific attributes.
  */
 public class XMLFactGenerator extends DefaultHandler {
     static final boolean verbose = false;
+    final String[] ID_PREFIXES = new String[] { "@id/", "@android:id/" };
 
     final XMLReader xmlReader;
     final Database db;
@@ -158,6 +160,20 @@ public class XMLFactGenerator extends DefaultHandler {
      * @param value          the value of the attribute
      */
     private void writeXMLNodeAttribute(String file, int nodeId, int idx, String localName, String qName, String value) {
-        db.add(XMLNodeAttribute, file, str(nodeId), str(idx), localName, qName, value);
+        String sNodeId = str(nodeId);
+        db.add(XMLNodeAttribute, file, sNodeId, str(idx), localName, qName, value);
+        // Register Android ids by extracting their labels.
+        if (qName.equals("android:id")) {
+            boolean handled = false;
+            for (String prefix : ID_PREFIXES)
+                if (value.startsWith(prefix)) {
+                    db.add(ANDROID_ID, file, sNodeId, value, prefix, value.substring(prefix.length()));
+                    handled = true;
+                }
+            if (!handled) {
+                System.err.println("Warning: could not process android id: " + value);
+                db.add(ANDROID_ID, file, sNodeId, value, "-", value);
+            }
+        }
     }
 }

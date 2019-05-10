@@ -1055,3 +1055,41 @@ Activity_Alias(?activity, ?alias) :-
 // Detect onClick handlers.
 CallbackMethod(?id) :-
   XMLNodeAttribute(_, _, _, _, "android:onClick", ?id).
+
+// XML nodes: parent relationship (can cross files due to <merge> elements.
+.decl XMLNode_Parent(?file:symbol, ?nodeId:symbol, ?parentFile:symbol, ?parentNodeId:symbol)
+XMLNode_Parent(?file, ?nodeId, ?file, ?parentNodeId) :-
+  XMLNode(?file, ?nodeId, ?parentNodeId, _, _, _).
+
+.decl XMLLayoutControl(?file:symbol, ?nodeId:symbol, ?name:symbol, ?value:symbol)
+XMLLayoutControl(?file, ?nodeId, ?name, ?id) :-
+  XMLNode(?file, ?nodeId, _, _, _, ?name),
+  AndroidId(?file, ?nodeId, _, _, ?label),
+  Field_SimpleName(?field, ?label),
+  FieldInitialValue(?field, ?id).
+
+// Detect layout controls.
+LayoutControl0(?id, ?name, ?parentId) :-
+  XMLLayoutControl(?file, ?nodeId, ?name, ?id),
+  XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
+  XMLLayoutControl(?parentFile, ?parentNodeId, _, ?parentId).
+// Handle laoyout controls where the parent is missing.
+LayoutControl0(?id, ?name, "-") :-
+  XMLLayoutControl(?file, ?nodeId, ?name, ?id),
+  XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
+  !XMLLayoutControl(?parentFile, ?parentNodeId, _, _).
+
+// Detect sensitive layout controls.
+SensitiveLayoutControl0(?id, ?type, ?parent) :-
+  XMLLayoutControl(?file, ?nodeId, ?type, ?id),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "android:password", "true"),
+  LayoutControl0(?id, ?name, ?parent).
+SensitiveLayoutControl0(?id, ?type, ?parent) :-
+  XMLLayoutControl(?file, ?nodeId, ?type, ?id),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "android:inputType", ?inputType),
+  ( ?inputType = "textPassword"
+  ; ?inputType = "textVisiblePassword"
+  ; ?inputType = "textWebPassword"
+  ; ?inputType = "numberPassword"
+  ),
+  LayoutControl0(?id, ?name, ?parent).

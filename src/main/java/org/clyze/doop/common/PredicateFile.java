@@ -13,6 +13,7 @@ public enum PredicateFile
     ACTUAL_PARAMETER("ActualParam"),
     ANDROID_APPLICATION("AndroidApplication"),
     ANDROID_ENTRY_POINT("AndroidEntryPoint"),
+    ANDROID_ID("AndroidId"),
     ANNOTATION_ELEMENT("AnnotationElement"),
     APP_CLASS("ApplicationClass"),
     APP_PACKAGE("ApplicationPackage"),
