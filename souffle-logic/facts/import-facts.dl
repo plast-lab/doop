@@ -805,7 +805,7 @@ Instruction_Method(?instruction, ?method) :-
 
 #ifdef ANDROID
 
-// AndroidEntryPoints
+// AndroidEntryPoint
 .input AndroidEntryPoint(IO="file", filename="AndroidEntryPoint.facts", delimiter="\t")
 
 // AndroidApplication
