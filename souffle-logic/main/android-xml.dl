@@ -112,7 +112,10 @@ LayoutControl0(?id, ?name, ?parentId) :-
   XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
   XMLLayoutControl(?parentFile, ?parentNodeId, _, ?parentId).
 
-// Handle layout controls where the parent is missing.
+// Handle layout controls where the parent is missing (or is not a layout control).
+LayoutControl0(?id, ?name, "-") :-
+  XMLLayoutControl(?file, ?nodeId, ?name, ?id),
+  !XMLNode_Parent(?file, ?nodeId, _, _).
 LayoutControl0(?id, ?name, "-") :-
   XMLLayoutControl(?file, ?nodeId, ?name, ?id),
   XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
