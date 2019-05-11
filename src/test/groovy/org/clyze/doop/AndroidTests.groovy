@@ -53,9 +53,18 @@ class AndroidTests extends DoopBenchmark {
 
 		then:
 		methodIsReachable(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>')
+		methodIsReachable(analysis, '<jackpal.androidterm.Term: void <init>()>')
+		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onActivityResult(int,int,android.content.Intent)>')
+		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onCreate(android.os.Bundle)>')
+		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onDestroy()>')
+		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onPause()>')
+		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onStart()>')
+		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onStop()>')
+		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onNewIntent(android.content.Intent)>')
+		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onUpdate()>')
 		// Test application package.
 		isApplicationPackage(analysis, 'jackpal.androidterm')
-		// Test activities: Term (LAUNCHER), RemoteInterface.
+		// Test activities: Term, RemoteInterface.
 		isActivity(analysis, 'jackpal.androidterm.Term')
 		isActivity(analysis, 'jackpal.androidterm.RemoteInterface')
 		// Test service: TermService.
