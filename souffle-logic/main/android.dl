@@ -1005,27 +1005,36 @@ AndroidApplication(?type) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNodeAttribute(?manifest, ?applicationId, _, _, "android:name", ?type).
+#define APP_QUALIFIED_TYPE(t, qType) \
+  ( qType = t \
+  ; (ApplicationPackage(?package), qType= cat(?package, cat(".", ?type))) \
+  ), \
+  isType(qType)
 // Detect activities, providers, receivers, and services.
-Activity(?type) :-
+Activity(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
-  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type).
-Service(?type) :-
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+Service(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?serviceId, ?applicationId, _, _, "service"),
-  XMLNodeAttribute(?manifest, ?serviceId, _, _, "android:name", ?type).
-BroadcastReceiver(?type) :-
+  XMLNodeAttribute(?manifest, ?serviceId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+BroadcastReceiver(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?receiverId, ?applicationId, _, _, "receiver"),
-  XMLNodeAttribute(?manifest, ?receiverId, _, _, "android:name", ?type).
-ContentProvider(?type) :-
+  XMLNodeAttribute(?manifest, ?receiverId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+ContentProvider(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?providerId, ?applicationId, _, _, "provider"),
-  XMLNodeAttribute(?manifest, ?providerId, _, _, "android:name", ?type).
+  XMLNodeAttribute(?manifest, ?providerId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
 // Make all methods reachable for configured 'appComponentFactory'
 // classes. These classes may come from the platform, so we don't
 // register them in AndroidOriginalAppComponent/AndroidAppComponent.
