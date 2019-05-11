@@ -86,10 +86,18 @@ Activity_Alias(?activity, ?alias) :-
 CallbackMethod(?id) :-
   XMLNodeAttribute(_, _, _, _, "android:onClick", ?id).
 
-// XML nodes: parent relationship (can cross files due to <merge> elements.
+// This should match the constant in the XML fact generator.
+#define ROOT_NODE "-1"
+
+// XML nodes: parent relationship (can cross files due to <include> elements).
 .decl XMLNode_Parent(?file:symbol, ?nodeId:symbol, ?parentFile:symbol, ?parentNodeId:symbol)
 XMLNode_Parent(?file, ?nodeId, ?file, ?parentNodeId) :-
   XMLNode(?file, ?nodeId, ?parentNodeId, _, _, _).
+XMLNode_Parent(?file, ?nodeId, ?originFile, ?parentNodeId) :-
+  AndroidIncludeXML(?originFile, ?includeId, ?xml),
+  XMLNode(?originFile, ?includeId, ?parentNodeId, _, _, _),
+  XMLNode(?file, ?nodeId, ROOT_NODE, _, _, _),
+  contains(?xml, ?file).
 
 .decl XMLLayoutControl(?file:symbol, ?nodeId:symbol, ?name:symbol, ?value:symbol)
 XMLLayoutControl(?file, ?nodeId, ?name, ?id) :-
@@ -137,3 +145,4 @@ LauncherActivity(?qType) :-
   XMLNode(?manifest, ?categoryId, ?intentFilterId, _, _, "category"),
   XMLNodeAttribute(?manifest, ?categoryId, _, _, "android:name", "android.intent.category.LAUNCHER"),
   APP_QUALIFIED_TYPE(?type, ?qType).
+  

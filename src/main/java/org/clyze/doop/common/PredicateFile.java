@@ -14,6 +14,7 @@ public enum PredicateFile
     ANDROID_APPLICATION("AndroidApplication"),
     ANDROID_ENTRY_POINT("AndroidEntryPoint"),
     ANDROID_ID("AndroidId"),
+    ANDROID_INCLUDE_XML("AndroidIncludeXML"),
     ANNOTATION_ELEMENT("AnnotationElement"),
     APP_CLASS("ApplicationClass"),
     APP_PACKAGE("ApplicationPackage"),

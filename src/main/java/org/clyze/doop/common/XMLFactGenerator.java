@@ -15,12 +15,14 @@ import static org.clyze.doop.common.PredicateFile.*;
 public class XMLFactGenerator extends DefaultHandler {
     static final boolean verbose = false;
     final String[] ID_PREFIXES = new String[] { "@id/", "@android:id/" };
+    final String LAYOUT_PREFIX = "@layout/";
 
     final XMLReader xmlReader;
     final Database db;
     final File xmlFile;
     final String relativePath;
     final Stack<Integer> parents = new Stack<>();
+    // This should match the constant in the XML logic.
     private static final int ROOT_NODE = -1;
     int nodeId = 0;
 
@@ -174,6 +176,11 @@ public class XMLFactGenerator extends DefaultHandler {
                 System.err.println("Warning: could not process android id: " + value);
                 db.add(ANDROID_ID, file, sNodeId, value, "-", value);
             }
+        } else if (qName.equals("layout")) {
+            if (value.startsWith(LAYOUT_PREFIX)) {
+                db.add(ANDROID_INCLUDE_XML, file, sNodeId, value.substring(LAYOUT_PREFIX.length()));
+            } else
+                System.err.println("Warning: ignoring layout=" + value);
         }
     }
 }

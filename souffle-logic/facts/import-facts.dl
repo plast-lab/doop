@@ -846,6 +846,7 @@ isMethod(?id) :-
 .input FieldInitialValue(IO="file", filename="FieldInitialValue.facts", delimiter="\t")
 
 .input AndroidId(IO="file", filename="AndroidId.facts", delimiter="\t")
+.input AndroidIncludeXML(IO="file", filename="AndroidIncludeXML.facts", delimiter="\t")
 
 // NumConstantRaw
 

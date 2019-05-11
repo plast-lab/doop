@@ -511,6 +511,7 @@
 .decl AndroidEntryPoint(?m:Method)
 .decl AndroidApplication(?t:ClassType)
 .decl AndroidId(?file:symbol, ?nodeId:symbol, ?value:symbol, ?prefix:symbol, ?id:symbol)
+.decl AndroidIncludeXML(?file:symbol, ?nodeId:symbol, ?value:symbol)
 
 #endif
 
