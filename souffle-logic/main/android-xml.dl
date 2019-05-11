@@ -125,7 +125,7 @@ LayoutControl0(?id, ?name, "-") :-
 SensitiveLayoutControl0(?id, ?type, ?parent) :-
   XMLLayoutControl(?file, ?nodeId, ?type, ?id),
   XMLNodeAttribute(?file, ?nodeId, _, _, "android:password", "true"),
-  LayoutControl0(?id, ?name, ?parent).
+  LayoutControl0(?id, ?type, ?parent).
 SensitiveLayoutControl0(?id, ?type, ?parent) :-
   XMLLayoutControl(?file, ?nodeId, ?type, ?id),
   XMLNodeAttribute(?file, ?nodeId, _, _, "android:inputType", ?inputType),
@@ -134,7 +134,7 @@ SensitiveLayoutControl0(?id, ?type, ?parent) :-
   ; ?inputType = "textWebPassword"
   ; ?inputType = "numberPassword"
   ),
-  LayoutControl0(?id, ?name, ?parent).
+  LayoutControl0(?id, ?type, ?parent).
 
 // Detect launcher activity XML Pattern:
 //   <activity android:name="Activity">
