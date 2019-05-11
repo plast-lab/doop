@@ -1,0 +1,122 @@
+// Android XML interpretation
+//
+// The following rules interpret XML files found in Android applications.
+// This logic handles both the Android manifest and resource files (such as
+// controls for the view inflater).
+//
+
+// Detect application package and main class.
+.decl ApplicationPackage(?package:symbol)
+ApplicationPackage(?package) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNodeAttribute(?manifest, ?manifestId, _, _, "package", ?package).
+AndroidApplication(?type) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNodeAttribute(?manifest, ?applicationId, _, _, "android:name", ?type).
+
+// Helper macro to handle types that are either fully qualified or
+// unqualified and belong to the application package.
+#define APP_QUALIFIED_TYPE(t, qType) \
+  ( qType = t \
+  ; (ApplicationPackage(?package), qType= cat(?package, cat(".", ?type))) \
+  ), \
+  isType(qType)
+
+// Detect activities, providers, receivers, and services.
+Activity(?qType) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+Service(?qType) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?serviceId, ?applicationId, _, _, "service"),
+  XMLNodeAttribute(?manifest, ?serviceId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+BroadcastReceiver(?qType) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?receiverId, ?applicationId, _, _, "receiver"),
+  XMLNodeAttribute(?manifest, ?receiverId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+ContentProvider(?qType) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?providerId, ?applicationId, _, _, "provider"),
+  XMLNodeAttribute(?manifest, ?providerId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+
+// Make all methods reachable for configured 'appComponentFactory'
+// classes. These classes may come from the platform, so we don't
+// register them in AndroidOriginalAppComponent/AndroidAppComponent.
+ForcedReachableAndroidContext(?ctx, ?meth) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNodeAttribute(?manifest, ?applicationId, _, _, "android:appComponentFactory", ?appComponentFactoryClass),
+  basic.MethodDeclaredOrInherited(?meth, ?appComponentFactoryClass),
+  isImmutableContext(?ctx).
+
+// Detect parent activities.
+.decl Activity_Parent(?type:ClassType, ?parentActivity:ClassType)
+Activity(?parentActivity),
+Activity_Parent(?type, ?parentActivity) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:parentActivityName", ?parentActivity).
+
+// Detect activity aliases.
+.decl Activity_Alias(?activity:ClassType, ?alias:symbol)
+Activity_Alias(?activity, ?alias) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity-alias"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?alias),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:targetActivity", ?activity).
+
+// Detect onClick handlers.
+CallbackMethod(?id) :-
+  XMLNodeAttribute(_, _, _, _, "android:onClick", ?id).
+
+// XML nodes: parent relationship (can cross files due to <merge> elements.
+.decl XMLNode_Parent(?file:symbol, ?nodeId:symbol, ?parentFile:symbol, ?parentNodeId:symbol)
+XMLNode_Parent(?file, ?nodeId, ?file, ?parentNodeId) :-
+  XMLNode(?file, ?nodeId, ?parentNodeId, _, _, _).
+
+.decl XMLLayoutControl(?file:symbol, ?nodeId:symbol, ?name:symbol, ?value:symbol)
+XMLLayoutControl(?file, ?nodeId, ?name, ?id) :-
+  XMLNode(?file, ?nodeId, _, _, _, ?name),
+  AndroidId(?file, ?nodeId, _, _, ?label),
+  Field_SimpleName(?field, ?label),
+  FieldInitialValue(?field, ?id).
+
+// Detect layout controls.
+LayoutControl0(?id, ?name, ?parentId) :-
+  XMLLayoutControl(?file, ?nodeId, ?name, ?id),
+  XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
+  XMLLayoutControl(?parentFile, ?parentNodeId, _, ?parentId).
+
+// Handle layout controls where the parent is missing.
+LayoutControl0(?id, ?name, "-") :-
+  XMLLayoutControl(?file, ?nodeId, ?name, ?id),
+  XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
+  !XMLLayoutControl(?parentFile, ?parentNodeId, _, _).
+
+// Detect sensitive layout controls.
+SensitiveLayoutControl0(?id, ?type, ?parent) :-
+  XMLLayoutControl(?file, ?nodeId, ?type, ?id),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "android:password", "true"),
+  LayoutControl0(?id, ?name, ?parent).
+SensitiveLayoutControl0(?id, ?type, ?parent) :-
+  XMLLayoutControl(?file, ?nodeId, ?type, ?id),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "android:inputType", ?inputType),
+  ( ?inputType = "textPassword"
+  ; ?inputType = "textVisiblePassword"
+  ; ?inputType = "textWebPassword"
+  ; ?inputType = "numberPassword"
+  ),
+  LayoutControl0(?id, ?name, ?parent).
