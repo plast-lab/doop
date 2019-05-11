@@ -124,3 +124,16 @@ SensitiveLayoutControl0(?id, ?type, ?parent) :-
   ; ?inputType = "numberPassword"
   ),
   LayoutControl0(?id, ?name, ?parent).
+
+// Detect launcher activity XML Pattern:
+//   <activity android:name="Activity">
+//     <intent-filter>
+//       <category android:name="android.intent.category.LAUNCHER" />
+.decl LauncherActivity(?type:ClassType)
+LauncherActivity(?qType) :-
+  XMLNode(?manifest, ?activityId, _, _, _, "activity"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
+  XMLNode(?manifest, ?intentFilterId, ?activityId, _, _, "intent-filter"),
+  XMLNode(?manifest, ?categoryId, ?intentFilterId, _, _, "category"),
+  XMLNodeAttribute(?manifest, ?categoryId, _, _, "android:name", "android.intent.category.LAUNCHER"),
+  APP_QUALIFIED_TYPE(?type, ?qType).

@@ -175,6 +175,12 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
    OverridingProtectedOnMethodOfLayoutControl(?meth)),
   isImmutableContext(?ctx).
 
+// Make launcher activity methods (constructor plus on* methods) forced-reachable.
+ForcedReachableAndroidContext(?ctx, ?meth) :-
+  LauncherActivity(?type),
+  Method_DeclaringType(?meth, ?type),
+  (Method_SimpleName(?meth, "<init>") ; _OnEventMethod(?meth)),
+  isImmutableContext(?ctx).
 
 /**
  * Intents and Bundles
