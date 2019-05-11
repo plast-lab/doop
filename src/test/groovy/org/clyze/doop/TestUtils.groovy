@@ -139,6 +139,31 @@ class TestUtils {
 		findPair(analysis, "mainAnalysis.InstanceFieldPointsTo", fld, 2, value, 1)
 	}
 
+	static void isActivity(Analysis analysis, String activity) {
+		log("isActivity('${activity}')")
+		find(analysis, "Activity", activity, true)
+	}
+
+	static void isBroadcastReceiver(Analysis analysis, String receiver) {
+		log("isBroadcastReceiver('${receiver}')")
+		find(analysis, "BroadcastReceiver", receiver, true)
+	}
+
+	static void isService(Analysis analysis, String service) {
+		log("isService('${service}')")
+		find(analysis, "Service", service, true)
+	}
+
+	static void isContentProvider(Analysis analysis, String provider) {
+		log("isContentProvider('${provider}')")
+		find(analysis, "ContentProvider", provider, true)
+	}
+
+	static void isApplicationPackage(Analysis analysis, String packageName) {
+		log("isApplicationPackage('${packageName}')")
+		find(analysis, "mainAnalysis.ApplicationPackage", packageName, true)
+	}
+
 	// Check that a method is reachable.
 	static void methodIsReachable(Analysis analysis, String meth) {
 		log("methodIsReachable('${meth}')")

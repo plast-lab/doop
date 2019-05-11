@@ -53,6 +53,13 @@ class AndroidTests extends DoopBenchmark {
 
 		then:
 		methodIsReachable(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>')
+		// Test application package.
+		isApplicationPackage(analysis, 'jackpal.androidterm')
+		// Test activities: Term (LAUNCHER), RemoteInterface.
+		isActivity(analysis, 'jackpal.androidterm.Term')
+		isActivity(analysis, 'jackpal.androidterm.RemoteInterface')
+		// Test service: TermService.
+		isService(analysis, 'jackpal.androidterm.TermService')
 		noSanityErrors(analysis, false)
 	}
 

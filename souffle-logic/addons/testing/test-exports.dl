@@ -16,3 +16,11 @@
 #define methodHandleCGE(i, m) mainAnalysis.MethodHandleCallGraphEdge(_, i, _, m, _, _)
 #define proxyCGE(i, m) mainAnalysis.ProxyCallGraphEdge(_, i, _, m)
 #define reachable(m) mainAnalysis.Reachable(m)
+
+#ifdef ANDROID
+.output mainAnalysis.ApplicationPackage
+.output Activity
+.output BroadcastReceiver
+.output ContentProvider
+.output Service
+#endif // ANDROID
