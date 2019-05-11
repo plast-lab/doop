@@ -116,7 +116,7 @@ public class XMLFactGenerator extends DefaultHandler {
 
     @Override
     public void endDocument() throws SAXException {
-        if (!parents.empty() && (parents.peek() != ROOT_NODE))
+        if (parents.empty() || (parents.peek() != ROOT_NODE))
             throw new RuntimeException("Internal error: corrupt node traversal, non-empty parent = " + parents.peek());
     }
 
