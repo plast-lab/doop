@@ -20,8 +20,8 @@ AndroidApplication(?type) :-
 #define APP_QUALIFIED_TYPE(t, qType) \
   ( qType = t \
   ; ( ApplicationPackage(?package), \
-      ( qType = cat(?package, ?type) \
-      ; qType = cat(?package, cat(".", ?type)) \
+      ( qType = cat(?package, t) \
+      ; qType = cat(?package, cat(".", t)) \
       ) \
     ) \
   ), \
