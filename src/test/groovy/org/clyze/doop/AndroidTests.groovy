@@ -81,7 +81,7 @@ class AndroidTests extends DoopBenchmark {
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-phonograph-types-only",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--gen-opt-directives", "--decode-apk", "--cache",
+					 "--gen-opt-directives", "--decode-apk",
 					 "--thorough-fact-gen", "--sanity", "--Xstats-full",
 					 "--scan-native-code", "--simulate-native-returns",
 					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
