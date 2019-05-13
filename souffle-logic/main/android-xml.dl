@@ -5,7 +5,7 @@
 // controls for the view inflater).
 //
 
-// Detect application package and main class.
+// Detect application package and main class. XML pattern: <manifest package="...">
 .decl ApplicationPackage(?package:symbol)
 ApplicationPackage(?package) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
@@ -28,24 +28,40 @@ AndroidApplication(?type) :-
   isType(qType)
 
 // Detect activities, providers, receivers, and services.
+// Activity XML pattern:
+// <manifest>
+//   <application>
+//     <activity android:name="...">
 Activity(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
   XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
   APP_QUALIFIED_TYPE(?type, ?qType).
+// Service XML pattern:
+// <manifest>
+//   <application>
+//     <service android:name="...">
 Service(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?serviceId, ?applicationId, _, _, "service"),
   XMLNodeAttribute(?manifest, ?serviceId, _, _, "android:name", ?type),
   APP_QUALIFIED_TYPE(?type, ?qType).
+// Broadcast receiver XML pattern:
+// <manifest>
+//   <application>
+//     <receiver android:name="...">
 BroadcastReceiver(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?receiverId, ?applicationId, _, _, "receiver"),
   XMLNodeAttribute(?manifest, ?receiverId, _, _, "android:name", ?type),
   APP_QUALIFIED_TYPE(?type, ?qType).
+// Content provider XML pattern:
+// <manifest>
+//   <application>
+//     <provider android:name="...">
 ContentProvider(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
@@ -56,6 +72,9 @@ ContentProvider(?qType) :-
 // Make all methods reachable for configured 'appComponentFactory'
 // classes. These classes may come from the platform, so we don't
 // register them in AndroidOriginalAppComponent/AndroidAppComponent.
+// XML pattern:
+// <manifest>
+//   <application android:appComponentFactory="...">
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
@@ -73,7 +92,10 @@ Activity_Parent(?type, ?parentActivity) :-
   XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
   XMLNodeAttribute(?manifest, ?activityId, _, _, "android:parentActivityName", ?parentActivity).
 
-// Detect activity aliases.
+// Detect activity aliases. XML pattern:
+// <manifest>
+//   <application>
+//     <activity-alias android:name="..." android:targetActivity="...">
 .decl Activity_Alias(?activity:ClassType, ?alias:symbol)
 Activity_Alias(?activity, ?alias) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
@@ -136,7 +158,7 @@ SensitiveLayoutControl0(?id, ?type, ?parent) :-
   ),
   LayoutControl0(?id, ?type, ?parent).
 
-// Detect launcher activity XML Pattern:
+// Detect launcher activity. XML pattern:
 //   <activity android:name="Activity">
 //     <intent-filter>
 //       <category android:name="android.intent.category.LAUNCHER" />
