@@ -2,6 +2,7 @@ package org.clyze.jimple
 
 import groovy.transform.CompileStatic
 import org.antlr.v4.runtime.ANTLRFileStream
+import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ErrorNode
@@ -465,4 +466,30 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			throw StackTraceUtils.deepSanitize(new Throwable("Jimple File: $filename", all))
 		}
 	}
+
+    static Walker parseJimpleText(String className, String text) {
+        def parser = new JimpleParser(new CommonTokenStream(new JimpleLexer(new ANTLRInputStream(text))))
+        return new Walker(className, parser.program())
+    }
+
+    static class Walker {
+        private final String className
+        private final JimpleParser.ProgramContext ctx
+
+        Walker(String className, JimpleParser.ProgramContext ctx) {
+            this.className = className
+            this.ctx = ctx
+        }
+
+        void walk(Closure processor) {
+            def listener = new JimpleListenerImpl(className, processor)
+            try {
+                ParseTreeWalker.DEFAULT.walk(listener, ctx)
+            } catch (all) {
+                all = StackTraceUtils.deepSanitize all
+                    throw StackTraceUtils.deepSanitize(new Throwable("Jimple class: ${listener.filename}", all))
+            }
+        }
+    }
+
 }
