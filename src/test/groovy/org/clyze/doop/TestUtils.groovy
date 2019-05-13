@@ -9,6 +9,8 @@ import static org.clyze.utils.Helper.forEachLineIn
  * Utility class with checker methods used by other tests.
  */
 class TestUtils {
+	private enum MatchMode { EXACT, SUFFIX }
+
 	static void relationHasApproxSize(Analysis analysis, String relation, int expectedSize) {
 		log("relationHasApproxSize(${relation}) = ${expectedSize}")
 		int actualSize = 0
@@ -186,6 +188,12 @@ class TestUtils {
 		assert true == find(analysis, "TestId", id, true)
 	}
 
+	static void xmlParent(Analysis analysis, String file1, String nodeId1, String file2, String nodeId2) {
+		findTuple(analysis, 'mainAnalysis.XMLNode_Parent',
+				  [[file1, 0, MatchMode.SUFFIX], [nodeId1, 1, MatchMode.EXACT],
+				   [file2, 2, MatchMode.SUFFIX], [nodeId2, 3, MatchMode.EXACT]])
+	}
+
 	static void findPair(Analysis analysis, String relation,
 						 String s1, int idx1, String s2, int idx2) {
 		boolean found = false
@@ -200,6 +208,50 @@ class TestUtils {
 							  }
 						  }
 					  })
+		assert found == true
+	}
+
+	/**
+	 * Finds a tuple in a relation, matching a given spec. This is a generalization
+	 * of findPair(), but slower (since the spec is interpreted).
+	 *
+	 * @param analysis	the analysis object
+	 * @param relation	the relation to check
+	 * @param spec		a list of pairs (value, index, mode) that
+	 *					must all match (according to 'MatchMode' mode)
+	 */
+	static void findTuple(Analysis analysis, String relation, List spec) {
+		boolean found = false
+		forEachLineIn(
+			"${analysis.database}/${relation}.csv",
+			{ line ->
+				if (!found && line) {
+					String[] values = line.split('\t')
+					boolean tupleMatches = true
+					for (int index = 0; index < spec.size; index++) {
+						String expectedValue = spec[index][0] as String
+						def expectedIndex = spec[index][1]
+						MatchMode mode = spec[index][2]
+						boolean match
+						switch (mode) {
+							case MatchMode.SUFFIX :
+								match = values[expectedIndex].endsWith(expectedValue)
+								break
+							case MatchMode.EXACT:
+								match =values[expectedIndex].equals(expectedValue)
+								break
+							default:
+								throw new RuntimeException("Match mode not supported: " + mode)
+						}
+						if (!match) {
+							tupleMatches = false
+						}
+					}
+					if (!found && tupleMatches) {
+						found = true
+					}
+				}
+			})
 		assert found == true
 	}
 

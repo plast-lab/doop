@@ -74,6 +74,29 @@ class AndroidTests extends DoopBenchmark {
 
 	// @spock.lang.Ignore
 	@Unroll
+	def "Types-only Android analysis test (Phonograph)"() {
+		when:
+		List args = ["-i", Artifacts.PHONOGRAPH_APK,
+					 "-a", "types-only", "--Xserver-logic",
+					 "--platform", "android_25_fulljars",
+					 "--id", "test-android-phonograph-types-only",
+					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+					 "--gen-opt-directives", "--decode-apk", "--cache",
+					 "--thorough-fact-gen", "--sanity", "--Xstats-full",
+					 "--scan-native-code", "--simulate-native-returns",
+					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
+		Main.main((String[])args)
+		Analysis analysis = Main.analysis
+
+		then:
+		// Test XML logic for <include> + <merge>.
+		xmlParent(analysis, 'res/layout/abc_screen_content_include.xml', '2', 'res/layout/abc_screen_simple_overlay_action_mode.xml', '1')
+		// Test analysis sanity.
+		noSanityErrors(analysis, false)
+	}
+
+	// @spock.lang.Ignore
+	@Unroll
 	def "Types-only Android analysis test (Signal)"() {
 		when:
 		List args = ["-i", Artifacts.SIGNAL_APK,

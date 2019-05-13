@@ -113,12 +113,28 @@ CallbackMethod(?id) :-
 
 // XML nodes: parent relationship (can cross files due to <include> elements).
 .decl XMLNode_Parent(?file:symbol, ?nodeId:symbol, ?parentFile:symbol, ?parentNodeId:symbol)
+// Base case: XML nodes in the same file.
 XMLNode_Parent(?file, ?nodeId, ?file, ?parentNodeId) :-
   XMLNode(?file, ?nodeId, ?parentNodeId, _, _, _).
+// Cross-file parents: <include> a layout (with a non-<merge> root node).
+// This will make NODE_1 the parent of NODE_2 in this XML pattern:
+//   file1.xml:   ... <NODE1><include layout="@layout/file2"></NODE1> ...
+//   file2.xml:   <NODE2> ... </NODE2>
 XMLNode_Parent(?file, ?nodeId, ?originFile, ?parentNodeId) :-
   AndroidIncludeXML(?originFile, ?includeId, ?xml),
   XMLNode(?originFile, ?includeId, ?parentNodeId, _, _, _),
-  XMLNode(?file, ?nodeId, ROOT_NODE, _, _, _),
+  XMLNode(?file, ?nodeId, ROOT_NODE, _, _, ?nodeName),
+  ?nodeName != "merge",
+  contains(?xml, ?file).
+// Cross-file parents: <include> a layout (with a <merge> root node).
+// This will make NODE the parent of all NODES in this XML pattern:
+//   file1.xml:   ... <NODE><include layout="@layout/file2"></NODE> ...
+//   file2.xml:   <merge> ... NODES ... </merge>
+XMLNode_Parent(?file, ?nodeId, ?originFile, ?parentNodeId) :-
+  AndroidIncludeXML(?originFile, ?includeId, ?xml),
+  XMLNode(?originFile, ?includeId, ?parentNodeId, _, _, _),
+  XMLNode(?file, _, ROOT_NODE, _, _, "merge"),
+  XMLNode(?file, ?nodeId, _, _, _, _),
   contains(?xml, ?file).
 
 .decl XMLLayoutControl(?file:symbol, ?nodeId:symbol, ?name:symbol, ?value:symbol)

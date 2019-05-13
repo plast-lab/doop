@@ -25,4 +25,5 @@
 .output Service
 .output mainAnalysis.LauncherActivity
 .output LayoutControl
+.output mainAnalysis.XMLNode_Parent
 #endif // ANDROID
