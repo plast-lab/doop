@@ -542,13 +542,11 @@ Method_Arity(?method, ?arity),
 Method_ReturnType(?method, ?returnType) :-
   _Method(?method, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor, ?arity).
 
-#ifndef VIA_DDLOG
 isMethodDescriptor(?descriptor),
 Method_Descriptor(?method, ?descriptor) :-
   Method_ReturnType(?method, ?returnType),
   Method_ParamTypes(?method, ?params),
   ?descriptor = cat(?returnType, cat("(", cat(?params, ")"))).
-#endif // VIA_DDLOG
 
 // StoreInstanceField
 
