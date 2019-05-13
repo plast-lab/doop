@@ -139,6 +139,11 @@ class TestUtils {
 		findPair(analysis, "mainAnalysis.InstanceFieldPointsTo", fld, 2, value, 1)
 	}
 
+	static void isLauncherActivity(Analysis analysis, String activity) {
+		log("isLauncherActivity('${activity}')")
+		find(analysis, "mainAnalysis.LauncherActivity", activity, true)
+	}
+
 	static void isActivity(Analysis analysis, String activity) {
 		log("isActivity('${activity}')")
 		find(analysis, "Activity", activity, true)
@@ -162,6 +167,11 @@ class TestUtils {
 	static void isApplicationPackage(Analysis analysis, String packageName) {
 		log("isApplicationPackage('${packageName}')")
 		find(analysis, "mainAnalysis.ApplicationPackage", packageName, true)
+	}
+
+	static void isLayoutControl(Analysis analysis, String id, String control) {
+		log("isLayoutControl('${id}', '${control}')")
+		findPair(analysis, "LayoutControl", id, 0, control, 1)
 	}
 
 	// Check that a method is reachable.
