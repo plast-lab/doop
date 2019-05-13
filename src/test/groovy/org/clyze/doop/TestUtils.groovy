@@ -191,7 +191,7 @@ class TestUtils {
 		boolean found = false
 		forEachLineIn("${analysis.database}/${relation}.csv",
 					  { line ->
-						  if (line) {
+						  if (!found && line) {
 							  String[] values = line.split('\t')
 							  String a = values[idx1]
 							  String b = values[idx2]
