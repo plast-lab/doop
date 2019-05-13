@@ -38,10 +38,10 @@ MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
     !_MethodLookup_ImpossibleClosest(?simplename, ?descriptor, ?type, ?method).
 
 
-#ifndef VIA_DDLOG
 _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, 0) :-
     MethodImplemented(?simplename, ?descriptor, ?type, ?method).
 
+#ifndef VIA_DDLOG
 _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, n + 1) :-
     (DirectSuperclass(?type, ?supertype) ;
      DirectSuperinterface(?type, ?supertype)),
