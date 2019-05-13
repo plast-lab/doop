@@ -89,6 +89,9 @@ class AndroidTests extends DoopBenchmark {
 		Analysis analysis = Main.analysis
 
 		then:
+		// Misc. tests (needed for the tests that follow).
+		methodIsReachable(analysis, '<com.sothree.slidinguppanel.SlidingUpPanelLayout: void <init>(android.content.Context)>')
+		methodIsReachable(analysis, '<com.kabouzeid.gramophone.ui.activities.base.AbsSlidingMusicPanelActivity: void <init>()>')
 		// Test XML logic for <include> + <merge>.
 		xmlParent(analysis, 'res/layout/abc_screen_content_include.xml', '2', 'res/layout/abc_screen_simple_overlay_action_mode.xml', '1')
 		// Test fragment detection.
