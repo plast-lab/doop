@@ -11,13 +11,14 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static final String DEFAULT_JAVA_PLATFORM = "java_8"
-	private static final String GROUP_FACTS = "Fact generation"
-	private static final String GROUP_REFLECTION = "Reflection"
 	private static final String GROUP_ENGINE = "Datalog engine"
+	private static final String GROUP_FACTS = "Fact generation"
 	private static final String GROUP_HEAPDL = "HeapDL"
+	private static final String GROUP_INFORMATION_FLOW = "Information flow"
 	private static final String GROUP_NATIVE = "Native code"
 	private static final String GROUP_PYTHON = "Python"
-	private static final String GROUP_INFORMATION_FLOW = "Information flow"
+	private static final String GROUP_REFLECTION = "Reflection"
+	private static final String GROUP_STATS = "Statistics"
 
 	@Override
 	String getName() { "doop" }
@@ -756,24 +757,28 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_STATS_FULL",
 					name: "Xstats-full",
+					group: GROUP_STATS,
 					description: "Load additional logic for collecting statistics.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_NONE",
 					name: "Xstats-none",
+					group: GROUP_STATS,
 					description: "Do not load logic for collecting statistics.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_DEFAULT",
 					name: "Xstats-default",
+					group: GROUP_STATS,
 					description: "Load default logic for collecting statistics.",
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
 					id: "X_STATS_AROUND",
 					name: "Xstats-around",
+					group: GROUP_STATS,
 					description: "Load custom logic for collecting statistics.",
 					argName: "FILE",
 					argInputType: InputType.MISC
