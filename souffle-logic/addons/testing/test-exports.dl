@@ -23,4 +23,6 @@
 .output BroadcastReceiver
 .output ContentProvider
 .output Service
+.output mainAnalysis.LauncherActivity
+.output LayoutControl
 #endif // ANDROID

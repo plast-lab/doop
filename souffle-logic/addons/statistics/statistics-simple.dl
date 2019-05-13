@@ -29,7 +29,7 @@ Stats_Simple_ReachableVar(?ctx, ?var) :-
 Stats_Simple_InsensVarPointsTo(?value, ?var) :-
   DupCopies(?var, ?var2),
   mainAnalysis.VarPointsTo(_, ?value, _, ?var2).
-#endif
+#endif // TRANSFORM_INPUT
 
 /***************************************************
  * Arrays
@@ -229,6 +229,20 @@ NewMetricMacro("25.5", "app reachable methods", Stats_Simple_Application_Reachab
 //NewMetricMacro("51.0", "allocation sites that did (not) get refined", ValueToRefine(_)).
 
 /***************************************************
+ * Android
+ ***************************************************/
+
+#ifdef ANDROID
+NewMetricMacro("26.0", "Android activities", Activity(_)).
+NewMetricMacro("26.1", "Android broadcast receivers", BroadcastReceiver(_)).
+NewMetricMacro("26.2", "Android content providers", ContentProvider(_)).
+NewMetricMacro("26.3", "Android services", Service(_)).
+NewMetricMacro("26.4", "Android layout controls", LayoutControl(_, _, _)).
+NewMetricMacro("26.5", "Android sensitive layout controls", SensitiveLayoutControl(_, _, _)).
+NewMetricMacro("26.6", "Android callback methods", CallbackMethod(_)).
+#endif // ANDROID
+
+/***************************************************
  * Reflection
  ***************************************************/
 
@@ -271,7 +285,7 @@ NewMetricMacro("32.5", "instance field points-to (to a reflective value) (SENS)"
 NewMetricMacro("35.0", "reachable 'forName' (INS)", Stats_Simple_forName(_)).
 NewMetricMacro("36.0", "reachable 'Class.newInstance' (INS)", Stats_Simple_Class_newInstance(_)).
 NewMetricMacro("37.0", "reachable 'Constructor.newInstance' (INS)", Stats_Simple_Constructor_newInstance(_)).
-#endif
+#endif // REFLECTION
 
 /***************************************************
  * Information Flow
@@ -301,7 +315,7 @@ NewMetricMacro("42.0", "total tainted values", TaintedValue(_)).
 NewMetricMacro("43.0", "original tainted values", Stats_Simple_OriginalTaintedValue(_)).
 NewMetricMacro("44.0", "sink variables (SENS)", LeakingSinkVariable(_, _, _, _)).
 NewMetricMacro("45.0", "total leaks", Stats_Simple_LeakingTaintedInformation(_, _)).
-#endif
+#endif // INFORMATION_FLOW
 
 /***************************************************
  * Open Programs
@@ -319,7 +333,7 @@ NewMetricMacro("61.3", "Mock Objects for Arrays", MockObjFromArray(_)).
 NewMetricMacro("61.4", "Mock Objects for Formals", MockObjFromFormal(_)).
 //NewMetricMacro("62.0", "Methods Reachable from open entry points (SENS)", MockReachableContext(_,_)).
 //NewMetricMacro("62.5", "Methods Reachable from open entry points (INS)", Stats_Simple_ReachableFromOpenProgramEntryPoint(_)).
-#endif
+#endif // OPEN_PROGRAMS
 
 #ifdef SPECIAL_CONTEXT_SENSITIVITY_METHODS
 Stats_Simple_TwoObjectMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
@@ -332,7 +346,8 @@ NewMetricMacro("101.0", "context-insensitive methods", mainAnalysis.configuratio
 NewMetricMacro("102.0", "2-object-sensitive methods", mainAnalysis.configuration.TwoObjectMethod(_)).
 NewMetricMacro("103.0", "context-insensitive methods total VPT", Stats_Simple_ContextInsensitiveMethodsVPT(_, _, _, _)).
 NewMetricMacro("104.0", "2-object-sensitive methods total VPT", Stats_Simple_TwoObjectMethodsVPT(_, _, _, _)).
-#endif
+#endif // SPECIAL_CONTEXT_SENSITIVITY_METHODS
+
 /***************************************************
  * Memory Dump
  ***************************************************/
@@ -411,7 +426,7 @@ Stats_Simple_Application_DynamicCallGraphEdge(?invocation, ?toMeth) :-
   Instruction_Method(?invocation, ?fromMeth),
   ApplicationMethod(?fromMeth).
 
-#endif
+#endif // HEAPDLS
 
 .decl Stats_Simple_Application_InsensCallGraphEdge(?invocation:Instruction, ?toMeth:Method)
 OUTPUT_STATS(Stats_Simple_Application_InsensCallGraphEdge)
