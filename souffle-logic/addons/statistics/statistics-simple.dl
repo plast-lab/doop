@@ -229,6 +229,20 @@ NewMetricMacro("25.5", "app reachable methods", Stats_Simple_Application_Reachab
 //NewMetricMacro("51.0", "allocation sites that did (not) get refined", ValueToRefine(_)).
 
 /***************************************************
+ * Android
+ ***************************************************/
+
+#ifdef ANDROID
+NewMetricMacro("26.0", "Android activities", Activity(_)).
+NewMetricMacro("26.1", "Android broadcast receivers", BroadcastReceiver(_)).
+NewMetricMacro("26.2", "Android content providers", ContentProvider(_)).
+NewMetricMacro("26.3", "Android services", Service(_)).
+NewMetricMacro("26.4", "Android layout controls", LayoutControl(_, _, _)).
+NewMetricMacro("26.5", "Android sensitive layout controls", SensitiveLayoutControl(_, _, _)).
+NewMetricMacro("26.6", "Android callback methods", CallbackMethod(_)).
+#endif // ANDROID
+
+/***************************************************
  * Reflection
  ***************************************************/
 
