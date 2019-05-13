@@ -1004,3 +1004,5 @@ TypeHasApplicationObjectFlowingToLibrary(?type) :-
   _AndroidReachableLibraryVarOfType(_, ?varType),
   basic.SubtypeOf(?type, ?varType),
   TypeHasReachableApplicationObject(?type).
+
+#include "butterknife.dl"

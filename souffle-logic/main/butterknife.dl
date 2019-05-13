@@ -1,0 +1,67 @@
+// Special logic to support Butterknife annotations.
+//
+// TODO: @BindViews, bind resources (drawables, fonts, data).
+//
+
+.decl FieldBindView(?field:Field, ?controlValue:Value, ?controlType:Type, ?ctx:configuration.Context, ?hctx:configuration.HContext)
+
+/***************************************************
+ * @BindView
+ ***************************************************/
+
+// When a constructor is made reachable in a type containing a
+// @BindView-annotated field, instantiate that field.
+MockValueConsMacro(?controlValue, ?controlType),
+FieldBindView(?field, ?controlValue, ?controlType, ?ctx, ?hctx) :-
+  Field_Annotation(?field, "butterknife.BindView"),
+  AnnotationElement("field", ?field, _, _, "value", ?id, _),
+  LayoutControl(?id, ?controlType, _),
+  Field_DeclaringType(?field, ?type),
+  Method_DeclaringType(?method, ?type),
+  Method_SimpleName(?method, "<init>"),
+  ReachableContext(?ctx, ?meth),
+  isImmutableHContext(?hctx),
+  ?controlValue = cat("@BindView: <", cat(?controlType, cat(" control for field ", ?field))).
+
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  FieldBindView(_, _, ?controlType, ?ctx, _),
+  Method_DeclaringType(?method, ?controlType),
+  (Method_SimpleName(?method, "<init>") ; _OnEventMethod(?method)).
+
+#ifndef DISABLE_POINTS_TO
+
+// @BindView points-to for instance fields.
+InstanceFieldPointsTo(?hctx, ?controlValue, ?field, ?baseHctx, ?baseVal) :-
+  FieldBindView(?field, ?controlValue, ?controlType, ?ctx, ?hctx),
+  !Field_Modifier("static", ?field),
+  Method_DeclaringType(?method, ?controlType),
+  ThisVar(?method, ?this),
+  VarPointsTo(?baseHctx, ?baseVal, ?ctx, ?this).
+
+// @BindView points-to for static fields.
+StaticFieldPointsTo(?hctx, ?controlValue, ?field) :-
+  FieldBindView(?field, ?controlValue, _, _, ?hctx),
+  Field_Modifier("static", ?field).
+
+#endif // DISABLE_POINTS_TO
+
+/***************************************************
+ * Callback methods
+ ***************************************************/
+
+CallbackMethod(?method),
+LayoutControl_CallbackMethod(?controlId, ?method) :-
+  Method_Annotation(?method, ?annot),
+  ( ?annot = "butterknife.OnCheckedChanged"
+  ; ?annot = "butterknife.OnClick"
+  ; ?annot = "butterknife.OnEditorAction"
+  ; ?annot = "butterknife.OnFocusChange"
+  ; ?annot = "butterknife.OnItemClick"
+  ; ?annot = "butterknife.OnItemLongClick"
+  ; ?annot = "butterknife.OnItemSelected"
+  ; ?annot = "butterknife.OnLongClick"
+  ; ?annot = "butterknife.OnPageChange"
+  ; ?annot = "butterknife.OnTextChanged"
+  ; ?annot = "butterknife.OnTouch"
+  ),
+  AnnotationElement("method", ?method, _, _, "value", ?controlId, _).

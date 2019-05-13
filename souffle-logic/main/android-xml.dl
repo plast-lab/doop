@@ -105,8 +105,12 @@ Activity_Alias(?activity, ?alias) :-
   XMLNodeAttribute(?manifest, ?activityId, _, _, "android:targetActivity", ?activity).
 
 // Detect onClick handlers.
-CallbackMethod(?id) :-
-  XMLNodeAttribute(_, _, _, _, "android:onClick", ?id).
+CallbackMethod(?method) :-
+  XMLNodeAttribute(_, _, _, _, "android:onClick", ?method).
+.decl LayoutControl_CallbackMethod(?controlId:symbol, ?method:symbol)
+LayoutControl_CallbackMethod(?controlId, ?method) :-
+  XMLNodeAttribute(?file, ?nodeId, _, _, "android:onClick", ?method),
+  XMLNode_Id(?file, ?nodeId, _, ?controlId).
 
 // This should match the constant in the XML fact generator.
 #define ROOT_NODE "-1"
