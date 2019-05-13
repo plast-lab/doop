@@ -313,12 +313,11 @@ ListenerClassConstantValue(?classHeap, ?type) :-
   // or: ReifiedClass(?type, ?classHeap),  // needs reflection enabled!
   AndroidApplicationListenerClass(?type).
 
-#define MOCK_LISTENER(t) cat("<mock android listener-like object ", cat(?type, ">"))
-
-ApplicationObjectFlowingToLibrary(?hctx, MOCK_LISTENER(?type), ?type),
-MockValueConsMacro(MOCK_LISTENER(?type), ?type) :-
+ApplicationObjectFlowingToLibrary(?hctx, ?mockListener, ?type),
+MockValueConsMacro(?mockListener, ?type) :-
   ListenerClassConstantValue(?classHeap, ?type),
-  ReachableValue(?hctx, ?classHeap).
+  ReachableValue(?hctx, ?classHeap),
+  ?mockListener = cat("<mock android listener-like object ", cat(?type, ">")).
 
 TypeHasApplicationObjectFlowingToLibrary(?type),
 LibraryReachableAppListenerType(?type) :-
