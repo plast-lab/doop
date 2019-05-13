@@ -677,10 +677,14 @@ ViewRetrievalByArg0MethodInvocation(?invo) :-
 // Support fragment retrieval by id (similar to rule about view retrieval).
 FragmentRetrievalByArg0MethodInvocation(?invo) :-
   Method_SimpleName(?method, "findFragmentById"),
-  (?retType = "android.app.Fragment";
-   ?retType = "android.support.v4.app.Fragment"),
+  Method_Arity(?method, 1),
+  ( ?retSuperType = "android.app.Fragment"
+  ; ?retSuperType = "androidx.fragment.app.Fragment"
+  ; ?retSuperType = "android.support.v4.app.Fragment"
+  ),
+  isType(?retSuperType),
   Method_ReturnType(?method, ?retType),
-  isType(?retType),
+  basic.SubtypeOf(?retType, ?retSuperType),
   MethodInvocation_Method(?invo, ?method).
 
 // The variables holding the layout control id and the retrieved
