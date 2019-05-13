@@ -23,7 +23,9 @@
 .output BroadcastReceiver
 .output ContentProvider
 .output Service
-.output mainAnalysis.LauncherActivity
 .output LayoutControl
+.output mainAnalysis.Fragment_Class
+.output mainAnalysis.Fragment_Id
+.output mainAnalysis.LauncherActivity
 .output mainAnalysis.XMLNode_Parent
 #endif // ANDROID

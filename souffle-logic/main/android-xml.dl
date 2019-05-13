@@ -137,8 +137,8 @@ XMLNode_Parent(?file, ?nodeId, ?originFile, ?parentNodeId) :-
   XMLNode(?file, ?nodeId, _, _, _, _),
   contains(?xml, ?file).
 
-.decl XMLLayoutControl(?file:symbol, ?nodeId:symbol, ?name:symbol, ?value:symbol)
-XMLLayoutControl(?file, ?nodeId, ?name, ?id) :-
+.decl XMLNode_Id(?file:symbol, ?nodeId:symbol, ?name:symbol, ?value:symbol)
+XMLNode_Id(?file, ?nodeId, ?name, ?id) :-
   XMLNode(?file, ?nodeId, _, _, _, ?name),
   AndroidId(?file, ?nodeId, _, _, ?label),
   Field_SimpleName(?field, ?label),
@@ -146,26 +146,26 @@ XMLLayoutControl(?file, ?nodeId, ?name, ?id) :-
 
 // Detect layout controls.
 LayoutControl0(?id, ?name, ?parentId) :-
-  XMLLayoutControl(?file, ?nodeId, ?name, ?id),
+  XMLNode_Id(?file, ?nodeId, ?name, ?id),
   XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
-  XMLLayoutControl(?parentFile, ?parentNodeId, _, ?parentId).
+  XMLNode_Id(?parentFile, ?parentNodeId, _, ?parentId).
 
 // Handle layout controls where the parent is missing (or is not a layout control).
 LayoutControl0(?id, ?name, "-") :-
-  XMLLayoutControl(?file, ?nodeId, ?name, ?id),
+  XMLNode_Id(?file, ?nodeId, ?name, ?id),
   !XMLNode_Parent(?file, ?nodeId, _, _).
 LayoutControl0(?id, ?name, "-") :-
-  XMLLayoutControl(?file, ?nodeId, ?name, ?id),
+  XMLNode_Id(?file, ?nodeId, ?name, ?id),
   XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
-  !XMLLayoutControl(?parentFile, ?parentNodeId, _, _).
+  !XMLNode_Id(?parentFile, ?parentNodeId, _, _).
 
 // Detect sensitive layout controls.
 SensitiveLayoutControl0(?id, ?type, ?parent) :-
-  XMLLayoutControl(?file, ?nodeId, ?type, ?id),
+  XMLNode_Id(?file, ?nodeId, ?type, ?id),
   XMLNodeAttribute(?file, ?nodeId, _, _, "android:password", "true"),
   LayoutControl0(?id, ?type, ?parent).
 SensitiveLayoutControl0(?id, ?type, ?parent) :-
-  XMLLayoutControl(?file, ?nodeId, ?type, ?id),
+  XMLNode_Id(?file, ?nodeId, ?type, ?id),
   XMLNodeAttribute(?file, ?nodeId, _, _, "android:inputType", ?inputType),
   ( ?inputType = "textPassword"
   ; ?inputType = "textVisiblePassword"
@@ -186,4 +186,13 @@ LauncherActivity(?qType) :-
   XMLNode(?manifest, ?categoryId, ?intentFilterId, _, _, "category"),
   XMLNodeAttribute(?manifest, ?categoryId, _, _, "android:name", "android.intent.category.LAUNCHER"),
   APP_QUALIFIED_TYPE(?type, ?qType).
-  
+
+// Detect fragments. XML pattern: <fragment android:id="@id/fragment" class="Fragment">
+.decl Fragment_Class(?file:symbol, ?nodeId:symbol, ?qClass:ClassType)
+Fragment_Class(?file, ?nodeId, ?qClass) :-
+  XMLNode(?file, ?nodeId, _, _, _, "fragment"),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "class", ?class),
+  APP_QUALIFIED_TYPE(?class, ?qClass).
+.decl Fragment_Id(?file:symbol, ?nodeId:symbol, ?id:symbol)
+Fragment_Id(?file, ?nodeId, ?id) :-
+  XMLNode_Id(?file, ?nodeId, "fragment", ?id).

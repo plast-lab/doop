@@ -194,6 +194,13 @@ class TestUtils {
 				   [file2, 2, MatchMode.SUFFIX], [nodeId2, 3, MatchMode.EXACT]])
 	}
 
+	static void isFragment(Analysis analysis, String file, String nodeId, String type, String id) {
+		findTuple(analysis, 'mainAnalysis.Fragment_Class',
+				  [[file, 0, MatchMode.SUFFIX], [nodeId, 1, MatchMode.EXACT], [type, 2, MatchMode.EXACT]])
+		findTuple(analysis, 'mainAnalysis.Fragment_Id',
+				  [[file, 0, MatchMode.SUFFIX], [nodeId, 1, MatchMode.EXACT], [id, 2, MatchMode.EXACT]])
+	}
+
 	static void findPair(Analysis analysis, String relation,
 						 String s1, int idx1, String s2, int idx2) {
 		boolean found = false

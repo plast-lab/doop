@@ -91,6 +91,8 @@ class AndroidTests extends DoopBenchmark {
 		then:
 		// Test XML logic for <include> + <merge>.
 		xmlParent(analysis, 'res/layout/abc_screen_content_include.xml', '2', 'res/layout/abc_screen_simple_overlay_action_mode.xml', '1')
+		// Test fragment detection.
+		isFragment(analysis, 'res/layout/sliding_music_panel_layout.xml', '5', 'com.kabouzeid.gramophone.ui.fragments.player.MiniPlayerFragment', '2131296569')
 		// Test analysis sanity.
 		noSanityErrors(analysis, false)
 	}
