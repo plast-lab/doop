@@ -17,7 +17,9 @@
 
 .decl VarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
 
+#ifndef DISABLE_POINTS_TO
 .decl InstanceFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)
+#endif // DISABLE_POINTS_TO
 
 .decl StaticFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field)
 

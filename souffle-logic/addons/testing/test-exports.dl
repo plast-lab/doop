@@ -1,9 +1,11 @@
 // Extra logic included by some tests.
 
+#ifndef DISABLE_POINTS_TO
 .output mainAnalysis.ArrayIndexPointsTo
 .output mainAnalysis.InstanceFieldPointsTo
 .output mainAnalysis.StaticFieldPointsTo
 .output mainAnalysis.VarPointsTo
+#endif // DISABLE_POINTS_TO
 .output mainAnalysis.MethodHandleCallGraphEdge
 .output mainAnalysis.LambdaObject
 .output mainAnalysis.LambdaCallGraphEdge

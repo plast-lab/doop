@@ -555,7 +555,7 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 ReachableValue(?hctx, ?value) :-
   ReifiedAndroidObjectValue(?value, _),
   isImmutableHContext(?hctx).
-#endif
+#endif // DISABLE_POINTS_TO
 
 // Link the two concepts: if an object is a ReifiedAndroidObjectValue,
 // make its constructors ForcedReachable.

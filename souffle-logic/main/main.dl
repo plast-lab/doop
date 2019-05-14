@@ -13,7 +13,9 @@
 #include "android.dl"
 #endif // ANDROID
 
+#ifndef DISABLE_POINTS_TO
 #include "string-concat.dl"
+#endif // DISABLE_POINTS_TO
 #include "exceptions.dl"
 #include "method-handles.dl"
 

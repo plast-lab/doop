@@ -684,6 +684,7 @@ InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?callerCtx) :-
   isBootstrapMethodContext(?calleeCtx),
   VarPointsTo(_, ?callsite, ?calleeCtx, ?bootRetVar).
 
+#ifndef DISABLE_POINTS_TO
 // Interpret CallSite contents.
 .decl CallSiteContents(?invokedynamic:DynamicMethodInvocation_Insn, ?methodHandle:MethodHandle, ?method:Method, ?mt:MethodType, ?ctx:configuration.Context)
 CallSiteContents(?invokedynamic, ?methodHandle, ?method, ?mt, ?ctx) :-
@@ -736,6 +737,7 @@ MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, 
 
 ReachableContext(?calleeCtx, ?callee) :-
   MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?callee, _, _).
+#endif // DISABLE_POINTS_TO
 
 /*************************************************************
  * Lambda-specific invokedynamic
