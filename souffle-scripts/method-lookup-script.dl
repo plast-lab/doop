@@ -9,6 +9,8 @@
 .output MethodOverridesOther
 .output Class_InterestingSubtype
 
+.output SubtypeOf
+
 .decl MethodLookupExt(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method, ?isSingleDispatch:number)
 .output MethodLookupExt
 
