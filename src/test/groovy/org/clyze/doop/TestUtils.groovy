@@ -195,9 +195,9 @@ class TestUtils {
 	}
 
 	static void isFragment(Analysis analysis, String file, String nodeId, String type, String id) {
-		findTuple(analysis, 'mainAnalysis.Fragment_Class',
+		findTuple(analysis, 'mainAnalysis.XMLFragment_Class',
 				  [[file, 0, MatchMode.SUFFIX], [nodeId, 1, MatchMode.EXACT], [type, 2, MatchMode.EXACT]])
-		findTuple(analysis, 'mainAnalysis.Fragment_Id',
+		findTuple(analysis, 'mainAnalysis.XMLFragment_Id',
 				  [[file, 0, MatchMode.SUFFIX], [nodeId, 1, MatchMode.EXACT], [id, 2, MatchMode.EXACT]])
 	}
 
