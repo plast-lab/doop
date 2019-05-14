@@ -48,6 +48,7 @@ Stats_Simple_Application_ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue
  * Fields
  ***************************************************/
 
+#ifndef DISABLE_POINTS_TO
 Stats_Simple_InsensInstanceFieldPointsTo(?value, ?sig, ?basevalue) :-
   mainAnalysis.InstanceFieldPointsTo(_, ?value, ?sig, _, ?basevalue).
 
@@ -59,6 +60,7 @@ Stats_Simple_Application_InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?
   ApplicationMethod(?meth),
   mainAnalysis.AssignNormalHeapAllocation(?basevalue, _, ?meth),
   mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue).
+#endif // DISABLE_POINTS_TO
 
 /***************************************************
  * Call graph edges
@@ -193,12 +195,18 @@ NewMetricMacro( "2.5", "array index points-to (SENS)", mainAnalysis.ArrayIndexPo
 NewMetricMacro( "6.0", "app array index points-to (INS)", Stats_Simple_Application_InsensArrayIndexPointsTo(_, _)).
 NewMetricMacro( "6.5", "app array index points-to (SENS)", Stats_Simple_Application_ArrayIndexPointsTo(_, _, _, _)).
 
+#ifndef DISABLE_POINTS_TO
 NewMetricMacro( "3.0", "instance field points-to (INS)", Stats_Simple_InsensInstanceFieldPointsTo(_, _, _)).
 NewMetricMacro( "3.5", "instance field points-to (SENS)", mainAnalysis.InstanceFieldPointsTo(_, _, _, _, _)).
+#endif // DISABLE_POINTS_TO
+
 NewMetricMacro( "4.0", "static field points-to (INS)", Stats_Simple_InsensStaticFieldPointsTo(_, _)).
 NewMetricMacro( "4.5", "static field points-to (SENS)", mainAnalysis.StaticFieldPointsTo(_, _, _)).
+
+#ifndef DISABLE_POINTS_TO
 NewMetricMacro( "7.0", "app instance field points-to (INS)", Stats_Simple_Application_InsensInstanceFieldPointsTo(_, _, _)).
 NewMetricMacro( "7.5", "app instance field points-to (SENS)", Stats_Simple_Application_InstanceFieldPointsTo(_, _, _, _, _)).
+#endif // DISABLE_POINTS_TO
 
 NewMetricMacro( "8.0", "call graph edges (INS)", Stats_Simple_InsensCallGraphEdge(_, _)).
 NewMetricMacro( "8.5", "call graph edges (SENS)", mainAnalysis.CallGraphEdge(_, _, _, _)).
@@ -258,10 +266,12 @@ Stats_Simple_Reflection_VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   mainAnalysis.ReflectiveValue(?value),
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
+#ifndef DISABLE_POINTS_TO
 Stats_Simple_Reflection_InsensInstanceFieldPointsTo(?value, ?sig, ?basevalue),
 Stats_Simple_Reflection_InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue) :-
   mainAnalysis.ReflectiveValue(?value),
   mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue).
+#endif // DISABLE_POINTS_TO
 
 Stats_Simple_forName(?invocation) :-
   mainAnalysis.java_lang_Class_forName(?invocation, ?inmethod),
@@ -281,8 +291,12 @@ NewMetricMacro("30.0", "var points-to (to a reflective value) (INS)", Stats_Simp
 NewMetricMacro("30.5", "var points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_VarPointsTo(_, _, _, _)).
 NewMetricMacro("31.0", "array index points-to (to a reflective value) (INS)", Stats_Simple_Reflection_InsensArrayIndexPointsTo(_, _)).
 NewMetricMacro("31.5", "array index points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_ArrayIndexPointsTo(_, _, _, _)).
+
+#ifndef DISABLE_POINTS_TO
 NewMetricMacro("32.0", "instance field points-to (to a reflective value) (INS)", Stats_Simple_Reflection_InsensInstanceFieldPointsTo(_, _, _)).
 NewMetricMacro("32.5", "instance field points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_InstanceFieldPointsTo(_, _, _, _, _)).
+#endif // DISABLE_POINTS_TO
+
 NewMetricMacro("35.0", "reachable 'forName' (INS)", Stats_Simple_forName(_)).
 NewMetricMacro("36.0", "reachable 'Class.newInstance' (INS)", Stats_Simple_Class_newInstance(_)).
 NewMetricMacro("37.0", "reachable 'Constructor.newInstance' (INS)", Stats_Simple_Constructor_newInstance(_)).
