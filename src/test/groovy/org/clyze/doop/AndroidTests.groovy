@@ -98,6 +98,8 @@ class AndroidTests extends DoopBenchmark {
 		methodIsReachable(analysis, '<androidx.core.app.CoreComponentFactory: android.app.Application instantiateApplication(java.lang.ClassLoader,java.lang.String)>')
 		// Test fragment detection.
 		isFragment(analysis, 'res/layout/sliding_music_panel_layout.xml', '5', 'com.kabouzeid.gramophone.ui.fragments.player.MiniPlayerFragment', '2131296569')
+		methodIsReachable(analysis, '<com.kabouzeid.gramophone.ui.fragments.player.MiniPlayerFragment: void <init>()>')
+		methodIsReachable(analysis, '<com.kabouzeid.gramophone.ui.fragments.player.MiniPlayerFragment: void onPause()>')
 		// Test analysis sanity.
 		noSanityErrors(analysis, false)
 	}

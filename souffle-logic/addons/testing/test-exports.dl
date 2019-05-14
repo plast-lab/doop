@@ -26,8 +26,8 @@
 .output ContentProvider
 .output Service
 .output LayoutControl
-.output mainAnalysis.Fragment_Class
-.output mainAnalysis.Fragment_Id
 .output mainAnalysis.LauncherActivity
+.output mainAnalysis.XMLFragment_Class
+.output mainAnalysis.XMLFragment_Id
 .output mainAnalysis.XMLNode_Parent
 #endif // ANDROID

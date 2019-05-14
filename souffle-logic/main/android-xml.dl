@@ -192,11 +192,21 @@ LauncherActivity(?qType) :-
   APP_QUALIFIED_TYPE(?type, ?qType).
 
 // Detect fragments. XML pattern: <fragment android:id="@id/fragment" class="Fragment">
-.decl Fragment_Class(?file:symbol, ?nodeId:symbol, ?qClass:ClassType)
-Fragment_Class(?file, ?nodeId, ?qClass) :-
+.decl XMLFragment_Class(?file:symbol, ?nodeId:symbol, ?qClass:ClassType)
+XMLFragment_Class(?file, ?nodeId, ?qClass) :-
   XMLNode(?file, ?nodeId, _, _, _, "fragment"),
   XMLNodeAttribute(?file, ?nodeId, _, _, "class", ?class),
   APP_QUALIFIED_TYPE(?class, ?qClass).
-.decl Fragment_Id(?file:symbol, ?nodeId:symbol, ?id:symbol)
-Fragment_Id(?file, ?nodeId, ?id) :-
+.decl XMLFragment_Id(?file:symbol, ?nodeId:symbol, ?id:symbol)
+XMLFragment_Id(?file, ?nodeId, ?id) :-
   XMLNode_Id(?file, ?nodeId, "fragment", ?id).
+
+#ifdef DISABLE_POINTS_TO
+// Crude rule for disabled points-to: make all detected fragment constructors
+// and callbacks reachable.
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  XMLFragment_Class(_, _, ?class),
+  Method_DeclaringType(?method, ?class),
+  (Method_SimpleName(?method, "<init>") ; _OnEventMethod(?method)),
+  isImmutableContext(?ctx).
+#endif // DISABLE_POINTS_TO
