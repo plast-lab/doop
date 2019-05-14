@@ -445,10 +445,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.X_SERVER_LOGIC.value) {
-			// If server mode is enabled, don't produce statistics.
-			options.X_STATS_FULL.value = false
-			options.X_STATS_DEFAULT.value = false
-			options.X_STATS_NONE.value = true
 			// Turn on optimization outputs.
 			if (!(options.GENERATE_OPTIMIZATION_DIRECTIVES.value)) {
 				println "Server logic enabled, turning on optimization directives"
