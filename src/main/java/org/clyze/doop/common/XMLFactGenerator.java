@@ -171,6 +171,8 @@ public class XMLFactGenerator extends DefaultHandler {
                 if (value.startsWith(prefix)) {
                     db.add(ANDROID_ID, file, sNodeId, value, prefix, value.substring(prefix.length()));
                     handled = true;
+                } else if (value.startsWith("@+id/")) {
+                    System.err.println("Warning: non-constant id found in: " + value);
                 }
             if (!handled) {
                 System.err.println("Warning: could not process android id: " + value);
