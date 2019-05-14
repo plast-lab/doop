@@ -204,9 +204,5 @@ XMLFragment_Id(?file, ?nodeId, ?id) :-
 #ifdef DISABLE_POINTS_TO
 // Crude rule for disabled points-to: make all detected fragment constructors
 // and callbacks reachable.
-ForcedReachableAndroidContext(?ctx, ?method) :-
-  XMLFragment_Class(_, _, ?class),
-  Method_DeclaringType(?method, ?class),
-  (Method_SimpleName(?method, "<init>") ; _OnEventMethod(?method)),
-  isImmutableContext(?ctx).
+ReachableLayoutControl(?class) :- XMLFragment_Class(_, _, ?class).
 #endif // DISABLE_POINTS_TO
