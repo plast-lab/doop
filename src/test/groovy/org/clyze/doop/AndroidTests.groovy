@@ -84,7 +84,7 @@ class AndroidTests extends DoopBenchmark {
 					 "--gen-opt-directives", "--decode-apk",
 					 "--thorough-fact-gen", "--sanity", "--Xstats-full",
 					 "--scan-native-code", "--simulate-native-returns",
-					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
+					 "--generate-jimple", "--Xstats-full"]
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
