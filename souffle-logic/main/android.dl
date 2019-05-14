@@ -325,11 +325,6 @@ LibraryReachableAppListenerType(?type) :-
   TypeHasReachableValue(?type).
 
 
-// Just for debugging
-.output ApplicationObjectFlowingToLibrary
-.output AndroidApplicationListenerClass
-.output AppMethodOverridesAndroidLibraryMethod
-
 //// More precise logic.
 //// Currently this is too conservative. We need to model more of
 //// the environment, such as "getActivity", "getSystemService", for
@@ -470,9 +465,6 @@ ReifiedAndroidObjectValue(?value, ?concreteType) :-
   ?value = cat("<android inferred object of type ", cat(?concreteType, ">")).
 // REVIEW: Just one globally? No invo?
 
-// Just for debugging
-.output ReifiedAndroidObjectValue
-
 
 /**
  * HACK for Runnable modeling. There are thread APIs we don't fully model,
@@ -500,8 +492,6 @@ WebClientType(?type):-
    ?supertype = "android.webkit.WebChromeClient").
 
 .decl _ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)
-// Just for debugging
-.output _ForcedReachableFromJavascriptContext
 
 _ForcedReachableFromJavascriptContext(?ctx, ?meth),
 ForcedReachableAndroidContext(?ctx, ?meth) :-
@@ -522,8 +512,7 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 //  Var_Type(?formal, ?formalType).
 
 .decl ArgToAddJavascriptInterface(?var:Var)
-// Just for debugging
-.output ArgToAddJavascriptInterface
+
 ArgToAddJavascriptInterface(?var) :-
   Method_SimpleName(?addjsmethod, "addJavascriptInterface"),
   Method_DeclaringType(?addjsmethod, "android.webkit.WebView"),
