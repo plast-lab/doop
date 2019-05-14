@@ -94,6 +94,8 @@ class AndroidTests extends DoopBenchmark {
 		methodIsReachable(analysis, '<com.kabouzeid.gramophone.ui.activities.base.AbsSlidingMusicPanelActivity: void <init>()>')
 		// Test XML logic for <include> + <merge>.
 		xmlParent(analysis, 'res/layout/abc_screen_content_include.xml', '2', 'res/layout/abc_screen_simple_overlay_action_mode.xml', '1')
+		// Test XML logic for attribute "android:appComponentFactory".
+		methodIsReachable(analysis, '<androidx.core.app.CoreComponentFactory: android.app.Application instantiateApplication(java.lang.ClassLoader,java.lang.String)>')
 		// Test fragment detection.
 		isFragment(analysis, 'res/layout/sliding_music_panel_layout.xml', '5', 'com.kabouzeid.gramophone.ui.fragments.player.MiniPlayerFragment', '2131296569')
 		// Test analysis sanity.
