@@ -83,7 +83,7 @@ dependencies {
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             "net.dongliu:apk-parser:2.6.2",                     // needed for reading binary XML entries from APK inputs
             "com.google.guava:guava:27.0-jre",
-            // "ext:apktool:2.3.3",                                // needed for decoding APK inputs (optional)
+            "ext:apktool:2.3.4",                                // needed for decoding APK inputs
 
             // Soot - choose one of the following:
             // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.

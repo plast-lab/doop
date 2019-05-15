@@ -217,7 +217,6 @@ public abstract class AndroidSupport {
         if (new File(decodeDir).mkdirs())
             System.out.println("Created " + decodeDir);
 
-        String apktoolHome = System.getenv(APKTOOL_HOME_ENV_VAR);
         String apkPath;
         String[] cmdArgs;
         try {
@@ -232,23 +231,10 @@ public abstract class AndroidSupport {
         }
 
         System.out.println("Decoding " + apkPath + " using apktool...");
-        if (apktoolHome == null || (!(new File(apktoolHome)).exists())) {
-            System.err.println("Invalid environment variable: " + APKTOOL_HOME_ENV_VAR + "=" + apktoolHome + ", using default apktool...");
-            try {
-                Class.forName("brut.apktool.Main").getDeclaredMethod("main").invoke(cmdArgs);
-            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-                System.err.println("Error: could not find default apktool.");
-            }
-        } else {
-            String[] cmd = new String[cmdArgs.length + 1];
-            cmd[0] = apktoolHome + File.separator + "apktool";
-            System.arraycopy(cmdArgs, 0, cmd, 1, cmdArgs.length);
-            System.out.println("Command: " + String.join(" ", cmd));
-            try {
-                JHelper.runWithOutput(cmd, "APKTOOL");
-            } catch (IOException ex) {
-                System.err.println("Error: could not run apktool (" + APKTOOL_HOME_ENV_VAR + " = " + apktoolHome + ").");
-            }
+        try {
+            brut.apktool.Main.main(cmdArgs);
+        } catch (Exception ex) {
+            System.err.println("Error: could not run apktool.");
         }
     }
 
