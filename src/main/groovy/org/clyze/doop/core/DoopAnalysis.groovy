@@ -479,7 +479,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 // leaks, not only for soot but for all other Java-based tools,
                 // like jphantom.  In such a case, we should invoke all
                 // Java-based tools using a separate process.
-                ClassLoader loader = sootClassLoader()
+                ClassLoader loader = JHelper.copyOfCurrentClasspath(log, this)
                 try {
                     redo = false
                     Helper.execJavaNoCatch(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
@@ -670,8 +670,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
         log.debug "Params of jphantom: ${params.join(' ')}"
 
-        //we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
-        ClassLoader loader = phantomClassLoader()
+        // We invoke the main method reflectively to avoid adding jphantom as a compile-time dependency.
+        ClassLoader loader = JHelper.copyOfCurrentClasspath(log, this)
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
@@ -689,16 +689,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }.sort()
         return (inputs + cacheOptions).join("\n")
     }
-
-    /**
-     * Creates a new class loader for running jphantom
-     */
-    protected ClassLoader phantomClassLoader() { JHelper.copyOfCurrentClasspath(log, this) }
-
-    /**
-     * Creates a new class loader for running soot
-     */
-    protected ClassLoader sootClassLoader() { JHelper.copyOfCurrentClasspath(log, this) }
 
     protected void runHeapDL(List<String> filenames) {
 
