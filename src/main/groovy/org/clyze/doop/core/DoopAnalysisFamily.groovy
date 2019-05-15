@@ -32,7 +32,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	@Override
 	Map<String, AnalysisOption> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
 
-	public AnalysisOption getOptionByName(String n) {
+	AnalysisOption getOptionByName(String n) {
 		SUPPORTED_OPTIONS.find { it.name == n }
 	}
 
@@ -979,7 +979,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		def analyses = []
 		new File(path).eachDir { File dir ->
 			def f = new File(dir, fileToLookFor)
-			if (f.exists() && f.isFile()) analyses << dir.name
+			if (f.exists() && f.file) analyses << dir.name
 		}
 		analyses.sort()
 	}

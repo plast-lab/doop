@@ -437,7 +437,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 	static TerminalNode getLastToken(ParserRuleContext ctx) {
 		TerminalNode last = null
-		for (def i = 0; i < ctx.getChildCount(); i++)
+		for (def i = 0; i < ctx.childCount; i++)
 			if (ctx.getChild(i) instanceof TerminalNode)
 				last = ctx.getChild(i) as TerminalNode
 		return last

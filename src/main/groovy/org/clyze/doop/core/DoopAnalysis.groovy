@@ -535,7 +535,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     Object getThrowableField(ClassLoader loader, Throwable t, String className, String fieldName) {
         if (t instanceof InvocationTargetException) {
-            Throwable cause = ((InvocationTargetException)t).getTargetException() as Throwable
+            Throwable cause = ((InvocationTargetException) t).targetException as Throwable
             if (cause.getClass().getName() == className) {
                 Field classesFld = loader.loadClass(className).getDeclaredField(fieldName)
                 classesFld.setAccessible(true)

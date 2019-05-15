@@ -160,7 +160,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 	// This method may not be static, see [Note] above.
 	private String getOutputDirectory(Map<String, AnalysisOption> options) {
-		return "${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}";
+		return "${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}"
 	}
 
 	// This method may not be static, see [Note] above.

@@ -298,7 +298,7 @@ class SouffleScript {
 				String libName = "libfunctors.so"
 				try {
 					Path target = FileSystems.default.getPath(libfunctors)
-					Path link = FileSystems.default.getPath(outDir.getAbsolutePath() + File.separator + libName)
+					Path link = FileSystems.default.getPath(outDir.absolutePath + File.separator + libName)
 					Files.createSymbolicLink(link, target)
 					log.debug "Created symbolic link: ${link} -> ${target}"
 				} catch (UnsupportedOperationException ignored) {
