@@ -11,19 +11,24 @@ import static org.clyze.doop.TestUtils.*
  */
 class AndroidTests extends DoopBenchmark {
 
+	static List defaultArgs = [
+		"--timeout", "30",
+		"--Xserver-logic", "--gen-opt-directives",
+		"--decode-apk", "--generate-jimple",
+		"--thorough-fact-gen", "--sanity"
+	]
+
 	// @spock.lang.Ignore
 	@Unroll
 	def "Basic Android analysis test"() {
 		when:
 		List args = ["-i", Artifacts.ANDROIDTERM_APK,
-					 "-a", "context-insensitive", "--Xserver-logic",
+					 "-a", "context-insensitive",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--gen-opt-directives", "--decode-apk",
-					 "--thorough-fact-gen", "--sanity",
 					 "--scan-native-code",
-					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
+					 "--Xstats-full", "-Ldebug"] + defaultArgs
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
@@ -40,14 +45,12 @@ class AndroidTests extends DoopBenchmark {
 	def "Types-only Android analysis test (androidterm)"() {
 		when:
 		List args = ["-i", Artifacts.ANDROIDTERM_APK,
-					 "-a", "types-only", "--Xserver-logic",
+					 "-a", "types-only",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm-types-only",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--gen-opt-directives", "--decode-apk",
-					 "--thorough-fact-gen", "--sanity",
 					 "--scan-native-code", "--simulate-native-returns",
-					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
+					 "--Xstats-full", "-Ldebug"] + defaultArgs
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
@@ -77,14 +80,11 @@ class AndroidTests extends DoopBenchmark {
 	def "Types-only Android analysis test (Phonograph)"() {
 		when:
 		List args = ["-i", Artifacts.PHONOGRAPH_APK,
-					 "-a", "types-only", "--Xserver-logic",
+					 "-a", "types-only",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-phonograph-types-only",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--gen-opt-directives", "--decode-apk",
-					 "--thorough-fact-gen", "--sanity",
-					 "--scan-native-code", "--simulate-native-returns",
-					 "--generate-jimple", "--Xstats-full"]
+					 "--scan-native-code", "--simulate-native-returns"] + defaultArgs
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
@@ -109,14 +109,12 @@ class AndroidTests extends DoopBenchmark {
 	def "Types-only Android analysis test (Signal)"() {
 		when:
 		List args = ["-i", Artifacts.SIGNAL_APK,
-					 "-a", "types-only", "--Xserver-logic",
+					 "-a", "types-only",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-signal-types-only",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--gen-opt-directives", "--decode-apk",
-					 "--thorough-fact-gen", "--sanity",
 					 "--scan-native-code", "--simulate-native-returns",
-					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
+					 "--Xstats-full", "-Ldebug"] + defaultArgs
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
@@ -164,7 +162,7 @@ class AndroidTests extends DoopBenchmark {
 					 "--id", "test-android-androidterm-fw-heapdl",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 					 "--thorough-fact-gen", "--sanity",
-					 "--decode-apk", "--generate-jimple", "--Xstats-full", "-Ldebug"]
+					 "--Xstats-full", "-Ldebug"] + defaultArgs
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
