@@ -96,7 +96,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		options.USER_SUPPLIED_ID.value = id ? validateUserSuppliedId(id) : generateId(options)
 
 		checkAnalysis(options)
-		if (options.LB3.value) checkLogicBlox(options)
+		if (options.LB3.value) {
+			checkLogicBlox(options)
+			log.info "WARNING: Using legacy Android processing."
+			options.LEGACY_ANDROID_PROCESSING.value = true
+		}
 
 		options.CONFIGURATION.value = availableConfigurations.get(options.ANALYSIS.value)
 
