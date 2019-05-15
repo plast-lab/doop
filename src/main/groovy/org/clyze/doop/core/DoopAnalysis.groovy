@@ -14,6 +14,7 @@ import org.clyze.doop.common.FrontEnd
 import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
+import org.clyze.doop.util.ClassPathHelper
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
@@ -479,7 +480,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 // leaks, not only for soot but for all other Java-based tools,
                 // like jphantom.  In such a case, we should invoke all
                 // Java-based tools using a separate process.
-                ClassLoader loader = JHelper.copyOfCurrentClasspath(log, this)
+                ClassLoader loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
                 try {
                     redo = false
                     Helper.execJavaNoCatch(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
@@ -671,7 +672,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of jphantom: ${params.join(' ')}"
 
         // We invoke the main method reflectively to avoid adding jphantom as a compile-time dependency.
-        ClassLoader loader = JHelper.copyOfCurrentClasspath(log, this)
+        ClassLoader loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
