@@ -16,7 +16,6 @@ For trouble-free configuration:
 * The `DOOP_CACHE` environment variable could point to the cached facts directory (optional, defaults to `cache`).
 * The `DOOP_LOG` environment variable could point to a log output directory (optional, defaults to `build/logs`).
 * The `LOGICBLOX_HOME` environment variable should point to the `logicblox` directory of the engine, if you want to use LogicBlox.
-* The `APKTOOL_HOME` environment variable should point to the location of Apktool, if option `--decode-apk` is to be used for Android apps.
 
 There is currently no mailing list, but there is an alias for support questions: doop-support@googlegroups.com
 

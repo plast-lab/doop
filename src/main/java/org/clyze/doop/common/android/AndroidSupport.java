@@ -18,8 +18,6 @@ import org.clyze.utils.JHelper;
 
 public abstract class AndroidSupport {
 
-    private static final String APKTOOL_HOME_ENV_VAR = "APKTOOL_HOME";
-
     protected final Parameters parameters;
     protected final BasicJavaSupport java;
 
@@ -206,9 +204,7 @@ public abstract class AndroidSupport {
     }
 
     /**
-     * Decode an APK input using apktool. The tool may either be found
-     * in environment variable (see constant APKTOOL_HOME_ENV_VAR) or
-     * a default version of apktool may be provided as a build dependency.
+     * Decode an APK input using apktool.
      *
      * @param apk                        the APK
      * @param decodeDir                  the target directory to use as root
