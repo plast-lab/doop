@@ -116,6 +116,7 @@ public class AppResourcesXML implements AppResources {
     public Set<String> getProviders()  { return providers;       }
     public Set<String> getReceivers()  { return receivers;       }
 
+    @SuppressWarnings("CatchMayIgnoreException")
     private InputStream getLayout(String entry) {
         try {
             return getXML(entry);

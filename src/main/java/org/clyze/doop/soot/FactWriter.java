@@ -101,10 +101,11 @@ class FactWriter extends JavaFactWriter {
      * Write an annotation element. Annotation elements may be nested, so we
      * have to generate facts that describe their structure as well.
      *
-     * @param target    the language construct that is annotated (e.g., "method")
-     * @param parentId  the ID of the parent of the annotation (or "0" for root)
-     * @param id        the annotation ID (e.g., an index to distinguish from siblings)
-     * @param ae        the annotation element
+     * @param targetType  the type of the language construct that is annotated (e.g., "method")
+     * @param target      the language construct that is annotated
+     * @param parentId    the ID of the parent of the annotation (or "0" for root)
+     * @param thisId      the annotation ID (e.g., an index to distinguish from siblings)
+     * @param ae          the annotation element
      */
     private void writeAnnotationElement(String targetType, String target, String parentId, String thisId, AnnotationElem ae) {
         if (ae instanceof AnnotationArrayElem) {

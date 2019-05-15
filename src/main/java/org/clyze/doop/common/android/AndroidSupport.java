@@ -2,7 +2,6 @@ package org.clyze.doop.common.android;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -10,11 +9,9 @@ import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
-import org.clyze.doop.common.NativeScanner;
 import org.clyze.doop.common.Parameters;
 import org.clyze.doop.common.XMLFactGenerator;
 import org.clyze.utils.AARUtils;
-import org.clyze.utils.JHelper;
 
 public abstract class AndroidSupport {
 
