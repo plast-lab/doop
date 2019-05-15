@@ -4,6 +4,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
+import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
 
 import java.util.concurrent.Callable
@@ -43,6 +44,11 @@ class SouffleAnalysis extends DoopAnalysis {
 		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
 		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
 		if (!options.X_STOP_AT_FACTS.value) {
+			if (options.VIA_DDLOG.value) {
+				// Copy the DDlog converter, needed both for logic
+				// compilation and fact post-processing.
+				DDlog.copyDDlogConverter(log, outDir)
+			}
 			compilationFuture = executorService.submit(new Callable<File>() {
 				@Override
 				File call() {
