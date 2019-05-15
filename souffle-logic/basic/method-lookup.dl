@@ -158,13 +158,11 @@ MethodOverridesOther(?methSub, ?methSuper) :-
  *      a direct superclass of array types, something we should do
  *      anyway.
  */
-#ifndef VIA_DDLOG
 MethodLookup(?simplename, ?descriptor, ?arraytype, ?method) :-
     isArrayType(?arraytype),
     isType(?objectType),
     MethodImplemented(?simplename, ?descriptor, ?objectType, ?method),
     ?objectType = "java.lang.Object".
-#endif // VIA_DDLOG
 
 MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
     Method_SimpleName(?method, ?simplename),
