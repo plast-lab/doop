@@ -190,8 +190,9 @@ public class Main {
             db.flush();
 
             if (android != null) {
-                android.writeComponents(writer, sootParameters);
                 android.generateFactsForXML(db, outDir);
+                if (sootParameters._legacyAndroidProcessing)
+                    android.writeComponents(writer, sootParameters);
             }
 
             if (!sootParameters.noFacts()) {

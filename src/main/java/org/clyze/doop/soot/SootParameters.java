@@ -104,6 +104,7 @@ public class SootParameters extends Parameters {
             System.err.println("  -lsystem                              Find classes in default system classes");
             System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
             System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails");
+            System.err.println("  --legacy-android-processing           Enable legacy Android XML processing.");
             System.err.println("  --no-facts                            Don't generate facts (just empty files -- used for debugging)");
             System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot");
             System.err.println("  --lowMem                              Consume less memory.");

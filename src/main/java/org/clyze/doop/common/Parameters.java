@@ -31,6 +31,7 @@ public class Parameters {
     public boolean _writeArtifactsMap = false;
     public boolean _reportPhantoms = true;
     public boolean _dex = false;
+    public boolean _legacyAndroidProcessing = false;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
@@ -214,6 +215,9 @@ public class Parameters {
             break;
         case "--scan-native-code":
             this._scanNativeCode = true;
+            break;
+        case "--legacy-android-processing":
+            _legacyAndroidProcessing = true;
             break;
         default:
             return -1;

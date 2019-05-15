@@ -59,13 +59,15 @@ public abstract class AndroidSupport {
                     decodeDirs.add(decodeDir);
                     decodeApk(new File(i), decodeDir);
                 }
-                try {
-                    AppResources resources = processAppResources(i);
-                    computedResources.put(i, resources);
-                    processAppResources(i, resources, pkgs, rLinker);
-                    resources.printManifestInfo();
-                } catch (Exception ex) {
-                    System.err.println("Resource processing failed: " + ex.getMessage());
+                if (parameters._legacyAndroidProcessing) {
+                    try {
+                        AppResources resources = processAppResources(i);
+                        computedResources.put(i, resources);
+                        processAppResources(i, resources, pkgs, rLinker);
+                        resources.printManifestInfo();
+                    } catch (Exception ex) {
+                        System.err.println("Resource processing failed: " + ex.getMessage());
+                    }
                 }
             }
         }

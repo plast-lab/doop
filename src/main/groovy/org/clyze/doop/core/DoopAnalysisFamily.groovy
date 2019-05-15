@@ -337,6 +337,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
+					id: "LEGACY_ANDROID_PROCESSING",
+					name: "legacy-android-processing",
+					description: "If true the analysis uses the legacy processor for Android resources."
+			),
+			new BooleanAnalysisOption(
 					id: "CFG_ANALYSIS",
 					name: "cfg",
 					description: "Perform a CFG analysis.",

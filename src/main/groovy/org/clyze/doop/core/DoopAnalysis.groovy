@@ -390,6 +390,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--write-artifacts-map"]
         }
 
+        if (options.LEGACY_ANDROID_PROCESSING.value) {
+            params += ["--legacy-android-processing"]
+        }
+
         params.addAll(["--log-dir", Doop.doopLog])
         params.addAll(["-d", factsDir.toString()] + inputArgs)
         deps.addAll(platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>)
