@@ -693,39 +693,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     /**
      * Creates a new class loader for running jphantom
      */
-    protected ClassLoader phantomClassLoader() { copyOfCurrentClasspath() }
+    protected ClassLoader phantomClassLoader() { JHelper.copyOfCurrentClasspath(log, this) }
 
     /**
      * Creates a new class loader for running soot
      */
-    protected ClassLoader sootClassLoader() { copyOfCurrentClasspath() }
-
-    protected ClassLoader copyOfCurrentClasspath() {
-        URL[] classpath = null
-        ClassLoader cl = this.class.classLoader
-        if (cl instanceof URLClassLoader) {
-            log.debug "Reading URL entries from current class loader..."
-            classpath = (cl as URLClassLoader).URLs
-            log.debug "Creating a new URL class loader with classpath = ${classpath}"
-            return new URLClassLoader(classpath, null as ClassLoader)
-        } else {
-            return this.class.classLoader
-            // We currently don't support classpath copies for Java 9+. Solution:
-            //
-            // 1. The classpath can be parsed as follows:
-            //   log.debug "Parsing current classpath to reconstruct URL entries..."
-            //   String pathSeparator = System.getProperty("path.separator");
-            //   classpath = System.getProperty("java.class.path").
-            //               split(pathSeparator).
-            //               collect { new URL("file://${it}") } as URL[]
-            //
-            // 2. And then a ModuleLayer must be constructed and loaded:
-            //    https://docs.oracle.com/javase/9/docs/api/java/lang/ModuleLayer.html
-            //
-            // However, the technique above makes Java 9+ a compile-time dependency
-            // and thus breaks Java 8 compatibility, unless all code is reflective.
-        }
-    }
+    protected ClassLoader sootClassLoader() { JHelper.copyOfCurrentClasspath(log, this) }
 
     protected void runHeapDL(List<String> filenames) {
 
