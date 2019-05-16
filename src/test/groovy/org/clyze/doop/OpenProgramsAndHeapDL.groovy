@@ -15,7 +15,7 @@ class OpenProgramsAndHeapDL extends DoopBenchmark {
 					 "-a", "context-insensitive",
 					 "--platform", "android_25_fulljars",
 					 "--open-programs", "concrete-types",
-					 "--heapdl-file", "${doopBenchmarksDir}/android-benchmarks/jackpal.androidterm.hprof.gz",
+					 "--heapdl-file", Artifacts.ANDROIDTERM_HPROF,
 					 "--id", "test-android-androidterm-open-programs-heapdl",
 					 "--Xdry-run"]
 		Main.main((String[])args)

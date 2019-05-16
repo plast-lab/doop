@@ -157,7 +157,7 @@ class AndroidTests extends DoopBenchmark {
 					 "-a", "context-insensitive",
 					 "--platform", "android_25_fulljars",
 					 "--featherweight-analysis",
-					 "--heapdl-file", "${doopBenchmarksDir}/android-benchmarks/jackpal.androidterm.hprof.gz",
+					 "--heapdl-file", Artifacts.ANDROIDTERM_HPROF,
 					 "--id", "test-android-androidterm-fw-heapdl",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 					 "--thorough-fact-gen", "--sanity",
