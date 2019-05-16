@@ -74,7 +74,12 @@ public class XMLFactGenerator extends DefaultHandler {
             XMLFactGenerator gen = new XMLFactGenerator(xmlReader, db, xmlFile, topDir);
             gen.parse();
         } catch (ParserConfigurationException | SAXException | IOException ex) {
-            System.err.println("Error parsing " + xmlFile + ": " + ex.getMessage());
+            // Skip error for "original" AndroidManifest.xml.
+            if (!xmlFile.getAbsolutePath().endsWith("/original/AndroidManifest.xml")) {
+                String msg = ex.getMessage();
+                if (!msg.equals("Content is not allowed in prolog."))
+                    System.err.println("Error parsing " + xmlFile + ": " + ex.getMessage());
+            }
         }
     }
 
