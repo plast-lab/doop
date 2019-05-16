@@ -48,6 +48,7 @@ class AndroidTests extends DoopBenchmark {
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm-types-only",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+					 "--Xserver-cha",
 					 "--scan-native-code", "--simulate-native-returns",
 					 "--Xstats-full", "--Xlow-mem", "-Ldebug"] + defaultArgs
 		Main.main((String[])args)
