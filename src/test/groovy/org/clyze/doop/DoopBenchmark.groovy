@@ -16,8 +16,7 @@ abstract class DoopBenchmark extends Specification {
 
 		doopBenchmarksDir = System.getenv(DOOP_BENCHMARKS)
 		if (!doopBenchmarksDir) {
-			System.err.println("Error: environment variable ${DOOP_BENCHMARKS} not set, cannot run tests")
+			System.err.println("Warning: environment variable ${DOOP_BENCHMARKS} not set.")
 		}
-		assert null != doopBenchmarksDir
 	}
 }
