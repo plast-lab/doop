@@ -74,7 +74,8 @@ public abstract class AndroidSupport {
             }
         }
 
-        printCollectedComponents();
+        if (parameters._legacyAndroidProcessing)
+            printCollectedComponents();
 
         // Produce a JAR of the missing R classes.
         String generatedR = rLinker.linkRs(parameters._rOutDir, tmpDirs);
