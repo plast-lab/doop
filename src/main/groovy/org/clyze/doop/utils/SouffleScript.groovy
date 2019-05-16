@@ -44,8 +44,7 @@ class SouffleScript {
 		preprocess(scriptFile, origScriptFile)
 
 		if (viaDDlog) {
-			log.info "Compilation will happen at the 'run' step."
-			return
+			return (new DDlog(executor, scriptFile, outDir)).compileWithDDlog(4)
 		}
 
 		if (useFunctors) {
@@ -123,7 +122,7 @@ class SouffleScript {
 
 		if (viaDDlog) {
 			try {
-				runWithDDlog(factsDir, outDir, db, jobs)
+				(new DDlog(executor, scriptFile, outDir)).runWithDDlog(db, jobs)
 				return
 			} catch (ex) {
 				throw new DoopErrorCodeException(25, ex)
@@ -195,92 +194,6 @@ class SouffleScript {
         log.info "Analysis execution time (sec): $executionTime"
         return [compilationTime, executionTime]
     }
-
-	/**
-	 * Execute the 'run' phase using the DDLog Souffle converter.
-	 *
-	 * @param factsDir	 the facts directory
-	 * @param outDir	 the output directory
-	 * @param db		 the database directory
-	 * @param jobs		 the number of jobs to use when compiling/running the analysis
-	 */
-	private void runWithDDlog(def factsDir, def outDir, def db, def jobs) {
-		String DDLOG_DIR = "DDLOG_DIR"
-		String ddlogDir = System.getenv(DDLOG_DIR)
-		if (!ddlogDir) {
-			throw new DoopErrorCodeException(24, new RuntimeException("Environment variable ${DDLOG_DIR} is empty."))
-		} else {
-			log.debug "Using DDlog in ${ddlogDir}"
-		}
-		String doopHome = System.getenv("DOOP_HOME")
-		if (!doopHome) {
-			throw new DoopErrorCodeException(24, new RuntimeException("Environment variable DOOP_HOME is empty."))
-		} else {
-			log.debug "Using Doop home: ${doopHome}"
-		}
-
-		// Step 1: Convert facts and analysis logic.
-		String ddlogSouffleDir = "${ddlogDir}/tools"
-		["souffle-grammar.pg", "souffle-converter.py"].each {
-			File from = new File(ddlogSouffleDir, it)
-			File to = new File(factsDir, it)
-			log.debug "COPY: ${from.canonicalPath} -> ${to.canonicalPath}"
-			Files.copy(from.toPath(), to.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
-		}
-		if (!scriptFile) {
-			throw new RuntimeException("Error: no script file, compile() must precede run().")
-		}
-		String convertedLogicName = "converted_logic" as String
-		String convertedLogicPrefix = "${outDir}/${convertedLogicName}" as String
-		def cmdConvert = ["${doopHome}/bin/run-in-dir.sh" as String,
-						  factsDir.canonicalPath,
-						  "${factsDir}/souffle-converter.py" as String,
-						  scriptFile.canonicalPath,
-						  convertedLogicPrefix ]
-		log.debug "Running conversion command: ${cmdConvert}"
-		executeCmd(cmdConvert)
-
-		// Step 2: Compile the analysis.
-		def genTime = Helper.timing {
-			log.info "Compiling the analysis: code generation..."
-			String convertedLogic = "${convertedLogicPrefix}.dl" as String
-			def cmdGenRust = "${doopHome}/bin/run-in-dir.sh ${ddlogDir} stack run -- -i ${convertedLogic} --action=compile -L lib".split().toList()
-			executeCmd(cmdGenRust)
-		}
-		log.info "Time: ${genTime}"
-		String buildDir = "${convertedLogicPrefix}_ddlog" as String
-		def buildTime = Helper.timing {
-			log.info "Compiling the analysis: building (using ${jobs} jobs)..."
-			log.debug "Build dir: ${buildDir}"
-			def cmdBuildRust = "${doopHome}/bin/run-in-dir.sh ${buildDir} cargo build -j ${jobs} --release".split().toList()
-			executeCmd(cmdBuildRust)
-		}
-		log.info "Time: ${buildTime}"
-
-		// Step 3: Run the analysis.
-		log.info "Running the analysis (using ${jobs} jobs)..."
-		def runTime = Helper.timing {
-			def dump = "${db.canonicalPath}/dump"
-			def dat = "${convertedLogicPrefix}.dat"
-
-			// Hack: use script to get away with redirection.
-			def cmdRun = "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${buildDir}/target/release/${convertedLogicName}_cli -w ${jobs}".split().toList()
-			executeCmd(cmdRun)
-		}
-		log.info "Time: ${runTime}"
-	}
-
-	/**
-	 * Executes a command using a temporary file for its output.
-	 *
-	 * @param cmd	the command line to invoke
-	 */
-	void executeCmd(List<String> command) {
-		log.debug command
-		Path tmpFile = Files.createTempFile("", "")
-		executor.executeWithRedirectedOutput(command, tmpFile.toFile()) { println it }
-		Files.delete(tmpFile)
-	}
 
 	// Detect libfunctors.so and create corresponding symbolic link.
 	private void detectFunctors(File outDir) {

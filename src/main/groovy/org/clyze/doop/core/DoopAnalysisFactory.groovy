@@ -404,7 +404,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			if (options.CACHE.value) {
 				throw new RuntimeException("Error: options --" + options.VIA_DDLOG.name + " and --" + options.CACHE.name + " are not compatible.")
 			}
-			options.X_SERIALIZE_FACTGEN_COMPILATION.value = true
 			options.X_UNIQUE_FACTS.value = false
 		}
 
