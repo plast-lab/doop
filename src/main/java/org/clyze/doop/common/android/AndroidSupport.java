@@ -174,7 +174,6 @@ public abstract class AndroidSupport {
                 }
             }
         }
-        writer.writeExtraSensitiveControls(parameters);
     }
 
     /**
