@@ -463,31 +463,31 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 		} catch (all) {
 			all = StackTraceUtils.deepSanitize all
-			throw StackTraceUtils.deepSanitize(new Throwable("Jimple File: $filename", all))
+			throw new Throwable("Jimple File: $filename", all)
 		}
 	}
 
-    static Walker parseJimpleText(String className, String text) {
+    static Walker parseJimpleText(String fileName, String text) {
         def parser = new JimpleParser(new CommonTokenStream(new JimpleLexer(new ANTLRInputStream(text))))
-        return new Walker(className, parser.program())
+        return new Walker(fileName, parser.program())
     }
 
     static class Walker {
-        private final String className
-        private final JimpleParser.ProgramContext ctx
+        private final String fileName
+        private final ProgramContext ctx
 
-        Walker(String className, JimpleParser.ProgramContext ctx) {
-            this.className = className
+        Walker(String fileName, ProgramContext ctx) {
+            this.fileName = fileName
             this.ctx = ctx
         }
 
         void walk(Closure processor) {
-            def listener = new JimpleListenerImpl(className, processor)
+            def listener = new JimpleListenerImpl(fileName, processor)
             try {
                 ParseTreeWalker.DEFAULT.walk(listener, ctx)
             } catch (all) {
-                all = StackTraceUtils.deepSanitize all
-                    throw StackTraceUtils.deepSanitize(new Throwable("Jimple class: ${listener.filename}", all))
+                //all = StackTraceUtils.deepSanitize all
+				throw new RuntimeException("Jimple class ${listener.filename}: ${all.getMessage()}", all)
             }
         }
     }
