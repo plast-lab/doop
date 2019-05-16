@@ -18,6 +18,5 @@ abstract class DoopBenchmark extends Specification {
 		if (!doopBenchmarksDir) {
 			System.err.println("Warning: environment variable ${DOOP_BENCHMARKS} not set.")
 		}
-		assert null != doopBenchmarksDir
 	}
 }
