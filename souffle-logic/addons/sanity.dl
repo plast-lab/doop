@@ -64,6 +64,9 @@ Sanity("17", "Field in {Static|Instance}FieldPointsTo points to wrongly typed va
   ?c = count : FieldPointsToWronglyTypedValue(_, _, _, _).
 #endif // DISABLE_POINTS_TO
 
+Sanity("18", "Missing artifact types from hierarchy", ?c) :-
+  ?c = count : ArtifactTypeMissingFromHierarchy(_).
+
 .decl VarHasNoType(var:Var)
 .output VarHasNoType
 
@@ -247,3 +250,11 @@ InstructionIsNotConcreteInstruction(?insn) :-
   !isAssignPhantomInvoke(?insn),
   !isExceptionHandler(?insn),
   !isBreakpointStmt(?insn).
+
+.decl ArtifactTypeMissingFromHierarchy(?t:ReferenceType)
+.output ArtifactTypeMissingFromHierarchy
+
+ArtifactTypeMissingFromHierarchy(?t) :-
+  _ClassArtifact(_, ?t, _),
+  isType(?t),
+  !basic.SubtypeOf(?t, _).
