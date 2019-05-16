@@ -187,6 +187,14 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 // Make launcher activity methods forced-reachable.
 ReachableLayoutControl(?type) :- LauncherActivity(?type).
 
+#ifdef DISABLE_POINTS_TO
+// Crude rule for disabled points-to: make all detected control/fragment
+// constructors and callbacks reachable.
+ReachableLayoutControl(?class) :-
+  XMLFragment_Class(_, _, ?class),
+  LayoutControl(_, ?class, _).
+#endif // DISABLE_POINTS_TO
+
 /**
  * Intents and Bundles
 **/

@@ -200,9 +200,3 @@ XMLFragment_Class(?file, ?nodeId, ?qClass) :-
 .decl XMLFragment_Id(?file:symbol, ?nodeId:symbol, ?id:symbol)
 XMLFragment_Id(?file, ?nodeId, ?id) :-
   XMLNode_Id(?file, ?nodeId, "fragment", ?id).
-
-#ifdef DISABLE_POINTS_TO
-// Crude rule for disabled points-to: make all detected fragment constructors
-// and callbacks reachable.
-ReachableLayoutControl(?class) :- XMLFragment_Class(_, _, ?class).
-#endif // DISABLE_POINTS_TO
