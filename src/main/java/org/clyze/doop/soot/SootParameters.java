@@ -145,9 +145,6 @@ public class SootParameters extends Parameters {
                 (!_android)) {
             System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
             throw new DoopErrorCodeException(3, null, true);
-        } else if (_lowMem && _generateJimple) {
-            System.err.println("Warning: --lowMem is not compatible with --generate-jimple and will be ignored");
-            _lowMem = false;
         } else if (_android && _androidJars == null) {
             System.err.println("internal error: bad configuration for Android analysis mode, missing Android .jar");
             throw new DoopErrorCodeException(21, null, true);

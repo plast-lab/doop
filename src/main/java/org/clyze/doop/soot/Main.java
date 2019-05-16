@@ -247,6 +247,16 @@ public class Main {
             }
 
             writer.writeLastFacts(java);
+
+            if (sootParameters._lowMem) {
+                System.out.println("Releasing Soot structures...");
+                for (SootClass cl : Scene.v().getClasses())
+                    for (SootMethod m : cl.getMethods())
+                        if (m.hasActiveBody())
+                            m.setActiveBody(null);
+                System.gc();
+                System.out.println("Done.");
+            }
         } finally {
             // Clean up any temporary directories used for AAR extraction.
             JHelper.cleanUp(tmpDirs);
