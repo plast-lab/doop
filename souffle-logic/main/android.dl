@@ -194,6 +194,9 @@ ReachableLayoutControl(?class) :-
   XMLFragment_Class(_, _, ?class) ; LayoutControl(_, ?class, _).
 #endif // DISABLE_POINTS_TO
 
+// Consider action view classes reachable.
+ReachableLayoutControl(?class) :- ActionViewType(?class).
+
 /**
  * Intents and Bundles
 **/

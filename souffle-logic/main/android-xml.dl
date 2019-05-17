@@ -204,3 +204,9 @@ XMLFragment_Class(?file, ?nodeId, ?qClass) :-
 .decl XMLFragment_Id(?file:symbol, ?nodeId:symbol, ?id:symbol)
 XMLFragment_Id(?file, ?nodeId, ?id) :-
   XMLNode_Id(?file, ?nodeId, "fragment", ?id).
+
+// Detect types used in action views.
+.decl ActionViewType(?class:ClassType)
+ActionViewType(?class) :-
+  XMLNodeAttribute(_, _, _, _, "app:actionViewClass", ?class),
+  isType(?class).
