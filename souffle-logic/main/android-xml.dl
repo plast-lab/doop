@@ -195,7 +195,11 @@ LauncherActivity(?qType) :-
 .decl XMLFragment_Class(?file:symbol, ?nodeId:symbol, ?qClass:ClassType)
 XMLFragment_Class(?file, ?nodeId, ?qClass) :-
   XMLNode(?file, ?nodeId, _, _, _, "fragment"),
-  XMLNodeAttribute(?file, ?nodeId, _, _, "class", ?class),
+  // Both "class" and "android:name" can be used for the fragment type:
+  // https://stackoverflow.com/questions/10162983/activity-layout-fragment-class-vs-androidname-attributes
+  ( XMLNodeAttribute(?file, ?nodeId, _, _, "class", ?class)
+  ; XMLNodeAttribute(?file, ?nodeId, _, _, "android:name", ?class)
+  ),
   APP_QUALIFIED_TYPE(?class, ?qClass).
 .decl XMLFragment_Id(?file:symbol, ?nodeId:symbol, ?id:symbol)
 XMLFragment_Id(?file, ?nodeId, ?id) :-
