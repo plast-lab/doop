@@ -107,6 +107,16 @@ Activity_Alias(?activity, ?alias) :-
 // Detect onClick handlers.
 CallbackMethod(?method) :-
   XMLNodeAttribute(_, _, _, _, "android:onClick", ?method).
+
+// Types-only: for a callback method that is just a name, consider as
+// callbacks all methods whose names match that name.
+#ifdef DISABLE_POINTS_TO
+CallbackMethod(?method) :-
+  CallbackMethod(?name),
+  !isMethod(?name),
+  Method_SimpleName(?method, ?name).
+#endif // DISABLE_POINTS_TO
+
 .decl LayoutControl_CallbackMethod(?controlId:symbol, ?method:symbol)
 LayoutControl_CallbackMethod(?controlId, ?method) :-
   XMLNodeAttribute(?file, ?nodeId, _, _, "android:onClick", ?method),
