@@ -831,8 +831,6 @@ isType(?id) :-
 
 // CallbackMethod
 .input CallbackMethod(IO="file", filename="CallbackMethod.facts", delimiter="\t")
-isMethod(?id) :-
-  CallbackMethod(?id).
 
 // LayoutControl
 .input LayoutControl0(IO="file", filename="LayoutControl.facts", delimiter="\t")
