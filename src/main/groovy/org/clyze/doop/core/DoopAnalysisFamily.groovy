@@ -301,7 +301,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "DECODE_APK",
 					name: "decode-apk",
 					group: GROUP_FACTS,
-					description: "Decode .apk inputs to facts directory."
+					description: "Decode .apk inputs to facts directory.",
+					value: true,
+					cli: false
 			),
 			new BooleanAnalysisOption(
 					id: "PYTHON",
