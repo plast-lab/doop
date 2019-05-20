@@ -92,9 +92,19 @@ public class BasicJavaSupport {
                         System.out.println("Processing XML entry (in " + filename + "): " + entryName);
                         XMLFactGenerator.processFile(xmlTmpFile, db, "");
                     }
-                } else if (parameters._scanNativeCode && entryName.endsWith(".so")) {
-                    File libTmpFile = extractZipEntryAsFile("native-lib", jarFile, entry, entryName);
-                    NativeScanner.scanLib(libTmpFile, outDir);
+                } else if (parameters._scanNativeCode) {
+                    boolean isSO = entryName.endsWith(".so");
+                    boolean isLibsXZS = entryName.endsWith("libs.xzs");
+                    boolean isLibsZSTD = entryName.endsWith("libs.zstd");
+                    File libTmpFile = null;
+                    if (isSO || isLibsXZS || isLibsZSTD)
+                        libTmpFile = extractZipEntryAsFile("native-lib", jarFile, entry, entryName);
+                    if (isSO)
+                        NativeScanner.scanLib(libTmpFile, outDir);
+                    else if (isLibsXZS)
+                        NativeScanner.scanXZSLib(libTmpFile, outDir);
+                    else if (isLibsZSTD)
+                        NativeScanner.scanZSTDLib(libTmpFile, outDir);
                 }
             }
         }

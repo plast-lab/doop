@@ -645,6 +645,36 @@ public class NativeScanner {
         }
         return stringsInFunctions;
     }
+
+    // Handle .xzs libraries (found in some .apk inputs).
+    public static void scanXZSLib(File xzsFile, File outDir) {
+        String xzsPath = xzsFile.getAbsolutePath();
+        System.out.println("Processing xzs-packed native code: " + xzsPath);
+        String xzPath = xzsPath.substring(0, xzsPath.length() - 1);
+        try {
+            // Change .xzs extension to .xz.
+            runCommand(new ProcessBuilder("mv", xzsPath, xzPath));
+            runCommand(new ProcessBuilder("xz", "--decompress", xzPath));
+            File libTmpFile = new File(xzPath.substring(0, xzPath.length() - 3));
+            scanLib(libTmpFile, outDir);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    // Handle .zstd libraries (found in some .apk inputs).
+    public static void scanZSTDLib(File zstdFile, File outDir) {
+        String zstdPath = zstdFile.getAbsolutePath();
+        System.out.println("Processing zstd-packed native code: " + zstdPath);
+        String zstdOutPath = zstdPath.substring(0, zstdPath.length() - 5);
+        try {
+            runCommand(new ProcessBuilder("zstd", "-d", "-o", zstdOutPath));
+            File libTmpFile = new File(zstdOutPath);
+            scanLib(libTmpFile, outDir);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
 }
 
 // A representation of the strings section in the binary.
