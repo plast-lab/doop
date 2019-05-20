@@ -105,8 +105,8 @@ OUTPUT_STATS(Stats_Simple_Application_PolymorphicCallSite)
 .decl Stats_Simple_Application_NullVirtualMethodInvocation(?invocation:MethodInvocation)
 OUTPUT_STATS(Stats_Simple_Application_NullVirtualMethodInvocation)
 
-.decl Stats_Simple_Application_EmptyVirtualMethodInvocation(?invocation:MethodInvocation)
-OUTPUT_STATS(Stats_Simple_Application_EmptyVirtualMethodInvocation)
+.decl Stats_Simple_Application_EmptyReachableVirtualMethodInvocation(?invocation:MethodInvocation)
+OUTPUT_STATS(Stats_Simple_Application_EmptyReachableVirtualMethodInvocation)
 
 /***************************************************
  * Casts

@@ -144,7 +144,7 @@ Stats_Simple_Application_NullVirtualMethodInvocation(?invocation) :-
   VirtualMethodInvocation_Base(?invocation, ?base),
   Stats_Simple_Application_ReachableVirtualMethodInvocation(?invocation).
 
-Stats_Simple_Application_EmptyVirtualMethodInvocation(?invocation) :-
+Stats_Simple_Application_EmptyReachableVirtualMethodInvocation(?invocation) :-
   Stats_Simple_Application_ReachableVirtualMethodInvocation(?invocation),
   VirtualMethodInvocation_Base(?invocation, ?base),
   !Stats_Simple_InsensVarPointsTo(_, ?base).
@@ -223,7 +223,7 @@ NewMetricMacro("16.0", "app virtual call sites (statically)", Stats_Simple_Appli
 NewMetricMacro("17.0", "app reachable virtual call sites", Stats_Simple_Application_ReachableVirtualMethodInvocation(_)).
 NewMetricMacro("18.0", "app polymorphic virtual call sites", Stats_Simple_Application_PolymorphicCallSite(_)).
 NewMetricMacro("19.0", "app null virtual call sites", Stats_Simple_Application_NullVirtualMethodInvocation(_)).
-NewMetricMacro("19.5", "app empty virtual call sites", Stats_Simple_Application_EmptyVirtualMethodInvocation(_)).
+NewMetricMacro("19.5", "app empty reachable virtual call sites", Stats_Simple_Application_EmptyReachableVirtualMethodInvocation(_)).
 
 NewMetricMacro("20.0", "casts (statically)", AssignCast(_, _, _, _)).
 NewMetricMacro("21.0", "reachable casts", Stats_Simple_ReachableCast(_, _, _, _)).
