@@ -14,7 +14,7 @@ class AndroidTests extends DoopBenchmark {
 	static List defaultArgs = [
 		"--timeout", "30",
 		"--Xserver-logic", "--gen-opt-directives",
-		"--decode-apk", "--generate-jimple",
+		"--generate-jimple",
 		"--thorough-fact-gen", "--sanity"
 	]
 
