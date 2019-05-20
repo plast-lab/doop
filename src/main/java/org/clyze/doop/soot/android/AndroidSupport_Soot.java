@@ -43,7 +43,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
                     String className = TypeUtils.raiseTypeId(dexBackedClassDef.getType());
                     SootClass c = scene.loadClass(className, SootClass.BODIES);
                     classes.add(c);
-                    java.registerArtifactClass(artifact, className, dexContainer.getDexName());
+                    java.registerArtifactClass(artifact, className, dexContainer.getDexName(), dexBackedClassDef.getSize());
                 }
             }
             System.out.println("Classes found in apk: " + dexClassesCount);

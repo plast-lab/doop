@@ -50,8 +50,8 @@ public abstract class JavaFactWriter {
             return "<<METHOD HASH:" + methodRaw.hashCode() + ">>";
     }
 
-    private void writeClassArtifact(String artifact, String className, String subArtifact) {
-        _db.add(CLASS_ARTIFACT, artifact, className, subArtifact);
+    private void writeClassArtifact(String artifact, String className, String subArtifact, int size) {
+        _db.add(CLASS_ARTIFACT, artifact, className, subArtifact, str(size));
     }
 
     private void writeProperty(String path, String key, String value) {
@@ -142,7 +142,7 @@ public abstract class JavaFactWriter {
             System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
             for (String artifact : artifactToClassMap.keySet())
                 for (ArtifactEntry ae : artifactToClassMap.get(artifact))
-                    writeClassArtifact(artifact, ae.className, ae.subArtifact);
+                    writeClassArtifact(artifact, ae.className, ae.subArtifact, ae.size);
         }
     }
 

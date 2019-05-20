@@ -262,8 +262,8 @@ METHODS_INLINE_COMPATIBLE(?a, ?b) :-
   ApplicationMethod(?b),
   Method_DeclaringType(?b, ?t2),
   ?t1 != ?t2,
-  _ClassArtifact(?artifact, ?a, ?subArtifact),
-  _ClassArtifact(?artifact, ?b, ?subArtifact).
+  _ClassArtifact(?artifact, ?a, ?subArtifact, _),
+  _ClassArtifact(?artifact, ?b, ?subArtifact, _).
 #else
 #define METHODS_INLINE_COMPATIBLE(a, b) 1=1
 #endif // NOINLINE_OVER_DEX_BOUNDARIES

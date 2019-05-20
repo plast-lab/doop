@@ -255,6 +255,6 @@ InstructionIsNotConcreteInstruction(?insn) :-
 .output ArtifactTypeMissingFromHierarchy
 
 ArtifactTypeMissingFromHierarchy(?t) :-
-  _ClassArtifact(_, ?t, _),
+  _ClassArtifact(_, ?t, _, _),
   isType(?t),
   !basic.SubtypeOf(?t, _).

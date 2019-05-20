@@ -76,7 +76,7 @@ public class BasicJavaSupport {
                         classSet.add(className);
                         if (parameters._writeArtifactsMap) {
                             String artifact = (new File(jarFile.getName())).getName();
-                            registerArtifactClass(artifact, className, "-");
+                            registerArtifactClass(artifact, className, "-", reader.b.length);
                         }
                     } catch (Exception e) {
                         System.err.println("Error while preprocessing entry \"" + entryName + "\", it will be ignored.");
@@ -143,9 +143,10 @@ public class BasicJavaSupport {
      * @param artifact     the file name of the artifact containing the class
      * @param className    the name of the class
      * @param subArtifact  the sub-artifact (such as "classes.dex" for APKs)
+     * @param size         the size of the class
      */
-    public void registerArtifactClass(String artifact, String className, String subArtifact) {
-        ArtifactEntry ae = new ArtifactEntry(className, subArtifact);
+    public void registerArtifactClass(String artifact, String className, String subArtifact, int size) {
+        ArtifactEntry ae = new ArtifactEntry(className, subArtifact, size);
         artifactToClassMap.computeIfAbsent(artifact, x -> new CopyOnWriteArraySet<>()).add(ae);
     }
 
