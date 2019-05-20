@@ -23,6 +23,13 @@ FieldBindView(?field, ?controlValue, ?controlType, ?ctx, ?hctx) :-
   isImmutableHContext(?hctx),
   ?controlValue = cat("@BindView: <", cat(?controlType, cat(" control for field ", ?field))).
 
+// Handle classes accessed by ButterKnife.findBindingConstructorForClass().
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  FieldBindView(?field, _, _, ?ctx, _),
+  Field_DeclaringType(?field, ?type),
+  ?viewBindingType = cat(?type, "_ViewBinding"),
+  Method_DeclaringType(?method, ?viewBindingType).
+
 #ifdef DISABLE_POINTS_TO
 
 ReachableLayoutControl(?controlType) :- FieldBindView(_, _, ?controlType, _, _).
