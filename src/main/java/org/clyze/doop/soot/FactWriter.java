@@ -43,6 +43,10 @@ class FactWriter extends JavaFactWriter {
         return hashMethodNameIfLong(methodRaw);
     }
 
+    static String getAnnotationType(AnnotationTag aTag) {
+        return TypeUtils.raiseTypeId(aTag.getType());
+    }
+
     String writeMethod(SootMethod m) {
         String methodRaw = _rep.signature(m);
         String methodId = methodSig(m, methodRaw);
@@ -53,7 +57,7 @@ class FactWriter extends JavaFactWriter {
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
-                writeMethodAnnotation(methodId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                writeMethodAnnotation(methodId, getAnnotationType(aTag));
                 writeAnnotationElements("method", methodId, null, aTag.getElems());
             }
         }
@@ -65,7 +69,7 @@ class FactWriter extends JavaFactWriter {
                 if (annList.get(i) != null)
                     for (AnnotationTag aTag : annList.get(i).getAnnotations()) {
                         String paramIdx = str(i);
-                        _db.add(PARAM_ANNOTATION, methodId, paramIdx, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                        _db.add(PARAM_ANNOTATION, methodId, paramIdx, getAnnotationType(aTag));
                         String paramId = methodId + "::parameter#" + paramIdx;
                         writeAnnotationElements("param", paramId, null, aTag.getElems());
                     }
@@ -91,7 +95,7 @@ class FactWriter extends JavaFactWriter {
         if (c.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
-                _db.add(TYPE_ANNOTATION, classStr, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                _db.add(TYPE_ANNOTATION, classStr, getAnnotationType(aTag));
                 writeAnnotationElements("type", classStr, null, aTag.getElems());
             }
         }
@@ -478,7 +482,7 @@ class FactWriter extends JavaFactWriter {
         if (f.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) f.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
-                _db.add(FIELD_ANNOTATION, fieldId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).toQuotedString());
+                _db.add(FIELD_ANNOTATION, fieldId, getAnnotationType(aTag));
                 writeAnnotationElements("field", fieldId, null, aTag.getElems());
             }
         }
