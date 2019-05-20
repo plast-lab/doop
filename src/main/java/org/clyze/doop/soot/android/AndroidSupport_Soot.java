@@ -34,10 +34,10 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
         String artifact = apk.getName();
         try {
             List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
-            Set<Object> allDexClasses = new HashSet<>();
+            int dexClassesCount = 0;
             for (DexContainer dexContainer : listContainers) {
                 Set<? extends DexBackedClassDef> dexClasses = dexContainer.getBase().getClasses();
-                allDexClasses.addAll(dexClasses);
+                dexClassesCount += dexClasses.size();
                 for (DexBackedClassDef dexBackedClassDef : dexClasses) {
                     String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor((dexBackedClassDef).getType()).toQuotedString();
                     SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
@@ -45,7 +45,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
                     java.registerArtifactClass(artifact, escapeClassName, dexContainer.getDexName());
                 }
             }
-            System.out.println("Classes found in apk: " + allDexClasses.size());
+            System.out.println("Classes found in apk: " + dexClassesCount);
         } catch (IOException ex) {
             System.err.println("Could not read dex classes in " + apk);
             ex.printStackTrace();
