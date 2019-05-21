@@ -95,9 +95,8 @@ public class BasicJavaSupport {
                     boolean isSO = entryName.endsWith(".so");
                     boolean isLibsXZS = entryName.endsWith("libs.xzs");
                     boolean isLibsZSTD = entryName.endsWith("libs.zstd");
-                    File libTmpFile = null;
                     if (isSO || isLibsXZS || isLibsZSTD) {
-                        libTmpFile = extractZipEntryAsFile("native-lib", jarFile, entry, entryName);
+                        File libTmpFile = extractZipEntryAsFile("native-lib", jarFile, entry, entryName);
                         if (isSO)
                             NativeScanner.scanLib(libTmpFile, outDir);
                         else if (isLibsXZS)
