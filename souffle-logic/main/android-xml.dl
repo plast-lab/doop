@@ -220,3 +220,16 @@ XMLFragment_Id(?file, ?nodeId, ?id) :-
 ActionViewType(?class) :-
   XMLNodeAttribute(_, _, _, _, "app:actionViewClass", ?class),
   isType(?class).
+
+// Layout behaviors. XML pattern:
+//   <... app:layout_behavior="@string/X" />
+//   <string name="X">CLASS</string>
+.decl LayoutBehavior(?class:ClassType)
+
+LayoutBehavior(?qClass) :-
+  XMLNode(?file, ?nodeId, _, _, _, "string"),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "name", ?x),
+  XMLNodeAttribute(_, _, _, _, "app:layout_behavior", ?s),
+  ?s = cat("@string/", ?x),
+  XMLNodeData(?file, ?nodeId, ?class),
+  APP_QUALIFIED_TYPE(?class, ?qClass).

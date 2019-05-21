@@ -24,7 +24,11 @@ public class XMLFactGenerator extends DefaultHandler {
     final Stack<Integer> parents = new Stack<>();
     // This should match the constant in the XML logic.
     private static final int ROOT_NODE = -1;
-    int nodeId = 0;
+    private int nodeId = 0;
+    // Last <string> node.
+    private Node lastStringNode = null;
+    // Contains the inner data of an element.
+    private String xmlData = null;
 
     private XMLFactGenerator(XMLReader xmlReader, Database db, File xmlFile, String topDir) {
         this.xmlReader = xmlReader;
@@ -102,21 +106,36 @@ public class XMLFactGenerator extends DefaultHandler {
                              String qName, Attributes attrs) throws SAXException {
         nodeId++;
         int parentNodeId = parents.peek();
-        writeXMLNode(relativePath, nodeId, parentNodeId, namespaceURI, localName, qName);
-        parents.push(nodeId);
+        String sNodeId = str(nodeId);
+        writeXMLNode(relativePath, sNodeId, parentNodeId, namespaceURI, localName, qName);
         for (int idx = 0; idx < attrs.getLength(); idx++)
-            writeXMLNodeAttribute(relativePath, nodeId, idx, attrs.getLocalName(idx), attrs.getQName(idx), attrs.getValue(idx));
+            writeXMLNodeAttribute(relativePath, sNodeId, idx, attrs.getLocalName(idx), attrs.getQName(idx), attrs.getValue(idx));
+        parents.push(nodeId);
+        if (qName.equals("string"))
+            lastStringNode = new Node(relativePath, sNodeId);
     }
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         parents.pop();
+
+        if (lastStringNode != null) {
+            if (xmlData != null)
+                db.add(XMLNodeData, lastStringNode.file, lastStringNode.nodeId, xmlData);
+            lastStringNode = null;
+        }
     }
 
     @Override
     public void startDocument() throws SAXException {
         // Default parent for top-level node.
         parents.push(ROOT_NODE);
+    }
+
+    @Override
+    public void characters(char[] ch, int start, int length) throws SAXException {
+        if (lastStringNode != null)
+            xmlData = new String(ch, start, length);
     }
 
     @Override
@@ -153,8 +172,8 @@ public class XMLFactGenerator extends DefaultHandler {
      * @param localName      the local name of the node
      * @param qName          the qualified name of the node
      */
-    private void writeXMLNode(String file, int nodeId, int parentNodeId, String namespaceURI, String localName, String qName) {
-        db.add(XMLNode, file, str(nodeId), str(parentNodeId), namespaceURI, localName, qName);
+    private void writeXMLNode(String file, String nodeId, int parentNodeId, String namespaceURI, String localName, String qName) {
+        db.add(XMLNode, file, nodeId, str(parentNodeId), namespaceURI, localName, qName);
     }
 
     /**
@@ -166,28 +185,36 @@ public class XMLFactGenerator extends DefaultHandler {
      * @param qName          the qualified name of the attribute
      * @param value          the value of the attribute
      */
-    private void writeXMLNodeAttribute(String file, int nodeId, int idx, String localName, String qName, String value) {
-        String sNodeId = str(nodeId);
-        db.add(XMLNodeAttribute, file, sNodeId, str(idx), localName, qName, value);
+    private void writeXMLNodeAttribute(String file, String nodeId, int idx, String localName, String qName, String value) {
+        db.add(XMLNodeAttribute, file, nodeId, str(idx), localName, qName, value);
         // Register Android ids by extracting their labels.
         if (qName.equals("android:id")) {
             boolean handled = false;
             for (String prefix : ID_PREFIXES)
                 if (value.startsWith(prefix)) {
-                    db.add(ANDROID_ID, file, sNodeId, value, prefix, value.substring(prefix.length()));
+                    db.add(ANDROID_ID, file, nodeId, value, prefix, value.substring(prefix.length()));
                     handled = true;
                 } else if (value.startsWith("@+id/")) {
                     System.err.println("Warning: non-constant id found in: " + value);
                 }
             if (!handled) {
                 System.err.println("Warning: could not process android id: " + value);
-                db.add(ANDROID_ID, file, sNodeId, value, "-", value);
+                db.add(ANDROID_ID, file, nodeId, value, "-", value);
             }
         } else if (qName.equals("layout")) {
             if (value.startsWith(LAYOUT_PREFIX)) {
-                db.add(ANDROID_INCLUDE_XML, file, sNodeId, value.substring(LAYOUT_PREFIX.length()));
+                db.add(ANDROID_INCLUDE_XML, file, nodeId, value.substring(LAYOUT_PREFIX.length()));
             } else
                 System.err.println("Warning: ignoring layout=" + value);
+        }
+    }
+
+    private static class Node {
+        String file;
+        String nodeId;
+        public Node(String file, String nodeId) {
+            this.file = file;
+            this.nodeId = nodeId;
         }
     }
 }

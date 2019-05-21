@@ -196,8 +196,9 @@ ReachableLayoutControl(?type) :- LauncherActivity(?type).
 #ifdef DISABLE_POINTS_TO
 // Crude rule for disabled points-to: make all detected control/fragment
 // constructors and callbacks reachable.
-ReachableLayoutControl(?class) :-
-  XMLFragment_Class(_, _, ?class) ; LayoutControl(_, ?class, _).
+ReachableLayoutControl(?class) :- XMLFragment_Class(_, _, ?class).
+ReachableLayoutControl(?class) :- LayoutControl(_, ?class, _).
+ReachableLayoutControl(?class) :- LayoutBehavior(?class).
 #endif // DISABLE_POINTS_TO
 
 // Consider action view classes reachable.

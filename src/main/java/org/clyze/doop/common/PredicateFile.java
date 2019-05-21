@@ -123,7 +123,8 @@ public enum PredicateFile
     VAR_DECLARING_METHOD("Var-DeclaringMethod"),
     VIRTUAL_METHOD_INV("VirtualMethodInvocation"),
     XMLNode("XMLNode"),
-    XMLNodeAttribute("XMLNodeAttribute");
+    XMLNodeAttribute("XMLNodeAttribute"),
+    XMLNodeData("XMLNodeData");
 
     private final String name;
 

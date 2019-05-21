@@ -930,3 +930,5 @@ isAnnotation(?annotation) :- Param_Annotation(_, _, ?annotation).
 .input XMLNode(IO="file", filename="XMLNode.facts", delimiter="\t")
 .decl XMLNodeAttribute(?file:symbol, ?nodeId:symbol, ?index:symbol, ?localName:symbol, ?qName:symbol, ?value:symbol)
 .input XMLNodeAttribute(IO="file", filename="XMLNodeAttribute.facts", delimiter="\t")
+.decl XMLNodeData(?file:symbol, ?nodeId:symbol, ?data:symbol)
+.input XMLNodeData(IO="file", filename="XMLNodeData.facts", delimiter="\t")
