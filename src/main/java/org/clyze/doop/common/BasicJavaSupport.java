@@ -85,8 +85,7 @@ public class BasicJavaSupport {
                     propertyProvider.addProperties(jarFile.getInputStream(entry), filename);
                 } else if ((isJar || isAar) && entryName.endsWith(".xml")) {
                     // We only handle .xml entries inside JAR archives here.
-                    // APK archives may contain binary XML and need decoding
-                    // (see 'decode apk' option).
+                    // APK archives may contain binary XML and need decoding.
                     File xmlTmpFile = extractZipEntryAsFile("xml-file", jarFile, entry, entryName);
                     try (Database db = new Database(outDir)) {
                         System.out.println("Processing XML entry (in " + filename + "): " + entryName);
