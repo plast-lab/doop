@@ -32,7 +32,9 @@ ForcedReachableAndroidContext(?ctx, ?method) :-
 
 #ifdef DISABLE_POINTS_TO
 
-ReachableLayoutControl(?controlType) :- FieldBindView(_, _, ?controlType, _, _).
+ReachableValue(?hctx, ?controlValue),
+ReachableLayoutControl(?controlType) :-
+  FieldBindView(_, ?controlValue, ?controlType, _, ?hctx).
 
 #else
 
