@@ -764,8 +764,22 @@ ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?baseva
 
 
 /**
- * Fragment transactions.
+ * Fragments and fragment transactions.
 **/
+
+#ifdef DISABLE_POINTS_TO
+
+// Handle reflective instantiation of fragments in types-only.
+ReachableLayoutControl(?fragmentSubType) :-
+  Reachable(?method),
+  _AssignHeapAllocation(_, _, ?heap, _, ?method, _),
+  ClassHeap_InstanceType(?heap, ?fragmentSubType),
+  basic.SubtypeOf(?fragmentSubType, ?fragmentType),
+  ( ?fragmentType = "android.app.Fragment"
+  ; ?fragmentType = "androidx.fragment.app.Fragment"
+  ).
+
+#endif // DISABLE_POINTS_TO
 
 // REVIEW: Doesn't the Fact type Activity suffice?
 .decl _ActivityVar(?var:Var)
