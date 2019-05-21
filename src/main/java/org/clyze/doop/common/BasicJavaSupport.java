@@ -97,14 +97,15 @@ public class BasicJavaSupport {
                     boolean isLibsXZS = entryName.endsWith("libs.xzs");
                     boolean isLibsZSTD = entryName.endsWith("libs.zstd");
                     File libTmpFile = null;
-                    if (isSO || isLibsXZS || isLibsZSTD)
+                    if (isSO || isLibsXZS || isLibsZSTD) {
                         libTmpFile = extractZipEntryAsFile("native-lib", jarFile, entry, entryName);
-                    if (isSO)
-                        NativeScanner.scanLib(libTmpFile, outDir);
-                    else if (isLibsXZS)
-                        NativeScanner.scanXZSLib(libTmpFile, outDir);
-                    else if (isLibsZSTD)
-                        NativeScanner.scanZSTDLib(libTmpFile, outDir);
+                        if (isSO)
+                            NativeScanner.scanLib(libTmpFile, outDir);
+                        else if (isLibsXZS)
+                            NativeScanner.scanXZSLib(libTmpFile, outDir);
+                        else if (isLibsZSTD)
+                            NativeScanner.scanZSTDLib(libTmpFile, outDir);
+                    }
                 }
             }
         }
