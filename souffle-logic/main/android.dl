@@ -1030,4 +1030,4 @@ TypeHasApplicationObjectFlowingToLibrary(?type) :-
   basic.SubtypeOf(?type, ?varType),
   TypeHasReachableApplicationObject(?type).
 
-#include "butterknife.dl"
+#include "../addons/butterknife.dl"
