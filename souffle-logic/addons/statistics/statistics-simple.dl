@@ -44,11 +44,12 @@ Stats_Simple_Application_ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue
   mainAnalysis.AssignNormalHeapAllocation(?basevalue, _, ?meth),
   mainAnalysis.ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue).
 
+#ifndef DISABLE_POINTS_TO
+
 /***************************************************
  * Fields
  ***************************************************/
 
-#ifndef DISABLE_POINTS_TO
 Stats_Simple_InsensInstanceFieldPointsTo(?value, ?sig, ?basevalue) :-
   mainAnalysis.InstanceFieldPointsTo(_, ?value, ?sig, _, ?basevalue).
 
@@ -60,6 +61,7 @@ Stats_Simple_Application_InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?
   ApplicationMethod(?meth),
   mainAnalysis.AssignNormalHeapAllocation(?basevalue, _, ?meth),
   mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue).
+
 #endif // DISABLE_POINTS_TO
 
 /***************************************************
@@ -198,12 +200,10 @@ NewMetricMacro( "6.5", "app array index points-to (SENS)", Stats_Simple_Applicat
 #ifndef DISABLE_POINTS_TO
 NewMetricMacro( "3.0", "instance field points-to (INS)", Stats_Simple_InsensInstanceFieldPointsTo(_, _, _)).
 NewMetricMacro( "3.5", "instance field points-to (SENS)", mainAnalysis.InstanceFieldPointsTo(_, _, _, _, _)).
-#endif // DISABLE_POINTS_TO
 
 NewMetricMacro( "4.0", "static field points-to (INS)", Stats_Simple_InsensStaticFieldPointsTo(_, _)).
 NewMetricMacro( "4.5", "static field points-to (SENS)", mainAnalysis.StaticFieldPointsTo(_, _, _)).
 
-#ifndef DISABLE_POINTS_TO
 NewMetricMacro( "7.0", "app instance field points-to (INS)", Stats_Simple_Application_InsensInstanceFieldPointsTo(_, _, _)).
 NewMetricMacro( "7.5", "app instance field points-to (SENS)", Stats_Simple_Application_InstanceFieldPointsTo(_, _, _, _, _)).
 #endif // DISABLE_POINTS_TO
