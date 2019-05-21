@@ -83,7 +83,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
    Value_Num(?value, ?const),
    isImmutableHContext(?hctx).
 
-#endif  // DISABLE_POINTS_TO
+#endif // DISABLE_POINTS_TO
 
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
@@ -225,7 +225,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   ReachableContext(?ctx, ?inmethod).
 #ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1)
-#endif
+#endif // X_CONTEXT_REMOVER
 
 /**
  * Store static fields
@@ -435,7 +435,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptReturnAssign(?toCtx, ?to, ?fromCtx, ?from).
   .plan 1:(2,1)
 
-#endif
+#endif // INFORMATION_FLOW
 
 OptArgVarPointsTo(?hctx, ?value, ?actualCtx, ?actual) :-
   VarPointsTo(?hctx, ?value, ?actualCtx, ?actual),
@@ -467,7 +467,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptArgAssign(?toCtx, ?to, ?fromCtx, ?from).
   .plan 1:(2,1)
 
-#endif
+#endif // INFORMATION_FLOW
 
 
 /**
@@ -534,9 +534,9 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   !Value_Null(?value).
 #ifndef X_CONTEXT_REMOVER
  .plan 1:(2,1,3)
-#endif
+#endif // X_CONTEXT_REMOVER
 
-#endif // #ifdef ZIPPER
+#endif // ZIPPER
 
 /**
  * Super method invocations
