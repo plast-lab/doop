@@ -184,6 +184,12 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
   (Method_SimpleName(?meth, "<init>") ; _OnEventMethod(?meth)),
   isImmutableContext(?ctx).
 
+// Create special values for layout controls made reachable by the analysis.
+MockValueConsMacro(?value, ?type),
+ReifiedAndroidObjectValue(?value, ?type) :-
+  ReachableLayoutControl(?type),
+  ?value = cat("<reachable layout control of type ", cat(?type, ">")).
+
 // Make launcher activity methods forced-reachable.
 ReachableLayoutControl(?type) :- LauncherActivity(?type).
 
