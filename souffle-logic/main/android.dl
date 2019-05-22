@@ -1031,3 +1031,4 @@ TypeHasApplicationObjectFlowingToLibrary(?type) :-
   TypeHasReachableApplicationObject(?type).
 
 #include "../addons/butterknife.dl"
+#include "../addons/glide.dl"

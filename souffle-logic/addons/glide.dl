@@ -1,0 +1,21 @@
+// Special logic to support features of the Glide framework.
+
+#ifdef DISABLE_POINTS_TO
+
+.decl GlideModule(?value:Value, ?t:Type)
+
+MockValueConsMacro(?value, ?t),
+ReachableValue(?hctx, ?value),
+ForcedReachableAndroidContext(?ctx, ?method),
+GlideModule(?value, ?t) :-
+  basic.SubtypeOf(?t, "com.bumptech.glide.module.GlideModule"),
+  Method_DeclaringType(?method, ?t),
+  isImmutableHContext(?hctx),
+  isImmutableContext(?ctx),
+  ?value = cat("<Glide module, value of type ", cat(?t, ">")).
+
+#else
+
+// TODO: points-to handling for Glide.
+
+#endif // DISABLE_POINTS_TO
