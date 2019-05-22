@@ -1030,5 +1030,13 @@ TypeHasApplicationObjectFlowingToLibrary(?type) :-
   basic.SubtypeOf(?type, ?varType),
   TypeHasReachableApplicationObject(?type).
 
+// Classes whose methods should be all considered reachable. For
+// types-only, there must also be a reachable value of the class.
+.decl ForcedReachableAndroidClass(?ctx:configuration.Context, ?type:Type)
+
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  ForcedReachableAndroidClass(?ctx, ?type),
+  Method_DeclaringType(?method, ?type).
+
 #include "../addons/butterknife.dl"
 #include "../addons/glide.dl"

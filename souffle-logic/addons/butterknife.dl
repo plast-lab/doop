@@ -39,14 +39,6 @@ ReachableLayoutControl(?type) :-
   ; ViewBinder(?value, ?type, ?hctx)
   ).
 
-// Classes whose methods should be all considered reachable. For
-// types-only, there must also be a reachable value of the class.
-.decl ForcedReachableAndroidClass(?ctx:configuration.Context, ?type:Type)
-
-ForcedReachableAndroidContext(?ctx, ?method) :-
-  ForcedReachableAndroidClass(?ctx, ?type),
-  Method_DeclaringType(?method, ?type).
-
 // Handle classes accessed by ButterKnife.findBindingConstructorForClass().
 ForcedReachableAndroidClass(?ctx, ?viewBindingType) :-
   FieldBindView(?field, _, _, ?ctx, _),

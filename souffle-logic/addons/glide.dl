@@ -1,21 +1,29 @@
 // Special logic to support features of the Glide framework.
 
+.decl GlideReifiedType(?value:Value, ?type:Type)
+
+MockValueConsMacro(?value, ?type),
+ReachableValue(?hctx, ?value),
+ForcedReachableAndroidClass(?ctx, ?type) :-
+  GlideReifiedType(?value, ?type),
+  isImmutableHContext(?hctx),
+  isImmutableContext(?ctx).
+
 #ifdef DISABLE_POINTS_TO
 
-.decl GlideModule(?value:Value, ?t:Type)
-
-MockValueConsMacro(?value, ?t),
-ReachableValue(?hctx, ?value),
-ForcedReachableAndroidContext(?ctx, ?method),
-GlideModule(?value, ?t) :-
-  basic.SubtypeOf(?t, ?glideType),
+// Recognize Glide modules.
+GlideReifiedType(?value, ?type) :-
+  basic.SubtypeOf(?type, ?glideType),
   ( ?glideType = "com.bumptech.glide.module.GlideModule"
   ; ?glideType = "com.bumptech.glide.module.AppGlideModule"
   ),
-  Method_DeclaringType(?method, ?t),
-  isImmutableHContext(?hctx),
-  isImmutableContext(?ctx),
-  ?value = cat("<Glide module, value of type ", cat(?t, ">")).
+  ?value = cat("<Glide module, value of type ", cat(?type, ">")).
+
+// Superset of Glide rules (matches all methods instead of just "public" ones).
+GlideReifiedType(?value, ?type) :-
+  isClassType(?type),
+  match("com.bumptech.glide.load.ImageHeaderParser\$.*", ?type),
+  ?value = cat("<Glide special value of type ", cat(?type, ">")).
 
 #else
 
