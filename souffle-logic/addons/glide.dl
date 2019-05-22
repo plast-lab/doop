@@ -8,7 +8,10 @@ MockValueConsMacro(?value, ?t),
 ReachableValue(?hctx, ?value),
 ForcedReachableAndroidContext(?ctx, ?method),
 GlideModule(?value, ?t) :-
-  basic.SubtypeOf(?t, "com.bumptech.glide.module.GlideModule"),
+  basic.SubtypeOf(?t, ?glideType),
+  ( ?glideType = "com.bumptech.glide.module.GlideModule"
+  ; ?glideType = "com.bumptech.glide.module.AppGlideModule"
+  ),
   Method_DeclaringType(?method, ?t),
   isImmutableHContext(?hctx),
   isImmutableContext(?ctx),
