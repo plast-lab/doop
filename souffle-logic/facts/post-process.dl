@@ -30,9 +30,10 @@ ConcreteClass(?class) :-
   isClassType(?class),
   !ClassModifier("abstract", ?class).
 
-// Note that this is more than a straightforward import of generated
-// facts into a DB relation. It filters out the guessed control
-// types that do not correspond to existing types.
+// Note that this is more than a straightforward import of generated facts into
+// a DB relation. It filters out the guessed control types that do not
+// correspond to existing types. Relations LayoutControl0 and
+// SensitiveLayoutControl0 may also come from XML facts (see android-xml.dl).
 #ifdef ANDROID
 LayoutControl(?id, ?type, ?parent) :-
   LayoutControl0(?id, ?type, ?parent),
