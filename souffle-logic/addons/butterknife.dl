@@ -3,11 +3,11 @@
 // TODO: @BindViews, bind resources (drawables, fonts, data).
 //
 
-.decl FieldBindView(?field:Field, ?controlValue:Value, ?controlType:Type, ?ctx:configuration.Context, ?hctx:configuration.HContext)
-
 /***************************************************
  * @BindView
  ***************************************************/
+
+.decl FieldBindView(?field:Field, ?controlValue:Value, ?controlType:Type, ?ctx:configuration.Context, ?hctx:configuration.HContext)
 
 // When a constructor is made reachable in a type containing a
 // @BindView-annotated field, instantiate that field.
@@ -23,18 +23,42 @@ FieldBindView(?field, ?controlValue, ?controlType, ?ctx, ?hctx) :-
   isImmutableHContext(?hctx),
   ?controlValue = cat("@BindView: <", cat(?controlType, cat(" control for field ", ?field))).
 
-// Handle classes accessed by ButterKnife.findBindingConstructorForClass().
+.decl ViewBinder(?value:Value, ?type:Type, ?hctx:configuration.HContext)
+
+// Recognize butterknife view binders.
+ViewBinder(?value, ?type, ?hctx) :-
+  basic.SubtypeOf(?type, "butterknife.ButterKnife$ViewBinder"),
+  ?value = cat("<butterknife ViewBinder of type ", cat(?type, ">")),
+  isImmutableHContext(?hctx).
+
+// Instantiate types involved in view binding.
+ReifiedAndroidObjectValue(?value, ?type),
+ReachableValue(?hctx, ?value),
+ReachableLayoutControl(?type) :-
+  ( FieldBindView(_, ?value, ?type, _, ?hctx)
+  ; ViewBinder(?value, ?type, ?hctx)
+  ).
+
+// Classes whose methods should be all considered reachable. For
+// types-only, there must also be a reachable value of the class.
+.decl ForcedReachableAndroidClass(?ctx:configuration.Context, ?type:Type)
+
 ForcedReachableAndroidContext(?ctx, ?method) :-
+  ForcedReachableAndroidClass(?ctx, ?type),
+  Method_DeclaringType(?method, ?type).
+
+// Handle classes accessed by ButterKnife.findBindingConstructorForClass().
+ForcedReachableAndroidClass(?ctx, ?viewBindingType) :-
   FieldBindView(?field, _, _, ?ctx, _),
   Field_DeclaringType(?field, ?type),
-  ?viewBindingType = cat(?type, "_ViewBinding"),
-  Method_DeclaringType(?method, ?viewBindingType).
+  ?viewBindingType = cat(?type, "_ViewBinding").
 
 #ifdef DISABLE_POINTS_TO
 
-ReachableValue(?hctx, ?controlValue),
-ReachableLayoutControl(?controlType) :-
-  FieldBindView(_, ?controlValue, ?controlType, _, ?hctx).
+// Make all view binder methods reachable.
+ForcedReachableAndroidClass(?ctx, ?type) :-
+  ViewBinder(_, ?type, _),
+  isImmutableContext(?ctx).
 
 #else
 
