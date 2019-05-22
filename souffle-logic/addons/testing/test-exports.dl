@@ -27,6 +27,7 @@
 .output Service
 .output LayoutControl
 .output mainAnalysis.LauncherActivity
+.output mainAnalysis.ReachableLayoutControl
 .output mainAnalysis.XMLFragment_Class
 .output mainAnalysis.XMLFragment_Id
 .output mainAnalysis.XMLNode_Parent

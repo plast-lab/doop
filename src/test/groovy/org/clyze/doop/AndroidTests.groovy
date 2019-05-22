@@ -100,6 +100,8 @@ class AndroidTests extends DoopBenchmark {
 		isFragment(analysis, 'res/layout/sliding_music_panel_layout.xml', '5', 'com.kabouzeid.gramophone.ui.fragments.player.MiniPlayerFragment', '2131296569')
 		methodIsReachable(analysis, '<com.kabouzeid.gramophone.ui.fragments.player.MiniPlayerFragment: void <init>()>')
 		methodIsReachable(analysis, '<com.kabouzeid.gramophone.ui.fragments.player.MiniPlayerFragment: void onPause()>')
+		// Test reachable layout control.
+		isReachableLayoutControl(analysis, 'com.kabouzeid.gramophone.ui.fragments.player.PlayerAlbumCoverFragment')
 		// Test analysis sanity.
 		noSanityErrors(analysis, false)
 	}

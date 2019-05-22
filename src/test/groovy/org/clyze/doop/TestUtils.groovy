@@ -176,6 +176,11 @@ class TestUtils {
 		findPair(analysis, "LayoutControl", id, 0, control, 1)
 	}
 
+	static void isReachableLayoutControl(Analysis analysis, String controlType) {
+		log("isReachableLayoutControl('${controlType}')")
+		assert true == find(analysis, "mainAnalysis.ReachableLayoutControl", controlType, true)
+	}
+
 	// Check that a method is reachable.
 	static void methodIsReachable(Analysis analysis, String meth) {
 		log("methodIsReachable('${meth}')")
