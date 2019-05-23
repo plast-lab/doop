@@ -17,6 +17,8 @@ import org.clyze.utils.JHelper;
 
 public abstract class AndroidSupport {
 
+    public static final String DECODE_DIR = "decoded";
+
     protected final Parameters parameters;
     protected final BasicJavaSupport java;
 
@@ -47,7 +49,7 @@ public abstract class AndroidSupport {
         // R class linker used for AAR inputs.
         RLinker rLinker = RLinker.getInstance();
 
-        String decodeDir = parameters.getOutputDir() + File.separator + "decoded";
+        String decodeDir = parameters.getOutputDir() + File.separator + DECODE_DIR;
 
         // We merge the information from all resource files, not just
         // the application's. There are Android apps that use
@@ -218,7 +220,7 @@ public abstract class AndroidSupport {
         String[] cmdArgs;
         try {
             apkPath = apk.getCanonicalPath();
-            String outDir = decodeDir + File.separator + apkBaseName(apk.getName());
+            String outDir = decodeDir + File.separator + apkBaseName(apk.getName()) + "-sources";
             // Don't use "-f" option of apktool, delete manually.
             FileUtils.deleteDirectory(new File(outDir));
             cmdArgs = new String[] { "d", apkPath, "-o", outDir };
