@@ -21,6 +21,7 @@ import org.clyze.utils.Helper
 class DDlog {
 
 	static final String convertedLogicName = "converted_logic" as String
+    static final String SOUFFLE_CONVERTER = "souffle_converter.py" as String
     Executor executor
     File scriptFile
     File outDir
@@ -50,7 +51,7 @@ class DDlog {
      */
     public static void copyDDlogConverter(Logger log, File outDir) {
 		String ddlogSouffleDir = "${getDDlogDir(log)}/tools"
-		["souffle-grammar.pg", "souffle-converter.py"].each {
+		["souffle-grammar.pg", SOUFFLE_CONVERTER].each {
 			File from = new File(ddlogSouffleDir, it)
 			File to = new File(outDir, it)
 			log.debug "COPY: ${from.canonicalPath} -> ${to.canonicalPath}"
@@ -67,7 +68,7 @@ class DDlog {
         // Step 1. Call converter for logic only.
 		def cmdConvert = ["${doopHome}/bin/run-in-dir.sh" as String,
 						  outDir.canonicalPath,
-						  "${outDir}/souffle-converter.py" as String,
+						  "${outDir}/${SOUFFLE_CONVERTER}" as String,
                           "--logic-only",
 						  scriptFile.canonicalPath,
 						  convertedLogicPrefix ]
@@ -128,7 +129,7 @@ class DDlog {
         // Step 1. Convert the facts.
 		def cmdConvert = ["${doopHome}/bin/run-in-dir.sh" as String,
 						  outDir.canonicalPath,
-						  "${outDir}/souffle-converter.py" as String,
+						  "${outDir}/${SOUFFLE_CONVERTER}" as String,
 						  scriptFile.canonicalPath,
                           "--facts-only",
 						  convertedLogicPrefix ]

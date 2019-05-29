@@ -869,8 +869,6 @@ isNumConstant(?const) :-
 
 #endif // ANDROID
 
-#ifndef VIA_DDLOG
-
 // Access Modifiers
 
 isModifier(?x), Modifier_abstract(?x) :- ?x = "abstract".
@@ -895,8 +893,6 @@ isType(?t), isPrimitiveType(?t), Type_void(?t)    :- ?t = "void".
 isType(?t), isReferenceType(?t), isNullType(?t), Type_null(?t) :- ?t = "null_type".
 
 isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.lang.Object".
-
-#endif // VIA_DDLOG
 
 
 // Annotations
