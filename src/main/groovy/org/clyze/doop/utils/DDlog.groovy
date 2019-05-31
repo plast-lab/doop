@@ -32,14 +32,19 @@ class DDlog {
      * @param log    the logger object to use for debug messages
      * @return       the DDlog path
      */
-    private static String getDDlogDir(Logger log) {
+    private static File getDDlogDir(Logger log) {
 		String DDLOG_DIR = "DDLOG_DIR"
 		String ddlogDir = System.getenv(DDLOG_DIR)
 		if (!ddlogDir) {
 			throw new DoopErrorCodeException(24, new RuntimeException("Environment variable ${DDLOG_DIR} is empty."))
 		} else {
-			log.debug "Using DDlog in ${ddlogDir}"
-            return ddlogDir
+			File f = new File(ddlogDir)
+			if (!f.exists()) {
+				throw new DoopErrorCodeException(26, new RuntimeException("Directory ${DDLOG_DIR}=${ddlogDir} does not exist."))
+			} else {
+				log.debug "Using DDlog in ${ddlogDir}"
+				return f
+			}
 		}
     }
 
@@ -50,7 +55,7 @@ class DDlog {
      * @param outDir  the output directory where the files will be copied
      */
     public static void copyDDlogConverter(Logger log, File outDir) {
-		String ddlogSouffleDir = "${getDDlogDir(log)}/tools"
+		String ddlogSouffleDir = "${getDDlogDir(log).absolutePath}/tools"
 		["souffle-grammar.pg", SOUFFLE_CONVERTER].each {
 			File from = new File(ddlogSouffleDir, it)
 			File to = new File(outDir, it)
@@ -66,28 +71,26 @@ class DDlog {
      */
     File compileWithDDlog(int jobs) {
         // Step 1. Call converter for logic only.
-		def cmdConvert = ["${doopHome}/bin/run-in-dir.sh" as String,
-						  outDir.canonicalPath,
-						  "${outDir}/${SOUFFLE_CONVERTER}" as String,
+		def cmdConvert = ["${outDir}/${SOUFFLE_CONVERTER}" as String,
                           "--logic-only",
 						  scriptFile.canonicalPath,
 						  convertedLogicPrefix ]
 		log.debug "Running logic conversion command: ${cmdConvert}"
-		executeCmd(cmdConvert)
+		executeCmd(cmdConvert, outDir)
 
 		// Step 2: Compile the analysis.
 		def genTime = Helper.timing {
 			log.info "Compiling the analysis: code generation..."
 			String convertedLogic = "${convertedLogicPrefix}.dl" as String
-			def cmdGenRust = "${doopHome}/bin/run-in-dir.sh ${getDDlogDir(log)} stack run -- -i ${convertedLogic} --action=compile -L lib".split().toList()
-			executeCmd(cmdGenRust)
+			def cmdGenRust = "stack run -- -i ${convertedLogic} --action=compile -L lib".split().toList()
+			executeCmd(cmdGenRust, getDDlogDir(log))
 		}
 		log.info "Time: ${genTime}"
 		def buildTime = Helper.timing {
 			log.info "Compiling the analysis: building (using ${jobs} jobs)..."
 			log.debug "Build dir: ${buildDir}"
-			def cmdBuildRust = "${doopHome}/bin/run-in-dir.sh ${buildDir} cargo build -j ${jobs} --release".split().toList()
-			executeCmd(cmdBuildRust)
+			def cmdBuildRust = "cargo build -j ${jobs} --release".split().toList()
+			executeCmd(cmdBuildRust, new File(buildDir))
 		}
 		log.info "Time: ${buildTime}"
 
@@ -127,14 +130,12 @@ class DDlog {
 	 */
 	private void runWithDDlog(File db, int jobs) {
         // Step 1. Convert the facts.
-		def cmdConvert = ["${doopHome}/bin/run-in-dir.sh" as String,
-						  outDir.canonicalPath,
-						  "${outDir}/${SOUFFLE_CONVERTER}" as String,
+		def cmdConvert = ["${outDir}/${SOUFFLE_CONVERTER}" as String,
 						  scriptFile.canonicalPath,
                           "--facts-only",
 						  convertedLogicPrefix ]
 		log.debug "Running facts conversion command: ${cmdConvert}"
-		executeCmd(cmdConvert)
+		executeCmd(cmdConvert, outDir)
 
 		// Step 2: Run the analysis.
 		log.info "Running the analysis (using ${jobs} jobs)..."
@@ -144,7 +145,7 @@ class DDlog {
 
 			// Hack: use script to get away with redirection.
 			def cmdRun = "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs}".split().toList()
-			executeCmd(cmdRun)
+			executeCmd(cmdRun, null)
 		}
 		log.info "Time: ${runTime}"
 	}
@@ -152,13 +153,16 @@ class DDlog {
 	/**
 	 * Executes a command using a temporary file for its output.
 	 *
-	 * @param cmd	the command line to invoke
+	 * @param cmd		  the command line to invoke
+	 * @param workingDir  the working directory to use
 	 */
-	void executeCmd(List<String> command) {
+	void executeCmd(List<String> command, File workingDir) {
 		log.debug command
 		Path tmpFile = Files.createTempFile("", "")
+		if (workingDir) {
+			executor.currWorkingDir = workingDir
+		}
 		executor.executeWithRedirectedOutput(command, tmpFile.toFile()) { println it }
 		Files.delete(tmpFile)
 	}
-
 }
