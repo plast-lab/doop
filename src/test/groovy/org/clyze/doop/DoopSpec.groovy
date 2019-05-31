@@ -22,7 +22,7 @@ abstract class DoopSpec extends Specification {
 		return Main.analysis
 	}
 
-    Analysis analyzeBuiltinTest(String test, List<String> extraArgs, String analysisName, String id = null) {
+    Analysis analyzeBuiltinTest(String test, List<String> extraArgs, String analysisName = "context-insensitive", String id = null) {
         return analyzeTest(test, testJar(test), extraArgs, analysisName, id)
     }
 

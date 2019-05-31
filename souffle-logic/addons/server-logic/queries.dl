@@ -88,8 +88,10 @@ Server_Field_ShadowedBy(?fld, ?shadowFld) :-
 .decl _SFPT(?fld:Field, ?value:mainAnalysis.Value)
 .decl _SFPT_Count(?fld:Field, ?n:number)
 
+#ifndef DISABLE_POINTS_TO
 _IFPT(?baseValue, ?fld, ?value) :-
   mainAnalysis.InstanceFieldPointsTo(_, ?value, ?fld, _, ?baseValue).
+#endif // DISABLE_POINTS_TO
 
 Server_IField_Values_Count(?baseValue, ?fld, ?n) :-
   _IFPT(?baseValue, ?fld, _),

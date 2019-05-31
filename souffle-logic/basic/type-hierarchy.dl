@@ -254,7 +254,6 @@ ClassConstructor(method, type) :-
     isMethod(method),
     match(".*<init>.*", method).
 
-
 // ?class is implemented/extended by ?subClass
 .decl Class_InterestingSubtype(?class:ReferenceType, ?subClass:ReferenceType)
 .decl _Valid_Type(?type:ReferenceType)

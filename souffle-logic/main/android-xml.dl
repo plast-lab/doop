@@ -1,0 +1,235 @@
+// Android XML interpretation
+//
+// The following rules interpret XML files found in Android applications.
+// This logic handles both the Android manifest and resource files (such as
+// controls for the view inflater).
+//
+
+// Detect application package and main class. XML pattern: <manifest package="...">
+.decl ApplicationPackage(?package:symbol)
+ApplicationPackage(?package) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNodeAttribute(?manifest, ?manifestId, _, _, "package", ?package).
+AndroidApplication(?type) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNodeAttribute(?manifest, ?applicationId, _, _, "android:name", ?type).
+
+// Helper macro to handle types that are either fully qualified or
+// unqualified and belong to the application package.
+#define APP_QUALIFIED_TYPE(t, qType) \
+  ( qType = t \
+  ; ( ApplicationPackage(?package), \
+      ( qType = cat(?package, t) \
+      ; qType = cat(?package, cat(".", t)) \
+      ) \
+    ) \
+  ), \
+  isType(qType)
+
+// Detect activities, providers, receivers, and services.
+// Activity XML pattern:
+// <manifest>
+//   <application>
+//     <activity android:name="...">
+Activity(?qType) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+// Service XML pattern:
+// <manifest>
+//   <application>
+//     <service android:name="...">
+Service(?qType) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?serviceId, ?applicationId, _, _, "service"),
+  XMLNodeAttribute(?manifest, ?serviceId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+// Broadcast receiver XML pattern:
+// <manifest>
+//   <application>
+//     <receiver android:name="...">
+BroadcastReceiver(?qType) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?receiverId, ?applicationId, _, _, "receiver"),
+  XMLNodeAttribute(?manifest, ?receiverId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+// Content provider XML pattern:
+// <manifest>
+//   <application>
+//     <provider android:name="...">
+ContentProvider(?qType) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?providerId, ?applicationId, _, _, "provider"),
+  XMLNodeAttribute(?manifest, ?providerId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+
+// Make all methods reachable for configured 'appComponentFactory'
+// classes. These classes may come from the platform, so we don't
+// register them in AndroidOriginalAppComponent/AndroidAppComponent.
+// XML pattern:
+// <manifest>
+//   <application android:appComponentFactory="...">
+ForcedReachableAndroidContext(?ctx, ?meth) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNodeAttribute(?manifest, ?applicationId, _, _, "android:appComponentFactory", ?appComponentFactoryClass),
+  basic.MethodDeclaredOrInherited(?meth, ?appComponentFactoryClass),
+  isImmutableContext(?ctx).
+
+// Detect parent activities.
+.decl Activity_Parent(?type:ClassType, ?parentActivity:ClassType)
+Activity(?parentActivity),
+Activity_Parent(?type, ?parentActivity) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:parentActivityName", ?parentActivity).
+
+// Detect activity aliases. XML pattern:
+// <manifest>
+//   <application>
+//     <activity-alias android:name="..." android:targetActivity="...">
+.decl Activity_Alias(?activity:ClassType, ?alias:symbol)
+Activity_Alias(?activity, ?alias) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity-alias"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?alias),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:targetActivity", ?activity).
+
+// Detect onClick handlers.
+CallbackMethod(?method) :-
+  XMLNodeAttribute(_, _, _, _, "android:onClick", ?method).
+
+// Types-only: for a callback method that is just a name, consider as
+// callbacks all methods whose names match that name.
+#ifdef DISABLE_POINTS_TO
+CallbackMethod(?method) :-
+  CallbackMethod(?name),
+  !isMethod(?name),
+  Method_SimpleName(?method, ?name).
+#endif // DISABLE_POINTS_TO
+
+.decl LayoutControl_CallbackMethod(?controlId:symbol, ?method:symbol)
+LayoutControl_CallbackMethod(?controlId, ?method) :-
+  XMLNodeAttribute(?file, ?nodeId, _, _, "android:onClick", ?method),
+  XMLNode_Id(?file, ?nodeId, _, ?controlId).
+
+// This should match the constant in the XML fact generator.
+#define ROOT_NODE "-1"
+
+// XML nodes: parent relationship (can cross files due to <include> elements).
+.decl XMLNode_Parent(?file:symbol, ?nodeId:symbol, ?parentFile:symbol, ?parentNodeId:symbol)
+// Base case: XML nodes in the same file.
+XMLNode_Parent(?file, ?nodeId, ?file, ?parentNodeId) :-
+  XMLNode(?file, ?nodeId, ?parentNodeId, _, _, _).
+// Cross-file parents: <include> a layout (with a non-<merge> root node).
+// This will make NODE_1 the parent of NODE_2 in this XML pattern:
+//   file1.xml:   ... <NODE1><include layout="@layout/file2"></NODE1> ...
+//   file2.xml:   <NODE2> ... </NODE2>
+XMLNode_Parent(?file, ?nodeId, ?originFile, ?parentNodeId) :-
+  AndroidIncludeXML(?originFile, ?includeId, ?xml),
+  XMLNode(?originFile, ?includeId, ?parentNodeId, _, _, _),
+  XMLNode(?file, ?nodeId, ROOT_NODE, _, _, ?nodeName),
+  ?nodeName != "merge",
+  contains(?xml, ?file).
+// Cross-file parents: <include> a layout (with a <merge> root node).
+// This will make NODE the parent of all NODES in this XML pattern:
+//   file1.xml:   ... <NODE><include layout="@layout/file2"></NODE> ...
+//   file2.xml:   <merge> ... NODES ... </merge>
+XMLNode_Parent(?file, ?nodeId, ?originFile, ?parentNodeId) :-
+  AndroidIncludeXML(?originFile, ?includeId, ?xml),
+  XMLNode(?originFile, ?includeId, ?parentNodeId, _, _, _),
+  XMLNode(?file, _, ROOT_NODE, _, _, "merge"),
+  XMLNode(?file, ?nodeId, _, _, _, _),
+  contains(?xml, ?file).
+
+.decl XMLNode_Id(?file:symbol, ?nodeId:symbol, ?name:symbol, ?value:symbol)
+XMLNode_Id(?file, ?nodeId, ?name, ?id) :-
+  XMLNode(?file, ?nodeId, _, _, _, ?name),
+  AndroidId(?file, ?nodeId, _, _, ?label),
+  Field_SimpleName(?field, ?label),
+  FieldInitialValue(?field, ?id).
+
+// Detect layout controls.
+LayoutControl0(?id, ?name, ?parentId) :-
+  XMLNode_Id(?file, ?nodeId, ?name, ?id),
+  XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
+  XMLNode_Id(?parentFile, ?parentNodeId, _, ?parentId).
+
+// Handle layout controls where the parent is missing (or is not a layout control).
+LayoutControl0(?id, ?name, "-") :-
+  XMLNode_Id(?file, ?nodeId, ?name, ?id),
+  !XMLNode_Parent(?file, ?nodeId, _, _).
+LayoutControl0(?id, ?name, "-") :-
+  XMLNode_Id(?file, ?nodeId, ?name, ?id),
+  XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
+  !XMLNode_Id(?parentFile, ?parentNodeId, _, _).
+
+// Detect sensitive layout controls.
+SensitiveLayoutControl0(?id, ?type, ?parent) :-
+  XMLNode_Id(?file, ?nodeId, ?type, ?id),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "android:password", "true"),
+  LayoutControl0(?id, ?type, ?parent).
+SensitiveLayoutControl0(?id, ?type, ?parent) :-
+  XMLNode_Id(?file, ?nodeId, ?type, ?id),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "android:inputType", ?inputType),
+  ( ?inputType = "textPassword"
+  ; ?inputType = "textVisiblePassword"
+  ; ?inputType = "textWebPassword"
+  ; ?inputType = "numberPassword"
+  ),
+  LayoutControl0(?id, ?type, ?parent).
+
+// Detect launcher activity. XML pattern:
+//   <activity android:name="Activity">
+//     <intent-filter>
+//       <category android:name="android.intent.category.LAUNCHER" />
+.decl LauncherActivity(?type:ClassType)
+LauncherActivity(?qType) :-
+  XMLNode(?manifest, ?activityId, _, _, _, "activity"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
+  XMLNode(?manifest, ?intentFilterId, ?activityId, _, _, "intent-filter"),
+  XMLNode(?manifest, ?categoryId, ?intentFilterId, _, _, "category"),
+  XMLNodeAttribute(?manifest, ?categoryId, _, _, "android:name", "android.intent.category.LAUNCHER"),
+  APP_QUALIFIED_TYPE(?type, ?qType).
+
+// Detect fragments. XML pattern: <fragment android:id="@id/fragment" class="Fragment">
+.decl XMLFragment_Class(?file:symbol, ?nodeId:symbol, ?qClass:ClassType)
+XMLFragment_Class(?file, ?nodeId, ?qClass) :-
+  XMLNode(?file, ?nodeId, _, _, _, "fragment"),
+  // Both "class" and "android:name" can be used for the fragment type:
+  // https://stackoverflow.com/questions/10162983/activity-layout-fragment-class-vs-androidname-attributes
+  ( XMLNodeAttribute(?file, ?nodeId, _, _, "class", ?class)
+  ; XMLNodeAttribute(?file, ?nodeId, _, _, "android:name", ?class)
+  ),
+  APP_QUALIFIED_TYPE(?class, ?qClass).
+.decl XMLFragment_Id(?file:symbol, ?nodeId:symbol, ?id:symbol)
+XMLFragment_Id(?file, ?nodeId, ?id) :-
+  XMLNode_Id(?file, ?nodeId, "fragment", ?id).
+
+// Detect types used in action views.
+.decl ActionViewType(?class:ClassType)
+ActionViewType(?class) :-
+  XMLNodeAttribute(_, _, _, _, "app:actionViewClass", ?class),
+  isType(?class).
+
+// Layout behaviors. XML pattern:
+//   <... app:layout_behavior="@string/X" />
+//   <string name="X">CLASS</string>
+.decl LayoutBehavior(?class:ClassType)
+
+LayoutBehavior(?qClass) :-
+  XMLNode(?file, ?nodeId, _, _, _, "string"),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "name", ?x),
+  XMLNodeAttribute(_, _, _, _, "app:layout_behavior", ?s),
+  ?s = cat("@string/", ?x),
+  XMLNodeData(?file, ?nodeId, ?class),
+  APP_QUALIFIED_TYPE(?class, ?qClass).

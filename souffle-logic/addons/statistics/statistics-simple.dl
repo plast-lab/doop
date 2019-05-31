@@ -29,7 +29,7 @@ Stats_Simple_ReachableVar(?ctx, ?var) :-
 Stats_Simple_InsensVarPointsTo(?value, ?var) :-
   DupCopies(?var, ?var2),
   mainAnalysis.VarPointsTo(_, ?value, _, ?var2).
-#endif
+#endif // TRANSFORM_INPUT
 
 /***************************************************
  * Arrays
@@ -43,6 +43,8 @@ Stats_Simple_Application_ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue
   ApplicationMethod(?meth),
   mainAnalysis.AssignNormalHeapAllocation(?basevalue, _, ?meth),
   mainAnalysis.ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue).
+
+#ifndef DISABLE_POINTS_TO
 
 /***************************************************
  * Fields
@@ -59,6 +61,8 @@ Stats_Simple_Application_InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?
   ApplicationMethod(?meth),
   mainAnalysis.AssignNormalHeapAllocation(?basevalue, _, ?meth),
   mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue).
+
+#endif // DISABLE_POINTS_TO
 
 /***************************************************
  * Call graph edges
@@ -142,7 +146,7 @@ Stats_Simple_Application_NullVirtualMethodInvocation(?invocation) :-
   VirtualMethodInvocation_Base(?invocation, ?base),
   Stats_Simple_Application_ReachableVirtualMethodInvocation(?invocation).
 
-Stats_Simple_Application_EmptyVirtualMethodInvocation(?invocation) :-
+Stats_Simple_Application_EmptyReachableVirtualMethodInvocation(?invocation) :-
   Stats_Simple_Application_ReachableVirtualMethodInvocation(?invocation),
   VirtualMethodInvocation_Base(?invocation, ?base),
   !Stats_Simple_InsensVarPointsTo(_, ?base).
@@ -193,12 +197,16 @@ NewMetricMacro( "2.5", "array index points-to (SENS)", mainAnalysis.ArrayIndexPo
 NewMetricMacro( "6.0", "app array index points-to (INS)", Stats_Simple_Application_InsensArrayIndexPointsTo(_, _)).
 NewMetricMacro( "6.5", "app array index points-to (SENS)", Stats_Simple_Application_ArrayIndexPointsTo(_, _, _, _)).
 
+#ifndef DISABLE_POINTS_TO
 NewMetricMacro( "3.0", "instance field points-to (INS)", Stats_Simple_InsensInstanceFieldPointsTo(_, _, _)).
 NewMetricMacro( "3.5", "instance field points-to (SENS)", mainAnalysis.InstanceFieldPointsTo(_, _, _, _, _)).
+
 NewMetricMacro( "4.0", "static field points-to (INS)", Stats_Simple_InsensStaticFieldPointsTo(_, _)).
 NewMetricMacro( "4.5", "static field points-to (SENS)", mainAnalysis.StaticFieldPointsTo(_, _, _)).
+
 NewMetricMacro( "7.0", "app instance field points-to (INS)", Stats_Simple_Application_InsensInstanceFieldPointsTo(_, _, _)).
 NewMetricMacro( "7.5", "app instance field points-to (SENS)", Stats_Simple_Application_InstanceFieldPointsTo(_, _, _, _, _)).
+#endif // DISABLE_POINTS_TO
 
 NewMetricMacro( "8.0", "call graph edges (INS)", Stats_Simple_InsensCallGraphEdge(_, _)).
 NewMetricMacro( "8.5", "call graph edges (SENS)", mainAnalysis.CallGraphEdge(_, _, _, _)).
@@ -215,7 +223,7 @@ NewMetricMacro("16.0", "app virtual call sites (statically)", Stats_Simple_Appli
 NewMetricMacro("17.0", "app reachable virtual call sites", Stats_Simple_Application_ReachableVirtualMethodInvocation(_)).
 NewMetricMacro("18.0", "app polymorphic virtual call sites", Stats_Simple_Application_PolymorphicCallSite(_)).
 NewMetricMacro("19.0", "app null virtual call sites", Stats_Simple_Application_NullVirtualMethodInvocation(_)).
-NewMetricMacro("19.5", "app empty virtual call sites", Stats_Simple_Application_EmptyVirtualMethodInvocation(_)).
+NewMetricMacro("19.5", "app empty reachable virtual call sites", Stats_Simple_Application_EmptyReachableVirtualMethodInvocation(_)).
 
 NewMetricMacro("20.0", "casts (statically)", AssignCast(_, _, _, _)).
 NewMetricMacro("21.0", "reachable casts", Stats_Simple_ReachableCast(_, _, _, _)).
@@ -227,6 +235,21 @@ NewMetricMacro("25.5", "app reachable methods", Stats_Simple_Application_Reachab
 
 //NewMetricMacro("50.0", "call sites that did (not) get refined", SiteToRefine(_)).
 //NewMetricMacro("51.0", "allocation sites that did (not) get refined", ValueToRefine(_)).
+
+/***************************************************
+ * Android
+ ***************************************************/
+
+#ifdef ANDROID
+NewMetricMacro("26.0", "Android activities", Activity(_)).
+NewMetricMacro("26.1", "Android broadcast receivers", BroadcastReceiver(_)).
+NewMetricMacro("26.2", "Android content providers", ContentProvider(_)).
+NewMetricMacro("26.3", "Android services", Service(_)).
+NewMetricMacro("26.4", "Android layout controls", LayoutControl(_, _, _)).
+NewMetricMacro("26.5", "Android sensitive layout controls", SensitiveLayoutControl(_, _, _)).
+NewMetricMacro("26.6", "Android callback methods", CallbackMethod(_)).
+NewMetricMacro("26.7", "Android typed fragments", mainAnalysis.XMLFragment_Class(_, _, _)).
+#endif // ANDROID
 
 /***************************************************
  * Reflection
@@ -243,10 +266,12 @@ Stats_Simple_Reflection_VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   mainAnalysis.ReflectiveValue(?value),
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
+#ifndef DISABLE_POINTS_TO
 Stats_Simple_Reflection_InsensInstanceFieldPointsTo(?value, ?sig, ?basevalue),
 Stats_Simple_Reflection_InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue) :-
   mainAnalysis.ReflectiveValue(?value),
   mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue).
+#endif // DISABLE_POINTS_TO
 
 Stats_Simple_forName(?invocation) :-
   mainAnalysis.java_lang_Class_forName(?invocation, ?inmethod),
@@ -266,12 +291,16 @@ NewMetricMacro("30.0", "var points-to (to a reflective value) (INS)", Stats_Simp
 NewMetricMacro("30.5", "var points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_VarPointsTo(_, _, _, _)).
 NewMetricMacro("31.0", "array index points-to (to a reflective value) (INS)", Stats_Simple_Reflection_InsensArrayIndexPointsTo(_, _)).
 NewMetricMacro("31.5", "array index points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_ArrayIndexPointsTo(_, _, _, _)).
+
+#ifndef DISABLE_POINTS_TO
 NewMetricMacro("32.0", "instance field points-to (to a reflective value) (INS)", Stats_Simple_Reflection_InsensInstanceFieldPointsTo(_, _, _)).
 NewMetricMacro("32.5", "instance field points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_InstanceFieldPointsTo(_, _, _, _, _)).
+#endif // DISABLE_POINTS_TO
+
 NewMetricMacro("35.0", "reachable 'forName' (INS)", Stats_Simple_forName(_)).
 NewMetricMacro("36.0", "reachable 'Class.newInstance' (INS)", Stats_Simple_Class_newInstance(_)).
 NewMetricMacro("37.0", "reachable 'Constructor.newInstance' (INS)", Stats_Simple_Constructor_newInstance(_)).
-#endif
+#endif // REFLECTION
 
 /***************************************************
  * Information Flow
@@ -301,7 +330,7 @@ NewMetricMacro("42.0", "total tainted values", TaintedValue(_)).
 NewMetricMacro("43.0", "original tainted values", Stats_Simple_OriginalTaintedValue(_)).
 NewMetricMacro("44.0", "sink variables (SENS)", LeakingSinkVariable(_, _, _, _)).
 NewMetricMacro("45.0", "total leaks", Stats_Simple_LeakingTaintedInformation(_, _)).
-#endif
+#endif // INFORMATION_FLOW
 
 /***************************************************
  * Open Programs
@@ -319,7 +348,7 @@ NewMetricMacro("61.3", "Mock Objects for Arrays", MockObjFromArray(_)).
 NewMetricMacro("61.4", "Mock Objects for Formals", MockObjFromFormal(_)).
 //NewMetricMacro("62.0", "Methods Reachable from open entry points (SENS)", MockReachableContext(_,_)).
 //NewMetricMacro("62.5", "Methods Reachable from open entry points (INS)", Stats_Simple_ReachableFromOpenProgramEntryPoint(_)).
-#endif
+#endif // OPEN_PROGRAMS
 
 #ifdef SPECIAL_CONTEXT_SENSITIVITY_METHODS
 Stats_Simple_TwoObjectMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
@@ -332,7 +361,8 @@ NewMetricMacro("101.0", "context-insensitive methods", mainAnalysis.configuratio
 NewMetricMacro("102.0", "2-object-sensitive methods", mainAnalysis.configuration.TwoObjectMethod(_)).
 NewMetricMacro("103.0", "context-insensitive methods total VPT", Stats_Simple_ContextInsensitiveMethodsVPT(_, _, _, _)).
 NewMetricMacro("104.0", "2-object-sensitive methods total VPT", Stats_Simple_TwoObjectMethodsVPT(_, _, _, _)).
-#endif
+#endif // SPECIAL_CONTEXT_SENSITIVITY_METHODS
+
 /***************************************************
  * Memory Dump
  ***************************************************/
@@ -411,7 +441,7 @@ Stats_Simple_Application_DynamicCallGraphEdge(?invocation, ?toMeth) :-
   Instruction_Method(?invocation, ?fromMeth),
   ApplicationMethod(?fromMeth).
 
-#endif
+#endif // HEAPDLS
 
 .decl Stats_Simple_Application_InsensCallGraphEdge(?invocation:Instruction, ?toMeth:Method)
 OUTPUT_STATS(Stats_Simple_Application_InsensCallGraphEdge)

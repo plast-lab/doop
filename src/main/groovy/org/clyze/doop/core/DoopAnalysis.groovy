@@ -14,6 +14,7 @@ import org.clyze.doop.common.FrontEnd
 import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.python.PythonInvoker
+import org.clyze.doop.util.ClassPathHelper
 import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
@@ -390,6 +391,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--write-artifacts-map"]
         }
 
+        if (options.LEGACY_ANDROID_PROCESSING.value) {
+            params += ["--legacy-android-processing"]
+        }
+
         params.addAll(["--log-dir", Doop.doopLog])
         params.addAll(["-d", factsDir.toString()] + inputArgs)
         deps.addAll(platforms.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>)
@@ -475,7 +480,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 // leaks, not only for soot but for all other Java-based tools,
                 // like jphantom.  In such a case, we should invoke all
                 // Java-based tools using a separate process.
-                ClassLoader loader = sootClassLoader()
+                ClassLoader loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
                 try {
                     redo = false
                     Helper.execJavaNoCatch(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
@@ -535,7 +540,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     Object getThrowableField(ClassLoader loader, Throwable t, String className, String fieldName) {
         if (t instanceof InvocationTargetException) {
-            Throwable cause = ((InvocationTargetException)t).getTargetException() as Throwable
+            Throwable cause = ((InvocationTargetException) t).targetException as Throwable
             if (cause.getClass().getName() == className) {
                 Field classesFld = loader.loadClass(className).getDeclaredField(fieldName)
                 classesFld.setAccessible(true)
@@ -666,8 +671,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
         log.debug "Params of jphantom: ${params.join(' ')}"
 
-        //we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
-        ClassLoader loader = phantomClassLoader()
+        // We invoke the main method reflectively to avoid adding jphantom as a compile-time dependency.
+        ClassLoader loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
@@ -684,43 +689,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             AnalysisOption option -> option.toString()
         }.sort()
         return (inputs + cacheOptions).join("\n")
-    }
-
-    /**
-     * Creates a new class loader for running jphantom
-     */
-    protected ClassLoader phantomClassLoader() { copyOfCurrentClasspath() }
-
-    /**
-     * Creates a new class loader for running soot
-     */
-    protected ClassLoader sootClassLoader() { copyOfCurrentClasspath() }
-
-    protected ClassLoader copyOfCurrentClasspath() {
-        URL[] classpath = null
-        ClassLoader cl = this.class.classLoader
-        if (cl instanceof URLClassLoader) {
-            log.debug "Reading URL entries from current class loader..."
-            classpath = (cl as URLClassLoader).URLs
-            log.debug "Creating a new URL class loader with classpath = ${classpath}"
-            return new URLClassLoader(classpath, null as ClassLoader)
-        } else {
-            return this.class.classLoader
-            // We currently don't support classpath copies for Java 9+. Solution:
-            //
-            // 1. The classpath can be parsed as follows:
-            //   log.debug "Parsing current classpath to reconstruct URL entries..."
-            //   String pathSeparator = System.getProperty("path.separator");
-            //   classpath = System.getProperty("java.class.path").
-            //               split(pathSeparator).
-            //               collect { new URL("file://${it}") } as URL[]
-            //
-            // 2. And then a ModuleLayer must be constructed and loaded:
-            //    https://docs.oracle.com/javase/9/docs/api/java/lang/ModuleLayer.html
-            //
-            // However, the technique above makes Java 9+ a compile-time dependency
-            // and thus breaks Java 8 compatibility, unless all code is reflective.
-        }
     }
 
     protected void runHeapDL(List<String> filenames) {

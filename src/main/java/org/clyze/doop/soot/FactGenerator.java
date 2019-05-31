@@ -47,7 +47,8 @@ class FactGenerator implements Runnable {
             _writer.writeClassOrInterfaceType(_sootClass);
 
             for (String mod : getModifiers(_sootClass.getModifiers(), false))
-                _writer.writeClassModifier(_sootClass, mod);
+                if (!mod.trim().equals(""))
+                    _writer.writeClassModifier(_sootClass, mod);
 
             // the isInterface condition prevents Object as superclass of interface
             if (_sootClass.hasSuperclass() && !_sootClass.isInterface()) {

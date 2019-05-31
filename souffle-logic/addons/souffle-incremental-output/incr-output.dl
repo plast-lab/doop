@@ -1,3 +1,33 @@
+/*
+.decl LiveOutputRelation(?relName:symbol)
+
+.decl Successfull(?maxRes:number)
+.output Successfull
+
+.decl LiveOutputRelation_Res(?relName:symbol, ?res:number)
+.output LiveOutputRelation_Res
+
+LiveOutputRelation("Test1").
+LiveOutputRelation("Test2").
+
+LiveOutputRelation_Res(?relName, ?res):-
+  LiveOutputRelation(?relName),
+  ?res = @addOutputRelation(?relName).
+
+Successfull(?maxRes):-
+  ?maxRes = max ?res: {  LiveOutputRelation_Res(_, ?res)}.
+*/
+
+.decl RegAtExitFun(?pl:number)
+.decl RegAtExitFun_Res(?pl:number, ?res:number)
+.output RegAtExitFun_Res
+
+RegAtExitFun(1).
+
+RegAtExitFun_Res(?pl, ?res):-
+  RegAtExitFun(?pl),
+  ?res = @registerAtExitFunction(?pl).
+
 .decl ctxToNum(?ctx:mainAnalysis.configuration.Context, ?strCtx:number)
 .output ctxToNum
 
@@ -14,6 +44,7 @@ hctxToNum(?hctx, ?hctxNum):-
 
 
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?newVar):-
+  //Successfull(1),
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var),
   ?hctxNum = ord(?hctx),
   ?ctxNum = ord(?ctx),
@@ -23,8 +54,18 @@ mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?newVar):-
 
 
 mainAnalysis.CallGraphEdge(?callerCtx, ?invocation, ?callerCtx, ?tofunction):-
+  //Successfull(1),
   mainAnalysis.CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tofunction),
   ?callerCtxNum = ord(?callerCtx),
   ?calleeCtxNum = ord(?calleeCtx),
   ?resNum = @logCGE(?callerCtxNum, ?invocation, ?calleeCtxNum, ?tofunction),
   ?resNum != 0.
+
+/*
+ Example using the general logRel, the first argument of which provides the fileName
+ */
+mainAnalysis.Reachable(?reachablePlus):-
+  mainAnalysis.Reachable(?reachable),
+  ?resNum = @logRel("liveReachable", ?reachable),
+  ?resNum != 0,
+  ?reachablePlus = "<<never-reachable>>".

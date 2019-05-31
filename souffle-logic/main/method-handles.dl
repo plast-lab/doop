@@ -315,6 +315,7 @@ MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?form
   Var_Type(?actual, ?actualType),
   Var_Type(?formal, ?formalType).
 
+#ifndef DISABLE_POINTS_TO
 // This rule covers exact matching of argument types.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, _),
@@ -325,13 +326,11 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
 // This rule covers boxing of arguments for MethodHandle.invoke(). Since the
 // original arguments are primitive values, VarPointsTo may not be available.
 // This is an expensive rule and is thus guarded for the full reflective case.
-#ifndef DISABLE_POINTS_TO
 VarPointsTo(?immHctx, ?val, ?calleeCtx, ?formal) :-
   MethodHandleCGE_Arg(_, ?calleeCtx, _, ?formal, ?actualType, ?formalType, "invoke"),
   BoxTypeConversion(?actualType, ?formalType),
   BoxAllocation(?val, ?formalType),
   isImmutableHContext(?immHctx).
-#endif // DISABLE_POINTS_TO
 #endif // REFLECTION_METHOD_HANDLES
 
 // Pass receiver to instance methods.
@@ -354,13 +353,16 @@ VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
   Var_Type(?ret, ?retType),
   Var_Type(?var, ?varType),
   CompatibleTypes(?retType, ?varType).
+#endif // DISABLE_POINTS_TO
 
 // Model MethodHandle.asType().
 OpaqueCallGraphEdge(?invo, ?sig),
 MockValueConsMacro(?adapterMH, "java.lang.invoke.MethodHandle"),
+#ifndef DISABLE_POINTS_TO
+VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret),
+#endif // DISABLE_POINTS_TO
 MethodHandle_Method(?adapterMH, ?mhMethod),
-MethodHandle_MethodType(?adapterMH, ?mt),
-VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret) :-
+MethodHandle_MethodType(?adapterMH, ?mt) :-
   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
   ReachableContext(?ctx, ?method),
   ?sig = "<java.lang.invoke.MethodHandle: java.lang.invoke.MethodHandle asType(java.lang.invoke.MethodType)>",
@@ -647,6 +649,7 @@ MethodVarArgs(?method, ?idx, ?formal, ?type) :-
 // Use a mock array to fix calls to a bootstrap method accepting varargs.
 #define MOCK_ARRAY(invokedynamic) cat("bootstrap varargs array for ", invokedynamic)
 
+#ifndef DISABLE_POINTS_TO
 ArrayIndexPointsTo(?immHctx, ?val, ?immHctx, ?mockArray),
 MockValueConsMacro(?mockArray, ?varArgsType),
 VarPointsTo(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
@@ -665,6 +668,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   FormalParam(?idx + 3, ?bootMethod, ?formal),
   BootstrapParam(?idx, ?invokedynamic, ?actual),
   VarPointsTo(?hctx, ?val, _, ?actual).
+#endif // DISABLE_POINTS_TO
 
 .type CallSite = mainAnalysis.Value
 .decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?ctx:configuration.Context)
@@ -680,6 +684,7 @@ InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?callerCtx) :-
   isBootstrapMethodContext(?calleeCtx),
   VarPointsTo(_, ?callsite, ?calleeCtx, ?bootRetVar).
 
+#ifndef DISABLE_POINTS_TO
 // Interpret CallSite contents.
 .decl CallSiteContents(?invokedynamic:DynamicMethodInvocation_Insn, ?methodHandle:MethodHandle, ?method:Method, ?mt:MethodType, ?ctx:configuration.Context)
 CallSiteContents(?invokedynamic, ?methodHandle, ?method, ?mt, ?ctx) :-
@@ -732,6 +737,7 @@ MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, 
 
 ReachableContext(?calleeCtx, ?callee) :-
   MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?callee, _, _).
+#endif // DISABLE_POINTS_TO
 
 /*************************************************************
  * Lambda-specific invokedynamic
@@ -776,7 +782,9 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 // Record more information about the call site to model the metafactory result
 // and return the mock lambda object.
 MockValueConsMacro(?lambda, ?dynRetType),
+#ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?lambda, ?callerCtx, ?ret),
+#endif // DISABLE_POINTS_TO
 LambdaObject(?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?callerCtx) :-
   ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType, ?callerCtx),
   DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
@@ -824,12 +832,14 @@ LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
 ReachableContext(?calleeCtx, ?callee) :-
   LambdaCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
 
+#ifndef DISABLE_POINTS_TO
 // Handle return values for lambda call-graph edges.
 VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?method, _),
   ReturnVar(?realReturnVar, ?method),
   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
   AssignReturnValue(?i, ?ret).
+#endif // DISABLE_POINTS_TO
 
 // Helper relation: implementing method is an instance method.
 .decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?calleeCtx:configuration.Context, ?lambda:Lambda)
@@ -868,12 +878,14 @@ LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic) :-
   FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
   Var_Type(?formal, ?formalType).
 
+#ifndef DISABLE_POINTS_TO
 // Argument passing case #1: check type compatibility.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, _),
   VarPointsTo(?hctx, ?val, _, ?actual),
   Value_Type(?val, ?valType),
   basic.SubtypeOf(?valType, ?formalType).
+#endif // DISABLE_POINTS_TO
 
 // Argument passing case #2: autoboxing for some function types.
 .decl BoxingFunction(?functionType:ReferenceType, ?primType:Type, ?refType:ReferenceType)
@@ -904,6 +916,7 @@ BoxingFunction(?doubleArgLambdaType, "double", "java.lang.Double") :-
   ?doubleArgLambdaType = "java.util.function.DoubleToLongFunction";
   ?doubleArgLambdaType = "java.util.function.DoubleUnaryOperator";
   ?doubleArgLambdaType = "java.util.function.ObjDoubleConsumer".
+#ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic),
   ReachableLambdaMetafactoryInvoke(?invokedynamic, _, ?dynRetType, _),
@@ -912,7 +925,6 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   BoxAllocation(?val, ?formalType),
   isImmutableHContext(?hctx).
 
-#ifndef DISABLE_POINTS_TO
 // Pass captured arguments to the implementing method.
 VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
@@ -932,7 +944,6 @@ VarPointsTo(?hctx, ?thisValue, ?calleeCtx, ?this) :-
   LambdaCaptured(?invokedynamic, ?thisValue, 0, ?hctx),
   Value_Type(?thisValue, ?thisValueType),
   basic.SubtypeOf(?thisValueType, ?thisType).
-#endif // DISABLE_POINTS_TO
 
 // Special handling for "this" parameters to method references that do
 // not capture a receiver.
@@ -949,10 +960,8 @@ VarPointsTo(?hctx, ?argValue, ?calleeCtx, ?this) :-
 // Applications of constructor references construct values. However,
 // these values do not come from a 'new' instruction in the code but
 // are created here as mock values, one per type/invocation.
-#ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?mockObj, ?callerCtx, ?var),
 VarPointsTo(?hctx, ?mockObj, ?calleeCtx, ?thisVar),
-#endif // DISABLE_POINTS_TO
 MockValueConsMacro(?mockObj, ?type) :-
   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, _),
   Method_SimpleName(?implMethod, "<init>"),
@@ -961,9 +970,11 @@ MockValueConsMacro(?mockObj, ?type) :-
   ThisVar(?implMethod, ?thisVar),
   ?mockObj = cat("mock ", cat(?type, cat(" constructed by constructor reference at ", ?i))),
   isImmutableHContext(?hctx).
+#endif // DISABLE_POINTS_TO
 
 #ifdef REFLECTION_METHOD_HANDLES
 #ifdef REFLECTION
+#ifndef DISABLE_POINTS_TO
 
 /**
  * Naive model of Class.getDeclaredConstructors() without backpropagation of
@@ -986,9 +997,7 @@ Class_getMembers(?sig, ?hctx, ?ctx, ?ret, ?class) :-
   ApplicationClass(?class),
   AssignReturnValue(?invo, ?ret).
 
-#ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?mockConstructors, ?ctx, ?ret),
-#endif // DISABLE_POINTS_TO
 MockValueConsMacro(?mockConstructors, "java.lang.reflect.Constructor[]"),
 FillConstructorsFromClass(?hctx, ?mockConstructors, ?class) :-
   Class_getMembers(GET_DECLARED_CONSTRUCTORS, ?hctx, ?ctx, ?ret, ?class),
@@ -1001,9 +1010,7 @@ ArrayIndexPointsTo(?immHctx, ?constructor, ?hctx, ?mockConstructors) :-
   ReifiedConstructor(?method, ?constructor),
   isImmutableHContext(?immHctx).
 
-#ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?mockMethods, ?ctx, ?ret),
-#endif // DISABLE_POINTS_TO
 MockValueConsMacro(?mockMethods, "java.lang.reflect.Method[]"),
 FillConstructorsFromClass(?hctx, ?mockMethods, ?class) :-
   Class_getMembers(GET_DECLARED_METHODS, ?hctx, ?ctx, ?ret, ?class),
@@ -1015,5 +1022,6 @@ ArrayIndexPointsTo(?immHctx, ?methodValue, ?hctx, ?mockMethods) :-
   ReifiedMethod(?method, ?methodValue),
   isImmutableHContext(?immHctx).
 
+#endif // DISABLE_POINTS_TO
 #endif // REFLECTION
 #endif // REFLECTION_METHOD_HANDLES

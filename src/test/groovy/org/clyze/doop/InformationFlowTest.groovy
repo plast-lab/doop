@@ -12,7 +12,7 @@ class InformationFlowTest extends DoopBenchmark {
 	@Unroll
 	def "Information flow (P/Taint) test"() {
 		when:
-		List args = ["-i", "${doopBenchmarksDir}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk",
+		List args = ["-i", Artifacts.ANDROIDTERM_APK,
 					 "-a", "context-insensitive",
 					 "--platform", "android_25_fulljars",
                      "--information-flow", "android",

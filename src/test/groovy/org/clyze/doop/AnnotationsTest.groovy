@@ -6,16 +6,16 @@ import spock.lang.Specification
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
 
-class AnnotationsTest extends ServerAnalysisTests {
+class AnnotationsTest extends DoopSpec {
 	// @spock.lang.Ignore
 	@Unroll
 	def "Server analysis test 017 (annotations)"() {
 		when:
-		Analysis analysis = analyzeTest("017-annotations",
-										["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-										 "--generate-jimple", "--Xserver-logic",
-										 "--reflection-classic",
-										 "--thorough-fact-gen", "--sanity"])
+		List options = ["--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+						"--generate-jimple", "--Xserver-logic",
+						"--reflection-classic",
+						"--thorough-fact-gen", "--sanity"]
+		Analysis analysis = analyzeBuiltinTest("017-annotations", options)
 
 		then:
 		// type annotations

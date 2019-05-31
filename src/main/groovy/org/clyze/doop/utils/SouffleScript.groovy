@@ -24,8 +24,10 @@ class SouffleScript {
 	static final String EXE_NAME = "exe"
 
 	Executor executor
+	boolean viaDDlog
 	long compilationTime = 0L
 	long executionTime = 0L
+	File scriptFile = null
 
 	void preprocess(File output, File input) {
 		CPreprocessor cpp = new CPreprocessor(executor)
@@ -38,8 +40,12 @@ class SouffleScript {
                  boolean provenance = false, boolean liveProf = false,
                  boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
 
-		def scriptFile = File.createTempFile("gen_", ".dl", outDir)
+		scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		preprocess(scriptFile, origScriptFile)
+
+		if (viaDDlog) {
+			return (new DDlog(executor, scriptFile, outDir)).compileWithDDlog(4)
+		}
 
 		if (useFunctors) {
 			detectFunctors(outDir)
@@ -113,6 +119,15 @@ class SouffleScript {
 		def db = new File(outDir, "database")
 		deleteQuietly(db)
 		db.mkdirs()
+
+		if (viaDDlog) {
+			try {
+				(new DDlog(executor, scriptFile, outDir)).runWithDDlog(db, jobs)
+				return
+			} catch (ex) {
+				throw new DoopErrorCodeException(25, ex)
+			}
+		}
 
 		def executionCommand = "$cacheFile -j$jobs -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
 		if (profile)
@@ -196,7 +211,7 @@ class SouffleScript {
 				String libName = "libfunctors.so"
 				try {
 					Path target = FileSystems.default.getPath(libfunctors)
-					Path link = FileSystems.default.getPath(outDir.getAbsolutePath() + File.separator + libName)
+					Path link = FileSystems.default.getPath(outDir.absolutePath + File.separator + libName)
 					Files.createSymbolicLink(link, target)
 					log.debug "Created symbolic link: ${link} -> ${target}"
 				} catch (UnsupportedOperationException ignored) {

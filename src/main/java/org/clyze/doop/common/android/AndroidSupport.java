@@ -2,21 +2,22 @@ package org.clyze.doop.common.android;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
+import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
-import org.clyze.doop.common.NativeScanner;
 import org.clyze.doop.common.Parameters;
+import org.clyze.doop.common.XMLFactGenerator;
+import org.clyze.doop.util.ClassPathHelper;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
 
 public abstract class AndroidSupport {
 
-    private static final String APKTOOL_HOME_ENV_VAR = "APKTOOL_HOME";
+    public static final String DECODE_DIR = "decoded";
 
     protected final Parameters parameters;
     protected final BasicJavaSupport java;
@@ -28,6 +29,7 @@ public abstract class AndroidSupport {
     private final Collection<String> appCallbackMethods = new HashSet<>();
     private final Set<LayoutControl> appUserControls = new HashSet<>();
     private final Map<String, AppResources> computedResources = new HashMap<>();
+    private final Set<String> decodeDirs = new HashSet<>();
 
     private final Log logger;
 
@@ -47,7 +49,7 @@ public abstract class AndroidSupport {
         // R class linker used for AAR inputs.
         RLinker rLinker = RLinker.getInstance();
 
-        String decodeDir = parameters.getOutputDir() + File.separator + "decoded";
+        String decodeDir = parameters.getOutputDir() + File.separator + DECODE_DIR;
 
         // We merge the information from all resource files, not just
         // the application's. There are Android apps that use
@@ -58,20 +60,24 @@ public abstract class AndroidSupport {
                 System.out.println("Processing application resources in " + i);
                 if (isApk && parameters.getDecodeApk()) {
                     System.out.println("Decoding...");
+                    decodeDirs.add(decodeDir);
                     decodeApk(new File(i), decodeDir);
                 }
-                try {
-                    AppResources resources = processAppResources(i);
-                    computedResources.put(i, resources);
-                    processAppResources(i, resources, pkgs, rLinker);
-                    resources.printManifestInfo();
-                } catch (Exception ex) {
-                    System.err.println("Resource processing failed: " + ex.getMessage());
+                if (parameters._legacyAndroidProcessing) {
+                    try {
+                        AppResources resources = processAppResources(i);
+                        computedResources.put(i, resources);
+                        processAppResources(i, resources, pkgs, rLinker);
+                        resources.printManifestInfo();
+                    } catch (Exception ex) {
+                        System.err.println("Resource processing failed: " + ex.getMessage());
+                    }
                 }
             }
         }
 
-        printCollectedComponents();
+        if (parameters._legacyAndroidProcessing)
+            printCollectedComponents();
 
         // Produce a JAR of the missing R classes.
         String generatedR = rLinker.linkRs(parameters._rOutDir, tmpDirs);
@@ -170,7 +176,20 @@ public abstract class AndroidSupport {
                 }
             }
         }
-        writer.writeExtraSensitiveControls(parameters);
+    }
+
+    /**
+     * Translate XML files to facts.
+     *
+     * @param db      the database object to use
+     * @param outDir    the output directory (the parent of the decode directories)
+     */
+    public void generateFactsForXML(Database db, String outDir) {
+        for (String decodeDir : decodeDirs) {
+            System.out.println("Processing XML in directory: " + decodeDir);
+            XMLFactGenerator.processDir(new File(decodeDir), db, outDir);
+        }
+
     }
 
     // Parses Android manifests. Supports binary and plain-text XML
@@ -188,9 +207,7 @@ public abstract class AndroidSupport {
     }
 
     /**
-     * Decode an APK input using apktool. The tool may either be found
-     * in environment variable (see constant APKTOOL_HOME_ENV_VAR) or
-     * a default version of apktool may be provided as a build dependency.
+     * Decode an APK input using apktool.
      *
      * @param apk                        the APK
      * @param decodeDir                  the target directory to use as root
@@ -199,12 +216,11 @@ public abstract class AndroidSupport {
         if (new File(decodeDir).mkdirs())
             System.out.println("Created " + decodeDir);
 
-        String apktoolHome = System.getenv(APKTOOL_HOME_ENV_VAR);
         String apkPath;
         String[] cmdArgs;
         try {
             apkPath = apk.getCanonicalPath();
-            String outDir = decodeDir + File.separator + apkBaseName(apk.getName());
+            String outDir = decodeDir + File.separator + apkBaseName(apk.getName()) + "-sources";
             // Don't use "-f" option of apktool, delete manually.
             FileUtils.deleteDirectory(new File(outDir));
             cmdArgs = new String[] { "d", apkPath, "-o", outDir };
@@ -214,23 +230,38 @@ public abstract class AndroidSupport {
         }
 
         System.out.println("Decoding " + apkPath + " using apktool...");
-        if (apktoolHome == null || (!(new File(apktoolHome)).exists())) {
-            System.err.println("Invalid environment variable: " + APKTOOL_HOME_ENV_VAR + "=" + apktoolHome + ", using default apktool...");
-            try {
-                Class.forName("brut.apktool.Main").getDeclaredMethod("main").invoke(cmdArgs);
-            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-                System.err.println("Error: could not find default apktool.");
-            }
-        } else {
-            String[] cmd = new String[cmdArgs.length + 1];
+        String[] cmd;
+        // First, check if the environment overrides the bundled apktool.
+        final String APKTOOL_HOME_ENV_VAR = "APKTOOL_HOME";
+        String apktoolHome = System.getenv(APKTOOL_HOME_ENV_VAR);
+        if (apktoolHome != null) {
+            System.err.println("Trying to use apktool in : " + apktoolHome);
+            cmd = new String[cmdArgs.length + 1];
             cmd[0] = apktoolHome + File.separator + "apktool";
             System.arraycopy(cmdArgs, 0, cmd, 1, cmdArgs.length);
-            System.out.println("Command: " + String.join(" ", cmd));
+        } else {
             try {
-                JHelper.runWithOutput(cmd, "APKTOOL");
-            } catch (IOException ex) {
-                System.err.println("Error: could not run apktool (" + APKTOOL_HOME_ENV_VAR + " = " + apktoolHome + ").");
+                // Try to read the bundled apktool JAR. Since this is a standalone
+                // archive that duplicates classes already found in the classpath
+                // (possibly with different versions), it should then run isolated
+                // via 'java -jar'.
+                String apktoolJar = ClassPathHelper.getClasspathJar("apktool");
+                cmd = new String[cmdArgs.length + 3];
+                cmd[0] = "java";
+                cmd[1] = "-jar";
+                cmd[2] = apktoolJar;
+                System.arraycopy(cmdArgs, 0, cmd, 3, cmdArgs.length);
+            } catch (Exception ex) {
+                System.err.println("Error: could not find apktool, please set " + APKTOOL_HOME_ENV_VAR);
+                return;
             }
+        }
+        System.err.println("Command: " + String.join(" ", cmd));
+        try {
+            JHelper.runWithOutput(cmd, "APKTOOL");
+        } catch (IOException ex) {
+            System.err.println("Error: could not run apktool.");
+            ex.printStackTrace();
         }
     }
 

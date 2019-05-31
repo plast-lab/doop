@@ -176,7 +176,7 @@ public class Main {
             System.err.println("Error: not all bodies retrieved.");
         }
 
-        try (Database db = new Database(new File(sootParameters.getOutputDir()))) {
+        try (Database db = new Database(new File(outDir))) {
             boolean reportPhantoms = sootParameters._reportPhantoms;
             boolean moreStrings = sootParameters._extractMoreStrings;
             boolean artifacts = sootParameters._writeArtifactsMap;
@@ -189,8 +189,12 @@ public class Main {
             writer.writePreliminaryFacts(classes, java, sootParameters);
             db.flush();
 
-            if (android != null)
-                android.writeComponents(writer, sootParameters);
+            if (android != null) {
+                android.generateFactsForXML(db, outDir);
+                if (sootParameters._legacyAndroidProcessing)
+                    android.writeComponents(writer, sootParameters);
+                writer.writeExtraSensitiveControls(sootParameters);
+            }
 
             if (!sootParameters.noFacts()) {
                 scene.getOrMakeFastHierarchy();
@@ -225,7 +229,7 @@ public class Main {
                     boolean structured = DoopAddons.checkSetHierarchyDirs();
                     driver.writeInParallel(jimpleClasses);
                     if (!structured)
-                        DoopAddons.structureJimpleFiles(sootParameters.getOutputDir());
+                        DoopAddons.structureJimpleFiles(outDir);
                     // Revert to standard output dir for the rest of the code.
                     Options.v().set_output_dir(outDir);
                 }
@@ -244,6 +248,16 @@ public class Main {
             }
 
             writer.writeLastFacts(java);
+
+            if (sootParameters._lowMem) {
+                System.out.println("Releasing Soot structures...");
+                for (SootClass cl : Scene.v().getClasses())
+                    for (SootMethod m : cl.getMethods())
+                        if (m.hasActiveBody())
+                            m.setActiveBody(null);
+                System.gc();
+                System.out.println("Done.");
+            }
         } finally {
             // Clean up any temporary directories used for AAR extraction.
             JHelper.cleanUp(tmpDirs);

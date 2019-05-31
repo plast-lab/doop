@@ -11,7 +11,7 @@ MainClass(?class) :-
   _MainClass(?class).
 
 // ClassArtifact
-.decl _ClassArtifact(?artifact:symbol, ?className:symbol, ?subArtifact:symbol)
+.decl _ClassArtifact(?artifact:symbol, ?className:symbol, ?subArtifact:symbol, ?size:number)
 .input _ClassArtifact(IO="file", filename="Class-Artifact.facts", delimiter="\t")
 
 // NormalHeap
@@ -371,9 +371,9 @@ MethodInvocation_Line(?instruction, ?line) :-
   _MethodInvocation_Line(?instruction, ?line).
 
 MethodInvocation_Base(?invocation, ?base) :-
-  VirtualMethodInvocation_Base(?invocation, ?base) ;
+  VirtualMethodInvocation_Base(?invocation, ?base).
+MethodInvocation_Base(?invocation, ?base) :-
   SpecialMethodInvocation_Base(?invocation, ?base).
-
 
 
 // Static method invocation
@@ -468,9 +468,13 @@ DynamicMethodInvocation_DynArity(?instruction, ?dynArity) :-
 // Opaque method invocations
 
 isOpaqueInstruction(?instruction) :-
-  (_StaticMethodInvocation(?instruction, _, ?signature, _);
-   _SpecialMethodInvocation(?instruction, _, ?signature, _, _);
-   _VirtualMethodInvocation(?instruction, _, ?signature, _, _)),
+  _StaticMethodInvocation(?instruction, _, ?signature, _),
+  isOpaqueMethod(?signature).
+isOpaqueInstruction(?instruction) :-
+   _SpecialMethodInvocation(?instruction, _, ?signature, _, _),
+  isOpaqueMethod(?signature).
+isOpaqueInstruction(?instruction) :-
+   _VirtualMethodInvocation(?instruction, _, ?signature, _, _),
   isOpaqueMethod(?signature).
 
 // Polymorphic-signature method invocation
@@ -799,7 +803,7 @@ Instruction_Method(?instruction, ?method) :-
 
 #ifdef ANDROID
 
-// AndroidEntryPoints
+// AndroidEntryPoint
 .input AndroidEntryPoint(IO="file", filename="AndroidEntryPoint.facts", delimiter="\t")
 
 // AndroidApplication
@@ -827,8 +831,6 @@ isType(?id) :-
 
 // CallbackMethod
 .input CallbackMethod(IO="file", filename="CallbackMethod.facts", delimiter="\t")
-isMethod(?id) :-
-  CallbackMethod(?id).
 
 // LayoutControl
 .input LayoutControl0(IO="file", filename="LayoutControl.facts", delimiter="\t")
@@ -838,6 +840,9 @@ isMethod(?id) :-
 
 // FieldInitialValue
 .input FieldInitialValue(IO="file", filename="FieldInitialValue.facts", delimiter="\t")
+
+.input AndroidId(IO="file", filename="AndroidId.facts", delimiter="\t")
+.input AndroidIncludeXML(IO="file", filename="AndroidIncludeXML.facts", delimiter="\t")
 
 // NumConstantRaw
 
@@ -890,7 +895,6 @@ isType(?t), isReferenceType(?t), isNullType(?t), Type_null(?t) :- ?t = "null_typ
 isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.lang.Object".
 
 
-
 // Annotations
 // Type
 .input Type_Annotation(IO="file", filename="Type-Annotation.facts", delimiter="\t")
@@ -901,11 +905,10 @@ isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.
 // Param
 .input Param_Annotation(IO="file", filename="Param-Annotation.facts", delimiter="\t")
 
-isAnnotation(?annotation) :-
-    Type_Annotation(_, ?annotation);
-    Method_Annotation(_, ?annotation);
-    Field_Annotation(_, ?annotation);
-    Param_Annotation(_, _, ?annotation).
+isAnnotation(?annotation) :- Type_Annotation(_, ?annotation).
+isAnnotation(?annotation) :- Method_Annotation(_, ?annotation).
+isAnnotation(?annotation) :- Field_Annotation(_, ?annotation).
+isAnnotation(?annotation) :- Param_Annotation(_, _, ?annotation).
 
 // Annotation elements
 .input AnnotationElement(IO="file", filename="AnnotationElement.facts", delimiter="\t")
@@ -917,3 +920,11 @@ isAnnotation(?annotation) :-
 .input PhantomMethod(IO="file", filename="PhantomMethod.facts", delimiter="\t")
 .decl PhantomBasedMethod(?m:Method)
 .input PhantomBasedMethod(IO="file", filename="PhantomBasedMethod.facts", delimiter="\t")
+
+// XML facts.
+.decl XMLNode(?file:symbol, ?nodeId:symbol, ?parentNodeId:symbol, ?namespaceURI:symbol, ?localName:symbol, ?qName:symbol)
+.input XMLNode(IO="file", filename="XMLNode.facts", delimiter="\t")
+.decl XMLNodeAttribute(?file:symbol, ?nodeId:symbol, ?index:symbol, ?localName:symbol, ?qName:symbol, ?value:symbol)
+.input XMLNodeAttribute(IO="file", filename="XMLNodeAttribute.facts", delimiter="\t")
+.decl XMLNodeData(?file:symbol, ?nodeId:symbol, ?data:symbol)
+.input XMLNodeData(IO="file", filename="XMLNodeData.facts", delimiter="\t")

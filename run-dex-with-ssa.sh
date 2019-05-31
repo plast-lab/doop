@@ -20,7 +20,7 @@ echo "APP_NAME=${APP_NAME}"
 
 ./doop -i ${APP} -a context-insensitive --id ${ID} --platform android_25_fulljars --dex --Xfacts-subset APP --Xstop-at-facts ${FACTS_IN} --cache
 
-./gradlew souffleScript -Pargs="${SSA_TRANSFORMER} ${FACTS_IN} ${FACTS_OUT} ${DOOP_HOME}/cache 26 false false false false"
+./gradlew souffleScript -Pargs="${SSA_TRANSFORMER} ${FACTS_IN} ${FACTS_OUT} ${DOOP_HOME}/cache 26 false false false false false"
 
 pushd "${FACTS_OUT}/database"
 

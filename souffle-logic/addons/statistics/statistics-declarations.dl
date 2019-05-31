@@ -120,6 +120,8 @@ OUTPUT_STATS(Stats_Arrays)
 .decl Stats_InsensArrays(?n:number)
 OUTPUT_STATS(Stats_InsensArrays)
 
+#ifndef DISABLE_POINTS_TO
+
 /****************************************************************
  * Fields
  ***************************************************************/
@@ -171,6 +173,8 @@ OUTPUT_STATS(Stats_InsensFields)
 //
 //.decl Stats_InstanceFieldPointsToNonThrowable3(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value)
 //OUTPUT_STATS(Stats_InstanceFieldPointsToNonThrowable3)
+
+#endif // DISABLE_POINTS_TO
 
 /***************************************************
  * Methods

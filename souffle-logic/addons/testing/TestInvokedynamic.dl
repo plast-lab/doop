@@ -4,25 +4,25 @@
 .output TestId
 
 TestId("test1.1") :-
-  varPointsTo("<Main: void test1()>/lookup#_29", "mock method handles lookup object for type Main").
+  varPointsTo("<Main: void test1()>/lookup#_27", "mock method handles lookup object for type Main").
 TestId("test1.2") :-
-  varPointsTo("<Main: void test1()>/mType#_30", "method type (java.lang.String)void").
+  varPointsTo("<Main: void test1()>/mType#_28", "method type (java.lang.String)void").
 TestId("test1.3") :-
-  varPointsTo("<Main: void test1()>/println2out#_37", "<computed direct method handle for <java.io.PrintStream: void println(java.lang.String)>>").
+  varPointsTo("<Main: void test1()>/println2out#_35", "<computed direct method handle for <java.io.PrintStream: void println(java.lang.String)>>").
 TestId("test1.4") :-
   methodHandleCGE("<Main: void test1()>/java.lang.invoke.MethodHandle.invokeExact/0", "<java.io.PrintStream: void println(java.lang.String)>").
 TestId("test1.5") :-
   methodHandleCGE("<Main: void test1()>/java.lang.invoke.MethodHandle.invokeExact/1", "<java.io.PrintStream: void println(java.lang.String)>").
 
 TestId("test2.1") :-
-  varPointsTo("<Main: void test2()>/staticMeth_mh#_46", "<computed direct method handle for <A: java.lang.Integer staticMeth()>>").
+  varPointsTo("<Main: void test2()>/staticMeth_mh#_44", "<computed direct method handle for <A: java.lang.Integer staticMeth()>>").
 TestId("test2.2") :-
-  varPointsTo("<Main: void test2()>/ret#_48", "<A: java.lang.Integer staticMeth()>/new java.lang.Integer/0").
+  varPointsTo("<Main: void test2()>/ret#_46", "<A: java.lang.Integer staticMeth()>/new java.lang.Integer/0").
 TestId("test2.3") :-
   methodHandleCGE("<Main: void test2()>/java.lang.invoke.MethodHandle.invokeExact/0", "<A: java.lang.Integer staticMeth()>").
 
 TestId("test3.1") :-
-  varPointsTo("<Main: void test3()>/methI_mh#_58", "<computed direct method handle for <A: void methI(java.lang.Integer)>>").
+  varPointsTo("<Main: void test3()>/methI_mh#_56", "<computed direct method handle for <A: void methI(java.lang.Integer)>>").
 TestId("test3.2") :-
   varPointsTo("<A: void methI(java.lang.Integer)>/i#_0", "<Main: void test3()>/new java.lang.Integer/0").
 TestId("test3.3") :-
@@ -31,30 +31,30 @@ TestId("test3.4") :-
   methodHandleCGE("<Main: void test3()>/java.lang.invoke.MethodHandle.invokeExact/0", "<A: void methI(java.lang.Integer)>").
 
 TestId("test4.1") :-
-  varPointsTo("<Main: void test4()>/methDD_mh4#_68", "<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>").
+  varPointsTo("<Main: void test4()>/methDD_mh4#_66", "<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>").
 TestId("test4.2") :-
   methodHandleCGE("<Main: void test4()>/java.lang.invoke.MethodHandle.invokeExact/0", "<A: java.lang.Double doubleIdentity(java.lang.Double)>").
 TestId("test4.3") :-
   methodHandleCGE("<Main: void test4()>/java.lang.invoke.MethodHandle.invoke/0", "<A: java.lang.Double doubleIdentity(java.lang.Double)>").
 
 TestId("test5.1") :-
-  varPointsTo("<Main: void test5()>/mType#_81", "method type (--all-types--)java.lang.Double").
+  varPointsTo("<Main: void test5()>/mType#_79", "method type (--all-types--)java.lang.Double").
 TestId("test5.2") :-
-  varPointsTo("<Main: void test5()>/methDD_mh5#_82", "<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>").
+  varPointsTo("<Main: void test5()>/methDD_mh5#_80", "<computed direct method handle for <A: java.lang.Double doubleIdentity(java.lang.Double)>>").
 TestId("test5.3") :-
   methodHandleCGE("<Main: void test5()>/java.lang.invoke.MethodHandle.invokeExact/0", "<A: java.lang.Double doubleIdentity(java.lang.Double)>").
 
 TestId("test6.1") :-
-  varPointsTo("<Main: void test6_aux(java.lang.invoke.MethodType)>/add3_mh6#_104", "<computed direct method handle for <A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>>").
+  varPointsTo("<Main: void test6_aux(java.lang.invoke.MethodType)>/add3_mh6#_102", "<computed direct method handle for <A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>>").
 TestId("test6.2") :-
   methodHandleCGE("<Main: void test6_aux(java.lang.invoke.MethodType)>/java.lang.invoke.MethodHandle.invokeExact/0", "<A: java.lang.Double add3(java.lang.Integer,java.lang.Float,java.lang.Short)>").
 TestId("test6.3") :-
-  varPointsTo("<Main: void test6_aux(java.lang.invoke.MethodType)>/lookup#_103", "mock method handles lookup object for type java.lang.Object").
+  varPointsTo("<Main: void test6_aux(java.lang.invoke.MethodType)>/lookup#_101", "mock method handles lookup object for type java.lang.Object").
 
 TestId("test7.1") :-
-  varPointsTo("<Main: void test7()>/mType1#_114", "method type (java.lang.Double)java.lang.String").
+  varPointsTo("<Main: void test7()>/mType1#_112", "method type (java.lang.Double)java.lang.String").
 TestId("test7.2") :-
-  varPointsTo("<Main: void test7()>/mType2#_115", "method type (java.lang.Double)java.lang.Double").
+  varPointsTo("<Main: void test7()>/mType2#_113", "method type (java.lang.Double)java.lang.Double").
 TestId("test7.3") :-
   methodHandleCGE("<Main: void test7()>/java.lang.invoke.MethodHandle.invokeExact/0", "<A: java.lang.Double doubleIdentity(java.lang.Double)>").
 

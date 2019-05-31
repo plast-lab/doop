@@ -298,7 +298,6 @@ SimulateNativeAllocation(
   "<sun.misc.Perf: java.nio.ByteBuffer createLong(java.lang.String,int,int,long)>/new java.nio.DirectByteBuffer/0",
   "<java.nio.DirectByteBuffer: void <init>()>").
 
-
 /**********************************************************************************
  *
  * java.lang.ref
@@ -376,23 +375,23 @@ ReachableValue(?hctx, NativeReturnValId(?t, ?m)) :-
   isImmutableHContext(?hctx).
 #endif // SIMULATE_NATIVE_RETURNS
 
-// Process methods found by the native scanner. This includes mocking of arguments.
+// Reachability for methods discovered by the native code scanner.
+.decl ReachableContextFromNative(?ctx:configuration.Context, ?method:Method, ?function:symbol, ?file:symbol)
+ReachableContextFromNative(?immCtx, ?method, ?function, ?file) :-
+  basic.PossibleNativeCodeTargetMethod(?method, ?function, ?file),
+  isImmutableContext(?immCtx).
 
+// Process methods found by the native scanner. This includes mocking of arguments.
 #ifdef ANDROID
 
-// TODO: For Android, reuse relation ForcedReachableAndroidContext from android.dl.
+ForcedReachableAndroidContext(?ctx, ?meth) :-
+  ReachableContextFromNative(?ctx, ?meth, _, _).
 
 #else
 
 // Simple mocking for non-Android code.
-
-// Reachability for methods discovered by the native code scanner.
-.decl ReachableContextFromNative(?ctx:configuration.Context, ?method:Method, ?function:symbol, ?file:symbol)
-
-ReachableContext(?immCtx, ?method),
-ReachableContextFromNative(?immCtx, ?method, ?function, ?file) :-
-  basic.PossibleNativeCodeTargetMethod(?method, ?function, ?file),
-  isImmutableContext(?immCtx).
+ReachableContext(?ctx, ?meth) :-
+  ReachableContextFromNative(?ctx, ?meth, _, _).
 
 #ifndef DISABLE_POINTS_TO
 // Mock arguments for methods called from native code.

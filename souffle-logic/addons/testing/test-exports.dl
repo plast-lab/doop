@@ -1,9 +1,11 @@
 // Extra logic included by some tests.
 
+#ifndef DISABLE_POINTS_TO
 .output mainAnalysis.ArrayIndexPointsTo
 .output mainAnalysis.InstanceFieldPointsTo
 .output mainAnalysis.StaticFieldPointsTo
 .output mainAnalysis.VarPointsTo
+#endif // DISABLE_POINTS_TO
 .output mainAnalysis.MethodHandleCallGraphEdge
 .output mainAnalysis.LambdaObject
 .output mainAnalysis.LambdaCallGraphEdge
@@ -16,3 +18,17 @@
 #define methodHandleCGE(i, m) mainAnalysis.MethodHandleCallGraphEdge(_, i, _, m, _, _)
 #define proxyCGE(i, m) mainAnalysis.ProxyCallGraphEdge(_, i, _, m)
 #define reachable(m) mainAnalysis.Reachable(m)
+
+#ifdef ANDROID
+.output mainAnalysis.ApplicationPackage
+.output Activity
+.output BroadcastReceiver
+.output ContentProvider
+.output Service
+.output LayoutControl
+.output mainAnalysis.LauncherActivity
+.output mainAnalysis.ReachableLayoutControl
+.output mainAnalysis.XMLFragment_Class
+.output mainAnalysis.XMLFragment_Id
+.output mainAnalysis.XMLNode_Parent
+#endif // ANDROID

@@ -13,6 +13,8 @@ public enum PredicateFile
     ACTUAL_PARAMETER("ActualParam"),
     ANDROID_APPLICATION("AndroidApplication"),
     ANDROID_ENTRY_POINT("AndroidEntryPoint"),
+    ANDROID_ID("AndroidId"),
+    ANDROID_INCLUDE_XML("AndroidIncludeXML"),
     ANNOTATION_ELEMENT("AnnotationElement"),
     APP_CLASS("ApplicationClass"),
     APP_PACKAGE("ApplicationPackage"),
@@ -119,7 +121,10 @@ public enum PredicateFile
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
     VAR_TYPE("Var-Type"),
     VAR_DECLARING_METHOD("Var-DeclaringMethod"),
-    VIRTUAL_METHOD_INV("VirtualMethodInvocation");
+    VIRTUAL_METHOD_INV("VirtualMethodInvocation"),
+    XMLNode("XMLNode"),
+    XMLNodeAttribute("XMLNodeAttribute"),
+    XMLNodeData("XMLNodeData");
 
     private final String name;
 

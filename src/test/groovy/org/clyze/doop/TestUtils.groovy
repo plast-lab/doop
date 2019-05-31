@@ -9,6 +9,8 @@ import static org.clyze.utils.Helper.forEachLineIn
  * Utility class with checker methods used by other tests.
  */
 class TestUtils {
+	private enum MatchMode { EXACT, SUFFIX }
+
 	static void relationHasApproxSize(Analysis analysis, String relation, int expectedSize) {
 		log("relationHasApproxSize(${relation}) = ${expectedSize}")
 		int actualSize = 0
@@ -139,6 +141,46 @@ class TestUtils {
 		findPair(analysis, "mainAnalysis.InstanceFieldPointsTo", fld, 2, value, 1)
 	}
 
+	static void isLauncherActivity(Analysis analysis, String activity) {
+		log("isLauncherActivity('${activity}')")
+		find(analysis, "mainAnalysis.LauncherActivity", activity, true)
+	}
+
+	static void isActivity(Analysis analysis, String activity) {
+		log("isActivity('${activity}')")
+		find(analysis, "Activity", activity, true)
+	}
+
+	static void isBroadcastReceiver(Analysis analysis, String receiver) {
+		log("isBroadcastReceiver('${receiver}')")
+		find(analysis, "BroadcastReceiver", receiver, true)
+	}
+
+	static void isService(Analysis analysis, String service) {
+		log("isService('${service}')")
+		find(analysis, "Service", service, true)
+	}
+
+	static void isContentProvider(Analysis analysis, String provider) {
+		log("isContentProvider('${provider}')")
+		find(analysis, "ContentProvider", provider, true)
+	}
+
+	static void isApplicationPackage(Analysis analysis, String packageName) {
+		log("isApplicationPackage('${packageName}')")
+		find(analysis, "mainAnalysis.ApplicationPackage", packageName, true)
+	}
+
+	static void isLayoutControl(Analysis analysis, String id, String control) {
+		log("isLayoutControl('${id}', '${control}')")
+		findPair(analysis, "LayoutControl", id, 0, control, 1)
+	}
+
+	static void isReachableLayoutControl(Analysis analysis, String controlType) {
+		log("isReachableLayoutControl('${controlType}')")
+		assert true == find(analysis, "mainAnalysis.ReachableLayoutControl", controlType, true)
+	}
+
 	// Check that a method is reachable.
 	static void methodIsReachable(Analysis analysis, String meth) {
 		log("methodIsReachable('${meth}')")
@@ -151,12 +193,25 @@ class TestUtils {
 		assert true == find(analysis, "TestId", id, true)
 	}
 
+	static void xmlParent(Analysis analysis, String file1, String nodeId1, String file2, String nodeId2) {
+		findTuple(analysis, 'mainAnalysis.XMLNode_Parent',
+				  [[file1, 0, MatchMode.SUFFIX], [nodeId1, 1, MatchMode.EXACT],
+				   [file2, 2, MatchMode.SUFFIX], [nodeId2, 3, MatchMode.EXACT]])
+	}
+
+	static void isFragment(Analysis analysis, String file, String nodeId, String type, String id) {
+		findTuple(analysis, 'mainAnalysis.XMLFragment_Class',
+				  [[file, 0, MatchMode.SUFFIX], [nodeId, 1, MatchMode.EXACT], [type, 2, MatchMode.EXACT]])
+		findTuple(analysis, 'mainAnalysis.XMLFragment_Id',
+				  [[file, 0, MatchMode.SUFFIX], [nodeId, 1, MatchMode.EXACT], [id, 2, MatchMode.EXACT]])
+	}
+
 	static void findPair(Analysis analysis, String relation,
 						 String s1, int idx1, String s2, int idx2) {
 		boolean found = false
 		forEachLineIn("${analysis.database}/${relation}.csv",
 					  { line ->
-						  if (line) {
+						  if (!found && line) {
 							  String[] values = line.split('\t')
 							  String a = values[idx1]
 							  String b = values[idx2]
@@ -165,6 +220,50 @@ class TestUtils {
 							  }
 						  }
 					  })
+		assert found == true
+	}
+
+	/**
+	 * Finds a tuple in a relation, matching a given spec. This is a generalization
+	 * of findPair(), but slower (since the spec is interpreted).
+	 *
+	 * @param analysis	the analysis object
+	 * @param relation	the relation to check
+	 * @param spec		a list of pairs (value, index, mode) that
+	 *					must all match (according to 'MatchMode' mode)
+	 */
+	static void findTuple(Analysis analysis, String relation, List spec) {
+		boolean found = false
+		forEachLineIn(
+			"${analysis.database}/${relation}.csv",
+			{ line ->
+				if (!found && line) {
+					String[] values = line.split('\t')
+					boolean tupleMatches = true
+					for (int index = 0; index < spec.size; index++) {
+						String expectedValue = spec[index][0] as String
+						def expectedIndex = spec[index][1]
+						MatchMode mode = spec[index][2]
+						boolean match
+						switch (mode) {
+							case MatchMode.SUFFIX :
+								match = values[expectedIndex].endsWith(expectedValue)
+								break
+							case MatchMode.EXACT:
+								match =values[expectedIndex].equals(expectedValue)
+								break
+							default:
+								throw new RuntimeException("Match mode not supported: " + mode)
+						}
+						if (!match) {
+							tupleMatches = false
+						}
+					}
+					if (!found && tupleMatches) {
+						found = true
+					}
+				}
+			})
 		assert found == true
 	}
 

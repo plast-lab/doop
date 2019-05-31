@@ -5,6 +5,7 @@ package org.clyze.doop.common;
 public class DoopErrorCodeException extends Exception {
 
     private final int errorCode;
+    @SuppressWarnings("WeakerAccess")
     public boolean fatal = false;
 
     public DoopErrorCodeException(int errorCode, Throwable original) {

@@ -32,6 +32,8 @@ OUTPUT_STATS(Stats_Simple_Application_InsensArrayIndexPointsTo)
 .decl Stats_Simple_Application_ArrayIndexPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value)
 OUTPUT_STATS(Stats_Simple_Application_ArrayIndexPointsTo)
 
+#ifndef DISABLE_POINTS_TO
+
 /***************************************************
  * Fields
  ***************************************************/
@@ -47,6 +49,8 @@ OUTPUT_STATS(Stats_Simple_Application_InsensInstanceFieldPointsTo)
 
 .decl Stats_Simple_Application_InstanceFieldPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:mainAnalysis.Value)
 OUTPUT_STATS(Stats_Simple_Application_InstanceFieldPointsTo)
+
+#endif // DISABLE_POINTS_TO
 
 /***************************************************
  * Call graph edges
@@ -105,8 +109,8 @@ OUTPUT_STATS(Stats_Simple_Application_PolymorphicCallSite)
 .decl Stats_Simple_Application_NullVirtualMethodInvocation(?invocation:MethodInvocation)
 OUTPUT_STATS(Stats_Simple_Application_NullVirtualMethodInvocation)
 
-.decl Stats_Simple_Application_EmptyVirtualMethodInvocation(?invocation:MethodInvocation)
-OUTPUT_STATS(Stats_Simple_Application_EmptyVirtualMethodInvocation)
+.decl Stats_Simple_Application_EmptyReachableVirtualMethodInvocation(?invocation:MethodInvocation)
+OUTPUT_STATS(Stats_Simple_Application_EmptyReachableVirtualMethodInvocation)
 
 /***************************************************
  * Casts

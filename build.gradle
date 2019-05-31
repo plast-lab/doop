@@ -83,7 +83,6 @@ dependencies {
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             "net.dongliu:apk-parser:2.6.2",                     // needed for reading binary XML entries from APK inputs
             "com.google.guava:guava:27.0-jre",
-            // "ext:apktool:2.3.3",                                // needed for decoding APK inputs (optional)
 
             // Soot - choose one of the following:
             // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.
@@ -128,6 +127,7 @@ dependencies {
     runtime "org.clyze:jphantom:1.2",
             "ext:herosclasses:1.1",
             "ext:axml:2.0",
+            "ext:apktool:2.4.0",                                // needed for decoding APK inputs
             "org.smali:util:2.2.5"                              // Dexlib2 utilities
 
     // JimpleParser
@@ -148,7 +148,7 @@ applicationDistribution.from(projectDir) {
     include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
 }
 
-def testSubprojects = [ '104-method-references', '107-lambdas', '115-invokedynamic' ]
+def testSubprojects = [ '017-annotations', '104-method-references', '107-lambdas', '115-invokedynamic' ]
 
 testSubprojects.each {
     def path = "tests/${it}/build/libs"

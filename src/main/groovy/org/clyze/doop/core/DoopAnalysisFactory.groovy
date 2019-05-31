@@ -96,7 +96,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		options.USER_SUPPLIED_ID.value = id ? validateUserSuppliedId(id) : generateId(options)
 
 		checkAnalysis(options)
-		if (options.LB3.value) checkLogicBlox(options)
+		if (options.LB3.value) {
+			checkLogicBlox(options)
+			log.info "WARNING: Using legacy Android processing."
+			options.LEGACY_ANDROID_PROCESSING.value = true
+		}
 
 		options.CONFIGURATION.value = availableConfigurations.get(options.ANALYSIS.value)
 
@@ -160,7 +164,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 	// This method may not be static, see [Note] above.
 	private String getOutputDirectory(Map<String, AnalysisOption> options) {
-		return "${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}";
+		return "${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}"
 	}
 
 	// This method may not be static, see [Note] above.
@@ -389,11 +393,18 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.LIGHT_REFLECTION_GLUE.value && options.REFLECTION.value) {
-			throw new RuntimeException("Error: option " + options.LIGHT_REFLECTION_GLUE.name + " is not supported when reflection support is enabled.")
+			throw new RuntimeException("Error: option --" + options.LIGHT_REFLECTION_GLUE.name + " is not supported when reflection support is enabled.")
 		}
 
 		if (options.TAMIFLEX.value) {
 			options.REFLECTION.value = false
+		}
+
+		if (options.VIA_DDLOG.value) {
+			if (options.CACHE.value) {
+				throw new RuntimeException("Error: options --" + options.VIA_DDLOG.name + " and --" + options.CACHE.name + " are not compatible.")
+			}
+			options.X_UNIQUE_FACTS.value = false
 		}
 
 		if (options.NO_SSA.value) {
@@ -402,6 +413,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (options.MUST.value) {
 			options.MUST_AFTER_MAY.value = true
+		}
+
+		if (options.X_LOW_MEM.value) {
+			options.X_SERIALIZE_FACTGEN_COMPILATION.value = true
 		}
 
 		if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
@@ -433,10 +448,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.X_SERVER_LOGIC.value) {
-			// If server mode is enabled, don't produce statistics.
-			options.X_STATS_FULL.value = false
-			options.X_STATS_DEFAULT.value = false
-			options.X_STATS_NONE.value = true
 			// Turn on optimization outputs.
 			if (!(options.GENERATE_OPTIMIZATION_DIRECTIVES.value)) {
 				println "Server logic enabled, turning on optimization directives"

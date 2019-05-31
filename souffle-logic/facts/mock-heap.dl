@@ -30,25 +30,31 @@ MockHeapConsMacro(?heap, ?type) :-
    ?type = "java.nio.DirectByteBuffer".
 
 MockHeapConsMacro(?heap, ?type) :-
-   (?heap ="<<string-constant>>";
-    ?heap ="<<reflection-string-constant>>"),
+   ?heap = "<<string-constant>>",
    ?type = "java.lang.String".
 
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="<<string-buffer>>",
+   ?heap = "<<reflection-string-constant>>",
+   ?type = "java.lang.String".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap = "<<string-buffer>>",
    ?type = "java.lang.StringBuffer".
 
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="<<string-builder>>",
+   ?heap = "<<string-builder>>",
    ?type = "java.lang.StringBuilder".
 
 MockHeapConsMacro(?heap, ?type) :-
-   (?heap ="<<system-thread-group>>";
-    ?heap ="<<main-thread-group>>"),
+   ?heap = "<<system-thread-group>>",
    ?type = "java.lang.ThreadGroup".
 
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="<<main-thread>>",
+   ?heap = "<<main-thread-group>>",
+   ?type = "java.lang.ThreadGroup".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap = "<<main-thread>>",
    ?type = "java.lang.Thread".
 
 // Special heaps for contexts
@@ -56,29 +62,29 @@ MockHeapConsMacro(?heap, ?type) :-
 // anything. It also needs to be an existing type, otherwise the sanity checks
 // will barf.
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="<<initial-context>>",
+   ?heap = "<<initial-context>>",
    ?type = "java.lang.Object".
 
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="<<jvm-startup-context>>",
+   ?heap = "<<jvm-startup-context>>",
    ?type = "java.lang.Object".
 
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="<<jvm-startup-hcontext>>",
+   ?heap = "<<jvm-startup-hcontext>>",
    ?type = "java.lang.Object".
 
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="<<clinit-context>>",
+   ?heap = "<<clinit-context>>",
    ?type = "java.lang.Object".
 
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="<<immutable-context>>",
+   ?heap = "<<immutable-context>>",
    ?type = "java.lang.Object".
 
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="<<immutable-hcontext>>",
+   ?heap = "<<immutable-hcontext>>",
    ?type = "java.lang.Object".
 
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="<<immutable>>",
+   ?heap = "<<immutable>>",
    ?type = "java.lang.Object".

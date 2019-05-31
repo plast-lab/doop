@@ -7,6 +7,7 @@ import org.clyze.doop.common.android.AppResources;
 import org.clyze.doop.common.android.AppResourcesXML;
 import org.clyze.doop.common.android.AndroidSupport;
 import org.clyze.doop.soot.*;
+import org.clyze.doop.util.TypeUtils;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import soot.Scene;
 import soot.SootClass;
@@ -34,18 +35,18 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
         String artifact = apk.getName();
         try {
             List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
-            Set<Object> allDexClasses = new HashSet<>();
+            int dexClassesCount = 0;
             for (DexContainer dexContainer : listContainers) {
                 Set<? extends DexBackedClassDef> dexClasses = dexContainer.getBase().getClasses();
-                allDexClasses.addAll(dexClasses);
+                dexClassesCount += dexClasses.size();
                 for (DexBackedClassDef dexBackedClassDef : dexClasses) {
-                    String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor((dexBackedClassDef).getType()).toQuotedString();
-                    SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
+                    String className = TypeUtils.raiseTypeId(dexBackedClassDef.getType());
+                    SootClass c = scene.loadClass(className, SootClass.BODIES);
                     classes.add(c);
-                    java.registerArtifactClass(artifact, escapeClassName, dexContainer.getDexName());
+                    java.registerArtifactClass(artifact, className, dexContainer.getDexName(), dexBackedClassDef.getSize());
                 }
             }
-            System.out.println("Classes found in apk: " + allDexClasses.size());
+            System.out.println("Classes found in apk: " + dexClassesCount);
         } catch (IOException ex) {
             System.err.println("Could not read dex classes in " + apk);
             ex.printStackTrace();

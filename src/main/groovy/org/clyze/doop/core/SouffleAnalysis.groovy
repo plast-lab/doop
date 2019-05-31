@@ -4,6 +4,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
+import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
 
 import java.util.concurrent.Callable
@@ -36,13 +37,18 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		def cacheDir = new File(Doop.souffleAnalysesCache, name)
 		cacheDir.mkdirs()
-		def script = new SouffleScript(executor)
+		def script = new SouffleScript(executor, options.VIA_DDLOG.value as Boolean)
 
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()
 		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
 		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
 		if (!options.X_STOP_AT_FACTS.value) {
+			if (options.VIA_DDLOG.value) {
+				// Copy the DDlog converter, needed both for logic
+				// compilation and fact post-processing.
+				DDlog.copyDDlogConverter(log, outDir)
+			}
 			compilationFuture = executorService.submit(new Callable<File>() {
 				@Override
 				File call() {
@@ -64,8 +70,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
 
 		def generatedFile
-		// Don't run in parallel if low on memory
-		if (options.X_LOW_MEM.value) {
+		if (options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 			generatedFile = compilationFuture.get()
 			System.gc()
 		}
@@ -92,7 +97,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
 			if (options.X_STOP_AT_FACTS.value) return
 
-			if (!options.X_LOW_MEM.value) {
+			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 				generatedFile = compilationFuture.get()
 			}
 			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,

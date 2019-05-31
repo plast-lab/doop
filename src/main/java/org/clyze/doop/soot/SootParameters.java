@@ -104,6 +104,7 @@ public class SootParameters extends Parameters {
             System.err.println("  -lsystem                              Find classes in default system classes");
             System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
             System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails");
+            System.err.println("  --legacy-android-processing           Enable legacy Android XML processing.");
             System.err.println("  --no-facts                            Don't generate facts (just empty files -- used for debugging)");
             System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot");
             System.err.println("  --lowMem                              Consume less memory.");
@@ -144,9 +145,6 @@ public class SootParameters extends Parameters {
                 (!_android)) {
             System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs, run './doop --help' to see the valid Android platform values");
             throw new DoopErrorCodeException(3, null, true);
-        } else if (_lowMem && _generateJimple) {
-            System.err.println("Warning: --lowMem is not compatible with --generate-jimple and will be ignored");
-            _lowMem = false;
         } else if (_android && _androidJars == null) {
             System.err.println("internal error: bad configuration for Android analysis mode, missing Android .jar");
             throw new DoopErrorCodeException(21, null, true);

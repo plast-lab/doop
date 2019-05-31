@@ -5,6 +5,7 @@
 Sanity("1", "Var has no type", ?c) :-
   ?c = count : VarHasNoType(_).
 
+#ifndef DISABLE_POINTS_TO
 // Every var in VarPointsTo is reachable
 Sanity("2", "Var in VarPointsTo is not reachable", ?c) :-
   ?c = count : NotReachableVarPointsTo(_, _).
@@ -17,6 +18,7 @@ Sanity("3", "Var in VarPointsTo points to wrongly typed values", ?c) :-
 // merged. Suggests omission in the "Keep" predicate.
 Sanity("4", "VarPointsTo for merged objects", ?c) :-
   ?c = count : VarPointsToMergedHeap(_, _).
+#endif // DISABLE_POINTS_TO
 
 Sanity("5", "HeapAllocation has no type", ?c) :-
   ?c = count : HeapAllocationHasNoType(_).
@@ -56,9 +58,14 @@ Sanity("15", "Duplicate method implementation", ?c) :-
 Sanity("16", "Duplicate method lookup", ?c) :-
   ?c = count : basic.DuplicateMethodLookup(_, _, _, _, _).
 
+#ifndef DISABLE_POINTS_TO
 // Every field in {Instance|Static}PointsTo points to correctly typed values
 Sanity("17", "Field in {Static|Instance}FieldPointsTo points to wrongly typed values", ?c) :-
   ?c = count : FieldPointsToWronglyTypedValue(_, _, _, _).
+#endif // DISABLE_POINTS_TO
+
+Sanity("18", "Missing artifact types from hierarchy", ?c) :-
+  ?c = count : ArtifactTypeMissingFromHierarchy(_).
 
 .decl VarHasNoType(var:Var)
 .output VarHasNoType
@@ -67,6 +74,7 @@ VarHasNoType(?var) :-
   isVar(?var),
   !Var_Type(?var, _).
 
+#ifndef DISABLE_POINTS_TO
 .decl NotReachableVarPointsTo(?var:Var, ?method:Method)
 .output NotReachableVarPointsTo
 
@@ -74,6 +82,7 @@ NotReachableVarPointsTo(?var, ?method) :-
   Var_DeclaringMethod(?var, ?method),
   mainAnalysis.VarPointsTo(_, _, _, ?var),
   !mainAnalysis.Reachable(?method).
+#endif // DISABLE_POINTS_TO
 
 .decl ForceTypeCompatibility(?valueType:Type, ?varType:Type)
 
@@ -98,6 +107,7 @@ ForceValueCompatibility(?primType, ?numConst, "int") :-
   mainAnalysis.Value_Num(?numConst, _).
 #endif // ANDROID
 
+#ifndef DISABLE_POINTS_TO
 .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
 .output VarPointsToWronglyTypedValue
 
@@ -125,7 +135,6 @@ FieldPointsToWronglyTypedValue(?field, ?fieldType, ?value, ?valueType) :-
 #endif // ANDROID
   !ForceTypeCompatibility(?valueType, ?fieldType).
 
-
 .decl VarPointsToMergedHeap(?var:Var, ?value:mainAnalysis.Value)
 .output VarPointsToMergedHeap
 
@@ -137,6 +146,8 @@ VarPointsToMergedHeap(?var, ?value) :-
 #endif // distinguished strings support
   mainAnalysis.VarPointsTo(_, ?value, _, ?var),
   ?value != ?value2.
+
+#endif // DISABLE_POINTS_TO
 
 .decl HeapAllocationHasNoType(?heap:HeapAllocation)
 .output HeapAllocationHasNoType
@@ -239,3 +250,11 @@ InstructionIsNotConcreteInstruction(?insn) :-
   !isAssignPhantomInvoke(?insn),
   !isExceptionHandler(?insn),
   !isBreakpointStmt(?insn).
+
+.decl ArtifactTypeMissingFromHierarchy(?t:ReferenceType)
+.output ArtifactTypeMissingFromHierarchy
+
+ArtifactTypeMissingFromHierarchy(?t) :-
+  _ClassArtifact(_, ?t, _, _),
+  isType(?t),
+  !basic.SubtypeOf(?t, _).

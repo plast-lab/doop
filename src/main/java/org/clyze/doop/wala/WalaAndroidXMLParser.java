@@ -75,7 +75,7 @@ class WalaAndroidXMLParser extends AndroidSupport {
                         else
                             for (DexBackedClassDef dexClass : dex.getClasses()) {
                                 String className = TypeUtils.raiseTypeId(dexClass.getType());
-                                java.registerArtifactClass(apk.getName(), className, dexEntry);
+                                java.registerArtifactClass(apk.getName(), className, dexEntry, dexClass.getSize());
                             }
                     }
                 } catch (Exception ex) {

@@ -2,6 +2,7 @@ package org.clyze.jimple
 
 import groovy.transform.CompileStatic
 import org.antlr.v4.runtime.ANTLRFileStream
+import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ErrorNode
@@ -436,7 +437,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 	static TerminalNode getLastToken(ParserRuleContext ctx) {
 		TerminalNode last = null
-		for (def i = 0; i < ctx.getChildCount(); i++)
+		for (def i = 0; i < ctx.childCount; i++)
 			if (ctx.getChild(i) instanceof TerminalNode)
 				last = ctx.getChild(i) as TerminalNode
 		return last
@@ -462,7 +463,33 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 		} catch (all) {
 			all = StackTraceUtils.deepSanitize all
-			throw StackTraceUtils.deepSanitize(new Throwable("Jimple File: $filename", all))
+			throw new Throwable("Jimple File: $filename", all)
 		}
 	}
+
+    static Walker parseJimpleText(String fileName, String text) {
+        def parser = new JimpleParser(new CommonTokenStream(new JimpleLexer(new ANTLRInputStream(text))))
+        return new Walker(fileName, parser.program())
+    }
+
+    static class Walker {
+        private final String fileName
+        private final ProgramContext ctx
+
+        Walker(String fileName, ProgramContext ctx) {
+            this.fileName = fileName
+            this.ctx = ctx
+        }
+
+        void walk(Closure processor) {
+            def listener = new JimpleListenerImpl(fileName, processor)
+            try {
+                ParseTreeWalker.DEFAULT.walk(listener, ctx)
+            } catch (all) {
+                //all = StackTraceUtils.deepSanitize all
+				throw new RuntimeException("Jimple class ${listener.filename}: ${all.getMessage()}", all)
+            }
+        }
+    }
+
 }

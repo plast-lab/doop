@@ -32,6 +32,8 @@
 //     with what arguments?)
 **/
 
+#include "android-xml.dl"
+
 /**
  * App Components, in layout resources or dynamically registered
 **/
@@ -173,6 +175,34 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
    OverridingProtectedOnMethodOfLayoutControl(?meth)),
   isImmutableContext(?ctx).
 
+// Relation ReachableLayoutControl registers all types whose methods
+// (constructors plus on* methods) are to be made reachable.
+.decl ReachableLayoutControl(?type:ReferenceType)
+ForcedReachableAndroidContext(?ctx, ?meth) :-
+  ReachableLayoutControl(?type),
+  Method_DeclaringType(?meth, ?type),
+  (Method_SimpleName(?meth, "<init>") ; _OnEventMethod(?meth)),
+  isImmutableContext(?ctx).
+
+// Create special values for layout controls made reachable by the analysis.
+MockValueConsMacro(?value, ?type),
+ReifiedAndroidObjectValue(?value, ?type) :-
+  ReachableLayoutControl(?type),
+  ?value = cat("<reachable layout control of type ", cat(?type, ">")).
+
+// Make launcher activity methods forced-reachable.
+ReachableLayoutControl(?type) :- LauncherActivity(?type).
+
+#ifdef DISABLE_POINTS_TO
+// Crude rule for disabled points-to: make all detected control/fragment
+// constructors and callbacks reachable.
+ReachableLayoutControl(?class) :- XMLFragment_Class(_, _, ?class).
+ReachableLayoutControl(?class) :- LayoutControl(_, ?class, _).
+ReachableLayoutControl(?class) :- LayoutBehavior(?class).
+#endif // DISABLE_POINTS_TO
+
+// Consider action view classes reachable.
+ReachableLayoutControl(?class) :- ActionViewType(?class).
 
 /**
  * Intents and Bundles
@@ -305,23 +335,17 @@ ListenerClassConstantValue(?classHeap, ?type) :-
   // or: ReifiedClass(?type, ?classHeap),  // needs reflection enabled!
   AndroidApplicationListenerClass(?type).
 
-#define MOCK_LISTENER(t) cat("<mock android listener-like object ", cat(?type, ">"))
-
-ApplicationObjectFlowingToLibrary(?hctx, MOCK_LISTENER(?type), ?type),
-MockValueConsMacro(MOCK_LISTENER(?type), ?type) :-
+ApplicationObjectFlowingToLibrary(?hctx, ?mockListener, ?type),
+MockValueConsMacro(?mockListener, ?type) :-
   ListenerClassConstantValue(?classHeap, ?type),
-  ReachableValue(?hctx, ?classHeap).
+  ReachableValue(?hctx, ?classHeap),
+  ?mockListener = cat("<mock android listener-like object ", cat(?type, ">")).
 
 TypeHasApplicationObjectFlowingToLibrary(?type),
 LibraryReachableAppListenerType(?type) :-
   ListenerClassConstantValue(_, ?type),
   TypeHasReachableValue(?type).
 
-
-// Just for debugging
-.output ApplicationObjectFlowingToLibrary
-.output AndroidApplicationListenerClass
-.output AppMethodOverridesAndroidLibraryMethod
 
 //// More precise logic.
 //// Currently this is too conservative. We need to model more of
@@ -463,9 +487,6 @@ ReifiedAndroidObjectValue(?value, ?concreteType) :-
   ?value = cat("<android inferred object of type ", cat(?concreteType, ">")).
 // REVIEW: Just one globally? No invo?
 
-// Just for debugging
-.output ReifiedAndroidObjectValue
-
 
 /**
  * HACK for Runnable modeling. There are thread APIs we don't fully model,
@@ -493,8 +514,6 @@ WebClientType(?type):-
    ?supertype = "android.webkit.WebChromeClient").
 
 .decl _ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)
-// Just for debugging
-.output _ForcedReachableFromJavascriptContext
 
 _ForcedReachableFromJavascriptContext(?ctx, ?meth),
 ForcedReachableAndroidContext(?ctx, ?meth) :-
@@ -515,8 +534,7 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 //  Var_Type(?formal, ?formalType).
 
 .decl ArgToAddJavascriptInterface(?var:Var)
-// Just for debugging
-.output ArgToAddJavascriptInterface
+
 ArgToAddJavascriptInterface(?var) :-
   Method_SimpleName(?addjsmethod, "addJavascriptInterface"),
   Method_DeclaringType(?addjsmethod, "android.webkit.WebView"),
@@ -548,7 +566,7 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 ReachableValue(?hctx, ?value) :-
   ReifiedAndroidObjectValue(?value, _),
   isImmutableHContext(?hctx).
-#endif
+#endif // DISABLE_POINTS_TO
 
 // Link the two concepts: if an object is a ReifiedAndroidObjectValue,
 // make its constructors ForcedReachable.
@@ -670,10 +688,14 @@ ViewRetrievalByArg0MethodInvocation(?invo) :-
 // Support fragment retrieval by id (similar to rule about view retrieval).
 FragmentRetrievalByArg0MethodInvocation(?invo) :-
   Method_SimpleName(?method, "findFragmentById"),
-  (?retType = "android.app.Fragment";
-   ?retType = "android.support.v4.app.Fragment"),
+  Method_Arity(?method, 1),
+  ( ?retSuperType = "android.app.Fragment"
+  ; ?retSuperType = "androidx.fragment.app.Fragment"
+  ; ?retSuperType = "android.support.v4.app.Fragment"
+  ),
+  isType(?retSuperType),
   Method_ReturnType(?method, ?retType),
-  isType(?retType),
+  basic.SubtypeOf(?retType, ?retSuperType),
   MethodInvocation_Method(?invo, ?method).
 
 // The variables holding the layout control id and the retrieved
@@ -742,8 +764,22 @@ ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?baseva
 
 
 /**
- * Fragment transactions.
+ * Fragments and fragment transactions.
 **/
+
+#ifdef DISABLE_POINTS_TO
+
+// Handle reflective instantiation of fragments in types-only.
+ReachableLayoutControl(?fragmentSubType) :-
+  Reachable(?method),
+  _AssignHeapAllocation(_, _, ?heap, _, ?method, _),
+  ClassHeap_InstanceType(?heap, ?fragmentSubType),
+  basic.SubtypeOf(?fragmentSubType, ?fragmentType),
+  ( ?fragmentType = "android.app.Fragment"
+  ; ?fragmentType = "androidx.fragment.app.Fragment"
+  ).
+
+#endif // DISABLE_POINTS_TO
 
 // REVIEW: Doesn't the Fact type Activity suffice?
 .decl _ActivityVar(?var:Var)
@@ -994,3 +1030,13 @@ TypeHasApplicationObjectFlowingToLibrary(?type) :-
   basic.SubtypeOf(?type, ?varType),
   TypeHasReachableApplicationObject(?type).
 
+// Classes whose methods should be all considered reachable. For
+// types-only, there must also be a reachable value of the class.
+.decl ForcedReachableAndroidClass(?ctx:configuration.Context, ?type:Type)
+
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  ForcedReachableAndroidClass(?ctx, ?type),
+  Method_DeclaringType(?method, ?type).
+
+#include "../addons/butterknife.dl"
+#include "../addons/glide.dl"

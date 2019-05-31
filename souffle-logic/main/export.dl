@@ -22,10 +22,12 @@
 .output Stats_Simple_Application_PolymorphicCallSite(IO="file",filename="PolymorphicCallSiteApp.csv",delimiter="\t")
 .output Stats_Simple_Application_ReachableMethod(IO="file",filename="ReachableApp.csv",delimiter="\t")
 #endif // USER_DEFINED_PARTITIONS
+#endif // X_SERVER_LOGIC
+
 #ifndef X_STATS_NONE
 .output Stats_Metrics(IO="file",filename="Stats_Metrics.csv",delimiter="\t")
 #endif // X_STATS_NONE
-#endif // X_SERVER_LOGIC
+
 .output Reachable(IO="file",filename="Reachable.csv",delimiter="\t")
 
 // It is possible to output facts in an sqlite3 db.

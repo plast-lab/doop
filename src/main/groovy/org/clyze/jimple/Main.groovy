@@ -7,6 +7,6 @@ if (!args)
 
 args.each { dir ->
 	def f = new File(dir)
-	if (f.isDirectory())
+	if (f.directory)
 		f.eachFileRecurse(FILES) { JimpleListenerImpl.parseJimple(it as String, dir, {}) }
 }

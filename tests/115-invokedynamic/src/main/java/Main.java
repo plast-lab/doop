@@ -1,7 +1,5 @@
 import java.io.*;
 import java.lang.invoke.*;
-import java.lang.reflect.Constructor;
-import java.security.*;
 import java.util.*;
 import org.objectweb.asm.*;
 import org.objectweb.asm.Handle;

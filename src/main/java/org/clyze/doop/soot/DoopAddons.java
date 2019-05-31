@@ -41,6 +41,7 @@ public class DoopAddons {
      * Check and load classes before parallel fact generation or
      * synchronized/locking during classloading can cause deadlocks.
      */
+    @SuppressWarnings("CatchMayIgnoreException")
     static void initReflectiveAccess() {
         try {
             hc = Class.forName("soot.PolymorphicMethodRef").getDeclaredMethod("handlesClass", String.class);
@@ -226,6 +227,7 @@ public class DoopAddons {
     }
 
     private static boolean polymorphicHandling_msg = false;
+    @SuppressWarnings("CatchMayIgnoreException")
     public static boolean polymorphicHandling(String declClass, String simpleName) {
         try {
             if (hc != null)
@@ -244,6 +246,7 @@ public class DoopAddons {
      * compatibility with earlier versions, we introduce a reflective
      * layer and our own custom MethodType class.
      */
+    @SuppressWarnings("CatchMayIgnoreException")
     public static MethodType methodType(Value v) {
         if (!(METHODTYPE.equals(v.getClass().getName())))
             return null;

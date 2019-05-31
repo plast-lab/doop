@@ -135,6 +135,8 @@ Stats_Arrays(?n) :-
 Stats_InsensArrays(?n) :-
   ?n = count : Stats_InsensArrayCount(_, _).
 
+#ifndef DISABLE_POINTS_TO
+
 /****************************************************************
  * Fields
  ***************************************************************/
@@ -192,6 +194,8 @@ Stats_InsensFields(?n) :-
 //  Value_Type(?value, ?valuetype),
 //  !SupertypeOf("java.lang.Throwable", ?valuetype),
 //  !SupertypeOf("java.lang.Throwable", ?basevaluetype).
+
+#endif // DISABLE_POINTS_TO
 
 /***************************************************
  * Methods

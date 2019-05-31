@@ -11,13 +11,14 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static final String DEFAULT_JAVA_PLATFORM = "java_8"
-	private static final String GROUP_FACTS = "Fact generation"
-	private static final String GROUP_REFLECTION = "Reflection"
 	private static final String GROUP_ENGINE = "Datalog engine"
+	private static final String GROUP_FACTS = "Fact generation"
 	private static final String GROUP_HEAPDL = "HeapDL"
+	private static final String GROUP_INFORMATION_FLOW = "Information flow"
 	private static final String GROUP_NATIVE = "Native code"
 	private static final String GROUP_PYTHON = "Python"
-	private static final String GROUP_INFORMATION_FLOW = "Information flow"
+	private static final String GROUP_REFLECTION = "Reflection"
+	private static final String GROUP_STATS = "Statistics"
 
 	@Override
 	String getName() { "doop" }
@@ -31,7 +32,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	@Override
 	Map<String, AnalysisOption> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
 
-	public AnalysisOption getOptionByName(String n) {
+	AnalysisOption getOptionByName(String n) {
 		SUPPORTED_OPTIONS.find { it.name == n }
 	}
 
@@ -300,7 +301,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "DECODE_APK",
 					name: "decode-apk",
 					group: GROUP_FACTS,
-					description: "Decode .apk inputs to facts directory."
+					description: "Decode .apk inputs to facts directory.",
+					value: true,
+					cli: false
 			),
 			new BooleanAnalysisOption(
 					id: "PYTHON",
@@ -334,6 +337,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "android",
 					description: "If true the analysis is ran on an Android app.",
 					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "LEGACY_ANDROID_PROCESSING",
+					name: "legacy-android-processing",
+					description: "If true the analysis uses the legacy processor for Android resources."
 			),
 			new BooleanAnalysisOption(
 					id: "CFG_ANALYSIS",
@@ -616,6 +624,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_ENGINE,
 					description: "Use the functor for incremental output in Souffle."
 			),
+			new BooleanAnalysisOption(
+					id: "VIA_DDLOG",
+					name: "via-ddlog",
+					group: GROUP_ENGINE,
+					description: "Convert and run Souffle with DDlog.",
+					forPreprocessor: true
+			),
 			/* End Souffle related options */
 
 			//Information-flow, etc.
@@ -749,24 +764,28 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_STATS_FULL",
 					name: "Xstats-full",
+					group: GROUP_STATS,
 					description: "Load additional logic for collecting statistics.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_NONE",
 					name: "Xstats-none",
+					group: GROUP_STATS,
 					description: "Do not load logic for collecting statistics.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_DEFAULT",
 					name: "Xstats-default",
+					group: GROUP_STATS,
 					description: "Load default logic for collecting statistics.",
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
 					id: "X_STATS_AROUND",
 					name: "Xstats-around",
+					group: GROUP_STATS,
 					description: "Load custom logic for collecting statistics.",
 					argName: "FILE",
 					argInputType: InputType.MISC
@@ -847,6 +866,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xlow-mem",
 					group: GROUP_FACTS,
 					description: "Use less memory. Does not support all options."
+			),
+			new BooleanAnalysisOption(
+					id: "X_SERIALIZE_FACTGEN_COMPILATION",
+					name: "Xserialize-factgen-compilation",
+					group: GROUP_FACTS,
+					description: "Do not run fact generation and compilation in parallel.",
+					cli: false
 			),
 			new AnalysisOption<String>(
 					id: "X_START_AFTER_FACTS",
@@ -960,7 +986,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		def analyses = []
 		new File(path).eachDir { File dir ->
 			def f = new File(dir, fileToLookFor)
-			if (f.exists() && f.isFile()) analyses << dir.name
+			if (f.exists() && f.file) analyses << dir.name
 		}
 		analyses.sort()
 	}
