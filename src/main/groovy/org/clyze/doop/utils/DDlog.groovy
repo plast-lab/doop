@@ -146,7 +146,7 @@ class DDlog {
 			def dat = "${convertedLogicPrefix}.dat"
 
 			// Hack: use script to get away with redirection.
-			def cmdRun = "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs}".split().toList()
+			def cmdRun = "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs} --no-print".split().toList()
 			executeCmd(cmdRun, null)
 		}
 		log.info "Analysis execution time (sec): ${executionTime}"
