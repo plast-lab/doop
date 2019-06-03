@@ -85,14 +85,16 @@ class DDlog {
 			def cmdGenRust = "stack run -- -i ${convertedLogic} --action=compile -L lib".split().toList()
 			executeCmd(cmdGenRust, getDDlogDir(log))
 		}
-		log.info "Time: ${genTime}"
+		log.info "Code generation time: ${genTime}"
 		def buildTime = Helper.timing {
 			log.info "Compiling the analysis: building (using ${jobs} jobs)..."
 			log.debug "Build dir: ${buildDir}"
 			def cmdBuildRust = "cargo build -j ${jobs} --release".split().toList()
 			executeCmd(cmdBuildRust, new File(buildDir))
 		}
-		log.info "Time: ${buildTime}"
+		log.info "Build time: ${buildTime}"
+		def compilationTime = genTime + buildTime
+		log.info "Analysis compilation time (sec): ${compilationTime}"
 
         return new File(analysisBinary)
     }
@@ -139,7 +141,7 @@ class DDlog {
 
 		// Step 2: Run the analysis.
 		log.info "Running the analysis (using ${jobs} jobs)..."
-		def runTime = Helper.timing {
+		def executionTime = Helper.timing {
 			def dump = "${db.canonicalPath}/dump"
 			def dat = "${convertedLogicPrefix}.dat"
 
@@ -147,7 +149,7 @@ class DDlog {
 			def cmdRun = "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs}".split().toList()
 			executeCmd(cmdRun, null)
 		}
-		log.info "Time: ${runTime}"
+		log.info "Analysis execution time (sec): ${executionTime}"
 	}
 
 	/**
