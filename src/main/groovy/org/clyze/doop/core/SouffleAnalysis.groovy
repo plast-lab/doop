@@ -37,7 +37,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		def cacheDir = new File(Doop.souffleAnalysesCache, name)
 		cacheDir.mkdirs()
-		def script = new SouffleScript(executor, options.VIA_DDLOG.value as Boolean)
+		def script = SouffleScript.newScript(executor, options.VIA_DDLOG.value as Boolean)
 
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()

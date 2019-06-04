@@ -400,13 +400,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.REFLECTION.value = false
 		}
 
-		if (options.VIA_DDLOG.value) {
-			if (options.CACHE.value) {
-				throw new RuntimeException("Error: options --" + options.VIA_DDLOG.name + " and --" + options.CACHE.name + " are not compatible.")
-			}
-			options.X_UNIQUE_FACTS.value = false
-		}
-
 		if (options.NO_SSA.value) {
 			options.SSA.value = false
 		}

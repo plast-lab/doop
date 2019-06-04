@@ -39,7 +39,7 @@ class SoufflePythonAnalysis extends DoopAnalysis{
 
         def cacheDir = new File(Doop.souffleAnalysesCache, name)
         cacheDir.mkdirs()
-        def script = new SouffleScript(executor, options.VIA_DDLOG.value as Boolean)
+        def script = SouffleScript.newScript(executor, options.VIA_DDLOG.value as Boolean)
         if(options.SOUFFLE_RUN_INTERPRETED.value){
             script.interpretScript(analysis,outDir,factsDir,
                     options.SOUFFLE_PROFILE.value as boolean,
