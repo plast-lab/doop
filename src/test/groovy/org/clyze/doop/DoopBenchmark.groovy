@@ -5,7 +5,8 @@ import org.clyze.doop.core.Doop
 import spock.lang.Specification
 
 /**
- * Tests that come from the Doop benchmarks repo.
+ * Tests that come from the Doop benchmarks repository should extend this class
+ * so that they can find the path to the local copy of the repository.
  */
 abstract class DoopBenchmark extends Specification {
 	final static String DOOP_BENCHMARKS = "DOOP_BENCHMARKS"
