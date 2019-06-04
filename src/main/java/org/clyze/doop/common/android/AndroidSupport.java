@@ -186,7 +186,7 @@ public abstract class AndroidSupport {
      */
     public void generateFactsForXML(Database db, String outDir) {
         for (String decodeDir : decodeDirs) {
-            System.out.println("Processing XML in directory: " + decodeDir);
+            System.out.println("Processing XML files in directory: " + decodeDir);
             XMLFactGenerator.processDir(new File(decodeDir), db, outDir);
         }
 
