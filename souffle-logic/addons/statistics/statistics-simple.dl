@@ -249,6 +249,8 @@ NewMetricMacro("26.4", "Android layout controls", LayoutControl(_, _, _)).
 NewMetricMacro("26.5", "Android sensitive layout controls", SensitiveLayoutControl(_, _, _)).
 NewMetricMacro("26.6", "Android callback methods", CallbackMethod(_)).
 NewMetricMacro("26.7", "Android typed fragments", mainAnalysis.XMLFragment_Class(_, _, _)).
+NewMetricMacro("26.8", "Methods considered obfuscated", mainAnalysis.ObfuscatedApplicationClass(_)).
+NewMetricMacro("26.9", "Methods considered unobfuscated", mainAnalysis.UnobfuscatedApplicationClass(_)).
 #endif // ANDROID
 
 /***************************************************

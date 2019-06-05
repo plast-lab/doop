@@ -895,6 +895,12 @@ UnobfuscatedApplicationClass(?class) :-
   ApplicationPackageRegex(?regex),
   match(?regex, ?class).
 
+// Report application classes considered obfuscated by the analysis.
+.decl ObfuscatedApplicationClass(?class:ClassType)
+ObfuscatedApplicationClass(?class) :-
+  ApplicationClass(?class),
+  !UnobfuscatedApplicationClass(?class).
+
 .decl UnobfuscatedMethod(?meth:Method)
 .output UnobfuscatedMethod
 
