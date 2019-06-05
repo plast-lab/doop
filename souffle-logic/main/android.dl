@@ -883,18 +883,27 @@ UnobfuscatedApplicationClass(?class) :-
   ApplicationClass(?class),
   (match("android.*", ?class);
    match("butterknife.*", ?class);
+   match("cn.*", ?class);
    match("com.*", ?class);
+   match("dagger.*", ?class);
+   match("de.*", ?class);
+   match("ezvcard.*", ?class);
    match("fi.*", ?class);
    match("org.*", ?class);
    match("io.*", ?class);
    match("it.*", ?class);
+   match("me.*", ?class);
+   match("mobi.*", ?class);
+   match("net.*", ?class);
+   match("pl.*", ?class);
    match("javax.*", ?class);
    match("edu.*", ?class);
    match("oauth.*", ?class);
    match("okhttp3.*", ?class);
    match("okio.*", ?class);
    match("retrofit.*", ?class);
-   match("retrofit2.*", ?class)).
+   match("retrofit2.*", ?class);
+   match("twitter4j.*", ?class)).
 UnobfuscatedApplicationClass(?class) :-
   ApplicationClass(?class),
   ApplicationPackageRegex(?regex),
