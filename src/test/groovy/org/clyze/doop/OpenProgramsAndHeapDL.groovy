@@ -1,12 +1,13 @@
 package org.clyze.doop
 
 import org.clyze.analysis.Analysis
+import spock.lang.Specification
 import spock.lang.Unroll
 
 /**
  * Test the combination of open-program analysis and HeapDL.
  */
-class OpenProgramsAndHeapDL extends DoopBenchmark {
+class OpenProgramsAndHeapDL extends Specification {
 	// @spock.lang.Ignore
 	@Unroll
 	def "HeapDL/Open-Programs Android analysis test"() {

@@ -15,6 +15,11 @@ AndroidApplication(?type) :-
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNodeAttribute(?manifest, ?applicationId, _, _, "android:name", ?type).
 
+// Compute application regex if it is not given in the facts.
+ApplicationPackageRegex(cat(?package, ".*")) :-
+  !_ApplicationPackage(_),
+  ApplicationPackage(?package).
+
 // Helper macro to handle types that are either fully qualified or
 // unqualified and belong to the application package.
 #define APP_QUALIFIED_TYPE(t, qType) \

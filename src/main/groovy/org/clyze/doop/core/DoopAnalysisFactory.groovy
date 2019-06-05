@@ -400,11 +400,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.REFLECTION.value = false
 		}
 
-		if (options.VIA_DDLOG.value) {
-			if (options.CACHE.value) {
-				throw new RuntimeException("Error: options --" + options.VIA_DDLOG.name + " and --" + options.CACHE.name + " are not compatible.")
-			}
-			options.X_UNIQUE_FACTS.value = false
+		// Cached facts and profiling are compatible: profiling
+		// commands are added to the .dat file during fact generation.
+		if (options.VIA_DDLOG.value && options.CACHE.value && options.SOUFFLE_PROFILE.value) {
+			throw new RuntimeException("Error: options --" + options.CACHE.name + " and --" + options.SOUFFLE_PROFILE.name + " are not compatible when running via the DDlog converter.")
 		}
 
 		if (options.NO_SSA.value) {

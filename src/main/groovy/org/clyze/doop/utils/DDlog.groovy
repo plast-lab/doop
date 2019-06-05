@@ -16,15 +16,15 @@ import org.clyze.utils.Helper
  * This class compiles and runs Souffle analysis with DDlog via the DDlog converter.
  */
 @Log4j
-@TupleConstructor
 @TypeChecked
-class DDlog {
+class DDlog extends SouffleScript {
 
 	static final String convertedLogicName = "converted_logic" as String
     static final String SOUFFLE_CONVERTER = "souffle_converter.py" as String
-    Executor executor
-    File scriptFile
-    File outDir
+
+    public DDlog(Executor executor) {
+        super(executor)
+    }
 
     /**
      * Reads the DDlog directory from its corresponding environment variable.
@@ -64,13 +64,58 @@ class DDlog {
 		}
     }
 
+    /*
+     * Check that unsupported options are not enabled.
+     */
+    void checkOptions(boolean debug, boolean provenance, boolean liveProf,
+                      boolean removeContext, boolean useFunctors) {
+        if (debug) {
+            throw new DoopErrorCodeException(27, new RuntimeException("Option 'debug' is not supported."))
+        } else if (provenance) {
+            throw new DoopErrorCodeException(27, new RuntimeException("Option 'provenance' is not supported."))
+        } else if (liveProf) {
+            throw new DoopErrorCodeException(27, new RuntimeException("Option 'liveProf' is not supported."))
+        } else if (removeContext) {
+            throw new DoopErrorCodeException(27, new RuntimeException("Option 'removeContext' is not supported."))
+        } else if (useFunctors) {
+            throw new DoopErrorCodeException(27, new RuntimeException("Option 'useFunctors' is not supported."))
+        }
+    }
+
+    @Override
+	File compile(File origScriptFile, File outDir, File cacheDir,
+                 boolean profile = false, boolean debug = false,
+                 boolean provenance = false, boolean liveProf = false,
+                 boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
+
+        checkOptions(debug, provenance, liveProf, removeContext, useFunctors)
+
+        scriptFile = File.createTempFile("gen_", ".dl", outDir)
+		preprocess(scriptFile, origScriptFile)
+
+        def checksum = calcChecksum(profile, provenance, liveProf)
+		def cacheFile = new File(cacheDir, checksum)
+		if (!cacheFile.exists() || forceRecompile) {
+            def jobs = ((Runtime.getRuntime().availableProcessors() / 2) + 1) as Integer
+            log.info "Compiling Datalog to Rust program and executable using ${jobs} jobs"
+            def executable = compileWithDDlog(jobs, outDir)
+            cacheCompiledBinary(executable, cacheFile, checksum, cacheDir)
+        } else {
+			log.info "Using cached analysis executable $checksum from $cacheDir"
+		}
+		return cacheFile
+
+    }
+
     /**
      * Compile the (converted) analysis logic.
      *
-	 * @param jobs		 the number of jobs to use when compiling the analysis
+     * @param jobs       the number of jobs to use when compiling the analysis
+     * @param outDir     the analysis output directory
      */
-    File compileWithDDlog(int jobs) {
+    File compileWithDDlog(int jobs, File outDir) {
         // Step 1. Call converter for logic only.
+        def convertedLogicPrefix = getConvertedLogicPrefix(outDir)
 		def cmdConvert = ["${outDir}/${SOUFFLE_CONVERTER}" as String,
                           "--logic-only",
 						  scriptFile.canonicalPath,
@@ -85,19 +130,23 @@ class DDlog {
 			def cmdGenRust = "stack run -- -i ${convertedLogic} --action=compile -L lib".split().toList()
 			executeCmd(cmdGenRust, getDDlogDir(log))
 		}
-		log.info "Time: ${genTime}"
+		log.info "Code generation time: ${genTime}"
 		def buildTime = Helper.timing {
 			log.info "Compiling the analysis: building (using ${jobs} jobs)..."
+			String buildDir = getBuildDir(outDir)
 			log.debug "Build dir: ${buildDir}"
 			def cmdBuildRust = "cargo build -j ${jobs} --release".split().toList()
 			executeCmd(cmdBuildRust, new File(buildDir))
 		}
-		log.info "Time: ${buildTime}"
+		log.info "Build time: ${buildTime}"
+		compilationTime = genTime + buildTime
+		log.info "Analysis compilation time (sec): ${compilationTime}"
 
-        return new File(analysisBinary)
+        return new File(getAnalysisBinary(outDir))
     }
 
-    private String getBuildDir() {
+    private String getBuildDir(File outDir) {
+        def convertedLogicPrefix = getConvertedLogicPrefix(outDir)
         return "${convertedLogicPrefix}_ddlog" as String
 	}
 
@@ -114,41 +163,62 @@ class DDlog {
 		}
     }
 
-    private String getConvertedLogicPrefix() {
+    private String getConvertedLogicPrefix(outDir) {
 		return "${outDir}/${convertedLogicName}" as String
     }
 
-    private String getAnalysisBinary() {
+    private String getAnalysisBinary(File outDir) {
+        String buildDir = getBuildDir(outDir)
         return "${buildDir}/target/release/${convertedLogicName}_cli" as String
     }
 
-	/**
-	 * Execute the 'run' phase using the DDLog Souffle converter.
-	 *
-	 * @param db		 the database directory
-	 * @param jobs		 the number of jobs to use when running the analysis
-	 */
-	private void runWithDDlog(File db, int jobs) {
-        // Step 1. Convert the facts.
-		def cmdConvert = ["${outDir}/${SOUFFLE_CONVERTER}" as String,
-						  scriptFile.canonicalPath,
+    @Override
+    def run(File cacheFile, File factsDir, File outDir,
+            int jobs, long monitoringInterval, Closure monitorClosure,
+            boolean provenance = false, boolean liveProf = false,
+            boolean profile = false) {
+
+        checkOptions(false, provenance, liveProf, false, false)
+        def db = makeDatabase(outDir)
+        log.info "Running the analysis (using ${jobs} jobs)..."
+        try {
+            executionTime = Helper.timing {
+                def dump = "${db.canonicalPath}/dump"
+                def convertedLogicPrefix = getConvertedLogicPrefix(outDir)
+                def dat = "${convertedLogicPrefix}.dat"
+                // Hack: use script to get away with redirection.
+                def analysisBinary = cacheFile.absolutePath
+                def TIME_UTIL = "/usr/bin/time"
+                def cmdRun = ((profile && new File(TIME_UTIL).exists()) ? [TIME_UTIL] : []) as List
+                cmdRun += "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs} --no-print".split().toList()
+                executeCmd(cmdRun, null)
+            }
+            log.info "Analysis execution time (sec): ${executionTime}"
+            return [compilationTime, executionTime]
+        } catch (ex) {
+            throw new DoopErrorCodeException(25, ex)
+        }
+    }
+
+    /**
+     * Convert the facts to DDlog commands.
+     *
+     * @param outDir     the output directory
+     * @param profile    profiling mode
+     */
+    @Override
+    void postprocessFacts(File outDir, boolean profile) {
+        def convertedLogicPrefix = getConvertedLogicPrefix(outDir)
+        def cmdConvert = ["${outDir}/${SOUFFLE_CONVERTER}" as String,
+                          scriptFile.canonicalPath,
                           "--facts-only",
-						  convertedLogicPrefix ]
-		log.debug "Running facts conversion command: ${cmdConvert}"
-		executeCmd(cmdConvert, outDir)
-
-		// Step 2: Run the analysis.
-		log.info "Running the analysis (using ${jobs} jobs)..."
-		def runTime = Helper.timing {
-			def dump = "${db.canonicalPath}/dump"
-			def dat = "${convertedLogicPrefix}.dat"
-
-			// Hack: use script to get away with redirection.
-			def cmdRun = "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs}".split().toList()
-			executeCmd(cmdRun, null)
-		}
-		log.info "Time: ${runTime}"
-	}
+                          convertedLogicPrefix ]
+        if (profile) {
+            cmdConvert << "--profile"
+        }
+        log.debug "Running facts conversion command: ${cmdConvert}"
+        executeCmd(cmdConvert, outDir)
+    }
 
 	/**
 	 * Executes a command using a temporary file for its output.
@@ -165,4 +235,11 @@ class DDlog {
 		executor.executeWithRedirectedOutput(command, tmpFile.toFile()) { println it }
 		Files.delete(tmpFile)
 	}
+
+    @Override
+    def interpretScript(File origScriptFile, File outDir, File factsDir,
+                   boolean profile = false, boolean debug = false,
+                   boolean removeContext = false) {
+        throw new DoopErrorCodeException(27, new RuntimeException("Option 'interpret' is not supported."))
+    }
 }

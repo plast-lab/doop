@@ -185,6 +185,7 @@ Stats_Simple_Application_PotentiallyFailingCast(?type, ?from, ?to) :-
   !basic.SupertypeOf(?type, ?valuetype).
 
 /***************************************************/
+#ifndef DISABLE_POINTS_TO
 NewMetricMacro( "1.0", "var points-to (INS)", Stats_Simple_InsensVarPointsTo(_, _)).
 NewMetricMacro( "1.5", "var points-to (SENS)", mainAnalysis.VarPointsTo(_, _, _, _)).
 NewMetricMacro( "5.0", "app var points-to (INS)", Stats_Simple_Application_InsensVarPointsTo(_, _)).
@@ -197,7 +198,6 @@ NewMetricMacro( "2.5", "array index points-to (SENS)", mainAnalysis.ArrayIndexPo
 NewMetricMacro( "6.0", "app array index points-to (INS)", Stats_Simple_Application_InsensArrayIndexPointsTo(_, _)).
 NewMetricMacro( "6.5", "app array index points-to (SENS)", Stats_Simple_Application_ArrayIndexPointsTo(_, _, _, _)).
 
-#ifndef DISABLE_POINTS_TO
 NewMetricMacro( "3.0", "instance field points-to (INS)", Stats_Simple_InsensInstanceFieldPointsTo(_, _, _)).
 NewMetricMacro( "3.5", "instance field points-to (SENS)", mainAnalysis.InstanceFieldPointsTo(_, _, _, _, _)).
 
@@ -287,12 +287,11 @@ Stats_Simple_Constructor_newInstance(?invocation) :-
   Var_DeclaringMethod(?from, ?inmethod),
   mainAnalysis.Reachable(?inmethod).
 
+#ifndef DISABLE_POINTS_TO
 NewMetricMacro("30.0", "var points-to (to a reflective value) (INS)", Stats_Simple_Reflection_InsensVarPointsTo(_, _)).
 NewMetricMacro("30.5", "var points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_VarPointsTo(_, _, _, _)).
 NewMetricMacro("31.0", "array index points-to (to a reflective value) (INS)", Stats_Simple_Reflection_InsensArrayIndexPointsTo(_, _)).
 NewMetricMacro("31.5", "array index points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_ArrayIndexPointsTo(_, _, _, _)).
-
-#ifndef DISABLE_POINTS_TO
 NewMetricMacro("32.0", "instance field points-to (to a reflective value) (INS)", Stats_Simple_Reflection_InsensInstanceFieldPointsTo(_, _, _)).
 NewMetricMacro("32.5", "instance field points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_InstanceFieldPointsTo(_, _, _, _, _)).
 #endif // DISABLE_POINTS_TO

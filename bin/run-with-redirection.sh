@@ -8,4 +8,4 @@ fi
 INPUT=$1
 OUTPUT=$2
 shift 2
-eval "$*" < ${INPUT} > ${OUTPUT}
+eval "$*" < ${INPUT} &> ${OUTPUT}

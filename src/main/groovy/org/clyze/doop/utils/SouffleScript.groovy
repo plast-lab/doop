@@ -24,15 +24,34 @@ class SouffleScript {
 	static final String EXE_NAME = "exe"
 
 	Executor executor
-	boolean viaDDlog
 	long compilationTime = 0L
 	long executionTime = 0L
 	File scriptFile = null
+
+	static SouffleScript newScript(Executor executor, boolean viaDDlog) {
+		return viaDDlog ? new DDlog(executor) : new SouffleScript(executor)
+	}
 
 	void preprocess(File output, File input) {
 		CPreprocessor cpp = new CPreprocessor(executor)
 		cpp.disableLineMarkers().enableLogOutput()
 		cpp.preprocessIfExists(output.canonicalPath, input.canonicalPath)
+	}
+
+	/**
+	 * Calculates the checksum of the cached compiled analysis binary.
+	 *
+	 * @param profile	  profiling mode
+	 * @param provenance  provenance mode
+	 * @param liveProf	  live profiling mode
+	 */
+	final String calcChecksum(boolean profile, boolean provenance,
+							  boolean liveProf) {
+		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
+		// We also hash the current class name so that subclasses of
+		// SouffleScript cache their binaries in different paths.
+		def c2 = c1 + profile.toString() + provenance.toString() + liveProf.toString() + getClass().toString()
+		return CheckSum.checksum(c2, DoopAnalysisFactory.HASH_ALGO)
 	}
 
 	File compile(File origScriptFile, File outDir, File cacheDir,
@@ -43,19 +62,12 @@ class SouffleScript {
 		scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		preprocess(scriptFile, origScriptFile)
 
-		if (viaDDlog) {
-			return (new DDlog(executor, scriptFile, outDir)).compileWithDDlog(4)
-		}
-
 		if (useFunctors) {
 			detectFunctors(outDir)
 		}
 
-		def c1 = CheckSum.checksum(scriptFile, DoopAnalysisFactory.HASH_ALGO)
-		def c2 = c1 + profile.toString() + provenance.toString() + liveProf.toString()
-		def checksum = CheckSum.checksum(c2, DoopAnalysisFactory.HASH_ALGO)
+		def checksum = calcChecksum(profile, provenance, liveProf)
 		def cacheFile = new File(cacheDir, checksum)
-
 		if (!cacheFile.exists() || debug || forceRecompile) {
 
 			if (removeContext) {
@@ -93,42 +105,44 @@ class SouffleScript {
 				}
 				Files.delete(tmpFile)
 			}
-
-			try {
-				// COPY_ATTRIBUTES: Keep execute permission
-				Files.copy(executable.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
-			} catch (FileAlreadyExistsException e) {
-				// If a cached file is already there, don't overwrite it
-				// (it might be used by another analysis), just reuse it.
-				log.info (e.message)
-			}
-
 			log.info "Analysis compilation time (sec): $compilationTime"
-			log.info "Caching analysis executable $checksum in $cacheDir"
+			cacheCompiledBinary(executable, cacheFile, checksum, cacheDir)
 		} else {
 			log.info "Using cached analysis executable $checksum from $cacheDir"
 		}
 		return cacheFile
 	}
 
+	void cacheCompiledBinary(File executable, File cacheFile, String checksum, File cacheDir) {
+		try {
+			// COPY_ATTRIBUTES: Keep execute permission
+			Files.copy(executable.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+			log.info "Caching analysis executable $checksum in $cacheDir"
+		} catch (FileAlreadyExistsException e) {
+			// If a cached file is already there, don't overwrite it
+			// (it might be used by another analysis), just reuse it.
+			log.info (e.message)
+		}
+	}
+
+	final File makeDatabase(File outDir) {
+		def db = new File(outDir, "database")
+		deleteQuietly(db)
+		db.mkdirs()
+		return db
+	}
+
+	/**
+	 * Subclasses can override this method to post-process the facts before analysis.
+	 */
+	void postprocessFacts(File outDir, boolean profile) { }
+
 	def run(File cacheFile, File factsDir, File outDir,
 	        int jobs, long monitoringInterval, Closure monitorClosure,
 			boolean provenance = false, boolean liveProf = false,
 			boolean profile = false) {
 
-		def db = new File(outDir, "database")
-		deleteQuietly(db)
-		db.mkdirs()
-
-		if (viaDDlog) {
-			try {
-				(new DDlog(executor, scriptFile, outDir)).runWithDDlog(db, jobs)
-				return
-			} catch (ex) {
-				throw new DoopErrorCodeException(25, ex)
-			}
-		}
-
+		def db = makeDatabase(outDir)
 		def executionCommand = "$cacheFile -j$jobs -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
 		if (profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)

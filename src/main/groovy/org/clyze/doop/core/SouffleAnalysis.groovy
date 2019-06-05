@@ -37,11 +37,12 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		def cacheDir = new File(Doop.souffleAnalysesCache, name)
 		cacheDir.mkdirs()
-		def script = new SouffleScript(executor, options.VIA_DDLOG.value as Boolean)
+		def script = SouffleScript.newScript(executor, options.VIA_DDLOG.value as Boolean)
 
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()
 		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
+		boolean profiling = options.SOUFFLE_PROFILE.value as boolean
 		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
 		if (!options.X_STOP_AT_FACTS.value) {
 			if (options.VIA_DDLOG.value) {
@@ -54,7 +55,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				File call() {
 					log.info "[Task COMPILE...]"
 					def generatedFile = script.compile(analysis, outDir, cacheDir,
-							options.SOUFFLE_PROFILE.value as boolean,
+							profiling,
 							options.SOUFFLE_DEBUG.value as boolean,
 							provenance,
 							liveProf,
@@ -78,20 +79,22 @@ class SouffleAnalysis extends DoopAnalysis {
 		try {
 			log.info "[Task FACTS...]"
 			generateFacts()
+			script.postprocessFacts(outDir, profiling)
 			log.info "[Task FACTS Done]"
 
 			if (options.X_SERVER_CHA.value) {
 				log.info "[CHA...]"
 				def methodLookupFile = new File("${Doop.doopHome}/souffle-scripts/method-lookup-script.dl")
 				def generatedFile0 = script.compile(methodLookupFile, outDir, cacheDir,
-						options.SOUFFLE_PROFILE.value as boolean,
+						profiling,
 						options.SOUFFLE_DEBUG.value as boolean,
 						provenance,
 						liveProf,
 						options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
 						options.X_CONTEXT_REMOVER.value as boolean)
 				script.run(generatedFile0, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-						(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance)
+						   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
+						   provenance, liveProf, profiling)
 				log.info "[CHA Done]"
 			}
 
@@ -101,7 +104,8 @@ class SouffleAnalysis extends DoopAnalysis {
 				generatedFile = compilationFuture.get()
 			}
 			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance, liveProf)
+					   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
+					   provenance, liveProf, profiling)
 
 			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 			runtimeMetricsFile.createNewFile()

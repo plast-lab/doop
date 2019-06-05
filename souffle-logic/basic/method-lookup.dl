@@ -41,13 +41,15 @@ MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
 _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, 0) :-
     MethodImplemented(?simplename, ?descriptor, ?type, ?method).
 
-#ifndef VIA_DDLOG
 _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, n + 1) :-
-    (DirectSuperclass(?type, ?supertype) ;
-     DirectSuperinterface(?type, ?supertype)),
+    DirectSuperclass(?type, ?supertype),
     _MethodLookup_WithLen(?simplename, ?descriptor, ?supertype, ?method, n),
     !MethodImplemented(?simplename, ?descriptor, ?type, _).
-#endif // VIA_DDLOG
+
+_MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, n + 1) :-
+    DirectSuperinterface(?type, ?supertype),
+    _MethodLookup_WithLen(?simplename, ?descriptor, ?supertype, ?method, n),
+    !MethodImplemented(?simplename, ?descriptor, ?type, _).
 
 _MethodLookup_MoreThanOne(?simplename, ?descriptor, ?type) :-
     _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method1, _),
