@@ -67,11 +67,9 @@ class DDlog extends SouffleScript {
     /*
      * Check that unsupported options are not enabled.
      */
-    void checkOptions(boolean profile, boolean debug, boolean provenance,
-                      boolean liveProf, boolean removeContext, boolean useFunctors) {
-        if (profile) {
-            throw new DoopErrorCodeException(27, new RuntimeException("Option 'profile' is not supported."))
-        } else if (debug) {
+    void checkOptions(boolean debug, boolean provenance, boolean liveProf,
+                      boolean removeContext, boolean useFunctors) {
+        if (debug) {
             throw new DoopErrorCodeException(27, new RuntimeException("Option 'debug' is not supported."))
         } else if (provenance) {
             throw new DoopErrorCodeException(27, new RuntimeException("Option 'provenance' is not supported."))
@@ -90,7 +88,7 @@ class DDlog extends SouffleScript {
                  boolean provenance = false, boolean liveProf = false,
                  boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
 
-        checkOptions(profile, debug, provenance, liveProf, removeContext, useFunctors)
+        checkOptions(debug, provenance, liveProf, removeContext, useFunctors)
 
         scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		preprocess(scriptFile, origScriptFile)
@@ -180,47 +178,47 @@ class DDlog extends SouffleScript {
             boolean provenance = false, boolean liveProf = false,
             boolean profile = false) {
 
-        checkOptions(profile, false, provenance, liveProf, false, false)
+        checkOptions(false, provenance, liveProf, false, false)
         def db = makeDatabase(outDir)
+        log.info "Running the analysis (using ${jobs} jobs)..."
         try {
-            runWithDDlog(cacheFile, db, jobs, outDir)
+            executionTime = Helper.timing {
+                def dump = "${db.canonicalPath}/dump"
+                def convertedLogicPrefix = getConvertedLogicPrefix(outDir)
+                def dat = "${convertedLogicPrefix}.dat"
+                // Hack: use script to get away with redirection.
+                def analysisBinary = cacheFile.absolutePath
+                def TIME_UTIL = "/usr/bin/time"
+                def cmdRun = ((profile && new File(TIME_UTIL).exists()) ? [TIME_UTIL] : []) as List
+                cmdRun += "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs} --no-print".split().toList()
+                executeCmd(cmdRun, null)
+            }
+            log.info "Analysis execution time (sec): ${executionTime}"
             return [compilationTime, executionTime]
         } catch (ex) {
             throw new DoopErrorCodeException(25, ex)
         }
     }
 
-	/**
-	 * Execute the 'run' phase using the DDLog Souffle converter.
-	 *
-	 * @param cacheFile	 the cached analysis binary
-	 * @param db		 the database directory
-	 * @param jobs		 the number of jobs to use when running the analysis
-	 * @param outDir	 the output directory
-	 */
-	private void runWithDDlog(File cacheFile, File db, int jobs, File outDir) {
-        // Step 1. Convert the facts.
-		def convertedLogicPrefix = getConvertedLogicPrefix(outDir)
-		def cmdConvert = ["${outDir}/${SOUFFLE_CONVERTER}" as String,
-						  scriptFile.canonicalPath,
+    /**
+     * Convert the facts to DDlog commands.
+     *
+     * @param outDir     the output directory
+     * @param profile    profiling mode
+     */
+    @Override
+    void postprocessFacts(File outDir, boolean profile) {
+        def convertedLogicPrefix = getConvertedLogicPrefix(outDir)
+        def cmdConvert = ["${outDir}/${SOUFFLE_CONVERTER}" as String,
+                          scriptFile.canonicalPath,
                           "--facts-only",
-						  convertedLogicPrefix ]
-		log.debug "Running facts conversion command: ${cmdConvert}"
-		executeCmd(cmdConvert, outDir)
-
-		// Step 2: Run the analysis.
-		log.info "Running the analysis (using ${jobs} jobs)..."
-		executionTime = Helper.timing {
-			def dump = "${db.canonicalPath}/dump"
-			def dat = "${convertedLogicPrefix}.dat"
-
-			// Hack: use script to get away with redirection.
-			def analysisBinary = cacheFile.absolutePath
-			def cmdRun = "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs} --no-print".split().toList()
-			executeCmd(cmdRun, null)
-		}
-		log.info "Analysis execution time (sec): ${executionTime}"
-	}
+                          convertedLogicPrefix ]
+        if (profile) {
+            cmdConvert << "--profile"
+        }
+        log.debug "Running facts conversion command: ${cmdConvert}"
+        executeCmd(cmdConvert, outDir)
+    }
 
 	/**
 	 * Executes a command using a temporary file for its output.

@@ -132,6 +132,11 @@ class SouffleScript {
 		return db
 	}
 
+	/**
+	 * Subclasses can override this method to post-process the facts before analysis.
+	 */
+	void postprocessFacts(File outDir, boolean profile) { }
+
 	def run(File cacheFile, File factsDir, File outDir,
 	        int jobs, long monitoringInterval, Closure monitorClosure,
 			boolean provenance = false, boolean liveProf = false,
