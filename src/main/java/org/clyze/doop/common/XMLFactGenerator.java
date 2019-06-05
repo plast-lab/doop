@@ -3,10 +3,12 @@ package org.clyze.doop.common;
 import java.util.*;
 import java.io.*;
 import javax.xml.parsers.*;
+import org.apache.commons.io.FileUtils;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
 import static org.clyze.doop.common.JavaFactWriter.str;
 import static org.clyze.doop.common.PredicateFile.*;
+import org.clyze.utils.JHelper;
 
 /**
  * Convert XML data to facts. Converts some extra logic for
@@ -17,7 +19,6 @@ public class XMLFactGenerator extends DefaultHandler {
     final String[] ID_PREFIXES = new String[] { "@id/", "@android:id/" };
     final String LAYOUT_PREFIX = "@layout/";
 
-    final XMLReader xmlReader;
     final Database db;
     final File xmlFile;
     final String relativePath;
@@ -30,8 +31,7 @@ public class XMLFactGenerator extends DefaultHandler {
     // Contains the inner data of an element.
     private String xmlData = null;
 
-    private XMLFactGenerator(XMLReader xmlReader, Database db, File xmlFile, String topDir) {
-        this.xmlReader = xmlReader;
+    private XMLFactGenerator(Database db, File xmlFile, String topDir) {
         this.db = db;
         this.xmlFile = xmlFile;
         this.relativePath = trimXMLPath(topDir);
@@ -56,7 +56,9 @@ public class XMLFactGenerator extends DefaultHandler {
                     if (filePath.toLowerCase().endsWith(".xml")) {
                         if (verbose)
                             System.out.println("Processing: " + f);
-                        processFile(f, db, topDir);
+                        // Skip original AndroidManifest.xml (binary XML data).
+                        if (!f.getAbsolutePath().endsWith("/original/AndroidManifest.xml"))
+                            processFile(f, db, topDir);
                     }
                 }
             }
@@ -72,33 +74,30 @@ public class XMLFactGenerator extends DefaultHandler {
      */
     public static void processFile(File xmlFile, Database db, String topDir) {
         try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            spf.setNamespaceAware(true);
-            XMLReader xmlReader = spf.newSAXParser().getXMLReader();
-            XMLFactGenerator gen = new XMLFactGenerator(xmlReader, db, xmlFile, topDir);
+            XMLFactGenerator gen = new XMLFactGenerator(db, xmlFile, topDir);
             gen.parse();
         } catch (ParserConfigurationException | SAXException | IOException ex) {
-            // Skip error for "original" AndroidManifest.xml.
-            if (!xmlFile.getAbsolutePath().endsWith("/original/AndroidManifest.xml")) {
-                String msg = ex.getMessage();
-                if (!msg.equals("Content is not allowed in prolog."))
-                    System.err.println("Error parsing " + xmlFile + ": " + ex.getMessage());
-            }
+            String msg = ex.getMessage();
+            System.err.println("Error parsing " + xmlFile + ": " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
-    private void parse() throws IOException, SAXException {
+    private void parse() throws IOException, SAXException, ParserConfigurationException {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xmlReader = spf.newSAXParser().getXMLReader();
         xmlReader.setContentHandler(this);
-        xmlReader.parse(convertToFileURL(xmlFile));
-    }
 
-    private static String convertToFileURL(File file) {
-        String path = file.getAbsolutePath();
-        if (File.separatorChar != '/')
-            path = path.replace(File.separatorChar, '/');
-        if (!path.startsWith("/"))
-            path = "/" + path;
-        return "file:" + path;
+        try (FileInputStream is1 = new FileInputStream(xmlFile)) {
+            xmlReader.parse(new InputSource(is1));
+        } catch (SAXParseException ex) {
+            System.err.println("XML processing may fail for " + xmlFile.getAbsolutePath() + ", try automatic encoding conversion...");
+            JHelper.ensureUTF8(xmlFile.getAbsolutePath());
+            try (FileInputStream is2 = new FileInputStream(xmlFile)) {
+                xmlReader.parse(new InputSource(is2));
+            }
+        }
     }
 
     @Override
