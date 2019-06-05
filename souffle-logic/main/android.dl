@@ -884,10 +884,15 @@ UnobfuscatedApplicationClass(?class) :-
   (match("android.*", ?class);
    match("butterknife.*", ?class);
    match("com.*", ?class);
+   match("fi.*", ?class);
    match("org.*", ?class);
    match("io.*", ?class);
+   match("it.*", ?class);
+   match("javax.*", ?class);
    match("edu.*", ?class);
+   match("oauth.*", ?class);
    match("okhttp3.*", ?class);
+   match("okio.*", ?class);
    match("retrofit.*", ?class);
    match("retrofit2.*", ?class)).
 UnobfuscatedApplicationClass(?class) :-
