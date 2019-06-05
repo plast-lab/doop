@@ -884,16 +884,27 @@ UnobfuscatedApplicationClass(?class) :-
   (match("android.*", ?class);
    match("butterknife.*", ?class);
    match("com.*", ?class);
+   match("fi.*", ?class);
    match("org.*", ?class);
    match("io.*", ?class);
+   match("it.*", ?class);
+   match("javax.*", ?class);
    match("edu.*", ?class);
+   match("oauth.*", ?class);
    match("okhttp3.*", ?class);
+   match("okio.*", ?class);
    match("retrofit.*", ?class);
    match("retrofit2.*", ?class)).
 UnobfuscatedApplicationClass(?class) :-
   ApplicationClass(?class),
   ApplicationPackageRegex(?regex),
   match(?regex, ?class).
+
+// Report application classes considered obfuscated by the analysis.
+.decl ObfuscatedApplicationClass(?class:ClassType)
+ObfuscatedApplicationClass(?class) :-
+  ApplicationClass(?class),
+  !UnobfuscatedApplicationClass(?class).
 
 .decl UnobfuscatedMethod(?meth:Method)
 .output UnobfuscatedMethod
