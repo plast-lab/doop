@@ -22,17 +22,13 @@ echo "APP_NAME=${APP_NAME}"
 
 ./gradlew souffleScript -Pargs="${SSA_TRANSFORMER} ${FACTS_IN} ${FACTS_OUT} ${DOOP_HOME}/cache 26 false false false false false"
 
-pushd "${FACTS_OUT}/database"
-
 for file in ${FACTS_IN}/*.facts; do
     filename=$(basename "${file}")
 
     if [ ! -f "${filename}" ]; then
-        cp $file .
+        cp $file "${FACTS_OUT}/database"
     fi
 done
-
-popd
 
 exit 1
 
