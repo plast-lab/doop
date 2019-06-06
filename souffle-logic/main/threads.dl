@@ -45,7 +45,6 @@ _ReachableValuesWithRunMethod(?hctx, ?value, ?run) :-
     ReachableValue(?hctx, ?value),
     Value_Type(?value, ?valuetype),
     basic.MethodLookup("run", "void()", ?valuetype, ?run).
-#endif // DISABLE_POINTS_TO
 
 ReachableContext(?calleeCtx, ?run),
 RunningThread(?hctx, ?value) :-
@@ -167,6 +166,8 @@ ReachableContext(?calleeCtx, ?signature) :-
     MainThreadGroup(?groupHCtx, ?group),
     configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1),
     configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
+
+#endif // DISABLE_POINTS_TO
 
 FakeInvocation_ThreadGroupInit(?invo),
 PlusMethodInvocation(?invo) :-
