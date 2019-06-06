@@ -29,7 +29,9 @@
 .decl SSA_AssignToOriginal(?instr:symbol, ?original:symbol)
 
 .decl SSA_FormalParam(?index:number, ?method:symbol, ?ssa_name:symbol)
+.output SSA_FormalParam(filename="FormalParam")
 .decl SSA_ThisVar(?method:symbol, ?ssa_name:symbol)
+.output SSA_FormalParam(filename="ThisVar")
 
 SSA_AssignToOriginal(?instr, ?to),
 SSA_Alias(cat(?to, cat("_", to_string(?index))), ?to),
