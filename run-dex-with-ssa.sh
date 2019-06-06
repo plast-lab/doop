@@ -17,6 +17,8 @@ FACTS_OUT=$(realpath $2)
 SSA_TRANSFORMER=$(realpath souffle-scripts/ssa-transform.dl)
 
 echo "APP_NAME=${APP_NAME}"
+echo "FACTS_IN=${FACTS_IN}"
+echo "FACTS_OUT=${FACTS_OUT}"
 
 ./doop -i ${APP} -a context-insensitive --id ${ID} --platform android_25_fulljars --dex --Xfacts-subset APP --Xstop-at-facts ${FACTS_IN} --cache
 
@@ -27,11 +29,12 @@ else
 fi
 ./gradlew souffleScript -Pargs="${SSA_TRANSFORMER} ${FACTS_IN} ${FACTS_OUT} ${CACHE_DIR} 26 false false false false false"
 
+DB="${FACTS_OUT}/database"
 for file in ${FACTS_IN}/*.facts; do
     filename=$(basename "${file}")
 
-    if [ ! -f "${filename}" ]; then
-        cp $file "${FACTS_OUT}/database"
+    if [ ! -f "${DB}/${filename}" ]; then
+        cp $file "${DB}"
     fi
 done
 
