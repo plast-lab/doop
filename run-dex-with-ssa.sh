@@ -20,7 +20,12 @@ echo "APP_NAME=${APP_NAME}"
 
 ./doop -i ${APP} -a context-insensitive --id ${ID} --platform android_25_fulljars --dex --Xfacts-subset APP --Xstop-at-facts ${FACTS_IN} --cache
 
-./gradlew souffleScript -Pargs="${SSA_TRANSFORMER} ${FACTS_IN} ${FACTS_OUT} ${DOOP_HOME}/cache 26 false false false false false"
+if [ "${DOOP_HOME}" != "" ]; then
+    CACHE_DIR="${DOOP_HOME}/cache"
+else
+    CACHE_DIR=$(realpath cache)
+fi
+./gradlew souffleScript -Pargs="${SSA_TRANSFORMER} ${FACTS_IN} ${FACTS_OUT} ${CACHE_DIR} 26 false false false false false"
 
 for file in ${FACTS_IN}/*.facts; do
     filename=$(basename "${file}")
