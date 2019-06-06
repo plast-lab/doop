@@ -110,7 +110,7 @@ HeapAllocation_Merge(?heap, ?mergeHeap) :-
   isHeapAllocation(?mergeHeap),
   ord(?mergeHeap) = ?minHeapReprOrd,
   MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap).
-#endif
+#endif // NO_MERGES
 
 /*************************************************************
  * String constants
@@ -129,9 +129,9 @@ HeapRepresentative(?constant, ?heap) :-
 //   HeapAllocation_Type(?heap, "java.lang.Class"),
 //   !HeapAllocation_Keep(?heap).
 
-#endif
-#endif
-#endif // distinguish-no-string-constants mode
+#endif // NO_MERGES
+#endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
+#endif // DISTINGUISH_ALL_STRING_CONSTANTS
 
 .decl ReflectionStringConstant(?heap:HeapAllocation)
 .decl ReflectionSubstringObject(?heap:HeapAllocation)
@@ -157,7 +157,7 @@ HeapRepresentative("<<string-constant>>", ?heap) :-
   isStringConstant(?heap),
   !ReflectionStringConstant(?heap),
   !HeapAllocation_Keep(?heap).
-#endif
+#endif // NO_MERGES
 
 #ifdef GROUP_REFLECTION_STRINGS
 
@@ -287,7 +287,7 @@ StringRepresentativeForColor(?color, ?mergeHeap) :-
 HeapRepresentative(?mergeHeap, ?heap) :-
   StringColorForHeap(?heap, ?color),
   StringRepresentativeForColor(?color, ?mergeHeap).
-#endif
+#endif // NO_MERGES
 ///// End coloring strategy
 
 // Make the representative play (at a minimum) the same role as the
@@ -352,12 +352,12 @@ PreClassNameMatchingStringConstantExact_Type(?type, ?string) :-
   ApplicationClass(?type),
      // library classes are known and in known packages. Makes no sense
      // to access them via .getClass
-#endif
+#endif // REFLECTION_HIGH_SOUNDNESS_MODE
 // #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
 // #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
 //   NonTrivialStringConstant(?string),
-// #endif !INFORMATION_FLOW_HIGH_SOUNDNESS
-// #endif !REFLECTION_HIGH_SOUNDNESS_MODE
+// #endif // INFORMATION_FLOW_HIGH_SOUNDNESS
+// #endif // REFLECTION_HIGH_SOUNDNESS_MODE
   ord(?type) = ord(?string).
 
 .decl PreMethodNameMatchingStringConstant(?heap:HeapAllocation)
@@ -406,7 +406,7 @@ PreClassNameMatchingStringConstantInexact_Type(?type, ?string) :-
   isHeapAllocation(?string),
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
   ApplicationClass(?type),
-#endif
+#endif // REFLECTION_HIGH_SOUNDNESS_MODE
   ClassNameSuffix(?string, ?type).
 
 PreMethodNameMatchingStringConstant(?string),
@@ -415,7 +415,7 @@ PreMethodNameMatchingStringConstantInexact_Signature(?sig, ?string) :-
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
   ApplicationClass(?type),
   Method_DeclaringType(?sig, ?type),
-#endif
+#endif // REFLECTION_HIGH_SOUNDNESS_MODE
   (MethodNameSuffix(?string, ?sig);
    MethodNamePrefix(?string, ?sig)),
   isHeapAllocation(?string),
@@ -428,7 +428,7 @@ PreFieldNameMatchingStringConstantInexact_Signature(?sig, ?string) :-
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
   ApplicationClass(?declaringClass),
   Field_DeclaringType(?sig, ?declaringClass),
-#endif
+#endif // REFLECTION_HIGH_SOUNDNESS_MODE
   (FieldNameSuffix(?string, ?sig);
    FieldNamePrefix(?string, ?sig)),
   isHeapAllocation(?string).
@@ -442,14 +442,14 @@ ClassIterationTrick(?length+1) :- ClassIterationTrick(?length), ?length < 90.
 MemberPrefixIterationTrick(7).
 #ifdef REFLECTION_HIGH_SOUNDNESS_MODE
 MemberPrefixIterationTrick(3).
-#endif
+#endif // REFLECTION_HIGH_SOUNDNESS_MODE
 MemberPrefixIterationTrick(?length+1) :- MemberPrefixIterationTrick(?length), ?length < 90.
 
 .decl MemberSuffixIterationTrick(?length:number)
 MemberSuffixIterationTrick(7).
 #ifdef REFLECTION_HIGH_SOUNDNESS_MODE
 MemberSuffixIterationTrick(5).
-#endif
+#endif // REFLECTION_HIGH_SOUNDNESS_MODE
 MemberSuffixIterationTrick(?length+1) :- MemberSuffixIterationTrick(?length), ?length < 90.
 
 
@@ -679,7 +679,7 @@ MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
 HeapRepresentative(?representativeHeap, ?heap) :-
   MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap),
   MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
-#endif
+#endif // NO_MERGES
 // Now, per-class merging. This is more rare and should be requested
 // explicitly for a given type. Again, does not apply to types with
 // special merging policies.
@@ -719,7 +719,7 @@ ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap) :-
 HeapRepresentative(?representativeHeap, ?heap) :-
   ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap),
   ClassAndTypeToMergedHeap(?heap, ?type, ?class).
-#endif
+#endif // NO_MERGES
 // Same for per-package merging.
 #include "package-heuristic.dl"
 
@@ -759,7 +759,7 @@ PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap) :-
 HeapRepresentative(?representativeHeap, ?heap) :-
   PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap),
   PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
-#endif
+#endif // NO_MERGES
 // And the ultimate: universal per-type merging
 .decl TypeToHeap(?heap:HeapAllocation, ?heaptype:Type)
 .decl AllocationsPerType(?type:Type, ?n:number)
@@ -796,7 +796,7 @@ TypeToRepresentative(?type, ?representativeHeap) :-
 HeapRepresentative(?representativeHeap, ?heap) :-
   TypeToRepresentative(?type, ?representativeHeap),
   TypeToMergedHeap(?heap, ?type).
-#endif
+#endif // NO_MERGES
 /*************************************************************
  * Coarse-grained allocation policy
  *************************************************************/
@@ -840,7 +840,7 @@ AllocationShouldBeMergedPerClass(?type, ?class) :-
       SpecialLibraryClass(?class).
 
 #endif // MERGE_LIBRARY_OBJECTS_PER_METHOD
-#endif // !CONTEXT_SENSITIVE_LIBRARY_ANALYSIS
+#endif // CONTEXT_SENSITIVE_LIBRARY_ANALYSIS
 
 /*************************************************************
  * String buffers and builders
@@ -889,7 +889,7 @@ PackageAndTypeToStringFactoryRepresentative(?type, ?packageName, ?representative
 HeapRepresentative(?representativeHeap, ?heap) :-
   PackageAndTypeToStringFactoryHeap(?heap, ?type, ?packageName),
   PackageAndTypeToStringFactoryRepresentative(?type, ?packageName, ?representativeHeap).
-#endif
+#endif // NO_MERGES
 //// Used to be all are merged per-class:
 // // all string buffers (and builders) in the same class are merged
 // AllocationShouldBeMergedPerClass(?heaptype, ?class) <-
@@ -913,10 +913,10 @@ HeapRepresentative("<<string-builder>>", ?heap) :-
 HeapRepresentative("<<pystring-object>>", ?heap) :-
   HeapAllocation_Type(?heap, "org.python.core.PyString"),
   !HeapAllocation_Keep(?heap).
-#endif
-#endif
-#endif
-#endif
+#endif // NO_MERGES
+#endif // DISTINGUISH_STRING_BUFFERS_PER_PACKAGE
+#endif // INFORMATION_FLOW_HIGH_SOUNDNESS
+#endif // DISTINGUISH_ALL_STRING_BUFFERS
 
 /*************************************************************
  * Throwable
@@ -965,7 +965,7 @@ HeapRepresentative(?representativeHeap, ?heap) :-
   ExceptionTypeToHeap(?heap, ?heaptype),
   ord(?representativeHeap) = ?representativeHeapOrd,
   isHeapAllocation(?representativeHeap).
-#endif
+#endif // NO_MERGES
 #endif // SEPARATE_EXCEPTION_OBJECTS
 /*
 // An intermediate option is to only merge exception objects of the

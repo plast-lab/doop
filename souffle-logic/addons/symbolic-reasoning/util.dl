@@ -28,7 +28,7 @@ ToString(?expr, ?out) :-
   ToString(?exprLeft, ?outLeft),
   ToString(?exprRight, ?outRight),
   ?out = cat(?outLeft, cat(" ", cat(?op, cat(" ", ?outRight)))).
-#endif
+#endif // DEBUG
 
 Sanity(?expr) :-
   isExpr(?expr),

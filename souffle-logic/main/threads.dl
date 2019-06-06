@@ -29,7 +29,7 @@ RunningThread(?hctx, ?value)
     ?start = "<java.lang.Thread: void start()>",
 #else
     ?start = "<java.lang.Thread: void start0()>",
-#endif
+#endif // JRE13, JRE14
     ThisVar(?start, ?startThis),
     CallGraphEdge(?callerCtx, _, ?calleeCtx, ?start),
     VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis),
@@ -45,6 +45,7 @@ _ReachableValuesWithRunMethod(?hctx, ?value, ?run) :-
     ReachableValue(?hctx, ?value),
     Value_Type(?value, ?valuetype),
     basic.MethodLookup("run", "void()", ?valuetype, ?run).
+#endif // DISABLE_POINTS_TO
 
 ReachableContext(?calleeCtx, ?run),
 RunningThread(?hctx, ?value) :-
@@ -52,7 +53,7 @@ RunningThread(?hctx, ?value) :-
     ?start = "<java.lang.Thread: void start()>",
 #else
     ?start = "<java.lang.Thread: void start0()>",
-#endif // defined(JRE13) || defined(JRE14)
+#endif // JRE13, JRE14
     ReachableContext(?calleeCtx, ?start),
     _ReachableValuesWithRunMethod(?hctx, ?value, ?run).
 #endif // DISABLE_POINTS_TO
@@ -96,7 +97,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1) :-
 
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
-#endif
+#endif // DISABLE_POINTS_TO
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature) :-
     ?signature = "<java.lang.ThreadGroup: void <init>()>",
@@ -126,7 +127,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1) :-
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
 VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam),
-#endif
+#endif // DISABLE_POINTS_TO
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature) :-
     ?signature = "<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>",
@@ -156,7 +157,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1) :-
 #ifndef DISABLE_POINTS_TO
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
 VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam),
-#endif
+#endif // DISABLE_POINTS_TO
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature) :-
     ?signature = "<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>",
@@ -166,8 +167,6 @@ ReachableContext(?calleeCtx, ?signature) :-
     MainThreadGroup(?groupHCtx, ?group),
     configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1),
     configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
-
-#endif
 
 FakeInvocation_ThreadGroupInit(?invo),
 PlusMethodInvocation(?invo) :-

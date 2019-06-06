@@ -1,6 +1,6 @@
 #ifdef REFLECTION
 #error "light-Class.dl is not compatible with full reflection support"
-#endif
+#endif // REFLECTION
 
 // A few rules to handle expressions 'X.class' and 'Class.forName("X")' (the
 // first is compiled to the latter behind the scenes). These rules are usually

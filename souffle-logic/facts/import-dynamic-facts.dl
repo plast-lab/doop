@@ -276,7 +276,7 @@ DynamicVarPointsTo(?hctx, ?heap, ?ctx, ?sootVar) :-
     Var_DeclaringMethod(?sootVar, ?meth),
     contains(?dumpedVar, ?sootVar). // match soot var name with dumped var name
 
-#endif
+#endif // HEAPDL_DYNAMICVARPOINTSTO
 
 /** Register declaring type for dynamic heap allocations **/
 

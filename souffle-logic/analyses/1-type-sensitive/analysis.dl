@@ -53,7 +53,6 @@ DynamicContextToContext(?ctx, ?dynCtx) :-
    isDynamicContext(?dynCtx),
    !DynamicContextHeap1(_, ?dynCtx),
    isImmutableContext(?ctx).
-#endif
-
+#endif // HEAPDLS
 
 }

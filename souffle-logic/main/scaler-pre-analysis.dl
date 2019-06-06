@@ -7,11 +7,11 @@ AllCallGraphEdge(?from, ?to) :- CallGraphEdge(_, ?from, _, ?to).
 
 #ifdef REFLECTION
 AllCallGraphEdge(?from, ?to) :- ReflectiveCallGraphEdge(_, ?from, _, ?to).
-#endif
+#endif // REFLECTION
 
 #ifdef TAMIFLEX
 AllCallGraphEdge(?from, ?to) :- TamiflexCallGraphEdge(_, ?from, _, ?to).
-#endif
+#endif // TAMIFLEX
 
 .output ImplicitReachable(IO="file",filename="IMPLICITREACHABLE.csv",delimiter="\t")
 

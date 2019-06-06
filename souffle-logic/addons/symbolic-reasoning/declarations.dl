@@ -61,7 +61,7 @@
 
 #ifdef DEBUG
 .decl ToString(?expr: Expr, ?out: symbol)
-#endif
+#endif // DEBUG
 .decl Sanity(?expr: Expr)
 .output Sanity
 
@@ -103,7 +103,7 @@
 .output PathExpressionBefore
 .output PathExpressionAfterTrue
 .output PathExpressionAfterFalse
-#endif
+#endif // DEBUG
 
 .output ExprImpliesOther
 .output ExprIsNegationOfOther

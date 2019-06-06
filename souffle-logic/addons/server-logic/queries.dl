@@ -35,13 +35,13 @@ _Server_Interesting_Type(?type) :-
 _Server_Interesting_Type(?type) :-
   mainAnalysis.ReifiedClass(?type, ?value),
   mainAnalysis.VarPointsTo(_, ?value, _, _).
-#endif
+#endif // REFLECTION
 
 #ifdef REFLECTION_DYNAMIC_PROXIES
 // Proxied interfaces
 _Server_Interesting_Type(?interface) :-
   mainAnalysis.ProxyObject_Interface(_, ?interface).
-#endif
+#endif // REFLECTION_DYNAMIC_PROXIES
 
 // Transitively, everything up the hierarchy
 _Server_Interesting_Type(?interface) :-

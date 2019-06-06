@@ -17,4 +17,4 @@
 #else
 #error "One of X_STATS_FULL/X_STATS_DEFAULT/X_STATS_NONE must be given."
 
-#endif
+#endif // X_STATS_FULL, X_STATS_DEFAULT, X_STATS_NONE

@@ -36,7 +36,6 @@ ObjToMock(?class) :-
   ComponentType(?type, ?componentType),
   StaticToActualType(?class, ?componentType).
 
-
 .decl MockObjFromField(?fieldType:ReferenceType)
 
 #ifdef MOCK_OBJECTS_FOR_FIELDS
@@ -71,8 +70,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) :-
   mainAnalysis.isImmutableHContext(?hctx), //TODO: hctx
   FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype),
   MockObjectForType(?value, ?fieldtype).
-#endif
-
+#endif // MOCK_OBJECTS_FOR_FIELDS
 
 // Arrays
 .decl MockObjectForType(?value:mainAnalysis.Value, ?staticType:Type)
@@ -147,9 +145,8 @@ mainAnalysis.VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) :-
 #else
   mainAnalysis.configuration.RecordContextResponse(?calleeCtx, ?value, ?receiver, ?hctx),
   mainAnalysis.configuration.RecordContextRequest(?calleeCtx, ?value, ?receiver),
-#endif
+#endif // OPEN_PROGRAMS_IMMUTABLE_HCTX
   ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method).
-
 
 // Important: The MergeOpenProgramEntryPointMacro can be defined
 // in such a way as to retrieve some of the precision lost
@@ -179,10 +176,10 @@ ContextForOpenProgramEntryPoint(?calleeCtx, ?method) :-
   MockObjectForType(?value, ?class),
 #ifndef MergeOpenProgramEntryPointMacro
   mainAnalysis.isImmutableHContext(?immutablehctx),
-#endif
+#endif // MergeOpenProgramEntryPointMacro
 #ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
   mainAnalysis.isImmutableContext(?calleeCtx),
-#endif
+#endif // OPEN_PROGRAMS_IMMUTABLE_CTX
 #ifndef OPEN_PROGRAMS_IMMUTABLE_CTX
 #ifdef MergeOpenProgramEntryPointMacro
   MergeOpenProgramEntryPointMacro(?method, ?value, ?calleeCtx),
@@ -190,8 +187,8 @@ ContextForOpenProgramEntryPoint(?calleeCtx, ?method) :-
   mainAnalysis.isImmutableContext(?callerCtx),
   mainAnalysis.configuration.ContextResponse(?callerCtx, ?immutablehctx, ?invo, ?value, ?calleeCtx),
   mainAnalysis.configuration.ContextRequest(?callerCtx, ?immutablehctx, ?invo, ?value, ?method, 1),
-#endif
-#endif
+#endif // MergeOpenProgramEntryPointMacro
+#endif // OPEN_PROGRAMS_IMMUTABLE_CTX
   OpenProgramEntryPoint(?method).
 
 // TODO: requires major tweaking for context sensitive analyses
@@ -254,7 +251,7 @@ TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
     AllConcreteImplementations(?allClasses, ?staticType),
     (NonPrimaryTypeHasNoNonPrimaryConcreteImplementation(?staticType) ; PrimaryTypeHasNoPrimaryConcreteImplementation(?staticType))
  }.
-#endif
+#endif // USER_DEFINED_PARTITIONS
 .printsize TypeToConcreteImplementationOrd
 
 ConcreteImplementations(?staticType, ?class) :-
@@ -272,7 +269,6 @@ StaticToActualType(?class, ?staticType) :-
 StaticToActualType(?type, ?type) :-
   ConcreteType(?type).
 
-
 // The key point where all the mock objects are created. Triggers all the rest.
 MockObject(cat(?class, "::: (Mock)"), ?class),
 mainAnalysis_MockValueConsMacro(cat(?class, "::: (Mock)"), ?class),
@@ -282,8 +278,8 @@ mainAnalysis.Value_DeclaringType(cat(?class, "::: (Mock)"), ?class) :-
   !basic.MainMethodDeclaration(_),
 #ifdef ANDROID
   !AndroidAppComponent(_),
-#endif
-#endif
+#endif // ANDROID
+#endif // OPEN_PROGRAMS
   ObjToMock(?class).
 
 // Similar for mainAnalysis.ReachableContext. If not in open program mode, add extra conditions.
@@ -293,10 +289,9 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
   !basic.MainMethodDeclaration(_),
 #ifdef ANDROID
   !AndroidAppComponent(_),
-#endif
-#endif
+#endif // ANDROID
+#endif // OPEN_PROGRAMS
   ContextForOpenProgramEntryPoint(?ctx, ?method).
-
 
 // "Arbitrary" methods might be made reachable. Initialize the corresponding
 // classes as well.

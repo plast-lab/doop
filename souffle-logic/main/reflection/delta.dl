@@ -26,7 +26,7 @@ ClassModifier("final", cat("$Proxy$for$", ?interface)),
 DirectSuperclass(cat("$Proxy$for$", ?interface), "java.lang.reflect.Proxy"),
 DirectSuperinterface(cat("$Proxy$for$", ?interface), ?interface) :-
   isInterfaceType(?interface).
-#endif
+#endif // REFLECTION_DYNAMIC_PROXIES
 
 /* == Dynamic proxy handling ==
 

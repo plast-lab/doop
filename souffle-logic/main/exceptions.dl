@@ -208,4 +208,4 @@ Instruction_Throws(?hctx, CCE_ProxyValue, ?callerCtx, ?invo) :-
   isProxyCCE(CCE_ProxyValue),
   isImmutableHContext(?hctx).
 
-#endif /* REFLECTION_DYNAMIC_PROXIES */
+#endif // REFLECTION_DYNAMIC_PROXIES

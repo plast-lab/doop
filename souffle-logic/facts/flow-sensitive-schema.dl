@@ -487,7 +487,7 @@
 #ifndef X_STATS_NONE
 // Predicate to store analysis statistics
 .decl Stats_Metrics(order:symbol, msg:symbol, c:number)
-#endif
+#endif // X_STATS_NONE
 
 // Keep method/class information.
 .decl KeepMethod(?m:Method)
@@ -513,7 +513,7 @@
 .decl AndroidId(?file:symbol, ?nodeId:symbol, ?value:symbol, ?prefix:symbol, ?id:symbol)
 .decl AndroidIncludeXML(?file:symbol, ?nodeId:symbol, ?value:symbol)
 
-#endif
+#endif // ANDROID
 
 // Annotations
 .decl Type_Annotation(?type:ReferenceType, ?annotation:Annotation)
