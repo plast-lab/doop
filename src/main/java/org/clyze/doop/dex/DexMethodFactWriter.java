@@ -1036,11 +1036,23 @@ class DexMethodFactWriter extends JavaFactWriter {
     }
 
     private String local(int reg) {
+        String var;
         // System.out.println(methId + ", localsCount=" + this.localsCount + ",  reg=" + reg);
         if (reg < localRegCount)
-            return DexRepresentation.local(methId, reg);
+            var = DexRepresentation.local(methId, reg);
         else
-            return DexRepresentation.param(methId, reg - localRegCount);
+            var = DexRepresentation.param(methId, reg - localRegCount);
+        writeVarDeclaringMethod(var, methId);
+        return var;
+    }
+
+    private Collection<String> writtenVars = new HashSet<>();
+    @Override
+    protected void writeVarDeclaringMethod(String var, String methId) {
+        if (!writtenVars.contains(var)) {
+            writtenVars.add(var);
+            super.writeVarDeclaringMethod(var, methId);
+        }
     }
 
     private String instructionId(String kind, int index) {
