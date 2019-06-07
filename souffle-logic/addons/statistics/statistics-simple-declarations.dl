@@ -78,6 +78,11 @@ OUTPUT_STATS(Stats_Simple_ApplicationConcreteMethod)
 .decl Stats_Simple_NonReachableApplicationConcreteMethod(?method:Method)
 OUTPUT_STATS_DEFAULT(Stats_Simple_NonReachableApplicationConcreteMethod)
 
+#ifdef ANDROID
+.decl Stats_Simple_NonReachableAndroidApplicationConcreteMethod(?method:Method)
+OUTPUT_STATS_DEFAULT(Stats_Simple_NonReachableAndroidApplicationConcreteMethod)
+#endif // ANDROID
+
 /***************************************************
  * Virtual method invocations
  ***************************************************/
