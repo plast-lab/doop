@@ -323,7 +323,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.ENTRY_POINTS.value && options.X_SYMLINK_CACHED_FACTS.value) {
-			throw new RuntimeException("Options ${options.ENTRY_POINTS.value} and ${options.X_SYMLINK_CACHED_FACTS.value} are not compatible")
+			throw new RuntimeException("Options --${options.ENTRY_POINTS.name} and --${options.X_SYMLINK_CACHED_FACTS.name} are not compatible")
 		}
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
@@ -349,13 +349,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			log.warn "\nWARNING, types-only analysis chosen without disabling points-to reasoning. Disabling it, since this is likely what you want.\n"
 			options.DISABLE_POINTS_TO.value = true
 		}
-        
-		if (options.SOUFFLE_PROVENANCE.value &&
-				options.SOUFFLE_LIVE_PROFILE.value) {
-			throw new RuntimeException("Error: options --" + options.SOUFFLE_PROVENANCE.name + " and --" + options.SOUFFLE_LIVE_PROFILE.name + " are mutually exclusive.\n")
+
+		if (options.DISABLE_POINTS_TO.value && options.INFORMATION_FLOW.value) {
+			throw new RuntimeException("Options --${options.DISABLE_POINTS_TO.name} and --${options.INFORMATION_FLOW.name} are not compatible")
 		}
 
-		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
+		if (options.SOUFFLE_PROVENANCE.value && options.SOUFFLE_LIVE_PROFILE.value) {
+			throw new RuntimeException("Error: options --${options.SOUFFLE_PROVENANCE.name} and --${options.SOUFFLE_LIVE_PROFILE.name} are mutually exclusive.\n")
+		}
+
+		if (options.SOUFFLE_INCREMENTAL_OUTPUT.value){
 			options.SOUFFLE_USE_FUNCTORS.value = true
 		}
 
