@@ -133,9 +133,9 @@ HighConfidenceAssign(?value, ?inmethod) :-
   VarPointsTo(_, ?value, _, ?to),
   Var_DeclaringMethod(?to, ?inmethod),
   isMethod(?inmethod).
-#endif
+#endif // FEATHERWEIGHT_ANALYSIS
 
-#endif
+#endif // REFLECTION
 
 // Context insensitive allocations
 .decl FromDynamicHeapObject(?hctx:configuration.HContext, ?value:Value, ?dctx:DynamicContext, ?dheap:HeapAllocation)

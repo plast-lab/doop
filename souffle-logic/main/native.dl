@@ -228,7 +228,7 @@ SimulateNativeStringArrayAllocation(
   "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0",
   "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String/0",
   "java.lang.String").
-#endif /* ANDROID */
+#endif // ANDROID
 
 /**********************************************************************************
  *

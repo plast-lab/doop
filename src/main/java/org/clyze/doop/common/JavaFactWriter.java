@@ -186,6 +186,10 @@ public abstract class JavaFactWriter {
 
     protected void writeLocal(String local, String type, String method) {
         _db.add(VAR_TYPE, local, type);
+        writeVarDeclaringMethod(local, method);
+    }
+
+    protected void writeVarDeclaringMethod(String local, String method) {
         _db.add(VAR_DECLARING_METHOD, local, method);
     }
 

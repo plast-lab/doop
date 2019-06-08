@@ -78,6 +78,11 @@ OUTPUT_STATS(Stats_Simple_ApplicationConcreteMethod)
 .decl Stats_Simple_NonReachableApplicationConcreteMethod(?method:Method)
 OUTPUT_STATS_DEFAULT(Stats_Simple_NonReachableApplicationConcreteMethod)
 
+#ifdef ANDROID
+.decl Stats_Simple_NonReachableAndroidApplicationConcreteMethod(?method:Method)
+OUTPUT_STATS_DEFAULT(Stats_Simple_NonReachableAndroidApplicationConcreteMethod)
+#endif // ANDROID
+
 /***************************************************
  * Virtual method invocations
  ***************************************************/
@@ -165,7 +170,7 @@ OUTPUT_STATS(Stats_Simple_Class_newInstance)
 
 .decl Stats_Simple_Constructor_newInstance(?invocation:MethodInvocation)
 OUTPUT_STATS(Stats_Simple_Constructor_newInstance)
-#endif
+#endif // REFLECTION
 
 /***************************************************
  * Information Flow
@@ -186,7 +191,7 @@ OUTPUT_STATS(Stats_Simple_LeakingTaintedInformation)
 
 .decl Stats_Simple_OriginalTaintedValue(?id:symbol)
 OUTPUT_STATS(Stats_Simple_OriginalTaintedValue)
-#endif
+#endif // INFORMATION_FLOW
 
 /***************************************************
  * Open Programs
@@ -195,13 +200,15 @@ OUTPUT_STATS(Stats_Simple_OriginalTaintedValue)
 #ifdef OPEN_PROGRAMS
 //.decl Stats_Simple_ReachableFromEntryPoint(?method:Method)
 //OUTPUT_STATS(Stats_Simple_ReachableFromEntryPoint)
-#endif
+#endif // OPEN_PROGRAMS
 
+#ifndef DISABLE_POINTS_TO
 .decl Stats_Simple_ContextInsensitiveMethodsVPT(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 OUTPUT_STATS(Stats_Simple_ContextInsensitiveMethodsVPT)
 
 .decl Stats_Simple_TwoObjectMethodsVPT(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 OUTPUT_STATS(Stats_Simple_TwoObjectMethodsVPT)
+#endif // DISABLE_POINTS_TO
 
 /***************************************************
  * Memory Dump
@@ -232,4 +239,4 @@ OUTPUT_STATS_DEFAULT(DynamicReachableMethod)
 
 .decl Stats_Simple_InsensDynamicCallGraphEdge(?fromMeth:Method, ?invocation:MethodInvocation, ?toMeth:Method)
 OUTPUT_STATS_DEFAULT(Stats_Simple_InsensDynamicCallGraphEdge)
-#endif
+#endif // HEAPDLS

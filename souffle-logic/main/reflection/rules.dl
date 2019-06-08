@@ -198,7 +198,7 @@ java_lang_Class_getDeclaredField(?to, ?param, ?from) :-
 CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat(cat(cat("<reflective Class.newInstance/", ?invocation), "/new "), ?type), ">")),
 #else
 CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Class.newInstance/new ", ?type), ">")),
-#endif
+#endif // REFLECTION_REFINED_OBJECTS
 java_lang_Class_newInstance(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Object newInstance()>"),
   isClassType(?type).
@@ -242,7 +242,7 @@ java_lang_reflect_Array_newInstance(?invocation, ?to, ?param) :-
 CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat(cat(cat("<reflective Constructor.newInstance/", ?invocation), "/new "), ?type), ">")),
 #else
 CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Constructor.newInstance/new ", ?type), ">")),
-#endif
+#endif // REFLECTION_REFINED_OBJECTS
 java_lang_reflect_Constructor_newInstance(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
   isClassType(?type).
@@ -441,7 +441,7 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
   isImmutableContext(?calleeCtx),
   ReflectiveStaticMethodInvocation(?callerCtx, ?invocation, ?callee).
-#endif
+#endif // REFLECTION_CONTEXT_SENSITIVITY
 
 
 // Special methods
@@ -473,7 +473,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   Var_Type(?this, ?thisType),
   Value_Type(?value, ?valueType),
   basic.SupertypeOf(?thisType, ?valueType).
-#endif
+#endif // REFLECTION_CONTEXT_SENSITIVITY
 
 
 // Virtual methods
@@ -507,7 +507,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   basic.MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
   ThisVar(?tomethod, ?this),
   isImmutableContext(?calleeCtx).
-#endif
+#endif // REFLECTION_CONTEXT_SENSITIVITY
 
 // Return values of reflective method invocations
 OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
@@ -600,7 +600,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   ReflectiveAllocation(?instruction, ?type, ?value),
   Var_Type(?var, ?vartype),
   basic.SubtypeOf(?type, ?vartype).
-#endif
+#endif // REFLECTION_CONTEXT_SENSITIVITY
 
 
 //// There are hundreds of thousands of ReflectiveAllocation facts typically.
@@ -619,7 +619,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 //  AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
 //  ReflectiveAllocation[?instruction, ?type]  = ?value,
 //  ObjectShouldBeRefined(?value).
-//#endif
+//#endif // RecordRefinedMacro
 
 /*************************************************************
  * Reflective load of array index.
@@ -681,7 +681,7 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   Value_Type(?value, ?valuetype),
   Field_Type(?signature, ?fieldtype),
   basic.SupertypeOf(?fieldtype, ?valuetype).
-#endif
+#endif // FEATHERWEIGHT_ANALYSIS
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   ReflectiveStoreStaticField(?signature, ?ctx, ?from),
@@ -690,7 +690,7 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   Field_Type(?signature, ?fieldtype),
   basic.SupertypeOf(?fieldtype, ?valuetype),
   isImmutableHContext(?hctx).
-#endif
+#endif // FEATHERWEIGHT_ANALYSIS, INFORMATION_FLOW
 
 // The code is very similar to the logic in the main analysis, however
 // we split it out because of the need (here, but not for normal value
@@ -782,7 +782,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   Value_Type(?value, ?valuetype),
   Var_Type(?to, ?vartype),
   basic.SupertypeOf(?vartype, ?valuetype).
-#endif
+#endif // FEATHERWEIGHT_ANALYSIS
 
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
@@ -793,7 +793,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   Field_Type(?signature, ?fieldtype),
   basic.SupertypeOf(?fieldtype, ?valuetype),
   isImmutableHContext(?hctx).
-#endif
+#endif // FEATHERWEIGHT_ANALYSIS, INFORMATION_FLOW
 
 /*************************************************************
  * END forward reflection logic
@@ -892,7 +892,7 @@ ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) :-
 //   _OptVarToMethod[?to] = ?inmethod,
 //   ReachableContext(?ctx, ?inmethod),
 //   BackwardReflectiveAssignFieldConstant(?to, ?signature).
-#endif   // REFLECTION_HIGH_SOUNDNESS_MODE || INFORMATION_FLOW_HIGH_SOUNDNESS
+#endif // REFLECTION_HIGH_SOUNDNESS_MODE, INFORMATION_FLOW_HIGH_SOUNDNESS
 
 /*************************************************************
  * END tying together forward and backward reflection logic

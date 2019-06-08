@@ -276,7 +276,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   SourceFromTaintedValue(?value, ?source),
   mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   mainAnalysis.isImmutableHContext(?hctx).
-#endif
+#endif // INFORMATION_FLOW_HIGH_SOUNDNESS
 
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 // Option 1
@@ -293,7 +293,7 @@ MethodInvocationInContext(?ctx, ?invocation, ?tomethod) :-
 // Option 2
 MethodInvocationInContext(?ctx, ?invocation, ?tomethod) :-
   mainAnalysis.CallGraphEdge(?ctx, ?invocation, _, ?tomethod).
-#endif
+#endif // INFORMATION_FLOW_HIGH_SOUNDNESS
 
 /**
  * Sinks and leaks
@@ -362,8 +362,8 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, "char[]", DEFAULT_BREADCRU
   mainAnalysis.isImmutableHContext(?hctx).
   .plan 1:(2,1,3,4,5)
 
-#endif
- 
+#endif // INFORMATION_FLOW_HIGH_SOUNDNESS
+
 // Serialization
 .decl SerializeObjectInvocation(?base:Var, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 

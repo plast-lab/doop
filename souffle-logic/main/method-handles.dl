@@ -102,7 +102,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
   ReifiedClass(?pType, ?classValue),
   AssignReturnValue(?invo, ?ret).
 
-#endif // REFLECTION || LIGHT_REFLECTION_GLUE
+#endif // REFLECTION, LIGHT_REFLECTION_GLUE
 
 // MethodType API entry points. The actual logic: every methodType()
 // invocation picks all descriptors that match.
@@ -124,7 +124,7 @@ MT_ReturnType(?invo, ?hctx, ?ctx, ?type) :-
   ActualParam(0, ?invo, ?param),
   VarPointsTo(?hctx, ?classValue, ?ctx, ?param),
   ReifiedClass(?type, ?classValue).
-#endif // REFLECTION || LIGHT_REFLECTION_GLUE
+#endif // REFLECTION, LIGHT_REFLECTION_GLUE
 
 // MethodType2, MethodType4: second parameter.
 MT_ParamValue(?invo, 0, ?classValue) :-
@@ -163,7 +163,7 @@ MTCallMatch(?invo, ?hctx, ?ctx, ?pType0, ?retType, 1) :-
   InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
   MT_ParamValue(?invo, 0, ?classValue0),
   ReifiedClass(?pType0, ?classValue0).
-#endif // REFLECTION || LIGHT_REFLECTION_GLUE
+#endif // REFLECTION, LIGHT_REFLECTION_GLUE
 
 // MethodType5.
 MTCallMatch(?invo, ?hctx, ?ctx, ?argParamTypes, ?retType, ?arity) :-
@@ -424,7 +424,7 @@ OpaqueCallGraphEdge(?invo, ?sig) :-
   MHLookup_Type(?mhLookup, ?type),
   ReifiedClass(?type, ?classValue),
   AssignReturnValue(?invo, ?ret).
-#endif // REFLECTION || LIGHT_REFLECTION_GLUE
+#endif // REFLECTION, LIGHT_REFLECTION_GLUE
 
 // Helper relation to only create direct method handles when no constant method
 // handles are found. Used when computing the handle to store in a variable.
@@ -527,7 +527,7 @@ FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
   VarPointsTo(_, ?id, _, ?stringParam),
   ActualParam(2, ?invo, ?mtParam),
   VarPointsTo(_, ?mt, _, ?mtParam).
-#endif // REFLECTION || LIGHT_REFLECTION_GLUE
+#endif // REFLECTION, LIGHT_REFLECTION_GLUE
 
 // Compute result of findStatic().
 AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
@@ -634,7 +634,7 @@ VarPointsTo(?immHctx, ?invokedName, ?calleeCtx, ?invokedNameParam) :-
   DynamicMethodInvocation_DynName(?invokedynamic, ?invokedName),
   isImmutableHContext(?immHctx).
 #endif // DISABLE_POINTS_TO
-#endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS || DISTINGUISH_ALL_STRING_CONSTANTS || NO_MERGES
+#endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS, DISTINGUISH_ALL_STRING_CONSTANTS, NO_MERGES
 
 // Helper method to compute the varargs accumulator formal of a method.
 .decl MethodVarArgs(?method:Method, ?idx:number, ?formal:Var, ?type:ArrayType)

@@ -8,7 +8,7 @@
 
 #if defined(HEAPDLS) || defined(IMPORT_DYNAMIC_FACTS)
 #include "dynamicanalysis.dl"
-#endif
+#endif // HEAPDLS, IMPORT_DYNAMIC_FACTS
 
 FakeInvocation_RegisterFinalize(?heapValue, ?invo) :-
   FakeInvocation_RegisterFinalize0(?heapValue, ?invo).

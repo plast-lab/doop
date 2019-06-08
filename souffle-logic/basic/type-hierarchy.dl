@@ -211,7 +211,7 @@ SubtypeOf(?s, ?t) :-
 SubtypeOf(?s, ?t) :-
     Type_byte(?s),
     Type_short(?t).
-#endif
+#endif // TYPE_INFERENCE
 
 /**
  * Each type is a subtype / supertype of itself

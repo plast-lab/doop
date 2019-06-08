@@ -1,15 +1,12 @@
 #include "main-declarations.dl"
 
 .comp AbstractContextSensitivity<Configuration> {
-// Do not indent: this breaks some cpp versions.
-#ifdef ANDROID
-#include "android-declarations.dl"
-#endif
 #include "class-initialization-declarations.dl"
 #include "exceptions-declarations.dl"
 #include "implicit-reachable-declarations.dl"
 #include "threads-declarations.dl"
 #ifdef ANDROID
+#include "android-declarations.dl"
 #include "android.dl"
 #endif // ANDROID
 
@@ -82,12 +79,15 @@
 // Dynamic proxies supports two kinds of reflection: standard reflection and
 // light reflection (just Class object handling or light-reflection-glue).
 #ifdef REFLECTION_DYNAMIC_PROXIES
+
 // If no reflection support is available, at least handle Class objects.
 #if !defined(REFLECTION) && !defined(LIGHT_REFLECTION_GLUE)
 #include "reflection/light-Class.dl"
-#endif // !REFLECTION && !LIGHT_REFLECTION_GLUE
+#endif // REFLECTION, LIGHT_REFLECTION_GLUE
+
 #include "reflection/dynamic-proxies.dl"
 #include "reflection/dynamic-proxies-delta.dl"
+
 #endif // REFLECTION_DYNAMIC_PROXIES
 
 #ifdef TAMIFLEX
@@ -96,7 +96,7 @@
 #endif // TAMIFLEX
 #if defined(DACAPO) || defined(DACAPO_BACH)
 #include "../addons/dacapo/rules.dl"
-#endif // DACAPO || DACAPO_BACH
+#endif // DACAPO, DACAPO_BACH
 
 #include "phantom-dead.dl"
 

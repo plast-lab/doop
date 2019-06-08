@@ -3,18 +3,13 @@ package org.clyze.doop
 import org.clyze.analysis.Analysis
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysisFamily
-import spock.lang.Specification
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
 
 /**
  * Test that all analyses compile.
  */
-class DryRuns extends Specification {
-
-	def setupSpec() {
-		Doop.initDoopFromEnv()
-	}
+class DryRuns extends DoopSpec {
 
 	@Unroll
 	def "Test analysis compilation"(String analysisName) {

@@ -68,7 +68,7 @@ OpenProgramEntryPoint(?method) :-
 OpenProgramEntryPoint(?method) :-
   PossibleOpenProgramEntryPoint(?method).
 //  TopLevelOpenProgramEntryPoint(?method).
-#endif
+#endif // OPEN_PROGRAMS
 
 // Contribute to the global summary relation
 mainAnalysis.ApplicationEntryPoint(?meth) :-

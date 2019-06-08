@@ -70,4 +70,4 @@ OPAQUE_METHOD("<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupCla
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>").
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class returnType()>").
 
-#endif // REFLECTION || LIGHT_REFLECTION_GLUE
+#endif // REFLECTION, LIGHT_REFLECTION_GLUE

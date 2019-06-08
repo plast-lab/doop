@@ -188,4 +188,4 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?
   mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx),
   Method_DeclaringType(?dtoMeth, ?type).
 
-#endif
+#endif // OPEN_PROGRAMS

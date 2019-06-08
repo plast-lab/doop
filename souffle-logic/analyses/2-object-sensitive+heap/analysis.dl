@@ -64,5 +64,6 @@
     isDynamicContext(?dynCtx),
     !DynamicContextHeap1(_, ?dynCtx),
     isImmutableHContext(?hctx).
-#endif
+#endif // HEAPDLS
+
 }

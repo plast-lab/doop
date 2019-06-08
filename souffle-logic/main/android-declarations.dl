@@ -33,6 +33,9 @@
 .decl ViewRetrievalByArg0MethodInvocation(?invo:MethodInvocation)
 .decl VarsAtInvocationRetrievingLayoutControl(?ret:Var, ?var:Var)
 .decl LayoutControlObjectValueFromId(?controlValue:Value, ?numId:NumConstant)
-.decl UninitialisedArray(?hctx:configuration.HContext, ?value:Value, ?invocation:MethodInvocation, ?type:Type)
 .decl MultiDimensionalArrayTemp(?value:Value, ?invocation:MethodInvocation, ?type:Type, ?ctx:configuration.Context, ?from:Var)
 .decl WebClientType(?type:Type)
+
+#ifndef DISABLE_POINTS_TO
+.decl UninitialisedArray(?hctx:configuration.HContext, ?value:Value, ?invocation:MethodInvocation, ?type:Type)
+#endif // DISABLE_POINTS_TO

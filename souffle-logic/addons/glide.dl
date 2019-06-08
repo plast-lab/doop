@@ -9,8 +9,6 @@ ForcedReachableAndroidClass(?ctx, ?type) :-
   isImmutableHContext(?hctx),
   isImmutableContext(?ctx).
 
-#ifdef DISABLE_POINTS_TO
-
 // Recognize Glide modules.
 GlideReifiedType(?value, ?type) :-
   basic.SubtypeOf(?type, ?glideType),
@@ -24,9 +22,3 @@ GlideReifiedType(?value, ?type) :-
   isClassType(?type),
   match("com.bumptech.glide.load.ImageHeaderParser\$.*", ?type),
   ?value = cat("<Glide special value of type ", cat(?type, ">")).
-
-#else
-
-// TODO: points-to handling for Glide.
-
-#endif // DISABLE_POINTS_TO

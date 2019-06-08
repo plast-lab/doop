@@ -862,8 +862,8 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param op     the instruction opcode
      */
     private void writeStatementType(String insn, Opcode op) {
-        String in_type  = null;
-        String out_type = null;
+        InferType in_type  = null;
+        InferType out_type = null;
         switch (op) {
         // Binops
         case ADD_INT: case SUB_INT: case  MUL_INT : case  DIV_INT:
@@ -880,7 +880,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         case DIV_INT_LIT8: case  REM_INT_LIT8: case  AND_INT_LIT8:
         case  OR_INT_LIT8: case  XOR_INT_LIT8: case  SHL_INT_LIT8:
         case SHR_INT_LIT8: case USHR_INT_LIT8:
-            in_type = "int32"; out_type = "int32"; break;
+            in_type = InferType.INT32; out_type = InferType.INT32; break;
         case ADD_LONG: case SUB_LONG: case  MUL_LONG : case DIV_LONG:
         case REM_LONG: case AND_LONG: case   OR_LONG : case XOR_LONG:
         case SHL_LONG: case SHR_LONG: case USHR_LONG : case CMP_LONG:
@@ -888,88 +888,92 @@ class DexMethodFactWriter extends JavaFactWriter {
         case DIV_LONG_2ADDR: case  REM_LONG_2ADDR: case AND_LONG_2ADDR:
         case  OR_LONG_2ADDR: case  XOR_LONG_2ADDR: case SHL_LONG_2ADDR:
         case SHR_LONG_2ADDR: case USHR_LONG_2ADDR:
-            in_type = "long"; out_type = "long";  break;
+            in_type = InferType.LONG; out_type = InferType.LONG;  break;
         case ADD_FLOAT: case  SUB_FLOAT : case  MUL_FLOAT : case DIV_FLOAT:
         case REM_FLOAT: case CMPL_FLOAT : case CMPG_FLOAT :
         case ADD_FLOAT_2ADDR: case SUB_FLOAT_2ADDR: case MUL_FLOAT_2ADDR:
         case DIV_FLOAT_2ADDR: case REM_FLOAT_2ADDR:
-            in_type = "float"; out_type = "float"; break;
+            in_type = InferType.FLOAT; out_type = InferType.FLOAT; break;
         case ADD_DOUBLE: case  SUB_DOUBLE : case  MUL_DOUBLE: case DIV_DOUBLE:
         case REM_DOUBLE: case CMPL_DOUBLE : case CMPG_DOUBLE:
         case ADD_DOUBLE_2ADDR: case SUB_DOUBLE_2ADDR: case MUL_DOUBLE_2ADDR:
         case DIV_DOUBLE_2ADDR: case REM_DOUBLE_2ADDR:
-            in_type = "double"; out_type = "double"; break;
+            in_type = InferType.DOUBLE; out_type = InferType.DOUBLE; break;
 
         // Unops
         case NEG_INT:   case NOT_INT:
-            in_type = "int32"; out_type = "int32"; break;
+            in_type = InferType.INT32; out_type = InferType.INT32; break;
         case NEG_LONG:  case NOT_LONG:
-            in_type = "long"; out_type = "long"; break;
+            in_type = InferType.LONG; out_type = InferType.LONG; break;
         case NEG_FLOAT:
-            in_type = "float"; out_type = "float"; break;
+            in_type = InferType.FLOAT; out_type = InferType.FLOAT; break;
         case NEG_DOUBLE:
-            in_type = "double"; out_type = "double"; break;
+            in_type = InferType.DOUBLE; out_type = InferType.DOUBLE; break;
         case INT_TO_LONG:
-            in_type = "int32"; out_type = "long"; break;
+            in_type = InferType.INT32; out_type = InferType.LONG; break;
         case INT_TO_FLOAT:
-            in_type = "int32"; out_type = "float"; break;
+            in_type = InferType.INT32; out_type = InferType.FLOAT; break;
         case INT_TO_DOUBLE:
-            in_type = "int32"; out_type = "float"; break;
+            in_type = InferType.INT32; out_type = InferType.FLOAT; break;
         case INT_TO_BYTE:
-            in_type = "int32"; out_type = "byte"; break;
+            in_type = InferType.INT32; out_type = InferType.BYTE; break;
         case INT_TO_CHAR:
-            in_type = "int32"; out_type = "char"; break;
+            in_type = InferType.INT32; out_type = InferType.CHAR; break;
         case INT_TO_SHORT:
-            in_type = "int32"; out_type = "short"; break;
+            in_type = InferType.INT32; out_type = InferType.SHORT; break;
         case LONG_TO_INT:
-            in_type = "long"; out_type = "int32"; break;
+            in_type = InferType.LONG; out_type = InferType.INT32; break;
         case LONG_TO_FLOAT:
-            in_type = "long"; out_type = "float"; break;
+            in_type = InferType.LONG; out_type = InferType.FLOAT; break;
         case LONG_TO_DOUBLE:
-            in_type = "long"; out_type = "double"; break;
+            in_type = InferType.LONG; out_type = InferType.DOUBLE; break;
         case FLOAT_TO_INT:
-            in_type = "float"; out_type = "int"; break;
+            in_type = InferType.FLOAT; out_type = InferType.INT; break;
         case FLOAT_TO_LONG:
-            in_type = "float"; out_type = "long"; break;
+            in_type = InferType.FLOAT; out_type = InferType.LONG; break;
         case FLOAT_TO_DOUBLE:
-            in_type = "float"; out_type = "double"; break;
+            in_type = InferType.FLOAT; out_type = InferType.DOUBLE; break;
         case DOUBLE_TO_INT:
-            in_type = "double"; out_type = "int"; break;
+            in_type = InferType.DOUBLE; out_type = InferType.INT; break;
         case DOUBLE_TO_LONG:
-            in_type = "double"; out_type = "long"; break;
+            in_type = InferType.DOUBLE; out_type = InferType.LONG; break;
         case DOUBLE_TO_FLOAT:
-            in_type = "double"; out_type = "float"; break;
+            in_type = InferType.DOUBLE; out_type = InferType.FLOAT; break;
+        case ARRAY_LENGTH:
+            in_type = InferType.OBJ; out_type = InferType.INT; break;
 
         // Moves
         case MOVE:
         case MOVE_FROM16:
         case MOVE_16:
-            in_type = "prim32"; out_type = "prim32"; break;
+            in_type = InferType.PRIM32; out_type = InferType.PRIM32; break;
         case MOVE_WIDE:
         case MOVE_WIDE_FROM16:
         case MOVE_WIDE_16:
-            in_type = "prim64"; out_type = "prim64"; break;
+            in_type = InferType.PRIM64; out_type = InferType.PRIM64; break;
         case MOVE_OBJECT:
         case MOVE_OBJECT_FROM16:
         case MOVE_OBJECT_16:
-            in_type = "obj"; out_type = "obj"; break;
+            in_type = InferType.OBJ; out_type = InferType.OBJ; break;
 
         // Move constants
         case CONST_4:
         case CONST_16:
         case CONST:
         case CONST_HIGH16:
-            in_type = "32bit"; out_type = "32bit"; break;
+            in_type = InferType.BITS32; out_type = InferType.BITS32; break;
 
         case CONST_WIDE:
         case CONST_WIDE_16:
         case CONST_WIDE_32:
-            in_type = "64bit"; out_type = "64bit"; break;
+        case CONST_WIDE_HIGH16:
+            in_type = InferType.BITS64; out_type = InferType.BITS64; break;
         }
+
         if (in_type == null || out_type == null)
-            System.err.println("Cannot determine statement type for instruction " + insn);
+            System.err.println("Cannot determine statement type for instruction " + insn + " (opcode: " + op + ")");
         else
-            _db.add(STATEMENT_TYPE, insn, in_type, out_type);
+            _db.add(STATEMENT_TYPE, insn, in_type.toString(), out_type.toString());
     }
 
     private void writeAssignCast(OneRegisterInstruction ori, ReferenceInstruction ri, int index) {
@@ -1036,11 +1040,23 @@ class DexMethodFactWriter extends JavaFactWriter {
     }
 
     private String local(int reg) {
+        String var;
         // System.out.println(methId + ", localsCount=" + this.localsCount + ",  reg=" + reg);
         if (reg < localRegCount)
-            return DexRepresentation.local(methId, reg);
+            var = DexRepresentation.local(methId, reg);
         else
-            return DexRepresentation.param(methId, reg - localRegCount);
+            var = DexRepresentation.param(methId, reg - localRegCount);
+        writeVarDeclaringMethod(var, methId);
+        return var;
+    }
+
+    private Collection<String> writtenVars = new HashSet<>();
+    @Override
+    protected void writeVarDeclaringMethod(String var, String methId) {
+        if (!writtenVars.contains(var)) {
+            writtenVars.add(var);
+            super.writeVarDeclaringMethod(var, methId);
+        }
     }
 
     private String instructionId(String kind, int index) {

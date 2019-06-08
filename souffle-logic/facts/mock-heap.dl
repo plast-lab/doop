@@ -23,7 +23,7 @@ MockHeapConsMacro(?heap, ?type) :-
    ?heap = "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String/0",
    ?type = "java.lang.String".
 
-#endif /* ANDROID */
+#endif // ANDROID
 
 MockHeapConsMacro(?heap, ?type) :-
    ?heap = "<sun.misc.Perf: java.nio.ByteBuffer createLong(java.lang.String,int,int,long)>/new java.nio.DirectByteBuffer/0",

@@ -12,7 +12,7 @@
 
 #ifdef REFLECTION
 #error "light-reflection-glue.dl is not compatible with full reflection support"
-#endif
+#endif // REFLECTION
 
 #include "classloading.dl"
 #include "native-reflection.dl"

@@ -92,6 +92,16 @@ Stats_Simple_NonReachableApplicationConcreteMethod(?method) :-
   Stats_Simple_ApplicationConcreteMethod(?method),
   !Stats_Simple_InsensReachableApplicationMethod(?method).
 
+#ifdef ANDROID
+// Extra metric to only show non-reachable concrete methods in the
+// main package of an Android app.
+Stats_Simple_NonReachableAndroidApplicationConcreteMethod(?method) :-
+  Stats_Simple_NonReachableApplicationConcreteMethod(?method),
+  Method_DeclaringType(?method, ?class),
+  mainAnalysis.ApplicationPackageRegex(?regex),
+  match(?regex, ?class).
+#endif // ANDROID
+
 /***************************************************
  * Virtual method invocations
  ***************************************************/
@@ -251,6 +261,8 @@ NewMetricMacro("26.6", "Android callback methods", CallbackMethod(_)).
 NewMetricMacro("26.7", "Android typed fragments", mainAnalysis.XMLFragment_Class(_, _, _)).
 NewMetricMacro("26.8", "Methods considered obfuscated", mainAnalysis.ObfuscatedApplicationClass(_)).
 NewMetricMacro("26.9", "Methods considered unobfuscated", mainAnalysis.UnobfuscatedApplicationClass(_)).
+NewMetricMacro("26.10", "Obfuscation (boolean)", mainAnalysis.ObfuscationOn()).
+NewMetricMacro("26.11", "non-reachable app concrete methods (in app package)", Stats_Simple_NonReachableAndroidApplicationConcreteMethod(_)).
 #endif // ANDROID
 
 /***************************************************
