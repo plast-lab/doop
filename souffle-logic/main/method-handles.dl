@@ -1005,6 +1005,8 @@ VarPointsTo(?hctx, ?mockConstructors, ?ctx, ?ret),
 MockValueConsMacro(?mockConstructors, "java.lang.reflect.Constructor[]"),
 FillConstructorsFromClass(?hctx, ?mockConstructors, ?class) :-
   Class_getMembers(GET_DECLARED_CONSTRUCTORS, ?hctx, ?ctx, ?ret, ?class),
+  Var_Type(?ret, ?retType),
+  (isArrayType(?retType) ; ?retType = "java.lang.Object"),
   ?mockConstructors = cat("mock constructors array for ", ?class).
 
 ArrayIndexPointsTo(?immHctx, ?constructor, ?hctx, ?mockConstructors) :-
@@ -1018,6 +1020,8 @@ VarPointsTo(?hctx, ?mockMethods, ?ctx, ?ret),
 MockValueConsMacro(?mockMethods, "java.lang.reflect.Method[]"),
 FillConstructorsFromClass(?hctx, ?mockMethods, ?class) :-
   Class_getMembers(GET_DECLARED_METHODS, ?hctx, ?ctx, ?ret, ?class),
+  Var_Type(?ret, ?retType),
+  (isArrayType(?retType) ; ?retType = "java.lang.Object"),
   ?mockMethods = cat("mock methods array for ", ?class).
 
 ArrayIndexPointsTo(?immHctx, ?methodValue, ?hctx, ?mockMethods) :-
