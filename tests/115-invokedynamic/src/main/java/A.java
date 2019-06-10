@@ -73,4 +73,22 @@ public class A {
         System.out.println("add3_dynamic() | Result: d = " + d);
     }
 
+    public A init_dynamic() throws Throwable {
+        System.out.println("== init_dynamic ==");
+        MethodType mType = MethodType.methodType(void.class);
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodHandle constr = lookup.findConstructor(Class.forName("A"), mType);
+        A a = (A)constr.invokeExact();
+        System.out.println("A: " + a.hashCode());
+        return a;
+    }
+
+    public void test() throws Throwable {
+        add3_dynamic();
+        A a = init_dynamic();
+    }
+
+    public A() {
+        System.out.println("A() called.");
+    }
 }

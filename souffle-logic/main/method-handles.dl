@@ -497,6 +497,10 @@ FindStatic(?invo, ?ret) :-
 FindSpecial(?invo, ?ret) :-
   FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findSpecial(java.lang.Class,java.lang.String,java.lang.invoke.MethodType,java.lang.Class)>").
 
+.decl FindConstructor(?invo:MethodInvocation, ?ret:Var)
+FindConstructor(?invo, ?ret) :-
+  FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findConstructor(java.lang.Class,java.lang.invoke.MethodType)>").
+
 // Direct method handle lookup.
 .decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type, ?paramTypes:ParamTypes)
 // Look up method handle with a normal method type.
@@ -530,6 +534,15 @@ FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
   VarPointsTo(_, ?id, _, ?stringParam),
   ActualParam(2, ?invo, ?mtParam),
   VarPointsTo(_, ?mt, _, ?mtParam).
+// Special case: constructor finder.
+FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
+  FindConstructor(?invo, _),
+  ActualParam(0, ?invo, ?classParam),
+  VarPointsTo(?hctx, ?classValue, ?ctx, ?classParam),
+  ReifiedClass(?type, ?classValue),
+  ?id = "<init>",
+  ActualParam(1, ?invo, ?mtParam),
+  VarPointsTo(_, ?mt, _, ?mtParam).
 #endif // REFLECTION, LIGHT_REFLECTION_GLUE
 
 // Compute result of findStatic().
@@ -538,11 +551,14 @@ AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret
   FindStatic(?invo, ?ret),
   DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes),
   Method_Modifier("static", ?method).
-// Compute result of findVirtual()/findSpecial(): transform the method
-// type to an equivalent that also contains the receiver as first argument.
+// Compute result of findVirtual()/findSpecial()/findConstructor():
+// transform the method type to an equivalent that also contains the
+// receiver as first argument.
 AssignMethodHandleToVarRequest(?method, ?paramTypesConv, ?retType, ?hctx, ?ctx, ?ret) :-
   FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx),
-  (FindVirtual(?invo, ?ret) ; FindSpecial(?invo, ?ret)),
+  ( FindVirtual(?invo, ?ret)
+  ; FindSpecial(?invo, ?ret)
+  ; FindConstructor(?invo, ?ret)),
   DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes),
   !Method_Modifier("static", ?method),
   // Reconstruct method type to prepend receiver (since ?mt may contain wildcard

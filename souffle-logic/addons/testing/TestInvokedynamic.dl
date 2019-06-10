@@ -63,6 +63,9 @@ TestId("testAdd3.1") :-
 TestId("testAdd3.2") :-
   varPointsTo("<A: void add3_dynamic()>/d#_72", "<java.lang.Double: java.lang.Double valueOf(double)>/new java.lang.Double/0").
 
+TestId("testInit_dynamic.1") :-
+  varPointsTo("<A: A init_dynamic()>/a#_81", "A value constructed by method handle <computed direct method handle for <A: void <init>()>>").
+
 TestId("testID.1") :-
   reachable("<A: java.lang.invoke.CallSite bootstrap(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType)>").
 TestId("testID.2") :-

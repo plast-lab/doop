@@ -81,6 +81,9 @@ class TestInvokedynamic extends DoopSpec {
 		feature 'Calling special method handles with MethodHandle.invokeExact().'
 		testSucceeds(analysis, "testAdd3.1")
 		testSucceeds(analysis, "testAdd3.2")
+		// testInit_dynamic
+		feature 'Calling constructor method handles with MethodHandle.invokeExact().'
+		testSucceeds(analysis, "testInit_dynamic.1")
 		// testInvokedynamic
 		feature 'Bootstrap methods are made reachable.'
 		testSucceeds(analysis, "testID.1")
