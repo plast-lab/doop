@@ -536,7 +536,8 @@ FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
 AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
   FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx),
   FindStatic(?invo, ?ret),
-  DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes).
+  DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes),
+  Method_Modifier("static", ?method).
 // Compute result of findVirtual()/findSpecial(): transform the method
 // type to an equivalent that also contains the receiver as first argument.
 AssignMethodHandleToVarRequest(?method, ?paramTypesConv, ?retType, ?hctx, ?ctx, ?ret) :-
