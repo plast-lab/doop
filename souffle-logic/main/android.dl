@@ -888,8 +888,10 @@ UnobfuscatedApplicationClass(?class) :-
    match("dagger.*", ?class);
    match("de.*", ?class);
    match("ezvcard.*", ?class);
+   match("dk.*", ?class);
    match("fi.*", ?class);
    match("org.*", ?class);
+   match("in.*", ?class);
    match("io.*", ?class);
    match("it.*", ?class);
    match("me.*", ?class);
@@ -903,6 +905,7 @@ UnobfuscatedApplicationClass(?class) :-
    match("okio.*", ?class);
    match("retrofit.*", ?class);
    match("retrofit2.*", ?class);
+   match("secondary.*", ?class);
    match("twitter4j.*", ?class)).
 UnobfuscatedApplicationClass(?class) :-
   ApplicationClass(?class),
