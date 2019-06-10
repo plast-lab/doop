@@ -77,6 +77,10 @@ class TestInvokedynamic extends DoopSpec {
 		testSucceeds(analysis, "test7.1")
 		testSucceeds(analysis, "test7.2")
 		testSucceeds(analysis, "test7.3")
+		// testAdd3
+		feature 'Calling special method handles with MethodHandle.invokeExact().'
+		testSucceeds(analysis, "testAdd3.1")
+		testSucceeds(analysis, "testAdd3.2")
 		// testInvokedynamic
 		feature 'Bootstrap methods are made reachable.'
 		testSucceeds(analysis, "testID.1")

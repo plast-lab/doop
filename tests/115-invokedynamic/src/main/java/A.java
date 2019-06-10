@@ -61,4 +61,16 @@ public class A {
         int hash = this.hashCode();
         System.out.println("print2() called, i = " + i + ", hash code = " + hash);
     }
+
+    public void add3_dynamic() throws Throwable {
+        System.out.println("== add3_dynamic ==");
+
+        MethodType mType = MethodType.methodType(Double.class, Integer.class, Float.class, Short.class);
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodHandle add3_mh = lookup.findSpecial(A.class, "add3", mType, A.class);
+        Main.info(add3_mh, mType);
+        Double d = (Double)add3_mh.invokeExact(this, new Integer(11), new Float(112.0), new Short("1"));
+        System.out.println("add3_dynamic() | Result: d = " + d);
+    }
+
 }

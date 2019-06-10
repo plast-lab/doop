@@ -476,23 +476,26 @@ AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret
   AssignReturnValue(?invo, ?ret).
 #endif // REFLECTION
 
-// Method lookup methods.
+// Method-lookup methods.
+
+#define FIND_METHOD(invo, ret, sig)            \
+  MethodInvocation_Method(invo, sig),          \
+  VirtualMethodInvocation_Base(invo, ?lookup), \
+  VarPointsTo(_, ?baseVal, _, ?lookup),        \
+  !Value_Null(?baseVal),                       \
+  AssignReturnValue(invo, ret)
 
 .decl FindVirtual(?invo:MethodInvocation, ?ret:Var)
 FindVirtual(?invo, ?ret) :-
-  MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findVirtual(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>"),
-  VirtualMethodInvocation_Base(?invo, ?lookup),
-  VarPointsTo(_, ?baseVal, _, ?lookup),
-  !Value_Null(?baseVal),
-  AssignReturnValue(?invo, ?ret).
+  FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findVirtual(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>").
 
 .decl FindStatic(?invo:MethodInvocation, ?ret:Var)
 FindStatic(?invo, ?ret) :-
-  MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findStatic(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>"),
-  VirtualMethodInvocation_Base(?invo, ?lookup),
-  VarPointsTo(_, ?baseVal, _, ?lookup),
-  !Value_Null(?baseVal),
-  AssignReturnValue(?invo, ?ret).
+  FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findStatic(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>").
+
+.decl FindSpecial(?invo:MethodInvocation, ?ret:Var)
+FindSpecial(?invo, ?ret) :-
+  FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findSpecial(java.lang.Class,java.lang.String,java.lang.invoke.MethodType,java.lang.Class)>").
 
 // Direct method handle lookup.
 .decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type, ?paramTypes:ParamTypes)
@@ -519,7 +522,7 @@ DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
 // Create VarPointsTo for return values of method finders.
 .decl FindMethod(?invo:MethodInvocation, ?type:Type, ?id:symbol, ?mt:MethodType, ?hctx:configuration.HContext, ?ctx:configuration.Context)
 FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
-  (FindStatic(?invo, _) ; FindVirtual(?invo, _)),
+  (FindStatic(?invo, _) ; FindVirtual(?invo, _) ; FindSpecial(?invo, _)),
   ActualParam(0, ?invo, ?classParam),
   VarPointsTo(?hctx, ?classValue, ?ctx, ?classParam),
   ReifiedClass(?type, ?classValue),
@@ -534,11 +537,11 @@ AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret
   FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx),
   FindStatic(?invo, ?ret),
   DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes).
-// Compute result of findVirtual(). This transforms the method type to an
-// equivalent that also contains the receiver as a first argument.
+// Compute result of findVirtual()/findSpecial(): transform the method
+// type to an equivalent that also contains the receiver as first argument.
 AssignMethodHandleToVarRequest(?method, ?paramTypesConv, ?retType, ?hctx, ?ctx, ?ret) :-
   FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx),
-  FindVirtual(?invo, ?ret),
+  (FindVirtual(?invo, ?ret) ; FindSpecial(?invo, ?ret)),
   DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes),
   !Method_Modifier("static", ?method),
   // Reconstruct method type to prepend receiver (since ?mt may contain wildcard

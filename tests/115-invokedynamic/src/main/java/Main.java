@@ -16,6 +16,7 @@ public class Main {
             test6();
             test7();
             testInvokedynamic(new A());
+            (new A()).add3_dynamic();
         } catch (Throwable t) {
             t.printStackTrace();
         }
