@@ -364,16 +364,22 @@ NewMetricMacro("61.4", "Mock Objects for Formals", MockObjFromFormal(_)).
 #endif // OPEN_PROGRAMS
 
 #ifdef SPECIAL_CONTEXT_SENSITIVITY_METHODS
-Stats_Simple_TwoObjectMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
-   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), Var_DeclaringMethod(?var, ?method), mainAnalysis.configuration.TwoObjectMethod(?method).
-
-Stats_Simple_ContextInsensitiveMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
-   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), Var_DeclaringMethod(?var, ?method), mainAnalysis.configuration.ContextInsensitiveMethod(?method).
 
 NewMetricMacro("101.0", "context-insensitive methods", mainAnalysis.configuration.ContextInsensitiveMethod(_)).
 NewMetricMacro("102.0", "2-object-sensitive methods", mainAnalysis.configuration.TwoObjectMethod(_)).
+
+#ifndef DISABLE_POINTS_TO
+
+Stats_Simple_TwoObjectMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
+   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), Var_DeclaringMethod(?var, ?method), mainAnalysis.configuration.TwoObjectMethod(?method).
 NewMetricMacro("103.0", "context-insensitive methods total VPT", Stats_Simple_ContextInsensitiveMethodsVPT(_, _, _, _)).
+
+Stats_Simple_ContextInsensitiveMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
+   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), Var_DeclaringMethod(?var, ?method), mainAnalysis.configuration.ContextInsensitiveMethod(?method).
 NewMetricMacro("104.0", "2-object-sensitive methods total VPT", Stats_Simple_TwoObjectMethodsVPT(_, _, _, _)).
+
+#endif // DISABLE_POINTS_TO
+
 #endif // SPECIAL_CONTEXT_SENSITIVITY_METHODS
 
 /***************************************************

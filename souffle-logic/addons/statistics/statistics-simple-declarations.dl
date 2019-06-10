@@ -202,13 +202,13 @@ OUTPUT_STATS(Stats_Simple_OriginalTaintedValue)
 //OUTPUT_STATS(Stats_Simple_ReachableFromEntryPoint)
 #endif // OPEN_PROGRAMS
 
-#ifndef DISABLE_POINTS_TO
+#if defined(SPECIAL_CONTEXT_SENSITIVITY_METHODS) && !defined(DISABLE_POINTS_TO)
 .decl Stats_Simple_ContextInsensitiveMethodsVPT(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 OUTPUT_STATS(Stats_Simple_ContextInsensitiveMethodsVPT)
 
 .decl Stats_Simple_TwoObjectMethodsVPT(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
 OUTPUT_STATS(Stats_Simple_TwoObjectMethodsVPT)
-#endif // DISABLE_POINTS_TO
+#endif // SPECIAL_CONTEXT_SENSITIVITY_METHODS, DISABLE_POINTS_TO
 
 /***************************************************
  * Memory Dump
