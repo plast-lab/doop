@@ -20,7 +20,9 @@ plugins {
     id 'net.researchgate.release' version '2.6.0'
 }
 
-applicationDefaultJvmArgs = ["-Xmx12000m", "-Xss2000m"]
+// Warning: -Xss is restricted in recent Java versions.
+applicationDefaultJvmArgs = ["-Xmx12000m", "-Xss1000m"]
+
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
