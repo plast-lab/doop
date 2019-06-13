@@ -112,6 +112,7 @@ public class SootParameters extends Parameters {
             System.err.println("  --also-resolve <class>                Force resolution of class that may not be found automatically.");
             System.err.println("  --log-dir <dir>                       Write logs in directory <dir>.");
             System.err.println("  --write-artifacts-map                 Write artifacts map.");
+            System.err.println("  --classpath                           Set classptha to use when calling external processes.");
             System.err.println("Jimple/Shimple generation:");
             System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
             System.err.println("  --stdout                              Write Jimple/Shimple to stdout");

@@ -5,6 +5,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.log4j.Logger;
 
 /**
@@ -15,7 +17,9 @@ public class ClassPathHelper {
 
     /**
      * Finds a classpath JAR that matches a string. This method can be
-     * used to find standalone JARs packaged as dependencies.
+     * used to find standalone JARs packaged as dependencies. This
+     * method reads the current classloader classpath and is thus only
+     * supported in Java < 9.
      *
      * @param prefix   the prefix of the JAR
      * @return         the path of the JAR
@@ -23,21 +27,38 @@ public class ClassPathHelper {
      */
     public static String getClasspathJar(String prefix) {
         ClassLoader cl = ClassPathHelper.class.getClassLoader();
-        LinkedList<String> matchingPaths = new LinkedList<>();
         if (cl instanceof URLClassLoader) {
-            URL[] classpath = ((URLClassLoader)cl).getURLs();
-            String searchString = "/" + prefix;
-            for (URL url : classpath) {
-                String path = url.getFile();
-                if (path.contains(prefix) && path.toLowerCase().endsWith(".jar"))
-                    matchingPaths.add(path);
-            }
-            if (matchingPaths.size() == 1)
-                return matchingPaths.get(0);
-            else
-                throw new RuntimeException("runClasspathJar: no single match for " + prefix + " in classpath: " + Arrays.toString(classpath));
+            Set<String> classpath = new HashSet<>();
+            URL[] urls = ((URLClassLoader)cl).getURLs();
+            for (URL url : urls)
+                classpath.add(url.getFile());
+            return getClasspathJar(prefix, classpath);
         } else
-            throw new RuntimeException("Unsupported classloader " + cl.getClass() + " when running: " + prefix);
+            throw new RuntimeException("Could not handle non-URLClassloader.");
+    }
+
+    /**
+     * Finds a classpath JAR that matches a string.
+     *
+     * @param prefix     the prefix of the JAR
+     * @param classpath  the classpath
+     * @return           the path of the JAR
+     *
+     */
+    public static String getClasspathJar(String prefix, Set<String> classpath) {
+	final String searchString = "/" + prefix;
+        LinkedList<String> matchingPaths = new LinkedList<>();
+	for (String path : classpath) {
+	    if (path.contains(prefix) && path.toLowerCase().endsWith(".jar"))
+		matchingPaths.add(path);
+	}
+	int matches = matchingPaths.size();
+	if (matches == 1)
+	    return matchingPaths.get(0);
+	else if (matches > 1)
+	    throw new RuntimeException("No single match for '" + prefix + "' in classpath: " + String.join(":", classpath));
+	else
+	    throw new RuntimeException("Could not find classpath entry: " + prefix);
     }
 
     /**

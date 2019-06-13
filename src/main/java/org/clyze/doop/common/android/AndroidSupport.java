@@ -212,7 +212,7 @@ public abstract class AndroidSupport {
      * @param apk                        the APK
      * @param decodeDir                  the target directory to use as root
      */
-    private static void decodeApk(File apk, String decodeDir) {
+    private void decodeApk(File apk, String decodeDir) {
         if (new File(decodeDir).mkdirs())
             System.out.println("Created " + decodeDir);
 
@@ -249,7 +249,10 @@ public abstract class AndroidSupport {
                     // archive that duplicates classes already found in the classpath
                     // (possibly with different versions), it should then run isolated
                     // via 'java -jar'.
-                    apktoolJar = ClassPathHelper.getClasspathJar("apktool");
+		    if (parameters.classpath == null)
+			apktoolJar = ClassPathHelper.getClasspathJar("apktool");
+		    else
+			apktoolJar = ClassPathHelper.getClasspathJar("apktool", parameters.classpath);
                 } catch (Exception ex) {
                     System.err.println("Error: could not find apktool, please set " + APKTOOL_HOME_ENV_VAR);
                     return;

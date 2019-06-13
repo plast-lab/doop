@@ -158,13 +158,17 @@ testSubprojects.each {
     applicationDistribution.from(file("$projectDir/${path}")) { into path }
 }
 
-
 run {
     //debug true
     // We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
     if (project.hasProperty('args')) {
         args project.property('args').split()
+
+        // Inform Doop about the current classpath.
+        def doopCP = String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
+        args "--classpath"
+        args doopCP
     }
 }
 

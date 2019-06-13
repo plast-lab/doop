@@ -2,7 +2,9 @@ package org.clyze.doop.common;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
@@ -32,6 +34,7 @@ public class Parameters {
     public boolean _reportPhantoms = true;
     public boolean _dex = false;
     public boolean _legacyAndroidProcessing = false;
+    public Set<String> classpath = null;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
@@ -219,6 +222,12 @@ public class Parameters {
         case "--legacy-android-processing":
             _legacyAndroidProcessing = true;
             break;
+	case "--classpath":
+	    i = shift(args, i);
+	    classpath = new HashSet<>();
+	    for (String p : args[i].split(":"))
+		classpath.add(p);
+	    break;
         default:
             return -1;
         }
