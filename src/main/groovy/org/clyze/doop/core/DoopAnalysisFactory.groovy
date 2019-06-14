@@ -114,6 +114,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		throwIfBothSet(options.X_USE_EXISTING_FACTS, options.X_STOP_AT_FACTS)
 
 		if (options.X_START_AFTER_FACTS.value) {
+			// Option "start-after-facts" is not compatible with options
+			// generating facts, the user must use "use-existing-facts" instead.
+			def factOpts = options.values().findAll { it.affectsFacts && it.value }
+			if (factOpts.size > 0) {
+				throw new RuntimeException("Cannot reuse facts with facts-modifying option --${factOpts.get(0).name}, use --${options.X_USE_EXISTING_FACTS.name} instead of --${options.X_START_AFTER_FACTS.name}")
+			}
+
 			def cacheDir = new File(options.X_START_AFTER_FACTS.value as String)
 			FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
 			options.CACHE_DIR.value = cacheDir
@@ -121,6 +128,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			def cacheId = generateCacheID(options)
 			options.CACHE_DIR.value = new File(Doop.doopCache, cacheId)
 			checkAppGlob(options)
+		}
+
+		// Enable APK decoding when not reusing facts.
+		if (!options.X_START_AFTER_FACTS.value && !options.X_USE_EXISTING_FACTS.value) {
+			options.DECODE_APK.value = true
 		}
 
 		log.debug "Created new analysis"
