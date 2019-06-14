@@ -118,11 +118,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			// Option "start-after-facts" is not compatible with options
 			// generating facts, the user must use "use-existing-facts" instead.
 			def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
-			if (factOpts.size > 0) {
-				for (def opt : factOpts) {
-					if (opt != options.PLATFORM) {
-						log.warn "WARNING: Option --${opt.name} modifies facts."
-					}
+			for (def opt : factOpts) {
+				if (opt != options.PLATFORM) {
+					log.warn "WARNING: Option --${opt.name} modifies facts."
 				}
 			}
 
