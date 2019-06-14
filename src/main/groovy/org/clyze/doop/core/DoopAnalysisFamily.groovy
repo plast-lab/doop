@@ -149,13 +149,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
-					id: "CLASSPATH",
-					name: "classpath",
-					group: GROUP_FACTS,
-					description: "The Java classpath to use when invoking external Java processes.",
-					argName: "CP"
-			),
-			new AnalysisOption<String>(
 					id: "IMPORT_PARTITIONS",
 					name: "import-partitions",
 					argName: "FILE",

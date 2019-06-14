@@ -462,10 +462,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--lowMem"]
         }
 
-        if (options.CLASSPATH.value) {
-            params += ["--classpath", options.CLASSPATH.value as String]
-        }
-
         log.debug "Params of soot: ${params.join(' ')}"
 
         factGenTime = Helper.timing {

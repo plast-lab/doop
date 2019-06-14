@@ -249,10 +249,13 @@ public abstract class AndroidSupport {
                     // archive that duplicates classes already found in the classpath
                     // (possibly with different versions), it should then run isolated
                     // via 'java -jar'.
-		    if (parameters.classpath == null)
+		    if (parameters.classpath == null) {
+			System.err.println("Trying to use bundled apktool...");
 			apktoolJar = ClassPathHelper.getClasspathJar("apktool");
-		    else
+		    } else {
+			System.err.println("Trying to use classpath apktool...");
 			apktoolJar = ClassPathHelper.getClasspathJar("apktool", parameters.classpath);
+		    }
                 } catch (Exception ex) {
                     System.err.println("Error: could not find apktool, please set " + APKTOOL_HOME_ENV_VAR);
                     return;

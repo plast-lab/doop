@@ -40,6 +40,13 @@ public class Parameters {
 
     public Parameters() {
         setAppRegex("**");
+
+        String cp = System.getenv("DOOP_EXT_CLASSPATH");
+        if (cp != null) {
+            classpath = new HashSet<>();
+            for (String j : cp.split(":"))
+                classpath.add(j);
+        }
     }
 
     public void initFromArgs(String[] args) throws DoopErrorCodeException {
@@ -222,12 +229,6 @@ public class Parameters {
         case "--legacy-android-processing":
             _legacyAndroidProcessing = true;
             break;
-	case "--classpath":
-	    i = shift(args, i);
-	    classpath = new HashSet<>();
-	    for (String p : args[i].split(":"))
-		classpath.add(p);
-	    break;
         default:
             return -1;
         }

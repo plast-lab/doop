@@ -158,17 +158,20 @@ testSubprojects.each {
     applicationDistribution.from(file("$projectDir/${path}")) { into path }
 }
 
+void setDoopCP(def environment) {
+    // Inform Doop about the current classpath.
+    def doopCP = String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
+    environment.DOOP_EXT_CLASSPATH = doopCP
+    // println "Doop external classpath = ${doopCP}"
+}
+
 run {
     //debug true
     // We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
+    setDoopCP(environment)
     if (project.hasProperty('args')) {
         args project.property('args').split()
-
-        // Inform Doop about the current classpath.
-        def doopCP = String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
-        args "--classpath"
-        args doopCP
     }
 }
 
@@ -250,6 +253,7 @@ test {
     }
     environment.DOOP_HOME = projectDir
     environment.HOME = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx"))).toString()
+    setDoopCP(environment)
 }
 
 task buildTests {
