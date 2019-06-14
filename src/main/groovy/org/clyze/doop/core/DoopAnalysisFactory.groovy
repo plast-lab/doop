@@ -112,13 +112,20 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_STOP_AT_FACTS)
 		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_USE_EXISTING_FACTS)
 		throwIfBothSet(options.X_USE_EXISTING_FACTS, options.X_STOP_AT_FACTS)
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.CACHE)
 
 		if (options.X_START_AFTER_FACTS.value) {
 			// Option "start-after-facts" is not compatible with options
 			// generating facts, the user must use "use-existing-facts" instead.
-			def factOpts = options.values().findAll { it.affectsFacts && it.value }
+			def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
 			if (factOpts.size > 0) {
-				throw new RuntimeException("Cannot reuse facts with facts-modifying option --${factOpts.get(0).name}, use --${options.X_USE_EXISTING_FACTS.name} instead of --${options.X_START_AFTER_FACTS.name}")
+				for (def opt : factOpts) {
+					if (opt == options.PLATFORM) {
+						log.info "Ignoring option --${opt.name}"
+					} else {
+						throw new RuntimeException("Cannot reuse facts with facts-modifying option --${opt.name}, use --${options.X_USE_EXISTING_FACTS.name} instead of --${options.X_START_AFTER_FACTS.name}")
+					}
+				}
 			}
 
 			def cacheDir = new File(options.X_START_AFTER_FACTS.value as String)

@@ -144,6 +144,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
 
         factsDir.mkdirs()
+        log.debug "Copying: ${fromDir} -> ${factsDir}"
         FileOps.copyDirContents(fromDir, factsDir)
     }
 
