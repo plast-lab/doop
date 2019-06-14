@@ -135,7 +135,7 @@ public abstract class AndroidSupport {
         System.out.println("possible layout controls: " + appUserControls.size());
     }
 
-    public void writeComponents(JavaFactWriter writer, Parameters parameters) {
+    public void writeComponents(JavaFactWriter writer) {
         for (String appInput : parameters.getInputs()) {
             AppResources processMan = computedResources.get(appInput);
             if (processMan == null) {
