@@ -4,6 +4,7 @@ import groovy.util.logging.Log4j
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.*
+import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.input.PlatformManager
@@ -108,6 +109,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def commandsEnv = initExternalCommandsEnvironment(options)
 		createOutputDirectory(options)
 
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_STOP_AT_FACTS)
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_USE_EXISTING_FACTS)
+		throwIfBothSet(options.X_USE_EXISTING_FACTS, options.X_STOP_AT_FACTS)
+
 		if (options.X_START_AFTER_FACTS.value) {
 			def cacheDir = new File(options.X_START_AFTER_FACTS.value as String)
 			FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
@@ -138,6 +143,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 				}
 			}
+		}
+	}
+
+	// Throw an error when two incompatible options are set.
+	static void throwIfBothSet(AnalysisOption opt1, AnalysisOption opt2) {
+		if (opt1.value && opt2.value) {
+			throw new DoopErrorCodeException(28, new RuntimeException("Error: options --${opt1.name} and --${opt2.name} are mutually exclusive."))
 		}
 	}
 
@@ -322,9 +334,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
-		if (options.ENTRY_POINTS.value && options.X_SYMLINK_CACHED_FACTS.value) {
-			throw new RuntimeException("Options --${options.ENTRY_POINTS.name} and --${options.X_SYMLINK_CACHED_FACTS.name} are not compatible")
-		}
+		throwIfBothSet(options.ENTRY_POINTS, options.X_SYMLINK_CACHED_FACTS)
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
 			def tamiflexArg = options.TAMIFLEX.value as String
@@ -350,22 +360,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.DISABLE_POINTS_TO.value = true
 		}
 
-		if (options.DISABLE_POINTS_TO.value && options.INFORMATION_FLOW.value) {
-			throw new RuntimeException("Options --${options.DISABLE_POINTS_TO.name} and --${options.INFORMATION_FLOW.name} are not compatible")
-		}
-
-		if (options.SOUFFLE_PROVENANCE.value && options.SOUFFLE_LIVE_PROFILE.value) {
-			throw new RuntimeException("Error: options --${options.SOUFFLE_PROVENANCE.name} and --${options.SOUFFLE_LIVE_PROFILE.name} are mutually exclusive.\n")
-		}
+		throwIfBothSet(options.DISABLE_POINTS_TO, options.INFORMATION_FLOW)
+		throwIfBothSet(options.SOUFFLE_PROVENANCE, options.SOUFFLE_LIVE_PROFILE)
 
 		if (options.SOUFFLE_INCREMENTAL_OUTPUT.value){
 			options.SOUFFLE_USE_FUNCTORS.value = true
 		}
 
-		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value &&
-				options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-			throw new RuntimeException("Error: options --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
-		}
+		throwIfBothSet(options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS, options.DISTINGUISH_ALL_STRING_CONSTANTS)
 
 		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
 			options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
