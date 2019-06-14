@@ -346,7 +346,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "ANDROID",
 					name: "android",
-					description: "If true the analysis is ran on an Android app.",
+					description: "If true the analysis enables Android-specific logic.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -890,7 +890,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_START_AFTER_FACTS",
 					name: "Xstart-after-facts",
 					group: GROUP_FACTS,
-					description: "Import facts from OUT_DIR and start the analysis.",
+					description: "Import facts from OUT_DIR and start the analysis. Application/library inputs are ignored.",
 					argName: "OUT_DIR",
 					argInputType: InputType.MISC,
 					forPreprocessor: true
