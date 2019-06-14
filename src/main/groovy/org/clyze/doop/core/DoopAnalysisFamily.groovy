@@ -20,6 +20,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_REFLECTION = "Reflection"
 	private static final String GROUP_STATS = "Statistics"
 
+	private static final int SERVER_DEFAULT_THRESHOLD = 1000
+
 	@Override
 	String getName() { "doop" }
 
@@ -899,8 +901,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_SERVER_LOGIC_THRESHOLD",
 					name: "Xserver-logic-threshold",
 					argName: "THRESHOLD",
-					description: "Threshold when reporting point-to information in server logic (per points-to set). default: 1000",
-					value: 1000,
+					description: "Threshold when reporting points-to information in server logic (per points-to set). default: ${SERVER_DEFAULT_THRESHOLD}",
+					value: SERVER_DEFAULT_THRESHOLD,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
