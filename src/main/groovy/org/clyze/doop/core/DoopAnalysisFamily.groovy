@@ -176,7 +176,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "entry-points",
 					argName: "FILE",
 					forCacheID: true,
-					description: "Entry points (Proguard seed file or doop method IDs)."
+					description: "Entry points (Proguard seed file or doop method IDs).",
+					forCacheID: true
 			),
 			new AnalysisOption<String>(
 					id: "SPECIAL_CONTEXT_SENSITIVITY_METHODS",
