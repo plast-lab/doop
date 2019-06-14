@@ -217,14 +217,21 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 	protected String generateCacheID(Map<String, AnalysisOption> options) {
 		Collection<String> idComponents = options.values()
-				.findAll { it.forCacheID }
-				.collect { it as String }
+			.findAll { it.forCacheID }
+			.collect { it as String }
 
 		Collection<String> checksums = DoopAnalysisFamily.getAllInputs(options)
 			.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
 
-		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy")
-			checksums += [CheckSum.checksum(new File(options.TAMIFLEX.value as String), HASH_ALGO)]
+		// Also calculate checksums on all other options that import
+		// files into facts.
+		Collection<AnalysisOption> miscFileOpts = options.values()
+			.findAll { it.forCacheID && it.argInputType == InputType.MISC && it.value }
+		for (AnalysisOption opt : miscFileOpts) {
+			if (opt != options.TAMIFLEX || opt.value != "dummy") {
+				checksums += [CheckSum.checksum(new File(opt.value as String), HASH_ALGO)]
+			}
+		}
 
 		idComponents = checksums + idComponents
 

@@ -160,6 +160,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "import-partitions",
 					argName: "FILE",
 					description: "Specify the partitions.",
+					argInputType: InputType.MISC,
 					forCacheID: true,
 					forPreprocessor: true
 			),
@@ -177,6 +178,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "ENTRY_POINTS",
 					name: "entry-points",
 					argName: "FILE",
+					argInputType: InputType.MISC,
 					forCacheID: true,
 					description: "Entry points (Proguard seed file or doop method IDs)."
 			),
@@ -184,6 +186,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SPECIAL_CONTEXT_SENSITIVITY_METHODS",
 					name: "special-cs-methods",
 					argName: "FILE",
+					argInputType: InputType.MISC,
 					description: "Use a file that specifies special context sensitivity for some methods.",
 					forPreprocessor: true,	
 					forCacheID: true
@@ -192,6 +195,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "USER_DEFINED_PARTITIONS",
 					name: "user-defined-partitions",
 					argName: "FILE",
+					argInputType: InputType.MISC,
 					description: "Use a file that specifies the partitions of the analyzed program.",
 					forPreprocessor: true,
 					forCacheID: true
@@ -740,6 +744,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "import-dynamic-facts",
 					group: GROUP_HEAPDL,
 					argName: "FACTS_FILE",
+					argInputType: InputType.MISC,
 					description: "Use dynamic information from file.",
 					forPreprocessor: true
 			),
@@ -817,8 +822,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xstop-at-basic",
 					group: GROUP_FACTS,
 					description: "Run the basic analysis and exit. Possible strategies: default, classes-scc (outputs the classes in SCC), partitioning (outputs the classes in partitions)",
-					argName: "PARTITIONING_STRATEGY",
-					argInputType: InputType.MISC
+					argName: "PARTITIONING_STRATEGY"
 			),
 			new BooleanAnalysisOption(
 					id: "X_DRY_RUN",
