@@ -144,7 +144,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Analysis Configuration",
 					value: "ContextInsensitiveConfiguration",
 					cli: false,
-					forCacheID: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
@@ -222,10 +221,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "NO_SSA",
 					name: "no-ssa",
 					group: GROUP_FACTS,
-					description: "Disable the default policy of using ssa transformation on input."
+					description: "Disable the default policy of using SSA transformation on input.",
+					forCacheID: true
 			),
 			new BooleanAnalysisOption(
 					id: "SSA",
+					name: "ssa",
+					group: GROUP_FACTS,
 					value: true,
 					forCacheID: true,
 					cli: false
@@ -262,7 +264,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_FACTS,
 					description: "Generate artifacts map.",
 					value: false,
-					cli: false
+					cli: false,
+					forCacheID: true
 			),
 			new BooleanAnalysisOption(
 					id: "SIMULATE_NATIVE_RETURNS",
@@ -310,7 +313,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_FACTS,
 					description: "Decode .apk inputs to facts directory.",
 					value: false,
-					cli: false
+					cli: false,
+					forCacheID: true
 			),
 			new BooleanAnalysisOption(
 					id: "PYTHON",
@@ -527,6 +531,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "extract-more-strings",
 					group: GROUP_FACTS,
 					description: "Extract more string constants from the input code (may degrade analysis performance).",
+					forCacheID: true
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_METHOD_HANDLES",
@@ -909,13 +914,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_IGNORE_WRONG_STATICNESS",
 					name: "Xignore-wrong-staticness",
 					group: GROUP_FACTS,
-					description: "Ignore 'wrong static-ness' errors in Soot."
+					description: "Ignore 'wrong static-ness' errors in Soot.",
+					forCacheID: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_IGNORE_FACTGEN_ERRORS",
 					name: "Xignore-factgen-errors",
 					group: GROUP_FACTS,
-					description: "Continue with analysis despite fact generation errors."
+					description: "Continue with analysis despite fact generation errors.",
+					forCacheID: true
 			),
 			new AnalysisOption<List<String>>(
 					id: "ALSO_RESOLVE",
@@ -924,13 +931,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Force resolution of class(es) by Soot.",
 					value: [],
 					multipleValues: true,
-					argName: "CLASS"
+					argName: "CLASS",
+					forCacheID: true
 			),
 			new BooleanAnalysisOption(
 					id: "THOROUGH_FACT_GEN",
 					name: "thorough-fact-gen",
 					group: GROUP_FACTS,
-					description: "Attempt to resolve as many classes during fact generation (may take more time)."
+					description: "Attempt to resolve as many classes during fact generation (may take more time).",
+					forCacheID: true
 			),
 			new IntegerAnalysisOption(
 					id: "X_MONITORING_INTERVAL",
@@ -953,6 +962,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xunique-facts",
 					group: GROUP_FACTS,
 					description: "Eliminate redundancy from .facts files.",
+					forCacheID: true
 			),
 			new AnalysisOption<String>(
 					id: "X_USE_EXISTING_FACTS",
