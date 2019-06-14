@@ -99,7 +99,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		checkAnalysis(options)
 		if (options.LB3.value) {
 			checkLogicBlox(options)
-			log.info "WARNING: Using legacy Android processing."
+			log.warn "WARNING: Using legacy Android processing."
 			options.LEGACY_ANDROID_PROCESSING.value = true
 		}
 
@@ -120,10 +120,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
 			if (factOpts.size > 0) {
 				for (def opt : factOpts) {
-					if (opt == options.PLATFORM) {
-						log.info "Ignoring option --${opt.name}"
-					} else {
-						throw new RuntimeException("Cannot reuse facts with facts-modifying option --${opt.name}, use --${options.X_USE_EXISTING_FACTS.name} instead of --${options.X_START_AFTER_FACTS.name}")
+					if (opt != options.PLATFORM) {
+						log.warn "WARNING: Option --${opt.name} modifies facts."
 					}
 				}
 			}
@@ -363,7 +361,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
 				options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value) {
-			log.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
+			log.warn "WARNING: Multiple distinguish-string-buffer flags. 'All' overrides."
 		}
 
 		if (options.NO_MERGE_LIBRARY_OBJECTS.value) {
@@ -371,11 +369,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value && options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
-			log.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
+			log.warn "WARNING: Possible inconsistency: context-sensitive library analysis with merged objects."
 		}
 
 		if (options.ANALYSIS.value == "types-only" && !options.DISABLE_POINTS_TO.value) {
-			log.warn "\nWARNING, types-only analysis chosen without disabling points-to reasoning. Disabling it, since this is likely what you want.\n"
+			log.warn "WARNING: Types-only analysis chosen without disabling points-to reasoning. Disabling it, since this is likely what you want."
 			options.DISABLE_POINTS_TO.value = true
 		}
 
@@ -404,10 +402,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 									   "--${options.REFLECTION_CLASSIC.name} --${options.LIGHT_REFLECTION_GLUE.name}")
 		}
 
+		throwIfBothSet(options.REFLECTION_CLASSIC, options.DISTINGUISH_ALL_STRING_CONSTANTS)
 		if (options.REFLECTION_CLASSIC.value) {
-			if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-				throw new RuntimeException("Error: options --" + options.REFLECTION_CLASSIC.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
-			}
 			options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false
 			options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
 			options.REFLECTION.value = true
@@ -446,14 +442,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				!options.HEAPDLS.value && !options.ANDROID.value &&
 				!options.DACAPO.value && !options.DACAPO_BACH.value) {
 			if (options.DISCOVER_MAIN_METHODS.value) {
-				log.info "WARNING: No main class was found. Using --${options.DISCOVER_MAIN_METHODS.name}"
+				log.warn "WARNING: No main class was found. Using --${options.DISCOVER_MAIN_METHODS.name}"
 			} else {
 				if (options.X_START_AFTER_FACTS.value) {
 					if (!options.OPEN_PROGRAMS.value) {
 						throw new RuntimeException("Error: no main class was found and option --${options.OPEN_PROGRAMS.name} is missing.")
 					}
 				} else {
-					log.info "WARNING: No main class was found. This will trigger open-program analysis!"
+					log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
 					if (!options.OPEN_PROGRAMS.value) {
 						options.OPEN_PROGRAMS.value = "concrete-types"
 					}
@@ -462,13 +458,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.X_DRY_RUN.value && options.CACHE.value) {
-			log.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
+			log.warn "WARNING: Doing a dry run of the analysis while using cached facts might be problematic!"
 		}
 
-		if (options.APP_REGEX.value &&
-				options.AUTO_APP_REGEX_MODE.value) {
-			throw new RuntimeException("Error: options " + options.APP_REGEX.name + " and " + options.AUTO_APP_REGEX_MODE.name + " are mutually exclusive.\n")
-		}
+		throwIfBothSet(options.APP_REGEX, options.AUTO_APP_REGEX_MODE)
 
 		if (options.X_SERVER_LOGIC.value) {
 			// Turn on optimization outputs.
@@ -489,7 +482,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.REFLECTION_DYNAMIC_PROXIES.value && !options.REFLECTION.value) {
-			String message = "\nWARNING: Dynamic proxy support without standard reflection support, using custom 'opt-reflective' reflection rules."
+			String message = "WARNING: Dynamic proxy support without standard reflection support, using custom 'opt-reflective' reflection rules."
 			if (!options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value &&
 					!options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
 				message += "\nWARNING: 'opt-reflective' may not work optimally, one of these flags is suggested: --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + ", --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name
@@ -505,13 +498,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 					options.REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS.value ||
 					options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
 					options.REFLECTION_REFINED_OBJECTS.value) {
-				log.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
+				log.warn "WARNING: Probable inconsistent set of Java reflection flags!"
 			} else if (options.LIGHT_REFLECTION_GLUE.value) {
-				log.warn "\nWARNING: Handling of simple Java reflection patterns only!\n"
+				log.warn "WARNING: Handling of simple Java reflection patterns only!"
 			} else if (options.TAMIFLEX.value) {
-				log.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
+				log.warn "WARNING: Handling of Java reflection via Tamiflex logic!"
 			} else {
-				log.warn "\nWARNING: Handling of Java reflection is disabled!\n"
+				log.warn "WARNING: Handling of Java reflection is disabled!"
 			}
 		} else if (options.REFLECTION_HIGH_SOUNDNESS_MODE.value) {
 			options.EXTRACT_MORE_STRINGS.value = true
