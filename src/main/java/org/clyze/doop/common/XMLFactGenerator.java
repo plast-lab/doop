@@ -79,7 +79,7 @@ public class XMLFactGenerator extends DefaultHandler {
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             String msg = ex.getMessage();
             System.err.println("Error parsing " + xmlFile + ": " + ex.getMessage());
-            ex.printStackTrace();
+            // ex.printStackTrace();
         }
     }
 

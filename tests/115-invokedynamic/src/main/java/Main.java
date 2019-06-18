@@ -16,6 +16,7 @@ public class Main {
             test6();
             test7();
             testInvokedynamic(new A());
+            (new A()).test();
         } catch (Throwable t) {
             t.printStackTrace();
         }
@@ -48,7 +49,7 @@ public class Main {
         System.out.println("filler for Android dx conversion");
     }
 
-    // Test for static method handles and <methodType(Class, Class)>.
+    // Test for instance method handles and <methodType(Class, Class)>.
     public static void test3() throws Throwable {
         System.out.println("== test3 ==");
         MethodHandles.Lookup lookup = MethodHandles.lookup();

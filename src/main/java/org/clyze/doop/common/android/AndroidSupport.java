@@ -135,7 +135,7 @@ public abstract class AndroidSupport {
         System.out.println("possible layout controls: " + appUserControls.size());
     }
 
-    public void writeComponents(JavaFactWriter writer, Parameters parameters) {
+    public void writeComponents(JavaFactWriter writer) {
         for (String appInput : parameters.getInputs()) {
             AppResources processMan = computedResources.get(appInput);
             if (processMan == null) {
@@ -212,7 +212,7 @@ public abstract class AndroidSupport {
      * @param apk                        the APK
      * @param decodeDir                  the target directory to use as root
      */
-    private static void decodeApk(File apk, String decodeDir) {
+    private void decodeApk(File apk, String decodeDir) {
         if (new File(decodeDir).mkdirs())
             System.out.println("Created " + decodeDir);
 
@@ -230,35 +230,38 @@ public abstract class AndroidSupport {
         }
 
         System.out.println("Decoding " + apkPath + " using apktool...");
-        String[] cmd;
         // First, check if the environment overrides the bundled apktool.
         final String APKTOOL_HOME_ENV_VAR = "APKTOOL_HOME";
+        // Prefix for output lines of apktool.
+        final String TAG = "APKTOOL";
         String apktoolHome = System.getenv(APKTOOL_HOME_ENV_VAR);
-        if (apktoolHome != null) {
-            System.err.println("Trying to use apktool in : " + apktoolHome);
-            cmd = new String[cmdArgs.length + 1];
-            cmd[0] = apktoolHome + File.separator + "apktool";
-            System.arraycopy(cmdArgs, 0, cmd, 1, cmdArgs.length);
-        } else {
-            try {
-                // Try to read the bundled apktool JAR. Since this is a standalone
-                // archive that duplicates classes already found in the classpath
-                // (possibly with different versions), it should then run isolated
-                // via 'java -jar'.
-                String apktoolJar = ClassPathHelper.getClasspathJar("apktool");
-                cmd = new String[cmdArgs.length + 3];
-                cmd[0] = "java";
-                cmd[1] = "-jar";
-                cmd[2] = apktoolJar;
-                System.arraycopy(cmdArgs, 0, cmd, 3, cmdArgs.length);
-            } catch (Exception ex) {
-                System.err.println("Error: could not find apktool, please set " + APKTOOL_HOME_ENV_VAR);
-                return;
-            }
-        }
-        System.err.println("Command: " + String.join(" ", cmd));
         try {
-            JHelper.runWithOutput(cmd, "APKTOOL");
+            if (apktoolHome != null) {
+                System.err.println("Trying to use apktool in: " + apktoolHome);
+                String[] cmd = new String[cmdArgs.length + 1];
+                cmd[0] = apktoolHome + File.separator + "apktool";
+                System.arraycopy(cmdArgs, 0, cmd, 1, cmdArgs.length);
+                JHelper.runWithOutput(cmd, TAG);
+            } else {
+                String apktoolJar;
+                try {
+                    // Try to read the bundled apktool JAR. Since this is a standalone
+                    // archive that duplicates classes already found in the classpath
+                    // (possibly with different versions), it should then run isolated
+                    // via 'java -jar'.
+		    if (parameters.classpath == null) {
+			System.err.println("Trying to use bundled apktool...");
+			apktoolJar = ClassPathHelper.getClasspathJar("apktool");
+		    } else {
+			System.err.println("Trying to use classpath apktool...");
+			apktoolJar = ClassPathHelper.getClasspathJar("apktool", parameters.classpath);
+		    }
+                } catch (Exception ex) {
+                    System.err.println("Error: could not find apktool, please set " + APKTOOL_HOME_ENV_VAR);
+                    return;
+                }
+                JHelper.runJar(new String[] {}, apktoolJar, cmdArgs, TAG, true);
+            }
         } catch (IOException ex) {
             System.err.println("Error: could not run apktool.");
             ex.printStackTrace();

@@ -83,10 +83,11 @@ InstanceStore(?baseObj, ?field, ?from) :-
 .decl InterproceduralAssign(?to:Var, ?from:Var)
 .output InterproceduralAssign(IO="file",filename="INTERPROCEDURAL_ASSIGN.csv",delimiter="\t")
 
-InterproceduralAssign(?to, ?from) :-
-    OptArgAssign(_, ?to, _, ?from);
-    OptReturnAssign(_, ?to, _, ?from).
+InterproceduralAssign(?to, ?from) :- OptArgAssign(_, ?to, _, ?from).
 
+#ifndef INFORMATION_FLOW
+InterproceduralAssign(?to, ?from) :- OptReturnAssign(_, ?to, _, ?from).
+#endif // INFORMATION_FLOW
 
 .decl LocalAssign(?to:Var, ?from:Var)
 .output LocalAssign(IO="file",filename="LOCAL_ASSIGN.csv",delimiter="\t")
