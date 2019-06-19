@@ -3,14 +3,13 @@ package org.clyze.doop
 import java.nio.file.Files
 import org.clyze.analysis.Analysis
 import org.clyze.doop.core.Doop
-import spock.lang.Specification
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
 
 /**
  * Test Android functionality.
  */
-class AndroidTests extends Specification {
+class AndroidTests extends DoopSpec {
 
 	static List defaultArgs = [
 		"--timeout", "30",

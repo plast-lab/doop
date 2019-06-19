@@ -2,6 +2,7 @@ package org.clyze.doop
 
 import groovy.cli.commons.CliBuilder
 import groovy.cli.commons.OptionAccessor
+import groovy.util.logging.Log4j
 import org.apache.commons.cli.GnuParser
 import org.apache.commons.cli.HelpFormatter
 import org.apache.commons.cli.Option
@@ -18,6 +19,7 @@ import org.clyze.doop.core.DoopAnalysisFamily
 /**
  * A factory for creating Analysis objects from the command line.
  */
+@Log4j
 class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
 	static final String LOGLEVEL = 'Set the log level: debug, info or error (default: info).'
@@ -49,8 +51,14 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 		// Get the name of the analysis (short option: a)
 		options.ANALYSIS.value = cli.a
 		// Get the inputFiles of the analysis (short option: i)
+		if (options.X_START_AFTER_FACTS.value && cli.is) {
+			log.warn "WARNING: Ignoring inputs (--${options.X_START_AFTER_FACTS.name})."
+		}
 		options.INPUTS.value = (!options.X_START_AFTER_FACTS.value && cli.is) ? cli.is : []
 		// Get the libraryFiles of the analysis (short option: l)
+		if (options.X_START_AFTER_FACTS.value && cli.ls) {
+			log.warn "WARNING: ignoring libraries (--${options.X_START_AFTER_FACTS.name})."
+		}
 		options.LIBRARIES.value = (!options.X_START_AFTER_FACTS.value && cli.ls) ? cli.ls : []
 		// Get the heapFiles of the analysis (long option: heapdl)
 

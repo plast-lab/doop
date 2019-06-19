@@ -1,15 +1,12 @@
 #include "main-declarations.dl"
 
 .comp AbstractContextSensitivity<Configuration> {
-// Do not indent: this breaks some cpp versions.
-#ifdef ANDROID
-#include "android-declarations.dl"
-#endif
 #include "class-initialization-declarations.dl"
 #include "exceptions-declarations.dl"
 #include "implicit-reachable-declarations.dl"
 #include "threads-declarations.dl"
 #ifdef ANDROID
+#include "android-declarations.dl"
 #include "android.dl"
 #endif // ANDROID
 

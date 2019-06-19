@@ -2,7 +2,9 @@ package org.clyze.doop.common;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
@@ -21,7 +23,7 @@ public class Parameters {
     public boolean _scanNativeCode = false;
     public boolean _android = false;
     public Integer _cores = null;
-    public String _entryPoints = null;
+    public String _keepSpec = null;
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
@@ -32,11 +34,19 @@ public class Parameters {
     public boolean _reportPhantoms = true;
     public boolean _dex = false;
     public boolean _legacyAndroidProcessing = false;
+    public Set<String> classpath = null;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
     public Parameters() {
         setAppRegex("**");
+
+        String cp = System.getenv("DOOP_EXT_CLASSPATH");
+        if (cp != null) {
+            classpath = new HashSet<>();
+            for (String j : cp.split(":"))
+                classpath.add(j);
+        }
     }
 
     public void initFromArgs(String[] args) throws DoopErrorCodeException {
@@ -185,9 +195,9 @@ public class Parameters {
             i = shift(args, i);
             _extraSensitiveControls = args[i];
             break;
-        case "--entry-points":
+        case "--keep-spec":
             i = shift(args, i);
-            _entryPoints = args[i];
+            _keepSpec = args[i];
             break;
         case "--no-facts":
             _noFacts = true;

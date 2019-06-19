@@ -110,8 +110,12 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
   AndroidEntryPoint(?meth),
   isImmutableContext(?ctx).
 
-// Also accept info from keep annotations (e.g., produced via -printseeds in ProGuard).
-// Forcing the reachability and mocking of all "keep" methods.
+/*
+ * The following rules handle the 'keep' specification, by
+ * forcing reachability and mocking of all "keep" methods.
+ */
+
+// 'keep'= make method reachable.
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   KeepMethod(?meth),
   isImmutableContext(?ctx).
@@ -888,8 +892,10 @@ UnobfuscatedApplicationClass(?class) :-
    match("dagger.*", ?class);
    match("de.*", ?class);
    match("ezvcard.*", ?class);
+   match("dk.*", ?class);
    match("fi.*", ?class);
    match("org.*", ?class);
+   match("in.*", ?class);
    match("io.*", ?class);
    match("it.*", ?class);
    match("me.*", ?class);
@@ -903,6 +909,7 @@ UnobfuscatedApplicationClass(?class) :-
    match("okio.*", ?class);
    match("retrofit.*", ?class);
    match("retrofit2.*", ?class);
+   match("secondary.*", ?class);
    match("twitter4j.*", ?class)).
 UnobfuscatedApplicationClass(?class) :-
   ApplicationClass(?class),

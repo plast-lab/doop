@@ -857,8 +857,6 @@ StringFactoryHeap(?heap) :-
   HeapAllocation_Type(?heap, ?heaptype),
   StringFactoryType(?heaptype).
 
-.decl StringFactoryVar(?var:Var)
-
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
 #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
 #ifdef DISTINGUISH_STRING_BUFFERS_PER_PACKAGE

@@ -2,14 +2,13 @@ package org.clyze.doop
 
 import org.clyze.analysis.Analysis
 import org.clyze.doop.core.Doop
-import spock.lang.Specification
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
 
 /**
  * Test information flow (P/Taint).
  */
-class InformationFlowTest extends Specification {
+class InformationFlowTest extends DoopSpec {
 	@Unroll
 	def "Information flow (P/Taint) test"() {
 		when:

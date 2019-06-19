@@ -9,10 +9,9 @@ import static org.clyze.doop.common.PredicateFile.*;
 import org.clyze.utils.Helper;
 
 /**
- * This class processes entry points given to Doop (supporting
- * ProGuard seeds syntax).
+ * This class processes the keep specification given to Doop.
  */
-public class EntryPointsProcessor {
+public class KeepSpecProcessor {
     public static void processDir(File factsDir, String file) {
         try (Database db = new Database(factsDir)) {
             processDb(db, file);
@@ -25,31 +24,33 @@ public class EntryPointsProcessor {
 
     public static void processDb(Database db, String file) throws IOException {
         if (file != null) {
-            System.out.println("Reading entry points from: " + file);
+            System.out.println("Reading keep specification from: " + file);
             try (Stream<String> stream = Files.lines(Paths.get(file))) {
                 stream.forEach(s -> processFileLine(db, s));
             }
-        }
+        } else
+            System.err.println("WARNING: cannot read keep specification, file is null");
     }
 
     private static void processFileLine(Database db, String line) {
-        // The entry points file may contain method doopIds or proguard seeds.
-        if (line.startsWith("<"))
-            writeKeepMethodDoopId(db, line);
-        else if (line.contains("(")) {
-            // The proguard seeds file notation does not use doopIds for constructors.
-            // e.g. in a seeds file we have:
-            //   package.class$innerClass: class$innerClass(args...)
-            // instead of:
-            //   package.class$innerClass: void <init>(args...)
-            String doopId = Helper.readMethodDoopId(line);
-            writeKeepMethodDoopId(db, doopId);
-        } else if (!line.contains(":"))
-            writeKeepClass(db, line);
-    }
+        String[] fields = line.split("\t");
+        if (fields.length != 2) {
+            System.err.println("WARNING: malformed line (should be two columns, tab-separated): " + line);
+        }
 
-    private static void writeKeepMethodDoopId(Database db, String doopId) {
-        db.add(KEEP_METHOD, doopId);
+        switch (fields[0]) {
+        case "KEEP":
+            db.add(KEEP_METHOD, fields[1]);
+            break;
+        case "KEEP_CLASS_MEMBERS":
+            db.add(KEEP_CLASS_MEMBERS, fields[1]);
+            break;
+        case "KEEP_CLASSES_WITH_MEMBERS":
+            db.add(KEEP_CLASSES_WITH_MEMBERS, fields[1]);
+            break;
+        default:
+            System.err.println("WARNING: unsupported spec line: " + line);
+        }
     }
 
     private static void writeKeepClass(Database db, String className) {

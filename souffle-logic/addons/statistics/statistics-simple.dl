@@ -92,6 +92,16 @@ Stats_Simple_NonReachableApplicationConcreteMethod(?method) :-
   Stats_Simple_ApplicationConcreteMethod(?method),
   !Stats_Simple_InsensReachableApplicationMethod(?method).
 
+#ifdef ANDROID
+// Extra metric to only show non-reachable concrete methods in the
+// main package of an Android app.
+Stats_Simple_NonReachableAndroidApplicationConcreteMethod(?method) :-
+  Stats_Simple_NonReachableApplicationConcreteMethod(?method),
+  Method_DeclaringType(?method, ?class),
+  mainAnalysis.ApplicationPackageRegex(?regex),
+  match(?regex, ?class).
+#endif // ANDROID
+
 /***************************************************
  * Virtual method invocations
  ***************************************************/
@@ -251,6 +261,8 @@ NewMetricMacro("26.6", "Android callback methods", CallbackMethod(_)).
 NewMetricMacro("26.7", "Android typed fragments", mainAnalysis.XMLFragment_Class(_, _, _)).
 NewMetricMacro("26.8", "Methods considered obfuscated", mainAnalysis.ObfuscatedApplicationClass(_)).
 NewMetricMacro("26.9", "Methods considered unobfuscated", mainAnalysis.UnobfuscatedApplicationClass(_)).
+NewMetricMacro("26.10", "Obfuscation (boolean)", mainAnalysis.ObfuscationOn()).
+NewMetricMacro("26.11", "non-reachable app concrete methods (in app package)", Stats_Simple_NonReachableAndroidApplicationConcreteMethod(_)).
 #endif // ANDROID
 
 /***************************************************
@@ -352,16 +364,22 @@ NewMetricMacro("61.4", "Mock Objects for Formals", MockObjFromFormal(_)).
 #endif // OPEN_PROGRAMS
 
 #ifdef SPECIAL_CONTEXT_SENSITIVITY_METHODS
-Stats_Simple_TwoObjectMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
-   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), Var_DeclaringMethod(?var, ?method), mainAnalysis.configuration.TwoObjectMethod(?method).
-
-Stats_Simple_ContextInsensitiveMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
-   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), Var_DeclaringMethod(?var, ?method), mainAnalysis.configuration.ContextInsensitiveMethod(?method).
 
 NewMetricMacro("101.0", "context-insensitive methods", mainAnalysis.configuration.ContextInsensitiveMethod(_)).
 NewMetricMacro("102.0", "2-object-sensitive methods", mainAnalysis.configuration.TwoObjectMethod(_)).
+
+#ifndef DISABLE_POINTS_TO
+
+Stats_Simple_TwoObjectMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
+   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), Var_DeclaringMethod(?var, ?method), mainAnalysis.configuration.TwoObjectMethod(?method).
 NewMetricMacro("103.0", "context-insensitive methods total VPT", Stats_Simple_ContextInsensitiveMethodsVPT(_, _, _, _)).
+
+Stats_Simple_ContextInsensitiveMethodsVPT(?hctx, ?value, ?ctx, ?var) :-
+   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var), Var_DeclaringMethod(?var, ?method), mainAnalysis.configuration.ContextInsensitiveMethod(?method).
 NewMetricMacro("104.0", "2-object-sensitive methods total VPT", Stats_Simple_TwoObjectMethodsVPT(_, _, _, _)).
+
+#endif // DISABLE_POINTS_TO
+
 #endif // SPECIAL_CONTEXT_SENSITIVITY_METHODS
 
 /***************************************************

@@ -4,6 +4,7 @@ import groovy.util.logging.Log4j
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.*
+import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.input.PlatformManager
@@ -98,7 +99,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		checkAnalysis(options)
 		if (options.LB3.value) {
 			checkLogicBlox(options)
-			log.info "WARNING: Using legacy Android processing."
+			log.warn "WARNING: Using legacy Android processing."
 			options.LEGACY_ANDROID_PROCESSING.value = true
 		}
 
@@ -108,7 +109,25 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def commandsEnv = initExternalCommandsEnvironment(options)
 		createOutputDirectory(options)
 
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_STOP_AT_FACTS)
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_USE_EXISTING_FACTS)
+		throwIfBothSet(options.X_USE_EXISTING_FACTS, options.X_STOP_AT_FACTS)
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.CACHE)
+
 		if (options.X_START_AFTER_FACTS.value) {
+			// Option "start-after-facts" is not compatible with options
+			// generating facts, the user must use "use-existing-facts" instead.
+			def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
+			for (def opt : factOpts) {
+				if (opt != options.PLATFORM) {
+					if (options.X_SYMLINK_CACHED_FACTS.value) {
+						throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}")
+					} else {
+						log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts will be extended (since option --${options.X_START_AFTER_FACTS.name} is on)."
+					}
+				}
+			}
+
 			def cacheDir = new File(options.X_START_AFTER_FACTS.value as String)
 			FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
 			options.CACHE_DIR.value = cacheDir
@@ -116,6 +135,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			def cacheId = generateCacheID(options)
 			options.CACHE_DIR.value = new File(Doop.doopCache, cacheId)
 			checkAppGlob(options)
+		}
+
+		// Enable APK decoding when not reusing facts.
+		if (!options.X_START_AFTER_FACTS.value && !options.X_USE_EXISTING_FACTS.value) {
+			options.DECODE_APK.value = true
 		}
 
 		log.debug "Created new analysis"
@@ -138,6 +162,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 				}
 			}
+		}
+	}
+
+	// Throw an error when two incompatible options are set.
+	static void throwIfBothSet(AnalysisOption opt1, AnalysisOption opt2) {
+		if (opt1?.value && opt2?.value) {
+			throw new DoopErrorCodeException(28, new RuntimeException("Error: options --${opt1.name} and --${opt2.name} are mutually exclusive."))
 		}
 	}
 
@@ -190,14 +221,21 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 	protected String generateCacheID(Map<String, AnalysisOption> options) {
 		Collection<String> idComponents = options.values()
-				.findAll { it.forCacheID }
-				.collect { it as String }
+			.findAll { it.forCacheID }
+			.collect { it as String }
 
 		Collection<String> checksums = DoopAnalysisFamily.getAllInputs(options)
 			.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
 
-		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy")
-			checksums += [CheckSum.checksum(new File(options.TAMIFLEX.value as String), HASH_ALGO)]
+		// Also calculate checksums on all other options that import
+		// files into facts.
+		Collection<AnalysisOption> miscFileOpts = options.values()
+			.findAll { it.forCacheID && it.argInputType == InputType.MISC && it.value }
+		for (AnalysisOption opt : miscFileOpts) {
+			if (opt != options.TAMIFLEX || opt.value != "dummy") {
+				checksums += [CheckSum.checksum(new File(opt.value as String), HASH_ALGO)]
+			}
+		}
 
 		idComponents = checksums + idComponents
 
@@ -293,9 +331,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (!options.PYTHON.value) {
 			if (options.MAIN_CLASS.value) {
-				if (options.X_START_AFTER_FACTS.value && options.X_SYMLINK_CACHED_FACTS.value) {
-					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.X_START_AFTER_FACTS.name} when using symbolic links")
-				} else if (options.IGNORE_MAIN_METHOD.value) {
+				if (options.IGNORE_MAIN_METHOD.value) {
 					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
 				} else {
 					log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
@@ -322,9 +358,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
-		if (options.ENTRY_POINTS.value && options.X_SYMLINK_CACHED_FACTS.value) {
-			throw new RuntimeException("Options ${options.ENTRY_POINTS.value} and ${options.X_SYMLINK_CACHED_FACTS.value} are not compatible")
-		}
+		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_CACHED_FACTS)
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
 			def tamiflexArg = options.TAMIFLEX.value as String
@@ -334,7 +368,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
 				options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value) {
-			log.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
+			log.warn "WARNING: Multiple distinguish-string-buffer flags. 'All' overrides."
 		}
 
 		if (options.NO_MERGE_LIBRARY_OBJECTS.value) {
@@ -342,27 +376,22 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value && options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
-			log.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
+			log.warn "WARNING: Possible inconsistency: context-sensitive library analysis with merged objects."
 		}
 
 		if (options.ANALYSIS.value == "types-only" && !options.DISABLE_POINTS_TO.value) {
-			log.warn "\nWARNING, types-only analysis chosen without disabling points-to reasoning. Disabling it, since this is likely what you want.\n"
+			log.warn "WARNING: Types-only analysis chosen without disabling points-to reasoning. Disabling it, since this is likely what you want."
 			options.DISABLE_POINTS_TO.value = true
 		}
-        
-		if (options.SOUFFLE_PROVENANCE.value &&
-				options.SOUFFLE_LIVE_PROFILE.value) {
-			throw new RuntimeException("Error: options --" + options.SOUFFLE_PROVENANCE.name + " and --" + options.SOUFFLE_LIVE_PROFILE.name + " are mutually exclusive.\n")
-		}
 
-		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
+		throwIfBothSet(options.DISABLE_POINTS_TO, options.INFORMATION_FLOW)
+		throwIfBothSet(options.SOUFFLE_PROVENANCE, options.SOUFFLE_LIVE_PROFILE)
+
+		if (options.SOUFFLE_INCREMENTAL_OUTPUT.value){
 			options.SOUFFLE_USE_FUNCTORS.value = true
 		}
 
-		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value &&
-				options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-			throw new RuntimeException("Error: options --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
-		}
+		throwIfBothSet(options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS, options.DISTINGUISH_ALL_STRING_CONSTANTS)
 
 		if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
 			options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
@@ -380,10 +409,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 									   "--${options.REFLECTION_CLASSIC.name} --${options.LIGHT_REFLECTION_GLUE.name}")
 		}
 
+		throwIfBothSet(options.REFLECTION_CLASSIC, options.DISTINGUISH_ALL_STRING_CONSTANTS)
 		if (options.REFLECTION_CLASSIC.value) {
-			if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-				throw new RuntimeException("Error: options --" + options.REFLECTION_CLASSIC.name + " and --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
-			}
 			options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false
 			options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
 			options.REFLECTION.value = true
@@ -422,14 +449,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				!options.HEAPDLS.value && !options.ANDROID.value &&
 				!options.DACAPO.value && !options.DACAPO_BACH.value) {
 			if (options.DISCOVER_MAIN_METHODS.value) {
-				log.info "WARNING: No main class was found. Using --${options.DISCOVER_MAIN_METHODS.name}"
+				log.warn "WARNING: No main class was found. Using --${options.DISCOVER_MAIN_METHODS.name}"
 			} else {
 				if (options.X_START_AFTER_FACTS.value) {
 					if (!options.OPEN_PROGRAMS.value) {
 						throw new RuntimeException("Error: no main class was found and option --${options.OPEN_PROGRAMS.name} is missing.")
 					}
 				} else {
-					log.info "WARNING: No main class was found. This will trigger open-program analysis!"
+					log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
 					if (!options.OPEN_PROGRAMS.value) {
 						options.OPEN_PROGRAMS.value = "concrete-types"
 					}
@@ -438,13 +465,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.X_DRY_RUN.value && options.CACHE.value) {
-			log.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
+			log.warn "WARNING: Doing a dry run of the analysis while using cached facts might be problematic!"
 		}
 
-		if (options.APP_REGEX.value &&
-				options.AUTO_APP_REGEX_MODE.value) {
-			throw new RuntimeException("Error: options " + options.APP_REGEX.name + " and " + options.AUTO_APP_REGEX_MODE.name + " are mutually exclusive.\n")
-		}
+		throwIfBothSet(options.APP_REGEX, options.AUTO_APP_REGEX_MODE)
 
 		if (options.X_SERVER_LOGIC.value) {
 			// Turn on optimization outputs.
@@ -465,7 +489,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.REFLECTION_DYNAMIC_PROXIES.value && !options.REFLECTION.value) {
-			String message = "\nWARNING: Dynamic proxy support without standard reflection support, using custom 'opt-reflective' reflection rules."
+			String message = "WARNING: Dynamic proxy support without standard reflection support, using custom 'opt-reflective' reflection rules."
+			options.LIGHT_REFLECTION_GLUE.value = true
 			if (!options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value &&
 					!options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
 				message += "\nWARNING: 'opt-reflective' may not work optimally, one of these flags is suggested: --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name + ", --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name
@@ -481,13 +506,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 					options.REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS.value ||
 					options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
 					options.REFLECTION_REFINED_OBJECTS.value) {
-				log.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
+				log.warn "WARNING: Probable inconsistent set of Java reflection flags!"
 			} else if (options.LIGHT_REFLECTION_GLUE.value) {
-				log.warn "\nWARNING: Handling of simple Java reflection patterns only!\n"
+				log.warn "WARNING: Handling of simple Java reflection patterns only!"
 			} else if (options.TAMIFLEX.value) {
-				log.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
+				log.warn "WARNING: Handling of Java reflection via Tamiflex logic!"
 			} else {
-				log.warn "\nWARNING: Handling of Java reflection is disabled!\n"
+				log.warn "WARNING: Handling of Java reflection is disabled!"
 			}
 		} else if (options.REFLECTION_HIGH_SOUNDNESS_MODE.value) {
 			options.EXTRACT_MORE_STRINGS.value = true

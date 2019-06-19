@@ -9,7 +9,7 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
 import org.clyze.doop.common.FieldInfo
 import org.clyze.doop.common.DoopErrorCodeException
-import org.clyze.doop.common.EntryPointsProcessor
+import org.clyze.doop.common.KeepSpecProcessor
 import org.clyze.doop.common.FrontEnd
 import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
@@ -144,6 +144,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
 
         factsDir.mkdirs()
+        log.debug "Copying: ${fromDir} -> ${factsDir}"
         FileOps.copyDirContents(fromDir, factsDir)
     }
 
@@ -163,9 +164,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     protected void reuseFacts(File fromDir) {
         linkOrCopyFacts(fromDir)
-        def entryPoints = options.ENTRY_POINTS.value as String
-        if (entryPoints) {
-            EntryPointsProcessor.processDir(factsDir, entryPoints)
+        def keepSpec = options.KEEP_SPEC.value as String
+        if (keepSpec) {
+            KeepSpecProcessor.processDir(factsDir, keepSpec)
         }
         writeMainClassFacts()
     }
@@ -359,8 +360,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
-        if (options.ENTRY_POINTS.value) {
-            params += ["--entry-points", options.ENTRY_POINTS.value.toString()]
+        if (options.KEEP_SPEC.value) {
+            params += ["--keep-spec", options.KEEP_SPEC.value.toString()]
         }
 
         if (options.EXTRACT_MORE_STRINGS.value) {

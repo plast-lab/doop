@@ -51,7 +51,7 @@ public class DexInvoker {
                 Set<String> tmpDirs = new HashSet<>();
                 android.processInputs(tmpDirs);
                 System.out.println("Writing components...");
-                android.writeComponents(writer, dexParams);
+                android.writeComponents(writer);
                 android.printCollectedComponents();
                 JHelper.cleanUp(tmpDirs);
             } catch (Exception ex) {

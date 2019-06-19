@@ -242,7 +242,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				log.info "Adding extra logic file ${extraLogicPath}"
 				cpp.includeAtEnd("${analysis}", extraLogicPath, commonMacros)
 			} else {
-				log.warn "Extra logic file does not exist: ${extraLogic}"
+				throw new RuntimeException("Extra logic file does not exist: ${extraLogic}")
 			}
 		}
 	}

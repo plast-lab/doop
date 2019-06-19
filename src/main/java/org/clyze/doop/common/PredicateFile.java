@@ -70,6 +70,8 @@ public enum PredicateFile
     INTERFACE_TYPE("InterfaceType"),
     KEEP_CLASS("KeepClass"),
     KEEP_METHOD("KeepMethod"),
+    KEEP_CLASS_MEMBERS("KeepClassMembers"),
+    KEEP_CLASSES_WITH_MEMBERS("KeepClassesWithMembers"),
     LAYOUT_CONTROL("LayoutControl"),
     LOAD_ARRAY_INDEX("LoadArrayIndex"),
     LOAD_INST_FIELD("LoadInstanceField"),
