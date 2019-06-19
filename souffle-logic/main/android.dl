@@ -965,6 +965,13 @@ KeepClass(?class) :-
   ObfuscationOn(),
   UnobfuscatedApplicationClass(?class).
 
+// 'keep class members' = make all class reachable if it has a reachable method.
+ForcedReachableAndroidClass(?ctx, ?type) :-
+  KeepClassMembers(?method),
+  Reachable(?method),
+  Method_DeclaringType(?method, ?type),
+  isImmutableContext(?ctx).
+
 // .decl MethodFullJVMDescriptor(?method:Method, ?jvmFullName:symbol)
 
 // .output MethodFullJVMDescriptor

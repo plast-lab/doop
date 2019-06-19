@@ -124,7 +124,7 @@ public abstract class JavaFactWriter {
         }
 
         try {
-            EntryPointsProcessor.processDb(_db, params._entryPoints);
+            KeepSpecProcessor.processDb(_db, params._keepSpec);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
