@@ -123,7 +123,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 					if (options.X_SYMLINK_CACHED_FACTS.value) {
 						throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}")
 					} else {
-						log.warn "WARNING: Option --${opt.name} modifies facts."
+						log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts will be extended (since option --${options.X_START_AFTER_FACTS.name} is on)."
 					}
 				}
 			}
@@ -167,7 +167,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 	// Throw an error when two incompatible options are set.
 	static void throwIfBothSet(AnalysisOption opt1, AnalysisOption opt2) {
-		if (opt1.value && opt2.value) {
+		if (opt1?.value && opt2?.value) {
 			throw new DoopErrorCodeException(28, new RuntimeException("Error: options --${opt1.name} and --${opt2.name} are mutually exclusive."))
 		}
 	}
