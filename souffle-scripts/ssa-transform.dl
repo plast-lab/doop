@@ -1448,9 +1448,9 @@ SSA_TypeOrd(?var, ?minTypeOrd) :-
     ?minTypeOrd = min ord(?t) : NonGuardCompatibleTypes(?var, ?t).
     
 SSA_Type(?var, ?minType) :-
-    isType(?minType),
-    ?minTypeOrd = ord(?minType),
-    SSA_TypeOrd(?var, ?minTypeOrd).
+    NonGuardCompatibleTypes(?var, ?minType),
+    SSA_TypeOrd(?var, ?minTypeOrd),
+    ?minTypeOrd = ord(?minType).
 
 SSA_Type(?var, "int") :-
     TypeCompatibleWithAllConstraints(?var, _),
