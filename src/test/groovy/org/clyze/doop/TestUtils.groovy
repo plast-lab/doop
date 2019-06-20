@@ -2,6 +2,7 @@ package org.clyze.doop
 
 import java.nio.file.Files
 import org.clyze.analysis.Analysis
+import org.clyze.doop.core.DoopAnalysis
 import org.clyze.doop.utils.SouffleScript
 import static org.clyze.utils.Helper.forEachLineIn
 
@@ -290,7 +291,10 @@ class TestUtils {
 	static void noSanityErrors(Analysis analysis, boolean checkPointsTo) {
 		log("noSanityErrors")
 		relationIsEmpty(analysis, "VarHasNoType")
-		relationIsEmpty(analysis, "TypeIsNotConcreteType")
+		// Omit check (Doop has no thorough fact generation on Java 9+).
+		if (!DoopAnalysis.java9Plus()) {
+			relationIsEmpty(analysis, "TypeIsNotConcreteType")
+		}
 		relationIsEmpty(analysis, "InstructionIsNotConcreteInstruction")
 		relationIsEmpty(analysis, "ValueHasNoType")
 		relationIsEmpty(analysis, "ValueHasNoDeclaringType")

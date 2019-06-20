@@ -455,7 +455,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
 
         if (options.THOROUGH_FACT_GEN.value) {
-            params += ["--failOnMissingClasses"]
+            if (java9Plus()) {
+                log.warn "WARNING: Option not supported in this Java version and will be ignored: --${options.THOROUGH_FACT_GEN.name}"
+            } else {
+                params += ["--failOnMissingClasses"]
+            }
         }
 
         if (options.X_LOW_MEM.value) {
@@ -484,7 +488,18 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 ClassLoader loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
                 try {
                     redo = false
-                    Helper.execJavaNoCatch(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
+                    String SOOT_MAIN = "org.clyze.doop.soot.Main"
+                    def args = params.toArray(new String[params.size()])
+                    if (!java9Plus()) {
+                        Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
+                    } else {
+                        log.warn "WARNING: Calling Soot as external process, this may use more memory."
+                        String classpath = System.getenv("DOOP_EXT_CLASSPATH")
+                        if (classpath == null) {
+                            throw new RuntimeException("Missing classpath environment variable DOOP_EXT_CLASSPATH")
+                        }
+                        JHelper.runClass(classpath.split(":"), SOOT_MAIN, args, "SOOT_FACT_GEN", true);
+                    }
                 } catch (Throwable t) {
                     if (isFatal(loader, t)) {
                         throw new RuntimeException("Fatal error, see log for details.")
@@ -752,5 +767,15 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 			fields.put(declType, info)
 		})
 		fields.each { declType, fs -> cha.registerDefinedClassFields(declType, fs) }
+    }
+
+    /**
+     * Checks if the Java runtime is 9+.
+     *
+     * @return true if the runtime supports Java 9+
+     */
+    public static boolean java9Plus() {
+	int javaVersion = System.getProperty("java.specification.version") as int
+	return (javaVersion > 8)
     }
 }
