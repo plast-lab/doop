@@ -775,7 +775,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      * @return true if the runtime supports Java 9+
      */
     public static boolean java9Plus() {
-	int javaVersion = System.getProperty("java.specification.version") as int
-	return (javaVersion > 8)
+        try {
+            Class c = Class.forName("java.lang.Runtime.Version")
+            return true
+        } catch (ClassNotFoundException ex) {
+            return false
+        }
     }
 }
