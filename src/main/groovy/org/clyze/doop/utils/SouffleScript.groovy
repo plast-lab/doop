@@ -108,9 +108,13 @@ class SouffleScript {
 			log.info "Analysis compilation time (sec): $compilationTime"
 			cacheCompiledBinary(executable, cacheFile, checksum, cacheDir)
 		} else {
-			log.info "Using cached analysis executable $checksum from $cacheDir"
+			logCachedExecutable(cacheFile)
 		}
 		return cacheFile
+	}
+
+	protected void logCachedExecutable(File cacheFile) {
+		log.info "Using cached analysis executable ${cacheFile.absolutePath}"
 	}
 
 	void cacheCompiledBinary(File executable, File cacheFile, String checksum, File cacheDir) {
