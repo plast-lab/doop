@@ -37,7 +37,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 wrapper {
-    gradleVersion = "4.9"
+    gradleVersion = "5.4.1"
 }
 
 repositories {
