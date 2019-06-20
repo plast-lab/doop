@@ -709,6 +709,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     protected void runHeapDL(List<String> filenames) {
 
+        log.info "Running HeapDL..."
+
         // Support compressed formats: decompress
         List<String> tmpFiles = []
         List<String> processed = filenames.collect { String heapdl ->
