@@ -776,7 +776,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     public static boolean java9Plus() {
         try {
-            Class c = Class.forName("java.lang.Runtime.Version")
+            Class c = Class.forName('java.lang.Runtime$Version')
             return true
         } catch (ClassNotFoundException ex) {
             return false
