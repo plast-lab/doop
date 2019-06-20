@@ -23,7 +23,7 @@ public class Parameters {
     public boolean _scanNativeCode = false;
     public boolean _android = false;
     public Integer _cores = null;
-    public String _entryPoints = null;
+    public String _keepSpec = null;
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
@@ -195,9 +195,9 @@ public class Parameters {
             i = shift(args, i);
             _extraSensitiveControls = args[i];
             break;
-        case "--entry-points":
+        case "--keep-spec":
             i = shift(args, i);
-            _entryPoints = args[i];
+            _keepSpec = args[i];
             break;
         case "--no-facts":
             _noFacts = true;

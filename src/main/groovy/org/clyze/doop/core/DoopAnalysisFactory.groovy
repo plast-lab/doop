@@ -120,7 +120,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
 			for (def opt : factOpts) {
 				if (opt != options.PLATFORM) {
-					log.warn "WARNING: Option --${opt.name} modifies facts."
+					if (options.X_SYMLINK_CACHED_FACTS.value) {
+						throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}")
+					} else {
+						log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts will be extended (since option --${options.X_START_AFTER_FACTS.name} is on)."
+					}
 				}
 			}
 
@@ -163,7 +167,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 	// Throw an error when two incompatible options are set.
 	static void throwIfBothSet(AnalysisOption opt1, AnalysisOption opt2) {
-		if (opt1.value && opt2.value) {
+		if (opt1?.value && opt2?.value) {
 			throw new DoopErrorCodeException(28, new RuntimeException("Error: options --${opt1.name} and --${opt2.name} are mutually exclusive."))
 		}
 	}
@@ -327,9 +331,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (!options.PYTHON.value) {
 			if (options.MAIN_CLASS.value) {
-				if (options.X_START_AFTER_FACTS.value && options.X_SYMLINK_CACHED_FACTS.value) {
-					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.X_START_AFTER_FACTS.name} when using symbolic links")
-				} else if (options.IGNORE_MAIN_METHOD.value) {
+				if (options.IGNORE_MAIN_METHOD.value) {
 					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
 				} else {
 					log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
@@ -356,7 +358,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
-		throwIfBothSet(options.ENTRY_POINTS, options.X_SYMLINK_CACHED_FACTS)
+		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_CACHED_FACTS)
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
 			def tamiflexArg = options.TAMIFLEX.value as String

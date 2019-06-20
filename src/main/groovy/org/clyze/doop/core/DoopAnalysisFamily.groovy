@@ -168,12 +168,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
-					id: "ENTRY_POINTS",
-					name: "entry-points",
+					id: "KEEP_SPEC",
+					name: "keep-spec",
 					argName: "FILE",
 					argInputType: InputType.MISC,
 					forCacheID: true,
-					description: "Entry points (Proguard seed file or doop method IDs)."
+					description: "Give a 'keep' specification."
 			),
 			new AnalysisOption<String>(
 					id: "SPECIAL_CONTEXT_SENSITIVITY_METHODS",

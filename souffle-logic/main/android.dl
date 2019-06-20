@@ -110,8 +110,12 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
   AndroidEntryPoint(?meth),
   isImmutableContext(?ctx).
 
-// Also accept info from keep annotations (e.g., produced via -printseeds in ProGuard).
-// Forcing the reachability and mocking of all "keep" methods.
+/*
+ * The following rules handle the 'keep' specification, by
+ * forcing reachability and mocking of all "keep" methods.
+ */
+
+// 'keep'= make method reachable.
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   KeepMethod(?meth),
   isImmutableContext(?ctx).

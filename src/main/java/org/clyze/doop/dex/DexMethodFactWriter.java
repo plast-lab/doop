@@ -537,7 +537,6 @@ class DexMethodFactWriter extends JavaFactWriter {
                 break;
             case ADD_INT:
             case SUB_INT:
-            case RSUB_INT:
             case MUL_INT:
             case DIV_INT:
             case REM_INT:
@@ -636,6 +635,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case SHL_INT_LIT8:
             case SHR_INT_LIT8:
             case USHR_INT_LIT8:
+            case RSUB_INT:
                 writeBinopTwoRegPlusLit((TwoRegisterInstruction)instr, op, index);
                 break;
             case MOVE_EXCEPTION:
@@ -676,6 +676,8 @@ class DexMethodFactWriter extends JavaFactWriter {
                     System.out.println("Ignoring unsupported ODEX instruction " + op + " in method " + methId);
                 else {
                     System.err.println("Unknown instruction type: " + op);
+                    if (debug)
+                        System.err.println(instr.getClass());
                     throw new RuntimeException("Quit! [methId = " + methId + ", lineNo = " + findLineForInstructionIndex(index) + "]");
                 }
         }

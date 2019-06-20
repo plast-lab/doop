@@ -797,8 +797,10 @@ Instruction_Method(?instruction, ?method) :-
   _UnsupportedInstruction(?instruction, ?index, ?method).
 
 
-// The exact info from keep annotations
+// The "keep" specification.
 .input KeepMethod(IO="file", filename="KeepMethod.facts", delimiter="\t")
+.input KeepClassMembers(IO="file", filename="KeepClassMembers.facts", delimiter="\t")
+.input KeepClassesWithMembers(IO="file", filename="KeepClassesWithMembers.facts", delimiter="\t")
 .input KeepClass(IO="file", filename="KeepClass.facts", delimiter="\t")
 
 #ifdef ANDROID
