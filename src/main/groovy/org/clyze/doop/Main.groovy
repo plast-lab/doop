@@ -47,7 +47,7 @@ class Main {
 		try {
 			Helper.tryInitLogging("INFO", Doop.doopLog, true)
 		} catch (IOException ex) {
-			System.err.println("Warning: could not initialize logging")
+			System.err.println("WARNING: could not initialize logging")
 			throw new DoopErrorCodeException(15)
 		}
 

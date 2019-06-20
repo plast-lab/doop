@@ -213,7 +213,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 if (t == null) {
                     excType = "java.lang.Throwable";
                     if (debug)
-                        logger.debug("Warning: no exception type found for handler in " + methId + ", using " + excType);
+                        logger.warn("WARNING: no exception type found for handler in " + methId + ", using " + excType);
                 } else
                     excType = raiseTypeId(t);
                 handlers.add(new Handler(startAddr, endAddr, handlerAddr, excType));
