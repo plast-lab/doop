@@ -65,7 +65,7 @@ public enum TypeUtils implements Opcodes  {
 
         // Find multidimensional arrays in bytecode (e.g. '[[C' / 'char[][]') .
 //        if (typePrefixEndIdx > 1) {
-//            System.err.println("Warning: found multidimensional array type: " + id + " -> " + ret);
+//            System.err.println("WARNING: found multidimensional array type: " + id + " -> " + ret);
 //        }
 
         cachedRaisedTypes.put(id, ret);

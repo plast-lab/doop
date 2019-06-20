@@ -155,7 +155,7 @@ public class WalaUtils {
                     ret = "short";
                     break;
                 default:
-                    System.err.println("Warning: unknown primitive code found: " + temp);
+                    System.err.println("WARNING: unknown primitive code found: " + temp);
                     ret = "OTHERPRIMITIVE";
                     break;
             }

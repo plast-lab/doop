@@ -139,7 +139,7 @@ public abstract class AndroidSupport {
         for (String appInput : parameters.getInputs()) {
             AppResources processMan = computedResources.get(appInput);
             if (processMan == null) {
-                System.err.println("Warning: missing resources for " + appInput);
+                System.err.println("WARNING: missing resources for " + appInput);
                 continue;
             }
 

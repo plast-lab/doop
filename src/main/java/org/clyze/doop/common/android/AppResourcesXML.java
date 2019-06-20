@@ -300,7 +300,7 @@ public class AppResourcesXML implements AppResources {
                 if (strId.startsWith("0x"))
                     intId = Integer.parseInt(strId.substring(2), 16);
                 else {
-                    System.err.println("Warning: non-hex resource id found: " + strId);
+                    System.err.println("WARNING: non-hex resource id found: " + strId);
                     intId = Integer.parseInt(strId);
                 }
             } else {

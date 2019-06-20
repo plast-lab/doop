@@ -194,17 +194,17 @@ public class XMLFactGenerator extends DefaultHandler {
                     db.add(ANDROID_ID, file, nodeId, value, prefix, value.substring(prefix.length()));
                     handled = true;
                 } else if (value.startsWith("@+id/")) {
-                    System.err.println("Warning: non-constant id found in: " + value);
+                    System.err.println("WARNING: non-constant id found in: " + value);
                 }
             if (!handled) {
-                System.err.println("Warning: could not process android id: " + value);
+                System.err.println("WARNING: could not process android id: " + value);
                 db.add(ANDROID_ID, file, nodeId, value, "-", value);
             }
         } else if (qName.equals("layout")) {
             if (value.startsWith(LAYOUT_PREFIX)) {
                 db.add(ANDROID_INCLUDE_XML, file, nodeId, value.substring(LAYOUT_PREFIX.length()));
             } else
-                System.err.println("Warning: ignoring layout=" + value);
+                System.err.println("WARNING: ignoring layout=" + value);
         }
     }
 

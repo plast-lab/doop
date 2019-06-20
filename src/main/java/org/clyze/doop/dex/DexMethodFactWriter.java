@@ -251,7 +251,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                     Integer handlerIndex = hi.getIndex(addressToIndex);
                     // Sanity check: MOVE_EXCEPTION must be first handler instruction.
                     if (handlerIndex != mei.index)
-                        System.err.println("Warning: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
+                        System.err.println("WARNING: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
                     String insn = instructionId(handlerMid(hi.excType), handlerIndex);
                     writeExceptionHandlerFormal(insn, localA);
                 } catch (Handler.IndexException ex) {
@@ -268,7 +268,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         for (RawGoto g : gotos) {
             Integer indexTo = addressToIndex.get(g.addrTo);
             if (indexTo == null)
-                System.err.println("Warning: cannot resolve goto target " + g.index + " in method " + methId);
+                System.err.println("WARNING: cannot resolve goto target " + g.index + " in method " + methId);
             else
                 writeGoto(g.insn, indexTo, g.index);
         }
@@ -276,7 +276,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         for (RawGoto g : ifs) {
             Integer indexTo = addressToIndex.get(g.addrTo);
             if (indexTo == null)
-                System.err.println("Warning: cannot resolve if target " + g.index + " in method " + methId);
+                System.err.println("WARNING: cannot resolve if target " + g.index + " in method " + methId);
             else
                 writeIf(g.insn, g.index, indexTo, methId);
         }
@@ -308,7 +308,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 if (addr != 0)
                     System.err.println("(UNUSED) Epilogue begin: " + addr + " != 0");
             } else
-                System.err.println("Warning: Unknown debug item class: " + di.getClass());
+                System.err.println("WARNING: Unknown debug item class: " + di.getClass());
         }
     }
 
@@ -713,7 +713,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         // Sanity check: fill-array-data should appear at most 2 instructions
         // after a new-array instruction.
         if (lastNewArrayInfo.index > (index + 2))
-            System.err.println("Warning: suspicious fill-array-data + new-array pattern in " + methId);
+            System.err.println("WARNING: suspicious fill-array-data + new-array pattern in " + methId);
         fillArrayInfo.registerFirstInstructionData(new FillArrayInfoEntry(absoluteAddr((OffsetInstruction)instr), regA, index, lastNewArrayInfo));
         // Consume the information.
         this.lastNewArrayInfo = null;
@@ -791,7 +791,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 _db.add(ASSIGN_RETURN_VALUE, insn, local(regDest));
                 // Sanity check.
                 if (this.objReturnInfo.retType == null)
-                    System.err.println("Warning: no return type in " + objReturnInfo);
+                    System.err.println("WARNING: no return type in " + objReturnInfo);
                 break;
             }
             default:
@@ -1142,7 +1142,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private String writeArrayTypes(String arrayType) {
         int bracketIndex = arrayType.indexOf('[');
         if (bracketIndex == -1) {
-            System.err.println("Warning: not an array type: " + arrayType);
+            System.err.println("WARNING: not an array type: " + arrayType);
             return null;
         }
         String componentType = arrayType.substring(0, bracketIndex);

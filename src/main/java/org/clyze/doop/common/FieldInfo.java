@@ -36,7 +36,7 @@ public class FieldInfo {
                 this.definingClass = current;
                 return;
             }
-        // System.out.println("Warning: cannot resolve field " + getFieldId());
+        // System.err.println("WARNING: cannot resolve field " + getFieldId());
         throw new FieldInfo.ResolveException();
     }
 

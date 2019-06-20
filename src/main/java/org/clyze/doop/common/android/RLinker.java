@@ -135,7 +135,7 @@ public class RLinker {
         if (parts.length < 2) {
             System.err.println("Error processing R.txt line: " + line);
         } else if (pkg == null) {
-            System.err.println("Warning: no package: " + ar);
+            System.err.println("WARNING: no package: " + ar);
         } else {
 
             // Extract information from the line text.
@@ -172,13 +172,10 @@ public class RLinker {
         Map<String, Map<String, Integer>> packageEntry = constants.getOrDefault(packageName, new HashMap<>());
         Map<String, Integer> nestedEntry = packageEntry.getOrDefault(nested, new HashMap<>());
         Integer val = nestedEntry.get(f);
-        if (val == null) {
+        if (val == null)
             nestedEntry.put(f, c);
-        } else {
-            if (!val.equals(c)) {
-                System.err.println("Warning: duplicate values for " + nested + "$" + f + ": " + val + ", " + c);
-            }
-        }
+        else if (!val.equals(c))
+            System.err.println("WARNING: duplicate values for " + nested + "$" + f + ": " + val + ", " + c);
         packageEntry.put(nested, nestedEntry);
         constants.put(packageName, packageEntry);
     }
