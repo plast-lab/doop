@@ -92,7 +92,7 @@ public class XMLFactGenerator extends DefaultHandler {
         try (FileInputStream is1 = new FileInputStream(xmlFile)) {
             xmlReader.parse(new InputSource(is1));
         } catch (SAXParseException ex) {
-            System.err.println("XML processing may fail for " + xmlFile.getAbsolutePath() + ", try automatic encoding conversion...");
+            System.err.println("XML processing may fail for " + xmlFile.getAbsolutePath() + ", trying automatic encoding conversion...");
             JHelper.ensureUTF8(xmlFile.getAbsolutePath());
             try (FileInputStream is2 = new FileInputStream(xmlFile)) {
                 xmlReader.parse(new InputSource(is2));
