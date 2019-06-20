@@ -724,7 +724,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
 
         try {
-            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(processed, options.HEAPDL_NOSTRINGS.value ? false : true)
+            List<String> traces = [] as List
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(processed, traces, options.HEAPDL_NOSTRINGS.value ? false : true)
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
             log.info("Generated " + n + " additional facts from memory dump")
         } catch (Exception e) {
