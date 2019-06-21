@@ -108,9 +108,13 @@ class SouffleScript {
 			log.info "Analysis compilation time (sec): $compilationTime"
 			cacheCompiledBinary(executable, cacheFile, checksum, cacheDir)
 		} else {
-			log.info "Using cached analysis executable $checksum from $cacheDir"
+			logCachedExecutable(cacheFile)
 		}
 		return cacheFile
+	}
+
+	protected void logCachedExecutable(File cacheFile) {
+		log.info "Using cached analysis executable ${cacheFile.absolutePath}"
 	}
 
 	void cacheCompiledBinary(File executable, File cacheFile, String checksum, File cacheDir) {
@@ -233,10 +237,10 @@ class SouffleScript {
 					// Fallback (non-portable).
 					// executor.execute("ln -s ${libfunctors} libfunctors.so".split().toList()) { log.info it }
 				} catch (FileAlreadyExistsException) {
-					log.info "Warning: could not create link to ${libName}, file already exists."
+					log.warn "WARNING: could not create link to ${libName}, file already exists."
 				}
 			} else {
-				log.debug "Warning: no ${libName} in environment variable ${envVar} = '${ldLibPath}'"
+				log.warn "WARNING: no ${libName} in environment variable ${envVar} = '${ldLibPath}'"
 			}
 		}
 	}

@@ -47,7 +47,7 @@ class AndroidTests extends DoopSpec {
 					 "-a", "types-only",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm-types-only",
-					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
+					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/AndroidTests_TypesOnly_androidterm.dl",
 					 "--Xserver-cha",
 					 "--scan-native-code", "--simulate-native-returns",
 					 "--Xstats-full", "--Xlow-mem", "-Ldebug"] + defaultArgs
@@ -55,16 +55,16 @@ class AndroidTests extends DoopSpec {
 		Analysis analysis = Main.analysis
 
 		then:
-		methodIsReachable(analysis, '<jackpal.androidterm.RunScript: void handleIntent()>')
-		methodIsReachable(analysis, '<jackpal.androidterm.Term: void <init>()>')
-		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onActivityResult(int,int,android.content.Intent)>')
-		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onCreate(android.os.Bundle)>')
-		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onDestroy()>')
-		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onPause()>')
-		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onStart()>')
-		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onStop()>')
-		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onNewIntent(android.content.Intent)>')
-		methodIsReachable(analysis, '<jackpal.androidterm.Term: void onUpdate()>')
+		testSucceeds(analysis, "test.1")
+		testSucceeds(analysis, "test.2")
+		testSucceeds(analysis, "test.3")
+		testSucceeds(analysis, "test.4")
+		testSucceeds(analysis, "test.5")
+		testSucceeds(analysis, "test.6")
+		testSucceeds(analysis, "test.7")
+		testSucceeds(analysis, "test.8")
+		testSucceeds(analysis, "test.9")
+		testSucceeds(analysis, "test.10")
 		// Test application package.
 		isApplicationPackage(analysis, 'jackpal.androidterm')
 		// Test activities: Term, RemoteInterface.
@@ -169,8 +169,9 @@ class AndroidTests extends DoopSpec {
 		Analysis analysis = Main.analysis
 
 		then:
-		// We only test if the logic compiles and loads the dynamic facts. The
-		// sanity check cannot pass: HRPOF contains objects with unknown types.
+		methodIsReachable(analysis, '<android.app.admin.IDevicePolicyManager$Stub$Proxy: void <init>(android.os.IBinder)>')
+		// The sanity check cannot pass: HRPOF contains objects with
+		// unknown types.
 		// noSanityErrors(analysis)
 		true
 	}

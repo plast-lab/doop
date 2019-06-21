@@ -56,7 +56,7 @@ public class Main {
             Helper.tryInitLogging("DEBUG", sootParameters.getLogDir(), true);
             logger = LogFactory.getLog(Main.class);
         } catch (IOException ex) {
-            System.err.println("Warning: could not initialize logging");
+            logWarn("WARNING: could not initialize logging");
             throw new DoopErrorCodeException(18);
         }
 
@@ -91,11 +91,11 @@ public class Main {
             System.out.println("Running in mixed Soot/Dex mode.");
         } else if (sootParameters._android) {
             if (sootParameters.getInputs().size() > 1)
-                System.err.println("\nWARNING -- Android mode: all inputs will be preprocessed but only " + sootParameters.getInputs().get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
+                logWarn("WARNING: Android mode: all inputs will be preprocessed but only " + sootParameters.getInputs().get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             if (sootParameters._androidJars == null)
-                System.err.println("WARNING: missing --android-jars option.");
+                logWarn("WARNING: missing --android-jars option.");
             else
                 Options.v().set_android_jars(sootParameters._androidJars);
             android = new AndroidSupport_Soot(sootParameters, java);
@@ -113,7 +113,7 @@ public class Main {
             addToSootClassPath(scene, input);
             if (sootParameters._android) {
                 if (inputs.size() > 1)
-                    System.out.println("WARNING: skipping rest of inputs");
+                    logWarn("WARNING: skipping rest of inputs");
                 break;
             }
         }
@@ -243,7 +243,7 @@ public class Main {
                 if (sootParameters._failOnMissingClasses) {
                     throw new MissingClassesException(unrecorded.toArray(new String[0]));
                 } else {
-                    System.err.println("Warning: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
+                    logWarn("WARNING: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
                 }
             }
 
@@ -286,7 +286,7 @@ public class Main {
      */
     private static SootMethod getDummyMain(String appInput, String androidJars) {
         if (!DoopAddons.usingUpstream())
-            System.err.println("WARNING: FlowDroid is only supported when using upstream Soot (see build.gradle).");
+            logWarn("WARNING: FlowDroid is only supported when using upstream Soot (see build.gradle).");
 
         Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
 
@@ -328,5 +328,12 @@ public class Main {
             System.err.println(s);
         else
             logger.debug(s);
+    }
+
+    private static void logWarn(String s) {
+        if (logger == null)
+            System.err.println(s);
+        else
+            logger.warn(s);
     }
 }

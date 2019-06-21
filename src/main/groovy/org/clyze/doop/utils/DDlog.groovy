@@ -100,8 +100,8 @@ class DDlog extends SouffleScript {
             log.info "Compiling Datalog to Rust program and executable using ${jobs} jobs"
             def executable = compileWithDDlog(jobs, outDir)
             cacheCompiledBinary(executable, cacheFile, checksum, cacheDir)
-        } else {
-			log.info "Using cached analysis executable $checksum from $cacheDir"
+		} else {
+			logCachedExecutable(cacheFile)
 		}
 		return cacheFile
 

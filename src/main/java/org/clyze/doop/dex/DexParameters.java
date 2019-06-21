@@ -7,7 +7,7 @@ class DexParameters extends Parameters {
     @Override
     protected void finishArgProcessing() throws DoopErrorCodeException {
         if (!_android)
-            System.err.println("Warning: Android mode is disabled.");
+            System.err.println("WARNING: Android mode is disabled.");
         super.finishArgProcessing();
     }
 }

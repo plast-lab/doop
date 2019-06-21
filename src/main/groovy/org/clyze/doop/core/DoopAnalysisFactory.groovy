@@ -115,25 +115,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		throwIfBothSet(options.X_START_AFTER_FACTS, options.CACHE)
 
 		if (options.X_START_AFTER_FACTS.value) {
-			// Option "start-after-facts" is not compatible with options
-			// generating facts, the user must use "use-existing-facts" instead.
-			def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
-			for (def opt : factOpts) {
-				if (opt != options.PLATFORM) {
-					if (options.X_SYMLINK_CACHED_FACTS.value) {
-						throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}")
-					} else {
-						log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts will be extended (since option --${options.X_START_AFTER_FACTS.name} is on)."
-					}
-				}
-			}
-
+			checkFactsReuse(options.X_START_AFTER_FACTS, options)
 			def cacheDir = new File(options.X_START_AFTER_FACTS.value as String)
 			FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
 			options.CACHE_DIR.value = cacheDir
 		} else {
 			def cacheId = generateCacheID(options)
 			options.CACHE_DIR.value = new File(Doop.doopCache, cacheId)
+			if (options.CACHE.value && options.CACHE_DIR.value.exists()) {
+				checkFactsReuse(options.CACHE, options)
+			}
 			checkAppGlob(options)
 		}
 
@@ -160,6 +151,26 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 						return new SouffleAnalysis(options, context, commandsEnv)
 					}
 
+				}
+			}
+		}
+	}
+
+	/**
+	 * Checks that, when reusing facts, options that modify facts do not cause
+	 * problems.
+	 *
+	 * @param factsOpt	 the facts-reusing option that has been enabled
+	 * @param options	 the analysis options
+	 */
+	static void checkFactsReuse(AnalysisOption factsOpt, Map<String, AnalysisOption> options) {
+		def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
+		for (def opt : factOpts) {
+			if (opt != options.PLATFORM) {
+				if (options.X_SYMLINK_CACHED_FACTS.value) {
+					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}")
+				} else {
+					log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts will be extended (since option --${factsOpt.name} is on)."
 				}
 			}
 		}
@@ -343,13 +354,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 						//Try to read the main class from the manifest contained in the jar
 						def main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS)
 						if (main) {
-							log.debug "Main class(es) expanded with ${main}"
+							log.info "Main class(es) expanded with '${main}'"
 							options.MAIN_CLASS.value << main
 						} else {
 							//Check whether the jar contains a class with the same name
 							def jarName = FilenameUtils.getBaseName(jarFile.name)
 							if (jarFile.getJarEntry("${jarName}.class")) {
-								log.debug "Main class(es) expanded with ${jarName}"
+								log.info "Main class(es) expanded with '${jarName}'"
 								options.MAIN_CLASS.value << jarName
 							}
 						}

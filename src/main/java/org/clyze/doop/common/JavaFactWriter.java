@@ -304,7 +304,7 @@ public abstract class JavaFactWriter {
             String[] paramTypes = params.split(",");
             writeMethodTypeConstant(retType, paramTypes, params);
         } else
-            System.err.println("Warning: cannot process method type " + mt);
+            System.err.println("WARNING: cannot process method type " + mt);
     }
 
     protected void writeMethodAnnotation(String method, String annotationType) {

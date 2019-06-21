@@ -87,7 +87,7 @@ public class CHA {
                     // Sanity check: the id has not already been resolved to a different id.
                     String existing = resolvedFields.get(fieldIdBefore);
                     if ((existing != null) && (!existing.equals(fieldIdAfter)))
-                        System.out.println("Warning: resolved " + fieldIdBefore + " to " + fieldIdAfter + ", overwriting existing: " + existing);
+                        System.err.println("WARNING: resolved " + fieldIdBefore + " to " + fieldIdAfter + ", overwriting existing: " + existing);
                     resolvedFields.put(fieldIdBefore, fieldIdAfter);
                 }
             } catch (FieldInfo.ResolveException ex) {

@@ -9,6 +9,8 @@ import static org.clyze.doop.TestUtils.*
  * Test information flow (P/Taint).
  */
 class InformationFlowTest extends DoopSpec {
+
+	// @spock.lang.Ignore
 	@Unroll
 	def "Information flow (P/Taint) test"() {
 		when:

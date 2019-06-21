@@ -10,6 +10,7 @@ import static org.clyze.doop.TestUtils.*
  */
 class CrudeMicroTest extends Specification {
 
+	// @spock.lang.Ignore
 	@Unroll
 	def "Crude testing micro analysis"() {
 		when:

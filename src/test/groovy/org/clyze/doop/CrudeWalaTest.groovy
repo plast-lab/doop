@@ -10,6 +10,7 @@ import static org.clyze.doop.TestUtils.*
  */
 class CrudeWalaTest extends Specification {
 
+	// @spock.lang.Ignore
 	@Unroll
 	def "Crude testing WALA fact generation and analysis"() {
 		when:

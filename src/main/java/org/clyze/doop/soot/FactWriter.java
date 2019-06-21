@@ -144,7 +144,7 @@ class FactWriter extends JavaFactWriter {
             writeAnnotationElement(targetType, target, parentId, thisId, "INNER-ANNOTATION", "-", null);
             writeAnnotationElements(targetType, target, thisId, aae.getValue().getElems());
         } else
-            System.out.println("Warning: unknown annotation element, type: '" + ae.getClass() + "', name: '" + ae.getName() + "'");
+            System.err.println("WARNING: unknown annotation element, type: '" + ae.getClass() + "', name: '" + ae.getName() + "'");
     }
 
     // Helper method used by writeAnnotationElement().
@@ -795,7 +795,7 @@ class FactWriter extends JavaFactWriter {
             else
                 throw new RuntimeException("Value has unknown constant type: " + v);
         } else if (!(v instanceof JimpleLocal))
-            System.err.println("Warning: value has unknown non-constant type: " + v.getClass().getName());
+            System.err.println("WARNING: value has unknown non-constant type: " + v.getClass().getName());
         return v;
     }
 

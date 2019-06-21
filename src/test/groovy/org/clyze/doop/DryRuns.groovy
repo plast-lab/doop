@@ -11,6 +11,7 @@ import static org.clyze.doop.TestUtils.*
  */
 class DryRuns extends DoopSpec {
 
+	// @spock.lang.Ignore
 	@Unroll
 	def "Test analysis compilation"(String analysisName) {
 		when:

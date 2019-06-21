@@ -33,7 +33,7 @@ public class DexInvoker {
         try {
             Helper.tryInitLogging("DEBUG", dexParams.getLogDir(), true);
         } catch (IOException ex) {
-            System.err.println("Warning: could not initialize logging");
+            System.err.println("WARNING: could not initialize logging");
             throw new DoopErrorCodeException(18, null, true);
         }
 

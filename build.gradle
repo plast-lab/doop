@@ -20,8 +20,10 @@ plugins {
     id 'net.researchgate.release' version '2.6.0'
 }
 
+def maxHeap = '12000m'
+
 // Warning: -Xss is restricted in recent Java versions.
-applicationDefaultJvmArgs = ["-Xmx12000m", "-Xss1000m"]
+applicationDefaultJvmArgs = ["-Xmx${maxHeap}", "-Xss1000m"]
 
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
@@ -32,12 +34,12 @@ group = "org.clyze"
 mainClassName = "org.clyze.doop.Main"
 
 //def heapDLVersion = "master-SNAPSHOT"
-def heapDLVersion = "1.0.2"
+def heapDLVersion = "1.1.0"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 wrapper {
-    gradleVersion = "4.9"
+    gradleVersion = "5.4.1"
 }
 
 repositories {
@@ -68,7 +70,7 @@ compileGroovy {
     groovyOptions.optimizationOptions.indy = true
 }
 
-def groovyVersion="2.5.5"
+def groovyVersion="2.5.7"
 
 dependencies {
 
@@ -247,6 +249,7 @@ test {
     // failFast = true
     maxParallelForks = 1
     forkEvery = 1
+    maxHeapSize = maxHeap
     jvmArgs '-XX:ReservedCodeCacheSize=1g'
     testLogging {
         exceptionFormat = 'full'

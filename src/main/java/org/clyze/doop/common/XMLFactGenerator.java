@@ -78,7 +78,7 @@ public class XMLFactGenerator extends DefaultHandler {
             gen.parse();
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             String msg = ex.getMessage();
-            System.err.println("Error parsing " + xmlFile + ": " + ex.getMessage());
+            System.err.println("Error parsing " + xmlFile + ": " + msg);
             // ex.printStackTrace();
         }
     }
@@ -92,7 +92,7 @@ public class XMLFactGenerator extends DefaultHandler {
         try (FileInputStream is1 = new FileInputStream(xmlFile)) {
             xmlReader.parse(new InputSource(is1));
         } catch (SAXParseException ex) {
-            System.err.println("XML processing may fail for " + xmlFile.getAbsolutePath() + ", try automatic encoding conversion...");
+            System.err.println("XML processing may fail for " + xmlFile.getAbsolutePath() + ", trying automatic encoding conversion...");
             JHelper.ensureUTF8(xmlFile.getAbsolutePath());
             try (FileInputStream is2 = new FileInputStream(xmlFile)) {
                 xmlReader.parse(new InputSource(is2));
@@ -194,17 +194,17 @@ public class XMLFactGenerator extends DefaultHandler {
                     db.add(ANDROID_ID, file, nodeId, value, prefix, value.substring(prefix.length()));
                     handled = true;
                 } else if (value.startsWith("@+id/")) {
-                    System.err.println("Warning: non-constant id found in: " + value);
+                    System.err.println("WARNING: non-constant id found in: " + value);
                 }
             if (!handled) {
-                System.err.println("Warning: could not process android id: " + value);
+                System.err.println("WARNING: could not process android id: " + value);
                 db.add(ANDROID_ID, file, nodeId, value, "-", value);
             }
         } else if (qName.equals("layout")) {
             if (value.startsWith(LAYOUT_PREFIX)) {
                 db.add(ANDROID_INCLUDE_XML, file, nodeId, value.substring(LAYOUT_PREFIX.length()));
             } else
-                System.err.println("Warning: ignoring layout=" + value);
+                System.err.println("WARNING: ignoring layout=" + value);
         }
     }
 

@@ -33,7 +33,7 @@ env.putAll(System.getenv())
 try {
     Helper.tryInitLogging("INFO", Doop.doopLog ?: "$outDir/logs", true)
 } catch (IOException ex) {
-    System.err.println("Warning: could not initialize logging")
+    System.err.println("WARNING: could not initialize logging")
     throw new DoopErrorCodeException(19)
 }
 

@@ -10,6 +10,7 @@ import static org.clyze.doop.TestUtils.*
  */
 class OpenProgramsTest extends Specification {
 
+	// @spock.lang.Ignore
 	@Unroll
 	def "Testing support for open programs"() {
 		when:

@@ -236,7 +236,7 @@ public class DoopAddons {
 
         if (!polymorphicHandling_msg) {
             polymorphicHandling_msg = true;
-            System.err.println("Warning: Soot does not contain PolymorphicMethodRef.handlesClass(), using custom method.");
+            System.err.println("WARNING: Soot does not contain PolymorphicMethodRef.handlesClass(), using custom method.");
         }
         return JavaFactWriter.polymorphicHandling(declClass, simpleName);
     }
