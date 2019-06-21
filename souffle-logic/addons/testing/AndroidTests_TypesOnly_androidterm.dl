@@ -1,0 +1,26 @@
+#include "test-exports.dl"
+
+.decl TestId(?id:symbol)
+.output TestId
+
+TestId("test.1") :-
+  reachable("<jackpal.androidterm.RunScript: void handleIntent()>").
+TestId("test.2") :-
+  reachable("<jackpal.androidterm.Term: void <init>()>").
+TestId("test.3") :-
+  reachable("<jackpal.androidterm.Term: void onActivityResult(int,int,android.content.Intent)>").
+TestId("test.4") :-
+  reachable("<jackpal.androidterm.Term: void onCreate(android.os.Bundle)>").
+TestId("test.5") :-
+  reachable("<jackpal.androidterm.Term: void onDestroy()>").
+TestId("test.6") :-
+  reachable("<jackpal.androidterm.Term: void onPause()>").
+TestId("test.7") :-
+  reachable("<jackpal.androidterm.Term: void onStart()>").
+TestId("test.8") :-
+  reachable("<jackpal.androidterm.Term: void onStop()>").
+TestId("test.9") :-
+  reachable("<jackpal.androidterm.Term: void onNewIntent(android.content.Intent)>").
+TestId("test.10") :-
+  reachable("<jackpal.androidterm.Term: void onUpdate()>").
+
