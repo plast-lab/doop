@@ -169,8 +169,9 @@ class AndroidTests extends DoopSpec {
 		Analysis analysis = Main.analysis
 
 		then:
-		// We only test if the logic compiles and loads the dynamic facts. The
-		// sanity check cannot pass: HRPOF contains objects with unknown types.
+		methodIsReachable(analysis, '<android.app.admin.IDevicePolicyManager$Stub$Proxy: void <init>(android.os.IBinder)>')
+		// The sanity check cannot pass: HRPOF contains objects with
+		// unknown types.
 		// noSanityErrors(analysis)
 		true
 	}
