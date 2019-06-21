@@ -9,6 +9,7 @@ import spock.lang.Unroll
  */
 class CrudeLBTest extends Specification {
 
+	// @spock.lang.Ignore
 	@Unroll
 	def "Crude testing LB mode (based on sample metrics similarity) using [#scenario]"() {
 		when:

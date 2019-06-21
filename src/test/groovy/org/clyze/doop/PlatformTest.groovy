@@ -11,6 +11,7 @@ import static org.clyze.doop.TestUtils.*
  */
 class PlatformTest extends Specification {
 
+    // @spock.lang.Ignore
     @Unroll
     def "Platform test [#platform]"(String platform) {
         when:

@@ -10,6 +10,7 @@ import static org.clyze.doop.TestUtils.*
  */
 class CrudeSouffleTest extends Specification {
 
+	// @spock.lang.Ignore
 	@Unroll
 	def "Crude testing Souffle mode (based on sample metrics similarity) using [#scenario]"() {
 		when:
