@@ -354,13 +354,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 						//Try to read the main class from the manifest contained in the jar
 						def main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS)
 						if (main) {
-							log.debug "Main class(es) expanded with ${main}"
+							log.info "Main class(es) expanded with '${main}'"
 							options.MAIN_CLASS.value << main
 						} else {
 							//Check whether the jar contains a class with the same name
 							def jarName = FilenameUtils.getBaseName(jarFile.name)
 							if (jarFile.getJarEntry("${jarName}.class")) {
-								log.debug "Main class(es) expanded with ${jarName}"
+								log.info "Main class(es) expanded with '${jarName}'"
 								options.MAIN_CLASS.value << jarName
 							}
 						}
