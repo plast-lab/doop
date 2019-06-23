@@ -728,11 +728,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         List<String> traces = [] as List
         processed.each {
             if (it.endsWith(".hprof")) {
+                log.info "Heap snapshot input: ${it}"
                 hprofs << it
-            } else if (it.endsWith(".trace")) {
-                traces << it
             } else {
-                log.warn "WARNING: HeapDL input not .hprof/.trace and will be ignored: ${it}"
+                log.info "Stack trace input: ${it}"
+                traces << it
             }
         }
 
