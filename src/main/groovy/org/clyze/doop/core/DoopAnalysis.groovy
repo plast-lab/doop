@@ -724,10 +724,20 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 return heapdl
             }
         }
+        List<String> hprofs = [] as List
+        List<String> traces = [] as List
+        processed.each {
+            if (it.endsWith(".hprof")) {
+                hprofs << it
+            } else if (it.endsWith(".trace")) {
+                traces << it
+            } else {
+                log.warn "WARNING: HeapDL input not .hprof/.trace and will be ignored: ${it}"
+            }
+        }
 
         try {
-            List<String> traces = [] as List
-            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(processed, traces, options.HEAPDL_NOSTRINGS.value ? false : true)
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(hprofs, traces, options.HEAPDL_NOSTRINGS.value ? false : true)
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
             log.info("Generated " + n + " additional facts from memory dump")
         } catch (Exception e) {

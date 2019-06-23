@@ -105,7 +105,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "HEAPDLS",
 					name: "heapdl-file",
 					group: GROUP_HEAPDL,
-					description: "Use dynamic information from memory dump, using HeapDL. Takes one or more files in `.hprof` format.",
+					description: "Use dynamic information from memory dump, using HeapDL. Takes one or more files (`.hprof` format or `.trace` stack traces).",
 					value: [],
 					multipleValues: true,
 					argName: "HEAPDLS",
