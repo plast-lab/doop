@@ -109,11 +109,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def commandsEnv = initExternalCommandsEnvironment(options)
 		createOutputDirectory(options)
 
-		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_STOP_AT_FACTS)
-		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_USE_EXISTING_FACTS)
-		throwIfBothSet(options.X_USE_EXISTING_FACTS, options.X_STOP_AT_FACTS)
-		throwIfBothSet(options.X_START_AFTER_FACTS, options.CACHE)
-
 		if (options.X_START_AFTER_FACTS.value) {
 			checkFactsReuse(options.X_START_AFTER_FACTS, options)
 			def cacheDir = new File(options.X_START_AFTER_FACTS.value as String)
@@ -126,11 +121,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				checkFactsReuse(options.CACHE, options)
 			}
 			checkAppGlob(options)
-		}
-
-		// Enable APK decoding when not reusing facts.
-		if (!options.X_START_AFTER_FACTS.value && !options.X_USE_EXISTING_FACTS.value) {
-			options.DECODE_APK.value = true
 		}
 
 		log.debug "Created new analysis"
@@ -373,6 +363,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_STOP_AT_FACTS)
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_EXTEND_FACTS)
+		throwIfBothSet(options.X_EXTEND_FACTS, options.X_STOP_AT_FACTS)
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.CACHE)
 		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_CACHED_FACTS)
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
@@ -458,6 +452,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (options.X_LOW_MEM.value) {
 			options.X_SERIALIZE_FACTGEN_COMPILATION.value = true
+		}
+
+		// Enable APK decoding on Android when not reusing read-only
+		// facts. We don't check the ANDROID option, since the user
+		// may want to analyze an .apk using a non-Android platform.
+		if (!options.X_START_AFTER_FACTS.value) {
+			options.DECODE_APK.value = true
 		}
 
 		if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
