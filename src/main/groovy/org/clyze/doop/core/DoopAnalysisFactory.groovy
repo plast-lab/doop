@@ -464,7 +464,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				!options.HEAPDLS.value && !options.ANDROID.value &&
 				!options.DACAPO.value && !options.DACAPO_BACH.value) {
 			if (options.DISCOVER_MAIN_METHODS.value) {
-				log.warn "WARNING: No main class was found. Using --${options.DISCOVER_MAIN_METHODS.name}"
+				log.warn "WARNING: No main class was found. Using option --${options.DISCOVER_MAIN_METHODS.name} to discover main methods."
 			} else {
 				if (options.X_START_AFTER_FACTS.value) {
 					if (!options.OPEN_PROGRAMS.value) {
