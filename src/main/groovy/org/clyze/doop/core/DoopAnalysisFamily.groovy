@@ -964,8 +964,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new AnalysisOption<String>(
-					id: "X_USE_EXISTING_FACTS",
-					name: "Xuse-existing-facts",
+					id: "X_EXTEND_FACTS",
+					name: "Xextend-facts",
 					group: GROUP_FACTS,
 					description: "Expand upon the facts found in the given directory.",
 					argName: "DIR",

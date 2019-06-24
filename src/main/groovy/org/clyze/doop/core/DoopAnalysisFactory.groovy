@@ -110,15 +110,17 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		createOutputDirectory(options)
 
 		if (options.X_START_AFTER_FACTS.value) {
-			checkFactsReuse(options.X_START_AFTER_FACTS, options)
-			def cacheDir = new File(options.X_START_AFTER_FACTS.value as String)
-			FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
-			options.CACHE_DIR.value = cacheDir
+			// Facts are assumed to be read-only.
+			options.CACHE_DIR.value = getFactsReuseDir(options.X_START_AFTER_FACTS, options, true)
+		} else if (options.X_EXTEND_FACTS.value) {
+			options.CACHE_DIR.value = getFactsReuseDir(options.X_EXTEND_FACTS, options, false)
 		} else {
 			def cacheId = generateCacheID(options)
 			options.CACHE_DIR.value = new File(Doop.doopCache, cacheId)
+
+			// Facts are assumed to be read-only.
 			if (options.CACHE.value && options.CACHE_DIR.value.exists()) {
-				checkFactsReuse(options.CACHE, options)
+				checkFactsReuse(options.CACHE, options, true)
 			}
 			checkAppGlob(options)
 		}
@@ -150,20 +152,40 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 * Checks that, when reusing facts, options that modify facts do not cause
 	 * problems.
 	 *
-	 * @param factsOpt	 the facts-reusing option that has been enabled
-	 * @param options	 the analysis options
+	 * @param factsOpt       the facts-reusing option that has been enabled
+	 * @param options        the analysis options
+	 * @param throwError     if true, then throw an error, otherwise report a warning
 	 */
-	static void checkFactsReuse(AnalysisOption factsOpt, Map<String, AnalysisOption> options) {
+	static void checkFactsReuse(AnalysisOption factsOpt, Map<String, AnalysisOption> options,
+								boolean throwError) {
 		def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
 		for (def opt : factOpts) {
 			if (opt != options.PLATFORM) {
 				if (options.X_SYMLINK_CACHED_FACTS.value) {
-					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}")
+					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}.")
+				} else if (throwError) {
+					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${factsOpt.name}, use --${options.X_EXTEND_FACTS.name} instead.")
 				} else {
 					log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts will be extended (since option --${factsOpt.name} is on)."
 				}
 			}
 		}
+	}
+
+	/**
+	 * Return the directory containing facts that will be reused.
+	 *
+	 * @param factsOpt     the facts-reusing option that has been enabled
+	 * @param options      the analysis options
+	 * @param throwError   if true, then throw an error, otherwise report a warning
+	 * @return             the directory containing facts to reuse
+	 */
+	static File getFactsReuseDir(AnalysisOption factsOpt, Map<String, AnalysisOption> options,
+								 boolean throwError) {
+		checkFactsReuse(factsOpt, options, throwError)
+		File cacheDir = new File(factsOpt.value as String)
+		FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
+		return cacheDir
 	}
 
 	// Throw an error when two incompatible options are set.

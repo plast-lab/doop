@@ -189,7 +189,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 runJPhantom()
             }
 
-            def existingFactsDir = options.X_USE_EXISTING_FACTS.value as File
+            def existingFactsDir = options.X_EXTEND_FACTS.value as File
             if (existingFactsDir) {
                 log.info "Expanding upon facts found in: $existingFactsDir.canonicalPath"
                 linkOrCopyFacts(existingFactsDir)
