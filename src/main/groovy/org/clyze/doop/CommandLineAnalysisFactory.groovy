@@ -60,7 +60,6 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 			log.warn "WARNING: ignoring libraries (--${options.X_START_AFTER_FACTS.name})."
 		}
 		options.LIBRARIES.value = (!options.X_START_AFTER_FACTS.value && cli.ls) ? cli.ls : []
-		// Get the heapFiles of the analysis (long option: heapdl)
 
 		newAnalysis(FAMILY, options)
 	}
