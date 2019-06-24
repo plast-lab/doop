@@ -331,6 +331,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runFrontEnd(Set<String> tmpDirs, FrontEnd frontEnd, CHA cha) {
+        if (options.X_START_AFTER_FACTS.value) {
+            log.info "Skipping facts generation."
+            return
+        }
+
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         if (platform != "android" && platform != "java")
             throw new RuntimeException("Unsupported platform: ${platform}")
