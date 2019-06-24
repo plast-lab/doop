@@ -130,6 +130,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: System.getenv("DOOP_PLATFORMS_LIB"),
 					cli: false
 			),
+			new BooleanAnalysisOption(
+					id: "SKIP_CODE_FACTGEN",
+					name: "skip-code-factgen",
+					group: GROUP_FACTS,
+					description: "Don't generate facts for code."
+			),
 
 			new AnalysisOption<List<String>>(
 					id: "MAIN_CLASS",

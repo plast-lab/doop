@@ -160,13 +160,15 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 								boolean throwError) {
 		def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
 		for (def opt : factOpts) {
-			if (opt != options.PLATFORM) {
+			if ((factsOpt == options.X_START_AFTER_FACTS) && opt.forPreprocessor) {
+				log.warn "WARNING: Using option --${opt.name} but facts may not be modified (only logic will be affected)."
+			} else {
 				if (options.X_SYMLINK_CACHED_FACTS.value) {
 					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}.")
 				} else if (throwError) {
 					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${factsOpt.name}, use --${options.X_EXTEND_FACTS.name} instead.")
 				} else {
-					log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts will be extended (since option --${factsOpt.name} is on)."
+					log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts may be extended (since option --${factsOpt.name} is on)."
 				}
 			}
 		}
@@ -308,10 +310,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.ANALYSIS.value = "context-insensitive"
 		}
 
-		if (options.X_START_AFTER_FACTS.value) {
+		// Inputs are optional when reusing facts.
+		if (options.X_START_AFTER_FACTS.value || options.X_EXTEND_FACTS.value) {
 			options.INPUTS.isMandatory = false
 			options.LIBRARIES.isMandatory = false
-		} else {
+		}
+
+		if (!options.X_START_AFTER_FACTS.value) {
 			log.debug "Resolving files"
 			context.resolve()
 
@@ -390,6 +395,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		throwIfBothSet(options.X_EXTEND_FACTS, options.X_STOP_AT_FACTS)
 		throwIfBothSet(options.X_START_AFTER_FACTS, options.CACHE)
 		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_CACHED_FACTS)
+
+		if (options.SKIP_CODE_FACTGEN.value && !options.X_EXTEND_FACTS.value) {
+			throw new RuntimeException("Option --${options.SKIP_CODE_FACTGEN.name} should only be used together with --${options.X_EXTEND_FACTS.name}.")
+		} else if (options.X_STOP_AT_FACTS.value) {
+			options.SKIP_CODE_FACTGEN.value = true
+		}
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
 			def tamiflexArg = options.TAMIFLEX.value as String

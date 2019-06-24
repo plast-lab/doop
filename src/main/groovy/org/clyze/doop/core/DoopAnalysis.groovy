@@ -331,8 +331,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runFrontEnd(Set<String> tmpDirs, FrontEnd frontEnd, CHA cha) {
-        if (options.X_START_AFTER_FACTS.value) {
-            log.info "Skipping facts generation."
+        if (options.SKIP_CODE_FACTGEN.value) {
+            log.info "Skipping facts generation for code inputs."
             return
         }
 
