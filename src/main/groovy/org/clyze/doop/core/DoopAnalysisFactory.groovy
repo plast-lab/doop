@@ -286,7 +286,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.ANALYSIS.value = "context-insensitive"
 		}
 
-		if (!options.X_START_AFTER_FACTS.value) {
+		if (options.X_START_AFTER_FACTS.value) {
+			options.INPUTS.isMandatory = false
+			options.LIBRARIES.isMandatory = false
+		} else {
 			log.debug "Resolving files"
 			context.resolve()
 
@@ -301,9 +304,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 			options.HEAPDLS.value = context.allHeapDLs
 			log.debug "HeapDL file paths: ${context.heapDLs()} -> ${options.HEAPDLS.value}"
-		} else {
-			// Dummy value so the option is not empty, because otherwise it is mandatory
-			options.INPUTS.value = ["false"]
 		}
 
 		try {
