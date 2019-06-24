@@ -316,7 +316,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.INPUTS.value = ["false"]
 		}
 
-		setOptionsForPlatform(options, platformName)
+		try {
+			setOptionsForPlatform(options, platformName)
+		} catch (Exception ex) {
+			throw new DoopErrorCodeException(29, new RuntimeException("Could not process platform ${platformName}, valid platforms are: ${availablePlatforms}"))
+		}
 
 		if (options.DACAPO.value || options.DACAPO_BACH.value) {
 			if (!options.X_START_AFTER_FACTS.value) {
