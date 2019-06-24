@@ -465,16 +465,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				!options.DACAPO.value && !options.DACAPO_BACH.value) {
 			if (options.DISCOVER_MAIN_METHODS.value) {
 				log.warn "WARNING: No main class was found. Using option --${options.DISCOVER_MAIN_METHODS.name} to discover main methods."
+			} else if (options.X_START_AFTER_FACTS.value) {
+				if (!options.OPEN_PROGRAMS.value) {
+					log.warn("WARNING: No main class was found and option --${options.OPEN_PROGRAMS.name} is missing. The reused facts are assumed to declare the correct main class(es).")
+				}
 			} else {
-				if (options.X_START_AFTER_FACTS.value) {
-					if (!options.OPEN_PROGRAMS.value) {
-						throw new RuntimeException("Error: no main class was found and option --${options.OPEN_PROGRAMS.name} is missing.")
-					}
-				} else {
-					log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
-					if (!options.OPEN_PROGRAMS.value) {
-						options.OPEN_PROGRAMS.value = "concrete-types"
-					}
+				log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
+				if (!options.OPEN_PROGRAMS.value) {
+					options.OPEN_PROGRAMS.value = "concrete-types"
 				}
 			}
 		}
