@@ -193,7 +193,6 @@ public class Main {
                 android.generateFactsForXML(db, outDir);
                 if (sootParameters._legacyAndroidProcessing)
                     android.writeComponents(writer);
-                writer.writeExtraSensitiveControls(sootParameters);
             }
 
             if (!sootParameters.noFacts()) {

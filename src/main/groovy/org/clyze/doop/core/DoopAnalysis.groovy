@@ -7,7 +7,6 @@ import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
-import org.clyze.doop.common.FieldInfo
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.common.KeepSpecProcessor
 import org.clyze.doop.common.FrontEnd
@@ -82,6 +81,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     List<File> getLibraryFiles() { options.LIBRARIES.value as List<File> }
 
+    FactGenerator0 gen0
+
     /*
      * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
      * in order to ensure that internal state is initialized at one point and the init method is no longer required.
@@ -105,6 +106,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
         else
             factsDir = new File(outDir, "facts")
+
+        gen0 = new FactGenerator0(factsDir)
 
         database = new File(outDir, "database")
 
@@ -148,14 +151,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         FileOps.copyDirContents(fromDir, factsDir)
     }
 
-    private void writeMainClassFacts() {
-        if (options.MAIN_CLASS.value) {
-            new File(factsDir, "MainClass.facts").withWriterAppend { w ->
-                options.MAIN_CLASS.value.each { w.writeLine(it as String) }
-            }
-        }
-    }
-
     /**
      * Reuses an existing facts directory. May add more facts on top of
      * the existing facts, if appropriate command line options are set.
@@ -168,7 +163,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (keepSpec) {
             KeepSpecProcessor.processDir(factsDir, keepSpec)
         }
-        writeMainClassFacts()
+        gen0.writeMainClassFacts(options.MAIN_CLASS.value)
     }
 
     protected void generateFacts() throws DoopErrorCodeException {
@@ -187,6 +182,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
             if (options.RUN_JPHANTOM.value) {
                 runJPhantom()
+            }
+
+            if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
+                gen0.writeExtraSensitiveControls(options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString())
             }
 
             def existingFactsDir = options.X_EXTEND_FACTS.value as File
@@ -210,7 +209,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     // runFrontEnd(tmpDirs, FrontEnd.SOOT, null)
                     // // Step 2. Read CHA information from Soot run.
                     // CHA cha = new CHA()
-                    // fillCHAFromSootFacts(cha)
+                    // gen0.fillCHAFromSootFacts(cha)
                     // // Step 3. Run Dex front end with CHA information.
                     // File origFactsDir = factsDir
                     // File nonSSAFactsDir = new File("${factsDir}/nonSSA")
@@ -255,31 +254,16 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             if (options.DACAPO.value) {
                 def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
                 def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-
-                new File(factsDir, "Dacapo.facts").withWriter { w ->
-                    w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
-                }
+                gen0.writeDacapoFacts(benchmark, benchmarkCap)
             } else if (options.DACAPO_BACH.value) {
                 def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
                 def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-
-                new File(factsDir, "Dacapo.facts").withWriter { w ->
-                    w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
-                }
+                gen0.writeDacapoBachFacts(benchmarkCap)
             }
 
             if (options.TAMIFLEX.value) {
                 File origTamFile = new File(options.TAMIFLEX.value.toString())
-
-                new File(factsDir, "Tamiflex.facts").withWriter { w ->
-                    origTamFile.eachLine { line ->
-                        w << line
-                                .replaceFirst(/;[^;]*;$/, "")
-                                .replaceFirst(/;$/, ";0")
-                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + ";" + second + "\n" }
-                                .replaceAll(";", "\t").replaceFirst(/\./, "\t")
-                    }
-                }
+                gen0.writeTamiflexFacts(origTamFile)
             }
 
             if (!options.X_START_AFTER_FACTS.value) {
@@ -298,7 +282,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             log.info "----"
         }
 
-        writeMainClassFacts()
+        gen0.writeMainClassFacts(options.MAIN_CLASS.value)
 
         if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
             File origSpecialCSMethodsFile = new File(options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString())
@@ -359,10 +343,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         if (options.X_FACTS_SUBSET.value) {
             params += ["--facts-subset", options.X_FACTS_SUBSET.value.toString()]
-        }
-
-        if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
-            params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
         if (options.KEEP_SPEC.value) {
@@ -762,29 +742,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 copyFileToDirectory(f, factsDir)
             }
         }
-    }
-
-    private void fillCHAFromSootFacts(CHA cha) {
-		String supFile = "${factsDir}/DirectSuperclass.facts"
-		println "Importing non-dex class type hierarchy from ${supFile}"
-		Helper.forEachLineIn(supFile, { String line ->
-			def parts = line.tokenize('\t')
-			cha.registerSuperClass(parts[0], parts[1])
-		})
-
-		String fieldFile = "${factsDir}/Field.facts"
-		println "Importing non-dex fields from ${fieldFile}"
-		Map<String, List<FieldInfo> > fields = [:].withDefault { [] }
-		Helper.forEachLineIn(fieldFile, { String line ->
-			def parts = line.tokenize('\t')
-			String declType = parts[1]
-			String name = parts[2]
-			String type = parts[3]
-			List<FieldInfo> info = fields.get(declType)
-			info.add(new FieldInfo(type, name))
-			fields.put(declType, info)
-		})
-		fields.each { declType, fs -> cha.registerDefinedClassFields(declType, fs) }
     }
 
     /**

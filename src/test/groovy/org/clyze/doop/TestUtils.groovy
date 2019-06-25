@@ -177,6 +177,11 @@ class TestUtils {
 		findPair(analysis, "LayoutControl", id, 0, control, 1)
 	}
 
+	static void isSensitiveLayoutControl(Analysis analysis, String id, String control) {
+		log("isSensitiveLayoutControl('${id}', '${control}')")
+		findPair(analysis, "SensitiveLayoutControl", id, 0, control, 1)
+	}
+
 	static void isReachableLayoutControl(Analysis analysis, String controlType) {
 		log("isReachableLayoutControl('${controlType}')")
 		assert true == find(analysis, "mainAnalysis.ReachableLayoutControl", controlType, true)

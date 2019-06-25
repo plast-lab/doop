@@ -26,6 +26,9 @@
 .output ContentProvider
 .output Service
 .output LayoutControl
+#ifdef INFORMATION_FLOW
+.output SensitiveLayoutControl
+#endif // INFORMATION_FLOW
 .output mainAnalysis.LauncherActivity
 .output mainAnalysis.ReachableLayoutControl
 .output mainAnalysis.XMLFragment_Class
