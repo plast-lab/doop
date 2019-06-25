@@ -10,6 +10,7 @@ import org.clyze.doop.common.Database
 import org.clyze.doop.common.FieldInfo
 import org.clyze.doop.common.PredicateFile
 import org.clyze.utils.Helper
+import static PredicateFile0.*
 
 // This fact generator handles facts that do not need front-end/IR information.
 @Log4j
@@ -18,14 +19,20 @@ public class FactGenerator0 {
 
     private File factsDir
 
-    private static final String DACAPO = "Dacapo"
-    private static final String KEEP_CLASS = "KeepClass"
-    private static final String KEEP_METHOD = "KeepMethod"
-    private static final String KEEP_CLASS_MEMBERS = "KeepClassMembers"
-    private static final String KEEP_CLASSES_WITH_MEMBERS = "KeepClassesWithMembers"
-    private static final String MAIN_CLASS = "MainClass"
-    private static final String SENSITIVE_LAYOUT_CONTROL = "SensitiveLayoutControl"
-    private static final String TAMIFLEX = "Tamiflex"
+    private enum PredicateFile0 {
+        DACAPO("Dacapo"),
+        KEEP_CLASS("KeepClass"),
+        KEEP_METHOD("KeepMethod"),
+        KEEP_CLASS_MEMBERS("KeepClassMembers"),
+        KEEP_CLASSES_WITH_MEMBERS("KeepClassesWithMembers"),
+        MAIN_CLASS("MainClass"),
+        SENSITIVE_LAYOUT_CONTROL("SensitiveLayoutControl"),
+        TAMIFLEX("Tamiflex");
+
+        private final String name
+
+        PredicateFile0(String name) { this.name = name }
+    }
 
     // A map from rule-hash to (type, number-of-matches). Used to detect bad 'keep' input.
     private Map<String, Map<String, Integer> > ruleCounts = new HashMap<String, Map<String, Integer> >()
@@ -38,26 +45,26 @@ public class FactGenerator0 {
 
     public void writeMainClassFacts(def mainClass) {
         if (mainClass) {
-            factsFile(MAIN_CLASS).withWriterAppend { w ->
+            factsFile(MAIN_CLASS.name).withWriterAppend { w ->
                 mainClass.each { w.writeLine(it as String) }
             }
         }
     }
 
     public void writeDacapoFacts(String benchmark, String benchmarkCap) {
-        factsFile(DACAPO).withWriter { w ->
+        factsFile(DACAPO.name).withWriter { w ->
             w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
         }
     }
 
     public void writeDacapoBachFacts(String benchmarkCap) {
-        factsFile(DACAPO).withWriter { w ->
+        factsFile(DACAPO.name).withWriter { w ->
             w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
         }
     }
 
     public void writeTamiflexFacts(File origTamFile) {
-        factsFile(TAMIFLEX).withWriter { w ->
+        factsFile(TAMIFLEX.name).withWriter { w ->
             origTamFile.eachLine { line ->
                 w << line
                     .replaceFirst(/;[^;]*;$/, "")
@@ -113,7 +120,7 @@ public class FactGenerator0 {
                 long parentId = Long.parseLong(parts[i+2])
                 System.out.println("Adding sensitive layout control: " + control)
                 factsFile(PredicateFile.SENSITIVE_LAYOUT_CONTROL.toString()).withWriterAppend { w ->
-                    w << controlId + "\t" + typeId + "\t" + parentId
+                    w << controlId + "\t" + typeId + "\t" + parentId + "\n"
                 }
             } catch (Exception ex) {
                 System.err.println("Ignoring control: ${control} (exception: '${ex.message}')")
@@ -133,11 +140,13 @@ public class FactGenerator0 {
         if ((new File(specPath)).exists()) {
             System.out.println("Reading keep specification from: " + specPath)
             Files.lines(Paths.get(specPath)).withCloseable { Stream<String> stream ->
-                // try (Stream<String> stream = Files.lines(Paths.get(specPath))) {
                 try {
-                    new Database(factsDir).withCloseable { db ->
-                        stream.forEach { s -> processKeepSpecLine(db, s) }
-                    }
+
+                    Database db = new Database(factsDir)
+                    stream.forEach ({ String s -> processKeepSpecLine(db, s) } as java.util.function.Consumer<String>)
+                    db.flush()
+                    db.close()
+
                     ruleCounts.each { ruleHash, typeCounts ->
                         int counts = (new HashSet<Integer>(typeCounts.values())).size()
                         if (counts > 1) {
@@ -166,14 +175,14 @@ public class FactGenerator0 {
             case "KEEP":
                 // Support both two- and three-column format (ignore last column).
                 if (fields.length == 2 || fields.length == 3)
-                    factsFile(KEEP_METHOD).withWriterAppend { it << fields[1] }
+                    factsFile(KEEP_METHOD.name).withWriterAppend { it << (fields[1] + "\n") }
                 else
                     System.err.println("WARNING: malformed line (should be 2 or 3 columns, tab-separated): " + line)
                 break
             case "KEEP_CLASS_MEMBERS":
                 // Support both two- and three-column format (ignore last column).
                 if (fields.length == 2 || fields.length == 3)
-                    factsFile(KEEP_CLASS_MEMBERS).withWriterAppend { it << fields[1] }
+                    factsFile(KEEP_CLASS_MEMBERS.name).withWriterAppend { it << (fields[1] + "\n") }
                 else
                     System.err.println("WARNING: malformed line (should be 2 or 3 columns, tab-separated): " + line)
                 break
@@ -186,7 +195,7 @@ public class FactGenerator0 {
                         System.err.println("WARNING: malformed type in spec line: " + line)
                         return
                     }
-                    factsFile(KEEP_CLASSES_WITH_MEMBERS).withWriterAppend { it << (typeId + "\t" + ruleHash) }
+                    factsFile(KEEP_CLASSES_WITH_MEMBERS.name).withWriterAppend { it << (typeId + "\t" + ruleHash + "\n") }
                     Map<String, Integer> typeCounts = ruleCounts.computeIfAbsent(ruleHash, { new HashMap<String, Integer>() })
                     String typePrefix = typeId.substring(1, colonIdx)
                     typeCounts.compute(typePrefix, { String k1, Integer v1 -> (v1 == null) ? 1 : v1 + 1 })
