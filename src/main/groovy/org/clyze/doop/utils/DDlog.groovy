@@ -117,7 +117,7 @@ class DDlog extends SouffleScript {
         // Step 1. Call converter for logic only.
         def convertedLogicPrefix = getConvertedLogicPrefix(outDir)
 		def cmdConvert = ["${outDir}/${SOUFFLE_CONVERTER}" as String,
-                          "--logic-only",
+						  "--logic-only", "--convert-dnf",
 						  scriptFile.canonicalPath,
 						  convertedLogicPrefix ]
 		log.debug "Running logic conversion command: ${cmdConvert}"
