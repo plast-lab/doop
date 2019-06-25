@@ -8,7 +8,6 @@ import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
 import org.clyze.doop.common.DoopErrorCodeException
-import org.clyze.doop.common.KeepSpecProcessor
 import org.clyze.doop.common.FrontEnd
 import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
@@ -159,11 +158,38 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     protected void reuseFacts(File fromDir) {
         linkOrCopyFacts(fromDir)
-        def keepSpec = options.KEEP_SPEC.value as String
-        if (keepSpec) {
-            KeepSpecProcessor.processDir(factsDir, keepSpec)
+        generateFacts0()
+    }
+
+    /**
+     * Generates the facts that do not need a call to the front end. Such
+     * facts can also be written on top of reused facts.
+     */
+    protected void generateFacts0() {
+
+        if (options.KEEP_SPEC.value)
+            gen0.writeKeepSpec(options.KEEP_SPEC.value as String)
+
+        if (options.MAIN_CLASS.value)
+            gen0.writeMainClassFacts(options.MAIN_CLASS.value)
+
+        if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value)
+            gen0.writeExtraSensitiveControls(options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString())
+
+        if (options.DACAPO.value) {
+            def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+            def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+            gen0.writeDacapoFacts(benchmark, benchmarkCap)
+        } else if (options.DACAPO_BACH.value) {
+            def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+            def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+            gen0.writeDacapoBachFacts(benchmarkCap)
         }
-        gen0.writeMainClassFacts(options.MAIN_CLASS.value)
+
+        if (options.TAMIFLEX.value) {
+            File origTamFile = new File(options.TAMIFLEX.value.toString())
+            gen0.writeTamiflexFacts(origTamFile)
+        }
     }
 
     protected void generateFacts() throws DoopErrorCodeException {
@@ -184,9 +210,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 runJPhantom()
             }
 
-            if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
-                gen0.writeExtraSensitiveControls(options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString())
-            }
+            generateFacts0()
 
             def existingFactsDir = options.X_EXTEND_FACTS.value as File
             if (existingFactsDir) {
@@ -251,21 +275,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
             touch(new File(factsDir, "MainClass.facts"))
 
-            if (options.DACAPO.value) {
-                def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
-                def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-                gen0.writeDacapoFacts(benchmark, benchmarkCap)
-            } else if (options.DACAPO_BACH.value) {
-                def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
-                def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-                gen0.writeDacapoBachFacts(benchmarkCap)
-            }
-
-            if (options.TAMIFLEX.value) {
-                File origTamFile = new File(options.TAMIFLEX.value.toString())
-                gen0.writeTamiflexFacts(origTamFile)
-            }
-
             if (!options.X_START_AFTER_FACTS.value) {
                 if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
                     runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
@@ -281,8 +290,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             }
             log.info "----"
         }
-
-        gen0.writeMainClassFacts(options.MAIN_CLASS.value)
 
         if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
             File origSpecialCSMethodsFile = new File(options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString())

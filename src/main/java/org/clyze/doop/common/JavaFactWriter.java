@@ -122,13 +122,6 @@ public abstract class JavaFactWriter {
                 writeProperty(path, propertyName, propertyValue);
             }
         }
-
-        try {
-            if (params._keepSpec != null)
-                KeepSpecProcessor.processDb(_db, params._keepSpec);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
     }
 
     /**

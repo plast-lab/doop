@@ -1,0 +1,205 @@
+package org.clyze.doop.core
+
+import groovy.transform.TypeChecked
+import groovy.util.logging.Log4j
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.stream.Stream
+import org.clyze.doop.common.CHA
+import org.clyze.doop.common.Database
+import org.clyze.doop.common.FieldInfo
+import org.clyze.doop.common.PredicateFile
+import org.clyze.utils.Helper
+
+// This fact generator handles facts that do not need front-end/IR information.
+@Log4j
+@TypeChecked
+public class FactGenerator0 {
+
+    private File factsDir
+
+    private static final String DACAPO = "Dacapo"
+    private static final String KEEP_CLASS = "KeepClass"
+    private static final String KEEP_METHOD = "KeepMethod"
+    private static final String KEEP_CLASS_MEMBERS = "KeepClassMembers"
+    private static final String KEEP_CLASSES_WITH_MEMBERS = "KeepClassesWithMembers"
+    private static final String MAIN_CLASS = "MainClass"
+    private static final String SENSITIVE_LAYOUT_CONTROL = "SensitiveLayoutControl"
+    private static final String TAMIFLEX = "Tamiflex"
+
+    // A map from rule-hash to (type, number-of-matches). Used to detect bad 'keep' input.
+    private Map<String, Map<String, Integer> > ruleCounts = new HashMap<String, Map<String, Integer> >()
+
+    public FactGenerator0(File factsDir) {
+        this.factsDir = factsDir
+    }
+
+    private File factsFile(String s) { new File(factsDir, s + ".facts") }
+
+    public void writeMainClassFacts(def mainClass) {
+        if (mainClass) {
+            factsFile(MAIN_CLASS).withWriterAppend { w ->
+                mainClass.each { w.writeLine(it as String) }
+            }
+        }
+    }
+
+    public void writeDacapoFacts(String benchmark, String benchmarkCap) {
+        factsFile(DACAPO).withWriter { w ->
+            w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
+        }
+    }
+
+    public void writeDacapoBachFacts(String benchmarkCap) {
+        factsFile(DACAPO).withWriter { w ->
+            w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
+        }
+    }
+
+    public void writeTamiflexFacts(File origTamFile) {
+        factsFile(TAMIFLEX).withWriter { w ->
+            origTamFile.eachLine { line ->
+                w << line
+                    .replaceFirst(/;[^;]*;$/, "")
+                    .replaceFirst(/;$/, ";0")
+                    .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + ";" + second + "\n" }
+                    .replaceAll(";", "\t").replaceFirst(/\./, "\t")
+            }
+        }
+    }
+
+    private void fillCHAFromSootFacts(CHA cha) {
+		String supFile = "${factsDir}/${PredicateFile.DIRECT_SUPER_CLASS.toString()}.facts"
+		println "Importing non-dex class type hierarchy from ${supFile}"
+		Helper.forEachLineIn(supFile, { String line ->
+			def parts = line.tokenize('\t')
+			cha.registerSuperClass(parts[0], parts[1])
+		})
+
+		String fieldFile = "${factsDir}/${PredicateFile.FIELD_SIGNATURE.toString()}.facts"
+		println "Importing non-dex fields from ${fieldFile}"
+		Map<String, List<FieldInfo> > fields = [:].withDefault { [] }
+		Helper.forEachLineIn(fieldFile, { String line ->
+			def parts = line.tokenize('\t')
+			String declType = parts[1]
+			String name = parts[2]
+			String type = parts[3]
+			List<FieldInfo> info = fields.get(declType)
+			info.add(new FieldInfo(type, name))
+			fields.put(declType, info)
+		})
+		fields.each { declType, fs -> cha.registerDefinedClassFields(declType, fs) }
+    }
+
+    // The extra sensitive controls are given as a String
+    // "id1,type1,parentId1,id2,type2,parentId2,...".
+    public void writeExtraSensitiveControls(String controls) {
+        if (controls.equals("")) {
+            return
+        }
+
+        final String DELIM = ","
+        String[] parts = controls.split(DELIM)
+        int partsLen = parts.length
+        if (partsLen % 3 != 0) {
+            System.err.println("Extra sensitive controls list size is " + partsLen + ", not a multiple of 3: \"" + controls + "\"")
+            return
+        }
+        for (int i = 0; i < partsLen; i += 3) {
+            String control = parts[i] + DELIM + parts[i+1] + DELIM + parts[i+2]
+            try {
+                long controlId = Long.parseLong(parts[i])
+                String typeId = parts[i+1].trim()
+                long parentId = Long.parseLong(parts[i+2])
+                System.out.println("Adding sensitive layout control: " + control)
+                factsFile(PredicateFile.SENSITIVE_LAYOUT_CONTROL.toString()).withWriterAppend { w ->
+                    w << controlId + "\t" + typeId + "\t" + parentId
+                }
+            } catch (Exception ex) {
+                System.err.println("Ignoring control: ${control} (exception: '${ex.message}')")
+            }
+        }
+    }
+
+    /**
+     * Write the 'keep' specification for entry points.
+     *
+     * @param specPath   the specification file path
+     */
+    public void writeKeepSpec(String specPath) {
+        if (specPath == null)
+            return
+
+        if ((new File(specPath)).exists()) {
+            System.out.println("Reading keep specification from: " + specPath)
+            Files.lines(Paths.get(specPath)).withCloseable { Stream<String> stream ->
+                // try (Stream<String> stream = Files.lines(Paths.get(specPath))) {
+                try {
+                    new Database(factsDir).withCloseable { db ->
+                        stream.forEach { s -> processKeepSpecLine(db, s) }
+                    }
+                    ruleCounts.each { ruleHash, typeCounts ->
+                        int counts = (new HashSet<Integer>(typeCounts.values())).size()
+                        if (counts > 1) {
+                            System.err.println("WARNING: Rule ${ruleHash} matches different member counts for different types: ${typeCounts}")
+                        }
+                    }
+                    ruleCounts.clear()
+                } catch (IOException ex) {
+                    System.err.println("Error writing entry point information: " + ex.message)
+                }
+            }
+        } else
+            System.err.println("WARNING: cannot read keep specification from file: " + specPath)
+    }
+
+    /**
+     * The main processor for keep specification lines.
+     *
+     * @param db     the database object to use for writing
+     * @param line   the text line to process
+     */
+    private void processKeepSpecLine(Database db, String line) {
+        String[] fields = line.split("\t")
+
+        switch (fields[0]) {
+            case "KEEP":
+                // Support both two- and three-column format (ignore last column).
+                if (fields.length == 2 || fields.length == 3)
+                    factsFile(KEEP_METHOD).withWriterAppend { it << fields[1] }
+                else
+                    System.err.println("WARNING: malformed line (should be 2 or 3 columns, tab-separated): " + line)
+                break
+            case "KEEP_CLASS_MEMBERS":
+                // Support both two- and three-column format (ignore last column).
+                if (fields.length == 2 || fields.length == 3)
+                    factsFile(KEEP_CLASS_MEMBERS).withWriterAppend { it << fields[1] }
+                else
+                    System.err.println("WARNING: malformed line (should be 2 or 3 columns, tab-separated): " + line)
+                break
+            case "KEEP_CLASSES_WITH_MEMBERS":
+                if (fields.length == 3) {
+                    String typeId = fields[1]
+                    String ruleHash = fields[2]
+                    int colonIdx = typeId.indexOf(':')
+                    if (colonIdx < 0) {
+                        System.err.println("WARNING: malformed type in spec line: " + line)
+                        return
+                    }
+                    factsFile(KEEP_CLASSES_WITH_MEMBERS).withWriterAppend { it << (typeId + "\t" + ruleHash) }
+                    Map<String, Integer> typeCounts = ruleCounts.computeIfAbsent(ruleHash, { new HashMap<String, Integer>() })
+                    String typePrefix = typeId.substring(1, colonIdx)
+                    typeCounts.compute(typePrefix, { String k1, Integer v1 -> (v1 == null) ? 1 : v1 + 1 })
+                }
+                else
+                    System.err.println("WARNING: malformed line (should be 4 columns, tab-separated): " + line)
+                break
+            default:
+                System.err.println("WARNING: unsupported spec line: " + line)
+        }
+    }
+
+    // private static void writeKeepClass(Database db, String className) {
+    //     db.add(KEEP_CLASS, className);
+    // }
+}

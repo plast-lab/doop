@@ -22,7 +22,6 @@ public class Parameters {
     public boolean _scanNativeCode = false;
     public boolean _android = false;
     public Integer _cores = null;
-    public String _keepSpec = null;
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
@@ -185,10 +184,6 @@ public class Parameters {
         case "--R-out-dir":
             i = shift(args, i);
             _rOutDir = args[i];
-            break;
-        case "--keep-spec":
-            i = shift(args, i);
-            _keepSpec = args[i];
             break;
         case "--no-facts":
             _noFacts = true;
