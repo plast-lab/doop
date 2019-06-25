@@ -39,14 +39,6 @@ SpecialMethodToKeep(?method) :-
   (?r = ".R" ; ?r = "$R"),
   substr(?type, strlen(?type) - 2, 2) = ?r.
 
-// 'keep class members' = keep all class methods if the class
-// has a reachable method.
-SpecialMethodToKeep(?method) :-
-  KeepClassMembers(?method),
-  Method_DeclaringType(?method, ?type),
-  Method_DeclaringType(?otherMethod, ?type),
-  mainAnalysis.Reachable(?otherMethod).
-
 // Output for dead method removal.
 .decl MethodToRemove(?method:Method)
 MethodToRemove(?method) :-
