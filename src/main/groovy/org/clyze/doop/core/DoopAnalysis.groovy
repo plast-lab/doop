@@ -316,6 +316,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             return
         }
 
+        if (options.X_START_AFTER_FACTS.value) {
+            throw new RuntimeException("Internal error: code fact generator called under --${options.X_START_AFTER_FACTS.name}")
+        } else if (options.CACHE.value) {
+            throw new RuntimeException("Internal error: code fact generator called under --${options.CACHE.name}")
+        }
+
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         if (platform != "android" && platform != "java")
             throw new RuntimeException("Unsupported platform: ${platform}")
@@ -325,6 +331,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         List<File> platforms = options.PLATFORMS.value as List<File>
         if (!platforms) {
             throw new RuntimeException("internal option '${options.PLATFORMS.name}' is empty")
+        }
+
+        if (!options.APP_REGEX.value) {
+            throw new RuntimeException("Internal error: no application regex available for code fact generator.")
         }
 
         Collection<String> params = ["--application-regex", options.APP_REGEX.value.toString()]
