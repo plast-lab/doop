@@ -284,6 +284,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "scan-native-code",
 					group: GROUP_NATIVE,
 					description: "Scan native code for specific patterns.",
+					forCacheID: true,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
