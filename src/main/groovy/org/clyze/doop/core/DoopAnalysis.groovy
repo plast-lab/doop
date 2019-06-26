@@ -184,14 +184,15 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     protected void generateFacts() throws DoopErrorCodeException {
         deleteQuietly(factsDir)
 
-        if (cacheDir.exists() && options.CACHE.value) {
+        if (options.CACHE.value) {
             log.info "Using cached facts from $cacheDir"
             linkOrCopyFacts(cacheDir)
-        } else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
+        } else if (options.X_START_AFTER_FACTS.value) {
             def importedFactsDir = options.X_START_AFTER_FACTS.value as String
             log.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
             linkOrCopyFacts(new File(importedFactsDir))
         } else {
+
             factsDir.mkdirs()
             log.info "-- Fact Generation --"
 
@@ -264,7 +265,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
             touch(new File(factsDir, "MainClass.facts"))
 
-            if (!options.X_START_AFTER_FACTS.value) {
+            if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value) {
                 if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
                     runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
                 }

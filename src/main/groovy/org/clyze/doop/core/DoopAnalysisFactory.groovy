@@ -116,11 +116,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.CACHE_DIR.value = getFactsReuseDir(options.X_EXTEND_FACTS, options, false)
 		} else {
 			def cacheId = generateCacheID(options)
-			options.CACHE_DIR.value = new File(Doop.doopCache, cacheId)
-
-			// Facts are assumed to be read-only.
-			if (options.CACHE.value && options.CACHE_DIR.value.exists()) {
+			File cachedFacts = new File(Doop.doopCache, cacheId)
+			options.CACHE_DIR.value = cachedFacts
+			if (options.CACHE.value && cachedFacts.exists()) {
+				// Facts are assumed to be read-only.
 				checkFactsReuse(options.CACHE, options, true)
+			} else if (options.CACHE.value) {
+				log.info "Could not find cached facts."
+				options.CACHE.value = false
 			}
 		}
 
@@ -163,7 +166,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 								boolean throwError) {
 		def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
 		for (def opt : factOpts) {
-			if ((factsOpt == options.X_START_AFTER_FACTS) && opt.forPreprocessor) {
+			if (opt.forPreprocessor) {
 				log.warn "WARNING: Using option --${opt.name} but facts may not be modified (only logic will be affected)."
 			} else {
 				if (options.X_SYMLINK_CACHED_FACTS.value) {
@@ -371,23 +374,18 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				} else {
 					log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
 				}
-			} else {
-				if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
-					options.INPUTS.value.each {
-						def jarFile = new JarFile(it)
-						//Try to read the main class from the manifest contained in the jar
-						def main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS)
-						if (main) {
-							log.info "Main class(es) expanded with '${main}'"
-							options.MAIN_CLASS.value << main
-						} else {
-							//Check whether the jar contains a class with the same name
-							def jarName = FilenameUtils.getBaseName(jarFile.name)
-							if (jarFile.getJarEntry("${jarName}.class")) {
-								log.info "Main class(es) expanded with '${jarName}'"
-								options.MAIN_CLASS.value << jarName
-							}
-						}
+			} else if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
+				options.INPUTS.value.each {
+					def jarFile = new JarFile(it)
+					//Try to read the main class from the manifest contained in the jar
+					def main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS)
+					if (main) {
+						recordAutoMainClass(options, main)
+					} else {
+						//Check whether the jar contains a class with the same name
+						def jarName = FilenameUtils.getBaseName(jarFile.name)
+						if (jarFile.getJarEntry("${jarName}.class"))
+							recordAutoMainClass(options, jarName)
 					}
 				}
 			}
@@ -576,6 +574,21 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		options.values().findAll { it.isMandatory }.each {
 			if (!it.value)
 				throw new RuntimeException("Missing mandatory argument: $it.name")
+		}
+	}
+
+	/**
+	 * Records an auto-detected main class. If reusing read-only facts, it does nothing.
+	 *
+	 * @param options	   the analysis options
+	 * @param className	   the name of the class
+	 */
+	static void recordAutoMainClass(Map<String, AnalysisOption> options, String className) {
+		if (options.CACHE.value)
+			log.warn "WARNING: Ignoring auto-detected main class '${className}' when using --${options.CACHE.name}"
+		else {
+			log.info "Main class(es) expanded with '${className}'"
+			options.MAIN_CLASS.value << className
 		}
 	}
 
