@@ -372,7 +372,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (options.SKIP_CODE_FACTGEN.value && !options.X_EXTEND_FACTS.value) {
 			throw new RuntimeException("Option --${options.SKIP_CODE_FACTGEN.name} should only be used together with --${options.X_EXTEND_FACTS.name}.")
-		} else if (options.X_STOP_AT_FACTS.value) {
+		} else if (options.X_START_AFTER_FACTS.value) {
 			options.SKIP_CODE_FACTGEN.value = true
 		}
 
