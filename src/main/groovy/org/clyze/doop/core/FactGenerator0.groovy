@@ -77,14 +77,14 @@ public class FactGenerator0 {
 
     private void fillCHAFromSootFacts(CHA cha) {
 		String supFile = "${factsDir}/${PredicateFile.DIRECT_SUPER_CLASS.toString()}.facts"
-		println "Importing non-dex class type hierarchy from ${supFile}"
+		log.info "Importing non-dex class type hierarchy from ${supFile}"
 		Helper.forEachLineIn(supFile, { String line ->
 			def parts = line.tokenize('\t')
 			cha.registerSuperClass(parts[0], parts[1])
 		})
 
 		String fieldFile = "${factsDir}/${PredicateFile.FIELD_SIGNATURE.toString()}.facts"
-		println "Importing non-dex fields from ${fieldFile}"
+		log.info "Importing non-dex fields from ${fieldFile}"
 		Map<String, List<FieldInfo> > fields = [:].withDefault { [] }
 		Helper.forEachLineIn(fieldFile, { String line ->
 			def parts = line.tokenize('\t')
@@ -109,7 +109,7 @@ public class FactGenerator0 {
         String[] parts = controls.split(DELIM)
         int partsLen = parts.length
         if (partsLen % 3 != 0) {
-            System.err.println("Extra sensitive controls list size is " + partsLen + ", not a multiple of 3: \"" + controls + "\"")
+            log.error("Extra sensitive controls list size is " + partsLen + ", not a multiple of 3: \"" + controls + "\"")
             return
         }
         for (int i = 0; i < partsLen; i += 3) {
@@ -118,12 +118,12 @@ public class FactGenerator0 {
                 long controlId = Long.parseLong(parts[i])
                 String typeId = parts[i+1].trim()
                 long parentId = Long.parseLong(parts[i+2])
-                System.out.println("Adding sensitive layout control: " + control)
+                log.info "Adding sensitive layout control: ${control}"
                 factsFile(PredicateFile.SENSITIVE_LAYOUT_CONTROL.toString()).withWriterAppend { w ->
                     w << controlId + "\t" + typeId + "\t" + parentId + "\n"
                 }
             } catch (Exception ex) {
-                System.err.println("Ignoring control: ${control} (exception: '${ex.message}')")
+                log.warn "WARNING: Ignoring control: ${control} (exception: '${ex.message}')"
             }
         }
     }
@@ -138,7 +138,7 @@ public class FactGenerator0 {
             return
 
         if ((new File(specPath)).exists()) {
-            System.out.println("Reading keep specification from: " + specPath)
+            log.info "Reading keep specification from: ${specPath}"
             Files.lines(Paths.get(specPath)).withCloseable { Stream<String> stream ->
                 try {
 
@@ -150,16 +150,16 @@ public class FactGenerator0 {
                     ruleCounts.each { ruleHash, typeCounts ->
                         int counts = (new HashSet<Integer>(typeCounts.values())).size()
                         if (counts > 1) {
-                            System.err.println("WARNING: Rule ${ruleHash} matches different member counts for different types: ${typeCounts}")
+                            log.warn "WARNING: Rule ${ruleHash} matches different member counts for different types: ${typeCounts}"
                         }
                     }
                     ruleCounts.clear()
                 } catch (IOException ex) {
-                    System.err.println("Error writing entry point information: " + ex.message)
+                    log.error "Error writing entry point: ${ex.message}"
                 }
             }
         } else
-            System.err.println("WARNING: cannot read keep specification from file: " + specPath)
+            log.warn "WARNING: cannot read keep specification: ${specPath}"
     }
 
     /**
@@ -177,14 +177,14 @@ public class FactGenerator0 {
                 if (fields.length == 2 || fields.length == 3)
                     factsFile(KEEP_METHOD.name).withWriterAppend { it << (fields[1] + "\n") }
                 else
-                    System.err.println("WARNING: malformed line (should be 2 or 3 columns, tab-separated): " + line)
+                    log.warn "WARNING: malformed line (should be 2 or 3 columns, tab-separated): ${line}"
                 break
             case "KEEP_CLASS_MEMBERS":
                 // Support both two- and three-column format (ignore last column).
                 if (fields.length == 2 || fields.length == 3)
                     factsFile(KEEP_CLASS_MEMBERS.name).withWriterAppend { it << (fields[1] + "\n") }
                 else
-                    System.err.println("WARNING: malformed line (should be 2 or 3 columns, tab-separated): " + line)
+                    log.warn "WARNING: malformed line (should be 2 or 3 columns, tab-separated): ${line}"
                 break
             case "KEEP_CLASSES_WITH_MEMBERS":
                 if (fields.length == 3) {
@@ -192,7 +192,7 @@ public class FactGenerator0 {
                     String ruleHash = fields[2]
                     int colonIdx = typeId.indexOf(':')
                     if (colonIdx < 0) {
-                        System.err.println("WARNING: malformed type in spec line: " + line)
+                        log.warn "WARNING: malformed type in spec line: ${line}"
                         return
                     }
                     factsFile(KEEP_CLASSES_WITH_MEMBERS.name).withWriterAppend { it << (typeId + "\t" + ruleHash + "\n") }
@@ -201,10 +201,10 @@ public class FactGenerator0 {
                     typeCounts.compute(typePrefix, { String k1, Integer v1 -> (v1 == null) ? 1 : v1 + 1 })
                 }
                 else
-                    System.err.println("WARNING: malformed line (should be 4 columns, tab-separated): " + line)
+                    log.warn "WARNING: malformed line (should be 4 columns, tab-separated): ${line}"
                 break
             default:
-                System.err.println("WARNING: unsupported spec line: " + line)
+                log.warn "WARNING: unsupported spec line: ${line}"
         }
     }
 
