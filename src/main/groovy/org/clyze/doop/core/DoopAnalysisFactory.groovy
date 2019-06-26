@@ -122,6 +122,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			if (options.CACHE.value && options.CACHE_DIR.value.exists()) {
 				checkFactsReuse(options.CACHE, options, true)
 			}
+		}
+
+		if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value) {
 			checkAppGlob(options)
 		}
 
