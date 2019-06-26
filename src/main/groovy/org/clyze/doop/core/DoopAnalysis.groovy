@@ -304,7 +304,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
             touch(new File(factsDir, "MainClass.facts"))
 
-            if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value) {
+            if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value && !options.X_EXTEND_FACTS.value) {
                 if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
                     runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
                 }
