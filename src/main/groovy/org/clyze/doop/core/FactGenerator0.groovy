@@ -179,6 +179,12 @@ public class FactGenerator0 {
                 else
                     log.warn "WARNING: malformed line (should be 2 or 3 columns, tab-separated): ${line}"
                 break
+            case "KEEP_CLASS":
+                if (fields.length == 2)
+                    factsFile(KEEP_CLASS.name).withWriterAppend { it << (fields[1] + "\n") }
+                else
+                    log.warn "WARNING: malformed line (should be 2 or 3 columns, tab-separated): ${line}"
+                break
             case "KEEP_CLASS_MEMBERS":
                 // Support both two- and three-column format (ignore last column).
                 if (fields.length == 2 || fields.length == 3)
@@ -208,7 +214,12 @@ public class FactGenerator0 {
         }
     }
 
-    // private static void writeKeepClass(Database db, String className) {
-    //     db.add(KEEP_CLASS, className);
-    // }
+    /**
+     * Initialize all output fact files.
+     */
+    public void touch() {
+        PredicateFile0.values().each {
+            factsFile(it.name).withWriterAppend { }
+        }
+    }
 }

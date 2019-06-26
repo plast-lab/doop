@@ -158,6 +158,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     protected void generateFacts0() {
 
+        gen0.touch()
+
         if (options.KEEP_SPEC.value)
             gen0.writeKeepSpec(options.KEEP_SPEC.value as String)
 
@@ -301,8 +303,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 }
                 log.info "Time to make facts unique: $timing"
             }
-
-            touch(new File(factsDir, "MainClass.facts"))
 
             if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value && !options.X_EXTEND_FACTS.value) {
                 if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
