@@ -195,17 +195,17 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             factsDir.mkdirs()
             log.info "-- Fact Generation --"
 
-            if (options.RUN_JPHANTOM.value) {
-                runJPhantom()
-            }
-
-            generateFacts0()
-
             def existingFactsDir = options.X_EXTEND_FACTS.value as File
             if (existingFactsDir) {
                 log.info "Expanding upon facts found in: $existingFactsDir.canonicalPath"
                 linkOrCopyFacts(existingFactsDir)
             }
+
+            if (options.RUN_JPHANTOM.value) {
+                runJPhantom()
+            }
+
+            generateFacts0()
 
             Set<String> tmpDirs = [] as Set
             try {
