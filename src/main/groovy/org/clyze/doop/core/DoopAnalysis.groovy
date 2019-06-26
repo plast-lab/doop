@@ -23,6 +23,8 @@ import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.util.jar.Attributes
+import java.util.jar.JarFile
 
 import static org.apache.commons.io.FileUtils.*
 
@@ -159,8 +161,30 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (options.KEEP_SPEC.value)
             gen0.writeKeepSpec(options.KEEP_SPEC.value as String)
 
-        if (options.MAIN_CLASS.value)
-            gen0.writeMainClassFacts(options.MAIN_CLASS.value)
+        if (!options.PYTHON.value) {
+            if (options.MAIN_CLASS.value) {
+                if (options.IGNORE_MAIN_METHOD.value)
+                    throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
+                else
+                    log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
+            } else if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
+                options.INPUTS.value.each { File jarPath ->
+                    JarFile jarFile = new JarFile(jarPath)
+                    //Try to read the main class from the manifest contained in the jar
+                    String main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS) as String
+                    if (main)
+                        recordAutoMainClass(main)
+                    else {
+                        //Check whether the jar contains a class with the same name
+                        def jarName = FilenameUtils.getBaseName(jarFile.name)
+                        if (jarFile.getJarEntry("${jarName}.class"))
+                            recordAutoMainClass(jarName)
+                    }
+                }
+            }
+            if (options.MAIN_CLASS.value)
+                gen0.writeMainClassFacts(options.MAIN_CLASS.value)
+        }
 
         if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value)
             gen0.writeExtraSensitiveControls(options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString())
@@ -179,7 +203,22 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             File origTamFile = new File(options.TAMIFLEX.value.toString())
             gen0.writeTamiflexFacts(origTamFile)
         }
+
     }
+
+	/**
+	 * Records an auto-detected main class. If reusing read-only facts, it does nothing.
+	 *
+	 * @param className	   the name of the class
+	 */
+	public void recordAutoMainClass(String className) {
+		if (options.CACHE.value)
+			log.warn "WARNING: Ignoring auto-detected main class '${className}' when using --${options.CACHE.name}"
+		else {
+			log.info "Main class(es) expanded with '${className}'"
+			(options.MAIN_CLASS.value as List<String>) << className
+		}
+	}
 
     protected void generateFacts() throws DoopErrorCodeException {
         deleteQuietly(factsDir)

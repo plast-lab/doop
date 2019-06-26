@@ -12,9 +12,6 @@ import org.clyze.doop.utils.PackageUtil
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
 
-import java.util.jar.Attributes
-import java.util.jar.JarFile
-
 /**
  * A Factory for creating Analysis objects.
  *
@@ -122,7 +119,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				// Facts are assumed to be read-only.
 				checkFactsReuse(options.CACHE, options, true)
 			} else if (options.CACHE.value) {
-				log.info "Could not find cached facts."
+				log.info "Could not find cached facts, option will be ignored: --${options.CACHE.name}"
 				options.CACHE.value = false
 			}
 		}
@@ -367,30 +364,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
-		if (!options.PYTHON.value) {
-			if (options.MAIN_CLASS.value) {
-				if (options.IGNORE_MAIN_METHOD.value) {
-					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
-				} else {
-					log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
-				}
-			} else if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
-				options.INPUTS.value.each {
-					def jarFile = new JarFile(it)
-					//Try to read the main class from the manifest contained in the jar
-					def main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS)
-					if (main) {
-						recordAutoMainClass(options, main)
-					} else {
-						//Check whether the jar contains a class with the same name
-						def jarName = FilenameUtils.getBaseName(jarFile.name)
-						if (jarFile.getJarEntry("${jarName}.class"))
-							recordAutoMainClass(options, jarName)
-					}
-				}
-			}
-		}
-
 		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_STOP_AT_FACTS)
 		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_EXTEND_FACTS)
 		throwIfBothSet(options.X_EXTEND_FACTS, options.X_STOP_AT_FACTS)
@@ -574,21 +547,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		options.values().findAll { it.isMandatory }.each {
 			if (!it.value)
 				throw new RuntimeException("Missing mandatory argument: $it.name")
-		}
-	}
-
-	/**
-	 * Records an auto-detected main class. If reusing read-only facts, it does nothing.
-	 *
-	 * @param options	   the analysis options
-	 * @param className	   the name of the class
-	 */
-	static void recordAutoMainClass(Map<String, AnalysisOption> options, String className) {
-		if (options.CACHE.value)
-			log.warn "WARNING: Ignoring auto-detected main class '${className}' when using --${options.CACHE.name}"
-		else {
-			log.info "Main class(es) expanded with '${className}'"
-			options.MAIN_CLASS.value << className
 		}
 	}
 
