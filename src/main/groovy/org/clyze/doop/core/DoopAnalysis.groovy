@@ -151,17 +151,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     /**
-     * Reuses an existing facts directory. May add more facts on top of
-     * the existing facts, if appropriate command line options are set.
-     *
-     * @param fromDir the existing directory containing the facts
-     */
-    protected void reuseFacts(File fromDir) {
-        linkOrCopyFacts(fromDir)
-        generateFacts0()
-    }
-
-    /**
      * Generates the facts that do not need a call to the front end. Such
      * facts can also be written on top of reused facts.
      */
@@ -197,11 +186,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         if (cacheDir.exists() && options.CACHE.value) {
             log.info "Using cached facts from $cacheDir"
-            reuseFacts(cacheDir)
+            linkOrCopyFacts(cacheDir)
         } else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
             def importedFactsDir = options.X_START_AFTER_FACTS.value as String
             log.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
-            reuseFacts(new File(importedFactsDir))
+            linkOrCopyFacts(new File(importedFactsDir))
         } else {
             factsDir.mkdirs()
             log.info "-- Fact Generation --"
