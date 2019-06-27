@@ -11,6 +11,7 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
+import static org.apache.commons.io.FilenameUtils.getBaseName
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 
@@ -165,7 +166,7 @@ class SouffleAnalysis extends DoopAnalysis {
 	void mainAnalysis(File analysis) {
 		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 		def mainPath = "${Doop.souffleLogicPath}/main"
-		def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
+		def analysisPath = "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}"
 
 		if (name == "sound-may-point-to") {
 			cpp.includeAtEnd("$analysis", "${mainPath}/string-constants.dl")
