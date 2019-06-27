@@ -23,15 +23,15 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
 
     @Override
     void run() {
-        analysis = new File(outDir, "${name}.dl")
+        File analysis = new File(outDir, "${name}.dl")
         deleteQuietly(analysis)
         analysis.createNewFile()
 
-        initDatabase()
-        basicAnalysis()
+        initDatabase(analysis)
+        basicAnalysis(analysis)
         if (!options.X_STOP_AT_BASIC.value) {
-            mainAnalysis()
-            produceStats()
+            mainAnalysis(analysis)
+            produceStats(analysis)
         }
 
         def cacheDir = new File(Doop.souffleAnalysesCache, name)

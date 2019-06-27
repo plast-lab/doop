@@ -6,6 +6,7 @@ import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.ptatoolkit.scaler.Driver
+import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
 import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
@@ -18,22 +19,19 @@ import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 import static org.apache.commons.io.FilenameUtils.getBaseName
 
-//@CompileStatic
+@CompileStatic
 @InheritConstructors
 @Log4j
-//@TypeChecked
+@TypeChecked
 class SouffleMultiPhaseAnalysis extends DoopAnalysis {
-
-	File preAnalysis
-	File analysis
 
 	@Override
 	void run() {
-		preAnalysis = new File(outDir, "context-insensitive.dl")
-		analysis = new File(outDir, "${name}.dl")
+		File preAnalysis = new File(outDir, "context-insensitive.dl")
 		deleteQuietly(preAnalysis)
-		deleteQuietly(analysis)
 		preAnalysis.createNewFile()
+		File analysis = new File(outDir, "${name}.dl")
+		deleteQuietly(analysis)
 		analysis.createNewFile()
 
 		options.CONFIGURATION.value = "ContextInsensitiveConfiguration"
@@ -56,36 +54,52 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()
 		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
+		boolean profiling = options.SOUFFLE_PROFILE.value as boolean
 		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
 		if (!options.X_STOP_AT_FACTS.value) {
+			if (options.VIA_DDLOG.value) {
+				// Copy the DDlog converter, needed both for logic
+				// compilation and fact post-processing.
+				DDlog.copyDDlogConverter(log, outDir)
+			}
 			compilationFuture = executorService.submit(new Callable<File>() {
 				@Override
 				File call() {
 					log.info "[Task COMPILE...]"
-					def generatedFile = script.compile(preAnalysis, outDir, cacheDir,
-							options.SOUFFLE_PROFILE.value as boolean,
+					def generatedFile0 = script.compile(preAnalysis, outDir, cacheDir,
+							profiling,
 							options.SOUFFLE_DEBUG.value as boolean,
 							provenance,
 							liveProf,
 							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-							options.X_CONTEXT_REMOVER.value as boolean)
+							options.X_CONTEXT_REMOVER.value as boolean,
+							options.SOUFFLE_USE_FUNCTORS.value as boolean)
 					log.info "[Task COMPILE Done]"
-					return generatedFile
+					return generatedFile0
 				}
 			})
 		}
 
 		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
 
+		def generatedFile0
+		if (options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
+			generatedFile0 = compilationFuture.get()
+			System.gc()
+		}
+
 		try {
 			log.info "[Task FACTS...]"
 			generateFacts()
+			script.postprocessFacts(outDir, profiling)
 			log.info "[Task FACTS Done]"
 
 			if (options.X_STOP_AT_FACTS.value) return
 
-			def generatedFile = compilationFuture.get()
-			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
+			    generatedFile0 = compilationFuture.get()
+            }
+			script.run(generatedFile0, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
 					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
 
 			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
@@ -123,12 +137,13 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 				File call() {
 					log.info "[Task COMPILE...]"
 					def generatedFile = script.compile(analysis, outDir, cacheDir,
-							options.SOUFFLE_PROFILE.value as boolean,
+							profiling,
 							options.SOUFFLE_DEBUG.value as boolean,
 							provenance,
 							liveProf,
 							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-							options.X_CONTEXT_REMOVER.value as boolean)
+							options.X_CONTEXT_REMOVER.value as boolean,
+							options.SOUFFLE_USE_FUNCTORS.value as boolean)
 					log.info "[Task COMPILE Done]"
 					return generatedFile
 				}
@@ -137,12 +152,20 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 
 		runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
 
+		def generatedFile
+		if (options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
+			generatedFile = compilationFuture.get()
+			System.gc()
+		}
 		try {
 			if (options.X_STOP_AT_FACTS.value) return
 
-			def generatedFile = compilationFuture.get()
+			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
+				generatedFile = compilationFuture.get()
+			}
 			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, provenance, liveProf)
+					   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
+					   provenance, liveProf, profiling)
 
 			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 			runtimeMetricsFile.createNewFile()
@@ -156,6 +179,10 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 	}
 
 	void initDatabase(File analysis) {
+		//functor declarations need to be first
+		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/souffle-incremental-output/functor-declarations.dl")
+		}
 		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-sensitive-schema.dl")
 		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-insensitive-schema.dl")
@@ -212,6 +239,10 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros)
 		}
 
+		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/souffle-incremental-output/incr-output.dl")
+		}
+
 		if (options.INFORMATION_FLOW.value) {
 			def infoFlowPath = "${Doop.souffleAddonsPath}/information-flow"
 			cpp.includeAtEnd("$analysis", "${infoFlowPath}/declarations.dl")
@@ -220,11 +251,20 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
 		}
 
+		if (options.CONSTANT_FOLDING.value) {
+			def constantFoldingPath = "${Doop.souffleAddonsPath}/constant-folding"
+			cpp.includeAtEnd("$analysis", "${constantFoldingPath}/declarations.dl")
+			cpp.includeAtEnd("$analysis", "${constantFoldingPath}/const-type-infer.dl")
+			cpp.includeAtEnd("$analysis", "${constantFoldingPath}/constant-folding.dl")
+		}
+
 		if (options.SYMBOLIC_REASONING.value) {
-			def symbolicReasoningPath ="${Doop.souffleAddonsPath}/symbolic-reasoning"
-			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/const-type-infer.dl")
-			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/constant-folding.dl")
-			//cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/constant-propagation.dl")
+			def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/util.dl")
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/path-expression.dl")
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/boolean-reasoning.dl")
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/arithmetic-reasoning.dl")
 		}
 
 		String openProgramsRules = options.OPEN_PROGRAMS.value
@@ -262,7 +302,7 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 				log.info "Adding extra logic file ${extraLogicPath}"
 				cpp.includeAtEnd("${analysis}", extraLogicPath, commonMacros)
 			} else {
-				log.warn "Extra logic file does not exist: ${extraLogic}"
+				throw new RuntimeException("Extra logic file does not exist: ${extraLogic}")
 			}
 		}
 	}
@@ -275,6 +315,10 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 
 		if (options.X_ORACULAR_HEURISTICS.value) {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
+		}
+
+		if (options.X_CONTEXT_DEPENDENCY_HEURISTIC.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/2-object-ctx-dependency-heuristic.dl")
 		}
 
 		if (options.X_STATS_NONE.value) return
@@ -345,10 +389,9 @@ class SouffleMultiPhaseAnalysis extends DoopAnalysis {
 	}
 
 	void printStats() {
-		def lines = []
+		List<String> lines = []
 
-
-		def file = new File("${this.outDir}/database/Stats_Runtime.csv")
+		File file = new File("${this.outDir}/database/Stats_Runtime.csv")
 		file.eachLine { String line -> lines << line.replace("\t", ", ") }
 
 		log.info "-- Runtime metrics --"
