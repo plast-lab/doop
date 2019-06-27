@@ -1,6 +1,8 @@
 package org.clyze.doop.core
 
 import groovy.util.logging.Log4j
+import java.util.jar.Attributes
+import java.util.jar.JarFile
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.*
@@ -468,19 +470,41 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.DECODE_APK.value = true
 		}
 
-		if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
+		// Handle inerplay between 'main class' information and open programs.
+		if (!options.PYTHON.value) {
+			if (options.MAIN_CLASS.value) {
+				if (options.IGNORE_MAIN_METHOD.value)
+					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
+				else
+					log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
+			} else if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
+				options.INPUTS.value.each { File jarPath ->
+					JarFile jarFile = new JarFile(jarPath)
+					//Try to read the main class from the manifest contained in the jar
+					String main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS) as String
+					if (main)
+						recordAutoMainClass(options, main)
+					else {
+						//Check whether the jar contains a class with the same name
+						def jarName = FilenameUtils.getBaseName(jarFile.name)
+						if (jarFile.getJarEntry("${jarName}.class"))
+							recordAutoMainClass(options, jarName)
+					}
+				}
+			}
+
+			if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
 				!options.HEAPDLS.value && !options.ANDROID.value &&
 				!options.DACAPO.value && !options.DACAPO_BACH.value) {
-			if (options.DISCOVER_MAIN_METHODS.value) {
-				log.warn "WARNING: No main class was found. Using option --${options.DISCOVER_MAIN_METHODS.name} to discover main methods."
-			} else if (options.X_START_AFTER_FACTS.value) {
-				if (!options.OPEN_PROGRAMS.value) {
-					log.warn("WARNING: No main class was found and option --${options.OPEN_PROGRAMS.name} is missing. The reused facts are assumed to declare the correct main class(es).")
-				}
-			} else {
-				log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
-				if (!options.OPEN_PROGRAMS.value) {
-					options.OPEN_PROGRAMS.value = "concrete-types"
+				if (options.DISCOVER_MAIN_METHODS.value) {
+					log.warn "WARNING: No main class was found. Using option --${options.DISCOVER_MAIN_METHODS.name} to discover main methods."
+				} else if (options.X_START_AFTER_FACTS.value) {
+					if (!options.OPEN_PROGRAMS.value)
+						log.warn("WARNING: No main class was found and option --${options.OPEN_PROGRAMS.name} is missing. The reused facts are assumed to declare the correct main class(es).")
+				} else {
+					log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
+					if (!options.OPEN_PROGRAMS.value)
+						options.OPEN_PROGRAMS.value = "concrete-types"
 				}
 			}
 		}
@@ -547,6 +571,21 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		options.values().findAll { it.isMandatory }.each {
 			if (!it.value)
 				throw new RuntimeException("Missing mandatory argument: $it.name")
+		}
+	}
+
+	/**
+	 * Records an auto-detected main class. If reusing read-only facts, it does nothing.
+	 *
+	 * @param options	   the analysis options
+	 * @param className	   the name of the class
+	 */
+	static void recordAutoMainClass(Map<String, AnalysisOption> options, String className) {
+		if (options.CACHE.value)
+			log.warn "WARNING: Ignoring auto-detected main class '${className}' when using --${options.CACHE.name}"
+		else {
+			log.info "Main class(es) expanded with '${className}'"
+			(options.MAIN_CLASS.value as List<String>) << className
 		}
 	}
 
