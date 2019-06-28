@@ -108,24 +108,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def commandsEnv = initExternalCommandsEnvironment(options)
 		createOutputDirectory(options)
 
-		if (options.X_START_AFTER_FACTS.value) {
-			// Facts are assumed to be read-only.
-			options.CACHE_DIR.value = getFactsReuseDir(options.X_START_AFTER_FACTS, options, true)
-		} else if (options.X_EXTEND_FACTS.value) {
-			options.CACHE_DIR.value = getFactsReuseDir(options.X_EXTEND_FACTS, options, false)
-		} else {
-			def cacheId = generateCacheID(options)
-			File cachedFacts = new File(Doop.doopCache, cacheId)
-			options.CACHE_DIR.value = cachedFacts
-			if (options.CACHE.value && cachedFacts.exists()) {
-				// Facts are assumed to be read-only.
-				checkFactsReuse(options.CACHE, options, true)
-			} else if (options.CACHE.value) {
-				log.info "Could not find cached facts, option will be ignored: --${options.CACHE.name}"
-				options.CACHE.value = false
-			}
-		}
-
 		if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value) {
 			checkAppGlob(options)
 		}
@@ -248,7 +230,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		return CheckSum.checksum(id, HASH_ALGO)
 	}
 
-	protected String generateCacheID(Map<String, AnalysisOption> options) {
+	private static String generateCacheID(Map<String, AnalysisOption> options) {
 		Collection<String> idComponents = options.values()
 			.findAll { it.forCacheID }
 			.collect { it as String }
@@ -468,6 +450,25 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		// may want to analyze an .apk using a non-Android platform.
 		if (!options.X_START_AFTER_FACTS.value) {
 			options.DECODE_APK.value = true
+		}
+
+		// Resolution of facts location when reusing facts.
+		if (options.X_START_AFTER_FACTS.value) {
+			// Facts are assumed to be read-only.
+			options.CACHE_DIR.value = getFactsReuseDir(options.X_START_AFTER_FACTS, options, true)
+		} else if (options.X_EXTEND_FACTS.value) {
+			options.CACHE_DIR.value = getFactsReuseDir(options.X_EXTEND_FACTS, options, false)
+		} else {
+			def cacheId = generateCacheID(options)
+			File cachedFacts = new File(Doop.doopCache, cacheId)
+			options.CACHE_DIR.value = cachedFacts
+			if (options.CACHE.value && cachedFacts.exists()) {
+				// Facts are assumed to be read-only.
+				checkFactsReuse(options.CACHE, options, true)
+			} else if (options.CACHE.value) {
+				log.info "Could not find cached facts, option will be ignored: --${options.CACHE.name}"
+				options.CACHE.value = false
+			}
 		}
 
 		// Handle inerplay between 'main class' information and open programs.
