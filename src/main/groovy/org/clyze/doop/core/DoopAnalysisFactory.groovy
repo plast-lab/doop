@@ -314,7 +314,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.ANALYSIS.value = "context-insensitive"
 		}
 
-		// Inputs are optional when reusing facts.
+		// Inputs are optional when reusing facts (but the 'cache'
+		// option needs them to compute the cache hash identifier).
 		if (options.X_START_AFTER_FACTS.value || options.X_EXTEND_FACTS.value) {
 			options.INPUTS.isMandatory = false
 			options.LIBRARIES.isMandatory = false
