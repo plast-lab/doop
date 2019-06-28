@@ -98,8 +98,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		checkAnalysis(options)
 		if (options.LB3.value) {
 			checkLogicBlox(options)
-			log.warn "WARNING: Using legacy Android processing."
-			options.LEGACY_ANDROID_PROCESSING.value = true
+			if (options.ANDROID.value) {
+				log.warn "WARNING: Using legacy Android processing."
+				options.LEGACY_ANDROID_PROCESSING.value = true
+			}
 		}
 
 		options.CONFIGURATION.value = availableConfigurations.get(options.ANALYSIS.value)
