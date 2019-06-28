@@ -509,6 +509,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
+		if (options.OPEN_PROGRAMS.value && options.ANALYSIS.value == 'micro')
+			throw new DoopErrorCodeException(30, "Open-program analysis is not compatible with the 'micro' analysis.")
+
 		if (options.X_DRY_RUN.value && options.CACHE.value) {
 			log.warn "WARNING: Doing a dry run of the analysis while using cached facts might be problematic!"
 		}
