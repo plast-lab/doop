@@ -197,9 +197,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 	// Throw an error when two incompatible options are set.
 	static void throwIfBothSet(AnalysisOption opt1, AnalysisOption opt2) {
-		if (opt1?.value && opt2?.value) {
-			throw new DoopErrorCodeException(28, new RuntimeException("Error: options --${opt1.name} and --${opt2.name} are mutually exclusive."))
-		}
+		if (opt1?.value && opt2?.value)
+			throw new DoopErrorCodeException(28, "Error: options --${opt1.name} and --${opt2.name} are mutually exclusive.")
 	}
 
 	static void checkAnalysis(Map<String, AnalysisOption> options) {
@@ -341,7 +340,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		try {
 			setOptionsForPlatform(options, platformName)
 		} catch (Exception ex) {
-			throw new DoopErrorCodeException(29, new RuntimeException("Could not process platform ${platformName}, valid platforms are: ${availablePlatforms}"))
+			throw new DoopErrorCodeException(29, "Could not process platform ${platformName}, valid platforms are: ${availablePlatforms}")
 		}
 
 		if (options.DACAPO.value || options.DACAPO_BACH.value) {
