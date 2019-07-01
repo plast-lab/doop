@@ -11,6 +11,7 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
+import static org.apache.commons.io.FilenameUtils.getBaseName
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 
@@ -20,19 +21,17 @@ import static org.apache.commons.io.FileUtils.sizeOfDirectory
 @TypeChecked
 class SouffleAnalysis extends DoopAnalysis {
 
-	File analysis
-
 	@Override
 	void run() {
-		analysis = new File(outDir, "${name}.dl")
+		File analysis = new File(outDir, "${name}.dl")
 		deleteQuietly(analysis)
 		analysis.createNewFile()
 
-		initDatabase()
-		basicAnalysis()
+		initDatabase(analysis)
+		basicAnalysis(analysis)
 		if (!options.X_STOP_AT_BASIC.value) {
-			mainAnalysis()
-			produceStats()
+			mainAnalysis(analysis)
+			produceStats(analysis)
 		}
 
 		def cacheDir = new File(Doop.souffleAnalysesCache, name)
@@ -118,7 +117,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 	}
 
-	void initDatabase() {
+	void initDatabase(File analysis) {
 		//functor declarations need to be first
 		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/souffle-incremental-output/functor-declarations.dl")
@@ -145,7 +144,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 	}
 
-	void basicAnalysis() {
+	void basicAnalysis(File analysis) {
 		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
 
@@ -164,10 +163,10 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 	}
 
-	void mainAnalysis() {
+	void mainAnalysis(File analysis) {
 		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 		def mainPath = "${Doop.souffleLogicPath}/main"
-		def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
+		def analysisPath = "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}"
 
 		if (name == "sound-may-point-to") {
 			cpp.includeAtEnd("$analysis", "${mainPath}/string-constants.dl")
@@ -188,22 +187,21 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${infoFlowPath}/delta.dl")
 			cpp.includeAtEnd("$analysis", "${infoFlowPath}/rules.dl")
 			cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
-
 		}
 
-    if (options.CONSTANT_FOLDING.value) {
-        def constantFoldingPath = "${Doop.souffleAddonsPath}/constant-folding"
-        cpp.includeAtEnd("$analysis", "${constantFoldingPath}/declarations.dl")
-        cpp.includeAtEnd("$analysis", "${constantFoldingPath}/const-type-infer.dl")
-        cpp.includeAtEnd("$analysis", "${constantFoldingPath}/constant-folding.dl")
-    }
+		if (options.CONSTANT_FOLDING.value) {
+			def constantFoldingPath = "${Doop.souffleAddonsPath}/constant-folding"
+			cpp.includeAtEnd("$analysis", "${constantFoldingPath}/declarations.dl")
+			cpp.includeAtEnd("$analysis", "${constantFoldingPath}/const-type-infer.dl")
+			cpp.includeAtEnd("$analysis", "${constantFoldingPath}/constant-folding.dl")
+		}
 
 		if (options.SYMBOLIC_REASONING.value) {
-      def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
+			def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
 			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/util.dl")
-      cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
 			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/path-expression.dl")
-      cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/boolean-reasoning.dl")
+			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/boolean-reasoning.dl")
 			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/arithmetic-reasoning.dl")
 		}
 
@@ -247,7 +245,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 	}
 
-	void produceStats() {
+	void produceStats(File analysis) {
 		def statsPath = "${Doop.souffleAddonsPath}/statistics"
 		if (options.X_EXTRA_METRICS.value) {
 			cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")

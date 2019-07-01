@@ -13,13 +13,17 @@ public class DoopErrorCodeException extends Exception {
         this.errorCode = errorCode;
     }
 
+    public DoopErrorCodeException(int errorCode, String msg) {
+        this(errorCode, new RuntimeException(msg));
+    }
+
     public DoopErrorCodeException(int errorCode, Throwable original, boolean fatal) {
         this(errorCode, original);
         this.fatal = fatal;
     }
 
     public DoopErrorCodeException(int errorCode) {
-        this(errorCode, null);
+        this(errorCode, (Throwable)null);
     }
 
     public int getErrorCode() {

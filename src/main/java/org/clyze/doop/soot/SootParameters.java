@@ -112,7 +112,6 @@ public class SootParameters extends Parameters {
             System.err.println("  --also-resolve <class>                Force resolution of class that may not be found automatically.");
             System.err.println("  --log-dir <dir>                       Write logs in directory <dir>.");
             System.err.println("  --write-artifacts-map                 Write artifacts map.");
-            System.err.println("  --keep-spec                           Use 'keep' specification from file.");
             System.err.println("Jimple/Shimple generation:");
             System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
             System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
@@ -120,7 +119,6 @@ public class SootParameters extends Parameters {
             System.err.println("  --android-jars <archive>              The main android library jar (for Android apk inputs). The same jar should be provided in the -l option");
             System.err.println("  --decode-apk                          Decompress apk input in facts directory.");
             System.err.println("  --scan-native-code                    Scan native code found in .JAR/.APK inputs.");
-            System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
             System.err.println("  --R-out-dir <directory>               Specify where to generate R code (when linking AAR inputs)");
     }
 

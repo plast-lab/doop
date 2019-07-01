@@ -105,7 +105,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "HEAPDLS",
 					name: "heapdl-file",
 					group: GROUP_HEAPDL,
-					description: "Use dynamic information from memory dump, using HeapDL. Takes one or more files in `.hprof` format.",
+					description: "Use dynamic information from memory dump, using HeapDL. Takes one or more files (`.hprof` format or stack traces).",
 					value: [],
 					multipleValues: true,
 					argName: "HEAPDLS",
@@ -129,6 +129,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "The path to the platform libs directory.",
 					value: System.getenv("DOOP_PLATFORMS_LIB"),
 					cli: false
+			),
+			new BooleanAnalysisOption(
+					id: "SKIP_CODE_FACTGEN",
+					name: "skip-code-factgen",
+					group: GROUP_FACTS,
+					description: "Don't generate facts for code."
 			),
 
 			new AnalysisOption<List<String>>(
@@ -278,6 +284,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "scan-native-code",
 					group: GROUP_NATIVE,
 					description: "Scan native code for specific patterns.",
+					forCacheID: true,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -964,8 +971,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new AnalysisOption<String>(
-					id: "X_USE_EXISTING_FACTS",
-					name: "Xuse-existing-facts",
+					id: "X_EXTEND_FACTS",
+					name: "Xextend-facts",
 					group: GROUP_FACTS,
 					description: "Expand upon the facts found in the given directory.",
 					argName: "DIR",

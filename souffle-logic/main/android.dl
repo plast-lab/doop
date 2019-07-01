@@ -120,6 +120,17 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
   KeepMethod(?meth),
   isImmutableContext(?ctx).
 
+// 'keep class members' / 'keep classes with members' = keep all class
+// methods if the class has a reachable method. We assume that 'keep
+// classes with members' has already been resolved and the tuples only
+// concern the types that apply.
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  ( KeepClassMembers(?method) ; KeepClassesWithMembers(?method) ),
+  Method_DeclaringType(?method, ?type),
+  Method_DeclaringType(?otherMethod, ?type),
+  Reachable(?otherMethod),
+  isImmutableContext(?ctx).
+
 // Not clear what ProGuard does with "keep" annotations for classes, but certainly
 // I've seen documented behavior in industrial code that expects it to keep no-arg
 // constructors.

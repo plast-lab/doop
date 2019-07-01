@@ -7,9 +7,7 @@ import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
-import org.clyze.doop.common.FieldInfo
 import org.clyze.doop.common.DoopErrorCodeException
-import org.clyze.doop.common.KeepSpecProcessor
 import org.clyze.doop.common.FrontEnd
 import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
@@ -82,6 +80,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     List<File> getLibraryFiles() { options.LIBRARIES.value as List<File> }
 
+    FactGenerator0 gen0
+
     /*
      * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
      * in order to ensure that internal state is initialized at one point and the init method is no longer required.
@@ -105,6 +105,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
         else
             factsDir = new File(outDir, "facts")
+
+        gen0 = new FactGenerator0(factsDir)
 
         database = new File(outDir, "database")
 
@@ -148,52 +150,66 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         FileOps.copyDirContents(fromDir, factsDir)
     }
 
-    private void writeMainClassFacts() {
-        if (options.MAIN_CLASS.value) {
-            new File(factsDir, "MainClass.facts").withWriterAppend { w ->
-                options.MAIN_CLASS.value.each { w.writeLine(it as String) }
-            }
-        }
-    }
-
     /**
-     * Reuses an existing facts directory. May add more facts on top of
-     * the existing facts, if appropriate command line options are set.
-     *
-     * @param fromDir the existing directory containing the facts
+     * Generates the facts that do not need a call to the front end. Such
+     * facts can also be written on top of reused facts.
      */
-    protected void reuseFacts(File fromDir) {
-        linkOrCopyFacts(fromDir)
-        def keepSpec = options.KEEP_SPEC.value as String
-        if (keepSpec) {
-            KeepSpecProcessor.processDir(factsDir, keepSpec)
+    protected void generateFacts0() {
+
+        gen0.touch()
+
+        if (options.KEEP_SPEC.value)
+            gen0.writeKeepSpec(options.KEEP_SPEC.value as String)
+
+        if (!options.PYTHON.value && options.MAIN_CLASS.value)
+            gen0.writeMainClassFacts(options.MAIN_CLASS.value)
+
+        if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value)
+            gen0.writeExtraSensitiveControls(options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString())
+
+        if (options.DACAPO.value) {
+            def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+            def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+            gen0.writeDacapoFacts(benchmark, benchmarkCap)
+        } else if (options.DACAPO_BACH.value) {
+            def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+            def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+            gen0.writeDacapoBachFacts(benchmarkCap)
         }
-        writeMainClassFacts()
+
+        if (options.TAMIFLEX.value) {
+            File origTamFile = new File(options.TAMIFLEX.value.toString())
+            gen0.writeTamiflexFacts(origTamFile)
+        }
+
     }
 
     protected void generateFacts() throws DoopErrorCodeException {
         deleteQuietly(factsDir)
 
-        if (cacheDir.exists() && options.CACHE.value) {
+        if (options.CACHE.value) {
             log.info "Using cached facts from $cacheDir"
-            reuseFacts(cacheDir)
-        } else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
+            linkOrCopyFacts(cacheDir)
+        } else if (options.X_START_AFTER_FACTS.value) {
             def importedFactsDir = options.X_START_AFTER_FACTS.value as String
             log.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
-            reuseFacts(new File(importedFactsDir))
+            linkOrCopyFacts(new File(importedFactsDir))
         } else {
+
             factsDir.mkdirs()
             log.info "-- Fact Generation --"
+
+            def existingFactsDir = options.X_EXTEND_FACTS.value as File
+            if (existingFactsDir) {
+                log.info "Expanding upon facts found in: $existingFactsDir.canonicalPath"
+                linkOrCopyFacts(existingFactsDir)
+            }
 
             if (options.RUN_JPHANTOM.value) {
                 runJPhantom()
             }
 
-            def existingFactsDir = options.X_USE_EXISTING_FACTS.value as File
-            if (existingFactsDir) {
-                log.info "Expanding upon facts found in: $existingFactsDir.canonicalPath"
-                linkOrCopyFacts(existingFactsDir)
-            }
+            generateFacts0()
 
             Set<String> tmpDirs = [] as Set
             try {
@@ -210,7 +226,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     // runFrontEnd(tmpDirs, FrontEnd.SOOT, null)
                     // // Step 2. Read CHA information from Soot run.
                     // CHA cha = new CHA()
-                    // fillCHAFromSootFacts(cha)
+                    // gen0.fillCHAFromSootFacts(cha)
                     // // Step 3. Run Dex front end with CHA information.
                     // File origFactsDir = factsDir
                     // File nonSSAFactsDir = new File("${factsDir}/nonSSA")
@@ -250,39 +266,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 log.info "Time to make facts unique: $timing"
             }
 
-            touch(new File(factsDir, "MainClass.facts"))
-
-            if (options.DACAPO.value) {
-                def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
-                def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-
-                new File(factsDir, "Dacapo.facts").withWriter { w ->
-                    w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
-                }
-            } else if (options.DACAPO_BACH.value) {
-                def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
-                def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-
-                new File(factsDir, "Dacapo.facts").withWriter { w ->
-                    w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
-                }
-            }
-
-            if (options.TAMIFLEX.value) {
-                File origTamFile = new File(options.TAMIFLEX.value.toString())
-
-                new File(factsDir, "Tamiflex.facts").withWriter { w ->
-                    origTamFile.eachLine { line ->
-                        w << line
-                                .replaceFirst(/;[^;]*;$/, "")
-                                .replaceFirst(/;$/, ";0")
-                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + ";" + second + "\n" }
-                                .replaceAll(";", "\t").replaceFirst(/\./, "\t")
-                    }
-                }
-            }
-
-            if (!options.X_START_AFTER_FACTS.value) {
+            if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value && !options.X_EXTEND_FACTS.value) {
                 if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
                     runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
                 }
@@ -297,8 +281,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             }
             log.info "----"
         }
-
-        writeMainClassFacts()
 
         if (options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value) {
             File origSpecialCSMethodsFile = new File(options.SPECIAL_CONTEXT_SENSITIVITY_METHODS.value.toString())
@@ -331,6 +313,17 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runFrontEnd(Set<String> tmpDirs, FrontEnd frontEnd, CHA cha) {
+        if (options.SKIP_CODE_FACTGEN.value) {
+            log.info "Skipping facts generation for code inputs."
+            return
+        }
+
+        if (options.X_START_AFTER_FACTS.value) {
+            throw new RuntimeException("Internal error: code fact generator called under --${options.X_START_AFTER_FACTS.name}")
+        } else if (options.CACHE.value) {
+            throw new RuntimeException("Internal error: code fact generator called under --${options.CACHE.name}")
+        }
+
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         if (platform != "android" && platform != "java")
             throw new RuntimeException("Unsupported platform: ${platform}")
@@ -340,6 +333,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         List<File> platforms = options.PLATFORMS.value as List<File>
         if (!platforms) {
             throw new RuntimeException("internal option '${options.PLATFORMS.name}' is empty")
+        }
+
+        if (!options.APP_REGEX.value) {
+            throw new RuntimeException("Internal error: no application regex available for code fact generator.")
         }
 
         Collection<String> params = ["--application-regex", options.APP_REGEX.value.toString()]
@@ -354,10 +351,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         if (options.X_FACTS_SUBSET.value) {
             params += ["--facts-subset", options.X_FACTS_SUBSET.value.toString()]
-        }
-
-        if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
-            params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
         if (options.KEEP_SPEC.value) {
@@ -724,10 +717,20 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 return heapdl
             }
         }
+        List<String> hprofs = [] as List
+        List<String> traces = [] as List
+        processed.each {
+            if (it.endsWith(".hprof")) {
+                log.info "Heap snapshot input: ${it}"
+                hprofs << it
+            } else {
+                log.info "Stack trace input: ${it}"
+                traces << it
+            }
+        }
 
         try {
-            List<String> traces = [] as List
-            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(processed, traces, options.HEAPDL_NOSTRINGS.value ? false : true)
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(hprofs, traces, options.HEAPDL_NOSTRINGS.value ? false : true)
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
             log.info("Generated " + n + " additional facts from memory dump")
         } catch (Exception e) {
@@ -747,29 +750,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 copyFileToDirectory(f, factsDir)
             }
         }
-    }
-
-    private void fillCHAFromSootFacts(CHA cha) {
-		String supFile = "${factsDir}/DirectSuperclass.facts"
-		println "Importing non-dex class type hierarchy from ${supFile}"
-		Helper.forEachLineIn(supFile, { String line ->
-			def parts = line.tokenize('\t')
-			cha.registerSuperClass(parts[0], parts[1])
-		})
-
-		String fieldFile = "${factsDir}/Field.facts"
-		println "Importing non-dex fields from ${fieldFile}"
-		Map<String, List<FieldInfo> > fields = [:].withDefault { [] }
-		Helper.forEachLineIn(fieldFile, { String line ->
-			def parts = line.tokenize('\t')
-			String declType = parts[1]
-			String name = parts[2]
-			String type = parts[3]
-			List<FieldInfo> info = fields.get(declType)
-			info.add(new FieldInfo(type, name))
-			fields.put(declType, info)
-		})
-		fields.each { declType, fs -> cha.registerDefinedClassFields(declType, fs) }
     }
 
     /**

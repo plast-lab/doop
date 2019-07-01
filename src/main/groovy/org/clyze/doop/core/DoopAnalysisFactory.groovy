@@ -1,6 +1,8 @@
 package org.clyze.doop.core
 
 import groovy.util.logging.Log4j
+import java.util.jar.Attributes
+import java.util.jar.JarFile
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.*
@@ -11,9 +13,6 @@ import org.clyze.doop.input.PlatformManager
 import org.clyze.doop.utils.PackageUtil
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
-
-import java.util.jar.Attributes
-import java.util.jar.JarFile
 
 /**
  * A Factory for creating Analysis objects.
@@ -99,8 +98,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		checkAnalysis(options)
 		if (options.LB3.value) {
 			checkLogicBlox(options)
-			log.warn "WARNING: Using legacy Android processing."
-			options.LEGACY_ANDROID_PROCESSING.value = true
+			if (options.ANDROID.value) {
+				log.warn "WARNING: Using legacy Android processing."
+				options.LEGACY_ANDROID_PROCESSING.value = true
+			}
 		}
 
 		options.CONFIGURATION.value = availableConfigurations.get(options.ANALYSIS.value)
@@ -109,28 +110,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def commandsEnv = initExternalCommandsEnvironment(options)
 		createOutputDirectory(options)
 
-		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_STOP_AT_FACTS)
-		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_USE_EXISTING_FACTS)
-		throwIfBothSet(options.X_USE_EXISTING_FACTS, options.X_STOP_AT_FACTS)
-		throwIfBothSet(options.X_START_AFTER_FACTS, options.CACHE)
-
-		if (options.X_START_AFTER_FACTS.value) {
-			checkFactsReuse(options.X_START_AFTER_FACTS, options)
-			def cacheDir = new File(options.X_START_AFTER_FACTS.value as String)
-			FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
-			options.CACHE_DIR.value = cacheDir
-		} else {
-			def cacheId = generateCacheID(options)
-			options.CACHE_DIR.value = new File(Doop.doopCache, cacheId)
-			if (options.CACHE.value && options.CACHE_DIR.value.exists()) {
-				checkFactsReuse(options.CACHE, options)
-			}
+		if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value) {
 			checkAppGlob(options)
-		}
-
-		// Enable APK decoding when not reusing facts.
-		if (!options.X_START_AFTER_FACTS.value && !options.X_USE_EXISTING_FACTS.value) {
-			options.DECODE_APK.value = true
 		}
 
 		log.debug "Created new analysis"
@@ -160,27 +141,48 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 * Checks that, when reusing facts, options that modify facts do not cause
 	 * problems.
 	 *
-	 * @param factsOpt	 the facts-reusing option that has been enabled
-	 * @param options	 the analysis options
+	 * @param factsOpt       the facts-reusing option that has been enabled
+	 * @param options        the analysis options
+	 * @param throwError     if true, then throw an error, otherwise report a warning
 	 */
-	static void checkFactsReuse(AnalysisOption factsOpt, Map<String, AnalysisOption> options) {
+	static void checkFactsReuse(AnalysisOption factsOpt, Map<String, AnalysisOption> options,
+								boolean throwError) {
 		def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
 		for (def opt : factOpts) {
-			if (opt != options.PLATFORM) {
+			if (opt.forPreprocessor) {
+				log.warn "WARNING: Using option --${opt.name} but facts may not be modified (only logic will be affected)."
+			} else {
 				if (options.X_SYMLINK_CACHED_FACTS.value) {
-					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}")
+					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}.")
+				} else if (throwError) {
+					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${factsOpt.name}, use --${options.X_EXTEND_FACTS.name} instead.")
 				} else {
-					log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts will be extended (since option --${factsOpt.name} is on)."
+					log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts may be extended (since option --${factsOpt.name} is on)."
 				}
 			}
 		}
 	}
 
+	/**
+	 * Return the directory containing facts that will be reused.
+	 *
+	 * @param factsOpt     the facts-reusing option that has been enabled
+	 * @param options      the analysis options
+	 * @param throwError   if true, then throw an error, otherwise report a warning
+	 * @return             the directory containing facts to reuse
+	 */
+	static File getFactsReuseDir(AnalysisOption factsOpt, Map<String, AnalysisOption> options,
+								 boolean throwError) {
+		checkFactsReuse(factsOpt, options, throwError)
+		File cacheDir = new File(factsOpt.value as String)
+		FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
+		return cacheDir
+	}
+
 	// Throw an error when two incompatible options are set.
 	static void throwIfBothSet(AnalysisOption opt1, AnalysisOption opt2) {
-		if (opt1?.value && opt2?.value) {
-			throw new DoopErrorCodeException(28, new RuntimeException("Error: options --${opt1.name} and --${opt2.name} are mutually exclusive."))
-		}
+		if (opt1?.value && opt2?.value)
+			throw new DoopErrorCodeException(28, "Error: options --${opt1.name} and --${opt2.name} are mutually exclusive.")
 	}
 
 	static void checkAnalysis(Map<String, AnalysisOption> options) {
@@ -230,7 +232,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		return CheckSum.checksum(id, HASH_ALGO)
 	}
 
-	protected String generateCacheID(Map<String, AnalysisOption> options) {
+	private static String generateCacheID(Map<String, AnalysisOption> options) {
 		Collection<String> idComponents = options.values()
 			.findAll { it.forCacheID }
 			.collect { it as String }
@@ -296,6 +298,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.ANALYSIS.value = "context-insensitive"
 		}
 
+		// Inputs are optional when reusing facts (but the 'cache'
+		// option needs them to compute the cache hash identifier).
+		if (options.X_START_AFTER_FACTS.value || options.X_EXTEND_FACTS.value) {
+			options.INPUTS.isMandatory = false
+			options.LIBRARIES.isMandatory = false
+		}
+
 		if (!options.X_START_AFTER_FACTS.value) {
 			log.debug "Resolving files"
 			context.resolve()
@@ -311,12 +320,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 			options.HEAPDLS.value = context.allHeapDLs
 			log.debug "HeapDL file paths: ${context.heapDLs()} -> ${options.HEAPDLS.value}"
-		} else {
-			// Dummy value so the option is not empty, because otherwise it is mandatory
-			options.INPUTS.value = ["false"]
 		}
 
-		setOptionsForPlatform(options, platformName)
+		try {
+			setOptionsForPlatform(options, platformName)
+		} catch (Exception ex) {
+			throw new DoopErrorCodeException(29, "Could not process platform ${platformName}, valid platforms are: ${availablePlatforms}")
+		}
 
 		if (options.DACAPO.value || options.DACAPO_BACH.value) {
 			if (!options.X_START_AFTER_FACTS.value) {
@@ -340,36 +350,17 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
-		if (!options.PYTHON.value) {
-			if (options.MAIN_CLASS.value) {
-				if (options.IGNORE_MAIN_METHOD.value) {
-					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
-				} else {
-					log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
-				}
-			} else {
-				if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
-					options.INPUTS.value.each {
-						def jarFile = new JarFile(it)
-						//Try to read the main class from the manifest contained in the jar
-						def main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS)
-						if (main) {
-							log.info "Main class(es) expanded with '${main}'"
-							options.MAIN_CLASS.value << main
-						} else {
-							//Check whether the jar contains a class with the same name
-							def jarName = FilenameUtils.getBaseName(jarFile.name)
-							if (jarFile.getJarEntry("${jarName}.class")) {
-								log.info "Main class(es) expanded with '${jarName}'"
-								options.MAIN_CLASS.value << jarName
-							}
-						}
-					}
-				}
-			}
-		}
-
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_STOP_AT_FACTS)
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_EXTEND_FACTS)
+		throwIfBothSet(options.X_EXTEND_FACTS, options.X_STOP_AT_FACTS)
+		throwIfBothSet(options.X_START_AFTER_FACTS, options.CACHE)
 		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_CACHED_FACTS)
+
+		if (options.SKIP_CODE_FACTGEN.value && !options.X_EXTEND_FACTS.value) {
+			throw new RuntimeException("Option --${options.SKIP_CODE_FACTGEN.name} should only be used together with --${options.X_EXTEND_FACTS.name}.")
+		} else if (options.X_START_AFTER_FACTS.value) {
+			options.SKIP_CODE_FACTGEN.value = true
+		}
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
 			def tamiflexArg = options.TAMIFLEX.value as String
@@ -456,24 +447,73 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.X_SERIALIZE_FACTGEN_COMPILATION.value = true
 		}
 
-		if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
-				!options.HEAPDLS.value && !options.ANDROID.value &&
-				!options.DACAPO.value && !options.DACAPO_BACH.value) {
-			if (options.DISCOVER_MAIN_METHODS.value) {
-				log.warn "WARNING: No main class was found. Using --${options.DISCOVER_MAIN_METHODS.name}"
-			} else {
-				if (options.X_START_AFTER_FACTS.value) {
-					if (!options.OPEN_PROGRAMS.value) {
-						throw new RuntimeException("Error: no main class was found and option --${options.OPEN_PROGRAMS.name} is missing.")
-					}
-				} else {
-					log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
-					if (!options.OPEN_PROGRAMS.value) {
-						options.OPEN_PROGRAMS.value = "concrete-types"
+		// Enable APK decoding on Android when not reusing read-only
+		// facts. We don't check the ANDROID option, since the user
+		// may want to analyze an .apk using a non-Android platform.
+		if (!options.X_START_AFTER_FACTS.value) {
+			options.DECODE_APK.value = true
+		}
+
+		// Resolution of facts location when reusing facts.
+		if (options.X_START_AFTER_FACTS.value) {
+			// Facts are assumed to be read-only.
+			options.CACHE_DIR.value = getFactsReuseDir(options.X_START_AFTER_FACTS, options, true)
+		} else if (options.X_EXTEND_FACTS.value) {
+			options.CACHE_DIR.value = getFactsReuseDir(options.X_EXTEND_FACTS, options, false)
+		} else {
+			def cacheId = generateCacheID(options)
+			File cachedFacts = new File(Doop.doopCache, cacheId)
+			options.CACHE_DIR.value = cachedFacts
+			if (options.CACHE.value && cachedFacts.exists()) {
+				// Facts are assumed to be read-only.
+				checkFactsReuse(options.CACHE, options, true)
+			} else if (options.CACHE.value) {
+				log.info "Could not find cached facts, option will be ignored: --${options.CACHE.name}"
+				options.CACHE.value = false
+			}
+		}
+
+		// Handle inerplay between 'main class' information and open programs.
+		if (!options.PYTHON.value) {
+			if (options.MAIN_CLASS.value) {
+				if (options.IGNORE_MAIN_METHOD.value)
+					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
+				else
+					log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
+			} else if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
+				options.INPUTS.value.each { File jarPath ->
+					JarFile jarFile = new JarFile(jarPath)
+					//Try to read the main class from the manifest contained in the jar
+					String main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS) as String
+					if (main)
+						recordAutoMainClass(options, main)
+					else {
+						//Check whether the jar contains a class with the same name
+						def jarName = FilenameUtils.getBaseName(jarFile.name)
+						if (jarFile.getJarEntry("${jarName}.class"))
+							recordAutoMainClass(options, jarName)
 					}
 				}
 			}
+
+			if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
+				!options.HEAPDLS.value && !options.ANDROID.value &&
+				!options.DACAPO.value && !options.DACAPO_BACH.value) {
+				if (options.DISCOVER_MAIN_METHODS.value) {
+					log.warn "WARNING: No main class was found. Using option --${options.DISCOVER_MAIN_METHODS.name} to discover main methods."
+				} else if (options.X_START_AFTER_FACTS.value || options.CACHE.value || options.X_EXTEND_FACTS.value) {
+					if (!options.OPEN_PROGRAMS.value)
+						log.warn("WARNING: No main class was found and option --${options.OPEN_PROGRAMS.name} is missing. The reused facts are assumed to declare the correct main class(es).")
+				} else {
+					log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
+					if (!options.OPEN_PROGRAMS.value)
+						options.OPEN_PROGRAMS.value = "concrete-types"
+				}
+			}
 		}
+
+		if (options.OPEN_PROGRAMS.value && options.ANALYSIS.value == 'micro')
+			throw new DoopErrorCodeException(30, "Open-program analysis is not compatible with the 'micro' analysis.")
 
 		if (options.X_DRY_RUN.value && options.CACHE.value) {
 			log.warn "WARNING: Doing a dry run of the analysis while using cached facts might be problematic!"
@@ -537,6 +577,21 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		options.values().findAll { it.isMandatory }.each {
 			if (!it.value)
 				throw new RuntimeException("Missing mandatory argument: $it.name")
+		}
+	}
+
+	/**
+	 * Records an auto-detected main class. If reusing read-only facts, it does nothing.
+	 *
+	 * @param options	   the analysis options
+	 * @param className	   the name of the class
+	 */
+	static void recordAutoMainClass(Map<String, AnalysisOption> options, String className) {
+		if (options.CACHE.value)
+			log.warn "WARNING: Ignoring auto-detected main class '${className}' when using --${options.CACHE.name}"
+		else {
+			log.info "Main class(es) expanded with '${className}'"
+			(options.MAIN_CLASS.value as List<String>) << className
 		}
 	}
 

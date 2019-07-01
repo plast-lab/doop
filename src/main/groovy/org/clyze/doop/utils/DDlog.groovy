@@ -36,11 +36,11 @@ class DDlog extends SouffleScript {
 		String DDLOG_DIR = "DDLOG_DIR"
 		String ddlogDir = System.getenv(DDLOG_DIR)
 		if (!ddlogDir) {
-			throw new DoopErrorCodeException(24, new RuntimeException("Environment variable ${DDLOG_DIR} is empty."))
+			throw new DoopErrorCodeException(24, "Environment variable ${DDLOG_DIR} is empty.")
 		} else {
 			File f = new File(ddlogDir)
 			if (!f.exists()) {
-				throw new DoopErrorCodeException(26, new RuntimeException("Directory ${DDLOG_DIR}=${ddlogDir} does not exist."))
+				throw new DoopErrorCodeException(26, "Directory ${DDLOG_DIR}=${ddlogDir} does not exist.")
 			} else {
 				log.debug "Using DDlog in ${ddlogDir}"
 				return f
@@ -70,15 +70,15 @@ class DDlog extends SouffleScript {
     void checkOptions(boolean debug, boolean provenance, boolean liveProf,
                       boolean removeContext, boolean useFunctors) {
         if (debug) {
-            throw new DoopErrorCodeException(27, new RuntimeException("Option 'debug' is not supported."))
+            throw new DoopErrorCodeException(27, "Option 'debug' is not supported.")
         } else if (provenance) {
-            throw new DoopErrorCodeException(27, new RuntimeException("Option 'provenance' is not supported."))
+            throw new DoopErrorCodeException(27, "Option 'provenance' is not supported.")
         } else if (liveProf) {
-            throw new DoopErrorCodeException(27, new RuntimeException("Option 'liveProf' is not supported."))
+            throw new DoopErrorCodeException(27, "Option 'liveProf' is not supported.")
         } else if (removeContext) {
-            throw new DoopErrorCodeException(27, new RuntimeException("Option 'removeContext' is not supported."))
+            throw new DoopErrorCodeException(27, "Option 'removeContext' is not supported.")
         } else if (useFunctors) {
-            throw new DoopErrorCodeException(27, new RuntimeException("Option 'useFunctors' is not supported."))
+            throw new DoopErrorCodeException(27, "Option 'useFunctors' is not supported.")
         }
     }
 
@@ -117,7 +117,7 @@ class DDlog extends SouffleScript {
         // Step 1. Call converter for logic only.
         def convertedLogicPrefix = getConvertedLogicPrefix(outDir)
 		def cmdConvert = ["${outDir}/${SOUFFLE_CONVERTER}" as String,
-                          "--logic-only",
+						  "--logic-only", "--convert-dnf",
 						  scriptFile.canonicalPath,
 						  convertedLogicPrefix ]
 		log.debug "Running logic conversion command: ${cmdConvert}"
@@ -156,7 +156,7 @@ class DDlog extends SouffleScript {
     private String getDoopHome() {
         String doopHome = System.getenv("DOOP_HOME")
 		if (!doopHome) {
-			throw new DoopErrorCodeException(24, new RuntimeException("Environment variable DOOP_HOME is empty."))
+			throw new DoopErrorCodeException(24, "Environment variable DOOP_HOME is empty.")
 		} else {
 			log.debug "Using Doop home: ${doopHome}"
             return doopHome
@@ -240,6 +240,6 @@ class DDlog extends SouffleScript {
     def interpretScript(File origScriptFile, File outDir, File factsDir,
                    boolean profile = false, boolean debug = false,
                    boolean removeContext = false) {
-        throw new DoopErrorCodeException(27, new RuntimeException("Option 'interpret' is not supported."))
+        throw new DoopErrorCodeException(27, "Option 'interpret' is not supported.")
     }
 }

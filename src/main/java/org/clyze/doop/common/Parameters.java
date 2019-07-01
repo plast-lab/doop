@@ -18,12 +18,10 @@ public class Parameters {
     private final List<String> _platformLibs = new ArrayList<>();
     private String _outputDir = null;
     private String _logDir = null;
-    private String _extraSensitiveControls = "";
     private ClassFilter applicationClassFilter;
     public boolean _scanNativeCode = false;
     public boolean _android = false;
     public Integer _cores = null;
-    public String _keepSpec = null;
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
@@ -110,10 +108,6 @@ public class Parameters {
         return _noFacts;
     }
 
-    public String getExtraSensitiveControls() {
-        return _extraSensitiveControls;
-    }
-
     public List<String> getDependencies() {
         return _dependencies;
     }
@@ -190,14 +184,6 @@ public class Parameters {
         case "--R-out-dir":
             i = shift(args, i);
             _rOutDir = args[i];
-            break;
-        case "--extra-sensitive-controls":
-            i = shift(args, i);
-            _extraSensitiveControls = args[i];
-            break;
-        case "--keep-spec":
-            i = shift(args, i);
-            _keepSpec = args[i];
             break;
         case "--no-facts":
             _noFacts = true;

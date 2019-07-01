@@ -30,6 +30,6 @@ class ChainResolver implements InputResolver {
 			}
 		}
 
-		throw new DoopErrorCodeException(14, new RuntimeException("Not a valid input: $input"))
+		throw new DoopErrorCodeException(14, "Not a valid input: $input")
 	}
 }
