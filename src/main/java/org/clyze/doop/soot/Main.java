@@ -2,6 +2,8 @@ package org.clyze.doop.soot;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -58,6 +60,12 @@ public class Main {
         } catch (IOException ex) {
             logWarn("WARNING: could not initialize logging");
             throw new DoopErrorCodeException(18);
+        }
+
+        if (System.getenv("SOOT_DEBUG") != null) {
+            RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+            for (String arg : runtimeMxBean.getInputArguments())
+                logDebug("Soot front end argument: " + arg);
         }
 
         DoopAddons.initReflectiveAccess();
