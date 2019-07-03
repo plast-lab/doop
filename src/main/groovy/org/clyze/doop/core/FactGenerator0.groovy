@@ -5,6 +5,7 @@ import groovy.util.logging.Log4j
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.stream.Stream
+import org.apache.commons.io.FileUtils
 import org.clyze.doop.common.CHA
 import org.clyze.doop.common.Database
 import org.clyze.doop.common.FieldInfo
@@ -219,7 +220,7 @@ public class FactGenerator0 {
      */
     public void touch() {
         PredicateFile0.values().each {
-            factsFile(it.name).withWriterAppend { }
+            FileUtils.touch(factsFile(it.name))
         }
     }
 }
