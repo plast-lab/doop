@@ -1,16 +1,24 @@
 .decl PossibleNativeCodeTargetMethod(?method:Method, ?function:symbol, ?file:symbol)
 
 PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
-  _NativeMethodTypeCandidate(?file, ?function, ?descriptor),
-  _NativeNameCandidate(?file, ?function, ?name),
+  _NativeMethodTypeCandidate(?file, ?function, ?descriptor, _),
+  _NativeNameCandidate(?file, ?function, ?name, _),
   Method_SimpleName(?method, ?name),
   Method_JVMDescriptor(?method, ?descriptor).
+
+// PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
+//   _NativeMethodTypeCandidate(?file, ?function, ?descriptor, ?offset1),
+//   _NativeNameCandidate(?file, ?function, ?name, ?offset2),
+//   Method_SimpleName(?method, ?name),
+//   Method_JVMDescriptor(?method, ?descriptor),
+//   (?offset1 - ?offset2) <= 5,
+//   (?offset1 - ?offset2) >= -5.
 
 // // Crude over-approximation for strings used in unknown positions:
 // // assume matching methods are called from any function.
 // PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
-//   _NativeMethodTypeCandidate(?file, "-", ?descriptor),
-//   _NativeNameCandidate(?file, "-", ?name),
+//   _NativeMethodTypeCandidate(?file, "-", ?descriptor, _),
+//   _NativeNameCandidate(?file, "-", ?name, _),
 //   _NativeLibEntryPoint(?file, ?function, _),
 //   Method_SimpleName(?method, ?name),
 //   Method_JVMDescriptor(?method, ?descriptor).

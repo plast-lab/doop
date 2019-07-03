@@ -107,10 +107,10 @@ OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodType") :-
 .decl _NativeLibEntryPoint(?lib:symbol, ?function:symbol, ?addr:symbol)
 .input _NativeLibEntryPoint(IO="file", filename="NativeLibEntryPoint.facts", delimiter="\t")
 
-.decl _NativeMethodTypeCandidate(?lib:symbol, ?function:symbol, ?descriptor:symbol)
+.decl _NativeMethodTypeCandidate(?lib:symbol, ?function:symbol, ?descriptor:symbol, ?offset2:number)
 .input _NativeMethodTypeCandidate(IO="file", filename="NativeMethodTypeCandidate.facts", delimiter="\t")
 
-.decl _NativeNameCandidate(?lib:symbol, ?function:symbol, ?name:symbol)
+.decl _NativeNameCandidate(?lib:symbol, ?function:symbol, ?name:symbol, ?offset1:number)
 .input _NativeNameCandidate(IO="file", filename="NativeNameCandidate.facts", delimiter="\t")
 
 // EmptyArray

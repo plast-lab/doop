@@ -9,6 +9,8 @@ import static org.clyze.doop.common.PredicateFile.*;
 public class NativeScanner {
     private final static boolean debug = false;
     private final static boolean check = false;
+    private final static boolean radareFlag = false;
+    private final static boolean rodataFlag = false;
     private static final String envVarARMEABI = "ARMEABI_TOOLCHAIN";
     private static final String toolchainARMEABI = System.getenv(envVarARMEABI);
     private static final String envVarAARCH64 = "AARCH64_TOOLCHAIN";
@@ -282,11 +284,15 @@ public class NativeScanner {
 
         // Find in which function every string is used
         Map<String, List<String>> stringsInFunctions = null;
+        // Find radare strings
+        List<String> stringsInRadare = null;
 
         boolean success = false;
         try {
             stringsInFunctions = findStringsInFunctions(objdumpCmd, rodata.strings(), eps, lib, arch);
-            if (stringsInFunctions != null)
+            if (radareFlag)
+                stringsInRadare = findStringsInRadare(lib);
+            if (stringsInFunctions != null || stringsInRadare != null)
                 success = true;
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -299,22 +305,42 @@ public class NativeScanner {
 
         // Write out facts.
         try (Database db = new Database(outDir)) {
-            for (String mt : methodTypes) {
-                List<String> strings = stringsInFunctions.get(mt);
-                if (strings != null)
-                    for (String function : strings)
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, function, mt);
-                else
-                    db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", mt);
+            if( stringsInFunctions != null) {
+                for (String mt : methodTypes) {
+                    List<String> strings = stringsInFunctions.get(mt);
+                    if (strings != null)
+                        for (String function : strings)
+                            db.add(NATIVE_METHODTYPE_CANDIDATE, lib, function, mt, "0");
+                    else
+                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", mt, "0");
+                }
+
+                for (String n : names) {
+                    List<String> strings = stringsInFunctions.get(n);
+                    if (strings != null)
+                        for (String function : strings)
+                            db.add(NATIVE_NAME_CANDIDATE, lib, function, n, "1");
+                    else
+                        db.add(NATIVE_NAME_CANDIDATE, lib, "-", n, "1");
+                }
             }
 
-            for (String n : names) {
-                List<String> strings = stringsInFunctions.get(n);
-                if (strings != null)
-                    for (String function : strings)
-                        db.add(NATIVE_NAME_CANDIDATE, lib, function, n);
-                else
-                    db.add(NATIVE_NAME_CANDIDATE, lib, "-", n);
+            if (radareFlag) {
+                for (int i = 0; i < stringsInRadare.size(); i++) {
+                    if (isName(stringsInRadare.get(i)))
+                        db.add(NATIVE_NAME_CANDIDATE, lib, "--", stringsInRadare.get(i), String.valueOf(i));
+                    else if (isMethodType(stringsInRadare.get(i)))
+                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "--", stringsInRadare.get(i), String.valueOf(i));
+                }
+            }
+
+            if (rodataFlag) {
+                for (Map.Entry<Long, String> foundString : rodata.getFoundStrings().entrySet()) {
+                    if (isName(foundString.getValue()))
+                        db.add(NATIVE_NAME_CANDIDATE, lib, "--", foundString.getValue(), Long.toString(foundString.getKey()));
+                    else if (isMethodType(foundString.getValue()))
+                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "--", foundString.getValue(), Long.toString(foundString.getKey()));
+                }
             }
 
             eps.forEach ((Long addr, String name) ->
@@ -371,6 +397,22 @@ public class NativeScanner {
         while ((line = reader.readLine()) != null)
             lines.add(line);
         return lines;
+    }
+
+    // Get strings found in radare as a list
+    private static List<String> findStringsInRadare(String lib) {
+        List<String> stringsInRadare = new ArrayList<>();
+        try {
+            ProcessBuilder radareBuilder = new ProcessBuilder("python", "/home/leonidastri/radare-strings.py", lib);
+            for (String line : runCommand(radareBuilder)) {
+                System.out.println(line);
+                stringsInRadare.add(line);
+            }
+        } catch (IOException ex) {
+            System.err.println("Could not run radare: " + ex.getMessage());
+        }
+
+        return stringsInRadare;
     }
 
     /**
@@ -688,6 +730,10 @@ class Section {
         this.offset = offset;
         this.size = size;
         this.data = data;
+    }
+
+    public Map<Long,String> getFoundStrings() {
+        return foundStrings;
     }
 
     /**
