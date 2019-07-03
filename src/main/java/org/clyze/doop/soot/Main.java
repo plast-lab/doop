@@ -57,8 +57,9 @@ public class Main {
         try {
             Helper.tryInitLogging("DEBUG", sootParameters.getLogDir(), true);
             logger = LogFactory.getLog(Main.class);
+            logger.info("Logging initialized for Soot-based fact generation.");
         } catch (IOException ex) {
-            logWarn("WARNING: could not initialize logging");
+            System.err.println("WARNING: could not initialize logging");
             throw new DoopErrorCodeException(18);
         }
 
