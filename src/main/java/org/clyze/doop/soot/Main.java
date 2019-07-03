@@ -63,10 +63,12 @@ public class Main {
             throw new DoopErrorCodeException(18);
         }
 
-        if (System.getenv("SOOT_DEBUG") != null) {
+        String debug = System.getenv("SOOT_DEBUG");
+        System.err.println("debug = " + debug);
+        if (debug != null) {
             RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
             for (String arg : runtimeMxBean.getInputArguments())
-                logDebug("Soot front end argument: " + arg);
+                System.err.println("Soot front end argument: " + arg);
         }
 
         DoopAddons.initReflectiveAccess();
