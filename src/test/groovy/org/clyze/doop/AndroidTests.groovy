@@ -48,7 +48,6 @@ class AndroidTests extends DoopSpec {
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm-types-only",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/AndroidTests_TypesOnly_androidterm.dl",
-					 "--Xserver-cha",
 					 "--scan-native-code", "--simulate-native-returns",
 					 "--Xstats-full", "--Xlow-mem", "-Ldebug"] + defaultArgs
 		Main.main((String[])args)
