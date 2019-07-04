@@ -2,6 +2,8 @@ package org.clyze.doop.soot;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -55,10 +57,13 @@ public class Main {
         try {
             Helper.tryInitLogging("DEBUG", sootParameters.getLogDir(), true);
             logger = LogFactory.getLog(Main.class);
+            logger.info("Logging initialized for Soot-based fact generation.");
         } catch (IOException ex) {
-            logWarn("WARNING: could not initialize logging");
+            System.err.println("WARNING: could not initialize logging");
             throw new DoopErrorCodeException(18);
         }
+
+        checkJVMArgs();
 
         DoopAddons.initReflectiveAccess();
 
@@ -334,5 +339,26 @@ public class Main {
             System.err.println(s);
         else
             logger.warn(s);
+    }
+
+    /**
+     * Checks that the JVM arguments contain sane defaults. Also
+     * prints the arguments when the environment variable SOOT_DEBUG
+     * is set.
+     */
+    private static void checkJVMArgs() {
+        final String UTF8_ENCODING = "-Dfile.encoding=UTF-8";
+        String debug = System.getenv("SOOT_DEBUG");
+
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        boolean utf8 = false;
+        for (String arg : runtimeMxBean.getInputArguments()) {
+            if (debug != null)
+                System.err.println("Soot front end argument: " + arg);
+            if (arg.contains(UTF8_ENCODING))
+                utf8 = true;
+        }
+        if (!utf8)
+            logWarn("WARNING: 'file.encoding' property missing or not UTF8, please pass: " + UTF8_ENCODING);
     }
 }

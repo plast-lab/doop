@@ -356,6 +356,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		throwIfBothSet(options.X_START_AFTER_FACTS, options.CACHE)
 		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_CACHED_FACTS)
 
+		if (options.X_SERVER_CHA.value && !options.X_STOP_AT_FACTS.value)
+			throw new RuntimeException("Option --${options.X_SERVER_CHA.name} should only be used together with --${options.X_STOP_AT_FACTS.name}.")
+
 		if (options.SKIP_CODE_FACTGEN.value && !options.X_EXTEND_FACTS.value) {
 			throw new RuntimeException("Option --${options.SKIP_CODE_FACTGEN.name} should only be used together with --${options.X_EXTEND_FACTS.name}.")
 		} else if (options.X_START_AFTER_FACTS.value) {
