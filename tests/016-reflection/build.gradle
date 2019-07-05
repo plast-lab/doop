@@ -20,7 +20,7 @@ apply plugin: 'maven'
 apply plugin: 'application'
 
 group = 'org.clyze'
-description = """org.clyze:104-method-references-test"""
+description = """org.clyze:016-reflection-test"""
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -36,3 +36,12 @@ jar {
     }
     version null
 }
+
+// Uncomment to see the "unchecked" warning for Class.forName().
+// allprojects {
+//     gradle.projectsEvaluated {
+//         tasks.withType(JavaCompile) {
+//             options.compilerArgs << "-Xlint:unchecked"
+//         }
+//     }
+// }

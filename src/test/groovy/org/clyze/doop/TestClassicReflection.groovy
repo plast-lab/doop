@@ -1,0 +1,35 @@
+package org.clyze.doop
+
+import org.clyze.analysis.Analysis
+import org.clyze.doop.core.Doop
+import spock.lang.Specification
+import spock.lang.Unroll
+import static org.clyze.doop.TestUtils.*
+
+class TestClassicReflection extends DoopSpec {
+	// @spock.lang.Ignore
+	@Unroll
+	def "Server analysis test 016 (reflection)"() {
+		when:
+		List options = ["--reflection-classic", "--reflection-dynamic-proxies",
+						"--gen-opt-directives", "--Xserver-logic", "--generate-jimple",
+						"--Xextra-logic", "${Doop.souffleAddonsPath}/testing/TestReflection.dl",
+						"--thorough-fact-gen", "--sanity",
+						"--platform", "java_8"]
+		Analysis analysis = analyzeBuiltinTest("016-reflection", options)
+
+		then:
+		testSucceeds(analysis, "test1.1")
+		testSucceeds(analysis, "test1.2")
+		testSucceeds(analysis, "test1.3")
+		testSucceeds(analysis, "test1.4")
+		testSucceeds(analysis, "test1.5")
+		testSucceeds(analysis, "test1.6")
+		testSucceeds(analysis, "test1.7")
+		testSucceeds(analysis, "test1.8")
+		testSucceeds(analysis, "test1.9")
+		testSucceeds(analysis, "test1.10")
+		testSucceeds(analysis, "test1.11")
+		noSanityErrors(analysis)
+	}
+}
