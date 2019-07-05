@@ -194,10 +194,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (existingFactsDir) {
             log.info "Expanding upon facts found in: $existingFactsDir.canonicalPath"
             linkOrCopyFacts(existingFactsDir)
+        } else {
+            deleteQuietly(factsDir)
+            factsDir.mkdirs()
         }
-
-        deleteQuietly(factsDir)
-        factsDir.mkdirs()
         generateFacts0()
     }
 
