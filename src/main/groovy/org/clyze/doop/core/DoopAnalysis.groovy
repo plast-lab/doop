@@ -141,12 +141,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 Files.createSymbolicLink(factsDir.toPath(), fromDirPath)
                 return
             } catch (UnsupportedOperationException ignored) {
-                System.err.println("Filesystem does not support symbolic links, copying directory instead...")
+                log.warn("WARNING: Filesystem does not support symbolic links, copying directory instead...")
             }
         }
 
-        factsDir.mkdirs()
         log.debug "Copying: ${fromDir} -> ${factsDir}"
+        deleteQuietly(factsDir)
+        factsDir.mkdirs()
         FileOps.copyDirContents(fromDir, factsDir)
     }
 
@@ -184,8 +185,23 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     }
 
-    protected void generateFacts() throws DoopErrorCodeException {
+    /**
+     * Initializes the facts directory. This method may be called repeatedly,
+     * when restarting fact generation.
+     */
+    protected void initFactsDir() {
+        def existingFactsDir = options.X_EXTEND_FACTS.value as File
+        if (existingFactsDir) {
+            log.info "Expanding upon facts found in: $existingFactsDir.canonicalPath"
+            linkOrCopyFacts(existingFactsDir)
+        }
+
         deleteQuietly(factsDir)
+        factsDir.mkdirs()
+        generateFacts0()
+    }
+
+    protected void generateFacts() throws DoopErrorCodeException {
 
         if (options.CACHE.value) {
             log.info "Using cached facts from $cacheDir"
@@ -196,20 +212,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             linkOrCopyFacts(new File(importedFactsDir))
         } else {
 
-            factsDir.mkdirs()
             log.info "-- Fact Generation --"
-
-            def existingFactsDir = options.X_EXTEND_FACTS.value as File
-            if (existingFactsDir) {
-                log.info "Expanding upon facts found in: $existingFactsDir.canonicalPath"
-                linkOrCopyFacts(existingFactsDir)
-            }
+            initFactsDir()
 
             if (options.RUN_JPHANTOM.value) {
                 runJPhantom()
             }
-
-            generateFacts0()
 
             Set<String> tmpDirs = [] as Set
             try {
@@ -525,8 +533,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     // We cannot add to current facts: non-deterministic names
                     // from different runs blow up relations (e.g., VarPointsTo).
                     if (redo) {
-                        println "Deleting ${factsDir}..."
-                        deleteQuietly(factsDir)
+                        println "Reset facts directory: ${factsDir}"
+                        initFactsDir()
                     }
                 }
             }

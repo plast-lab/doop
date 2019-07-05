@@ -20,7 +20,7 @@ apply plugin: 'maven'
 apply plugin: 'application'
 
 group = 'org.clyze'
-description = """org.clyze:017-annotations"""
+description = """org.clyze:017-annotations-test"""
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8

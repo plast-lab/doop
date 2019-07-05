@@ -20,7 +20,7 @@ apply plugin: 'maven'
 apply plugin: 'application'
 
 group = 'org.clyze'
-description = """org.clyze:115-invokedynamic"""
+description = """org.clyze:115-invokedynamic-test"""
 
 repositories {
     // mavenCentral()
