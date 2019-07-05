@@ -2,7 +2,6 @@ package org.clyze.doop
 
 import org.clyze.analysis.Analysis
 import org.clyze.doop.core.Doop
-import spock.lang.Specification
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
 
