@@ -19,6 +19,7 @@ class TestClassicReflection extends DoopSpec {
 		Analysis analysis = analyzeBuiltinTest("016-reflection", options)
 
 		then:
+		// Reflection tests.
 		testSucceeds(analysis, "test1.1")
 		testSucceeds(analysis, "test1.2")
 		testSucceeds(analysis, "test1.3")
@@ -30,6 +31,16 @@ class TestClassicReflection extends DoopSpec {
 		testSucceeds(analysis, "test1.9")
 		testSucceeds(analysis, "test1.10")
 		testSucceeds(analysis, "test1.11")
+		// Annotation tests.
+		testSucceeds(analysis, "test2.1")
+		testSucceeds(analysis, "test2.2")
+		testSucceeds(analysis, "test2.3")
+		testSucceeds(analysis, "test2.4")
+		testSucceeds(analysis, "test2.5")
+		testSucceeds(analysis, "test2.6")
+		testSucceeds(analysis, "test2.7")
+		testSucceeds(analysis, "test2.8")
+		testSucceeds(analysis, "test2.9")
 		noSanityErrors(analysis)
 	}
 }

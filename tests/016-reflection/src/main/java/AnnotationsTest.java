@@ -5,7 +5,7 @@ import java.lang.annotation.*;
 import java.lang.reflect.*;
 
 @TypeAnnotation(opt="test-opt-string1", annotation="test-annotation-string1", intVal=1, floatVal=2.0f, doubleVal=6.0001, shortVal=12, longVal=32_000_000_000_000l, classVal=Integer.class)
-public class Main {
+public class AnnotationsTest {
 
     @FieldAnnotation1(metadata="Metadata for the field.", inner=@FieldAnnotation2(metadata="Inner metadata."))
     static String field;
@@ -14,7 +14,7 @@ public class Main {
         System.out.println("Annotation test.");
 
         try {
-            Class<?> mainClass = Main.class;
+            Class<?> mainClass = AnnotationsTest.class;
             testClassAnnotations(mainClass);
             testFieldAnnotations(mainClass);
             testMethodAndParameterAnnotations(mainClass);
