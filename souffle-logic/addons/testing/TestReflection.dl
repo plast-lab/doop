@@ -4,27 +4,50 @@
 .output TestId
 
 TestId("test1.1") :-
-  varPointsTo("<Main: void main(java.lang.String[])>/cA#_31", "<class A>").
+  varPointsTo("<ReflectionTest: void main(java.lang.String[])>/cA#_31", "<class A>").
 TestId("test1.2") :-
-  varPointsTo("<Main: void main(java.lang.String[])>/cA_2#_39", "<class A>").
+  varPointsTo("<ReflectionTest: void main(java.lang.String[])>/cA_2#_39", "<class A>").
 TestId("test1.3") :-
-  varPointsTo("<Main: void main(java.lang.String[])>/constr#_32", "<<reified constructor <A: void <init>()>>>").
+  varPointsTo("<ReflectionTest: void main(java.lang.String[])>/constr#_32", "<<reified constructor <A: void <init>()>>>").
 TestId("test1.4") :-
-  varPointsTo("<Main: void main(java.lang.String[])>/constr2#_42", "<<reified constructor <A: void <init>(java.lang.Integer,B)>>>").
+  varPointsTo("<ReflectionTest: void main(java.lang.String[])>/constr2#_42", "<<reified constructor <A: void <init>(java.lang.Integer,B)>>>").
 TestId("test1.5") :-
-  varPointsTo("<Main: void main(java.lang.String[])>/a3#_33", "<reflective Class.newInstance/new A>").
+  varPointsTo("<ReflectionTest: void main(java.lang.String[])>/a3#_33", "<reflective Class.newInstance/new A>").
 TestId("test1.6") :-
-  varPointsTo("<Main: void main(java.lang.String[])>/a3_2#_35", "<reflective Constructor.newInstance/new A>").
+  varPointsTo("<ReflectionTest: void main(java.lang.String[])>/a3_2#_35", "<reflective Constructor.newInstance/new A>").
 TestId("test1.7") :-
-  varPointsTo("<Main: void main(java.lang.String[])>/iField#_46", "<<reified field <A: java.lang.Integer i>>>").
+  varPointsTo("<ReflectionTest: void main(java.lang.String[])>/iField#_46", "<<reified field <A: java.lang.Integer i>>>").
 TestId("test1.8") :-
-  varPointsTo("<Main: void main(java.lang.String[])>/bFieldVal#_52", "<A: void <init>()>/new B/0").
+  varPointsTo("<ReflectionTest: void main(java.lang.String[])>/bFieldVal#_52", "<A: void <init>()>/new B/0").
 TestId("test1.9") :-
-  varPointsTo("<Main: void main(java.lang.String[])>/bFieldValB#_53", "<A: void <init>()>/new B/0").
+  varPointsTo("<ReflectionTest: void main(java.lang.String[])>/bFieldValB#_53", "<A: void <init>()>/new B/0").
 TestId("test1.10") :-
-  varPointsTo("<Main: void testProxies()>/g#_109", "<proxy object for interface G at <Main: void testProxies()>/java.lang.reflect.Proxy.newProxyInstance/0>").
+  varPointsTo("<ReflectionTest: void testProxies()>/g#_109", "<proxy object for interface G at <ReflectionTest: void testProxies()>/java.lang.reflect.Proxy.newProxyInstance/0>").
 
 #ifdef REFLECTION_DYNAMIC_PROXIES
 TestId("test1.11") :-
-  proxyCGE("<Main: void testProxies()>/G.countInteger/0", "<DHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>").
+  proxyCGE("<ReflectionTest: void testProxies()>/G.countInteger/0", "<DHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>").
 #endif // REFLECTION_DYNAMIC_PROXIES
+
+// type annotations
+TestId("test2.1") :-
+  varPointsTo("<AnnotationsTest: void testClassAnnotations(java.lang.Class)>/cAnnotations#_28", "<annotations array for type AnnotationsTest at <AnnotationsTest: void testClassAnnotations(java.lang.Class)>/java.lang.Class.getDeclaredAnnotations/0>").
+TestId("test2.2") :-
+  arrayIndexPointsTo("<annotations array for type AnnotationsTest at <AnnotationsTest: void testClassAnnotations(java.lang.Class)>/java.lang.Class.getDeclaredAnnotations/0>", "<annotation TypeAnnotation for AnnotationsTest>").
+// method annotations
+TestId("test2.3") :-
+  varPointsTo("<AnnotationsTest: void testMethodAndParameterAnnotations(java.lang.Class)>/mAnnotations#_48", "<annotations array for method <AnnotationsTest: void annotation(java.lang.String)> at <AnnotationsTest: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getDeclaredAnnotations/0>").
+TestId("test2.4") :-
+  arrayIndexPointsTo("<annotations array for method <AnnotationsTest: void annotation(java.lang.String)> at <AnnotationsTest: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getDeclaredAnnotations/0>", "<annotation MethodAnnotation for <AnnotationsTest: void annotation(java.lang.String)>>").
+// field annotations
+TestId("test2.5") :-
+  varPointsTo("<AnnotationsTest: void testFieldAnnotations(java.lang.Class)>/fAnnotations#_38", "<annotations array for field <AnnotationsTest: java.lang.String field> at <AnnotationsTest: void testFieldAnnotations(java.lang.Class)>/java.lang.reflect.Field.getDeclaredAnnotations/0>").
+TestId("test2.6") :-
+  arrayIndexPointsTo("<annotations array for field <AnnotationsTest: java.lang.String field> at <AnnotationsTest: void testFieldAnnotations(java.lang.Class)>/java.lang.reflect.Field.getDeclaredAnnotations/0>", "<annotation FieldAnnotation1 for <AnnotationsTest: java.lang.String field>>").
+// parameter annotations
+TestId("test2.7") :-
+  varPointsTo("<AnnotationsTest: void testMethodAndParameterAnnotations(java.lang.Class)>/pAnnotations#6#_53", "<method parameter annotations array for method <AnnotationsTest: void annotation(java.lang.String)> at <AnnotationsTest: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getParameterAnnotations/0>").
+TestId("test2.8") :-
+  arrayIndexPointsTo("<method parameter annotations array for method <AnnotationsTest: void annotation(java.lang.String)> at <AnnotationsTest: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getParameterAnnotations/0>", "<parameter annotations array for parameter ParameterAnnotation at <AnnotationsTest: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getParameterAnnotations/0>").
+TestId("test2.9") :-
+  arrayIndexPointsTo("<parameter annotations array for parameter ParameterAnnotation at <AnnotationsTest: void testMethodAndParameterAnnotations(java.lang.Class)>/java.lang.reflect.Method.getParameterAnnotations/0>", "<annotation ParameterAnnotation for parameter 0 of method <AnnotationsTest: void annotation(java.lang.String)>>").

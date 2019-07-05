@@ -153,7 +153,7 @@ applicationDistribution.from(projectDir) {
     include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
 }
 
-def testSubprojects = [ '016-reflection', '017-annotations', '104-method-references', '107-lambdas', '115-invokedynamic' ]
+def testSubprojects = [ '016-reflection', '104-method-references', '107-lambdas', '115-invokedynamic' ]
 
 testSubprojects.each {
     def path = "tests/${it}/build/libs"
