@@ -63,7 +63,13 @@ public class Database implements Closeable, Flushable {
 
     public void add(PredicateFile predicateFile, String arg, String... args) {
         try {
-            StringBuilder line = new StringBuilder(addColumn(arg));
+            // Estimate StringBuilder capacity.
+            int capacity = args.length + 1;
+            for (String arg0 : args)
+                capacity += arg0.length();
+
+            StringBuilder line = new StringBuilder(capacity);
+            line.append(addColumn(arg));
             for (String col : args) {
                 line.append(SEP);
                 line.append(addColumn(col));
