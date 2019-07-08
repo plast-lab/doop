@@ -1052,7 +1052,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         return var;
     }
 
-    private Collection<String> writtenVars = new HashSet<>();
+    private final Collection<String> writtenVars = new HashSet<>();
     @Override
     protected void writeVarDeclaringMethod(String var, String methId) {
         if (!writtenVars.contains(var)) {

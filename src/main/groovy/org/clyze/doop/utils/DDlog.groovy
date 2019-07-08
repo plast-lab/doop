@@ -22,7 +22,7 @@ class DDlog extends SouffleScript {
 	static final String convertedLogicName = "converted_logic" as String
     static final String SOUFFLE_CONVERTER = "souffle_converter.py" as String
 
-    public DDlog(Executor executor) {
+    DDlog(Executor executor) {
         super(executor)
     }
 
@@ -96,7 +96,7 @@ class DDlog extends SouffleScript {
         def checksum = calcChecksum(profile, provenance, liveProf)
 		def cacheFile = new File(cacheDir, checksum)
 		if (!cacheFile.exists() || forceRecompile) {
-            def jobs = ((Runtime.getRuntime().availableProcessors() / 2) + 1) as Integer
+            def jobs = ((Runtime.runtime.availableProcessors() / 2) + 1) as Integer
             log.info "Compiling Datalog to Rust program and executable using ${jobs} jobs"
             def executable = compileWithDDlog(jobs, outDir)
             cacheCompiledBinary(executable, cacheFile, checksum, cacheDir)

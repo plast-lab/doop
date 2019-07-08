@@ -16,7 +16,7 @@ import static PredicateFile0.*
 // This fact generator handles facts that do not need front-end/IR information.
 @Log4j
 @TypeChecked
-public class FactGenerator0 {
+class FactGenerator0 {
 
     private File factsDir
 
@@ -102,7 +102,7 @@ public class FactGenerator0 {
     // The extra sensitive controls are given as a String
     // "id1,type1,parentId1,id2,type2,parentId2,...".
     public void writeExtraSensitiveControls(String controls) {
-        if (controls.equals("")) {
+        if (controls == "") {
             return
         }
 

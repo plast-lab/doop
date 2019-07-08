@@ -209,8 +209,8 @@ public class XMLFactGenerator extends DefaultHandler {
     }
 
     private static class Node {
-        String file;
-        String nodeId;
+        final String file;
+        final String nodeId;
         public Node(String file, String nodeId) {
             this.file = file;
             this.nodeId = nodeId;

@@ -29,7 +29,7 @@ public abstract class AndroidSupport {
     private final Collection<String> appCallbackMethods = new HashSet<>();
     private final Set<LayoutControl> appUserControls = new HashSet<>();
     private final Map<String, AppResources> computedResources = new HashMap<>();
-    private final Set<String> decodeDirs = new HashSet<>();
+    private final Collection<String> decodeDirs = new HashSet<>();
 
     private final Log logger;
 

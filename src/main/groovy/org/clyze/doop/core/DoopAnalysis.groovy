@@ -499,7 +499,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         if (classpath == null) {
                             throw new RuntimeException("Missing classpath environment variable DOOP_EXT_CLASSPATH")
                         }
-                        JHelper.runClass(classpath.split(":"), SOOT_MAIN, args, "SOOT_FACT_GEN", true);
+                        JHelper.runClass(classpath.split(":"), SOOT_MAIN, args, "SOOT_FACT_GEN", true)
                     }
                 } catch (Throwable t) {
                     if (isFatal(loader, t)) {
@@ -558,7 +558,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     Object getThrowableField(ClassLoader loader, Throwable t, String className, String fieldName) {
         if (t instanceof InvocationTargetException) {
             Throwable cause = ((InvocationTargetException) t).targetException as Throwable
-            if (cause.getClass().getName() == className) {
+            if (cause.getClass().name == className) {
                 Field classesFld = loader.loadClass(className).getDeclaredField(fieldName)
                 classesFld.setAccessible(true)
                 return classesFld.get(cause)

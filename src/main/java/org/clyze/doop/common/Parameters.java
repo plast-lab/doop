@@ -1,10 +1,7 @@
 package org.clyze.doop.common;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
@@ -42,8 +39,7 @@ public class Parameters {
         String cp = System.getenv("DOOP_EXT_CLASSPATH");
         if (cp != null) {
             classpath = new HashSet<>();
-            for (String j : cp.split(":"))
-                classpath.add(j);
+            Collections.addAll(classpath, cp.split(":"));
         }
     }
 
