@@ -2,6 +2,8 @@ package org.clyze.doop.util;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.objectweb.asm.Opcodes;
 
 public enum TypeUtils implements Opcodes  {
@@ -25,6 +27,9 @@ public enum TypeUtils implements Opcodes  {
     private static final String SHORT_JVM = "S";
     private static final String BYTE = "byte";
     private static final String BYTE_JVM = "B";
+
+    private static final Pattern slashPat = Pattern.compile("/", Pattern.LITERAL);
+    private static final String dotRepl = Matcher.quoteReplacement(".");
 
     private static final Map<String, String> cachedRaisedTypes = new ConcurrentHashMap<>();
 
@@ -52,7 +57,7 @@ public enum TypeUtils implements Opcodes  {
 
         StringBuilder sb;
         if ((id.charAt(typePrefixEndIdx) == 'L') && (id.charAt(id.length() -1) == ';'))
-            sb = new StringBuilder(id.substring(typePrefixEndIdx + 1, id.length() - 1).replace('/', '.'));
+            sb = new StringBuilder(replaceSlashesWithDots(id.substring(typePrefixEndIdx + 1, id.length() - 1)));
         else
             sb = new StringBuilder(decodePrimType(id.substring(typePrefixEndIdx)));
 
@@ -95,5 +100,9 @@ public enum TypeUtils implements Opcodes  {
 
     public static boolean isLowLevelType(char first, String s) {
         return first == '[' || (first == 'L' && s.endsWith(";"));
+    }
+
+    public static String replaceSlashesWithDots(CharSequence s) {
+        return slashPat.matcher(s).replaceAll(dotRepl);
     }
 }
