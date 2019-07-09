@@ -67,7 +67,7 @@ public class PythonFactGenerator implements Runnable{
                         declaringModule = classNameParts[0].replace("script ", "");
                         className = classNameParts[1];
                     } else {
-                        throw new RuntimeException("BUILTING CLASS of PythonClass type? "+ classNameParts[0]);
+                        throw new RuntimeException("BUILTIN CLASS of PythonClass type? "+ classNameParts[0]);
                     }
                 }
                 else{
