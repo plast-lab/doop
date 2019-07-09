@@ -484,12 +484,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 // leaks, not only for soot but for all other Java-based tools,
                 // like jphantom.  In such a case, we should invoke all
                 // Java-based tools using a separate process.
-                ClassLoader loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
+                ClassLoader loader = null
                 try {
                     redo = false
                     String SOOT_MAIN = "org.clyze.doop.soot.Main"
                     def args = params.toArray(new String[params.size()])
                     if (!java9Plus() && options.LEGACY_SOOT_INVOCATION.value) {
+                        loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
                         Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
                     } else {
                         log.warn "WARNING: Calling Soot as external process, this may use more memory."
