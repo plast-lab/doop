@@ -76,9 +76,10 @@ class Main {
 				// We assume usage has already been displayed by the CliBuilder.
 				return
 			} else if (cli.arguments().size() != 0) {
-				log.info "Invalid argument specified: " + cli.arguments()[0]
+				def msg = "Invalid argument specified: " + cli.arguments()[0]
+				log.error msg
 				clidBuilder.usage()
-				return
+				throw new DoopErrorCodeException(31, msg)
 			} else if (cli['h']) {
 				clidBuilder.usage()
 				return

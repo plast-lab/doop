@@ -497,7 +497,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         String classpath = System.getenv("DOOP_EXT_CLASSPATH")
                         if (classpath == null)
                             throw new RuntimeException("Missing classpath environment variable DOOP_EXT_CLASSPATH")
-                        JHelper.runClass(classpath.split(":"), SOOT_MAIN, args, "SOOT_FACT_GEN", true, null)
+                        String error = null
+                        def proc = { String line -> if (line.contains(DoopErrorCodeException.PREFIX)) error = line }
+                        JHelper.runClass(classpath.split(":"), SOOT_MAIN, args, "SOOT_FACT_GEN", true, proc)
+                        if (error)
+                            throw new RuntimeException(error)
                     }
                     // Check if fact generation must be restarted due to missing classes.
                     if (missingClasses != null && missingClasses.exists()) {
@@ -516,7 +520,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         }
                     }
                 } catch (Throwable t) {
-                    if (isFatal(loader, t))
+                    if (loader != null && isFatal(loader, t))
                         throw new RuntimeException("Fatal error, see log for details.")
                     if (factGenRun >= MAX_FACTGEN_RUNS) {
                         println "Too many fact generation restarts, aborting."

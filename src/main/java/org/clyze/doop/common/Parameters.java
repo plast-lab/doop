@@ -48,7 +48,7 @@ public class Parameters {
         while (i < args.length) {
             last_i = processNextArg(args, i);
             if (last_i == -1)
-                throw new RuntimeException("Bad argument: " + args[i]);
+                throw new DoopErrorCodeException(32, "Bad argument: " + args[i]);
             i = last_i + 1;
         }
 
