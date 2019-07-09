@@ -472,31 +472,35 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             int factGenRun = 1
             boolean redo = true
             while (redo) {
-                // We invoke Soot reflectively using a separate class-loader to
-                // be able to support multiple soot invocations in the same JVM
-                // (server-side). Note that information may be passed over the
-                // different class-loader border but this needs some careful
-                // code (a class "A" in the context of this class is not the
-                // same as "A" in the context of Soot); see exception handling
-                // below for details.
-                //
-                // TODO: Investigate whether this approach may lead to memory
-                // leaks, not only for soot but for all other Java-based tools,
-                // like jphantom.  In such a case, we should invoke all
-                // Java-based tools using a separate process.
                 ClassLoader loader = null
                 try {
                     redo = false
                     String SOOT_MAIN = "org.clyze.doop.soot.Main"
                     def args = params.toArray(new String[params.size()])
-                    if (!java9Plus() && options.LEGACY_SOOT_INVOCATION.value) {
+                    String classpath = System.getenv("DOOP_EXT_CLASSPATH")
+                    if (!java9Plus() && (options.LEGACY_SOOT_INVOCATION.value || (classpath == null))) {
+                        if (classpath == null) {
+                            log.warn 'WARNING: No "DOOP_EXT_CLASSPATH" environment variable found, Soot-based fact generation will be invoked by custom class loader. Please run Doop via Gradle to override this behavior.'
+                        }
+                        // We invoke the Soot-based fact generator reflectively
+                        // using a separate class-loader to be able to support
+                        // multiple soot invocations in the same JVM
+                        // (server-side). Note that information may be passed
+                        // over the different class-loader border but this needs
+                        // some careful code (a class "A" in the context of this
+                        // class is not the same as "A" in the context of Soot);
+                        // see exception handling below for details.
+                        //
+                        // TODO: Investigate whether this approach may lead to memory
+                        // leaks, not only for soot but for all other Java-based tools,
+                        // like jphantom.
                         loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
                         Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
                     } else {
+                        // Invoke the Soot-based fact generator using a separate JVM.
                         log.warn "WARNING: Calling Soot as external process, this may use more memory."
-                        String classpath = System.getenv("DOOP_EXT_CLASSPATH")
                         if (classpath == null)
-                            throw new RuntimeException("Missing classpath environment variable DOOP_EXT_CLASSPATH")
+                            throw new DoopErrorCodeException(33, new RuntimeException("Doop can only run via Gradle on Java 9+."), true)
                         String error = null
                         def proc = { String line -> if (line.contains(DoopErrorCodeException.PREFIX)) error = line }
                         JHelper.runClass(classpath.split(":"), SOOT_MAIN, args, "SOOT_FACT_GEN", true, proc)
@@ -520,7 +524,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         }
                     }
                 } catch (Throwable t) {
-                    if (loader != null && isFatal(loader, t))
+                    if (isFatal(loader, t))
                         throw new RuntimeException("Fatal error, see log for details.")
                     if (factGenRun >= MAX_FACTGEN_RUNS) {
                         println "Too many fact generation restarts, aborting."
@@ -561,13 +565,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      *                   does not exist
      */
     Object getThrowableField(ClassLoader loader, Throwable t, String className, String fieldName) {
-        if (t instanceof InvocationTargetException) {
-            Throwable cause = ((InvocationTargetException) t).targetException as Throwable
-            if (cause.getClass().name == className) {
-                Field classesFld = loader.loadClass(className).getDeclaredField(fieldName)
-                classesFld.setAccessible(true)
-                return classesFld.get(cause)
-            }
+        if (t instanceof InvocationTargetException)
+            t = ((InvocationTargetException) t).targetException as Throwable
+        if (loader == null)
+            loader = t.getClass().getClassLoader()
+        if (t.getClass().name == className) {
+            Field classesFld = loader.loadClass(className).getDeclaredField(fieldName)
+            classesFld.setAccessible(true)
+            return classesFld.get(t)
         }
         return null
     }
