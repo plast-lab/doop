@@ -361,6 +361,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "If true the analysis uses the legacy processor for Android resources."
 			),
 			new BooleanAnalysisOption(
+					id: "LEGACY_SOOT_INVOCATION",
+					name: "legacy-soot-invocation",
+					description: "If true, Soot will be invoked using a custom classloader (may use less memory, only supported on Java < 9)."
+			),
+			new BooleanAnalysisOption(
 					id: "CFG_ANALYSIS",
 					name: "cfg",
 					description: "Perform a CFG analysis.",

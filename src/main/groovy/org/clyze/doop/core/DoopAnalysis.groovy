@@ -489,7 +489,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     redo = false
                     String SOOT_MAIN = "org.clyze.doop.soot.Main"
                     def args = params.toArray(new String[params.size()])
-                    if (!java9Plus()) {
+                    if (!java9Plus() && options.LEGACY_SOOT_INVOCATION.value) {
                         Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
                     } else {
                         log.warn "WARNING: Calling Soot as external process, this may use more memory."
