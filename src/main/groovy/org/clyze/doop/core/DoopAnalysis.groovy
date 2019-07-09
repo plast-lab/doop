@@ -525,7 +525,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     }
                 } catch (Throwable t) {
                     if (isFatal(loader, t))
-                        throw new RuntimeException("Fatal error, see log for details.")
+                        throw new RuntimeException("Fatal error, see log for details: ${t.toString()}")
                     if (factGenRun >= MAX_FACTGEN_RUNS) {
                         println "Too many fact generation restarts, aborting."
                         if (!(options.X_IGNORE_FACTGEN_ERRORS.value)) {
