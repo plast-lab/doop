@@ -1,6 +1,7 @@
 package org.clyze.doop.soot;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -244,11 +245,19 @@ public class Main {
             if (unrecorded.size() > 0) {
                 // If option is set, fail and notify caller that fact generation
                 // must run again with these classes added.
-                if (sootParameters._failOnMissingClasses) {
-                    throw new MissingClassesException(unrecorded.toArray(new String[0]));
-                } else {
+                String outFile = sootParameters._missingClassesOut;
+                if (outFile != null) {
+                    FileWriter fWriter = new FileWriter(new File(outFile));
+                    unrecorded.forEach(s -> {
+                            try {
+                                fWriter.write(s + '\n');
+                            } catch (IOException ex) {
+                                System.err.println("ERROR: " + ex.getMessage());
+                            }});
+                    fWriter.close();
+                    logError("ERROR: some classes were not resolved (see " + outFile + "), restarting fact generation: " + Arrays.toString(unrecorded.toArray()));
+                } else
                     logWarn("WARNING: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
-                }
             }
 
             writer.writeLastFacts(java);
@@ -339,6 +348,13 @@ public class Main {
             System.err.println(s);
         else
             logger.warn(s);
+    }
+
+    private static void logError(String s) {
+        if (logger == null)
+            System.err.println(s);
+        else
+            logger.error(s);
     }
 
     /**

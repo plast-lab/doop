@@ -15,7 +15,7 @@ public class SootParameters extends Parameters {
     boolean _allowPhantom = false;
     boolean _generateJimple = false;
     boolean _ignoreWrongStaticness = false;
-    boolean _failOnMissingClasses = false;
+    String _missingClassesOut = null;
     String _androidJars = null;
     private boolean _runFlowdroid = false;
     private boolean _toStdout = false;
@@ -76,7 +76,8 @@ public class SootParameters extends Parameters {
             extraClassesToResolve.add(args[i]);
             break;
         case "--failOnMissingClasses":
-            _failOnMissingClasses = true;
+            i = shift(args, i);
+            _missingClassesOut = args[i];
             break;
         case "--lowMem":
             _lowMem = true;
@@ -108,7 +109,7 @@ public class SootParameters extends Parameters {
             System.err.println("  --no-facts                            Don't generate facts (just empty files -- used for debugging)");
             System.err.println("  --ignoreWrongStaticness               Ignore 'wrong static-ness' errors in Soot");
             System.err.println("  --lowMem                              Consume less memory.");
-            System.err.println("  --failOnMissingClasses                Terminate if classes are missing");
+            System.err.println("  --failOnMissingClasses <file>         Terminate if classes are missing (and record them to file)");
             System.err.println("  --also-resolve <class>                Force resolution of class that may not be found automatically.");
             System.err.println("  --log-dir <dir>                       Write logs in directory <dir>.");
             System.err.println("  --write-artifacts-map                 Write artifacts map.");
