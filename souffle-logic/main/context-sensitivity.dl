@@ -610,3 +610,24 @@ DuplicateContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx1, ?calleeCtx
   ?calleeCtx1 != ?calleeCtx2.
 
 #endif // SANITY
+
+// Reachable methods should make their annotations reachable.
+
+.decl ReachableAnnotationMethod(?method:Method, ?annotation:Annotation)
+
+ReachableAnnotationMethod(?annotMethod, ?annotation) :-
+  ReachableContext(_, ?method),
+  Method_Annotation(?method, ?annotation),
+  Method_DeclaringType(?annotMethod, ?annotation).
+// Annotation methods are abstract, so we don't mock the receiver or the parameters.
+ReachableContext(?ctx0, ?annotMethod) :-
+  ReachableAnnotationMethod(?annotMethod, _),
+  isImmutableContext(?ctx0).
+
+#ifdef DISABLE_POINTS_TO
+MockValueConsMacro(?value, ?annotation),
+ReachableValue(?hctx, ?value) :-
+  ReachableAnnotationMethod(_, ?annotation),
+  isImmutableHContext(?hctx),
+  ?value = cat("<Annotation ", cat(?annotation, ">")).
+#endif // DISABLE_POINTS_TO
