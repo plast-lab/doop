@@ -45,7 +45,7 @@ public class ClassPathHelper {
      * @return           the path of the JAR
      *
      */
-    public static String getClasspathJar(String prefix, Set<String> classpath) {
+    public static String getClasspathJar(String prefix, Iterable<String> classpath) {
 	final String searchString = "/" + prefix;
         LinkedList<String> matchingPaths = new LinkedList<>();
 	for (String path : classpath) {

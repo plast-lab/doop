@@ -21,7 +21,7 @@ class TestLightReflection extends DoopSpec {
 											   'test-016-reflection-glue')
 
 		then:
-		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/cA#_31', '<class A>')
+		varPointsToQ(analysis, '<ReflectionTest: void main(java.lang.String[])>/cA#_31', '<class A>')
 		noSanityErrors(analysis)
 	}
 }

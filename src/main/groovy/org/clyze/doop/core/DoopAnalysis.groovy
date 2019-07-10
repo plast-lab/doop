@@ -455,12 +455,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             alsoResolve(params, options.ALSO_RESOLVE.value as Collection<String>)
         }
 
+        File missingClasses = null
         if (options.THOROUGH_FACT_GEN.value) {
-            if (java9Plus()) {
-                log.warn "WARNING: Option not supported in this Java version and will be ignored: --${options.THOROUGH_FACT_GEN.name}"
-            } else {
-                params += ["--failOnMissingClasses"]
-            }
+            missingClasses = File.createTempFile("fact-gen-missing-classes", ".tmp")
+            params += ["--failOnMissingClasses", missingClasses.absolutePath ]
         }
 
         if (options.X_LOW_MEM.value) {
@@ -474,51 +472,61 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             int factGenRun = 1
             boolean redo = true
             while (redo) {
-                // We invoke Soot reflectively using a separate class-loader to
-                // be able to support multiple soot invocations in the same JVM
-                // (server-side). Note that information may be passed over the
-                // different class-loader border but this needs some careful
-                // code (a class "A" in the context of this class is not the
-                // same as "A" in the context of Soot); see exception handling
-                // below for details.
-                //
-                // TODO: Investigate whether this approach may lead to memory
-                // leaks, not only for soot but for all other Java-based tools,
-                // like jphantom.  In such a case, we should invoke all
-                // Java-based tools using a separate process.
-                ClassLoader loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
+                ClassLoader loader = null
                 try {
                     redo = false
                     String SOOT_MAIN = "org.clyze.doop.soot.Main"
                     def args = params.toArray(new String[params.size()])
-                    if (!java9Plus()) {
+                    String classpath = System.getenv("DOOP_EXT_CLASSPATH")
+                    if (!java9Plus() && (options.LEGACY_SOOT_INVOCATION.value || (classpath == null))) {
+                        if (classpath == null) {
+                            log.warn 'WARNING: No "DOOP_EXT_CLASSPATH" environment variable found, Soot-based fact generation will be invoked by custom class loader. Please run Doop via Gradle to override this behavior.'
+                        }
+                        // We invoke the Soot-based fact generator reflectively
+                        // using a separate class-loader to be able to support
+                        // multiple soot invocations in the same JVM
+                        // (server-side). Note that information may be passed
+                        // over the different class-loader border but this needs
+                        // some careful code (a class "A" in the context of this
+                        // class is not the same as "A" in the context of Soot);
+                        // see exception handling below for details.
+                        //
+                        // TODO: Investigate whether this approach may lead to memory
+                        // leaks, not only for soot but for all other Java-based tools,
+                        // like jphantom.
+                        loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
                         Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
                     } else {
+                        // Invoke the Soot-based fact generator using a separate JVM.
                         log.warn "WARNING: Calling Soot as external process, this may use more memory."
-                        String classpath = System.getenv("DOOP_EXT_CLASSPATH")
-                        if (classpath == null) {
-                            throw new RuntimeException("Missing classpath environment variable DOOP_EXT_CLASSPATH")
+                        if (classpath == null)
+                            throw new DoopErrorCodeException(33, new RuntimeException("Doop can only run via Gradle on Java 9+."), true)
+                        String error = null
+                        def proc = { String line -> if (line.contains(DoopErrorCodeException.PREFIX)) error = line }
+                        JHelper.runClass(classpath.split(":"), SOOT_MAIN, args, "SOOT_FACT_GEN", true, proc)
+                        if (error)
+                            throw new RuntimeException(error)
+                    }
+                    // Check if fact generation must be restarted due to missing classes.
+                    if (missingClasses != null && missingClasses.exists()) {
+                        String[] extraClasses = missingClasses.readLines() as String[]
+                        if (extraClasses.length > 0) {
+                            // Retry with classes reported by the front-end.
+                            if (factGenRun >= MAX_FACTGEN_RUNS)
+                                System.err.println("Too many fact generation restarts, classes still not resolved: " + Arrays.toString(extraClasses))
+                            else {
+                                redo = true
+                                factGenRun += 1
+                                println("Restarting fact generation (run #${factGenRun}) with " + extraClasses.length + " more classes: " + Arrays.toString(extraClasses))
+                                DoopAnalysis.alsoResolve(params, Arrays.asList(extraClasses))
+                                missingClasses.delete()
+                            }
                         }
-                        JHelper.runClass(classpath.split(":"), SOOT_MAIN, args, "SOOT_FACT_GEN", true);
                     }
                 } catch (Throwable t) {
-                    if (isFatal(loader, t)) {
-                        throw new RuntimeException("Fatal error, see log for details.")
-                    }
-                    // Try to restart fact generation a limited number of times
-                    // (e.g., if Soot randomly fails or classes are missing).
-                    String[] extraClasses = checkMissingClasses(loader, t)
-                    if (extraClasses != null) {
-                        // Retry with classes reported by the front-end.
-                        if (factGenRun >= MAX_FACTGEN_RUNS) {
-                            System.err.println("Too many fact generation restarts, classes still not resolved: " + Arrays.toString(extraClasses))
-                        } else {
-                            redo = true
-                            factGenRun += 1
-                            println("Restarting fact generation (run #${factGenRun}) with " + extraClasses.length + " more classes: " + Arrays.toString(extraClasses))
-                            DoopAnalysis.alsoResolve(params, Arrays.asList(extraClasses))
-                        }
-                    } else if (factGenRun >= MAX_FACTGEN_RUNS) {
+                    if (isFatal(loader, t))
+                        throw new RuntimeException("Fatal error, see log for details: ${t.toString()}")
+                    if (factGenRun >= MAX_FACTGEN_RUNS) {
                         println "Too many fact generation restarts, aborting."
                         if (!(options.X_IGNORE_FACTGEN_ERRORS.value)) {
                             log.info "Errors occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
@@ -530,7 +538,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         factGenRun += 1
                         println "Errors occurred, restarting fact generation (run #${factGenRun})."
                     }
-                    // We cannot add to current facts: non-deterministic names
+                } finally {
+                    // Restarting cannot add to current facts: non-deterministic names
                     // from different runs blow up relations (e.g., VarPointsTo).
                     if (redo) {
                         println "Reset facts directory: ${factsDir}"
@@ -544,7 +553,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     /** Reads the value of a field of a Throwable object thrown by a
      *  different class loader via an InvocationTargetException.
-     *  Since Soot runs in a different class loader, we cannot do
+     *  Since Soot may run in a different class loader, we cannot do
      *  instanceof checks but have to resort to string checks to
      *  find the type of thrown exceptions.
      *
@@ -556,28 +565,16 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      *                   does not exist
      */
     Object getThrowableField(ClassLoader loader, Throwable t, String className, String fieldName) {
-        if (t instanceof InvocationTargetException) {
-            Throwable cause = ((InvocationTargetException) t).targetException as Throwable
-            if (cause.getClass().getName() == className) {
-                Field classesFld = loader.loadClass(className).getDeclaredField(fieldName)
-                classesFld.setAccessible(true)
-                return classesFld.get(cause)
-            }
+        if (t instanceof InvocationTargetException)
+            t = ((InvocationTargetException) t).targetException as Throwable
+        if (loader == null)
+            loader = t.getClass().getClassLoader()
+        if (t.getClass().name == className) {
+            Field classesFld = loader.loadClass(className).getDeclaredField(fieldName)
+            classesFld.setAccessible(true)
+            return classesFld.get(t)
         }
         return null
-    }
-
-
-    /**
-     * Read the 'classes' field of MissingClassesException.
-     *
-     * @param loader  the class loader
-     * @param t       the throwable to check
-     *  @return       if t is a MissingClassesException, field
-     *                'classes' is returned here, otherwise null.
-     */
-    String[] checkMissingClasses(ClassLoader loader, Throwable t) {
-        return getThrowableField(loader, t, 'org.clyze.doop.soot.MissingClassesException', 'classes') as String[]
     }
 
     /**

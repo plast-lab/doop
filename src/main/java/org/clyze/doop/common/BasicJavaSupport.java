@@ -13,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
+import org.clyze.doop.util.TypeUtils;
 import org.objectweb.asm.ClassReader;
 
 /**
@@ -72,7 +73,7 @@ public class BasicJavaSupport {
                 if (entryName.endsWith(".class")) {
                     try {
                         ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                        String className = reader.getClassName().replace("/", ".");
+                        String className = TypeUtils.replaceSlashesWithDots(reader.getClassName());
                         classSet.add(className);
                         if (parameters._writeArtifactsMap) {
                             String artifact = (new File(jarFile.getName())).getName();

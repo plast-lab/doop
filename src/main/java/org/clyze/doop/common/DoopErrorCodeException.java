@@ -7,9 +7,10 @@ public class DoopErrorCodeException extends Exception {
     private final int errorCode;
     @SuppressWarnings("WeakerAccess")
     public boolean fatal = false;
+    public static final String PREFIX = "Doop error #";
 
     public DoopErrorCodeException(int errorCode, Throwable original) {
-        super("Doop error " + errorCode, original);
+        super(PREFIX + errorCode, original);
         this.errorCode = errorCode;
     }
 

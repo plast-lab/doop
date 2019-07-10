@@ -258,7 +258,7 @@ public class DoopAddons {
                 Object paramTypesObj = getParamTypes.invoke(methodType);
                 if (!(paramTypesObj instanceof List))
                     return null;
-                List<?> paramTypesT = (List<?>)paramTypesObj;
+                Iterable<?> paramTypesT = (List<?>)paramTypesObj;
                 List<String> paramTypes = new LinkedList<>();
                 for (Object t : paramTypesT)
                     paramTypes.add(t.toString());

@@ -487,7 +487,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
                 ParseTreeWalker.DEFAULT.walk(listener, ctx)
             } catch (all) {
                 //all = StackTraceUtils.deepSanitize all
-				throw new RuntimeException("Jimple class ${listener.filename}: ${all.getMessage()}", all)
+				throw new RuntimeException("Jimple class ${listener.filename}: ${all.message}", all)
             }
         }
     }

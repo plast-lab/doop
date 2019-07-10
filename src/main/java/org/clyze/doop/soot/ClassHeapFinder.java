@@ -58,7 +58,7 @@ class ClassHeapFinder {
     }
 
     private void processClassConstant(ClassConstant constant) {
-        String s = constant.getValue().replace('/', '.');
+        String s = TypeUtils.replaceSlashesWithDots(constant.getValue());
         char first = s.charAt(0);
         if (TypeUtils.isLowLevelType(first, s)) {
             // array type
