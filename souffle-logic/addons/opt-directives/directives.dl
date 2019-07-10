@@ -53,6 +53,35 @@ MethodToRemove(?method) :-
    // don't throw away root methods that may be needed for dispatch of overriding methods.
 .output MethodToRemove
 
+// Test logic to measure Doop-reachable methods against seeds.txt
+// entry points for application code.
+// #define DEBUG_SEEDS
+#ifdef DEBUG_SEEDS
+
+.decl Seed(?s:symbol)
+.input Seed(IO="file", filename="Seeds.facts", delimiter="\t")
+
+.decl SeedMethod(?m:Method)
+.output SeedMethod
+SeedMethod(?m) :-
+  Seed(?m0),
+  ?m = cat("<", cat(?m0, ">")),
+  ApplicationMethod(?m).
+
+.decl SeedMethodReachable(?m:Method)
+.output SeedMethodReachable
+SeedMethodReachable(?m) :-
+  SeedMethod(?m),
+  mainAnalysis.Reachable(?m).
+
+.decl SeedMethodNotReachable(?m:Method)
+.output SeedMethodNotReachable
+SeedMethodNotReachable(?m) :-
+  SeedMethod(?m),
+  !mainAnalysis.Reachable(?m).
+
+#endif // DEBUG_SEEDS
+
 .decl ClassOfDeadMethod(?method:Method, ?class:ClassType)
 ClassOfDeadMethod(?method, ?class) :-
   MethodToRemove(?method),
