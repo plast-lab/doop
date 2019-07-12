@@ -4,7 +4,7 @@
 .type Modifier
 .decl isModifier(?m:Modifier)
 
-.type Annotation
+.type Annotation = ReferenceType
 .decl isAnnotation(?a:Annotation)
 
 .decl Modifier_abstract(?mod:Modifier)

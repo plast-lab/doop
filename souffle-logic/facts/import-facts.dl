@@ -907,10 +907,10 @@ isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.
 // Param
 .input Param_Annotation(IO="file", filename="Param-Annotation.facts", delimiter="\t")
 
-isAnnotation(?annotation) :- Type_Annotation(_, ?annotation).
-isAnnotation(?annotation) :- Method_Annotation(_, ?annotation).
-isAnnotation(?annotation) :- Field_Annotation(_, ?annotation).
-isAnnotation(?annotation) :- Param_Annotation(_, _, ?annotation).
+isAnnotation(?annotation) :- isReferenceType(?annotation), Type_Annotation(_, ?annotation).
+isAnnotation(?annotation) :- isReferenceType(?annotation), Method_Annotation(_, ?annotation).
+isAnnotation(?annotation) :- isReferenceType(?annotation), Field_Annotation(_, ?annotation).
+isAnnotation(?annotation) :- isReferenceType(?annotation), Param_Annotation(_, _, ?annotation).
 
 // Annotation elements
 .input AnnotationElement(IO="file", filename="AnnotationElement.facts", delimiter="\t")
