@@ -630,6 +630,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				throw new RuntimeException("Invalid auto-app-regex mode: ${mode}")
 			}
 
+			if (packages.size() == 0)
+				throw new DoopErrorCodeException(34, "Automatic app-regex generation failed, do the inputs contain valid Java code?")
+
 			options.APP_REGEX.value = packages.sort().join(':')
 			log.debug "APP_REGEX: ${options.APP_REGEX.value}"
 		}
