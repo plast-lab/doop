@@ -503,7 +503,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                             throw new DoopErrorCodeException(33, new RuntimeException("Doop can only run via Gradle on Java 9+."), true)
                         String error = null
                         def proc = { String line -> if (line.contains(DoopErrorCodeException.PREFIX)) error = line }
-                        JHelper.runClass(classpath.split(":"), SOOT_MAIN, args, "SOOT_FACT_GEN", true, proc)
+                        // Write arguments to file and pass that to Soot-based fact generator.
+                        String argsFile = Files.createTempFile("soot-params-", "").toString()
+                        (new File(argsFile)).withWriterAppend { w -> args.each { w.writeLine(it as String) } }
+                        String[] args0 = [ "--args-file", argsFile ] as String[]
+                        JHelper.runClass(classpath.split(":"), SOOT_MAIN, args0, "SOOT_FACT_GEN", true, proc)
                         if (error)
                             throw new RuntimeException(error)
                     }
