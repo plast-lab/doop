@@ -257,6 +257,8 @@ OUTPUT_STATS(Stats_Methods)
  * Exceptions
  ***************************************************/
 
+#ifndef DISABLE_POINTS_TO
+
 .decl Stats_InsensValueThrowPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?method:Method)
 OUTPUT_STATS(Stats_InsensValueThrowPointsTo)
 
@@ -268,6 +270,8 @@ OUTPUT_STATS(Stats_InsensThrowPointsTo)
 
 //.decl Stats_InsensThrowPointsToSize(?method:Method, ?size:number)
 //OUTPUT_STATS(Stats_InsensThrowPointsToSize)
+
+#endif // DISABLE_POINTS_TO
 
 //.decl Stats_ReachableExceptionHandler(?handler:ExceptionHandler)
 //OUTPUT_STATS(Stats_ReachableExceptionHandler)

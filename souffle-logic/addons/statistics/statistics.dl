@@ -293,6 +293,9 @@ Stats_Methods(?n) :-
  * Exceptions
  ***************************************************/
 
+
+#ifndef DISABLE_POINTS_TO
+
 Stats_InsensValueThrowPointsTo(?value, ?ctx, ?method) :-
   mainAnalysis.ThrowPointsTo(_, ?value, ?ctx, ?method).
 
@@ -306,6 +309,8 @@ Stats_InsensThrowPointsTo(?value, ?method) :-
 //Stats_InsensThrowPointsToSize(?method, ?size)
 //  Stats_InsensThrowPointsTo(_, ?method),
 //  ?size = count : Stats_InsensThrowPointsTo(_, ?method).
+
+#endif // DISABLE_POINTS_TO
 
 //Stats_ReachableExceptionHandler(?handler) :-
 //  Reachable(?method),
