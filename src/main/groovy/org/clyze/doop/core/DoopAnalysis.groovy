@@ -507,7 +507,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         String argsFile = Files.createTempFile("soot-params-", "").toString()
                         (new File(argsFile)).withWriterAppend { w -> args.each { w.writeLine(it as String) } }
                         String[] args0 = [ "--args-file", argsFile ] as String[]
-                        JHelper.runClass(classpath.split(":"), SOOT_MAIN, args0, "SOOT_FACT_GEN", true, proc)
+                        String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
+                        JHelper.runClass(classpath.split(":"), jvmArgs, SOOT_MAIN, args0, "SOOT_FACT_GEN", true, proc)
                         if (error)
                             throw new RuntimeException(error)
                     }
