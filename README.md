@@ -141,7 +141,7 @@ You can then inspect the analysis results by using the souffle-profile command a
 
 ### Using LogicBlox as the Datalog engine of choice
 
-In order to use LogicBlox instead of the Soufflé engine you can provide the --lb argument. 
+In order to use LogicBlox instead of the Soufflé engine you can provide the --lb argument. Be warned that this will use older analysis logic and thus some Java features (such as lambdas, dynamic proxies, or Android-specific behavior) may not be handled successfully.
 
     $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id lb-antlr --lb
 
