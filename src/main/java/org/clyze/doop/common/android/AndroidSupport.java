@@ -260,7 +260,8 @@ public abstract class AndroidSupport {
                     System.err.println("Error: could not find apktool, please set " + APKTOOL_HOME_ENV_VAR);
                     return;
                 }
-                JHelper.runJar(new String[] {}, apktoolJar, cmdArgs, TAG, true);
+                String[] empty = new String[0];
+                JHelper.runJar(empty, empty, apktoolJar, cmdArgs, TAG, true);
             }
         } catch (IOException ex) {
             System.err.println("Error: could not run apktool.");
