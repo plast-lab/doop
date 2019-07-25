@@ -50,7 +50,7 @@ class DexThreadFactory {
         return () -> {
             for (DexBackedClassDef dexClass : classes) {
                 String className = TypeUtils.raiseTypeId(dexClass.getType());
-                java.registerArtifactClass(apkName, className, dexEntry, dexClass.getSize());
+                java.getArtifactScanner().registerArtifactClass(apkName, className, dexEntry, dexClass.getSize());
                 DexClassFactWriter classWriter = new DexClassFactWriter(db, moreStrings);
                 classWriter.generateFacts(dexClass, className, dexParams, cachedMethodDescriptors);
                 cha.registerDefinedMethods(classWriter.definedMethods);

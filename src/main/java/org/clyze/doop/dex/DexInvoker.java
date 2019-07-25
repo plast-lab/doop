@@ -2,6 +2,7 @@ package org.clyze.doop.dex;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.CHA;
 import org.clyze.doop.common.Database;
@@ -43,7 +44,7 @@ public class DexInvoker {
 
         try (Database db = new Database(new File(outDir))) {
             DexFactWriter writer = new DexFactWriter(db, dexParams._extractMoreStrings, cha);
-            BasicJavaSupport java = new BasicJavaSupport(dexParams);
+            BasicJavaSupport java = new BasicJavaSupport(dexParams, new ArtifactScanner());
             java.preprocessInputs();
             writer.writePreliminaryFacts(java, dexParams);
             AndroidSupport android = new DexAndroidSupport(dexParams, java);

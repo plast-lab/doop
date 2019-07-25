@@ -130,14 +130,14 @@ public abstract class JavaFactWriter {
      * @param java  the object supporting basic Java functionality
      */
     public void writeLastFacts(BasicJavaSupport java) {
+        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactScanner().getArtifactToClassMap();
         if (_writeArtifactsMap) {
-            Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
-
             System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
             for (String artifact : artifactToClassMap.keySet())
                 for (ArtifactEntry ae : artifactToClassMap.get(artifact))
                     writeClassArtifact(artifact, ae.className, ae.subArtifact, ae.size);
         }
+        artifactToClassMap.clear();
     }
 
     protected void writeMethodDeclaresException(String methodId, String exceptionType) {

@@ -30,27 +30,8 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
      * @param inputApk  the filename of the APK
      */
     private void addClasses(Collection<SootClass> classes, Scene scene, String inputApk) {
-        File apk = new File(inputApk);
         System.out.println("Android mode, APK = " + inputApk);
-        String artifact = apk.getName();
-        try {
-            List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
-            int dexClassesCount = 0;
-            for (DexContainer dexContainer : listContainers) {
-                Set<? extends DexBackedClassDef> dexClasses = dexContainer.getBase().getClasses();
-                dexClassesCount += dexClasses.size();
-                for (DexBackedClassDef dexBackedClassDef : dexClasses) {
-                    String className = TypeUtils.raiseTypeId(dexBackedClassDef.getType());
-                    SootClass c = scene.loadClass(className, SootClass.BODIES);
-                    classes.add(c);
-                    java.registerArtifactClass(artifact, className, dexContainer.getDexName(), dexBackedClassDef.getSize());
-                }
-            }
-            System.out.println("Classes found in apk: " + dexClassesCount);
-        } catch (IOException ex) {
-            System.err.println("Could not read dex classes in " + apk);
-            ex.printStackTrace();
-        }
+        java.getArtifactScanner().processAPKClasses(inputApk, (className -> classes.add(scene.loadClass(className, SootClass.BODIES))));
     }
 
     private void addClasses(Iterable<String> inputs, Collection<SootClass> classes, Scene scene, Iterable<String> target) {
