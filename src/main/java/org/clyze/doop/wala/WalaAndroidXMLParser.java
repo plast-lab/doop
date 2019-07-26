@@ -1,6 +1,5 @@
 package org.clyze.doop.wala;
 
-import java.io.File;
 import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -8,13 +7,6 @@ import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Parameters;
 import org.clyze.doop.common.android.AppResources;
 import org.clyze.doop.common.android.AndroidSupport;
-import org.clyze.doop.util.TypeUtils;
-import org.jf.dexlib2.Opcodes;
-import org.jf.dexlib2.dexbacked.DexBackedDexFile;
-import org.jf.dexlib2.iface.MultiDexContainer;
-import org.jf.dexlib2.dexbacked.DexBackedClassDef;
-
-import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
 
 /*
  * Parses all the XML files of each input file to find all the information we want about
@@ -64,22 +56,6 @@ class WalaAndroidXMLParser extends AndroidSupport {
     private void populateArtifactsRelation() {
         for (String i : parameters.getInputs())
             if (i.endsWith(".apk"))
-                try {
-                    Opcodes opcodes = Opcodes.getDefault();
-                    File apk = new File(i);
-                    MultiDexContainer<? extends DexBackedDexFile> multiDex = loadDexContainer(apk, opcodes);
-                    for (String dexEntry : multiDex.getDexEntryNames()) {
-                        DexBackedDexFile dex = multiDex.getEntry(dexEntry);
-                        if (dex == null)
-                            logger.debug("No .dex entry for " + dexEntry);
-                        else
-                            for (DexBackedClassDef dexClass : dex.getClasses()) {
-                                String className = TypeUtils.raiseTypeId(dexClass.getType());
-                                java.registerArtifactClass(apk.getName(), className, dexEntry, dexClass.getSize());
-                            }
-                    }
-                } catch (Exception ex) {
-                    logger.debug("Error while calculating artifacts on Android: " + ex.getMessage());
-                }
+                java.getArtifactScanner().processAPKClasses(i, null);
     }
 }

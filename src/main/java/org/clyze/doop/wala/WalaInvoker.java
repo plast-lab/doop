@@ -12,6 +12,7 @@ import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.types.annotations.Annotation;
+import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
@@ -81,7 +82,7 @@ public class WalaInvoker {
             WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._extractMoreStrings, walaParameters._writeArtifactsMap, rep);
             WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
-            BasicJavaSupport java = new BasicJavaSupport(walaParameters);
+            BasicJavaSupport java = new BasicJavaSupport(walaParameters, new ArtifactScanner());
 
             if (walaParameters._android) {
                 WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);

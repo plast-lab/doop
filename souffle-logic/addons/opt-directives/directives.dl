@@ -130,11 +130,13 @@ ExceptionThrownByReachableMethod(?excType, ?method) :-
   mainAnalysis.Reachable(?method),
   Method_DeclaresException(?excType, ?method).
 
+#ifndef DISABLE_POINTS_TO
 ExceptionThrownByReachableMethod(?excType, ?method) :-
   mainAnalysis.Reachable(?method),
   mainAnalysis.ThrowPointsTo(_, ?exc, _, ?method),
   mainAnalysis.Value_Type(?exc, ?excType),
   !isNullType(?excType).
+#endif // DISABLE_POINTS_TO
 
 .decl ClassWithReachableConstructor(?class:ClassType)
 .output ClassWithReachableConstructor

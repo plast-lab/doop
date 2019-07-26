@@ -9,6 +9,7 @@ import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.ArtifactEntry;
+import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
@@ -84,7 +85,7 @@ public class Main {
         //soot.options.Options.v().set_drop_bodies_after_load(true);
         Options.v().set_keep_line_number(true);
 
-        BasicJavaSupport_Soot java = new BasicJavaSupport_Soot(sootParameters);
+        BasicJavaSupport_Soot java = new BasicJavaSupport_Soot(sootParameters, new ArtifactScanner());
         java.preprocessInputs();
 
         AndroidSupport_Soot android = null;
@@ -217,7 +218,7 @@ public class Main {
                     Set<SootClass> jimpleClasses = new HashSet<>(classes);
                     if (sootParameters._factsSubSet == null) {
                         Collection<String> allClassNames = new ArrayList<>();
-                        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactToClassMap();
+                        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactScanner().getArtifactToClassMap();
                         for (String artifact : artifactToClassMap.keySet()) {
                             //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
                             Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));

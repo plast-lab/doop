@@ -1,7 +1,10 @@
 package org.clyze.doop.common;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.io.*;
 import java.util.*;
+import java.util.stream.Stream;
 
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
@@ -43,7 +46,7 @@ public class Parameters {
         }
     }
 
-    public void initFromArgs(String[] args) throws DoopErrorCodeException {
+    private void processArgs(String[] args) throws DoopErrorCodeException {
         int i = 0, last_i;
         while (i < args.length) {
             last_i = processNextArg(args, i);
@@ -51,7 +54,10 @@ public class Parameters {
                 throw new DoopErrorCodeException(32, "Bad argument: " + args[i]);
             i = last_i + 1;
         }
+    }
 
+    public void initFromArgs(String[] args) throws DoopErrorCodeException {
+        processArgs(args);
         finishArgProcessing();
     }
 
@@ -165,6 +171,10 @@ public class Parameters {
             i = shift(args, i);
             setAppRegex(args[i]);
             break;
+        case "--args-file":
+            i = shift(args, i);
+            processArgsFile(args[i]);
+            break;
         case "--fact-gen-cores":
             i = shift(args, i);
             try {
@@ -239,5 +249,25 @@ public class Parameters {
             _logDir = getOutputDir() + File.separator + "logs";
             System.err.println("No logs directory set, using: " + _logDir);
         }
+    }
+
+    /**
+     * Read command-line arguments from file, one per line.
+     *
+     * @param path   the file to use
+     */
+    private void processArgsFile(String path) throws DoopErrorCodeException {
+        if (!(new File(path)).exists())
+            throw new RuntimeException("Arguments file does not exist: " + path);
+
+        List<String> lines = new LinkedList<>();
+        try (Stream<String> stream = Files.lines(Paths.get(path))) {
+            stream.forEach(l -> lines.add(l));
+        } catch (IOException ex) {
+            throw new RuntimeException("Malformed arguments file: " + path);
+        }
+
+        String[] params = lines.toArray(new String[0]);
+        processArgs(params);
     }
 }

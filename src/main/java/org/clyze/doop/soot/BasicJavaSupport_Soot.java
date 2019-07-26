@@ -2,6 +2,7 @@ package org.clyze.doop.soot;
 
 import java.util.Collection;
 import java.util.Set;
+import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.BasicJavaSupport;
 import soot.Scene;
 import soot.SootClass;
@@ -9,8 +10,8 @@ import soot.SourceLocator;
 
 public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdder {
 
-    public BasicJavaSupport_Soot(SootParameters parameters) {
-        super(parameters);
+    public BasicJavaSupport_Soot(SootParameters parameters, ArtifactScanner artScanner) {
+        super(parameters, artScanner);
     }
 
     public void addSootClasses(Iterable<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
