@@ -159,11 +159,13 @@ testSubprojects.each {
     applicationDistribution.from(file("$projectDir/${path}")) { into path }
 }
 
+String doopCP() {
+    return String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
+}
+
 void setDoopCP(def environment) {
     // Inform Doop about the current classpath.
-    def doopCP = String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
-    environment.DOOP_EXT_CLASSPATH = doopCP
-    // println "Doop external classpath = ${doopCP}"
+    environment.DOOP_EXT_CLASSPATH = doopCP()
 }
 
 run {
@@ -173,6 +175,14 @@ run {
     setDoopCP(environment)
     if (project.hasProperty('args')) {
         args project.property('args').split()
+    }
+}
+
+// Auxiliary task to print the environment variable needed for
+// isolated execution of Soot-based front end.
+task printExtClasspath {
+    doLast {
+        println "DOOP_EXT_CLASSPATH=${doopCP()}"
     }
 }
 
