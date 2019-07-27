@@ -9,6 +9,7 @@
 
 #ifndef X_SERVER_LOGIC
 .output CallGraphEdge(IO="file",filename="CallGraphEdge.csv",delimiter="\t")
+.output AnyCallGraphEdge(IO="file",filename="AnyCallGraphEdge.csv",delimiter="\t")
 #ifndef USER_DEFINED_PARTITIONS
 .output VarPointsTo(IO="file",filename="VarPointsTo.csv",delimiter="\t")
 .output ReachableContext(IO="file",filename="ReachableContext.csv",delimiter="\t")
