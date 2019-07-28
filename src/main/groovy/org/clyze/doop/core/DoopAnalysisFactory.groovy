@@ -476,7 +476,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
-		// Handle inerplay between 'main class' information and open programs.
+		// Handle interplay between 'main class' information and open programs.
 		if (!options.PYTHON.value) {
 			if (options.MAIN_CLASS.value) {
 				if (options.IGNORE_MAIN_METHOD.value)
