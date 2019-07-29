@@ -12,7 +12,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import org.clyze.doop.util.TypeUtils;
+import org.clyze.utils.TypeUtils;
 
 /**
  * This class gathers Java-specific code (such as JAR handling).

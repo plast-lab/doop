@@ -1,6 +1,6 @@
 package org.clyze.doop.soot;
 
-import org.clyze.doop.util.TypeUtils;
+import org.clyze.utils.TypeUtils;
 import soot.*;
 import soot.jimple.ClassConstant;
 

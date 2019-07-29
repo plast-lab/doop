@@ -1,7 +1,7 @@
 package org.clyze.doop.common;
 
 import org.clyze.doop.common.Database;
-import org.clyze.doop.util.TypeUtils;
+import org.clyze.utils.TypeUtils;
 
 import java.util.Collection;
 import java.util.List;

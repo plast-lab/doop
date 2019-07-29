@@ -12,7 +12,7 @@ import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.clyze.doop.util.TypeUtils;
+import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.MultiDexContainer;

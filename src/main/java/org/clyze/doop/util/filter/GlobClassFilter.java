@@ -3,7 +3,7 @@ package org.clyze.doop.util.filter;
 import java.io.File;
 import java.util.ArrayList;
 
-import static org.clyze.doop.util.TypeUtils.getPackageName;
+import static org.clyze.utils.TypeUtils.getPackageName;
 
 public class GlobClassFilter implements ClassFilter {
     private final ArrayList<String> packages;
