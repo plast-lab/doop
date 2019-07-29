@@ -24,7 +24,7 @@ public class Scaler {
     private ContextComputer bottomLine;
     private Map<Method, Integer> ptsSize = new HashMap<>();
     /** Total Scalability Threshold */
-    private long tst = 500_000_000L;
+    private long tst = 1_500_000_000L;
     private List<Triple<Method, String, Long>> results;
 
     public Scaler(DoopPointsToAnalysis pta) {
@@ -89,12 +89,18 @@ public class Scaler {
         System.out.println("Total Reachable Methods: " + reachableMethods.size());
         // From the most precise analysis to the least precise analysis
 
-        ContextComputer _2ObjectContextComputer = new _2ObjectContextComputer(pta, oag);
+        ContextComputer _2ObjectContextComputer = new _2ObjectContextComputer_ScalerPlus(pta, oag);
         ctxComputers = new ContextComputer[] {
                 _2ObjectContextComputer,
-                new _2TypeContextComputer(pta, oag, _2ObjectContextComputer),
-                new _1TypeContextComputer(pta, oag, _2ObjectContextComputer),
+                new _2TypeContextComputer_ScalerPlus(pta, oag, _2ObjectContextComputer),
+                new _1TypeContextComputer_ScalerPlus(pta, oag, _2ObjectContextComputer),
         };
+//        ContextComputer _2ObjectContextComputer = new _2ObjectContextComputer_Scaler(pta, oag);
+//        ctxComputers = new ContextComputer[] {
+//                _2ObjectContextComputer,
+//                new _2TypeContextComputer_Scaler(pta, oag),
+//                new _1TypeContextComputer_Scaler(pta, oag),
+//        };
         ctxComputers[0].computeContext();
         ctxComputers[1].computeContext();
         ctxComputers[2].computeContext();

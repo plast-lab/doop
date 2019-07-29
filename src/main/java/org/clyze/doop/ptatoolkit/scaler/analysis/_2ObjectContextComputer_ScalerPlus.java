@@ -9,12 +9,12 @@ import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 import java.io.*;
 import java.util.*;
 
-public class _2ObjectContextComputer extends ContextComputer {
+public class _2ObjectContextComputer_ScalerPlus extends ContextComputer {
     private Set<Method> visited = null;
     private Map<Method, Set<List<Obj>>> methodToContextMap = new HashMap<>();
 
 
-    _2ObjectContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag) {
+    _2ObjectContextComputer_ScalerPlus(DoopPointsToAnalysis pta, ObjectAllocationGraph oag) {
         super(pta, oag);
         try {
             writer = new PrintWriter("scaler-two-object.csv");

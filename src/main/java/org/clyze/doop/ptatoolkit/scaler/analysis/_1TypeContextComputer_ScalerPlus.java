@@ -7,10 +7,10 @@ import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 import java.util.HashSet;
 import java.util.Set;
 
-public class _1TypeContextComputer extends ContextComputer {
+public class _1TypeContextComputer_ScalerPlus extends ContextComputer {
     private Set<Method> visited = new HashSet<>();
 
-    _1TypeContextComputer(DoopPointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
+    _1TypeContextComputer_ScalerPlus(DoopPointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
 	    super(pta, oag, worstCaseContextComputer);
     }
 
