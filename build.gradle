@@ -34,7 +34,7 @@ group = "org.clyze"
 mainClassName = "org.clyze.doop.Main"
 
 //def heapDLVersion = "master-SNAPSHOT"
-def heapDLVersion = "1.1.2"
+def heapDLVersion = "1.1.3"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
@@ -86,7 +86,7 @@ dependencies {
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             "net.dongliu:apk-parser:2.6.2",                     // needed for reading binary XML entries from APK inputs
-            "com.google.guava:guava:27.0-jre",
+            "com.google.guava:guava:27.1-jre",
 
             // Soot - choose one of the following:
             // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.
