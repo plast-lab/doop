@@ -238,8 +238,8 @@ class DDlog extends SouffleScript {
 
     @Override
     def interpretScript(File origScriptFile, File outDir, File factsDir,
-                   boolean profile = false, boolean debug = false,
-                   boolean removeContext = false) {
+                        int jobs, boolean profile = false, boolean debug = false,
+                        boolean removeContext = false) {
         throw new DoopErrorCodeException(27, "Option 'interpret' is not supported.")
     }
 }

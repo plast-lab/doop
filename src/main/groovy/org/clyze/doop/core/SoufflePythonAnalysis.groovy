@@ -41,7 +41,8 @@ class SoufflePythonAnalysis extends DoopAnalysis{
         cacheDir.mkdirs()
         def script = SouffleScript.newScript(executor, options.VIA_DDLOG.value as Boolean)
         if(options.SOUFFLE_RUN_INTERPRETED.value){
-            script.interpretScript(analysis,outDir,factsDir,
+            script.interpretScript(analysis, outDir, factsDir,
+                    options.SOUFFLE_JOBS.value as int,
                     options.SOUFFLE_PROFILE.value as boolean,
                     options.SOUFFLE_DEBUG.value as boolean,
                     options.X_CONTEXT_REMOVER.value as boolean)

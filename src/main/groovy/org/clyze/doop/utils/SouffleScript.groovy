@@ -147,7 +147,7 @@ class SouffleScript {
 			boolean profile = false) {
 
 		def db = makeDatabase(outDir)
-		def executionCommand = "$cacheFile -j$jobs -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
+		def executionCommand = "${cacheFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
 		if (profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 
@@ -169,15 +169,13 @@ class SouffleScript {
 	}
 
     def interpretScript(File origScriptFile, File outDir, File factsDir,
-                   boolean profile = false, boolean debug = false,
-                   boolean removeContext = false) {
+                        int jobs, boolean profile = false, boolean debug = false,
+                        boolean removeContext = false) {
 
         def scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		preprocess(scriptFile, origScriptFile)
 
-        def db = new File(outDir, "database")
-        deleteQuietly(db)
-        db.mkdirs()
+		def db = makeDatabase(outDir)
 
         if (removeContext) {
             def backupFile = new File("${scriptFile}.backup")
@@ -185,7 +183,7 @@ class SouffleScript {
             ContextRemover.removeContexts(backupFile, scriptFile)
         }
 
-        def interpretationCommand = "souffle  $scriptFile -F$factsDir -D$db".split().toList()
+        def interpretationCommand = "souffle ${scriptFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
         if (profile)
             interpretationCommand<< ("-p${outDir}/profile.txt" as String)
         if (debug)
@@ -209,7 +207,7 @@ class SouffleScript {
             Files.delete(tmpFile)
         }
 
-        log.info "Analysis execution time (sec): $executionTime"
+        log.info "Analysis execution time (sec): ${executionTime}"
         return [compilationTime, executionTime]
     }
 
