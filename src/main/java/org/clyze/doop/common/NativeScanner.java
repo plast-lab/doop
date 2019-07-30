@@ -25,6 +25,9 @@ public class NativeScanner {
     private static final String DOOP_HOME = "DOOP_HOME";
     private static final String doopHome = System.getenv(DOOP_HOME);
 
+    // Dummy value for "function" column in facts.
+    private static final String UNKNOWN_FUNCTION = "-";
+
     // The supported architectures.
     enum Arch {
         X86_64, AARCH64, ARMEABI, MIPS;
@@ -352,7 +355,7 @@ public class NativeScanner {
                         for (String function : strings)
                             db.add(NATIVE_METHODTYPE_CANDIDATE, lib, function, mt, "0");
                     else
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", mt, "0");
+                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, UNKNOWN_FUNCTION, mt, "0");
                 }
 
                 for (String n : names) {
@@ -361,23 +364,23 @@ public class NativeScanner {
                         for (String function : strings)
                             db.add(NATIVE_NAME_CANDIDATE, lib, function, n, "1");
                     else
-                        db.add(NATIVE_NAME_CANDIDATE, lib, "-", n, "1");
+                        db.add(NATIVE_NAME_CANDIDATE, lib, UNKNOWN_FUNCTION, n, "1");
                 }
             }
 
             if (useRadare)
                 for (int i = 0; i < stringsInRadare.size(); i++)
                     if (isName(stringsInRadare.get(i)))
-                        db.add(NATIVE_NAME_CANDIDATE, lib, "-", stringsInRadare.get(i), String.valueOf(i));
+                        db.add(NATIVE_NAME_CANDIDATE, lib, UNKNOWN_FUNCTION, stringsInRadare.get(i), String.valueOf(i));
                     else if (isMethodType(stringsInRadare.get(i)))
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", stringsInRadare.get(i), String.valueOf(i));
+                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, UNKNOWN_FUNCTION, stringsInRadare.get(i), String.valueOf(i));
 
             if (parseRodata)
                 for (Map.Entry<Long, String> foundString : rodata.getFoundStrings().entrySet())
                     if (isName(foundString.getValue()))
-                        db.add(NATIVE_NAME_CANDIDATE, lib, "-", foundString.getValue(), Long.toString(foundString.getKey()));
+                        db.add(NATIVE_NAME_CANDIDATE, lib, UNKNOWN_FUNCTION, foundString.getValue(), Long.toString(foundString.getKey()));
                     else if (isMethodType(foundString.getValue()))
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", foundString.getValue(), Long.toString(foundString.getKey()));
+                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, UNKNOWN_FUNCTION, foundString.getValue(), Long.toString(foundString.getKey()));
 
             eps.forEach ((Long addr, String name) ->
                          db.add(NATIVE_LIB_ENTRY_POINT, lib, name, String.valueOf(addr)));
