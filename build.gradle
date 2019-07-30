@@ -87,6 +87,7 @@ dependencies {
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             "net.dongliu:apk-parser:2.6.2",                     // needed for reading binary XML entries from APK inputs
             "com.google.guava:guava:27.1-jre",
+            "com.jcabi:jcabi-manifests:1.1",                    // manifest reader
 
             // Soot - choose one of the following:
             // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.
@@ -161,6 +162,12 @@ testSubprojects.each {
 
 String doopCP() {
     return String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
+}
+
+jar {
+    manifest {
+        attributes('Doop-Ext-Classpath' : doopCP())
+    }
 }
 
 void setDoopCP(def environment) {
