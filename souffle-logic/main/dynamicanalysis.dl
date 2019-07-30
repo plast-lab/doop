@@ -319,8 +319,8 @@ DynamicNativeCodeTarget(?toMethod) :-
 .decl DynamicAppNativeCodeTarget(?toMethod:Method)
 .output DynamicAppNativeCodeTarget
 DynamicAppNativeCodeTarget(?toMethod) :-
-  NativeToBytecodeDynamicCallGraphEdge(?toMethod, _),
-  Method_DeclaringType(?toMethod, ?type),
+  NativeToBytecodeDynamicCallGraphEdge(?toMethod, ?fromMethod),
+  Method_DeclaringType(?fromMethod, ?type),
   ApplicationClass(?type).
 
 // Intersection of methods called dynamically by native code and edges
