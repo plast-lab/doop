@@ -7,14 +7,23 @@ import java.util.regex.*;
 import static org.clyze.doop.common.PredicateFile.*;
 
 public class NativeScanner {
+    // Enable debug messages.
     private final static boolean debug = false;
+    // Check for the presence of some special symbols (statistic).
     private final static boolean check = false;
-    private final static boolean radareFlag = false;
-    private final static boolean rodataFlag = false;
+    // Use Radare to find strings.
+    private final static boolean useRadare = false;
+    // Parse .rodata section to find strings (imprecise, does not use
+    // function boundaries or measure distances in the native code).
+    private final static boolean parseRodata = false;
+
+    // Environment variables needed to find external tools.
     private static final String envVarARMEABI = "ARMEABI_TOOLCHAIN";
     private static final String toolchainARMEABI = System.getenv(envVarARMEABI);
     private static final String envVarAARCH64 = "AARCH64_TOOLCHAIN";
     private static final String toolchainAARCH64 = System.getenv(envVarAARCH64);
+    private static final String DOOP_HOME = "DOOP_HOME";
+    private static final String doopHome = System.getenv(DOOP_HOME);
 
     // The supported architectures.
     enum Arch {
@@ -189,6 +198,13 @@ public class NativeScanner {
             return new EntryPoint(method, addr);
     }
 
+    /**
+     * Diagnostic: check for the presence of some special symbols in
+     * the output of 'nm'.
+     *
+     * @param lines    the output lines
+     * @param lib      the name of the library
+     */
     private static void checkSymbols(Iterable<String> lines, String lib) {
         boolean referencesGetMethodID = false;
         boolean referencesGetFieldID = false;
@@ -290,7 +306,7 @@ public class NativeScanner {
         boolean success = false;
         try {
             stringsInFunctions = findStringsInFunctions(objdumpCmd, rodata.strings(), eps, lib, arch);
-            if (radareFlag)
+            if (useRadare)
                 stringsInRadare = findStringsInRadare(lib);
             if (stringsInFunctions != null || stringsInRadare != null)
                 success = true;
@@ -325,7 +341,7 @@ public class NativeScanner {
                 }
             }
 
-            if (radareFlag) {
+            if (useRadare) {
                 for (int i = 0; i < stringsInRadare.size(); i++) {
                     if (isName(stringsInRadare.get(i)))
                         db.add(NATIVE_NAME_CANDIDATE, lib, "--", stringsInRadare.get(i), String.valueOf(i));
@@ -334,7 +350,7 @@ public class NativeScanner {
                 }
             }
 
-            if (rodataFlag) {
+            if (parseRodata) {
                 for (Map.Entry<Long, String> foundString : rodata.getFoundStrings().entrySet()) {
                     if (isName(foundString.getValue()))
                         db.add(NATIVE_NAME_CANDIDATE, lib, "--", foundString.getValue(), Long.toString(foundString.getKey()));
@@ -402,8 +418,12 @@ public class NativeScanner {
     // Get strings found in radare as a list
     private static List<String> findStringsInRadare(String lib) {
         List<String> stringsInRadare = new ArrayList<>();
+        if (doopHome == null) {
+            System.err.println("Cannot find Radare script, set environment variable " + DOOP_HOME);
+            return stringsInRadare;
+        }
         try {
-            ProcessBuilder radareBuilder = new ProcessBuilder("python", "/home/leonidastri/radare-strings.py", lib);
+            ProcessBuilder radareBuilder = new ProcessBuilder("python", doopHome + "/bin/radare-strings.py", lib);
             for (String line : runCommand(radareBuilder)) {
                 System.out.println(line);
                 stringsInRadare.add(line);
