@@ -57,6 +57,12 @@ public class NativeScanner {
         }
     }
 
+    /**
+     * Scan a native code library.
+     *
+     * @param libFile        the native code library
+     * @param outDir         the output directory to use to write facts
+     */
     public static void scanLib(File libFile, File outDir) {
         try {
             // Auto-detect architecture.
@@ -83,8 +89,17 @@ public class NativeScanner {
 
     }
 
-    public static void scan(String nmCmd, String objdumpCmd,
-                            File libFile, File outDir, Arch arch) {
+    /**
+     * Scan a native code library.
+     *
+     * @param nmCmd          the path to tool 'nm'
+     * @param objdumpCmd     the path to tool 'objdump'
+     * @param libFile        the native code library
+     * @param outDir         the output directory to use to write facts
+     * @param arch           the architecture of the native code
+     */
+    private static void scan(String nmCmd, String objdumpCmd,
+                             File libFile, File outDir, Arch arch) {
 
         if (debug) {
             System.out.println("== Native scanner ==");
@@ -225,6 +240,15 @@ public class NativeScanner {
             System.out.println("Library seems to not contain interesting JNIEnv calls: " + lib);
     }
 
+    /**
+     * Processes a native code library.
+     *
+     * @param objdumpCmd     the path to tool 'objdump'
+     * @param outDir         the output directory to use to write facts
+     * @param lib            the path of the library
+     * @param eps            a map from offset to native code entry point
+     * @param arch           the architecture of the native code
+     */
     private static void processLib(String objdumpCmd, File outDir, String lib,
                                    Map<Long, String> eps, Arch arch) throws IOException {
         final String stringsSection = ".rodata";
@@ -415,7 +439,12 @@ public class NativeScanner {
         return lines;
     }
 
-    // Get strings found in radare as a list
+    /**
+     * Use Radare (via external tool) to find strings.
+     *
+     * @param lib    the path of the library
+     * @return       the list of strings found
+     */
     private static List<String> findStringsInRadare(String lib) {
         List<String> stringsInRadare = new ArrayList<>();
         if (doopHome == null) {
@@ -436,8 +465,14 @@ public class NativeScanner {
     }
 
     /**
-     *  return in which functions every found string belongs
-     **/
+     * Determine the function that contains every string found.
+     *
+     * @param objdumpCmd     the path to tool 'objdump'
+     * @param foundStrings   a map from offset to string
+     * @param eps            a map from offset to native code entry point
+     * @param lib            the path of the library
+     * @param arch           the architecture of the native code
+     */
     private static Map<String,List<String>> findStringsInFunctions(String objdumpCmd, Map<Long,String> foundStrings, Map<Long, String> eps, String lib, Arch arch) {
         if (arch.equals(Arch.X86_64))
             return findStringsInX86_64(foundStrings, eps, lib);
