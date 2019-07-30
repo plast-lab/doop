@@ -12,7 +12,7 @@ import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.clyze.doop.util.TypeUtils;
+import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.MultiDexContainer;
@@ -119,12 +119,16 @@ public class ArtifactScanner {
 
                 String entryName = entry.getName().toLowerCase();
                 if (entryName.endsWith(".class")) {
-                    ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                    String className = TypeUtils.replaceSlashesWithDots(reader.getClassName());
-                    String artifact = (new File(jarFile.getName())).getName();
-                    registerArtifactClass(artifact, className, "-", reader.b.length);
-                    if (classProc != null)
-                        classProc.accept(className);
+                    try {
+                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
+                        String className = TypeUtils.replaceSlashesWithDots(reader.getClassName());
+                        String artifact = (new File(jarFile.getName())).getName();
+                        registerArtifactClass(artifact, className, "-", reader.b.length);
+                        if (classProc != null)
+                            classProc.accept(className);
+                    } catch (Exception ex) {
+                        System.err.println("Error while preprocessing entry \"" + entryName + "\", it will be ignored.");
+                    }
                 } else if (generalProc != null)
                     generalProc.accept(jarFile, entry, entryName);
             }

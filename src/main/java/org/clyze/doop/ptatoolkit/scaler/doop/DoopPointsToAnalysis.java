@@ -58,6 +58,7 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
         return reachableMethods;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Set<Obj> pointsToSetOf(Variable var) {
         if (var.hasAttribute(PTS)) {

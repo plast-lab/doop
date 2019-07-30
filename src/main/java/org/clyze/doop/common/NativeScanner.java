@@ -7,14 +7,28 @@ import java.util.regex.*;
 import static org.clyze.doop.common.PredicateFile.*;
 
 public class NativeScanner {
+    // Enable debug messages.
     private final static boolean debug = false;
+    // Check for the presence of some special symbols (statistic).
     private final static boolean check = false;
-    private final static boolean radareFlag = false;
-    private final static boolean rodataFlag = false;
+    // Use Radare to find strings.
+    private final static boolean useRadare = false;
+    // Parse .rodata section to find strings (imprecise, does not use
+    // function boundaries or measure distances in the native code).
+    private final static boolean parseRodata = true;
+
+    // Environment variables needed to find external tools.
     private static final String envVarARMEABI = "ARMEABI_TOOLCHAIN";
     private static final String toolchainARMEABI = System.getenv(envVarARMEABI);
     private static final String envVarAARCH64 = "AARCH64_TOOLCHAIN";
     private static final String toolchainAARCH64 = System.getenv(envVarAARCH64);
+    private static final String DOOP_HOME = "DOOP_HOME";
+    private static final String doopHome = System.getenv(DOOP_HOME);
+
+    // Dummy value for "function" column in facts.
+    private static final String UNKNOWN_FUNCTION = "-";
+    // Dummy value for "offset" column in facts.
+    private static final String UNKNOWN_OFFSET = "-1";
 
     // The supported architectures.
     enum Arch {
@@ -48,6 +62,12 @@ public class NativeScanner {
         }
     }
 
+    /**
+     * Scan a native code library.
+     *
+     * @param libFile        the native code library
+     * @param outDir         the output directory to use to write facts
+     */
     public static void scanLib(File libFile, File outDir) {
         try {
             // Auto-detect architecture.
@@ -74,8 +94,17 @@ public class NativeScanner {
 
     }
 
-    public static void scan(String nmCmd, String objdumpCmd,
-                            File libFile, File outDir, Arch arch) {
+    /**
+     * Scan a native code library.
+     *
+     * @param nmCmd          the path to tool 'nm'
+     * @param objdumpCmd     the path to tool 'objdump'
+     * @param libFile        the native code library
+     * @param outDir         the output directory to use to write facts
+     * @param arch           the architecture of the native code
+     */
+    private static void scan(String nmCmd, String objdumpCmd,
+                             File libFile, File outDir, Arch arch) {
 
         if (debug) {
             System.out.println("== Native scanner ==");
@@ -189,6 +218,13 @@ public class NativeScanner {
             return new EntryPoint(method, addr);
     }
 
+    /**
+     * Diagnostic: check for the presence of some special symbols in
+     * the output of 'nm'.
+     *
+     * @param lines    the output lines
+     * @param lib      the name of the library
+     */
     private static void checkSymbols(Iterable<String> lines, String lib) {
         boolean referencesGetMethodID = false;
         boolean referencesGetFieldID = false;
@@ -209,6 +245,15 @@ public class NativeScanner {
             System.out.println("Library seems to not contain interesting JNIEnv calls: " + lib);
     }
 
+    /**
+     * Processes a native code library.
+     *
+     * @param objdumpCmd     the path to tool 'objdump'
+     * @param outDir         the output directory to use to write facts
+     * @param lib            the path of the library
+     * @param eps            a map from offset to native code entry point
+     * @param arch           the architecture of the native code
+     */
     private static void processLib(String objdumpCmd, File outDir, String lib,
                                    Map<Long, String> eps, Arch arch) throws IOException {
         final String stringsSection = ".rodata";
@@ -277,10 +322,6 @@ public class NativeScanner {
             else if (isName(line))
                 names.add(line);
         }
-        int methodTypesCount = methodTypes.size();
-        System.out.println("Possible method types found: " + methodTypesCount);
-        int namesCount = names.size();
-        System.out.println("Possible method/class names: " + namesCount);
 
         // Find in which function every string is used
         Map<String, List<String>> stringsInFunctions = null;
@@ -290,7 +331,7 @@ public class NativeScanner {
         boolean success = false;
         try {
             stringsInFunctions = findStringsInFunctions(objdumpCmd, rodata.strings(), eps, lib, arch);
-            if (radareFlag)
+            if (useRadare)
                 stringsInRadare = findStringsInRadare(lib);
             if (stringsInFunctions != null || stringsInRadare != null)
                 success = true;
@@ -303,46 +344,55 @@ public class NativeScanner {
             return;
         }
 
-        // Write out facts.
+        // Write out facts: first write names and method types that
+        // belong to known functions, then write everything else (that
+        // may be found via radare or parsing the .rodata section).
+        Map<String, List<SymbolInfo>> nameSymbols = new HashMap<>();
+        Map<String, List<SymbolInfo>> methodTypeSymbols = new HashMap<>();
         try (Database db = new Database(outDir)) {
-            if( stringsInFunctions != null) {
+            if (stringsInFunctions != null) {
+                // For values that we know their containing function, we set special offsets
                 for (String mt : methodTypes) {
                     List<String> strings = stringsInFunctions.get(mt);
                     if (strings != null)
                         for (String function : strings)
-                            db.add(NATIVE_METHODTYPE_CANDIDATE, lib, function, mt, "0");
-                    else
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", mt, "0");
+                            addSymbol(methodTypeSymbols, mt, new SymbolInfo(lib, function, null));
                 }
-
                 for (String n : names) {
                     List<String> strings = stringsInFunctions.get(n);
                     if (strings != null)
                         for (String function : strings)
-                            db.add(NATIVE_NAME_CANDIDATE, lib, function, n, "1");
-                    else
-                        db.add(NATIVE_NAME_CANDIDATE, lib, "-", n, "1");
+                            addSymbol(nameSymbols, n, new SymbolInfo(lib, function, null));
                 }
             }
 
-            if (radareFlag) {
+            if (useRadare)
                 for (int i = 0; i < stringsInRadare.size(); i++) {
-                    if (isName(stringsInRadare.get(i)))
-                        db.add(NATIVE_NAME_CANDIDATE, lib, "--", stringsInRadare.get(i), String.valueOf(i));
-                    else if (isMethodType(stringsInRadare.get(i)))
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "--", stringsInRadare.get(i), String.valueOf(i));
+                    String s = stringsInRadare.get(i);
+                    if (isName(s))
+                        addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, new Long(i)));
+                    else if (isMethodType(s))
+                        addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, new Long(i)));
                 }
-            }
 
-            if (rodataFlag) {
+            if (parseRodata)
                 for (Map.Entry<Long, String> foundString : rodata.getFoundStrings().entrySet()) {
-                    if (isName(foundString.getValue()))
-                        db.add(NATIVE_NAME_CANDIDATE, lib, "--", foundString.getValue(), Long.toString(foundString.getKey()));
-                    else if (isMethodType(foundString.getValue()))
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "--", foundString.getValue(), Long.toString(foundString.getKey()));
+                    String s = foundString.getValue();
+                    if (isName(s))
+                        addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, foundString.getKey()));
+                    else if (isMethodType(s))
+                        addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, foundString.getKey()));
                 }
-            }
 
+            // Write out symbol tables.
+            int namesCount = nameSymbols.keySet().size();
+            System.out.println("Possible method/class names: " + namesCount);
+            writeSymbolTable(db, NATIVE_NAME_CANDIDATE, nameSymbols);
+            int methodTypesCount = methodTypeSymbols.keySet().size();
+            System.out.println("Possible method types found: " + methodTypesCount);
+            writeSymbolTable(db, NATIVE_METHODTYPE_CANDIDATE, methodTypeSymbols);
+
+            // Write out native code entry points.
             eps.forEach ((Long addr, String name) ->
                          db.add(NATIVE_LIB_ENTRY_POINT, lib, name, String.valueOf(addr)));
         }
@@ -399,11 +449,20 @@ public class NativeScanner {
         return lines;
     }
 
-    // Get strings found in radare as a list
+    /**
+     * Use Radare (via external tool) to find strings.
+     *
+     * @param lib    the path of the library
+     * @return       the list of strings found
+     */
     private static List<String> findStringsInRadare(String lib) {
         List<String> stringsInRadare = new ArrayList<>();
+        if (doopHome == null) {
+            System.err.println("Cannot find Radare script, set environment variable " + DOOP_HOME);
+            return stringsInRadare;
+        }
         try {
-            ProcessBuilder radareBuilder = new ProcessBuilder("python", "/home/leonidastri/radare-strings.py", lib);
+            ProcessBuilder radareBuilder = new ProcessBuilder("python", doopHome + "/bin/radare-strings.py", lib);
             for (String line : runCommand(radareBuilder)) {
                 System.out.println(line);
                 stringsInRadare.add(line);
@@ -416,8 +475,14 @@ public class NativeScanner {
     }
 
     /**
-     *  return in which functions every found string belongs
-     **/
+     * Determine the function that contains every string found.
+     *
+     * @param objdumpCmd     the path to tool 'objdump'
+     * @param foundStrings   a map from offset to string
+     * @param eps            a map from offset to native code entry point
+     * @param lib            the path of the library
+     * @param arch           the architecture of the native code
+     */
     private static Map<String,List<String>> findStringsInFunctions(String objdumpCmd, Map<Long,String> foundStrings, Map<Long, String> eps, String lib, Arch arch) {
         if (arch.equals(Arch.X86_64))
             return findStringsInX86_64(foundStrings, eps, lib);
@@ -717,6 +782,40 @@ public class NativeScanner {
             ex.printStackTrace();
         }
     }
+
+    /**
+     * Register a symbol with its info in a table.
+     *
+     * @param symbols    the symbols table
+     * @param symbol     key: the (string) symbol
+     * @param si         value: the symbol information
+     */
+    private static void addSymbol(Map<String, List<SymbolInfo> > symbols,
+                                  String symbol, SymbolInfo si) {
+        List<SymbolInfo> infos = symbols.getOrDefault(symbol, new LinkedList<>());
+        infos.add(si);
+        symbols.put(symbol, infos);
+    }
+
+    /**
+     * Write the full symbol table. This method can also be extended
+     * to merge information per symbol (for example, if different
+     * entries contain complementary information).
+     *
+     * @param db         the database object to use
+     * @param factsFile  the facts file to use for writing
+     * @param symbols    the symbols table
+     */
+    private static void writeSymbolTable(Database db, PredicateFile factsFile,
+                                         Map<String, List<SymbolInfo> > symbols) {
+        for (Map.Entry<String, List<SymbolInfo>> entry : symbols.entrySet()) {
+            String symbol = entry.getKey();
+            for (SymbolInfo si : entry.getValue()) {
+                String offset = si.offset == null ? UNKNOWN_OFFSET : Long.toString(si.offset);
+                db.add(factsFile, si.lib, si.function, symbol, offset);
+            }
+        }
+    }
 }
 
 // A representation of the strings section in the binary.
@@ -772,5 +871,16 @@ class EntryPoint {
     public EntryPoint(String name, Long addr) {
         this.name = name;
         this.addr = addr;
+    }
+}
+
+class SymbolInfo {
+    final String lib;
+    final String function;
+    final Long offset;
+    SymbolInfo(String lib, String function, Long offset) {
+        this.lib = lib;
+        this.function = function;
+        this.offset = offset;
     }
 }

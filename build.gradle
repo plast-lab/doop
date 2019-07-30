@@ -34,7 +34,7 @@ group = "org.clyze"
 mainClassName = "org.clyze.doop.Main"
 
 //def heapDLVersion = "master-SNAPSHOT"
-def heapDLVersion = "1.1.1"
+def heapDLVersion = "1.1.4"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
@@ -74,8 +74,7 @@ def groovyVersion="2.5.7"
 
 dependencies {
 
-    compile "org.clyze:clue-common:3.10.0",
-            "org.clyze:deepdoop:0.9.2",
+    compile "org.clyze:clue-common:3.11.1",
             "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
@@ -87,7 +86,8 @@ dependencies {
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             "net.dongliu:apk-parser:2.6.2",                     // needed for reading binary XML entries from APK inputs
-            "com.google.guava:guava:27.0-jre",
+            "com.google.guava:guava:27.1-jre",
+            "com.jcabi:jcabi-manifests:1.1",                    // manifest reader
 
             // Soot - choose one of the following:
             // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.
@@ -160,11 +160,19 @@ testSubprojects.each {
     applicationDistribution.from(file("$projectDir/${path}")) { into path }
 }
 
+String doopCP() {
+    return String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
+}
+
+jar {
+    manifest {
+        attributes('Doop-Ext-Classpath' : doopCP())
+    }
+}
+
 void setDoopCP(def environment) {
     // Inform Doop about the current classpath.
-    def doopCP = String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
-    environment.DOOP_EXT_CLASSPATH = doopCP
-    // println "Doop external classpath = ${doopCP}"
+    environment.DOOP_EXT_CLASSPATH = doopCP()
 }
 
 run {
@@ -174,6 +182,14 @@ run {
     setDoopCP(environment)
     if (project.hasProperty('args')) {
         args project.property('args').split()
+    }
+}
+
+// Auxiliary task to print the environment variable needed for
+// isolated execution of Soot-based front end.
+task printExtClasspath {
+    doLast {
+        println "DOOP_EXT_CLASSPATH=${doopCP()}"
     }
 }
 

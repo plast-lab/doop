@@ -34,6 +34,7 @@ public abstract class AttributeElement extends BasicElement {
      * @param elem
      * @param <T>
      */
+    @SuppressWarnings("unchecked")
     public <T> void addToAttributeSet(String name, T elem) {
         attributes.putIfAbsent(name, new HashSet<>());
         ((Set<T>) attributes.get(name)).add(elem);
@@ -46,6 +47,7 @@ public abstract class AttributeElement extends BasicElement {
      * @return the attribute set corresponding to name.
      * If the set does not exist, then return an empty set.
      */
+    @SuppressWarnings("unchecked")
     public <T> Set<T> getAttributeSet(String name) {
         return (Set<T>) attributes.getOrDefault(name, Collections.emptySet());
     }

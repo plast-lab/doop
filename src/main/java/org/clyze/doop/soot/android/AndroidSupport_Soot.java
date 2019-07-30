@@ -7,7 +7,7 @@ import org.clyze.doop.common.android.AppResources;
 import org.clyze.doop.common.android.AppResourcesXML;
 import org.clyze.doop.common.android.AndroidSupport;
 import org.clyze.doop.soot.*;
-import org.clyze.doop.util.TypeUtils;
+import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import soot.Scene;
 import soot.SootClass;

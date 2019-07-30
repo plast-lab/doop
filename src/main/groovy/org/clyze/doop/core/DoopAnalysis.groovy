@@ -1,5 +1,6 @@
 package org.clyze.doop.core
 
+import com.jcabi.manifests.Manifests
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
 import heapdl.core.MemoryAnalyser
@@ -478,6 +479,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     String SOOT_MAIN = "org.clyze.doop.soot.Main"
                     def args = params.toArray(new String[params.size()])
                     String classpath = System.getenv("DOOP_EXT_CLASSPATH")
+                    if (classpath == null) {
+                        try {
+                            classpath = Manifests.read("Doop-Ext-Classpath")
+                        } catch (Exception ex) {
+                            log.debug "Cannot determine external classpath."
+                        }
+                    }
                     if (!java9Plus() && (options.LEGACY_SOOT_INVOCATION.value || (classpath == null))) {
                         if (classpath == null) {
                             log.warn 'WARNING: No "DOOP_EXT_CLASSPATH" environment variable found, Soot-based fact generation will be invoked by custom class loader. Please run Doop via Gradle to override this behavior.'
@@ -500,7 +508,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         // Invoke the Soot-based fact generator using a separate JVM.
                         log.warn "WARNING: Calling Soot as external process, this may use more memory."
                         if (classpath == null)
-                            throw new DoopErrorCodeException(33, new RuntimeException("Doop can only run via Gradle on Java 9+."), true)
+                            throw new DoopErrorCodeException(33, new RuntimeException("Could not find external classpath for Soot-based fact generator."), true)
                         String error = null
                         def proc = { String line -> if (line.contains(DoopErrorCodeException.PREFIX)) error = line }
                         // Write arguments to file and pass that to Soot-based fact generator.
@@ -508,7 +516,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         (new File(argsFile)).withWriterAppend { w -> args.each { w.writeLine(it as String) } }
                         String[] args0 = [ "--args-file", argsFile ] as String[]
                         String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
-                        JHelper.runClass(classpath.split(":"), jvmArgs, SOOT_MAIN, args0, "SOOT_FACT_GEN", true, proc)
+                        JHelper.runClass(classpath.split(":"), jvmArgs, SOOT_MAIN, args0, "SOOT_FACT_GEN", false, proc)
                         if (error)
                             throw new RuntimeException(error)
                     }

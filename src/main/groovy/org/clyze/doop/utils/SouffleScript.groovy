@@ -71,9 +71,7 @@ class SouffleScript {
 		if (!cacheFile.exists() || debug || forceRecompile) {
 
 			if (removeContext) {
-				def backupFile = new File("${scriptFile}.backup")
-				Files.copy(scriptFile.toPath(), backupFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
-				ContextRemover.removeContexts(backupFile, scriptFile)
+				removeContexts(scriptFile)
 			}
 
 			def executable = new File(outDir, EXE_NAME)
@@ -147,7 +145,7 @@ class SouffleScript {
 			boolean profile = false) {
 
 		def db = makeDatabase(outDir)
-		def executionCommand = "$cacheFile -j$jobs -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
+		def executionCommand = "${cacheFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
 		if (profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 
@@ -169,23 +167,19 @@ class SouffleScript {
 	}
 
     def interpretScript(File origScriptFile, File outDir, File factsDir,
-                   boolean profile = false, boolean debug = false,
-                   boolean removeContext = false) {
+                        int jobs, boolean profile = false, boolean debug = false,
+                        boolean removeContext = false) {
 
         def scriptFile = File.createTempFile("gen_", ".dl", outDir)
 		preprocess(scriptFile, origScriptFile)
 
-        def db = new File(outDir, "database")
-        deleteQuietly(db)
-        db.mkdirs()
+		def db = makeDatabase(outDir)
 
         if (removeContext) {
-            def backupFile = new File("${scriptFile}.backup")
-            Files.copy(scriptFile.toPath(), backupFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
-            ContextRemover.removeContexts(backupFile, scriptFile)
+            removeContexts(scriptFile)
         }
 
-        def interpretationCommand = "souffle  $scriptFile -F$factsDir -D$db".split().toList()
+        def interpretationCommand = "souffle ${scriptFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
         if (profile)
             interpretationCommand<< ("-p${outDir}/profile.txt" as String)
         if (debug)
@@ -209,7 +203,7 @@ class SouffleScript {
             Files.delete(tmpFile)
         }
 
-        log.info "Analysis execution time (sec): $executionTime"
+        log.info "Analysis execution time (sec): ${executionTime}"
         return [compilationTime, executionTime]
     }
 
@@ -243,5 +237,11 @@ class SouffleScript {
 				log.warn "WARNING: no ${libName} in environment variable ${envVar} = '${ldLibPath}'"
 			}
 		}
+	}
+
+	private static void removeContexts(File scriptFile) {
+		def backupFile = new File("${scriptFile}.backup")
+		Files.copy(scriptFile.toPath(), backupFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+		ContextRemover.removeContexts(backupFile, scriptFile)
 	}
 }
