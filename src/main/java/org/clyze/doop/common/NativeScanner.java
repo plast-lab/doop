@@ -15,7 +15,7 @@ public class NativeScanner {
     private final static boolean useRadare = false;
     // Parse .rodata section to find strings (imprecise, does not use
     // function boundaries or measure distances in the native code).
-    private final static boolean parseRodata = false;
+    private final static boolean parseRodata = true;
 
     // Environment variables needed to find external tools.
     private static final String envVarARMEABI = "ARMEABI_TOOLCHAIN";
@@ -345,7 +345,7 @@ public class NativeScanner {
 
         // Write out facts.
         try (Database db = new Database(outDir)) {
-            if( stringsInFunctions != null) {
+            if (stringsInFunctions != null) {
                 for (String mt : methodTypes) {
                     List<String> strings = stringsInFunctions.get(mt);
                     if (strings != null)
@@ -365,23 +365,19 @@ public class NativeScanner {
                 }
             }
 
-            if (useRadare) {
-                for (int i = 0; i < stringsInRadare.size(); i++) {
+            if (useRadare)
+                for (int i = 0; i < stringsInRadare.size(); i++)
                     if (isName(stringsInRadare.get(i)))
-                        db.add(NATIVE_NAME_CANDIDATE, lib, "--", stringsInRadare.get(i), String.valueOf(i));
+                        db.add(NATIVE_NAME_CANDIDATE, lib, "-", stringsInRadare.get(i), String.valueOf(i));
                     else if (isMethodType(stringsInRadare.get(i)))
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "--", stringsInRadare.get(i), String.valueOf(i));
-                }
-            }
+                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", stringsInRadare.get(i), String.valueOf(i));
 
-            if (parseRodata) {
-                for (Map.Entry<Long, String> foundString : rodata.getFoundStrings().entrySet()) {
+            if (parseRodata)
+                for (Map.Entry<Long, String> foundString : rodata.getFoundStrings().entrySet())
                     if (isName(foundString.getValue()))
-                        db.add(NATIVE_NAME_CANDIDATE, lib, "--", foundString.getValue(), Long.toString(foundString.getKey()));
+                        db.add(NATIVE_NAME_CANDIDATE, lib, "-", foundString.getValue(), Long.toString(foundString.getKey()));
                     else if (isMethodType(foundString.getValue()))
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "--", foundString.getValue(), Long.toString(foundString.getKey()));
-                }
-            }
+                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, "-", foundString.getValue(), Long.toString(foundString.getKey()));
 
             eps.forEach ((Long addr, String name) ->
                          db.add(NATIVE_LIB_ENTRY_POINT, lib, name, String.valueOf(addr)));
