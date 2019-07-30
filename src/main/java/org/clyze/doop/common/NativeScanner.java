@@ -27,6 +27,8 @@ public class NativeScanner {
 
     // Dummy value for "function" column in facts.
     private static final String UNKNOWN_FUNCTION = "-";
+    // Dummy value for "offset" column in facts.
+    private static final String UNKNOWN_OFFSET = "-1";
 
     // The supported architectures.
     enum Arch {
@@ -320,10 +322,6 @@ public class NativeScanner {
             else if (isName(line))
                 names.add(line);
         }
-        int methodTypesCount = methodTypes.size();
-        System.out.println("Possible method types found: " + methodTypesCount);
-        int namesCount = names.size();
-        System.out.println("Possible method/class names: " + namesCount);
 
         // Find in which function every string is used
         Map<String, List<String>> stringsInFunctions = null;
@@ -346,42 +344,55 @@ public class NativeScanner {
             return;
         }
 
-        // Write out facts.
+        // Write out facts: first write names and method types that
+        // belong to known functions, then write everything else (that
+        // may be found via radare or parsing the .rodata section).
+        Map<String, List<SymbolInfo>> nameSymbols = new HashMap<>();
+        Map<String, List<SymbolInfo>> methodTypeSymbols = new HashMap<>();
         try (Database db = new Database(outDir)) {
             if (stringsInFunctions != null) {
+                // For values that we know their containing function, we set special offsets
                 for (String mt : methodTypes) {
                     List<String> strings = stringsInFunctions.get(mt);
                     if (strings != null)
                         for (String function : strings)
-                            db.add(NATIVE_METHODTYPE_CANDIDATE, lib, function, mt, "0");
-                    else
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, UNKNOWN_FUNCTION, mt, "0");
+                            addSymbol(methodTypeSymbols, mt, new SymbolInfo(lib, function, null));
                 }
-
                 for (String n : names) {
                     List<String> strings = stringsInFunctions.get(n);
                     if (strings != null)
                         for (String function : strings)
-                            db.add(NATIVE_NAME_CANDIDATE, lib, function, n, "1");
-                    else
-                        db.add(NATIVE_NAME_CANDIDATE, lib, UNKNOWN_FUNCTION, n, "1");
+                            addSymbol(nameSymbols, n, new SymbolInfo(lib, function, null));
                 }
             }
 
             if (useRadare)
-                for (int i = 0; i < stringsInRadare.size(); i++)
-                    if (isName(stringsInRadare.get(i)))
-                        db.add(NATIVE_NAME_CANDIDATE, lib, UNKNOWN_FUNCTION, stringsInRadare.get(i), String.valueOf(i));
-                    else if (isMethodType(stringsInRadare.get(i)))
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, UNKNOWN_FUNCTION, stringsInRadare.get(i), String.valueOf(i));
+                for (int i = 0; i < stringsInRadare.size(); i++) {
+                    String s = stringsInRadare.get(i);
+                    if (isName(s))
+                        addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, new Long(i)));
+                    else if (isMethodType(s))
+                        addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, new Long(i)));
+                }
 
             if (parseRodata)
-                for (Map.Entry<Long, String> foundString : rodata.getFoundStrings().entrySet())
-                    if (isName(foundString.getValue()))
-                        db.add(NATIVE_NAME_CANDIDATE, lib, UNKNOWN_FUNCTION, foundString.getValue(), Long.toString(foundString.getKey()));
-                    else if (isMethodType(foundString.getValue()))
-                        db.add(NATIVE_METHODTYPE_CANDIDATE, lib, UNKNOWN_FUNCTION, foundString.getValue(), Long.toString(foundString.getKey()));
+                for (Map.Entry<Long, String> foundString : rodata.getFoundStrings().entrySet()) {
+                    String s = foundString.getValue();
+                    if (isName(s))
+                        addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, foundString.getKey()));
+                    else if (isMethodType(s))
+                        addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, foundString.getKey()));
+                }
 
+            // Write out symbol tables.
+            int namesCount = nameSymbols.keySet().size();
+            System.out.println("Possible method/class names: " + namesCount);
+            writeSymbolTable(db, NATIVE_NAME_CANDIDATE, nameSymbols);
+            int methodTypesCount = methodTypeSymbols.keySet().size();
+            System.out.println("Possible method types found: " + methodTypesCount);
+            writeSymbolTable(db, NATIVE_METHODTYPE_CANDIDATE, methodTypeSymbols);
+
+            // Write out native code entry points.
             eps.forEach ((Long addr, String name) ->
                          db.add(NATIVE_LIB_ENTRY_POINT, lib, name, String.valueOf(addr)));
         }
@@ -771,6 +782,40 @@ public class NativeScanner {
             ex.printStackTrace();
         }
     }
+
+    /**
+     * Register a symbol with its info in a table.
+     *
+     * @param symbols    the symbols table
+     * @param symbol     key: the (string) symbol
+     * @param si         value: the symbol information
+     */
+    private static void addSymbol(Map<String, List<SymbolInfo> > symbols,
+                                  String symbol, SymbolInfo si) {
+        List<SymbolInfo> infos = symbols.getOrDefault(symbol, new LinkedList<>());
+        infos.add(si);
+        symbols.put(symbol, infos);
+    }
+
+    /**
+     * Write the full symbol table. This method can also be extended
+     * to merge information per symbol (for example, if different
+     * entries contain complementary information).
+     *
+     * @param db         the database object to use
+     * @param factsFile  the facts file to use for writing
+     * @param symbols    the symbols table
+     */
+    private static void writeSymbolTable(Database db, PredicateFile factsFile,
+                                         Map<String, List<SymbolInfo> > symbols) {
+        for (Map.Entry<String, List<SymbolInfo>> entry : symbols.entrySet()) {
+            String symbol = entry.getKey();
+            for (SymbolInfo si : entry.getValue()) {
+                String offset = si.offset == null ? UNKNOWN_OFFSET : Long.toString(si.offset);
+                db.add(factsFile, si.lib, si.function, symbol, offset);
+            }
+        }
+    }
 }
 
 // A representation of the strings section in the binary.
@@ -826,5 +871,16 @@ class EntryPoint {
     public EntryPoint(String name, Long addr) {
         this.name = name;
         this.addr = addr;
+    }
+}
+
+class SymbolInfo {
+    final String lib;
+    final String function;
+    final Long offset;
+    SymbolInfo(String lib, String function, Long offset) {
+        this.lib = lib;
+        this.function = function;
+        this.offset = offset;
     }
 }
