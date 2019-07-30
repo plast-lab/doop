@@ -71,9 +71,7 @@ class SouffleScript {
 		if (!cacheFile.exists() || debug || forceRecompile) {
 
 			if (removeContext) {
-				def backupFile = new File("${scriptFile}.backup")
-				Files.copy(scriptFile.toPath(), backupFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
-				ContextRemover.removeContexts(backupFile, scriptFile)
+				removeContexts(scriptFile)
 			}
 
 			def executable = new File(outDir, EXE_NAME)
@@ -178,9 +176,7 @@ class SouffleScript {
 		def db = makeDatabase(outDir)
 
         if (removeContext) {
-            def backupFile = new File("${scriptFile}.backup")
-            Files.copy(scriptFile.toPath(), backupFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
-            ContextRemover.removeContexts(backupFile, scriptFile)
+            removeContexts(scriptFile)
         }
 
         def interpretationCommand = "souffle ${scriptFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
@@ -241,5 +237,11 @@ class SouffleScript {
 				log.warn "WARNING: no ${libName} in environment variable ${envVar} = '${ldLibPath}'"
 			}
 		}
+	}
+
+	private static void removeContexts(File scriptFile) {
+		def backupFile = new File("${scriptFile}.backup")
+		Files.copy(scriptFile.toPath(), backupFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+		ContextRemover.removeContexts(backupFile, scriptFile)
 	}
 }
