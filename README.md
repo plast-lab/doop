@@ -194,3 +194,10 @@ features.
 
 Solution: Ensure that you do not use the legacy Logicblox mode
 (`--lb`) and appropriate options are set (check `doop --help`).
+
+*Problem:* Analyzing a program targeting Java on an Apple platform
+ shows missing ("phantom") classes.
+
+Solution: Add platform-specific libraries as extra inputs. For
+example, for Java 8, these could be: `apple.laf-jdk1.8.jar`,
+`sun.lwawt-jdk1.8.jar`, and `com.apple-jdk1.8.jar`.
