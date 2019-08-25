@@ -523,42 +523,15 @@ public class NativeScanner {
         return ret;
     }
 
-    /**
-     * Get the address of _GLOBAL_OFFSET_TABLE_. In x86 disassembled code using objdump, we need
-     * to subtract the hexademical value found in lea instruction from the address of _GLOBAL_OFFSET_TABLE_
-     * to find the string reference
-     *
-     * @param lib            the path of the library
-     */
-    private static Long getGlobalOffsetTableAddress(String lib) {
-        Long GlobalOffsetTableAddress;
-
-        try {
-            ProcessBuilder gdbBuilder = new ProcessBuilder("readelf", "-s", lib);
-            for (String line : runCommand(gdbBuilder)) {
-                if (line.contains("_GLOBAL_OFFSET_TABLE_")) {
-                    String[] lineSplit = line.split("\\s+");
-                    GlobalOffsetTableAddress = Long.parseLong(lineSplit[2], 16);
-                    if (debug)
-                        System.out.println("_GLOBAL_OFFSET_TABLE_ address: " + GlobalOffsetTableAddress);
-                    return GlobalOffsetTableAddress;
-                }
-            }
-        } catch (IOException ex) {
-            System.err.println("Could not run readelf: " + ex.getMessage());
-        }
-
-        return null;
-    }
-
     private static Map<String,List<String>> findStringsInX86(Map<Long, String> foundStrings, String lib) {
         Long address, GlobalOffsetTableAddress;
         String function = null;
         Map<String,List<String>> stringsInFunctions = new HashMap<>();
+        Map<String,Long> registers = null;
         Pattern funPattern = Pattern.compile("^.*[<](.*)[>][:]$");
-        Pattern leaPattern = Pattern.compile("^.*lea\\s+(.)[0][x]([a-f0-9]+).*$");
+        Pattern addPattern = Pattern.compile("^\\s+([a-f0-9]+).*add\\s+[$][0][x]([a-f0-9]+)[,][%](.*)$");
+        Pattern leaPattern = Pattern.compile("^.*lea\\s+(.)[0][x]([a-f0-9]+)[(][%](.*)[)].*$");
         Matcher m;
-        GlobalOffsetTableAddress = getGlobalOffsetTableAddress(lib);
 
         try {
             ProcessBuilder gdbBuilder = new ProcessBuilder("objdump", "-j", ".text", "-d", lib);
@@ -566,21 +539,32 @@ public class NativeScanner {
                 m = funPattern.matcher(line);
                 if (m.find()) {
                     function = m.group(1);
+                    registers = new HashMap<>();
                     continue;
+                }
+
+                m = addPattern.matcher(line);
+                if (m.find()) {
+                    Long value = Long.parseLong(m.group(1),16) + Long.parseLong(m.group(2),16);
+                    registers.put(m.group(3), value);
                 }
 
                 m = leaPattern.matcher(line);
                 if (m.find()) {
-                    address = GlobalOffsetTableAddress;
-                    if (m.group(1).equals("+"))
-                        address += Long.parseLong(m.group(2),16);
-                    else if (m.group(1).equals("-"))
-                        address -= Long.parseLong(m.group(2),16);
+                    if (registers.get(m.group(3)) != null) {
+                        address = registers.get(m.group(3));
+                        if (m.group(1).equals(" "))
+                            address += Long.parseLong(m.group(2),16);
+                        else if (m.group(1).equals("-"))
+                            address -= Long.parseLong(m.group(2),16);
 
-                    String str = foundStrings.get(address);
-                    if (debug)
-                        System.out.println("objdump disassemble string: '" + str + "' -> " + address);
-                    stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<>()).add(function);
+                        if (foundStrings.get(address) != null) {
+                            String str = foundStrings.get(address);
+                            if (debug)
+                                System.out.println("objdump disassemble string: '" + str + "' -> " + address);
+                            stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<>()).add(function);
+                        }
+                    }
                 }
             }
         } catch (IOException ex) {
