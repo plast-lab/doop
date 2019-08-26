@@ -1,8 +1,10 @@
+.decl FinalizeContextRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?fakeinvo:MethodInvocation, ?heapValue:Value, ?formal:Var)
+
 /**
  * For a heap allocation of an object that overrides Object.finalize, invoke
- * the method Finalizer.register to register the object for finalization. The
- * allocated object becomes the actual parameter to Finalizer.register.
+ * the method Finalizer.register to register the object for finalization.
  */
+FinalizeContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?formal),
 configuration.ContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, 1) :-
   FakeInvocation_RegisterFinalize(?heapValue, ?fakeinvo),
   basic.AllocatedObjectSupportsFinalize(?heapValue, ?inmethod),
@@ -12,10 +14,17 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register
   ?register = "<java.lang.ref.Finalizer: void register(java.lang.Object)>",
   isMethod(?register),
   FormalParam(0, ?register, ?formal),
-  VarPointsTo(?hctx, ?heapValue, ?ctx, ?formal).
+  isImmutableHContext(?hctx).
 
-FakeInvocation_RegisterFinalize0(?val2, cat("<register-finalize ", cat(?val1, cat( "/", cat(?val2, "  >"))))),
-PlusMethodInvocation(cat("<register-finalize ", cat(?val1, cat( "/", cat(?val2, "  >"))))) :-
+// The allocated object becomes the actual parameter to Finalizer.register.
+VarPointsTo(?hctx, ?heapValue, ?calleeCtx, ?formal) :-
+  configuration.ContextResponse(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?calleeCtx),
+  FinalizeContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?formal).
+
+#define REG_FINALIZE_ID(val1, val2) cat("<register-finalize ", cat(val1, cat( "/", cat(val2, "  >"))))
+
+FakeInvocation_RegisterFinalize0(?val2, REG_FINALIZE_ID(?val1, ?val2)),
+PlusMethodInvocation(REG_FINALIZE_ID(?val1, ?val2)) :-
     basic.AllocatedObjectSupportsFinalize(?val2, ?val1),
     isMethod(?val1),
     isHeapAllocation(?val2).

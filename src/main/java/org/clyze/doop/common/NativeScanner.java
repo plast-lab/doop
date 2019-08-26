@@ -32,13 +32,16 @@ public class NativeScanner {
 
     // The supported architectures.
     enum Arch {
-        X86_64, AARCH64, ARMEABI, MIPS;
+        X86, X86_64, AARCH64, ARMEABI, MIPS;
 
         public static Arch autodetect(String libFilePath) throws IOException {
             ProcessBuilder pb = new ProcessBuilder("file", libFilePath);
             Arch arch = null;
             for (String line : NativeScanner.runCommand(pb)) {
-                if (line.contains("80386") || line.contains("x86-64")) {
+                if (line.contains("80386")) {
+                    arch = Arch.X86;
+                    break;
+                } else if (line.contains("x86-64")) {
                     arch = Arch.X86_64;
                     break;
                 } else if (line.contains("aarch64")) {
@@ -484,7 +487,9 @@ public class NativeScanner {
      * @param arch           the architecture of the native code
      */
     private static Map<String,List<String>> findStringsInFunctions(String objdumpCmd, Map<Long,String> foundStrings, Map<Long, String> eps, String lib, Arch arch) {
-        if (arch.equals(Arch.X86_64))
+        if (arch.equals(Arch.X86))
+            return findStringsInX86(foundStrings, lib);
+        else if (arch.equals(Arch.X86_64))
             return findStringsInX86_64(foundStrings, eps, lib);
         else if (arch.equals(Arch.AARCH64))
             return findStringsInAARCH64(foundStrings, eps, lib);
@@ -516,6 +521,57 @@ public class NativeScanner {
             }
         }
         return ret;
+    }
+
+    private static Map<String,List<String>> findStringsInX86(Map<Long, String> foundStrings, String lib) {
+        Long address, GlobalOffsetTableAddress;
+        String function = null;
+        Map<String,List<String>> stringsInFunctions = new HashMap<>();
+        Map<String,Long> registers = null;
+        Pattern funPattern = Pattern.compile("^.*[<](.*)[>][:]$");
+        Pattern addPattern = Pattern.compile("^\\s+([a-f0-9]+).*add\\s+[$][0][x]([a-f0-9]+)[,][%](.*)$");
+        Pattern leaPattern = Pattern.compile("^.*lea\\s+(.)[0][x]([a-f0-9]+)[(][%](.*)[)].*$");
+        Matcher m;
+
+        try {
+            ProcessBuilder gdbBuilder = new ProcessBuilder("objdump", "-j", ".text", "-d", lib);
+            for (String line : runCommand(gdbBuilder)) {
+                m = funPattern.matcher(line);
+                if (m.find()) {
+                    function = m.group(1);
+                    registers = new HashMap<>();
+                    continue;
+                }
+
+                m = addPattern.matcher(line);
+                if (m.find()) {
+                    Long value = Long.parseLong(m.group(1),16) + Long.parseLong(m.group(2),16);
+                    registers.put(m.group(3), value);
+                }
+
+                m = leaPattern.matcher(line);
+                if (m.find()) {
+                    if (registers.get(m.group(3)) != null) {
+                        address = registers.get(m.group(3));
+                        if (m.group(1).equals(" "))
+                            address += Long.parseLong(m.group(2),16);
+                        else if (m.group(1).equals("-"))
+                            address -= Long.parseLong(m.group(2),16);
+
+                        if (foundStrings.get(address) != null) {
+                            String str = foundStrings.get(address);
+                            if (debug)
+                                System.out.println("objdump disassemble string: '" + str + "' -> " + address);
+                            stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<>()).add(function);
+                        }
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            System.err.println("Could not run objdump: " + ex.getMessage());
+        }
+
+        return stringsInFunctions;
     }
 
     private static Map<String,List<String>> findStringsInX86_64(Map<Long,String> foundStrings, Map<Long, String> eps, String lib) {
@@ -669,7 +725,7 @@ public class NativeScanner {
                                 address += Long.parseLong("4",16);
                                 String str = foundStrings.get(address);
                                 if (debug)
-                                    System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                                    System.out.println("objdump disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
                                 stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<>()).add(function);
                             }
                         } else if (m.group(4).equals("mov")) {
@@ -732,7 +788,7 @@ public class NativeScanner {
                                     address += Long.parseLong(registers.get(m.group(3)), 16);
                                     String str = foundStrings.get(address);
                                     if (debug)
-                                        System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                                        System.out.println("objdump disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
                                     stringsInFunctions.computeIfAbsent(str, k -> new ArrayList<>()).add(function);
                                 } catch (NumberFormatException ex) {
                                     System.err.println("Number format error '" + ex.getMessage() + "' in line: " + line);
