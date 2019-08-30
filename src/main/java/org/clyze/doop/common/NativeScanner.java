@@ -316,15 +316,21 @@ public class NativeScanner {
         }
 
         System.out.println("Gathering strings from " + lib + "...");
-        ProcessBuilder builderStrings = new ProcessBuilder("strings", lib);
-        Collection<String> methodTypes = new LinkedList<>();
-        Collection<String> names = new LinkedList<>();
-        for (String line : runCommand(builderStrings)) {
-            if (isMethodType(line))
-                methodTypes.add(line);
-            else if (isName(line))
-                names.add(line);
-        }
+
+        // // Legacy 'strings'-based scanner.
+        // ProcessBuilder builderStrings = new ProcessBuilder("strings", lib);
+        // Collection<String> methodTypes = new LinkedList<>();
+        // Collection<String> names = new LinkedList<>();
+        // for (String line : runCommand(builderStrings)) {
+        //     if (debug)
+        //         System.out.println("Checking string: '" + line + "'");
+        //     if (isMethodType(line)) {
+        //         if (debug)
+        //             System.out.println("isMethodType('" + line + "') = true");
+        //         methodTypes.add(line);
+        //     } else if (isName(line))
+        //         names.add(line);
+        // }
 
         // Find in which function every string is used
         Map<String, List<String>> stringsInFunctions = null;
@@ -342,6 +348,11 @@ public class NativeScanner {
             ex.printStackTrace();
         }
 
+        if (debug && stringsInFunctions != null) {
+            System.out.println("Strings in functions:");
+            stringsInFunctions.forEach ((k, v) -> System.out.println("'" + k + "' -> " + v) );
+        }
+
         if (!success) {
             System.err.println("Cannot find strings in " + lib + ", aborting.");
             return;
@@ -355,36 +366,39 @@ public class NativeScanner {
         try (Database db = new Database(outDir)) {
             if (stringsInFunctions != null) {
                 // For values that we know their containing function, we set special offsets
-                for (String mt : methodTypes) {
-                    List<String> strings = stringsInFunctions.get(mt);
-                    if (strings != null)
-                        for (String function : strings)
-                            addSymbol(methodTypeSymbols, mt, new SymbolInfo(lib, function, null));
-                }
-                for (String n : names) {
-                    List<String> strings = stringsInFunctions.get(n);
-                    if (strings != null)
-                        for (String function : strings)
-                            addSymbol(nameSymbols, n, new SymbolInfo(lib, function, null));
+                for (String s : stringsInFunctions.keySet()) {
+                    if (s == null)
+                        continue;
+                    if (isMethodType(s)) {
+                        List<String> strings = stringsInFunctions.get(s);
+                        if (strings != null)
+                            for (String function : strings)
+                                addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, function, null));
+                    } else if (isName(s)) {
+                        List<String> strings = stringsInFunctions.get(s);
+                        if (strings != null)
+                            for (String function : strings)
+                                addSymbol(nameSymbols, s, new SymbolInfo(lib, function, null));
+                    }
                 }
             }
 
             if (useRadare)
                 for (int i = 0; i < stringsInRadare.size(); i++) {
                     String s = stringsInRadare.get(i);
-                    if (isName(s))
-                        addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, new Long(i)));
-                    else if (isMethodType(s))
+                    if (isMethodType(s))
                         addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, new Long(i)));
+                    else if (isName(s))
+                        addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, new Long(i)));
                 }
 
             if (parseRodata)
                 for (Map.Entry<Long, String> foundString : rodata.getFoundStrings().entrySet()) {
                     String s = foundString.getValue();
-                    if (isName(s))
-                        addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, foundString.getKey()));
-                    else if (isMethodType(s))
+                    if (isMethodType(s))
                         addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, foundString.getKey()));
+                    else if (isName(s))
+                        addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, foundString.getKey()));
                 }
 
             // Write out symbol tables.
@@ -409,7 +423,7 @@ public class NativeScanner {
                 (c != '<') && (c != '>') &&
                 !Character.isLetterOrDigit(c)) {
                 if (debug)
-                    System.err.println("Rejecting char '" + c + "' : " + line);
+                    System.err.println("isName(): Rejecting char '" + c + "' : " + line);
                 return false;
             }
         }
@@ -426,7 +440,7 @@ public class NativeScanner {
                 (c != '(') && (c != ')') && (c != ';') && (c != '_') &&
                 (!Character.isLetterOrDigit(c))) {
                 if (debug)
-                    System.err.println("Rejecting char '" + c + "' : " + line);
+                    System.err.println("isMethodType(): Rejecting char '" + c + "' : " + line);
                 return false;
             }
         }
