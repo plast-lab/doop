@@ -85,10 +85,7 @@ dependencies {
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             "com.google.guava:guava:27.1-jre",
-            "com.jcabi:jcabi-manifests:1.1",                    // manifest reader
-
-            // https://mvnrepository.com/artifact/gov.nist.math/jama
-            "gov.nist.math:jama:1.0.3"
+            "com.jcabi:jcabi-manifests:1.1"                     // manifest reader
 
     runtime "org.clyze:jphantom:1.2",                           // JPhantom is a runtime dependency
             "ext:herosclasses:1.1",
