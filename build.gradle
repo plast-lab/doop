@@ -246,6 +246,7 @@ test.dependsOn buildTests
 ['dex-fact-generator', 'soot-fact-generator', 'wala-fact-generator'].each { fg ->
     [ build, jar, run, test ].each { it.dependsOn(":generators:${fg}:installJar") }
     clean.dependsOn(":generators:${fg}:uninstallJar")
+    test.dependsOn(":generators:${fg}:test")
 }
 
 task fullClean {
