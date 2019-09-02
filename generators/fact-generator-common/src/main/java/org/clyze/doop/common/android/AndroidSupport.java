@@ -261,7 +261,7 @@ public abstract class AndroidSupport {
                     return;
                 }
                 String[] empty = new String[0];
-                JHelper.runJar(empty, empty, apktoolJar, cmdArgs, TAG, true);
+                JHelper.runJar(empty, empty, apktoolJar, cmdArgs, TAG, true, null);
             }
         } catch (IOException ex) {
             System.err.println("Error: could not run apktool.");

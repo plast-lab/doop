@@ -8,6 +8,10 @@ if ((gradle.parent == null) && hasProperty("use_composite_builds") && use_compos
 
 enableFeaturePreview('STABLE_PUBLISHING')
 
+include 'generators:fact-generator-common'
+include 'generators:soot-fact-generator'
+include 'generators:wala-fact-generator'
+include 'generators:dex-fact-generator'
 include 'tests:016-reflection'
 include 'tests:017-annotations'
 include 'tests:104-method-references'

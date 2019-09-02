@@ -8,14 +8,12 @@ import soot.jimple.*;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 public class Representation extends JavaRepresentation {
     private final Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
     private final Map<SootField, String> _fieldSigRepr = new ConcurrentHashMap<>();
     private final Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
     private final Map<SootMethod, String> methodNames = new ConcurrentHashMap<>();
-    private final static Pattern qPat = Pattern.compile("'");
 
     static String classConstant(SootClass c) {
         return classConstant(c.getName());
@@ -23,10 +21,6 @@ public class Representation extends JavaRepresentation {
 
     static String classConstant(Type t) {
         return classConstant(t.toString());
-    }
-
-    public static String stripQuotes(String s) {
-        return qPat.matcher(s).replaceAll("");
     }
 
     String signature(SootMethod m) {

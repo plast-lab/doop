@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+}
+
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
+    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+    maven {
+        name "soot-snapshot"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
+    }
+    maven {
+        name "soot-release"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
+    }
+}
+
+dependencies {
+
+    compile "org.clyze:clue-common:3.12.+",
+            "org.ow2.asm:asm-debug-all:5.1",          // Java Bytecode library
+            "org.smali:dexlib2:2.2.5",                // Dexlib2: library for reading/modifying/writing Android dex files
+            "net.dongliu:apk-parser:2.6.2"            // needed for reading binary XML entries from APK inputs
+}

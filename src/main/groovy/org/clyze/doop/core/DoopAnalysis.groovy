@@ -10,11 +10,8 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.common.FrontEnd
-import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.util.ClassPathHelper
-import org.clyze.doop.wala.WalaInvoker
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
 
@@ -505,20 +502,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
                         Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
                     } else {
-                        // Invoke the Soot-based fact generator using a separate JVM.
-                        log.warn "WARNING: Calling Soot as external process, this may use more memory."
-                        if (classpath == null)
-                            throw new DoopErrorCodeException(33, new RuntimeException("Could not find external classpath for Soot-based fact generator."), true)
-                        String error = null
-                        def proc = { String line -> if (line.contains(DoopErrorCodeException.PREFIX)) error = line }
                         // Write arguments to file and pass that to Soot-based fact generator.
                         String argsFile = Files.createTempFile("soot-params-", "").toString()
                         (new File(argsFile)).withWriterAppend { w -> args.each { w.writeLine(it as String) } }
                         String[] args0 = [ "--args-file", argsFile ] as String[]
                         String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
-                        JHelper.runClass(classpath.split(":"), jvmArgs, SOOT_MAIN, args0, "SOOT_FACT_GEN", log.debugEnabled, proc)
-                        if (error)
-                            throw new RuntimeException(error)
+                        // Invoke the Soot-based fact generator using a separate JVM.
+                        invokeFrontEndJar('soot-fact-generator', 'SOOT_FACT_GEN', jvmArgs, args0)
                     }
                     // Check if fact generation must be restarted due to missing classes.
                     if (missingClasses != null && missingClasses.exists()) {
@@ -620,14 +610,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                //We invoke soot reflectively using a separate class-loader to be able
-                //to support multiple soot invocations in the same JVM @ server-side.
-                //TODO: Investigate whether this approach may lead to memory leaks,
-                //not only for soot but for all other Java-based tools, like jphantom.
-                //In such a case, we should invoke all Java-based tools using a
-                //separate process.
-                WalaInvoker wala = new WalaInvoker()
-                wala.main(params.toArray(new String[params.size()]))
+                invokeFrontEndJar('wala-fact-generator', 'WALA_FACT_GEN', params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -643,7 +626,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of dex front-end: ${params.join(' ')}"
 
         try {
-            DexInvoker.start(params.toArray(new String[params.size()]), cha)
+            invokeFrontEndJar('dex-fact-generator', 'DEX_FACT_GEN', params.toArray(new String[params.size()]))
         } catch (Exception ex) {
             ex.printStackTrace()
         }
@@ -657,6 +640,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         assert platform == "python"
+
+        params += ["--python"]
 
         if (options.FACT_GEN_CORES.value) {
             params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
@@ -674,8 +659,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                PythonInvoker wala = new PythonInvoker()
-                wala.main(params.toArray(new String[params.size()]))
+                invokeFrontEndJar('wala-fact-generator', 'PYTHON_FACT_GEN', params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -782,5 +766,33 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         } catch (ClassNotFoundException ex) {
             return false
         }
+    }
+
+    protected void invokeFrontEndJar(String frontEnd, String TAG, String[] jvmArgs, String[] args) {
+        String frontEndJar = null
+
+        if (Doop.doopHome) {
+            List<String> jars = []
+            (new File("${Doop.doopHome}/generators/lib/")).eachFile {
+                if (it.name.startsWith(frontEnd)) {
+                    jars.add(it.canonicalPath)
+                }
+            }
+            if (jars && jars.size() > 0) {
+                // Use last JAR in case many are found (to select most recent version).
+                frontEndJar = jars.sort().get(jars.size()-1)
+                log.debug "Using front end: ${frontEndJar}"
+            }
+        }
+
+        if (frontEndJar == null) {
+            throw new RuntimeException("Front end could not be found: " + frontEnd)
+        }
+
+        String error = null
+        def proc = { String line -> if (line.contains(DoopErrorCodeException.PREFIX)) error = line }
+        JHelper.runJar(new String[0], jvmArgs, frontEndJar, args, TAG, log.debugEnabled, proc);
+        if (error)
+            throw new RuntimeException(error)
     }
 }

@@ -1,6 +1,10 @@
 package org.clyze.doop.common;
 
+import java.util.regex.Pattern;
+
 public class JavaRepresentation {
+
+    private final static Pattern qPat = Pattern.compile("'");
 
     public static String classConstant(String className) {
         return "<class " + className + ">";
@@ -48,5 +52,9 @@ public class JavaRepresentation {
 
     public static String fieldId(String declClass, String type, String name) {
         return "<" + declClass + ": " + type + " " + name + ">";
+    }
+
+    public static String stripQuotes(String s) {
+        return qPat.matcher(s).replaceAll("");
     }
 }

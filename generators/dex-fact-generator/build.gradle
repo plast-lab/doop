@@ -1,0 +1,39 @@
+plugins {
+    id 'java'
+}
+
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
+    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+    maven {
+        name "soot-snapshot"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
+    }
+    maven {
+        name "soot-release"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
+    }
+}
+
+dependencies {
+    compile project(':generators:fact-generator-common')
+}
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'org.clyze.doop.dex.DexInvoker'
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+task installJar(type: Copy) {
+    from fatJar.outputs.files.singleFile
+    into('../lib')
+}
+installJar.dependsOn fatJar

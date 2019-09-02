@@ -15,7 +15,7 @@ import org.clyze.persistent.model.doop.Class as Klass
 import org.codehaus.groovy.runtime.StackTraceUtils
 
 import static org.clyze.jimple.JimpleParser.*
-import static org.clyze.doop.soot.Representation.stripQuotes
+import static org.clyze.doop.common.JavaRepresentation.stripQuotes
 
 @CompileStatic
 class JimpleListenerImpl extends JimpleBaseListener {

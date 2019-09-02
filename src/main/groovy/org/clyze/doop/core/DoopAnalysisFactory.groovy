@@ -110,7 +110,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def commandsEnv = initExternalCommandsEnvironment(options)
 		createOutputDirectory(options)
 
-		if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value) {
+		if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value && !options.PYTHON.value) {
 			checkAppGlob(options)
 		}
 
