@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'groovy'
 }
 
 sourceCompatibility = "1.8"
@@ -22,7 +23,8 @@ repositories {
 
 dependencies {
     compile project(':generators:fact-generator-common')
-    compile "ext:AXMLPrinter:2.0",
+    compile "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
+            "ext:AXMLPrinter:2.0",
             // Soot - choose one of the following:
             // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.
             // "ext:sootclasses:3.2.7",
@@ -36,6 +38,7 @@ dependencies {
             // "ca.mcgill.sable:soot-j9:4.0.0-SNAPSHOT",
             "ext:soot-infoflow:2.5.1",
             "ext:soot-infoflow-android:2.5.1"
+    testCompile "org.spockframework:spock-core:${spockVersion}"
 }
 
 task fatJar(type: Jar) {
