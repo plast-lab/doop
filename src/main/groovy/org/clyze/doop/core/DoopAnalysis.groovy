@@ -610,7 +610,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                invokeFrontEndJar('wala-fact-generator', 'WALA_FACT_GEN', params.toArray(new String[params.size()]))
+                invokeFrontEndJar('wala-fact-generator', 'WALA_FACT_GEN', null, params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -626,7 +626,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of dex front-end: ${params.join(' ')}"
 
         try {
-            invokeFrontEndJar('dex-fact-generator', 'DEX_FACT_GEN', params.toArray(new String[params.size()]))
+            invokeFrontEndJar('dex-fact-generator', 'DEX_FACT_GEN', null, params.toArray(new String[params.size()]))
         } catch (Exception ex) {
             ex.printStackTrace()
         }
@@ -655,11 +655,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
 
-        log.debug "Params of wala: ${params.join(' ')}"
+        log.debug "Params of wala (Python mode): ${params.join(' ')}"
 
         try {
             factGenTime = Helper.timing {
-                invokeFrontEndJar('wala-fact-generator', 'PYTHON_FACT_GEN', params.toArray(new String[params.size()]))
+                invokeFrontEndJar('wala-fact-generator', 'PYTHON_FACT_GEN', null, params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -788,6 +788,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (frontEndJar == null) {
             throw new RuntimeException("Front end could not be found: " + frontEnd)
         }
+
+        jvmArgs = jvmArgs ?: new String[0]
 
         String error = null
         def proc = { String line -> if (line.contains(DoopErrorCodeException.PREFIX)) error = line }
