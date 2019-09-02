@@ -48,3 +48,10 @@ task installJar(type: Copy) {
     into('../lib')
 }
 installJar.dependsOn fatJar
+
+task uninstallJar() {
+    doLast {
+        def jar = fatJar.outputs.files.singleFile
+        if (jar && jar.name) { delete "../lib/${jar.name}" }
+    }
+}
