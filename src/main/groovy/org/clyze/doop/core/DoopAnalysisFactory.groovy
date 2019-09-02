@@ -67,7 +67,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def context
 		def platformName = options.PLATFORM.value as String
 		if (platformName.contains("python")) {
-			context = new DefaultInputResolutionContext(DefaultInputResolutionContext.PYTHON_RESOLVER)
+			context = new DefaultInputResolutionContext(DefaultInputResolutionContext.pythonResolver(new File(Doop.doopTmp)))
 		} else {
 			context = newJavaDefaultInputResolutionContext()
 		}

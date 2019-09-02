@@ -19,11 +19,13 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 			new IvyResolver())
 	}
 
-	static final ChainResolver PYTHON_RESOLVER = new ChainResolver(
+	static ChainResolver pythonResolver(File tmpDir) {
+		return new ChainResolver(
 			// The order matters
 			new FileResolver(),
-			new PythonDirectoryResolver()
-	)
+			new URLResolver(tmpDir, true),
+			new PythonDirectoryResolver())
+	}
 
 	// The input resolver
 	ChainResolver resolver
