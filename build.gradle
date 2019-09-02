@@ -71,11 +71,13 @@ compileGroovy {
 }
 
 def groovyVersion="2.5.7"
+// Set clue-common version so that it is available to subprojects.
+gradle.rootProject.ext.clueCommonVersion='3.12.+'
 
 dependencies {
 
     compile project(':generators:fact-generator-common')
-    compile "org.clyze:clue-common:3.12.+",
+    compile "org.clyze:clue-common:${clueCommonVersion}",
             "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
