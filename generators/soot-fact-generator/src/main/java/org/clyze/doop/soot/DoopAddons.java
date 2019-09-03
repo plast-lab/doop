@@ -16,6 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.JavaFactWriter;
+import org.clyze.utils.DoopConventions;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
@@ -140,10 +141,6 @@ public class DoopAddons {
         }
     }
 
-    public static String jimpleDir(String outDir) {
-        return outDir + File.separatorChar + "jimple";
-    }
-
     /**
      * Some versions of Soot do not structure generated Jimple by package, which
      * is expected by the server. This method simulates (so that the server
@@ -154,7 +151,7 @@ public class DoopAddons {
      */
     public static void structureJimpleFiles(String outDir) {
         boolean movedMsg = false;
-        String jimpleDirPath = jimpleDir(outDir);
+        String jimpleDirPath = DoopConventions.jimpleDir(outDir);
         File[] jimpleDirFiles = new File(jimpleDirPath).listFiles();
         if (jimpleDirFiles == null) {
             System.err.println("Output directory " + jimpleDirPath + " is empty, cannot restructure Jimple files.");
@@ -198,32 +195,6 @@ public class DoopAddons {
         } catch (ClassNotFoundException ex) {
             return true;
         }
-    }
-
-    private static final String LOCAL_SEPARATOR = "_$$A_";
-
-    /**
-     * Call setSeparator() on Soot to set the fresh variable separator
-     * (needed to discover the original names of SSA-transformed locals).
-     */
-    public static void setSeparator() {
-        try {
-            Method setter = Class.forName("soot.shimple.internal.ShimpleBodyBuilder").getDeclaredMethod("setSeparator", String.class);
-            setter.setAccessible(true);
-            setter.invoke(null, LOCAL_SEPARATOR);
-            System.err.println("Using separator for fresh variables in Soot: " + LOCAL_SEPARATOR);
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-            // ex.printStackTrace();
-            System.err.println("Using default fresh variable separator in Soot.");
-        }
-    }
-
-    /**
-     * Clients of Doop can read the separator to be able to reason
-     * about local names in generated Jimple.
-     */
-    public static String getSeparator() {
-        return LOCAL_SEPARATOR;
     }
 
     private static boolean polymorphicHandling_msg = false;

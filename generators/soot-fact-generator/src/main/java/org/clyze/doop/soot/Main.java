@@ -14,6 +14,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
+import org.clyze.utils.DoopConventions;
 import org.clyze.utils.Helper;
 import org.clyze.utils.JHelper;
 import org.xmlpull.v1.XmlPullParserException;
@@ -109,7 +110,7 @@ public class Main {
             Options.v().set_src_prec(Options.src_prec_class);
 
         Scene scene = Scene.v();
-        DoopAddons.setSeparator();
+        DoopConventions.setSeparator();
         List<String> inputs = sootParameters.getInputs();
         for (String input : inputs) {
             String inputFormat = input.endsWith(".jar")? "archive" : "file";
@@ -229,7 +230,7 @@ public class Main {
                     }
 
                     // Write classes, following package hierarchy.
-                    Options.v().set_output_dir(DoopAddons.jimpleDir(outDir));
+                    Options.v().set_output_dir(DoopConventions.jimpleDir(outDir));
                     boolean structured = DoopAddons.checkSetHierarchyDirs();
                     driver.writeInParallel(jimpleClasses);
                     if (!structured)
