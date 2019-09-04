@@ -12,6 +12,7 @@ import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.common.FrontEnd
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.util.ClassPathHelper
+import org.clyze.doop.utils.Resources
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
 
@@ -508,7 +509,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         String[] args0 = [ "--args-file", argsFile ] as String[]
                         String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
                         // Invoke the Soot-based fact generator using a separate JVM.
-                        invokeFrontEndJar('soot-fact-generator', 'SOOT_FACT_GEN', jvmArgs, args0)
+                        Resources.invokeResourceJar(log, 'soot-fact-generator', 'SOOT_FACT_GEN', jvmArgs, args0)
                     }
                     // Check if fact generation must be restarted due to missing classes.
                     if (missingClasses != null && missingClasses.exists()) {
@@ -610,7 +611,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                invokeFrontEndJar('wala-fact-generator', 'WALA_FACT_GEN', null, params.toArray(new String[params.size()]))
+                Resources.invokeResourceJar(log, 'wala-fact-generator', 'WALA_FACT_GEN', null, params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -626,7 +627,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of dex front-end: ${params.join(' ')}"
 
         try {
-            invokeFrontEndJar('dex-fact-generator', 'DEX_FACT_GEN', null, params.toArray(new String[params.size()]))
+            Resources.invokeResourceJar(log, 'dex-fact-generator', 'DEX_FACT_GEN', null, params.toArray(new String[params.size()]))
         } catch (Exception ex) {
             ex.printStackTrace()
         }
@@ -659,7 +660,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                invokeFrontEndJar('wala-fact-generator', 'PYTHON_FACT_GEN', null, params.toArray(new String[params.size()]))
+                Resources.invokeResourceJar(log, 'wala-fact-generator', 'PYTHON_FACT_GEN', null, params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -766,35 +767,5 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         } catch (ClassNotFoundException ex) {
             return false
         }
-    }
-
-    protected void invokeFrontEndJar(String frontEnd, String TAG, String[] jvmArgs, String[] args) {
-        String frontEndJar = null
-
-        if (Doop.doopHome) {
-            List<String> jars = []
-            (new File("${Doop.doopHome}/generators/lib/")).eachFile {
-                if (it.name.startsWith(frontEnd)) {
-                    jars.add(it.canonicalPath)
-                }
-            }
-            if (jars && jars.size() > 0) {
-                // Use last JAR in case many are found (to select most recent version).
-                frontEndJar = jars.sort().get(jars.size()-1)
-                log.debug "Using front end: ${frontEndJar}"
-            }
-        }
-
-        if (frontEndJar == null) {
-            throw new RuntimeException("Front end could not be found: " + frontEnd)
-        }
-
-        jvmArgs = jvmArgs ?: new String[0]
-
-        String error = null
-        def proc = { String line -> if (line.contains(DoopErrorCodeException.PREFIX)) error = line }
-        JHelper.runJar(new String[0], jvmArgs, frontEndJar, args, TAG, log.debugEnabled, proc);
-        if (error)
-            throw new RuntimeException(error)
     }
 }

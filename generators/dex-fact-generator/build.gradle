@@ -34,13 +34,13 @@ task fatJar(type: Jar) {
 
 task installJar(type: Copy) {
     from fatJar.outputs.files.singleFile
-    into('../lib')
+    into("../../${resourcesDir}")
 }
 installJar.dependsOn fatJar
 
 task uninstallJar() {
     doLast {
         def jar = fatJar.outputs.files.singleFile
-        if (jar && jar.name) { delete "../lib/${jar.name}" }
+        if (jar && jar.name) { delete "../../${resourcesDir}/${jar.name}" }
     }
 }
