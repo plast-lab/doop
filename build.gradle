@@ -59,6 +59,12 @@ repositories {
         maven { url 'https://jitpack.io' }
 }
 
+configurations {
+    apktool {
+        transitive = false
+    }
+}
+
 configurations.all {
     //This is required for SNAPSHOT dependencies
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
@@ -78,7 +84,7 @@ gradle.rootProject.ext.spockVersion='1.3-groovy-2.5'
 gradle.rootProject.ext.resourcesDir='resources'
 
 dependencies {
-
+    apktool "ext:apktool:2.4.0"                                 // needed for decoding APK inputs
     compile project(':generators:fact-generator-common')
     compile "org.clyze:clue-common:${clueCommonVersion}",
             "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
@@ -95,7 +101,6 @@ dependencies {
     runtime "org.clyze:jphantom:1.2",                           // JPhantom is a runtime dependency
             "ext:herosclasses:1.1",
             "ext:axml:2.0",
-            "ext:apktool:2.4.0",                                // needed for decoding APK inputs
             "org.smali:util:2.2.5"                              // Dexlib2 utilities
 
     // JimpleParser
@@ -221,6 +226,15 @@ task createEmptyProperties {
     }
 }
 
+task resolveApktool {
+    doLast {
+        copy {
+            from configurations.apktool.files[0]
+            into "${projectDir}/${resourcesDir}"
+        }
+    }
+}
+
 compileJava {
     options.compilerArgs << '-Xlint:unchecked'
 }
@@ -252,7 +266,10 @@ def frontends = ['dex-fact-generator', 'soot-fact-generator', 'wala-fact-generat
 
 // Connect task dependencies against fact generator subprojects.
 frontends.each { fg ->
-    [ build, jar, run, test ].each { it.dependsOn(":generators:${fg}:installJar") }
+    [ build, jar, run, test ].each {
+        it.dependsOn(":generators:${fg}:installJar")
+        it.dependsOn resolveApktool
+    }
     clean.dependsOn(":generators:${fg}:uninstallJar")
     testAll.dependsOn(":generators:${fg}:test")
 }

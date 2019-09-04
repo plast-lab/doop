@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.logging.Log;
+import org.apache.log4j.Logger;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
@@ -12,6 +12,7 @@ import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.doop.common.Parameters;
 import org.clyze.doop.common.XMLFactGenerator;
 import org.clyze.doop.util.ClassPathHelper;
+import org.clyze.doop.util.Resources;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
 
@@ -31,12 +32,12 @@ public abstract class AndroidSupport {
     private final Map<String, AppResources> computedResources = new HashMap<>();
     private final Collection<String> decodeDirs = new HashSet<>();
 
-    private final Log logger;
+    private final Logger logger;
 
     protected AndroidSupport(Parameters parameters, BasicJavaSupport java) {
         this.parameters = parameters;
         this.java = java;
-        this.logger = LogFactory.getLog(getClass());
+        this.logger = Logger.getLogger(getClass());
     }
 
     public void processInputs(Set<String> tmpDirs) {
@@ -242,27 +243,8 @@ public abstract class AndroidSupport {
                 cmd[0] = apktoolHome + File.separator + "apktool";
                 System.arraycopy(cmdArgs, 0, cmd, 1, cmdArgs.length);
                 JHelper.runWithOutput(cmd, TAG);
-            } else {
-                String apktoolJar;
-                try {
-                    // Try to read the bundled apktool JAR. Since this is a standalone
-                    // archive that duplicates classes already found in the classpath
-                    // (possibly with different versions), it should then run isolated
-                    // via 'java -jar'.
-		    if (parameters.classpath == null) {
-			System.err.println("Trying to use bundled apktool...");
-			apktoolJar = ClassPathHelper.getClasspathJar("apktool");
-		    } else {
-			System.err.println("Trying to use classpath apktool...");
-			apktoolJar = ClassPathHelper.getClasspathJar("apktool", parameters.classpath);
-		    }
-                } catch (Exception ex) {
-                    System.err.println("Error: could not find apktool, please set " + APKTOOL_HOME_ENV_VAR);
-                    return;
-                }
-                String[] empty = new String[0];
-                JHelper.runJar(empty, empty, apktoolJar, cmdArgs, TAG, true, null);
-            }
+            } else
+                Resources.invokeResourceJar(logger, "apktool", "APKTOOL", null, cmdArgs);
         } catch (IOException ex) {
             System.err.println("Error: could not run apktool.");
             ex.printStackTrace();
