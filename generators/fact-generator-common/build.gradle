@@ -10,18 +10,9 @@ repositories {
     mavenCentral()
     maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
     maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
-    maven {
-        name "soot-snapshot"
-        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
-    }
-    maven {
-        name "soot-release"
-        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
-    }
 }
 
 dependencies {
-
     compile "org.clyze:clue-common:${clueCommonVersion}",
             "org.ow2.asm:asm-debug-all:5.1",          // Java Bytecode library
             "org.smali:dexlib2:2.2.5",                // Dexlib2: library for reading/modifying/writing Android dex files
