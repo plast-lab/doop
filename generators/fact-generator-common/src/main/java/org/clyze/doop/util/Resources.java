@@ -15,24 +15,29 @@ import org.clyze.utils.JHelper;
  * (such as standalone programs in JAR form).
  */
 public class Resources {
-    public static void invokeResourceJar(Logger log, String resource, String TAG, String[] jvmArgs, String[] args)
+    public static void invokeResourceJar(String doopHome, Logger logger, String resource, String TAG, String[] jvmArgs, String[] args)
         throws IOException {
         String resourceJar = null;
-        String doopHome = System.getenv("DOOP_HOME");
 
         List<String> matches = new LinkedList<>();
         if (doopHome != null) {
-            for (File f : (new File(doopHome + File.separator + "resources")).listFiles())
+            // Remove quotes used for escaping in the command line.
+            doopHome = doopHome.replaceAll("\"", "");
+            File resourcesDir = new File(doopHome + File.separator + "resources");
+            if (!resourcesDir.exists())
+                throw new RuntimeException("ERROR: resources directory does not exist: " + resourcesDir.getCanonicalPath());
+            for (File f : resourcesDir.listFiles())
                 if (f.getName().startsWith(resource))
-                    matches.add(f.getAbsolutePath());
+                    matches.add(f.getCanonicalPath());
 
             if ((matches != null) && matches.size() > 0) {
                 // Use last JAR in case many are found (to select most recent version).
                 Collections.sort(matches);
                 resourceJar = matches.get(matches.size()-1);
-                log.debug("Running resource: " + resourceJar);
+                logger.debug("Running resource: " + resourceJar);
             }
-        }
+        } else
+            throw new RuntimeException("ERROR: cannot find resource '" + resource + "', no DOOP_HOME");
 
         if (resourceJar == null) {
             String msg = "Bundled resource could not be found: " + resource + " (doopHome: " + doopHome + ", matching resources: " + matches.size() + ")";
@@ -43,10 +48,27 @@ public class Resources {
         if (jvmArgs == null)
             jvmArgs = new String[0];
 
+        // Pass DOOP_HOME to called program via system property.
+        String[] newJvmArgs = new String[jvmArgs.length + 1];
+        newJvmArgs[0] = "-DDOOP_HOME=\"" + doopHome + "\"";
+        System.arraycopy(jvmArgs, 0, newJvmArgs, 1, jvmArgs.length);
+        jvmArgs = newJvmArgs;
+
         OutputConsumer proc = new OutputConsumer();
-        JHelper.runJar(new String[0], jvmArgs, resourceJar, args, TAG, log.isDebugEnabled(), proc);
+        JHelper.runJar(new String[0], jvmArgs, resourceJar, args, TAG, logger.isDebugEnabled(), proc);
         if (proc.error != null)
             throw new RuntimeException(proc.error);
+    }
+
+    /**
+     * Method to find DOOP_HOME when the Doop class is not available.
+     */
+    public static String findDoopHome(Logger logger) {
+        String doopHome = System.getenv("DOOP_HOME");
+        if (doopHome == null)
+            doopHome = System.getProperty("DOOP_HOME");
+        logger.debug("findDoopHome()=" + doopHome);
+        return doopHome;
     }
 }
 

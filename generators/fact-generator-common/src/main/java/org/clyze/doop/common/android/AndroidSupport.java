@@ -243,8 +243,10 @@ public abstract class AndroidSupport {
                 cmd[0] = apktoolHome + File.separator + "apktool";
                 System.arraycopy(cmdArgs, 0, cmd, 1, cmdArgs.length);
                 JHelper.runWithOutput(cmd, TAG);
-            } else
-                Resources.invokeResourceJar(logger, "apktool", "APKTOOL", null, cmdArgs);
+            } else {
+                String doopHome = Resources.findDoopHome(logger);
+                Resources.invokeResourceJar(doopHome, logger, "apktool", "APKTOOL", null, cmdArgs);
+            }
         } catch (IOException ex) {
             System.err.println("Error: could not run apktool.");
             ex.printStackTrace();

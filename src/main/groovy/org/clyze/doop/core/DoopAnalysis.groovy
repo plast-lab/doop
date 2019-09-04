@@ -509,7 +509,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         String[] args0 = [ "--args-file", argsFile ] as String[]
                         String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
                         // Invoke the Soot-based fact generator using a separate JVM.
-                        Resources.invokeResourceJar(log, 'soot-fact-generator', 'SOOT_FACT_GEN', jvmArgs, args0)
+                        Resources.invokeResourceJar(Doop.doopHome, log, 'soot-fact-generator', 'SOOT_FACT_GEN', jvmArgs, args0)
                     }
                     // Check if fact generation must be restarted due to missing classes.
                     if (missingClasses != null && missingClasses.exists()) {
@@ -611,7 +611,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                Resources.invokeResourceJar(log, 'wala-fact-generator', 'WALA_FACT_GEN', null, params.toArray(new String[params.size()]))
+                Resources.invokeResourceJar(Doop.doopHome, log, 'wala-fact-generator', 'WALA_FACT_GEN', null, params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -627,7 +627,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of dex front-end: ${params.join(' ')}"
 
         try {
-            Resources.invokeResourceJar(log, 'dex-fact-generator', 'DEX_FACT_GEN', null, params.toArray(new String[params.size()]))
+            Resources.invokeResourceJar(Doop.doopHome, log, 'dex-fact-generator', 'DEX_FACT_GEN', null, params.toArray(new String[params.size()]))
         } catch (Exception ex) {
             ex.printStackTrace()
         }
@@ -660,7 +660,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                Resources.invokeResourceJar(log, 'wala-fact-generator', 'PYTHON_FACT_GEN', null, params.toArray(new String[params.size()]))
+                Resources.invokeResourceJar(Doop.doopHome, log, 'wala-fact-generator', 'PYTHON_FACT_GEN', null, params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
