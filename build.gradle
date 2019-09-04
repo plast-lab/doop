@@ -337,6 +337,10 @@ if (project.hasProperty('artifactory_user')) {
 
     afterReleaseBuild.dependsOn publish
 
+    (['fact-generator-common'] + frontends).each {
+        publishToMavenLocal.dependsOn ":generators:${it}:publishToMavenLocal"
+    }
+
     tasks.release.doLast {
         println "WARNING: Tag may not be pushed upstream, please use:"
         println "WARNING:   git remote add upstream <UPSTREAM_REPO>"

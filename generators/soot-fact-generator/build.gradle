@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'groovy'
+    id 'maven-publish'
 }
 
 sourceCompatibility = "1.8"
@@ -59,5 +60,14 @@ task uninstallJar() {
     doLast {
         def jar = fatJar.outputs.files.singleFile
         if (jar && jar.name) { delete "../../${resourcesDir}/${jar.name}" }
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId 'org.clyze'
+            artifact fatJar
+        }
     }
 }
