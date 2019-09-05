@@ -476,18 +476,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     redo = false
                     String SOOT_MAIN = "org.clyze.doop.soot.Main"
                     def args = params.toArray(new String[params.size()])
-                    String classpath = System.getenv("DOOP_EXT_CLASSPATH")
-                    if (classpath == null) {
-                        try {
-                            classpath = Manifests.read("Doop-Ext-Classpath")
-                        } catch (Exception ex) {
-                            log.debug "Cannot determine external classpath."
-                        }
-                    }
-                    if (!java9Plus() && (options.LEGACY_SOOT_INVOCATION.value || (classpath == null))) {
-                        if (classpath == null) {
-                            log.warn 'WARNING: No "DOOP_EXT_CLASSPATH" environment variable found, Soot-based fact generation will be invoked by custom class loader. Please run Doop via Gradle to override this behavior.'
-                        }
+                    if (!java9Plus() && options.LEGACY_SOOT_INVOCATION.value) {
                         // We invoke the Soot-based fact generator reflectively
                         // using a separate class-loader to be able to support
                         // multiple soot invocations in the same JVM

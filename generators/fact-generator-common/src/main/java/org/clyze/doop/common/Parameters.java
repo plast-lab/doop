@@ -32,18 +32,11 @@ public class Parameters {
     public boolean _reportPhantoms = true;
     public boolean _dex = false;
     public boolean _legacyAndroidProcessing = false;
-    public Set<String> classpath = null;
 
     public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
 
     public Parameters() {
         setAppRegex("**");
-
-        String cp = System.getenv("DOOP_EXT_CLASSPATH");
-        if (cp != null) {
-            classpath = new HashSet<>();
-            Collections.addAll(classpath, cp.split(":"));
-        }
     }
 
     private void processArgs(String[] args) throws DoopErrorCodeException {
