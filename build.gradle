@@ -259,7 +259,7 @@ def frontends = ['dex-fact-generator', 'soot-fact-generator', 'wala-fact-generat
 
 // Connect task dependencies against fact generator subprojects.
 frontends.each { fg ->
-    [ jar, run, test ].each {
+    [ run, test ].each {
         it.dependsOn(":generators:${fg}:installJar")
         it.dependsOn resolveApktool
     }
