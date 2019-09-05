@@ -78,7 +78,7 @@ compileGroovy {
 
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.groovyVersion="2.5.7"
-gradle.rootProject.ext.clueCommonVersion='3.13.+'
+gradle.rootProject.ext.clueCommonVersion='[3.13.0,)'  // Maven style instead of .*
 gradle.rootProject.ext.spockVersion='1.3-groovy-2.5'
 // Set other variables for subprojects.
 gradle.rootProject.ext.resourcesDir='resources'
