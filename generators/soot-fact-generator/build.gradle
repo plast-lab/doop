@@ -2,7 +2,6 @@ plugins {
     id 'java'
     id 'groovy'
     id 'maven-publish'
-    id 'net.researchgate.release'
 }
 
 sourceCompatibility = "1.8"
