@@ -161,13 +161,15 @@ class DexMethodFactWriter extends JavaFactWriter {
 
         if (!isStatic) {
             String thisVar = DexRepresentation.thisVarId(methId);
-            String type = raiseTypeId(m.getDefiningClass());
-            writeThisVar(methId, thisVar, type);
+            writeThisVar(methId, thisVar, mf.declaringClass);
         }
-        if (isNative && !"void".equals(mf.retType)) {
-            String var = JavaRepresentation.nativeReturnVarOfMethod(methId);
-            _db.add(NATIVE_RETURN_VAR, var, methId);
-            writeLocal(var, mf.retType, methId);
+        if (isNative) {
+            writeNativeMethodId(methId, mf.declaringClass, mf.simpleName);
+            if (!"void".equals(mf.retType)) {
+                String var = JavaRepresentation.nativeReturnVarOfMethod(methId);
+                _db.add(NATIVE_RETURN_VAR, var, methId);
+                writeLocal(var, mf.retType, methId);
+            }
         }
 
         DexBackedMethodImplementation mi = m.getImplementation();

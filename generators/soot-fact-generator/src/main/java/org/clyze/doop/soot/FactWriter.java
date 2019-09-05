@@ -523,6 +523,10 @@ class FactWriter extends JavaFactWriter {
         }
     }
 
+    void writeNativeMethodId(SootMethod m) {
+        writeNativeMethodId(methodSig(m, null), m.getDeclaringClass().toString(), _rep.simpleName(m));
+    }
+
     void writeGoto(SootMethod m, GotoStmt stmt, Session session) {
         Unit to = stmt.getTarget();
         session.calcUnitNumber(stmt);

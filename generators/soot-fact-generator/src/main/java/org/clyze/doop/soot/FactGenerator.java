@@ -188,6 +188,7 @@ class FactGenerator implements Runnable {
 
         if(m.isNative())
         {
+            _writer.writeNativeMethodId(m);
             _writer.writeNativeReturnVar(m);
         }
 

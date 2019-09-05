@@ -349,4 +349,16 @@ public abstract class JavaFactWriter {
             value2 = "-";
         _db.add(ANNOTATION_ELEMENT, annotationKind, annotatedElement, parentId, thisId, name, value1, value2);
     }
+
+    /**
+     * Map native Java methods to native code entry points. Based on
+     * section "Resolving Native Method Names" in the JNI spec:
+     * https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html
+     *
+     * Overloaded JNI names are computed later, in Datalog.
+     */
+    protected void writeNativeMethodId(String methodId, String type, String name) {
+        String jniMethodId = "Java_" + type.replaceAll("\\.", "_") + "_" + name;
+        _db.add(NATIVE_METHOD_ID, methodId, jniMethodId);
+    }
 }

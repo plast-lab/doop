@@ -646,9 +646,16 @@ public class WalaFactWriter extends JavaFactWriter {
     void writeNativeReturnVar(IMethod m) {
         String methodId = _rep.signature(m);
 
-        String  var = _rep.nativeReturnVar(m);
+        String var = _rep.nativeReturnVar(m);
         _db.add(NATIVE_RETURN_VAR, var, methodId);
         writeLocal(var, writeType(m.getReturnType()), methodId);
+    }
+
+    void writeNativeMethodId(IMethod m) {
+        String methodId = _rep.signature(m);
+        String name = WalaRepresentation.simpleName(m.getReference());
+        String type = writeType(m.getReference().getDeclaringClass());
+        writeNativeMethodId(methodId, type, name);
     }
 
     void writeGoto(IMethod m, SSAGotoInstruction instruction, SSAInstruction to, Session session) {

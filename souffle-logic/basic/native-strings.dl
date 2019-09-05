@@ -29,22 +29,13 @@ PossibleNativeCodeTargetMethodLocalized(?method, ?function, ?file) :-
   PossibleNativeCodeTargetMethod(?method, ?function, ?file),
   ?function != "-".
 
-// The following rules map native Java methods to native code entry
-// points. Based on section "Resolving Native Method Names" in the JNI spec:
-// https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html
+.decl OverloadedJNIMethod(?javaMethod:Method, ?type:ReferenceType, ?name:symbol, ?descriptor:symbol)
 
-.decl JNIMethod(?javaMethod:Method, ?type:ReferenceType, ?name:symbol, ?descriptor:symbol)
-
-JNIMethod(?javaMethod, ?type, ?name, ?descriptor) :-
+OverloadedJNIMethod(?javaMethod, ?type, ?name, ?descriptor) :-
   Method_Modifier("native", ?javaMethod),
   Method_SimpleName(?javaMethod, ?name),
   Method_Descriptor(?javaMethod, ?descriptor),
-  Method_DeclaringType(?javaMethod, ?type).
-
-.decl OverloadedJNIMethod(?javaMethod:Method)
-
-OverloadedJNIMethod(?javaMethod) :-
-  JNIMethod(?javaMethod, ?type, ?name, _),
+  Method_DeclaringType(?javaMethod, ?type),
   MethodLookup(?name, _, ?type, ?method1),
   MethodLookup(?name, _, ?type, ?method2),
   ?method1 != ?method2.
@@ -54,14 +45,14 @@ OverloadedJNIMethod(?javaMethod) :-
 
 // Non-overloaded native method (default, always generated).
 JNIMethod_NativeId(?javaMethod, ?nativeId) :-
-  JNIMethod(?javaMethod, ?type, ?name, _),
-  ?nativeId = cat("Java_", cat(?type, cat("_", ?name))).
+  _NativeMethodId(?javaMethod, ?nativeId),
+  isMethod(?javaMethod).
 
-// Overloaded native method.
+// Overloaded native method, use computed name as prefix (see JNI spec).
 JNIMethod_NativeId(?javaMethod, ?nativeId) :-
-  OverloadedJNIMethod(?javaMethod),
-  JNIMethod(?javaMethod, ?type, ?name, ?descriptor),
-  ?nativeId = cat("Java_", cat(?type, cat("_", cat(?name, cat("__", ?descriptor))))).
+  OverloadedJNIMethod(?javaMethod, _, _, ?descriptor),
+  _NativeMethodId(?javaMethod, ?nativeIdBase),
+  ?nativeId = cat(?nativeIdBase, cat("__", ?descriptor)).
 
 // Call-graph edges from native methods. This only captures direct call-graph
 // edges from native methods; if a native method calls other native code to do
