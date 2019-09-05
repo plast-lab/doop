@@ -73,4 +73,19 @@ publishing {
     }
 }
 
-task release(overwrite: true) { }
+if (project.hasProperty('artifactory_user')) {
+
+    publishing {
+        repositories {
+            maven {
+                credentials {
+                    username artifactory_user
+                    password artifactory_password
+                }
+                url "$artifactory_contextUrl/libs-release-local"
+            }
+        }
+    }
+
+    afterReleaseBuild.dependsOn publish
+}
