@@ -334,9 +334,20 @@ if (project.hasProperty('artifactory_user')) {
     def factGeneratorProjs = ['fact-generator-common'] + frontends
 
     subprojects { subProj ->
-        if (factGeneratorProjs.findAll { it.contains(subProj.name) }.size() > 0) {
+        if (frontends.findAll { it.contains(subProj.name) }.size() > 0) {
             task release(overwrite: true) {
                 //overwrite release task in the subprojects
+            }
+            publishing {
+                repositories {
+                    maven {
+                        credentials {
+                            username artifactory_user
+                            password artifactory_password
+                        }
+                        url "$artifactory_contextUrl/libs-release-local"
+                    }
+                }
             }
         }
     }
