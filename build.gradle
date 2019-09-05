@@ -118,6 +118,10 @@ applicationDistribution.from(file("$projectDir/souffle-logic")) {
     into 'souffle-logic'
 }
 
+applicationDistribution.from(file("${projectDir}/${resourcesDir}")) {
+    into resourcesDir
+}
+
 applicationDistribution.from(projectDir) {
     include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
 }
@@ -259,7 +263,7 @@ def frontends = ['dex-fact-generator', 'soot-fact-generator', 'wala-fact-generat
 
 // Connect task dependencies against fact generator subprojects.
 frontends.each { fg ->
-    [ run, test ].each {
+    [ run, test, distTar, distZip ].each {
         it.dependsOn(":generators:${fg}:installJar")
         it.dependsOn resolveApktool
     }
