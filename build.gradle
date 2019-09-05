@@ -329,6 +329,7 @@ if (project.hasProperty('artifactory_user')) {
     }
 
     afterReleaseBuild.dependsOn publish
+    frontends.each { afterReleaseBuild.dependsOn ":generators:${it}:publish" }
 
     (['fact-generator-common'] + frontends).each {
         publishToMavenLocal.dependsOn ":generators:${it}:publishToMavenLocal"
