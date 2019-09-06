@@ -266,9 +266,23 @@ frontends.each { fg ->
         it.dependsOn(":generators:${fg}:installJar")
         it.dependsOn resolveApktool
     }
-    clean.dependsOn(":generators:${fg}:uninstallJar")
     testAll.dependsOn(":generators:${fg}:test")
 }
+
+// Uninstall resources on 'clean'.
+task uninstallResources {
+    doLast {
+        def resDir = "${projectDir}/${resourcesDir}"
+        file(resDir).list().each { f ->
+            (frontends + ["apktool"]).each { res ->
+                if (f.startsWith(res) && f.toLowerCase().endsWith("jar")) {
+                    delete "${resDir}/${f}"
+                }
+            }
+        }
+    }
+}
+clean.dependsOn uninstallResources
 
 task fullClean {
     description 'Clean everything, including caches and analysis results.'
