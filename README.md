@@ -201,3 +201,9 @@ Solution: Ensure that you do not use the legacy Logicblox mode
 Solution: Add platform-specific libraries as extra inputs. For
 example, for Java 8, these could be: `apple.laf-jdk1.8.jar`,
 `sun.lwawt-jdk1.8.jar`, and `com.apple-jdk1.8.jar`.
+
+*Problem:* Fact generation runs out of memory.
+
+Solution: Change the "maximum heap size" or "stack size" options in
+build.gradle (if running via Gradle) or in the DEFAULT_JVM_OPTS
+environment variable in bin/doop (if using a Doop distrubution).
