@@ -63,12 +63,6 @@ class WalaScopeReader {
     public static AnalysisScope setUpAndroidAnalysisScope(Iterable<String> inputs, String exclusions, Iterable<String> androidLibs, Iterable<String> appLibs) throws IOException {
         AnalysisScope scope;
         scope = AnalysisScope.createJavaAnalysisScope();
-
-        File exclusionsFile = new File(exclusions);
-        try (final InputStream fs = exclusionsFile.exists()? new FileInputStream(exclusionsFile): FileProvider.class.getClassLoader().getResourceAsStream(exclusionsFile.getName())) {
-            scope.setExclusions(new FileOfClasses(fs));
-        }
-
         scope.setLoaderImpl(ClassLoaderReference.Primordial,
                 "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
 

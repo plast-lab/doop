@@ -587,12 +587,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runWala(String platform, Collection<String> deps, List<File> platforms, Collection<String> params) {
-        if (platform == "android") {
-            // This uses all platformLibs.
-            // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-            // This uses just platformLibs[0], assumed to be android.jar.
-            params.addAll(["--android-jars", platforms.first().absolutePath])
-        } else if (platform != "java") {
+        if ((platform != "android") && (platform != "java")) {
             throw new RuntimeException("Unsupported platform: ${platform}")
         }
 
