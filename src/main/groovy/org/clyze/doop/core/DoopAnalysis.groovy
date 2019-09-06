@@ -498,7 +498,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         String[] args0 = [ "--args-file", argsFile ] as String[]
                         String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
                         // Invoke the Soot-based fact generator using a separate JVM.
-                        Resources.invokeResourceJar(Doop.doopHome, log, 'soot-fact-generator', 'SOOT_FACT_GEN', jvmArgs, args0)
+                        invokeFactGenerator('SOOT_FACT_GEN', jvmArgs, 'soot-fact-generator', args0)
                     }
                     // Check if fact generation must be restarted due to missing classes.
                     if (missingClasses != null && missingClasses.exists()) {
@@ -600,7 +600,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                Resources.invokeResourceJar(Doop.doopHome, log, 'wala-fact-generator', 'WALA_FACT_GEN', null, params.toArray(new String[params.size()]))
+                invokeFactGenerator('WALA_FACT_GEN', null, 'wala-fact-generator', params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -616,7 +616,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of dex front-end: ${params.join(' ')}"
 
         try {
-            Resources.invokeResourceJar(Doop.doopHome, log, 'dex-fact-generator', 'DEX_FACT_GEN', null, params.toArray(new String[params.size()]))
+            invokeFactGenerator('DEX_FACT_GEN', null, 'dex-fact-generator', params.toArray(new String[params.size()]))
         } catch (Exception ex) {
             ex.printStackTrace()
         }
@@ -649,7 +649,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                Resources.invokeResourceJar(Doop.doopHome, log, 'wala-fact-generator', 'PYTHON_FACT_GEN', null, params.toArray(new String[params.size()]))
+                invokeFactGenerator('PYTHON_FACT_GEN', null, 'wala-fact-generator', params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -756,5 +756,37 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         } catch (ClassNotFoundException ex) {
             return false
         }
+    }
+
+    /**
+     * Invoke a fact generator bundled as a JAR in Doop's resources.
+     *
+     * @param TAG          the tag to use to mark fact generator output
+     * @param jvmArgs      the JVM arguments to use (memory options should be set separately, via properties)
+     * @param resource     the prefix of the fact generator JAR (should match one resource)
+     * @param args         the fact generation arguments
+     */
+    public void invokeFactGenerator(String TAG, String[] jvmArgs, String resource, String[] args) {
+        if (jvmArgs == null)
+            jvmArgs = new String[0]
+
+        // Read properties to get JVM arguments for calling the fact generators.
+        List<String> jvmMemArgs = []
+
+        String maxHeapSize = System.getProperty("maxHeapSize")
+        if (maxHeapSize != null)
+            jvmMemArgs.add("-Xmx" + maxHeapSize)
+
+        String stackSize = System.getProperty("stackSize")
+        if (stackSize != null)
+            jvmMemArgs.add("-Xss" + stackSize)
+
+        String reservedCodeCacheSize = System.getProperty("reservedCodeCacheSize")
+        if (reservedCodeCacheSize)
+            jvmMemArgs.add("-XX:ReservedCodeCacheSize=" + reservedCodeCacheSize)
+
+        log.debug "Memory JVM args: ${jvmMemArgs}"
+        String[] jvmArgs0 = (jvmArgs + jvmMemArgs) as String[]
+        Resources.invokeResourceJar(Doop.doopHome, log, TAG, jvmArgs0, resource, args)
     }
 }

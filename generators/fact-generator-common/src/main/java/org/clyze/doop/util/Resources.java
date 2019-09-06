@@ -15,7 +15,18 @@ import org.clyze.utils.JHelper;
  * (such as standalone programs in JAR form).
  */
 public class Resources {
-    public static void invokeResourceJar(String doopHome, Logger logger, String resource, String TAG, String[] jvmArgs, String[] args)
+
+    /**
+     * Run a program bundled as a JAR in the resources.
+     *
+     * @param doopHome     the Doop installation home
+     * @param logger       the log4j logger to use
+     * @param TAG          the tag to use to mark program output
+     * @param jvmArgs      the JVM arguments (may be null)
+     * @param resource     the prefix of the resource JAR (should match one resource)
+     * @param args         the arguments to pass to the program
+     */
+    public static void invokeResourceJar(String doopHome, Logger logger, String TAG, String[] jvmArgs, String resource, String[] args)
         throws IOException {
         String resourceJar = null;
 
@@ -45,19 +56,25 @@ public class Resources {
             throw new RuntimeException(msg);
         }
 
-        if (jvmArgs == null)
-            jvmArgs = new String[0];
-
-        // Pass DOOP_HOME to called program via system property.
-        String[] newJvmArgs = new String[jvmArgs.length + 1];
-        newJvmArgs[0] = "-DDOOP_HOME=\"" + doopHome + "\"";
-        System.arraycopy(jvmArgs, 0, newJvmArgs, 1, jvmArgs.length);
-        jvmArgs = newJvmArgs;
+        // Add extra flags.
+        jvmArgs = extraJvmArgs(jvmArgs, doopHome);
 
         OutputConsumer proc = new OutputConsumer();
         JHelper.runJar(new String[0], jvmArgs, resourceJar, args, TAG, logger.isDebugEnabled(), proc);
         if (proc.error != null)
             throw new RuntimeException(proc.error);
+    }
+
+    private static String[] extraJvmArgs(String[] jvmArgs, String doopHome) {
+        if (jvmArgs == null)
+            jvmArgs = new String[0];
+
+        int extraArgs = 1;
+        String[] newJvmArgs = new String[jvmArgs.length + extraArgs];
+        // Pass DOOP_HOME to called program via system property.
+        newJvmArgs[0] = "-DDOOP_HOME=\"" + doopHome + "\"";
+        System.arraycopy(jvmArgs, 0, newJvmArgs, extraArgs, jvmArgs.length);
+        return newJvmArgs;
     }
 
     /**

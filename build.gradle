@@ -20,10 +20,10 @@ plugins {
     id 'net.researchgate.release' version '2.6.0'
 }
 
-def maxHeap = '12000m'
-
 // Warning: -Xss is restricted in recent Java versions.
-applicationDefaultJvmArgs = ["-Xmx${maxHeap}", "-Xss1000m"]
+def defaultFactGenJvmArgs = ["-DmaxHeapSize=12000m", "-DstackSize=1000m"]
+
+applicationDefaultJvmArgs = defaultFactGenJvmArgs
 
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
@@ -241,8 +241,7 @@ test {
     // failFast = true
     maxParallelForks = 1
     // forkEvery = 1
-    maxHeapSize = maxHeap
-    jvmArgs '-XX:ReservedCodeCacheSize=1g'
+    jvmArgs ['-DreservedCodeCacheSize=1g'] + defaultFactGenJvmArgs
     testLogging {
         exceptionFormat = 'full'
     }
