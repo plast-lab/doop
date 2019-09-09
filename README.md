@@ -170,6 +170,14 @@ run. This can help with dependency resolution issues due to network
 connectivity or to avoid Gradle overhead when running Doop in batch
 mode.
 
+### Using Doop as a library
+
+Directory docs/doop-as-lib contains a test program that links against
+Doop and runs an analysis on a simple hello-world program.
+
+Please consult its Gradle build script (build.gradle) for details on
+how to set up and call Doop from another program.
+
 ## License
 UPL (see [LICENSE](LICENSE)).
 
