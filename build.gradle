@@ -367,7 +367,7 @@ if (project.hasProperty('artifactory_user')) {
                     username artifactory_user
                     password artifactory_password
                 }
-                url "$artifactory_contextUrl/libs-release-local"
+                url "$artifactory_contextUrl/libs-public-release-local"
             }
         }
     }
