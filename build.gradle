@@ -20,10 +20,10 @@ plugins {
     id 'net.researchgate.release' version '2.6.0'
 }
 
-// Warning: -Xss is restricted in recent Java versions.
-def defaultFactGenJvmArgs = ["-DmaxHeapSize=12000m", "-DstackSize=1000m"]
+def maxHeap = '12000m'
 
-applicationDefaultJvmArgs = defaultFactGenJvmArgs
+// Warning: -Xss is restricted in recent Java versions.
+applicationDefaultJvmArgs = ["-Xmx${maxHeap}", "-Xss1000m"]
 
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
@@ -40,6 +40,32 @@ if (project.hasProperty('heapDLVersion'))
 
 wrapper {
     gradleVersion = "5.4.1"
+}
+
+def allGeneratorProjects = subprojects.findAll { it.name.indexOf('fact-generator') >= 0 }
+allGeneratorProjects.each {
+    //common configuration for all generator sub-projects
+    it.with {
+        apply(plugin: 'java')
+
+        group = gradle.rootProject.group
+        sourceCompatibility = gradle.rootProject.sourceCompatibility
+        targetCompatibility = gradle.rootProject.targetCompatibility
+
+        repositories {
+            mavenLocal()
+            mavenCentral()
+            maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
+            maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+        }
+    }
+}
+
+def frontendGeneratorProjects = allGeneratorProjects.findAll { it.name.indexOf('common') == -1 }
+//all frontends have a fatJar task, which we explicitly (re)define it here, so we can reference it without issues in
+//the publishing spec
+frontendGeneratorProjects.each {
+    it.tasks.create('fatJar', Jar)
 }
 
 repositories {
@@ -241,7 +267,8 @@ test {
     // failFast = true
     maxParallelForks = 1
     // forkEvery = 1
-    jvmArgs ['-DreservedCodeCacheSize=1g'] + defaultFactGenJvmArgs
+    maxHeapSize = maxHeap
+    jvmArgs '-XX:ReservedCodeCacheSize=1g'
     testLogging {
         exceptionFormat = 'full'
     }
@@ -258,7 +285,7 @@ test.dependsOn buildTests
 task testAll(type: Test) { }
 testAll.dependsOn test
 
-def frontends = ['dex-fact-generator', 'soot-fact-generator', 'wala-fact-generator']
+def frontends = frontendGeneratorProjects.collect { it.name }
 
 // Connect task dependencies against fact generator subprojects.
 frontends.each { fg ->
@@ -266,6 +293,7 @@ frontends.each { fg ->
         it.dependsOn(":generators:${fg}:installJar")
         it.dependsOn resolveApktool
     }
+    clean.dependsOn(":generators:${fg}:uninstallJar")
     testAll.dependsOn(":generators:${fg}:test")
 }
 
@@ -324,6 +352,16 @@ if (project.hasProperty('artifactory_user')) {
                     classifier "logic-files"
                 }
             }
+
+            allGeneratorProjects.each { p ->
+                create(p.name, MavenPublication) {
+                    def taskThatGeneratesTheArtifact = p.hasProperty('fatJar') ? p.fatJar : p.jar
+                    artifact(taskThatGeneratesTheArtifact) {
+                        groupId 'org.clyze'
+                        artifactId p.name
+                    }
+                }
+            }
         }
 
         repositories {
@@ -346,37 +384,23 @@ if (project.hasProperty('artifactory_user')) {
     }
 
     afterReleaseBuild.dependsOn publish
-    frontends.each { afterReleaseBuild.dependsOn ":generators:${it}:publish" }
-
-    def factGeneratorProjs = ['fact-generator-common'] + frontends
-
-    subprojects { subProj ->
-        if (frontends.findAll { it.contains(subProj.name) }.size() > 0) {
-            task release(overwrite: true) {
-                //overwrite release task in the subprojects
-            }
-            publishing {
-                repositories {
-                    maven {
-                        credentials {
-                            username artifactory_user
-                            password artifactory_password
-                        }
-                        url "$artifactory_contextUrl/libs-release-local"
-                    }
-                }
-            }
-        }
-    }
-
-    factGeneratorProjs.each {
-        publishToMavenLocal.dependsOn ":generators:${it}:publishToMavenLocal"
-    }
 
     tasks.release.doLast {
         println "WARNING: Tag may not be pushed upstream, please use:"
         println "WARNING:   git remote add upstream <UPSTREAM_REPO>"
         println "WARNING:   git push upstream <TAG>"
     }
-
 }
+
+/* Handy for debugging task dependencies
+gradle.taskGraph.whenReady {taskGraph ->
+    println "Found task graph: " + taskGraph
+    println "Found " + taskGraph.allTasks.size() + " tasks."
+    taskGraph.allTasks.forEach { task ->
+        println task
+        task.dependsOn.forEach { dep ->
+            println "  - " + dep
+        }
+    }
+}
+*/

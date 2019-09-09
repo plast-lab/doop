@@ -1,17 +1,8 @@
 plugins {
-    id 'java'
     id 'groovy'
-    id 'maven-publish'
 }
 
-sourceCompatibility = "1.8"
-targetCompatibility = "1.8"
-
 repositories {
-    mavenLocal()
-    mavenCentral()
-    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
-    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
     maven {
         name "soot-snapshot"
         url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
@@ -42,7 +33,8 @@ dependencies {
     testCompile "org.spockframework:spock-core:${spockVersion}"
 }
 
-task fatJar(type: Jar) {
+//fatJar already exists
+fatJar {
     manifest {
         attributes 'Main-Class': 'org.clyze.doop.soot.Main'
     }
@@ -60,14 +52,5 @@ task uninstallJar() {
     doLast {
         def jar = fatJar.outputs.files.singleFile
         if (jar && jar.name) { delete "../../${resourcesDir}/${jar.name}" }
-    }
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId 'org.clyze'
-            artifact fatJar
-        }
     }
 }
