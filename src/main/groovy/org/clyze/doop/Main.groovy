@@ -23,7 +23,7 @@ import java.util.concurrent.TimeoutException
 class Main {
 
 	// Allow access to the analysis object from external code
-	static DoopAnalysis analysis
+	public static DoopAnalysis analysis
 
 	static void main(String[] args) {
 		try {

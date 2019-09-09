@@ -67,13 +67,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     static final INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
 
-    String getId() { options.USER_SUPPLIED_ID.value as String }
+    public String getId() { options.USER_SUPPLIED_ID.value as String }
 
-    String getName() { options.ANALYSIS.value.toString().replace(File.separator, "-") }
+    public String getName() { options.ANALYSIS.value.toString().replace(File.separator, "-") }
 
-    File getOutDir() { options.OUT_DIR.value as File }
+    public File getOutDir() { options.OUT_DIR.value as File }
 
-    File getCacheDir() { options.CACHE_DIR.value as File }
+    public File getCacheDir() { options.CACHE_DIR.value as File }
 
     List<File> getInputFiles() { options.INPUTS.value as List<File> }
 
