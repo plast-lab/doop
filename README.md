@@ -170,9 +170,48 @@ run. This can help with dependency resolution issues due to network
 connectivity or to avoid Gradle overhead when running Doop in batch
 mode.
 
+### Using Doop as a library
+
+Directory docs/doop-as-lib contains a test program that links against
+Doop and runs an analysis on a simple hello-world program.
+
+Please consult its Gradle build script (build.gradle) for details on
+how to set up and call Doop from another program.
+
 ## License
 UPL (see [LICENSE](LICENSE)).
 
 
 ## Development on Doop
 The `doop` command is a script for Gradle build tasks. If you want to see all available tasks (e.g., how to build stand-alone packages of Doop for offline use), try `./gradlew tasks`. Generally, for development and integration instructions, please consult the [Doop Developer Guide](docs/documentation.md).
+
+
+## Troubleshooting
+
+*Problem:* Analyzing a program as a "super-JAR" (all classes given as
+a JAR after `-i`) shows less methods reachable compared to analyzing
+the same program split into "app" JAR inputs (with `-i`) and library
+JAR inputs (after `-l`).
+
+Solution: Use a recent version of Doop (after 4.20.15).
+
+*Problem:* Analyzing a program with dynamic features (reflection,
+dynamic proxies, lambdas, method handles, method references,
+dependency injection, test framework code), Doop fails to handle these
+features.
+
+Solution: Ensure that you do not use the legacy Logicblox mode
+(`--lb`) and appropriate options are set (check `doop --help`).
+
+*Problem:* Analyzing a program targeting Java on an Apple platform
+ shows missing ("phantom") classes.
+
+Solution: Add platform-specific libraries as extra inputs. For
+example, for Java 8, these could be: `apple.laf-jdk1.8.jar`,
+`sun.lwawt-jdk1.8.jar`, and `com.apple-jdk1.8.jar`.
+
+*Problem:* Fact generation runs out of memory.
+
+Solution: Change the "maximum heap size" or "stack size" options in
+build.gradle (if running via Gradle) or in the DEFAULT_JVM_OPTS
+environment variable in bin/doop (if using a Doop distrubution).

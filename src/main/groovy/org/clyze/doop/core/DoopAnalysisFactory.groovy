@@ -67,7 +67,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def context
 		def platformName = options.PLATFORM.value as String
 		if (platformName.contains("python")) {
-			context = new DefaultInputResolutionContext(DefaultInputResolutionContext.PYTHON_RESOLVER)
+			context = new DefaultInputResolutionContext(DefaultInputResolutionContext.pythonResolver(new File(Doop.doopTmp)))
 		} else {
 			context = newJavaDefaultInputResolutionContext()
 		}
@@ -110,7 +110,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def commandsEnv = initExternalCommandsEnvironment(options)
 		createOutputDirectory(options)
 
-		if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value) {
+		if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value && !options.PYTHON.value) {
 			checkAppGlob(options)
 		}
 

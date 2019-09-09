@@ -113,6 +113,9 @@ OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodType") :-
 .decl _NativeNameCandidate(?lib:symbol, ?function:symbol, ?name:symbol, ?offset1:number)
 .input _NativeNameCandidate(IO="file", filename="NativeNameCandidate.facts", delimiter="\t")
 
+.decl _NativeMethodId(?javaMethod:symbol, ?nativeId:symbol)
+.input _NativeMethodId(IO="file", filename="NativeMethodId.facts", delimiter="\t")
+
 // EmptyArray
 
 .decl _EmptyArray(?id:symbol)

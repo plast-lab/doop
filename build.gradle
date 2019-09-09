@@ -20,10 +20,8 @@ plugins {
     id 'net.researchgate.release' version '2.6.0'
 }
 
-def maxHeap = '12000m'
-
 // Warning: -Xss is restricted in recent Java versions.
-applicationDefaultJvmArgs = ["-Xmx${maxHeap}", "-Xss1000m"]
+def defaultFactGenJvmArgs = ["-DmaxHeapSize=12000m", "-DstackSize=1000m"]
 
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
@@ -40,6 +38,32 @@ if (project.hasProperty('heapDLVersion'))
 
 wrapper {
     gradleVersion = "5.4.1"
+}
+
+def allGeneratorProjects = subprojects.findAll { it.name.indexOf('fact-generator') >= 0 }
+allGeneratorProjects.each {
+    //common configuration for all generator sub-projects
+    it.with {
+        apply(plugin: 'java')
+
+        group = gradle.rootProject.group
+        sourceCompatibility = gradle.rootProject.sourceCompatibility
+        targetCompatibility = gradle.rootProject.targetCompatibility
+
+        repositories {
+            mavenLocal()
+            mavenCentral()
+            maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
+            maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+        }
+    }
+}
+
+def frontendGeneratorProjects = allGeneratorProjects.findAll { it.name.indexOf('common') == -1 }
+//all frontends have a fatJar task, which we explicitly (re)define it here, so we can reference it without issues in
+//the publishing spec
+frontendGeneratorProjects.each {
+    it.tasks.create('fatJar', Jar)
 }
 
 repositories {
@@ -59,6 +83,12 @@ repositories {
         maven { url 'https://jitpack.io' }
 }
 
+configurations {
+    apktool {
+        transitive = false
+    }
+}
+
 configurations.all {
     //This is required for SNAPSHOT dependencies
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
@@ -70,75 +100,38 @@ compileGroovy {
     groovyOptions.optimizationOptions.indy = true
 }
 
-def groovyVersion="2.5.7"
+// Set dependency version so that they are available to subprojects.
+gradle.rootProject.ext.groovyVersion="2.5.7"
+gradle.rootProject.ext.clueCommonVersion='3.13.0'
+gradle.rootProject.ext.spockVersion='1.3-groovy-2.5'
+// Set other variables for subprojects.
+gradle.rootProject.ext.resourcesDir='resources'
 
 dependencies {
-
-    compile "org.clyze:clue-common:3.11.0",
+    apktool "ext:apktool:2.4.0"                                 // needed for decoding APK inputs
+    compile project(':generators:fact-generator-common')
+    compile "org.clyze:clue-common:${clueCommonVersion}",
             "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
             "commons-io:commons-io:2.4",                        // File Utils
-            "org.ow2.asm:asm-debug-all:5.1",                    // Java Bytecode library
-            "org.smali:dexlib2:2.2.5",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
-            "net.dongliu:apk-parser:2.6.2",                     // needed for reading binary XML entries from APK inputs
             "com.google.guava:guava:27.1-jre",
-            "com.jcabi:jcabi-manifests:1.1",                    // manifest reader
+            "com.jcabi:jcabi-manifests:1.1"                     // manifest reader
 
-            // Soot - choose one of the following:
-            // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.
-            // "ext:sootclasses:3.2.7",
-            // (b) Upstream stable Soot version.
-            // "ca.mcgill.sable:soot:3.1.0",
-            // (c) Upstream 3.x + minimal changes (mostly equivalent to our fork).
-            "ext:sootclasses:3.1.0.MINIMAL",
-            // (d) Latest tested nightly build.
-            // "ext:sootclasses:trunk.20190225",
-            // (e) Soot for Java 9.
-            // "ca.mcgill.sable:soot-j9:4.0.0-SNAPSHOT",
-
-            "ext:AXMLPrinter:2.0",
-            "ext:soot-infoflow:2.5.1",
-            "ext:soot-infoflow-android:2.5.1",
-            // https://mvnrepository.com/artifact/gov.nist.math/jama
-            "gov.nist.math:jama:1.0.3",
-
-            /// WALA
-            /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
-            //"com.ibm.wala:com.ibm.wala.util:1.4.3",
-            "ext:com.ibm.wala.util:1.5.1-SNAPSHOT",
-            /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.core
-            //"com.ibm.wala:com.ibm.wala.core:1.4.3",
-            "ext:com.ibm.wala.core:1.5.1-SNAPSHOT",
-            /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.shrike
-            //"com.ibm.wala:com.ibm.wala.shrike:1.4.3",
-            "ext:com.ibm.wala.shrike:1.5.1-SNAPSHOT",
-            /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.dalvik
-            //"com.ibm.wala:com.ibm.wala.dalvik:1.4.3"
-            "ext:com.ibm.wala.dalvik:1.5.1-SNAPSHOT",
-            "ext:com.ibm.wala.cast:1.5.1-SNAPSHOT",
-            "ext:com.ibm.wala.cast.java:1.5.1-SNAPSHOT",
-            "ext:com.ibm.wala.cast.python:0.0.1-SNAPSHOT",
-            "ext:com.ibm.wala.cast.lsp:0.0.1-SNAPSHOT",
-            "org.python:jython:2.7.1b3"
-            //"commons-cli:commons-cli:1.3.1",
-            //"org.eclipse.lsp4j:org.eclipse.lsp4j:0.4.0"
-
-    // JPhantom is a runtime dependency
-    runtime "org.clyze:jphantom:1.2",
+    runtime "org.clyze:jphantom:1.2",                           // JPhantom is a runtime dependency
             "ext:herosclasses:1.1",
             "ext:axml:2.0",
-            "ext:apktool:2.4.0",                                // needed for decoding APK inputs
             "org.smali:util:2.2.5"                              // Dexlib2 utilities
 
     // JimpleParser
     antlr   "org.antlr:antlr4:4.5.1-1"
     compile "org.antlr:antlr4-runtime:4.5.1-1"
-    testCompile "org.spockframework:spock-core:1.3-groovy-2.5"
+
+    testCompile "org.spockframework:spock-core:${spockVersion}"
 }
 
 applicationDistribution.from(file("$projectDir/logic")) {
@@ -147,6 +140,10 @@ applicationDistribution.from(file("$projectDir/logic")) {
 
 applicationDistribution.from(file("$projectDir/souffle-logic")) {
     into 'souffle-logic'
+}
+
+applicationDistribution.from(file("${projectDir}/${resourcesDir}")) {
+    into resourcesDir
 }
 
 applicationDistribution.from(projectDir) {
@@ -170,16 +167,10 @@ jar {
     }
 }
 
-void setDoopCP(def environment) {
-    // Inform Doop about the current classpath.
-    environment.DOOP_EXT_CLASSPATH = doopCP()
-}
-
 run {
     //debug true
     // We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
-    setDoopCP(environment)
     if (project.hasProperty('args')) {
         args project.property('args').split()
     }
@@ -189,7 +180,7 @@ run {
 // isolated execution of Soot-based front end.
 task printExtClasspath {
     doLast {
-        println "DOOP_EXT_CLASSPATH=${doopCP()}"
+        println(doopCP())
     }
 }
 
@@ -257,6 +248,15 @@ task createEmptyProperties {
     }
 }
 
+task resolveApktool {
+    doLast {
+        copy {
+            from configurations.apktool.files[0]
+            into "${projectDir}/${resourcesDir}"
+        }
+    }
+}
+
 compileJava {
     options.compilerArgs << '-Xlint:unchecked'
 }
@@ -265,14 +265,12 @@ test {
     // failFast = true
     maxParallelForks = 1
     // forkEvery = 1
-    maxHeapSize = maxHeap
-    jvmArgs '-XX:ReservedCodeCacheSize=1g'
+    jvmArgs ['-DreservedCodeCacheSize=1g'] + defaultFactGenJvmArgs
     testLogging {
         exceptionFormat = 'full'
     }
     environment.DOOP_HOME = projectDir
     environment.HOME = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx"))).toString()
-    setDoopCP(environment)
 }
 
 task buildTests {
@@ -280,6 +278,36 @@ task buildTests {
 }
 testSubprojects.each { buildTests.dependsOn("tests:${it}:jar") }
 test.dependsOn buildTests
+
+task testAll(type: Test) { }
+testAll.dependsOn test
+
+def frontends = frontendGeneratorProjects.collect { it.name }
+
+// Connect task dependencies against fact generator subprojects.
+frontends.each { fg ->
+    [ run, test, distTar, distZip ].each {
+        it.dependsOn(":generators:${fg}:installJar")
+        it.dependsOn resolveApktool
+    }
+    clean.dependsOn(":generators:${fg}:uninstallJar")
+    testAll.dependsOn(":generators:${fg}:test")
+}
+
+// Uninstall resources on 'clean'.
+task uninstallResources {
+    doLast {
+        def resDir = "${projectDir}/${resourcesDir}"
+        file(resDir).list().each { f ->
+            (frontends + ["apktool"]).each { res ->
+                if (f.startsWith(res) && f.toLowerCase().endsWith("jar")) {
+                    delete "${resDir}/${f}"
+                }
+            }
+        }
+    }
+}
+clean.dependsOn uninstallResources
 
 task fullClean {
     description 'Clean everything, including caches and analysis results.'
@@ -321,6 +349,16 @@ if (project.hasProperty('artifactory_user')) {
                     classifier "logic-files"
                 }
             }
+
+            allGeneratorProjects.each { p ->
+                create(p.name, MavenPublication) {
+                    def taskThatGeneratesTheArtifact = p.hasProperty('fatJar') ? p.fatJar : p.jar
+                    artifact(taskThatGeneratesTheArtifact) {
+                        groupId 'org.clyze'
+                        artifactId p.name
+                    }
+                }
+            }
         }
 
         repositories {
@@ -329,7 +367,7 @@ if (project.hasProperty('artifactory_user')) {
                     username artifactory_user
                     password artifactory_password
                 }
-                url "$artifactory_contextUrl/libs-release-local"
+                url "$artifactory_contextUrl/libs-public-release-local"
             }
         }
     }
@@ -349,5 +387,17 @@ if (project.hasProperty('artifactory_user')) {
         println "WARNING:   git remote add upstream <UPSTREAM_REPO>"
         println "WARNING:   git push upstream <TAG>"
     }
-
 }
+
+/* Handy for debugging task dependencies
+gradle.taskGraph.whenReady {taskGraph ->
+    println "Found task graph: " + taskGraph
+    println "Found " + taskGraph.allTasks.size() + " tasks."
+    taskGraph.allTasks.forEach { task ->
+        println task
+        task.dependsOn.forEach { dep ->
+            println "  - " + dep
+        }
+    }
+}
+*/

@@ -28,3 +28,50 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
 PossibleNativeCodeTargetMethodLocalized(?method, ?function, ?file) :-
   PossibleNativeCodeTargetMethod(?method, ?function, ?file),
   ?function != "-".
+
+.decl OverloadedJNIMethod(?javaMethod:Method, ?type:ReferenceType, ?name:symbol, ?descriptor:symbol)
+
+OverloadedJNIMethod(?javaMethod, ?type, ?name, ?descriptor) :-
+  Method_Modifier("native", ?javaMethod),
+  Method_SimpleName(?javaMethod, ?name),
+  Method_Descriptor(?javaMethod, ?descriptor),
+  Method_DeclaringType(?javaMethod, ?type),
+  MethodLookup(?name, _, ?type, ?method1),
+  MethodLookup(?name, _, ?type, ?method2),
+  ?method1 != ?method2.
+
+.decl JNIMethod_NativeId(?javaMethod:Method, ?nativeId:symbol)
+.output JNIMethod_NativeId
+
+// Non-overloaded native method (default, always generated).
+JNIMethod_NativeId(?javaMethod, ?nativeId) :-
+  _NativeMethodId(?javaMethod, ?nativeId),
+  isMethod(?javaMethod).
+
+// Overloaded native method, use computed name as prefix (see JNI spec).
+JNIMethod_NativeId(?javaMethod, ?nativeId) :-
+  OverloadedJNIMethod(?javaMethod, _, _, ?descriptor),
+  _NativeMethodId(?javaMethod, ?nativeIdBase),
+  ?nativeId = cat(?nativeIdBase, cat("__", ?descriptor)).
+
+// Call-graph edges from native methods. This only captures direct call-graph
+// edges from native methods; if a native method calls other native code to do
+// the call, that behavior will be missed.
+
+.decl CallGraphEdgeFromNativeMethod(?targetMethod:Method, ?nativeMethod:Method)
+.output CallGraphEdgeFromNativeMethod
+
+CallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod) :-
+  PossibleNativeCodeTargetMethod(?targetMethod, ?function, _),
+  JNIMethod_NativeId(?nativeMethod, ?function).
+
+// Filtered CallGraphEdgeFromNativeMethod, in the "application" part.
+.decl AppCallGraphEdgeFromNativeMethod(?targetMethod:Method, ?nativeMethod:Method)
+.output AppCallGraphEdgeFromNativeMethod
+
+AppCallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod) :-
+  CallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod),
+  Method_DeclaringType(?targetMethod, ?targetClass),
+  ApplicationClass(?targetClass),
+  Method_DeclaringType(?nativeMethod, ?nativeClass),
+  ApplicationClass(?nativeClass).

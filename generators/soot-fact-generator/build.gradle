@@ -1,0 +1,56 @@
+plugins {
+    id 'groovy'
+}
+
+repositories {
+    maven {
+        name "soot-snapshot"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
+    }
+    maven {
+        name "soot-release"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
+    }
+}
+
+dependencies {
+    compile project(':generators:fact-generator-common')
+    compile "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
+            "ext:AXMLPrinter:2.0",
+            // Soot - choose one of the following:
+            // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.
+            // "ext:sootclasses:3.2.7",
+            // (b) Upstream stable Soot version.
+            // "ca.mcgill.sable:soot:3.1.0",
+            // (c) Upstream 3.x + minimal changes (mostly equivalent to our fork).
+            "ext:sootclasses:3.1.0.MINIMAL",
+            // (d) Latest tested nightly build.
+            // "ext:sootclasses:trunk.20190225",
+            // (e) Soot for Java 9.
+            // "ca.mcgill.sable:soot-j9:4.0.0-SNAPSHOT",
+            "ext:soot-infoflow:2.5.1",
+            "ext:soot-infoflow-android:2.5.1"
+    testCompile "org.spockframework:spock-core:${spockVersion}"
+}
+
+//fatJar already exists
+fatJar {
+    manifest {
+        attributes 'Main-Class': 'org.clyze.doop.soot.Main'
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+task installJar(type: Copy) {
+    from fatJar.outputs.files.singleFile
+    into("../../${resourcesDir}")
+}
+installJar.dependsOn fatJar
+
+task uninstallJar() {
+    doLast {
+        def jar = fatJar.outputs.files.singleFile
+        if (jar && jar.name) { delete "../../${resourcesDir}/${jar.name}" }
+    }
+}

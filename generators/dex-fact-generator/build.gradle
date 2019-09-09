@@ -1,0 +1,36 @@
+repositories {
+    maven {
+        name "soot-snapshot"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
+    }
+    maven {
+        name "soot-release"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
+    }
+}
+
+dependencies {
+    compile project(':generators:fact-generator-common')
+}
+
+//fatJar already exists
+fatJar {
+    manifest {
+        attributes 'Main-Class': 'org.clyze.doop.dex.DexInvoker'
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+task installJar(type: Copy) {
+    from fatJar.outputs.files.singleFile
+    into("../../${resourcesDir}")
+}
+installJar.dependsOn fatJar
+
+task uninstallJar() {
+    doLast {
+        def jar = fatJar.outputs.files.singleFile
+        if (jar && jar.name) { delete "../../${resourcesDir}/${jar.name}" }
+    }
+}

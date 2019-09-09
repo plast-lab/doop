@@ -10,11 +10,9 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.common.FrontEnd
-import org.clyze.doop.dex.DexInvoker
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.python.PythonInvoker
 import org.clyze.doop.util.ClassPathHelper
-import org.clyze.doop.wala.WalaInvoker
+import org.clyze.doop.util.Resources
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
 
@@ -69,13 +67,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     static final INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
 
-    String getId() { options.USER_SUPPLIED_ID.value as String }
+    public String getId() { options.USER_SUPPLIED_ID.value as String }
 
-    String getName() { options.ANALYSIS.value.toString().replace(File.separator, "-") }
+    public String getName() { options.ANALYSIS.value.toString().replace(File.separator, "-") }
 
-    File getOutDir() { options.OUT_DIR.value as File }
+    public File getOutDir() { options.OUT_DIR.value as File }
 
-    File getCacheDir() { options.CACHE_DIR.value as File }
+    public File getCacheDir() { options.CACHE_DIR.value as File }
 
     List<File> getInputFiles() { options.INPUTS.value as List<File> }
 
@@ -478,18 +476,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     redo = false
                     String SOOT_MAIN = "org.clyze.doop.soot.Main"
                     def args = params.toArray(new String[params.size()])
-                    String classpath = System.getenv("DOOP_EXT_CLASSPATH")
-                    if (classpath == null) {
-                        try {
-                            classpath = Manifests.read("Doop-Ext-Classpath")
-                        } catch (Exception ex) {
-                            log.debug "Cannot determine external classpath."
-                        }
-                    }
-                    if (!java9Plus() && (options.LEGACY_SOOT_INVOCATION.value || (classpath == null))) {
-                        if (classpath == null) {
-                            log.warn 'WARNING: No "DOOP_EXT_CLASSPATH" environment variable found, Soot-based fact generation will be invoked by custom class loader. Please run Doop via Gradle to override this behavior.'
-                        }
+                    if (!java9Plus() && options.LEGACY_SOOT_INVOCATION.value) {
                         // We invoke the Soot-based fact generator reflectively
                         // using a separate class-loader to be able to support
                         // multiple soot invocations in the same JVM
@@ -505,20 +492,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
                         Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
                     } else {
-                        // Invoke the Soot-based fact generator using a separate JVM.
-                        log.warn "WARNING: Calling Soot as external process, this may use more memory."
-                        if (classpath == null)
-                            throw new DoopErrorCodeException(33, new RuntimeException("Could not find external classpath for Soot-based fact generator."), true)
-                        String error = null
-                        def proc = { String line -> if (line.contains(DoopErrorCodeException.PREFIX)) error = line }
                         // Write arguments to file and pass that to Soot-based fact generator.
                         String argsFile = Files.createTempFile("soot-params-", "").toString()
                         (new File(argsFile)).withWriterAppend { w -> args.each { w.writeLine(it as String) } }
                         String[] args0 = [ "--args-file", argsFile ] as String[]
                         String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
-                        JHelper.runClass(classpath.split(":"), jvmArgs, SOOT_MAIN, args0, "SOOT_FACT_GEN", false, proc)
-                        if (error)
-                            throw new RuntimeException(error)
+                        // Invoke the Soot-based fact generator using a separate JVM.
+                        invokeFactGenerator('SOOT_FACT_GEN', jvmArgs, 'soot-fact-generator', args0)
                     }
                     // Check if fact generation must be restarted due to missing classes.
                     if (missingClasses != null && missingClasses.exists()) {
@@ -607,12 +587,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runWala(String platform, Collection<String> deps, List<File> platforms, Collection<String> params) {
-        if (platform == "android") {
-            // This uses all platformLibs.
-            // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-            // This uses just platformLibs[0], assumed to be android.jar.
-            params.addAll(["--android-jars", platforms.first().absolutePath])
-        } else if (platform != "java") {
+        if ((platform != "android") && (platform != "java")) {
             throw new RuntimeException("Unsupported platform: ${platform}")
         }
 
@@ -620,14 +595,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                //We invoke soot reflectively using a separate class-loader to be able
-                //to support multiple soot invocations in the same JVM @ server-side.
-                //TODO: Investigate whether this approach may lead to memory leaks,
-                //not only for soot but for all other Java-based tools, like jphantom.
-                //In such a case, we should invoke all Java-based tools using a
-                //separate process.
-                WalaInvoker wala = new WalaInvoker()
-                wala.main(params.toArray(new String[params.size()]))
+                invokeFactGenerator('WALA_FACT_GEN', null, 'wala-fact-generator', params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -643,7 +611,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of dex front-end: ${params.join(' ')}"
 
         try {
-            DexInvoker.start(params.toArray(new String[params.size()]), cha)
+            invokeFactGenerator('DEX_FACT_GEN', null, 'dex-fact-generator', params.toArray(new String[params.size()]))
         } catch (Exception ex) {
             ex.printStackTrace()
         }
@@ -658,6 +626,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         assert platform == "python"
 
+        params += ["--python"]
+
         if (options.FACT_GEN_CORES.value) {
             params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
         }
@@ -670,12 +640,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         //depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         params = params + inputArgs + depArgs + ["-d", factsDir.toString()]
 
-        log.debug "Params of wala: ${params.join(' ')}"
+        log.debug "Params of wala (Python mode): ${params.join(' ')}"
 
         try {
             factGenTime = Helper.timing {
-                PythonInvoker wala = new PythonInvoker()
-                wala.main(params.toArray(new String[params.size()]))
+                invokeFactGenerator('PYTHON_FACT_GEN', null, 'wala-fact-generator', params.toArray(new String[params.size()]))
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -782,5 +751,37 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         } catch (ClassNotFoundException ex) {
             return false
         }
+    }
+
+    /**
+     * Invoke a fact generator bundled as a JAR in Doop's resources.
+     *
+     * @param TAG          the tag to use to mark fact generator output
+     * @param jvmArgs      the JVM arguments to use (memory options should be set separately, via properties)
+     * @param resource     the prefix of the fact generator JAR (should match one resource)
+     * @param args         the fact generation arguments
+     */
+    public void invokeFactGenerator(String TAG, String[] jvmArgs, String resource, String[] args) {
+        if (jvmArgs == null)
+            jvmArgs = new String[0]
+
+        // Read properties to get JVM arguments for calling the fact generators.
+        List<String> jvmMemArgs = []
+
+        String maxHeapSize = System.getProperty("maxHeapSize")
+        if (maxHeapSize != null)
+            jvmMemArgs.add("-Xmx" + maxHeapSize)
+
+        String stackSize = System.getProperty("stackSize")
+        if (stackSize != null)
+            jvmMemArgs.add("-Xss" + stackSize)
+
+        String reservedCodeCacheSize = System.getProperty("reservedCodeCacheSize")
+        if (reservedCodeCacheSize)
+            jvmMemArgs.add("-XX:ReservedCodeCacheSize=" + reservedCodeCacheSize)
+
+        log.debug "Memory JVM args: ${jvmMemArgs}"
+        String[] jvmArgs0 = (jvmArgs + jvmMemArgs) as String[]
+        Resources.invokeResourceJar(Doop.doopHome, log, TAG, jvmArgs0, resource, args)
     }
 }
