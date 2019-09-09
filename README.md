@@ -152,6 +152,23 @@ Sometimes, it might be desirable to invoke doop in an offline mode. There is an 
 
     $ ./doopOffline --platform java_8 -a context-insensitive -i com.example.some.jar
 
+### Using differential datalog
+
+The differential datalog (DDlog) engine is currently supported for the
+"micro" analysis.
+
+Setup: clone and build DDlog in a directory, then set environment
+variable `DDLOG_DIR` to point to that directory.
+
+Running an analysis (non-incrementally) with id "ID":
+```
+./doop -i program.jar -a micro --via-ddlog --Xstats-none --id <ID> ...
+```
+
+For more applications of the analysis, such as incremental
+computations, the DDlog program can be found in
+`out/micro/ID/converted_logic_ddlog`.
+
 ### Building Doop distribution
 
 Optionally, Doop can be built as a binary distribution with the
