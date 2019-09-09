@@ -11,25 +11,46 @@ public class Database implements Closeable, Flushable {
 
     private final Map<PredicateFile, Writer> _writers;
 
+    /**
+     * Generate a database object, which can be used to write facts.
+     *
+     * @param directory     the output directory
+     */
     public Database(File directory) throws IOException {
+        this(directory, true);
+    }
+
+    /**
+     * Generate a database object, which can be used to write facts.
+     *
+     * @param directory     the output directory
+     * @param initWriters   if false, no facts can be written (dummy database)
+     */
+    public Database(File directory, boolean initWriters) throws IOException {
+        if (!initWriters) {
+            this._writers = null;
+            return;
+        }
+
         this._writers = new EnumMap<>(PredicateFile.class);
 
-        for(PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class))
+        for (PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class))
             _writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
     }
 
     @Override
     public void close() throws IOException {
-        for(Writer w: _writers.values())
-            w.close();
+        if (_writers != null)
+            for (Writer w: _writers.values())
+                w.close();
     }
 
     @Override
     public void flush() throws IOException {
-        for(Writer w: _writers.values())
-            w.flush();
+        if (_writers != null)
+            for (Writer w: _writers.values())
+                w.flush();
     }
-
 
     private String addColumn(String column) {
         // Quote some special characters.
