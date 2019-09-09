@@ -184,26 +184,29 @@ public class Main {
             System.err.println("Error: not all bodies retrieved.");
         }
 
-        try (Database db = new Database(new File(outDir))) {
-            boolean reportPhantoms = sootParameters._reportPhantoms;
-            boolean moreStrings = sootParameters._extractMoreStrings;
-            boolean artifacts = sootParameters._writeArtifactsMap;
-            Representation rep = new Representation();
+        boolean reportPhantoms = sootParameters._reportPhantoms;
+        boolean moreStrings = sootParameters._extractMoreStrings;
+        boolean artifacts = sootParameters._writeArtifactsMap;
+        boolean writeFacts = !sootParameters.noFacts();
+        Representation rep = new Representation();
+
+        try (Database db = new Database(new File(outDir), writeFacts)) {
             FactWriter writer = new FactWriter(db, moreStrings, artifacts, rep, reportPhantoms);
             ThreadFactory factory = new ThreadFactory(writer, sootParameters);
             SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors);
             factory.setDriver(driver);
 
-            writer.writePreliminaryFacts(classes, java, sootParameters);
-            db.flush();
+            if (writeFacts) {
 
-            if (android != null) {
-                android.generateFactsForXML(db, outDir);
-                if (sootParameters._legacyAndroidProcessing)
-                    android.writeComponents(writer);
-            }
+                writer.writePreliminaryFacts(classes, java, sootParameters);
+                db.flush();
 
-            if (!sootParameters.noFacts()) {
+                if (android != null) {
+                    android.generateFactsForXML(db, outDir);
+                    if (sootParameters._legacyAndroidProcessing)
+                        android.writeComponents(writer);
+                }
+
                 scene.getOrMakeFastHierarchy();
 
                 if (sootParameters._android && sootParameters.getRunFlowdroid()) {
@@ -217,52 +220,32 @@ public class Main {
                 // avoids a concurrent modification exception, since we may
                 // later be asking soot to add phantom classes to the scene's hierarchy
                 driver.generateInParallel(classes);
-                if (sootParameters._generateJimple) {
-                    Set<SootClass> jimpleClasses = new HashSet<>(classes);
-                    if (sootParameters._factsSubSet == null) {
-                        Collection<String> allClassNames = new ArrayList<>();
-                        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactScanner().getArtifactToClassMap();
-                        for (String artifact : artifactToClassMap.keySet()) {
-                            //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
-                            Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
-                            allClassNames.addAll(artEntries);
-                        }
-                        forceResolveClasses(allClassNames, jimpleClasses, scene);
-                        System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
-                    }
 
-                    // Write classes, following package hierarchy.
-                    Options.v().set_output_dir(DoopConventions.jimpleDir(outDir));
-                    boolean structured = DoopAddons.checkSetHierarchyDirs();
-                    driver.writeInParallel(jimpleClasses);
-                    if (!structured)
-                        DoopAddons.structureJimpleFiles(outDir);
-                    // Revert to standard output dir for the rest of the code.
-                    Options.v().set_output_dir(outDir);
+                logDebug("Checking class heaps for missing types...");
+                Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
+                if (unrecorded.size() > 0) {
+                    // If option is set, fail and notify caller that fact generation
+                    // must run again with these classes added.
+                    String outFile = sootParameters._missingClassesOut;
+                    if (outFile != null) {
+                        FileWriter fWriter = new FileWriter(new File(outFile));
+                        unrecorded.forEach(s -> {
+                                try {
+                                    fWriter.write(s + '\n');
+                                } catch (IOException ex) {
+                                    System.err.println("ERROR: " + ex.getMessage());
+                                }});
+                        fWriter.close();
+                        logError("ERROR: some classes were not resolved (see " + outFile + "), restarting fact generation: " + Arrays.toString(unrecorded.toArray()));
+                    } else
+                        logWarn("WARNING: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
                 }
+
+                writer.writeLastFacts(java);
             }
 
-            logDebug("Checking class heaps for missing types...");
-            Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
-            if (unrecorded.size() > 0) {
-                // If option is set, fail and notify caller that fact generation
-                // must run again with these classes added.
-                String outFile = sootParameters._missingClassesOut;
-                if (outFile != null) {
-                    FileWriter fWriter = new FileWriter(new File(outFile));
-                    unrecorded.forEach(s -> {
-                            try {
-                                fWriter.write(s + '\n');
-                            } catch (IOException ex) {
-                                System.err.println("ERROR: " + ex.getMessage());
-                            }});
-                    fWriter.close();
-                    logError("ERROR: some classes were not resolved (see " + outFile + "), restarting fact generation: " + Arrays.toString(unrecorded.toArray()));
-                } else
-                    logWarn("WARNING: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
-            }
-
-            writer.writeLastFacts(java);
+            if (sootParameters._generateJimple)
+                generateIR(sootParameters, java, scene, classes, driver, outDir);
 
             if (sootParameters._lowMem) {
                 System.out.println("Releasing Soot structures...");
@@ -378,5 +361,45 @@ public class Main {
         }
         if (!utf8)
             logWarn("WARNING: 'file.encoding' property missing or not UTF8, please pass: " + UTF8_ENCODING);
+    }
+
+    /**
+     * Generate Jimple/Shimple for the classes loaded into Soot.
+     *
+     * @param sootParameters   the command-line parameters
+     * @param java             the Java platform support object
+     * @param scene            the Soot scene
+     * @param classes          the loaded classes
+     * @param driver           the driver to use for parallelism
+     * @param outDir           the (parent) output directory to use
+     */
+    private static void generateIR(SootParameters sootParameters,
+                                   BasicJavaSupport_Soot java, Scene scene,
+                                   Set<SootClass> classes, SootDriver driver,
+                                   String outDir) throws DoopErrorCodeException {
+        Set<SootClass> jimpleClasses = new HashSet<>(classes);
+        if (sootParameters._factsSubSet == null) {
+            Collection<String> allClassNames = new ArrayList<>();
+            Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactScanner().getArtifactToClassMap();
+            for (String artifact : artifactToClassMap.keySet()) {
+                //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
+                Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
+                allClassNames.addAll(artEntries);
+            }
+            forceResolveClasses(allClassNames, jimpleClasses, scene);
+            System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
+        } else {
+            logError("ERROR: facts-subset not supported: " + sootParameters._factsSubSet);
+            return;
+        }
+
+        // Write classes, following package hierarchy.
+        Options.v().set_output_dir(DoopConventions.jimpleDir(outDir));
+        boolean structured = DoopAddons.checkSetHierarchyDirs();
+        driver.writeInParallel(jimpleClasses);
+        if (!structured)
+            DoopAddons.structureJimpleFiles(outDir);
+        // Revert to standard output dir for the rest of the code.
+        Options.v().set_output_dir(outDir);
     }
 }
