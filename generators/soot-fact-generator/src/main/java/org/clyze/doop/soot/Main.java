@@ -80,8 +80,10 @@ public class Main {
         if (sootParameters._ssa) {
             Options.v().set_via_shimple(true);
             Options.v().set_output_format(Options.output_format_shimple);
-        } else
+        } else {
+            logWarn("WARNING: SSA not enabled, generating Jimple instead of Shimple");
             Options.v().set_output_format(Options.output_format_jimple);
+        }
 
         //soot.options.Options.v().set_drop_bodies_after_load(true);
         Options.v().set_keep_line_number(true);

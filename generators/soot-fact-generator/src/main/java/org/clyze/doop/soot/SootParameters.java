@@ -100,8 +100,9 @@ public class SootParameters extends Parameters {
             System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
             System.err.println("  --full                                Generate facts by full transitive resolution");
             System.err.println("  -d <directory>                        Specify where to generate csv fact files");
-            System.err.println("  -l <archive>                          Find (library) classes in jar/zip archive");
-            System.err.println("  -ld <archive>                         Find (dependency) classes in jar/zip archive");
+            System.err.println("  -i <archive>                          Find classes in archive");
+            System.err.println("  -l <archive>                          Find library classes in archive");
+            System.err.println("  -ld <archive>                         Find dependency classes in archive");
             System.err.println("  -lsystem                              Find classes in default system classes");
             System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes");
             System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails");
@@ -122,6 +123,8 @@ public class SootParameters extends Parameters {
             System.err.println("  --decode-apk                          Decompress apk input in facts directory.");
             System.err.println("  --scan-native-code                    Scan native code found in .JAR/.APK inputs.");
             System.err.println("  --R-out-dir <directory>               Specify where to generate R code (when linking AAR inputs)");
+            System.err.println();
+            System.err.println("Supported input archive formats: AAR, APK, JAR, ZIP");
     }
 
     /**
