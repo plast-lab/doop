@@ -68,6 +68,10 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 
 		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
+		if (!database.exists()) {
+			database.mkdirs()
+		}
+		runtimeMetricsFile.createNewFile()
 
 		def generatedFile
 		if (options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
@@ -80,6 +84,7 @@ class SouffleAnalysis extends DoopAnalysis {
 			generateFacts()
 			script.postprocessFacts(outDir, profiling)
 			log.info "[Task FACTS Done]"
+			runtimeMetricsFile.append("soot-fact-generation time (sec)\t${factGenTime}\n")
 
 			if (options.X_SERVER_CHA.value) {
 				log.info "[CHA...]"
@@ -102,16 +107,17 @@ class SouffleAnalysis extends DoopAnalysis {
 			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 				generatedFile = compilationFuture.get()
 			}
-			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-					   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
-					   provenance, liveProf, profiling)
-
-			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
-			runtimeMetricsFile.createNewFile()
 			runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
-			runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
-			runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
-			runtimeMetricsFile.append("soot-fact-generation time (sec)\t$factGenTime\n")
+
+			if (!options.X_DRY_RUN.value) {
+				script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+						   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
+						   provenance, liveProf, profiling)
+
+				runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
+				int dbSize = (sizeOfDirectory(database) / 1024).intValue()
+				runtimeMetricsFile.append("disk footprint (KB)\t${dbSize}\n")
+			}
 		} finally {
 			executorService.shutdownNow()
 		}

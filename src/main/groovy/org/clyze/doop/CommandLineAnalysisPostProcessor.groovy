@@ -41,13 +41,15 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 		if (!analysis.options.X_STATS_NONE.value) {
 			lines = []
 
-			if (analysis.options.LB3.value) {
-				analysis.processRelation("Stats:Metrics") { String line ->
-					if (!filterOutLBWarn(line)) lines.add(line)
+			if (!analysis.options.X_DRY_RUN.value) {
+				if (analysis.options.LB3.value) {
+					analysis.processRelation("Stats:Metrics") { String line ->
+						if (!filterOutLBWarn(line)) lines.add(line)
+					}
+				} else {
+					def file = new File("${analysis.database}/Stats_Metrics.csv")
+					file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
 				}
-			} else {
-				def file = new File("${analysis.database}/Stats_Metrics.csv")
-				file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
 			}
 
 			log.info "-- Statistics --"
