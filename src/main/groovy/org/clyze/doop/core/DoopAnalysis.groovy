@@ -489,8 +489,25 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         // TODO: Investigate whether this approach may lead to memory
                         // leaks, not only for soot but for all other Java-based tools,
                         // like jphantom.
+                        //
+                        // SETUP: to enable this mode, edit build.gradle as follows:
+                        //
+                        // (a) Add soot-fact-generator compile dependency:
+                        //     dependencies {
+                        //       ...
+                        //       compile project(':generators:soot-fact-generator')
+                        //       ...
+                        //     }
+                        //
+                        // (b) For big inputs, give appropriate -Xss/-Xmx memory
+                        //     parameters via Gradle option 'applicationDefaultJvmArgs'.
+                        //
                         loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
-                        Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
+                        try {
+                            Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
+                        } catch (ClassNotFoundException ex) {
+                            throw new RuntimeException("Cannot find Soot-based front end.")
+                        }
                     } else {
                         // Write arguments to file and pass that to Soot-based fact generator.
                         String argsFile = Files.createTempFile("soot-params-", "").toString()
@@ -517,6 +534,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         }
                     }
                 } catch (Throwable t) {
+                    String msg = "Soot fact generation error (${t.class.name}): ${t.message}"
+                    log.debug msg
                     if (isFatal(loader, t))
                         throw new RuntimeException("Fatal error, see log for details: ${t.toString()}")
                     if (factGenRun >= MAX_FACTGEN_RUNS) {
@@ -524,8 +543,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         if (!(options.X_IGNORE_FACTGEN_ERRORS.value)) {
                             log.info "Errors occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
                         }
-                        System.err.println(t.message)
-                        throw new RuntimeException("Soot fact generation error")
+                        throw new RuntimeException(msg)
                     } else {
                         redo = true
                         factGenRun += 1
