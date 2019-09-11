@@ -13,19 +13,6 @@ class MethodSig {
     public final String sig;
 
     /**
-     * Creates an anonymous method signature. Used in array creation opcodes.
-     * @param paramTypes  the parameter types
-     * @param retType     the return type
-     */
-    MethodSig(String retType, String[] paramTypes) {
-        this.declClass = null;
-        this.name = null;
-        this.paramTypes = paramTypes;
-        this.sig = null;
-        this.retType = retType;
-    }
-
-    /**
      * Convert a Dex method reference to a MethodSig.
      * @param methodRef  the Dex method reference
      */
