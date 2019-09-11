@@ -1,11 +1,15 @@
 package org.clyze.doop.dex;
 
 import org.clyze.utils.TypeUtils;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jf.dexlib2.iface.reference.MethodReference;
 
 import java.util.List;
 
 class DexRepresentation {
+
+    private static Map<MethodReference, String> cachedMethodIds = new ConcurrentHashMap<>();
 
     public static String local(String methId, int i) {
         return methId + "/v" + i;
@@ -19,19 +23,25 @@ class DexRepresentation {
         return "<" + declClass + ": " + retType + " " + name + "(" + paramsSig + ")>";
     }
 
+    public static String methodId(MethodReference m) {
+        String methId = cachedMethodIds.get(m);
+        if (methId == null) {
+            methId = methodFacts(m).getMethodId();
+            cachedMethodIds.put(m, methId);
+        }
+        return methId;
+    }
+
     public static String thisVarId(String methId) {
         return param(methId, 0);
     }
 
-
     /**
-     * Generates a method id for a method.
-     * @param m      the method for which to generate an id
-     * @param mf     if not null, this argument will be populated
-     *               with more facts about the method
-     * @return       the method id
+     * Generates a table of metadata/facts for a method.
+     * @param m      the method
+     * @return       the method facts
      */
-    public static String methodId(MethodReference m, MethodFacts mf) {
+    public static MethodFacts methodFacts(MethodReference m) {
         String jvmRetType = m.getReturnType();
         String retType = TypeUtils.raiseTypeId(jvmRetType);
 
@@ -40,8 +50,7 @@ class DexRepresentation {
         boolean firstParam = true;
         List<? extends CharSequence> paramTypes = m.getParameterTypes();
         for (CharSequence pt : paramTypes) {
-            if (mf != null)
-                jvmParamsSig.append(pt);
+            jvmParamsSig.append(pt);
             if (firstParam)
                 firstParam = false;
             else
@@ -53,15 +62,10 @@ class DexRepresentation {
         String simpleName = m.getName();
         String declaringClass = TypeUtils.raiseTypeId(m.getDefiningClass());
         String methId = methodId(declaringClass, retType, simpleName, paramsSigStr);
-        if (mf != null) {
-            mf.simpleName = simpleName;
-            mf.paramsSig = paramsSigStr;
-            mf.declaringClass = declaringClass;
-            mf.retType = retType;
-            mf.jvmSig = "(" + jvmParamsSig + ")" + jvmRetType;
-            mf.arity = Integer.valueOf(paramTypes.size()).toString();
-        }
-        return methId;
+        cachedMethodIds.put(m, methId);
+        String jvmSig = "(" + jvmParamsSig + ")" + jvmRetType;
+        String arity = Integer.valueOf(paramTypes.size()).toString();
+        return new MethodFacts(simpleName, paramsSigStr, declaringClass, retType, jvmSig, arity);
     }
 
     static String strOfLineNo(Integer i) {

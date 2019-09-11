@@ -55,7 +55,8 @@ class DexThreadFactory {
                 classWriter.generateFacts(dexClass, className, dexParams, cachedMethodDescriptors);
                 cha.registerDefinedMethods(classWriter.definedMethods);
                 cha.queueFieldOps(classWriter.fieldOps);
-                cha.registerSuperClass(className, classWriter.superClass);
+                if (classWriter.superClass != null)
+                    cha.registerSuperClass(className, classWriter.superClass);
                 cha.registerDefinedClassFields(className, classWriter.definedFields);
             }
         };

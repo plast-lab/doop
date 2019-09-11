@@ -60,7 +60,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private final DexBackedMethod m;
     private final Map<String, MethodSig> cachedMethodDescriptors;
     private final SessionCounter counter = new SessionCounter();
-    private final MethodFacts mf = new MethodFacts();
+    private final MethodFacts mf;
     private final String methId;
     private final NavigableMap<Integer, Integer> lineNumbers = new TreeMap<>();
 
@@ -113,7 +113,9 @@ class DexMethodFactWriter extends JavaFactWriter {
         super(_db, moreStrings, true);
         this.m = dexMethod;
         this.cachedMethodDescriptors = cachedMethodDescriptors;
-        this.methId = DexRepresentation.methodId(m, mf);
+
+        this.mf = DexRepresentation.methodFacts(m);
+        this.methId = mf.getMethodId();
 
         // Process flags.
         this.flags = AccessFlags.getAccessFlagsForMethod(m.getAccessFlags());
