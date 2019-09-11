@@ -114,7 +114,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         this.m = dexMethod;
         this.cachedMethodDescriptors = cachedMethodDescriptors;
 
-        this.mf = DexRepresentation.methodFacts(m);
+        this.mf = new MethodFacts(m);
         this.methId = mf.getMethodId();
 
         // Process flags.
@@ -1143,10 +1143,9 @@ class DexMethodFactWriter extends JavaFactWriter {
             return;
         int arraySize = ((VariableRegisterInstruction)instr).getRegisterCount();
         String[] paramTypes = Collections.nCopies(arraySize, componentType).toArray(new String[arraySize]);
-        MethodSig mSig = new MethodSig(arrayType, paramTypes);
 
         // Remember information to be used by subsequent move-result-object
-        this.objReturnInfo = new ObjectReturnInfo(insn, regsFor(instr), mSig, true, op, index);
+        this.objReturnInfo = new ObjectReturnInfo(insn, regsFor(instr), arrayType, paramTypes.length, true, op, index);
     }
 
     private String writeArrayTypes(String arrayType) {
@@ -1194,7 +1193,9 @@ class DexMethodFactWriter extends JavaFactWriter {
         String insn = numberedInstructionId(methId, mSig.getMid(), counter);
 
         // Remember information to be used by subsequent move-result-object
-        this.objReturnInfo = new ObjectReturnInfo(insn, regsFor(instr), mSig, isStaticInvoke, op, index);
+        this.objReturnInfo = new ObjectReturnInfo(insn, regsFor(instr), mSig.retType,
+                                                  mSig.paramTypes.length,
+                                                  isStaticInvoke, op, index);
 
         Integer lineNoInteger = findLineForInstructionIndex(index);
         String lineNo = strOfLineNo(lineNoInteger);
