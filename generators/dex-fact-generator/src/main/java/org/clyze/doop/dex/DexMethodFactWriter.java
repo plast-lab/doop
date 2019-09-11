@@ -39,6 +39,7 @@ import org.jf.dexlib2.immutable.debug.ImmutablePrologueEnd;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.clyze.doop.common.FrontEndLogger.*;
 import static org.clyze.doop.common.JavaRepresentation.handlerMid;
 import static org.clyze.doop.common.JavaRepresentation.numberedInstructionId;
 import static org.clyze.doop.common.PredicateFile.*;
@@ -138,7 +139,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 if (debug) {
                     for (String sig : getAnnotationValues(annotation, (ev -> ((DexBackedStringEncodedValue) ev).getValue())))
                         if (!sig.equals(mf.jvmSig))
-                            logger.debug("Ignored supplied method signature: " + sig + " != " + mf.jvmSig);
+                            logDebug(logger, "Ignored supplied method signature: " + sig + " != " + mf.jvmSig);
                 }
             }
             writeMethodAnnotation(methId, annotType);
@@ -215,7 +216,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 if (t == null) {
                     excType = "java.lang.Throwable";
                     if (debug)
-                        logger.warn("WARNING: no exception type found for handler in " + methId + ", using " + excType);
+                        logWarn(logger, "WARNING: no exception type found for handler in " + methId + ", using " + excType);
                 } else
                     excType = raiseTypeId(t);
                 handlers.add(new Handler(startAddr, endAddr, handlerAddr, excType));
@@ -224,7 +225,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 Integer startIndex = addressToIndex.get(startAddr);
                 Integer endIndex = addressToIndex.get(endAddr);
                 if (handlerIndex == null || startIndex == null || endIndex == null) {
-                    System.err.println("Error: handler {" + handlerIndex + ", " + startIndex + ", " + endIndex + "}");
+                    logError(logger, "ERROR: handler {" + handlerIndex + ", " + startIndex + ", " + endIndex + "}");
                     previous = null;
                 } else {
                     String insn = instructionId(handlerMid(excType), handlerIndex);
@@ -242,7 +243,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         for (MoveExceptionInfo mei : exceptionMoves) {
             List<Handler> containingHandlers = Handler.findHandlerStartingAt(handlers, mei.address);
             if (containingHandlers.isEmpty()) {
-                System.err.println("Error: no exception handler found for MOVE_EXCEPTION at address " + mei.address + " in " + methId);
+                logError(logger, "ERROR: no exception handler found for MOVE_EXCEPTION at address " + mei.address + " in " + methId);
                 continue;
             }
             String localA = local(mei.reg);
@@ -253,11 +254,11 @@ class DexMethodFactWriter extends JavaFactWriter {
                     Integer handlerIndex = hi.getIndex(addressToIndex);
                     // Sanity check: MOVE_EXCEPTION must be first handler instruction.
                     if (handlerIndex != mei.index)
-                        System.err.println("WARNING: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
+                        logWarn(logger, "WARNING: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
                     String insn = instructionId(handlerMid(hi.excType), handlerIndex);
                     writeExceptionHandlerFormal(insn, localA);
                 } catch (Handler.IndexException ex) {
-                    System.err.println("Error: " + ex.getMessage());
+                    logError(logger, "ERROR: " + ex.getMessage());
                 }
             }
         }
@@ -270,7 +271,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         for (RawGoto g : gotos) {
             Integer indexTo = addressToIndex.get(g.addrTo);
             if (indexTo == null)
-                System.err.println("WARNING: cannot resolve goto target " + g.index + " in method " + methId);
+                logWarn(logger, "WARNING: cannot resolve goto target " + g.index + " in method " + methId);
             else
                 writeGoto(g.insn, indexTo, g.index);
         }
@@ -278,7 +279,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         for (RawGoto g : ifs) {
             Integer indexTo = addressToIndex.get(g.addrTo);
             if (indexTo == null)
-                System.err.println("WARNING: cannot resolve if target " + g.index + " in method " + methId);
+                logWarn(logger, "WARNING: cannot resolve if target " + g.index + " in method " + methId);
             else
                 writeIf(g.insn, g.index, indexTo, methId);
         }
@@ -310,7 +311,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 if (addr != 0)
                     System.err.println("(UNUSED) Epilogue begin: " + addr + " != 0");
             } else
-                System.err.println("WARNING: Unknown debug item class: " + di.getClass());
+                logWarn(logger, "WARNING: Unknown debug item class: " + di.getClass());
         }
     }
 
@@ -332,7 +333,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                                   Collection<FieldOp> fieldOps) {
         Opcode op = instr.getOpcode();
         if (debug)
-            logger.debug("Opcode " + op.name + " | Instruction class: " + instr.getClass());
+            logDebug(logger, "Opcode " + op.name + " | Instruction class: " + instr.getClass());
         switch (op) {
             case CONST_4:
             case CONST_16:
@@ -715,7 +716,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         // Sanity check: fill-array-data should appear at most 2 instructions
         // after a new-array instruction.
         if (lastNewArrayInfo.index > (index + 2))
-            System.err.println("WARNING: suspicious fill-array-data + new-array pattern in " + methId);
+            logWarn(logger, "WARNING: suspicious fill-array-data + new-array pattern in " + methId);
         fillArrayInfo.registerFirstInstructionData(new FillArrayInfoEntry(absoluteAddr((OffsetInstruction)instr), regA, index, lastNewArrayInfo));
         // Consume the information.
         this.lastNewArrayInfo = null;
@@ -738,7 +739,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             for (int idx = 0; idx < numbersSize; idx++)
                 _db.add(ARRAY_INITIAL_VALUE_FROM_CONST, insn, str(originalIndex), local(regDest), str(idx), numbers.get(idx).toString(), heapId, methId);
         } catch (Exception ex) {
-            System.err.println(ex.getMessage());
+            logError(logger, ex.getMessage());
         }
     }
 
@@ -754,19 +755,19 @@ class DexMethodFactWriter extends JavaFactWriter {
     private void writeMoveResult(Instruction instr, int index, Opcode op) {
         if (this.objReturnInfo == null) {
             // Sanity check: return-object information must be present.
-            System.err.println("Internal error: result already consumed in method " +
+            logError(logger, "Internal error: result already consumed in method " +
                     methId + ", index = " + index);
             return;
         } else if (index != (objReturnInfo.index + 1)) {
             // Sanity check: a MOVE_RESULT* opcode must directly follow the
             // instruction that left the information about returning an object.
-            System.err.println("Opcode " + op + " at index " + index +
+            logError(logger, "Opcode " + op + " at index " + index +
                     " does not directly follow instruction " + objReturnInfo.index);
             return;
         }
 
         if (debug)
-            logger.debug("Consuming object return info: " + objReturnInfo);
+            logDebug(logger, "Consuming object return info: " + objReturnInfo);
 
         int regDest = ((OneRegisterInstruction) instr).getRegisterA();
         switch (objReturnInfo.op) {
@@ -793,7 +794,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 _db.add(ASSIGN_RETURN_VALUE, insn, local(regDest));
                 // Sanity check.
                 if (this.objReturnInfo.retType == null)
-                    System.err.println("WARNING: no return type in " + objReturnInfo);
+                    logWarn(logger, "WARNING: no return type in " + objReturnInfo);
                 break;
             }
             default:
@@ -1144,7 +1145,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private String writeArrayTypes(String arrayType) {
         int bracketIndex = arrayType.indexOf('[');
         if (bracketIndex == -1) {
-            System.err.println("WARNING: not an array type: " + arrayType);
+            logWarn(logger, "WARNING: not an array type: " + arrayType);
             return null;
         }
         String componentType = arrayType.substring(0, bracketIndex);

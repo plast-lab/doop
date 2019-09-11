@@ -29,6 +29,7 @@ import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
 
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
+import static org.clyze.doop.common.FrontEndLogger.*;
 
 public class Main {
 
@@ -81,7 +82,7 @@ public class Main {
             Options.v().set_via_shimple(true);
             Options.v().set_output_format(Options.output_format_shimple);
         } else {
-            logWarn("WARNING: SSA not enabled, generating Jimple instead of Shimple");
+            logWarn(logger, "WARNING: SSA not enabled, generating Jimple instead of Shimple");
             Options.v().set_output_format(Options.output_format_jimple);
         }
 
@@ -99,11 +100,11 @@ public class Main {
             System.out.println("Running in mixed Soot/Dex mode.");
         } else if (sootParameters._android) {
             if (sootParameters.getInputs().size() > 1)
-                logWarn("WARNING: Android mode: all inputs will be preprocessed but only " + sootParameters.getInputs().get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
+                logWarn(logger, "WARNING: Android mode: all inputs will be preprocessed but only " + sootParameters.getInputs().get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             if (sootParameters._androidJars == null)
-                logWarn("WARNING: missing --android-jars option.");
+                logWarn(logger, "WARNING: missing --android-jars option.");
             else
                 Options.v().set_android_jars(sootParameters._androidJars);
             android = new AndroidSupport_Soot(sootParameters, java);
@@ -121,7 +122,7 @@ public class Main {
             addToSootClassPath(scene, input);
             if (sootParameters._android) {
                 if (inputs.size() > 1)
-                    logWarn("WARNING: skipping rest of inputs");
+                    logWarn(logger, "WARNING: skipping rest of inputs");
                 break;
             }
         }
@@ -221,7 +222,7 @@ public class Main {
                 // later be asking soot to add phantom classes to the scene's hierarchy
                 driver.generateInParallel(classes);
 
-                logDebug("Checking class heaps for missing types...");
+                logDebug(logger, "Checking class heaps for missing types...");
                 Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
                 if (unrecorded.size() > 0) {
                     // If option is set, fail and notify caller that fact generation
@@ -236,9 +237,9 @@ public class Main {
                                     System.err.println("ERROR: " + ex.getMessage());
                                 }});
                         fWriter.close();
-                        logError("ERROR: some classes were not resolved (see " + outFile + "), restarting fact generation: " + Arrays.toString(unrecorded.toArray()));
+                        logError(logger, "ERROR: some classes were not resolved (see " + outFile + "), restarting fact generation: " + Arrays.toString(unrecorded.toArray()));
                     } else
-                        logWarn("WARNING: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
+                        logWarn(logger, "WARNING: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
                 }
 
                 writer.writeLastFacts(java);
@@ -284,7 +285,7 @@ public class Main {
      */
     private static SootMethod getDummyMain(String appInput, String androidJars) {
         if (!DoopAddons.usingUpstream())
-            logWarn("WARNING: FlowDroid is only supported when using upstream Soot (see build.gradle).");
+            logWarn(logger, "WARNING: FlowDroid is only supported when using upstream Soot (see build.gradle).");
 
         Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
 
@@ -321,26 +322,6 @@ public class Main {
         }
     }
 
-    private static void logDebug(String s) {
-        if (logger == null)
-            System.err.println(s);
-        else
-            logger.debug(s);
-    }
-
-    private static void logWarn(String s) {
-        if (logger == null)
-            System.err.println(s);
-        else
-            logger.warn(s);
-    }
-
-    private static void logError(String s) {
-        if (logger == null)
-            System.err.println(s);
-        else
-            logger.error(s);
-    }
 
     /**
      * Checks that the JVM arguments contain sane defaults. Also
@@ -360,7 +341,7 @@ public class Main {
                 utf8 = true;
         }
         if (!utf8)
-            logWarn("WARNING: 'file.encoding' property missing or not UTF8, please pass: " + UTF8_ENCODING);
+            logWarn(logger, "WARNING: 'file.encoding' property missing or not UTF8, please pass: " + UTF8_ENCODING);
     }
 
     /**
@@ -389,7 +370,7 @@ public class Main {
             forceResolveClasses(allClassNames, jimpleClasses, scene);
             System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
         } else {
-            logError("ERROR: facts-subset not supported: " + sootParameters._factsSubSet);
+            logError(logger, "ERROR: facts-subset not supported: " + sootParameters._factsSubSet);
             return;
         }
 

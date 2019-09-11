@@ -1,5 +1,7 @@
 package org.clyze.doop.dex;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FieldInfo;
 import org.clyze.doop.common.FieldOp;
@@ -16,12 +18,15 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
 
+import static org.clyze.doop.common.FrontEndLogger.*;
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**
  * Writes facts for a single class found in a .dex entry.
  */
 class DexClassFactWriter extends JavaFactWriter {
+
+    private static final @Nullable Log logger = LogFactory.getLog(DexClassFactWriter.class);
 
     public final Collection<FieldOp> fieldOps = new LinkedList<>();
     public final Collection<String> definedMethods = new LinkedList<>();
