@@ -1,11 +1,12 @@
 package org.clyze.doop.dex;
 
+import org.checkerframework.checker.nullness.qual.*;
 import org.jf.dexlib2.iface.value.*;
 
 import static org.clyze.doop.common.JavaFactWriter.str;
 
 public class InitialValue {
-    final String value;
+    final @Nullable String value;
     final InitialValue.IVType type;
 
     enum IVType { NUMBER, STRING, OTHER }

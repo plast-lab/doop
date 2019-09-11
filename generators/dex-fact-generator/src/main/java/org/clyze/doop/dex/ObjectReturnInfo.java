@@ -1,5 +1,6 @@
 package org.clyze.doop.dex;
 
+import org.checkerframework.checker.nullness.qual.*;
 import org.jf.dexlib2.Opcode;
 
 import java.util.Arrays;
@@ -10,7 +11,7 @@ import java.util.Arrays;
  * opcodes).
  */
 class ObjectReturnInfo {
-    public final Integer baseReg;
+    public final @Nullable Integer baseReg;
     public final int[] argRegs;
     public final String insn;
     public final Opcode op;

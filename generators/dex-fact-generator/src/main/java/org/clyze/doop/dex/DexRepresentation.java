@@ -1,5 +1,6 @@
 package org.clyze.doop.dex;
 
+import org.checkerframework.checker.nullness.qual.*;
 
 class DexRepresentation {
 

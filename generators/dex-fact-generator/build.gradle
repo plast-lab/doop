@@ -1,3 +1,8 @@
+plugins {
+    id 'org.checkerframework' version '0.3.31'
+}
+apply plugin: 'org.checkerframework'
+
 repositories {
     maven {
         name "soot-snapshot"
@@ -8,6 +13,13 @@ repositories {
         url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
     }
 }
+
+// // Uncomment to compile with nullness checker.
+// checkerFramework {
+//   checkers = [
+//     'org.checkerframework.checker.nullness.NullnessChecker'
+//   ]
+// }
 
 dependencies {
     compile project(':generators:fact-generator-common')

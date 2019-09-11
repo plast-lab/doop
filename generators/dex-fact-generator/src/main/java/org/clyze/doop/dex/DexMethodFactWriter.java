@@ -2,6 +2,7 @@ package org.clyze.doop.dex;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.checkerframework.checker.nullness.qual.*;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FieldInfo;
 import org.clyze.doop.common.FieldOp;
@@ -86,14 +87,14 @@ class DexMethodFactWriter extends JavaFactWriter {
     //     INVOKE_SUPER, INVOKE_DIRECT_RANGE, INVOKE_VIRTUAL_RANGE,
     //     INVOKE_STATIC_RANGE, INVOKE_INTERFACE_RANGE, INVOKE_SUPER_RANGE: }
     //   second instruction: any of { MOVE_RESULT, MOVE_RESULT_WIDE, MOVE_RESULT_OBJECT }
-    private ObjectReturnInfo objReturnInfo;
+    private @Nullable ObjectReturnInfo objReturnInfo;
 
     // Pattern supported by field: set-register-R-to-0 + NEW_ARRAY-of-size-R
-    private ZeroedRegister zeroedArraySizeRegister;
+    private @Nullable ZeroedRegister zeroedArraySizeRegister;
 
     // The following two fields essentially support a 3-instruction pattern.
     // Pattern supported by field: NEW_ARRAY + FILL_ARRAY_DATA
-    private NewArrayInfo lastNewArrayInfo;
+    private @Nullable NewArrayInfo lastNewArrayInfo;
     // Pattern supported by field: FILL_ARRAY_DATA + ARRAY_PAYLOAD
     private final PatternManager<FillArrayInfoEntry> fillArrayInfo = new PatternManager<>();
 
@@ -120,10 +121,10 @@ class DexMethodFactWriter extends JavaFactWriter {
         // Process flags.
         this.flags = AccessFlags.getAccessFlagsForMethod(m.getAccessFlags());
         this.isNative = Arrays.asList(flags).contains(AccessFlags.NATIVE);
-        this.isStatic = Arrays.asList(flags).contains(AccessFlags.STATIC);
+        boolean staticMod = Arrays.asList(flags).contains(AccessFlags.STATIC);
+        this.isStatic = staticMod;
         // Process locals.
-        DexBackedMethodImplementation mi = m.getImplementation();
-        this.localRegCount = (mi == null) ? 0 : countLocalRegisters(mi);
+        this.localRegCount = countLocalRegisters(dexMethod, staticMod);
     }
 
     public void writeMethod(Collection<FieldOp> fieldOps,
@@ -322,7 +323,11 @@ class DexMethodFactWriter extends JavaFactWriter {
         writeLocal(local(reg), regType, methId);
     }
 
-    private int countLocalRegisters(DexBackedMethodImplementation mi) {
+    private static int countLocalRegisters(DexBackedMethod m, boolean isStatic) {
+        DexBackedMethodImplementation mi = m.getImplementation();
+        if (mi == null)
+            return 0;
+
         int paramRegCount = 0;
         for (MethodParameter mp : mi.method.getParameters())
             paramRegCount += regSizeOf(mp.getType());
@@ -1050,7 +1055,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         writeAssignLocal(instructionId("assign", index), index, from, to, methId);
     }
 
-    private String local(int reg) {
+    private @NonNull String local(int reg) {
         String var;
         // System.out.println(methId + ", localsCount=" + this.localsCount + ",  reg=" + reg);
         if (reg < localRegCount)
@@ -1091,7 +1096,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     }
 
     private void writeFieldOp(Instruction instr, PredicateFile target,
-                              String localA, String localB, int index,
+                              String localA, @Nullable String localB, int index,
                               Collection<FieldOp> fieldOps) {
         String insn = instructionId("assign", index);
         Reference fieldRef = ((ReferenceInstruction)instr).getReference();
@@ -1146,7 +1151,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         this.objReturnInfo = new ObjectReturnInfo(insn, regsFor(instr), arrayType, paramTypes.length, true, op, index);
     }
 
-    private String writeArrayTypes(String arrayType) {
+    private @Nullable String writeArrayTypes(String arrayType) {
         int bracketIndex = arrayType.indexOf('[');
         if (bracketIndex == -1) {
             logWarn(logger, "WARNING: not an array type: " + arrayType);

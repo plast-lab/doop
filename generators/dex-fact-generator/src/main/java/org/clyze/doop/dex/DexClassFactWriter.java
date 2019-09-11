@@ -2,6 +2,7 @@ package org.clyze.doop.dex;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.checkerframework.checker.nullness.qual.*;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FieldInfo;
 import org.clyze.doop.common.FieldOp;
@@ -31,7 +32,7 @@ class DexClassFactWriter extends JavaFactWriter {
     public final Collection<FieldOp> fieldOps = new LinkedList<>();
     public final Collection<String> definedMethods = new LinkedList<>();
     public final Collection<FieldInfo> definedFields = new LinkedList<>();
-    public String superClass;
+    public @Nullable String superClass;
 
     DexClassFactWriter(Database db, boolean moreStrings) {
         super(db, moreStrings, true);
