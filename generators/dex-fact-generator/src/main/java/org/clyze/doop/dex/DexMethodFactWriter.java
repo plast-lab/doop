@@ -746,7 +746,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             for (int idx = 0; idx < numbersSize; idx++)
                 _db.add(ARRAY_INITIAL_VALUE_FROM_CONST, insn, str(originalIndex), local(regDest), str(idx), numbers.get(idx).toString(), heapId, methId);
         } catch (Exception ex) {
-            logError(logger, ex.getMessage());
+            logError(logger, "Error in array payload handling: " + ex.getMessage());
         }
     }
 
@@ -1219,6 +1219,8 @@ class DexMethodFactWriter extends JavaFactWriter {
         switch (op) {
             case INVOKE_DIRECT:
             case INVOKE_DIRECT_RANGE:
+                if (base == null)
+                    throw new RuntimeException("ERROR: no object return information in " + methId);
                 _db.add(SPECIAL_METHOD_INV, insn, str(index), mSig.sig, base, methId);
                 break;
             case INVOKE_STATIC:
@@ -1229,10 +1231,14 @@ class DexMethodFactWriter extends JavaFactWriter {
             case INVOKE_VIRTUAL_RANGE:
             case INVOKE_INTERFACE:
             case INVOKE_INTERFACE_RANGE:
+                if (base == null)
+                    throw new RuntimeException("ERROR: no object return information in " + methId);
                 _db.add(VIRTUAL_METHOD_INV, insn, str(index), mSig.sig, base, methId);
                 break;
             case INVOKE_SUPER:
             case INVOKE_SUPER_RANGE:
+                if (base == null)
+                    throw new RuntimeException("ERROR: no object return information in " + methId);
                 _db.add(SUPER_METHOD_INV, insn, str(index), mSig.sig, base, methId);
                 break;
             default:
