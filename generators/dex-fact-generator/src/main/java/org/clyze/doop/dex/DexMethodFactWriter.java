@@ -1312,9 +1312,18 @@ class DexMethodFactWriter extends JavaFactWriter {
         return cachedMethodDescriptors.computeIfAbsent(ref.toString(), x -> new MethodSig(ref));
     }
 
+    /**
+     * Find line corresponding to index.
+     *
+     * @param index   the opcode index
+     * @return the line number or -1 if no line number could be determined
+     */
     private Integer findLineForInstructionIndex(int index) {
         Map.Entry<Integer, Integer> entry = lineNumbers.floorEntry(index);
-        return (entry == null) ? null : entry.getValue();
+        if (entry == null) {
+            return -1;
+        }
+        return entry.getValue();
     }
 
     private int absoluteAddr(OffsetInstruction instr) {
