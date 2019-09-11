@@ -370,7 +370,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 int reg = ((OneRegisterInstruction)instr).getRegisterA();
                 TypeReference typeRef = (TypeReference)((ReferenceInstruction)instr).getReference();
                 String type = raiseTypeId(typeRef.getType());
-                writeAssignHeapAllocation(reg, type, index, instructionId("assign", index), false, null);
+                writeAssignHeapAllocation(reg, type, index, instructionId("assign", index), false);
                 break;
             }
             case CONST_STRING:
@@ -782,8 +782,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case FILLED_NEW_ARRAY_RANGE: {
                     String insn = instructionId("assign", index);
                     boolean isEmpty = (objReturnInfo.argRegs.length == 0);
-                    String[] heap = new String[1];
-                    writeAssignHeapAllocation(regDest, objReturnInfo.retType, index, insn, isEmpty, heap);
+                    String heap = writeAssignHeapAllocation(regDest, objReturnInfo.retType, index, insn, isEmpty);
                     writeInitialArrayValues(insn, index, regDest, objReturnInfo.argRegs, heap);
                 }
                 break;
@@ -817,12 +816,12 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param insn       the instruction id (one of the move-result opcodes)
      * @param regDest    the target register pointing to the array
      * @param argRegs    the sequence of initial values
-     * @param heap       a single-element array containing the heap id
+     * @param heap       the heap id
      */
     private void writeInitialArrayValues(String insn, int regDest, int index,
-                                         int[] argRegs, String[] heap) {
+                                         int[] argRegs, String heap) {
         for (int idx = 0; idx < argRegs.length; idx++)
-            _db.add(ARRAY_INITIAL_VALUE_FROM_LOCAL, insn, str(index), local(regDest), str(idx), local(argRegs[idx]), heap[0], methId);
+            _db.add(ARRAY_INITIAL_VALUE_FROM_LOCAL, insn, str(index), local(regDest), str(idx), local(argRegs[idx]), heap, methId);
     }
 
     private void writeSwitchTargets(Instruction instr, PredicateFile predicateFile) {
@@ -1128,11 +1127,10 @@ class DexMethodFactWriter extends JavaFactWriter {
         ReferenceInstruction ri = (ReferenceInstruction)instr;
         TypeReference typeRef = (DexBackedTypeReference)ri.getReference();
         String arrayType = raiseTypeId(typeRef.getType());
-        boolean isEmpty = arraySizeIsZero(regSize, index);
-        String[] heapIdBox = new String[1];
-        writeAssignHeapAllocation(regDest, arrayType, index, instructionId("assign", index), isEmpty, heapIdBox);
         writeArrayTypes(arrayType);
-        this.lastNewArrayInfo = new NewArrayInfo(index, heapIdBox[0]);
+        boolean isEmpty = arraySizeIsZero(regSize, index);
+        String heapId = writeAssignHeapAllocation(regDest, arrayType, index, instructionId("assign", index), isEmpty);
+        this.lastNewArrayInfo = new NewArrayInfo(index, heapId);
     }
 
     private void writeFilledNewArray(Instruction instr, int index, Opcode op) {
@@ -1265,15 +1263,11 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param index          the index of the allocating instruction
      * @param insn           the instruction id
      * @param isEmptyArray   if the allocation is a 0-size array
-     * @param heapBox        a single-element array to hold the heap id (or null)
+     * @return the heap allocation identifier
      */
-    private void writeAssignHeapAllocation(int reg, String type, int index,
-                                           String insn, boolean isEmptyArray,
-                                           String[] heapBox) {
+    private String writeAssignHeapAllocation(int reg, String type, int index,
+                                             String insn, boolean isEmptyArray) {
         String heap = JavaRepresentation.heapAllocId(methId, type, counter);
-        if (heapBox != null)
-            heapBox[0] = heap;
-
         _db.add(NORMAL_HEAP, heap, type);
         String lineNo = strOfLineNo(findLineForInstructionIndex(index));
         String var = local(reg);
@@ -1284,6 +1278,8 @@ class DexMethodFactWriter extends JavaFactWriter {
 
         if (extractRegisterTypes)
             writeLocal(var, type, methId);
+
+        return heap;
     }
 
     private boolean arraySizeIsZero(int arraySizeReg, int index) {
