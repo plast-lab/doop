@@ -54,7 +54,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private static final boolean extractRegisterTypes = false;
 
     private static final boolean debug = false;
-    private static final Log logger = debug ? LogFactory.getLog(DexMethodFactWriter.class) : null;
+    private static final Log logger = LogFactory.getLog(DexMethodFactWriter.class);
 
     // The following fields are needed to process the current method.
     private final DexBackedMethod m;
