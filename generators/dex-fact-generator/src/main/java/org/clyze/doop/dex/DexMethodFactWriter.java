@@ -713,6 +713,11 @@ class DexMethodFactWriter extends JavaFactWriter {
 
     private void handleFillArrayData(Instruction instr, int index) {
         int regA = ((OneRegisterInstruction) instr).getRegisterA();
+        // Sanity check: lastNewArrayInfo should be initialized.
+        if (lastNewArrayInfo == null) {
+            logWarn(logger, "WARNING: 'lastNewArrayInfo' is null in " + methId);
+            return;
+        }
         // Sanity check: fill-array-data should appear at most 2 instructions
         // after a new-array instruction.
         if (lastNewArrayInfo.index > (index + 2))

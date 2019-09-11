@@ -68,8 +68,12 @@ class DexClassFactWriter extends JavaFactWriter {
         else
             _db.add(CLASS_TYPE, className);
 
-        this.superClass = TypeUtils.raiseTypeId(dexClass.getSuperclass());
-        _db.add(DIRECT_SUPER_CLASS, className, superClass);
+        String dexSuper = dexClass.getSuperclass();
+        if (dexSuper != null) {
+            this.superClass = TypeUtils.raiseTypeId(dexSuper);
+            _db.add(DIRECT_SUPER_CLASS, className, superClass);
+        } else
+            logError(logger, "ERROR: no super class found for " + className);
 
         for (String intf : dexClass.getInterfaces())
             _db.add(DIRECT_SUPER_IFACE, className, TypeUtils.raiseTypeId(intf));
