@@ -135,6 +135,23 @@ public class ArtifactScanner {
         }
     }
 
+    /**
+     * Helper method to generate the "class-artifact" table for a list of inputs.
+     *
+     * @param inputs   a list of inputs (such as JAR or APK files)
+     */
+    public void onlyRegisterArtifactClasses(List<String> inputs) throws IOException {
+        for (String input : inputs) {
+            String lower = input.toLowerCase();
+            if (lower.endsWith(".jar") || lower.endsWith(".zip"))
+                processJARClasses(input, null, null);
+            else if (lower.endsWith(".apk"))
+                processAPKClasses(input, null);
+            else if (lower.endsWith(".aar"))
+                System.err.println("AAR input not supported for class-artifact table: " + input);
+        }
+    }
+
     @FunctionalInterface
     interface EntryProcessor {
         /**
