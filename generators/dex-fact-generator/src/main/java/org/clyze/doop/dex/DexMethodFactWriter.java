@@ -764,6 +764,7 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param index    the instruction index
      * @param op       the move-result opcode
      */
+    // @SuppressWarnings("dereference.of.nullable")
     private void writeMoveResult(Instruction instr, int index, Opcode op) {
         if (this.objReturnInfo == null) {
             // Sanity check: return-object information must be present.
@@ -1138,6 +1139,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         this.lastNewArrayInfo = new NewArrayInfo(index, heapId);
     }
 
+    // @SuppressWarnings("assignment.type.incompatible")
     private void writeFilledNewArray(Instruction instr, int index, Opcode op) {
         String insn = instructionId("assign", index);
         String arrayType = raiseTypeId(jvmTypeOf((ReferenceInstruction)instr));
@@ -1188,6 +1190,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         return ret.stream().mapToInt(Integer::intValue).toArray();
     }
 
+    // @SuppressWarnings("dereference.of.nullable")
     private void writeInvoke(Instruction instr, Opcode op, int index) {
         ReferenceInstruction ri = (ReferenceInstruction)instr;
         DexBackedMethodReference mRef = (DexBackedMethodReference)ri.getReference();
