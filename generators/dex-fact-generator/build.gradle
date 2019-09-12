@@ -1,7 +1,7 @@
-plugins {
-    id 'org.checkerframework' version '0.3.31'
-}
-apply plugin: 'org.checkerframework'
+// plugins {
+//     id 'org.checkerframework' version '0.3.31'
+// }
+// apply plugin: 'org.checkerframework'
 
 repositories {
     maven {
@@ -23,6 +23,7 @@ repositories {
 
 dependencies {
     compile project(':generators:fact-generator-common')
+    implementation 'org.checkerframework:checker-qual:2.11.0'   // needed when the Checker plugin is disabled
 }
 
 //fatJar already exists
