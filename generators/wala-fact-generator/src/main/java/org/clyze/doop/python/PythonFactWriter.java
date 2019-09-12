@@ -45,7 +45,7 @@ class PythonFactWriter {
     private final SortedSet<String> packages;
 
     //Used for logging various messages
-    protected final Log logger;
+    private final Log logger;
     PythonFactWriter(PythonDatabase db) {
         _db = db;
         _rep = PythonRepresentation.getRepresentation();
@@ -126,7 +126,7 @@ class PythonFactWriter {
         return result;
     }
 
-    void writeGlobalFunction(IMethod globalFun){
+    private void writeGlobalFunction(IMethod globalFun){
         String funOrFileRep = _rep.signature(globalFun);
         String fileDeclaredInFolder = funOrFileRep.substring(0, funOrFileRep.lastIndexOf("/")).concat(">");
         String fileName = funOrFileRep.substring(funOrFileRep.lastIndexOf("/") + 1, funOrFileRep.length() - 4);
@@ -683,15 +683,15 @@ class PythonFactWriter {
         _db.add(predFile, fileName, args);
     }
 
-    boolean packageExists(String pack){
+    private boolean packageExists(String pack){
         return packages.contains(pack);
     }
 
-    void addPackage(String pack){
+    private void addPackage(String pack){
         packages.add(pack);
     }
 
-    String getRoot(){
+    private String getRoot(){
         //return packages.first();
         return packages.last();
     }

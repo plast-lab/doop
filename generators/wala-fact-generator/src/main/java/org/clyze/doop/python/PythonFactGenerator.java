@@ -23,8 +23,8 @@ import java.util.*;
 import static org.clyze.doop.python.utils.PythonUtils.createLocal;
 import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 
-public class PythonFactGenerator implements Runnable{
-    protected Log logger;
+class PythonFactGenerator implements Runnable{
+    protected final Log logger;
 
     private final PythonFactWriter _writer;
     private final IAnalysisCacheView cache;

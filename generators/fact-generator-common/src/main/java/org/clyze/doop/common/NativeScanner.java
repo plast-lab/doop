@@ -522,19 +522,18 @@ public class NativeScanner {
      */
     private static Map<String, List<String>> mergeMaps(Map<String, List<String>> map1,
                                                        Map<String, List<String>> map2) {
-        Map<String,List<String>> ret = map1;
         for (Map.Entry<String, List<String>> entry : map2.entrySet()) {
             String key = entry.getKey();
             List<String> existing = map1.get(key);
             if (existing == null)
-                ret.put(key, entry.getValue());
+                map1.put(key, entry.getValue());
             else {
-                List<String> newValue = ret.get(key);
+                List<String> newValue = map1.get(key);
                 newValue.addAll(entry.getValue());
-                ret.put(key, newValue);
+                map1.put(key, newValue);
             }
         }
-        return ret;
+        return map1;
     }
 
     private static Map<String,List<String>> findStringsInX86(Map<Long, String> foundStrings, String lib) {

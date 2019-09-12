@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 
 public class PythonIRPrinter {
-    private IAnalysisCacheView _cache;
+    private final IAnalysisCacheView _cache;
 
     public PythonIRPrinter(IAnalysisCacheView cache, String outputDir)
     {
