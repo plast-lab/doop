@@ -37,13 +37,13 @@ class FactWriter extends JavaFactWriter {
         _reportPhantoms = reportPhantoms;
     }
 
-    String methodSig(SootMethod m, String methodRaw) {
+    private String methodSig(SootMethod m, String methodRaw) {
         if (methodRaw == null)
             methodRaw = _rep.signature(m);
         return hashMethodNameIfLong(methodRaw);
     }
 
-    static String getAnnotationType(AnnotationTag aTag) {
+    private static String getAnnotationType(AnnotationTag aTag) {
         return TypeUtils.raiseTypeId(aTag.getType());
     }
 

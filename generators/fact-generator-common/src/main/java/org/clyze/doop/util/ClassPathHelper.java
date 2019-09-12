@@ -1,12 +1,9 @@
 package org.clyze.doop.util;
 
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -28,7 +25,7 @@ public class ClassPathHelper {
     public static String getClasspathJar(String prefix) {
         ClassLoader cl = ClassPathHelper.class.getClassLoader();
         if (cl instanceof URLClassLoader) {
-            Set<String> classpath = new HashSet<>();
+            Collection<String> classpath = new HashSet<>();
             URL[] urls = ((URLClassLoader)cl).getURLs();
             for (URL url : urls)
                 classpath.add(url.getFile());
@@ -45,7 +42,7 @@ public class ClassPathHelper {
      * @return           the path of the JAR
      *
      */
-    public static String getClasspathJar(String prefix, Iterable<String> classpath) {
+    private static String getClasspathJar(String prefix, Iterable<String> classpath) {
 	final String searchString = "/" + prefix;
         LinkedList<String> matchingPaths = new LinkedList<>();
 	for (String path : classpath) {

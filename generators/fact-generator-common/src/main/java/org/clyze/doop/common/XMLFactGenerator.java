@@ -3,7 +3,7 @@ package org.clyze.doop.common;
 import java.util.*;
 import java.io.*;
 import javax.xml.parsers.*;
-import org.apache.commons.io.FileUtils;
+
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
 import static org.clyze.doop.common.JavaFactWriter.str;

@@ -1,6 +1,5 @@
 package org.clyze.doop.common;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;

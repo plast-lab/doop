@@ -34,7 +34,7 @@ public class NativeScanner {
     enum Arch {
         X86, X86_64, AARCH64, ARMEABI, MIPS;
 
-        public static Arch autodetect(String libFilePath) throws IOException {
+        static Arch autodetect(String libFilePath) throws IOException {
             ProcessBuilder pb = new ProcessBuilder("file", libFilePath);
             Arch arch = null;
             for (String line : NativeScanner.runCommand(pb)) {
@@ -451,7 +451,7 @@ public class NativeScanner {
         System.out.println("[" + addr + "] " + eps.get(addr));
     }
 
-    public static List<String> runCommand(ProcessBuilder builder) throws IOException {
+    private static List<String> runCommand(ProcessBuilder builder) throws IOException {
         if (debug)
             System.err.println("Running external command: " + String.join(" ", builder.command()));
         builder.redirectErrorStream(true);

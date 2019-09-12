@@ -1,20 +1,12 @@
 package org.clyze.doop.soot.android;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import org.clyze.doop.common.android.AppResources;
 import org.clyze.doop.common.android.AppResourcesXML;
 import org.clyze.doop.common.android.AndroidSupport;
 import org.clyze.doop.soot.*;
-import org.clyze.utils.TypeUtils;
-import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import soot.Scene;
 import soot.SootClass;
-import soot.coffi.Util;
-import soot.dexpler.DexFileProvider;
-
-import static soot.dexpler.DexFileProvider.DexContainer;
 
 public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
 

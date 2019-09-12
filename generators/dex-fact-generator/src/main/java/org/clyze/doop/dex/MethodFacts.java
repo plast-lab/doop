@@ -9,7 +9,7 @@ import org.jf.dexlib2.iface.reference.MethodReference;
 
 class MethodFacts {
 
-    private static Map<MethodReference, String> cachedMethodIds = new ConcurrentHashMap<>();
+    private static final Map<MethodReference, String> cachedMethodIds = new ConcurrentHashMap<>();
 
     public final String simpleName;
     public final String paramsSig;
@@ -17,7 +17,7 @@ class MethodFacts {
     public final String retType;
     public final String jvmSig;
     public final String arity;
-    public final String methId;
+    private final String methId;
 
     /**
      * Generates a method facts table for a method reference.

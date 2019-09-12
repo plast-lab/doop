@@ -242,7 +242,7 @@ public class DoopAddons {
     public static class MethodType {
 	final String returnType;
 	final List<String> parameterTypes;
-	public MethodType(String retType, List<String> paramTypes) {
+	MethodType(String retType, List<String> paramTypes) {
 	    this.returnType = retType;
 	    this.parameterTypes = paramTypes;
 	}

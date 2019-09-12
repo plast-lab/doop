@@ -1,7 +1,5 @@
 package org.clyze.doop.dex;
 
-import org.checkerframework.checker.nullness.qual.*;
-
 class DexRepresentation {
 
     public static String local(String methId, int i) {
