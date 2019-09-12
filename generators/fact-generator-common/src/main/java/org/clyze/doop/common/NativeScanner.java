@@ -598,7 +598,7 @@ public class NativeScanner {
                 for (String line : runCommand(gdbBuilder)) {
                     Matcher m = leaPattern.matcher(line);
                     if (m.find()) {
-                        Long address = Long.parseLong(m.group(1),16);
+                        long address = Long.parseLong(m.group(1),16);
                         String str = foundStrings.get(address);
                         if (debug)
                             System.out.println("gdb disassemble string: '" + str + "' -> " + address);
@@ -722,7 +722,7 @@ public class NativeScanner {
                         } else if (m.group(4).contains("add") || m.group(4).equals("adr")) {
                             m = addPattern.matcher(instruction);
                             if (m.find() && registers.containsKey(m.group(1)) && registers.containsKey(m.group(2))) {
-                                Long address = Long.parseLong(registers.get(m.group(2)), 16);
+                                long address = Long.parseLong(registers.get(m.group(2)), 16);
                                 if (!m.group(3).equals("")) {
                                     if (!registers.containsKey(m.group(3)))
                                         if (m.group(4).contains("#"))
@@ -732,7 +732,7 @@ public class NativeScanner {
                                     address += Long.parseLong(registers.get(m.group(3)), 16);
                                 } else
                                     address += Long.parseLong(registers.get(m.group(1)), 16);
-                                Integer len = Long.toHexString(address).length();
+                                int len = Long.toHexString(address).length();
                                 if (len>registers.get(m.group(1)).length() && len>registers.get(m.group(2)).length())
                                     address = Long.parseLong(Long.toHexString(address).substring(1),16);
                                 registers.put(m.group(1),Long.toHexString(address));
@@ -798,7 +798,7 @@ public class NativeScanner {
                             m = addPattern.matcher(instruction);
                             if (m.find() && registers.containsKey(m.group(2)) && registers.containsKey(m.group(3))) {
                                 try {
-                                    Long address = Long.parseLong(registers.get(m.group(2)), 16) + Long.parseLong("8", 16);
+                                    long address = Long.parseLong(registers.get(m.group(2)), 16) + Long.parseLong("8", 16);
                                     address += Long.parseLong(registers.get(m.group(3)), 16);
                                     String str = foundStrings.get(address);
                                     if (debug)

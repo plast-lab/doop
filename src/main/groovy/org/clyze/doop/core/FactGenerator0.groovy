@@ -38,13 +38,13 @@ class FactGenerator0 {
     // A map from rule-hash to (type, number-of-matches). Used to detect bad 'keep' input.
     private Map<String, Map<String, Integer> > ruleCounts = new HashMap<String, Map<String, Integer> >()
 
-    public FactGenerator0(File factsDir) {
+    FactGenerator0(File factsDir) {
         this.factsDir = factsDir
     }
 
     private File factsFile(String s) { new File(factsDir, s + ".facts") }
 
-    public void writeMainClassFacts(def mainClass) {
+    void writeMainClassFacts(def mainClass) {
         if (mainClass) {
             factsFile(MAIN_CLASS.name).withWriterAppend { w ->
                 mainClass.each { w.writeLine(it as String) }
@@ -52,19 +52,19 @@ class FactGenerator0 {
         }
     }
 
-    public void writeDacapoFacts(String benchmark, String benchmarkCap) {
+    void writeDacapoFacts(String benchmark, String benchmarkCap) {
         factsFile(DACAPO.name).withWriter { w ->
             w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
         }
     }
 
-    public void writeDacapoBachFacts(String benchmarkCap) {
+    void writeDacapoBachFacts(String benchmarkCap) {
         factsFile(DACAPO.name).withWriter { w ->
             w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
         }
     }
 
-    public void writeTamiflexFacts(File origTamFile) {
+    void writeTamiflexFacts(File origTamFile) {
         factsFile(TAMIFLEX.name).withWriter { w ->
             origTamFile.eachLine { line ->
                 w << line
@@ -101,7 +101,7 @@ class FactGenerator0 {
 
     // The extra sensitive controls are given as a String
     // "id1,type1,parentId1,id2,type2,parentId2,...".
-    public void writeExtraSensitiveControls(String controls) {
+    void writeExtraSensitiveControls(String controls) {
         if (controls == "") {
             return
         }
@@ -134,7 +134,7 @@ class FactGenerator0 {
      *
      * @param specPath   the specification file path
      */
-    public void writeKeepSpec(String specPath) {
+    void writeKeepSpec(String specPath) {
         if (specPath == null)
             return
 
@@ -218,7 +218,7 @@ class FactGenerator0 {
     /**
      * Initialize all output fact files.
      */
-    public void touch() {
+    void touch() {
         PredicateFile0.values().each {
             FileUtils.touch(factsFile(it.name))
         }

@@ -27,7 +27,7 @@ public class DexInvoker {
         start(args, new CHA());
     }
 
-    public static void start(String[] args, CHA cha) throws DoopErrorCodeException {
+    private static void start(String[] args, CHA cha) throws DoopErrorCodeException {
         DexParameters dexParams = new DexParameters();
         dexParams.initFromArgs(args);
 

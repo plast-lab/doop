@@ -34,18 +34,18 @@ import static org.clyze.doop.python.utils.PythonUtils.fixNewType;
 import static org.clyze.doop.python.utils.PythonUtils.fixType;
 import static org.clyze.doop.python.utils.PythonUtils.createLocal;
 
-public class PythonFactWriter {
-    private PythonDatabase _db;
-    private PythonRepresentation _rep;
+class PythonFactWriter {
+    private final PythonDatabase _db;
+    private final PythonRepresentation _rep;
 
     //Map from WALA's JVM like type string to our format
     //Used in writeType()
-    private Map<String, String> _typeMap;
+    private final Map<String, String> _typeMap;
 
-    private SortedSet<String> packages;
+    private final SortedSet<String> packages;
 
     //Used for logging various messages
-    protected Log logger;
+    protected final Log logger;
     PythonFactWriter(PythonDatabase db) {
         _db = db;
         _rep = PythonRepresentation.getRepresentation();

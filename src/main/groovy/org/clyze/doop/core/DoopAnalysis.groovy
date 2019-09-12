@@ -66,13 +66,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     static final INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
 
-    public String getId() { options.USER_SUPPLIED_ID.value as String }
+    String getId() { options.USER_SUPPLIED_ID.value as String }
 
-    public String getName() { options.ANALYSIS.value.toString().replace(File.separator, "-") }
+    String getName() { options.ANALYSIS.value.toString().replace(File.separator, "-") }
 
-    public File getOutDir() { options.OUT_DIR.value as File }
+    File getOutDir() { options.OUT_DIR.value as File }
 
-    public File getCacheDir() { options.CACHE_DIR.value as File }
+    File getCacheDir() { options.CACHE_DIR.value as File }
 
     List<File> getInputFiles() { options.INPUTS.value as List<File> }
 
@@ -578,10 +578,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (t instanceof InvocationTargetException)
             t = ((InvocationTargetException) t).targetException as Throwable
         if (loader == null)
-            loader = t.getClass().getClassLoader()
-        if (t.getClass().name == className) {
+            loader = t.class.classLoader
+        if (t.class.name == className) {
             Field classesFld = loader.loadClass(className).getDeclaredField(fieldName)
-            classesFld.setAccessible(true)
+            classesFld.accessible = true
             return classesFld.get(t)
         }
         return null
@@ -761,7 +761,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      *
      * @return true if the runtime supports Java 9+
      */
-    public static boolean java9Plus() {
+    static boolean java9Plus() {
         try {
             Class c = Class.forName('java.lang.Runtime$Version')
             return true
@@ -778,7 +778,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      * @param resource     the prefix of the fact generator JAR (should match one resource)
      * @param args         the fact generation arguments
      */
-    public void invokeFactGenerator(String TAG, String[] jvmArgs, String resource, String[] args) {
+    void invokeFactGenerator(String TAG, String[] jvmArgs, String resource, String[] args) {
         if (jvmArgs == null)
             jvmArgs = new String[0]
 

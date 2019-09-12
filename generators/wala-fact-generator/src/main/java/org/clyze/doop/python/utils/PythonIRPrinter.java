@@ -11,11 +11,10 @@ import java.util.Iterator;
 
 public class PythonIRPrinter {
     private IAnalysisCacheView _cache;
-    private String _outputDir;
 
     public PythonIRPrinter(IAnalysisCacheView cache, String outputDir)
     {
-        _outputDir = outputDir;
+        String _outputDir = outputDir;
         _cache = cache;
     }
 

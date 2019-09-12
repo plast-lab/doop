@@ -1163,7 +1163,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     }
 
     private int[] processActualParams(int[] actual, String[] paramTypes) {
-        List<Integer> ret = new ArrayList<>();
+        Collection<Integer> ret = new ArrayList<>();
 
         // Formal param type index
         int j = 0;

@@ -22,7 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class WalaInvoker {
+class WalaInvoker {
 
     private static boolean isApplicationClass(Parameters walaParameters, IClass klass) {
         // Change package delimiter from "/" to "."

@@ -149,7 +149,7 @@ class FactWriter extends JavaFactWriter {
 
     // Helper method used by writeAnnotationElement().
     private void writeAnnotationElements(String targetType, String target, String parentId,
-                                         Collection<AnnotationElem> elements) {
+                                         Iterable<AnnotationElem> elements) {
         if (parentId == null)
             parentId = "0";
         int id = 0;

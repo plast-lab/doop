@@ -28,7 +28,6 @@ public class PythonFactGenerator implements Runnable{
 
     private final PythonFactWriter _writer;
     private final IAnalysisCacheView cache;
-    private final PythonIRPrinter IRPrinter;
     private final Set<IClass> _iClasses;
 
     //The classes that are in the class hierarchy by default
@@ -42,7 +41,7 @@ public class PythonFactGenerator implements Runnable{
         this.logger = LogFactory.getLog(getClass());
         this._iClasses = iClasses;
         cache = analysisCache;
-        IRPrinter = new PythonIRPrinter(cache, outDir);
+        PythonIRPrinter IRPrinter = new PythonIRPrinter(cache, outDir);
     }
 
     @Override

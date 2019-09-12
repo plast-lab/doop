@@ -3,7 +3,6 @@ package org.clyze.doop.soot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import org.clyze.doop.common.Driver;
 import soot.*;
