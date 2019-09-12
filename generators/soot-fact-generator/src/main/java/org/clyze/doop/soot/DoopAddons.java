@@ -29,7 +29,6 @@ import soot.options.Options;
  */
 public class DoopAddons {
 
-    private static Object lock = new Object();
     private static Method hc = null;
     private static final String METHODTYPE = "soot.jimple.MethodType";
     private static Class<?> mtClass = null;
@@ -242,7 +241,7 @@ public class DoopAddons {
     public static class MethodType {
 	final String returnType;
 	final List<String> parameterTypes;
-	public MethodType(String retType, List<String> paramTypes) {
+	MethodType(String retType, List<String> paramTypes) {
 	    this.returnType = retType;
 	    this.parameterTypes = paramTypes;
 	}

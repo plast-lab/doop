@@ -1,24 +1,19 @@
 package org.clyze.doop.common.android;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-import org.apache.commons.logging.LogFactory;
-import org.clyze.doop.common.BasicJavaSupport;
-import org.clyze.doop.common.Database;
-import org.clyze.doop.common.JavaFactWriter;
-import org.clyze.doop.common.Parameters;
-import org.clyze.doop.common.XMLFactGenerator;
-import org.clyze.doop.util.ClassPathHelper;
+import org.clyze.doop.common.*;
 import org.clyze.doop.util.Resources;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+
 public abstract class AndroidSupport {
 
-    public static final String DECODE_DIR = "decoded";
+    private static final String DECODE_DIR = "decoded";
 
     protected final Parameters parameters;
     protected final BasicJavaSupport java;

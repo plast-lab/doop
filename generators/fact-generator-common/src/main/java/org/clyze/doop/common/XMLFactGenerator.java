@@ -3,7 +3,7 @@ package org.clyze.doop.common;
 import java.util.*;
 import java.io.*;
 import javax.xml.parsers.*;
-import org.apache.commons.io.FileUtils;
+
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
 import static org.clyze.doop.common.JavaFactWriter.str;
@@ -15,14 +15,15 @@ import org.clyze.utils.JHelper;
  * Android-specific attributes.
  */
 public class XMLFactGenerator extends DefaultHandler {
-    static final boolean verbose = false;
-    final String[] ID_PREFIXES = new String[] { "@id/", "@android:id/" };
-    final String LAYOUT_PREFIX = "@layout/";
+    private static final boolean verbose = false;
+    private final String[] ID_PREFIXES = new String[] { "@id/", "@android:id/" };
+    @SuppressWarnings("FieldCanBeLocal")
+    private final String LAYOUT_PREFIX = "@layout/";
 
-    final Database db;
-    final File xmlFile;
-    final String relativePath;
-    final Stack<Integer> parents = new Stack<>();
+    private final Database db;
+    private final File xmlFile;
+    private final String relativePath;
+    private final Stack<Integer> parents = new Stack<>();
     // This should match the constant in the XML logic.
     private static final int ROOT_NODE = -1;
     private int nodeId = 0;
@@ -211,7 +212,7 @@ public class XMLFactGenerator extends DefaultHandler {
     private static class Node {
         final String file;
         final String nodeId;
-        public Node(String file, String nodeId) {
+        Node(String file, String nodeId) {
             this.file = file;
             this.nodeId = nodeId;
         }

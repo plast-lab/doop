@@ -1,5 +1,6 @@
 package org.clyze.doop.dex;
 
+import org.checkerframework.checker.nullness.qual.*;
 import org.jf.dexlib2.Opcode;
 
 import java.util.Arrays;
@@ -10,7 +11,7 @@ import java.util.Arrays;
  * opcodes).
  */
 class ObjectReturnInfo {
-    public final Integer baseReg;
+    public final @Nullable Integer baseReg;
     public final int[] argRegs;
     public final String insn;
     public final Opcode op;
@@ -22,23 +23,23 @@ class ObjectReturnInfo {
      * array creation opcode.
      * @param insn        the instruction returning the object (String id)
      * @param argRegs0    the argument registers
-     * @param mSig        method signature information or array signature
+     * @param retType     the return type (method signature information or array signature)
+     * @param frmCount    the number of parameters (in method signature information or array signature)
      * @param isStatic    if this is a static method call (always true for array creation)
      * @param op          the instruction returning the object (opcode)
      */
-    ObjectReturnInfo(String insn, int[] argRegs0, MethodSig mSig, boolean isStatic,
-                            Opcode op, int index) {
+    ObjectReturnInfo(String insn, int[] argRegs0, String retType, int frmCount,
+                     boolean isStatic, Opcode op, int index) {
         this.insn = insn;
         this.op = op;
         this.index = index;
-        this.retType = mSig.retType;
+        this.retType = retType;
 
         // Calculate registers.
         int argStartIdx = 0;
         // Consume one register for "this" if the function is not static
         this.baseReg = (isStatic) ? null : argRegs0[argStartIdx++];
         // Put the rest of the registers into argRegs
-        int frmCount = mSig.paramTypes.length;
         int argCount = argRegs0.length - argStartIdx;
         if (frmCount > argCount)
             throw new RuntimeException("Cannot find all " + frmCount + " arguments, only " + argCount + " are available.");

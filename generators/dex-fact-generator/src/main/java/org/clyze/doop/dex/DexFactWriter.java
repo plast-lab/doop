@@ -43,7 +43,7 @@ class DexFactWriter extends JavaFactWriter {
         for (DexBackedTypeReference typeRef : dex.getTypes())
             cha.registerReferencedType(TypeUtils.raiseTypeId(typeRef.getType()));
         for (DexBackedMethodReference methRef : dex.getMethods())
-            cha.registerReferencedMethod(DexRepresentation.methodId(methRef, null));
+            cha.registerReferencedMethod(MethodFacts.methodId(methRef));
 
         if (dex.getMethodHandleCount() > 0)
             System.err.println("WARNING: method handles are not yet supported.");

@@ -27,7 +27,7 @@ public class DexInvoker {
         start(args, new CHA());
     }
 
-    public static void start(String[] args, CHA cha) throws DoopErrorCodeException {
+    private static void start(String[] args, CHA cha) throws DoopErrorCodeException {
         DexParameters dexParams = new DexParameters();
         dexParams.initFromArgs(args);
 
@@ -35,7 +35,7 @@ public class DexInvoker {
             Helper.tryInitLogging("DEBUG", dexParams.getLogDir(), true);
         } catch (IOException ex) {
             System.err.println("WARNING: could not initialize logging");
-            throw new DoopErrorCodeException(18, null, true);
+            throw new DoopErrorCodeException(18, ex, true);
         }
 
         Log logger = LogFactory.getLog(DexInvoker.class);

@@ -2,6 +2,7 @@ package org.clyze.doop.dex;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.checkerframework.checker.nullness.qual.*;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FieldInfo;
 import org.clyze.doop.common.FieldOp;
@@ -39,6 +40,7 @@ import org.jf.dexlib2.immutable.debug.ImmutablePrologueEnd;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.clyze.doop.common.FrontEndLogger.*;
 import static org.clyze.doop.common.JavaRepresentation.handlerMid;
 import static org.clyze.doop.common.JavaRepresentation.numberedInstructionId;
 import static org.clyze.doop.common.PredicateFile.*;
@@ -53,13 +55,13 @@ class DexMethodFactWriter extends JavaFactWriter {
     private static final boolean extractRegisterTypes = false;
 
     private static final boolean debug = false;
-    private static final Log logger = debug ? LogFactory.getLog(DexMethodFactWriter.class) : null;
+    private static final Log logger = LogFactory.getLog(DexMethodFactWriter.class);
 
     // The following fields are needed to process the current method.
     private final DexBackedMethod m;
     private final Map<String, MethodSig> cachedMethodDescriptors;
     private final SessionCounter counter = new SessionCounter();
-    private final MethodFacts mf = new MethodFacts();
+    private final MethodFacts mf;
     private final String methId;
     private final NavigableMap<Integer, Integer> lineNumbers = new TreeMap<>();
 
@@ -85,14 +87,14 @@ class DexMethodFactWriter extends JavaFactWriter {
     //     INVOKE_SUPER, INVOKE_DIRECT_RANGE, INVOKE_VIRTUAL_RANGE,
     //     INVOKE_STATIC_RANGE, INVOKE_INTERFACE_RANGE, INVOKE_SUPER_RANGE: }
     //   second instruction: any of { MOVE_RESULT, MOVE_RESULT_WIDE, MOVE_RESULT_OBJECT }
-    private ObjectReturnInfo objReturnInfo;
+    private @Nullable ObjectReturnInfo objReturnInfo;
 
     // Pattern supported by field: set-register-R-to-0 + NEW_ARRAY-of-size-R
-    private ZeroedRegister zeroedArraySizeRegister;
+    private @Nullable ZeroedRegister zeroedArraySizeRegister;
 
     // The following two fields essentially support a 3-instruction pattern.
     // Pattern supported by field: NEW_ARRAY + FILL_ARRAY_DATA
-    private NewArrayInfo lastNewArrayInfo;
+    private @Nullable NewArrayInfo lastNewArrayInfo;
     // Pattern supported by field: FILL_ARRAY_DATA + ARRAY_PAYLOAD
     private final PatternManager<FillArrayInfoEntry> fillArrayInfo = new PatternManager<>();
 
@@ -112,15 +114,17 @@ class DexMethodFactWriter extends JavaFactWriter {
         super(_db, moreStrings, true);
         this.m = dexMethod;
         this.cachedMethodDescriptors = cachedMethodDescriptors;
-        this.methId = DexRepresentation.methodId(m, mf);
+
+        this.mf = new MethodFacts(m);
+        this.methId = mf.getMethodId();
 
         // Process flags.
         this.flags = AccessFlags.getAccessFlagsForMethod(m.getAccessFlags());
         this.isNative = Arrays.asList(flags).contains(AccessFlags.NATIVE);
-        this.isStatic = Arrays.asList(flags).contains(AccessFlags.STATIC);
+        boolean staticMod = Arrays.asList(flags).contains(AccessFlags.STATIC);
+        this.isStatic = staticMod;
         // Process locals.
-        DexBackedMethodImplementation mi = m.getImplementation();
-        this.localRegCount = (mi == null) ? 0 : countLocalRegisters(mi);
+        this.localRegCount = countLocalRegisters(dexMethod, staticMod);
     }
 
     public void writeMethod(Collection<FieldOp> fieldOps,
@@ -138,7 +142,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 if (debug) {
                     for (String sig : getAnnotationValues(annotation, (ev -> ((DexBackedStringEncodedValue) ev).getValue())))
                         if (!sig.equals(mf.jvmSig))
-                            logger.debug("Ignored supplied method signature: " + sig + " != " + mf.jvmSig);
+                            logDebug(logger, "Ignored supplied method signature: " + sig + " != " + mf.jvmSig);
                 }
             }
             writeMethodAnnotation(methId, annotType);
@@ -215,7 +219,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 if (t == null) {
                     excType = "java.lang.Throwable";
                     if (debug)
-                        logger.warn("WARNING: no exception type found for handler in " + methId + ", using " + excType);
+                        logWarn(logger, "WARNING: no exception type found for handler in " + methId + ", using " + excType);
                 } else
                     excType = raiseTypeId(t);
                 handlers.add(new Handler(startAddr, endAddr, handlerAddr, excType));
@@ -224,7 +228,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 Integer startIndex = addressToIndex.get(startAddr);
                 Integer endIndex = addressToIndex.get(endAddr);
                 if (handlerIndex == null || startIndex == null || endIndex == null) {
-                    System.err.println("Error: handler {" + handlerIndex + ", " + startIndex + ", " + endIndex + "}");
+                    logError(logger, "ERROR: handler {" + handlerIndex + ", " + startIndex + ", " + endIndex + "}");
                     previous = null;
                 } else {
                     String insn = instructionId(handlerMid(excType), handlerIndex);
@@ -242,7 +246,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         for (MoveExceptionInfo mei : exceptionMoves) {
             List<Handler> containingHandlers = Handler.findHandlerStartingAt(handlers, mei.address);
             if (containingHandlers.isEmpty()) {
-                System.err.println("Error: no exception handler found for MOVE_EXCEPTION at address " + mei.address + " in " + methId);
+                logError(logger, "ERROR: no exception handler found for MOVE_EXCEPTION at address " + mei.address + " in " + methId);
                 continue;
             }
             String localA = local(mei.reg);
@@ -253,11 +257,11 @@ class DexMethodFactWriter extends JavaFactWriter {
                     Integer handlerIndex = hi.getIndex(addressToIndex);
                     // Sanity check: MOVE_EXCEPTION must be first handler instruction.
                     if (handlerIndex != mei.index)
-                        System.err.println("WARNING: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
+                        logWarn(logger, "WARNING: different handlerIndex " + handlerIndex + "!=" + mei.index + " for handler: " + hi);
                     String insn = instructionId(handlerMid(hi.excType), handlerIndex);
                     writeExceptionHandlerFormal(insn, localA);
                 } catch (Handler.IndexException ex) {
-                    System.err.println("Error: " + ex.getMessage());
+                    logError(logger, "ERROR: " + ex.getMessage());
                 }
             }
         }
@@ -270,7 +274,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         for (RawGoto g : gotos) {
             Integer indexTo = addressToIndex.get(g.addrTo);
             if (indexTo == null)
-                System.err.println("WARNING: cannot resolve goto target " + g.index + " in method " + methId);
+                logWarn(logger, "WARNING: cannot resolve goto target " + g.index + " in method " + methId);
             else
                 writeGoto(g.insn, indexTo, g.index);
         }
@@ -278,7 +282,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         for (RawGoto g : ifs) {
             Integer indexTo = addressToIndex.get(g.addrTo);
             if (indexTo == null)
-                System.err.println("WARNING: cannot resolve if target " + g.index + " in method " + methId);
+                logWarn(logger, "WARNING: cannot resolve if target " + g.index + " in method " + methId);
             else
                 writeIf(g.insn, g.index, indexTo, methId);
         }
@@ -310,7 +314,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 if (addr != 0)
                     System.err.println("(UNUSED) Epilogue begin: " + addr + " != 0");
             } else
-                System.err.println("WARNING: Unknown debug item class: " + di.getClass());
+                logWarn(logger, "WARNING: Unknown debug item class: " + di.getClass());
         }
     }
 
@@ -319,7 +323,11 @@ class DexMethodFactWriter extends JavaFactWriter {
         writeLocal(local(reg), regType, methId);
     }
 
-    private int countLocalRegisters(DexBackedMethodImplementation mi) {
+    private static int countLocalRegisters(DexBackedMethod m, boolean isStatic) {
+        DexBackedMethodImplementation mi = m.getImplementation();
+        if (mi == null)
+            return 0;
+
         int paramRegCount = 0;
         for (MethodParameter mp : mi.method.getParameters())
             paramRegCount += regSizeOf(mp.getType());
@@ -332,7 +340,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                                   Collection<FieldOp> fieldOps) {
         Opcode op = instr.getOpcode();
         if (debug)
-            logger.debug("Opcode " + op.name + " | Instruction class: " + instr.getClass());
+            logDebug(logger, "Opcode " + op.name + " | Instruction class: " + instr.getClass());
         switch (op) {
             case CONST_4:
             case CONST_16:
@@ -367,7 +375,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 int reg = ((OneRegisterInstruction)instr).getRegisterA();
                 TypeReference typeRef = (TypeReference)((ReferenceInstruction)instr).getReference();
                 String type = raiseTypeId(typeRef.getType());
-                writeAssignHeapAllocation(reg, type, index, instructionId("assign", index), false, null);
+                writeAssignHeapAllocation(reg, type, index, instructionId("assign", index), false);
                 break;
             }
             case CONST_STRING:
@@ -712,10 +720,15 @@ class DexMethodFactWriter extends JavaFactWriter {
 
     private void handleFillArrayData(Instruction instr, int index) {
         int regA = ((OneRegisterInstruction) instr).getRegisterA();
+        // Sanity check: lastNewArrayInfo should be initialized.
+        if (lastNewArrayInfo == null) {
+            logWarn(logger, "WARNING: 'lastNewArrayInfo' is null in " + methId);
+            return;
+        }
         // Sanity check: fill-array-data should appear at most 2 instructions
         // after a new-array instruction.
         if (lastNewArrayInfo.index > (index + 2))
-            System.err.println("WARNING: suspicious fill-array-data + new-array pattern in " + methId);
+            logWarn(logger, "WARNING: suspicious fill-array-data + new-array pattern in " + methId);
         fillArrayInfo.registerFirstInstructionData(new FillArrayInfoEntry(absoluteAddr((OffsetInstruction)instr), regA, index, lastNewArrayInfo));
         // Consume the information.
         this.lastNewArrayInfo = null;
@@ -738,7 +751,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             for (int idx = 0; idx < numbersSize; idx++)
                 _db.add(ARRAY_INITIAL_VALUE_FROM_CONST, insn, str(originalIndex), local(regDest), str(idx), numbers.get(idx).toString(), heapId, methId);
         } catch (Exception ex) {
-            System.err.println(ex.getMessage());
+            logError(logger, "Error in array payload handling: " + ex.getMessage());
         }
     }
 
@@ -751,22 +764,23 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param index    the instruction index
      * @param op       the move-result opcode
      */
+    // @SuppressWarnings("dereference.of.nullable")
     private void writeMoveResult(Instruction instr, int index, Opcode op) {
         if (this.objReturnInfo == null) {
             // Sanity check: return-object information must be present.
-            System.err.println("Internal error: result already consumed in method " +
+            logError(logger, "Internal error: result already consumed in method " +
                     methId + ", index = " + index);
             return;
         } else if (index != (objReturnInfo.index + 1)) {
             // Sanity check: a MOVE_RESULT* opcode must directly follow the
             // instruction that left the information about returning an object.
-            System.err.println("Opcode " + op + " at index " + index +
+            logError(logger, "Opcode " + op + " at index " + index +
                     " does not directly follow instruction " + objReturnInfo.index);
             return;
         }
 
         if (debug)
-            logger.debug("Consuming object return info: " + objReturnInfo);
+            logDebug(logger, "Consuming object return info: " + objReturnInfo);
 
         int regDest = ((OneRegisterInstruction) instr).getRegisterA();
         switch (objReturnInfo.op) {
@@ -774,8 +788,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             case FILLED_NEW_ARRAY_RANGE: {
                     String insn = instructionId("assign", index);
                     boolean isEmpty = (objReturnInfo.argRegs.length == 0);
-                    String[] heap = new String[1];
-                    writeAssignHeapAllocation(regDest, objReturnInfo.retType, index, insn, isEmpty, heap);
+                    String heap = writeAssignHeapAllocation(regDest, objReturnInfo.retType, index, insn, isEmpty);
                     writeInitialArrayValues(insn, index, regDest, objReturnInfo.argRegs, heap);
                 }
                 break;
@@ -793,7 +806,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 _db.add(ASSIGN_RETURN_VALUE, insn, local(regDest));
                 // Sanity check.
                 if (this.objReturnInfo.retType == null)
-                    System.err.println("WARNING: no return type in " + objReturnInfo);
+                    logWarn(logger, "WARNING: no return type in " + objReturnInfo);
                 break;
             }
             default:
@@ -809,12 +822,12 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param insn       the instruction id (one of the move-result opcodes)
      * @param regDest    the target register pointing to the array
      * @param argRegs    the sequence of initial values
-     * @param heap       a single-element array containing the heap id
+     * @param heap       the heap id
      */
     private void writeInitialArrayValues(String insn, int regDest, int index,
-                                         int[] argRegs, String[] heap) {
+                                         int[] argRegs, String heap) {
         for (int idx = 0; idx < argRegs.length; idx++)
-            _db.add(ARRAY_INITIAL_VALUE_FROM_LOCAL, insn, str(index), local(regDest), str(idx), local(argRegs[idx]), heap[0], methId);
+            _db.add(ARRAY_INITIAL_VALUE_FROM_LOCAL, insn, str(index), local(regDest), str(idx), local(argRegs[idx]), heap, methId);
     }
 
     private void writeSwitchTargets(Instruction instr, PredicateFile predicateFile) {
@@ -1043,7 +1056,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         writeAssignLocal(instructionId("assign", index), index, from, to, methId);
     }
 
-    private String local(int reg) {
+    private @NonNull String local(int reg) {
         String var;
         // System.out.println(methId + ", localsCount=" + this.localsCount + ",  reg=" + reg);
         if (reg < localRegCount)
@@ -1084,7 +1097,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     }
 
     private void writeFieldOp(Instruction instr, PredicateFile target,
-                              String localA, String localB, int index,
+                              String localA, @Nullable String localB, int index,
                               Collection<FieldOp> fieldOps) {
         String insn = instructionId("assign", index);
         Reference fieldRef = ((ReferenceInstruction)instr).getReference();
@@ -1120,13 +1133,13 @@ class DexMethodFactWriter extends JavaFactWriter {
         ReferenceInstruction ri = (ReferenceInstruction)instr;
         TypeReference typeRef = (DexBackedTypeReference)ri.getReference();
         String arrayType = raiseTypeId(typeRef.getType());
-        boolean isEmpty = arraySizeIsZero(regSize, index);
-        String[] heapIdBox = new String[1];
-        writeAssignHeapAllocation(regDest, arrayType, index, instructionId("assign", index), isEmpty, heapIdBox);
         writeArrayTypes(arrayType);
-        this.lastNewArrayInfo = new NewArrayInfo(index, heapIdBox[0]);
+        boolean isEmpty = arraySizeIsZero(regSize, index);
+        String heapId = writeAssignHeapAllocation(regDest, arrayType, index, instructionId("assign", index), isEmpty);
+        this.lastNewArrayInfo = new NewArrayInfo(index, heapId);
     }
 
+    // @SuppressWarnings("assignment.type.incompatible")
     private void writeFilledNewArray(Instruction instr, int index, Opcode op) {
         String insn = instructionId("assign", index);
         String arrayType = raiseTypeId(jvmTypeOf((ReferenceInstruction)instr));
@@ -1135,16 +1148,15 @@ class DexMethodFactWriter extends JavaFactWriter {
             return;
         int arraySize = ((VariableRegisterInstruction)instr).getRegisterCount();
         String[] paramTypes = Collections.nCopies(arraySize, componentType).toArray(new String[arraySize]);
-        MethodSig mSig = new MethodSig(arrayType, paramTypes);
 
         // Remember information to be used by subsequent move-result-object
-        this.objReturnInfo = new ObjectReturnInfo(insn, regsFor(instr), mSig, true, op, index);
+        this.objReturnInfo = new ObjectReturnInfo(insn, regsFor(instr), arrayType, paramTypes.length, true, op, index);
     }
 
-    private String writeArrayTypes(String arrayType) {
+    private @Nullable String writeArrayTypes(String arrayType) {
         int bracketIndex = arrayType.indexOf('[');
         if (bracketIndex == -1) {
-            System.err.println("WARNING: not an array type: " + arrayType);
+            logWarn(logger, "WARNING: not an array type: " + arrayType);
             return null;
         }
         String componentType = arrayType.substring(0, bracketIndex);
@@ -1153,7 +1165,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     }
 
     private int[] processActualParams(int[] actual, String[] paramTypes) {
-        ArrayList<Integer> ret = new ArrayList<>();
+        Collection<Integer> ret = new ArrayList<>();
 
         // Formal param type index
         int j = 0;
@@ -1178,6 +1190,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         return ret.stream().mapToInt(Integer::intValue).toArray();
     }
 
+    // @SuppressWarnings("dereference.of.nullable")
     private void writeInvoke(Instruction instr, Opcode op, int index) {
         ReferenceInstruction ri = (ReferenceInstruction)instr;
         DexBackedMethodReference mRef = (DexBackedMethodReference)ri.getReference();
@@ -1186,7 +1199,9 @@ class DexMethodFactWriter extends JavaFactWriter {
         String insn = numberedInstructionId(methId, mSig.getMid(), counter);
 
         // Remember information to be used by subsequent move-result-object
-        this.objReturnInfo = new ObjectReturnInfo(insn, regsFor(instr), mSig, isStaticInvoke, op, index);
+        this.objReturnInfo = new ObjectReturnInfo(insn, regsFor(instr), mSig.retType,
+                                                  mSig.paramTypes.length,
+                                                  isStaticInvoke, op, index);
 
         Integer lineNoInteger = findLineForInstructionIndex(index);
         String lineNo = strOfLineNo(lineNoInteger);
@@ -1210,6 +1225,8 @@ class DexMethodFactWriter extends JavaFactWriter {
         switch (op) {
             case INVOKE_DIRECT:
             case INVOKE_DIRECT_RANGE:
+                if (base == null)
+                    throw new RuntimeException("ERROR: no object return information in " + methId);
                 _db.add(SPECIAL_METHOD_INV, insn, str(index), mSig.sig, base, methId);
                 break;
             case INVOKE_STATIC:
@@ -1220,10 +1237,14 @@ class DexMethodFactWriter extends JavaFactWriter {
             case INVOKE_VIRTUAL_RANGE:
             case INVOKE_INTERFACE:
             case INVOKE_INTERFACE_RANGE:
+                if (base == null)
+                    throw new RuntimeException("ERROR: no object return information in " + methId);
                 _db.add(VIRTUAL_METHOD_INV, insn, str(index), mSig.sig, base, methId);
                 break;
             case INVOKE_SUPER:
             case INVOKE_SUPER_RANGE:
+                if (base == null)
+                    throw new RuntimeException("ERROR: no object return information in " + methId);
                 _db.add(SUPER_METHOD_INV, insn, str(index), mSig.sig, base, methId);
                 break;
             default:
@@ -1250,15 +1271,11 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param index          the index of the allocating instruction
      * @param insn           the instruction id
      * @param isEmptyArray   if the allocation is a 0-size array
-     * @param heapBox        a single-element array to hold the heap id (or null)
+     * @return the heap allocation identifier
      */
-    private void writeAssignHeapAllocation(int reg, String type, int index,
-                                           String insn, boolean isEmptyArray,
-                                           String[] heapBox) {
+    private String writeAssignHeapAllocation(int reg, String type, int index,
+                                             String insn, boolean isEmptyArray) {
         String heap = JavaRepresentation.heapAllocId(methId, type, counter);
-        if (heapBox != null)
-            heapBox[0] = heap;
-
         _db.add(NORMAL_HEAP, heap, type);
         String lineNo = strOfLineNo(findLineForInstructionIndex(index));
         String var = local(reg);
@@ -1269,6 +1286,8 @@ class DexMethodFactWriter extends JavaFactWriter {
 
         if (extractRegisterTypes)
             writeLocal(var, type, methId);
+
+        return heap;
     }
 
     private boolean arraySizeIsZero(int arraySizeReg, int index) {
@@ -1297,9 +1316,18 @@ class DexMethodFactWriter extends JavaFactWriter {
         return cachedMethodDescriptors.computeIfAbsent(ref.toString(), x -> new MethodSig(ref));
     }
 
+    /**
+     * Find line corresponding to index.
+     *
+     * @param index   the opcode index
+     * @return the line number or -1 if no line number could be determined
+     */
     private Integer findLineForInstructionIndex(int index) {
         Map.Entry<Integer, Integer> entry = lineNumbers.floorEntry(index);
-        return (entry == null) ? null : entry.getValue();
+        if (entry == null) {
+            return -1;
+        }
+        return entry.getValue();
     }
 
     private int absoluteAddr(OffsetInstruction instr) {

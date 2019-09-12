@@ -3,7 +3,6 @@ package org.clyze.doop.soot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import org.clyze.doop.common.Driver;
 import soot.*;
@@ -117,7 +116,7 @@ class FactGenerator implements Runnable {
                 else if ("volatile".equals(modifierStrings[i]))
                     modifierStrings[i] = "bridge";
         // Handle modifiers that are not in the Modifier.toString() output.
-        List<String> ret = new ArrayList<>(Arrays.asList(modifierStrings));
+        Collection<String> ret = new ArrayList<>(Arrays.asList(modifierStrings));
         if(Modifier.isSynthetic(modifiers))
             ret.add("synthetic");
         if(Modifier.isConstructor(modifiers))

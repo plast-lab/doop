@@ -1,3 +1,8 @@
+// plugins {
+//     id 'org.checkerframework' version '0.3.31'
+// }
+// apply plugin: 'org.checkerframework'
+
 repositories {
     maven {
         name "soot-snapshot"
@@ -9,8 +14,16 @@ repositories {
     }
 }
 
+// // Uncomment to compile with nullness checker.
+// checkerFramework {
+//   checkers = [
+//     'org.checkerframework.checker.nullness.NullnessChecker'
+//   ]
+// }
+
 dependencies {
     compile project(':generators:fact-generator-common')
+    implementation 'org.checkerframework:checker-qual:2.11.0'   // needed when the Checker plugin is disabled
 }
 
 //fatJar already exists
@@ -18,7 +31,7 @@ fatJar {
     manifest {
         attributes 'Main-Class': 'org.clyze.doop.dex.DexInvoker'
     }
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    from { configurations.compile.collect { it.directory ? it : zipTree(it) } }
     with jar
 }
 

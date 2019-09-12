@@ -1,5 +1,8 @@
 package org.clyze.doop.dex;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.checkerframework.checker.nullness.qual.*;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FieldInfo;
 import org.clyze.doop.common.FieldOp;
@@ -16,6 +19,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
 
+import static org.clyze.doop.common.FrontEndLogger.*;
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**
@@ -23,10 +27,12 @@ import static org.clyze.doop.common.PredicateFile.*;
  */
 class DexClassFactWriter extends JavaFactWriter {
 
+    private static final @Nullable Log logger = LogFactory.getLog(DexClassFactWriter.class);
+
     public final Collection<FieldOp> fieldOps = new LinkedList<>();
     public final Collection<String> definedMethods = new LinkedList<>();
     public final Collection<FieldInfo> definedFields = new LinkedList<>();
-    public String superClass;
+    public @Nullable String superClass;
 
     DexClassFactWriter(Database db, boolean moreStrings) {
         super(db, moreStrings, true);
@@ -63,8 +69,12 @@ class DexClassFactWriter extends JavaFactWriter {
         else
             _db.add(CLASS_TYPE, className);
 
-        this.superClass = TypeUtils.raiseTypeId(dexClass.getSuperclass());
-        _db.add(DIRECT_SUPER_CLASS, className, superClass);
+        String dexSuper = dexClass.getSuperclass();
+        if (dexSuper != null) {
+            this.superClass = TypeUtils.raiseTypeId(dexSuper);
+            _db.add(DIRECT_SUPER_CLASS, className, superClass);
+        } else
+            logError(logger, "ERROR: no super class found for " + className);
 
         for (String intf : dexClass.getInterfaces())
             _db.add(DIRECT_SUPER_IFACE, className, TypeUtils.raiseTypeId(intf));

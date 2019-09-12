@@ -42,9 +42,14 @@ public class Resources {
                     matches.add(f.getCanonicalPath());
 
             if ((matches != null) && matches.size() > 0) {
-                // Use last JAR in case many are found (to select most recent version).
-                Collections.sort(matches);
-                resourceJar = matches.get(matches.size()-1);
+                if (matches.size() == 1)
+                    resourceJar = matches.get(0);
+                else {
+                    // Use last JAR in case many are found (to select most recent version).
+                    Collections.sort(matches);
+                    resourceJar = matches.get(matches.size()-1);
+                    logger.warn("WARNING: more than one resource JAR files match '" + resource +"', picking: " + resourceJar);
+                }
                 logger.debug("Running resource: " + resourceJar);
             }
         } else

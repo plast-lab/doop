@@ -1,6 +1,5 @@
 package org.clyze.doop.common;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -15,7 +14,7 @@ public abstract class JavaFactWriter {
     protected static final String R_OP = "2";
     protected final Database _db;
     protected final boolean _extractMoreStrings;
-    protected final boolean _writeArtifactsMap;
+    private final boolean _writeArtifactsMap;
 
     protected JavaFactWriter(Database db, boolean extractMoreStrings,
                              boolean writeArtifactsMap) {

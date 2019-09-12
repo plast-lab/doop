@@ -255,7 +255,7 @@ public class Parameters {
 
         List<String> lines = new LinkedList<>();
         try (Stream<String> stream = Files.lines(Paths.get(path))) {
-            stream.forEach(l -> lines.add(l));
+            stream.forEach(lines::add);
         } catch (IOException ex) {
             throw new RuntimeException("Malformed arguments file: " + path);
         }

@@ -54,7 +54,7 @@ class DDlog extends SouffleScript {
      * @param log     the logger object to use for debug messages
      * @param outDir  the output directory where the files will be copied
      */
-    public static void copyDDlogConverter(Logger log, File outDir) {
+    static void copyDDlogConverter(Logger log, File outDir) {
 		String ddlogSouffleDir = "${getDDlogDir(log).absolutePath}/tools"
 		["souffle-grammar.pg", SOUFFLE_CONVERTER].each {
 			File from = new File(ddlogSouffleDir, it)

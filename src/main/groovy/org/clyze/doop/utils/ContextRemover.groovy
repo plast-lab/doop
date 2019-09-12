@@ -230,7 +230,7 @@ class ContextRemover {
 
 	static int findWordStartBackwards(String line, int startIdx) {
 		for (int idx = startIdx; idx >= 0; idx--) {
-			if (!((Character) line[idx]).isLetter())
+			if (!((Character) line[idx]).letter)
 				return idx
 		}
 		return 0

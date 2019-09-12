@@ -26,7 +26,7 @@ fatJar {
     manifest {
         attributes 'Main-Class': 'org.clyze.doop.wala.Main'
     }
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    from { configurations.compile.collect { it.directory ? it : zipTree(it) } }
     with jar
 }
 

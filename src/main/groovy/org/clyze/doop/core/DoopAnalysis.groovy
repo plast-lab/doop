@@ -9,7 +9,6 @@ import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
 import org.clyze.doop.common.DoopErrorCodeException
-import org.clyze.doop.common.FrontEnd
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.util.ClassPathHelper
 import org.clyze.doop.util.Resources
@@ -67,13 +66,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     static final INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
 
-    public String getId() { options.USER_SUPPLIED_ID.value as String }
+    String getId() { options.USER_SUPPLIED_ID.value as String }
 
-    public String getName() { options.ANALYSIS.value.toString().replace(File.separator, "-") }
+    String getName() { options.ANALYSIS.value.toString().replace(File.separator, "-") }
 
-    public File getOutDir() { options.OUT_DIR.value as File }
+    File getOutDir() { options.OUT_DIR.value as File }
 
-    public File getCacheDir() { options.CACHE_DIR.value as File }
+    File getCacheDir() { options.CACHE_DIR.value as File }
 
     List<File> getInputFiles() { options.INPUTS.value as List<File> }
 
@@ -489,8 +488,25 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         // TODO: Investigate whether this approach may lead to memory
                         // leaks, not only for soot but for all other Java-based tools,
                         // like jphantom.
+                        //
+                        // SETUP: to enable this mode, edit build.gradle as follows:
+                        //
+                        // (a) Add soot-fact-generator compile dependency:
+                        //     dependencies {
+                        //       ...
+                        //       compile project(':generators:soot-fact-generator')
+                        //       ...
+                        //     }
+                        //
+                        // (b) For big inputs, give appropriate -Xss/-Xmx memory
+                        //     parameters via Gradle option 'applicationDefaultJvmArgs'.
+                        //
                         loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
-                        Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
+                        try {
+                            Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
+                        } catch (ClassNotFoundException ex) {
+                            throw new RuntimeException("Cannot find Soot-based front end.")
+                        }
                     } else {
                         // Write arguments to file and pass that to Soot-based fact generator.
                         String argsFile = Files.createTempFile("soot-params-", "").toString()
@@ -517,6 +533,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         }
                     }
                 } catch (Throwable t) {
+                    String msg = "Soot fact generation error (${t.class.name}): ${t.message}"
+                    log.debug msg
                     if (isFatal(loader, t))
                         throw new RuntimeException("Fatal error, see log for details: ${t.toString()}")
                     if (factGenRun >= MAX_FACTGEN_RUNS) {
@@ -524,8 +542,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         if (!(options.X_IGNORE_FACTGEN_ERRORS.value)) {
                             log.info "Errors occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
                         }
-                        System.err.println(t.message)
-                        throw new RuntimeException("Soot fact generation error")
+                        throw new RuntimeException(msg)
                     } else {
                         redo = true
                         factGenRun += 1
@@ -561,10 +578,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (t instanceof InvocationTargetException)
             t = ((InvocationTargetException) t).targetException as Throwable
         if (loader == null)
-            loader = t.getClass().getClassLoader()
-        if (t.getClass().name == className) {
+            loader = t.class.classLoader
+        if (t.class.name == className) {
             Field classesFld = loader.loadClass(className).getDeclaredField(fieldName)
-            classesFld.setAccessible(true)
+            classesFld.accessible = true
             return classesFld.get(t)
         }
         return null
@@ -744,7 +761,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      *
      * @return true if the runtime supports Java 9+
      */
-    public static boolean java9Plus() {
+    static boolean java9Plus() {
         try {
             Class c = Class.forName('java.lang.Runtime$Version')
             return true
@@ -761,7 +778,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      * @param resource     the prefix of the fact generator JAR (should match one resource)
      * @param args         the fact generation arguments
      */
-    public void invokeFactGenerator(String TAG, String[] jvmArgs, String resource, String[] args) {
+    void invokeFactGenerator(String TAG, String[] jvmArgs, String resource, String[] args) {
         if (jvmArgs == null)
             jvmArgs = new String[0]
 
