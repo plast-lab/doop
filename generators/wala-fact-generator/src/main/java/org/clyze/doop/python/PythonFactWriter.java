@@ -8,7 +8,6 @@ import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.cast.python.ssa.PythonPropertyRead;
 import com.ibm.wala.cast.python.ssa.PythonPropertyWrite;
 import com.ibm.wala.cast.python.types.PythonTypes;
-import com.ibm.wala.classLoader.FieldImpl;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
@@ -17,7 +16,6 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
-import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.FactEncoders;
@@ -77,7 +75,7 @@ class PythonFactWriter {
         _db.add(PROJECT_ROOT_FOLDER, getRoot());
     }
 
-    String writeMethod(IMethod m) {
+    void writeMethod(IMethod m) {
         String result = _rep.signature(m);
         String simpleName = _rep.simpleName(m);
         String sourceFileName = _rep.sourceFileName(m);
@@ -123,7 +121,6 @@ class PythonFactWriter {
         if(result.equals(sourceFileName))
             writeGlobalFunction(m);
 
-        return result;
     }
 
     private void writeGlobalFunction(IMethod globalFun){

@@ -184,7 +184,6 @@ public class NativeScanner {
 
     private static EntryPoint parseEntryPoint(String line) {
         String prefix = line;
-        int prefixEndIdx;
         // Cut part after left parenthesis.
         prefix = trimAfter(prefix, "(");
         // Cut part after left bracket.
@@ -293,7 +292,6 @@ public class NativeScanner {
                     int offset = (int)Long.parseLong(line.substring(offsetIdx, offsetEndIdx), 16);
                     System.out.println(stringsSection + " section: offset = " + offset + ", size = " + size);
 
-                    Map<Long, String> symbols = new HashMap<>();
                     // Read section from the library.
                     RandomAccessFile raf = new RandomAccessFile(lib, "r");
                     raf.seek(offset);
@@ -387,9 +385,9 @@ public class NativeScanner {
                 for (int i = 0; i < stringsInRadare.size(); i++) {
                     String s = stringsInRadare.get(i);
                     if (isMethodType(s))
-                        addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, new Long(i)));
+                        addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, (long) i));
                     else if (isName(s))
-                        addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, new Long(i)));
+                        addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, (long) i));
                 }
 
             if (parseRodata)
@@ -537,7 +535,7 @@ public class NativeScanner {
     }
 
     private static Map<String,List<String>> findStringsInX86(Map<Long, String> foundStrings, String lib) {
-        Long address, GlobalOffsetTableAddress;
+        Long address;
         String function = null;
         Map<String,List<String>> stringsInFunctions = new HashMap<>();
         Map<String,Long> registers = null;
@@ -559,12 +557,18 @@ public class NativeScanner {
                 m = addPattern.matcher(line);
                 if (m.find()) {
                     Long value = Long.parseLong(m.group(1),16) + Long.parseLong(m.group(2),16);
-                    registers.put(m.group(3), value);
+                    if (registers == null)
+                        System.err.println("WARNING: no registers map initialized for 'add' pattern");
+                    else
+                        registers.put(m.group(3), value);
+                    continue;
                 }
 
                 m = leaPattern.matcher(line);
                 if (m.find()) {
-                    if (registers.get(m.group(3)) != null) {
+                    if (registers == null)
+                        System.err.println("WARNING: no registers map initialized for 'lea' pattern");
+                    else if (registers.get(m.group(3)) != null) {
                         address = registers.get(m.group(3));
                         if (m.group(1).equals(" "))
                             address += Long.parseLong(m.group(2),16);
@@ -646,7 +650,7 @@ public class NativeScanner {
     }
 
     private static Map<String,List<String>> findStringsInARMEABIv7a(String objdumpCmd, Map<Long,String> foundStrings, String lib) {
-        String function = null, programCounter = null;
+        String function = null;
         Pattern addrCodePattern = Pattern.compile("^\\s+([a-f0-9]+)[:]\\s+([a-f0-9]+)\\s?([a-f0-9]*)\\s+.*$");
         Pattern funPattern = Pattern.compile("^.*[<](.*)[>][:]$");
         Pattern insPattern = Pattern.compile("^\\s+([a-f0-9]+)[:]\\s+([a-f0-9]+)\\s?([a-f0-9]*)\\s+(\\w+[.]?\\w+)(.*)$");
@@ -692,6 +696,10 @@ public class NativeScanner {
                 try {
                     m = insPattern.matcher(line);
                     if (m.find()) {
+                        if (registers == null) {
+                            System.err.println("WARNING: no registers map initialized for 'ins' pattern");
+                            continue;
+                        }
                         registers.put("pc",m.group(1));
                         String instruction = m.group(5);
                         if (m.group(4).equals("ldr")) {
@@ -758,7 +766,7 @@ public class NativeScanner {
     }
 
     private static Map<String,List<String>> findStringsInARMEABI(String objdumpCmd, Map<Long,String> foundStrings, String lib) {
-        String function = null, programCounter = null;
+        String function = null;
         Pattern funPattern = Pattern.compile(".*[<](.*)[>][:]$");
         Pattern insPattern = Pattern.compile("^\\s([a-f0-9]+)[:]\\s+([a-f0-9]+)\\s+[.]?(\\w+)(.*)$");
         Pattern ldrPattern = Pattern.compile("^\\s+(\\w+).*\\bpc.*[;]\\s([a-f0-9]+).*$");
@@ -785,6 +793,10 @@ public class NativeScanner {
                 }
                 m = insPattern.matcher(line);
                 if (m.find()) {
+                    if (registers == null) {
+                        System.err.println("WARNING: no registers map initialized for 'ins' pattern");
+                        continue;
+                    }
                     registers.put("pc",m.group(1));
                     String instruction = m.group(4);
                     switch (m.group(3)) {

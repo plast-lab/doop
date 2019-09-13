@@ -215,7 +215,7 @@ public class Main {
                     if (dummyMain == null)
                         throw new RuntimeException("Internal error: could not compute dummy main() with FlowDroid");
                     System.out.println("Generated dummy main method " + dummyMain.getName() + "()");
-                    driver.generateMethod(dummyMain, writer, reportPhantoms, sootParameters);
+                    driver.generateMethod(dummyMain, writer, sootParameters);
                 }
 
                 // avoids a concurrent modification exception, since we may

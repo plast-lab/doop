@@ -14,7 +14,6 @@ public class PythonIRPrinter {
 
     public PythonIRPrinter(IAnalysisCacheView cache, String outputDir)
     {
-        String _outputDir = outputDir;
         _cache = cache;
     }
 

@@ -140,7 +140,7 @@ public class ArtifactScanner {
      *
      * @param inputs   a list of inputs (such as JAR or APK files)
      */
-    public void onlyRegisterArtifactClasses(List<String> inputs) throws IOException {
+    public void onlyRegisterArtifactClasses(Iterable<String> inputs) throws IOException {
         for (String input : inputs) {
             String lower = input.toLowerCase();
             if (lower.endsWith(".jar") || lower.endsWith(".zip"))

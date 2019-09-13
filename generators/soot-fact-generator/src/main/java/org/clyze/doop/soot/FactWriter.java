@@ -47,7 +47,7 @@ class FactWriter extends JavaFactWriter {
         return TypeUtils.raiseTypeId(aTag.getType());
     }
 
-    String writeMethod(SootMethod m) {
+    void writeMethod(SootMethod m) {
         String methodRaw = _rep.signature(m);
         String methodId = methodSig(m, methodRaw);
         String arity = Integer.toString(m.getParameterCount());
@@ -75,7 +75,6 @@ class FactWriter extends JavaFactWriter {
                     }
 
         }
-        return methodId;
     }
 
     void writeAndroidEntryPoint(SootMethod m) {

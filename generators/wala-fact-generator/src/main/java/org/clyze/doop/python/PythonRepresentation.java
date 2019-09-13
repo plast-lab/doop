@@ -15,10 +15,7 @@ import org.clyze.doop.common.SessionCounter;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
 
-import java.util.Collections;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.python.utils.PythonUtils.fixNewType;
@@ -133,13 +130,12 @@ class PythonRepresentation {
 
 
     String signature(FieldReference f, TypeReference declaringClass) {
-        String DoopSig = "<" + fixType(declaringClass) +
+        return "<" + fixType(declaringClass) +
                 ": " +
                 fixType(f.getFieldType()) +
                 " " +
                 f.getName().toString() +
                 ">";
-        return DoopSig;
     }
 
     String simpleName(IMethod m) {
