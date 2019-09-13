@@ -376,10 +376,28 @@ ReachableValue(?hctx, NativeReturnValId(?t, ?m)) :-
 #endif // SIMULATE_NATIVE_RETURNS
 
 // Reachability for methods discovered by the native code scanner.
+.decl ReachableMethodFromNativeCode(?method:Method)
 .decl ReachableContextFromNative(?ctx:configuration.Context, ?method:Method, ?function:symbol, ?file:symbol)
+
+ReachableMethodFromNativeCode(?method),
 ReachableContextFromNative(?immCtx, ?method, ?function, ?file) :-
   basic.PossibleNativeCodeTargetMethod(?method, ?function, ?file),
   isImmutableContext(?immCtx).
+
+// This rule handles the possibility of <clinit> being triggered on
+// the call from native. The rule is useful for calculating recall
+// against the dynamic HeapDL analysis but it can be skipped without
+// affecting reachability results.
+ReachableMethodFromNativeCode(?clinit) :-
+  ReachableMethodFromNativeCode(?method),
+  Method_DeclaringType(?method, ?class),
+  ClassInitializer(?class, ?clinit).
+
+.decl ReachableAppMethodFromNativeCode(?method:Method)
+ReachableAppMethodFromNativeCode(?method) :-
+  ReachableMethodFromNativeCode(?method),
+  Method_DeclaringType(?method, ?class),
+  ApplicationClass(?class).
 
 // Process methods found by the native scanner. This includes mocking of arguments.
 #ifdef ANDROID

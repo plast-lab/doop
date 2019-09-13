@@ -22,14 +22,26 @@ JVM_NATIVE_CODE=${DOOP_HOME}/jvm8-native-code.jar
 function measureRecall() {
     local ID_STATIC="$1"
     local ID_DYNAMIC="$2"
-    local DYNAMIC_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppCallGraphEdgeFromNative.csv
-    local SCANNER_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
-    local INTERSECTION_COUNT=$(comm -1 -2 <(sort -u ${DYNAMIC_EDGES}) <(sort -u ${SCANNER_EDGES}) | wc -l)
-    local DYNAMIC_EDGES_COUNT=$(cat ${DYNAMIC_EDGES} | wc -l)
+    # local DYNAMIC_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppCallGraphEdgeFromNative.csv
+    local DYNAMIC_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppNativeCodeTarget.csv
+    # local SCANNER_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
+    local SCANNER_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
+    local INTERSECTION_FILE=dynamic-scanner-intersection
+    local MISSED_FILE=missed-methods
+
+    echo "Intersection file: ${INTERSECTION_FILE}"
     echo "Dynamic edges: ${DYNAMIC_EDGES}"
     echo "Scanner edges: ${SCANNER_EDGES}"
+
+    echo "Calculating recall..."
+    comm -1 -2 <(sort -u ${DYNAMIC_EDGES}) <(sort -u ${SCANNER_EDGES}) > ${INTERSECTION_FILE}
+    local INTERSECTION_COUNT=$(cat ${INTERSECTION_FILE} | wc -l)
+    local DYNAMIC_EDGES_COUNT=$(cat ${DYNAMIC_EDGES} | wc -l)
     echo "${INTERSECTION_COUNT} / ${DYNAMIC_EDGES_COUNT}"
     python -c "print(str(100.0 * ${INTERSECTION_COUNT} / ${DYNAMIC_EDGES_COUNT}) + '%')"
+
+    echo "Calculating missed methods (file: ${MISSED_FILE})"
+    comm -2 -3 <(sort -u ${DYNAMIC_EDGES}) <(sort -u ${SCANNER_EDGES}) > ${MISSED_FILE}
 }
 
 function runDoop() {
@@ -64,6 +76,6 @@ function analyzeAspectJ() {
 runDoop ${SERVER_ANALYSIS_TESTS}/009-native/build/libs/009-native.jar 009-native java_8 ${SERVER_ANALYSIS_TESTS}/009-native/java.hprof
 
 # Decompress com.instagram.android.hprof.gz with "gunzip".
-runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243317_minAPI16\(armeabi-v7a\)\(320dpi\)_apkmirror.com.apk instagram android_25_fulljars ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof
+runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243323_minAPI16_x86_nodpi_apkmirror.com.apk instagram android_25_fulljars ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof
 
 analyzeAspectJ
