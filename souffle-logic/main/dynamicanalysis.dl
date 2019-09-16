@@ -323,8 +323,8 @@ DynamicNativeCodeTarget(?toMethod) :-
 .decl DynamicAppNativeCodeTarget(?toMethod:Method)
 DynamicAppNativeCodeTarget(?toMethod) :-
   DynamicCallGraphEdgeFromNative(?toMethod, ?fromMethod),
-  Method_DeclaringType(?fromMethod, ?type),
-  ApplicationClass(?type).
+  ApplicationMethod(?fromMethod),
+  ApplicationMethod(?toMethod).
 
 #ifdef SCAN_NATIVE_CODE
 
