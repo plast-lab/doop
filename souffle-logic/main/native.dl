@@ -375,14 +375,18 @@ ReachableValue(?hctx, NativeReturnValId(?t, ?m)) :-
   isImmutableHContext(?hctx).
 #endif // SIMULATE_NATIVE_RETURNS
 
+// Native contexts are currently another name for immutable contexts.
+.decl isNativeContext(?ctx:configuration.Context)
+isNativeContext(?ctx) :- isImmutableContext(?ctx).
+
 // Reachability for methods discovered by the native code scanner.
 .decl ReachableMethodFromNativeCode(?method:Method)
 .decl ReachableContextFromNative(?ctx:configuration.Context, ?method:Method, ?function:symbol, ?file:symbol)
 
 ReachableMethodFromNativeCode(?method),
-ReachableContextFromNative(?immCtx, ?method, ?function, ?file) :-
+ReachableContextFromNative(?ctx, ?method, ?function, ?file) :-
   basic.PossibleNativeCodeTargetMethod(?method, ?function, ?file),
-  isImmutableContext(?immCtx).
+  isNativeContext(?ctx).
 
 // This rule handles the possibility of <clinit> being triggered on
 // the call from native. The rule is useful for calculating recall
