@@ -402,6 +402,18 @@ ReachableAppMethodFromNativeCode(?method) :-
   ReachableMethodFromNativeCode(?method),
   ApplicationMethod(?method).
 
+#ifdef SCAN_NATIVE_CODE
+
+// Native allocations trigger finalization code in the Android runtime.
+#ifdef ANDROID
+ReachableMethodFromNativeCode(?finalizerAdd) :-
+  basic.NativeAllocation(_, _, _, _),
+  ?finalizerAdd = "<java.lang.ref.FinalizerReference: void add(java.lang.Object)>",
+  isMethod(?finalizerAdd).
+#endif // ANDROID
+
+#endif // SCAN_NATIVE_CODE
+
 // Process methods found by the native scanner. This includes mocking of arguments.
 #ifdef ANDROID
 

@@ -74,3 +74,9 @@ AppCallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod) :-
   ApplicationMethod(?targetMethod),
   ApplicationMethod(?nativeMethod).
 
+// Native allocations detected by the native scanner.
+.decl NativeAllocation(?constructor:Method, ?function:symbol, ?file:symbol, ?type:ReferenceType)
+NativeAllocation(?constructor, ?function, ?file, ?type) :-
+  PossibleNativeCodeTargetMethod(?constructor, ?function, ?file),
+  ClassConstructor(?constructor, ?type).
+
