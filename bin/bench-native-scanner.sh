@@ -17,17 +17,23 @@ if [ "${XCORPUS_DIR}" == "" ]; then
     exit
 fi
 
+# The "fulljars" platform is the full Android code, while "stubs"
+# should only be used for recall calculation, not reachability metrics.
+# ANDROID_PLATFORM=android_25_fulljars
+ANDROID_PLATFORM=android_25_stubs
+
 JVM_NATIVE_CODE=${DOOP_HOME}/jvm8-native-code.jar
 
 function measureRecall() {
-    local ID_STATIC="$1"
-    local ID_DYNAMIC="$2"
+    local ID="$1"
+    local ID_STATIC="$2"
+    local ID_DYNAMIC="$3"
     # local DYNAMIC_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppCallGraphEdgeFromNative.csv
     local DYNAMIC_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppNativeCodeTarget.csv
     # local SCANNER_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
     local SCANNER_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
-    local INTERSECTION_FILE=dynamic-scanner-intersection
-    local MISSED_FILE=missed-methods
+    local INTERSECTION_FILE="dynamic-scanner-intersection-${ID}.log"
+    local MISSED_FILE="missed-methods-${ID}.log"
 
     echo "Intersection file: ${INTERSECTION_FILE}"
     echo "Dynamic edges: ${DYNAMIC_EDGES}"
@@ -59,7 +65,7 @@ function runDoop() {
     local ID2="native-test-${ID}-heapdl"
     ./doop -i ${INPUT} -a context-insensitive --id ${ID1} --platform ${PLATFORM} --timeout 600 --scan-native-code |& tee ${ID1}.log
     ./doop -i ${INPUT} -a context-insensitive --id ${ID2} --platform ${PLATFORM} --timeout 600 --heapdl-file ${HPROF} |& tee ${ID2}.log
-    measureRecall "${ID1}" "${ID2}"
+    measureRecall "${ID}" "${ID1}" "${ID2}"
 }
 
 function analyzeAspectJ() {
@@ -75,7 +81,13 @@ function analyzeAspectJ() {
 # Generate java.hprof with "make capture_hprof".
 runDoop ${SERVER_ANALYSIS_TESTS}/009-native/build/libs/009-native.jar 009-native java_8 ${SERVER_ANALYSIS_TESTS}/009-native/java.hprof
 
-# Decompress com.instagram.android.hprof.gz with "gunzip".
-runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243323_minAPI16_x86_nodpi_apkmirror.com.apk instagram android_25_fulljars ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof
+# Instagram.
+runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243323_minAPI16_x86_nodpi_apkmirror.com.apk instagram ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof.gz
+
+# Chrome.
+runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome_57.0.2987.132-298713212_minAPI24_x86_nodpi_apkmirror.com.apk chrome ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome.hprof.gz
+
+# Androidterm.
+runDoop ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk androidterm ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm.hprof.gz
 
 analyzeAspectJ
