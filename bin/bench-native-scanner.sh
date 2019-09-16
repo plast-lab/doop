@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+CURRENT_DIR="$(pwd)"
+echo "CURRENT_DIR=${CURRENT_DIR}"
+
 if [ "${DOOP_HOME}" == "" ]; then
     echo "Please set DOOP_HOME."
     exit
@@ -17,37 +20,62 @@ if [ "${XCORPUS_DIR}" == "" ]; then
     exit
 fi
 
+# RUN_ANALYSIS=1
+RUN_ANALYSIS=0
+
 # The "fulljars" platform is the full Android code, while "stubs"
 # should only be used for recall calculation, not reachability metrics.
-# ANDROID_PLATFORM=android_25_fulljars
-ANDROID_PLATFORM=android_25_stubs
+ANDROID_PLATFORM=android_25_fulljars
+# ANDROID_PLATFORM=android_25_stubs
 
 JVM_NATIVE_CODE=${DOOP_HOME}/jvm8-native-code.jar
 
-function measureRecall() {
+function calcIntersection() {
+    comm -1 -2 <(sort -u "$1") <(sort -u "$2")
+}
+
+function calcIncrease() {
+    python -c "print(str(100.0 * ($2 - $1) / $1) + '%')"
+}
+
+function printStats() {
     local ID="$1"
-    local ID_STATIC="$2"
-    local ID_DYNAMIC="$3"
-    # local DYNAMIC_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppCallGraphEdgeFromNative.csv
-    local DYNAMIC_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppNativeCodeTarget.csv
-    # local SCANNER_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
-    local SCANNER_EDGES=${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
-    local INTERSECTION_FILE="dynamic-scanner-intersection-${ID}.log"
-    local MISSED_FILE="missed-methods-${ID}.log"
+    local ID_BASE="$2"
+    local ID_STATIC="$3"
+    local ID_DYNAMIC="$4"
+    # local DYNAMIC_METHODS=${DOOP_HOME}/out/context-insensitive/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppCallGraphEdgeFromNative.csv
+    local DYNAMIC_METHODS=${DOOP_HOME}/out/context-insensitive/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppNativeCodeTarget.csv
+    # local SCANNER_METHODS=${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
+    local SCANNER_METHODS=${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
+    local INTERSECTION_FILE="${CURRENT_DIR}/dynamic-scanner-intersection-${ID}.log"
+    local MISSED_FILE="${CURRENT_DIR}/missed-methods-${ID}.log"
 
+    echo "== Benchmark: ${ID} =="
     echo "Intersection file: ${INTERSECTION_FILE}"
-    echo "Dynamic edges: ${DYNAMIC_EDGES}"
-    echo "Scanner edges: ${SCANNER_EDGES}"
+    echo "Dynamic methods: ${DYNAMIC_METHODS}"
+    echo "Scanner methods: ${SCANNER_METHODS}"
+    echo "Missed methods: ${MISSED_FILE}"
 
-    echo "Calculating recall..."
-    comm -1 -2 <(sort -u ${DYNAMIC_EDGES}) <(sort -u ${SCANNER_EDGES}) > ${INTERSECTION_FILE}
+    # echo "Calculating recall..."
+    calcIntersection ${DYNAMIC_METHODS} ${SCANNER_METHODS} > ${INTERSECTION_FILE}
     local INTERSECTION_COUNT=$(cat ${INTERSECTION_FILE} | wc -l)
-    local DYNAMIC_EDGES_COUNT=$(cat ${DYNAMIC_EDGES} | wc -l)
-    echo "${INTERSECTION_COUNT} / ${DYNAMIC_EDGES_COUNT}"
-    python -c "print(str(100.0 * ${INTERSECTION_COUNT} / ${DYNAMIC_EDGES_COUNT}) + '%')"
+    local DYNAMIC_METHODS_COUNT=$(cat ${DYNAMIC_METHODS} | wc -l)
+    echo -n "Recall = ${INTERSECTION_COUNT} / ${DYNAMIC_METHODS_COUNT} = "
+    python -c "print(str(100.0 * ${INTERSECTION_COUNT} / ${DYNAMIC_METHODS_COUNT}) + '%')"
 
-    echo "Calculating missed methods (file: ${MISSED_FILE})"
-    comm -2 -3 <(sort -u ${DYNAMIC_EDGES}) <(sort -u ${SCANNER_EDGES}) > ${MISSED_FILE}
+    comm -2 -3 <(sort -u ${DYNAMIC_METHODS}) <(sort -u ${SCANNER_METHODS}) > ${MISSED_FILE}
+
+    local BASE_APP_REACHABLE=$(cat ${DOOP_HOME}/out/context-insensitive/${ID_BASE}/database/Stats_Simple_Application_ReachableMethod.csv | wc -l)
+    local SCANNER_APP_REACHABLE=$(cat ${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/Stats_Simple_Application_ReachableMethod.csv | wc -l)
+    echo "App-reachable increase over base (${BASE_APP_REACHABLE} -> ${SCANNER_APP_REACHABLE}): "$(calcIncrease ${BASE_APP_REACHABLE} ${SCANNER_APP_REACHABLE})
+
+    # Use 'xargs' to remove whitespace.
+    local BASE_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_BASE}.log | cut -d ')' -f 2 | xargs)
+    echo "Analysis time [base]: ${BASE_TIME}"
+    local SCANNER_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_STATIC}.log | cut -d ')' -f 2 | xargs)
+    echo "Analysis time [scanner]: ${SCANNER_TIME}"
+    echo "Analysis time increase over base: "$(calcIncrease ${BASE_TIME} ${SCANNER_TIME})
+
 }
 
 function runDoop() {
@@ -61,11 +89,17 @@ function runDoop() {
         return
     fi
     date
+    local ID0="native-test-${ID}-base"
     local ID1="native-test-${ID}-scanner"
     local ID2="native-test-${ID}-heapdl"
-    ./doop -i ${INPUT} -a context-insensitive --id ${ID1} --platform ${PLATFORM} --timeout 600 --scan-native-code |& tee ${ID1}.log
-    ./doop -i ${INPUT} -a context-insensitive --id ${ID2} --platform ${PLATFORM} --timeout 600 --heapdl-file ${HPROF} |& tee ${ID2}.log
-    measureRecall "${ID}" "${ID1}" "${ID2}"
+    pushd ${DOOP_HOME} &> /dev/null
+    if [ "${RUN_ANALYSIS}" == "1" ]; then
+        ./doop -i ${INPUT} -a context-insensitive --id ${ID0} --platform ${PLATFORM} --timeout 600 |& tee ${CURRENT_DIR}/${ID0}.log
+        ./doop -i ${INPUT} -a context-insensitive --id ${ID1} --platform ${PLATFORM} --timeout 600 --scan-native-code |& tee ${CURRENT_DIR}/${ID1}.log
+        ./doop -i ${INPUT} -a context-insensitive --id ${ID2} --platform ${PLATFORM} --timeout 600 --heapdl-file ${HPROF} |& tee ${CURRENT_DIR}/${ID2}.log
+    fi
+    popd &> /dev/null
+    printStats "${ID}" "${ID0}" "${ID1}" "${ID2}"
 }
 
 function analyzeAspectJ() {
@@ -75,7 +109,7 @@ function analyzeAspectJ() {
     local LIBS="${DIR}/.xcorpus/lib/avalon-framework-4.1.3.jar ${DIR}/.xcorpus/lib/commons-logging-1.1.1.jar ${DIR}/.xcorpus/lib/servlet-api-2.3.jar ${DIR}/.xcorpus/lib/commands-3.3.0-I20070605-0010.jar ${DIR}/.xcorpus/lib/text-3.3.0-v20070606-0010.jar ${DIR}/.xcorpus/lib/osgi-3.9.1-v20130814-1242.jar ${DIR}/.xcorpus/lib/common-3.6.200-v20130402-1505.jar ${DIR}/.xcorpus/lib/ant-launcher-1.8.1.jar ${DIR}/.xcorpus/lib/asm-3.2.jar ${DIR}/.xcorpus/lib/logkit-1.0.1.jar ${DIR}/.xcorpus/lib/ant-1.8.1.jar ${DIR}/.xcorpus/lib/log4j-1.2.12.jar ${DIR}/.xcorpus/build/main/aspectjtools1.6.9/ant_tasks/resources-ant.jar"
     local NATIVE_LIB="${XCORPUS_DIR}/data/qualitas_corpus_20130901/aspectj-1.6.9/native/x86_64-1.0.100-v20070510.jar"
     local ID="aspectj-native"
-    echo "./doop -i ${APP_INPUTS} ${TESTS} ${LIBS} ${NATIVE_LIB} -a context-insensitive --id ${ID} --scan-native-code --discover-tests --timeout 240 |& tee ${ID}.log"
+    echo "./doop -i ${APP_INPUTS} ${TESTS} ${LIBS} ${NATIVE_LIB} -a context-insensitive --id ${ID} --scan-native-code --discover-tests --timeout 240 |& tee ${CURRENT_DIR}/${ID}.log"
 }
 
 # Generate java.hprof with "make capture_hprof".
