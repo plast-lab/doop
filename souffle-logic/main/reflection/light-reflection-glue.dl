@@ -122,8 +122,7 @@ VarPointsTo(?hctx, NewInstanceMockObj(?type), ?ctx, ?thisVar) :-
   ReifiedClass(?type, ?classVal),
   ApplicationClass(?type),
   java_lang_reflect_Constructor_newInstance(?invocation, ?newVar, ?constrVar),
-  Method_DeclaringType(?init, ?type),
-  Method_SimpleName(?init, "<init>"),
+  basic.ClassConstructor(?init, ?type),
   ThisVar(?init, ?thisVar),
   isImmutableContext(?calleeCtx).
 

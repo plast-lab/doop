@@ -576,9 +576,8 @@ VarPointsTo(?hctx, ?value, ?callerCtx, ?ret),
 #endif // DISABLE_POINTS_TO
 MockValueConsMacro(?value, ?type) :-
   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, _),
-  Method_SimpleName(?method, "<init>"),
+  basic.ClassConstructor(?method, ?type),
   ThisVar(?method, ?thisVar),
-  Method_DeclaringType(?method, ?type),
   isImmutableHContext(?hctx),
   ?value = cat(?type, cat(" value constructed by method handle ", ?mh)),
   AssignReturnValue(?invo, ?ret),
@@ -729,8 +728,7 @@ CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?ctx) :-
 CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?ctx) :-
   CallSiteContents(?invokedynamic, ?mh, ?method, ?mt, ?ctx),
   MethodType_ReturnType(?mt, ?dynRetType),
-  Method_DeclaringType(?method, ?dynRetType),
-  Method_SimpleName(?method, "<init>"),
+  basic.ClassConstructor(?method, ?dynRetType),
   MethodHandle_Method(?mh, ?method).
 
 // After a method handle is resolved, invokedynamic calls it, as if
@@ -984,8 +982,7 @@ VarPointsTo(?hctx, ?mockObj, ?callerCtx, ?var),
 VarPointsTo(?hctx, ?mockObj, ?calleeCtx, ?thisVar),
 MockValueConsMacro(?mockObj, ?type) :-
   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, _),
-  Method_SimpleName(?implMethod, "<init>"),
-  Method_DeclaringType(?implMethod, ?type),
+  basic.ClassConstructor(?implMethod, ?type),
   AssignReturnValue(?i, ?var),
   ThisVar(?implMethod, ?thisVar),
   ?mockObj = cat("mock ", cat(?type, cat(" constructed by constructor reference at ", ?i))),
@@ -1027,8 +1024,7 @@ FillConstructorsFromClass(?hctx, ?mockConstructors, ?class) :-
 
 ArrayIndexPointsTo(?immHctx, ?constructor, ?hctx, ?mockConstructors) :-
   FillConstructorsFromClass(?hctx, ?mockConstructors, ?class),
-  Method_DeclaringType(?method, ?class),
-  Method_SimpleName(?method, "<init>"),
+  basic.ClassConstructor(?method, ?class),
   ReifiedConstructor(?method, ?constructor),
   isImmutableHContext(?immHctx).
 
