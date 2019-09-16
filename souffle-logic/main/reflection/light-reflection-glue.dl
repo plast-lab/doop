@@ -41,8 +41,7 @@ java_lang_reflect_Method_invoke(?invocation, ?methodVar) :-
   MethodInvocation_Method(?invocation, "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
   VirtualMethodInvocation_Base(?invocation, ?methodVar),
   Instruction_Method(?invocation, ?inMethod),
-  Method_DeclaringType(?inMethod, ?inType),
-  ApplicationClass(?inType).
+  ApplicationMethod(?inMethod).
 
 // A Method variable whose value (not modelled) may invoke a method reflectively.
 .decl ReflectiveMethodCall_Candidate(?methodVar:Var, ?methName:symbol, ?callerCtx:configuration.Context, ?type:Type)

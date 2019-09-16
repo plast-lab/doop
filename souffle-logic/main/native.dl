@@ -400,8 +400,7 @@ ReachableMethodFromNativeCode(?clinit) :-
 .decl ReachableAppMethodFromNativeCode(?method:Method)
 ReachableAppMethodFromNativeCode(?method) :-
   ReachableMethodFromNativeCode(?method),
-  Method_DeclaringType(?method, ?class),
-  ApplicationClass(?class).
+  ApplicationMethod(?method).
 
 // Process methods found by the native scanner. This includes mocking of arguments.
 #ifdef ANDROID

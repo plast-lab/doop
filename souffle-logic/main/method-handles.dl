@@ -211,8 +211,7 @@ MethodType_ReturnType(?mt, ?retType) :-
   AssignMethodType(?hctx, ?mt, ?ctx, ?ret, ?paramTypes, ?retType, ?arity),
   !isInitialMethodType(?mt),
   Var_DeclaringMethod(?ret, ?method),
-  Method_DeclaringType(?method, ?type),
-  ApplicationClass(?type).
+  ApplicationMethod(?method).
 
 #endif // REFLECTION_METHOD_HANDLES
 
