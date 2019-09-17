@@ -12,7 +12,7 @@ public class NativeScanner {
     // Check for the presence of some special symbols (statistic).
     private final static boolean check = false;
     // Use Radare to find strings.
-    private final static boolean useRadare = false;
+    private final boolean useRadare;
     // Parse .rodata section to find strings (imprecise, does not use
     // function boundaries or measure distances in the native code).
     private final static boolean parseRodata = true;
@@ -65,13 +65,17 @@ public class NativeScanner {
         }
     }
 
+    NativeScanner(boolean useRadare) {
+        this.useRadare = useRadare;
+    }
+
     /**
      * Scan a native code library.
      *
      * @param libFile        the native code library
      * @param outDir         the output directory to use to write facts
      */
-    public static void scanLib(File libFile, File outDir) {
+    public void scanLib(File libFile, File outDir) {
         try {
             // Auto-detect architecture.
             Arch arch = Arch.autodetect(libFile.getCanonicalPath());
@@ -106,8 +110,8 @@ public class NativeScanner {
      * @param outDir         the output directory to use to write facts
      * @param arch           the architecture of the native code
      */
-    private static void scan(String nmCmd, String objdumpCmd,
-                             File libFile, File outDir, Arch arch) {
+    private void scan(String nmCmd, String objdumpCmd,
+                      File libFile, File outDir, Arch arch) {
 
         if (debug) {
             System.out.println("== Native scanner ==");
@@ -256,8 +260,8 @@ public class NativeScanner {
      * @param eps            a map from offset to native code entry point
      * @param arch           the architecture of the native code
      */
-    private static void processLib(String objdumpCmd, File outDir, String lib,
-                                   Map<Long, String> eps, Arch arch) throws IOException {
+    private void processLib(String objdumpCmd, File outDir, String lib,
+                            Map<Long, String> eps, Arch arch) throws IOException {
         final String stringsSection = ".rodata";
         System.out.println("Finding " + stringsSection + " header");
 
@@ -835,7 +839,7 @@ public class NativeScanner {
     }
 
     // Handle .xzs libraries (found in some .apk inputs).
-    public static void scanXZSLib(File xzsFile, File outDir) {
+    public void scanXZSLib(File xzsFile, File outDir) {
         String xzsPath = xzsFile.getAbsolutePath();
         System.out.println("Processing xzs-packed native code: " + xzsPath);
         String xzPath = xzsPath.substring(0, xzsPath.length() - 1);
@@ -851,7 +855,7 @@ public class NativeScanner {
     }
 
     // Handle .zstd libraries (found in some .apk inputs).
-    public static void scanZSTDLib(File zstdFile, File outDir) {
+    public void scanZSTDLib(File zstdFile, File outDir) {
         String zstdPath = zstdFile.getAbsolutePath();
         System.out.println("Processing zstd-packed native code: " + zstdPath);
         String zstdOutPath = zstdPath.substring(0, zstdPath.length() - 5);

@@ -288,6 +288,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
+					id: "USE_RADARE",
+					name: "use-radare",
+					group: GROUP_NATIVE,
+					description: "Use Radare2 to find strings.",
+					forCacheID: true
+			),
+			new BooleanAnalysisOption(
 					id: "DACAPO",
 					name: "dacapo",
 					description: "Load additional logic for DaCapo (2006) benchmarks properties.",

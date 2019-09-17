@@ -20,6 +20,7 @@ public class Parameters {
     private String _logDir = null;
     private ClassFilter applicationClassFilter;
     public boolean _scanNativeCode = false;
+    public boolean _radare = false;
     public boolean _android = false;
     public Integer _cores = null;
     public String _rOutDir = null;
@@ -210,6 +211,9 @@ public class Parameters {
             break;
         case "--scan-native-code":
             this._scanNativeCode = true;
+            break;
+        case "--use-radare":
+            this._radare = true;
             break;
         case "--legacy-android-processing":
             _legacyAndroidProcessing = true;
