@@ -295,6 +295,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
+					id: "ONLY_PRECISE_NATIVE_STRINGS",
+					name: "only-precise-native-strings",
+					group: GROUP_NATIVE,
+					description: "Skip strings without enclosing function information.",
+					forCacheID: true,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "DACAPO",
 					name: "dacapo",
 					description: "Load additional logic for DaCapo (2006) benchmarks properties.",

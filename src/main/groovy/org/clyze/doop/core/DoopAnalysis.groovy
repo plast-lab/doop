@@ -391,6 +391,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--use-radare"]
         }
 
+        if (options.ONLY_PRECISE_NATIVE_STRINGS.value) {
+            params += ["--only-precise-native-strings"]
+        }
+
         if (options.GENERATE_ARTIFACTS_MAP.value) {
             params += ["--write-artifacts-map"]
         }

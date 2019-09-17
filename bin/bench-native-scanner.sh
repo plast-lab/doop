@@ -20,6 +20,9 @@ if [ "${XCORPUS_DIR}" == "" ]; then
     exit
 fi
 
+ANALYSIS=context-insensitive
+TIMEOUT=600
+
 # RUN_ANALYSIS=1
 RUN_ANALYSIS=0
 
@@ -41,22 +44,22 @@ function calcIncrease() {
 function printStats() {
     local ID="$1"
     local ID_BASE="$2"
-    local ID_STATIC="$3"
+    local ID_SCANNER="$3"
     local ID_DYNAMIC="$4"
-    # local DYNAMIC_METHODS=${DOOP_HOME}/out/context-insensitive/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppCallGraphEdgeFromNative.csv
-    local DYNAMIC_METHODS=${DOOP_HOME}/out/context-insensitive/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppNativeCodeTarget.csv
-    # local SCANNER_METHODS=${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
-    local SCANNER_METHODS=${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
+
+    # local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppCallGraphEdgeFromNative.csv
+    local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppNativeCodeTarget.csv
+    # local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
+    local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
     local INTERSECTION_FILE="${CURRENT_DIR}/dynamic-scanner-intersection-${ID}.log"
-    local MISSED_FILE="${CURRENT_DIR}/missed-methods-${ID}.log"
+    local MISSED_FILE="${CURRENT_DIR}/missed-methods-${ID_SCANNER}.log"
 
-    echo "== Benchmark: ${ID} =="
-    echo "Intersection file: ${INTERSECTION_FILE}"
-    echo "Dynamic methods: ${DYNAMIC_METHODS}"
-    echo "Scanner methods: ${SCANNER_METHODS}"
-    echo "Missed methods: ${MISSED_FILE}"
+    echo "== Benchmark: ${ID} (static scanner mode: ${ID_SCANNER}) =="
+    # echo "Intersection file: ${INTERSECTION_FILE}"
+    # echo "Dynamic methods: ${DYNAMIC_METHODS}"
+    # echo "Scanner methods: ${SCANNER_METHODS}"
+    # echo "Missed methods: ${MISSED_FILE}"
 
-    # echo "Calculating recall..."
     calcIntersection ${DYNAMIC_METHODS} ${SCANNER_METHODS} > ${INTERSECTION_FILE}
     local INTERSECTION_COUNT=$(cat ${INTERSECTION_FILE} | wc -l)
     local DYNAMIC_METHODS_COUNT=$(cat ${DYNAMIC_METHODS} | wc -l)
@@ -65,14 +68,14 @@ function printStats() {
 
     comm -2 -3 <(sort -u ${DYNAMIC_METHODS}) <(sort -u ${SCANNER_METHODS}) > ${MISSED_FILE}
 
-    local BASE_APP_REACHABLE=$(cat ${DOOP_HOME}/out/context-insensitive/${ID_BASE}/database/Stats_Simple_Application_ReachableMethod.csv | wc -l)
-    local SCANNER_APP_REACHABLE=$(cat ${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/Stats_Simple_Application_ReachableMethod.csv | wc -l)
-    echo "Application methods: "$(cat ${DOOP_HOME}/out/context-insensitive/${ID_BASE}/database/ApplicationMethod.csv | wc -l)
+    local BASE_APP_REACHABLE=$(cat ${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/Stats_Simple_Application_ReachableMethod.csv | wc -l)
+    local SCANNER_APP_REACHABLE=$(cat ${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/Stats_Simple_Application_ReachableMethod.csv | wc -l)
+    echo "Application methods: "$(cat ${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/ApplicationMethod.csv | wc -l)
     echo "App-reachable increase over base (${BASE_APP_REACHABLE} -> ${SCANNER_APP_REACHABLE}): "$(calcIncrease ${BASE_APP_REACHABLE} ${SCANNER_APP_REACHABLE})
 
     # Use 'xargs' to remove whitespace.
     local BASE_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_BASE}.log | cut -d ')' -f 2 | xargs)
-    local SCANNER_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_STATIC}.log | cut -d ')' -f 2 | xargs)
+    local SCANNER_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_SCANNER}.log | cut -d ')' -f 2 | xargs)
     echo "Analysis time increase over base (${BASE_TIME} -> ${SCANNER_TIME}): "$(calcIncrease ${BASE_TIME} ${SCANNER_TIME})
 
 }
@@ -82,23 +85,32 @@ function runDoop() {
     local ID="$2"
     local PLATFORM="$3"
     local HPROF="$4"
-    echo HPROF=${HPROF}
-    if [ ! -f ${HPROF} ]; then
-        echo "Error, file does not exist: ${HPROF}"
-        return
-    fi
-    date
-    local ID0="native-test-${ID}-base"
-    local ID1="native-test-${ID}-scanner"
-    local ID2="native-test-${ID}-heapdl"
+    # echo HPROF="${HPROF}"
+    # if [ ! -f ${HPROF} ]; then
+    #     echo "Error, file does not exist: ${HPROF}"
+    #     return
+    # fi
+    local ID_BASE="native-test-${ID}-base"
+    local ID_SCANNER="native-test-${ID}-scanner"
+    local ID_SCANNER_LOCAL="${ID_SCANNER}-localized"
+    local ID_HEAPDL="native-test-${ID}-heapdl"
     pushd ${DOOP_HOME} &> /dev/null
     if [ "${RUN_ANALYSIS}" == "1" ]; then
-        ./doop -i ${INPUT} -a context-insensitive --id ${ID0} --platform ${PLATFORM} --timeout 600 |& tee ${CURRENT_DIR}/${ID0}.log
-        ./doop -i ${INPUT} -a context-insensitive --id ${ID1} --platform ${PLATFORM} --timeout 600 --scan-native-code |& tee ${CURRENT_DIR}/${ID1}.log
-        ./doop -i ${INPUT} -a context-insensitive --id ${ID2} --platform ${PLATFORM} --timeout 600 --heapdl-file ${HPROF} |& tee ${CURRENT_DIR}/${ID2}.log
+        date
+        ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_BASE} --platform ${PLATFORM} --timeout ${TIMEOUT} |& tee ${CURRENT_DIR}/${ID_BASE}.log
+        ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+        ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL}.log
+        ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_HEAPDL} --platform ${PLATFORM} --timeout ${TIMEOUT} --heapdl-file ${HPROF} |& tee ${CURRENT_DIR}/${ID_HEAPDL}.log
     fi
     popd &> /dev/null
-    printStats "${ID}" "${ID0}" "${ID1}" "${ID2}"
+
+
+    local ID_SCANNER_LOCAL="${ID_SCANNER}-localized"
+    for ID_STATIC in "${ID_SCANNER}" "${ID_SCANNER_LOCAL}"
+    do
+        printStats "${ID}" "${ID_BASE}" "${ID_STATIC}" "${ID_HEAPDL}"
+    done
+    echo
 }
 
 function analyzeAspectJ() {
@@ -108,19 +120,19 @@ function analyzeAspectJ() {
     local LIBS="${DIR}/.xcorpus/lib/avalon-framework-4.1.3.jar ${DIR}/.xcorpus/lib/commons-logging-1.1.1.jar ${DIR}/.xcorpus/lib/servlet-api-2.3.jar ${DIR}/.xcorpus/lib/commands-3.3.0-I20070605-0010.jar ${DIR}/.xcorpus/lib/text-3.3.0-v20070606-0010.jar ${DIR}/.xcorpus/lib/osgi-3.9.1-v20130814-1242.jar ${DIR}/.xcorpus/lib/common-3.6.200-v20130402-1505.jar ${DIR}/.xcorpus/lib/ant-launcher-1.8.1.jar ${DIR}/.xcorpus/lib/asm-3.2.jar ${DIR}/.xcorpus/lib/logkit-1.0.1.jar ${DIR}/.xcorpus/lib/ant-1.8.1.jar ${DIR}/.xcorpus/lib/log4j-1.2.12.jar ${DIR}/.xcorpus/build/main/aspectjtools1.6.9/ant_tasks/resources-ant.jar"
     local NATIVE_LIB="${XCORPUS_DIR}/data/qualitas_corpus_20130901/aspectj-1.6.9/native/x86_64-1.0.100-v20070510.jar"
     local ID="aspectj-native"
-    echo "./doop -i ${APP_INPUTS} ${TESTS} ${LIBS} ${NATIVE_LIB} -a context-insensitive --id ${ID} --scan-native-code --discover-tests --timeout 240 |& tee ${CURRENT_DIR}/${ID}.log"
+    echo "./doop -i ${APP_INPUTS} ${TESTS} ${LIBS} ${NATIVE_LIB} -a ${ANALYSIS} --id ${ID} --scan-native-code --discover-tests --timeout 240 |& tee ${CURRENT_DIR}/${ID}.log"
 }
 
 # Generate java.hprof with "make capture_hprof".
 runDoop ${SERVER_ANALYSIS_TESTS}/009-native/build/libs/009-native.jar 009-native java_8 ${SERVER_ANALYSIS_TESTS}/009-native/java.hprof
 
-# Instagram.
-runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243323_minAPI16_x86_nodpi_apkmirror.com.apk instagram ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof.gz
+# Androidterm.
+runDoop ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk androidterm ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm.hprof.gz
 
 # Chrome.
 runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome_57.0.2987.132-298713212_minAPI24_x86_nodpi_apkmirror.com.apk chrome ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome.hprof.gz
 
-# Androidterm.
-runDoop ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk androidterm ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm.hprof.gz
+# Instagram.
+runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243323_minAPI16_x86_nodpi_apkmirror.com.apk instagram ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof.gz
 
 analyzeAspectJ

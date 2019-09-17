@@ -21,6 +21,7 @@ public class Parameters {
     private ClassFilter applicationClassFilter;
     public boolean _scanNativeCode = false;
     public boolean _radare = false;
+    public boolean _preciseNativeStrings = false;
     public boolean _android = false;
     public Integer _cores = null;
     public String _rOutDir = null;
@@ -214,6 +215,9 @@ public class Parameters {
             break;
         case "--use-radare":
             this._radare = true;
+            break;
+        case "--only-precise-native-strings":
+            this._preciseNativeStrings = true;
             break;
         case "--legacy-android-processing":
             _legacyAndroidProcessing = true;

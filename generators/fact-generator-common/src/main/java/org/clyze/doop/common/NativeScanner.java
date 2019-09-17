@@ -13,9 +13,12 @@ public class NativeScanner {
     private final static boolean check = false;
     // Use Radare to find strings.
     private final boolean useRadare;
-    // Parse .rodata section to find strings (imprecise, does not use
-    // function boundaries or measure distances in the native code).
+    // Parse .rodata section to find strings.
     private final static boolean parseRodata = true;
+    // Only output localized strings (i.e. found inside function
+    // boundaries). When function boundaries can be determined, this
+    // improves precision.
+    private final boolean onlyPreciseNativeStrings;
 
     // Environment variables needed to find external tools.
     private static final String envVarARMEABI = "ARMEABI_TOOLCHAIN";
@@ -65,8 +68,9 @@ public class NativeScanner {
         }
     }
 
-    NativeScanner(boolean useRadare) {
+    NativeScanner(boolean useRadare, boolean onlyPreciseNativeStrings) {
         this.useRadare = useRadare;
+        this.onlyPreciseNativeStrings = onlyPreciseNativeStrings;
     }
 
     /**
@@ -891,13 +895,16 @@ public class NativeScanner {
      * @param factsFile  the facts file to use for writing
      * @param symbols    the symbols table
      */
-    private static void writeSymbolTable(Database db, PredicateFile factsFile,
-                                         Map<String, List<SymbolInfo> > symbols) {
+    private void writeSymbolTable(Database db, PredicateFile factsFile,
+                                  Map<String, List<SymbolInfo> > symbols) {
         for (Map.Entry<String, List<SymbolInfo>> entry : symbols.entrySet()) {
             String symbol = entry.getKey();
             for (SymbolInfo si : entry.getValue()) {
                 String offset = si.offset == null ? UNKNOWN_OFFSET : Long.toString(si.offset);
-                db.add(factsFile, si.lib, si.function, symbol, offset);
+                // Skip strings belonging to unknown fuctions if option is set.
+                boolean skipString = onlyPreciseNativeStrings && si.function.equals(UNKNOWN_FUNCTION);
+                if (!skipString)
+                    db.add(factsFile, si.lib, si.function, symbol, offset);
             }
         }
     }

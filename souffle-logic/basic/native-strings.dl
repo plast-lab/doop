@@ -3,6 +3,9 @@
 PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   _NativeMethodTypeCandidate(?file, ?function, ?descriptor, _),
   _NativeNameCandidate(?file, ?function, ?name, _),
+#ifdef ONLY_PRECISE_NATIVE_STRINGS
+  ?function != "-",
+#endif // ONLY_PRECISE_NATIVE_STRINGS
   Method_SimpleName(?method, ?name),
   Method_JVMDescriptor(?method, ?descriptor).
 
@@ -14,6 +17,7 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
 //   (?offset1 - ?offset2) <= 5,
 //   (?offset1 - ?offset2) >= -5.
 
+// #ifdef ONLY_PRECISE_NATIVE_STRINGS
 // // Crude over-approximation for strings used in unknown positions:
 // // assume matching methods are called from any function.
 // PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
@@ -22,6 +26,7 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
 //   _NativeLibEntryPoint(?file, ?function, _),
 //   Method_SimpleName(?method, ?name),
 //   Method_JVMDescriptor(?method, ?descriptor).
+// #endif // ONLY_PRECISE_NATIVE_STRINGS
 
 .decl PossibleNativeCodeTargetMethodLocalized(?method:Method, ?function:symbol, ?file:symbol)
 
