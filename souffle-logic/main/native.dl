@@ -404,7 +404,8 @@ ReachableAppMethodFromNativeCode(?method) :-
 
 #ifdef SCAN_NATIVE_CODE
 
-// Native allocations trigger finalization code in the Android runtime.
+// Native allocations trigger finalization code in the Android runtime. See:
+// https://android.googlesource.com/platform/libcore/+/master/luni/src/main/java/java/lang/ref/FinalizerReference.java
 #ifdef ANDROID
 ReachableMethodFromNativeCode(?finalizerAdd) :-
   basic.NativeAllocation(_, _, _, _),
