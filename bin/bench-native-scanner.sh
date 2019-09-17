@@ -67,14 +67,13 @@ function printStats() {
 
     local BASE_APP_REACHABLE=$(cat ${DOOP_HOME}/out/context-insensitive/${ID_BASE}/database/Stats_Simple_Application_ReachableMethod.csv | wc -l)
     local SCANNER_APP_REACHABLE=$(cat ${DOOP_HOME}/out/context-insensitive/${ID_STATIC}/database/Stats_Simple_Application_ReachableMethod.csv | wc -l)
+    echo "Application methods: "$(cat ${DOOP_HOME}/out/context-insensitive/${ID_BASE}/database/ApplicationMethod.csv | wc -l)
     echo "App-reachable increase over base (${BASE_APP_REACHABLE} -> ${SCANNER_APP_REACHABLE}): "$(calcIncrease ${BASE_APP_REACHABLE} ${SCANNER_APP_REACHABLE})
 
     # Use 'xargs' to remove whitespace.
     local BASE_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_BASE}.log | cut -d ')' -f 2 | xargs)
-    echo "Analysis time [base]: ${BASE_TIME}"
     local SCANNER_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_STATIC}.log | cut -d ')' -f 2 | xargs)
-    echo "Analysis time [scanner]: ${SCANNER_TIME}"
-    echo "Analysis time increase over base: "$(calcIncrease ${BASE_TIME} ${SCANNER_TIME})
+    echo "Analysis time increase over base (${BASE_TIME} -> ${SCANNER_TIME}): "$(calcIncrease ${BASE_TIME} ${SCANNER_TIME})
 
 }
 
