@@ -13,8 +13,6 @@ public class NativeScanner {
     private final static boolean check = false;
     // Use Radare to find strings.
     private final boolean useRadare;
-    // Parse .rodata section to find strings.
-    private final static boolean parseRodata = true;
     // Only output localized strings (i.e. found inside function
     // boundaries). When function boundaries can be determined, this
     // improves precision.
@@ -398,14 +396,14 @@ public class NativeScanner {
                         addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, (long) i));
                 }
 
-            if (parseRodata)
-                for (Map.Entry<Long, String> foundString : rodata.getFoundStrings().entrySet()) {
-                    String s = foundString.getValue();
-                    if (isMethodType(s))
-                        addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, foundString.getKey()));
-                    else if (isName(s))
-                        addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, foundString.getKey()));
-                }
+            // Parse .rodata section to find strings.
+            for (Map.Entry<Long, String> foundString : rodata.getFoundStrings().entrySet()) {
+                String s = foundString.getValue();
+                if (isMethodType(s))
+                    addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, foundString.getKey()));
+                else if (isName(s))
+                    addSymbol(nameSymbols, s, new SymbolInfo(lib, UNKNOWN_FUNCTION, foundString.getKey()));
+            }
 
             // Write out symbol tables.
             int namesCount = nameSymbols.keySet().size();
