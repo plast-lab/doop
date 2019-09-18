@@ -21,6 +21,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_STATS = "Statistics"
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
+	private static final int DEFAULT_JOBS = 4
 
 	@Override
 	String getName() { "doop" }
@@ -610,9 +611,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SOUFFLE_JOBS",
 					name: "souffle-jobs",
 					group: GROUP_ENGINE,
-					description: "Specify number of Souffle jobs to run.",
+					description: "Specify number of Souffle jobs to run (default: ${DEFAULT_JOBS}).",
 					argName: "NUMBER",
-					value: 4
+					value: DEFAULT_JOBS
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_DEBUG",
