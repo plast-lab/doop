@@ -64,7 +64,7 @@ function printStatsRow() {
     calcIntersection ${DYNAMIC_METHODS} ${SCANNER_METHODS} > ${INTERSECTION_FILE}
     local INTERSECTION_COUNT=$(cat ${INTERSECTION_FILE} | wc -l)
     local DYNAMIC_METHODS_COUNT=$(cat ${DYNAMIC_METHODS} | wc -l)
-    local RECALL="${INTERSECTION_COUNT} / ${DYNAMIC_METHODS_COUNT} = "$(python -c "print(str(100.0 * ${INTERSECTION_COUNT} / ${DYNAMIC_METHODS_COUNT}) + '%')")
+    local RECALL="${INTERSECTION_COUNT} / ${DYNAMIC_METHODS_COUNT} = "$(python -c "print('%.2f' % (100.0 * ${INTERSECTION_COUNT} / ${DYNAMIC_METHODS_COUNT}) + '%')")
     # echo "Recall = ${RECALL}"
 
     comm -2 -3 <(sort -u ${DYNAMIC_METHODS}) <(sort -u ${SCANNER_METHODS}) > ${MISSED_FILE}
@@ -121,7 +121,7 @@ function printLine() {
 }
 
 function printStatsTable() {
-    tabs 16,32,48,68,80,96,112,126
+    tabs 16,32,48,69,83,97,112,126
     printLine 126
     echo -e "| Benchmark \t| Mode \t| App methods \t| Recall \t| App-reachable     \t| Analysis time increase \t|"
     echo -e "|           \t|      \t|             \t|        \t| (incr. over base) \t| (incr. over base)      \t|"
