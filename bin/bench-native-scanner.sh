@@ -77,12 +77,15 @@ function printStatsRow() {
     # echo "App-reachable increase over base: ${APP_REACHABLE_DELTA}"
 
     # Use 'xargs' to remove whitespace.
-    local BASE_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_BASE}.log | cut -d ')' -f 2 | xargs)
-    local SCANNER_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_SCANNER}.log | cut -d ')' -f 2 | xargs)
-    local ANALYSIS_TIME_DELTA="(${BASE_TIME} -> ${SCANNER_TIME}): "$(calcIncrease ${BASE_TIME} ${SCANNER_TIME})
+    local BASE_ANALYSIS_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_BASE}.log | cut -d ')' -f 2 | xargs)
+    local SCANNER_ANALYSIS_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_SCANNER}.log | cut -d ')' -f 2 | xargs)
+    local BASE_FACTS_TIME=$(grep -F 'Soot fact generation time:' ${CURRENT_DIR}/${ID_BASE}.log | cut -d ':' -f 2 | xargs)
+    local SCANNER_FACTS_TIME=$(grep -F 'Soot fact generation time:' ${CURRENT_DIR}/${ID_SCANNER}.log | cut -d ':' -f 2 | xargs)
+    local ANALYSIS_TIME_DELTA="(${BASE_ANALYSIS_TIME} -> ${SCANNER_ANALYSIS_TIME}): "$(calcIncrease ${BASE_ANALYSIS_TIME} ${SCANNER_ANALYSIS_TIME})
+    local FACTS_TIME_DELTA="(${BASE_FACTS_TIME} -> ${SCANNER_FACTS_TIME}): "$(calcIncrease ${BASE_FACTS_TIME} ${SCANNER_FACTS_TIME})
     # echo "Analysis time increase over base: ${ANALYSIS_TIME_DELTA}"
 
-    echo -e "| ${BENCHMARK} \t| ${MODE} \t| ${APP_METHOD_COUNT} \t| ${RECALL} \t| ${APP_REACHABLE_DELTA} \t| ${ANALYSIS_TIME_DELTA} \t|"
+    echo -e "| ${BENCHMARK} \t| ${MODE} \t| ${APP_METHOD_COUNT} \t| ${RECALL} \t| ${APP_REACHABLE_DELTA} \t| ${ANALYSIS_TIME_DELTA} \t| ${FACTS_TIME_DELTA} \t|"
 }
 
 function setIDs() {
@@ -121,11 +124,11 @@ function printLine() {
 }
 
 function printStatsTable() {
-    tabs 16,32,48,69,83,97,112,126
-    printLine 126
-    echo -e "| Benchmark \t| Mode \t| App methods \t| Recall \t| App-reachable     \t| Analysis time increase \t|"
-    echo -e "|           \t|      \t|             \t|        \t| (incr. over base) \t| (incr. over base)      \t|"
-    printLine 126
+    tabs 16,32,48,69,83,97,112,126,151
+    printLine 151
+    echo -e "| Benchmark \t| Mode \t| App methods \t| Recall \t| App-reachable     \t| Analysis time increase \t| Factgen time \t|"
+    echo -e "|           \t|      \t|             \t|        \t| (incr. over base) \t| (incr. over base)      \t|              \t|"
+    printLine 151
     for BENCHMARK in androidterm chrome instagram 009-native
     do
         setIDs "${BENCHMARK}"
@@ -134,7 +137,7 @@ function printStatsTable() {
             local ID_STATIC="${ID_SCANNER}${MODE}"
             printStatsRow "${BENCHMARK}" "${ID_BASE}" "${ID_STATIC}" "${ID_HEAPDL}" "${MODE}"
         done
-        printLine 126
+        printLine 151
     done
 }
 
