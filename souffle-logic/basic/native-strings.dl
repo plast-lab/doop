@@ -45,6 +45,9 @@ OverloadedJNIMethod(?javaMethod, ?type, ?name, ?descriptor) :-
   MethodLookup(?name, _, ?type, ?method2),
   ?method1 != ?method2.
 
+// A mapping between a native Java method and a JNI function. This
+// does not capture the case of using the runtime's RegisterNatives()
+// function to register native functions with arbitrary names.
 .decl JNIMethod_NativeId(?javaMethod:Method, ?nativeId:symbol)
 .output JNIMethod_NativeId
 
