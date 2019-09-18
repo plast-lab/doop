@@ -157,11 +157,13 @@ public class NativeScanner {
     private static List<String> parseLib(String nmCmd, String lib,
                                          boolean demangle) throws IOException {
         List<String> ids = new LinkedList<>();
-        ProcessBuilder nmBuilder;
+
+        List<String> nmInvocation = Arrays.asList(new String[] { nmCmd, "--defined-only", "--dynamic" });
         if (demangle)
-            nmBuilder = new ProcessBuilder(nmCmd, "--dynamic", "--demangle", lib);
-        else
-            nmBuilder = new ProcessBuilder(nmCmd, "--dynamic", lib);
+            nmInvocation.add("--demangle");
+        nmInvocation.add(lib);
+
+        ProcessBuilder nmBuilder = new ProcessBuilder(nmInvocation);
         for (String nmLine : runCommand(nmBuilder)) {
             if (!nmLine.contains("JNI"))
                 continue;
