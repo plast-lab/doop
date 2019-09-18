@@ -52,7 +52,7 @@ function printStatsRow() {
     local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppNativeCodeTarget.csv
     # local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
     local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
-    local INTERSECTION_FILE="${CURRENT_DIR}/dynamic-scanner-intersection-${BENCHMARK}.log"
+    local INTERSECTION_FILE="${CURRENT_DIR}/dynamic-scanner-intersection-${ID_SCANNER}.log"
     local MISSED_FILE="${CURRENT_DIR}/missed-methods-${ID_SCANNER}.log"
 
     # echo "== Benchmark: ${BENCHMARK} (static scanner mode: ${ID_SCANNER}) =="
