@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 CURRENT_DIR="$(pwd)"
-echo "CURRENT_DIR=${CURRENT_DIR}"
+# echo "CURRENT_DIR=${CURRENT_DIR}"
 
 if [ "${DOOP_HOME}" == "" ]; then
     echo "Please set DOOP_HOME."
@@ -126,7 +126,7 @@ function printStatsTable() {
     echo -e "| Benchmark \t| Mode \t| App methods \t| Recall \t| App-reachable     \t| Analysis time increase \t|"
     echo -e "|           \t|      \t|             \t|        \t| (incr. over base) \t| (incr. over base)      \t|"
     printLine 126
-    for BENCHMARK in androidterm chrome instagram
+    for BENCHMARK in androidterm chrome instagram 009-native
     do
         setIDs "${BENCHMARK}"
         for MODE in "" "-localized"
