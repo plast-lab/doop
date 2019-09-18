@@ -158,7 +158,10 @@ public class NativeScanner {
                                          boolean demangle) throws IOException {
         List<String> ids = new LinkedList<>();
 
-        List<String> nmInvocation = Arrays.asList(new String[] { nmCmd, "--defined-only", "--dynamic" });
+        List<String> nmInvocation = new ArrayList<>();
+        nmInvocation.add(nmCmd);
+        nmInvocation.add("--defined-only");
+        nmInvocation.add("--dynamic");
         if (demangle)
             nmInvocation.add("--demangle");
         nmInvocation.add(lib);
