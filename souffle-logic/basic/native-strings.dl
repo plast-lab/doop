@@ -47,7 +47,9 @@ OverloadedJNIMethod(?javaMethod, ?type, ?name, ?descriptor) :-
 
 // A mapping between a native Java method and a JNI function. This
 // does not capture the case of using the runtime's RegisterNatives()
-// function to register native functions with arbitrary names.
+// function to register native functions with arbitrary names. For
+// example, the "crazy linker" used on Android, registers native
+// methods: https://chromium.googlesource.com/chromium/src/+/master/docs/android_native_libraries.md
 .decl JNIMethod_NativeId(?javaMethod:Method, ?nativeId:symbol)
 .output JNIMethod_NativeId
 
