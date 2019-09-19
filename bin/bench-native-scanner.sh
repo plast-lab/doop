@@ -33,8 +33,12 @@ ANDROID_PLATFORM=android_25_fulljars
 
 JVM_NATIVE_CODE=${DOOP_HOME}/jvm8-native-code.jar
 
-function calcIntersection() {
+function setIntersection() {
     comm -1 -2 <(sort -u "$1") <(sort -u "$2")
+}
+
+function setDifference() {
+    comm -2 -3 <(sort -u "$1") <(sort -u "$2")
 }
 
 function calcIncrease() {
@@ -51,8 +55,7 @@ function printStatsRow() {
     # local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppCallGraphEdgeFromNative.csv
     local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppNativeCodeTarget.csv
     # local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
-    local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
-    local INTERSECTION_FILE="${CURRENT_DIR}/dynamic-scanner-intersection-${ID_SCANNER}.log"
+    local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/Stats_Simple_Application_ReachableMethod.csv
     local MISSED_FILE="${CURRENT_DIR}/missed-methods-${ID_SCANNER}.log"
 
     # echo "== Benchmark: ${BENCHMARK} (static scanner mode: ${ID_SCANNER}) =="
@@ -61,16 +64,24 @@ function printStatsRow() {
     # echo "Scanner methods: ${SCANNER_METHODS}"
     # echo "Missed methods: ${MISSED_FILE}"
 
-    calcIntersection ${DYNAMIC_METHODS} ${SCANNER_METHODS} > ${INTERSECTION_FILE}
-    local INTERSECTION_COUNT=$(cat ${INTERSECTION_FILE} | wc -l)
     local DYNAMIC_METHODS_COUNT=$(cat ${DYNAMIC_METHODS} | wc -l)
+    # 1. Calculate recall of the "base" analysis.
+    local BASE_INTERSECTION_FILE="${CURRENT_DIR}/dynamic-scanner-intersection-${ID_BASE}.log"
+    local BASE_APP_REACHABLE_FILE=${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/Stats_Simple_Application_ReachableMethod.csv
+    setIntersection ${DYNAMIC_METHODS} ${BASE_APP_REACHABLE_FILE} > ${BASE_INTERSECTION_FILE}
+    local BASE_INTERSECTION_COUNT=$(cat ${BASE_INTERSECTION_FILE} | wc -l)
+    local BASE_RECALL="${BASE_INTERSECTION_COUNT} / ${DYNAMIC_METHODS_COUNT} = "$(python -c "print('%.2f' % (100.0 * ${BASE_INTERSECTION_COUNT} / ${DYNAMIC_METHODS_COUNT}) + '%')")
+    # 2. Calculate recall of the "scanner" analysis.
+    local INTERSECTION_FILE="${CURRENT_DIR}/dynamic-scanner-intersection-${ID_SCANNER}.log"
+    setIntersection ${DYNAMIC_METHODS} ${SCANNER_METHODS} > ${INTERSECTION_FILE}
+    local INTERSECTION_COUNT=$(cat ${INTERSECTION_FILE} | wc -l)
     local RECALL="${INTERSECTION_COUNT} / ${DYNAMIC_METHODS_COUNT} = "$(python -c "print('%.2f' % (100.0 * ${INTERSECTION_COUNT} / ${DYNAMIC_METHODS_COUNT}) + '%')")
-    # echo "Recall = ${RECALL}"
 
     comm -2 -3 <(sort -u ${DYNAMIC_METHODS}) <(sort -u ${SCANNER_METHODS}) > ${MISSED_FILE}
 
-    local BASE_APP_REACHABLE=$(cat ${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/Stats_Simple_Application_ReachableMethod.csv | wc -l)
-    local SCANNER_APP_REACHABLE=$(cat ${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/Stats_Simple_Application_ReachableMethod.csv | wc -l)
+    local BASE_APP_REACHABLE=$(cat ${BASE_APP_REACHABLE_FILE} | wc -l)
+    local SCANNER_APP_REACHABLE_FILE=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/Stats_Simple_Application_ReachableMethod.csv
+    local SCANNER_APP_REACHABLE=$(cat ${SCANNER_APP_REACHABLE_FILE} | wc -l)
     local APP_METHOD_COUNT=$(cat ${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/ApplicationMethod.csv | wc -l)
     # echo "Application methods: ${APP_METHOD_COUNT}"
     local APP_REACHABLE_DELTA="(${BASE_APP_REACHABLE} -> ${SCANNER_APP_REACHABLE}): "$(calcIncrease ${BASE_APP_REACHABLE} ${SCANNER_APP_REACHABLE})
@@ -85,7 +96,10 @@ function printStatsRow() {
     local FACTS_TIME_DELTA="(${BASE_FACTS_TIME} -> ${SCANNER_FACTS_TIME}): "$(calcIncrease ${BASE_FACTS_TIME} ${SCANNER_FACTS_TIME})
     # echo "Analysis time increase over base: ${ANALYSIS_TIME_DELTA}"
 
-    echo -e "| ${BENCHMARK} \t| ${MODE} \t| ${APP_METHOD_COUNT} \t| ${RECALL} \t| ${APP_REACHABLE_DELTA} \t| ${ANALYSIS_TIME_DELTA} \t| ${FACTS_TIME_DELTA} \t|"
+    local SCANNER_ENTRY_POINTS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
+    local ADDED_ENTRY_POINTS=$(setDifference ${SCANNER_ENTRY_POINTS} ${BASE_APP_REACHABLE_FILE} | wc -l)
+
+    echo -e "| ${BENCHMARK} \t| ${MODE} \t| ${APP_METHOD_COUNT} \t| ${BASE_RECALL} \t| ${RECALL} \t| ${APP_REACHABLE_DELTA} \t| ${ANALYSIS_TIME_DELTA} \t| ${FACTS_TIME_DELTA} \t| ${ADDED_ENTRY_POINTS} \t|"
 }
 
 function setIDs() {
@@ -124,11 +138,12 @@ function printLine() {
 }
 
 function printStatsTable() {
-    tabs 16,32,48,69,83,97,112,126,151
-    printLine 151
-    echo -e "| Benchmark \t| Mode \t| App methods \t| Recall \t| App-reachable     \t| Analysis time increase \t| Factgen time \t|"
-    echo -e "|           \t|      \t|             \t|        \t| (incr. over base) \t| (incr. over base)      \t|              \t|"
-    printLine 151
+    local LAST_COL=173
+    tabs 16,30,41,61,83,112,125,137,143,152,163,${LAST_COL}
+    printLine ${LAST_COL}
+    echo -e "| Benchmark \t| Mode \t| App     \t| Base   \t| Recall \t| +App-reachable     \t| +Analysis time     \t| +Factgen time \t| +entry \t|"
+    echo -e "|           \t|      \t| methods \t| recall \t|        \t|  (incr. over base) \t|  (incr. over base) \t|               \t|  points\t|"
+    printLine ${LAST_COL}
     for BENCHMARK in androidterm chrome instagram 009-native
     do
         setIDs "${BENCHMARK}"
@@ -137,7 +152,7 @@ function printStatsTable() {
             local ID_STATIC="${ID_SCANNER}${MODE}"
             printStatsRow "${BENCHMARK}" "${ID_BASE}" "${ID_STATIC}" "${ID_HEAPDL}" "${MODE}"
         done
-        printLine 151
+        printLine ${LAST_COL}
     done
 }
 
