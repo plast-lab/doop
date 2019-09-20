@@ -14,8 +14,8 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
 //   _NativeNameCandidate(?file, ?function, ?name, ?offset2),
 //   Method_SimpleName(?method, ?name),
 //   Method_JVMDescriptor(?method, ?descriptor),
-//   (?offset1 - ?offset2) <= 5,
-//   (?offset1 - ?offset2) >= -5.
+//   (?offset1 - ?offset2) <= NATIVE_STRINGS_DISTANCE,
+//   (?offset2 - ?offset1) >= NATIVE_STRINGS_DISTANCE.
 
 // #ifdef ONLY_PRECISE_NATIVE_STRINGS
 // // Crude over-approximation for strings used in unknown positions:

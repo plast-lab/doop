@@ -22,6 +22,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
 	private static final int DEFAULT_JOBS = 4
+	private static final int DEFAULT_STRINGS_DISTANCE = 5
 
 	@Override
 	String getName() { "doop" }
@@ -301,6 +302,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_NATIVE,
 					description: "Skip strings without enclosing function information.",
 					forCacheID: true,
+					forPreprocessor: true
+			),
+			new IntegerAnalysisOption(
+					id: "NATIVE_STRINGS_DISTANCE",
+					name: "native-strings-distance",
+					group: GROUP_NATIVE,
+					description: "The maximum distance to use when reasoning about string locality. Default: ${DEFAULT_STRINGS_DISTANCE}",
+					argName: "N",
+					value: DEFAULT_STRINGS_DISTANCE,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
