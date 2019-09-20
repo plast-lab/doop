@@ -884,6 +884,10 @@ public class NativeScanner {
      */
     private static void addSymbol(Map<String, List<SymbolInfo> > symbols,
                                   String symbol, SymbolInfo si) {
+        // Ignore @-suffix (such as '@plt' or '@@Base'), since it's not part of the mangled name.
+        int atSymbol = symbol.indexOf("@");
+        if (atSymbol != -1)
+            symbol = symbol.substring(0, atSymbol);
         List<SymbolInfo> infos = symbols.getOrDefault(symbol, new LinkedList<>());
         infos.add(si);
         symbols.put(symbol, infos);
