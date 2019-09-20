@@ -13,6 +13,7 @@
 #ifndef USER_DEFINED_PARTITIONS
 .output VarPointsTo(IO="file",filename="VarPointsTo.csv",delimiter="\t")
 .output ReachableContext(IO="file",filename="ReachableContext.csv",delimiter="\t")
+//.output InstanceFieldPointsTo(IO="file",filename="InstanceFieldPointsTo.csv",delimiter="\t")
 #else
 .output Stats_Simple_InsensVarPointsTo(IO="file",filename="VarPointsTo.csv",delimiter="\t")
 .output Stats_Simple_InsensCallGraphEdge(IO="file",filename="CallGraphEdge.csv",delimiter="\t")

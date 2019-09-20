@@ -118,6 +118,7 @@ HeapAllocation_Merge(?heap, ?mergeHeap) :-
 
 #ifndef DISTINGUISH_ALL_STRING_CONSTANTS
 #ifndef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
+#ifndef DISTINGUISH_WEB_APP_STRING_CONSTANTS
 #ifndef NO_MERGES
 HeapRepresentative(?constant, ?heap) :-
   isStringConstant(?heap),
@@ -130,8 +131,24 @@ HeapRepresentative(?constant, ?heap) :-
 //   !HeapAllocation_Keep(?heap).
 
 #endif // NO_MERGES
+#endif // DISTINGUSIH_WEB_APP_STRING_CONSTANTS
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 #endif // DISTINGUISH_ALL_STRING_CONSTANTS
+
+#ifdef DISTINGUISH_WEB_APP_STRING_CONSTANTS
+
+.decl SpringBeanId(?id:symbol)
+
+SpringBeanId(?id) :-
+  SingletonBean(_, ?id).
+
+HeapRepresentative(?constant, ?heap) :-
+  isStringConstant(?heap),
+  ?constant = "<<string-constant>>",
+  isHeapAllocation(?constant),
+  !SpringBeanId(?heap),
+  !HeapAllocation_Keep(?heap).
+#endif
 
 .decl ReflectionStringConstant(?heap:HeapAllocation)
 .decl ReflectionSubstringObject(?heap:HeapAllocation)
