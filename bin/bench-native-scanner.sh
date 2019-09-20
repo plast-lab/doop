@@ -107,6 +107,7 @@ function setIDs() {
     ID_BASE="native-test-${BENCHMARK}-base"
     ID_SCANNER="native-test-${BENCHMARK}-scanner"
     ID_SCANNER_LOCAL="${ID_SCANNER}-localized"
+    ID_SCANNER_SMART="${ID_SCANNER}-smart"
     ID_HEAPDL="native-test-${BENCHMARK}-heapdl"
 }
 
@@ -123,9 +124,15 @@ function runDoop() {
     setIDs "${BENCHMARK}"
     pushd ${DOOP_HOME} &> /dev/null
     date
+    # 1. Base analysis.
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_BASE} --platform ${PLATFORM} --timeout ${TIMEOUT} |& tee ${CURRENT_DIR}/${ID_BASE}.log
+    # 2. Native scanner, default mode.
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+    # 3. Native scanner, use only localized strings.
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL}.log
+    # 4. Native scanner, "smart native targets" mode.
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
+    # 5. HeapDL analysis, for comparison.
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_HEAPDL} --platform ${PLATFORM} --timeout ${TIMEOUT} --heapdl-file ${HPROF} |& tee ${CURRENT_DIR}/${ID_HEAPDL}.log
     popd &> /dev/null
 }
@@ -138,7 +145,7 @@ function printLine() {
 }
 
 function printStatsTable() {
-    local LAST_COL=173
+    local LAST_COL=174
     tabs 16,30,41,61,83,112,125,137,143,152,163,${LAST_COL}
     printLine ${LAST_COL}
     echo -e "| Benchmark \t| Mode \t| App     \t| Base   \t| Recall \t| +App-reachable     \t| +Analysis time     \t| +Factgen time \t| +entry \t|"
@@ -147,7 +154,7 @@ function printStatsTable() {
     for BENCHMARK in androidterm chrome instagram 009-native
     do
         setIDs "${BENCHMARK}"
-        for MODE in "" "-localized"
+        for MODE in "" "-localized" "-smart"
         do
             local ID_STATIC="${ID_SCANNER}${MODE}"
             printStatsRow "${BENCHMARK}" "${ID_BASE}" "${ID_STATIC}" "${ID_HEAPDL}" "${MODE}"

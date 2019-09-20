@@ -1,5 +1,5 @@
+// A cross-product of method name candidates and method signature candidates.
 .decl PossibleNativeCodeTargetMethod(?method:Method, ?function:symbol, ?file:symbol)
-
 PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   _NativeMethodTypeCandidate(?file, ?function, ?descriptor, _),
   _NativeNameCandidate(?file, ?function, ?name, _),
@@ -64,29 +64,4 @@ JNIMethod_NativeId(?javaMethod, ?nativeId) :-
   _NativeMethodId(?javaMethod, ?nativeIdBase),
   ?nativeId = cat(?nativeIdBase, cat("__", ?descriptor)).
 
-// Call-graph edges from native methods. This only captures direct call-graph
-// edges from native methods; if a native method calls other native code to do
-// the call, that behavior will be missed.
-
-.decl CallGraphEdgeFromNativeMethod(?targetMethod:Method, ?nativeMethod:Method, ?function:symbol, ?file:symbol)
-.output CallGraphEdgeFromNativeMethod
-
-CallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod, ?function, ?file) :-
-  PossibleNativeCodeTargetMethod(?targetMethod, ?function, ?file),
-  JNIMethod_NativeId(?nativeMethod, ?function).
-
-// Filtered CallGraphEdgeFromNativeMethod, in the "application" part.
-.decl AppCallGraphEdgeFromNativeMethod(?targetMethod:Method, ?nativeMethod:Method)
-.output AppCallGraphEdgeFromNativeMethod
-
-AppCallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod) :-
-  CallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod, _, _),
-  ApplicationMethod(?targetMethod),
-  ApplicationMethod(?nativeMethod).
-
-// Native allocations detected by the native scanner.
-.decl NativeAllocation(?constructor:Method, ?function:symbol, ?file:symbol, ?type:ReferenceType)
-NativeAllocation(?constructor, ?function, ?file, ?type) :-
-  PossibleNativeCodeTargetMethod(?constructor, ?function, ?file),
-  ClassConstructor(?constructor, ?type).
 

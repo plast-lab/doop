@@ -379,13 +379,37 @@ ReachableValue(?hctx, NativeReturnValId(?t, ?m)) :-
 .decl isNativeContext(?ctx:configuration.Context)
 isNativeContext(?ctx) :- isImmutableContext(?ctx).
 
+#ifdef SCAN_NATIVE_CODE
+
+// A filtered version of the cross-product.
+.decl HighlyPossibleNativeCodeTargetMethod(?method:Method, ?function:symbol, ?file:symbol)
+// Accept calls to non-constructors.
+HighlyPossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
+  basic.PossibleNativeCodeTargetMethod(?method, ?function, ?file),
+  !basic.ClassConstructor(?method, _).
+// Accept calls to constructors if instance methods are reachable.
+HighlyPossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
+  basic.PossibleNativeCodeTargetMethod(?method, ?function, ?file),
+  basic.ClassConstructor(?method, ?type),
+  Method_DeclaringType(?instanceMethod, ?type),
+  Reachable(?instanceMethod),
+  !Method_Modifier("final", ?instanceMethod).
+// Accept calls to constructors if instance fields are used.
+HighlyPossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
+  basic.PossibleNativeCodeTargetMethod(?method, ?function, ?file),
+  basic.ClassConstructor(?method, ?type),
+  Field_DeclaringType(?field, ?type),
+  ( StoreHeapInstanceField(?field, _, _, _, _)
+  ; LoadHeapInstanceField(_, _, ?field, _, _)),
+  !Field_Modifier("final", ?field).
+
 // Reachability for methods discovered by the native code scanner.
 .decl ReachableMethodFromNativeCode(?method:Method)
 .decl ReachableContextFromNative(?ctx:configuration.Context, ?method:Method, ?function:symbol, ?file:symbol)
 
 ReachableMethodFromNativeCode(?method),
 ReachableContextFromNative(?ctx, ?method, ?function, ?file) :-
-  basic.PossibleNativeCodeTargetMethod(?method, ?function, ?file),
+  HighlyPossibleNativeCodeTargetMethod(?method, ?function, ?file),
   isNativeContext(?ctx).
 
 // This rule handles the possibility of <clinit> being triggered on
@@ -402,18 +426,41 @@ ReachableAppMethodFromNativeCode(?method) :-
   ReachableMethodFromNativeCode(?method),
   ApplicationMethod(?method).
 
-#ifdef SCAN_NATIVE_CODE
+// Call-graph edges from native methods. This only captures direct call-graph
+// edges from native methods; if a native method calls other native code to do
+// the call, that behavior will be missed.
+
+.decl CallGraphEdgeFromNativeMethod(?targetMethod:Method, ?nativeMethod:Method, ?function:symbol, ?file:symbol)
+.output CallGraphEdgeFromNativeMethod
+
+CallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod, ?function, ?file) :-
+  HighlyPossibleNativeCodeTargetMethod(?targetMethod, ?function, ?file),
+  basic.JNIMethod_NativeId(?nativeMethod, ?function).
+
+// Filtered CallGraphEdgeFromNativeMethod, in the "application" part.
+.decl AppCallGraphEdgeFromNativeMethod(?targetMethod:Method, ?nativeMethod:Method)
+.output AppCallGraphEdgeFromNativeMethod
+
+AppCallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod) :-
+  CallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod, _, _),
+  ApplicationMethod(?targetMethod),
+  ApplicationMethod(?nativeMethod).
+
+// Native allocations detected by the native scanner.
+.decl NativeAllocation(?constructor:Method, ?function:symbol, ?file:symbol, ?type:ReferenceType)
+NativeAllocation(?constructor, ?function, ?file, ?type) :-
+  HighlyPossibleNativeCodeTargetMethod(?constructor, ?function, ?file),
+  basic.ClassConstructor(?constructor, ?type).
 
 // Native allocations trigger finalization code in the Android runtime. See:
 // https://android.googlesource.com/platform/libcore/+/master/luni/src/main/java/java/lang/ref/FinalizerReference.java
 #ifdef ANDROID
 ReachableMethodFromNativeCode(?finalizerAdd) :-
-  basic.NativeAllocation(_, _, _, _),
+  NativeAllocation(_, _, _, _),
   ?finalizerAdd = "<java.lang.ref.FinalizerReference: void add(java.lang.Object)>",
   isMethod(?finalizerAdd).
 #endif // ANDROID
 
-#endif // SCAN_NATIVE_CODE
 
 // Process methods found by the native scanner. This includes mocking of arguments.
 #ifdef ANDROID
@@ -448,3 +495,5 @@ VarPointsTo(?immHCtx, ?mockId, ?ctx, ?this) :-
 #endif // DISABLE_POINTS_TO
 
 #endif // ANDROID
+
+#endif // SCAN_NATIVE_CODE

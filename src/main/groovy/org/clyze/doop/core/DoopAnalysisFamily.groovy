@@ -304,6 +304,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true,
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "SMART_NATIVE_TARGETS",
+					name: "smart-native-targets",
+					group: GROUP_NATIVE,
+					description: "Filter native targets (heuristic).",
+					forPreprocessor: true
+			),
 			new IntegerAnalysisOption(
 					id: "NATIVE_STRINGS_DISTANCE",
 					name: "native-strings-distance",
