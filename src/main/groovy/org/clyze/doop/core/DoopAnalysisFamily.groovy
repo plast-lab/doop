@@ -324,8 +324,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_NATIVE,
 					description: "The maximum distance to use when reasoning about string locality. Default: ${DEFAULT_STRINGS_DISTANCE}",
 					argName: "N",
-					value: DEFAULT_STRINGS_DISTANCE,
-					forPreprocessor: true
+					value: DEFAULT_STRINGS_DISTANCE
 			),
 			new BooleanAnalysisOption(
 					id: "DACAPO",
