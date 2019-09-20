@@ -311,6 +311,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Filter native targets (heuristic).",
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "USE_STRING_LOCALITY",
+					name: "use-string-locality",
+					group: GROUP_NATIVE,
+					description: "Use string locality when pairing native target strings.",
+					forPreprocessor: true
+			),
 			new IntegerAnalysisOption(
 					id: "NATIVE_STRINGS_DISTANCE",
 					name: "native-strings-distance",

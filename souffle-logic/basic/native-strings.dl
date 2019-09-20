@@ -1,5 +1,20 @@
 // A cross-product of method name candidates and method signature candidates.
 .decl PossibleNativeCodeTargetMethod(?method:Method, ?function:symbol, ?file:symbol)
+
+#ifdef USE_STRING_LOCALITY
+
+// Pair strings that are "close" in the strings symbol table.
+PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
+  _NativeMethodTypeCandidate(?file, ?function, ?descriptor, ?offset1),
+  _NativeNameCandidate(?file, ?function, ?name, ?offset2),
+  Method_SimpleName(?method, ?name),
+  Method_JVMDescriptor(?method, ?descriptor),
+  (?offset1 - ?offset2) <= NATIVE_STRINGS_DISTANCE,
+  (?offset2 - ?offset1) <= NATIVE_STRINGS_DISTANCE.
+
+#else
+
+// Pair all strings (or only strings in known functions in precise mode).
 PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   _NativeMethodTypeCandidate(?file, ?function, ?descriptor, _),
   _NativeNameCandidate(?file, ?function, ?name, _),
@@ -9,13 +24,7 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   Method_SimpleName(?method, ?name),
   Method_JVMDescriptor(?method, ?descriptor).
 
-// PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
-//   _NativeMethodTypeCandidate(?file, ?function, ?descriptor, ?offset1),
-//   _NativeNameCandidate(?file, ?function, ?name, ?offset2),
-//   Method_SimpleName(?method, ?name),
-//   Method_JVMDescriptor(?method, ?descriptor),
-//   (?offset1 - ?offset2) <= NATIVE_STRINGS_DISTANCE,
-//   (?offset2 - ?offset1) >= NATIVE_STRINGS_DISTANCE.
+#endif // USE_STRING_LOCALITY
 
 .decl PossibleNativeCodeTargetMethodLocalized(?method:Method, ?function:symbol, ?file:symbol)
 

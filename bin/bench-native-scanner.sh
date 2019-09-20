@@ -22,6 +22,7 @@ fi
 
 ANALYSIS=context-insensitive
 TIMEOUT=600
+STRING_DISTANCE=5
 
 RUN_ANALYSIS=1
 # RUN_ANALYSIS=0
@@ -80,8 +81,7 @@ function printStatsRow() {
     comm -2 -3 <(sort -u ${DYNAMIC_METHODS}) <(sort -u ${SCANNER_METHODS}) > ${MISSED_FILE}
 
     local BASE_APP_REACHABLE=$(cat ${BASE_APP_REACHABLE_FILE} | wc -l)
-    local SCANNER_APP_REACHABLE_FILE=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/Stats_Simple_Application_ReachableMethod.csv
-    local SCANNER_APP_REACHABLE=$(cat ${SCANNER_APP_REACHABLE_FILE} | wc -l)
+    local SCANNER_APP_REACHABLE=$(cat ${SCANNER_METHODS} | wc -l)
     local APP_METHOD_COUNT=$(cat ${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/ApplicationMethod.csv | wc -l)
     # echo "Application methods: ${APP_METHOD_COUNT}"
     local APP_REACHABLE_DELTA="(${BASE_APP_REACHABLE} -> ${SCANNER_APP_REACHABLE}): "$(calcIncrease ${BASE_APP_REACHABLE} ${SCANNER_APP_REACHABLE})
@@ -108,6 +108,7 @@ function setIDs() {
     ID_SCANNER="native-test-${BENCHMARK}-scanner"
     ID_SCANNER_LOCAL="${ID_SCANNER}-localized"
     ID_SCANNER_SMART="${ID_SCANNER}-smart"
+    ID_SCANNER_OFFSETS="${ID_SCANNER}-offsets-${STRING_DISTANCE}"
     ID_HEAPDL="native-test-${BENCHMARK}-heapdl"
 }
 
@@ -126,14 +127,16 @@ function runDoop() {
     date
     # 1. Base analysis.
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_BASE} --platform ${PLATFORM} --timeout ${TIMEOUT} |& tee ${CURRENT_DIR}/${ID_BASE}.log
-    # 2. Native scanner, default mode.
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
-    # 3. Native scanner, use only localized strings.
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL}.log
-    # 4. Native scanner, "smart native targets" mode.
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
-    # 5. HeapDL analysis, for comparison.
+    # 2. HeapDL analysis, for comparison.
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_HEAPDL} --platform ${PLATFORM} --timeout ${TIMEOUT} --heapdl-file ${HPROF} |& tee ${CURRENT_DIR}/${ID_HEAPDL}.log
+    # 3. Native scanner, default mode.
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+    # 4. Native scanner, use only localized strings.
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL}.log
+    # 5. Native scanner, "smart native targets" mode.
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
+    # 6. Native scanner, "use string locality" mode.
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS}.log
     popd &> /dev/null
 }
 
@@ -154,7 +157,7 @@ function printStatsTable() {
     for BENCHMARK in androidterm chrome instagram 009-native
     do
         setIDs "${BENCHMARK}"
-        for MODE in "" "-localized" "-smart"
+        for MODE in "" "-localized" "-smart" "-offsets-${STRING_DISTANCE}"
         do
             local ID_STATIC="${ID_SCANNER}${MODE}"
             printStatsRow "${BENCHMARK}" "${ID_BASE}" "${ID_STATIC}" "${ID_HEAPDL}" "${MODE}"
