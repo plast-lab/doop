@@ -195,10 +195,13 @@ _MethodMatchingBridge(?meth, ?bridge, ?bridgetype) :-
    _BridgeMethod(?bridge, ?name, ?bridgetype),
    !Method_Modifier("bridge", ?meth).
 
+.output _MethodMatchingBridge
+
 MethodMightBeCovariantBridge(?bridge, ?meth) :-
    _MethodMatchingBridge(?meth, ?bridge, ?bridgetype),
    Method_DeclaringType(?meth, ?bridgetype).
 
+.output MethodMightBeCovariantBridge
 //// Greatly suboptimal this way.
 // MethodMightBeCovariantBridge(?bridge, ?meth) :-
 //    Method_Modifier("bridge", ?bridge),
