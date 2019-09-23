@@ -456,8 +456,6 @@ NewMetricMacro("96.0", "Unmatched dynamic reachable methods (INS)", UnmatchedDyn
 NewMetricMacro("97.0", "Dynamic call graph edges from native code to Java code", mainAnalysis.NativeToBytecodeDynamicCallGraphEdge(_, _)).
 NewMetricMacro("97.1", "Dynamic reachable methods from native code", mainAnalysis.DynamicNativeCodeTarget(_)).
 NewMetricMacro("97.2", "Dynamic app-reachable methods from native code", mainAnalysis.DynamicAppNativeCodeTarget(_)).
-NewMetricMacro("97.3", "Dynamic reachable methods from native code (also found by scanner)", mainAnalysis.DynamicNativeCodeTargetObservedByHeapDL(_)).
-NewMetricMacro("97.4", "Dynamic app-reachable methods from native code (also found by scanner)", mainAnalysis.DynamicAppNativeCodeTargetObservedByHeapDL(_)).
 #endif // SCAN_NATIVE_CODE
 
 .decl Stats_Simple_Application_DynamicCallGraphEdge(?invocation:Instruction, ?toMeth:Method)

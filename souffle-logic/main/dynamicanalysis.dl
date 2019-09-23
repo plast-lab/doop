@@ -325,23 +325,3 @@ DynamicAppNativeCodeTarget(?toMethod) :-
   DynamicCallGraphEdgeFromNative(?toMethod, ?fromMethod),
   ApplicationMethod(?fromMethod),
   ApplicationMethod(?toMethod).
-
-#ifdef SCAN_NATIVE_CODE
-
-// Intersection of methods called dynamically by native code and edges
-// computed by the native scanner.
-.decl DynamicNativeCodeTargetObservedByHeapDL(?toMethod:Method)
-.output DynamicNativeCodeTargetObservedByHeapDL
-DynamicNativeCodeTargetObservedByHeapDL(?toMethod) :-
-  DynamicNativeCodeTarget(?toMethod),
-  basic.PossibleNativeCodeTargetMethod(?toMethod, _, _).
-
-// Intersection of application methods called dynamically by native
-// code and edges computed by the native scanner.
-.decl DynamicAppNativeCodeTargetObservedByHeapDL(?toMethod:Method)
-.output DynamicAppNativeCodeTargetObservedByHeapDL
-DynamicAppNativeCodeTargetObservedByHeapDL(?toMethod) :-
-  DynamicAppNativeCodeTarget(?toMethod),
-  basic.PossibleNativeCodeTargetMethod(?toMethod, _, _).
-
-#endif // SCAN_NATIVE_CODE
