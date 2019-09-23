@@ -22,7 +22,8 @@ fi
 
 ANALYSIS=context-insensitive
 TIMEOUT=600
-STRING_DISTANCE=5
+STRING_DISTANCE1=20
+STRING_DISTANCE2=2000
 
 RUN_ANALYSIS=1
 # RUN_ANALYSIS=0
@@ -108,7 +109,8 @@ function setIDs() {
     ID_SCANNER="native-test-${BENCHMARK}-scanner"
     ID_SCANNER_LOCAL="${ID_SCANNER}-localized"
     ID_SCANNER_SMART="${ID_SCANNER}-smart"
-    ID_SCANNER_OFFSETS="${ID_SCANNER}-offsets-${STRING_DISTANCE}"
+    ID_SCANNER_OFFSETS1="${ID_SCANNER}-dist-${STRING_DISTANCE1}"
+    ID_SCANNER_OFFSETS2="${ID_SCANNER}-dist-${STRING_DISTANCE2}"
     ID_HEAPDL="native-test-${BENCHMARK}-heapdl"
 }
 
@@ -136,7 +138,10 @@ function runDoop() {
     # 5. Native scanner, "smart native targets" mode.
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
     # 6. Native scanner, "use string locality" mode.
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS}.log
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS1} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE1} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS1}.log
+    if [ "${BENCHMARK}" == "chrome" ]; then
+        ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS2} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE2} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS2}.log
+    fi
     popd &> /dev/null
 }
 
@@ -157,7 +162,12 @@ function printStatsTable() {
     for BENCHMARK in androidterm chrome instagram 009-native
     do
         setIDs "${BENCHMARK}"
-        for MODE in "" "-localized" "-smart" "-offsets-${STRING_DISTANCE}"
+        if [ "${BENCHMARK}" == "chrome" ]; then
+            MODES=( "" "-localized" "-smart" "-dist-${STRING_DISTANCE1}" "-dist-${STRING_DISTANCE2}" )
+        else
+            MODES=( "" "-localized" "-smart" "-dist-${STRING_DISTANCE1}" )
+        fi
+        for MODE in "${MODES[@]}"
         do
             local ID_STATIC="${ID_SCANNER}${MODE}"
             printStatsRow "${BENCHMARK}" "${ID_BASE}" "${ID_STATIC}" "${ID_HEAPDL}" "${MODE}"
@@ -189,7 +199,7 @@ if [ "${RUN_ANALYSIS}" == "1" ]; then
     # Instagram.
     runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243323_minAPI16_x86_nodpi_apkmirror.com.apk instagram ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof.gz
 
-    analyzeAspectJ
+    # analyzeAspectJ
 fi
 
 printStatsTable ${BENCHMARK}
