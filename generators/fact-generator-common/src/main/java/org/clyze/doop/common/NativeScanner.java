@@ -127,13 +127,13 @@ public class NativeScanner {
             System.out.println("== Processing library: " + lib + " ==");
             // Demangling interacts poorly with libraries lacking
             // symbol tables and is thus turned off.
-            List<String> lines = parseLib(nmCmd, lib, false);
+            List<String> symbols = libSymbols(nmCmd, lib, false);
             if (check)
-                checkSymbols(lines, lib);
+                checkSymbols(symbols, lib);
 
             SortedMap<Long, String> libEntryPoints = new TreeMap<>();
-            for (String line : lines) {
-                EntryPoint ep = parseEntryPoint(line);
+            for (String symbol : symbols) {
+                EntryPoint ep = parseEntryPoint(symbol);
                 if (ep != null)
                     libEntryPoints.put(ep.addr, ep.name);
             }
@@ -144,9 +144,8 @@ public class NativeScanner {
     }
 
     /**
-     * Reads all dynamic symbols from a library that contain the
-     * substring "JNI". Matching results may be passed through
-     * c++filt.
+     * Reads dynamic symbols from a library. Matching results may be
+     * passed through c++filt.
      *
      * @param nmCmd     the command to run the "nm" tool
      * @param lib       the path to the dynamic library
@@ -154,8 +153,8 @@ public class NativeScanner {
      *                  we use c++filt
      * @return          a list of lines containing entry points
      */
-    private static List<String> parseLib(String nmCmd, String lib,
-                                         boolean demangle) throws IOException {
+    private static List<String> libSymbols(String nmCmd, String lib,
+                                           boolean demangle) throws IOException {
         List<String> ids = new LinkedList<>();
 
         List<String> nmInvocation = new ArrayList<>();
@@ -168,8 +167,8 @@ public class NativeScanner {
 
         ProcessBuilder nmBuilder = new ProcessBuilder(nmInvocation);
         for (String nmLine : runCommand(nmBuilder)) {
-            if (!nmLine.contains("JNI"))
-                continue;
+            // if (!nmLine.contains("JNI"))
+            //     continue;
             ids.add(nmLine);
             // // Call separate tool to do name demangling.
             // final String CPPFILT = "c++filt";
@@ -235,18 +234,18 @@ public class NativeScanner {
      * Diagnostic: check for the presence of some special symbols in
      * the output of 'nm'.
      *
-     * @param lines    the output lines
+     * @param symbols  the text output of 'nm' that contains symbols
      * @param lib      the name of the library
      */
-    private static void checkSymbols(Iterable<String> lines, String lib) {
+    private static void checkSymbols(Iterable<String> symbols, String lib) {
         boolean referencesGetMethodID = false;
         boolean referencesGetFieldID = false;
-        for (String line : lines) {
+        for (String symbol : symbols) {
             if (debug)
-                System.out.println("LINE: " + line);
-            if (line.contains("W _JNIEnv::GetMethodID("))
+                System.out.println("SYMBOL: " + symbol);
+            if (symbol.contains("W _JNIEnv::GetMethodID("))
                 referencesGetMethodID = true;
-            else if (line.contains("W _JNIEnv::GetFieldID("))
+            else if (symbol.contains("W _JNIEnv::GetFieldID("))
                 referencesGetMethodID = true;
         }
 
@@ -885,14 +884,14 @@ class Section {
     private final int size;
     private final byte[] data;
     private Map<Long, String> foundStrings;
-    private Set<Long> words;
+    private final Set<Long> words;
 
     private Section(NativeScanner.Arch arch, int offset, int size, byte[] data) {
         this.arch = arch;
         this.offset = offset;
         this.size = size;
         this.data = data;
-        this.words = null;
+        this.words = new HashSet<>();
     }
 
     /*
@@ -998,7 +997,7 @@ class Section {
             break;
         default:
             System.err.println("ERROR: analyzeWords() does not yet support " + arch);
-            return new HashSet<>();
+            return words;
         }
 
         int countSize = size;
@@ -1015,7 +1014,6 @@ class Section {
             else
                 factors[wordSize - i - 1] = 1 << (i * wordSize);
 
-        words = new HashSet<>();
         for (int offset = 0; offset < countSize; offset += wordSize) {
             long value = 0;
             for (int i = 0; i < wordSize; i++)
