@@ -269,62 +269,16 @@ public class NativeScanner {
      */
     private void processLib(String objdumpCmd, File outDir, String lib,
                             Map<Long, String> eps, Arch arch) throws IOException {
-        final String stringsSection = ".rodata";
-        System.out.println("Finding " + stringsSection + " header");
+        System.out.println("Reading section headers...");
 
         ProcessBuilder builder = new ProcessBuilder(objdumpCmd, "--headers", lib);
-        int sizeIdx = -1;
-        int offsetIdx = -1;
-        Section rodata = null;
-
-        List<String> lines = runCommand(builder);
-        for (String line : lines) {
-            // Autodetect column positions.
-            if (sizeIdx == -1) {
-                int sizeIdx0 = line.indexOf("Size ");
-                if (sizeIdx0 != -1)
-                    sizeIdx = sizeIdx0;
-            }
-            if (offsetIdx == -1) {
-                int offsetIdx0 = line.indexOf("File off");
-                if (offsetIdx0 != -1)
-                    offsetIdx = offsetIdx0;
-            }
-            if (line.contains(stringsSection)) {
-                if ((sizeIdx == -1) || (offsetIdx == -1)) {
-                    System.err.println("Error, cannot find section " + stringsSection + " from output:");
-                    for (String l : lines)
-                        System.out.println(l);
-                    return;
-                } else {
-                    int sizeEndIdx = line.indexOf(' ', sizeIdx);
-                    int offsetEndIdx = line.indexOf(' ', offsetIdx);
-                    int size = (int)Long.parseLong(line.substring(sizeIdx, sizeEndIdx), 16);
-                    int offset = (int)Long.parseLong(line.substring(offsetIdx, offsetEndIdx), 16);
-                    System.out.println(stringsSection + " section: offset = " + offset + ", size = " + size);
-
-                    // Read section from the library.
-                    RandomAccessFile raf = new RandomAccessFile(lib, "r");
-                    raf.seek(offset);
-                    byte[] bytes = new byte[size];
-                    raf.readFully(bytes);
-
-                    rodata = new Section(offset, size, bytes);
-                    System.out.println("Section fully read.");
-                    if (debug)
-                        System.out.println(rodata.toString());
-
-                    break;
-                }
-            }
-        }
-
-        if (rodata == null) {
-            System.out.println("Library " + lib + " does not contain a " + stringsSection + " section.");
-            return;
-        }
 
         System.out.println("Gathering strings from " + lib + "...");
+        List<String> lines = runCommand(builder);
+        Section rodata = Section.fromObjdump(arch, lib, ".rodata", lines);
+        if (debug)
+            System.out.println(rodata.toString());
+        Section data = Section.fromObjdump(arch, lib, ".data", lines);
 
         // // Legacy 'strings'-based scanner.
         // ProcessBuilder builderStrings = new ProcessBuilder("strings", lib);
@@ -411,12 +365,13 @@ public class NativeScanner {
             }
 
             // Write out symbol tables.
+            Set<Long> dataWords = data.analyzeWords();
             int namesCount = nameSymbols.keySet().size();
             System.out.println("Possible method/class names: " + namesCount);
-            writeSymbolTable(db, NATIVE_NAME_CANDIDATE, nameSymbols);
+            writeSymbolTable(db, NATIVE_NAME_CANDIDATE, nameSymbols, dataWords);
             int methodTypesCount = methodTypeSymbols.keySet().size();
             System.out.println("Possible method types found: " + methodTypesCount);
-            writeSymbolTable(db, NATIVE_METHODTYPE_CANDIDATE, methodTypeSymbols);
+            writeSymbolTable(db, NATIVE_METHODTYPE_CANDIDATE, methodTypeSymbols, dataWords);
 
             // Write out native code entry points.
             eps.forEach ((Long addr, String name) ->
@@ -901,17 +856,23 @@ public class NativeScanner {
      * @param db         the database object to use
      * @param factsFile  the facts file to use for writing
      * @param symbols    the symbols table
+     * @param words      a set of machine words that might contain string pointers
      */
     private void writeSymbolTable(Database db, PredicateFile factsFile,
-                                  Map<String, List<SymbolInfo> > symbols) {
+                                  Map<String, List<SymbolInfo> > symbols,
+                                  Set<Long> words) {
         for (Map.Entry<String, List<SymbolInfo>> entry : symbols.entrySet()) {
             String symbol = entry.getKey();
             for (SymbolInfo si : entry.getValue()) {
                 String offset = si.offset == null ? UNKNOWN_OFFSET : Long.toString(si.offset);
+                // If used in global data, set dummy function name for string.
+                String func = si.function;
+                if (func.equals(UNKNOWN_FUNCTION) && words.contains(si.offset))
+                    func = "<<GLOBAL_DATA_SECTION>>";
                 // Skip strings belonging to unknown fuctions if option is set.
-                boolean skipString = onlyPreciseNativeStrings && si.function.equals(UNKNOWN_FUNCTION);
+                boolean skipString = onlyPreciseNativeStrings && func.equals(UNKNOWN_FUNCTION);
                 if (!skipString)
-                    db.add(factsFile, si.lib, si.function, symbol, offset);
+                    db.add(factsFile, si.lib, func, symbol, offset);
             }
         }
     }
@@ -919,15 +880,74 @@ public class NativeScanner {
 
 // A representation of the strings section in the binary.
 class Section {
+    private final NativeScanner.Arch arch;
     private final int offset;
     private final int size;
     private final byte[] data;
     private Map<Long, String> foundStrings;
+    private Set<Long> words;
 
-    public Section(int offset, int size, byte[] data) {
+    private Section(NativeScanner.Arch arch, int offset, int size, byte[] data) {
+        this.arch = arch;
         this.offset = offset;
         this.size = size;
         this.data = data;
+        this.words = null;
+    }
+
+    /*
+     * Object builder from objdump output.
+     *
+     * @param arch         the library architecture
+     * @param lib          the library path
+     * @param sectionName  the name of the section
+     * @param lines        the text output of objdump
+     * @return             a section object or null if no section was found
+     */
+    public static Section fromObjdump(NativeScanner.Arch arch, String lib,
+                                      String sectionName, List<String> lines)
+        throws IOException {
+
+        int sizeIdx = -1;
+        int offsetIdx = -1;
+        for (String line : lines) {
+            // Autodetect column positions.
+            if (sizeIdx == -1) {
+                int sizeIdx0 = line.indexOf("Size ");
+                if (sizeIdx0 != -1)
+                    sizeIdx = sizeIdx0;
+            }
+            if (offsetIdx == -1) {
+                int offsetIdx0 = line.indexOf("File off");
+                if (offsetIdx0 != -1)
+                    offsetIdx = offsetIdx0;
+            }
+            if (line.contains(sectionName + " ")) {
+                if ((sizeIdx == -1) || (offsetIdx == -1)) {
+                    System.err.println("Error, cannot find section " + sectionName + " from output:");
+                    for (String l : lines)
+                        System.out.println(l);
+                    return null;
+                } else {
+                    int sizeEndIdx = line.indexOf(' ', sizeIdx);
+                    int offsetEndIdx = line.indexOf(' ', offsetIdx);
+                    int size = (int)Long.parseLong(line.substring(sizeIdx, sizeEndIdx), 16);
+                    int offset = (int)Long.parseLong(line.substring(offsetIdx, offsetEndIdx), 16);
+                    System.out.println(sectionName + " section: offset = " + offset + ", size = " + size);
+
+                    // Read section from the library.
+                    RandomAccessFile raf = new RandomAccessFile(lib, "r");
+                    raf.seek(offset);
+                    byte[] bytes = new byte[size];
+                    raf.readFully(bytes);
+
+                    System.out.println("Section fully read: " + sectionName);
+                    return new Section(arch, offset, size, bytes);
+                }
+            }
+        }
+        System.out.println("Library " + lib + " does not contain a " + sectionName + " section.");
+        return null;
     }
 
     public Map<Long,String> getFoundStrings() {
@@ -961,6 +981,49 @@ class Section {
         StringBuilder sb = new StringBuilder("Section [offset = " + offset + ", size = " + size + "]\n");
         strings().forEach((Long addr, String s) -> sb.append(addr).append(": String '").append(s).append("'\n"));
         return sb.toString();
+    }
+
+    public Set<Long> analyzeWords() {
+        int wordSize;
+        boolean littleEndian;
+
+        switch (arch) {
+        case X86:
+            littleEndian = true;
+            wordSize = 4;
+            break;
+        case X86_64:
+            littleEndian = true;
+            wordSize = 8;
+            break;
+        default:
+            System.err.println("ERROR: analyzeWords() does not yet support " + arch);
+            return new HashSet<>();
+        }
+
+        int countSize = size;
+        if (size % wordSize != 0) {
+            int size2 = (size / wordSize) * wordSize;
+            System.err.println("Section size " + size + " not a multiple of " + wordSize + ", reading only first " + size2 + " bytes.");
+            countSize = size2;
+        }
+
+        int[] factors = new int[wordSize];
+        for (int i = 0; i < wordSize; i++)
+            if (littleEndian)
+                factors[i] = 1 << (i * wordSize);
+            else
+                factors[wordSize - i - 1] = 1 << (i * wordSize);
+
+        words = new HashSet<>();
+        for (int offset = 0; offset < countSize; offset += wordSize) {
+            long value = 0;
+            for (int i = 0; i < wordSize; i++)
+                value += factors[i] * data[offset + i];
+            words.add(value);
+        }
+        System.err.println("Words in data section: " + words.size());
+        return words;
     }
 }
 
