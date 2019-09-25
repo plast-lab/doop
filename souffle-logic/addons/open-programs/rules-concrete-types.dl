@@ -20,6 +20,8 @@ ConcreteType(?type) :-
 
 .decl ObjToMock(?class:ReferenceType)
 .decl MockObjFromOpenProgramEntryPoint(?class:ReferenceType)
+.decl MockObjFromOpenProgramEntryPointReceiver(?value:mainAnalysis.Value)
+.decl MockObjFromOpenProgramEntryPointArg(?value:mainAnalysis.Value)
 .decl MockObjFromArray(?class:ReferenceType)
 
 MockObjFromOpenProgramEntryPoint(?class),
