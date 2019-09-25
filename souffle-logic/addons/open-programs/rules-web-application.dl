@@ -57,6 +57,7 @@ TypeHasNoApplicationConcreteImplementations(?class) :-
 
 AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?class) :-
   isInterfaceType(?class),
+  !ClassModifier("annotation", ?class),
   !TypeHasApplicationConcreteSubtypes(?class).
 
 AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?class) :-
@@ -75,7 +76,7 @@ ServletClass(?class) :-
 mainAnalysis.ApplicationEntryPoint(?meth) :-
   OpenProgramEntryPoint(?meth),
   ApplicationMethod(?meth).
-
+/*
 MockOpenProgramEntryPoint(?class, ?method) :-
   ServletClass(?class),
   (ServletEntryMethodName(?serviceMethodName);
@@ -87,7 +88,7 @@ MockOpenProgramEntryPoint(?class, ?method) :-
   FormalParam(1, ?serviceMethodName, ?httpResponse),
   Var_Type(?httpResponse, ?httpResponseType),
   AllConcreteImplementations(?httpResponseType, "javax.servlet.http.HttpServletResponse").
-
+*/
 mainAnalysis.ReachableContext(?ctx, ?method) :-
   mainAnalysis.isImmutableContext(?ctx),
   OpenProgramEntryPoint(?method).
@@ -193,7 +194,7 @@ MockObject(cat(?type, "::MockObject"), ?type) :-
    Type_Annotation(?type, "javax.persistence.Entity");
    SingletonBean(?type, _);
    AuthenticationProviderBean(?type, _);
-   MVCInterceptorBean(?type),
+   MVCInterceptorBean(?type);
    ReachableThroughInjection(?type);
    Validator(?type)).
 
@@ -280,7 +281,8 @@ MockOpenProgramEntryPoint(?class, ?method) :-
    Method_DeclaringType(?method, ?class),
    (Method_Annotation(?method, "Bean");
     Method_Annotation(?method, "PrePersist");
-    Method_Annotation(?method, "PreUpdate")).
+    Method_Annotation(?method, "PreUpdate");
+    Method_Annotation(?method, "Inject")).
 
 mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
   BeanMethod(?method),
@@ -316,7 +318,6 @@ MVCInterceptorBean(?class) :-
 Validator(?validator) :-
   AnnotationElement("type", _, "0.0", "0.0.0", _, ?validator, _),
   match(".*Validator", ?validator).
-
 
 .decl AuthenticationProviderBean(?class:Type, ?id:symbol)
 .output AuthenticationProviderBean
