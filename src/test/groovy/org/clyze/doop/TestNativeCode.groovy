@@ -11,11 +11,16 @@ class TestNativeCode extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 009 (native code)"() {
 		when:
-		Analysis analysis = analyzeTest("009-native", [ "--simulate-native-returns", "--generate-jimple", "--scan-native-code"])
+		List args = ["--simulate-native-returns",
+					 "--generate-jimple",
+					 "--scan-native-code",
+					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"
+		]
+		Analysis analysis = analyzeTest("009-native", args)
 
 		then:
-		varPointsTo(analysis, '<HelloJNI: void main(java.lang.String[])>/obj#_48', '<native java.lang.Object value allocated in <HelloJNI: java.lang.Object newJNIObj()>>')
-		varPointsTo(analysis, '<HelloJNI: void main(java.lang.String[])>/list#_57', '<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0')
+		varPointsToQ(analysis, '<HelloJNI: void main(java.lang.String[])>/obj#_50', '<native java.lang.Object value allocated in <HelloJNI: java.lang.Object newJNIObj()>>')
+		varPointsToQ(analysis, '<HelloJNI: void main(java.lang.String[])>/list#_59', '<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0')
 		methodIsReachable(analysis, '<HelloJNI: int helloMethod(java.lang.Object,java.lang.Object)>')
 	}
 }
