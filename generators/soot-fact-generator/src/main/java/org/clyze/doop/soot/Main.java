@@ -178,7 +178,11 @@ public class Main {
 
         try {
             System.out.println("Total classes in Scene: " + classes.size());
-            DoopAddons.retrieveAllSceneClassesBodies(sootParameters._cores);
+
+            // Skip "retrieve all bodies" step for Android apps.
+            if (android == null)
+                DoopAddons.retrieveAllSceneClassesBodies(sootParameters._cores);
+
             // The call below has a problem (only retrieves app method bodies).
             // DoopAddons.retrieveAllBodies();
             System.out.println("Retrieved all bodies.");
