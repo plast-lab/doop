@@ -22,7 +22,7 @@ fi
 
 ANALYSIS=context-insensitive
 TIMEOUT=600
-STRING_DISTANCE1=20
+STRING_DISTANCE1=40
 STRING_DISTANCE2=2000
 
 RUN_ANALYSIS=1
@@ -159,7 +159,8 @@ function printStatsTable() {
     echo -e "| Benchmark \t| Mode \t| App     \t| Base   \t| Recall \t| +App-reachable     \t| +Analysis time     \t| +Factgen time \t| +entry \t|"
     echo -e "|           \t|      \t| methods \t| recall \t|        \t|  (incr. over base) \t|  (incr. over base) \t|               \t|  points\t|"
     printLine ${LAST_COL}
-    for BENCHMARK in androidterm chrome instagram 009-native
+    # for BENCHMARK in androidterm chrome instagram 009-native
+    for BENCHMARK in chrome instagram 009-native
     do
         setIDs "${BENCHMARK}"
         if [ "${BENCHMARK}" == "chrome" ]; then
@@ -191,7 +192,7 @@ if [ "${RUN_ANALYSIS}" == "1" ]; then
     runDoop ${SERVER_ANALYSIS_TESTS}/009-native/build/libs/009-native.jar 009-native java_8 ${SERVER_ANALYSIS_TESTS}/009-native/java.hprof
 
     # Androidterm.
-    runDoop ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk androidterm ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm.hprof.gz
+    # runDoop ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk androidterm ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm.hprof.gz
 
     # Chrome.
     runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome_57.0.2987.132-298713212_minAPI24_x86_nodpi_apkmirror.com.apk chrome ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome.hprof.gz
