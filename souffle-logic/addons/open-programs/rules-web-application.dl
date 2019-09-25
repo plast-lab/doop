@@ -196,10 +196,12 @@ MockObject(cat(?type, "::MockObject"), ?type) :-
    AuthenticationProviderBean(?type, _);
    MVCInterceptorBean(?type);
    ReachableThroughInjection(?type);
-   Validator(?type)).
+   Validator(?type);
+   match(".*_jsp", ?type)).
 
 .decl ReachableThroughInjection(?type:Type)
 .output ReachableThroughInjection
+
 
 
 /** We treat every class that has dependency injection through annotations i.e., @Inject, @Autowired
@@ -239,6 +241,7 @@ MockOpenProgramEntryPoint(?type, ?method) :-
 
 OpenProgramEntryPoint(?method) :-
   MockOpenProgramEntryPoint(_, ?method).
+
 
 
 // anantoni: I'm trying to figure out if there are any non-bridge erased methods that are marked as entry points
@@ -296,6 +299,7 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
 /**
  * Spring Beans - XML
  **/
+
 
 .decl SingletonBean(?class:Type, ?id:symbol)
 .output SingletonBean

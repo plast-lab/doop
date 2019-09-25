@@ -223,6 +223,8 @@ NewMetricMacro( "8.5", "call graph edges (SENS)", mainAnalysis.CallGraphEdge(_, 
 NewMetricMacro( "9.0", "non-reachable app concrete methods", Stats_Simple_NonReachableApplicationConcreteMethod(_)).
 NewMetricMacro("11.0", "reachable methods (INS)", mainAnalysis.Reachable(_)).
 NewMetricMacro("11.5", "reachable methods (SENS)", mainAnalysis.ReachableContext(_, _)).
+NewMetricMacro("11.75", "total methods", isMethod(_)).
+
 
 NewMetricMacro("12.0", "virtual call sites (statically)", isVirtualMethodInvocation_Insn(_)).
 NewMetricMacro("13.0", "reachable virtual call sites", Stats_Simple_ReachableVirtualMethodInvocation(_)).
@@ -242,6 +244,7 @@ NewMetricMacro("23.0", "app casts (statically)", Stats_Simple_Application_Cast(_
 NewMetricMacro("24.0", "app reachable casts", Stats_Simple_Application_ReachableCast(_, _, _, _)).
 NewMetricMacro("25.0", "app reachable casts that may fail", Stats_Simple_Application_PotentiallyFailingCast(_, _, _)).
 NewMetricMacro("25.5", "app reachable methods", Stats_Simple_Application_ReachableMethod(_)).
+NewMetricMacro("25.75", "app total methods", ApplicationMethod(_)).
 
 //NewMetricMacro("50.0", "call sites that did (not) get refined", SiteToRefine(_)).
 //NewMetricMacro("51.0", "allocation sites that did (not) get refined", ValueToRefine(_)).
