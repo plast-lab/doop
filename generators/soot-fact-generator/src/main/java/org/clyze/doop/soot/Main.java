@@ -195,9 +195,7 @@ public class Main {
 
         try (Database db = new Database(new File(outDir), writeFacts)) {
             FactWriter writer = new FactWriter(db, moreStrings, artifacts, rep, reportPhantoms);
-            ThreadFactory factory = new ThreadFactory(writer, sootParameters);
-            SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors);
-            factory.setDriver(driver);
+            SootDriver driver = new SootDriver(classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors, writer, sootParameters);
 
             if (writeFacts) {
 

@@ -8,11 +8,9 @@ import java.util.function.Consumer;
 /**
  * A driver for parallel fact generation.
  * @param <C>    class type
- * @param <F>    thread factory type that generates Runnable objects
  */
-public abstract class Driver<C, F> {
+public abstract class Driver<C> {
     private ExecutorService _executor;
-    protected final F _factory;
     private final int _cores;
     protected Set<C> _tmpClassGroup;
     private int _classCounter;
@@ -21,8 +19,7 @@ public abstract class Driver<C, F> {
     private int errors;
     public final boolean _ignoreFactGenErrors;
 
-    protected Driver(F factory, int totalClasses, Integer cores, boolean ignoreFactGenErrors) {
-        this._factory = factory;
+    protected Driver(int totalClasses, Integer cores, boolean ignoreFactGenErrors) {
         this._totalClasses = totalClasses;
         this._cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
         this._classCounter = 0;

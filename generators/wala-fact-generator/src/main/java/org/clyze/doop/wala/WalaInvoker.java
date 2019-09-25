@@ -80,7 +80,6 @@ class WalaInvoker {
         try (Database db = new Database(new File(outputDir))) {
             WalaRepresentation rep = new WalaRepresentation();
             WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._extractMoreStrings, walaParameters._writeArtifactsMap, rep);
-            WalaThreadFactory walaThreadFactory = new WalaThreadFactory(walaFactWriter, outputDir, walaParameters._android);
 
             BasicJavaSupport java = new BasicJavaSupport(walaParameters, new ArtifactScanner());
 
@@ -122,7 +121,7 @@ class WalaInvoker {
             }
             walaFactWriter.setSignaturePolyMorphicMethods(signaturePolymorphicMethods);
 
-            WalaDriver driver = new WalaDriver(walaThreadFactory, cha.getNumberOfClasses(), walaParameters._cores, cache, false);
+            WalaDriver driver = new WalaDriver(cha.getNumberOfClasses(), walaParameters._cores, cache, false, walaFactWriter, outputDir, walaParameters._android);
             driver.generateInParallel(classesSet);
 
             if (walaFactWriter.getNumberOfPhantomTypes() > 0)

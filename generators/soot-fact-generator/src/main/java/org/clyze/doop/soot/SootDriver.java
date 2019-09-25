@@ -6,10 +6,15 @@ import org.clyze.doop.common.Driver;
 import soot.SootClass;
 import soot.SootMethod;
 
-class SootDriver extends Driver<SootClass, ThreadFactory> {
+class SootDriver extends Driver<SootClass> {
+    private final FactWriter factWriter;
+    private final SootParameters sootParameters;
 
-    SootDriver(ThreadFactory factory, int totalClasses, Integer cores, boolean ignoreFactGenErrors) {
-        super(factory, totalClasses, cores, ignoreFactGenErrors);
+    SootDriver(int totalClasses, Integer cores, boolean ignoreFactGenErrors,
+               FactWriter factWriter, SootParameters sootParameters) {
+        super(totalClasses, cores, ignoreFactGenErrors);
+        this.factWriter = factWriter;
+        this.sootParameters = sootParameters;
     }
 
     void generateMethod(SootMethod dummyMain, FactWriter writer, SootParameters sootParameters) {
@@ -23,11 +28,11 @@ class SootDriver extends Driver<SootClass, ThreadFactory> {
 
     @Override
     protected Runnable getFactGenRunnable() {
-        return _factory.newFactGenRunnable(_tmpClassGroup);
+        return new FactGenerator(factWriter, _tmpClassGroup, this, sootParameters);
     }
 
     @Override
     protected Runnable getIRGenRunnable() {
-        return _factory.newJimpleGenRunnable(_tmpClassGroup);
+        return new JimpleGenerator(_tmpClassGroup);
     }
 }
