@@ -491,7 +491,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				else
 					log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
 			} else if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
-				options.INPUTS.value.each { File jarPath ->
+				options.INPUTS.value
+					.findAll { it.name.toLowerCase().endsWith(".jar") }
+					.each { File jarPath ->
 					JarFile jarFile = new JarFile(jarPath)
 					//Try to read the main class from the manifest contained in the jar
 					String main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS) as String

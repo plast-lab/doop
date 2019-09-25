@@ -2,6 +2,7 @@ package org.clyze.doop.common;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 
 import java.util.*;
@@ -99,6 +100,15 @@ public class ArtifactScanner {
         }
     }
 
+    public void processClass(InputStream is, File f, Consumer<String> classProc) throws IOException {
+        ClassReader reader = new ClassReader(is);
+        String className = BytecodeUtil.getClassName(reader);
+        String artifact = f.getName();
+        registerArtifactClass(artifact, className, "-", reader.b.length);
+        if (classProc != null)
+            classProc.accept(className);
+    }
+
     /**
      * Register JAR entries and perform actions over JAR entries (if
      * processors are not null).
@@ -120,12 +130,7 @@ public class ArtifactScanner {
                 String entryName = entry.getName().toLowerCase();
                 if (entryName.endsWith(".class")) {
                     try {
-                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                        String className = TypeUtils.replaceSlashesWithDots(reader.getClassName());
-                        String artifact = (new File(jarFile.getName())).getName();
-                        registerArtifactClass(artifact, className, "-", reader.b.length);
-                        if (classProc != null)
-                            classProc.accept(className);
+                        processClass(jarFile.getInputStream(entry), new File(jarFile.getName()), classProc);
                     } catch (Exception ex) {
                         System.err.println("Error while preprocessing entry \"" + entryName + "\", it will be ignored.");
                     }

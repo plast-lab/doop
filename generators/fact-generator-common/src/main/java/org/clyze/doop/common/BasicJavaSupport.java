@@ -1,6 +1,7 @@
 package org.clyze.doop.common;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
@@ -58,6 +59,7 @@ public class BasicJavaSupport {
     private void preprocessInput(Collection<String> classSet, String filename) throws IOException {
         boolean isAar = filename.toLowerCase().endsWith(".aar");
         boolean isJar = filename.toLowerCase().endsWith(".jar");
+        boolean isClass = filename.toLowerCase().endsWith(".class");
 
         ArtifactScanner.EntryProcessor gProc = (jarFile, entry, entryName) -> {
             File outDir = new File(parameters.getOutputDir());
@@ -87,7 +89,16 @@ public class BasicJavaSupport {
                 }
             }
         };
-        artScanner.processJARClasses(filename, classSet::add, gProc);
+        if (isJar)
+            artScanner.processJARClasses(filename, classSet::add, gProc);
+        else if (isClass) {
+            File f = new File(filename);
+            try (FileInputStream fis = new FileInputStream(f)) {
+                artScanner.processClass(fis, f, classSet::add);
+            }
+        }
+        else
+            System.err.println("WARNING: artifact scanner skips " + filename);
     }
 
     /**

@@ -3,6 +3,7 @@ package org.clyze.doop.utils
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import org.apache.commons.io.FilenameUtils
+import org.clyze.doop.common.BytecodeUtil
 import org.clyze.utils.AARUtils
 import org.clyze.utils.Helper
 import org.jf.dexlib2.dexbacked.DexBackedClassDef
@@ -24,9 +25,15 @@ class PackageUtil {
 			return getPackagesForAPK(archive)
 		} else if (name.endsWith(".aar")) {
 			return getPackagesForAAR(archive)
+		} else if (name.endsWith(".class")) {
+			return getPackagesForBytecode(archive)
 		}
-		System.err.println "Cannot compute packages, unknown file format: ${name}"
+		System.err.println "Cannot compute packages, unknown file format: ${archive}"
 		return [] as Set
+	}
+
+	static Set<String> getPackagesForBytecode(File f) {
+		[ getPackageFromDots(BytecodeUtil.getClassName(f)) ] as Set<String>
 	}
 
 	static Set<String> getPackagesForAPK(File apk) {
@@ -66,16 +73,19 @@ class PackageUtil {
 		return ret
 	}
 
+	static String getPackageFromClassName(String className) {
+		if (className.indexOf("/") > 0)
+			return FilenameUtils.getPath(className).replace('/' as char, '.' as char) + '*'
+		else
+			return FilenameUtils.getBaseName(className)
+	}
+
 	static Set<String> getPackagesForJAR(File jar) {
 		def zip = new ZipFile(jar)
 		Enumeration<? extends ZipEntry> entries = zip.entries()
 		List<ZipEntry> classes = entries?.findAll { it.name.endsWith(".class") }
 		List<String> packages = classes.collect { ZipEntry entry ->
-			def className = entry.name
-			if (className.indexOf("/") > 0)
-				return FilenameUtils.getPath(className).replace('/' as char, '.' as char) + '*'
-			else
-				return FilenameUtils.getBaseName(className)
+			getPackageFromClassName(entry.name)
 		}
 		return packages.toSet()
 	}

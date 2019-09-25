@@ -5,6 +5,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -171,8 +174,7 @@ public class Main {
 
         classes.stream().filter(sootParameters::isApplicationClass).forEachOrdered(SootClass::setApplicationClass);
 
-        if (sootParameters._mode == SootParameters.Mode.FULL && sootParameters._factsSubSet == null)
-            classes = new HashSet<>(scene.getClasses());
+        classes = new HashSet<>(scene.getClasses());
 
         try {
             System.out.println("Total classes in Scene: " + classes.size());
@@ -265,6 +267,9 @@ public class Main {
 
     private static boolean sootClassPathFirstElement = true;
     private static void addToSootClassPath(Scene scene, String input) {
+        if (input.endsWith(".class"))
+            System.err.println("WARNING: bare input class may not be resolved correctly, should be repackaged as a .jar: " + input);
+
         if (sootClassPathFirstElement) {
             scene.setSootClassPath(input);
             sootClassPathFirstElement = false;
