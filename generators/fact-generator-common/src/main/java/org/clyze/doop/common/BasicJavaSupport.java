@@ -60,6 +60,7 @@ public class BasicJavaSupport {
         boolean isAar = filename.toLowerCase().endsWith(".aar");
         boolean isJar = filename.toLowerCase().endsWith(".jar");
         boolean isClass = filename.toLowerCase().endsWith(".class");
+        boolean isApk = filename.toLowerCase().endsWith(".apk");
 
         ArtifactScanner.EntryProcessor gProc = (jarFile, entry, entryName) -> {
             File outDir = new File(parameters.getOutputDir());
@@ -97,7 +98,7 @@ public class BasicJavaSupport {
                 artScanner.processClass(fis, f, classSet::add);
             }
         }
-        else
+        else if (!isApk)
             System.err.println("WARNING: artifact scanner skips " + filename);
     }
 
