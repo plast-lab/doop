@@ -359,20 +359,15 @@ public class Main {
                                    Set<SootClass> classes, SootDriver driver,
                                    String outDir) throws DoopErrorCodeException {
         Set<SootClass> jimpleClasses = new HashSet<>(classes);
-        if (sootParameters._factsSubSet == null) {
-            Collection<String> allClassNames = new ArrayList<>();
-            Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactScanner().getArtifactToClassMap();
-            for (String artifact : artifactToClassMap.keySet()) {
-                //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
-                Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
-                allClassNames.addAll(artEntries);
-            }
-            forceResolveClasses(allClassNames, jimpleClasses, scene);
-            System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
-        } else {
-            logError(logger, "ERROR: facts-subset not supported: " + sootParameters._factsSubSet);
-            return;
+        Collection<String> allClassNames = new ArrayList<>();
+        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactScanner().getArtifactToClassMap();
+        for (String artifact : artifactToClassMap.keySet()) {
+            //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
+            Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
+            allClassNames.addAll(artEntries);
         }
+        forceResolveClasses(allClassNames, jimpleClasses, scene);
+        System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
 
         // Write classes, following package hierarchy.
         Options.v().set_output_dir(DoopConventions.jimpleDir(outDir));
