@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import org.clyze.doop.common.scanner.NativeScanner;
 
 /**
  * This class gathers Java-specific code (such as JAR handling).

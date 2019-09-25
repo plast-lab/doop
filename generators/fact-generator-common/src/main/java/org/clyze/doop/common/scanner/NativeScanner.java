@@ -1,8 +1,10 @@
-package org.clyze.doop.common;
+package org.clyze.doop.common.scanner;
 
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
+import org.clyze.doop.common.Database;
+import org.clyze.doop.common.PredicateFile;
 
 import static org.clyze.doop.common.PredicateFile.*;
 
@@ -31,42 +33,7 @@ public class NativeScanner {
     // Dummy value for "offset" column in facts.
     private static final String UNKNOWN_OFFSET = "-1";
 
-    // The supported architectures.
-    enum Arch {
-        X86, X86_64, AARCH64, ARMEABI, MIPS;
-
-        static Arch autodetect(String libFilePath) throws IOException {
-            ProcessBuilder pb = new ProcessBuilder("file", libFilePath);
-            Arch arch = null;
-            for (String line : NativeScanner.runCommand(pb)) {
-                if (line.contains("80386")) {
-                    arch = Arch.X86;
-                    break;
-                } else if (line.contains("x86-64")) {
-                    arch = Arch.X86_64;
-                    break;
-                } else if (line.contains("aarch64")) {
-                    arch = Arch.AARCH64;
-                    break;
-                } else if (line.contains("ARM") || line.contains("EABI")) {
-                    arch = Arch.ARMEABI;
-                    break;
-                } else if (line.contains("MIPS")) {
-                    arch = Arch.MIPS;
-                    break;
-                }
-            }
-            if (arch != null)
-                System.out.println("Detected architecture of " + libFilePath + " is " + arch);
-            else {
-                arch = NativeScanner.Arch.AARCH64;
-                System.out.println("Could not determine architecture of " + libFilePath + ", using default: " + arch);
-            }
-            return arch;
-        }
-    }
-
-    NativeScanner(boolean useRadare, boolean onlyPreciseNativeStrings) {
+    public NativeScanner(boolean useRadare, boolean onlyPreciseNativeStrings) {
         this.useRadare = useRadare;
         this.onlyPreciseNativeStrings = onlyPreciseNativeStrings;
     }
@@ -414,7 +381,7 @@ public class NativeScanner {
         System.out.println("[" + addr + "] " + eps.get(addr));
     }
 
-    private static List<String> runCommand(ProcessBuilder builder) throws IOException {
+    static List<String> runCommand(ProcessBuilder builder) throws IOException {
         if (debug)
             System.err.println("Running external command: " + String.join(" ", builder.command()));
         builder.redirectErrorStream(true);
@@ -874,154 +841,6 @@ public class NativeScanner {
                     db.add(factsFile, si.lib, func, symbol, offset);
             }
         }
-    }
-}
-
-// A representation of the strings section in the binary.
-class Section {
-    private final NativeScanner.Arch arch;
-    private final int offset;
-    private final int size;
-    private final byte[] data;
-    private Map<Long, String> foundStrings;
-    private final Set<Long> words;
-
-    private Section(NativeScanner.Arch arch, int offset, int size, byte[] data) {
-        this.arch = arch;
-        this.offset = offset;
-        this.size = size;
-        this.data = data;
-        this.words = new HashSet<>();
-    }
-
-    /*
-     * Object builder from objdump output.
-     *
-     * @param arch         the library architecture
-     * @param lib          the library path
-     * @param sectionName  the name of the section
-     * @param lines        the text output of objdump
-     * @return             a section object or null if no section was found
-     */
-    public static Section fromObjdump(NativeScanner.Arch arch, String lib,
-                                      String sectionName, List<String> lines)
-        throws IOException {
-
-        int sizeIdx = -1;
-        int offsetIdx = -1;
-        for (String line : lines) {
-            // Autodetect column positions.
-            if (sizeIdx == -1) {
-                int sizeIdx0 = line.indexOf("Size ");
-                if (sizeIdx0 != -1)
-                    sizeIdx = sizeIdx0;
-            }
-            if (offsetIdx == -1) {
-                int offsetIdx0 = line.indexOf("File off");
-                if (offsetIdx0 != -1)
-                    offsetIdx = offsetIdx0;
-            }
-            if (line.contains(sectionName + " ")) {
-                if ((sizeIdx == -1) || (offsetIdx == -1)) {
-                    System.err.println("Error, cannot find section " + sectionName + " from output:");
-                    for (String l : lines)
-                        System.out.println(l);
-                    return null;
-                } else {
-                    int sizeEndIdx = line.indexOf(' ', sizeIdx);
-                    int offsetEndIdx = line.indexOf(' ', offsetIdx);
-                    int size = (int)Long.parseLong(line.substring(sizeIdx, sizeEndIdx), 16);
-                    int offset = (int)Long.parseLong(line.substring(offsetIdx, offsetEndIdx), 16);
-                    System.out.println(sectionName + " section: offset = " + offset + ", size = " + size);
-
-                    // Read section from the library.
-                    RandomAccessFile raf = new RandomAccessFile(lib, "r");
-                    raf.seek(offset);
-                    byte[] bytes = new byte[size];
-                    raf.readFully(bytes);
-
-                    System.out.println("Section fully read: " + sectionName);
-                    return new Section(arch, offset, size, bytes);
-                }
-            }
-        }
-        System.out.println("Library " + lib + " does not contain a " + sectionName + " section.");
-        return null;
-    }
-
-    public Map<Long,String> getFoundStrings() {
-        return foundStrings;
-    }
-
-    /**
-     * Scan the 'data' buffer for NULL-terminated strings.
-     *
-     * @return a collection of the strings found
-     */
-    Map<Long, String> strings() {
-        if (this.foundStrings == null) {
-            this.foundStrings = new TreeMap<>();
-            StringBuilder foundString = new StringBuilder();
-            long addr = offset;
-            for (int i = 0; i < data.length; i++)
-                if (data[i] == 0) {
-                    if (!foundString.toString().equals("")) {
-                        foundStrings.put(addr, foundString.toString());
-                        foundString = new StringBuilder();
-                    }
-                    addr = offset + i + 1;
-                } else
-                    foundString.append((char) data[i]);
-        }
-        return this.foundStrings;
-    }
-
-    public String toString() {
-        StringBuilder sb = new StringBuilder("Section [offset = " + offset + ", size = " + size + "]\n");
-        strings().forEach((Long addr, String s) -> sb.append(addr).append(": String '").append(s).append("'\n"));
-        return sb.toString();
-    }
-
-    public Set<Long> analyzeWords() {
-        int wordSize;
-        boolean littleEndian;
-
-        switch (arch) {
-        case X86:
-            littleEndian = true;
-            wordSize = 4;
-            break;
-        case X86_64:
-            littleEndian = true;
-            wordSize = 8;
-            break;
-        default:
-            System.err.println("ERROR: analyzeWords() does not yet support " + arch);
-            return words;
-        }
-
-        int countSize = size;
-        if (size % wordSize != 0) {
-            int size2 = (size / wordSize) * wordSize;
-            System.err.println("Section size " + size + " not a multiple of " + wordSize + ", reading only first " + size2 + " bytes.");
-            countSize = size2;
-        }
-
-        int[] factors = new int[wordSize];
-        for (int i = 0; i < wordSize; i++)
-            if (littleEndian)
-                factors[i] = 1 << (i * wordSize);
-            else
-                factors[wordSize - i - 1] = 1 << (i * wordSize);
-
-        for (int offset = 0; offset < countSize; offset += wordSize) {
-            long value = 0;
-            for (int i = 0; i < wordSize; i++)
-                value += factors[i] * data[offset + i];
-            words.add(value);
-        }
-        System.err.println("Words in data section: " + words.size());
-        return words;
     }
 }
 
