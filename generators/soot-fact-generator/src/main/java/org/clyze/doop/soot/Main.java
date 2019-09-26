@@ -229,26 +229,21 @@ public class Main {
         classes.stream().filter(sootParameters::isApplicationClass).forEachOrdered(SootClass::setApplicationClass);
 
         classes = new HashSet<>(scene.getClasses());
+        System.out.println("Total classes in Scene: " + classes.size());
 
-        try {
-            System.out.println("Total classes in Scene: " + classes.size());
-
-            // Skip "retrieve all bodies" step for Android apps.
-            if (android == null) {
-                long time1 = System.currentTimeMillis();
+        // Skip "retrieve all bodies" step for Android apps.
+        if (android == null) {
+            long time1 = System.currentTimeMillis();
+            try {
                 DoopAddons.retrieveAllSceneClassesBodies(sootParameters._cores);
+                // The call below has a problem (only retrieves app method bodies).
+                // DoopAddons.retrieveAllBodies();
                 long time2 = System.currentTimeMillis();
-                System.out.println("Body retrieval time: " + ((time2 - time1)/1000));
+                System.out.println("Retrieved all bodies (time: " + ((time2 - time1)/1000) + ")");
+            } catch (Exception ex) {
+                System.err.println("Error: not all bodies retrieved.");
+                ex.printStackTrace();
             }
-
-            // The call below has a problem (only retrieves app method bodies).
-            // DoopAddons.retrieveAllBodies();
-
-            System.out.println("Retrieved all bodies.");
-        }
-        catch (Exception ex) {
-            System.err.println("Error: not all bodies retrieved.");
-            ex.printStackTrace();
         }
 
         boolean reportPhantoms = sootParameters._reportPhantoms;
