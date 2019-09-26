@@ -58,14 +58,18 @@ public abstract class Driver<C> {
         shutdownExecutor();
     }
 
-    private void shutdownExecutor() throws DoopErrorCodeException {
-        _executor.shutdown();
+    public static void waitForExecutorShutdown(ExecutorService executor) throws DoopErrorCodeException {
+        executor.shutdown();
         try {
-            _executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         } catch (InterruptedException e) {
             System.err.println(e.getMessage());
             throw new DoopErrorCodeException(10);
         }
+    }
+
+    private void shutdownExecutor() throws DoopErrorCodeException {
+        waitForExecutorShutdown(_executor);
         if (errorsExist()) {
             System.err.println("Fact generation failed (" + errors + " errors).");
             if (!_ignoreFactGenErrors)

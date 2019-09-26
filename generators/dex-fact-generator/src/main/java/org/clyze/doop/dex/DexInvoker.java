@@ -7,6 +7,7 @@ import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.CHA;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.Driver;
 import org.clyze.doop.common.android.AndroidSupport;
 import org.clyze.utils.Helper;
 import org.clyze.utils.JHelper;
@@ -42,10 +43,12 @@ public class DexInvoker {
         String outDir = dexParams.getOutputDir();
         logger.debug("Using output directory: " + outDir);
 
-        try (Database db = new Database(new File(outDir))) {
+        BasicJavaSupport java = new BasicJavaSupport(dexParams, new ArtifactScanner());
+
+        try (Database db = new Database(outDir)) {
+            java.preprocessInputs(db);
+
             DexFactWriter writer = new DexFactWriter(db, dexParams._extractMoreStrings, cha);
-            BasicJavaSupport java = new BasicJavaSupport(dexParams, new ArtifactScanner());
-            java.preprocessInputs();
             writer.writePreliminaryFacts(java, dexParams);
             AndroidSupport android = new DexAndroidSupport(dexParams, java);
             try {
@@ -94,6 +97,8 @@ public class DexInvoker {
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new DoopErrorCodeException(17, ex);
+        } finally {
+            Driver.waitForExecutorShutdown(java.getExecutor());
         }
     }
 }

@@ -16,6 +16,7 @@ import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.Driver;
 import org.clyze.doop.common.Parameters;
 
 import java.io.File;
@@ -75,13 +76,13 @@ class WalaInvoker {
 
         assert cha != null;
         Iterator<IClass> classes = cha.iterator();
+        BasicJavaSupport java = new BasicJavaSupport(walaParameters, new ArtifactScanner());
         String outputDir = walaParameters.getOutputDir();
 
-        try (Database db = new Database(new File(outputDir))) {
+        try (Database db = new Database(outputDir)) {
             WalaRepresentation rep = new WalaRepresentation();
             WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._extractMoreStrings, walaParameters._writeArtifactsMap, rep);
 
-            BasicJavaSupport java = new BasicJavaSupport(walaParameters, new ArtifactScanner());
 
             if (walaParameters._android) {
                 WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);
@@ -95,7 +96,7 @@ class WalaInvoker {
             else
                 cache = new AnalysisCacheImpl();
 
-            java.preprocessInputs();
+            java.preprocessInputs(db);
             walaFactWriter.writePreliminaryFacts(java, walaParameters);
             db.flush();
 
@@ -134,6 +135,8 @@ class WalaInvoker {
             walaFactWriter.writeLastFacts(java);
 
             db.flush();
+        } finally {
+            Driver.waitForExecutorShutdown(java.getExecutor());
         }
     }
 

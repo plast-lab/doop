@@ -150,7 +150,7 @@ class FactGenerator0 {
             Files.lines(Paths.get(specPath)).withCloseable { Stream<String> stream ->
                 try {
 
-                    Database db = new Database(factsDir)
+                    Database db = new Database(factsDir.canonicalPath)
                     stream.forEach ({ String s -> processKeepSpecLine(db, s) } as java.util.function.Consumer<String>)
                     db.flush()
                     db.close()

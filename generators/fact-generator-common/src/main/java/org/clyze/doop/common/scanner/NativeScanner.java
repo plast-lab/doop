@@ -43,8 +43,9 @@ public class NativeScanner {
      *
      * @param libFile        the native code library
      * @param outDir         the output directory to use to write facts
+     * @param db             the database object to use for writing
      */
-    public void scanLib(File libFile, File outDir) {
+    public void scanLib(File libFile, File outDir, Database db) {
         try {
             // Auto-detect architecture.
             Arch arch = Arch.autodetect(libFile.getCanonicalPath());
@@ -63,7 +64,7 @@ public class NativeScanner {
                 } else
                     System.err.println("No AARCH64 toolchain found, set " + envVarAARCH64 + ". Using system nm/objdump.");
             }
-            scan(nmCmd, objdumpCmd, libFile, outDir, arch);
+            scan(nmCmd, objdumpCmd, libFile, outDir, arch, db);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -78,9 +79,10 @@ public class NativeScanner {
      * @param libFile        the native code library
      * @param outDir         the output directory to use to write facts
      * @param arch           the architecture of the native code
+     * @param db             the database object to use for writing
      */
     private void scan(String nmCmd, String objdumpCmd,
-                      File libFile, File outDir, Arch arch) {
+                      File libFile, File outDir, Arch arch, Database db) {
 
         if (debug) {
             System.out.println("== Native scanner ==");
@@ -104,7 +106,7 @@ public class NativeScanner {
                 if (ep != null)
                     libEntryPoints.put(ep.addr, ep.name);
             }
-            processLib(objdumpCmd, outDir, lib, libEntryPoints, arch);
+            processLib(objdumpCmd, outDir, lib, libEntryPoints, arch, db);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -232,9 +234,10 @@ public class NativeScanner {
      * @param lib            the path of the library
      * @param eps            a map from offset to native code entry point
      * @param arch           the architecture of the native code
+     * @param db             the database object to use for writing
      */
     private void processLib(String objdumpCmd, File outDir, String lib,
-                            Map<Long, String> eps, Arch arch) throws IOException {
+                            Map<Long, String> eps, Arch arch, Database db) throws IOException {
         System.out.println("Reading section headers...");
 
         ProcessBuilder builder = new ProcessBuilder(objdumpCmd, "--headers", lib);
@@ -292,23 +295,21 @@ public class NativeScanner {
         // may be found via radare or parsing the .rodata section).
         Map<String, List<SymbolInfo>> nameSymbols = new HashMap<>();
         Map<String, List<SymbolInfo>> methodTypeSymbols = new HashMap<>();
-        try (Database db = new Database(outDir)) {
-            if (stringsInFunctions != null) {
-                // For values that we know their containing function, we set special offsets
-                for (String s : stringsInFunctions.keySet()) {
-                    if (s == null)
-                        continue;
-                    if (isMethodType(s)) {
-                        List<String> strings = stringsInFunctions.get(s);
-                        if (strings != null)
-                            for (String function : strings)
-                                addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, function, null));
-                    } else if (isName(s)) {
-                        List<String> strings = stringsInFunctions.get(s);
-                        if (strings != null)
-                            for (String function : strings)
-                                addSymbol(nameSymbols, s, new SymbolInfo(lib, function, null));
-                    }
+        if (stringsInFunctions != null) {
+            // For values that we know their containing function, we set special offsets
+            for (String s : stringsInFunctions.keySet()) {
+                if (s == null)
+                    continue;
+                if (isMethodType(s)) {
+                    List<String> strings = stringsInFunctions.get(s);
+                    if (strings != null)
+                        for (String function : strings)
+                            addSymbol(methodTypeSymbols, s, new SymbolInfo(lib, function, null));
+                } else if (isName(s)) {
+                    List<String> strings = stringsInFunctions.get(s);
+                    if (strings != null)
+                        for (String function : strings)
+                            addSymbol(nameSymbols, s, new SymbolInfo(lib, function, null));
                 }
             }
 
@@ -767,7 +768,7 @@ public class NativeScanner {
     }
 
     // Handle .xzs libraries (found in some .apk inputs).
-    public void scanXZSLib(File xzsFile, File outDir) {
+    public void scanXZSLib(File xzsFile, File outDir, Database db) {
         String xzsPath = xzsFile.getAbsolutePath();
         System.out.println("Processing xzs-packed native code: " + xzsPath);
         String xzPath = xzsPath.substring(0, xzsPath.length() - 1);
@@ -776,21 +777,21 @@ public class NativeScanner {
             runCommand(new ProcessBuilder("mv", xzsPath, xzPath));
             runCommand(new ProcessBuilder("xz", "--decompress", xzPath));
             File libTmpFile = new File(xzPath.substring(0, xzPath.length() - 3));
-            scanLib(libTmpFile, outDir);
+            scanLib(libTmpFile, outDir, db);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
     }
 
     // Handle .zstd libraries (found in some .apk inputs).
-    public void scanZSTDLib(File zstdFile, File outDir) {
+    public void scanZSTDLib(File zstdFile, File outDir, Database db) {
         String zstdPath = zstdFile.getAbsolutePath();
         System.out.println("Processing zstd-packed native code: " + zstdPath);
         String zstdOutPath = zstdPath.substring(0, zstdPath.length() - 5);
         try {
             runCommand(new ProcessBuilder("zstd", "-d", "-o", zstdOutPath));
             File libTmpFile = new File(zstdOutPath);
-            scanLib(libTmpFile, outDir);
+            scanLib(libTmpFile, outDir, db);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
