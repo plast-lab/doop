@@ -233,12 +233,13 @@ public class Main {
         try {
             System.out.println("Total classes in Scene: " + classes.size());
 
-            long time1 = System.currentTimeMillis();
             // Skip "retrieve all bodies" step for Android apps.
-            // if (android == null)
-            DoopAddons.retrieveAllSceneClassesBodies(sootParameters._cores);
-            long time2 = System.currentTimeMillis();
-            System.out.println("Body retrieval time: " + ((time2 - time1)/1000));
+            if (android == null) {
+                long time1 = System.currentTimeMillis();
+                DoopAddons.retrieveAllSceneClassesBodies(sootParameters._cores);
+                long time2 = System.currentTimeMillis();
+                System.out.println("Body retrieval time: " + ((time2 - time1)/1000));
+            }
 
             // The call below has a problem (only retrieves app method bodies).
             // DoopAddons.retrieveAllBodies();
