@@ -244,7 +244,7 @@ NewMetricMacro("23.0", "app casts (statically)", Stats_Simple_Application_Cast(_
 NewMetricMacro("24.0", "app reachable casts", Stats_Simple_Application_ReachableCast(_, _, _, _)).
 NewMetricMacro("25.0", "app reachable casts that may fail", Stats_Simple_Application_PotentiallyFailingCast(_, _, _)).
 NewMetricMacro("25.5", "app reachable methods", Stats_Simple_Application_ReachableMethod(_)).
-NewMetricMacro("25.75", "app total methods", ApplicationMethod(_)).
+NewMetricMacro("25.75", "app concrete methods", Stats_Simple_ApplicationConcreteMethod(_)).
 
 //NewMetricMacro("50.0", "call sites that did (not) get refined", SiteToRefine(_)).
 //NewMetricMacro("51.0", "allocation sites that did (not) get refined", ValueToRefine(_)).
