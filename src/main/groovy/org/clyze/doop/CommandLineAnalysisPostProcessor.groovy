@@ -16,7 +16,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 	void process(DoopAnalysis analysis) {
 		if (!analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_BASIC.value)
 			printStats(analysis)
-		if (analysis.options.SANITY.value)
+		if (analysis.options.SANITY.value && !analysis.options.X_DRY_RUN.value)
 			printSanityResults(analysis)
 		linkResult(analysis)
 	}
@@ -38,18 +38,16 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 			printf("%-80s %,d\n", it[0], it[1] as long)
 		}
 
-		if (!analysis.options.X_STATS_NONE.value) {
+		if (!analysis.options.X_STATS_NONE.value && !analysis.options.X_DRY_RUN.value) {
 			lines = []
 
-			if (!analysis.options.X_DRY_RUN.value) {
-				if (analysis.options.LB3.value) {
-					analysis.processRelation("Stats:Metrics") { String line ->
-						if (!filterOutLBWarn(line)) lines.add(line)
-					}
-				} else {
-					def file = new File("${analysis.database}/Stats_Metrics.csv")
-					file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
+			if (analysis.options.LB3.value) {
+				analysis.processRelation("Stats:Metrics") { String line ->
+					if (!filterOutLBWarn(line)) lines.add(line)
 				}
+			} else {
+				def file = new File("${analysis.database}/Stats_Metrics.csv")
+				file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
 			}
 
 			log.info "-- Statistics --"
