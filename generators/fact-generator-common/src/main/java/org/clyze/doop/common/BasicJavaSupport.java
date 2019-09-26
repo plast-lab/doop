@@ -89,11 +89,11 @@ public class BasicJavaSupport {
                     File libTmpFile = extractZipEntryAsFile("native-lib", jarFile, entry, entryName);
                     NativeScanner scanner = new NativeScanner(parameters._radare, parameters._preciseNativeStrings);
                     if (isSO)
-                        exec.execute(() -> scanner.scanLib(libTmpFile, outDir, db));
+                        scanner.scanLib(libTmpFile, outDir, db);
                     else if (isLibsXZS)
-                        exec.execute(() -> scanner.scanXZSLib(libTmpFile, outDir, db));
+                        scanner.scanXZSLib(libTmpFile, outDir, db);
                     else if (isLibsZSTD)
-                        exec.execute(() -> scanner.scanZSTDLib(libTmpFile, outDir, db));
+                        scanner.scanZSTDLib(libTmpFile, outDir, db);
                 }
             }
         };
