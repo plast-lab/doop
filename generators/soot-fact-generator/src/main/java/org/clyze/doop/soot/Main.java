@@ -123,19 +123,28 @@ public class Main {
         boolean writeFacts = !sootParameters.noFacts();
         try (Database db = new Database(outDir, writeFacts)) {
             AtomicInteger errors = new AtomicInteger(0);
-            java.getExecutor().execute(() -> {
-                    try {
-                        java.preprocessInputs(db);
-                    } catch (IOException ex) { errors.incrementAndGet(); }});
-            if (android != null)
+            if (android == null) {
+                java.preprocessInputs(db);
+            } else {
+                java.getExecutor().execute(() -> {
+                        try {
+                            java.preprocessInputs(db);
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                            errors.incrementAndGet();
+                        }});
                 java.getExecutor().execute(() -> android.processInputs(tmpDirs));
+            }
 
             Scene scene = Scene.v();
             SootData sootData = new SootData();
             java.getExecutor().execute(() -> {
                     try {
                         invokeSoot(sootParameters, db, tmpDirs, sootData, java, android, scene, writeFacts);
-                    } catch (Throwable t) { errors.incrementAndGet(); }});
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                        errors.incrementAndGet();
+                    }});
 
             // Wait for async tasks to finish for next steps such as
             // IR generation (needs information from previous steps).
