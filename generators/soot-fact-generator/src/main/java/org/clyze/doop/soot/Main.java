@@ -122,19 +122,11 @@ public class Main {
 
         boolean writeFacts = !sootParameters.noFacts();
         try (Database db = new Database(outDir, writeFacts)) {
+            java.preprocessInputs(db);
+
             AtomicInteger errors = new AtomicInteger(0);
-            if (android == null) {
-                java.preprocessInputs(db);
-            } else {
-                java.getExecutor().execute(() -> {
-                        try {
-                            java.preprocessInputs(db);
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                            errors.incrementAndGet();
-                        }});
+            if (android != null)
                 java.getExecutor().execute(() -> android.processInputs(tmpDirs));
-            }
 
             Scene scene = Scene.v();
             SootData sootData = new SootData();
