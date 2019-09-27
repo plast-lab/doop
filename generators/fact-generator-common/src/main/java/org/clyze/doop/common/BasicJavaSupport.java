@@ -97,7 +97,7 @@ public class BasicJavaSupport {
                 }
             }
         };
-        if (isJar)
+        if (isJar || isApk)
             artScanner.processJARClasses(filename, classSet::add, gProc);
         else if (isClass) {
             File f = new File(filename);
@@ -105,7 +105,7 @@ public class BasicJavaSupport {
                 artScanner.processClass(fis, f, classSet::add);
             }
         }
-        else if (!isApk)
+        else
             System.err.println("WARNING: artifact scanner skips " + filename);
     }
 
