@@ -428,3 +428,9 @@ public class Main {
         Options.v().set_output_dir(outDir);
     }
 }
+
+// Intermediate data structure, communicates values between stages.
+class SootData {
+    public Set<SootClass> classes;
+    public SootDriver driver;
+}
