@@ -143,7 +143,7 @@ public class Main {
             if (numErrors != 0)
                 throw new DoopErrorCodeException(35, "Fact generation failed with " + numErrors + " errors.");
 
-            if (writeFacts) {
+            if (writeFacts && sootParameters._scanNativeCode) {
                 NativeScanner scanner = new NativeScanner(db, sootParameters, sootData.writer.getMethodStrings());
                 scanner.scanInputs(sootParameters.getInputs());
             }
