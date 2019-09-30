@@ -3,7 +3,6 @@ package org.clyze.doop.common;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -78,55 +77,20 @@ public class BasicJavaSupport {
             else if ((isJar || isAar) && entryName.endsWith(".xml")) {
                 // We only handle .xml entries inside JAR archives here.
                 // APK archives may contain binary XML and need decoding.
-                File xmlTmpFile = extractZipEntryAsFile("xml-file", jarFile, entry, entryName);
+                File xmlTmpFile = ArtifactScanner.extractZipEntryAsFile("xml-file", jarFile, entry, entryName);
                 System.out.println("Processing XML entry (in " + filename + "): " + entryName);
                 XMLFactGenerator.processFile(xmlTmpFile, db, "");
-            } else if (parameters._scanNativeCode) {
-                boolean isSO = entryName.endsWith(".so");
-                boolean isLibsXZS = entryName.endsWith("libs.xzs");
-                boolean isLibsZSTD = entryName.endsWith("libs.zstd");
-                if (isSO || isLibsXZS || isLibsZSTD) {
-                    File libTmpFile = extractZipEntryAsFile("native-lib", jarFile, entry, entryName);
-                    NativeScanner scanner = new NativeScanner(parameters._radare, parameters._preciseNativeStrings);
-                    if (isSO)
-                        scanner.scanLib(libTmpFile, outDir, db);
-                    else if (isLibsXZS)
-                        scanner.scanXZSLib(libTmpFile, outDir, db);
-                    else if (isLibsZSTD)
-                        scanner.scanZSTDLib(libTmpFile, outDir, db);
-                }
             }
         };
         if (isJar || isApk)
-            artScanner.processJARClasses(filename, classSet::add, gProc);
+            artScanner.processArchive(filename, classSet::add, gProc);
         else if (isClass) {
             File f = new File(filename);
             try (FileInputStream fis = new FileInputStream(f)) {
                 artScanner.processClass(fis, f, classSet::add);
             }
-        }
-        else
+        } else
             System.err.println("WARNING: artifact scanner skips " + filename);
-    }
-
-    /**
-     * Helper method to extract an entry inside a JAR archive and save
-     * it as a file.
-     *
-     * @param tmpDirName   a name for the intermediate temporary directory
-     * @param jarFile      the JAR archive
-     * @param entry        the archive entry
-     * @param entryName    the name of the entry
-     * @return             the output file
-     */
-    private static File extractZipEntryAsFile(String tmpDirName, JarFile jarFile, JarEntry entry, String entryName) throws IOException {
-        File tmpDir = Files.createTempDirectory(tmpDirName).toFile();
-        tmpDir.deleteOnExit();
-        String tmpName = entryName.replaceAll(File.separator, "_");
-        File libTmpFile = new File(tmpDir, tmpName);
-        libTmpFile.deleteOnExit();
-        Files.copy(jarFile.getInputStream(entry), libTmpFile.toPath());
-        return libTmpFile;
     }
 
     public PropertyProvider getPropertyProvider() {

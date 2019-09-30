@@ -109,9 +109,9 @@ class DexMethodFactWriter extends JavaFactWriter {
     private final Collection<RawGoto> gotos = new LinkedList<>();
     private final Collection<RawGoto> ifs = new LinkedList<>();
 
-    DexMethodFactWriter(DexBackedMethod dexMethod, Database _db, boolean moreStrings,
+    DexMethodFactWriter(DexBackedMethod dexMethod, Database _db, DexParameters params,
                         Map<String, MethodSig> cachedMethodDescriptors) {
-        super(_db, moreStrings, true);
+        super(_db, params, true);
         this.m = dexMethod;
         this.cachedMethodDescriptors = cachedMethodDescriptors;
 
@@ -130,7 +130,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     public void writeMethod(Collection<FieldOp> fieldOps,
                             Collection<String> definedMethods) {
         // System.out.println("Generating facts for method: " + methId);
-        _db.add(METHOD, methId, mf.simpleName, mf.paramsSig, mf.declaringClass, mf.retType, mf.jvmSig, mf.arity);
+        writeMethod(methId, mf.simpleName, mf.paramsSig, mf.declaringClass, mf.retType, mf.jvmSig, mf.arity);
         definedMethods.add(methId);
 
         for (Annotation annotation : m.getAnnotations()) {

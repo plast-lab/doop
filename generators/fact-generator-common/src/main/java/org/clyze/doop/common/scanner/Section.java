@@ -10,7 +10,7 @@ class Section {
     private final int offset;
     private final int size;
     private final byte[] data;
-    private Map<Long, String> foundStrings;
+    private SortedMap<Long, String> foundStrings;
     private final Set<Long> words;
 
     private Section(Arch arch, int offset, int size, byte[] data) {
@@ -76,16 +76,12 @@ class Section {
         return null;
     }
 
-    public Map<Long,String> getFoundStrings() {
-        return foundStrings;
-    }
-
     /**
      * Scan the 'data' buffer for NULL-terminated strings.
      *
      * @return a collection of the strings found
      */
-    Map<Long, String> strings() {
+    SortedMap<Long, String> strings() {
         if (this.foundStrings == null) {
             this.foundStrings = new TreeMap<>();
             StringBuilder foundString = new StringBuilder();

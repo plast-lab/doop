@@ -21,6 +21,7 @@ import org.clyze.doop.common.SessionCounter;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import org.clyze.doop.common.Parameters;
 
 import static org.clyze.doop.common.JavaRepresentation.*;
 import static org.clyze.doop.common.PredicateFile.*;
@@ -46,9 +47,9 @@ public class WalaFactWriter extends JavaFactWriter {
 
     private Map<String,List<String>> _signaturePolyMorphicMethods;
 
-    WalaFactWriter(Database db, boolean moreStrings, boolean artifacts,
+    WalaFactWriter(Database db, Parameters params, boolean artifacts,
                    WalaRepresentation rep) {
-        super(db, moreStrings, artifacts);
+        super(db, params, artifacts);
         _rep = rep;
         _typeMap = new ConcurrentHashMap<>();
         _phantomType = new ConcurrentHashMap<>();
@@ -86,7 +87,7 @@ public class WalaFactWriter extends JavaFactWriter {
             arity = Integer.toString(m.getNumberOfParameters());
 
         _db.add(STRING_RAW, result, result);
-        _db.add(METHOD, result, WalaRepresentation.simpleName(m.getReference()), WalaRepresentation.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        writeMethod(result, WalaRepresentation.simpleName(m.getReference()), WalaRepresentation.params(m.getReference()), writeType(m.getReference().getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         for (Annotation annotation : m.getAnnotations()) {
             writeMethodAnnotation(result, fixTypeString(annotation.getType().toString()));
             //TODO:See if we can take use other features wala offers for annotations (named and unnamed arguments)
@@ -203,7 +204,7 @@ public class WalaFactWriter extends JavaFactWriter {
             writePhantomMethod(sig);
             _db.add(STRING_RAW, sig, sig);
             String arity = Integer.toString(m.getNumberOfParameters());
-            _db.add(METHOD, sig, WalaRepresentation.simpleName(m), WalaRepresentation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+            writeMethod(sig, WalaRepresentation.simpleName(m), WalaRepresentation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         }
     }
 
@@ -216,7 +217,7 @@ public class WalaFactWriter extends JavaFactWriter {
         }
 //        _db.add(STRING_RAW, sig, sig);
 //        String arity = Integer.toString(m.getNumberOfParameters());
-//        _db.add(METHOD, sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
+//        writeMethod(sig, _rep.simpleName(m), _rep.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString());
     }
 
     void writeEnterMonitor(IMethod m, SSAMonitorInstruction instruction, Local var, Session session) {
@@ -1170,7 +1171,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String sig = _rep.signature(m);
         _db.add(STRING_RAW, sig, sig);
         String arity = Integer.toString(m.getNumberOfParameters());
-        _db.add(METHOD, sig, WalaRepresentation.simpleName(m), WalaRepresentation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
+        writeMethod(sig, WalaRepresentation.simpleName(m), WalaRepresentation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), m.getDescriptor().toUnicodeString(), arity);
         //addMockExceptionThrows(m, declaredExceptions);
     }
 

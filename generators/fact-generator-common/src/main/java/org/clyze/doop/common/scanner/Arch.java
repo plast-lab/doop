@@ -6,6 +6,8 @@ import java.io.IOException;
 enum Arch {
     X86, X86_64, AARCH64, ARMEABI, MIPS;
 
+    static final Arch DEFAULT_ARCH = AARCH64;
+
     static Arch autodetect(String libFilePath) throws IOException {
         ProcessBuilder pb = new ProcessBuilder("file", libFilePath);
         Arch arch = null;
@@ -30,7 +32,7 @@ enum Arch {
         if (arch != null)
             System.out.println("Detected architecture of " + libFilePath + " is " + arch);
         else {
-            arch = AARCH64;
+            arch = DEFAULT_ARCH;
             System.out.println("Could not determine architecture of " + libFilePath + ", using default: " + arch);
         }
         return arch;

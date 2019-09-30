@@ -48,7 +48,7 @@ public class DexInvoker {
         try (Database db = new Database(outDir)) {
             java.preprocessInputs(db);
 
-            DexFactWriter writer = new DexFactWriter(db, dexParams._extractMoreStrings, cha);
+            DexFactWriter writer = new DexFactWriter(db, dexParams, cha);
             writer.writePreliminaryFacts(java, dexParams);
             AndroidSupport android = new DexAndroidSupport(dexParams, java);
             try {

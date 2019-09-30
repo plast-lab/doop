@@ -16,6 +16,7 @@ import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.scanner.NativeScanner;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.DoopConventions;
@@ -145,6 +146,11 @@ public class Main {
             if (numErrors != 0)
                 throw new DoopErrorCodeException(35, "Fact generation failed with " + numErrors + " errors.");
 
+            if (writeFacts) {
+                NativeScanner scanner = new NativeScanner(db, sootParameters, sootData.writer.getMethodStrings());
+                scanner.scanInputs(sootParameters.getInputs());
+            }
+
             if (sootParameters._generateJimple)
                 generateIR(sootParameters, java, scene, sootData.classes, sootData.driver, outDir);
 
@@ -252,7 +258,7 @@ public class Main {
         boolean artifacts = sootParameters._writeArtifactsMap;
         Representation rep = new Representation();
 
-        FactWriter writer = new FactWriter(db, moreStrings, artifacts, rep, reportPhantoms);
+        FactWriter writer = new FactWriter(db, sootParameters, artifacts, rep, reportPhantoms);
         SootDriver driver = new SootDriver(classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors, writer, sootParameters);
 
         if (writeFacts) {
@@ -303,8 +309,10 @@ public class Main {
             writer.writeLastFacts(java);
         }
 
+        // Communicate data structures to next stages of the pipeline.
         sootData.classes = classes;
         sootData.driver = driver;
+        sootData.writer = writer;
     }
 
     private static boolean sootClassPathFirstElement = true;
@@ -434,4 +442,5 @@ public class Main {
 class SootData {
     public Set<SootClass> classes;
     public SootDriver driver;
+    public FactWriter writer;
 }

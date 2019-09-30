@@ -58,7 +58,7 @@ class DexDriver extends Driver<DexBackedClassDef> {
             for (DexBackedClassDef dexClass : _tmpClassGroup) {
                 String className = TypeUtils.raiseTypeId(dexClass.getType());
                 java.getArtifactScanner().registerArtifactClass(apkName, className, dexEntry, dexClass.getSize());
-                DexClassFactWriter classWriter = new DexClassFactWriter(db, moreStrings);
+                DexClassFactWriter classWriter = new DexClassFactWriter(db, dexParams);
                 classWriter.generateFacts(dexClass, className, dexParams, cachedMethodDescriptors);
                 cha.registerDefinedMethods(classWriter.definedMethods);
                 cha.queueFieldOps(classWriter.fieldOps);

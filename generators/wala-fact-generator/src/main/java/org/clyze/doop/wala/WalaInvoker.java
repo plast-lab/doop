@@ -81,8 +81,7 @@ class WalaInvoker {
 
         try (Database db = new Database(outputDir)) {
             WalaRepresentation rep = new WalaRepresentation();
-            WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters._extractMoreStrings, walaParameters._writeArtifactsMap, rep);
-
+            WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters, walaParameters._writeArtifactsMap, rep);
 
             if (walaParameters._android) {
                 WalaAndroidXMLParser parser = new WalaAndroidXMLParser(walaParameters, walaFactWriter, java);
