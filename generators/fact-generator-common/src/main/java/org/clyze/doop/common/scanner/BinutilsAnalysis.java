@@ -405,14 +405,14 @@ class BinutilsAnalysis extends BinaryAnalysis {
     public SortedMap<Long, String> findStrings() throws IOException {
         if (rodata == null)
             analyzeSections();
-        return rodata.strings();
+        return rodata == null ? null : rodata.strings();
     }
 
     @Override
     public Set<Long> getGlobalDataPointers() throws IOException {
         if (data == null)
             analyzeSections();
-        return data.analyzeWords();
+        return data == null ? null : data.analyzeWords();
     }
 
     private void analyzeSections() throws IOException {
