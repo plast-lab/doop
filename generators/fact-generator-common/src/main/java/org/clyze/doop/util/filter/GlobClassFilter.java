@@ -12,7 +12,7 @@ public class GlobClassFilter implements ClassFilter {
     private final boolean matchEverything;
 
     public GlobClassFilter(String glob) {
-        String patterns[] = glob.split(File.pathSeparator);
+        String[] patterns = glob.split(File.pathSeparator);
 
         ArrayList<String> packages0 = new ArrayList<>(patterns.length);
         ArrayList<String> prefixes0 = new ArrayList<>(patterns.length);

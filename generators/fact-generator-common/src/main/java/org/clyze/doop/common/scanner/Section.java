@@ -31,7 +31,7 @@ class Section {
      * @return             a section object or null if no section was found
      */
     public static Section fromObjdump(Arch arch, String lib,
-                                      String sectionName, List<String> lines)
+                                      String sectionName, Iterable<String> lines)
         throws IOException {
 
         int sizeIdx = -1;

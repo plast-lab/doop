@@ -14,7 +14,7 @@ class MiscLambdaTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test ForEach"(boolean wala) {
 		when:
-		String analysisName = "context-insensitive";
+		String analysisName = "context-insensitive"
 		Analysis analysis = analyzeTest("invokedynamic-ForEach",
 										["--platform", "java_8"] + (wala ? ["--wala-fact-gen"] : []),
 										analysisName,

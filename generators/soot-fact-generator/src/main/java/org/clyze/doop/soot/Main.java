@@ -5,9 +5,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.logging.Log;
@@ -39,7 +36,7 @@ import static org.clyze.doop.common.FrontEndLogger.*;
 public class Main {
 
     private static Log logger;
-    private static String debug = System.getenv("SOOT_DEBUG");
+    private static final String debug = System.getenv("SOOT_DEBUG");
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
@@ -152,7 +149,7 @@ public class Main {
             }
 
             if (sootParameters._generateJimple)
-                generateIR(sootParameters, java, scene, sootData.classes, sootData.driver, outDir);
+                generateIR(java, scene, sootData.classes, sootData.driver, outDir);
 
             if (sootParameters._lowMem) {
                 System.out.println("Releasing Soot structures...");
@@ -377,7 +374,7 @@ public class Main {
         }
     }
 
-    static void showPacks() {
+    private static void showPacks() {
         for (soot.Pack pack : soot.PackManager.v().allPacks())
             System.out.println("Pack: " + pack.getPhaseName());
     }
@@ -404,16 +401,13 @@ public class Main {
 
     /**
      * Generate Jimple/Shimple for the classes loaded into Soot.
-     *
-     * @param sootParameters   the command-line parameters
-     * @param java             the Java platform support object
+     *  @param java             the Java platform support object
      * @param scene            the Soot scene
      * @param classes          the loaded classes
      * @param driver           the driver to use for parallelism
      * @param outDir           the (parent) output directory to use
      */
-    private static void generateIR(SootParameters sootParameters,
-                                   BasicJavaSupport_Soot java, Scene scene,
+    private static void generateIR(BasicJavaSupport_Soot java, Scene scene,
                                    Set<SootClass> classes, SootDriver driver,
                                    String outDir) throws DoopErrorCodeException {
         Set<SootClass> jimpleClasses = new HashSet<>(classes);

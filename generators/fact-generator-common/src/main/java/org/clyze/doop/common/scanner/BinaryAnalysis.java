@@ -12,11 +12,11 @@ import static org.clyze.doop.common.PredicateFile.*;
 abstract class BinaryAnalysis {
 
     // The database object to use for writing facts.
-    protected Database db;
+    private final Database db;
     // The native code library.
-    protected final String lib;
+    final String lib;
     // The entry points table.
-    protected SortedMap<Long, String> entryPoints = new TreeMap<>();
+    final SortedMap<Long, String> entryPoints = new TreeMap<>();
 
     BinaryAnalysis(Database db, String lib) {
         this.db = db;
@@ -57,7 +57,7 @@ abstract class BinaryAnalysis {
     }
 
     // Auxiliary hex converter.
-    static protected long hexToLong(String s) {
+    static long hexToLong(String s) {
         if (s.startsWith("0x"))
             s = s.substring(2);
         return Long.parseLong(s.trim(), 16);

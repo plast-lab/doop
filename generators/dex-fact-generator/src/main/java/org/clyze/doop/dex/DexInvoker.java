@@ -49,7 +49,7 @@ public class DexInvoker {
             java.preprocessInputs(db);
 
             DexFactWriter writer = new DexFactWriter(db, dexParams, cha);
-            writer.writePreliminaryFacts(java, dexParams);
+            writer.writePreliminaryFacts(java);
             AndroidSupport android = new DexAndroidSupport(dexParams, java);
             try {
                 Set<String> tmpDirs = new HashSet<>();

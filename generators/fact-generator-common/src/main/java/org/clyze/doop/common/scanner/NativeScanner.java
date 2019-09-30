@@ -35,7 +35,7 @@ public class NativeScanner {
         System.err.println("Initializing native scanner with " + methodStrings.size() + " strings related to methods.");
     }
 
-    public void scanInputs(List<String> inputs) {
+    public void scanInputs(Iterable<String> inputs) {
         ArtifactScanner.EntryProcessor gProc = (file, entry, entryName) -> {
             boolean isSO = entryName.endsWith(".so");
             boolean isLibsXZS = entryName.endsWith("libs.xzs");
@@ -66,7 +66,7 @@ public class NativeScanner {
      * @param libFile        the native code library
      * @param db             the database object to use for writing
      */
-    public void scanLib(File libFile, Database db) {
+    private void scanLib(File libFile, Database db) {
         try {
             BinaryAnalysis bAnalysis;
             String lib = libFile.getCanonicalPath();
@@ -206,7 +206,7 @@ public class NativeScanner {
     }
 
     // Handle .xzs libraries (found in some .apk inputs).
-    public void scanXZSLib(File xzsFile, Database db) {
+    private void scanXZSLib(File xzsFile, Database db) {
         String xzsPath = xzsFile.getAbsolutePath();
         System.out.println("Processing xzs-packed native code: " + xzsPath);
         String xzPath = xzsPath.substring(0, xzsPath.length() - 1);
@@ -222,7 +222,7 @@ public class NativeScanner {
     }
 
     // Handle .zstd libraries (found in some .apk inputs).
-    public void scanZSTDLib(File zstdFile, Database db) {
+    private void scanZSTDLib(File zstdFile, Database db) {
         String zstdPath = zstdFile.getAbsolutePath();
         System.out.println("Processing zstd-packed native code: " + zstdPath);
         String zstdOutPath = zstdPath.substring(0, zstdPath.length() - 5);
@@ -253,8 +253,8 @@ public class NativeScanner {
         symbols.put(symbol, infos);
     }
 
-    static void regUnknown(Set<String> uSymbols,
-                           String s, SymbolInfo v) {
+    private static void regUnknown(Collection<String> uSymbols,
+                                   String s, SymbolInfo v) {
         if (v.function.equals(UNKNOWN_FUNCTION))
             uSymbols.add(s);
     }
@@ -271,7 +271,7 @@ public class NativeScanner {
      */
     private void writeSymbolTable(Database db, PredicateFile factsFile,
                                   Map<String, List<SymbolInfo> > symbols,
-                                  Set<Long> words) {
+                                  Collection<Long> words) {
         for (Map.Entry<String, List<SymbolInfo>> entry : symbols.entrySet()) {
             String symbol = entry.getKey();
             for (SymbolInfo si : entry.getValue()) {
@@ -311,7 +311,7 @@ public class NativeScanner {
 }
 
 class SymbolInfo {
-    final String sym;
+    private final String sym;
     final String lib;
     final String function;
     final Long offset;

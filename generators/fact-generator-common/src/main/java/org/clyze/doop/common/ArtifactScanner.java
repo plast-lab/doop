@@ -162,7 +162,7 @@ public class ArtifactScanner {
      * it as a file.
      *
      * @param tmpDirName   a name for the intermediate temporary directory
-     * @param file         the ZIP archive
+     * @param zipFile      the ZIP archive
      * @param entry        the archive entry
      * @param entryName    the name of the entry
      * @return             the output file

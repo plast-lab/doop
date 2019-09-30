@@ -95,7 +95,7 @@ public class AppResourcesAXML implements AppResources {
     /**
      * Thin wrapper over Soot's PossibleLayoutControl.
      */
-    private class SootLayoutControl extends LayoutControl {
+    private static class SootLayoutControl extends LayoutControl {
         private final PossibleLayoutControl plc;
         SootLayoutControl(PossibleLayoutControl plc) {
             this.plc = plc;

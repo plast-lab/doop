@@ -117,7 +117,7 @@ public abstract class JavaFactWriter {
         _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), viewClassName, parentID.toString());
     }
 
-    public void writePreliminaryFacts(BasicJavaSupport java, Parameters params) {
+    public void writePreliminaryFacts(BasicJavaSupport java) {
         PropertyProvider propertyProvider = java.getPropertyProvider();
 
         // Read all stored properties files

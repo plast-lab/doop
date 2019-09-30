@@ -31,7 +31,7 @@ import static org.clyze.doop.wala.WalaUtils.*;
  * FactWriter determines the format of a fact and adds it to a
  * database.
  */
-public class WalaFactWriter extends JavaFactWriter {
+class WalaFactWriter extends JavaFactWriter {
     private final WalaRepresentation _rep;
 
     //Map from WALA's JVM like type string to our format
@@ -413,7 +413,7 @@ public class WalaFactWriter extends JavaFactWriter {
         String handleName =(String) constant.getValue();
         String heap = methodHandleConstant(handleName);
         String methodId = _rep.signature(m);
-        String breakHandles[] = handleName.split(" ");
+        String[] breakHandles = handleName.split(" ");
         String retType;
         int arity;
 
@@ -724,8 +724,8 @@ public class WalaFactWriter extends JavaFactWriter {
 
         _db.add(LOOKUP_SWITCH, insn, str(instrIndex), _rep.local(inMethod, switchVar), methodId);
 
-        int casesAndLabels[] = instruction.getCasesAndLabels();
-        SSAInstruction instructions[] = ir.getInstructions();
+        int[] casesAndLabels = instruction.getCasesAndLabels();
+        SSAInstruction[] instructions = ir.getInstructions();
         for(int i = 0; i < casesAndLabels.length; i+=2) {
             int tgIndex = casesAndLabels[i];
             //session.calcInstructionNumber(instructions[casesAndLabels[i+1]]);
@@ -1190,7 +1190,7 @@ public class WalaFactWriter extends JavaFactWriter {
         for(String declaredExc : declaredExceptions)
         {
             i+=3;
-            var = methodSig + "/" + varBase + Integer.toString(i);
+            var = methodSig + "/" + varBase + i;
             writeLocal(var, declaredExc, methodSig);
             heap = methodSig + "/new " + declaredExc + "/0";
             _db.add(NORMAL_HEAP, heap, declaredExc);
@@ -1199,7 +1199,7 @@ public class WalaFactWriter extends JavaFactWriter {
             specInvInstr = methodSig +"/" + declaredExc +".<init>/0" ;
             targetRef = "<" + declaredExc + ":  void <init>()>";
             _db.add(SPECIAL_METHOD_INV, specInvInstr, str(i+1), targetRef, var, methodSig);
-            throwInstr = methodSig + "/throw " +varBase + Integer.toString(i) + "/0";
+            throwInstr = methodSig + "/throw " +varBase + i + "/0";
             _db.add(THROW, throwInstr, str(i+2),var, methodSig);
         }
     }

@@ -20,14 +20,14 @@ class BinutilsAnalysis extends BinaryAnalysis {
     private static final String toolchainAARCH64 = System.getenv(envVarAARCH64);
 
     // The native code architecture.
-    Arch arch;
+    private Arch arch;
     // The path to tool 'nm'.
-    String nmCmd;
+    private String nmCmd;
     // The path to tool 'objdump'.
-    String objdumpCmd;
+    private String objdumpCmd;
     // The sections that may contain information about strings and global data structures.
-    Section data;
-    Section rodata;
+    private Section data;
+    private Section rodata;
 
     BinutilsAnalysis(Database db, String lib) {
         super(db, lib);
@@ -530,7 +530,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
 class EntryPoint {
     final String name;
     final Long addr;
-    public EntryPoint(String name, Long addr) {
+    private EntryPoint(String name, Long addr) {
         this.name = name;
         this.addr = addr;
     }

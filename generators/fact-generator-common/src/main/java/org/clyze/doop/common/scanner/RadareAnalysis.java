@@ -39,9 +39,6 @@ class RadareAnalysis extends BinaryAnalysis {
 
         ProcessBuilder radareBuilder = new ProcessBuilder("rabin2", "-z", lib);
         System.out.println("Radare command line: " + radareBuilder.command());
-        int vaddrIdx = -1;
-        int lenIdx = -1;
-        int stringIdx = -1;
         int lineNo = 0;
         final int IGNORE_ERRORS_BEFORE_LINE = 3;
         for (String line : NativeScanner.runCommand(radareBuilder)) {
@@ -77,8 +74,8 @@ class RadareAnalysis extends BinaryAnalysis {
      * Given a table of strings, returns a map that connects each
      * string with the functions that reference it.
      *
-     * @param strings  a table of strings
-     * @return         a map from strings to (sets of) functions
+     * @param binStrings  a table of strings
+     * @return            a map from strings to (sets of) functions
      */
     @Override
     Map<String, Set<String>> findXRefs(Map<Long, String> binStrings) throws IOException {

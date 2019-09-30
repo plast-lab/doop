@@ -19,7 +19,6 @@ import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Driver;
 import org.clyze.doop.common.Parameters;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -96,7 +95,7 @@ class WalaInvoker {
                 cache = new AnalysisCacheImpl();
 
             java.preprocessInputs(db);
-            walaFactWriter.writePreliminaryFacts(java, walaParameters);
+            walaFactWriter.writePreliminaryFacts(java);
             db.flush();
 
             IClass klass;
