@@ -13,7 +13,6 @@ import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
 import org.clyze.doop.common.SessionCounter;
 import org.clyze.doop.wala.Local;
-import org.clyze.doop.wala.Session;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,6 +46,7 @@ class PythonRepresentation {
             _repr = new PythonRepresentation();
         return _repr;
     }
+
     public PythonRepresentation(String fileName)
     {
         _fileName = fileName;
