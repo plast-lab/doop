@@ -124,6 +124,8 @@ VarPointsTo(?hctx, NewInstanceMockObj(?type), ?ctx, ?thisVar) :-
   basic.ClassConstructor(?init, ?type),
   ThisVar(?init, ?thisVar),
   isImmutableContext(?calleeCtx).
+//.plan 1:(2,1,3,4,5,6,7,8)
+
 
 // ** Pattern 3: reading the "TYPE" fields of the basic types **
 
