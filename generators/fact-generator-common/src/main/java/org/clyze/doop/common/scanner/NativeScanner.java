@@ -5,9 +5,6 @@ import java.util.*;
 import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.Parameters;
-import org.clyze.doop.common.PredicateFile;
-
-import static org.clyze.doop.common.PredicateFile.*;
 
 public class NativeScanner {
     // Enable debug messages.
@@ -20,11 +17,6 @@ public class NativeScanner {
     // improves precision.
     private final boolean onlyPreciseNativeStrings;
     private final Set<String> methodStrings;
-
-    // Dummy value for "function" column in facts.
-    private static final String UNKNOWN_FUNCTION = "-";
-    // Dummy value for "offset" column in facts.
-    private static final String UNKNOWN_OFFSET = "-1";
 
     public NativeScanner(Database db, Parameters params, Set<String> methodStrings) {
         this.db = db;
@@ -68,24 +60,25 @@ public class NativeScanner {
      */
     private void scanLib(File libFile, Database db) {
         try {
-            BinaryAnalysis bAnalysis;
             String lib = libFile.getCanonicalPath();
             System.out.println("== Processing library: " + lib + " ==");
-            if (useRadare)
-                bAnalysis = new RadareAnalysis(db, lib);
-            else
-                bAnalysis = new BinutilsAnalysis(db, lib);
 
-            bAnalysis.initEntryPoints();
+            RadareAnalysis radAnalysis = new RadareAnalysis(db, lib, onlyPreciseNativeStrings);
+            BinutilsAnalysis baseAnalysis = new BinutilsAnalysis(db, lib, onlyPreciseNativeStrings);
+            BinaryAnalysis analysis = useRadare ? radAnalysis : baseAnalysis;
+
+            // Use the base "binutils" analysis to find strings.
+
+            baseAnalysis.initEntryPoints();
 
             // Find all strings in the binary.
             System.out.println("Gathering strings from " + lib + "...");
-            SortedMap<Long, String> allStrings = bAnalysis.findStrings();
+            SortedMap<Long, String> allStrings = baseAnalysis.findStrings();
             if (allStrings == null || allStrings.size() == 0) {
                 System.err.println("Cannot find strings in " + lib + ", aborting.");
                 return;
             }
-            System.out.println("Found " + allStrings.size() + " in total.");
+            System.out.println("Total strings: " + allStrings.size());
 
             // Filter the strings to work with a more manageable set
             // of strings.
@@ -102,20 +95,24 @@ public class NativeScanner {
                 }
                 Long addr = foundString.getKey();
                 if (isMethodType(s)) {
-                    addSymbol(methodTypeSymbols, s, new SymbolInfo(s, lib, UNKNOWN_FUNCTION, addr));
+                    addSymbol(methodTypeSymbols, s, new SymbolInfo(s, lib, BinaryAnalysis.UNKNOWN_FUNCTION, addr));
                     strings.put(addr, s);
                 } else if (isName(s)) {
-                    addSymbol(nameSymbols, s, new SymbolInfo(s, lib, UNKNOWN_FUNCTION, addr));
+                    addSymbol(nameSymbols, s, new SymbolInfo(s, lib, BinaryAnalysis.UNKNOWN_FUNCTION, addr));
                     strings.put(addr, s);
                 } else
                     // If this code runs, then a method-related string is not a name/type.
                     System.err.println("WARNING: rejecting native string '" + s + "'");
             }
             System.out.println("Filter: " + strings.size() + " out of " + allStrings.size() + " survived.");
+            if (debug)
+                strings.forEach((k, v) -> System.out.println(k + " -> " + v));
 
             // Find in which function every string is used.
-            Map<String, Set<String>> xrefs = bAnalysis.findXRefs(strings);
+            Map<String, Set<XRef>> xrefs = analysis.findXRefs(strings);
             System.out.println("Computed " + xrefs.size() + " xrefs.");
+            if (debug)
+                xrefs.forEach ((k, v) -> System.out.println("XREF: '" + k + "' -> " + v) );
 
             // Write out facts: first write names and method types that
             // belong to known functions, then write everything else (that
@@ -125,15 +122,15 @@ public class NativeScanner {
                 if (s == null)
                     continue;
                 if (isMethodType(s)) {
-                    Set<String> funcs = xrefs.get(s);
-                    if (funcs != null)
-                        for (String function : funcs)
-                            addSymbol(methodTypeSymbols, s, new SymbolInfo(s, lib, function, null));
+                    Set<XRef> strRefs = xrefs.get(s);
+                    if (strRefs != null)
+                        for (XRef strRef : strRefs)
+                            addSymbol(methodTypeSymbols, s, new SymbolInfo(s, lib, strRef.function, null));
                 } else if (isName(s)) {
-                    Set<String> funcs = xrefs.get(s);
-                    if (funcs != null)
-                        for (String function : funcs)
-                            addSymbol(nameSymbols, s, new SymbolInfo(s, lib, function, null));
+                    Set<XRef> strRefs = xrefs.get(s);
+                    if (strRefs != null)
+                        for (XRef strRef : strRefs)
+                            addSymbol(nameSymbols, s, new SymbolInfo(s, lib, strRef.function, null));
                 }
             }
 
@@ -141,16 +138,16 @@ public class NativeScanner {
             updateLibSymbolTable(nameSymbols, lib, xrefs);
             updateLibSymbolTable(methodTypeSymbols, lib, xrefs);
 
-            // Write out symbol tables.
-            Set<Long> dataPointers = bAnalysis.getGlobalDataPointers();
+            // Finally write facts.
             int namesCount = nameSymbols.keySet().size();
-            System.out.println("Possible method/class names: " + namesCount);
-            writeSymbolTable(db, NATIVE_NAME_CANDIDATE, nameSymbols, dataPointers);
             int methodTypesCount = methodTypeSymbols.keySet().size();
-            System.out.println("Possible method types found: " + methodTypesCount);
-            writeSymbolTable(db, NATIVE_METHODTYPE_CANDIDATE, methodTypeSymbols, dataPointers);
-
-            bAnalysis.writeEntryPoints();
+            if (namesCount == 0 || methodTypesCount == 0)
+                System.out.println("Product [name x type] is empty, ignoring native library.");
+            else {
+                System.out.println("Possible method/class names: " + namesCount);
+                System.out.println("Possible method types found: " + methodTypesCount);
+                analysis.writeFacts(xrefs, nameSymbols, methodTypeSymbols);
+            }
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -255,56 +252,29 @@ public class NativeScanner {
 
     private static void regUnknown(Collection<String> uSymbols,
                                    String s, SymbolInfo v) {
-        if (v.function.equals(UNKNOWN_FUNCTION))
+        if (v.function.equals(BinaryAnalysis.UNKNOWN_FUNCTION)) {
+            System.out.println("Marking unknown symbol to localize: " + s);
             uSymbols.add(s);
-    }
-
-    /**
-     * Write the full symbol table. This method can also be extended
-     * to merge information per symbol (for example, if different
-     * entries contain complementary information).
-     *
-     * @param db         the database object to use
-     * @param factsFile  the facts file to use for writing
-     * @param symbols    the symbols table
-     * @param words      a set of machine words that might contain string pointers
-     */
-    private void writeSymbolTable(Database db, PredicateFile factsFile,
-                                  Map<String, List<SymbolInfo> > symbols,
-                                  Collection<Long> words) {
-        for (Map.Entry<String, List<SymbolInfo>> entry : symbols.entrySet()) {
-            String symbol = entry.getKey();
-            for (SymbolInfo si : entry.getValue()) {
-                String offset = si.offset == null ? UNKNOWN_OFFSET : Long.toString(si.offset);
-                // If used in global data, set dummy function name for string.
-                String func = si.function;
-                if (func.equals(UNKNOWN_FUNCTION) && words.contains(si.offset))
-                    func = "<<GLOBAL_DATA_SECTION>>";
-                // Skip strings belonging to unknown fuctions if option is set.
-                boolean skipString = onlyPreciseNativeStrings && func.equals(UNKNOWN_FUNCTION);
-                if (!skipString)
-                    db.add(factsFile, si.lib, func, symbol, offset);
-            }
         }
     }
 
     private void updateLibSymbolTable(Map<String, List<SymbolInfo>> symbols,
                                       String lib,
-                                      Map<String, Set<String>> xrefs) {
+                                      Map<String, Set<XRef>> xrefs) {
         Set<String> unknown = new HashSet<>();
         symbols.forEach((s, v) ->
                         v.forEach(v0 -> regUnknown(unknown, s, v0)));
 
         final long j = -1;
         for (String uString : unknown) {
-            System.out.println("updateLibSymbolTable('" + uString + "')");
-            Set<String> uXRefs = xrefs.get(uString);
+            // System.out.println("updateLibSymbolTable('" + uString + "')");
+            Set<XRef> uXRefs = xrefs.get(uString);
             if (uXRefs == null)
                 continue;
             System.out.println("Found xref information for: " + uString);
             List<SymbolInfo> l = symbols.get(uString);
-            for (String xref : uXRefs) {
-                l.add(new SymbolInfo(uString, lib, xref, j));
+            for (XRef xref : uXRefs) {
+                l.add(new SymbolInfo(uString, lib, xref.function, j));
             }
         }
     }

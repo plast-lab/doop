@@ -11,8 +11,8 @@ class RadareAnalysis extends BinaryAnalysis {
     private static final String doopHome = System.getenv(DOOP_HOME);
     private static final String LOC_MARKER = "STRING_LOC:";
 
-    RadareAnalysis(Database db, String lib) {
-        super(db, lib);
+    RadareAnalysis(Database db, String lib, boolean onlyPreciseNativeStrings) {
+        super(db, lib, onlyPreciseNativeStrings);
     }
     
     private static String getScript() {
@@ -48,7 +48,6 @@ class RadareAnalysis extends BinaryAnalysis {
             if (parts.length < 7) {
                 if (lineNo > IGNORE_ERRORS_BEFORE_LINE)
                     System.err.println("ERROR: cannot parse line " + lineNo + ": " + line);
-                System.out.println("CONTINUE");
                 continue;
             }
             StringBuilder sb = new StringBuilder();
@@ -56,14 +55,13 @@ class RadareAnalysis extends BinaryAnalysis {
                 sb.append(parts[i]);
             try {
                 long vaddr = hexToLong(parts[2]);
-                System.out.println(parts[2] + " | " + vaddr + " | " + sb.toString());
+                // System.out.println(parts[2] + " | " + vaddr + " | " + sb.toString());
                 strings.put(vaddr, sb.toString());
             } catch (NumberFormatException ex) {
                 if (lineNo > IGNORE_ERRORS_BEFORE_LINE) {
                     System.err.println("ERROR: cannot parse line " + lineNo + ": " + line);
                     ex.printStackTrace();
                 }
-                System.out.println("ERROR");
             }
         }
         System.err.println("Processed " + lineNo + " lines.");
@@ -78,14 +76,14 @@ class RadareAnalysis extends BinaryAnalysis {
      * @return            a map from strings to (sets of) functions
      */
     @Override
-    Map<String, Set<String>> findXRefs(Map<Long, String> binStrings) throws IOException {
+    Map<String, Set<XRef>> findXRefs(Map<Long, String> binStrings) throws IOException {
         System.out.println("Finding string xrefs with Radare2 in: " + lib);
 
-        Map<String, Set<String>> locs = new HashMap<>();
+        Map<String, Set<XRef>> xrefs = new HashMap<>();
 
         String script = getScript();
         if (script == null)
-            return locs;
+            return xrefs;
 
         File stringsFile = File.createTempFile("strings", ".txt");
         try (FileWriter writer = new FileWriter(stringsFile)) {
@@ -115,17 +113,32 @@ class RadareAnalysis extends BinaryAnalysis {
 
         for (String line : NativeScanner.runCommand(radareBuilder)) {
             System.out.println(line);
+            boolean success = false;
             if (line.startsWith(LOC_MARKER)) {
-                int tabIdx = line.indexOf("\t");
-                if (tabIdx > 0) {
-                    String func = line.substring(LOC_MARKER.length(), tabIdx);
-                    String s = line.substring(tabIdx+1);
-                    locs.computeIfAbsent(s, k -> new HashSet<>()).add(func);
-                } else
+                int tabIdx1 = line.indexOf("\t");
+                if (tabIdx1 > 0) {
+                    String func = line.substring(LOC_MARKER.length(), tabIdx1);
+                    if (func.equals("(nofunc)"))
+                        func = UNKNOWN_FUNCTION;
+                    int tabIdx2 = line.indexOf("\t", tabIdx1 + 1);
+                    if (tabIdx2 > 0) {
+                        String codeAddrStr = line.substring(tabIdx1+1, tabIdx2);
+                        long codeAddr = XRef.NO_ADDRESS;
+                        try {
+                            codeAddr = hexToLong(codeAddrStr);
+                        } catch (NumberFormatException ex) {
+                            System.err.println("WARNING: error parsing xref address: " + codeAddrStr);
+                        }
+                        String s = line.substring(tabIdx2+1);
+                        xrefs.computeIfAbsent(s, k -> new HashSet<>()).add(new XRef(lib, func, codeAddr));
+                        success = true;
+                    }
+                }
+                if (!success)
                     System.err.println("WARNING: malformed line: " + line);
             }
         }
-        return locs;
+        return xrefs;
     }
 
     @Override

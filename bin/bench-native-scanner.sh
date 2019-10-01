@@ -107,7 +107,8 @@ function setIDs() {
     local BENCHMARK="$1"
     ID_BASE="native-test-${BENCHMARK}-base"
     ID_SCANNER="native-test-${BENCHMARK}-scanner"
-    ID_SCANNER_LOCAL="${ID_SCANNER}-localized"
+    ID_SCANNER_LOCAL_OBJ="${ID_SCANNER}-loc-obj"
+    ID_SCANNER_LOCAL_RAD="${ID_SCANNER}-loc-rad"
     ID_SCANNER_SMART="${ID_SCANNER}-smart"
     ID_SCANNER_OFFSETS1="${ID_SCANNER}-dist-${STRING_DISTANCE1}"
     ID_SCANNER_OFFSETS2="${ID_SCANNER}-dist-${STRING_DISTANCE2}"
@@ -133,8 +134,9 @@ function runDoop() {
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_HEAPDL} --platform ${PLATFORM} --timeout ${TIMEOUT} --heapdl-file ${HPROF} |& tee ${CURRENT_DIR}/${ID_HEAPDL}.log
     # 3. Native scanner, default mode.
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
-    # 4. Native scanner, use only localized strings.
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL}.log
+    # 4. Native scanner, use only localized strings (binutils/Radare2 modes).
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_OBJ} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_OBJ}.log
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_RAD} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --only-precise-native-strings --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_RAD}.log
     # 5. Native scanner, "smart native targets" mode.
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
     # 6. Native scanner, "use string locality" mode.
@@ -164,9 +166,9 @@ function printStatsTable() {
     do
         setIDs "${BENCHMARK}"
         if [ "${BENCHMARK}" == "chrome" ]; then
-            MODES=( "" "-localized" "-smart" "-dist-${STRING_DISTANCE1}" "-dist-${STRING_DISTANCE2}" )
+            MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" "-dist-${STRING_DISTANCE2}" )
         else
-            MODES=( "" "-localized" "-smart" "-dist-${STRING_DISTANCE1}" )
+            MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" )
         fi
         for MODE in "${MODES[@]}"
         do

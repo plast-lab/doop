@@ -29,8 +29,8 @@ class BinutilsAnalysis extends BinaryAnalysis {
     private Section data;
     private Section rodata;
 
-    BinutilsAnalysis(Database db, String lib) {
-        super(db, lib);
+    BinutilsAnalysis(Database db, String lib, boolean onlyPreciseNativeStrings) {
+        super(db, lib, onlyPreciseNativeStrings);
 
         // Auto-detect architecture.
         try {
@@ -64,7 +64,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
     }
 
     @Override
-    public Map<String, Set<String>> findXRefs(Map<Long, String> binStrings) {
+    public Map<String, Set<XRef>> findXRefs(Map<Long, String> binStrings) {
         System.out.println("Using built-in scanner to find strings in functions...");
         if (arch.equals(Arch.X86))
             return findXRefsInX86(binStrings, lib);
@@ -74,8 +74,8 @@ class BinutilsAnalysis extends BinaryAnalysis {
             return findXRefsInAARCH64(binStrings, lib);
         else if (arch.equals(Arch.ARMEABI)) {
             // Fuse results for both armeabi/armeabi-v7a.
-            Map<String, Set<String>> eabi = findXRefsInARMEABI(binStrings, lib);
-            Map<String, Set<String>> eabi7 = findXRefsInARMEABIv7a(binStrings, lib);
+            Map<String, Set<XRef>> eabi = findXRefsInARMEABI(binStrings, lib);
+            Map<String, Set<XRef>> eabi7 = findXRefsInARMEABIv7a(binStrings, lib);
             return mergeMaps(eabi, eabi7);
         }
         System.err.println("Architecture not supported: " + arch);
@@ -85,15 +85,15 @@ class BinutilsAnalysis extends BinaryAnalysis {
     /**
      * Merge two maps from keys to collections of values. Parameters may be mutated.
      */
-    private static Map<String, Set<String>> mergeMaps(Map<String, Set<String>> map1,
-                                                      Map<String, Set<String>> map2) {
-        for (Map.Entry<String, Set<String>> entry : map2.entrySet()) {
+    private static <T> Map<String, Set<T>> mergeMaps(Map<String, Set<T>> map1,
+                                                     Map<String, Set<T>> map2) {
+        for (Map.Entry<String, Set<T>> entry : map2.entrySet()) {
             String key = entry.getKey();
-            Set<String> existing = map1.get(key);
+            Set<T> existing = map1.get(key);
             if (existing == null)
                 map1.put(key, entry.getValue());
             else {
-                Set<String> newValue = map1.get(key);
+                Set<T> newValue = map1.get(key);
                 newValue.addAll(entry.getValue());
                 map1.put(key, newValue);
             }
@@ -101,10 +101,15 @@ class BinutilsAnalysis extends BinaryAnalysis {
         return map1;
     }
 
-    private Map<String, Set<String>> findXRefsInX86(Map<Long, String> foundStrings, String lib) {
+    private void registerXRef(Map<String, Set<XRef>> xrefs, String str,
+                              String function) {
+        xrefs.computeIfAbsent(str, k -> new HashSet<>()).add(new XRef(lib, function, XRef.NO_ADDRESS));
+    }
+
+    private Map<String, Set<XRef>> findXRefsInX86(Map<Long, String> foundStrings, String lib) {
         Long address;
         String function = null;
-        Map<String, Set<String>> stringsInFunctions = new HashMap<>();
+        Map<String, Set<XRef>> xrefs = new HashMap<>();
         Map<String, Long> registers = null;
         Pattern funPattern = Pattern.compile("^.*[<](.*)[>][:]$");
         Pattern addPattern = Pattern.compile("^\\s+([a-f0-9]+).*add\\s+[$][0][x]([a-f0-9]+)[,][%](.*)$");
@@ -146,7 +151,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
                             String str = foundStrings.get(address);
                             if (debug)
                                 System.out.println("objdump disassemble string: '" + str + "' -> " + address);
-                            stringsInFunctions.computeIfAbsent(str, k -> new HashSet<>()).add(function);
+                            registerXRef(xrefs, str, function);
                         }
                     }
                 }
@@ -155,11 +160,11 @@ class BinutilsAnalysis extends BinaryAnalysis {
             System.err.println("Could not run objdump: " + ex.getMessage());
         }
 
-        return stringsInFunctions;
+        return xrefs;
     }
 
-    private Map<String, Set<String>> findXRefsInX86_64(Map<Long,String> foundStrings, String lib) {
-        Map<String, Set<String>> stringsInFunctions = new HashMap<>();
+    private Map<String, Set<XRef>> findXRefsInX86_64(Map<Long,String> foundStrings, String lib) {
+        Map<String, Set<XRef>> xrefs = new HashMap<>();
         Pattern leaPattern = Pattern.compile("^.*lea.*[#]\\s[0][x]([a-f0-9]+)$");
         for (Map.Entry<Long, String> entry : entryPoints.entrySet()) {
             try {
@@ -172,18 +177,18 @@ class BinutilsAnalysis extends BinaryAnalysis {
                         String str = foundStrings.get(address);
                         if (debug)
                             System.out.println("gdb disassemble string: '" + str + "' -> " + address);
-                        stringsInFunctions.computeIfAbsent(str, k -> new HashSet<>()).add(function);
+                        registerXRef(xrefs, str, function);
                     }
                 }
             } catch (IOException ex) {
                 System.err.println("Could not run gdb: " + ex.getMessage());
             }
         }
-        return stringsInFunctions;
+        return xrefs;
     }
 
-    private Map<String, Set<String>> findXRefsInAARCH64(Map<Long,String> foundStrings, String lib) {
-        Map<String, Set<String>> stringsInFunctions = new HashMap<>();
+    private Map<String, Set<XRef>> findXRefsInAARCH64(Map<Long,String> foundStrings, String lib) {
+        Map<String, Set<XRef>> xrefs = new HashMap<>();
         Pattern adrpPattern = Pattern.compile("^.*adrp\\s+([a-z0-9]+)[,]\\s[0][x]([a-f0-9]+)$");
         Pattern addPattern = Pattern.compile("^.*add\\s+([a-z0-9]+)[,]\\s([a-z0-9]+)[,]\\s[#][0][x]([a-f0-9]+)$");
         Pattern movPattern = Pattern.compile("^.*mov\\s+([a-z0-9]+)[,]\\s([a-z0-9]+)$");
@@ -203,7 +208,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
                         String str = foundStrings.get(address);
                         if (debug)
                             System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
-                        stringsInFunctions.computeIfAbsent(str, k -> new HashSet<>()).add(function);
+                        registerXRef(xrefs, str, function);
                     }
                     m = movPattern.matcher(line);
                     if (m.find() && registers.containsKey(m.group(2)))
@@ -213,10 +218,10 @@ class BinutilsAnalysis extends BinaryAnalysis {
                 System.err.println("Could not run gdb: " + ex.getMessage());
             }
         }
-        return stringsInFunctions;
+        return xrefs;
     }
 
-    private Map<String, Set<String>> findXRefsInARMEABIv7a(Map<Long, String> foundStrings, String lib) {
+    private Map<String, Set<XRef>> findXRefsInARMEABIv7a(Map<Long, String> foundStrings, String lib) {
         String function = null;
         Pattern addrCodePattern = Pattern.compile("^\\s+([a-f0-9]+)[:]\\s+([a-f0-9]+)\\s?([a-f0-9]*)\\s+.*$");
         Pattern funPattern = Pattern.compile("^.*[<](.*)[>][:]$");
@@ -227,7 +232,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
         Pattern movPattern = Pattern.compile("^\\s(\\w+)[,]\\s(\\w+)$");
         Matcher m;
         Map<String, String> registers = null, addressCode = new HashMap<>();
-        Map<String, Set<String>> stringsInFunctions = new HashMap<>();
+        Map<String, Set<XRef>> xrefs = new HashMap<>();
 
         ProcessBuilder objdumpBuilder = new ProcessBuilder(objdumpCmd, "-j", ".text", "-d", lib);
         try {
@@ -314,7 +319,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
                                 String str = foundStrings.get(address);
                                 if (debug)
                                     System.out.println("objdump disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
-                                stringsInFunctions.computeIfAbsent(str, k -> new HashSet<>()).add(function);
+                                registerXRef(xrefs, str, function);
                             }
                         } else if (m.group(4).equals("mov")) {
                             m = movPattern.matcher(instruction);
@@ -329,10 +334,10 @@ class BinutilsAnalysis extends BinaryAnalysis {
         } catch (IOException ex) {
             System.err.println("Could not run objdump: " + ex.getMessage());
         }
-        return stringsInFunctions;
+        return xrefs;
     }
 
-    private Map<String, Set<String>> findXRefsInARMEABI(Map<Long,String> foundStrings, String lib) {
+    private Map<String, Set<XRef>> findXRefsInARMEABI(Map<Long,String> foundStrings, String lib) {
         String function = null;
         Pattern funPattern = Pattern.compile(".*[<](.*)[>][:]$");
         Pattern insPattern = Pattern.compile("^\\s([a-f0-9]+)[:]\\s+([a-f0-9]+)\\s+[.]?(\\w+)(.*)$");
@@ -341,7 +346,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
         Pattern movPattern = Pattern.compile("^\\s+(\\w+)[,]\\s(\\w+)$");
         Matcher m;
         Map<String, String> registers = null, words = new HashMap<>();
-        Map<String, Set<String>> stringsInFunctions = new HashMap<>();
+        Map<String, Set<XRef>> xrefs = new HashMap<>();
 
         ProcessBuilder objdumpBuilder = new ProcessBuilder(objdumpCmd, "-j", ".text", "-d", lib);
         try {
@@ -381,7 +386,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
                                     String str = foundStrings.get(address);
                                     if (debug)
                                         System.out.println("objdump disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
-                                    stringsInFunctions.computeIfAbsent(str, k -> new HashSet<>()).add(function);
+                                    registerXRef(xrefs, str, function);
                                 } catch (NumberFormatException ex) {
                                     System.err.println("Number format error '" + ex.getMessage() + "' in line: " + line);
                                 }
@@ -398,7 +403,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
         } catch (IOException ex) {
             System.err.println("Could not run objdump: " + ex.getMessage());
         }
-        return stringsInFunctions;
+        return xrefs;
     }
 
     @Override

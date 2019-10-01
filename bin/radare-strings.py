@@ -47,6 +47,7 @@ def xrefs(r, strings, out):
     rCmd(r, 'aa')
     rCmd(r, 'aae')
     rCmd(r, 'aav')
+    rCmd(r, 'aan')
 
     # Localize each string by (a) finding its offset and (b) following its xrefs.
     for line in strings:
@@ -61,11 +62,11 @@ def xrefs(r, strings, out):
         for ref in refs.splitlines():
             refParts = ref.split()
             func = refParts[0].encode('utf-8')
-            if func != '(nofunc)':
-                info = 'STRING_LOC:' + func + '\t' + s
-                if (debug):
-                    print(info)
-                out.write(info + '\n')
+            codeAddr = refParts[1].encode('utf-8')
+            info = 'STRING_LOC:' + func + '\t' + codeAddr + '\t' + s
+            if (debug):
+                print(info)
+            out.write(info + '\n')
 
 def stripEOL(s):
     if s.endswith('\n'):

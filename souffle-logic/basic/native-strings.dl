@@ -27,6 +27,20 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
 
 #endif // USE_STRING_LOCALITY
 
+// The distance between string xrefs in the code. This should be big
+// enough to catch strings used together in major calling conventions.
+#define XREF_DISTANCE 16
+
+// If xref information exists, pair strings that are referenced together in code.
+PossibleNativeCodeTargetMethod(?method, "<<UNKNOWN>>", ?file) :-
+  _NativeMethodTypeCandidate(?file, ?function, ?descriptor, _),
+  _NativeNameCandidate(?file, ?function, ?name, _),
+  _NativeXRef(?descriptor, ?file, _, ?dataAddr1),
+  _NativeXRef(?name, ?file, _, ?dataAddr2),
+  Method_SimpleName(?method, ?name),
+  Method_JVMDescriptor(?method, ?descriptor),
+  ((?dataAddr1 - ?dataAddr2) <= XREF_DISTANCE ; (?dataAddr2 - ?dataAddr1) <= XREF_DISTANCE).
+
 .decl PossibleNativeCodeTargetMethodLocalized(?method:Method, ?function:symbol, ?file:symbol)
 
 PossibleNativeCodeTargetMethodLocalized(?method, ?function, ?file) :-
