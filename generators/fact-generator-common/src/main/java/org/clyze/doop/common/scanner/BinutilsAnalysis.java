@@ -128,7 +128,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
 
                 m = addPattern.matcher(line);
                 if (m.find()) {
-                    Long value = Long.parseLong(m.group(1),16) + Long.parseLong(m.group(2),16);
+                    Long value = hexToLong(m.group(1)) + hexToLong(m.group(2));
                     if (registers == null)
                         System.err.println("WARNING: no registers map initialized for 'add' pattern");
                     else
@@ -143,12 +143,12 @@ class BinutilsAnalysis extends BinaryAnalysis {
                     else if (registers.get(m.group(3)) != null) {
                         address = registers.get(m.group(3));
                         if (m.group(1).equals(" "))
-                            address += Long.parseLong(m.group(2),16);
+                            address += hexToLong(m.group(2));
                         else if (m.group(1).equals("-"))
-                            address -= Long.parseLong(m.group(2),16);
+                            address -= hexToLong(m.group(2));
 
-                        if (foundStrings.get(address) != null) {
-                            String str = foundStrings.get(address);
+                        String str = foundStrings.get(address);
+                        if (str != null) {
                             if (debug)
                                 System.out.println("objdump disassemble string: '" + str + "' -> " + address);
                             registerXRef(xrefs, str, function);
@@ -173,11 +173,13 @@ class BinutilsAnalysis extends BinaryAnalysis {
                 for (String line : NativeScanner.runCommand(gdbBuilder)) {
                     Matcher m = leaPattern.matcher(line);
                     if (m.find()) {
-                        long address = Long.parseLong(m.group(1),16);
+                        long address = hexToLong(m.group(1));
                         String str = foundStrings.get(address);
-                        if (debug)
-                            System.out.println("gdb disassemble string: '" + str + "' -> " + address);
-                        registerXRef(xrefs, str, function);
+                        if (str != null) {
+                            if (debug)
+                                System.out.println("gdb disassemble string: '" + str + "' -> " + address);
+                            registerXRef(xrefs, str, function);
+                        }
                     }
                 }
             } catch (IOException ex) {
@@ -204,11 +206,13 @@ class BinutilsAnalysis extends BinaryAnalysis {
                         registers.put(m.group(1),m.group(2));
                     m = addPattern.matcher(line);
                     if (m.find() && registers.containsKey(m.group(2))) {
-                        Long address = Long.parseLong(registers.get(m.group(2)),16) + Long.parseLong(m.group(3),16);
+                        Long address = hexToLong(registers.get(m.group(2))) + hexToLong(m.group(3));
                         String str = foundStrings.get(address);
-                        if (debug)
-                            System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
-                        registerXRef(xrefs, str, function);
+                        if (str != null) {
+                            if (debug)
+                                System.out.println("gdb disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                            registerXRef(xrefs, str, function);
+                        }
                     }
                     m = movPattern.matcher(line);
                     if (m.find() && registers.containsKey(m.group(2)))
@@ -301,25 +305,27 @@ class BinutilsAnalysis extends BinaryAnalysis {
                         } else if (m.group(4).contains("add") || m.group(4).equals("adr")) {
                             m = addPattern.matcher(instruction);
                             if (m.find() && registers.containsKey(m.group(1)) && registers.containsKey(m.group(2))) {
-                                long address = Long.parseLong(registers.get(m.group(2)), 16);
+                                long address = hexToLong(registers.get(m.group(2)));
                                 if (!m.group(3).equals("")) {
                                     if (!registers.containsKey(m.group(3)))
                                         if (m.group(4).contains("#"))
-                                            address += Long.parseLong(m.group(4).substring(m.group(4).lastIndexOf('#')),16);
+                                            address += hexToLong(m.group(4).substring(m.group(4).lastIndexOf('#')));
                                         else
                                             continue;
-                                    address += Long.parseLong(registers.get(m.group(3)), 16);
+                                    address += hexToLong(registers.get(m.group(3)));
                                 } else
-                                    address += Long.parseLong(registers.get(m.group(1)), 16);
+                                    address += hexToLong(registers.get(m.group(1)));
                                 int len = Long.toHexString(address).length();
                                 if (len>registers.get(m.group(1)).length() && len>registers.get(m.group(2)).length())
-                                    address = Long.parseLong(Long.toHexString(address).substring(1),16);
+                                    address = hexToLong(Long.toHexString(address).substring(1));
                                 registers.put(m.group(1),Long.toHexString(address));
-                                address += Long.parseLong("4",16);
+                                address += 4;
                                 String str = foundStrings.get(address);
-                                if (debug)
-                                    System.out.println("objdump disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
-                                registerXRef(xrefs, str, function);
+                                if (str != null) {
+                                    if (debug)
+                                        System.out.println("objdump disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                                    registerXRef(xrefs, str, function);
+                                }
                             }
                         } else if (m.group(4).equals("mov")) {
                             m = movPattern.matcher(instruction);
@@ -381,12 +387,14 @@ class BinutilsAnalysis extends BinaryAnalysis {
                             m = addPattern.matcher(instruction);
                             if (m.find() && registers.containsKey(m.group(2)) && registers.containsKey(m.group(3))) {
                                 try {
-                                    long address = Long.parseLong(registers.get(m.group(2)), 16) + Long.parseLong("8", 16);
-                                    address += Long.parseLong(registers.get(m.group(3)), 16);
+                                    long address = hexToLong(registers.get(m.group(2))) + 8;
+                                    address += hexToLong(registers.get(m.group(3)));
                                     String str = foundStrings.get(address);
-                                    if (debug)
-                                        System.out.println("objdump disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
-                                    registerXRef(xrefs, str, function);
+                                    if (str != null) {
+                                        if (debug)
+                                            System.out.println("objdump disassemble string: '" + str + "' -> " + registers.get(m.group(1)));
+                                        registerXRef(xrefs, str, function);
+                                    }
                                 } catch (NumberFormatException ex) {
                                     System.err.println("Number format error '" + ex.getMessage() + "' in line: " + line);
                                 }
@@ -569,7 +577,7 @@ class EntryPoint {
             if (field.charAt(0) == '\'')
                 field = field.substring(1);
             try {
-                addr = Long.parseLong(field, 16);
+                addr = BinaryAnalysis.hexToLong(field);
             } catch (NumberFormatException ex) {
                 System.err.println("Cannot compute address[0.." + firstSpaceIndex + "] for field: " + field);
             }
