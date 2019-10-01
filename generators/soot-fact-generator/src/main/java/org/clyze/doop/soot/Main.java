@@ -260,7 +260,7 @@ public class Main {
 
         if (writeFacts) {
 
-            writer.writePreliminaryFacts(classes, java, sootParameters);
+            writer.writePreliminaryFacts(classes, java);
             db.flush();
 
             if (android != null) {

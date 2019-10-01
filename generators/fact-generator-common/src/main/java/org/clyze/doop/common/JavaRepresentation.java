@@ -54,6 +54,7 @@ public class JavaRepresentation {
         return "<" + declClass + ": " + type + " " + name + ">";
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static String stripQuotes(CharSequence s) {
         return qPat.matcher(s).replaceAll("");
     }

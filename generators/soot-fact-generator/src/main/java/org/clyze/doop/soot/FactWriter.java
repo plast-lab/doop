@@ -1008,7 +1008,7 @@ class FactWriter extends JavaFactWriter {
             }
     }
 
-    public void writePreliminaryFacts(Collection<SootClass> classes, BasicJavaSupport java, SootParameters sootParameters) {
+    public void writePreliminaryFacts(Collection<SootClass> classes, BasicJavaSupport java) {
         classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(this::writeApplicationClass);
         writePreliminaryFacts(java);
     }

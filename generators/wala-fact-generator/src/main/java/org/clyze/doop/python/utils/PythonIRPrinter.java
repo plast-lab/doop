@@ -33,7 +33,7 @@ public class PythonIRPrinter {
             if(basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock)
             {
                 writer.write("\t\tHandler");
-                Iterator<TypeReference> types = ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCaughtExceptionTypes();
+                Iterator<TypeReference> types = basicBlock.getCaughtExceptionTypes();
                 while(types.hasNext())
                     writer.write(" " + types.next().getName().toString());
                 writer.write("\n");

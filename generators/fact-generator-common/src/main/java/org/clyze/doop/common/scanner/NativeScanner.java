@@ -261,7 +261,7 @@ public class NativeScanner {
     private void updateLibSymbolTable(Map<String, List<SymbolInfo>> symbols,
                                       String lib,
                                       Map<String, Set<XRef>> xrefs) {
-        Set<String> unknown = new HashSet<>();
+        Collection<String> unknown = new HashSet<>();
         symbols.forEach((s, v) ->
                         v.forEach(v0 -> regUnknown(unknown, s, v0)));
 
