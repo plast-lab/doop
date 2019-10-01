@@ -28,7 +28,7 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
 
 // The distance between string xrefs in the code. This should be big
 // enough to catch strings used together in major calling conventions.
-#define XREF_DISTANCE 16
+#define XREF_DISTANCE 15
 
 // If xref information exists, pair strings that are referenced together in code.
 PossibleNativeCodeTargetMethod(?method, "<<UNKNOWN>>", ?file) :-
