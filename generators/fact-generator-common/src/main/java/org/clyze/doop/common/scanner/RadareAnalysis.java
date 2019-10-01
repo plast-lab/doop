@@ -95,8 +95,10 @@ class RadareAnalysis extends BinaryAnalysis {
                     // cannot support some UTF-8 codes.
                     boolean nonLatin = false;
                     for (char c : s.toCharArray())
-                        if (Character.UnicodeBlock.of(c) != Character.UnicodeBlock.BASIC_LATIN)
+                        if (Character.UnicodeBlock.of(c) != Character.UnicodeBlock.BASIC_LATIN) {
                             nonLatin = true;
+                            break;
+                        }
                     if (!nonLatin)
                         try {
                             writer.write(addr + " " + s + "\n");
