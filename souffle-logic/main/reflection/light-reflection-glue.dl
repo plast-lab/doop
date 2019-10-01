@@ -109,7 +109,7 @@ java_lang_reflect_Constructor_newInstance(?invocation, ?to, ?from) :-
   AssignReturnValue(?invocation, ?to), VirtualMethodInvocation_Base(?invocation, ?from).
 
 // Same as hard-coded string concatenation in rules.dl.
-#define NewInstanceMockObj(t) (cat(cat("<reflective Constructor.newInstance/new ", ?type), ">"))
+#define NewInstanceMockObj(t) (cat(cat("<reflective Constructor.newInstance/new ", t), ">"))
 
 // Create a mock object and call its default constructor from this invocation.
 MockValueConsMacro(NewInstanceMockObj(?type), ?type),
