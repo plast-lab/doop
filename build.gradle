@@ -119,7 +119,6 @@ dependencies {
             "commons-io:commons-io:2.4",                        // File Utils
             "com.google.code.gson:gson:2.4",                    // GSON library
             "com.github.plast-lab:HeapDL:$heapDLVersion",
-            "com.google.guava:guava:27.1-jre",
             "com.jcabi:jcabi-manifests:1.1"                     // manifest reader
 
     runtime "org.clyze:jphantom:1.2",                           // JPhantom is a runtime dependency
