@@ -10,8 +10,7 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   Method_SimpleName(?method, ?name),
   Method_JVMDescriptor(?method, ?descriptor),
   _NativeStringsDistance(?nativeStringsDistance),
-  (?offset1 - ?offset2) <= ?nativeStringsDistance,
-  (?offset2 - ?offset1) <= ?nativeStringsDistance.
+  ((?offset1 - ?offset2) <= ?nativeStringsDistance ; (?offset2 - ?offset1) <= ?nativeStringsDistance).
 
 #else
 
