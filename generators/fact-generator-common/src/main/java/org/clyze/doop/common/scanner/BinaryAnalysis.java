@@ -124,4 +124,11 @@ abstract class BinaryAnalysis {
             s = s.substring(2);
         return Long.parseLong(s.trim(), 16);
     }
+
+    // Auxiliary hex converter.
+    static int hexToInt(String s) {
+        if (s.startsWith("0x"))
+            s = s.substring(2);
+        return Integer.parseInt(s.trim(), 16);
+    }
 }

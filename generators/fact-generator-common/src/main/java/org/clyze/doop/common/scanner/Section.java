@@ -7,16 +7,18 @@ import java.util.*;
 // A representation of a section in a binary.
 class Section {
     private final Arch arch;
-    private final int offset;
     private final int size;
+    private final long vma;
+    private final long offset;
     private final byte[] data;
     private SortedMap<Long, String> foundStrings;
     private final Set<Long> words;
 
-    private Section(Arch arch, int offset, int size, byte[] data) {
+    private Section(Arch arch, int size, long vma, long offset, byte[] data) {
         this.arch = arch;
-        this.offset = offset;
         this.size = size;
+        this.vma = vma;
+        this.offset = offset;
         this.data = data;
         this.words = new HashSet<>();
     }
@@ -34,45 +36,38 @@ class Section {
                                       String sectionName, Iterable<String> lines)
         throws IOException {
 
-        int sizeIdx = -1;
-        int offsetIdx = -1;
+        int lineNo = 0;
+        final int IGNORE_ERRORS_BEFORE_LINE = 3;
         for (String line : lines) {
-            // Autodetect column positions.
-            if (sizeIdx == -1) {
-                int sizeIdx0 = line.indexOf("Size ");
-                if (sizeIdx0 != -1)
-                    sizeIdx = sizeIdx0;
-            }
-            if (offsetIdx == -1) {
-                int offsetIdx0 = line.indexOf("File off");
-                if (offsetIdx0 != -1)
-                    offsetIdx = offsetIdx0;
-            }
-            if (line.contains(sectionName + " ")) {
-                if ((sizeIdx == -1) || (offsetIdx == -1)) {
-                    System.err.println("Error, cannot find section " + sectionName + " from output:");
-                    for (String l : lines)
-                        System.out.println(l);
-                    return null;
-                } else {
-                    int sizeEndIdx = line.indexOf(' ', sizeIdx);
-                    int offsetEndIdx = line.indexOf(' ', offsetIdx);
-                    int size = (int)Long.parseLong(line.substring(sizeIdx, sizeEndIdx), 16);
-                    int offset = (int)Long.parseLong(line.substring(offsetIdx, offsetEndIdx), 16);
-                    System.out.println(sectionName + " section: offset = " + offset + ", size = " + size);
+            if (!line.contains(sectionName + " "))
+                continue;
+            String[] parts = line.trim().split("\\s+");
+            if (parts.length < 7)
+                continue;
+            try {
+                String secName = parts[1];
+                System.out.println(secName + ": " + secName.trim().equals(sectionName));
+                int size = BinaryAnalysis.hexToInt(parts[2]);
+                long vma = BinaryAnalysis.hexToLong(parts[3]);
+                long offset = BinaryAnalysis.hexToLong(parts[5]);
+                System.out.println(sectionName + " section: offset = " + offset + ", size = " + size + ", vma = " + vma);
 
-                    // Read section from the library.
-                    RandomAccessFile raf = new RandomAccessFile(lib, "r");
-                    raf.seek(offset);
-                    byte[] bytes = new byte[size];
-                    raf.readFully(bytes);
+                // Read section from the library.
+                RandomAccessFile raf = new RandomAccessFile(lib, "r");
+                raf.seek(offset);
+                byte[] bytes = new byte[size];
+                raf.readFully(bytes);
 
-                    System.out.println("Section fully read: " + sectionName);
-                    return new Section(arch, offset, size, bytes);
-                }
+                System.out.println("Section fully read: " + sectionName);
+                return new Section(arch, size, vma, offset, bytes);
+            } catch (NumberFormatException ex) {
             }
+
         }
-        System.out.println("Library " + lib + " does not contain a " + sectionName + " section.");
+
+        System.err.println("Error, cannot find section " + sectionName + " from output:");
+        for (String l : lines)
+            System.out.println(l);
         return null;
     }
 
@@ -85,14 +80,15 @@ class Section {
         if (this.foundStrings == null) {
             this.foundStrings = new TreeMap<>();
             StringBuilder foundString = new StringBuilder();
-            long addr = offset;
+            long addr = vma;
             for (int i = 0; i < data.length; i++)
                 if (data[i] == 0) {
                     if (!foundString.toString().equals("")) {
                         foundStrings.put(addr, foundString.toString());
                         foundString = new StringBuilder();
                     }
-                    addr = offset + i + 1;
+                    // Compute address of next string.
+                    addr = vma + i + 1;
                 } else
                     foundString.append((char) data[i]);
         }
@@ -100,7 +96,7 @@ class Section {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder("Section [offset = " + offset + ", size = " + size + "]\n");
+        StringBuilder sb = new StringBuilder("Section [vma = " + vma + ", file offset = " + offset + ", size = " + size + "]\n");
         strings().forEach((Long addr, String s) -> sb.append(addr).append(": String '").append(s).append("'\n"));
         return sb.toString();
     }
