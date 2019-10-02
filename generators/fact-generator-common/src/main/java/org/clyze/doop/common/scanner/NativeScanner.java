@@ -79,6 +79,8 @@ public class NativeScanner {
                 return;
             }
             System.out.println("Total strings: " + allStrings.size());
+            if (debug)
+                allStrings.forEach ((k, v) -> System.out.println(k + " -> " + v));
 
             // Filter the strings to work with a more manageable set
             // of strings.

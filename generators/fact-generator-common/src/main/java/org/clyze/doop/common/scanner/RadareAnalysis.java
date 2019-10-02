@@ -1,12 +1,14 @@
 package org.clyze.doop.common.scanner;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 import org.clyze.doop.common.Database;
 
 // This class implements the analysis of the native scanner that uses Radare2.
 class RadareAnalysis extends BinaryAnalysis {
 
+    private static final boolean debug = false;
     private static final String DOOP_HOME = "DOOP_HOME";
     private static final String doopHome = System.getenv(DOOP_HOME);
     private static final String LOC_MARKER = "STRING_LOC:";
@@ -113,8 +115,13 @@ class RadareAnalysis extends BinaryAnalysis {
         ProcessBuilder radareBuilder = new ProcessBuilder("python", script, lib, stringsFile.getCanonicalPath(), outFile.getCanonicalPath());
         System.out.println("Radare command line: " + radareBuilder.command());
 
-        for (String line : NativeScanner.runCommand(radareBuilder)) {
-            System.out.println(line);
+        List<String> output = NativeScanner.runCommand(radareBuilder);
+        if (debug)
+            output.forEach(System.out::println);
+
+        for (String line : Files.readAllLines(outFile.toPath())) {
+            if (debug)
+                System.out.println(line);
             boolean success = false;
             if (line.startsWith(LOC_MARKER)) {
                 int tabIdx1 = line.indexOf("\t");

@@ -11,6 +11,6 @@ class XRef {
         this.codeAddr = codeAddr;
     }
     public String toString() {
-        return "[" + lib + "]" + codeAddr + "@" + function;
+        return codeAddr + "@" + function + "@" + lib;
     }
 }
