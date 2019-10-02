@@ -108,9 +108,23 @@ public class NativeScanner {
             if (debug)
                 strings.forEach((k, v) -> System.out.println(k + " -> " + v));
 
+            // If name or method type sets are empty, do not continue,
+            // as their product will eventually be empty as well.
+            int namesCount = nameSymbols.keySet().size();
+            int methodTypesCount = methodTypeSymbols.keySet().size();
+            if (namesCount == 0 || methodTypesCount == 0) {
+                System.out.println("Product [name x type] is empty, ignoring native library.");
+                return;
+            } else {
+                System.out.println("Possible method/class names: " + namesCount);
+                System.out.println("Possible method types found: " + methodTypesCount);
+            }
+
             // Find in which function every string is used.
+            long xrefsTime1 = System.currentTimeMillis();
             Map<String, Set<XRef>> xrefs = analysis.findXRefs(strings);
-            System.out.println("Computed " + xrefs.size() + " xrefs.");
+            long xrefsTime2 = System.currentTimeMillis();
+            System.out.println("Computed " + xrefs.size() + " xrefs (time: " + ((xrefsTime2 - xrefsTime1) / 1000.0) + " sec)");
             if (debug)
                 xrefs.forEach ((k, v) -> System.out.println("XREF: '" + k + "' -> " + v) );
 
@@ -139,15 +153,8 @@ public class NativeScanner {
             updateLibSymbolTable(methodTypeSymbols, lib, xrefs);
 
             // Finally write facts.
-            int namesCount = nameSymbols.keySet().size();
-            int methodTypesCount = methodTypeSymbols.keySet().size();
-            if (namesCount == 0 || methodTypesCount == 0)
-                System.out.println("Product [name x type] is empty, ignoring native library.");
-            else {
-                System.out.println("Possible method/class names: " + namesCount);
-                System.out.println("Possible method types found: " + methodTypesCount);
-                analysis.writeFacts(xrefs, nameSymbols, methodTypeSymbols);
-            }
+            analysis.writeFacts(xrefs, nameSymbols, methodTypeSymbols);
+
         } catch (IOException ex) {
             ex.printStackTrace();
         }
