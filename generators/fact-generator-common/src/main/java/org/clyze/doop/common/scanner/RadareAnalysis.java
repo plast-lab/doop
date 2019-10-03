@@ -158,7 +158,7 @@ class RadareAnalysis extends BinaryAnalysis {
                     vAddr = hexToLong(vAddrStr);
                     size = Integer.parseInt(sizeStr.trim());
                     offset = hexToLong(offsetStr);
-                    sec[0] = new Section(secName, null, lib, size, vAddr, offset);
+                    sec[0] = new Section(secName, arch, lib, size, vAddr, offset);
                 } catch (NumberFormatException ex) {
                     System.err.println("WARNING: error parsing section: " + secName + " " + vAddrStr + " " + sizeStr);
                 }
