@@ -18,6 +18,9 @@ def main():
     elif mode == 'sections' and argsNum == 4:
         with open(sys.argv[3], 'w') as out:
             sections(r, out)
+    elif mode == 'epoints' and argsNum == 4:
+        with open(sys.argv[3], 'w') as out:
+            entryPoints(r, out)
     elif mode == 'xrefs' and argsNum == 5:
         with open(sys.argv[3], 'r') as strings:
             with open(sys.argv[4], 'w') as out:
@@ -29,7 +32,7 @@ def main():
 def usage():
     print('Usage: radare.py MODE BINARY [STRINGS_FILE] [OUT_FILE]')
     print('')
-    print('  MODE                   one of "strings", "xrefs", "sections"')
+    print('  MODE                   one of "strings", "xrefs", "sections", "epoints"')
     print('  BINARY                 a native code binary')
     print('  LOCALIZE_STRINGS_FILE  a file containing strings to localize')
     print('                         (expensive analysis)')
@@ -39,6 +42,7 @@ def usage():
     print('  radare.py strings lib.so        # show all strings in library')
     print('  radare.py xrefs lib.so in out   # show containing function for strings in file \'in\', write results to file \'out\'')
     print('  radare.py sections lib.so out   # read library sections, write them to file \'out\'')
+    print('  radare.py epoints lib.so out    # read library entry points, write them to file \'out\'')
     sys.exit(0)
 
 def rCmd(r, c):
@@ -86,54 +90,51 @@ def findStrings(r, out):
     print('Reading binary strings...')
     # if you want to analyze binary file
     # rCmd(r, 'aaaa')
-    stringLines = rCmd(r, 'iz')
-    flagCounter = 0
-    for stringLine in stringLines.splitlines():
-        if debug:
-            print stringLine.encode('utf-8')
-        flagCounter += 1
-        if flagCounter < 3:
-            continue;
-        lineParts = stringLine.split()
-        if len(lineParts) < 8:
-            # This also catches empty strings, so it is not
-            # neccessarily an error.
-            if debug:
-                print("IGNORED: " + stringLine)
-            continue
+    processTable(r, out, 'iz', 3, 8, stringProc)
+
+def stringProc(lineParts):
         vaddr = lineParts[2]
         string = ''.join(lineParts[7:])
-        try:
-            info = 'STRING:' + vaddr + '\t' + string.encode('utf-8')
-            if debug:
-                print(info)
-            out.write(info + '\n')
-        except:
-            if debug:
-                print("IGNORED: " + stringLine)
+        return 'STRING:' + vaddr + '\t' + string.encode('utf-8')
 
 # Sections mode:  list binary sections.
 def sections(r, out):
     print('Reading binary sections...')
-    stringLines = rCmd(r, 'iS')
+    processTable(r, out, 'iS', 3, 7, sectionProc)
+
+def sectionProc(lineParts):
+    offset = lineParts[1]
+    size = lineParts[2]
+    vaddr = lineParts[3]
+    sectionName = ''.join(lineParts[6:]).encode('utf-8')
+    return 'SECTION:' + sectionName + '\t' + vaddr + '\t' + size + '\t' + offset
+
+# Sections mode:  list binary sections.
+def entryPoints(r, out):
+    print('Reading binary entry points...')
+    processTable(r, out, 'iE', 3, 7, entryPointProc)
+
+def entryPointProc(lineParts):
+    vaddr = lineParts[2]
+    name = lineParts[6]
+    return 'ENTRY_POINT:' + vaddr + '\t' + name
+
+def processTable(r, out, cmd, IGNORE_FIRST, COLUMNS, proc):
+    stringLines = rCmd(r, cmd)
     flagCounter = 0
     for stringLine in stringLines.splitlines():
         if debug:
             print stringLine.encode('utf-8')
         flagCounter += 1
-        if flagCounter < 3:
+        if flagCounter < IGNORE_FIRST:
             continue;
         lineParts = stringLine.split()
-        if len(lineParts) < 7:
+        if len(lineParts) < COLUMNS:
             if debug:
                 print("IGNORED: " + stringLine)
             continue
-        offset = lineParts[1]
-        size = lineParts[2]
-        vaddr = lineParts[3]
-        sectionName = ''.join(lineParts[6:]).encode('utf-8')
         try:
-            info = 'SECTION:' + sectionName + '\t' + vaddr + '\t' + size + '\t' + offset
+            info = proc(lineParts)
             if debug:
                 print(info)
             out.write(info + '\n')

@@ -17,6 +17,7 @@ class RadareAnalysis extends BinaryAnalysis {
     private static final String LOC_MARKER = "STRING_LOC:";
     private static final String STR_MARKER = "STRING:";
     private static final String SEC_MARKER = "SECTION:";
+    private static final String EP_MARKER = "ENTRY_POINT:";
 
     RadareAnalysis(Database db, String lib, boolean onlyPreciseNativeStrings) {
         super(db, lib, onlyPreciseNativeStrings);
@@ -163,6 +164,26 @@ class RadareAnalysis extends BinaryAnalysis {
             });
         processMultiColumnFile(outFile, SEC_MARKER, 4, proc);
         return sec[0];
+    }
+
+    @Override
+    public void initEntryPoints() throws IOException {
+        File outFile = File.createTempFile("sections-out", ".txt");
+
+        runRadare("epoints", lib, outFile.getCanonicalPath());
+
+        Consumer<ArrayList<String>> proc = (l -> {
+                String vAddrStr = l.get(0);
+                String name = l.get(1);
+                long vAddr = UNKNOWN_ADDRESS;
+                try {
+                    vAddr = hexToLong(vAddrStr);
+                    entryPoints.put(vAddr, name);
+                } catch (NumberFormatException ex) {
+                    System.err.println("WARNING: error parsing section: " + vAddrStr + " " + name);
+                }
+            });
+        processMultiColumnFile(outFile, EP_MARKER, 2, proc);
     }
 
     private void processMultiColumnFile(File f, String prefix, int numColumns,
