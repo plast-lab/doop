@@ -16,6 +16,8 @@ abstract class BinaryAnalysis {
     private static final String UNKNOWN_OFFSET = "-1";
     // Dummy value for "function" column in facts.
     static final String UNKNOWN_FUNCTION = "-";
+    // Dummy address.
+    public static final long UNKNOWN_ADDRESS = -1;
 
     // The database object to use for writing facts.
     private final Database db;
@@ -56,6 +58,11 @@ abstract class BinaryAnalysis {
      * Returns a list of pointer values that may point to global data.
      */
     abstract Set<Long> getGlobalDataPointers() throws IOException;
+
+    /**
+     * Reads a section by name.
+     */
+    abstract Section getSection(String sectionName) throws IOException;
 
     /**
      * Write the facts computed by the analysis.

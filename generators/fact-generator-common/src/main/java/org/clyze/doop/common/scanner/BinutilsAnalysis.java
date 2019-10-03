@@ -103,7 +103,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
 
     private void registerXRef(Map<String, Set<XRef>> xrefs, String str,
                               String function) {
-        xrefs.computeIfAbsent(str, k -> new HashSet<>()).add(new XRef(lib, function, XRef.NO_ADDRESS));
+        xrefs.computeIfAbsent(str, k -> new HashSet<>()).add(new XRef(lib, function, UNKNOWN_ADDRESS));
     }
 
     private Map<String, Set<XRef>> findXRefsInX86(Map<Long, String> foundStrings, String lib) {
@@ -430,13 +430,39 @@ class BinutilsAnalysis extends BinaryAnalysis {
 
     private void analyzeSections() throws IOException {
         System.out.println("Reading section headers...");
-        ProcessBuilder builder = new ProcessBuilder(objdumpCmd, "--headers", lib);
-        List<String> lines = NativeScanner.runCommand(builder);
-        this.rodata = Section.fromObjdump(arch, lib, ".rodata", lines);
+        this.rodata = getSection(".rodata");
         if (debug)
             System.out.println(rodata.toString());
 
-        this.data = Section.fromObjdump(arch, lib, ".data", lines);
+        this.data = getSection(".data");
+    }
+
+    @Override
+    public Section getSection(String sectionName) throws IOException {
+        ProcessBuilder builder = new ProcessBuilder(objdumpCmd, "--headers", lib);
+        List<String> lines = NativeScanner.runCommand(builder);
+        int lineNo = 0;
+        final int IGNORE_ERRORS_BEFORE_LINE = 3;
+        for (String line : lines) {
+            if (!line.contains(sectionName + " "))
+                continue;
+            String[] parts = line.trim().split("\\s+");
+            if (parts.length < 7)
+                continue;
+            try {
+                String secName = parts[1];
+                System.out.println(secName + ": " + secName.trim().equals(sectionName));
+                int size = BinaryAnalysis.hexToInt(parts[2]);
+                long vma = BinaryAnalysis.hexToLong(parts[3]);
+                long offset = BinaryAnalysis.hexToLong(parts[5]);
+                return new Section(secName, arch, lib, size, vma, offset);
+            } catch (NumberFormatException ex) {
+            }
+        }
+        System.err.println("Error, cannot find section " + sectionName + " from output:");
+        for (String l : lines)
+            System.out.println(l);
+        return null;
     }
 
     // @Override

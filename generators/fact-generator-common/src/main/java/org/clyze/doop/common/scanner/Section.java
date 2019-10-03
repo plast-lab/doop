@@ -6,68 +6,42 @@ import java.util.*;
 
 // A representation of a section in a binary.
 class Section {
+    private final String name;
     private final Arch arch;
+    private final String lib;
     private final int size;
     private final long vma;
     private final long offset;
-    private final byte[] data;
     private SortedMap<Long, String> foundStrings;
     private final Set<Long> words;
 
-    private Section(Arch arch, int size, long vma, long offset, byte[] data) {
+    Section(String name, Arch arch, String lib, int size, long vma, long offset) {
+        this.name = name;
         this.arch = arch;
+        this.lib = lib;
         this.size = size;
         this.vma = vma;
         this.offset = offset;
-        this.data = data;
+        System.out.println("Section " + name + ": offset = " + offset + ", size = " + size + ", vma = " + vma);
         this.words = new HashSet<>();
     }
 
-    /*
-     * Object builder from objdump output.
+    /**
+     * Read section data from the library file.
      *
-     * @param arch         the library architecture
-     * @param lib          the library path
-     * @param sectionName  the name of the section
-     * @param lines        the text output of objdump
-     * @return             a section object or null if no section was found
+     * @return the data as a byte array
      */
-    public static Section fromObjdump(Arch arch, String lib,
-                                      String sectionName, Iterable<String> lines)
-        throws IOException {
-
-        int lineNo = 0;
-        final int IGNORE_ERRORS_BEFORE_LINE = 3;
-        for (String line : lines) {
-            if (!line.contains(sectionName + " "))
-                continue;
-            String[] parts = line.trim().split("\\s+");
-            if (parts.length < 7)
-                continue;
-            try {
-                String secName = parts[1];
-                System.out.println(secName + ": " + secName.trim().equals(sectionName));
-                int size = BinaryAnalysis.hexToInt(parts[2]);
-                long vma = BinaryAnalysis.hexToLong(parts[3]);
-                long offset = BinaryAnalysis.hexToLong(parts[5]);
-                System.out.println(sectionName + " section: offset = " + offset + ", size = " + size + ", vma = " + vma);
-
-                // Read section from the library.
-                RandomAccessFile raf = new RandomAccessFile(lib, "r");
-                raf.seek(offset);
-                byte[] bytes = new byte[size];
-                raf.readFully(bytes);
-
-                System.out.println("Section fully read: " + sectionName);
-                return new Section(arch, size, vma, offset, bytes);
-            } catch (NumberFormatException ex) {
-            }
-
+    private byte[] readData() {
+        try {
+            RandomAccessFile raf = new RandomAccessFile(lib, "r");
+            raf.seek(offset);
+            byte[] data = new byte[size];
+            raf.readFully(data);
+            System.out.println("Section fully read: " + name);
+            return data;
+        } catch (IOException ex) {
+            System.err.println("Failed to read section " + name + ": " + ex.getMessage());
         }
-
-        System.err.println("Error, cannot find section " + sectionName + " from output:");
-        for (String l : lines)
-            System.out.println(l);
         return null;
     }
 
@@ -78,6 +52,7 @@ class Section {
      */
     SortedMap<Long, String> strings() {
         if (this.foundStrings == null) {
+            byte[] data = readData();
             this.foundStrings = new TreeMap<>();
             StringBuilder foundString = new StringBuilder();
             long addr = vma;
@@ -96,11 +71,16 @@ class Section {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder("Section [vma = " + vma + ", file offset = " + offset + ", size = " + size + "]\n");
+        StringBuilder sb = new StringBuilder("Section [lib = " + lib + ", vma = " + vma + ", file offset = " + offset + ", size = " + size + "]\n");
         strings().forEach((Long addr, String s) -> sb.append(addr).append(": String '").append(s).append("'\n"));
         return sb.toString();
     }
 
+    /**
+     * Return the data as a set of machine-word pointers.
+     *
+     * @return a set of machine word values
+     */
     public Set<Long> analyzeWords() {
         int wordSize;
         boolean littleEndian;
@@ -133,6 +113,7 @@ class Section {
             else
                 factors[wordSize - i - 1] = 1 << (i * wordSize);
 
+        byte[] data = readData();
         for (int offset = 0; offset < countSize; offset += wordSize) {
             long value = 0;
             for (int i = 0; i < wordSize; i++)

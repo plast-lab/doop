@@ -1,7 +1,6 @@
 package org.clyze.doop.common.scanner;
 
 class XRef {
-    public static final long NO_ADDRESS = -1;
     final String lib;
     final String function;
     final long codeAddr;

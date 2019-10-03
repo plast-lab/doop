@@ -3,6 +3,7 @@ package org.clyze.doop.common.scanner;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.function.Consumer;
 import org.clyze.doop.common.Database;
 
 // This class implements the analysis of the native scanner that uses Radare2.
@@ -11,18 +12,36 @@ class RadareAnalysis extends BinaryAnalysis {
     private static final boolean debug = false;
     private static final String DOOP_HOME = "DOOP_HOME";
     private static final String doopHome = System.getenv(DOOP_HOME);
+
+    // Radare interface prefixes, see script for details.
     private static final String LOC_MARKER = "STRING_LOC:";
+    private static final String STR_MARKER = "STRING:";
+    private static final String SEC_MARKER = "SECTION:";
 
     RadareAnalysis(Database db, String lib, boolean onlyPreciseNativeStrings) {
         super(db, lib, onlyPreciseNativeStrings);
     }
     
-    private static String getScript() {
+    private static void runRadare(String... args) throws IOException {
         if (doopHome == null) {
-            System.err.println("Cannot find Radare script, set environment variable " + DOOP_HOME);
-            return null;
-        } else
-            return doopHome + "/bin/radare-strings.py";
+            String msg = "Cannot find Radare script, set environment variable " + DOOP_HOME;
+            System.err.println(msg);
+            throw new RuntimeException(msg);
+        }
+        String script = doopHome + "/bin/radare.py";
+
+        List<String> args0 = new LinkedList<>();
+        args0.add("python");
+        args0.add(script);
+        for (String arg : args)
+            args0.add(arg);
+
+        ProcessBuilder radareBuilder = new ProcessBuilder(args0.toArray(new String[0]));
+        System.out.println("Radare command line: " + radareBuilder.command());
+
+        List<String> output = NativeScanner.runCommand(radareBuilder);
+        if (debug)
+            output.forEach(System.out::println);
     }
 
     /**
@@ -35,38 +54,22 @@ class RadareAnalysis extends BinaryAnalysis {
         System.out.println("Finding strings with Radare2...");
         SortedMap<Long, String> strings = new TreeMap<>();
 
-        String script = getScript();
-        if (script == null)
-            return strings;
+        File outFile = File.createTempFile("strings-out", ".txt");
 
-        ProcessBuilder radareBuilder = new ProcessBuilder("rabin2", "-z", lib);
-        System.out.println("Radare command line: " + radareBuilder.command());
-        int lineNo = 0;
-        final int IGNORE_ERRORS_BEFORE_LINE = 3;
-        for (String line : NativeScanner.runCommand(radareBuilder)) {
-            lineNo++;
-            System.out.println(line);
-            String[] parts = line.split("\\s+");
-            if (parts.length < 7) {
-                if (lineNo > IGNORE_ERRORS_BEFORE_LINE)
-                    System.err.println("ERROR: cannot parse line " + lineNo + ": " + line);
-                continue;
-            }
-            StringBuilder sb = new StringBuilder();
-            for (int i = 7; i < parts.length; i++)
-                sb.append(parts[i]);
-            try {
-                long vaddr = hexToLong(parts[2]);
-                // System.out.println(parts[2] + " | " + vaddr + " | " + sb.toString());
-                strings.put(vaddr, sb.toString());
-            } catch (NumberFormatException ex) {
-                if (lineNo > IGNORE_ERRORS_BEFORE_LINE) {
-                    System.err.println("ERROR: cannot parse line " + lineNo + ": " + line);
-                    ex.printStackTrace();
+        runRadare("strings", lib, outFile.getCanonicalPath());
+
+        Consumer<ArrayList<String>> proc = (l -> {
+                String vAddrStr = l.get(0);
+                String s = l.get(1);
+                long vAddr = UNKNOWN_ADDRESS;
+                try {
+                    vAddr = hexToLong(vAddrStr);
+                } catch (NumberFormatException ex) {
+                    System.err.println("WARNING: error parsing string address: " + vAddrStr);
                 }
-            }
-        }
-        System.err.println("Processed " + lineNo + " lines.");
+                strings.put(vAddr, s);
+            });
+        processMultiColumnFile(outFile, STR_MARKER, 2, proc);
         return strings;
     }
 
@@ -82,10 +85,6 @@ class RadareAnalysis extends BinaryAnalysis {
         System.out.println("Finding string xrefs with Radare2 in: " + lib);
 
         Map<String, Set<XRef>> xrefs = new HashMap<>();
-
-        String script = getScript();
-        if (script == null)
-            return xrefs;
 
         File stringsFile = File.createTempFile("strings", ".txt");
         try (FileWriter writer = new FileWriter(stringsFile)) {
@@ -110,44 +109,87 @@ class RadareAnalysis extends BinaryAnalysis {
                 });
         }
 
-        File outFile = File.createTempFile("strings-out", ".txt");
+        File outFile = File.createTempFile("string-xrefs-out", ".txt");
 
-        ProcessBuilder radareBuilder = new ProcessBuilder("python", script, lib, stringsFile.getCanonicalPath(), outFile.getCanonicalPath());
-        System.out.println("Radare command line: " + radareBuilder.command());
+        runRadare("xrefs", lib, stringsFile.getCanonicalPath(), outFile.getCanonicalPath());
 
-        List<String> output = NativeScanner.runCommand(radareBuilder);
-        if (debug)
-            output.forEach(System.out::println);
+        Consumer<ArrayList<String>> proc = (l -> {
+                String func = l.get(0);
+                String codeAddrStr = l.get(1);
+                String s = l.get(2);
+                if (func.equals("(nofunc)"))
+                    func = UNKNOWN_FUNCTION;
+                long codeAddr = UNKNOWN_ADDRESS;
+                try {
+                    codeAddr = hexToLong(codeAddrStr);
+                } catch (NumberFormatException ex) {
+                    System.err.println("WARNING: error parsing xref address: " + codeAddrStr);
+                }
+                xrefs.computeIfAbsent(s, k -> new HashSet<>()).add(new XRef(lib, func, codeAddr));
+            });
+        processMultiColumnFile(outFile, LOC_MARKER, 3, proc);
+        return xrefs;
+    }
 
-        for (String line : Files.readAllLines(outFile.toPath())) {
+    @Override
+    public Section getSection(String sectionName) throws IOException {
+        File outFile = File.createTempFile("sections-out", ".txt");
+
+        runRadare("sections", lib, outFile.getCanonicalPath());
+
+        // Box to use for returning value from section processor.
+        Section[] sec = new Section[1];
+
+        Consumer<ArrayList<String>> proc = (l -> {
+                String secName = l.get(0);
+                if (!secName.equals(sectionName))
+                    return;
+                String vAddrStr = l.get(1);
+                String sizeStr = l.get(2);
+                String offsetStr = l.get(3);
+                long vAddr = UNKNOWN_ADDRESS;
+                int size = 0;
+                long offset = 0;
+                try {
+                    vAddr = hexToLong(vAddrStr);
+                    size = hexToInt(sizeStr);
+                    offset = hexToLong(offsetStr);
+                    sec[0] = new Section(secName, null, lib, size, vAddr, offset);
+                } catch (NumberFormatException ex) {
+                    System.err.println("WARNING: error parsing section: " + secName + " " + vAddrStr + " " + sizeStr);
+                }
+            });
+        processMultiColumnFile(outFile, SEC_MARKER, 3, proc);
+        return sec[0];
+    }
+
+    private void processMultiColumnFile(File f, String prefix, int numColumns,
+                                        Consumer<ArrayList<String>> proc) throws IOException {
+        for (String line : Files.readAllLines(f.toPath())) {
             if (debug)
                 System.out.println(line);
-            boolean success = false;
-            if (line.startsWith(LOC_MARKER)) {
-                int tabIdx1 = line.indexOf("\t");
-                if (tabIdx1 > 0) {
-                    String func = line.substring(LOC_MARKER.length(), tabIdx1);
-                    if (func.equals("(nofunc)"))
-                        func = UNKNOWN_FUNCTION;
-                    int tabIdx2 = line.indexOf("\t", tabIdx1 + 1);
-                    if (tabIdx2 > 0) {
-                        String codeAddrStr = line.substring(tabIdx1+1, tabIdx2);
-                        long codeAddr = XRef.NO_ADDRESS;
-                        try {
-                            codeAddr = hexToLong(codeAddrStr);
-                        } catch (NumberFormatException ex) {
-                            System.err.println("WARNING: error parsing xref address: " + codeAddrStr);
-                        }
-                        String s = line.substring(tabIdx2+1);
-                        xrefs.computeIfAbsent(s, k -> new HashSet<>()).add(new XRef(lib, func, codeAddr));
-                        success = true;
+            boolean badLine = false;
+            if (line.startsWith(prefix)) {
+                line = line.substring(prefix.length());
+                ArrayList<String> values = new ArrayList(numColumns);
+                // Split first (n-1) values, consider the rest a single value.
+                for (int i = 0; i < numColumns - 1; i++) {
+                    int tabIdx = line.indexOf("\t");
+                    if (tabIdx > 0) {
+                        values.add(line.substring(0, tabIdx));
+                        line = line.substring(tabIdx+1);
+                    } else {
+                        System.err.println("WARNING: malformed line: " + line);
+                        badLine = true;
+                        break;
                     }
                 }
-                if (!success)
-                    System.err.println("WARNING: malformed line: " + line);
+                if (!badLine) {
+                    values.add(line);
+                    proc.accept(values);
+                }
             }
         }
-        return xrefs;
     }
 
     @Override
