@@ -45,14 +45,16 @@ class RadareAnalysis extends BinaryAnalysis {
     }
 
     /**
-     * Use Radare (via external tool) to find strings.
+     * Use Radare (via external tool) to find strings. This method
+     * also calls the supertype method to get a base set, which it
+     * will then extend.
      *
-     * @return          the list of strings found
+     * @return a map of address-to-string entries
      */
     @Override
     public SortedMap<Long, String> findStrings() throws IOException {
         System.out.println("Finding strings with Radare2...");
-        SortedMap<Long, String> strings = new TreeMap<>();
+        SortedMap<Long, String> strings = super.findStrings();
 
         File outFile = File.createTempFile("strings-out", ".txt");
 
@@ -190,17 +192,5 @@ class RadareAnalysis extends BinaryAnalysis {
                 }
             }
         }
-    }
-
-    @Override
-    public void initEntryPoints() throws IOException {
-        System.err.println("TODO: entry points for Radare2");
-    }
-
-
-    @Override
-    Set<Long> getGlobalDataPointers() throws IOException {
-        System.err.println("TODO: global data pointers for Radare2");
-        return new HashSet<>();
     }
 }

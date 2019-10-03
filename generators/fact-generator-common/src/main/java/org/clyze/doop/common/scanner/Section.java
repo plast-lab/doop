@@ -41,8 +41,9 @@ class Section {
             return data;
         } catch (IOException ex) {
             System.err.println("Failed to read section " + name + ": " + ex.getMessage());
+            ex.printStackTrace();
+            return new byte[0];
         }
-        return null;
     }
 
     /**

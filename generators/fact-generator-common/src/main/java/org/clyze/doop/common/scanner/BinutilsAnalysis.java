@@ -25,9 +25,6 @@ class BinutilsAnalysis extends BinaryAnalysis {
     private String nmCmd;
     // The path to tool 'objdump'.
     private String objdumpCmd;
-    // The sections that may contain information about strings and global data structures.
-    private Section data;
-    private Section rodata;
 
     BinutilsAnalysis(Database db, String lib, boolean onlyPreciseNativeStrings) {
         super(db, lib, onlyPreciseNativeStrings);
@@ -412,29 +409,6 @@ class BinutilsAnalysis extends BinaryAnalysis {
             System.err.println("Could not run objdump: " + ex.getMessage());
         }
         return xrefs;
-    }
-
-    @Override
-    public SortedMap<Long, String> findStrings() throws IOException {
-        if (rodata == null)
-            analyzeSections();
-        return rodata == null ? null : rodata.strings();
-    }
-
-    @Override
-    public Set<Long> getGlobalDataPointers() throws IOException {
-        if (data == null)
-            analyzeSections();
-        return data == null ? null : data.analyzeWords();
-    }
-
-    private void analyzeSections() throws IOException {
-        System.out.println("Reading section headers...");
-        this.rodata = getSection(".rodata");
-        if (debug)
-            System.out.println(rodata.toString());
-
-        this.data = getSection(".data");
     }
 
     @Override

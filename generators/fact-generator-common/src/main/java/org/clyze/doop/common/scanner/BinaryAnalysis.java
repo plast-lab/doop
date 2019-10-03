@@ -39,7 +39,10 @@ abstract class BinaryAnalysis {
      *
      * @return a map of address-to-string entries
      */
-    abstract SortedMap<Long, String> findStrings() throws IOException;
+    public SortedMap<Long, String> findStrings() throws IOException {
+        Section rodata = getSection(".rodata");
+        return rodata == null ? null : rodata.strings();
+    }
 
     /**
      * Find string cross-references.
@@ -57,7 +60,10 @@ abstract class BinaryAnalysis {
     /**
      * Returns a list of pointer values that may point to global data.
      */
-    abstract Set<Long> getGlobalDataPointers() throws IOException;
+    public Set<Long> getGlobalDataPointers() throws IOException {
+        Section data = getSection(".data");
+        return data == null ? null : data.analyzeWords();
+    }
 
     /**
      * Reads a section by name.
