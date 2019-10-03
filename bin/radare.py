@@ -21,6 +21,9 @@ def main():
     elif mode == 'epoints' and argsNum == 4:
         with open(sys.argv[3], 'w') as out:
             entryPoints(r, out)
+    elif mode == 'info' and argsNum == 4:
+        with open(sys.argv[3], 'w') as out:
+            info(r, out)
     elif mode == 'xrefs' and argsNum == 5:
         with open(sys.argv[3], 'r') as strings:
             with open(sys.argv[4], 'w') as out:
@@ -32,7 +35,7 @@ def main():
 def usage():
     print('Usage: radare.py MODE BINARY [STRINGS_FILE] [OUT_FILE]')
     print('')
-    print('  MODE                   one of "strings", "xrefs", "sections", "epoints"')
+    print('  MODE                   one of "strings", "xrefs", "sections", "epoints", "info"')
     print('  BINARY                 a native code binary')
     print('  LOCALIZE_STRINGS_FILE  a file containing strings to localize')
     print('                         (expensive analysis)')
@@ -109,7 +112,7 @@ def sectionProc(lineParts):
     sectionName = ''.join(lineParts[6:]).encode('utf-8')
     return 'SECTION:' + sectionName + '\t' + vaddr + '\t' + size + '\t' + offset
 
-# Sections mode:  list binary sections.
+# Sections mode: list binary sections.
 def entryPoints(r, out):
     print('Reading binary entry points...')
     processTable(r, out, 'iE', 3, 7, entryPointProc)
@@ -118,6 +121,16 @@ def entryPointProc(lineParts):
     vaddr = lineParts[2]
     name = lineParts[6]
     return 'ENTRY_POINT:' + vaddr + '\t' + name
+
+# Show binary information.
+def info(r, out):
+    print('Reading binary information...')
+    processTable(r, out, 'i', 0, 2, infoProc)
+
+def infoProc(lineParts):
+    key = lineParts[0]
+    value = lineParts[1]
+    return 'INFO:' + key + '\t' + value
 
 def processTable(r, out, cmd, IGNORE_FIRST, COLUMNS, proc):
     stringLines = rCmd(r, cmd)

@@ -19,8 +19,6 @@ class BinutilsAnalysis extends BinaryAnalysis {
     private static final String envVarAARCH64 = "AARCH64_TOOLCHAIN";
     private static final String toolchainAARCH64 = System.getenv(envVarAARCH64);
 
-    // The native code architecture.
-    private Arch arch;
     // The path to tool 'nm'.
     private String nmCmd;
     // The path to tool 'objdump'.
@@ -28,13 +26,6 @@ class BinutilsAnalysis extends BinaryAnalysis {
 
     BinutilsAnalysis(Database db, String lib, boolean onlyPreciseNativeStrings) {
         super(db, lib, onlyPreciseNativeStrings);
-
-        // Auto-detect architecture.
-        try {
-            this.arch = Arch.autodetect(lib);
-        } catch (IOException ex) {
-            this.arch = Arch.DEFAULT_ARCH;
-        }
 
         this.nmCmd = "nm";
         this.objdumpCmd = "objdump";
@@ -58,6 +49,37 @@ class BinutilsAnalysis extends BinaryAnalysis {
             System.out.println("nmCmd = " + nmCmd);
             System.out.println("objdumpCmd = " + objdumpCmd);
         }
+    }
+
+    @Override
+    protected Arch autodetectArch() throws IOException {
+        ProcessBuilder pb = new ProcessBuilder("file", lib);
+        Arch arch = null;
+        for (String line : NativeScanner.runCommand(pb)) {
+            if (line.contains("80386")) {
+                arch = Arch.X86;
+                break;
+            } else if (line.contains("x86-64")) {
+                arch = Arch.X86_64;
+                break;
+            } else if (line.contains("aarch64")) {
+                arch = Arch.AARCH64;
+                break;
+            } else if (line.contains("ARM") || line.contains("EABI")) {
+                arch = Arch.ARMEABI;
+                break;
+            } else if (line.contains("MIPS")) {
+                arch = Arch.MIPS;
+                break;
+            }
+        }
+        if (arch != null)
+            System.out.println("Detected architecture of " + lib + " is " + arch);
+        else {
+            arch = Arch.DEFAULT_ARCH;
+            System.out.println("Could not determine architecture of " + lib + ", using default: " + arch);
+        }
+        return arch;
     }
 
     @Override

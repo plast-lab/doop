@@ -28,10 +28,20 @@ abstract class BinaryAnalysis {
     // String precision option.
     private final boolean onlyPreciseNativeStrings;
 
+    // The native code architecture.
+    protected Arch arch;
+
     BinaryAnalysis(Database db, String lib, boolean onlyPreciseNativeStrings) {
         this.db = db;
         this.lib = lib;
         this.onlyPreciseNativeStrings = onlyPreciseNativeStrings;
+
+        // Auto-detect architecture.
+        try {
+            this.arch = autodetectArch();
+        } catch (IOException ex) {
+            this.arch = Arch.DEFAULT_ARCH;
+        }
     }
 
     /**
@@ -56,6 +66,11 @@ abstract class BinaryAnalysis {
      * Initialize the entry points table of the library.
      */
     abstract void initEntryPoints() throws IOException;
+
+    /**
+     * Autodetect the target hardware architecture.
+     */
+    abstract protected Arch autodetectArch() throws IOException;
 
     /**
      * Returns a list of pointer values that may point to global data.

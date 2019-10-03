@@ -18,6 +18,7 @@ class RadareAnalysis extends BinaryAnalysis {
     private static final String STR_MARKER = "STRING:";
     private static final String SEC_MARKER = "SECTION:";
     private static final String EP_MARKER = "ENTRY_POINT:";
+    private static final String INFO_MARKER = "INFO:";
 
     RadareAnalysis(Database db, String lib, boolean onlyPreciseNativeStrings) {
         super(db, lib, onlyPreciseNativeStrings);
@@ -186,6 +187,44 @@ class RadareAnalysis extends BinaryAnalysis {
         processMultiColumnFile(outFile, EP_MARKER, 2, proc);
     }
 
+    @Override
+    protected Arch autodetectArch() throws IOException {
+        File outFile = File.createTempFile("info-out", ".txt");
+
+        runRadare("info", lib, outFile.getCanonicalPath());
+
+        Map<String, String> info = new HashMap<>();
+        Consumer<ArrayList<String>> proc = (l -> {
+                String key = l.get(0);
+                String value = l.get(1);
+                info.put(key.trim(), value.trim());
+            });
+        processMultiColumnFile(outFile, INFO_MARKER, 2, proc);
+
+        String arch = info.get("arch");
+        String bits = info.get("bits");
+
+        Arch ret = null;
+        if (arch.equals("x86") && bits.equals("32"))
+            ret = Arch.X86;
+        else if (arch.equals("x86") && bits.equals("64"))
+            ret = Arch.X86_64;
+        else if (arch.equals("arm") && bits.equals("64"))
+            ret = Arch.AARCH64;
+        else if (arch.equals("arm") && (bits.equals("16") || bits.equals("32")))
+            ret = Arch.ARMEABI;
+        else if (arch.equals("mips"))
+            ret = Arch.MIPS;
+
+        if (arch == null || bits == null || ret == null) {
+            ret = Arch.DEFAULT_ARCH;
+            System.out.println("Could not determine architecture of " + lib + ", using default: " + ret);
+        } else
+            System.out.println("Detected architecture of " + lib + " is " + arch);
+
+        return ret;
+    }
+
     private void processMultiColumnFile(File f, String prefix, int numColumns,
                                         Consumer<ArrayList<String>> proc) throws IOException {
         for (String line : Files.readAllLines(f.toPath())) {
@@ -195,7 +234,7 @@ class RadareAnalysis extends BinaryAnalysis {
             if (line.startsWith(prefix)) {
                 line = line.substring(prefix.length());
                 ArrayList<String> values = new ArrayList(numColumns);
-                // Split first (n-1) values, consider the rest a single value.
+                // Split first (n-1) values, consider the rest the last value.
                 for (int i = 0; i < numColumns - 1; i++) {
                     int tabIdx = line.indexOf("\t");
                     if (tabIdx > 0) {
@@ -208,6 +247,7 @@ class RadareAnalysis extends BinaryAnalysis {
                     }
                 }
                 if (!badLine) {
+                    // Add last value.
                     values.add(line);
                     proc.accept(values);
                 }
