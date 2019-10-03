@@ -154,14 +154,14 @@ class RadareAnalysis extends BinaryAnalysis {
                 long offset = 0;
                 try {
                     vAddr = hexToLong(vAddrStr);
-                    size = hexToInt(sizeStr);
+                    size = Integer.parseInt(sizeStr.trim());
                     offset = hexToLong(offsetStr);
                     sec[0] = new Section(secName, null, lib, size, vAddr, offset);
                 } catch (NumberFormatException ex) {
                     System.err.println("WARNING: error parsing section: " + secName + " " + vAddrStr + " " + sizeStr);
                 }
             });
-        processMultiColumnFile(outFile, SEC_MARKER, 3, proc);
+        processMultiColumnFile(outFile, SEC_MARKER, 4, proc);
         return sec[0];
     }
 
