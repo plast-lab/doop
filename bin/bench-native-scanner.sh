@@ -147,9 +147,9 @@ function runDoop() {
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
     # 6. Native scanner, "use string locality" mode.
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS1} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE1} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS1}.log
-    if [ "${BENCHMARK}" == "chrome" ]; then
-        ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS2} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE2} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS2}.log
-    fi
+    # if [ "${BENCHMARK}" == "chrome" ]; then
+    #     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS2} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE2} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS2}.log
+    # fi
     popd &> /dev/null
 }
 
@@ -199,14 +199,14 @@ if [ "${RUN_ANALYSIS}" == "1" ]; then
     # Generate java.hprof with "make capture_hprof".
     runDoop ${SERVER_ANALYSIS_TESTS}/009-native/build/libs/009-native.jar 009-native java_8 ${SERVER_ANALYSIS_TESTS}/009-native/java.hprof
 
-    # Androidterm.
-    # runDoop ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk androidterm ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm.hprof.gz
-
     # Chrome.
     runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome_57.0.2987.132-298713212_minAPI24_x86_nodpi_apkmirror.com.apk chrome ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome.hprof.gz
 
     # Instagram.
     runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243323_minAPI16_x86_nodpi_apkmirror.com.apk instagram ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof.gz
+
+    # Androidterm.
+    # runDoop ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk androidterm ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm.hprof.gz
 
     # analyzeAspectJ
 fi
