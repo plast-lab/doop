@@ -10,7 +10,8 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   Method_SimpleName(?method, ?name),
   Method_JVMDescriptor(?method, ?descriptor),
   _NativeStringsDistance(?nativeStringsDistance),
-  ((?offset1 - ?offset2) <= ?nativeStringsDistance ; (?offset2 - ?offset1) <= ?nativeStringsDistance).
+  (?offset1 - ?offset2) <= ?nativeStringsDistance,
+  (?offset2 - ?offset1) <= ?nativeStringsDistance.
 
 #else
 
@@ -34,11 +35,12 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
 PossibleNativeCodeTargetMethod(?method, "<<UNKNOWN>>", ?file) :-
   _NativeMethodTypeCandidate(?file, ?function, ?descriptor, _),
   _NativeNameCandidate(?file, ?function, ?name, _),
-  _NativeXRef(?descriptor, ?file, _, ?dataAddr1),
-  _NativeXRef(?name, ?file, _, ?dataAddr2),
+  _NativeXRef(?descriptor, ?file, _, ?descriptorRefAddr),
+  _NativeXRef(?name, ?file, _, ?nameRefAddr),
   Method_SimpleName(?method, ?name),
   Method_JVMDescriptor(?method, ?descriptor),
-  ((?dataAddr1 - ?dataAddr2) <= XREF_DISTANCE ; (?dataAddr2 - ?dataAddr1) <= XREF_DISTANCE).
+  (?nameRefAddr - ?descriptorRefAddr) <= XREF_DISTANCE,
+  (?descriptorRefAddr - ?nameRefAddr) <= XREF_DISTANCE.
 
 .decl PossibleNativeCodeTargetMethodLocalized(?method:Method, ?function:symbol, ?file:symbol)
 
