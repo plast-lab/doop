@@ -271,7 +271,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_FACTS,
 					description: "Generate artifacts map.",
 					value: false,
-					cli: false,
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
