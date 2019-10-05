@@ -491,7 +491,7 @@ string_upper("4", "4"). string_upper("5", "5"). string_upper("6", "6"). string_u
 string_upper("8", "8"). string_upper("9", "9").
 
 // Exploit camel-case convention
-
+#ifndef StringChangesCaseAfterPosition
 #define StringChangesCaseAfterPosition(pos, str) \
   ((substr(str, pos, 1) = char, \
   substr(str, pos + 1, 1) = nextChar, \
@@ -505,7 +505,9 @@ string_upper("8", "8"). string_upper("9", "9").
    (char = "_"; \
     char = "."; \
     char = "$")))
+#endif
 
+#ifndef StringChangesCaseBeforePosition
 #define StringChangesCaseBeforePosition(pos, str) \
   ((substr(str, pos, 1) = char, \
   substr(str, pos - 1, 1) = prevChar, \
@@ -519,6 +521,7 @@ string_upper("8", "8"). string_upper("9", "9").
    (char = "_"; \
     char = "."; \
     char = "$")))
+#endif
 
 // Intermediate relations to avoid substr() warnings (too many warnings
 // may stall the executor that Doop uses to run the analysis binary).
