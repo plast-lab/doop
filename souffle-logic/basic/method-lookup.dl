@@ -92,7 +92,7 @@ _MethodLookup_ImpossibleClosest(?simplename, ?descriptor, ?type, ?method2) :-
 
 // Helper relation to filter out covariant methods.
 .decl CovariantMethods(?meth1:Method, ?meth2:Method)
-.output CovariantMethods
+
 CovariantMethods(?meth, ?methSub) :-
   SubtypeOf(?typeSub, ?type),
   Method_DeclaringType(?meth, ?type),
@@ -110,7 +110,7 @@ CovariantMethods(?meth, ?methSub) :-
 // Method lookup should be a function of the first three arguments
 // (simple name, descriptor, type).
 .decl DuplicateMethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method1:Method, ?method2:Method)
-.output DuplicateMethodLookup
+
 DuplicateMethodLookup(?simplename, ?descriptor, ?type, ?method1, ?method2):-
   MethodLookup(?simplename, ?descriptor, ?type, ?method1),
   MethodLookup(?simplename, ?descriptor, ?type, ?method2),
@@ -120,7 +120,7 @@ DuplicateMethodLookup(?simplename, ?descriptor, ?type, ?method1, ?method2):-
   !CovariantMethods(?method1, ?method2).
 
 .decl DuplicateMethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method1:Method, ?method2:Method)
-.output DuplicateMethodImplemented
+
 DuplicateMethodImplemented(?simplename, ?descriptor, ?type, ?method1, ?method2):-
   MethodImplemented(?simplename, ?descriptor, ?type, ?method1),
   MethodImplemented(?simplename, ?descriptor, ?type, ?method2),
@@ -196,6 +196,7 @@ MethodMightBeCovariantBridge(?bridge, ?meth) :-
    !Method_Modifier("bridge", ?meth).
 
 .output MethodMightBeCovariantBridge
+
 //// Greatly suboptimal this way.
 // MethodMightBeCovariantBridge(?bridge, ?meth) :-
 //    Method_Modifier("bridge", ?bridge),
