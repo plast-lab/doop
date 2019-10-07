@@ -475,6 +475,22 @@ MockOpenProgramEntryPoint(?class, ?method) :-
    Method_Annotation(?method, "javax.ws.rs.DELETE");
    Method_Annotation(?method, "javax.ws.rs.PATH")).
 
+MockOpenProgramEntryPoint(?class, ?method) :-
+  (XMLNodeAttribute(?XMLFile, ?nodeId, _, "init-method", "init-method", ?simpleName);
+   XMLNodeAttribute(?XMLFile, ?nodeId, _, "destroy-method", "destroy-method", ?simpleName)),
+  Method_SimpleName(?method, ?simpleName),
+  Method_DeclaringType(?method, ?class),
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "class", "class", ?class).
+
+MockOpenProgramEntryPoint(?class, ?method) :-
+  basic.SubtypeOf(?class, "org.springframework.beans.factory.InitializingBean"),
+  Method_DeclaringType(?method, ?class),
+  Method_SimpleName(?method, "afterPropertiesSet").
+
+MockOpenProgramEntryPoint(?class, ?method) :-
+  Method_DeclaringType(?method, ?class),
+  ?class = "com.icegreen.greenmail.util.GreenMail".
+
 mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
   BeanMethod(?method),
   mainAnalysis.ReachableContext(?ctx, ?method),
@@ -559,6 +575,8 @@ AuthenticationEntryPoint(?type) :-
 ApplicationListener(?type) :-
   ApplicationConcreteType(?type),
   basic.SubtypeOf(?type, "org.springframework.context.ApplicationListener").
+
+
 
 Validator(?validator) :-
   AnnotationElement("type", _, "0.0", "0.0.0", _, ?validator, _),
@@ -693,7 +711,7 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?calleeCtx, ?return) :-
 ApplicationUnreachableMethod(?method) :-
   ApplicationMethod(?method),
   Method_DeclaringType(?method, ?type),
-  !isInterfaceType(?type),
+  ApplicationConcreteType(?type),
   !mainAnalysis.Reachable(?method).
 
 .decl IncompleteFieldInjection(?type:Type, ?value:mainAnalysis.Value, ?field:Field)
@@ -702,16 +720,31 @@ ApplicationUnreachableMethod(?method) :-
 IncompleteFieldInjection(?type, ?basevalue, ?injectedField) :-
   mainAnalysis.Value_Type(?basevalue, ?type),
   Field_DeclaringType(?injectedField, ?type),
-  (Field_Annotation(?injectedField, "org.springframework.beans.factory.annotation.Autowired");
-   Field_Annotation(?injectedField, "javax.inject.Inject")),
+  Bean(?type),
   !mainAnalysis.InstanceFieldPointsTo(_, _, ?injectedField, _, ?basevalue).
+
+.decl VPTUnreachableMockObject(?value:mainAnalysis.Value)
+.output VPTUnreachableMockObject
+
+VPTUnreachableMockObject(?value) :-
+  MockObject(?value, _),
+  !mainAnalysis.VarPointsTo(_, ?value, _, _).
+
+.decl IFPTUnreachableMockObject(?value:mainAnalysis.Value)
+.output IFPTUnreachableMockObject
+
+IFPTUnreachableMockObject(?value) :-
+  MockObject(?value, _),
+  !mainAnalysis.InstanceFieldPointsTo(_, ?value, _, _, _).
 
 .decl UnreachableMockObject(?value:mainAnalysis.Value)
 .output UnreachableMockObject
 
 UnreachableMockObject(?value) :-
   MockObject(?value, _),
-  !mainAnalysis.VarPointsTo(_, ?value, _, _).
+  VPTUnreachableMockObject(?value),
+  IFPTUnreachableMockObject(?value).
+
 
 /**
  * String utils
