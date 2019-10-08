@@ -193,14 +193,14 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
 .decl MockObject(?value:mainAnalysis.Value, ?class:Type)
 .output MockObject
 .decl MockObjFromOpenProgramEntryPointReceiver(?value:mainAnalysis.Value)
-.output MockObjFromOpenProgramEntryPointReceiver
 
+mainAnalysis_MockValueConsMacro(?value, ?class),
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?receiver),
 MockObjFromOpenProgramEntryPointReceiver(?value),
 MockObject(?value, ?class) :-
   MockOpenProgramEntryPoint(?class, ?method),
   ThisVar(?method, ?receiver),
-  ?value = cat(?class, "::MockReceiver"),
+  ?value = cat(?class, "::MockObject"),
   mainAnalysis.isImmutableContext(?ctx),
   mainAnalysis.isImmutableHContext(?hctx).
 
@@ -208,16 +208,15 @@ MockObject(?value, ?class) :-
  *  Mock arguments for entry points
  **/
 .decl MockObjFromOpenProgramEntryPointArg(?value:mainAnalysis.Value)
-.output MockObjFromOpenProgramEntryPointArg
 
 /**
  * Main policy: If the argument type has concrete subtypes in the application, pass them all as mock objects
  * If it does not have concrete subtypes but it's a concrete type, pass that the mock object of the itself as argument.
  **/
-mainAnalysis_MockValueConsMacro(cat(?concreteType, "::MockArg"), ?concreteType),
-mainAnalysis.VarPointsTo(?hctx, cat(?concreteType, "::MockArg"), ?ctx, ?param),
-MockObjFromOpenProgramEntryPointArg(cat(?concreteType, "::MockArg")),
-MockObject(cat(?concreteType, "::MockArg"), ?concreteType) :-
+mainAnalysis_MockValueConsMacro(cat(?concreteType, "::MockObject"), ?concreteType),
+mainAnalysis.VarPointsTo(?hctx, cat(?concreteType, "::MockObject"), ?ctx, ?param),
+MockObjFromOpenProgramEntryPointArg(cat(?concreteType, "::MockObject")),
+MockObject(cat(?concreteType, "::MockObject"), ?concreteType) :-
   MockOpenProgramEntryPoint(?entryPointDeclaringType, ?method),
   !BridgeMethod(?method, ?entryPointDeclaringType),
   FormalParam(_, ?method, ?param),
@@ -230,10 +229,10 @@ MockObject(cat(?concreteType, "::MockArg"), ?concreteType) :-
  * Fallback: If the argument type has no concrete types in the application and it's an abstract class or interface
  * pass them all as mock objects create a mock object of a representative subtype of it and pass it as argument.
  **/
-mainAnalysis_MockValueConsMacro(cat(?concreteType, "::MockArg"), ?concreteType),
-mainAnalysis.VarPointsTo(?hctx, cat(?concreteType, "::MockArg"), ?ctx, ?param),
-MockObjFromOpenProgramEntryPointArg(cat(?concreteType, "::MockArg")),
-MockObject(cat(?concreteType, "::MockArg"), ?concreteType) :-
+mainAnalysis_MockValueConsMacro(cat(?concreteType, "::MockObject"), ?concreteType),
+mainAnalysis.VarPointsTo(?hctx, cat(?concreteType, "::MockObject"), ?ctx, ?param),
+MockObjFromOpenProgramEntryPointArg(cat(?concreteType, "::MockObject")),
+MockObject(cat(?concreteType, "::MockObject"), ?concreteType) :-
   MockOpenProgramEntryPoint(?entryPointDeclaringType, ?method),
   !BridgeMethod(?method, ?entryPointDeclaringType),
   FormalParam(_, ?method, ?param),
@@ -242,7 +241,6 @@ MockObject(cat(?concreteType, "::MockArg"), ?concreteType) :-
   NonApplicationConcreteImplementationRepresentative(?concreteType, ?type),
   mainAnalysis.isImmutableHContext(?hctx),
   mainAnalysis.isImmutableContext(?ctx).
-
 
 .decl IncompletelyMockedMethod(?method: Method)
 .output IncompletelyMockedMethod
@@ -299,19 +297,28 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
    ?beanType = ?injectedFieldType),
   !Bean_Id(_, ?injectedField),
   MockObject(?mockBeanObject, ?beanType),
-  match(".*MockReceiver", ?mockBeanObject),
   mainAnalysis.isImmutableHContext(?basehctx),
   mainAnalysis.isImmutableHContext(?hctx).
 
+/**
+ *  XML driven dependency injection
+ **/
+.decl XMLIFPTDI(?hctx:mainAnalysis.configuration.HContext, ?mo:mainAnalysis.Value, ?fld:Field, ?bhctx:mainAnalysis.configuration.HContext, ?bval:mainAnalysis.Value)
+.output XMLIFPTDI
+
 // Property injection from XML specification
-mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?basehctx, ?basevalue) :-
+XMLIFPTDI(?hctx, ?mockObject, ?injectedField, ?basehctx, ?basevalue),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockObject, ?injectedField, ?basehctx, ?basevalue) :-
   mainAnalysis.Value_Type(?basevalue, ?decltype),
   Field_DeclaringType(?injectedField, ?decltype),
-  BeanFieldInjection(?decltype, ?injectedField, ?injectedBeanType),
-  MockObject(?mockBeanObject, ?injectedBeanType),
-  match(".*MockReceiver", ?mockBeanObject),
+  BeanFieldInjection(?decltype, ?injectedField, ?mockObject),
   mainAnalysis.isImmutableHContext(?basehctx),
   mainAnalysis.isImmutableHContext(?hctx).
+
+
+/**
+ *  Annotation driven dependency injection for fields annotated with @Resource
+ **/
 
 // This rule handles special cases of injection where the injected object is a java.util.Collection of beans
 // using the filed name (Precise Version)
@@ -364,10 +371,11 @@ WebApplicationEntryPointClass(?type) :-
    Validator(?type);
    match(".*_jsp", ?type)).
 
-mainAnalysis_MockValueConsMacro(cat(?type, "::MockReceiver"), ?type),
-MockObject(cat(?type, "::MockReceiver"), ?type) :-
-  ApplicationConcreteType(?type),
-  (Type_Annotation(?type, "org.springframework.web.bind.annotation.RequestMapping");
+mainAnalysis_MockValueConsMacro(cat(?type, "::MockObject"), ?type),
+MockObject(cat(?type, "::MockObject"), ?type) :-
+  isClassType(?type),
+  ((ApplicationConcreteType(?type),
+   Type_Annotation(?type, "org.springframework.web.bind.annotation.RequestMapping");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RestController");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.ControllerAdvice");
    Type_Annotation(?type, "org.springframework.stereotype.Component");
@@ -378,8 +386,8 @@ MockObject(cat(?type, "::MockReceiver"), ?type) :-
    Type_Annotation(?type, "org.springframework.context.annotation.ComponentScan");
    Type_Annotation(?type, "org.springframework.context.annotation.Configuration");
    Type_Annotation(?type, "javax.persistence.Entity");
-   Type_Annotation(?type, "javax.ws.rs.Path");
-   Bean(?type);
+   Type_Annotation(?type, "javax.ws.rs.Path"));
+   isBean(?type);
    AuthenticationProviderBean(?type);
    AuthenticationFilterBean(?type);
    AuthenticationEntryPoint(?type);
@@ -505,7 +513,7 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
  **/
 .decl Bean_Id(?bean:Type, ?id:symbol)
 .output Bean_Id
-.decl Bean(?bean:Type)
+.decl isBean(?bean:Type)
 .decl MVCInterceptorBean(?bean:Type)
 .decl Validator(?class:Type)
 .decl AuthenticationProviderBean(?bean:Type)
@@ -513,14 +521,18 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
 .decl AuthenticationEntryPoint(?type:Type)
 .decl ApplicationListener(?type:Type)
 
-Bean(?class) :-
+isBean(?class) :-
   Bean_Id(?class, _).
 
+/**
+ * The application does not necessarily use only application concrete types as beans (e.g., Spring types are used as beans)
+ **/
 Bean_Id(?class, ?id) :-
-  XMLNode(?XMLFile, ?nodeId, _, _, _, _),
   XMLNodeAttribute(?XMLFile, ?nodeId, _, "id", "id", ?id),
   XMLNodeAttribute(?XMLFile, ?nodeId, _, "class", "class", ?class),
-  ApplicationConcreteType(?class).
+  isClassType(?class),
+  !match("java\..*", ?class),
+  !match("sun\..*", ?class).
 
 Bean_Id(?type, ?beanId) :-
   (Type_Annotation(?type, "org.springframework.stereotype.Component");
@@ -553,7 +565,7 @@ TypeConvertToBeanId(?type, ?beanId) :-
   StringChangesCaseAfterPosition(1, ?type),
   ?beanId = ?type.
 
-Bean(?class) :-
+isBean(?class) :-
   XMLNodeAttribute(_, _, _, _, _, ?class),
   ApplicationConcreteType(?class).
 
@@ -576,8 +588,6 @@ ApplicationListener(?type) :-
   ApplicationConcreteType(?type),
   basic.SubtypeOf(?type, "org.springframework.context.ApplicationListener").
 
-
-
 Validator(?validator) :-
   AnnotationElement("type", _, "0.0", "0.0.0", _, ?validator, _),
   match(".*Validator", ?validator).
@@ -592,8 +602,13 @@ Bean_Id(?authenticationProviderClass, ?id) :-
   XMLNodeAttribute(?XMLFile, ?differentNodeId, _, "id", "id", ?refId),
   XMLNodeAttribute(?XMLFile, ?differentNodeId, _, "class", "class", ?authenticationProviderClass).
 
-.decl BeanFieldInjection(?class:Type, ?id:symbol, ?injectedBean:Type)
+.decl BeanFieldInjection(?class:Type, ?id:symbol, ?value:mainAnalysis.Value)
+.decl BeanFieldInjection1(?class:Type, ?id:symbol, ?value:mainAnalysis.Value)
+.decl BeanFieldInjection2(?class:Type, ?id:symbol, ?value:mainAnalysis.Value)
+
 .output BeanFieldInjection
+.output BeanFieldInjection1
+.output BeanFieldInjection2
 
 /** Pattern:
  * <bean class="?class">
@@ -602,24 +617,18 @@ Bean_Id(?authenticationProviderClass, ?id) :-
  *
  * The injected bean is referred in the ref attribute of the property tag
  **/
-
-BeanFieldInjection(?class, ?injectedField, ?injectedBeanType) :-
+BeanFieldInjection1(?class, ?injectedField, ?mockObject),
+BeanFieldInjection(?class, ?injectedField, ?mockObject) :-
   XMLNode(?XMLFile, ?parentNodeId, _, _, _, _),
   XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "id", "id", _),
   XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "class", "class", ?class),
   XMLNode(?XMLFile, ?nodeId, ?parentNodeId, _, "property", _),
-  XMLNodeAttribute(?XMLFile, ?nodeId, _, "name", "name", ?injectedField),
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "name", "name", ?fieldName),
   XMLNodeAttribute(?XMLFile, ?nodeId, _, "ref", "ref", ?refId),
-  Bean_Id(?injectedBeanType, ?refId).
-
-BeanFieldInjection(?class, ?injectedField, ?injectedBeanType) :-
-  XMLNode(?XMLFile, ?parentNodeId, _, _, _, _),
-  XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "id", "id", _),
-  XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "class", "class", ?class),
-  XMLNode(?XMLFile, ?nodeId, ?parentNodeId, _, "property", _),
-  XMLNodeAttribute(?XMLFile, ?nodeId, _, "name", "name", ?injectedField),
-  XMLNode(?XMLFile, _, ?nodeId, _, "ref", ?refId),
-  Bean_Id(?injectedBeanType, ?refId).
+  Field_DeclaringType(?injectedField, ?class),
+  Field_SimpleName(?injectedField, ?fieldName),
+  Bean_Id(?injectedBeanType, ?refId),
+  MockObject(?mockObject, ?injectedBeanType).
 
 /** Pattern:
  * <bean class="?class">
@@ -630,15 +639,19 @@ BeanFieldInjection(?class, ?injectedField, ?injectedBeanType) :-
  *
  * The injected bean is referred in the ref attribute of the property tag
  **/
-BeanFieldInjection(?class, ?injectedField, ?injectedBeanType) :-
+BeanFieldInjection2(?class, ?injectedField, ?mockObject),
+BeanFieldInjection(?class, ?injectedField, ?mockObject) :-
   XMLNode(?XMLFile, ?parentNodeId, _, _, _, _),
   XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "id", "id", _),
   XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "class", "class", ?class),
   XMLNode(?XMLFile, ?nodeId, ?parentNodeId, _, "property", _),
-  XMLNodeAttribute(?XMLFile, ?nodeId, _, "name", "name", ?injectedField),
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "name", "name", ?fieldName),
   XMLNode(?XMLFile, ?injectedBeanNodeId, ?nodeId, _, "ref", _),
   XMLNodeAttribute(?XMLFile, ?injectedBeanNodeId, _, "bean", "bean", ?injectedBeanId),
-  Bean_Id(?injectedBeanType, ?injectedBeanId).
+  Field_DeclaringType(?injectedField, ?class),
+  Field_SimpleName(?injectedField, ?fieldName),
+  Bean_Id(?injectedBeanType, ?injectedBeanId),
+  MockObject(?mockObject, ?injectedBeanType).
 
 /**
  * Special handling for java.util.Collection data structures containing beans
@@ -717,10 +730,13 @@ ApplicationUnreachableMethod(?method) :-
 .decl IncompleteFieldInjection(?type:Type, ?value:mainAnalysis.Value, ?field:Field)
 .output IncompleteFieldInjection
 
-IncompleteFieldInjection(?type, ?basevalue, ?injectedField) :-
-  mainAnalysis.Value_Type(?basevalue, ?type),
-  Field_DeclaringType(?injectedField, ?type),
-  Bean(?type),
+IncompleteFieldInjection(?decltype, ?basevalue, ?injectedField) :-
+  mainAnalysis.Value_Type(?basevalue, ?decltype),
+  Field_DeclaringType(?injectedField, ?decltype),
+  Field_Type(?injectedField, ?fieldType),
+  !isPrimitiveType(?fieldType),
+  ?fieldType != "java.lang.String",
+  isBean(?decltype),
   !mainAnalysis.InstanceFieldPointsTo(_, _, ?injectedField, _, ?basevalue).
 
 .decl VPTUnreachableMockObject(?value:mainAnalysis.Value)
