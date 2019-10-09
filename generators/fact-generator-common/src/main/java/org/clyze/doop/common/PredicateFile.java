@@ -118,6 +118,7 @@ public enum PredicateFile
     THROW("Throw"),
     THROW_NULL("ThrowNull"),
     TYPE_ANNOTATION("Type-Annotation"),
+    TYPE_SIMPLENAME("Type-SimpleName"),
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
     VAR_TYPE("Var-Type"),
     VAR_DECLARING_METHOD("Var-DeclaringMethod"),

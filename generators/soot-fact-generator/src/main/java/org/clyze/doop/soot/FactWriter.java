@@ -98,6 +98,7 @@ class FactWriter extends JavaFactWriter {
                 writeAnnotationElements("type", classStr, null, aTag.getElems());
             }
         }
+        _db.add(TYPE_SIMPLENAME, classStr, c.getShortName());
     }
 
     /**
