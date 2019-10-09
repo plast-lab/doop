@@ -1,37 +1,5 @@
 #include "../../commonMacros.dl"
 
-#ifndef StringChangesCaseBeforePosition
-#define StringChangesCaseBeforePosition(pos, str) \
-  ((substr(str, pos, 1) = char, \
-  substr(str, pos - 1, 1) = prevChar, \
-  ((string_upper(char, Uchar), Uchar = char, string_upper(prevChar, UprevChar), UprevChar != prevChar); \
-   (string_upper(char, Uchar), Uchar != char, string_upper(prevChar, UprevChar), UprevChar = prevChar))); \
-  (substr(str, pos - 1, 1) = prevChar, \
-   (prevChar = "_"; \
-    prevChar = "."; \
-    prevChar = "$")); \
-  (substr(str, pos, 1) = char, \
-   (char = "_"; \
-    char = "."; \
-    char = "$")))
-#endif
-
-#ifndef StringChangesCaseAfterPosition
-#define StringChangesCaseAfterPosition(pos, str) \
-  ((substr(str, pos, 1) = char, \
-  substr(str, pos + 1, 1) = nextChar, \
-  ((string_upper(char, Uchar), Uchar = char, string_upper(nextChar, UnextChar), UnextChar != nextChar); \
-   (string_upper(char, Uchar), Uchar != char, string_upper(nextChar, UnextChar), UnextChar = nextChar))); \
-  (substr(str, pos + 1, 1) = nextChar, \
-   (nextChar = "_"; \
-    nextChar = "."; \
-    nextChar = "$")); \
-  (substr(str, pos, 1) = char, \
-   (char = "_"; \
-    char = "."; \
-    char = "$")))
-#endif
-
 // The following 3 predicate declarations are needed in case that
 // statistics are enabled.
 .decl MockObjFromArray(?type:ReferenceType)
@@ -280,7 +248,7 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
   (Field_Annotation(?injectedField, "org.springframework.beans.factory.annotation.Autowired");
    Field_Annotation(?injectedField, "javax.inject.Inject")),
   !Field_Annotation(?injectedField, "javax.annotation.Resource"),
-  Bean_Id(?beanType, ?injectedField),
+  ConcreteBean_Id(?beanType, ?injectedField),
   MockObject(?mockBeanObject, ?beanType),
   mainAnalysis.isImmutableHContext(?basehctx),
   mainAnalysis.isImmutableHContext(?hctx).
@@ -295,7 +263,7 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
   Field_Type(?injectedField, ?injectedFieldType),
   (basic.SubtypeOf(?beanType, ?injectedFieldType);
    ?beanType = ?injectedFieldType),
-  !Bean_Id(_, ?injectedField),
+  !ConcreteBean_Id(_, ?injectedField),
   MockObject(?mockBeanObject, ?beanType),
   mainAnalysis.isImmutableHContext(?basehctx),
   mainAnalysis.isImmutableHContext(?hctx).
@@ -387,7 +355,7 @@ MockObject(cat(?type, "::MockObject"), ?type) :-
    Type_Annotation(?type, "org.springframework.context.annotation.Configuration");
    Type_Annotation(?type, "javax.persistence.Entity");
    Type_Annotation(?type, "javax.ws.rs.Path"));
-   isBean(?type);
+   isConcreteBean(?type);
    AuthenticationProviderBean(?type);
    AuthenticationFilterBean(?type);
    AuthenticationEntryPoint(?type);
@@ -504,16 +472,14 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
   mainAnalysis.ReachableContext(?ctx, ?method),
   ReturnVar(?return, ?method),
   Method_SimpleName(?method, ?simplename),
-  Bean_Id(?beanClass, ?simplename),
+  ConcreteBean_Id(?beanClass, ?simplename),
   MockObject(?beanMockObject, ?beanClass),
   mainAnalysis.isImmutableHContext(?immHctx).
 
 /**
  * Spring Beans - XML
  **/
-.decl Bean_Id(?bean:Type, ?id:symbol)
-.output Bean_Id
-.decl isBean(?bean:Type)
+.decl isConcreteBean(?bean:Type)
 .decl MVCInterceptorBean(?bean:Type)
 .decl Validator(?class:Type)
 .decl AuthenticationProviderBean(?bean:Type)
@@ -521,27 +487,56 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
 .decl AuthenticationEntryPoint(?type:Type)
 .decl ApplicationListener(?type:Type)
 
-isBean(?class) :-
-  Bean_Id(?class, _).
+isConcreteBean(?class) :-
+  ConcreteBean_Id(?class, _).
 
 /**
- * The application does not necessarily use only application concrete types as beans (e.g., Spring types are used as beans)
+ * anantoni: The application does not necessarily use only application concrete types as beans (e.g., Spring types are used as beans)
+ * However, I do not want library types such as Strings
  **/
-Bean_Id(?class, ?id) :-
-  XMLNodeAttribute(?XMLFile, ?nodeId, _, "id", "id", ?id),
-  XMLNodeAttribute(?XMLFile, ?nodeId, _, "class", "class", ?class),
+.decl isBeanId(?id:symbol)
+.output isBeanId
+
+isBeanId(?id) :-
+   ConcreteBean_Id(_, ?id),
+   isAbstractBeanId(?id).
+
+.decl Bean_Parent(?id:symbol, ?parentId:symbol)
+.output Bean_Parent
+.decl ConcreteBean_Id(?class:ClassType, ?id:symbol)
+.output ConcreteBean_Id
+.decl isAbstractBeanId(?id:symbol)
+.output isAbstractBeanId
+
+ConcreteBean_Id(?class, ?id) :-
+  XMLNodeAttribute(?XMLFile, ?nodeId, "0", "id", "id", ?id),
+  XMLNodeAttribute(?XMLFile, ?nodeId, "1", "class", "class", ?class),
   isClassType(?class),
   !match("java\..*", ?class),
   !match("sun\..*", ?class).
 
-Bean_Id(?type, ?beanId) :-
+Bean_Parent(?id, ?parentId) :-
+  XMLNodeAttribute(?XMLFile, ?nodeId, "0", "id", "id", ?id),
+  XMLNodeAttribute(?XMLFile, ?nodeId, "1", "class", "class", _),
+  XMLNodeAttribute(?XMLFile, ?nodeId, "2", "parent", "parent", ?parentId).
+
+Bean_Parent(?id, ?parentId) :-
+  XMLNodeAttribute(?XMLFile, ?nodeId, "0", "id", "id", ?id),
+  !XMLNodeAttribute(?XMLFile, ?nodeId, _, "class", "class", _),
+  XMLNodeAttribute(?XMLFile, ?nodeId, "2", "parent", "parent", ?parentId).
+
+isAbstractBeanId(?id) :-
+  XMLNodeAttribute(?XMLFile, ?nodeId, "0", "id", "id", ?id),
+  !XMLNodeAttribute(?XMLFile, ?nodeId, _, "class", "class", _).
+
+ConcreteBean_Id(?type, ?beanId) :-
   (Type_Annotation(?type, "org.springframework.stereotype.Component");
    Type_Annotation(?type, "org.springframework.stereotype.Service");
    Type_Annotation(?type, "org.springframework.stereotype.Repository");
    Type_Annotation(?type, "org.springframework.stereotype.Controller")),
   AnnotationElement("type", ?type, "0", "0.0", "value", ?beanId, "-").
 
-Bean_Id(?type, ?beanId) :-
+ConcreteBean_Id(?type, ?beanId) :-
   (Type_Annotation(?type, "org.springframework.stereotype.Component");
    Type_Annotation(?type, "org.springframework.stereotype.Service");
    Type_Annotation(?type, "org.springframework.stereotype.Repository");
@@ -552,20 +547,7 @@ Bean_Id(?type, ?beanId) :-
 .decl TypeConvertToBeanId(?type:Type, ?beanId:symbol)
 .output TypeConvertToBeanId
 
-TypeConvertToBeanId(?type, ?beanId) :-
-  isClassType(?type),
-  StringChangesCaseBeforePosition(2, ?type),
-  substr(?type, 0, 1) = ?firstLetter,
-  string_upper(?firstLetter, ?upperFirstLetter),
-  substr(?type, 1, strlen(?type) - 2) = ?postfix,
-  ?beanId = cat(?upperFirstLetter, ?postfix).
-
-TypeConvertToBeanId(?type, ?beanId) :-
-  isClassType(?type),
-  StringChangesCaseAfterPosition(1, ?type),
-  ?beanId = ?type.
-
-isBean(?class) :-
+isConcreteBean(?class) :-
   XMLNodeAttribute(_, _, _, _, _, ?class),
   ApplicationConcreteType(?class).
 
@@ -593,7 +575,7 @@ Validator(?validator) :-
   match(".*Validator", ?validator).
 
 AuthenticationProviderBean(?authenticationProviderClass),
-Bean_Id(?authenticationProviderClass, ?id) :-
+ConcreteBean_Id(?authenticationProviderClass, ?id) :-
   XMLNode(?XMLFile, ?parentNodeId, _, _, "authentication-manager", "authentication-manager"),
   XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "id", "id", ?id),
   XMLNode(?XMLFile, ?nodeId, ?parentNodeId, _, "authentication-provider", "authentication-provider"),
@@ -627,7 +609,7 @@ BeanFieldInjection(?class, ?injectedField, ?mockObject) :-
   XMLNodeAttribute(?XMLFile, ?nodeId, _, "ref", "ref", ?refId),
   Field_DeclaringType(?injectedField, ?class),
   Field_SimpleName(?injectedField, ?fieldName),
-  Bean_Id(?injectedBeanType, ?refId),
+  ConcreteBean_Id(?injectedBeanType, ?refId),
   MockObject(?mockObject, ?injectedBeanType).
 
 /** Pattern:
@@ -650,7 +632,7 @@ BeanFieldInjection(?class, ?injectedField, ?mockObject) :-
   XMLNodeAttribute(?XMLFile, ?injectedBeanNodeId, _, "bean", "bean", ?injectedBeanId),
   Field_DeclaringType(?injectedField, ?class),
   Field_SimpleName(?injectedField, ?fieldName),
-  Bean_Id(?injectedBeanType, ?injectedBeanId),
+  ConcreteBean_Id(?injectedBeanType, ?injectedBeanId),
   MockObject(?mockObject, ?injectedBeanType).
 
 /**
@@ -677,7 +659,7 @@ BeanMap(?id, ?mapClass, ?value) :-
   XMLNode(?XMLFile, ?nodeId, ?parentNodeId, _, "entry", "beans:entry"),
   XMLNodeAttribute(?XMLFile, ?nodeId, _, "key", "key", ?entryBeanKey),
   XMLNodeAttribute(?XMLFile, ?nodeId, _, "value-ref", "value-ref", ?entryBeanId),
-  Bean_Id(?entryBeanClass, ?entryBeanId),
+  ConcreteBean_Id(?entryBeanClass, ?entryBeanId),
   MockObject(?entryBeanMockObject, ?entryBeanClass),
   ?value = cat("Mock map: ", cat(?id, ?mapClass)).
 
@@ -710,7 +692,7 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?calleeCtx, ?return) :-
   Method_SimpleName(?method, "getBean"),
   ActualParam(0, ?invocation, ?actual),
   mainAnalysis.VarPointsTo(_, ?heap, ?calleeCtx, ?actual),
-  Bean_Id(?beanClass, ?heap),
+  ConcreteBean_Id(?beanClass, ?heap),
   MockObject(?beanMockObject, ?beanClass),
   ReturnVar(?return, ?method),
   mainAnalysis.isImmutableHContext(?immHctx).
@@ -736,7 +718,7 @@ IncompleteFieldInjection(?decltype, ?basevalue, ?injectedField) :-
   Field_Type(?injectedField, ?fieldType),
   !isPrimitiveType(?fieldType),
   ?fieldType != "java.lang.String",
-  isBean(?decltype),
+  isConcreteBean(?decltype),
   !mainAnalysis.InstanceFieldPointsTo(_, _, ?injectedField, _, ?basevalue).
 
 .decl VPTUnreachableMockObject(?value:mainAnalysis.Value)
