@@ -98,7 +98,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
             return mergeMaps(eabi, eabi7);
         }
         System.err.println("Architecture not supported: " + arch);
-        return null;
+        return new HashMap<>();
     }
 
     /**

@@ -281,7 +281,8 @@ public class NativeScanner {
             Set<XRef> uXRefs = xrefs.get(uString);
             if (uXRefs == null)
                 continue;
-            System.out.println("Found xref information for string: " + uString);
+            if (debug)
+                System.out.println("Found xref information for string: " + uString);
             List<SymbolInfo> l = symbols.get(uString);
             for (XRef xref : uXRefs) {
                 l.add(new SymbolInfo(uString, lib, xref.function, j));
