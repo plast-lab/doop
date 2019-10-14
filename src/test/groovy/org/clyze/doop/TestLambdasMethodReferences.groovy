@@ -20,9 +20,9 @@ class TestLambdasMethodReferences extends DoopSpec {
 		Analysis analysis =
 			analyzeBuiltinTest("107-lambdas",
 							   ["--platform", "java_8", "--Xserver-logic",
-								"--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-								"--thorough-fact-gen", "--sanity",
+								"--thorough-fact-gen",
 								"--generate-jimple"] +
+							   sanityOpts +
 							   (wala ? ["--wala-fact-gen"] : []),
 							   analysisName,
 							   id)
@@ -59,9 +59,8 @@ class TestLambdasMethodReferences extends DoopSpec {
 		Analysis analysis =
 			analyzeBuiltinTest("104-method-references",
 							   ["--platform", "java_8",
-								"--thorough-fact-gen", "--sanity",
-								"--generate-jimple",
-								"--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"],
+								"--thorough-fact-gen",
+								"--generate-jimple"] + sanityOpts,
 							   analysisName)
 
 		then:

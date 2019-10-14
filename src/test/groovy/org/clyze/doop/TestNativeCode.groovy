@@ -13,9 +13,7 @@ class TestNativeCode extends ServerAnalysisTests {
 		when:
 		List args = ["--simulate-native-returns",
 					 "--generate-jimple",
-					 "--scan-native-code",
-					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl"
-		]
+					 "--scan-native-code"] + testExports
 		Analysis analysis = analyzeTest("009-native", args)
 
 		then:

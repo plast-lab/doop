@@ -1,5 +1,8 @@
 // Extra logic included by some tests.
 
+.output basic.DuplicateMethodLookup
+.output basic.DuplicateMethodImplemented
+
 #ifndef DISABLE_POINTS_TO
 .output mainAnalysis.ArrayIndexPointsTo
 .output mainAnalysis.InstanceFieldPointsTo

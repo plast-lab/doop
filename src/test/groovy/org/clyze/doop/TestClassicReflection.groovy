@@ -14,8 +14,8 @@ class TestClassicReflection extends DoopSpec {
 		List options = ["--reflection-classic", "--reflection-dynamic-proxies",
 						"--gen-opt-directives", "--Xserver-logic", "--generate-jimple",
 						"--Xextra-logic", "${Doop.souffleAddonsPath}/testing/TestReflection.dl",
-						"--thorough-fact-gen", "--sanity",
-						"--platform", "java_8"]
+						"--thorough-fact-gen",
+						"--platform", "java_8"] + sanityOpts
 		Analysis analysis = analyzeBuiltinTest("016-reflection", options)
 
 		then:
