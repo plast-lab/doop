@@ -63,17 +63,15 @@ public class NativeScanner {
             String lib = libFile.getCanonicalPath();
             System.out.println("== Processing library: " + lib + " ==");
 
-            RadareAnalysis radAnalysis = new RadareAnalysis(db, lib, onlyPreciseNativeStrings);
-            BinutilsAnalysis baseAnalysis = new BinutilsAnalysis(db, lib, onlyPreciseNativeStrings);
-            BinaryAnalysis analysis = useRadare ? radAnalysis : baseAnalysis;
+            BinaryAnalysis analysis = useRadare ?
+                new RadareAnalysis(db, lib, onlyPreciseNativeStrings)  :
+                new BinutilsAnalysis(db, lib, onlyPreciseNativeStrings);
 
-            // Use the base "binutils" analysis to find strings.
-
-            baseAnalysis.initEntryPoints();
+            analysis.initEntryPoints();
 
             // Find all strings in the binary.
             System.out.println("Gathering strings from " + lib + "...");
-            SortedMap<Long, String> allStrings = baseAnalysis.findStrings();
+            SortedMap<Long, String> allStrings = analysis.findStrings();
             if (allStrings == null || allStrings.size() == 0) {
                 System.err.println("Cannot find strings in " + lib + ", aborting.");
                 return;
