@@ -57,10 +57,10 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 013 (enums)"() {
 		when:
-		Analysis analysis = analyzeTest("013-enums", ["--reflection-classic", "--generate-jimple", testExports])
+		Analysis analysis = analyzeTest("013-enums", ["--reflection-classic", "--generate-jimple"] + testExports)
 
 		then:
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Enums array for Main$UndeletablePrefKey>')
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Enums array for Main$UndeletablePrefKey>')
 		arrayIndexPointsTo(analysis, '<Enums array for Main$UndeletablePrefKey>', '<Main$UndeletablePrefKey: void <clinit>()>/new Main$UndeletablePrefKey/0', true)
 	}
 }
