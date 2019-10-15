@@ -171,11 +171,14 @@ function printStatsTable() {
     for BENCHMARK in chrome instagram 009-native
     do
         setIDs "${BENCHMARK}"
-        if [ "${BENCHMARK}" == "chrome" ]; then
-            MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" "-dist-${STRING_DISTANCE2}" )
-        else
-            MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" )
-        fi
+        MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" )
+        # if [ "${BENCHMARK}" == "chrome" ]; then
+        #     MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" "-dist-${STRING_DISTANCE2}" )
+        #     # MODES=( "" "-loc-rad" "-dist-${STRING_DISTANCE1}" "-dist-${STRING_DISTANCE2}" )
+        # else
+        #     MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" )
+        #     # MODES=( "" "-loc-rad" "-dist-${STRING_DISTANCE1}" )
+        # fi
         for MODE in "${MODES[@]}"
         do
             local ID_STATIC="${ID_SCANNER}${MODE}"
