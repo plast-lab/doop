@@ -17,15 +17,12 @@ class TestLambdasMethodReferences extends DoopSpec {
 	def "Server analysis test 107 (lambdas)"(String analysisName, boolean wala) {
 		when:
 		String id = "test-107-lambdas" + (wala ? "-wala" : "")
-		Analysis analysis =
-			analyzeBuiltinTest("107-lambdas",
-							   ["--platform", "java_8", "--Xserver-logic",
-								"--thorough-fact-gen",
-								"--generate-jimple"] +
-							   sanityOpts +
-							   (wala ? ["--wala-fact-gen"] : []),
-							   analysisName,
-							   id)
+		List<String> walaOpts = wala ? ["--wala-fact-gen"] : []
+		List<String> opts = ["--platform", "java_8", "--Xserver-logic",
+							 "--thorough-fact-gen",
+							 "--generate-jimple"] +
+							 sanityOpts + walaOpts
+		Analysis analysis = analyzeBuiltinTest("107-lambdas", opts, analysisName, id)
 
 		then:
 		feature 'Creating lambdas with arrow notation.'
@@ -66,39 +63,39 @@ class TestLambdasMethodReferences extends DoopSpec {
 		then:
 
 		feature 'Construction of functional objects directly from method references.'
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/c1#_10', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::accept/0::: java.util.function.Consumer::: (Mock)::: reference A::meth1234 from <A: void meth1234(java.lang.Integer)> wrapped as java.util.function.Consumer.accept')
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/c1#_10', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::accept/0::: java.util.function.Consumer::: (Mock)::: reference A::meth1234 from <A: void meth1234(java.lang.Integer)> wrapped as java.util.function.Consumer.accept')
 
 		feature 'Use of functional objects together with Java 8 stream API methods.'
-		varPointsTo(analysis, '<java.util.stream.IntPipeline: void forEach(java.util.function.IntConsumer)>/@parameter0', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::accept/4::: java.util.function.IntConsumer::: (Mock)::: reference A::meth1234 from <A: void meth1234(java.lang.Integer)> wrapped as java.util.function.IntConsumer.accept')
+		varPointsToQ(analysis, '<java.util.stream.IntPipeline: void forEach(java.util.function.IntConsumer)>/@parameter0', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::accept/4::: java.util.function.IntConsumer::: (Mock)::: reference A::meth1234 from <A: void meth1234(java.lang.Integer)> wrapped as java.util.function.IntConsumer.accept')
 
 		feature 'Instance method references.'
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/c3#_47', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::apply/2::: java.util.function.Function::: (Mock)::: reference A::meth99 from <A: java.lang.Integer meth99(java.lang.Integer)> wrapped as java.util.function.Function.apply')
-		varPointsTo(analysis, '<A: void meth1234(java.lang.Integer)>/x#_0', '<Main: void main(java.lang.String[])>/new java.lang.Integer/0')
-		varPointsTo(analysis, '<A: java.lang.Integer meth99(java.lang.Integer)>/this#_0', '<Main: void main(java.lang.String[])>/new A/0')
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/c3#_47', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::apply/2::: java.util.function.Function::: (Mock)::: reference A::meth99 from <A: java.lang.Integer meth99(java.lang.Integer)> wrapped as java.util.function.Function.apply')
+		varPointsToQ(analysis, '<A: void meth1234(java.lang.Integer)>/x#_0', '<Main: void main(java.lang.String[])>/new java.lang.Integer/0')
+		varPointsToQ(analysis, '<A: java.lang.Integer meth99(java.lang.Integer)>/this#_0', '<Main: void main(java.lang.String[])>/new A/0')
 
 		feature 'Static method reference (Person::compareByAge).'
-		varPointsTo(analysis, '<Person: int compareByAge(Person,Person)>/a#_0', '<Person: java.util.List createRoster()>/new Person/0')
-		varPointsTo(analysis, '<Person: int compareByAge(Person,Person)>/a#_0', '<Person: java.util.List createRoster()>/new Person/1')
-		varPointsTo(analysis, '<Person: int compareByAge(Person,Person)>/b#_0', '<Person: java.util.List createRoster()>/new Person/0')
-		varPointsTo(analysis, '<Person: int compareByAge(Person,Person)>/b#_0', '<Person: java.util.List createRoster()>/new Person/1')
+		varPointsToQ(analysis, '<Person: int compareByAge(Person,Person)>/a#_0', '<Person: java.util.List createRoster()>/new Person/0')
+		varPointsToQ(analysis, '<Person: int compareByAge(Person,Person)>/a#_0', '<Person: java.util.List createRoster()>/new Person/1')
+		varPointsToQ(analysis, '<Person: int compareByAge(Person,Person)>/b#_0', '<Person: java.util.List createRoster()>/new Person/0')
+		varPointsToQ(analysis, '<Person: int compareByAge(Person,Person)>/b#_0', '<Person: java.util.List createRoster()>/new Person/1')
 
 		feature 'Instance method reference that captures receiver (myComparisonProvider::compareByName).'
-		varPointsTo(analysis, '<MethodReferencesTest$1ComparisonProvider: int compareByName(Person,Person)>/this#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new MethodReferencesTest$1ComparisonProvider/0')
+		varPointsToQ(analysis, '<MethodReferencesTest$1ComparisonProvider: int compareByName(Person,Person)>/this#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new MethodReferencesTest$1ComparisonProvider/0')
 
 		feature 'Instance method reference that does not capture receiver (String::compareToIgnoreCase).'
-		varPointsTo(analysis, '<java.lang.String: int compareToIgnoreCase(java.lang.String)>/l0#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new java.lang.String/0')
-		varPointsTo(analysis, '<java.lang.String: int compareToIgnoreCase(java.lang.String)>/l0#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new java.lang.String/1')
-		varPointsTo(analysis, '<java.lang.String: int compareToIgnoreCase(java.lang.String)>/l1#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new java.lang.String/0')
-		varPointsTo(analysis, '<java.lang.String: int compareToIgnoreCase(java.lang.String)>/l1#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new java.lang.String/1')
+		varPointsToQ(analysis, '<java.lang.String: int compareToIgnoreCase(java.lang.String)>/l0#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new java.lang.String/0')
+		varPointsToQ(analysis, '<java.lang.String: int compareToIgnoreCase(java.lang.String)>/l0#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new java.lang.String/1')
+		varPointsToQ(analysis, '<java.lang.String: int compareToIgnoreCase(java.lang.String)>/l1#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new java.lang.String/0')
+		varPointsToQ(analysis, '<java.lang.String: int compareToIgnoreCase(java.lang.String)>/l1#_0', '<MethodReferencesTest: void main(java.lang.String[])>/new java.lang.String/1')
 
 		feature 'Constructor references.'
 		lambdaCGE(analysis, '<Main: void main(java.lang.String[])>/java.util.function.Supplier.get/1', '<A: void <init>()>')
-		varPointsTo(analysis, '<A: void <init>()>/@this', 'mock A constructed by constructor reference at <Main: void main(java.lang.String[])>/java.util.function.Supplier.get/1')
-		varPointsTo(analysis, '<MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/result#_52', 'mock java.util.HashSet constructed by constructor reference at <MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/java.util.function.Supplier.get/0')
+		varPointsToQ(analysis, '<A: void <init>()>/@this', 'mock A constructed by constructor reference at <Main: void main(java.lang.String[])>/java.util.function.Supplier.get/1')
+		varPointsToQ(analysis, '<MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/result#_52', 'mock java.util.HashSet constructed by constructor reference at <MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/java.util.function.Supplier.get/0')
 
 		feature 'Auto-boxing conversions.'
-		varPointsTo(analysis, '<Main: void main(java.lang.String[])>/$r24', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::applyAsInt/0::: java.util.function.IntUnaryOperator::: (Mock)::: reference A::meth5678 from <A: java.lang.Integer meth5678(java.lang.Integer)> wrapped as java.util.function.IntUnaryOperator.applyAsInt')
-		varPointsTo(analysis, '<A: java.lang.Integer meth5678(java.lang.Integer)>/x#_0', 'mock box allocation for type java.lang.Integer')
+		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/$r24', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::applyAsInt/0::: java.util.function.IntUnaryOperator::: (Mock)::: reference A::meth5678 from <A: java.lang.Integer meth5678(java.lang.Integer)> wrapped as java.util.function.IntUnaryOperator.applyAsInt')
+		varPointsToQ(analysis, '<A: java.lang.Integer meth5678(java.lang.Integer)>/x#_0', 'mock box allocation for type java.lang.Integer')
 
 		noSanityErrors(analysis)
 
