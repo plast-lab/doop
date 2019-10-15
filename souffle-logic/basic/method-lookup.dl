@@ -120,7 +120,6 @@ DuplicateMethodLookup(?simplename, ?descriptor, ?type, ?method1, ?method2):-
   !CovariantMethods(?method1, ?method2).
 
 .decl DuplicateMethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method1:Method, ?method2:Method)
-.output DuplicateMethodImplemented
 
 DuplicateMethodImplemented(?simplename, ?descriptor, ?type, ?method1, ?method2):-
   MethodImplemented(?simplename, ?descriptor, ?type, ?method1),
