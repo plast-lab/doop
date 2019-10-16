@@ -134,21 +134,22 @@ function runDoop() {
     setIDs "${BENCHMARK}"
     pushd ${DOOP_HOME} &> /dev/null
     date
+    BASE_OPTS="--platform ${PLATFORM} --timeout ${TIMEOUT}" #  --no-standard-exports"
     # 1. Base analysis.
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_BASE} --platform ${PLATFORM} --timeout ${TIMEOUT} |& tee ${CURRENT_DIR}/${ID_BASE}.log
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_BASE} ${BASE_OPTS} |& tee ${CURRENT_DIR}/${ID_BASE}.log
     # 2. HeapDL analysis, for comparison.
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_HEAPDL} --platform ${PLATFORM} --timeout ${TIMEOUT} --heapdl-file ${HPROF} |& tee ${CURRENT_DIR}/${ID_HEAPDL}.log
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_HEAPDL} ${BASE_OPTS} --heapdl-file ${HPROF} |& tee ${CURRENT_DIR}/${ID_HEAPDL}.log
     # 3. Native scanner, default mode.
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} ${BASE_OPTS} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
     # 4. Native scanner, use only localized strings (binutils/Radare2 modes).
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_OBJ} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_OBJ}.log
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_RAD} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --only-precise-native-strings --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_RAD}.log
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_OBJ} ${BASE_OPTS} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_OBJ}.log
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_RAD} ${BASE_OPTS} --scan-native-code --only-precise-native-strings --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_RAD}.log
     # 5. Native scanner, "smart native targets" mode.
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} ${BASE_OPTS} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
     # 6. Native scanner, "use string locality" mode.
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS1} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE1} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS1}.log
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS1} ${BASE_OPTS} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE1} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS1}.log
     # if [ "${BENCHMARK}" == "chrome" ]; then
-    #     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS2} --platform ${PLATFORM} --timeout ${TIMEOUT} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE2} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS2}.log
+    #     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS2} ${BASE_OPTS} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE2} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS2}.log
     # fi
     popd &> /dev/null
 }
