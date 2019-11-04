@@ -296,32 +296,3 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
 #endif // HEAPDL_DYNAMICVARPOINTSTO
 
 isHeapAllocation(?heap), HeapAllocation_Type(?heap, ?type), OriginalHeapAllocation_Type(?heap, ?type) :- _DynamicNormalHeapAllocation(_, _, ?type, ?heap).
-
-
-// Native code scanner metric: how many dynamic method calls happen
-// from native code to Java code?
-.decl DynamicCallGraphEdgeFromNative(?toMethod:Method, ?fromMethod:Method)
-DynamicCallGraphEdgeFromNative(?toMethod, ?fromMethod) :-
-  _DynamicCallGraphEdge(?fromMethod, _, ?toMethod, _, _),
-  Method_Modifier("native", ?fromMethod).
-
-// Filtered DynamicCallGraphEdgeFromNative, in the "application" part.
-.decl DynamicAppCallGraphEdgeFromNative(?toMethod:Method, ?fromMethod:Method)
-DynamicAppCallGraphEdgeFromNative(?toMethod, ?fromMethod) :-
-  DynamicCallGraphEdgeFromNative(?toMethod, ?fromMethod),
-  Method_DeclaringType(?toMethod, ?toClass),
-  ApplicationClass(?toClass),
-  Method_DeclaringType(?fromMethod, ?fromClass),
-  ApplicationClass(?fromClass).
-
-// All methods called dynamically by native code.
-.decl DynamicNativeCodeTarget(?toMethod:Method)
-DynamicNativeCodeTarget(?toMethod) :-
-  DynamicCallGraphEdgeFromNative(?toMethod, _).
-
-// Application methods called dynamically by native code.
-.decl DynamicAppNativeCodeTarget(?toMethod:Method)
-DynamicAppNativeCodeTarget(?toMethod) :-
-  DynamicCallGraphEdgeFromNative(?toMethod, ?fromMethod),
-  ApplicationMethod(?fromMethod),
-  ApplicationMethod(?toMethod).
