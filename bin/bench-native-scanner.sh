@@ -50,7 +50,9 @@ function setDifference() {
 }
 
 function calcIncrease() {
-    python -c "print('%.2f' % (100.0 * ($2 - $1) / $1) + '%')"
+    local ARG1=$(echo "$1" | sed -e 's/,/./g')
+    local ARG2=$(echo "$2" | sed -e 's/,/./g')
+    python -c "print('%.2f' % (100.0 * (${ARG2} - ${ARG1}) / ${ARG1}) + '%')"
 }
 
 function printStatsRow() {
