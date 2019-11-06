@@ -227,7 +227,7 @@ function analyzeLog4J() {
 
 function analyzeTomcat() {
     local BASE_DIR="${XCORPUS_DIR}/data/qualitas_corpus_20130901/tomcat-7.0.2"
-    APP_INPUTS="${XCORPUS_EXT_DIR}/repackaged/tomcat-7.0.2 ${BASE_DIR}/project/builtin-tests.zip ${XCORPUS_EXT_DIR}/native/tomcat/tomcat-native-1.2.16-win32-bin.zip ${XCORPUS_EXT_DIR}/native/tomcat/ubuntu/libtcnative.so.jar"
+    APP_INPUTS="${XCORPUS_EXT_DIR}/repackaged/tomcat-7.0.2 ${BASE_DIR}/project/builtin-tests.zip ${XCORPUS_EXT_DIR}/native/tomcat/win64/tcnative.dll_win64_x64.jar ${XCORPUS_EXT_DIR}/native/tomcat/mandriva/libtcnative-1.so.jar"
     analyzeXCorpusBenchmark "tomcat-7.0.2"
 }
 
