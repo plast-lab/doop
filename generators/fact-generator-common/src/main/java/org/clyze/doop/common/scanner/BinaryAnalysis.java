@@ -132,7 +132,7 @@ abstract class BinaryAnalysis {
                 String offset = si.offset == null ? UNKNOWN_OFFSET : Long.toString(si.offset);
                 // If used in global data, set dummy function name for string.
                 String func = si.function;
-                if (func.equals(UNKNOWN_FUNCTION) && words.contains(si.offset))
+                if (func.equals(UNKNOWN_FUNCTION) && words != null && words.contains(si.offset))
                     func = "<<GLOBAL_DATA_SECTION>>";
                 // Skip strings used in unknown locations if appropriate option is set.
                 boolean skipString = onlyPreciseNativeStrings && func.equals(UNKNOWN_FUNCTION) && (xrefs.get(symbol) == null);

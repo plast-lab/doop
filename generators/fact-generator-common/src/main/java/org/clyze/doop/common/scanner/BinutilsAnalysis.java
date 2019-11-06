@@ -455,7 +455,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
             } catch (NumberFormatException ex) {
             }
         }
-        System.err.println("Error, cannot find section " + sectionName + " from output:");
+        System.err.println("WARNING: cannot find section " + sectionName + " from output:");
         for (String l : lines)
             System.out.println(l);
         return null;
