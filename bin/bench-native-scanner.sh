@@ -187,7 +187,7 @@ function printStatsTable() {
     echo -e "|          \t|     \t| methods\t| recall\t|       \t|  (incr. over base)\t|  (incr. over base)\t|              \t|  points\t|"
     printLine ${LAST_COL}
     # for BENCHMARK in androidterm chrome instagram 009-native
-    for BENCHMARK in "chrome" "instagram" "009-native" "aspectj-1.6.9" "log4j-1.2.16" "lucene-4.3.0"
+    for BENCHMARK in "chrome" "instagram" "009-native" "aspectj-1.6.9" "log4j-1.2.16" "lucene-4.3.0" "tomcat-7.0.2"
     do
         setIDs "${BENCHMARK}"
         MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" )
@@ -223,6 +223,12 @@ function analyzeLog4J() {
     local BASE_DIR="${XCORPUS_DIR}/data/qualitas_corpus_20130901/log4j-1.2.16"
     APP_INPUTS="${BASE_DIR}/project/bin.zip ${BASE_DIR}/project/builtin-tests.zip ${BASE_DIR}/.xcorpus/evosuite-tests.zip"
     analyzeXCorpusBenchmark "log4j-1.2.16"
+}
+
+function analyzeTomcat() {
+    local BASE_DIR="${XCORPUS_DIR}/data/qualitas_corpus_20130901/tomcat-7.0.2"
+    APP_INPUTS="${XCORPUS_EXT_DIR}/repackaged/tomcat-7.0.2 ${BASE_DIR}/project/builtin-tests.zip ${XCORPUS_EXT_DIR}/native/tomcat/tomcat-native-1.2.16-win32-bin.zip ${XCORPUS_EXT_DIR}/native/tomcat/ubuntu/libtcnative.so.jar"
+    analyzeXCorpusBenchmark "tomcat-7.0.2"
 }
 
 function analyzeXCorpusBenchmark() {
@@ -278,6 +284,9 @@ if [ "${RUN_ANALYSIS}" == "1" ]; then
 
     # Log4j.
     analyzeLog4J
+
+    # Tomcat.
+    analyzeTomcat
 fi
 
 printStatsTable ${BENCHMARK}
