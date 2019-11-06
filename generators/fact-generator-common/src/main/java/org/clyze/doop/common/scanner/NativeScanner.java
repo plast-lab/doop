@@ -30,13 +30,18 @@ public class NativeScanner {
     public void scanInputs(Iterable<String> inputs) {
         ArtifactScanner.EntryProcessor gProc = (file, entry, entryName) -> {
             boolean isSO = entryName.endsWith(".so");
+            boolean isDLL = entryName.toLowerCase().endsWith(".dll");
             boolean isLibsXZS = entryName.endsWith("libs.xzs");
             boolean isLibsZSTD = entryName.endsWith("libs.zstd");
-            if (isSO || isLibsXZS || isLibsZSTD) {
+            if (isSO || isDLL || isLibsXZS || isLibsZSTD) {
                 File libTmpFile = ArtifactScanner.extractZipEntryAsFile("native-lib", file, entry, entryName);
                 if (isSO)
                     scanLib(libTmpFile, db);
-                else if (isLibsXZS)
+                else if (isDLL) {
+                    if (!useRadare)
+                        System.err.println("WARNING: Radare mode should be activated to scan library " + entryName);
+                    scanLib(libTmpFile, db);
+                } else if (isLibsXZS)
                     scanXZSLib(libTmpFile, db);
                 else if (isLibsZSTD)
                     scanZSTDLib(libTmpFile, db);

@@ -51,7 +51,9 @@ abstract class BinaryAnalysis {
      */
     public SortedMap<Long, String> findStrings() throws IOException {
         Section rodata = getSection(".rodata");
-        return rodata == null ? null : rodata.strings();
+        if (rodata == null)
+            rodata = getSection(".rdata");
+        return rodata == null ? new TreeMap<>() : rodata.strings();
     }
 
     /**
