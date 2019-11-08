@@ -105,6 +105,7 @@ class PlatformManager {
 	]
 
 	String platformsLib
+	String androidSdkDir
 
 	List<String> find(String platform) {
 		if (!platformsLib)
@@ -116,12 +117,15 @@ class PlatformManager {
 				def platformPath = "${platformsLib}/JREs/jre1.${variant ? "${version}_$variant" : version}/lib"
 				return find0(platform, platformPath)
 			case "android":
-				def platformPath = "${platformsLib}/Android/${variant}/Android/Sdk/platforms/android-${version}"
-				def files = find0(platform, platformPath)
+				def platformSuffix = "platforms/android-${version}"
+				def files = find0(platform, "${platformsLib}/Android/${variant}/Android/Sdk/${platformSuffix}")
+				if (!allPlatformFilesExist(files) && (variant == 'stubs') && androidSdkDir) {
+					log.info "Could not resolve platform '${platform}' via 'platformsLib', trying Android SDK in ${androidSdkDir}"
+					files = find0(platform, "${androidSdkDir}/${platformSuffix}")
+				}
 				if (variant == "robolectric") {
 					log.info "Using Robolectric with Java 8"
-					platformPath = "${platformsLib}/JREs/jre1.8/lib"
-					files += find0("java_8", platformPath)
+					files += find0("java_8", "${platformsLib}/JREs/jre1.8/lib")
 				}
 				return files
 		}
@@ -133,5 +137,9 @@ class PlatformManager {
 		if (!artifacts)
 			throw new RuntimeException("Invalid platform: $platform")
 		artifacts.collect { "$path/$it" }
+	}
+
+	static boolean allPlatformFilesExist(Collection<String> paths) {
+		return paths.findAll { !(new File(it)).exists() }.size() == 0
 	}
 }

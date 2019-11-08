@@ -74,7 +74,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		context.add(options.INPUTS.value as List<String>, InputType.INPUT)
 		context.add(options.LIBRARIES.value as List<String>, InputType.LIBRARY)
 
-		def platformFiles = new PlatformManager(options.PLATFORMS_LIB.value as String).find(platformName)
+		def sdkDir = System.getenv('ANDROID_SDK')
+		def platformFiles = new PlatformManager(options.PLATFORMS_LIB.value as String, sdkDir).find(platformName)
 		context.add(platformFiles, InputType.PLATFORM)
 
 		context.add(options.HEAPDLS.value as List<String>, InputType.HEAPDL)
