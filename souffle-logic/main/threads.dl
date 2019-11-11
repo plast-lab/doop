@@ -32,7 +32,7 @@ RunningThread(?hctx, ?value)
 #endif // JRE13, JRE14
     ThisVar(?start, ?startThis),
     CallGraphEdge(?callerCtx, _, ?calleeCtx, ?start),
-    VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis),
+    VarPointsTo(?hctx, ?value, ?calleeCtx, ?startThis),
     Value_Type(?value, ?valuetype),
     basic.MethodLookup("run", "void()", ?valuetype, ?run),
     ThisVar(?run, ?runThis).
