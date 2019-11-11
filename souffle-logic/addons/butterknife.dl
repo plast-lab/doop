@@ -17,8 +17,7 @@ FieldBindView(?field, ?controlValue, ?controlType, ?ctx, ?hctx) :-
   AnnotationElement("field", ?field, _, _, "value", ?id, _),
   LayoutControl(?id, ?controlType, _),
   Field_DeclaringType(?field, ?type),
-  Method_DeclaringType(?method, ?type),
-  Method_SimpleName(?method, "<init>"),
+  basic.ClassConstructor(?method, ?type),
   ReachableContext(?ctx, ?meth),
   isImmutableHContext(?hctx),
   ?controlValue = cat("@BindView: <", cat(?controlType, cat(" control for field ", ?field))).

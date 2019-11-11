@@ -26,12 +26,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class PythonIREngine {
-    private List<Module> modules;
-    private PythonLoaderFactory loader;
+class PythonIREngine {
+    private final List<Module> modules;
+    private final PythonLoaderFactory loader;
     private AnalysisScope scope;
     private IClassHierarchy cha;
-    private IAnalysisCacheView cache;
+    private final IAnalysisCacheView cache;
 
     public List<Module> getModules() {
         return modules;

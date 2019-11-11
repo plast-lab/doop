@@ -30,9 +30,9 @@ class FactWriter extends JavaFactWriter {
     private final boolean _reportPhantoms;
     private final Collection<Object> seenPhantoms = new HashSet<>();
 
-    FactWriter(Database db, boolean moreStrings, boolean artifacts,
+    FactWriter(Database db, SootParameters params, boolean artifacts,
                Representation rep, boolean reportPhantoms) {
-        super(db, moreStrings, artifacts);
+        super(db, params, artifacts);
         _rep = rep;
         _reportPhantoms = reportPhantoms;
     }
@@ -47,13 +47,13 @@ class FactWriter extends JavaFactWriter {
         return TypeUtils.raiseTypeId(aTag.getType());
     }
 
-    String writeMethod(SootMethod m) {
+    void writeMethod(SootMethod m) {
         String methodRaw = _rep.signature(m);
         String methodId = methodSig(m, methodRaw);
         String arity = Integer.toString(m.getParameterCount());
 
         _db.add(STRING_RAW, methodId, methodRaw);
-        _db.add(METHOD, methodId, _rep.simpleName(m), Representation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
+        writeMethod(methodId, _rep.simpleName(m), Representation.params(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()), arity);
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
@@ -75,7 +75,6 @@ class FactWriter extends JavaFactWriter {
                     }
 
         }
-        return methodId;
     }
 
     void writeAndroidEntryPoint(SootMethod m) {
@@ -1009,9 +1008,9 @@ class FactWriter extends JavaFactWriter {
             }
     }
 
-    public void writePreliminaryFacts(Collection<SootClass> classes, BasicJavaSupport java, SootParameters sootParameters) {
+    public void writePreliminaryFacts(Collection<SootClass> classes, BasicJavaSupport java) {
         classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(this::writeApplicationClass);
-        writePreliminaryFacts(java, sootParameters);
+        writePreliminaryFacts(java);
     }
 
     boolean checkAndRegisterPhantom(Object phantom) {

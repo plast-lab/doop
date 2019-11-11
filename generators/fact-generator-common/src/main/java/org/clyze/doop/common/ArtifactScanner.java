@@ -2,14 +2,15 @@ package org.clyze.doop.common;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
-
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarInputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.utils.TypeUtils;
@@ -99,20 +100,29 @@ public class ArtifactScanner {
         }
     }
 
+    public void processClass(InputStream is, File f, Consumer<String> classProc) throws IOException {
+        ClassReader reader = new ClassReader(is);
+        String className = BytecodeUtil.getClassName(reader);
+        String artifact = f.getName();
+        registerArtifactClass(artifact, className, "-", reader.b.length);
+        if (classProc != null)
+            classProc.accept(className);
+    }
+
     /**
-     * Register JAR entries and perform actions over JAR entries (if
-     * processors are not null).
+     * Register archive (.class) entries and perform actions over
+     * other types of entries (if processors are not null).
      *
-     * @param inputJar    the path of the input JAR file
+     * @param input       the path of the input archive
      * @param classProc   the processor for .class entries (takes entry name)
      * @param generalProc the general processor for all other entries
      */
-    public void processJARClasses(String inputJar, Consumer<String> classProc,
-                                  EntryProcessor generalProc) throws IOException {
-        try (JarInputStream jin = new JarInputStream(new FileInputStream(inputJar));
-             JarFile jarFile = new JarFile(inputJar)) {
-            JarEntry entry;
-            while ((entry = jin.getNextJarEntry()) != null) {
+    public void processArchive(String input, Consumer<String> classProc,
+                               EntryProcessor generalProc) throws IOException {
+        try (ZipInputStream zin = new ZipInputStream(new FileInputStream(input));
+             ZipFile zipFile = new ZipFile(input)) {
+            ZipEntry entry;
+            while ((entry = zin.getNextEntry()) != null) {
                 /* Skip directories */
                 if (entry.isDirectory())
                     continue;
@@ -120,30 +130,62 @@ public class ArtifactScanner {
                 String entryName = entry.getName().toLowerCase();
                 if (entryName.endsWith(".class")) {
                     try {
-                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                        String className = TypeUtils.replaceSlashesWithDots(reader.getClassName());
-                        String artifact = (new File(jarFile.getName())).getName();
-                        registerArtifactClass(artifact, className, "-", reader.b.length);
-                        if (classProc != null)
-                            classProc.accept(className);
+                        processClass(zipFile.getInputStream(entry), new File(zipFile.getName()), classProc);
                     } catch (Exception ex) {
                         System.err.println("Error while preprocessing entry \"" + entryName + "\", it will be ignored.");
                     }
                 } else if (generalProc != null)
-                    generalProc.accept(jarFile, entry, entryName);
+                    generalProc.accept(zipFile, entry, entryName);
             }
         }
     }
 
+    /**
+     * Helper method to generate the "class-artifact" table for a list of inputs.
+     *
+     * @param inputs   a list of inputs (such as JAR or APK files)
+     */
+    public void onlyRegisterArtifactClasses(Iterable<String> inputs) throws IOException {
+        for (String input : inputs) {
+            String lower = input.toLowerCase();
+            if (lower.endsWith(".jar") || lower.endsWith(".zip"))
+                processArchive(input, null, null);
+            else if (lower.endsWith(".apk"))
+                processAPKClasses(input, null);
+            else if (lower.endsWith(".aar"))
+                System.err.println("AAR input not supported for class-artifact table: " + input);
+        }
+    }
+
+    /**
+     * Helper method to extract an entry inside a ZIP archive and save
+     * it as a file.
+     *
+     * @param tmpDirName   a name for the intermediate temporary directory
+     * @param zipFile      the ZIP archive
+     * @param entry        the archive entry
+     * @param entryName    the name of the entry
+     * @return             the output file
+     */
+    public static File extractZipEntryAsFile(String tmpDirName, ZipFile zipFile, ZipEntry entry, String entryName) throws IOException {
+        File tmpDir = Files.createTempDirectory(tmpDirName).toFile();
+        tmpDir.deleteOnExit();
+        String tmpName = entryName.replaceAll(File.separator, "_");
+        File libTmpFile = new File(tmpDir, tmpName);
+        libTmpFile.deleteOnExit();
+        Files.copy(zipFile.getInputStream(entry), libTmpFile.toPath());
+        return libTmpFile;
+    }
+
     @FunctionalInterface
-    interface EntryProcessor {
+    public interface EntryProcessor {
         /**
-         * Process an entry inside a .JAR file.
+         * Process an entry inside a .zip (JAR/AAR/APK) file.
          *
-         * @param jarFile    the JAR file
-         * @param entry      the JAR entry
-         * @param entryName  the name of the JAR entry
+         * @param file       the ZIP file
+         * @param entry      the ZIP entry
+         * @param entryName  the name of the ZIP entry
          */
-        void accept(JarFile jarFile, JarEntry entry, String entryName) throws IOException;
+        void accept(ZipFile file, ZipEntry entry, String entryName) throws IOException;
     }
 }

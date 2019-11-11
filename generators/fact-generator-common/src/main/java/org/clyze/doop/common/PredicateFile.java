@@ -88,6 +88,7 @@ public enum PredicateFile
     NATIVE_METHODTYPE_CANDIDATE("NativeMethodTypeCandidate"),
     NATIVE_NAME_CANDIDATE("NativeNameCandidate"),
     NATIVE_RETURN_VAR("NativeReturnVar"),
+    NATIVE_XREF("NativeXRef"),
     NORMAL_HEAP("NormalHeap"),
     NUM_CONSTANT_RAW("NumConstantRaw"),
     OPERATOR_AT("OperatorAt"),

@@ -13,52 +13,6 @@ import org.apache.log4j.Logger;
 public class ClassPathHelper {
 
     /**
-     * Finds a classpath JAR that matches a string. This method can be
-     * used to find standalone JARs packaged as dependencies. This
-     * method reads the current classloader classpath and is thus only
-     * supported in Java < 9.
-     *
-     * @param prefix   the prefix of the JAR
-     * @return         the path of the JAR
-     *
-     */
-    public static String getClasspathJar(String prefix) {
-        ClassLoader cl = ClassPathHelper.class.getClassLoader();
-        if (cl instanceof URLClassLoader) {
-            Collection<String> classpath = new HashSet<>();
-            URL[] urls = ((URLClassLoader)cl).getURLs();
-            for (URL url : urls)
-                classpath.add(url.getFile());
-            return getClasspathJar(prefix, classpath);
-        } else
-            throw new RuntimeException("Could not handle non-URLClassloader.");
-    }
-
-    /**
-     * Finds a classpath JAR that matches a string.
-     *
-     * @param prefix     the prefix of the JAR
-     * @param classpath  the classpath
-     * @return           the path of the JAR
-     *
-     */
-    private static String getClasspathJar(String prefix, Iterable<String> classpath) {
-	final String searchString = "/" + prefix;
-        LinkedList<String> matchingPaths = new LinkedList<>();
-	for (String path : classpath) {
-	    if (path.contains(prefix) && path.toLowerCase().endsWith(".jar"))
-		matchingPaths.add(path);
-	}
-	int matches = matchingPaths.size();
-	if (matches == 1)
-	    return matchingPaths.get(0);
-	else if (matches > 1)
-	    throw new RuntimeException("No single match for '" + prefix + "' in classpath: " + String.join(":", classpath));
-	else
-	    throw new RuntimeException("Could not find classpath entry: " + prefix);
-    }
-
-    /**
      * Create a copy of the current classpath. Only supported in Java < 9.
      *
      * @param log  a logger to use (may be null)

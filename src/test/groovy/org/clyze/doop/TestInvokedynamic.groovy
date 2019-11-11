@@ -14,7 +14,7 @@ class TestInvokedynamic extends DoopSpec {
 	@Unroll
 	def "Server analysis test 115 (invokedynamic, method handles/types)"(boolean fullReflection) {
 		when:
-		String analysisName = "context-insensitive";
+		String analysisName = "context-insensitive"
 		List reflectionOpts = fullReflection ?
 							  ["--reflection-classic"] :
 							  ["--light-reflection-glue", "--distinguish-all-string-constants"]

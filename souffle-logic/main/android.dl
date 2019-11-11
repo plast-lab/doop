@@ -136,8 +136,7 @@ ForcedReachableAndroidContext(?ctx, ?method) :-
 // constructors.
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   KeepClass(?class),
-  Method_DeclaringType(?meth, ?class),
-  Method_SimpleName(?meth, "<init>"),
+  basic.ClassConstructor(?meth, ?class),
   !FormalParam(_, ?meth, _),
   isImmutableContext(?ctx).
 
@@ -587,8 +586,7 @@ ReachableValue(?hctx, ?value) :-
 // make its constructors ForcedReachable.
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   ReifiedAndroidObjectValue(_, ?type),
-  Method_DeclaringType(?meth, ?type),
-  Method_SimpleName(?meth, "<init>"),
+  basic.ClassConstructor(?meth, ?type),
   isImmutableContext(?ctx).
 
 #ifndef DISABLE_POINTS_TO

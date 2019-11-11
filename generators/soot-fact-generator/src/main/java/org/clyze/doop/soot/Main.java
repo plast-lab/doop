@@ -6,12 +6,14 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.scanner.NativeScanner;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.DoopConventions;
@@ -34,6 +36,7 @@ import static org.clyze.doop.common.FrontEndLogger.*;
 public class Main {
 
     private static Log logger;
+    private static final String debug = System.getenv("SOOT_DEBUG");
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
@@ -59,9 +62,10 @@ public class Main {
         String outDir = sootParameters.getOutputDir();
 
         try {
-            Helper.tryInitLogging("DEBUG", sootParameters.getLogDir(), true);
+            String logDir = sootParameters.getLogDir();
+            Helper.tryInitLogging("DEBUG", logDir, true);
             logger = LogFactory.getLog(Main.class);
-            logger.info("Logging initialized for Soot-based fact generation.");
+            logger.info("Logging initialized, using directory: " + logDir);
         } catch (IOException ex) {
             System.err.println("WARNING: could not initialize logging");
             throw new DoopErrorCodeException(18);
@@ -90,14 +94,15 @@ public class Main {
         Options.v().set_keep_line_number(true);
 
         BasicJavaSupport_Soot java = new BasicJavaSupport_Soot(sootParameters, new ArtifactScanner());
-        java.preprocessInputs();
-
-        AndroidSupport_Soot android = null;
 
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
+
+        // Set up Soot options that depend on target platform (Android/Java).
+        AndroidSupport_Soot android;
         if (sootParameters._dex) {
             System.out.println("Running in mixed Soot/Dex mode.");
+            android = null;
         } else if (sootParameters._android) {
             if (sootParameters.getInputs().size() > 1)
                 logWarn(logger, "WARNING: Android mode: all inputs will be preprocessed but only " + sootParameters.getInputs().get(0) + " will be considered as application file. The rest of the input files may be ignored by Soot.\n");
@@ -108,11 +113,67 @@ public class Main {
             else
                 Options.v().set_android_jars(sootParameters._androidJars);
             android = new AndroidSupport_Soot(sootParameters, java);
-            android.processInputs(tmpDirs);
-        } else
+        } else {
             Options.v().set_src_prec(Options.src_prec_class);
+            android = null;
+        }
 
-        Scene scene = Scene.v();
+        boolean writeFacts = !sootParameters.noFacts();
+        try (Database db = new Database(outDir, writeFacts)) {
+            java.preprocessInputs(db);
+
+            AtomicInteger errors = new AtomicInteger(0);
+            if (android != null)
+                java.getExecutor().execute(() -> android.processInputs(tmpDirs));
+
+            Scene scene = Scene.v();
+            SootData sootData = new SootData();
+            java.getExecutor().execute(() -> {
+                    try {
+                        invokeSoot(sootParameters, db, tmpDirs, sootData, java, android, scene, writeFacts);
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                        errors.incrementAndGet();
+                    }});
+
+            // Wait for async tasks to finish for next steps such as
+            // IR generation (needs information from previous steps).
+            SootDriver.waitForExecutorShutdown(java.getExecutor());
+            int numErrors = errors.intValue();
+            if (numErrors != 0)
+                throw new DoopErrorCodeException(35, "Fact generation failed with " + numErrors + " errors.");
+
+            if (writeFacts && sootParameters._scanNativeCode) {
+                NativeScanner scanner = new NativeScanner(db, sootParameters, sootData.writer.getMethodStrings());
+                scanner.scanInputs(sootParameters.getInputs());
+            }
+
+            if (sootParameters._generateJimple)
+                generateIR(java, scene, sootData.classes, sootData.driver, outDir);
+
+            if (sootParameters._lowMem) {
+                System.out.println("Releasing Soot structures...");
+                for (SootClass cl : scene.getClasses())
+                    for (SootMethod m : cl.getMethods())
+                        if (m.hasActiveBody())
+                            m.setActiveBody(null);
+                System.gc();
+                System.out.println("Done.");
+            }
+        } finally {
+            // Clean up any temporary directories used for AAR extraction.
+            JHelper.cleanUp(tmpDirs);
+        }
+    }
+
+    /**
+     * This is the part of Soot that can run in parallel with other
+     * (pre)processing tasks.
+     */
+    private static void invokeSoot(SootParameters sootParameters, Database db, Set<String> tmpDirs, SootData sootData, BasicJavaSupport_Soot java, AndroidSupport_Soot android, Scene scene, boolean writeFacts) throws DoopErrorCodeException, IOException {
+        if (debug != null)
+            showPacks();
+
         DoopConventions.setSeparator();
         List<String> inputs = sootParameters.getInputs();
         for (String input : inputs) {
@@ -171,100 +232,91 @@ public class Main {
 
         classes.stream().filter(sootParameters::isApplicationClass).forEachOrdered(SootClass::setApplicationClass);
 
-        if (sootParameters._mode == SootParameters.Mode.FULL && sootParameters._factsSubSet == null)
-            classes = new HashSet<>(scene.getClasses());
+        classes = new HashSet<>(scene.getClasses());
+        System.out.println("Total classes in Scene: " + classes.size());
 
-        try {
-            System.out.println("Total classes in Scene: " + classes.size());
-            DoopAddons.retrieveAllSceneClassesBodies(sootParameters._cores);
-            // The call below has a problem (only retrieves app method bodies).
-            // DoopAddons.retrieveAllBodies();
-            System.out.println("Retrieved all bodies.");
-        }
-        catch (Exception ex) {
-            System.err.println("Error: not all bodies retrieved.");
+        // Skip "retrieve all bodies" step for Android apps.
+        if (android == null) {
+            long time1 = System.currentTimeMillis();
+            try {
+                DoopAddons.retrieveAllSceneClassesBodies(sootParameters._cores);
+                // The call below has a problem (only retrieves app method bodies).
+                // DoopAddons.retrieveAllBodies();
+                long time2 = System.currentTimeMillis();
+                System.out.println("Retrieved all bodies (time: " + ((time2 - time1)/1000) + ")");
+            } catch (Exception ex) {
+                System.err.println("Error: not all bodies retrieved.");
+                ex.printStackTrace();
+            }
         }
 
         boolean reportPhantoms = sootParameters._reportPhantoms;
         boolean moreStrings = sootParameters._extractMoreStrings;
         boolean artifacts = sootParameters._writeArtifactsMap;
-        boolean writeFacts = !sootParameters.noFacts();
         Representation rep = new Representation();
 
-        try (Database db = new Database(new File(outDir), writeFacts)) {
-            FactWriter writer = new FactWriter(db, moreStrings, artifacts, rep, reportPhantoms);
-            ThreadFactory factory = new ThreadFactory(writer, sootParameters);
-            SootDriver driver = new SootDriver(factory, classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors);
-            factory.setDriver(driver);
+        FactWriter writer = new FactWriter(db, sootParameters, artifacts, rep, reportPhantoms);
+        SootDriver driver = new SootDriver(classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors, writer, sootParameters);
 
-            if (writeFacts) {
+        if (writeFacts) {
 
-                writer.writePreliminaryFacts(classes, java, sootParameters);
-                db.flush();
+            writer.writePreliminaryFacts(classes, java);
+            db.flush();
 
-                if (android != null) {
-                    android.generateFactsForXML(db, outDir);
-                    if (sootParameters._legacyAndroidProcessing)
-                        android.writeComponents(writer);
-                }
+            if (android != null) {
+                android.generateFactsForXML(db);
+                if (sootParameters._legacyAndroidProcessing)
+                    android.writeComponents(writer);
+            }
 
-                scene.getOrMakeFastHierarchy();
+            scene.getOrMakeFastHierarchy();
 
-                if (sootParameters._android && sootParameters.getRunFlowdroid()) {
-                    SootMethod dummyMain = getDummyMain(sootParameters.getInputs().get(0), sootParameters._androidJars);
-                    if (dummyMain == null)
-                        throw new RuntimeException("Internal error: could not compute dummy main() with FlowDroid");
-                    System.out.println("Generated dummy main method " + dummyMain.getName() + "()");
-                    driver.generateMethod(dummyMain, writer, reportPhantoms, sootParameters);
-                }
+            if (sootParameters._android && sootParameters.getRunFlowdroid()) {
+                SootMethod dummyMain = getDummyMain(sootParameters.getInputs().get(0), sootParameters._androidJars);
+                if (dummyMain == null)
+                    throw new RuntimeException("Internal error: could not compute dummy main() with FlowDroid");
+                System.out.println("Generated dummy main method " + dummyMain.getName() + "()");
+                driver.generateMethod(dummyMain, writer, sootParameters);
+            }
 
-                // avoids a concurrent modification exception, since we may
-                // later be asking soot to add phantom classes to the scene's hierarchy
-                driver.generateInParallel(classes);
+            // avoids a concurrent modification exception, since we may
+            // later be asking soot to add phantom classes to the scene's hierarchy
+            driver.generateInParallel(classes);
 
-                logDebug(logger, "Checking class heaps for missing types...");
-                Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
-                if (unrecorded.size() > 0) {
-                    // If option is set, fail and notify caller that fact generation
-                    // must run again with these classes added.
-                    String outFile = sootParameters._missingClassesOut;
-                    if (outFile != null) {
-                        FileWriter fWriter = new FileWriter(new File(outFile));
+            logDebug(logger, "Checking class heaps for missing types...");
+            Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
+            if (unrecorded.size() > 0) {
+                // If option is set, fail and notify caller that fact generation
+                // must run again with these classes added.
+                String outFile = sootParameters._missingClassesOut;
+                if (outFile != null) {
+                    try (FileWriter fWriter = new FileWriter(new File(outFile))) {
                         unrecorded.forEach(s -> {
                                 try {
                                     fWriter.write(s + '\n');
                                 } catch (IOException ex) {
                                     System.err.println("ERROR: " + ex.getMessage());
                                 }});
-                        fWriter.close();
-                        logError(logger, "ERROR: some classes were not resolved (see " + outFile + "), restarting fact generation: " + Arrays.toString(unrecorded.toArray()));
-                    } else
-                        logWarn(logger, "WARNING: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
-                }
-
-                writer.writeLastFacts(java);
+                    }
+                    logError(logger, "ERROR: some classes were not resolved (see " + outFile + "), restarting fact generation: " + Arrays.toString(unrecorded.toArray()));
+                } else
+                    logWarn(logger, "WARNING: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
             }
 
-            if (sootParameters._generateJimple)
-                generateIR(sootParameters, java, scene, classes, driver, outDir);
-
-            if (sootParameters._lowMem) {
-                System.out.println("Releasing Soot structures...");
-                for (SootClass cl : Scene.v().getClasses())
-                    for (SootMethod m : cl.getMethods())
-                        if (m.hasActiveBody())
-                            m.setActiveBody(null);
-                System.gc();
-                System.out.println("Done.");
-            }
-        } finally {
-            // Clean up any temporary directories used for AAR extraction.
-            JHelper.cleanUp(tmpDirs);
+            writer.writeLastFacts(java);
         }
+
+        // Communicate data structures to next stages of the pipeline.
+        sootData.classes = classes;
+        sootData.driver = driver;
+        sootData.writer = writer;
     }
 
     private static boolean sootClassPathFirstElement = true;
     private static void addToSootClassPath(Scene scene, String input) {
+        if (input.endsWith(".class"))
+            System.err.println("WARNING: bare input class may not be resolved correctly, should be repackaged as a .jar: " + input);
+
         if (sootClassPathFirstElement) {
             scene.setSootClassPath(input);
             sootClassPathFirstElement = false;
@@ -322,6 +374,10 @@ public class Main {
         }
     }
 
+    private static void showPacks() {
+        for (soot.Pack pack : soot.PackManager.v().allPacks())
+            System.out.println("Pack: " + pack.getPhaseName());
+    }
 
     /**
      * Checks that the JVM arguments contain sane defaults. Also
@@ -330,7 +386,6 @@ public class Main {
      */
     private static void checkJVMArgs() {
         final String UTF8_ENCODING = "-Dfile.encoding=UTF-8";
-        String debug = System.getenv("SOOT_DEBUG");
 
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         boolean utf8 = false;
@@ -346,33 +401,25 @@ public class Main {
 
     /**
      * Generate Jimple/Shimple for the classes loaded into Soot.
-     *
-     * @param sootParameters   the command-line parameters
-     * @param java             the Java platform support object
+     *  @param java             the Java platform support object
      * @param scene            the Soot scene
      * @param classes          the loaded classes
      * @param driver           the driver to use for parallelism
      * @param outDir           the (parent) output directory to use
      */
-    private static void generateIR(SootParameters sootParameters,
-                                   BasicJavaSupport_Soot java, Scene scene,
+    private static void generateIR(BasicJavaSupport_Soot java, Scene scene,
                                    Set<SootClass> classes, SootDriver driver,
                                    String outDir) throws DoopErrorCodeException {
         Set<SootClass> jimpleClasses = new HashSet<>(classes);
-        if (sootParameters._factsSubSet == null) {
-            Collection<String> allClassNames = new ArrayList<>();
-            Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactScanner().getArtifactToClassMap();
-            for (String artifact : artifactToClassMap.keySet()) {
-                //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
-                Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
-                allClassNames.addAll(artEntries);
-            }
-            forceResolveClasses(allClassNames, jimpleClasses, scene);
-            System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
-        } else {
-            logError(logger, "ERROR: facts-subset not supported: " + sootParameters._factsSubSet);
-            return;
+        Collection<String> allClassNames = new ArrayList<>();
+        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactScanner().getArtifactToClassMap();
+        for (String artifact : artifactToClassMap.keySet()) {
+            //                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
+            Set<String> artEntries = ArtifactEntry.toClassNames(artifactToClassMap.get(artifact));
+            allClassNames.addAll(artEntries);
         }
+        forceResolveClasses(allClassNames, jimpleClasses, scene);
+        System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
 
         // Write classes, following package hierarchy.
         Options.v().set_output_dir(DoopConventions.jimpleDir(outDir));
@@ -383,4 +430,11 @@ public class Main {
         // Revert to standard output dir for the rest of the code.
         Options.v().set_output_dir(outDir);
     }
+}
+
+// Intermediate data structure, communicates values between stages.
+class SootData {
+    public Set<SootClass> classes;
+    public SootDriver driver;
+    public FactWriter writer;
 }

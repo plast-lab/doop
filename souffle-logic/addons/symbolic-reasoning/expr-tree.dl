@@ -124,8 +124,8 @@ isExpr(?expr) :-
   AssignBinaryVarVar(_, ?var, ?meth, ?right1, ?right2, ?op),
   Var_Type(?var, ?type),
   (isPrimitiveType(?type) ; isReferenceType(?type)),
-  ResolveExpr(?meth, ?right1, ?rExpr),
-  ResolveExpr(?meth, ?right2, ?lExpr),
+  ResolveExpr(?meth, ?right1, ?lExpr),
+  ResolveExpr(?meth, ?right2, ?rExpr),
   ?expr = [?op, ?type, ?lExpr, ?rExpr].
 
 isExpr(?constR),

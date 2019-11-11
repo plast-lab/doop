@@ -223,6 +223,8 @@ NewMetricMacro( "8.5", "call graph edges (SENS)", mainAnalysis.CallGraphEdge(_, 
 NewMetricMacro( "9.0", "non-reachable app concrete methods", Stats_Simple_NonReachableApplicationConcreteMethod(_)).
 NewMetricMacro("11.0", "reachable methods (INS)", mainAnalysis.Reachable(_)).
 NewMetricMacro("11.5", "reachable methods (SENS)", mainAnalysis.ReachableContext(_, _)).
+NewMetricMacro("11.75", "total methods", isMethod(_)).
+
 
 NewMetricMacro("12.0", "virtual call sites (statically)", isVirtualMethodInvocation_Insn(_)).
 NewMetricMacro("13.0", "reachable virtual call sites", Stats_Simple_ReachableVirtualMethodInvocation(_)).
@@ -242,6 +244,7 @@ NewMetricMacro("23.0", "app casts (statically)", Stats_Simple_Application_Cast(_
 NewMetricMacro("24.0", "app reachable casts", Stats_Simple_Application_ReachableCast(_, _, _, _)).
 NewMetricMacro("25.0", "app reachable casts that may fail", Stats_Simple_Application_PotentiallyFailingCast(_, _, _)).
 NewMetricMacro("25.5", "app reachable methods", Stats_Simple_Application_ReachableMethod(_)).
+NewMetricMacro("25.75", "app concrete methods", Stats_Simple_ApplicationConcreteMethod(_)).
 
 //NewMetricMacro("50.0", "call sites that did (not) get refined", SiteToRefine(_)).
 //NewMetricMacro("51.0", "allocation sites that did (not) get refined", ValueToRefine(_)).
@@ -355,10 +358,11 @@ NewMetricMacro("45.0", "total leaks", Stats_Simple_LeakingTaintedInformation(_, 
 
 NewMetricMacro("60.0", "Entry Points", OpenProgramEntryPoint(_)).
 NewMetricMacro("61.0", "Mock Objects", MockObject(_, _)).
-NewMetricMacro("61.1", "Mock Objects for Receivers", MockObjFromOpenProgramEntryPoint(_)).
-NewMetricMacro("61.2", "Mock Objects for Fields", MockObjFromField(_)).
-NewMetricMacro("61.3", "Mock Objects for Arrays", MockObjFromArray(_)).
-NewMetricMacro("61.4", "Mock Objects for Formals", MockObjFromFormal(_)).
+NewMetricMacro("61.1", "Mock Objects for Receivers", MockObjFromOpenProgramEntryPointReceiver(_)).
+NewMetricMacro("61.2", "Mock Objects for Arg", MockObjFromOpenProgramEntryPointArg(_)).
+NewMetricMacro("61.3", "Mock Objects for Fields", MockObjFromField(_)).
+NewMetricMacro("61.4", "Mock Objects for Arrays", MockObjFromArray(_)).
+NewMetricMacro("61.5", "Mock Objects for Formals", MockObjFromFormal(_)).
 //NewMetricMacro("62.0", "Methods Reachable from open entry points (SENS)", MockReachableContext(_,_)).
 //NewMetricMacro("62.5", "Methods Reachable from open entry points (INS)", Stats_Simple_ReachableFromOpenProgramEntryPoint(_)).
 #endif // OPEN_PROGRAMS
@@ -455,8 +459,6 @@ NewMetricMacro("96.0", "Unmatched dynamic reachable methods (INS)", UnmatchedDyn
 NewMetricMacro("97.0", "Dynamic call graph edges from native code to Java code", mainAnalysis.NativeToBytecodeDynamicCallGraphEdge(_, _)).
 NewMetricMacro("97.1", "Dynamic reachable methods from native code", mainAnalysis.DynamicNativeCodeTarget(_)).
 NewMetricMacro("97.2", "Dynamic app-reachable methods from native code", mainAnalysis.DynamicAppNativeCodeTarget(_)).
-NewMetricMacro("97.3", "Dynamic reachable methods from native code (also found by scanner)", mainAnalysis.DynamicNativeCodeTargetObservedByHeapDL(_)).
-NewMetricMacro("97.4", "Dynamic app-reachable methods from native code (also found by scanner)", mainAnalysis.DynamicAppNativeCodeTargetObservedByHeapDL(_)).
 #endif // SCAN_NATIVE_CODE
 
 .decl Stats_Simple_Application_DynamicCallGraphEdge(?invocation:Instruction, ?toMeth:Method)

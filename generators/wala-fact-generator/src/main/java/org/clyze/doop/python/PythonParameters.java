@@ -5,8 +5,8 @@ import java.util.Collection;
 import java.util.List;
 
 class PythonParameters {
-        List<String> _inputs = new ArrayList<>();
-        Collection<String> _appLibraries = new ArrayList<>();
+        final List<String> _inputs = new ArrayList<>();
+        final Collection<String> _appLibraries = new ArrayList<>();
         String _outputDir = null;
         Integer _cores = null;
         boolean _generateIR = false;

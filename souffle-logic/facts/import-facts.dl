@@ -116,6 +116,12 @@ OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodType") :-
 .decl _NativeMethodId(?javaMethod:symbol, ?nativeId:symbol)
 .input _NativeMethodId(IO="file", filename="NativeMethodId.facts", delimiter="\t")
 
+.decl _NativeStringsDistance(?n:number)
+.input _NativeStringsDistance(IO="file", filename="NativeStringsDistance.facts", delimiter="\t")
+
+.decl _NativeXRef(?string:symbol, ?lib:symbol, ?function:symbol, ?dataAddr:number)
+.input _NativeXRef(IO="file", filename="NativeXRef.facts", delimiter="\t")
+
 // EmptyArray
 
 .decl _EmptyArray(?id:symbol)

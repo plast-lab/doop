@@ -9,7 +9,7 @@ import soot.jimple.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Representation extends JavaRepresentation {
+class Representation extends JavaRepresentation {
     private final Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
     private final Map<SootField, String> _fieldSigRepr = new ConcurrentHashMap<>();
     private final Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();

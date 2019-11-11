@@ -8,7 +8,6 @@ import com.ibm.wala.cast.python.ssa.PythonInvokeInstruction;
 import com.ibm.wala.cast.python.ssa.PythonPropertyRead;
 import com.ibm.wala.cast.python.ssa.PythonPropertyWrite;
 import com.ibm.wala.cast.python.types.PythonTypes;
-import com.ibm.wala.classLoader.FieldImpl;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
@@ -17,7 +16,6 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
-import com.ibm.wala.types.annotations.Annotation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.doop.common.FactEncoders;
@@ -36,22 +34,19 @@ import static org.clyze.doop.python.utils.PythonUtils.createLocal;
 
 class PythonFactWriter {
     private final PythonDatabase _db;
-    private final PythonRepresentation _rep;
+    private final PythonRepresentation _rep = PythonRepresentation.getRepresentation();
 
-    //Map from WALA's JVM like type string to our format
-    //Used in writeType()
-    private final Map<String, String> _typeMap;
+    // Map from WALA's JVM like type string to our format.
+    // Used in writeType().
+    private final Map<String, String> _typeMap = new ConcurrentHashMap<>();
 
-    private final SortedSet<String> packages;
+    private final SortedSet<String> packages = Collections.synchronizedSortedSet(new TreeSet<>());
 
-    //Used for logging various messages
-    protected final Log logger;
+    // Used for logging various messages.
+    private final Log logger = LogFactory.getLog(getClass());
+
     PythonFactWriter(PythonDatabase db) {
-        _db = db;
-        _rep = PythonRepresentation.getRepresentation();
-        _typeMap = new ConcurrentHashMap<>();
-        logger =  LogFactory.getLog(getClass());
-        packages = Collections.synchronizedSortedSet(new TreeSet<>());
+        this._db = db;
     }
 
     private String str(int i) {
@@ -77,7 +72,7 @@ class PythonFactWriter {
         _db.add(PROJECT_ROOT_FOLDER, getRoot());
     }
 
-    String writeMethod(IMethod m) {
+    void writeMethod(IMethod m) {
         String result = _rep.signature(m);
         String simpleName = _rep.simpleName(m);
         String sourceFileName = _rep.sourceFileName(m);
@@ -100,18 +95,18 @@ class PythonFactWriter {
             if(decClass instanceof CAstAbstractModuleLoader.CoreClass){
 //                String declaringClass = classNameParts[1];
 //                String methodName = classNameParts[2];
-//                System.out.println("Adding Method <" + declaringModule + ":" + declaringClass + ":" + methodName + ">");
-                System.out.println("Adding Method " + result);
+//                logger.info("Adding Method <" + declaringModule + ":" + declaringClass + ":" + methodName + ">");
+                logger.info("Adding Method " + result);
             }else{
 //                String outerFunct = classNameParts[1];
 //                String methodName = classNameParts[2];
-//                System.out.println("Adding Inner Function <" + declaringModule + ":" + outerFunct + ":" + methodName + ">");
-                System.out.println("Adding Inner Function " + result);
+//                logger.info("Adding Inner Function <" + declaringModule + ":" + outerFunct + ":" + methodName + ">");
+                logger.info("Adding Inner Function " + result);
             }
         }
         else{
-//            System.out.println("Adding Function  <" + declaringModule + ":" +  classNameParts[classNameParts.length - 1] + ">");
-            System.out.println("Adding Function " + result);
+//            logger.info("Adding Function  <" + declaringModule + ":" +  classNameParts[classNameParts.length - 1] + ">");
+            logger.info("Adding Function " + result);
         }
 
         _db.add(STRING_RAW, result, result);
@@ -123,10 +118,9 @@ class PythonFactWriter {
         if(result.equals(sourceFileName))
             writeGlobalFunction(m);
 
-        return result;
     }
 
-    void writeGlobalFunction(IMethod globalFun){
+    private void writeGlobalFunction(IMethod globalFun){
         String funOrFileRep = _rep.signature(globalFun);
         String fileDeclaredInFolder = funOrFileRep.substring(0, funOrFileRep.lastIndexOf("/")).concat(">");
         String fileName = funOrFileRep.substring(funOrFileRep.lastIndexOf("/") + 1, funOrFileRep.length() - 4);
@@ -134,7 +128,7 @@ class PythonFactWriter {
         _db.add(GLOBAL_FUNCTION, funOrFileRep);
         _db.add(FILE_DECLAREDING_PACKAGE, funOrFileRep, fileName, fileDeclaredInFolder);
 
-        System.out.println("PACKAGE " + fileDeclaredInFolder + " RESULT " + packageExists(fileDeclaredInFolder));
+        logger.info("PACKAGE " + fileDeclaredInFolder + " RESULT " + packageExists(fileDeclaredInFolder));
         if(! packageExists(fileDeclaredInFolder)){
             addPackage(fileDeclaredInFolder);
             String declFolderDeclFolder = fileDeclaredInFolder.substring(0, fileDeclaredInFolder.lastIndexOf("/")).concat(">");
@@ -317,12 +311,12 @@ class PythonFactWriter {
         String methodId = _rep.signature(m);
         //TODO: Make sure this always works
         if(globalName.contains("_defaults_")){
-            //System.out.println("WE GOT YE " + globalName + " | " + methodId);
+            //logger.info("WE GOT YE " + globalName + " | " + methodId);
             String functionName = globalName.substring(0, globalName.indexOf("_defaults_"));
             String walaFormalIndex = globalName.substring(globalName.lastIndexOf('_') + 1);
             String functionSig = methodId.replace(">", ":" + functionName +">");
             int formalIndex = Integer.parseInt(walaFormalIndex) - 1;
-            System.out.println(functionSig + " | " + formalIndex + " | " + _rep.local(m, from));
+            logger.info(functionSig + " | " + formalIndex + " | " + _rep.local(m, from));
             _db.add(FORMAL_PARAM_DEFAULT_VAR, functionSig, str(formalIndex), _rep.local(m, from));
         }
         _db.add(GLOBAL_WRITE, insn, str(index), globalName, _rep.local(m, from), methodId);
@@ -343,8 +337,8 @@ class PythonFactWriter {
         try{
             Integer.parseInt(fieldId);
             _db.add(ORIGINAL_INT_CONSTANT, fieldId);
-        }catch(Throwable t){
-
+        } catch (Throwable t) {
+            logger.debug("Cannot parse fieldId=" + fieldId + ": " + t.getMessage());
         }
         _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
     }
@@ -449,7 +443,7 @@ class PythonFactWriter {
             paramName = names[0];
         }
         else{
-            System.out.println("This shouldn't(?) ever happen.");
+            logger.info("This shouldn't(?) ever happen.");
         }
         _db.add(FORMAL_PARAM, str(actualIndex), paramName, methodId, var);
     }
@@ -601,12 +595,11 @@ class PythonFactWriter {
         Local toVar = createLocal(ir,instruction,instruction.getDef(), typeInference);
         Local functionObject = createLocal(ir,instruction,instruction.getUse(0), typeInference);
         if (instruction.isDispatch()) {
-            //System.out.println("Virtual "+ instruction.toString(ir.getSymbolTable()));
+            //logger.info("Virtual "+ instruction.toString(ir.getSymbolTable()));
             _db.add(FUNCTION_INV, insn, str(index), _rep.local(inMethod,toVar), _rep.local(inMethod, functionObject), methodId);
         }
-        else {
+        else
             throw new RuntimeException("Cannot handle invoke instruction: " + instruction.toString(ir.getSymbolTable()));
-        }
 
         return insn;
     }
@@ -672,7 +665,7 @@ class PythonFactWriter {
                     lastColumn = sourceInfo.getLastCol();
                 }
             } catch (InvalidClassFileException e) {
-
+                logger.debug("Invalid class file: " + e.getMessage());
             }
         }
         _db.add(INSTRUCTION_SOURCE_POSITION, insn, str(firstLine),str(firstColumn),str(lastLine),str(lastColumn));
@@ -683,15 +676,15 @@ class PythonFactWriter {
         _db.add(predFile, fileName, args);
     }
 
-    boolean packageExists(String pack){
+    private boolean packageExists(String pack){
         return packages.contains(pack);
     }
 
-    void addPackage(String pack){
+    private void addPackage(String pack){
         packages.add(pack);
     }
 
-    String getRoot(){
+    private String getRoot(){
         //return packages.first();
         return packages.last();
     }

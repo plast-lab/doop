@@ -13,18 +13,14 @@ import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
 import org.clyze.doop.common.SessionCounter;
 import org.clyze.doop.wala.Local;
-import org.clyze.doop.wala.Session;
 
-import java.util.Collections;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.python.utils.PythonUtils.fixNewType;
 import static org.clyze.doop.python.utils.PythonUtils.fixType;
 
-public class PythonRepresentation {
+class PythonRepresentation {
     private final Map<String, String> _methodSigRepr = new ConcurrentHashMap<>();
 
     /*
@@ -50,6 +46,7 @@ public class PythonRepresentation {
             _repr = new PythonRepresentation();
         return _repr;
     }
+
     public PythonRepresentation(String fileName)
     {
         _fileName = fileName;
@@ -97,7 +94,7 @@ public class PythonRepresentation {
         return s;
     }
 
-    String sourceFileName(IClass klass){
+    private String sourceFileName(IClass klass){
         return "<" + klass.getSourceFileName() + ">";
     }
 
@@ -133,14 +130,12 @@ public class PythonRepresentation {
 
 
     String signature(FieldReference f, TypeReference declaringClass) {
-        StringBuilder DoopSig= new StringBuilder("<");
-        DoopSig.append(fixType(declaringClass));
-        DoopSig.append(": ");
-        DoopSig.append(fixType(f.getFieldType()));
-        DoopSig.append(" ");
-        DoopSig.append(f.getName().toString());
-        DoopSig.append(">");
-        return DoopSig.toString();
+        return "<" + fixType(declaringClass) +
+                ": " +
+                fixType(f.getFieldType()) +
+                " " +
+                f.getName().toString() +
+                ">";
     }
 
     String simpleName(IMethod m) {

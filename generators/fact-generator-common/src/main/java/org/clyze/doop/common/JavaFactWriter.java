@@ -1,5 +1,6 @@
 package org.clyze.doop.common;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -15,12 +16,20 @@ public abstract class JavaFactWriter {
     protected final Database _db;
     protected final boolean _extractMoreStrings;
     private final boolean _writeArtifactsMap;
+    private final boolean _regMethods;
+    private final Set<String> methodStrings;
 
-    protected JavaFactWriter(Database db, boolean extractMoreStrings,
+    protected JavaFactWriter(Database db, Parameters params,
                              boolean writeArtifactsMap) {
         this._db = db;
-        this._extractMoreStrings = extractMoreStrings;
+        this._extractMoreStrings = params._extractMoreStrings;
         this._writeArtifactsMap = writeArtifactsMap;
+        this._regMethods = params._scanNativeCode;
+        this.methodStrings = _regMethods ? new HashSet<>() : null;
+    }
+
+    public Set<String> getMethodStrings() {
+        return methodStrings;
     }
 
     public static String str(int i) {
@@ -108,7 +117,7 @@ public abstract class JavaFactWriter {
         _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), viewClassName, parentID.toString());
     }
 
-    public void writePreliminaryFacts(BasicJavaSupport java, Parameters params) {
+    public void writePreliminaryFacts(BasicJavaSupport java) {
         PropertyProvider propertyProvider = java.getPropertyProvider();
 
         // Read all stored properties files
@@ -359,5 +368,17 @@ public abstract class JavaFactWriter {
     protected void writeNativeMethodId(String methodId, String type, String name) {
         String jniMethodId = "Java_" + type.replaceAll("\\.", "_") + "_" + name;
         _db.add(NATIVE_METHOD_ID, methodId, jniMethodId);
+    }
+
+    protected void writeMethod(String methodId, String simpleName,
+                               String paramsSig, String declType,
+                               String retType, String jvmSig, String arity) {
+        _db.add(METHOD, methodId, simpleName, paramsSig, declType, retType, jvmSig, arity);
+
+        // If flag is set, register name+sig for later use (native scanner).
+        if (_regMethods) {
+            methodStrings.add(simpleName);
+            methodStrings.add(jvmSig);
+        }
     }
 }

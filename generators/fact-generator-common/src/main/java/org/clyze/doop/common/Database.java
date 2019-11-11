@@ -10,13 +10,14 @@ public class Database implements Closeable, Flushable {
     private static final char EOL = '\n';
 
     private final Map<PredicateFile, Writer> _writers;
+    private final String directory;
 
     /**
      * Generate a database object, which can be used to write facts.
      *
      * @param directory     the output directory
      */
-    public Database(File directory) throws IOException {
+    public Database(String directory) throws IOException {
         this(directory, true);
     }
 
@@ -26,7 +27,9 @@ public class Database implements Closeable, Flushable {
      * @param directory     the output directory
      * @param initWriters   if false, no facts can be written (dummy database)
      */
-    public Database(File directory, boolean initWriters) throws IOException {
+    public Database(String directory, boolean initWriters) throws IOException {
+        this.directory = directory;
+
         if (!initWriters) {
             this._writers = null;
             return;
@@ -35,7 +38,11 @@ public class Database implements Closeable, Flushable {
         this._writers = new EnumMap<>(PredicateFile.class);
 
         for (PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class))
-            _writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
+            _writers.put(predicateFile, predicateFile.getWriter(new File(directory), ".facts"));
+    }
+
+    public String getDirectory() {
+        return directory;
     }
 
     @Override
@@ -83,6 +90,8 @@ public class Database implements Closeable, Flushable {
     }
 
     public void add(PredicateFile predicateFile, String arg, String... args) {
+        if (_writers == null)
+            return;
         try {
             // Estimate StringBuilder capacity.
             int capacity = args.length + 1;

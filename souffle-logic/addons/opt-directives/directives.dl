@@ -143,8 +143,7 @@ ExceptionThrownByReachableMethod(?excType, ?method) :-
 
 ClassWithReachableConstructor(?class) :-
   mainAnalysis.Reachable(?method),
-  Method_SimpleName(?method, "<init>"),
-  Method_DeclaringType(?method, ?class).
+  basic.ClassConstructor(?method, ?class).
 
 .decl ConstructorlessReachableInstanceClass(?class:ClassType)
 .output ConstructorlessReachableInstanceClass
@@ -178,6 +177,14 @@ SingleInvocationTarget(?invocation, ?target) :-
   mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target).
 
 .output SingleInvocationTarget
+
+.decl SingleInvocationApplicationTarget(?invocation:MethodInvocation, ?target:Method)
+
+SingleInvocationApplicationTarget(?invocation, ?target) :-
+  SingleInvocationTarget(?invocation, ?target),
+  ApplicationMethod(?target).
+
+.output SingleInvocationApplicationTarget
 
 // Helper relation: virtual invocation sites that call multiple methods.
 .decl MultiInvocationTarget(?invocation:MethodInvocation, ?target:Method)
@@ -332,3 +339,23 @@ InvocationToInline(?invocation, ?target) :-
   CallerSize(?invocationMethod).  
 
 .output InvocationToInline
+
+.decl SingleInvocationToInline(?invocation:MethodInvocation, ?target:Method)
+
+SingleInvocationToInline(?invocation, ?target) :-
+  SmallApplicationMethod(?target),
+  SingleInvocationTarget(?invocation, ?target),
+  Instruction_Method(?invocation, ?invocationMethod),
+  METHODS_INLINE_COMPATIBLE(?invocationMethod, ?target),
+  CallerSize(?invocationMethod).
+
+SingleInvocationToInline(?invocation, ?target) :-
+  SmallApplicationMethod(?target),
+  (isStaticMethodInvocation_Insn(?invocation);
+   isSpecialMethodInvocation_Insn(?invocation)),
+  mainAnalysis.CallGraphEdge(_, ?invocation, _, ?target),
+  Instruction_Method(?invocation, ?invocationMethod),
+  METHODS_INLINE_COMPATIBLE(?invocationMethod, ?target),
+  CallerSize(?invocationMethod).
+
+.output SingleInvocationToInline

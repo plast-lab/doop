@@ -21,6 +21,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_STATS = "Statistics"
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
+	private static final int DEFAULT_JOBS = 4
+	private static final int DEFAULT_STRINGS_DISTANCE = 5
 
 	@Override
 	String getName() { "doop" }
@@ -269,7 +271,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_FACTS,
 					description: "Generate artifacts map.",
 					value: false,
-					cli: false,
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
@@ -286,6 +287,43 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Scan native code for specific patterns.",
 					forCacheID: true,
 					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "USE_RADARE",
+					name: "use-radare",
+					group: GROUP_NATIVE,
+					description: "Use Radare2 to find strings.",
+					forCacheID: true
+			),
+			new BooleanAnalysisOption(
+					id: "ONLY_PRECISE_NATIVE_STRINGS",
+					name: "only-precise-native-strings",
+					group: GROUP_NATIVE,
+					description: "Skip strings without enclosing function information.",
+					forCacheID: true,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "SMART_NATIVE_TARGETS",
+					name: "smart-native-targets",
+					group: GROUP_NATIVE,
+					description: "Filter native targets (heuristic).",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "USE_STRING_LOCALITY",
+					name: "use-string-locality",
+					group: GROUP_NATIVE,
+					description: "Use string locality when pairing native target strings.",
+					forPreprocessor: true
+			),
+			new IntegerAnalysisOption(
+					id: "NATIVE_STRINGS_DISTANCE",
+					name: "native-strings-distance",
+					group: GROUP_NATIVE,
+					description: "The maximum distance to use when reasoning about string locality. Default: ${DEFAULT_STRINGS_DISTANCE}",
+					argName: "N",
+					value: DEFAULT_STRINGS_DISTANCE
 			),
 			new BooleanAnalysisOption(
 					id: "DACAPO",
@@ -595,9 +633,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SOUFFLE_JOBS",
 					name: "souffle-jobs",
 					group: GROUP_ENGINE,
-					description: "Specify number of Souffle jobs to run.",
+					description: "Specify number of Souffle jobs to run (default: ${DEFAULT_JOBS}).",
 					argName: "NUMBER",
-					value: 4
+					value: DEFAULT_JOBS
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_DEBUG",

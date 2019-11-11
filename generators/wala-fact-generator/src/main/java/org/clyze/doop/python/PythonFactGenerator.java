@@ -23,8 +23,8 @@ import java.util.*;
 import static org.clyze.doop.python.utils.PythonUtils.createLocal;
 import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 
-public class PythonFactGenerator implements Runnable{
-    protected Log logger;
+class PythonFactGenerator implements Runnable{
+    private final Log logger;
 
     private final PythonFactWriter _writer;
     private final IAnalysisCacheView cache;
@@ -249,7 +249,7 @@ public class PythonFactGenerator implements Runnable{
         }
     }
 
-    public void generate(IMethod m, IR ir, SSAConditionalBranchInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAConditionalBranchInstruction instruction, Session session, TypeInference typeInference) {
         SSAInstruction[] ssaInstructions = ir.getInstructions();
         SSAInstruction targetInstr;
         // Conditional branch instructions have two uses (op1 and op2, the compared variables) and no defs
@@ -275,7 +275,7 @@ public class PythonFactGenerator implements Runnable{
     }
 
 
-    public void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
+    private void generate(IMethod m, IR ir, SSAGotoInstruction instruction, Session session) {
         // Go to instructions have no uses and no defs
         SSAInstruction[] ssaInstructions = ir.getInstructions();
         SSAInstruction targetInstr;
@@ -296,7 +296,7 @@ public class PythonFactGenerator implements Runnable{
         _writer.writeGoto(m, instruction,targetInstr , session);
     }
 
-    public void generate(IMethod m, IR ir, SSAUnaryOpInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAUnaryOpInstruction instruction, Session session, TypeInference typeInference) {
         // Unary op instructions have a single def (to) and a single use (from)
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
         Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
@@ -350,7 +350,7 @@ public class PythonFactGenerator implements Runnable{
         }
     }
 
-    public void generate(IMethod m, IR ir, SSAPhiInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAPhiInstruction instruction, Session session, TypeInference typeInference) {
         // Phi instructions have a single def (to) and a number uses that represent the alternative values
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
         Local alternative;
@@ -366,7 +366,7 @@ public class PythonFactGenerator implements Runnable{
         }
     }
 
-    public void generate(IMethod m, IR ir, SSANewInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSANewInstruction instruction, Session session, TypeInference typeInference) {
         Local l = createLocal(ir,instruction,instruction.getDef(),typeInference);
         int numOfUses = instruction.getNumberOfUses();
         if(numOfUses < 2)
@@ -380,13 +380,13 @@ public class PythonFactGenerator implements Runnable{
         }
     }
 
-    public void generate(IMethod m, IR ir, EachElementGetInstruction instruction, Session session, TypeInference typeInference){
+    private void generate(IMethod m, IR ir, EachElementGetInstruction instruction, Session session, TypeInference typeInference){
         Local target = createLocal(ir,instruction,instruction.getDef(),typeInference);
         Local iter = createLocal(ir,instruction,instruction.getUse(0),typeInference);
         _writer.writeEachElementGet(m, instruction, target, iter, session);
     }
 
-    public void generate(IMethod m, IR ir, AstLexicalAccess instruction, Session session, TypeInference typeInference){
+    private void generate(IMethod m, IR ir, AstLexicalAccess instruction, Session session, TypeInference typeInference){
         Local l;
         if(instruction.getAccessCount() !=1)
             System.out.println("instruction: " + instruction.toString(ir.getSymbolTable()) + " has more than one access!!!");
@@ -394,11 +394,11 @@ public class PythonFactGenerator implements Runnable{
         _writer.writeLexicalAccess(m, instruction, l, session);
     }
 
-    public void generate(IMethod m, IR ir, ReflectiveMemberAccess instruction, Session session, TypeInference typeInference){
+    private void generate(IMethod m, IR ir, ReflectiveMemberAccess instruction, Session session, TypeInference typeInference){
         _writer.writeReflectiveAccess(m, ir, instruction, session, typeInference);
     }
 
-    public void generate(IMethod m, IR ir, AstGlobalRead instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, AstGlobalRead instruction, Session session, TypeInference typeInference) {
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
         String globalName = instruction.getGlobalName();
         if(globalName.startsWith("global "))
@@ -409,7 +409,7 @@ public class PythonFactGenerator implements Runnable{
 
     }
 
-    public void generate(IMethod m, IR ir, SSAGetInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAGetInstruction instruction, Session session, TypeInference typeInference) {
         Local to = createLocal(ir, instruction, instruction.getDef(), typeInference);
 
         if (instruction.isStatic()) {
@@ -423,7 +423,7 @@ public class PythonFactGenerator implements Runnable{
 
     }
 
-    public void generate(IMethod m, IR ir, AstGlobalWrite instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, AstGlobalWrite instruction, Session session, TypeInference typeInference) {
 
         Local from = createLocal(ir, instruction, instruction.getUse(0), typeInference);
         String globalName = instruction.getGlobalName();
@@ -435,7 +435,7 @@ public class PythonFactGenerator implements Runnable{
 
     }
 
-    public void generate(IMethod m, IR ir, SSAPutInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAPutInstruction instruction, Session session, TypeInference typeInference) {
 
         if (instruction.isStatic()) {
             throw new RuntimeException("Unexpected static put " + instruction.toString(ir.getSymbolTable()));
@@ -450,7 +450,7 @@ public class PythonFactGenerator implements Runnable{
 
     }
 
-    public void generate(IMethod m, IR ir, PythonInvokeInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, PythonInvokeInstruction instruction, Session session, TypeInference typeInference) {
         // For invoke instructions the number of uses is equal to the number of parameters
 
         Local l;
@@ -461,7 +461,7 @@ public class PythonFactGenerator implements Runnable{
         _writer.writePythonInvoke(m, ir, instruction, l, session,typeInference);
     }
 
-    public void generate(IMethod m, IR ir, SSAAbstractInvokeInstruction instruction, Session session, TypeInference typeInference) {
+    private void generate(IMethod m, IR ir, SSAAbstractInvokeInstruction instruction, Session session, TypeInference typeInference) {
         // For invoke instructions the number of uses is equal to the number of parameters
 
         Local l;

@@ -27,6 +27,7 @@ class FactGenerator0 {
         KEEP_CLASS_MEMBERS("KeepClassMembers"),
         KEEP_CLASSES_WITH_MEMBERS("KeepClassesWithMembers"),
         MAIN_CLASS("MainClass"),
+        NATIVE_STRINGS_DISTANCE("NativeStringsDistance"),
         SENSITIVE_LAYOUT_CONTROL("SensitiveLayoutControl"),
         TAMIFLEX("Tamiflex");
 
@@ -61,6 +62,12 @@ class FactGenerator0 {
     void writeDacapoBachFacts(String benchmarkCap) {
         factsFile(DACAPO.name).withWriter { w ->
             w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
+        }
+    }
+
+    void writeNativeStringsDistance(String distance) {
+        factsFile(NATIVE_STRINGS_DISTANCE.name).withWriter { w ->
+            w << distance
         }
     }
 
@@ -143,7 +150,7 @@ class FactGenerator0 {
             Files.lines(Paths.get(specPath)).withCloseable { Stream<String> stream ->
                 try {
 
-                    Database db = new Database(factsDir)
+                    Database db = new Database(factsDir.canonicalPath)
                     stream.forEach ({ String s -> processKeepSpecLine(db, s) } as java.util.function.Consumer<String>)
                     db.flush()
                     db.close()

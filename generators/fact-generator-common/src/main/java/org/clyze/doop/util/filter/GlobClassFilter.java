@@ -12,7 +12,7 @@ public class GlobClassFilter implements ClassFilter {
     private final boolean matchEverything;
 
     public GlobClassFilter(String glob) {
-        String patterns[] = glob.split(File.pathSeparator);
+        String[] patterns = glob.split(File.pathSeparator);
 
         ArrayList<String> packages0 = new ArrayList<>(patterns.length);
         ArrayList<String> prefixes0 = new ArrayList<>(patterns.length);
@@ -66,16 +66,14 @@ public class GlobClassFilter implements ClassFilter {
         if (otherPatterns != null)
             for (String pattern : otherPatterns) {
                 if (pattern.equals("*")) {
-                    if (pkgName == null)
-                        pkgName = getPackageName(className);
+                    pkgName = getPackageName(className);
                     return pkgName.isEmpty();
                 } else if (className.equalsIgnoreCase(pattern))
                     return true;
             }
 
         if (packages != null) {
-            if (pkgName == null)
-                pkgName = getPackageName(className);
+            pkgName = getPackageName(className);
             for (String pkg : packages) {
                 if (pkgName.equalsIgnoreCase(pkg))
                     return true;

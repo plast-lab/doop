@@ -536,8 +536,7 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
 
 OptClassToConstructor(?constructor, ?classValue) :-
   ReifiedClass(?type, ?classValue),
-  Method_DeclaringType(?constructor, ?type),
-  Method_SimpleName(?constructor, "<init>").
+  basic.ClassConstructor(?constructor, ?type).
 
 .decl AssignReflectiveAllocation(?invocation:MethodInvocation, ?type:Type, ?ctx:configuration.Context, ?to:Var)
 .decl ReflectiveSpecialMethodInvocation(?invocation:MethodInvocation, ?constructor:Method, ?ctx:configuration.Context, ?to:Var)

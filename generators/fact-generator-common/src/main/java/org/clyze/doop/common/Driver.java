@@ -8,11 +8,9 @@ import java.util.function.Consumer;
 /**
  * A driver for parallel fact generation.
  * @param <C>    class type
- * @param <F>    thread factory type that generates Runnable objects
  */
-public abstract class Driver<C, F> {
+public abstract class Driver<C> {
     private ExecutorService _executor;
-    protected final F _factory;
     private final int _cores;
     protected Set<C> _tmpClassGroup;
     private int _classCounter;
@@ -21,8 +19,7 @@ public abstract class Driver<C, F> {
     private int errors;
     public final boolean _ignoreFactGenErrors;
 
-    protected Driver(F factory, int totalClasses, Integer cores, boolean ignoreFactGenErrors) {
-        this._factory = factory;
+    protected Driver(int totalClasses, Integer cores, boolean ignoreFactGenErrors) {
         this._totalClasses = totalClasses;
         this._cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
         this._classCounter = 0;
@@ -61,14 +58,18 @@ public abstract class Driver<C, F> {
         shutdownExecutor();
     }
 
-    private void shutdownExecutor() throws DoopErrorCodeException {
-        _executor.shutdown();
+    public static void waitForExecutorShutdown(ExecutorService executor) throws DoopErrorCodeException {
+        executor.shutdown();
         try {
-            _executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         } catch (InterruptedException e) {
             System.err.println(e.getMessage());
             throw new DoopErrorCodeException(10);
         }
+    }
+
+    private void shutdownExecutor() throws DoopErrorCodeException {
+        waitForExecutorShutdown(_executor);
         if (errorsExist()) {
             System.err.println("Fact generation failed (" + errors + " errors).");
             if (!_ignoreFactGenErrors)

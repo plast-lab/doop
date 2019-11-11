@@ -37,11 +37,14 @@ public class Resources {
             File resourcesDir = new File(doopHome + File.separator + "resources");
             if (!resourcesDir.exists())
                 throw new RuntimeException("ERROR: resources directory does not exist: " + resourcesDir.getCanonicalPath());
-            for (File f : resourcesDir.listFiles())
+            File[] files = resourcesDir.listFiles();
+            if (files == null)
+                throw new RuntimeException("ERROR: could not list directory " + resourcesDir.getCanonicalPath());
+            for (File f : files)
                 if (f.getName().startsWith(resource))
                     matches.add(f.getCanonicalPath());
 
-            if ((matches != null) && matches.size() > 0) {
+            if (matches.size() > 0) {
                 if (matches.size() == 1)
                     resourceJar = matches.get(0);
                 else {

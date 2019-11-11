@@ -7,7 +7,7 @@ import org.clyze.utils.Helper
 
 if (args.size() < 7) {
     println "Usage:"
-    println "  ./gradlew souffleScript -Pargs='<scriptFilePath> <factsDirPath> <outDirPath> <cacheDirPath> <jobs> <profile> <debug> <provenance> <recompile> <via-ddlog>'"
+    println "  ./gradlew souffleScript -Pargs='<scriptFilePath> <factsDirPath> <outDirPath> <cacheDirPath> <jobs> <profile> <debug> <provenance> <recompile> <via-ddlog> <interpret>'"
     println "Parameters:"
     println "  scriptFilePath   the Datalog file to evaluate"
     println "  factsDirPath     the directory containing the input facts"

@@ -312,7 +312,7 @@ ReifiedClass(?type, cat(cat("<<reified class ", ?type), ">>")) :-
 MockValueConsMacro(cat(cat("<<reified constructor ", ?signature), ">>"), ?type),
 ReifiedConstructor(?signature, cat(cat("<<reified constructor ", ?signature), ">>"))
 :-
-  Method_SimpleName(?signature, "<init>"),
+  basic.ClassConstructor(?signature, _),
   isMethod(?signature),
   ?type = "java.lang.reflect.Constructor",
   isType(?type).

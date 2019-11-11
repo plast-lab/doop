@@ -1,27 +1,46 @@
+// A cross-product of method name candidates and method signature candidates.
 .decl PossibleNativeCodeTargetMethod(?method:Method, ?function:symbol, ?file:symbol)
 
+#ifdef USE_STRING_LOCALITY
+
+// Pair strings that are "close" in the strings symbol table.
+PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
+  _NativeMethodTypeCandidate(?file, ?function, ?descriptor, ?offset1),
+  _NativeNameCandidate(?file, ?function, ?name, ?offset2),
+  Method_SimpleName(?method, ?name),
+  Method_JVMDescriptor(?method, ?descriptor),
+  _NativeStringsDistance(?nativeStringsDistance),
+  (?offset1 - ?offset2) <= ?nativeStringsDistance,
+  (?offset2 - ?offset1) <= ?nativeStringsDistance.
+
+#else
+
+// Pair all strings (or only strings in known functions in precise mode).
 PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   _NativeMethodTypeCandidate(?file, ?function, ?descriptor, _),
   _NativeNameCandidate(?file, ?function, ?name, _),
+#ifdef ONLY_PRECISE_NATIVE_STRINGS
+  ?function != "-",
+#endif // ONLY_PRECISE_NATIVE_STRINGS
   Method_SimpleName(?method, ?name),
   Method_JVMDescriptor(?method, ?descriptor).
 
-// PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
-//   _NativeMethodTypeCandidate(?file, ?function, ?descriptor, ?offset1),
-//   _NativeNameCandidate(?file, ?function, ?name, ?offset2),
-//   Method_SimpleName(?method, ?name),
-//   Method_JVMDescriptor(?method, ?descriptor),
-//   (?offset1 - ?offset2) <= 5,
-//   (?offset1 - ?offset2) >= -5.
+#endif // USE_STRING_LOCALITY
 
-// // Crude over-approximation for strings used in unknown positions:
-// // assume matching methods are called from any function.
-// PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
-//   _NativeMethodTypeCandidate(?file, "-", ?descriptor, _),
-//   _NativeNameCandidate(?file, "-", ?name, _),
-//   _NativeLibEntryPoint(?file, ?function, _),
-//   Method_SimpleName(?method, ?name),
-//   Method_JVMDescriptor(?method, ?descriptor).
+// The distance between string xrefs in the code. This should be big
+// enough to catch strings used together in major calling conventions.
+#define XREF_DISTANCE 15
+
+// If xref information exists, pair strings that are referenced together in code.
+PossibleNativeCodeTargetMethod(?method, "<<UNKNOWN>>", ?file) :-
+  _NativeMethodTypeCandidate(?file, ?function, ?descriptor, _),
+  _NativeNameCandidate(?file, ?function, ?name, _),
+  _NativeXRef(?descriptor, ?file, _, ?descriptorRefAddr),
+  _NativeXRef(?name, ?file, _, ?nameRefAddr),
+  Method_SimpleName(?method, ?name),
+  Method_JVMDescriptor(?method, ?descriptor),
+  (?nameRefAddr - ?descriptorRefAddr) <= XREF_DISTANCE,
+  (?descriptorRefAddr - ?nameRefAddr) <= XREF_DISTANCE.
 
 .decl PossibleNativeCodeTargetMethodLocalized(?method:Method, ?function:symbol, ?file:symbol)
 
@@ -40,6 +59,11 @@ OverloadedJNIMethod(?javaMethod, ?type, ?name, ?descriptor) :-
   MethodLookup(?name, _, ?type, ?method2),
   ?method1 != ?method2.
 
+// A mapping between a native Java method and a JNI function. This
+// does not capture the case of using the runtime's RegisterNatives()
+// function to register native functions with arbitrary names. For
+// example, the "crazy linker" used on Android, registers native
+// methods: https://chromium.googlesource.com/chromium/src/+/master/docs/android_native_libraries.md
 .decl JNIMethod_NativeId(?javaMethod:Method, ?nativeId:symbol)
 .output JNIMethod_NativeId
 
@@ -54,24 +78,4 @@ JNIMethod_NativeId(?javaMethod, ?nativeId) :-
   _NativeMethodId(?javaMethod, ?nativeIdBase),
   ?nativeId = cat(?nativeIdBase, cat("__", ?descriptor)).
 
-// Call-graph edges from native methods. This only captures direct call-graph
-// edges from native methods; if a native method calls other native code to do
-// the call, that behavior will be missed.
 
-.decl CallGraphEdgeFromNativeMethod(?targetMethod:Method, ?nativeMethod:Method)
-.output CallGraphEdgeFromNativeMethod
-
-CallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod) :-
-  PossibleNativeCodeTargetMethod(?targetMethod, ?function, _),
-  JNIMethod_NativeId(?nativeMethod, ?function).
-
-// Filtered CallGraphEdgeFromNativeMethod, in the "application" part.
-.decl AppCallGraphEdgeFromNativeMethod(?targetMethod:Method, ?nativeMethod:Method)
-.output AppCallGraphEdgeFromNativeMethod
-
-AppCallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod) :-
-  CallGraphEdgeFromNativeMethod(?targetMethod, ?nativeMethod),
-  Method_DeclaringType(?targetMethod, ?targetClass),
-  ApplicationClass(?targetClass),
-  Method_DeclaringType(?nativeMethod, ?nativeClass),
-  ApplicationClass(?nativeClass).

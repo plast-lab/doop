@@ -181,6 +181,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             gen0.writeTamiflexFacts(origTamFile)
         }
 
+        if (options.NATIVE_STRINGS_DISTANCE.value)
+            gen0.writeNativeStringsDistance(options.NATIVE_STRINGS_DISTANCE.value as String)
+
     }
 
     /**
@@ -385,6 +388,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         if (options.SCAN_NATIVE_CODE.value) {
             params += ["--scan-native-code"]
+        }
+
+        if (options.USE_RADARE.value) {
+            params += ["--use-radare"]
+        }
+
+        if (options.ONLY_PRECISE_NATIVE_STRINGS.value) {
+            params += ["--only-precise-native-strings"]
         }
 
         if (options.GENERATE_ARTIFACTS_MAP.value) {

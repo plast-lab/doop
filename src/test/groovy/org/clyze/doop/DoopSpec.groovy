@@ -30,4 +30,12 @@ abstract class DoopSpec extends Specification {
     String testJar(String test) {
         "tests/${test}/build/libs/${test}.jar"
     }
+
+    protected List getSanityOpts() {
+        return [ "--sanity" ] + getTestExports()
+    }
+
+    protected List getTestExports() {
+        return [ "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl" ]
+    }
 }

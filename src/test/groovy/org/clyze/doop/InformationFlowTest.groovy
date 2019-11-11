@@ -20,8 +20,7 @@ class InformationFlowTest extends DoopSpec {
 					 "--information-flow", "android",
 					 "--information-flow-extra-controls", "7878787878,android.widget.EditText,2131296798",
 					 "--id", "test-android-androidterm-information-flow",
-					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--generate-jimple", "--Xstats-full", "-Ldebug"]
+					 "--generate-jimple", "--Xstats-full", "-Ldebug"] + testExports
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 

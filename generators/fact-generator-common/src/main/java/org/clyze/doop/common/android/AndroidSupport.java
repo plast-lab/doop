@@ -1,15 +1,14 @@
 package org.clyze.doop.common.android;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.clyze.doop.common.*;
 import org.clyze.doop.util.Resources;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
 
 public abstract class AndroidSupport {
 
@@ -177,10 +176,11 @@ public abstract class AndroidSupport {
     /**
      * Translate XML files to facts.
      *
-     * @param db      the database object to use
-     * @param outDir    the output directory (the parent of the decode directories)
+     * @param db      the database object to use for output
      */
-    public void generateFactsForXML(Database db, String outDir) {
+    public void generateFactsForXML(Database db) {
+        // The output directory (the parent of the decode directories)
+        String outDir = db.getDirectory();
         for (String decodeDir : decodeDirs) {
             System.out.println("Processing XML files in directory: " + decodeDir);
             XMLFactGenerator.processDir(new File(decodeDir), db, outDir);

@@ -20,7 +20,7 @@ import static org.clyze.doop.common.Parameters.shift;
 
 public class PythonInvoker {
 
-    protected Log logger;
+    private final Log logger;
 
     public PythonInvoker() {
         logger =  LogFactory.getLog(getClass());
@@ -82,7 +82,7 @@ public class PythonInvoker {
         run(parameters);
     }
 
-    public void run(PythonParameters parameters) throws IOException
+    private void run(PythonParameters parameters) throws IOException
     {
         PythonDatabase db = new PythonDatabase(new File(parameters._outputDir));
         PythonFactWriter factWriter = new PythonFactWriter(db);

@@ -10,11 +10,10 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 
 public class PythonIRPrinter {
-    private IAnalysisCacheView _cache;
+    private final IAnalysisCacheView _cache;
 
     public PythonIRPrinter(IAnalysisCacheView cache, String outputDir)
     {
-        String _outputDir = outputDir;
         _cache = cache;
     }
 
@@ -34,7 +33,7 @@ public class PythonIRPrinter {
             if(basicBlock instanceof SSACFG.ExceptionHandlerBasicBlock)
             {
                 writer.write("\t\tHandler");
-                Iterator<TypeReference> types = ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCaughtExceptionTypes();
+                Iterator<TypeReference> types = basicBlock.getCaughtExceptionTypes();
                 while(types.hasNext())
                     writer.write(" " + types.next().getName().toString());
                 writer.write("\n");

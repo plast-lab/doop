@@ -34,8 +34,8 @@ class DexClassFactWriter extends JavaFactWriter {
     public final Collection<FieldInfo> definedFields = new LinkedList<>();
     public @Nullable String superClass;
 
-    DexClassFactWriter(Database db, boolean moreStrings) {
-        super(db, moreStrings, true);
+    DexClassFactWriter(Database db, DexParameters params) {
+        super(db, params, true);
     }
 
     public void generateFacts(DexBackedClassDef dexClass, String className,
@@ -44,7 +44,7 @@ class DexClassFactWriter extends JavaFactWriter {
             _db.add(APP_CLASS, className);
 
         for (DexBackedMethod dexMethod : dexClass.getMethods()) {
-            DexMethodFactWriter mWriter = new DexMethodFactWriter(dexMethod, _db, _extractMoreStrings, cachedMethodDescriptors);
+            DexMethodFactWriter mWriter = new DexMethodFactWriter(dexMethod, _db, dexParams, cachedMethodDescriptors);
             mWriter.writeMethod(fieldOps, definedMethods);
         }
 

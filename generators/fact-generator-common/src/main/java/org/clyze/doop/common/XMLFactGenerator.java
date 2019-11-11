@@ -43,7 +43,7 @@ public class XMLFactGenerator extends DefaultHandler {
      *
      * @param dir     the directory to process
      * @param db      the database object to use
-     * @param topDir  the top directory to use when creating realtive
+     * @param topDir  the top directory to use when creating relative
      *                paths (a prefix of the directory path)
      */
     public static void processDir(File dir, Database db, String topDir) {
