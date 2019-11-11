@@ -1,6 +1,12 @@
 /***************************************************
  * Variables
  ***************************************************/
+.decl Stats_Simple_JavaUtilInsensVarPointsTo(?value:mainAnalysis.Value, ?var:Var)
+OUTPUT_STATS_DEFAULT(Stats_Simple_JavaUtilInsensVarPointsTo)
+
+.decl Stats_Simple_JavaUtilVarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
+OUTPUT_STATS_DEFAULT(Stats_Simple_JavaUtilVarPointsTo)
+
 .decl Stats_Simple_InsensVarPointsTo(?value:mainAnalysis.Value, ?var:Var)
 OUTPUT_STATS_DEFAULT(Stats_Simple_InsensVarPointsTo)
 

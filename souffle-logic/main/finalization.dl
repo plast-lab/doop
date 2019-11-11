@@ -1,10 +1,10 @@
-.decl FinalizeContextRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?fakeinvo:MethodInvocation, ?heapValue:Value, ?formal:Var)
+.decl FinalizeContextRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?fakeinvo:MethodInvocation, ?heapValue:Value, ?register:Method, ?formal:Var)
 
 /**
  * For a heap allocation of an object that overrides Object.finalize, invoke
  * the method Finalizer.register to register the object for finalization.
  */
-FinalizeContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?formal),
+FinalizeContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, ?formal),
 configuration.ContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, 1) :-
   FakeInvocation_RegisterFinalize(?heapValue, ?fakeinvo),
   basic.AllocatedObjectSupportsFinalize(?heapValue, ?inmethod),
@@ -17,9 +17,10 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register
   isImmutableHContext(?hctx).
 
 // The allocated object becomes the actual parameter to Finalizer.register.
+ReachableContext(?calleeCtx, ?register),
 VarPointsTo(?hctx, ?heapValue, ?calleeCtx, ?formal) :-
   configuration.ContextResponse(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?calleeCtx),
-  FinalizeContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?formal).
+  FinalizeContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, ?formal).
 
 #define REG_FINALIZE_ID(val1, val2) cat("<register-finalize ", cat(val1, cat( "/", cat(val2, "  >"))))
 

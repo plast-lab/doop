@@ -143,6 +143,7 @@ class WalaFactWriter extends JavaFactWriter {
                 }
             }
         }
+        _db.add(TYPE_SIMPLENAME, c.getName().getClassName().toString());
     }
 
     void writeDirectSuperclass(IClass sub, IClass sup) {

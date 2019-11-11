@@ -56,6 +56,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			"3-type-sensitive+3-heap"            : "ThreeTypeSensitivePlusThreeHeapConfiguration",
 			"selective-2-object-sensitive+heap"  : "SelectiveTwoObjectSensitivePlusHeapConfiguration",
 			"partitioned-2-object-sensitive+heap": "PartitionedTwoObjectSensitivePlusHeapConfiguration",
+			"1-object-1-type-sensitive+heap"     : "OneObjectOneTypeSensitivePlusHeapConfiguration",
+			"web-app-sensitive"                  : "WebAppSensitiveConfiguration",
+			"sticky-2-object-sensitive"          : "StickyTwoObjectSensitiveConfiguration",
+			"adaptive-2-object-sensitive+heap"   : "AdaptiveTwoObjectSensitivePlusHeapConfiguration"
 	]
 
 	/**
@@ -126,12 +130,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 					return new SoufflePartitionedAnalysis(options, context, commandsEnv)
 				else {
 					if (options.ANALYSIS.value == "fully-guided-context-sensitive") {
-						return new SouffleMultiPhaseAnalysis(options, context, commandsEnv)
+						return new SouffleStickyCSMultiPhaseAnalysis(options, context, commandsEnv)
+					}
+					else if (options.ANALYSIS.value == "adaptive-2-object-sensitive+heap") {
+						return new SouffleStickyCSMultiPhaseAnalysis(options, context, commandsEnv)
 					}
 					else {
 						return new SouffleAnalysis(options, context, commandsEnv)
 					}
-
 				}
 			}
 		}
@@ -145,8 +151,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 * @param options        the analysis options
 	 * @param throwError     if true, then throw an error, otherwise report a warning
 	 */
-	static void checkFactsReuse(AnalysisOption factsOpt, Map<String, AnalysisOption> options,
-								boolean throwError) {
+	static void checkFactsReuse(AnalysisOption factsOpt, Map<String, AnalysisOption> options, boolean throwError) {
 		def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
 		for (def opt : factOpts) {
 			if (opt.forPreprocessor) {

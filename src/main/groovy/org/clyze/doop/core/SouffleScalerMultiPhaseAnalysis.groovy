@@ -23,7 +23,7 @@ import static org.apache.commons.io.FilenameUtils.getBaseName
 @InheritConstructors
 @Log4j
 @TypeChecked
-class SouffleMultiPhaseAnalysis extends SouffleAnalysis {
+class SouffleScalerMultiPhaseAnalysis extends SouffleAnalysis {
 
 	@Override
 	void run() {

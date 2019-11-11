@@ -32,7 +32,10 @@ public class Driver {
         Timer scalerTimer = new Timer("Scaler Timer");
         System.out.println(ANSIColor.BOLD + ANSIColor.YELLOW + "Scaler starts ..." + ANSIColor.RESET);
         scalerTimer.start();
-        Scaler scaler = new Scaler(pta);
+        File scalerOutput = new File(factsDir, "SpecialContextSensitivityMethod.facts");
+
+        Scaler scaler = new Scaler(pta, scalerOutput);
+
         if (Global.getTST() != Global.UNDEFINE) {
             scaler.setTST(Global.getTST());
         }
@@ -50,10 +53,10 @@ public class Driver {
             }
         }
 
-        File scalerOutput = new File(factsDir, "SpecialContextSensitivityMethod.facts");
         System.out.printf("Writing Scaler method context sensitivities to %s...\n",
                 scalerOutput.getPath());
-        writeScalerResults(scalerResults, scalerOutput);
+
+        //writeScalerResults(scalerResults, scalerOutput);
     }
 
 //    public static void runScalerRank(File factsDir, File database) throws FileNotFoundException {

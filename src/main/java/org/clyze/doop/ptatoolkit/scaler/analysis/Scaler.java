@@ -5,6 +5,7 @@ import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 import org.clyze.doop.ptatoolkit.util.ANSIColor;
 import org.clyze.doop.ptatoolkit.util.Triple;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.*;
@@ -24,12 +25,14 @@ public class Scaler {
     private ContextComputer bottomLine;
     private Map<Method, Integer> ptsSize = new HashMap<>();
     /** Total Scalability Threshold */
-    private long tst = 1_500_000_000L;
+    private long tst = 500_000_000L;
     private List<Triple<Method, String, Long>> results;
+    private File scalerOutput;
 
-    public Scaler(DoopPointsToAnalysis pta) {
+    public Scaler(DoopPointsToAnalysis pta, File scalerOutput) {
         this.pta = pta;
         this.oag = new ObjectAllocationGraph(pta);
+        this.scalerOutput = scalerOutput;
         init();
     }
 
@@ -44,7 +47,7 @@ public class Scaler {
         AtomicLong worstCaseVPT = new AtomicLong(0);
         AtomicLong numberOfMethods = new AtomicLong(0);
 
-        final PrintWriter writer = new PrintWriter("scaler-predictions");
+        final PrintWriter writer = new PrintWriter(scalerOutput);
 
         results.stream()
                 .sorted(Comparator.comparing(Triple::getThird))
@@ -55,7 +58,7 @@ public class Scaler {
                     String context = triple.getSecond();
                     long nContexts = triple.getThird();
                     long accumuPTSSize = getAccumulativePTSSizeOf(method);
-                    writer.printf("#\t%s\t{%s}\t%d\t%d\n",
+                    writer.printf("%s\t%s\t%d\t%d\n",
                             method.toString(), context,
                             nContexts, nContexts * accumuPTSSize);
                     worstCaseVPT.getAndAdd(nContexts * accumuPTSSize);
@@ -89,18 +92,18 @@ public class Scaler {
         System.out.println("Total Reachable Methods: " + reachableMethods.size());
         // From the most precise analysis to the least precise analysis
 
-        ContextComputer _2ObjectContextComputer = new _2ObjectContextComputer_ScalerPlus(pta, oag);
-        ctxComputers = new ContextComputer[] {
-                _2ObjectContextComputer,
-                new _2TypeContextComputer_ScalerPlus(pta, oag, _2ObjectContextComputer),
-                new _1TypeContextComputer_ScalerPlus(pta, oag, _2ObjectContextComputer),
-        };
-//        ContextComputer _2ObjectContextComputer = new _2ObjectContextComputer_Scaler(pta, oag);
+//        ContextComputer _2ObjectContextComputer = new _2ObjectContextComputer_ScalerPlus(pta, oag);
 //        ctxComputers = new ContextComputer[] {
 //                _2ObjectContextComputer,
-//                new _2TypeContextComputer_Scaler(pta, oag),
-//                new _1TypeContextComputer_Scaler(pta, oag),
+//                new _2TypeContextComputer_ScalerPlus(pta, oag, _2ObjectContextComputer),
+//                new _1TypeContextComputer_ScalerPlus(pta, oag, _2ObjectContextComputer),
 //        };
+        ContextComputer _2ObjectContextComputer = new _2ObjectContextComputer_Scaler(pta, oag);
+        ctxComputers = new ContextComputer[] {
+                _2ObjectContextComputer,
+                new _2TypeContextComputer_Scaler(pta, oag),
+                new _1TypeContextComputer_Scaler(pta, oag),
+        };
         ctxComputers[0].computeContext();
         ctxComputers[1].computeContext();
         ctxComputers[2].computeContext();
@@ -164,10 +167,10 @@ public class Scaler {
                                          long st) {
         long total = 0;
         for (Method method : methods) {
-//            if (!isSpecialMethod(method)) {
+            if (!isSpecialMethod(method)) {
                 ContextComputer cc = selectContext(method, st);
                 total += getFactor(method, cc);
-//            }
+            }
         }
         return total;
     }
@@ -180,9 +183,9 @@ public class Scaler {
      */
     private ContextComputer selectContext(Method method, long st) {
         ContextComputer ctxComp;
-//        if (isSpecialMethod(method)) {
-//            ctxComp = ctxComputers[0]; // the most precise analysis
-//        } else {
+        if (isSpecialMethod(method)) {
+            ctxComp = ctxComputers[0]; // the most precise analysis
+        } else {
             ctxComp = bottomLine;
             for (ContextComputer cc : ctxComputers) {
                 if (getFactor(method, cc) <= st) {
@@ -190,7 +193,7 @@ public class Scaler {
                     break;
                 }
             }
-//        }
+        }
         return ctxComp;
     }
 

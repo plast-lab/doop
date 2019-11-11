@@ -17,8 +17,32 @@ SpecialLibraryClass(?class) :-
   !CollectionLibraryClass(?class).
 
 .decl CollectionLibraryClass(?class:Type)
-CollectionLibraryClass(?class) :-
+/*CollectionLibraryClass(?class) :-
   isClassType(?class),
   !ApplicationClass(?class),
   isType(?class),
   match("java\.util.*", ?class).
+*/
+CollectionLibraryClass(?class) :-
+  isClassType(?class),
+  !ApplicationClass(?class),
+  basic.SubtypeOf(?class, ?superclass),
+  (?superclass = "java.util.Map";
+   ?superclass = "java.util.Collection";
+   ?superclass = "java.util.Iterable";
+   ?superclass = "java.util.Iterator";
+   ?superclass = "java.util.Comparator";
+   ?superclass = "java.util.Map$Entry";
+   ?superclass = "java.util.Dictionary";
+   ?superclass = "java.util.TimSort";
+   ?superclass = "java.util.ComparableTimSort";
+   ?superclass = "java.util.Arrays";
+   ?superclass = "java.util.Objects";
+   ?superclass = "java.util.Collections").
+
+CollectionLibraryClass(?innerClass) :-
+  CollectionLibraryClass(?class),
+  isClassType(?innerClass),
+  match(cat(?class, "$.*"), ?innerClass).
+
+.output CollectionLibraryClass

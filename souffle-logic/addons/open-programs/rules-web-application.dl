@@ -283,7 +283,6 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockObject, ?injectedField, ?basehctx
   mainAnalysis.isImmutableHContext(?basehctx),
   mainAnalysis.isImmutableHContext(?hctx).
 
-
 /**
  *  Annotation driven dependency injection for fields annotated with @Resource
  **/
@@ -327,6 +326,11 @@ WebApplicationEntryPointClass(?type) :-
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RequestMapping");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RestController");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.ControllerAdvice");
+   //Type_Annotation(?type, "org.springframework.stereotype.Component");
+   //Type_Annotation(?type, "org.springframework.stereotype.Service");
+   //Type_Annotation(?type, "org.springframework.stereotype.Repository");
+   //isConcreteBean(?type);
+   Type_Annotation(?type, "org.springframework.stereotype.Controller");
    Type_Annotation(?type, "org.springframework.boot.autoconfigure.EnableAutoConfiguration");
    Type_Annotation(?type, "org.springframework.context.annotation.Configuration");
    Type_Annotation(?type, "javax.persistence.Entity");
@@ -337,7 +341,8 @@ WebApplicationEntryPointClass(?type) :-
    ApplicationListener(?type);
    MVCInterceptorBean(?type);
    Validator(?type);
-   match(".*_jsp", ?type)).
+   match(".*_jsp", ?type);
+   PossibleWebApplicationEntryPoint(?type)).
 
 mainAnalysis_MockValueConsMacro(cat(?type, "::MockObject"), ?type),
 MockObject(cat(?type, "::MockObject"), ?type) :-
@@ -362,7 +367,35 @@ MockObject(cat(?type, "::MockObject"), ?type) :-
    ApplicationListener(?type);
    MVCInterceptorBean(?type);
    Validator(?type);
-   match(".*_jsp", ?type)).
+   PossibleWebApplicationEntryPoint(?type)).
+
+.decl isSpringApplication(?value:number)
+
+isSpringApplication(1) :-
+  isClassType(?type),
+  match("org\.springframework\.context.*", ?type).
+
+.decl PossibleWebApplicationEntryPoint(?type:Type)
+
+PossibleWebApplicationEntryPoint(?type) :-
+   !isSpringApplication(1),
+   ApplicationClass(?type),
+   (match(".*Controller", ?type);
+    match(".*Bean", ?type);
+    match(".*Listener", ?type);
+    match(".*Servlet", ?type)).
+
+PossibleWebApplicationEntryPoint(?type) :-
+  !isSpringApplication(1),
+  ApplicationClass(?type),
+  Method_DeclaringType(?method, ?type),
+  Method_SimpleName(?method, "init").
+
+
+MockOpenProgramEntryPoint(?type, ?method) :-
+   MockObject(_, ?type),
+   Method_DeclaringType(?method, ?type),
+   Method_SimpleName(?method, "<init>").
 
 /** We treat every class that has dependency injection through annotations i.e., @Inject, @Autowired
  *  as a class managed by the container and thus mark it as a web app entry point
@@ -517,13 +550,7 @@ ConcreteBean_Id(?class, ?id) :-
 
 Bean_Parent(?id, ?parentId) :-
   XMLNodeAttribute(?XMLFile, ?nodeId, "0", "id", "id", ?id),
-  XMLNodeAttribute(?XMLFile, ?nodeId, "1", "class", "class", _),
-  XMLNodeAttribute(?XMLFile, ?nodeId, "2", "parent", "parent", ?parentId).
-
-Bean_Parent(?id, ?parentId) :-
-  XMLNodeAttribute(?XMLFile, ?nodeId, "0", "id", "id", ?id),
-  !XMLNodeAttribute(?XMLFile, ?nodeId, _, "class", "class", _),
-  XMLNodeAttribute(?XMLFile, ?nodeId, "2", "parent", "parent", ?parentId).
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "parent", "parent", ?parentId).
 
 isAbstractBeanId(?id) :-
   XMLNodeAttribute(?XMLFile, ?nodeId, "0", "id", "id", ?id),
@@ -663,6 +690,27 @@ BeanMap(?id, ?mapClass, ?value) :-
   MockObject(?entryBeanMockObject, ?entryBeanClass),
   ?value = cat("Mock map: ", cat(?id, ?mapClass)).
 
+/*
+BeanFieldInjection(?beanClass, ?injectedField, ?value),
+BeanResource(?id, ?mapClass, ?value),
+mainAnalysis_MockValueConsMacro(?value, ?mapClass),
+BeanMapEntry(?id, ?entryBeanKey, ?entryBeanMockObject),
+BeanMap(?id, ?mapClass, ?value) :-
+  XMLNode(?XMLFile, ?beanNodeId, _, _, "bean", "bean"),
+  XMLNodeAttribute(?XMLFile, ?beanNodeId, _, "class", "class", ?beanClass),
+  XMLNode(?XMLFile, ?beanPropertyNodeId, ?beanNodeId, _, "property", "property"),
+  XMLNodeAttribute(?XMLFile, ?beanPropertyNodeId, _, "name", "name", ?injectedField),
+  XMLNode(?XMLFile, ?mapNodeId, ?beanPropertyNodeId, _, "map", "map"),
+  XMLNode(?XMLFile, ?entryNodeId, ?mapNodeId, _, "entry", "entry"),
+  XMLNodeAttribute(?XMLFile, ?entryNodeId, _, "key", "key", ?entryBeanKey),
+  XMLNode(?XMLFile, ?valueNodeId, ?entryNodeId, _, "bean", "bean"),
+  XMLNodeAttribute(?XMLFile, ?valueNodeId, _, "class", "class", ?entryBeanId),
+  ConcreteBean_Id(?entryBeanClass, ?entryBeanId),
+  MockObject(?entryBeanMockObject, ?entryBeanClass),
+  ?mapClass = "java.util.HashMap",
+  ?id = cat(cat(?beanClass, " "), ?injectedField),
+  ?value = cat("Mock map: ", cat(?id, ?mapClass)).
+*/
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanMockObject, ?valueField, ?basehctx, ?nodeMockObject),
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanId, ?keyField, ?basehctx, ?nodeMockObject),
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?arrayMockObject, ?tableField, ?basehctx, ?mapMockObject),
@@ -687,15 +735,23 @@ mainAnalysis_MockValueConsMacro(?nodeMockObject, ?nodeType) :-
 /**
  * Bean injection to getBean() invocations
  **/
-mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?calleeCtx, ?return) :-
-  mainAnalysis.CallGraphEdge(_, ?invocation, ?calleeCtx, ?method),
-  Method_SimpleName(?method, "getBean"),
+.decl GetBeanAppInvocation(?ctx: mainAnalysis.configuration.Context, ?invocation: MethodInvocation)
+GetBeanAppInvocation(?ctx, ?invocation) :-
+  mainAnalysis.ReachableContext(?ctx, ?method),
+  ApplicationMethod(?method),
+  Instruction_Method(?invocation, ?method),
+  isMethodInvocation(?invocation),
+  match(".*getBean.*", ?invocation).
+
+mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?local) :-
+  GetBeanAppInvocation(?ctx, ?invocation),
   ActualParam(0, ?invocation, ?actual),
-  mainAnalysis.VarPointsTo(_, ?heap, ?calleeCtx, ?actual),
+  mainAnalysis.VarPointsTo(_, ?heap, ?ctx, ?actual),
   ConcreteBean_Id(?beanClass, ?heap),
   MockObject(?beanMockObject, ?beanClass),
-  ReturnVar(?return, ?method),
+  AssignReturnValue(?invocation, ?local),
   mainAnalysis.isImmutableHContext(?immHctx).
+ .plan 1:(3,2,4,1,5,6,7)
 
 /**
  * Sanitization and Statistics
