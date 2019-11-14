@@ -22,6 +22,7 @@ import static org.apache.commons.io.FileUtils.deleteQuietly
 class SouffleScript {
 
 	static final String EXE_NAME = "exe"
+	protected static final String TIME_UTIL = "/usr/bin/time"
 
 	Executor executor
 	long compilationTime = 0L
@@ -145,7 +146,13 @@ class SouffleScript {
 			boolean profile = false) {
 
 		def db = makeDatabase(outDir)
-		def executionCommand = "${cacheFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
+		def baseCommand = "${cacheFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}"
+		if (profile && new File(TIME_UTIL).exists()) {
+			println "Using ${TIME_UTIL} to gather performance statistics..."
+			baseCommand = TIME_UTIL + " " + baseCommand
+		}
+
+		def executionCommand = baseCommand.split().toList()
 		if (profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 
