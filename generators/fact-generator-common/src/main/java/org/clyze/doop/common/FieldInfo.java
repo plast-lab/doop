@@ -45,5 +45,5 @@ public class FieldInfo {
         return (fis != null) && fis.stream().anyMatch(fi -> fi.name.equals(name));
     }
 
-    public static class ResolveException extends Exception { }
+    static class ResolveException extends Exception { }
 }

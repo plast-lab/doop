@@ -5,3 +5,7 @@ dependencies {
     compile 'net.dongliu:apk-parser:2.6.2'           // needed for reading binary XML entries from APK inputs
     compile 'commons-logging:commons-logging:1.1'    // Logging wrapper
 }
+
+compileJava {
+    options.compilerArgs << '-Xlint:unchecked'
+}

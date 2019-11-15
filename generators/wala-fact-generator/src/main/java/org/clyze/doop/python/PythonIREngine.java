@@ -94,7 +94,7 @@ class PythonIREngine {
         }
     }
 
-    AnalysisScope buildAnalysisScope() {
+    void buildAnalysisScope() {
         scope = new AnalysisScope(Collections.singleton(PythonLanguage.Python)) {
             {
                 loadersByName.put(PythonTypes.pythonLoaderName, PythonTypes.pythonLoader);
@@ -105,7 +105,6 @@ class PythonIREngine {
         for(Module o : modules) {
             scope.addToScope(PythonTypes.pythonLoader, o);
         }
-        return scope;
     }
 
     IClassHierarchy buildClassHierarchy()

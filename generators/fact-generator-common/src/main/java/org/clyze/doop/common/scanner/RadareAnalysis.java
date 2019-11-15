@@ -233,7 +233,7 @@ class RadareAnalysis extends BinaryAnalysis {
             boolean badLine = false;
             if (line.startsWith(prefix)) {
                 line = line.substring(prefix.length());
-                ArrayList<String> values = new ArrayList(numColumns);
+                ArrayList<String> values = new ArrayList<>(numColumns);
                 // Split first (n-1) values, consider the rest the last value.
                 for (int i = 0; i < numColumns - 1; i++) {
                     int tabIdx = line.indexOf("\t");

@@ -32,7 +32,7 @@ abstract class DoopSpec extends Specification {
     }
 
     protected List getSanityOpts() {
-        return [ "--sanity" ] + getTestExports()
+        return [ "--sanity" ] + testExports
     }
 
     protected List getTestExports() {

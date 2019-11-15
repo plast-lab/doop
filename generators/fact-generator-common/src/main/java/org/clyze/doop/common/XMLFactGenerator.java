@@ -14,6 +14,7 @@ import org.clyze.utils.JHelper;
  * Convert XML data to facts. Converts some extra logic for
  * Android-specific attributes.
  */
+@SuppressWarnings("RedundantThrows")
 public class XMLFactGenerator extends DefaultHandler {
     private static final boolean verbose = false;
     private final String[] ID_PREFIXES = new String[] { "@id/", "@android:id/" };

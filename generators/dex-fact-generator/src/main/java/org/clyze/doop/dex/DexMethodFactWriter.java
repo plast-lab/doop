@@ -877,7 +877,7 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param op     the instruction opcode
      */
     private void writeStatementType(String insn, Opcode op) {
-        InferType in_type  = null;
+        InferType in_type = null;
         InferType out_type = null;
         switch (op) {
         // Binops
@@ -982,6 +982,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             in_type = InferType.BITS64; out_type = InferType.BITS64; break;
         }
 
+        //noinspection ConstantConditions
         if (in_type == null || out_type == null)
             System.err.println("Cannot determine statement type for instruction " + insn + " (opcode: " + op + ")");
         else
