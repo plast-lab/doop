@@ -1,7 +1,6 @@
 package org.clyze.doop.utils
 
 import groovy.util.logging.Log4j
-import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 
 @Log4j

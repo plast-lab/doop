@@ -5,7 +5,6 @@ import groovy.util.logging.Log4j
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.utils.CheckSum
-import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 import org.clyze.utils.Helper
 
