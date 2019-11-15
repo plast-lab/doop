@@ -16,7 +16,6 @@ import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.scanner.NativeScanner;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
-import org.clyze.utils.DoopConventions;
 import org.clyze.utils.Helper;
 import org.clyze.utils.JHelper;
 import org.xmlpull.v1.XmlPullParserException;
