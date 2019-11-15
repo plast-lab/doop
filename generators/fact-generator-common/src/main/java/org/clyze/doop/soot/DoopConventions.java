@@ -4,6 +4,12 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 
+/*
+ * This class provides the conventions that are followed by the Soot
+ * front end. These conventions are provided here instead of the fact
+ * generator subproject, so that they can be visible to code using
+ * Doop as a library.
+ */
 public class DoopConventions {
 
     public static String jimpleDir(String outDir) {
