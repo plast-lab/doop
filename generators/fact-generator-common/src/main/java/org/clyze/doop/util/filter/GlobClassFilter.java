@@ -2,8 +2,7 @@ package org.clyze.doop.util.filter;
 
 import java.io.File;
 import java.util.ArrayList;
-
-import static org.clyze.utils.TypeUtils.getPackageName;
+import org.clyze.doop.util.PackageUtils;
 
 public class GlobClassFilter implements ClassFilter {
     private final ArrayList<String> packages;
@@ -66,14 +65,14 @@ public class GlobClassFilter implements ClassFilter {
         if (otherPatterns != null)
             for (String pattern : otherPatterns) {
                 if (pattern.equals("*")) {
-                    pkgName = getPackageName(className);
+                    pkgName = PackageUtils.getPackageName(className);
                     return pkgName.isEmpty();
                 } else if (className.equalsIgnoreCase(pattern))
                     return true;
             }
 
         if (packages != null) {
-            pkgName = getPackageName(className);
+            pkgName = PackageUtils.getPackageName(className);
             for (String pkg : packages) {
                 if (pkgName.equalsIgnoreCase(pkg))
                     return true;
