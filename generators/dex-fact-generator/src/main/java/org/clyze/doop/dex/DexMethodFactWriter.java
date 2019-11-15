@@ -46,7 +46,7 @@ import static org.clyze.doop.common.JavaRepresentation.numberedInstructionId;
 import static org.clyze.doop.common.PredicateFile.*;
 import static org.clyze.doop.dex.DexRepresentation.strOfLineNo;
 import static org.clyze.doop.dex.DexUtils.*;
-import static org.clyze.utils.TypeUtils.raiseTypeId;
+import static org.clyze.doop.util.TypeUtils.raiseTypeId;
 
 /**
  * Writes facts for a single method found in a .dex class.
