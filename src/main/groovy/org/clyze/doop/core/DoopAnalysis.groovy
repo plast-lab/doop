@@ -9,10 +9,10 @@ import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
 import org.clyze.doop.common.DoopErrorCodeException
-import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.util.ClassPathHelper
 import org.clyze.doop.util.Resources
 import org.clyze.doop.utils.CPreprocessor
+import org.clyze.input.InputResolutionContext
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
 

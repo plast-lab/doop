@@ -2,6 +2,7 @@ package org.clyze.doop.input
 
 import groovy.transform.TupleConstructor
 import org.clyze.analysis.InputType
+import org.clyze.input.InputResolutionContext
 
 @TupleConstructor
 class ResolvedInputResolutionContext implements InputResolutionContext {
