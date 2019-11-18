@@ -1,7 +1,7 @@
 package org.clyze.doop
 
 import org.clyze.analysis.Analysis
-import org.clyze.doop.input.PlatformManager
+import org.clyze.input.PlatformManager
 import spock.lang.Specification
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
