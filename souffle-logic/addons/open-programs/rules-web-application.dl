@@ -231,10 +231,9 @@ TypeCannotBeMocked(?type) :-
   AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?type).
 
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?bridgeParam) :-
-  MockOpenProgramEntryPoint(?entryPointDeclaringType, ?bridge),
-  BridgeMethod(?bridge, ?entryPointDeclaringType),
+  MockOpenProgramEntryPoint(?entryPoint, ?bridge),
+  BridgeMethod(?bridge, ?entryPoint),
   basic.MethodMightBeCovariantBridge(?bridge, ?method),
-  BridgeMethod(?method, ?entryPointDeclaringType),
   FormalParam(?index, ?bridge, ?bridgeParam),
   FormalParam(?index, ?method, ?methodParam),
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?methodParam),

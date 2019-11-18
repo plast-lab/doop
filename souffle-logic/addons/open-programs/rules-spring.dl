@@ -39,7 +39,7 @@ mainAnalysis.ReachableContext(?calleeCtx, ?method) :-
     mainAnalysis.isImmutableHContext(?hctx),
     mainAnalysis.isImmutableContext(?callerCtx),
     mainAnalysis.configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?method, 1),
-    mainAnalysis.configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
+    mainAnalysis.configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?method, ?calleeCtx).
 
 // Create mock object for the startup context
 mainAnalysis.isValue(cat("SERVLET ::: ", ?method)) :- isMethod(?method), ServletMethodEP(?method).

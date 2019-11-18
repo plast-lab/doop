@@ -1,0 +1,66 @@
+.decl MethodCantBenefitFromCS(?method:Method)
+.decl MethodDoesntDoStores(?method:Method)
+.decl MethodDoesntPassReferences(?method:Method)
+.decl MethodDoesntReturnReference(?method:Method)
+.decl MethodDoesStores(?method:Method)
+.decl MethodPassesReferences(?method:Method)
+.decl MethodReturnsReference(?method:Method)
+.decl MethodDoesntCallOthers(?method:Method)
+.decl Method_CalleeCanBenefitFromCS(?method:Method)
+
+.output MethodCantBenefitFromCS
+.output MethodDoesntDoStores
+.output MethodDoesntPassReferences
+.output MethodDoesntReturnReference
+
+MethodDoesntDoStores(?method) :-
+  isMethod(?method),
+  !MethodDoesStore(?method).
+
+MethodDoesStore(?method) :-
+  Instruction_Method(?instruction, ?method),
+  (isStoreInstanceField_Insn(?instruction);
+   isStoreStaticField_Insn(?instruction)).
+
+MethodPassesReferences(?method) :-
+  Instruction_Method(?instruction, ?method),
+  isMethodInvocation(?instruction),
+  ActualParam(_, ?instruction, ?actual),
+  Var_Type(?actual, ?type),
+  isReferenceType(?type).
+
+MethodCallsOthers(?method) :-
+  Instruction_Method(?instruction, ?method),
+  isMethodInvocation(?instruction).
+
+MethodDoesntCallOthers(?method) :-
+  !MethodCallsOthers(?method).
+
+MethodReturnsReference(?method) :-
+  ReturnVar(?return, method),
+  Var_Type(?return, ?type),
+  isReferenceType(?type).
+
+MethodDoesntReturnReference(?method) :-
+  isMethod(?method),
+  MethodReturnsReference(?method).
+
+MethodCantBenefitFromCS(?method) :-
+  MethodDoesntDoStores(?method),
+  (MethodDoesntCallOthers(?method);
+   MethodDoesntPassReferences(?method)),
+  MethodDoesntReturnReference(?method).
+
+Method_CalleeCanBenefitFromCS(?method, ?callee) :-
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?calee),
+  !MethodCantBenefitFromCS(?calee).
+
+MethodCantBenefitFromCS(?method) :-
+  MethodDoesntDoStores(?method),
+  !Method_CalleeCanBenefitFromCS(?method, _),
+  MethodDoesntReturnReference(?method).
+
+
+
+
+

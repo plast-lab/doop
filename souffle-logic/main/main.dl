@@ -23,6 +23,11 @@
 #ifdef SCALER_PRE_ANALYSIS
 #include "scaler-pre-analysis.dl"
 #endif // SCALER_PRE_ANALYSIS
+
+#ifdef GENERICS_PRE_ANALYSIS
+#include "generics-pre-analysis.dl"
+#endif // GENERICS_PRE_ANALYSIS
+
 #ifdef ZIPPER_PRE_ANALYSIS
 #include "zipper-pre-analysis.dl"
 #endif // ZIPPER_PRE_ANALYSIS

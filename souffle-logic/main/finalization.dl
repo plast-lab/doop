@@ -19,7 +19,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register
 // The allocated object becomes the actual parameter to Finalizer.register.
 ReachableContext(?calleeCtx, ?register),
 VarPointsTo(?hctx, ?heapValue, ?calleeCtx, ?formal) :-
-  configuration.ContextResponse(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?calleeCtx),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, ?calleeCtx),
   FinalizeContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, ?formal).
 
 #define REG_FINALIZE_ID(val1, val2) cat("<register-finalize ", cat(val1, cat( "/", cat(val2, "  >"))))

@@ -55,7 +55,16 @@
 
 .decl OptStoreArrayIndex(?from:Var, ?base:Var)
 
-.decl OptArgAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
+.decl OptArgAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var, ?allowedType:Type)
+.decl OptArgAssign1(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var, ?allowedType:Type)
+.decl OptArgAssign2(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var, ?allowedType:Type)
+.decl OptArgAssign3(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var, ?allowedType:Type)
+.decl OptArgAssign4(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var, ?allowedType:Type)
+
+.printsize OptArgAssign1
+.printsize OptArgAssign2
+.printsize OptArgAssign3
+.printsize OptArgAssign4
 
 #ifndef INFORMATION_FLOW
 .decl OptReturnAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)

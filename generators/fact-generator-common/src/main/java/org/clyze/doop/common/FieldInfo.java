@@ -14,6 +14,12 @@ public class FieldInfo {
         this.name = n;
     }
 
+    public FieldInfo(String t, String n, String c) {
+        this.type = t;
+        this.name = n;
+        this.definingClass = c;
+    }
+
     public String getFieldId() {
         return JavaRepresentation.fieldId(definingClass, type, name);
     }

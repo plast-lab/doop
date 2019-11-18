@@ -4,20 +4,18 @@
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
 
-// For this analysis the context of a method call corresponds to the
-// identity of the receiver object and the receiver object of the caller.
-// Again, this may trigger creation of a new object.
-.comp TwoObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
+.comp OneObjectOneTypeSensitivePlusHeapConfiguration : AbstractConfiguration {
 
   // In this analysis, the real context is a pair of Values and the real
   // heap context a single Value.
-  .type Context  = [ value1:mainAnalysis.Value, value2:mainAnalysis.Value ]
+  .type Context  = [ type:Type, value:mainAnalysis.Value ]
   .type HContext = [ value:mainAnalysis.Value ]
 
-  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxValue],
-    ?calleeCtx = [?hctxValue, ?value],
+    Value_DeclaringType(?hctxValue, ?hctxType),
+    ?calleeCtx = [?hctxType, ?value],
     ?tomethod = ?tomethod.
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
@@ -25,44 +23,18 @@
     ?calleeCtx = ?callerCtx.
 
   RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
-    RecordContextRequest(?ctx, ?value, ?var),      
-    ?ctx = [?ctxValue1, ?ctxValue2],
-    ?hctx = [?ctxValue2],
-    ?ctxValue1 = ?ctxValue1.
+    RecordContextRequest(?ctx, ?value, ?var),
+    ?ctx = [?ctxType, ?ctxValue],
+    ?hctx = [?ctxValue],
+    ?ctxType = ?ctxType.
 
   InitContextResponse(?value, ?ctx) :-
     InitContextRequest(?value),
-    ?ctx = [?value, ?value].
+    ?ctx = [cat(?value, ""), ?value].
 
   InitHContextResponse(?value, ?hctx) :-
     InitHContextRequest(?value),
     ?hctx = [?value].
-
-  .decl Method_NumberOfContexts(?method:Method, ?n:number)
-
-      Method_NumberOfContexts(?method, ?n) :-
-        Reachable(?method),
-        ?n =  count : {ReachableContext(_, ?method)}.
-
-      .output Method_NumberOfContexts
-
-      .decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
-
-      VPTCountPerMethodVariable(?method, ?var, Y) :-
-         Var_DeclaringMethod(?var, ?method),
-         Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
-
-      .decl MethodTotalVPT(?method:Method, Y:number)
-
-      MethodTotalVPT(?method, Y) :-
-        mainAnalysis.Reachable(?method),
-        Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
-
-      MethodTotalVPT(?method, 0) :-
-        mainAnalysis.Reachable(?method),
-        !Var_DeclaringMethod(_, ?method).
-
-      .output MethodTotalVPT
 
 #ifdef HEAPDLS
   DynamicContextToContext([?value1, ?value2], ?dynCtx) :-
@@ -83,7 +55,7 @@
     isImmutableContext(?ctx).
 
   DynamicContextToHContext([?value], ?dynCtx) :-
-    Value_byDynamicHeap(?heap1, ?value), 
+    Value_byDynamicHeap(?heap1, ?value),
     DynamicContextHeap1(?heap1, ?dynCtx).
 
   DynamicContextToHContext(?hctx, ?dynCtx) :-

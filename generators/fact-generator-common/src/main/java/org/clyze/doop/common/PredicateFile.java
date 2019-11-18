@@ -63,6 +63,9 @@ public enum PredicateFile
     FIELD_MODIFIER("Field-Modifier"),
     FIELD_SIGNATURE("Field"),
     FORMAL_PARAM("FormalParam"),
+    GENERIC_TYPE_PARAMETERS("GenericTypeParameters"),
+    GENERIC_TYPE_ERASED_TYPE("GenericType-ErasedType"),
+    GENERIC_FIELD("GenericField"),
     GOTO("Goto"),
     IF("If"),
     IF_CONSTANT("IfConstant"),
@@ -126,6 +129,7 @@ public enum PredicateFile
     XMLNode("XMLNode"),
     XMLNodeAttribute("XMLNodeAttribute"),
     XMLNodeData("XMLNodeData");
+
 
     private final String name;
 

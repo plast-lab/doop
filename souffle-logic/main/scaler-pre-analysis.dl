@@ -34,80 +34,52 @@ CallSiteIn(?invo, ?method) :-
 .decl MethodDoesntCallOthers(?method:Method)
 .decl MethodCallsOthers(?method:Method)
 
-.decl Method_CalleeCanBenefitFromCS(?method:Method, ?callee:Method)
+ MethodDoesStores(?method) :-
+   Instruction_Method(?instruction, ?method),
+   (isStoreInstanceField_Insn(?instruction);
+    isStoreStaticField_Insn(?instruction);
+    isStoreArrayIndex_Insn(?instruction)).
 
-  .output MethodCantBenefitFromCS
-  .output MethodDoesntDoStores
-  .output MethodDoesntPassReferences
-  .output MethodDoesntReturnReference
+ MethodReturnsReference(?method) :-
+   ReturnVar(?return, ?method),
+   Var_Type(?return, ?type),
+   (isReferenceType(?type);
+    isArrayType(?type)).
 
-  .output MethodCantBenefitFromCS
-  .output MethodDoesntDoStores
-  .output MethodDoesntPassReferences
-  .output MethodDoesntReturnReference
+ .decl MethodThrowsException(?method:Method)MethodThrowsException(?method) :-
+   Throw(_, ?var),
+   Var_DeclaringMethod(?var, ?method).
 
-  .decl MethodHasMemorySideEffects(?method:Method)
+.decl MethodCanBenefitFromCS(?method:Method)
 
-    MethodHasMemorySideEffects(?method) :-
-      Reachable(?method),
-      (MethodDoesStores(?method);
-       MethodReturnsReference(?method);
-       MethodThrowsException(?method);
-       MethodPassesReferences(?method)).
+MethodCanBenefitFromCS(?method) :-
+  MethodDoesStores(?method);
+  MethodReturnsReference(?method);
+  MethodThrowsException(?method);
+  Method_Modifier("native", ?method).
 
-    MethodHasMemorySideEffects(?method) :-
-      Reachable(?method),
-      Instruction_Method(?invo, ?method),
-      mainAnalysis.CallGraphEdge(_, ?invo, _, ?callee),
-      MethodHasMemorySideEffects(?callee).
+MethodCanBenefitFromCS(?method) :-
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?callee),
+  MethodCanBenefitFromCS(?callee),
+  Instruction_Method(?invo, ?method).
 
-    .decl MethodThrowsException(?method:Method)
+ .decl MethodCannotBenefitFromCS(?method:Method)
+ MethodCannotBenefitFromCS(?method) :-
+   Reachable(?method),
+   !MethodCanBenefitFromCS(?method).
 
-     MethodThrowsException(?method) :-
-       Throw(_, ?var),
-       Var_DeclaringMethod(?var, ?method).
-
-    .decl InsensitiveMethod(?method:Method)
-
-    InsensitiveMethod(?method) :-
-      MethodDoesntDoStores(?method),
-      MethodDoesntThrowException(?method),
-      MethodDoesntReturnReference(?method),
-      MethodDoesntCallOthers(?method).
-
-    InsensitiveMethod(?method) :-
-      MethodDoesntDoStores(?method),
-      MethodDoesntThrowException(?method),
-      MethodDoesntReturnReference(?method),
-      MethodDoesntPassReferences(?method).
-
-
+.output MethodCannotBenefitFromCS
 /*
-    InsensitiveMethod(?method) :-
-      Reachable(?method),
-      !MethodHasMemorySideEffects(?method).
+.decl EntryNonDataStructureMethod(?method:Method)
 
-    InsensitiveMethod(?method) :-
-      Method_SimpleName(?method, "hashCode").
-
-    InsensitiveMethod(?method) :-
-      Method_SimpleName(?method, "hash").
-
-    InsensitiveMethod(?method) :-
-      Method_SimpleName(?method, "rehash").
-
-    InsensitiveMethod("java.lang.Object: void <init>()>").
-*/
-    .decl EntryNonDataStructureMethod(?method:Method)
-
-    EntryNonDataStructureMethod(?method) :-
-      mainAnalysis.Reachable(?method),
-      !DataStructureMethod(?method),
-      AllCallGraphEdge(?invo, ?method),
-      Instruction_Method(?invo, ?caller),
-      Method_DeclaringType(?caller, ?class1),
-      Method_DeclaringType(?method, ?class2),
-      ?class1 != ?class2.
+EntryNonDataStructureMethod(?method) :-
+  mainAnalysis.Reachable(?method),
+  !DataStructureMethod(?method),
+  AllCallGraphEdge(?invo, ?method),
+  Instruction_Method(?invo, ?caller),
+  Method_DeclaringType(?caller, ?class1),
+  Method_DeclaringType(?method, ?class2),
+  ?class1 != ?class2.
 
     .decl StickyContextMethod(?method:Method)
     .decl EntryContextMethod(?method:Method)
@@ -121,12 +93,12 @@ CallSiteIn(?invo, ?method) :-
         (?superclass = "java.util.Map";
          ?superclass = "java.util.Collection";
          ?superclass = "java.util.Dictionary").
-/*
+
       DataStructureClass(?innerClass) :-
         DataStructureClass(?class),
         isClassType(?innerClass),
         match(cat(?class, "$.*"), ?innerClass).
-*/
+
       .output DataStructureClass
 
       .decl DataStructureMethod(?method:Method)
@@ -142,10 +114,9 @@ CallSiteIn(?invo, ?method) :-
         Instruction_Method(?invo, ?caller),
         !DataStructureMethod(?caller).
 
-/*
       EntryContextMethod(?method) :-
-              EntryNonDataStructureMethod(?method),
-              !InsensitiveMethod(?method).
+        EntryNonDataStructureMethod(?method),
+        !InsensitiveMethod(?method).
 
 
       StickyContextMethod(?method) :-
@@ -153,7 +124,7 @@ CallSiteIn(?invo, ?method) :-
         !InsensitiveMethod(?method),
         !DataStructureMethod(?method),
         !EntryNonDataStructureMethod(?method).
-*/
+
       EntryContextMethod(?method) :-
         EntryDataStructureMethod(?method),
         !InsensitiveMethod(?method).
@@ -170,55 +141,10 @@ CallSiteIn(?invo, ?method) :-
         !EntryDataStructureMethod(?method).
 
     .output EntryContextMethod(IO="file",filename="EntryContextMethod.csv",delimiter="\t")
-    .output InsensitiveMethod(IO="file",filename="InsensitiveMethod.csv",delimiter="\t")
-
-    MethodDoesntDoStores(?method) :-
-      Reachable(?method),
-      !MethodDoesStores(?method).
-
-    MethodDoesStores(?method) :-
-      Reachable(?method),
-      Instruction_Method(?instruction, ?method),
-      (isStoreInstanceField_Insn(?instruction);
-       isStoreStaticField_Insn(?instruction);
-       isStoreArrayIndex_Insn(?instruction)).
-
-    MethodPassesReferences(?method) :-
-      Reachable(?method),
-      Instruction_Method(?instruction, ?method),
-      isMethodInvocation(?instruction),
-      ActualParam(_, ?instruction, ?actual),
-      Var_Type(?actual, ?type),
-      (isReferenceType(?type);
-       isArrayType(?type)).
-
-    MethodDoesntPassReferences(?method) :-
-      Reachable(?method),
-      !MethodPassesReferences(?method).
-
-    MethodCallsOthers(?method) :-
-      Reachable(?method),
-      Instruction_Method(?instruction, ?method),
-      isMethodInvocation(?instruction).
-
-    MethodDoesntCallOthers(?method) :-
-      Reachable(?method),
-      !MethodCallsOthers(?method).
-
-    MethodReturnsReference(?method) :-
-      Reachable(?method),
-      ReturnVar(?return, ?method),
-      Var_Type(?return, ?type),
-      (isReferenceType(?type);
-       isArrayType(?type)).
-
-    MethodDoesntReturnReference(?method) :-
-      Reachable(?method),
-      !MethodReturnsReference(?method).
 
 
 
-.output Value_DeclaringType(IO="file",filename="DECLARING_CLASS_ALLOCATION.csv",delimiter="\t")
+.output InsensitiveMethod(IO="file",filename="InsensitiveMethod.csv",delimiter="\t")
 
 
 .decl Instance_Method(?method:Method)
@@ -241,9 +167,7 @@ Object_In(?heap, ?method) :-
     Instruction_Method(?instruction, ?method),
     AssignHeapAllocation_Heap(?instruction, ?heap).
 
-
 .output HeapAllocation_ContextInsensitive(IO="file", filename="SPECIAL_OBJECTS.csv",delimiter="\t")
-
 
 .decl Var_In(?var:Var, ?method:Method)
 .output Var_In(IO="file", filename="VAR_IN.csv", delimiter="\t")
@@ -295,9 +219,6 @@ Method_NumberOfContexts(?method, ?n) :-
 
 .output Method_NumberOfContexts(IO="file", filename="Method_NumberOfContexts.csv", delimiter="\t")
 
-/**
- *  Prephase: build the object allocation graph for all abstract heap objects
- **/
 .decl Prephase_ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)
 .output Prephase_ReceiverOfAllocatingMethod_Object
 
@@ -306,30 +227,18 @@ Prephase_ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject) :-
   Instruction_Method(?insn, ?allocatingMethod),
   AssignHeapAllocation_Heap(?insn, ?allocatedObject).
 
-/**
- * Base case: For an instance method, its receiver is... its receiver
- **/
 .decl ReceiverOfMethod(?method:Method, ?value:mainAnalysis.Value)
 
 ReceiverOfMethod(?method, ?receiver) :-
   ThisVar(?method, ?this),
   mainAnalysis.VarPointsTo(_, ?receiver, _, ?this).
 
-/**
- * Recursive case: For a static method, its possible receivers are the receivers of all its callers
- * We use this to expand the Object Allocation Graph so that it takes into account the
- * context sensitive behavior of static methods
- **/
 ReceiverOfMethod(?method, ?receiver) :-
   !ThisVar(?method, _),
   mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
   Instruction_Method(?invo, ?caller),
   ReceiverOfMethod(?caller, ?receiver).
 
-/**
- * Finalize the object allocation graph by making all the mock objects have themselves as receivers of their allocating
- * methods (which do not exist)
- **/
 .decl ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)
 .output ReceiverOfAllocatingMethod_Object
 
@@ -343,9 +252,6 @@ ReceiverOfAllocatingMethod_Object(?allocatedObject, ?allocatedObject) :-
 .decl Method_AllPossibleTwoObjContexts(?method:Method, ?receiverOfAllocator:mainAnalysis.Value, ?receiver:mainAnalysis.Value)
 .output Method_AllPossibleTwoObjContexts
 
-/**
- *  This will handle all instance methods
- **/
 Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, "<immutable-hcontext>"),
 Method_AllPossibleTwoObjContexts(?method, "<immutable-hcontext>", ?receiver),
 Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, "<immutable-context>"),
@@ -355,9 +261,6 @@ Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, ?receiver) :-
   mainAnalysis.VarPointsTo(_, ?receiver, _, ?this),
   ReceiverOfAllocatingMethod_Object(?receiverOfAllocator, ?receiver).
 
-/**
- * This will handle all static methods
- **/
 Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, "<immutable-hcontext>"),
 Method_AllPossibleTwoObjContexts(?method, "<immutable-hcontext>", ?receiver),
 Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, "<immutable-context>"),
@@ -387,7 +290,6 @@ Method_AllPossibleTwoTypeContexts(?method, ?receiverOfAllocatorType, ?receiverTy
 Method_AllPossibleOneTypeContexts(?method, ?receiverType) :-
   Method_AllPossibleTwoTypeContexts(?method, _, ?receiverType).
 
-/*
 .decl ActualParam_Method(?var:Var, ?method:Method)
 
 ActualParam_Method(?var, ?method) :-
@@ -448,7 +350,6 @@ VarTransitivelyPointsTo(?heap, ?var) :-
 
 VarTransitivelyPointsTo(?value, ?var) :-
   Stats_Simple_InsensInstanceFieldPointsTo(?value, _, ?basevalue),
-  VarTransitivelyPointsTo(?basevalue, ?var).
 
 .decl VariableCantBenefitFromCS(?var:Var)
 
@@ -457,4 +358,5 @@ VariableCantBenefitFromCS(?var) :-
   !VariableValueEscapesMethod(?var).
 
 .output VariableCantBenefitFromCS(IO="file", filename="VariableCantBenefitFromCS.csv", delimiter="\t")
+
 */

@@ -110,7 +110,7 @@ gradle.rootProject.ext.resourcesDir='resources'
 dependencies {
     apktool "ext:apktool:2.4.0"                                 // needed for decoding APK inputs
     compile project(':generators:fact-generator-common')
-    compile "org.clyze:clue-common:${clueCommonVersion}",
+    compile "org.clyze:clue-common:3.14.1",
             "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
@@ -125,8 +125,8 @@ dependencies {
             "ext:axml:2.0"
 
     // JimpleParser
-    antlr   "org.antlr:antlr4:4.5.1-1"
-    compile "org.antlr:antlr4-runtime:4.5.1-1"
+    antlr   "org.antlr:antlr4:4.7.2"
+    compile "org.antlr:antlr4-runtime:4.7.2"
 
     testCompile "org.spockframework:spock-core:${spockVersion}"
 }

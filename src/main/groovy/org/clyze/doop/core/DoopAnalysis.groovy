@@ -266,7 +266,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             if (options.X_UNIQUE_FACTS.value) {
                 def timing = Helper.timing {
                     factsDir.eachFileMatch(~/.*.facts/) { file ->
-                        def uniqueLines = file.readLines().toSet()
+                        def uniqueLines = file.readLines() as SortedSet<String>
+                        uniqueLines.sort()
                         def tmp = new File(factsDir, "${file.name}.tmp")
                         tmp.withWriter { w -> uniqueLines.each { w.writeLine(it) } }
                         tmp.renameTo(file)

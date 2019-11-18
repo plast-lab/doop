@@ -341,7 +341,6 @@ Field_SimpleName(?signature, ?simplename),
 Field_Type(?signature, ?type) :-
   _Field(?signature, ?declaringType, ?simplename, ?type).
 
-
 // EnterMonitor
 
 .decl _EnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
@@ -849,7 +848,9 @@ isType(?id) :-
 // SensitiveLayoutControl
 .input SensitiveLayoutControl0(IO="file", filename="SensitiveLayoutControl.facts", delimiter="\t")
 
-// FieldInitialValue
+// FieldInitialVal
+.input GenericTypeParameters(IO="file", filename="GenericTypeParameters.facts", delimiter="\t")
+.input GenericType_ErasedType(IO="file", filename="GenericType-ErasedType.facts", delimiter="\t"
 .input FieldInitialValue(IO="file", filename="FieldInitialValue.facts", delimiter="\t")
 
 .input AndroidId(IO="file", filename="AndroidId.facts", delimiter="\t")
@@ -939,3 +940,22 @@ isAnnotation(?annotation) :- isReferenceType(?annotation), Param_Annotation(_, _
 .input XMLNodeAttribute(IO="file", filename="XMLNodeAttribute.facts", delimiter="\t")
 .decl XMLNodeData(?file:symbol, ?nodeId:symbol, ?data:symbol)
 .input XMLNodeData(IO="file", filename="XMLNodeData.facts", delimiter="\t")
+
+#ifdef GENERICS_PRE_ANALYSIS
+.decl _GenericField(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol)
+.input _GenericField(IO="file", filename="GenericField.facts", delimiter="\t")
+
+isGenericField(?signature),
+GenericField_DeclaringType(?signature, ?declaringType),
+GenericField_SimpleName(?signature, ?simplename),
+GenericField_Type(?signature, ?type) :-
+  _GenericField(?signature, ?declaringType, ?simplename, ?type).
+
+.decl GenericTypeParameters(?type:symbol, ?index:number, ?genericParameter:symbol)
+.decl GenericType_ErasedType(?genericType:symbol, ?erasedType:Type)
+.input GenericTypeParameters(IO="file", filename="GenericTypeParameters.facts", delimiter="\t")
+.input GenericType_ErasedType(IO="file", filename="GenericType-ErasedType.facts", delimiter="\t")
+.decl GenericField_DeclaringType(?field:Field, ?declaringClass:ClassType)
+.decl GenericField_SimpleName(?field:Field, ?simpleName:symbol)
+.decl GenericField_Type(?field:Field, ?type:Type)
+#endif

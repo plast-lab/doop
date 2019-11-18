@@ -418,6 +418,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Enable the analysis to be the pre-analysis of Scaler, and outputs the information required by Scaler.",
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "GENERICS_PRE_ANALYSIS",
+					name: "generics-pre",
+					description: "Enable precise generics pre-analysis to infer content types for Collections and Maps.",
+					forPreprocessor: true
+			),
 			/* End Scaler related options */
 
 			/* Start Zipper related options */
@@ -467,6 +473,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "NO_MERGES",
 					name: "no-merges",
 					description: "No merges for string constants.",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "PRECISE_GENERICS",
+					name: "precise-generics",
+					description: "Precise handling for maps and collections",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(

@@ -19,7 +19,8 @@ class PlatformManager {
 			"java_7_debug"          : ["rt.jar", "jce.jar", "jsse.jar", "tools.jar"],
 			"java_8"                : ["rt.jar", "jce.jar", "jsse.jar"],
 			"java_8_debug"          : ["rt.jar", "jce.jar", "jsse.jar"],
-			"java_8_mini"           : ["rt.jar", "jce.jar", "jsse.jar"],
+			"java_8_v2"             : ["rt.jar", "jce.jar", "jsse.jar"],
+			"java_8_v3"             : ["rt.jar", "jce.jar", "jsse.jar"],
 			// Android compiled from sources
 			"android_22_fulljars"   : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
 			"android_25_fulljars"   : ["android.jar", "data/layoutlib.jar", "uiautomator.jar",

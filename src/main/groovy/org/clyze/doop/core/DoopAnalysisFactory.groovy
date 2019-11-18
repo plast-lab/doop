@@ -130,10 +130,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 					return new SoufflePartitionedAnalysis(options, context, commandsEnv)
 				else {
 					if (options.ANALYSIS.value == "fully-guided-context-sensitive") {
-						return new SouffleStickyCSMultiPhaseAnalysis(options, context, commandsEnv)
+						return new SouffleGenericsMultiPhaseAnalysis(options, context, commandsEnv)
 					}
 					else if (options.ANALYSIS.value == "adaptive-2-object-sensitive+heap") {
-						return new SouffleStickyCSMultiPhaseAnalysis(options, context, commandsEnv)
+						return new SouffleGenericsMultiPhaseAnalysis(options, context, commandsEnv)
 					}
 					else {
 						return new SouffleAnalysis(options, context, commandsEnv)

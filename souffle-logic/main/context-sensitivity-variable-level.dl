@@ -4,6 +4,9 @@
  * Generic context-sensitive pointer analysis, and more
  */
 
+.decl InsensitiveVar(?var:Var)
+
+.input InsensitiveVar(IO="file", filename="InsensitiveVar.facts", delimiter="\t")
 
 /**
  * Reachable values: useful even when points-to analysis is limited
@@ -50,12 +53,21 @@ VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
   configuration.RecordContextRequest(?ctx, ?heapValue, ?var),
   configuration.RecordContextResponse(?ctx, ?heapValue, ?var, ?newHCtx).
 
+
 VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
   Reachable(?inmethod),  // optimization purposes
   AssignContextInsensitiveHeapAllocation(?heapValue, ?var, ?inmethod),
+  !InsensitiveVar(?var),
   ReachableContext(?ctx, ?inmethod),
   isImmutableHContext(?hctx).
   .plan 1:(4,3,2,1)
+
+VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
+  Reachable(?inmethod),  // optimization purposes
+  AssignContextInsensitiveHeapAllocation(?heapValue, ?var, ?inmethod),
+  InsensitiveVar(?var),
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx).
 
 /**
  * Null assignments
@@ -64,8 +76,17 @@ VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
 VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
    Reachable(?inmethod),  // optimization purposes
    AssignNull(?to, ?inmethod),
+   !InsensitiveVar(?to),
    Value_Null(?null),
    ReachableContext(?toCtx, ?inmethod),
+   isImmutableHContext(?hctx).
+
+VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
+   Reachable(?inmethod),  // optimization purposes
+   AssignNull(?to, ?inmethod),
+   InsensitiveVar(?to),
+   Value_Null(?null),
+   isImmutableContext(?toCtx),
    isImmutableHContext(?hctx).
 
 /**
@@ -79,8 +100,20 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
    Instruction_Method(?insn, ?inmethod),
    (AssignNumConstant_Id(?insn, ?const);
     AssignCastNumConstant_Id(?insn, ?const)), // TODO: check the cast?
+   !InsensitiveVar(?to),
    AssignInstruction_To(?insn, ?to),
    Value_Num(?value, ?const),
+   isImmutableHContext(?hctx).
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+   Reachable(?inmethod),
+   Instruction_Method(?insn, ?inmethod),
+   (AssignNumConstant_Id(?insn, ?const);
+    AssignCastNumConstant_Id(?insn, ?const)), // TODO: check the cast?
+   InsensitiveVar(?to),
+   AssignInstruction_To(?insn, ?to),
+   Value_Num(?value, ?const),
+   isImmutableContext(?toCtx),
    isImmutableHContext(?hctx).
 
 #endif // DISABLE_POINTS_TO
@@ -131,7 +164,7 @@ HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
   LoadHeapInstanceField(?ctxTo, ?to, ?signature, ?basehctx, ?basevalue),
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctxFrom, ?from),
   !Value_Null(?basevalue).
- .plan 1:(2,1)
+  .plan 1:(2,1)
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   HeapInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
@@ -222,9 +255,22 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   StaticFieldPointsTo(?hctx, ?value, ?sig),
   LoadStaticField(?sig, ?to, ?inmethod),
+  !InsensitiveVar(?to),
   ReachableContext(?ctx, ?inmethod).
+
 #ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1)
+#endif // X_CONTEXT_REMOVER
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  StaticFieldPointsTo(?hctx, ?value, ?sig),
+  LoadStaticField(?sig, ?to, ?inmethod),
+  Reachable(?inmethod),
+  InsensitiveVar(?to),
+  isImmutableContext(?ctx).
+
+#ifndef X_CONTEXT_REMOVER
+  .plan 1:(5,4,3,2,1)
 #endif // X_CONTEXT_REMOVER
 
 /**
@@ -400,95 +446,10 @@ OptStoreArrayIndex(?from, ?base) :-
 // Souffle appreciates smaller deltas, since plans cannot change
 // per-rule-evaluation, only per-rule-structure.
 
-#ifdef PRECISE_GENERICS
-.decl MapAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
-.decl MapAcceptsKeyType(?value:mainAnalysis.Value, ?type:Type)
-.decl CollectionAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
-
-.input MapAcceptsValueType(IO="file",filename="MapAcceptsValueType.facts",delimiter="\t")
-.input MapAcceptsKeyType(IO="file",filename="MapAcceptsKeyType.facts",delimiter="\t")
-.input CollectionAcceptsValueType(IO="file",filename="CollectionAcceptsValueType.facts",delimiter="\t")
-
-.decl MapAcceptsKeyFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
-.decl CollectionAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
-.decl MapAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
-
-.input MapAcceptsKeyFallbackType(IO="file",filename="MapAcceptsKeyFallbackType.facts",delimiter="\t")
-.input CollectionAcceptsValueFallbackType(IO="file",filename="CollectionAcceptsValueFallbackType.facts",delimiter="\t")
-.input MapAcceptsValueFallbackType(IO="file",filename="MapAcceptsValueFallbackType.facts",delimiter="\t")
-
-#endif
-
-OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
+OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-#ifdef PRECISE_GENERICS
-  !isMapPutMethod(?method),
-  !isCollectionAddMethod(?method),
-#endif
   ActualParam(?index, ?invocation, ?actual),
-  FormalParam(?index, ?method, ?formal),
-  Var_Type(?formal, ?allowedType).
-
-#ifdef PRECISE_GENERICS
-.decl isCollectionAddMethod(?method:Method)
-.decl isMapPutMethod(?method:Method)
-
-isMapPutMethod(?method) :-
-  Method_SimpleName(?method, "put"),
-  Method_DeclaringType(?method, ?mapType),
-  basic.SubtypeOf(?mapType, "java.util.Map").
-
-isCollectionAddMethod(?method) :-
-  Method_SimpleName(?method, "add"),
-  Method_DeclaringType(?method, ?collectionType),
-  basic.SubtypeOf(?collectionType, "java.util.Collection").
-
-OptArgAssign1(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType),
-OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
-  isMapPutMethod(?method),
-  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-  MethodInvocation_Base(?invocation, ?base),
-  VarPointsTo(_, ?mapValue, ?callerCtx, ?base),
-  (MapAcceptsKeyType(?mapValue, ?allowedType);
-   MapAcceptsKeyFallbackType(?mapValue, ?allowedType)),
-  ActualParam(0, ?invocation, ?actual),
-  FormalParam(0, ?method, ?formal).
-
-OptArgAssign2(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType),
-OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
-  isMapPutMethod(?method),
-  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-  MethodInvocation_Base(?invocation, ?base),
-  VarPointsTo(_, ?mapValue, ?callerCtx, ?base),
-  (MapAcceptsValueType(?mapValue, ?allowedType);
-   MapAcceptsValueFallbackType(?mapValue, ?allowedType)),
-  ActualParam(1, ?invocation, ?actual),
-  FormalParam(1, ?method, ?formal).
-
-OptArgAssign3(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType),
-OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
-  isCollectionAddMethod(?method),
-  Method_Arity(?method, 1),
-  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-  MethodInvocation_Base(?invocation, ?base),
-  VarPointsTo(_, ?collectionValue, ?callerCtx, ?base),
-  (CollectionAcceptsValueType(?collectionValue, ?allowedType);
-   CollectionAcceptsValueFallbackType(?collectionValue, ?allowedType)),
-  ActualParam(0, ?invocation, ?actual),
-  FormalParam(0, ?method, ?formal).
-
-OptArgAssign4(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType),
-OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
-  isCollectionAddMethod(?method),
-  Method_Arity(?method, 2),
-  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-  MethodInvocation_Base(?invocation, ?base),
-  VarPointsTo(_, ?collectionValue, ?callerCtx, ?base),
-  (CollectionAcceptsValueType(?collectionValue, ?allowedType);
-   CollectionAcceptsValueFallbackType(?collectionValue, ?allowedType)),
-  ActualParam(1, ?invocation, ?actual),
-  FormalParam(1, ?method, ?formal).
-#endif
+  FormalParam(?index, ?method, ?formal).
 
 #ifdef INFORMATION_FLOW
 
@@ -549,10 +510,8 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
-  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
-  Value_Type(?value, ?type),
-  basic.SubtypeOf(?type, ?allowedType).
-  .plan 1:(2,1,3,4)
+  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from).
+  .plan 1:(2,1)
 
 #endif // INFORMATION_FLOW
 
@@ -602,7 +561,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 
 
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, _),
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, ?calleeCtx),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   ThisVar(?tomethod, ?this),
   ZipperPrecisionCriticalMethod(?tomethod).
 
@@ -616,7 +575,7 @@ VarPointsTo(?hctx, ?value, ?immCtx, ?this) :-
 
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, _),
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, ?calleeCtx),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
   ThisVar(?tomethod, ?this),
   !Value_Null(?value).
 #ifndef X_CONTEXT_REMOVER
@@ -691,9 +650,9 @@ DuplicateContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth1, ?meth2) :-
 .output DuplicateContextResponse
 
 DuplicateContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx1, ?calleeCtx2) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?tomethod, _),
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?tomethod, ?calleeCtx1),
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?tomethod, ?calleeCtx2),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, _, _),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx1),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx2),
   ?calleeCtx1 != ?calleeCtx2.
 
 #endif // SANITY

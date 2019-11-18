@@ -103,7 +103,7 @@ ReachableContext(?calleeCtx, ?signature) :-
     ThisVar(?signature, ?this),
     SystemThreadGroup(?hctx, ?value),
     configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1),
-    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
+    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?signature, ?calleeCtx).
 
 
 /**
@@ -135,7 +135,7 @@ ReachableContext(?calleeCtx, ?signature) :-
     FormalParam(0, ?signature, ?groupParam),
     SystemThreadGroup(?groupHCtx, ?group),
     configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1),
-    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
+    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?signature, ?calleeCtx).
 
 /**
  * Initialization of the main thread
@@ -165,7 +165,7 @@ ReachableContext(?calleeCtx, ?signature) :-
     FormalParam(0, ?signature, ?groupParam),
     MainThreadGroup(?groupHCtx, ?group),
     configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1),
-    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx).
+    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?signature, ?calleeCtx).
 
 #endif // EXCLUDE_IMPLICITLY_REACHABLE_CODE
 
