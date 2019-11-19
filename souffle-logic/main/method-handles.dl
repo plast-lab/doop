@@ -249,12 +249,13 @@ MethodType_ReturnType(?mt, ?retType) :-
 .decl MethodHandleCallGraphEdge_Candidate(?callerCtx:configuration.Context, ?i:MethodInvocation, ?m:Method, ?mh:MethodHandle, ?name:symbol)
 MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name) :-
   // Permit treatment of invoke methods as opaque.
+  ReachableContext(?callerCtx, ?containingMethod),
   (_VirtualMethodInvocation(?invo, _, _, ?base, ?containingMethod) ;
    _SpecialMethodInvocation(?invo, _, _, ?base, ?containingMethod)),
   _PolymorphicInvocation(?invo, ?name),
-  ReachableContext(?callerCtx, ?containingMethod),
   VarPointsTo(_, ?mh, ?callerCtx, ?base),
   MethodHandle_Method(?mh, ?method).
+.plan 1:(4,5,2,1,3), 2:(5,4,2,1,3)
 
 .decl MethodHandleCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?mh:MethodHandle, ?name:symbol)
 configuration.StaticContextRequest(?callerCtx, ?invo) :-

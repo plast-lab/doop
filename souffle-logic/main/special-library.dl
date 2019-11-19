@@ -14,16 +14,16 @@ SpecialLibraryMethod(?method) :-
 SpecialLibraryClass(?class) :-
   isClassType(?class),
   !ApplicationClass(?class),
-  !CollectionLibraryClass(?class).
+  !CollectionClass(?class).
 
-.decl CollectionLibraryClass(?class:Type)
+.decl CollectionClass(?class:Type)
 /*CollectionLibraryClass(?class) :-
   isClassType(?class),
   !ApplicationClass(?class),
   isType(?class),
   match("java\.util.*", ?class).
 */
-CollectionLibraryClass(?class) :-
+CollectionClass(?class) :-
   isClassType(?class),
   !ApplicationClass(?class),
   basic.SubtypeOf(?class, ?superclass),
@@ -32,7 +32,6 @@ CollectionLibraryClass(?class) :-
    ?superclass = "java.util.Iterable";
    ?superclass = "java.util.Iterator";
    ?superclass = "java.util.Comparator";
-   ?superclass = "java.util.Map$Entry";
    ?superclass = "java.util.Dictionary";
    ?superclass = "java.util.TimSort";
    ?superclass = "java.util.ComparableTimSort";
@@ -40,9 +39,18 @@ CollectionLibraryClass(?class) :-
    ?superclass = "java.util.Objects";
    ?superclass = "java.util.Collections").
 
-CollectionLibraryClass(?innerClass) :-
-  CollectionLibraryClass(?class),
-  isClassType(?innerClass),
-  match(cat(?class, "$.*"), ?innerClass).
+.decl CollectionInnerClass(?class:ClassType)
 
-.output CollectionLibraryClass
+CollectionInnerClass(?innerClass),
+CollectionClass(?innerClass) :-
+  CollectionInnerClassPrefix(?innerClassPrefix),
+  isClassType(?innerClass),
+  substr(?innerClass, 0, strlen(?innerClassPrefix)) = ?innerClassPrefix.
+
+.decl CollectionInnerClassPrefix(?innerClassPrefix:symbol)
+
+CollectionInnerClassPrefix(?innerClassPrefix) :-
+  CollectionClass(?class),
+  ?innerClassPrefix = cat(?class, "$").
+
+.output CollectionClass

@@ -86,6 +86,16 @@ NonApplicationConcreteImplementationRepresentative(?class, ?staticType) :-
 ServletClass(?class) :-
   AllApplicationConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
 
+.decl ActionClass(?class:Type)
+
+// Struts 2
+ActionClass(?class) :-
+  (AllApplicationConcreteImplementations(?class, "com.opensymphony.xwork2.ActionSupport");
+   AllApplicationConcreteImplementations(?class, "com.opensymphony.xwork2.Action");
+   Type_Annotation(?class, "org.apache.struts2.convention.annotation.Action");
+   Type_Annotation(?class, "org.apache.struts2.convention.annotation.Result")).
+
+
 .decl MockOpenProgramEntryPoint(?class:Type, ?method:Method)
 
 // Contribute to the global summary relation
@@ -95,6 +105,10 @@ mainAnalysis.ApplicationEntryPoint(?meth) :-
 
 WebApplicationEntryPointClass(?class) :-
   ServletClass(?class),
+  ApplicationConcreteType(?class).
+
+WebApplicationEntryPointClass(?class) :-
+  ActionClass(?class),
   ApplicationConcreteType(?class).
 
 WebApplicationEntryPointClass(?class) :-
@@ -245,7 +259,8 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
   mainAnalysis.Value_Type(?basevalue, ?decltype),
   Field_DeclaringType(?injectedField, ?decltype),
   (Field_Annotation(?injectedField, "org.springframework.beans.factory.annotation.Autowired");
-   Field_Annotation(?injectedField, "javax.inject.Inject")),
+   Field_Annotation(?injectedField, "javax.inject.Inject");
+   Field_Annotation(?injectedField, "javax.inject.EJB")),
   !Field_Annotation(?injectedField, "javax.annotation.Resource"),
   ConcreteBean_Id(?beanType, ?injectedField),
   MockObject(?mockBeanObject, ?beanType),
@@ -257,7 +272,8 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
   mainAnalysis.Value_Type(?basevalue, ?decltype),
   Field_DeclaringType(?injectedField, ?decltype),
   (Field_Annotation(?injectedField, "org.springframework.beans.factory.annotation.Autowired");
-   Field_Annotation(?injectedField, "javax.inject.Inject")),
+   Field_Annotation(?injectedField, "javax.inject.Inject");
+   Field_Annotation(?injectedField, "javax.inject.EJB")),
   !Field_Annotation(?injectedField, "javax.annotation.Resource"),
   Field_Type(?injectedField, ?injectedFieldType),
   (basic.SubtypeOf(?beanType, ?injectedFieldType);
@@ -325,10 +341,7 @@ WebApplicationEntryPointClass(?type) :-
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RequestMapping");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RestController");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.ControllerAdvice");
-   //Type_Annotation(?type, "org.springframework.stereotype.Component");
-   //Type_Annotation(?type, "org.springframework.stereotype.Service");
-   //Type_Annotation(?type, "org.springframework.stereotype.Repository");
-   //isConcreteBean(?type);
+   Type_Annotation(?type, "org.aspectj.lang.annotation");
    Type_Annotation(?type, "org.springframework.stereotype.Controller");
    Type_Annotation(?type, "org.springframework.boot.autoconfigure.EnableAutoConfiguration");
    Type_Annotation(?type, "org.springframework.context.annotation.Configuration");
@@ -462,15 +475,43 @@ SerializableEntryPointMethod(?method) :-
  **/
 .decl BeanMethod(?method:Method)
 
+MockOpenProgramEntryPoint(?class, ?method) :-
+   ApplicationClass(?class),
+   Method_DeclaringType(?method, ?class),
+   (Method_Annotation(?method, "org.apache.struts2.convention.annotation.Action");
+    Method_Annotation(?method, "org.apache.struts2.convention.annotation.Result")).
+
+MockOpenProgramEntryPoint(?class, ?method) :-
+   ApplicationClass(?class),
+   Method_DeclaringType(?method, ?class),
+   Method_Annotation(?method, ?annotation),
+   match("org.aspectj.lang.annotation.*", ?annotation).
+
+MockOpenProgramEntryPoint(?class, ?method) :-
+   ApplicationClass(?class),
+   Method_DeclaringType(?method, ?class),
+   Method_Annotation(?method, ?annotation),
+   match("javax.persistence.*", ?annotation).
+
+MockOpenProgramEntryPoint(?class, ?method) :-
+   ApplicationClass(?class),
+   Method_DeclaringType(?method, ?class),
+   Method_Annotation(?method, ?annotation),
+   match("javax.annotation.*", ?annotation).
+
+MockOpenProgramEntryPoint(?class, ?method) :-
+   ApplicationClass(?class),
+   Method_DeclaringType(?method, ?class),
+   Method_Annotation(?method, ?annotation),
+   match("javax.inject.*", ?annotation).
+
 BeanMethod(?method),
 MockOpenProgramEntryPoint(?class, ?method) :-
    ApplicationClass(?class),
    Method_DeclaringType(?method, ?class),
-   (Method_Annotation(?method, "Bean");
-    Method_Annotation(?method, "PrePersist");
-    Method_Annotation(?method, "PreUpdate");
-    Method_Annotation(?method, "PostConstruct");
-    Method_Annotation(?method, "Inject")).
+   (Method_Annotation(?method, "org.springframework.context.annotation.Bean");
+    Method_Annotation(?method, "javax.inject.Inject"),
+    Method_Annotation(?method, "org.elasticsearch.common.inject.Inject")).
 
 MockOpenProgramEntryPoint(?class, ?method) :-
   ApplicationClass(?class),
@@ -567,6 +608,19 @@ ConcreteBean_Id(?type, ?beanId) :-
    Type_Annotation(?type, "org.springframework.stereotype.Service");
    Type_Annotation(?type, "org.springframework.stereotype.Repository");
    Type_Annotation(?type, "org.springframework.stereotype.Controller")),
+  !AnnotationElement("type", ?type, "0", "0.0", "value", _, "-"),
+  TypeConvertToBeanId(?type, ?beanId).
+
+ConcreteBean_Id(?type, ?beanId) :-
+  (Type_Annotation(?type, "javax.ejb.Stateful");
+   Type_Annotation(?type, "javax.ejb.Stateless");
+   Type_Annotation(?type, "javax.ejb.Singleton")),
+  AnnotationElement("type", ?type, "0", "0.0", "value", ?beanId, "-").
+
+ConcreteBean_Id(?type, ?beanId) :-
+  (Type_Annotation(?type, "javax.ejb.Stateful");
+   Type_Annotation(?type, "javax.ejb.Stateless");
+   Type_Annotation(?type, "javax.ejb.Singleton")),
   !AnnotationElement("type", ?type, "0", "0.0", "value", _, "-"),
   TypeConvertToBeanId(?type, ?beanId).
 
@@ -689,7 +743,6 @@ BeanMap(?id, ?mapClass, ?value) :-
   MockObject(?entryBeanMockObject, ?entryBeanClass),
   ?value = cat("Mock map: ", cat(?id, ?mapClass)).
 
-/*
 BeanFieldInjection(?beanClass, ?injectedField, ?value),
 BeanResource(?id, ?mapClass, ?value),
 mainAnalysis_MockValueConsMacro(?value, ?mapClass),
@@ -709,7 +762,7 @@ BeanMap(?id, ?mapClass, ?value) :-
   ?mapClass = "java.util.HashMap",
   ?id = cat(cat(?beanClass, " "), ?injectedField),
   ?value = cat("Mock map: ", cat(?id, ?mapClass)).
-*/
+
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanMockObject, ?valueField, ?basehctx, ?nodeMockObject),
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanId, ?keyField, ?basehctx, ?nodeMockObject),
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?arrayMockObject, ?tableField, ?basehctx, ?mapMockObject),
@@ -731,9 +784,52 @@ mainAnalysis_MockValueConsMacro(?nodeMockObject, ?nodeType) :-
   mainAnalysis.isImmutableHContext(?hctx),
   mainAnalysis.isImmutableHContext(?basehctx).
 
+
+BeanFieldInjection(?beanClass, ?injectedField, ?value),
+BeanResource(?id, ?mapClass, ?value),
+mainAnalysis_MockValueConsMacro(?value, ?mapClass),
+BeanMapEntry(?id, ?entryBeanKey, ?entryBeanMockObject),
+BeanMap(?id, ?mapClass, ?value) :-
+  XMLNode(?XMLFile, ?beanNodeId, _, _, "bean", "bean"),
+  XMLNodeAttribute(?XMLFile, ?beanNodeId, _, "class", "class", ?beanClass),
+  XMLNode(?XMLFile, ?beanPropertyNodeId, ?beanNodeId, _, "property", "property"),
+  XMLNodeAttribute(?XMLFile, ?beanPropertyNodeId, _, "name", "name", ?injectedField),
+  XMLNode(?XMLFile, ?mapNodeId, ?beanPropertyNodeId, _, "map", "map"),
+  XMLNode(?XMLFile, ?entryNodeId, ?mapNodeId, _, "entry", "entry"),
+  XMLNodeAttribute(?XMLFile, ?entryNodeId, _, "key", "key", ?entryBeanKey),
+  XMLNode(?XMLFile, ?valueNodeId, ?entryNodeId, _, "bean", "bean"),
+  XMLNodeAttribute(?XMLFile, ?valueNodeId, _, "class", "class", ?entryBeanId),
+  ConcreteBean_Id(?entryBeanClass, ?entryBeanId),
+  MockObject(?entryBeanMockObject, ?entryBeanClass),
+  ?mapClass = "java.util.HashMap",
+  ?id = cat(cat(?beanClass, " "), ?injectedField),
+  ?value = cat("Mock map: ", cat(?id, ?mapClass)).
+
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanMockObject, ?valueField, ?basehctx, ?nodeMockObject),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanId, ?keyField, ?basehctx, ?nodeMockObject),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?nodeMockObject, ?contentsField, ?basehctx, ?mapMockObject),
+//mainAnalysis.ArrayIndexPointsTo(?hctx, ?nodeMockObject, ?basehctx, ?arrayMockObject),
+//mainAnalysis_MockValueConsMacro(?arrayMockObject, ?arrayType),
+mainAnalysis_MockValueConsMacro(?nodeMockObject, ?nodeType) :-
+  BeanMap(?id, ?mapClass, ?mapMockObject),
+  BeanMapEntry(?id, ?entryBeanId, ?entryBeanMockObject),
+  //?arrayMockObject = cat(cat(cat(?entryBeanId, ": "), ?mapClass), "$Node[]"),
+  ?nodeMockObject = cat(cat(cat(?entryBeanId, ": "), ?mapClass), "$Node"),
+  Field_DeclaringType(?tableField, ?mapClass),
+  Field_SimpleName(?contentsField, "contents"),
+  Field_DeclaringType(?keyField, ?nodeType),
+  Field_SimpleName(?keyField, "key"),
+  Field_DeclaringType(?valueField, ?nodeType),
+  Field_SimpleName(?valueField, "value"),
+  ?nodeType = cat(?mapClass, "$Node"),
+  //?arrayType = cat(?mapClass, "$Node[]"),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableHContext(?basehctx).
+
 /**
  * Bean injection to getBean() invocations
  **/
+ /*
 .decl GetBeanAppInvocation(?ctx: mainAnalysis.configuration.Context, ?invocation: MethodInvocation)
 GetBeanAppInvocation(?ctx, ?invocation) :-
   mainAnalysis.ReachableContext(?ctx, ?method),
@@ -751,7 +847,7 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?local) :-
   AssignReturnValue(?invocation, ?local),
   mainAnalysis.isImmutableHContext(?immHctx).
  .plan 1:(3,2,4,1,5,6,7)
-
+*/
 /**
  * Sanitization and Statistics
  **/

@@ -419,6 +419,12 @@ OptStoreArrayIndex(?from, ?base) :-
 
 #endif
 
+OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  ActualParam(?index, ?invocation, ?actual),
+  FormalParam(?index, ?method, ?formal).
+
+/*
 OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
 #ifdef PRECISE_GENERICS
@@ -428,7 +434,7 @@ OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   ActualParam(?index, ?invocation, ?actual),
   FormalParam(?index, ?method, ?formal),
   Var_Type(?formal, ?allowedType).
-
+*/
 #ifdef PRECISE_GENERICS
 .decl isCollectionAddMethod(?method:Method)
 .decl isMapPutMethod(?method:Method)
@@ -443,7 +449,6 @@ isCollectionAddMethod(?method) :-
   Method_DeclaringType(?method, ?collectionType),
   basic.SubtypeOf(?collectionType, "java.util.Collection").
 
-OptArgAssign1(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType),
 OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   isMapPutMethod(?method),
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
@@ -454,7 +459,6 @@ OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   ActualParam(0, ?invocation, ?actual),
   FormalParam(0, ?method, ?formal).
 
-OptArgAssign2(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType),
 OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   isMapPutMethod(?method),
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
@@ -465,7 +469,6 @@ OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   ActualParam(1, ?invocation, ?actual),
   FormalParam(1, ?method, ?formal).
 
-OptArgAssign3(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType),
 OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   isCollectionAddMethod(?method),
   Method_Arity(?method, 1),
@@ -477,7 +480,6 @@ OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   ActualParam(0, ?invocation, ?actual),
   FormalParam(0, ?method, ?formal).
 
-OptArgAssign4(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType),
 OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   isCollectionAddMethod(?method),
   Method_Arity(?method, 2),
@@ -549,11 +551,17 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from).
+.plan 1:(2,1)
+
+/** Generics
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
   Value_Type(?value, ?type),
   basic.SubtypeOf(?type, ?allowedType).
   .plan 1:(2,1,3,4)
-
+**/
 #endif // INFORMATION_FLOW
 
 
