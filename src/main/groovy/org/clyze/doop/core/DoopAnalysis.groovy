@@ -48,7 +48,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     InputResolutionContext ctx
 
     /**
-     * Used for invoking external commnands
+     * Used for invoking external commands
      */
     protected Executor executor
 
@@ -58,7 +58,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     protected CPreprocessor cpp
 
     /**
-     * Total time for the soot invocation
+     * Total time for the fact generator invocation
      */
     protected long factGenTime
 

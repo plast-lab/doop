@@ -10,7 +10,7 @@ import static org.clyze.doop.TestUtils.*
 // should reuse this class, if they read Doop paths.
 abstract class DoopSpec extends Specification {
     def setupSpec() {
-	Doop.initDoopFromEnv()
+	    Doop.initDoopWithLoggingFromEnv()
     }
 
     Analysis analyzeTest(String test, String jar, List<String> extraArgs, String analysisName = "context-insensitive", String id = null) {
