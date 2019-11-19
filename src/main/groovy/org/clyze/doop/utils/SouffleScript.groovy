@@ -146,7 +146,7 @@ class SouffleScript {
 
 		def db = makeDatabase(outDir)
 		def baseCommand = "${cacheFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}"
-		if (profile && new File(TIME_UTIL).exists()) {
+		if (new File(TIME_UTIL).exists()) {
 			println "Using ${TIME_UTIL} to gather performance statistics..."
 			baseCommand = TIME_UTIL + " " + baseCommand
 		}
