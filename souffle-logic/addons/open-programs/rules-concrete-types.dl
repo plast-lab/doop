@@ -187,7 +187,7 @@ ContextForOpenProgramEntryPoint(?calleeCtx, ?method) :-
   MergeOpenProgramEntryPointMacro(?method, ?value, ?calleeCtx),
 #else
   mainAnalysis.isImmutableContext(?callerCtx),
-  mainAnalysis.configuration.ContextResponse(?callerCtx, ?immutablehctx, ?invo, ?value, ?calleeCtx),
+  mainAnalysis.configuration.ContextResponse(?callerCtx, ?immutablehctx, ?invo, ?value, ?method, ?calleeCtx),
   mainAnalysis.configuration.ContextRequest(?callerCtx, ?immutablehctx, ?invo, ?value, ?method, 1),
 #endif // MergeOpenProgramEntryPointMacro
 #endif // OPEN_PROGRAMS_IMMUTABLE_CTX
