@@ -27,11 +27,11 @@ UHContext(UNIQUE_HCONTEXT).
 _InOutFlowMethod(?method) :-
   InOutFlowMethod(_, ?method).
   
-ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?invo) :-
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?invo) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
   _InOutFlowMethod(?tomethod).
 
-ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
   !_InOutFlowMethod(?tomethod),
   UContext(?calleeCtx).

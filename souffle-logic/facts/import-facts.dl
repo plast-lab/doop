@@ -849,8 +849,6 @@ isType(?id) :-
 .input SensitiveLayoutControl0(IO="file", filename="SensitiveLayoutControl.facts", delimiter="\t")
 
 // FieldInitialVal
-.input GenericTypeParameters(IO="file", filename="GenericTypeParameters.facts", delimiter="\t")
-.input GenericType_ErasedType(IO="file", filename="GenericType-ErasedType.facts", delimiter="\t"
 .input FieldInitialValue(IO="file", filename="FieldInitialValue.facts", delimiter="\t")
 
 .input AndroidId(IO="file", filename="AndroidId.facts", delimiter="\t")

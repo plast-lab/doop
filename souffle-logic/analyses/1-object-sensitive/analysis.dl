@@ -17,10 +17,9 @@
 // Only used for arrays. Maps each context to a *potential* hcontext.
 .decl ContextToHContext(?ctx:Context, ?hctx:HContext)
 
-  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
-    ?calleeCtx = [?value],
-    ?tomethod = ?tomethod.             
+    ?calleeCtx = [?value].
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),
@@ -45,7 +44,7 @@
     InitHContextRequest(?s),
     ?hctx = UNIQUE_HCONTEXT.
 
-#ifdef HEAPDLS
+#ifdef HEAPDLS`
   DynamicContextToContext([?value], ?dynCtx) :-
     Value_byDynamicHeap(?heap1, ?value),
     DynamicContextHeap1(?heap1, ?dynCtx).

@@ -12,43 +12,30 @@
   // static calls) sometimes.  The real heap context is a single Value.
   // Keeping mapping functions is the way to handle analyses where HContext =
   // Context (since the language considers them different types).
-  .type Context  = [ elem1:symbol, elem2:symbol ]
+  .type Context  = [ elem1:symbol, elem2:symbol, value:mainAnalysis.Value ]
   .type HContext = [ value:mainAnalysis.Value ]
 
-  .decl JavaUtilMethod(?method:Method)
-    JavaUtilMethod(?method) :-
-      Method_DeclaringType(?method, ?type),
-      match("java\.util\..*", ?type).
-
-  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxValue],
-    ?calleeCtx = [?hctxValue, ?value],
-    ?tomethod = ?tomethod.
+    ?calleeCtx = [NO_INVOCATION_CONTEXT, ?hctxValue, ?value].
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),
-    MethodInvocation_Method(?invo, ?tomethod),
-    !JavaUtilMethod(?tomethod),
-    ?callerCtx = [?callerCtxElement1,  ?callerCtxValue],
-    ?calleeCtx = [?callerCtxValue, ?invo],
+    ?callerCtx = [?callerCtxElement1, ?callerCtxElement2, ?callerCtxValue],
+    ?calleeCtx = [?callerCtxElement2, ?invo, ?callerCtxValue],
     ?callerCtxElement1 = ?callerCtxElement1.
-
-  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
-    StaticContextRequest(?callerCtx, ?invo),
-    MethodInvocation_Method(?invo, ?tomethod),
-    JavaUtilMethod(?tomethod),
-    ?calleeCtx = ?callerCtx.
 
   RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
     RecordContextRequest(?ctx, ?value, ?var),      
-    ?ctx = [?ctxElement1, ?ctxValue],
+    ?ctx = [?ctxElement1, ?ctxElement2, ?ctxValue],
     ?hctx = [?ctxValue],
-    ?ctxElement1 = ?ctxElement1.
+    ?ctxElement1 = ?ctxElement1,
+    ?ctxElement2 = ?ctxElement2.
 
   InitContextResponse(?value, ?ctx) :-
     InitContextRequest(?value),
-    ?ctx = [?value, ?value].
+    ?ctx = [NO_INVOCATION_CONTEXT, ?value, ?value].
 
   InitHContextResponse(?value, ?hctx) :-
     InitHContextRequest(?value),

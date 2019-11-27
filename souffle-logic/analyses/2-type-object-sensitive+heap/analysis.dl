@@ -10,7 +10,7 @@
 // .decl CachedMerge(?hctx:HContext, ?value:Value, ?calleeCtx:Context)
 // .decl CachedMergeStatic(?callerCtx:Context, ?invo:MethodInvocation, ?calleeCtx:Context)
 
-ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx) :-
+ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, ?calleeCtx) :-
   ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, _),
   ?hctx = [?hctxValue],
   Value_DeclaringType(?hctxValue, ?type), 

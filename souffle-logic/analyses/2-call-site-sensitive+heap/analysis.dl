@@ -13,12 +13,11 @@
   .type Context = [ invocation1:MethodInvocation, invocation2:MethodInvocation ]
   .type HContext = [ invocation:MethodInvocation ]
 
-  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?callerCtx = [?invocation1, ?invocation2],
     ?calleeCtx = [?invocation2, ?invo],
-    ?invocation1 = ?invocation1,
-    ?tomethod = ?tomethod.
+    ?invocation1 = ?invocation1.
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),
@@ -45,6 +44,4 @@
   StartupInvocation(?startupInvocation) :-
     ?startupInvocation = "<<jvm-startup-context>>",
     isMethodInvocation(?startupInvocation).
-
-
 }

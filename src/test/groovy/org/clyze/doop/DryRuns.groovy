@@ -32,7 +32,7 @@ class DryRuns extends DoopSpec {
 							  "-a", analysisName,
 							  "--id", "dry-run-${analysisName}", "--cache",
 							  "--Xdry-run", "--souffle-force-recompile"] +
-							  extraOpts))
+							  extraOpts + "-Ldebug"))
 		Analysis analysis = Main.analysis
 
         then:

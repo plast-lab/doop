@@ -52,7 +52,7 @@
 
     // 2-object
     TwoObjectMethod(?tomethod),
-    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
       ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
       SpecialContextSensitivityMethod(?tomethod, "2-object", _, _),
       ?hctx = [?hctxValue],
@@ -60,7 +60,7 @@
 
     // // 2-type
     TwoTypeMethod(?tomethod),
-    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
       ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
       SpecialContextSensitivityMethod(?tomethod, "2-type", _, _),
       ?hctx = [?hctxValue],
@@ -70,7 +70,7 @@
 
     // // 1-type
     OneTypeMethod(?tomethod),
-    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
       ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
       SpecialContextSensitivityMethod(?tomethod, "1-type", _, _),
       Value_DeclaringType(?value, ?type),
@@ -78,7 +78,7 @@
 
     // context-insensitive
     ContextInsensitiveMethod(?tomethod),
-    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
       ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
       SpecialContextSensitivityMethod(?tomethod, "context-insensitive", _, _),
       isImmutableContext(?calleeCtx).
