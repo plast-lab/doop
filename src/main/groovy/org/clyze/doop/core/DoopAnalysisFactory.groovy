@@ -7,10 +7,10 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.*
 import org.clyze.doop.common.DoopErrorCodeException
-import org.clyze.doop.input.DefaultInputResolutionContext
-import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.input.PlatformManager
 import org.clyze.doop.utils.PackageUtil
+import org.clyze.input.DefaultInputResolutionContext
+import org.clyze.input.InputResolutionContext
+import org.clyze.input.PlatformManager
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
 
@@ -78,7 +78,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		context.add(options.INPUTS.value as List<String>, InputType.INPUT)
 		context.add(options.LIBRARIES.value as List<String>, InputType.LIBRARY)
 
-		def platformFiles = new PlatformManager(options.PLATFORMS_LIB.value as String).find(platformName)
+		def sdkDir = System.getenv('ANDROID_SDK')
+		def platformFiles = new PlatformManager(options.PLATFORMS_LIB.value as String, sdkDir).find(platformName)
 		context.add(platformFiles, InputType.PLATFORM)
 
 		context.add(options.HEAPDLS.value as List<String>, InputType.HEAPDL)

@@ -17,5 +17,4 @@ class AnalysisWorstCaseContextCounter {
 	Long numberOfContextsForMethod(String method) {
 		return worstCaseContextMap.getOrDefault(method, 1)
 	}
-
 }

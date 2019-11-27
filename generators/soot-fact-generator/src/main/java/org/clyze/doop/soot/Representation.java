@@ -170,7 +170,7 @@ class Representation extends JavaRepresentation {
         return numberedInstructionId(signature(inMethod), midPart, counter);
     }
 
-    String heapAlloc(SootMethod inMethod, AnyNewExpr expr, SessionCounter counter) {
+    String heapAlloc(SootMethod inMethod, Value expr, SessionCounter counter) {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
             return heapAlloc(inMethod, expr.getType(), counter);
 	    else if(expr instanceof NewMultiArrayExpr)

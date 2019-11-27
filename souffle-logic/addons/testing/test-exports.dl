@@ -4,6 +4,11 @@
 .output basic.DuplicateMethodImplemented
 #endif // SANITY
 
+#ifdef SANITY
+.output basic.DuplicateMethodLookup
+.output basic.DuplicateMethodImplemented
+#endif // SANITY
+
 #ifndef DISABLE_POINTS_TO
 .output mainAnalysis.ArrayIndexPointsTo
 .output mainAnalysis.InstanceFieldPointsTo

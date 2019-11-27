@@ -2,7 +2,6 @@ package org.clyze.doop.common.android;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.clyze.Constants;
 import org.clyze.utils.AARUtils;
 
 import java.io.File;
@@ -28,6 +27,8 @@ import java.util.zip.ZipFile;
  *  programs are not in the path.
  */
 public class RLinker {
+
+    private static final String R_AUTOGEN_JAR = "doop-autogen-R.jar";
 
     // A map from package names -> nested class -> field -> element
     // ids. Used by lookupConst() and XML parsing for layout controls.
@@ -83,9 +84,9 @@ public class RLinker {
             rs.forEach ((k, v) -> runProcess("javac " + genR(tmpDir, k, v)));
 
             // Compile JAR and optionally copy to output directory.
-            String tmpJarName = tmpDir + "/" + Constants.R_AUTOGEN_JAR;
+            String tmpJarName = tmpDir + "/" + R_AUTOGEN_JAR;
             runProcess("jar cf " + tmpJarName + " -C " + tmpDir + " .");
-            String outJarName = rDir + "/" + Constants.R_AUTOGEN_JAR;
+            String outJarName = rDir + "/" + R_AUTOGEN_JAR;
             try {
                 FileUtils.copyFile(new File(tmpJarName), new File(outJarName));
                 return outJarName;

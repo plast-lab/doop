@@ -30,13 +30,18 @@ public class NativeScanner {
     public void scanInputs(Iterable<String> inputs) {
         ArtifactScanner.EntryProcessor gProc = (file, entry, entryName) -> {
             boolean isSO = entryName.endsWith(".so");
+            boolean isDLL = entryName.toLowerCase().endsWith(".dll");
             boolean isLibsXZS = entryName.endsWith("libs.xzs");
             boolean isLibsZSTD = entryName.endsWith("libs.zstd");
-            if (isSO || isLibsXZS || isLibsZSTD) {
+            if (isSO || isDLL || isLibsXZS || isLibsZSTD) {
                 File libTmpFile = ArtifactScanner.extractZipEntryAsFile("native-lib", file, entry, entryName);
                 if (isSO)
                     scanLib(libTmpFile, db);
-                else if (isLibsXZS)
+                else if (isDLL) {
+                    if (!useRadare)
+                        System.err.println("WARNING: Radare mode should be activated to scan library " + entryName);
+                    scanLib(libTmpFile, db);
+                } else if (isLibsXZS)
                     scanXZSLib(libTmpFile, db);
                 else if (isLibsZSTD)
                     scanZSTDLib(libTmpFile, db);
@@ -63,17 +68,15 @@ public class NativeScanner {
             String lib = libFile.getCanonicalPath();
             System.out.println("== Processing library: " + lib + " ==");
 
-            RadareAnalysis radAnalysis = new RadareAnalysis(db, lib, onlyPreciseNativeStrings);
-            BinutilsAnalysis baseAnalysis = new BinutilsAnalysis(db, lib, onlyPreciseNativeStrings);
-            BinaryAnalysis analysis = useRadare ? radAnalysis : baseAnalysis;
+            BinaryAnalysis analysis = useRadare ?
+                new RadareAnalysis(db, lib, onlyPreciseNativeStrings)  :
+                new BinutilsAnalysis(db, lib, onlyPreciseNativeStrings);
 
-            // Use the base "binutils" analysis to find strings.
-
-            baseAnalysis.initEntryPoints();
+            analysis.initEntryPoints();
 
             // Find all strings in the binary.
             System.out.println("Gathering strings from " + lib + "...");
-            SortedMap<Long, String> allStrings = baseAnalysis.findStrings();
+            SortedMap<Long, String> allStrings = analysis.findStrings();
             if (allStrings == null || allStrings.size() == 0) {
                 System.err.println("Cannot find strings in " + lib + ", aborting.");
                 return;
@@ -281,7 +284,8 @@ public class NativeScanner {
             Set<XRef> uXRefs = xrefs.get(uString);
             if (uXRefs == null)
                 continue;
-            System.out.println("Found xref information for string: " + uString);
+            if (debug)
+                System.out.println("Found xref information for string: " + uString);
             List<SymbolInfo> l = symbols.get(uString);
             for (XRef xref : uXRefs) {
                 l.add(new SymbolInfo(uString, lib, xref.function, j));
@@ -300,5 +304,9 @@ class SymbolInfo {
         this.lib = lib;
         this.function = function;
         this.offset = offset;
+    }
+    @Override
+    public String toString() {
+        return sym + "@" + lib + "." + offset + "(" + function + ")";
     }
 }

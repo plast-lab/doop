@@ -46,7 +46,7 @@ import static org.clyze.doop.common.JavaRepresentation.numberedInstructionId;
 import static org.clyze.doop.common.PredicateFile.*;
 import static org.clyze.doop.dex.DexRepresentation.strOfLineNo;
 import static org.clyze.doop.dex.DexUtils.*;
-import static org.clyze.utils.TypeUtils.raiseTypeId;
+import static org.clyze.doop.util.TypeUtils.raiseTypeId;
 
 /**
  * Writes facts for a single method found in a .dex class.
@@ -877,7 +877,7 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param op     the instruction opcode
      */
     private void writeStatementType(String insn, Opcode op) {
-        InferType in_type  = null;
+        InferType in_type = null;
         InferType out_type = null;
         switch (op) {
         // Binops
@@ -982,6 +982,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             in_type = InferType.BITS64; out_type = InferType.BITS64; break;
         }
 
+        //noinspection ConstantConditions
         if (in_type == null || out_type == null)
             System.err.println("Cannot determine statement type for instruction " + insn + " (opcode: " + op + ")");
         else

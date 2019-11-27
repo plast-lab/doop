@@ -20,12 +20,6 @@ import static org.clyze.doop.common.Parameters.shift;
 
 public class PythonInvoker {
 
-    private final Log logger;
-
-    public PythonInvoker() {
-        logger =  LogFactory.getLog(getClass());
-    }
-
     public void main(String[] args) throws IOException {
         PythonParameters parameters = new PythonParameters();
         System.out.println("Python Fact Gen!!");
@@ -110,7 +104,7 @@ public class PythonInvoker {
                     try {
                         sourceFileName = klass.getSourceFileName();
                     } catch (NullPointerException ex) {
-
+                        System.err.println("Error reading " + klass + " source file name:" + ex.getMessage());
                     }
                     //System.out.println("class: " + klass.toString() + " in file: " + sourceFileName);
                     Collection<? extends IMethod> methods = klass.getDeclaredMethods();

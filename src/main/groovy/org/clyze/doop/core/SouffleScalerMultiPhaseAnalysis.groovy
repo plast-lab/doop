@@ -6,9 +6,9 @@ import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.ptatoolkit.scaler.Driver
+import org.clyze.doop.utils.CPreprocessor
 import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
-import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 
 import java.util.concurrent.Callable

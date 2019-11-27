@@ -62,16 +62,18 @@ public class BasicJavaSupport {
      * @param filename   the input filename
      */
     private void preprocessInput(Database db, Collection<String> classSet, String filename) throws IOException {
-        boolean isAar = filename.toLowerCase().endsWith(".aar");
-        boolean isJar = filename.toLowerCase().endsWith(".jar");
-        boolean isClass = filename.toLowerCase().endsWith(".class");
-        boolean isApk = filename.toLowerCase().endsWith(".apk");
+        String filenameL = filename.toLowerCase();
+        boolean isAar = filenameL.endsWith(".aar");
+        boolean isJar = filenameL.endsWith(".jar");
+        boolean isZip = filenameL.endsWith(".zip");
+        boolean isClass = filenameL.endsWith(".class");
+        boolean isApk = filenameL.endsWith(".apk");
 
         ArtifactScanner.EntryProcessor gProc = (jarFile, entry, entryName) -> {
             File outDir = new File(parameters.getOutputDir());
             if (entryName.endsWith(".properties"))
                 propertyProvider.addProperties(jarFile.getInputStream(entry), filename);
-            else if ((isJar || isAar) && entryName.endsWith(".xml")) {
+            else if ((isJar || isAar || isZip) && entryName.endsWith(".xml")) {
                 // We only handle .xml entries inside JAR archives here.
                 // APK archives may contain binary XML and need decoding.
                 File xmlTmpFile = ArtifactScanner.extractZipEntryAsFile("xml-file", jarFile, entry, entryName);
@@ -79,7 +81,7 @@ public class BasicJavaSupport {
                 XMLFactGenerator.processFile(xmlTmpFile, db, "");
             }
         };
-        if (isJar || isApk)
+        if (isJar || isApk || isZip)
             artScanner.processArchive(filename, classSet::add, gProc);
         else if (isClass) {
             File f = new File(filename);

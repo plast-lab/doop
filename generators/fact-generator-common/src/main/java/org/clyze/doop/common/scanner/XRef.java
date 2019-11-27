@@ -1,7 +1,7 @@
 package org.clyze.doop.common.scanner;
 
 class XRef {
-    final String lib;
+    private final String lib;
     final String function;
     final long codeAddr;
     XRef(String lib, String function, long codeAddr) {

@@ -15,7 +15,7 @@ class AndroidTests extends DoopSpec {
 		"--timeout", "30",
 		"--Xserver-logic", "--gen-opt-directives",
 		"--generate-jimple",
-		"--thorough-fact-gen", "--sanity"
+		"--thorough-fact-gen"
 	]
 
 	// @spock.lang.Ignore
@@ -26,8 +26,7 @@ class AndroidTests extends DoopSpec {
 					 "-a", "context-insensitive",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm",
-					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--Xstats-full", "-Ldebug"] + defaultArgs
+					 "--Xstats-full", "-Ldebug"] + defaultArgs + sanityOpts
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
@@ -47,6 +46,7 @@ class AndroidTests extends DoopSpec {
 					 "-a", "types-only",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm-types-only",
+					 "--sanity",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/AndroidTests_TypesOnly_androidterm.dl",
 					 "--scan-native-code", "--simulate-native-returns",
 					 "--Xstats-full", "--Xlow-mem", "-Ldebug"] + defaultArgs
@@ -82,8 +82,7 @@ class AndroidTests extends DoopSpec {
 					 "-a", "types-only",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-phonograph-types-only",
-					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--scan-native-code", "--simulate-native-returns"] + defaultArgs
+					 "--scan-native-code", "--simulate-native-returns"] + defaultArgs + sanityOpts
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
@@ -113,9 +112,8 @@ class AndroidTests extends DoopSpec {
 					 "-a", "types-only",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-signal-types-only",
-					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 					 "--scan-native-code", "--simulate-native-returns",
-					 "--Xstats-full", "-Ldebug"] + defaultArgs
+					 "--Xstats-full", "-Ldebug"] + defaultArgs + sanityOpts
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
@@ -161,8 +159,7 @@ class AndroidTests extends DoopSpec {
 					 "--featherweight-analysis",
 					 "--heapdl-file", Artifacts.ANDROIDTERM_HPROF,
 					 "--id", "test-android-androidterm-fw-heapdl",
-					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
-					 "--thorough-fact-gen", "--sanity",
+					 "--thorough-fact-gen",
 					 "--Xstats-full", "-Ldebug"] + defaultArgs
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
@@ -183,9 +180,8 @@ class AndroidTests extends DoopSpec {
 					 "-a", "context-insensitive",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm-dex",
-					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl",
 					 "--dex", "--Xstats-full", "-Ldebug",
-					 "--Xdry-run"]
+					 "--Xdry-run"] + testExports
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 

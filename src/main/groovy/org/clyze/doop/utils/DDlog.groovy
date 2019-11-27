@@ -188,8 +188,7 @@ class DDlog extends SouffleScript {
                 def dat = "${convertedLogicPrefix}.dat"
                 // Hack: use script to get away with redirection.
                 def analysisBinary = cacheFile.absolutePath
-                def TIME_UTIL = "/usr/bin/time"
-                def cmdRun = ((profile && new File(TIME_UTIL).exists()) ? [TIME_UTIL] : []) as List
+                def cmdRun = ((profile && new File(SouffleScript.TIME_UTIL).exists()) ? [SouffleScript.TIME_UTIL] : []) as List
                 cmdRun += "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs} --no-print".split().toList()
                 executeCmd(cmdRun, null)
             }

@@ -98,7 +98,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
             return mergeMaps(eabi, eabi7);
         }
         System.err.println("Architecture not supported: " + arch);
-        return null;
+        return new HashMap<>();
     }
 
     /**
@@ -437,8 +437,6 @@ class BinutilsAnalysis extends BinaryAnalysis {
     public Section getSection(String sectionName) throws IOException {
         ProcessBuilder builder = new ProcessBuilder(objdumpCmd, "--headers", lib);
         List<String> lines = NativeScanner.runCommand(builder);
-        int lineNo = 0;
-        final int IGNORE_ERRORS_BEFORE_LINE = 3;
         for (String line : lines) {
             if (!line.contains(sectionName + " "))
                 continue;
@@ -455,7 +453,7 @@ class BinutilsAnalysis extends BinaryAnalysis {
             } catch (NumberFormatException ex) {
             }
         }
-        System.err.println("Error, cannot find section " + sectionName + " from output:");
+        System.err.println("WARNING: cannot find section " + sectionName + " from output:");
         for (String l : lines)
             System.out.println(l);
         return null;

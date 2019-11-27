@@ -5,9 +5,9 @@ import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
 import org.clyze.analysis.AnalysisOption
+import org.clyze.doop.utils.CPreprocessor
 import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
-import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 
 import java.nio.file.Files

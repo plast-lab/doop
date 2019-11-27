@@ -5,8 +5,8 @@ import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.CHA;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.Driver;
+import org.clyze.doop.util.TypeUtils;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
-import org.clyze.utils.TypeUtils;
 
 class DexDriver extends Driver<DexBackedClassDef> {
     private final Database db;
