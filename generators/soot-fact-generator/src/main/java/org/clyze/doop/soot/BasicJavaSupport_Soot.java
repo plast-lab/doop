@@ -49,7 +49,6 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdde
          * input fact generation thus leading to different analysis results
          */
         scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", SootClass.HIERARCHY);
-        scene.addBasicClass("com.vaadin.shared.ui.treegrid.NodeCollapseRpc", SootClass.HIERARCHY);
         scene.addBasicClass("javax.crypto.extObjectInputStream");
         /*
          * For simulating the FileSystem class, we need the implementation
@@ -66,8 +65,6 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdde
         addCommonDynamicClass(scene, "sun.net.www.protocol.http.Handler");
         addCommonDynamicClass(scene, "sun.net.www.protocol.https.Handler");
         addCommonDynamicClass(scene, "sun.net.www.protocol.jar.Handler");
-
-
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {
