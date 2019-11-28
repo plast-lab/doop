@@ -3,7 +3,7 @@ package org.clyze.doop.soot;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
-import org.clyze.doop.util.TypeUtils;
+import org.clyze.utils.TypeUtils;
 import soot.*;
 import soot.jimple.*;
 

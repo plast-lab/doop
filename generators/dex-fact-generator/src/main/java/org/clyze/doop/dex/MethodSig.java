@@ -1,6 +1,6 @@
 package org.clyze.doop.dex;
 
-import org.clyze.doop.util.TypeUtils;
+import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.iface.reference.MethodReference;
 
 import java.util.List;

@@ -1,7 +1,7 @@
 package org.clyze.doop.common;
 
 import java.io.*;
-import org.clyze.doop.util.TypeUtils;
+import org.clyze.utils.TypeUtils;
 import org.objectweb.asm.ClassReader;
 
 enum BytecodeUtil {

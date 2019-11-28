@@ -7,7 +7,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FieldInfo;
 import org.clyze.doop.common.FieldOp;
 import org.clyze.doop.common.JavaFactWriter;
-import org.clyze.doop.util.TypeUtils;
+import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.dexbacked.*;
 import org.jf.dexlib2.iface.Annotation;
