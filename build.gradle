@@ -119,6 +119,7 @@ dependencies {
             "commons-io:commons-io:2.4",                        // File Utils
             "com.github.plast-lab:HeapDL:$heapDLVersion",
             "com.jcabi:jcabi-manifests:1.1"                     // manifest reader
+    compile "com.google.guava:guava:27.1-jre"                   // for Scaler
 
     runtime "org.clyze:jphantom:1.2",                           // JPhantom is a runtime dependency
             "ext:herosclasses:1.1",
