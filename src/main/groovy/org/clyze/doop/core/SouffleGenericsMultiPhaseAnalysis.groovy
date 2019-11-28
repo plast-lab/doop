@@ -161,61 +161,61 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 		Files.copy(mapAcceptsKeyFallbackType.toPath(), mapAcceptsKeyFallbackTypeFacts.toPath())
 		Files.copy(collectionAcceptsValueFallbackType.toPath(), collectionAcceptsValueFallbackTypeFacts.toPath())
 
-//		initDatabase(analysis)
-//		basicAnalysis(analysis)
-//		if (!options.X_STOP_AT_BASIC.value) {
-//			log.debug("analysis: ${getBaseName(analysis.name)}")
-//			mainAnalysis(analysis)
-//			produceStats(analysis)
-//		}
-//
-//		compilationFuture = null
-//		executorService = Executors.newSingleThreadExecutor()
-//		if (!options.X_STOP_AT_FACTS.value) {
-//			compilationFuture = executorService.submit(new Callable<File>() {
-//				@Override
-//				File call() {
-//					log.info "[Task COMPILE...]"
-//					def generatedFile = script.compile(analysis, outDir, cacheDir,
-//							profiling,
-//							options.SOUFFLE_DEBUG.value as boolean,
-//							provenance,
-//							liveProf,
-//							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-//							options.X_CONTEXT_REMOVER.value as boolean,
-//							options.SOUFFLE_USE_FUNCTORS.value as boolean)
-//					log.info "[Task COMPILE Done]"
-//					return generatedFile
-//				}
-//			})
-//		}
-//
-//		runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
-//
-//		def generatedFile
-//		if (options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
-//			generatedFile = compilationFuture.get()
-//			System.gc()
-//		}
-//		try {
-//			if (options.X_STOP_AT_FACTS.value) return
-//
-//			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
-//				generatedFile = compilationFuture.get()
-//			}
-//			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-//					   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
-//					   provenance, liveProf, profiling)
-//
-//			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
-//			runtimeMetricsFile.createNewFile()
-//			runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
-//			runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
-//			runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
-//			runtimeMetricsFile.append("soot-fact-generation time (sec)\t$factGenTime\n")
-//		} finally {
-//			executorService.shutdownNow()
-//		}
+		initDatabase(analysis)
+		basicAnalysis(analysis)
+		if (!options.X_STOP_AT_BASIC.value) {
+			log.debug("analysis: ${getBaseName(analysis.name)}")
+			mainAnalysis(analysis)
+			produceStats(analysis)
+		}
+
+		compilationFuture = null
+		executorService = Executors.newSingleThreadExecutor()
+		if (!options.X_STOP_AT_FACTS.value) {
+			compilationFuture = executorService.submit(new Callable<File>() {
+				@Override
+				File call() {
+					log.info "[Task COMPILE...]"
+					def generatedFile = script.compile(analysis, outDir, cacheDir,
+							profiling,
+							options.SOUFFLE_DEBUG.value as boolean,
+							provenance,
+							liveProf,
+							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
+							options.X_CONTEXT_REMOVER.value as boolean,
+							options.SOUFFLE_USE_FUNCTORS.value as boolean)
+					log.info "[Task COMPILE Done]"
+					return generatedFile
+				}
+			})
+		}
+
+		runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
+
+		def generatedFile
+		if (options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
+			generatedFile = compilationFuture.get()
+			System.gc()
+		}
+		try {
+			if (options.X_STOP_AT_FACTS.value) return
+
+			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
+				generatedFile = compilationFuture.get()
+			}
+			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+					   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
+					   provenance, liveProf, profiling)
+
+			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
+			runtimeMetricsFile.createNewFile()
+			runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
+			runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
+			runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
+			runtimeMetricsFile.append("soot-fact-generation time (sec)\t$factGenTime\n")
+		} finally {
+			executorService.shutdownNow()
+		}
 	}
 
 	/**

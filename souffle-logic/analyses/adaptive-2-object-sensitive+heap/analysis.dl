@@ -30,7 +30,8 @@
     StaticContextRequest(?callerCtx, ?invo),
     MethodInvocation_Method(?invo, ?tomethod),
     //ApplicationMethod(?tomethod),
-    ?calleeCtx = ?callerCtx.
+    ?calleeCtx = ?callerCtx,
+    ?tomethod = ?tomethod.
 /*
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

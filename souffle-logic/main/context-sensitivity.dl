@@ -399,32 +399,13 @@ OptStoreArrayIndex(?from, ?base) :-
 // assignments for args and returns. It should be unnecessary, but
 // Souffle appreciates smaller deltas, since plans cannot change
 // per-rule-evaluation, only per-rule-structure.
-
-#ifdef PRECISE_GENERICS
-.decl MapAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
-.decl MapAcceptsKeyType(?value:mainAnalysis.Value, ?type:Type)
-.decl CollectionAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
-
-.input MapAcceptsValueType(IO="file",filename="MapAcceptsValueType.facts",delimiter="\t")
-.input MapAcceptsKeyType(IO="file",filename="MapAcceptsKeyType.facts",delimiter="\t")
-.input CollectionAcceptsValueType(IO="file",filename="CollectionAcceptsValueType.facts",delimiter="\t")
-
-.decl MapAcceptsKeyFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
-.decl CollectionAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
-.decl MapAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
-
-.input MapAcceptsKeyFallbackType(IO="file",filename="MapAcceptsKeyFallbackType.facts",delimiter="\t")
-.input CollectionAcceptsValueFallbackType(IO="file",filename="CollectionAcceptsValueFallbackType.facts",delimiter="\t")
-.input MapAcceptsValueFallbackType(IO="file",filename="MapAcceptsValueFallbackType.facts",delimiter="\t")
-
-#endif
-
+/*
 OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
   ActualParam(?index, ?invocation, ?actual),
   FormalParam(?index, ?method, ?formal).
+*/
 
-/*
 OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
 #ifdef PRECISE_GENERICS
@@ -434,7 +415,7 @@ OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   ActualParam(?index, ?invocation, ?actual),
   FormalParam(?index, ?method, ?formal),
   Var_Type(?formal, ?allowedType).
-*/
+
 #ifdef PRECISE_GENERICS
 .decl isCollectionAddMethod(?method:Method)
 .decl isMapPutMethod(?method:Method)
@@ -548,20 +529,20 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   .plan 1:(2,1,3)
 
 #else
+/**
+ * VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+ *  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+ *  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from).
+ *.plan 1:(2,1)
+ **/
 
-VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
-  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
-  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from).
-.plan 1:(2,1)
-
-/** Generics
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
   Value_Type(?value, ?type),
   basic.SubtypeOf(?type, ?allowedType).
   .plan 1:(2,1,3,4)
-**/
+
 #endif // INFORMATION_FLOW
 
 

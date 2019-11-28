@@ -55,8 +55,8 @@
 
 .decl OptStoreArrayIndex(?from:Var, ?base:Var)
 
-//.decl OptArgAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var, ?allowedType:Type)
-.decl OptArgAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
+.decl OptArgAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var, ?allowedType:Type)
+//.decl OptArgAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
 #ifndef INFORMATION_FLOW
 .decl OptReturnAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
 #endif // INFORMATION_FLOW
@@ -99,3 +99,22 @@
 // Is the ValueToRefine the real list of objects needing
 // refinement or its negation?
 // .decl NegativeObjectFilter(?v:symbol)
+
+#ifdef PRECISE_GENERICS
+.decl MapAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
+.decl MapAcceptsKeyType(?value:mainAnalysis.Value, ?type:Type)
+.decl CollectionAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
+
+.input MapAcceptsValueType(IO="file",filename="MapAcceptsValueType.facts",delimiter="\t")
+.input MapAcceptsKeyType(IO="file",filename="MapAcceptsKeyType.facts",delimiter="\t")
+.input CollectionAcceptsValueType(IO="file",filename="CollectionAcceptsValueType.facts",delimiter="\t")
+
+.decl MapAcceptsKeyFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
+.decl CollectionAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
+.decl MapAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
+
+.input MapAcceptsKeyFallbackType(IO="file",filename="MapAcceptsKeyFallbackType.facts",delimiter="\t")
+.input CollectionAcceptsValueFallbackType(IO="file",filename="CollectionAcceptsValueFallbackType.facts",delimiter="\t")
+.input MapAcceptsValueFallbackType(IO="file",filename="MapAcceptsValueFallbackType.facts",delimiter="\t")
+
+#endif
