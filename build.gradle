@@ -31,8 +31,7 @@ group = "org.clyze"
 //For the doop app
 mainClassName = "org.clyze.doop.Main"
 
-//def heapDLVersion = "master-SNAPSHOT"
-def heapDLVersion = "1.1.5"
+def heapDLVersion = "1.1.6"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
@@ -117,7 +116,7 @@ dependencies {
             "log4j:log4j:1.2.14",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
             "commons-io:commons-io:2.4",                        // File Utils
-            "com.github.plast-lab:HeapDL:$heapDLVersion",
+            "org.clyze:HeapDL:$heapDLVersion",
             "com.jcabi:jcabi-manifests:1.1"                     // manifest reader
     compile "com.google.guava:guava:27.1-jre"                   // for Scaler
 
