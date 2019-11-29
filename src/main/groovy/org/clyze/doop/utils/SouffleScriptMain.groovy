@@ -3,7 +3,7 @@ package org.clyze.doop.utils
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.Doop
 import org.clyze.utils.Executor
-import org.clyze.utils.Helper
+import org.clyze.utils.JHelper
 
 if (args.size() < 7) {
     println "Usage:"
@@ -32,7 +32,7 @@ def env = [:]
 env.putAll(System.getenv())
 
 try {
-    Helper.tryInitLogging("INFO", Doop.doopLog ?: "$outDir/logs", true)
+    JHelper.tryInitLogging("INFO", Doop.doopLog ?: "$outDir/logs", true)
 } catch (IOException ex) {
     System.err.println("WARNING: could not initialize logging")
     throw new DoopErrorCodeException(19)

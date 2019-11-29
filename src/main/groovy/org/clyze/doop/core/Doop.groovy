@@ -8,7 +8,7 @@ import org.clyze.analysis.BooleanAnalysisOption
 import org.clyze.analysis.IntegerAnalysisOption
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.utils.FileOps
-import org.clyze.utils.Helper
+import org.clyze.utils.JHelper
 
 /**
  * Doop initialization and supported options.
@@ -94,7 +94,7 @@ class Doop {
 
 		try {
 			String logLevel = Logger.getRootLogger().isDebugEnabled() ? "DEBUG" : "INFO"
-			Helper.tryInitLogging(logLevel, doopLog, true)
+			JHelper.tryInitLogging(logLevel, doopLog, true)
 		} catch (IOException ex) {
 			System.err.println("WARNING: could not initialize logging")
 			throw new DoopErrorCodeException(15)

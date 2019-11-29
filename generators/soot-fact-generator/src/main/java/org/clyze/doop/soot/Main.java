@@ -16,7 +16,6 @@ import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.scanner.NativeScanner;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
-import org.clyze.utils.Helper;
 import org.clyze.utils.JHelper;
 import org.xmlpull.v1.XmlPullParserException;
 import soot.Scene;
@@ -62,7 +61,7 @@ public class Main {
 
         try {
             String logDir = sootParameters.getLogDir();
-            Helper.tryInitLogging("DEBUG", logDir, true);
+            JHelper.tryInitLogging("DEBUG", logDir, true);
             logger = LogFactory.getLog(Main.class);
             logger.info("Logging initialized, using directory: " + logDir);
         } catch (IOException ex) {

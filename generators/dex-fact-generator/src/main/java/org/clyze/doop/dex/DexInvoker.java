@@ -9,7 +9,6 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Driver;
 import org.clyze.doop.common.android.AndroidSupport;
-import org.clyze.utils.Helper;
 import org.clyze.utils.JHelper;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
@@ -33,7 +32,7 @@ public class DexInvoker {
         dexParams.initFromArgs(args);
 
         try {
-            Helper.tryInitLogging("DEBUG", dexParams.getLogDir(), true);
+            JHelper.tryInitLogging("DEBUG", dexParams.getLogDir(), true);
         } catch (IOException ex) {
             System.err.println("WARNING: could not initialize logging");
             throw new DoopErrorCodeException(18, ex, true);
