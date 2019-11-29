@@ -1,7 +1,6 @@
 package org.clyze.doop.dex;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.checkerframework.checker.nullness.qual.*;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FieldInfo;
@@ -55,7 +54,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private static final boolean extractRegisterTypes = false;
 
     private static final boolean debug = false;
-    private static final Log logger = LogFactory.getLog(DexMethodFactWriter.class);
+    private final Logger logger = Logger.getLogger(getClass());
 
     // The following fields are needed to process the current method.
     private final DexBackedMethod m;

@@ -12,8 +12,7 @@ import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ssa.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.clyze.doop.python.utils.PythonIRPrinter;
 import org.clyze.doop.wala.Local;
 import org.clyze.doop.wala.Session;
@@ -24,7 +23,7 @@ import static org.clyze.doop.python.utils.PythonUtils.createLocal;
 import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 
 class PythonFactGenerator implements Runnable{
-    private final Log logger;
+    private final Logger logger = Logger.getLogger(getClass());
 
     private final PythonFactWriter _writer;
     private final IAnalysisCacheView cache;
@@ -38,7 +37,6 @@ class PythonFactGenerator implements Runnable{
     PythonFactGenerator(PythonFactWriter writer, Set<IClass> iClasses, String outDir, IAnalysisCacheView analysisCache)
     {
         this._writer = writer;
-        this.logger = LogFactory.getLog(getClass());
         this._iClasses = iClasses;
         cache = analysisCache;
         PythonIRPrinter IRPrinter = new PythonIRPrinter(cache, outDir);

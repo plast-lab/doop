@@ -12,8 +12,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
@@ -34,7 +33,7 @@ import static org.objectweb.asm.Opcodes.*;
 public class ArtifactScanner {
 
     private final Map<String, Set<ArtifactEntry>> artifactToClassMap = new ConcurrentHashMap<>();
-    private final Log logger = LogFactory.getLog(getClass());
+    private final Logger logger = Logger.getLogger(getClass());
     private Set<GenericFieldInfo> genericFields = new HashSet<>();
 
     Set<GenericFieldInfo> getGenericFields() { return genericFields; }

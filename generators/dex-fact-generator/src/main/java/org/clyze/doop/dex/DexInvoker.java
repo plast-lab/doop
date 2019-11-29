@@ -1,7 +1,6 @@
 package org.clyze.doop.dex;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.CHA;
@@ -38,7 +37,7 @@ public class DexInvoker {
             throw new DoopErrorCodeException(18, ex, true);
         }
 
-        Log logger = LogFactory.getLog(DexInvoker.class);
+        Logger logger = Logger.getLogger(DexInvoker.class);
         String outDir = dexParams.getOutputDir();
         logger.debug("Using output directory: " + outDir);
 

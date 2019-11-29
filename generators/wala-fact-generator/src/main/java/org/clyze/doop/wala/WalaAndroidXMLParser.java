@@ -1,8 +1,7 @@
 package org.clyze.doop.wala;
 
 import java.util.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Parameters;
 import org.clyze.doop.common.android.AppResources;
@@ -15,13 +14,12 @@ import org.clyze.doop.common.android.AndroidSupport;
  */
 class WalaAndroidXMLParser extends AndroidSupport {
     private final WalaFactWriter factWriter;
-    private final Log logger;
+    private final Logger logger = Logger.getLogger(getClass());
 
     WalaAndroidXMLParser(Parameters parameters, WalaFactWriter writer, BasicJavaSupport java)
     {
         super(parameters, java);
         this.factWriter = writer;
-        this.logger = LogFactory.getLog(getClass());
     }
 
     void process()
