@@ -941,6 +941,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use less memory. Does not support all options."
 			),
 			new BooleanAnalysisOption(
+					id: "X_ISOLATE_FACTGEN",
+					name: "Xisolate-fact-generation",
+					group: GROUP_FACTS,
+					description: "Isolate invocations to the fact generator."
+			),
+			new BooleanAnalysisOption(
 					id: "X_SERIALIZE_FACTGEN_COMPILATION",
 					name: "Xserialize-factgen-compilation",
 					group: GROUP_FACTS,

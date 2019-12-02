@@ -21,14 +21,21 @@ plugins {
 }
 
 // Warning: -Xss is restricted in recent Java versions.
-def defaultFactGenJvmArgs = ["-DmaxHeapSize=12000m", "-DstackSize=1000m"]
+def factGenXmx='12000m'
+def factGenStack='1000m'
+def defaultFactGenJvmArgs = ["-DmaxHeapSize=${factGenXmx}", "-DstackSize=${factGenStack}"]
+
+// Should the fact generators be linked as normal Java libraries? By
+// default this is false, as this integrates many (possibly duplicate
+// or incompatible) libraries due to the different front ends.
+boolean linkFactGenerators = project.hasProperty('linkFactGenerators') ? project.property('linkFactGenerators') : false
 
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
 group = "org.clyze"
 
-//For the doop app
+// Doop entry point.
 mainClassName = "org.clyze.doop.Main"
 
 def heapDLVersion = "1.1.7"
@@ -126,6 +133,23 @@ dependencies {
     compile "org.antlr:antlr4-runtime:${antlrVersion}"
 
     testCompile "org.spockframework:spock-core:${spockVersion}"
+}
+
+// If fact generators are linked, mark them as dependencies and set up
+// an appropriate environment.
+if (linkFactGenerators) {
+    dependencies {
+        runtime project(':generators:dex-fact-generator')
+        runtime project(':generators:soot-fact-generator')
+        runtime project(':generators:wala-fact-generator')
+    }
+    def jvmMemArgs = ["-Xmx${factGenXmx}", "-Xss${factGenStack}"] as List<String>
+    application {
+        applicationDefaultJvmArgs = jvmMemArgs
+    }
+    test {
+        jvmArgs jvmMemArgs
+    }
 }
 
 applicationDistribution.from(file("$projectDir/logic")) {
@@ -259,7 +283,7 @@ test {
     // failFast = true
     maxParallelForks = 1
     // forkEvery = 1
-    jvmArgs ['-DreservedCodeCacheSize=1g'] + defaultFactGenJvmArgs
+    jvmArgs.addAll(['-DreservedCodeCacheSize=1g'] + defaultFactGenJvmArgs)
     testLogging {
         exceptionFormat = 'full'
     }

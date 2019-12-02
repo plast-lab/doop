@@ -76,13 +76,16 @@ class MiscAnalysisTests extends ServerAnalysisTests {
 
 	// @spock.lang.Ignore
 	@Unroll
-	def "Server analysis test 018-threads"() {
+	def "Server analysis test 018-threads"(def mode) {
 		when:
-		Analysis analysis = analyzeTest("018-threads", ["--generate-jimple"])
+		Analysis analysis = analyzeTest("018-threads", ["--generate-jimple"] + mode)
 
 		then:
 		methodIsReachable(analysis, '<Main$1: void run()>')
 		methodIsReachable(analysis, '<Main$2: void run()>')
 		methodIsReachable(analysis, '<Main: void lambda$main$0()>')
+
+        where:
+        mode << [[], ["--Xisolate-fact-generation"]]
 	}
 }
