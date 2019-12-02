@@ -26,49 +26,12 @@ public class PythonInvoker {
                 System.err.println("usage: [options] file...");
                 throw new DoopErrorCodeException(0);
             }
-
-            for (int i = 0; i < args.length; i++) {
-                switch (args[i]) {
-                    case "-i":
-                        i = shift(args, i);
-                        parameters._inputs.add(args[i]);
-                        break;
-                    case "-l":
-                        i = shift(args, i);
-                        parameters._appLibraries.add(args[i]);
-                        break;
-                    case "--generate-ir":
-                        parameters._generateIR = true;
-                        break;
-                    case "--single-file-analysis":
-                        parameters._singleFileAnalysis = true;
-                        break;
-                    case "-d":
-                        i = shift(args, i);
-                        parameters._outputDir = args[i];
-                        break;
-                    case "--fact-gen-cores":
-                        i = shift(args, i);
-                        try {
-                            parameters._cores = new Integer(args[i]);
-                        } catch (NumberFormatException nfe) {
-                            System.out.println("Invalid cores argument: " + args[i]);
-                        }
-                        break;
-                    default:
-                        if (args[i].charAt(0) == '-') {
-                            System.err.println("error: unrecognized option: " + args[i]);
-                            throw new DoopErrorCodeException(6);
-                        }
-                        break;
-                }
-            }
+            parameters.initFromArgs(args);
         } catch(DoopErrorCodeException errCode) {
             int n = errCode.getErrorCode();
             if (n != 0)
                 System.err.println("Exiting with code " + n);
-        }
-        catch(Exception exc) {
+        } catch(Exception exc) {
             exc.printStackTrace();
         }
         run(parameters);
@@ -76,12 +39,12 @@ public class PythonInvoker {
 
     private void run(PythonParameters parameters) throws IOException
     {
-        PythonDatabase db = new PythonDatabase(new File(parameters._outputDir));
+        PythonDatabase db = new PythonDatabase(new File(parameters.getOutputDir()));
         PythonFactWriter factWriter = new PythonFactWriter(db);
         int numOfFailures = 0;
         int numOfEmptyCha = 0;
         PythonCAstToIRTranslator.setSingleFileAnalysis(parameters._singleFileAnalysis);
-        for(String inputFile: parameters._inputs) {
+        for(String inputFile: parameters.getInputs()) {
             try{
                 int numOfClassesInCha = 0;
                 //PythonIREngine pythonIREngine = new PythonIREngine(parameters._inputs);
@@ -113,7 +76,7 @@ public class PythonInvoker {
                         System.out.println(ir.toString());
                     }
                 }
-                Runnable pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters._outputDir, cache);
+                Runnable pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters.getOutputDir(), cache);
                 pythonFactGenerator.run();
                 if(numOfClassesInCha == 6) {
                     numOfEmptyCha++;
@@ -127,8 +90,8 @@ public class PythonInvoker {
             }
         }
         factWriter.writeRootFolder();
-        System.out.println("Failed for " + numOfFailures + " out of " + parameters._inputs.size() + " python script files.");
-        System.out.println("Empty Class Hierarchy for " + numOfEmptyCha + " out of " + parameters._inputs.size() + " python script files.");
+        System.out.println("Failed for " + numOfFailures + " out of " + parameters.getInputs().size() + " python script files.");
+        System.out.println("Empty Class Hierarchy for " + numOfEmptyCha + " out of " + parameters.getInputs().size() + " python script files.");
 
         db.close();
     }
