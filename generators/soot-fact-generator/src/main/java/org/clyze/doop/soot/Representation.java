@@ -2,7 +2,7 @@ package org.clyze.doop.soot;
 
 import org.clyze.doop.common.JavaRepresentation;
 import org.clyze.doop.common.SessionCounter;
-import org.clyze.persistent.model.doop.DynamicMethodInvocation;
+import org.clyze.persistent.model.DynamicMethodInvocation;
 import soot.*;
 import soot.jimple.*;
 

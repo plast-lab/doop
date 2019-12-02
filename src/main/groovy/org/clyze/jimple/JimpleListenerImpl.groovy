@@ -8,10 +8,18 @@ import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ErrorNode
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
+import org.clyze.persistent.model.BasicMetadata
+import org.clyze.persistent.model.Class as Klass
+import org.clyze.persistent.model.DynamicMethodInvocation
 import org.clyze.persistent.model.Element
+import org.clyze.persistent.model.Field
+import org.clyze.persistent.model.HeapAllocation
+import org.clyze.persistent.model.Method
+import org.clyze.persistent.model.MethodInvocation
 import org.clyze.persistent.model.Position
-import org.clyze.persistent.model.doop.*
-import org.clyze.persistent.model.doop.Class as Klass
+import org.clyze.persistent.model.Usage
+import org.clyze.persistent.model.UsageKind
+import org.clyze.persistent.model.Variable
 import org.codehaus.groovy.runtime.StackTraceUtils
 
 import static org.clyze.jimple.JimpleParser.*
