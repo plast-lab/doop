@@ -13,7 +13,7 @@ import org.apache.log4j.Logger;
 public class ClassPathHelper {
 
     /**
-     * Create a copy of the current classpath. Only supported in Java < 9.
+     * Create a copy of the current classpath. Not supported on Java 9+.
      *
      * @param log  a logger to use (may be null)
      * @param obj  an object to use for reading a class loader
