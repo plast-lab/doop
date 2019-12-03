@@ -8,7 +8,6 @@ dependencies {
     compile("org.clyze:clue-common:${clueCommonVersion}") {
         exclude group: 'com.google.code.gson', module: 'gson'
         exclude group: 'org.apache.ivy', module: 'ivy'
-        exclude group: 'com.googlecode.juniversalchardet', module: 'juniversalchardet'
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
     compile 'org.ow2.asm:asm-debug-all:5.1'          // Java bytecode library
