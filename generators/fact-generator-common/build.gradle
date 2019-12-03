@@ -13,7 +13,7 @@ dependencies {
     }
     compile 'org.ow2.asm:asm-debug-all:5.1'          // Java bytecode library
     compile 'org.smali:dexlib2:2.2.5'                // Dexlib2: library for reading/modifying/writing Android dex files
-    compile 'net.dongliu:apk-parser:2.6.2'           // needed for reading binary XML entries from APK inputs
+    compile 'net.dongliu:apk-parser:2.6.10'          // needed for reading binary XML entries from APK inputs
     compile "org.antlr:antlr4-runtime:${antlrVersion}"
 }
 
