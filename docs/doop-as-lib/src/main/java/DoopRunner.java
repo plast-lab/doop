@@ -9,7 +9,7 @@ class DoopRunner {
         String[] doopArgs = new String[] {
             "-i", "http://centauri.di.uoa.gr:8081/artifactory/Demo-benchmarks/test-resources/006-hello-world-1.2.jar",
             "-a", "context-insensitive",
-            "--id", "signal",
+            "--id", "hello-world",
             "--platform", "java_8"
         };
         Main.main(doopArgs);
