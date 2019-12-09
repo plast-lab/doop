@@ -9,6 +9,7 @@ import org.clyze.doop.ptatoolkit.scaler.Driver
 import org.clyze.doop.utils.CPreprocessor
 import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
+import org.clyze.doop.utils.scaler.ScalerPostAnalysis
 import org.clyze.utils.Executor
 
 import java.util.concurrent.Callable
@@ -114,9 +115,9 @@ class SouffleScalerMultiPhaseAnalysis extends SouffleAnalysis {
 		}
 		printStats()
 		//Scaler Execution
-		Driver scalerMain = new Driver()
-		scalerMain.runScaler(factsDir, database)
-		//scalerMain.runScaler(factsDir, database)
+		ScalerPostAnalysis scalerPostAnalysis = new ScalerPostAnalysis(database)
+		scalerPostAnalysis.run(factsDir)
+
 		options.X_START_AFTER_FACTS.value = factsDir
 		options.CONFIGURATION.value = "FullyGuidedContextSensitiveConfiguration"
 		options.SCALER_PRE_ANALYSIS.value = null

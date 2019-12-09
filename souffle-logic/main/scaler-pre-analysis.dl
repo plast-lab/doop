@@ -1,5 +1,46 @@
 // Compute and output the relations that are needed by Scaler.
-// Compute and output the relations that are needed by Scaler.
+.decl ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)
+.output ReceiverOfAllocatingMethod_Object
+
+ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject) :-
+  ReceiverOfMethod(?allocatingMethod, ?receiver),
+  Instruction_Method(?insn, ?allocatingMethod),
+  AssignHeapAllocation_Heap(?insn, ?allocatedObject).
+
+.decl ReceiverOfMethod(?method:Method, ?value:mainAnalysis.Value)
+
+ReceiverOfMethod(?method, ?receiver) :-
+  ThisVar(?method, ?this),
+  mainAnalysis.VarPointsTo(_, ?receiver, _, ?this).
+
+.decl Method_AllPossibleTwoObjContexts(?method:Method, ?receiverOfAllocator:mainAnalysis.Value, ?receiver:mainAnalysis.Value)
+.output Method_AllPossibleTwoObjContexts
+
+Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, ?receiver) :-
+  ThisVar(?method, ?this),
+  mainAnalysis.VarPointsTo(_, ?receiver, _, ?this),
+  ReceiverOfAllocatingMethod_Object(?receiverOfAllocator, ?receiver).
+
+Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, ?receiver) :-
+  Method_Modifier("static", ?method),
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
+  Instruction_Method(?invo, ?caller),
+  Method_AllPossibleTwoObjContexts(?caller, ?receiverOfAllocator, ?receiver).
+
+.decl Method_AllPossibleTwoTypeContexts(?method:Method, ?receiverOfAllocatorType:Type, ?receiverType:Type)
+.output Method_AllPossibleTwoTypeContexts
+
+Method_AllPossibleTwoTypeContexts(?method, ?receiverOfAllocatorType, ?receiverType) :-
+  Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, ?receiver),
+  mainAnalysis.Value_Type(?receiver, ?receiverType),
+  mainAnalysis.Value_Type(?receiverOfAllocator, ?receiverOfAllocatorType).
+
+.decl Method_AllPossibleOneTypeContexts(?method:Method, ?receiverType:Type)
+.output Method_AllPossibleOneTypeContexts
+
+Method_AllPossibleOneTypeContexts(?method, ?receiverType) :-
+  Method_AllPossibleTwoTypeContexts(?method, _, ?receiverType).
+
 
 .decl AllCallGraphEdge(?from:MethodInvocation, ?to:Method)
 .output AllCallGraphEdge(IO="file",filename="CALL_EDGE.csv",delimiter="\t")
@@ -69,6 +110,26 @@ MethodCanBenefitFromCS(?method) :-
    !MethodCanBenefitFromCS(?method).
 
 .output MethodCannotBenefitFromCS
+
+.decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
+
+VPTCountPerMethodVariable(?method, ?var, Y) :-
+   Var_DeclaringMethod(?var, ?method),
+   Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
+
+.decl Method_TotalVPT(?method:Method, Y:number)
+
+Method_TotalVPT(?method, Y) :-
+  mainAnalysis.Reachable(?method),
+  Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
+
+Method_TotalVPT(?method, 0) :-
+  mainAnalysis.Reachable(?method),
+  !Var_DeclaringMethod(_, ?method).
+
+.output Method_TotalVPT(IO="file", filename="Method_TotalVPT.csv", delimiter="\t")
+
+
 /*
 .decl EntryNonDataStructureMethod(?method:Method)
 
@@ -175,24 +236,6 @@ Object_In(?heap, ?method) :-
 Var_In(?var, ?method) :-
     Reachable(?method),
     Var_DeclaringMethod(?var, ?method).
-
-.decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
-
-VPTCountPerMethodVariable(?method, ?var, Y) :-
-   Var_DeclaringMethod(?var, ?method),
-   Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
-
-.decl Method_TotalVPT(?method:Method, Y:number)
-
-Method_TotalVPT(?method, Y) :-
-  mainAnalysis.Reachable(?method),
-  Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
-
-Method_TotalVPT(?method, 0) :-
-  mainAnalysis.Reachable(?method),
-  !Var_DeclaringMethod(_, ?method).
-
-.output Method_TotalVPT(IO="file", filename="Method_TotalVPT.csv", delimiter="\t")
 
 .decl Method_Neighbor(?method:Method, ?neighbor:Method)
 

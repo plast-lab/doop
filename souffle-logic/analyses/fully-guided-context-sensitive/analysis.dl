@@ -182,17 +182,17 @@
     // Pick last context elements of as heap context
     RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
       RecordContextRequest(?ctx, ?value, ?var),
-      !InsensitiveVar(?var),
+      //!InsensitiveVar(?var),
       ?ctx = [?ctxValue1, ?ctxValue2],
       ?hctx = [?ctxValue2],
       ?ctxValue1 = ?ctxValue1.
 
-    RecordContextResponse(?immCtx, ?value, ?var, ?hctx) :-
-      RecordContextRequest(?ctx, ?value, ?var),
-      InsensitiveVar(?var),
-      ?ctx = [?ctxValue1, ?ctxValue2],
-      ?hctx = [?ctxValue2],
-      isImmutableContext(?immCtx).
+    //RecordContextResponse(?immCtx, ?value, ?var, ?hctx) :-
+    //  RecordContextRequest(?ctx, ?value, ?var),
+    //  InsensitiveVar(?var),
+    //  ?ctx = [?ctxValue1, ?ctxValue2],
+    //  ?hctx = [?ctxValue2],
+    //  isImmutableContext(?immCtx).
 
     // RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
     //     RecordContextRequest(?ctx, ?value, ?var),

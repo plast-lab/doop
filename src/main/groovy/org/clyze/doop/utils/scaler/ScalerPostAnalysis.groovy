@@ -21,7 +21,7 @@ class ScalerPostAnalysis {
 	private File stickyContextMethodsFile
 	private Map<String, Long> methodInsVPTSizeMap = [:]
 	private AnalysisWorstCaseContextCounter[] contextCounters = new AnalysisWorstCaseContextCounter[4]
-	private long tst = 5_000_000_000_000L
+	private long tst = 20_000_000L
 	private List<Triple<String, String, Long>> results
 	private Set<String> reachableMethods
 	private Set<String> noCSMethods
@@ -45,8 +45,8 @@ class ScalerPostAnalysis {
 		buildMethodMaxOneTypeContexts()
 		buildMethodMaxInsensitiveContexts()
 		buildReachableMethods()
-		buildNoCSMethods()
-		buildStickyContextMethods()
+		//buildNoCSMethods()
+		//buildStickyContextMethods()
 		//buildNoCSVariables()
 	}
 
@@ -64,7 +64,6 @@ class ScalerPostAnalysis {
 			}
 		}
 
-		System.out.println("2-object contexts: " + contextCounter.get("<java.net.URL: void <init>(java.net.URL,java.lang.String,java.net.URLStreamHandler)>"))
 		contextCounters[0] = new AnalysisWorstCaseContextCounter("2-object", contextCounter)
 	}
 
@@ -83,9 +82,7 @@ class ScalerPostAnalysis {
 			}
 		}
 
-		System.out.println("2-type contexts: " + contextCounter.get("<java.net.URL: void <init>(java.net.URL,java.lang.String,java.net.URLStreamHandler)>"))
 		contextCounters[1] = new AnalysisWorstCaseContextCounter("2-type", contextCounter)
-
 	}
 
 	void buildMethodMaxOneTypeContexts() {
@@ -103,8 +100,6 @@ class ScalerPostAnalysis {
 			}
 		}
 		contextCounters[2] = new AnalysisWorstCaseContextCounter("1-type", contextCounter)
-		System.out.println("1-type contexts: " + contextCounter.get("<java.net.URL: void <init>(java.net.URL,java.lang.String,java.net.URLStreamHandler)>"))
-
 	}
 
 	void buildMethodMaxInsensitiveContexts() {
@@ -114,8 +109,6 @@ class ScalerPostAnalysis {
 			contextCounter.put(method, 1L)
 		}
 		contextCounters[3] = new AnalysisWorstCaseContextCounter("context-insensitive", contextCounter)
-		contextCounters[4] = new AnalysisWorstCaseContextCounter("sticky-2-object", contextCounter)
-		System.out.println("Insensitive contexts: " + contextCounter.get("<java.net.URL: void <init>(java.net.URL,java.lang.String,java.net.URLStreamHandler)>"))
 	}
 
 	void buildReachableMethods() {
@@ -134,20 +127,20 @@ class ScalerPostAnalysis {
 		}
 	}
 
-	void buildStickyContextMethods() {
-		stickyContextMethods = []
-
-		stickyContextMethodsFile.eachLine { line ->
-			stickyContextMethods.add(line)
-		}
-	}
-	void buildNoCSVariables() {
-		noCSVariables = []
-
-		variableCantBenefitFromCSFile.eachLine {line ->
-			noCSVariables.add(line)
-		}
-	}
+//	void buildStickyContextMethods() {
+//		stickyContextMethods = []
+//
+//		stickyContextMethodsFile.eachLine { line ->
+//			stickyContextMethods.add(line)
+//		}
+//	}
+//	void buildNoCSVariables() {
+//		noCSVariables = []
+//
+//		variableCantBenefitFromCSFile.eachLine {line ->
+//			noCSVariables.add(line)
+//		}
+//	}
 
 	void buildMethodTotalVPTSize() {
 		methodTotalVPTFile.eachLine { line ->
@@ -156,14 +149,7 @@ class ScalerPostAnalysis {
 			def totalVPTSize = pieces[1]
 
 			methodInsVPTSizeMap.put(method, Long.parseLong(totalVPTSize))
-
-//			long totalVPT = 0L
-//			for (String key : methodTotalVPTSize.keySet()) {
-//				totalVPT += methodTotalVPTSize.getOrDefault(key, 1L)
-//			}
-//			System.out.println("Total context-insensitive VPT ${totalVPT}")
 		}
-		System.out.println("VPT: " + methodInsVPTSizeMap.get("<java.net.URL: void <init>(java.net.URL,java.lang.String,java.net.URLStreamHandler)>"))
 	}
 
 	void run(File factsDir) throws FileNotFoundException {
@@ -174,19 +160,13 @@ class ScalerPostAnalysis {
 		File insensitiveVariableOutput = new File(factsDir, "InsensitiveVar.facts")
 
 		selectContexts(scalerOutput)
-		selectInsensitiveVariables(insensitiveVariableOutput)
+
 		scalerTimer.stop()
 		System.out.print(ANSIColor.BOLD + ANSIColor.YELLOW +
 				"Scaler finishes, analysis time: " + ANSIColor.RESET)
 		System.out.print(ANSIColor.BOLD + ANSIColor.GREEN)
 		System.out.printf("%.2fs", scalerTimer.inSecond())
 		System.out.println(ANSIColor.RESET)
-	}
-
-	void selectInsensitiveVariables(File file) {
-//		noCSVariables.each{ v ->
-//			file << ("${v}\n")
-//		}
 	}
 
 	void selectContexts(File scalerOutput) throws FileNotFoundException {
@@ -218,7 +198,7 @@ class ScalerPostAnalysis {
 					worstCaseVPT += nContexts * methodInsVPTSize
 					numberOfMethods += 1
 				})
-		//}
+
 		writer.close()
 		System.out.println("Total worst case VPT: " + worstCaseVPT + " for " + numberOfMethods + " methods")
 	}
@@ -231,21 +211,18 @@ class ScalerPostAnalysis {
 	 */
 	private String finalizeContextSelection(String method, long st) {
 		AnalysisWorstCaseContextCounter ctxCounter
-		if (isNoCSMethod(method)){
-			ctxCounter = contextCounters[3]
-		}
-		else if (isStickyContextMethod(method)) {
-			ctxCounter = contextCounters[4]
-		}
 
+		if (isSpecialMethod(method)) {
+			ctxCounter = contextCounters[0]; // the most precise analysis
+		}
 		else {
 			ctxCounter = contextCounters[0]
-//			for (AnalysisWorstCaseContextCounter selectedContextCounter : contextCounters) {
-//				if (getFactor(method, selectedContextCounter) <= st) {
-//					ctxCounter = selectedContextCounter
-//					break
-//				}
-//			}
+			for (AnalysisWorstCaseContextCounter selectedContextCounter : contextCounters) {
+				if (getFactor(method, selectedContextCounter) <= st) {
+					ctxCounter = selectedContextCounter
+					break
+				}
+			}
 		}
 
 		results.add(new Triple<>(method,
@@ -286,14 +263,11 @@ class ScalerPostAnalysis {
 	private long getTotalAccumulativePTS(long st) {
 		long total = 0
 		for (String method : reachableMethods) {
-			if (!isSpecialMethod(method) && !isNoCSMethod(method)) {
+			if (!isSpecialMethod(method)) {
 				AnalysisWorstCaseContextCounter contextMap = selectContextForMethod(method, st)
 				total += getFactor(method, contextMap)
 			}
-			else if (isNoCSMethod(method)) {
-				total += methodInsVPTSizeMap.get(method)
-			}
-			else if (isSpecialMethod(method)) {
+			else {
 				total += 0
 			}
 		}
@@ -308,13 +282,7 @@ class ScalerPostAnalysis {
 	 */
 	private AnalysisWorstCaseContextCounter selectContextForMethod(String method, long st) {
 		AnalysisWorstCaseContextCounter ctxCounter
-		if (isNoCSMethod(method)){
-			ctxCounter = contextCounters[3]
-		}
-		else if (isStickyContextMethod(method)) {
-			ctxCounter = contextCounters[4]
-		}
-		else if (isSpecialMethod(method)) {
+		if (isSpecialMethod(method)) {
 			ctxCounter = contextCounters[0]; // the most precise analysis
 		}
 		else {
@@ -331,13 +299,5 @@ class ScalerPostAnalysis {
 
 	private boolean isSpecialMethod(String method) {
 		method.startsWith("<java.util.")
-	}
-
-	private boolean isNoCSMethod(String method) {
-		return noCSMethods.contains(method);
-	}
-
-	private boolean isStickyContextMethod(String method) {
-		return stickyContextMethods.contains(method);
 	}
 }
