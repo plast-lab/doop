@@ -367,7 +367,6 @@ if (project.hasProperty('artifactory_user')) {
 
     // Generate a jar with all the logic files
     task logicFilesJar(type: Jar) {
-        into('logic') { from "logic" }
         into('souffle-logic') { from "souffle-logic" }
         into('souffle-scripts') { from "souffle-scripts" }
     }
