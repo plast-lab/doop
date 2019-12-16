@@ -436,8 +436,10 @@ AppTaintedVar(?var) :-
 
 // Rules for tracking taint object flow (from/to var and context)
 TaintObjTransfer(?callerCtx, ?actual, ?calleeCtx, ?formal) :-
-    mainAnalysis.OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual),
-    TaintedVarPointsTo(_, ?callerCtx, ?actual).
+    mainAnalysis.OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType),
+    TaintedVarPointsTo(?taintedValue, ?callerCtx, ?actual),
+    mainAnalysis.Value_Type(?taintedValue, ?tType),
+    basic.SubtypeOf(?tType, ?allowedType).
 
 TaintObjTransfer(?callerCtx, ?return, ?calleeCtx, ?local) :-
     mainAnalysis.CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
