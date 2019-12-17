@@ -1063,7 +1063,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	]
 
 	private static List<String> analysesFor(String path, String fileToLookFor) {
-		if (!path) {
+		if (!path || (!(new File(path)).exists())) {
 			println "Error: Doop was not initialized correctly, could not read analyses names."
 			return []
 		}
@@ -1102,7 +1102,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		List<String> platforms_Souffle = []
 		Closure scan = { ifDir ->
 			if (ifDir) {
-				new File("${ifDir}/information-flow")?.eachFile { File f ->
+				File ifSubDir = new File("${ifDir}/information-flow")
+				if (!ifSubDir || !ifSubDir.exists()) {
+					println "WARNING: cannot process information flow directory: ${ifDir}"
+					return
+				}
+				ifSubDir.eachFile { File f ->
 					String n = f.name
 					String base = removeExtension(n)
 					int platformEndIdx = base.lastIndexOf(INFORMATION_FLOW_SUFFIX)
