@@ -65,7 +65,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     /**
      * The suffix of information flow platforms.
      */
-    static final INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
+    static final String INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
 
     String getId() { options.USER_SUPPLIED_ID.value as String }
 
