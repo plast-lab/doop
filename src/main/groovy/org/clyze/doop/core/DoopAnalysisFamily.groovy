@@ -1,7 +1,6 @@
 package org.clyze.doop.core
 
 // import groovy.transform.TypeChecked
-import groovy.util.logging.Log4j
 import org.clyze.analysis.*
 import org.clyze.doop.common.Parameters
 
@@ -11,7 +10,6 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 
 @Singleton
 // @TypeChecked
-@Log4j
 class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static final String DEFAULT_JAVA_PLATFORM = "java_8"
@@ -1068,7 +1066,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static List<String> analysesFor(File path, String fileToLookFor) {
 		if (!path) {
-			log.error "ERROR: Doop was not initialized correctly, could not read analyses names."
+			println "ERROR: Doop was not initialized correctly, could not read analyses names."
 			return []
 		}
 		def analyses = []
@@ -1085,7 +1083,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				Doop.initDoopFromEnv()
 			}
 		} catch (e) {
-			log.error "ERROR: Souffle logic path not found, set DOOP_HOME."
+			println "ERROR: Souffle logic path not found, set DOOP_HOME."
 		}
 		analysesFor(new File(Doop.souffleAnalysesPath), "analysis.dl")
 	}
@@ -1096,11 +1094,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				Doop.initDoopFromEnv()
 			}
 		} catch (e) {
-			log.debug "ERROR: Could not initialize Doop: ${e.message}"
+			println "ERROR: Could not initialize Doop: ${e.message}"
 			e.printStackTrace()
 		}
 		if (!Doop.analysesPath) {
-			log.warn "WARNING: LB legacy logic path not found, set DOOP_HOME."
+			println "WARNING: LB legacy logic path not found, set DOOP_HOME."
 			return []
 		}
 		File legacyPath = new File(Doop.analysesPath)
@@ -1116,7 +1114,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			if (ifDir) {
 				File ifSubDir = new File("${ifDir}/information-flow")
 				if (!ifSubDir || !ifSubDir.exists()) {
-					log.warn "WARNING: cannot process information flow directory: ${ifDir}"
+					println "WARNING: cannot process information flow directory: ${ifSubDir}"
 					return
 				}
 				ifSubDir.eachFile { File f ->
