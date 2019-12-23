@@ -16,6 +16,8 @@ import org.clyze.utils.JHelper
 @Log4j
 class Doop {
 
+	static final String LOG_NAME = 'doop.log'
+
 	static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [
 			"LOGICBLOX_HOME",
 			"LD_LIBRARY_PATH",
@@ -94,7 +96,7 @@ class Doop {
 
 		try {
 			String logLevel = Logger.getRootLogger().isDebugEnabled() ? "DEBUG" : "INFO"
-			JHelper.tryInitLogging(logLevel, doopLog, true)
+			JHelper.tryInitLogging(logLevel, doopLog, true, LOG_NAME)
 		} catch (IOException ex) {
 			System.err.println("WARNING: could not initialize logging")
 			throw new DoopErrorCodeException(15)

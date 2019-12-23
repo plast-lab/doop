@@ -32,7 +32,7 @@ def env = [:]
 env.putAll(System.getenv())
 
 try {
-    JHelper.tryInitLogging("INFO", Doop.doopLog ?: "$outDir/logs", true)
+    JHelper.tryInitLogging("INFO", Doop.doopLog ?: "$outDir/logs", true, Doop.LOG_NAME)
 } catch (IOException ex) {
     System.err.println("WARNING: could not initialize logging")
     throw new DoopErrorCodeException(19)
