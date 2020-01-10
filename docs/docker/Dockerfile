@@ -2,13 +2,11 @@ FROM ubuntu:bionic
 
 USER root
 
-ENV DOOP_VERSION=doop-4.20.43
-
 ## package update
 RUN apt-get update
 
 ## locales: Doop may hang for non-UTF8 locales
-RUN apt-get install -y apt-utils
+RUN apt-get install -y apt-utils busybox nano
 # apt-utils installation should happen before locales installation
 RUN apt-get install -y locales
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
@@ -23,9 +21,6 @@ RUN dpkg-reconfigure --frontend=noninteractive locales
 # RUN echo "Europe/Athens" > /etc/timezone
 # RUN dpkg-reconfigure -f noninteractive tzdata
 
-## Utilities/editors.
-RUN apt-get install busybox nano
-
 ## Souffle
 RUN apt-get install -y cpp autoconf automake bison build-essential clang doxygen flex g++ gdb git libncurses5-dev libtool libsqlite3-dev make mcpp python sqlite zlib1g-dev
 RUN git clone https://github.com/souffle-lang/souffle.git /souffle
@@ -38,6 +33,7 @@ ENV DOOP_BENCHMARKS=/doop-benchmarks
 ENV DOOP_PLATFORMS_LIB=/doop-benchmarks
 RUN mkdir /doop
 RUN apt-get install -y unzip
+ENV DOOP_VERSION=doop-4.20.43
 COPY $DOOP_VERSION.zip /doop/$DOOP_VERSION.zip
 RUN cd /doop && unzip $DOOP_VERSION.zip
 ENV DOOP_HOME=/doop/$DOOP_VERSION
