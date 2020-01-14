@@ -172,21 +172,26 @@ class AndroidTests extends DoopSpec {
 		true
 	}
 
-	// @spock.lang.Ignore
-	@Unroll
-	def "Custom Dex front end test"() {
-		when:
-		List args = ["-i", Artifacts.ANDROIDTERM_APK,
-					 "-a", "context-insensitive",
-					 "--platform", "android_25_fulljars",
-					 "--id", "test-android-androidterm-dex",
-					 "--dex", "--Xstats-full", "-Ldebug",
-					 "--Xdry-run"] + testExports
-		Main.main((String[])args)
-		Analysis analysis = Main.analysis
+    // @spock.lang.Ignore
+    @Unroll
+    def "Custom Dex front end test"(def mode) {
+        when:
+        String id = 'test-android-androidterm-dex'
+        List args = ["-i", Artifacts.ANDROIDTERM_APK,
+                     "-a", "context-insensitive",
+                     "--platform", "android_25_fulljars",
+                     "--id", id,
+                     "--Xstop-at-facts", "${id}-facts",
+                     "--dex", "--Xstats-full", "-Ldebug",
+                     "--Xdry-run"] + testExports + mode
+        Main.main((String[])args)
+        Analysis analysis = Main.analysis
 
-		then:
-		// We only test if the front end does not fail.
-		true == true
-	}
+        then:
+        // We only test if the front end does not fail.
+        true == true
+
+        where:
+        mode << [[], ["--Xisolate-fact-generation"]]
+    }
 }

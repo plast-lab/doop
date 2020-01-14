@@ -1,7 +1,6 @@
 package org.clyze.doop.dex;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.CHA;
@@ -9,7 +8,6 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Driver;
 import org.clyze.doop.common.android.AndroidSupport;
-import org.clyze.utils.Helper;
 import org.clyze.utils.JHelper;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
@@ -33,13 +31,13 @@ public class DexInvoker {
         dexParams.initFromArgs(args);
 
         try {
-            Helper.tryInitLogging("DEBUG", dexParams.getLogDir(), true);
+            JHelper.tryInitLogging("DEBUG", dexParams.getLogDir(), true, "dex-fact-generator.log");
         } catch (IOException ex) {
             System.err.println("WARNING: could not initialize logging");
             throw new DoopErrorCodeException(18, ex, true);
         }
 
-        Log logger = LogFactory.getLog(DexInvoker.class);
+        Logger logger = Logger.getLogger(DexInvoker.class);
         String outDir = dexParams.getOutputDir();
         logger.debug("Using output directory: " + outDir);
 

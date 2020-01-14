@@ -11,16 +11,19 @@ import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+
+import org.apache.log4j.Logger;
 import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.MultiDexContainer;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.tree.ClassNode;
 
 import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
+import static org.objectweb.asm.Opcodes.*;
 
 /**
  * This class scans input artifacts (.jar, .aar, or .apk files) and
@@ -30,7 +33,10 @@ import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
 public class ArtifactScanner {
 
     private final Map<String, Set<ArtifactEntry>> artifactToClassMap = new ConcurrentHashMap<>();
-    private final Log logger = LogFactory.getLog(getClass());
+    private final Logger logger = Logger.getLogger(getClass());
+    private Set<GenericFieldInfo> genericFields = new HashSet<>();
+
+    Set<GenericFieldInfo> getGenericFields() { return genericFields; }
 
     public Map<String, Set<ArtifactEntry>> getArtifactToClassMap() {
         return artifactToClassMap;
@@ -107,6 +113,13 @@ public class ArtifactScanner {
         registerArtifactClass(artifact, className, "-", reader.b.length);
         if (classProc != null)
             classProc.accept(className);
+
+//        ClassNode cn = new ClassNode(ASM5);
+//        reader.accept(cn, ClassReader.EXPAND_FRAMES);
+//        ClassVisitor genericSignaturesRetriever = new GenericSignaturesRetriever(ASM5);
+//        cn.accept(genericSignaturesRetriever);
+//        Set<GenericFieldInfo> classGenericFields = ((GenericSignaturesRetriever) genericSignaturesRetriever).getGenericFields();
+//        this.genericFields.addAll(classGenericFields);
     }
 
     /**
@@ -119,8 +132,7 @@ public class ArtifactScanner {
      */
     public void processArchive(String input, Consumer<String> classProc,
                                EntryProcessor generalProc) throws IOException {
-        try (ZipInputStream zin = new ZipInputStream(new FileInputStream(input));
-             ZipFile zipFile = new ZipFile(input)) {
+        try (ZipInputStream zin = new ZipInputStream(new FileInputStream(input)); ZipFile zipFile = new ZipFile(input)) {
             ZipEntry entry;
             while ((entry = zin.getNextEntry()) != null) {
                 /* Skip directories */
@@ -132,6 +144,8 @@ public class ArtifactScanner {
                     try {
                         processClass(zipFile.getInputStream(entry), new File(zipFile.getName()), classProc);
                     } catch (Exception ex) {
+                        ex.printStackTrace();
+                        System.err.println(ex.toString());
                         System.err.println("Error while preprocessing entry \"" + entryName + "\", it will be ignored.");
                     }
                 } else if (generalProc != null)

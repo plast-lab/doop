@@ -50,7 +50,6 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdde
          */
         scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", SootClass.HIERARCHY);
         scene.addBasicClass("javax.crypto.extObjectInputStream");
-
         /*
          * For simulating the FileSystem class, we need the implementation
          * of the FileSystem, but the classes are not loaded automatically

@@ -1,6 +1,23 @@
+plugins {
+    id 'java'
+}
+
+// WARNING: dependencies below should be minimal, since every
+// dependency will be included as-is *in each* fact generator "fat" JAR.
 dependencies {
-    compile "org.clyze:clue-common:${clueCommonVersion}",
-            "org.ow2.asm:asm-debug-all:5.1",          // Java Bytecode library
-            "org.smali:dexlib2:2.2.5",                // Dexlib2: library for reading/modifying/writing Android dex files
-            "net.dongliu:apk-parser:2.6.2"            // needed for reading binary XML entries from APK inputs
+    compile("org.clyze:clue-common:${clueCommonVersion}") {
+        exclude group: 'com.google.code.gson', module: 'gson'
+        exclude group: 'org.apache.ivy', module: 'ivy'
+        exclude group: 'org.codehaus.groovy', module: 'groovy-all'
+    }
+    compile 'org.clyze:metadata-model:1.0.0'
+    compile 'org.ow2.asm:asm-debug-all:5.1'          // Java bytecode library
+    compile 'org.smali:dexlib2:2.2.5'                // Dexlib2: library for reading/modifying/writing Android dex files
+    compile 'net.dongliu:apk-parser:2.6.10'          // needed for reading binary XML entries from APK inputs
+    compile "org.antlr:antlr4-runtime:${antlrVersion}"
+}
+
+compileJava {
+    options.compilerArgs << '-Xlint:unchecked'
+    options.compilerArgs << '-Xlint:deprecation'
 }

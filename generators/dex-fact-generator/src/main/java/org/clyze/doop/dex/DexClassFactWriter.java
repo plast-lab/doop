@@ -1,7 +1,6 @@
 package org.clyze.doop.dex;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.checkerframework.checker.nullness.qual.*;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FieldInfo;
@@ -27,7 +26,7 @@ import static org.clyze.doop.common.PredicateFile.*;
  */
 class DexClassFactWriter extends JavaFactWriter {
 
-    private static final @Nullable Log logger = LogFactory.getLog(DexClassFactWriter.class);
+    private static final @Nullable Logger logger = Logger.getLogger(DexClassFactWriter.class);
 
     public final Collection<FieldOp> fieldOps = new LinkedList<>();
     public final Collection<String> definedMethods = new LinkedList<>();

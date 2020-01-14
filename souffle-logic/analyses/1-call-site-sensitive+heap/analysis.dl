@@ -10,10 +10,9 @@
   .type Context  = [ invocation:MethodInvocation ]
   .type HContext = [ invocation:MethodInvocation ]
 
-  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
-    ?calleeCtx = [?invo],
-    ?tomethod = ?tomethod.
+    ?calleeCtx = [?invo].
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

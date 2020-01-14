@@ -17,12 +17,11 @@
   // For this analysis the context of a method call corresponds to the
   // identity of the receiver object and the receiver object of the caller.
   // Again, this may trigger creation of a new object.
-  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxValue1, ?hctxValue2],
     ?calleeCtx = [?hctxValue2, ?value],
-    ?hctxValue1 = ?hctxValue1,
-    ?tomethod = ?tomethod.
+    ?hctxValue1 = ?hctxValue1.
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

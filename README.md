@@ -195,6 +195,12 @@ Doop and runs an analysis on a simple hello-world program.
 Please consult its Gradle build script (build.gradle) for details on
 how to set up and call Doop from another program.
 
+### Using Doop via Docker
+
+You can use one of the [published Doop images on docker
+hub](https://hub.docker.com/r/gfour/doop) or build a new
+image/container by following the [instructions](docs/docker/README.md).
+
 ## License
 UPL (see [LICENSE](LICENSE)).
 

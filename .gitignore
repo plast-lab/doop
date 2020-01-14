@@ -9,6 +9,9 @@ last-analysis
 checksums.properties
 doop.properties
 
+# dynamically generated class
+tests/115-invokedynamic/InvokedynamicClass.class
+
 #intellij idea files
 .idea
 doop-nexgen.iml

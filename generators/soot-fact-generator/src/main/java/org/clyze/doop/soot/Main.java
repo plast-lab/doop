@@ -7,8 +7,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.Database;
@@ -16,8 +15,6 @@ import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.scanner.NativeScanner;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
-import org.clyze.utils.DoopConventions;
-import org.clyze.utils.Helper;
 import org.clyze.utils.JHelper;
 import org.xmlpull.v1.XmlPullParserException;
 import soot.Scene;
@@ -35,7 +32,7 @@ import static org.clyze.doop.common.FrontEndLogger.*;
 
 public class Main {
 
-    private static Log logger;
+    private static Logger logger;
     private static final String debug = System.getenv("SOOT_DEBUG");
 
     public static void main(String[] args) throws Exception {
@@ -63,8 +60,8 @@ public class Main {
 
         try {
             String logDir = sootParameters.getLogDir();
-            Helper.tryInitLogging("DEBUG", logDir, true);
-            logger = LogFactory.getLog(Main.class);
+            JHelper.tryInitLogging("DEBUG", logDir, true, "soot-fact-generator");
+            logger = Logger.getLogger(Main.class);
             logger.info("Logging initialized, using directory: " + logDir);
         } catch (IOException ex) {
             System.err.println("WARNING: could not initialize logging");

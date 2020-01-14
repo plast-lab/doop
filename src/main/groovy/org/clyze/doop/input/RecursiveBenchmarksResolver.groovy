@@ -2,6 +2,8 @@ package org.clyze.doop.input
 
 import groovy.transform.TupleConstructor
 import org.clyze.analysis.InputType
+import org.clyze.input.InputResolutionContext
+import org.clyze.input.InputResolver
 import org.clyze.utils.FileOps
 
 /**

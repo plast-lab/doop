@@ -16,8 +16,7 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.python.utils.PythonDatabase;
 import org.clyze.doop.python.utils.PythonPredicateFile;
@@ -43,7 +42,7 @@ class PythonFactWriter {
     private final SortedSet<String> packages = Collections.synchronizedSortedSet(new TreeSet<>());
 
     // Used for logging various messages.
-    private final Log logger = LogFactory.getLog(getClass());
+    private final Logger logger = Logger.getLogger(getClass());
 
     PythonFactWriter(PythonDatabase db) {
         this._db = db;

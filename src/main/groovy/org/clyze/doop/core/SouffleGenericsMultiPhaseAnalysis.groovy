@@ -5,12 +5,12 @@ import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
 import org.clyze.analysis.AnalysisOption
-import org.clyze.doop.ptatoolkit.scaler.Driver
+import org.clyze.doop.utils.CPreprocessor
 import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
-import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 
+import java.nio.file.Files
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -23,11 +23,12 @@ import static org.apache.commons.io.FilenameUtils.getBaseName
 @InheritConstructors
 @Log4j
 @TypeChecked
-class SouffleMultiPhaseAnalysis extends SouffleAnalysis {
+class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 
 	@Override
 	void run() {
 		File preAnalysis = new File(outDir, "context-insensitive.dl")
+		//File preAnalysis = new File(outDir, "2-object-sensitive+heap.dl")
 		deleteQuietly(preAnalysis)
 		preAnalysis.createNewFile()
 		File analysis = new File(outDir, "${name}.dl")
@@ -35,6 +36,7 @@ class SouffleMultiPhaseAnalysis extends SouffleAnalysis {
 		analysis.createNewFile()
 
 		options.CONFIGURATION.value = "ContextInsensitiveConfiguration"
+		//options.CONFIGURATION.value = "TwoObjectSensitivePlusHeapConfiguration"
 		def commandsEnv = initExternalCommandsEnvironment(options)
 
 		executor = new Executor(outDir, commandsEnv)
@@ -113,15 +115,51 @@ class SouffleMultiPhaseAnalysis extends SouffleAnalysis {
 			executorService.shutdownNow()
 		}
 		printStats()
-		//Scaler Execution
-		Driver scalerMain = new Driver()
-		scalerMain.runScaler(factsDir, database)
-		//scalerMain.runScaler(factsDir, database)
+
 		options.X_START_AFTER_FACTS.value = factsDir
-		options.CONFIGURATION.value = "FullyGuidedContextSensitiveConfiguration"
-		options.SCALER_PRE_ANALYSIS.value = null
+		options.CONFIGURATION.value = "AdaptiveTwoObjectSensitivePlusHeapConfiguration"
+		options.GENERICS_PRE_ANALYSIS.value = null
+		options.PRECISE_GENERICS.value = true
+		options.CFG_ANALYSIS.value = false
 		executor = new Executor(outDir, commandsEnv)
 		cpp = new CPreprocessor(this, executor)
+		//ScalerPostAnalysis scalerPostAnalysis = new ScalerPostAnalysis(database)
+		//scalerPostAnalysis.run(factsDir)
+//		def insensitiveMethodsFile = new File(database.getAbsolutePath() + File.separator + "InsensitiveMethod.csv")
+//		def stickyContextMethodsFile = new File(database.getAbsolutePath() + File.separator + "StickyContextMethod.csv")
+//		def entryContextMethodsFile = new File(database.getAbsolutePath() + File.separator + "EntryContextMethod.csv")
+//
+//		def insensitiveMethodsFactFile = new File(factsDir.getAbsolutePath() + File.separator + "InsensitiveMethod.facts")
+//		def stickyContextMethodsFactFile = new File(factsDir.getAbsolutePath() + File.separator + "StickyContextMethod.facts")
+//		def entryContextMethodsFactFile = new File(factsDir.getAbsolutePath() + File.separator + "EntryContextMethod.facts")
+//
+//		Files.copy(insensitiveMethodsFile.toPath(), insensitiveMethodsFactFile.toPath())
+//		Files.copy(stickyContextMethodsFile.toPath(), stickyContextMethodsFactFile.toPath())
+//		Files.copy(entryContextMethodsFile.toPath(), entryContextMethodsFactFile.toPath())
+
+		def mapAcceptsValueType = new File(database.getAbsolutePath() + File.separator + "MapAcceptsValueType.csv")
+		def mapAcceptsKeyType = new File(database.getAbsolutePath() + File.separator + "MapAcceptsKeyType.csv")
+		def collectionAcceptsValueType = new File(database.getAbsolutePath() + File.separator + "CollectionAcceptsValueType.csv")
+
+		def mapAcceptsValueTypeFacts = new File(factsDir.getAbsolutePath() + File.separator + "MapAcceptsValueType.facts")
+		def mapAcceptsKeyTypeFacts = new File(factsDir.getAbsolutePath() + File.separator + "MapAcceptsKeyType.facts")
+		def collectionAcceptsValueTypeFacts = new File(factsDir.getAbsolutePath() + File.separator + "CollectionAcceptsValueType.facts")
+
+		Files.copy(mapAcceptsValueType.toPath(), mapAcceptsValueTypeFacts.toPath())
+		Files.copy(mapAcceptsKeyType.toPath(), mapAcceptsKeyTypeFacts.toPath())
+		Files.copy(collectionAcceptsValueType.toPath(), collectionAcceptsValueTypeFacts.toPath())
+
+		def mapAcceptsValueFallbackType = new File(database.getAbsolutePath() + File.separator + "MapAcceptsValueFallbackType.csv")
+		def mapAcceptsKeyFallbackType = new File(database.getAbsolutePath() + File.separator + "MapAcceptsKeyFallbackType.csv")
+		def collectionAcceptsValueFallbackType = new File(database.getAbsolutePath() + File.separator + "CollectionAcceptsValueFallbackType.csv")
+
+		def mapAcceptsValueFallbackTypeFacts = new File(factsDir.getAbsolutePath() + File.separator + "MapAcceptsValueFallbackType.facts")
+		def mapAcceptsKeyFallbackTypeFacts = new File(factsDir.getAbsolutePath() + File.separator + "MapAcceptsKeyFallbackType.facts")
+		def collectionAcceptsValueFallbackTypeFacts = new File(factsDir.getAbsolutePath() + File.separator + "CollectionAcceptsValueFallbackType.facts")
+
+		Files.copy(mapAcceptsValueFallbackType.toPath(), mapAcceptsValueFallbackTypeFacts.toPath())
+		Files.copy(mapAcceptsKeyFallbackType.toPath(), mapAcceptsKeyFallbackTypeFacts.toPath())
+		Files.copy(collectionAcceptsValueFallbackType.toPath(), collectionAcceptsValueFallbackTypeFacts.toPath())
 
 		initDatabase(analysis)
 		basicAnalysis(analysis)

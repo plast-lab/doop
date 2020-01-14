@@ -4,14 +4,8 @@
 // apply plugin: 'org.checkerframework'
 
 repositories {
-    maven {
-        name "soot-snapshot"
-        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
-    }
-    maven {
-        name "soot-release"
-        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
-    }
+    mavenLocal()
+    mavenCentral()
 }
 
 // // Uncomment to compile with nullness checker.

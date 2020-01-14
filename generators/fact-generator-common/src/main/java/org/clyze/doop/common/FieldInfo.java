@@ -14,6 +14,12 @@ public class FieldInfo {
         this.name = n;
     }
 
+    public FieldInfo(String t, String n, String c) {
+        this.type = t;
+        this.name = n;
+        this.definingClass = c;
+    }
+
     public String getFieldId() {
         return JavaRepresentation.fieldId(definingClass, type, name);
     }
@@ -45,5 +51,5 @@ public class FieldInfo {
         return (fis != null) && fis.stream().anyMatch(fi -> fi.name.equals(name));
     }
 
-    public static class ResolveException extends Exception { }
+    static class ResolveException extends Exception { }
 }

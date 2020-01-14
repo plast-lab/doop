@@ -305,4 +305,8 @@ class SymbolInfo {
         this.function = function;
         this.offset = offset;
     }
+    @Override
+    public String toString() {
+        return sym + "@" + lib + "." + offset + "(" + function + ")";
+    }
 }

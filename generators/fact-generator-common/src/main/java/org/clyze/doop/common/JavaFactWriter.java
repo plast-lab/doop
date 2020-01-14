@@ -1,5 +1,13 @@
 package org.clyze.doop.common;
 
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.clyze.doop.common.scanner.antlr.GenericTypeLexer;
+import org.clyze.doop.common.scanner.antlr.GenericTypeParser;
+import org.clyze.doop.common.scanner.antlr.PrintVisitor;
+
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
@@ -86,7 +94,7 @@ public abstract class JavaFactWriter {
     }
 
     public void writeApplication(String applicationName) {
-	_db.add(ANDROID_APPLICATION, applicationName);
+        _db.add(ANDROID_APPLICATION, applicationName);
     }
 
     public void writeActivity(String activity) {
@@ -138,19 +146,44 @@ public abstract class JavaFactWriter {
      * @param java  the object supporting basic Java functionality
      */
     public void writeLastFacts(BasicJavaSupport java) {
-        Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactScanner().getArtifactToClassMap();
+        ArtifactScanner artScanner = java.getArtifactScanner();
+        Map<String, Set<ArtifactEntry>> artifactToClassMap = artScanner.getArtifactToClassMap();
+        Set<GenericFieldInfo> genericFields = artScanner.getGenericFields();
         if (_writeArtifactsMap) {
             System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
             for (String artifact : artifactToClassMap.keySet())
                 for (ArtifactEntry ae : artifactToClassMap.get(artifact))
                     writeClassArtifact(artifact, ae.className, ae.subArtifact, ae.size);
         }
+
+        writeGenericFields(genericFields);
         artifactToClassMap.clear();
     }
 
     protected void writeMethodDeclaresException(String methodId, String exceptionType) {
         _db.add(METHOD_DECL_EXCEPTION, exceptionType, methodId);
     }
+
+    protected void writeGenericFields(Set<GenericFieldInfo> genericFields) {
+        for (GenericFieldInfo fi : genericFields) {
+            if (!fi.type.contains("extends") && !fi.type.contains("super")) {
+                GenericTypeLexer lexer = new GenericTypeLexer(new ANTLRInputStream(fi.type));
+                GenericTypeParser parser = new GenericTypeParser(new CommonTokenStream(lexer));
+                ParseTree parseTree = parser.type();
+                PrintVisitor printVisitor = new PrintVisitor(_db);
+                printVisitor.visit(parseTree);
+            }
+            if (fi.type.contains("<")){
+                _db.add(GENERIC_FIELD, "<" + fi.definingClass + ": " + fi.type + " " + fi.name + ">", fi.definingClass, fi.name, fi.type);
+            }
+            else {
+                _db.add(GENERIC_FIELD, "<" + fi.definingClass + ": " + fi.type + " " + fi.name + ">", fi.definingClass, fi.name, fi.type);
+            }
+
+        }
+    }
+    //_db.add(GENERIC_FIELD_TYPE, fieldInfo.definingClass, fieldInfo.name,
+
 
     protected void writePhantomType(String t) {
         _db.add(PHANTOM_TYPE, t);
@@ -335,7 +368,7 @@ public abstract class JavaFactWriter {
     public static boolean polymorphicHandling(String declClass, String simpleName) {
         return (declClass.equals("java.lang.invoke.MethodHandle") &&
                 (simpleName.equals("invoke") || simpleName.equals("invokeExact") ||
-                 simpleName.equals("invokeBasic")));
+                        simpleName.equals("invokeBasic")));
     }
 
     /**

@@ -1,7 +1,6 @@
 package org.clyze.doop.dex;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Parameters;
 import org.clyze.doop.common.android.AndroidSupport;
@@ -9,11 +8,10 @@ import org.clyze.doop.common.android.AppResources;
 
 class DexAndroidSupport extends AndroidSupport {
 
-    private final Log logger;
+    private final Logger logger = Logger.getLogger(getClass());
 
     DexAndroidSupport(Parameters parameters, BasicJavaSupport java) {
         super(parameters, java);
-        this.logger = LogFactory.getLog(getClass());
     }
 
     @Override

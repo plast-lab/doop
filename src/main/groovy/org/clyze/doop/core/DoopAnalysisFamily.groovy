@@ -1,5 +1,6 @@
 package org.clyze.doop.core
 
+// import groovy.transform.TypeChecked
 import org.clyze.analysis.*
 import org.clyze.doop.common.Parameters
 
@@ -8,6 +9,7 @@ import static org.apache.commons.io.FilenameUtils.getExtension
 import static org.apache.commons.io.FilenameUtils.removeExtension
 
 @Singleton
+// @TypeChecked
 class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static final String DEFAULT_JAVA_PLATFORM = "java_8"
@@ -54,7 +56,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					optName: "a",
 					argName: "NAME",
 					description: "The name of the analysis.",
-					validValues: analysesSouffle() + ["----- (LB analyses) -----"] + analysesLB(),
+					validValues: (analysesSouffle() + ["----- (LB analyses) -----"] + analysesLB()) as Set<String>,
 					isMandatory: true
 			),
 			new AnalysisOption<File>(
@@ -418,6 +420,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Enable the analysis to be the pre-analysis of Scaler, and outputs the information required by Scaler.",
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "GENERICS_PRE_ANALYSIS",
+					name: "generics-pre",
+					description: "Enable precise generics pre-analysis to infer content types for Collections and Maps.",
+					forPreprocessor: true
+			),
 			/* End Scaler related options */
 
 			/* Start Zipper related options */
@@ -467,6 +475,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "NO_MERGES",
 					name: "no-merges",
 					description: "No merges for string constants.",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "PRECISE_GENERICS",
+					name: "precise-generics",
+					description: "Precise handling for maps and collections",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -929,6 +943,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use less memory. Does not support all options."
 			),
 			new BooleanAnalysisOption(
+					id: "X_ISOLATE_FACTGEN",
+					name: "Xisolate-fact-generation",
+					group: GROUP_FACTS,
+					description: "Isolate invocations to the fact generator."
+			),
+			new BooleanAnalysisOption(
 					id: "X_SERIALIZE_FACTGEN_COMPILATION",
 					name: "Xserialize-factgen-compilation",
 					group: GROUP_FACTS,
@@ -1003,7 +1023,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_FACTS,
 					description: "Produce facts only for a subset of the given classes.",
 					argName: "SUBSET",
-					validValues: Parameters.FactsSubSet.values().collect { it as String },
+					validValues: Parameters.FactsSubSet.values().collect { it as String } as Set<String>,
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
@@ -1044,13 +1064,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 	]
 
-	private static List<String> analysesFor(String path, String fileToLookFor) {
+	private static List<String> analysesFor(File path, String fileToLookFor) {
 		if (!path) {
-			println "Error: Doop was not initialized correctly, could not read analyses names."
+			println "ERROR: Doop was not initialized correctly, could not read analyses names."
 			return []
 		}
 		def analyses = []
-		new File(path).eachDir { File dir ->
+		path.eachDir { File dir ->
 			def f = new File(dir, fileToLookFor)
 			if (f.exists() && f.file) analyses << dir.name
 		}
@@ -1063,9 +1083,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				Doop.initDoopFromEnv()
 			}
 		} catch (e) {
-			println "Error initializing Doop: Souffle logic path not found, set DOOP_HOME."
+			println "ERROR: Souffle logic path not found, set DOOP_HOME."
 		}
-		analysesFor(Doop.souffleAnalysesPath, "analysis.dl")
+		analysesFor(new File(Doop.souffleAnalysesPath), "analysis.dl")
 	}
 
 	private static List<String> analysesLB() {
@@ -1074,17 +1094,30 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				Doop.initDoopFromEnv()
 			}
 		} catch (e) {
-			println "Error initializing Doop: LB logic path not found, set DOOP_HOME."
+			println "ERROR: Could not initialize Doop: ${e.message}"
+			e.printStackTrace()
 		}
-		analysesFor(Doop.analysesPath, "analysis.logic")
+		if (!Doop.analysesPath) {
+			println "WARNING: LB legacy logic path not found, set DOOP_HOME."
+			return []
+		}
+		File legacyPath = new File(Doop.analysesPath)
+		if (legacyPath.exists()) {
+			analysesFor(legacyPath, "analysis.logic")
+		}
 	}
 
-	private static List<String> informationFlowPlatforms(String lbDir, String souffleDir) {
-		List<String> platforms_LB = []
-		List<String> platforms_Souffle = []
+	private static SortedSet<String> informationFlowPlatforms(String lbDir, String souffleDir) {
+		SortedSet<String> platforms_LB = new TreeSet<>()
+		SortedSet<String> platforms_Souffle = new TreeSet<>()
 		Closure scan = { ifDir ->
 			if (ifDir) {
-				new File("${ifDir}/information-flow")?.eachFile { File f ->
+				File ifSubDir = new File("${ifDir}/information-flow")
+				if (!ifSubDir || !ifSubDir.exists()) {
+					println "WARNING: cannot process information flow directory: ${ifSubDir}"
+					return
+				}
+				ifSubDir.eachFile { File f ->
 					String n = f.name
 					String base = removeExtension(n)
 					int platformEndIdx = base.lastIndexOf(INFORMATION_FLOW_SUFFIX)
@@ -1104,12 +1137,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		scan(souffleDir)
 
 		List<String> platforms =
-				(platforms_Souffle.collect {
-					it + ((it in platforms_LB) ? "" : " (Souffle-only)")
-				}) +
-						(platforms_LB.findAll { !(it in platforms_Souffle) }
-								.collect { it + " (LB-only)" })
-		return platforms.sort()
+			(platforms_Souffle.collect {
+			it + ((it in platforms_LB) ? "" : " (Souffle-only)")
+		}) +
+			(platforms_LB.findAll { !(it in platforms_Souffle) }
+			 .collect { it + " (LB-only)" })
+		return new TreeSet<>(platforms)
 	}
 
     static Collection<File> getAllInputs(Map<String, AnalysisOption> options) {

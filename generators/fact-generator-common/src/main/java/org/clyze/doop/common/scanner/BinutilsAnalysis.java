@@ -437,8 +437,6 @@ class BinutilsAnalysis extends BinaryAnalysis {
     public Section getSection(String sectionName) throws IOException {
         ProcessBuilder builder = new ProcessBuilder(objdumpCmd, "--headers", lib);
         List<String> lines = NativeScanner.runCommand(builder);
-        int lineNo = 0;
-        final int IGNORE_ERRORS_BEFORE_LINE = 3;
         for (String line : lines) {
             if (!line.contains(sectionName + " "))
                 continue;

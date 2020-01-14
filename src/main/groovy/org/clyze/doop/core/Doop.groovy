@@ -2,16 +2,21 @@ package org.clyze.doop.core
 
 import groovy.cli.commons.OptionAccessor
 import groovy.util.logging.Log4j
+import org.apache.log4j.Logger
 import org.clyze.analysis.AnalysisOption
 import org.clyze.analysis.BooleanAnalysisOption
 import org.clyze.analysis.IntegerAnalysisOption
+import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.utils.FileOps
+import org.clyze.utils.JHelper
 
 /**
  * Doop initialization and supported options.
  */
 @Log4j
 class Doop {
+
+	static final String LOG_NAME = 'doop.log'
 
 	static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [
 			"LOGICBLOX_HOME",
@@ -81,6 +86,23 @@ class Doop {
 	 */
 	static void initDoopFromEnv() {
 		Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"), System.getenv("DOOP_LOG"), System.getenv("DOOP_TMP"))
+	}
+
+	/**
+	 * Initializes Doop (and its logging machinery) using the default environment variables.
+	 */
+	static void initDoopWithLoggingFromEnv() {
+		initDoopFromEnv()
+
+		try {
+			String logLevel = Logger.getRootLogger().isDebugEnabled() ? "DEBUG" : "INFO"
+			JHelper.tryInitLogging(logLevel, doopLog, true, LOG_NAME)
+		} catch (IOException ex) {
+			System.err.println("WARNING: could not initialize logging")
+			throw new DoopErrorCodeException(15)
+		}
+
+		log.debug "Doop initialized with: doopOut = ${doopOut}, doopCache = ${doopCache}, doopLog = ${doopLog}, doopTmp = ${doopTmp}, souffleAnalysesCache = ${souffleAnalysesCache}, logicPath = ${logicPath}, souffleLogicPath = ${souffleLogicPath}, analysesPath = ${analysesPath}"
 	}
 
 	/**

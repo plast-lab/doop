@@ -1,0 +1,93 @@
+// The following 3 predicate declarations are needed in case that
+// statistics are enabled.
+.decl MockObjFromArray(?type:ReferenceType)
+.decl MockObjFromField(?type:ReferenceType)
+.decl MockObjFromFormal(?type:ReferenceType)
+
+.decl ServletEntryMethodName(?method:Method)
+
+ServletEntryMethodName("doGet").
+ServletEntryMethodName("doPost").
+
+.decl AllConcreteImplementations(?type1:Type, ?type2:Type)
+
+AllConcreteImplementations(?class, ?staticType) :-
+  isClassType(?class),
+  basic.SubtypeOf(?class, ?staticType),
+  !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?class, ?class) :-
+  isClassType(?class),
+  !ClassModifier("abstract", ?class).
+
+.decl ConcreteImplementationsOrd(?staticType:Type, ?classOrd:number)
+.decl ConcreteImplementations(?staticType:Type, ?class:Type)
+
+ConcreteImplementationsOrd(?staticType, ?classOrd) :-
+  AllConcreteImplementations(_, ?staticType),
+  ?classOrd = min ord(?allClasses): AllConcreteImplementations(?allClasses, ?staticType).
+
+ConcreteImplementations(?staticType, ?class) :-
+  ConcreteImplementationsOrd(?staticType, ?classOrd),
+  isClassType(?class),
+  ord(?class) = ?classOrd.
+
+.decl ServletClass(?class:Type)
+
+ServletClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
+
+.decl OpenProgramEntryPoint(?method:Method)
+.decl MockOpenProgramEntryPoint(?class:Type, ?method:Method)
+.decl PossibleOpenProgramEntryPoint(?class:Type, ?method:Method)
+
+OpenProgramEntryPoint(?method) :-
+  MockOpenProgramEntryPoint(_, ?method).
+
+// Contribute to the global summary relation
+mainAnalysis.ApplicationEntryPoint(?meth) :-
+  OpenProgramEntryPoint(?meth),
+  ApplicationMethod(?meth).
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>")) :-
+  ServletClass(?class),
+  ServletEntryMethodName(?serviceMethodName).
+
+// Servlet service methods
+MockOpenProgramEntryPoint(?class, ?entry) :-
+  PossibleOpenProgramEntryPoint(?class, ?entry),
+  isMethod(?entry).
+
+mainAnalysis.configuration.InitContextRequest(?value) :-
+  MockOpenProgramEntryPoint(_, ?method),
+  Method_DeclaringType(?method, ?class),
+  MockObject(?value, ?class).
+
+mainAnalysis.ReachableContext(?ctx, ?method) :-
+  MockOpenProgramEntryPoint(_, ?method),
+  Method_DeclaringType(?method, ?class),
+  MockObject(?value, ?class),
+  mainAnalysis.configuration.InitContextResponse(?value, ?ctx).
+
+// The following two rules were originally separated to stratify negation (no longer needed)
+mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?receiver) :-
+  mainAnalysis.isImmutableHContext(?hctx),
+  ValueForReceiverInContext(?ctx, ?receiver, ?value).
+
+.decl MockObject(?value:mainAnalysis.Value, ?type:Type)
+.decl MockObjFromOpenProgramEntryPoint(?value:mainAnalysis.Value)
+
+mainAnalysis_MockValueConsMacro(cat(cat("<Mock receiver ", ?class), " >"), ?class),
+MockObjFromOpenProgramEntryPoint(cat(cat("<Mock receiver ", ?class), " >")),
+MockObject(cat(cat("<Mock receiver ", ?class), " >"), ?class) :-
+  MockOpenProgramEntryPoint(?class, _).
+
+.decl ValueForReceiverInContext(?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?value:mainAnalysis.Value)
+
+ValueForReceiverInContext(?ctx, ?receiver, ?value) :-
+  mainAnalysis.ReachableContext(?ctx, ?method),
+  ThisVar(?method, ?receiver),
+  Method_DeclaringType(?method, ?class),
+  MockObject(?value, ?class).

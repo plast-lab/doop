@@ -29,13 +29,6 @@ public class Local {
     {
         type = newType;
     }
-    public Local(String name, int varIndex, String sourceCodeName, TypeReference type, String value) {
-        this.name = name;
-        this.sourceCodeName = sourceCodeName;
-        this.type = type;
-        this.value = value;
-        this.varIndex = varIndex;
-    }
 
     public void setValue(String _value)
     {

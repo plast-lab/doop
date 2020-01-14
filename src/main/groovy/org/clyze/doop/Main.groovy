@@ -8,7 +8,6 @@ import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
 import org.clyze.utils.FileOps
-import org.clyze.utils.Helper
 import org.codehaus.groovy.runtime.StackTraceUtils
 
 import java.util.concurrent.Executors
@@ -43,13 +42,7 @@ class Main {
 	 *								   that identifies points of failure
 	 */
 	static void main2(String[] args) throws DoopErrorCodeException {
-		Doop.initDoopFromEnv()
-		try {
-			Helper.tryInitLogging("INFO", Doop.doopLog, true)
-		} catch (IOException ex) {
-			System.err.println("WARNING: could not initialize logging")
-			throw new DoopErrorCodeException(15)
-		}
+		Doop.initDoopWithLoggingFromEnv()
 
 		try {
 			// The builder for displaying usage and parsing the arguments

@@ -10,7 +10,7 @@
   .type Context  = [ invocation:FunctionInvocation_Insn ]
   .type HContext = [ invocation:FunctionInvocation_Insn ]
 
-  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),
     ?calleeCtx = [?invo],
     ?tomethod = ?tomethod.

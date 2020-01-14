@@ -14,7 +14,7 @@ import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
 import org.clyze.doop.common.JavaRepresentation;
 import org.clyze.doop.common.SessionCounter;
-import org.clyze.persistent.model.doop.DynamicMethodInvocation;
+import org.clyze.persistent.model.DynamicMethodInvocation;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

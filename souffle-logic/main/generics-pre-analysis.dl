@@ -1,0 +1,342 @@
+.decl GenericFieldSignatureViolation(?field:Field)
+.decl isCollectionValue(?value:mainAnalysis.Value)
+.decl isMapValue(?value:mainAnalysis.Value)
+.decl isMapField(?field:Field)
+.decl isCollectionField(?field:Field)
+.decl isMapGetMethod(?method:Method)
+.decl isCollectionGetMethod(?method:Method)
+
+.decl FieldPointsToMap(?value:mainAnalysis.Value, ?field:Field)
+.decl FieldPointsToCollection(?value:mainAnalysis.Value, ?field:Field)
+
+.decl MapAcceptsKeyTypeByGenericFieldInfo(?value:mainAnalysis.Value, ?type:Type)
+.decl MapAcceptsValueTypeByGenericFieldInfo(?value:mainAnalysis.Value, ?type:Type)
+.decl CollectionAcceptsValueTypeByGenericFieldInfo(?value:mainAnalysis.Value, ?type:Type)
+
+.decl MapAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
+.decl MapAcceptsKeyType(?value:mainAnalysis.Value, ?type:Type)
+.decl CollectionAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
+
+.output MapAcceptsValueType(IO="file",filename="MapAcceptsValueType.csv",delimiter="\t")
+.output MapAcceptsKeyType(IO="file",filename="MapAcceptsKeyType.csv",delimiter="\t")
+.output CollectionAcceptsValueType(IO="file",filename="CollectionAcceptsValueType.csv",delimiter="\t")
+
+.decl MapAcceptsKeyFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
+.decl MapAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
+.decl CollectionAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
+
+.printsize MapAcceptsKeyFallbackType
+.printsize MapAcceptsValueFallbackType
+.printsize CollectionAcceptsValueFallbackType
+
+.output MapAcceptsKeyFallbackType(IO="file",filename="MapAcceptsKeyFallbackType.csv",delimiter="\t")
+.output MapAcceptsValueFallbackType(IO="file",filename="MapAcceptsValueFallbackType.csv",delimiter="\t")
+.output CollectionAcceptsValueFallbackType(IO="file",filename="CollectionAcceptsValueFallbackType.csv",delimiter="\t")
+
+GenericFieldSignatureViolation(?field) :-
+  isGenericField(?field),
+  !isField(?field).
+
+.output GenericFieldSignatureViolation
+
+isMapGetMethod(?method) :-
+  Method_SimpleName(?method, "get"),
+  Method_DeclaringType(?method, ?type),
+  basic.SubtypeOf(?type, "java.util.Map").
+
+isCollectionGetMethod(?method) :-
+  Method_SimpleName(?method, "get"),
+  Method_DeclaringType(?method, ?type),
+  basic.SubtypeOf(?type, "java.util.Collection").
+
+.decl MapAcceptsValueTypeByDowncast(?mapValue:mainAnalysis.Value, ?type:Type)
+.output MapAcceptsValueTypeByDowncast
+
+.decl CollectionAcceptsValueTypeByDowncast(?mapValue:mainAnalysis.Value, ?type:Type)
+.output CollectionAcceptsValueTypeByDowncast
+
+.decl GetMethodInvocationBasePointsToMap(?invo:MethodInvocation, ?to:Var, ?mapValue:mainAnalysis.Value)
+.decl GetMethodInvocationBasePointsToCollection(?invo:MethodInvocation,  ?to:Var, ?collectionValue:mainAnalysis.Value)
+
+.decl NoValueRetrievalFromMap(?mapValue:mainAnalysis.Value)
+
+NoValueRetrievalFromMap(?mapValue) :-
+  isMapValue(?mapValue),
+  !GetMethodInvocationBasePointsToMap(_, _, ?mapValue).
+
+.output NoValueRetrievalFromMap
+
+.decl GetNotFollowedByDownCast(?invo:MethodInvocation)
+
+GetNotFollowedByDownCast(?invo) :-
+  GetMethodInvocationBasePointsToMap(?invo, _, _),
+  !GetFollowedByDownCast(?invo, _).
+
+.decl SensitiveMethod(?method:Method)
+
+SensitiveMethod(?method) :-
+  ApplicationClass(?type),
+  Method_DeclaringType(?method, ?type).
+
+.decl InsensitiveMethod(?method:Method)
+
+InsensitiveMethod(?method) :-
+  isMethod(?method),
+  !SensitiveMethod(?method).
+
+.output InsensitiveMethod(IO="file",filename="InsensitiveMethod.csv",delimiter="\t")
+
+.decl GetFollowedByDownCast(?invo:MethodInvocation, ?downCastIns:AssignCast_Insn)
+/*
+GetFollowedByDownCast(?invo, ?downCastIns) :-
+  Instruction_Method(?invo, ?method),
+  (GetMethodInvocationBasePointsToMap(?invo, ?returnValue, _);
+   GetMethodInvocationBasePointsToCollection(?invo, ?returnValue, _)),
+  Instruction_Method(?downCastIns, ?method),
+  Instruction_Next(?invo, ?downCastIns),
+  isAssignCast_Insn(?downCastIns),
+  AssignCast_From(?downCastIns, ?returnValue).
+
+GetFollowedByDownCast(?invo, ?downCastIns) :-
+  Instruction_Method(?invo, ?method),
+  (GetMethodInvocationBasePointsToMap(?invo, ?returnValue, _);
+   GetMethodInvocationBasePointsToCollection(?invo, ?returnValue, _)),
+  Instruction_Next(?invo, ?assignConstantIns),
+  Instruction_Method(?assignConstantIns, ?method),
+  isAssignInstruction(?assignConstantIns),
+  Instruction_Method(?downCastIns, ?method),
+  Instruction_Next(?assignConstantIns, ?downCastIns),
+  isAssignCast_Insn(?downCastIns),
+  AssignCast_From(?downCastIns, ?returnValue).
+*/
+GetFollowedByDownCast(?invo, ?downCastIns) :-
+  Instruction_Method(?invo, ?method),
+  GetMethodInvocationBasePointsToMap(?invo, ?returnVar, _),
+  Instruction_Method(?downCastIns, ?method),
+  AssignCast_From(?downCastIns, ?var),
+  Stats_Simple_InsensVarPointsTo(?value, ?returnVar),
+  Stats_Simple_InsensVarPointsTo(?value, ?var).
+.output GetFollowedByDownCast
+
+GetFollowedByDownCast(?invo, ?downCastIns) :-
+  Instruction_Method(?invo, ?method),
+  GetMethodInvocationBasePointsToCollection(?invo, ?returnVar, _),
+  Instruction_Method(?downCastIns, ?method),
+  AssignCast_From(?downCastIns, ?var),
+  Stats_Simple_InsensVarPointsTo(?value, ?returnVar),
+  Stats_Simple_InsensVarPointsTo(?value, ?var).
+
+.output GetNotFollowedByDownCast
+.output GetFollowedByDownCast
+.output Instruction_Next
+.output GetMethodInvocationBasePointsToMap
+.output GetMethodInvocationBasePointsToCollection
+
+GetMethodInvocationBasePointsToMap(?invo, ?to, ?mapValue) :-
+  Stats_Simple_InsensCallGraphEdge(?invo, ?method),
+  isMapGetMethod(?method),
+  MethodInvocation_Base(?invo, ?base),
+  Stats_Simple_InsensVarPointsTo(?mapValue, ?base),
+  isMapValue(?mapValue),
+  AssignReturnValue(?invo, ?to).
+
+MapAcceptsValueTypeByDowncast(?mapValue, ?type) :-
+  GetMethodInvocationBasePointsToMap(?invo, _, ?mapValue),
+  GetFollowedByDownCast(?invo, ?downCastIns),
+  AssignCast_Type(?downCastIns, ?type).
+
+GetMethodInvocationBasePointsToCollection(?invo, ?to, ?collectionValue) :-
+  Stats_Simple_InsensCallGraphEdge(?invo, ?method),
+  isCollectionGetMethod(?method),
+  MethodInvocation_Base(?invo, ?base),
+  Stats_Simple_InsensVarPointsTo(?collectionValue, ?base),
+  isCollectionValue(?collectionValue),
+  AssignReturnValue(?invo, ?to).
+
+CollectionAcceptsValueTypeByDowncast(?collectionValue, ?type) :-
+  GetMethodInvocationBasePointsToCollection(?invo, _, ?collectionValue),
+  GetFollowedByDownCast(?invo, ?downCastIns),
+  AssignCast_Type(?downCastIns, ?type).
+
+isMapValue(?value) :-
+  ReachableValue(_, ?value),
+  isValue(?value),
+  Value_Type(?value, ?type),
+  basic.SubtypeOf(?type, "java.util.Map").
+
+isCollectionValue(?value) :-
+  ReachableValue(_, ?value),
+  isValue(?value),
+  Value_Type(?value, ?type),
+  basic.SubtypeOf(?type, "java.util.Collection").
+
+FieldPointsToMap(?mapValue, ?field) :-
+  isMapValue(?mapValue),
+  Stats_Simple_InsensInstanceFieldPointsTo(?mapValue, ?field, _).
+
+FieldPointsToMap(?mapValue, ?field) :-
+  isMapValue(?mapValue),
+  Stats_Simple_InsensStaticFieldPointsTo(?mapValue, ?field).
+
+FieldPointsToCollection(?collectionValue, ?field) :-
+  isCollectionValue(?collectionValue),
+  Stats_Simple_InsensInstanceFieldPointsTo(?collectionValue, ?field, _).
+
+FieldPointsToCollection(?collectionValue, ?field) :-
+  isCollectionValue(?collectionValue),
+  Stats_Simple_InsensStaticFieldPointsTo(?collectionValue, ?field).
+
+MapAcceptsKeyType(?mapValue, ?type) :-
+  MapAcceptsKeyTypeByGenericFieldInfo(?mapValue, ?type).
+
+MapAcceptsKeyType(?mapValue, ?type) :-
+  isMapValue(?mapValue),
+  !MapAcceptsKeyTypeByGenericFieldInfo(?mapValue, _),
+  ?type = "java.lang.Object".
+
+MapAcceptsValueType(?mapValue, ?type) :-
+  isMapValue(?mapValue),
+  (MapAcceptsValueTypeByDowncast(?mapValue, ?type);
+   MapAcceptsValueTypeByGenericFieldInfo(?mapValue, ?type)).
+/*
+MapAcceptsValueType(?mapValue, ?type) :-
+  isMapValue(?mapValue),
+  !MapAcceptsValueTypeByDowncast(?mapValue, ?type),
+  MapAcceptsValueTypeByGenericFieldInfo(?mapValue, ?type).
+
+MapAcceptsValueType(?mapValue, ?type) :-
+  isMapValue(?mapValue),
+  MapAcceptsValueTypeByDowncast(?mapValue, ?type),
+  !MapAcceptsValueTypeByGenericFieldInfo(?mapValue, ?type).
+*/
+
+MapAcceptsValueType(?mapValue, ?type) :-
+  isMapValue(?mapValue),
+  !MapAcceptsValueTypeByDowncast(?mapValue, _),
+  !MapAcceptsValueTypeByGenericFieldInfo(?mapValue, _),
+  ?type = "java.lang.Object".
+
+CollectionAcceptsValueType(?collectionValue, ?type) :-
+  isCollectionValue(?collectionValue),
+  (CollectionAcceptsValueTypeByDowncast(?collectionValue, ?type);
+   CollectionAcceptsValueTypeByGenericFieldInfo(?collectionValue, ?type)).
+/*
+CollectionAcceptsValueType(?collectionValue, ?type) :-
+  isCollectionValue(?collectionValue),
+  !CollectionAcceptsValueTypeByDowncast(?collectionValue, ?type),
+  CollectionAcceptsValueTypeByGenericFieldInfo(?collectionValue, ?type).
+
+CollectionAcceptsValueType(?collectionValue, ?type) :-
+  isCollectionValue(?collectionValue),
+  CollectionAcceptsValueTypeByDowncast(?collectionValue, ?type),
+  !CollectionAcceptsValueTypeByGenericFieldInfo(?collectionValue, ?type).
+*/
+CollectionAcceptsValueType(?collectionValue, ?type) :-
+  isCollectionValue(?collectionValue),
+  !CollectionAcceptsValueTypeByDowncast(?collectionValue, _),
+  !CollectionAcceptsValueTypeByGenericFieldInfo(?collectionValue, _),
+  ?type = "java.lang.Object".
+
+MapAcceptsValueFallbackType(?value, ?type) :-
+  isMapValue(?value),
+  !MapAcceptsValueType(?value, _),
+  ?type = "java.lang.Object".
+
+.output MapAcceptsValueFallbackType
+
+MapAcceptsKeyFallbackType(?value, ?type) :-
+  isMapValue(?value),
+  !MapAcceptsKeyType(?value, _),
+  ?type = "java.lang.Object".
+
+.output MapAcceptsKeyFallbackType
+
+CollectionAcceptsValueFallbackType(?value, ?type) :-
+  isCollectionValue(?value),
+  !CollectionAcceptsValueType(?value, _),
+  ?type = "java.lang.Object".
+
+.output isMapValue
+
+isMapField(?field) :-
+  isField(?field),
+  Field_Type(?field, ?type),
+  basic.SubtypeOf(?type, "java.util.Map").
+
+.output isMapField
+
+isCollectionField(?field) :-
+  isField(?field),
+  Field_Type(?field, ?type),
+  basic.SubtypeOf(?type, "java.util.Collection").
+
+.output isCollectionField
+
+.decl SootFieldToGenericAsmField(?sootField:Field, ?asmField:Field)
+
+SootFieldToGenericAsmField(?sootField, ?asmField) :-
+  Field_SimpleName(?sootField, ?fieldName),
+  isGenericField(?asmField),
+  GenericField_SimpleName(?asmField, ?fieldName),
+  Field_DeclaringType(?sootField, ?declaringType),
+  GenericField_DeclaringType(?asmField, ?declaringType).
+
+.output SootFieldToGenericAsmField
+/*
+MapAcceptsKeyTypeByGenericFieldInfo(?value, ?keyType) :-
+  isMapField(?field),
+  !SootFieldToGenericAsmField(?field, _),
+  ?keyType = "java.lang.Object".
+
+MapAcceptsValueTypeByGenericFieldInfo(?value, ?valType) :-
+  isMapField(?field),
+  !SootFieldToGenericAsmField(?field, _),
+  ?valType = "java.lang.Object".
+*/
+MapAcceptsKeyTypeByGenericFieldInfo(?value, ?keyType) :-
+  isMapField(?field),
+  FieldPointsToMap(?value, ?field),
+  SootFieldToGenericAsmField(?field, ?asmField),
+  GenericField_Type(?asmField, ?type),
+  GenericTypeParameters(?type, 0, ?keyType),
+  isType(?keyType).
+
+MapAcceptsKeyTypeByGenericFieldInfo(?value, ?keyErasedType) :-
+  isMapField(?field),
+  FieldPointsToMap(?value, ?field),
+  SootFieldToGenericAsmField(?field, ?asmField),
+  GenericField_Type(?asmField, ?type),
+  GenericTypeParameters(?type, 0, ?keyType),
+  GenericType_ErasedType(?keyType, ?keyErasedType).
+
+MapAcceptsValueTypeByGenericFieldInfo(?value, ?valueType) :-
+  isMapField(?field),
+  FieldPointsToMap(?value, ?field),
+  SootFieldToGenericAsmField(?field, ?asmField),
+  GenericField_Type(?asmField, ?type),
+  GenericTypeParameters(?type, 1, ?valueType),
+  isType(?valueType).
+
+MapAcceptsValueTypeByGenericFieldInfo(?value, ?valueErasedType) :-
+  isMapField(?field),
+  FieldPointsToMap(?value, ?field),
+  SootFieldToGenericAsmField(?field, ?asmField),
+  GenericField_Type(?asmField, ?type),
+  GenericTypeParameters(?type, 1, ?valueType),
+  GenericType_ErasedType(?valueType, ?valueErasedType).
+
+CollectionAcceptsValueTypeByGenericFieldInfo(?value, ?valueType) :-
+  isCollectionField(?field),
+  FieldPointsToCollection(?value, ?field),
+  SootFieldToGenericAsmField(?field, ?asmField),
+  GenericField_Type(?asmField, ?type),
+  GenericTypeParameters(?type, 0, ?valueType),
+  isType(?valueType).
+
+CollectionAcceptsValueTypeByGenericFieldInfo(?value, ?valueErasedType) :-
+  isCollectionField(?field),
+  FieldPointsToCollection(?value, ?field),
+  SootFieldToGenericAsmField(?field, ?asmField),
+  GenericField_Type(?asmField, ?type),
+  GenericTypeParameters(?type, 0, ?valueType),
+  GenericType_ErasedType(?valueType, ?valueErasedType).

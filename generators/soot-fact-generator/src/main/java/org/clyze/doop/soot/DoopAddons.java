@@ -16,7 +16,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.JavaFactWriter;
-import org.clyze.utils.DoopConventions;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;

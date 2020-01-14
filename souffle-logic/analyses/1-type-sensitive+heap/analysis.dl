@@ -12,11 +12,10 @@
   .type Context  = [ type:Type ]
   .type HContext = [ type:Type ]
 
-  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     Value_DeclaringType(?value, ?type), 
-    ?calleeCtx = [?type],
-    ?tomethod = ?tomethod.
+    ?calleeCtx = [?type].
 
   // For this analysis, static calls just keep the same context as the
   // caller.

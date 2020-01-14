@@ -1,7 +1,6 @@
 package org.clyze.doop.dex;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.checkerframework.checker.nullness.qual.*;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FieldInfo;
@@ -55,7 +54,7 @@ class DexMethodFactWriter extends JavaFactWriter {
     private static final boolean extractRegisterTypes = false;
 
     private static final boolean debug = false;
-    private static final Log logger = LogFactory.getLog(DexMethodFactWriter.class);
+    private final Logger logger = Logger.getLogger(getClass());
 
     // The following fields are needed to process the current method.
     private final DexBackedMethod m;
@@ -877,7 +876,7 @@ class DexMethodFactWriter extends JavaFactWriter {
      * @param op     the instruction opcode
      */
     private void writeStatementType(String insn, Opcode op) {
-        InferType in_type  = null;
+        InferType in_type = null;
         InferType out_type = null;
         switch (op) {
         // Binops
@@ -982,6 +981,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             in_type = InferType.BITS64; out_type = InferType.BITS64; break;
         }
 
+        //noinspection ConstantConditions
         if (in_type == null || out_type == null)
             System.err.println("Cannot determine statement type for instruction " + insn + " (opcode: " + op + ")");
         else

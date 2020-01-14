@@ -21,18 +21,24 @@ plugins {
 }
 
 // Warning: -Xss is restricted in recent Java versions.
-def defaultFactGenJvmArgs = ["-DmaxHeapSize=12000m", "-DstackSize=1000m"]
+def factGenXmx='12000m'
+def factGenStack='1000m'
+def defaultFactGenJvmArgs = ["-DmaxHeapSize=${factGenXmx}", "-DstackSize=${factGenStack}"]
+
+// Should the fact generators be linked as normal Java libraries? By
+// default this is false, as this integrates many (possibly duplicate
+// or incompatible) libraries due to the different front ends.
+boolean linkFactGenerators = project.hasProperty('linkFactGenerators') ? project.property('linkFactGenerators') : false
 
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
 group = "org.clyze"
 
-//For the doop app
+// Doop entry point.
 mainClassName = "org.clyze.doop.Main"
 
-//def heapDLVersion = "master-SNAPSHOT"
-def heapDLVersion = "1.1.4"
+def heapDLVersion = "1.1.8"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
@@ -53,7 +59,6 @@ allGeneratorProjects.each {
         repositories {
             mavenLocal()
             mavenCentral()
-            maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
             maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
         }
     }
@@ -101,8 +106,9 @@ compileGroovy {
 }
 
 // Set dependency version so that they are available to subprojects.
+gradle.rootProject.ext.antlrVersion='4.7.2'
 gradle.rootProject.ext.groovyVersion="2.5.7"
-gradle.rootProject.ext.clueCommonVersion='3.13.0'
+gradle.rootProject.ext.clueCommonVersion='3.20.0'
 gradle.rootProject.ext.spockVersion='1.3-groovy-2.5'
 // Set other variables for subprojects.
 gradle.rootProject.ext.resourcesDir='resources'
@@ -110,25 +116,40 @@ gradle.rootProject.ext.resourcesDir='resources'
 dependencies {
     apktool "ext:apktool:2.4.0"                                 // needed for decoding APK inputs
     compile project(':generators:fact-generator-common')
-    compile "org.clyze:clue-common:${clueCommonVersion}",
-            "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
+    compile "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
             "commons-io:commons-io:2.4",                        // File Utils
-            "com.github.plast-lab:HeapDL:$heapDLVersion",
+            "org.clyze:HeapDL:$heapDLVersion",
             "com.jcabi:jcabi-manifests:1.1"                     // manifest reader
+    compile "com.google.guava:guava:27.1-jre"                   // for Scaler
 
-    runtime "org.clyze:jphantom:1.2",                           // JPhantom is a runtime dependency
-            "ext:herosclasses:1.1",
-            "ext:axml:2.0"
+    runtime "org.clyze:jphantom:1.2"                            // JPhantom is a runtime dependency
 
-    // JimpleParser
-    antlr   "org.antlr:antlr4:4.5.1-1"
-    compile "org.antlr:antlr4-runtime:4.5.1-1"
+    // Jimple parser
+    antlr   "org.antlr:antlr4:${antlrVersion}"
+    compile "org.antlr:antlr4-runtime:${antlrVersion}"
 
     testCompile "org.spockframework:spock-core:${spockVersion}"
+}
+
+// If fact generators are linked, mark them as dependencies and set up
+// an appropriate environment.
+if (linkFactGenerators) {
+    dependencies {
+        runtime project(':generators:dex-fact-generator')
+        runtime project(':generators:soot-fact-generator')
+        runtime project(':generators:wala-fact-generator')
+    }
+    def jvmMemArgs = ["-Xmx${factGenXmx}", "-Xss${factGenStack}"] as List<String>
+    application {
+        applicationDefaultJvmArgs = jvmMemArgs
+    }
+    test {
+        jvmArgs jvmMemArgs
+    }
 }
 
 applicationDistribution.from(file("$projectDir/logic")) {
@@ -262,7 +283,7 @@ test {
     // failFast = true
     maxParallelForks = 1
     // forkEvery = 1
-    jvmArgs ['-DreservedCodeCacheSize=1g'] + defaultFactGenJvmArgs
+    jvmArgs.addAll(['-DreservedCodeCacheSize=1g'] + defaultFactGenJvmArgs)
     testLogging {
         exceptionFormat = 'full'
     }
@@ -327,12 +348,25 @@ task printClasspath {
     }
 }
 
+task sourcesJar(type: Jar, dependsOn: classes) {
+    archiveClassifier.set('sources')
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier.set('javadoc')
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
 
 if (project.hasProperty('artifactory_user')) {
 
     // Generate a jar with all the logic files
     task logicFilesJar(type: Jar) {
-        into('logic') { from "logic" }
         into('souffle-logic') { from "souffle-logic" }
         into('souffle-scripts') { from "souffle-scripts" }
     }
@@ -341,6 +375,8 @@ if (project.hasProperty('artifactory_user')) {
         publications {
             mavenJava(MavenPublication) {
                 from components.java
+                artifact tasks.sourcesJar
+                artifact tasks.javadocJar
 
                 artifact logicFilesJar {
                     classifier "logic-files"

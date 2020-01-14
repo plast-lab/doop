@@ -33,10 +33,13 @@
 .decl Type_string(?t:PrimitiveType)
 .decl Type_none(?t:PrimitiveType)
 
+
+
 //-----------------------------------------------------------------------------
 
 .type Field
 .decl isField(?field:Field)
+.decl isGenericField(?field:Field)
 
 .decl Field_DeclaringType(?field:Field, ?declaringClass:ClassType)
 .decl Field_SimpleName(?field:Field, ?simpleName:symbol)

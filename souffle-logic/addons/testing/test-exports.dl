@@ -1,4 +1,8 @@
 // Extra logic included by some tests.
+#ifdef SANITY
+.output basic.DuplicateMethodLookup
+.output basic.DuplicateMethodImplemented
+#endif // SANITY
 
 #ifdef SANITY
 .output basic.DuplicateMethodLookup

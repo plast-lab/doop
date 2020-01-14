@@ -98,6 +98,7 @@ class FactWriter extends JavaFactWriter {
                 writeAnnotationElements("type", classStr, null, aTag.getElems());
             }
         }
+        _db.add(TYPE_SIMPLENAME, classStr, c.getShortName());
     }
 
     /**
@@ -212,11 +213,13 @@ class FactWriter extends JavaFactWriter {
         _db.add(PHANTOM_BASED_METHOD, sig);
     }
 
+    @SuppressWarnings("TypeMayBeWeakened")
     void writeEnterMonitor(SootMethod m, EnterMonitorStmt stmt, Local var, Session session) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
         _db.add(ENTER_MONITOR, ii.insn, str(ii.index), _rep.local(m, var), ii.methodId);
     }
 
+    @SuppressWarnings("TypeMayBeWeakened")
     void writeExitMonitor(SootMethod m, ExitMonitorStmt stmt, Local var, Session session) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
         _db.add(EXIT_MONITOR, ii.insn, str(ii.index), _rep.local(m, var), ii.methodId);
@@ -242,7 +245,7 @@ class FactWriter extends JavaFactWriter {
         _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
     }
 
-    void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session) {
+    void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, Value expr, Session session) {
         String heap = _rep.heapAlloc(m, expr, session);
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
 

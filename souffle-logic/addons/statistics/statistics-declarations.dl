@@ -187,6 +187,15 @@ OUTPUT_STATS(Stats_MethodContextCount)
 .decl Stats_Methods(?n:number)
 OUTPUT_STATS(Stats_Methods)
 
+.decl Method_NumberOfContexts(?method:Method, ?n:number)
+OUTPUT_STATS(Method_NumberOfContexts)
+
+.decl Method_VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
+OUTPUT_STATS(Method_VPTCountPerMethodVariable)
+
+.decl Method_TotalVPT(?method:Method, Y:number)
+OUTPUT_STATS(Method_TotalVPT)
+
 //// Count how many local vars, a reachable method has
 //.decl Stats_InsensVarInReachableMethod(?var:Var, ?method:Method)
 //OUTPUT_STATS(Stats_InsensVarInReachableMethod)

@@ -1,0 +1,311 @@
+// Context-sensitive pointer analysis with context of 2 object and a
+// context-sensitive heap abstraction.
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
+// For this analysis the context of a method call corresponds to the
+// identity of the receiver object and the receiver object of the caller.
+// Again, this may trigger creation of a new object.
+.comp AdaptiveTwoObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
+
+// In this analysis, the real context is a pair of Values and the real
+  // heap context a single Value.
+  .type Context  = [ value1:mainAnalysis.Value, value2:mainAnalysis.Value ]
+  .type HContext = [ value:mainAnalysis.Value ]
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+    //ApplicationMethod(?tomethod),
+    ?hctx = [?hctxValue],
+    ?calleeCtx = [?hctxValue, ?value],
+    ?tomethod = ?tomethod.
+/*
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+    !ApplicationMethod(?tomethod),
+    isImmutableContext(?calleeCtx).
+*/
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    MethodInvocation_Method(?invo, ?tomethod),
+    //ApplicationMethod(?tomethod),
+    ?calleeCtx = ?callerCtx,
+    ?tomethod = ?tomethod.
+/*
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    MethodInvocation_Method(?invo, ?tomethod),
+    !ApplicationMethod(?tomethod),
+    isImmutableContext(?calleeCtx).
+*/
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),
+    //isImmutableHContext(?hctx).
+    ?ctx = [?ctxValue1, ?ctxValue2],
+    ?hctx = [?ctxValue2],
+    ?ctxValue1 = ?ctxValue1.
+
+  InitContextResponse(?value, ?ctx) :-
+    InitContextRequest(?value),
+    ?ctx = [?value, ?value].
+
+  InitHContextResponse(?value, ?hctx) :-
+    InitHContextRequest(?value),
+    ?hctx = [?value].
+
+  .decl Method_NumberOfContexts(?method:Method, ?n:number)
+
+    Method_NumberOfContexts(?method, ?n) :-
+      Reachable(?method),
+      ?n =  count : {ReachableContext(_, ?method)}.
+
+    .output Method_NumberOfContexts
+
+    .decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
+
+    VPTCountPerMethodVariable(?method, ?var, Y) :-
+       Var_DeclaringMethod(?var, ?method),
+       Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
+
+    .decl MethodTotalVPT(?method:Method, Y:number)
+
+    MethodTotalVPT(?method, Y) :-
+      mainAnalysis.Reachable(?method),
+      Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
+
+    MethodTotalVPT(?method, 0) :-
+      mainAnalysis.Reachable(?method),
+      !Var_DeclaringMethod(_, ?method).
+
+    .output MethodTotalVPT
+
+    .decl MethodCantBenefitFromCS(?method:Method)
+    .decl MethodDoesntDoStores(?method:Method)
+    .decl MethodDoesntPassReferences(?method:Method)
+    .decl MethodDoesntReturnReference(?method:Method)
+    .decl MethodDoesStores(?method:Method)
+    .decl MethodPassesReferences(?method:Method)
+    .decl MethodReturnsReference(?method:Method)
+    .decl MethodDoesntCallOthers(?method:Method)
+    .decl MethodCallsOthers(?method:Method)
+
+    .output MethodCantBenefitFromCS
+    .output MethodDoesntDoStores
+    .output MethodDoesntPassReferences
+    .output MethodDoesntReturnReference
+
+    MethodDoesntDoStores(?method) :-
+      isMethod(?method),
+      !MethodDoesStores(?method).
+
+    MethodDoesStores(?method) :-
+      Instruction_Method(?instruction, ?method),
+      (isStoreInstanceField_Insn(?instruction);
+       isStoreStaticField_Insn(?instruction)).
+
+    MethodPassesReferences(?method) :-
+      Instruction_Method(?instruction, ?method),
+      isMethodInvocation(?instruction),
+      ActualParam(_, ?instruction, ?actual),
+      Var_Type(?actual, ?type),
+      (isReferenceType(?type);
+       isArrayType(?type)).
+
+    MethodDoesntPassReferences(?method) :-
+      isMethod(?method),
+      !MethodPassesReferences(?method).
+
+    MethodCallsOthers(?method) :-
+      Instruction_Method(?instruction, ?method),
+      isMethodInvocation(?instruction).
+
+    MethodDoesntCallOthers(?method) :-
+      isMethod(?method),
+      !MethodCallsOthers(?method).
+
+    MethodReturnsReference(?method) :-
+      ReturnVar(?return, ?method),
+      Var_Type(?return, ?type),
+      (isReferenceType(?type);
+       isArrayType(?type)).
+
+    MethodDoesntReturnReference(?method) :-
+      isMethod(?method),
+      !MethodReturnsReference(?method).
+
+    MethodCantBenefitFromCS(?method) :-
+      MethodDoesntDoStores(?method),
+      (MethodDoesntCallOthers(?method);
+       MethodDoesntPassReferences(?method)),
+      MethodDoesntReturnReference(?method).
+
+    MethodCantBenefitFromCS(?method) :-
+      Method_SimpleName(?method, "equals").
+
+    MethodCantBenefitFromCS(?method) :-
+      Method_SimpleName(?method, "hashCode").
+
+    MethodCantBenefitFromCS(?method) :-
+      Method_SimpleName(?method, "compareTo").
+
+     .decl MethodContext(?method: Method, ?ctx1: mainAnalysis.Value, ?ctx2: mainAnalysis.Value)
+
+        MethodContext(?method, ?ctx1, ?ctx2) :-
+          mainAnalysis.ReachableContext(?ctx, ?method),
+          ?ctx = [?ctx1, ?ctx2].
+
+        .output MethodContext
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+  // In this analysis, the real context is a pair of Values and the real
+  // heap context a single Value.
+  .type Context  = [ value1:mainAnalysis.Value, value2:mainAnalysis.Value ]
+  .type HContext = [ value:mainAnalysis.Value ]
+
+   .decl InsensitiveMethod(?method:Method)
+   .decl EntryContextMethod(?method:Method)
+   .decl StickyContextMethod(?method:Method)
+   .decl SpecialContextMethod(?method:Method)
+
+   .input InsensitiveMethod(IO="file", filename="InsensitiveMethod.facts", delimiter="\t")
+   .input EntryContextMethod(IO="file", filename="EntryContextMethod.facts", delimiter="\t")
+   .input StickyContextMethod(IO="file", filename="StickyContextMethod.facts", delimiter="\t")
+
+    SpecialContextMethod(?method) :-
+      InsensitiveMethod(?method),
+      EntryContextMethod(?method),
+      StickyContextMethod(?method).
+
+    // 2-object
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+      ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+      !SpecialContextMethod(?tomethod),
+      ?hctx = [?hctxValue],
+      ?calleeCtx = [?hctxValue, ?value].
+
+    // context-insensitive
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+      ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+      InsensitiveMethod(?tomethod),
+      isImmutableContext(?calleeCtx).
+
+
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+      ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+      EntryContextMethod(?tomethod),
+      ?hctx = [?hctxValue],
+      ?calleeCtx = [?hctxValue, ?value].
+
+    ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+      ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+      StickyContextMethod(?tomethod),
+      ?calleeCtx = ?callerCtx.
+
+    // 2-object, entry, sticky
+    StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+      StaticContextRequest(?callerCtx, ?invo),
+      MethodInvocation_Method(?invo, ?tomethod),
+      !InsensitiveMethod(?tomethod),
+      ?calleeCtx = ?callerCtx.
+
+    // context-insensitive
+    StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+      StaticContextRequest(?callerCtx, ?invo),
+      MethodInvocation_Method(?invo, ?tomethod),
+      InsensitiveMethod(?tomethod),
+      isImmutableContext(?calleeCtx).
+
+    // Pick last context element as heap context
+    RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+      RecordContextRequest(?ctx, ?value, ?var),
+      isImmutableHContext(?hctx).
+      //?ctx = [?ctxValue1, ?ctxValue2],
+      //?hctx = [?ctxValue2],
+      //?ctxValue1 = ?ctxValue1.
+
+    InitContextResponse(?value, ?ctx) :-
+      InitContextRequest(?value),
+      ?ctx = [?value, ?value].
+
+    InitHContextResponse(?value, ?hctx) :-
+      InitHContextRequest(?value),
+      ?hctx = [?value].
+
+    .decl SensitivityViolation(?method:Method)
+    SensitivityViolation(?method) :-
+      Reachable(?method),
+      InsensitiveMethod(?method),
+      EntryContextMethod(?method).
+
+    SensitivityViolation(?method) :-
+      Reachable(?method),
+      InsensitiveMethod(?method),
+      StickyContextMethod(?method).
+
+    SensitivityViolation(?method) :-
+      Reachable(?method),
+      EntryContextMethod(?method),
+      StickyContextMethod(?method).
+
+    .printsize EntryContextMethod
+    .output EntryContextMethod
+    .printsize StickyContextMethod
+    .output StickyContextMethod
+    .printsize InsensitiveMethod
+    .output InsensitiveMethod
+    .printsize SensitivityViolation
+    .output SensitivityViolation
+
+    .decl Method_NumberOfContexts(?method:Method, ?n:number)
+
+    Method_NumberOfContexts(?method, ?n) :-
+      Reachable(?method),
+      ?n =  count : {ReachableContext(_, ?method)}.
+
+    .output Method_NumberOfContexts
+
+    .decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
+
+    VPTCountPerMethodVariable(?method, ?var, Y) :-
+       Var_DeclaringMethod(?var, ?method),
+       Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
+
+    .decl MethodTotalVPT(?method:Method, Y:number)
+
+    MethodTotalVPT(?method, Y) :-
+      mainAnalysis.Reachable(?method),
+      Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
+
+    MethodTotalVPT(?method, 0) :-
+      mainAnalysis.Reachable(?method),
+      !Var_DeclaringMethod(_, ?method).
+
+    .output MethodTotalVPT
+
+    .decl MethodContext(?method: Method, ?ctx1: mainAnalysis.Value, ?ctx2: mainAnalysis.Value)
+
+    MethodContext(?method, ?ctx1, ?ctx2) :-
+      mainAnalysis.ReachableContext(?ctx, ?method),
+      ?ctx = [?ctx1, ?ctx2].
+
+    .output MethodContext
+
+*/
+}

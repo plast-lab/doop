@@ -15,10 +15,9 @@
   .type Context  = [ value:mainAnalysis.Value ]
   .type HContext = [ value:mainAnalysis.Value ]
 
-  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
-    ?calleeCtx = [?value],
-    ?tomethod = ?tomethod.                
+    ?calleeCtx = [?value].
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

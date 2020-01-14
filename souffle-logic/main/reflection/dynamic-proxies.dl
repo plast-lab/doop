@@ -204,7 +204,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?proxy, ?init, 0) :-
    ProxyObject_HandlerHctx(?proxy, ?hctx).
 ReachableContext(?calleeCtx, ?init),
 VarPointsTo(?hctx, ?handlerObj, ?calleeCtx, ?h) :-
-   configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?proxy, ?calleeCtx),
+   configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?proxy, ?init, ?calleeCtx),
    ProxyInit(?callerCtx, ?hctx, ?invo, ?proxy, ?handlerObj, ?init),
    FormalParam(0, ?init, ?h).
 
@@ -231,7 +231,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvo
 
 ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
 HandledProxy(?newProxyInstanceInvo, ?handlerType) :-
-   configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?handlerObj, ?calleeCtx),
+   configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, ?calleeCtx),
    ProxyCallGraphEdgeCandidate(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, ?value, ?handlerType),
    ProxyObject_Invocation(?value, ?newProxyInstanceInvo).
 

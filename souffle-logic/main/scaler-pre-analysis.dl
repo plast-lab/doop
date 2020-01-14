@@ -1,4 +1,46 @@
 // Compute and output the relations that are needed by Scaler.
+.decl ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)
+.output ReceiverOfAllocatingMethod_Object
+
+ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject) :-
+  ReceiverOfMethod(?allocatingMethod, ?receiver),
+  Instruction_Method(?insn, ?allocatingMethod),
+  AssignHeapAllocation_Heap(?insn, ?allocatedObject).
+
+.decl ReceiverOfMethod(?method:Method, ?value:mainAnalysis.Value)
+
+ReceiverOfMethod(?method, ?receiver) :-
+  ThisVar(?method, ?this),
+  mainAnalysis.VarPointsTo(_, ?receiver, _, ?this).
+
+.decl Method_AllPossibleTwoObjContexts(?method:Method, ?receiverOfAllocator:mainAnalysis.Value, ?receiver:mainAnalysis.Value)
+.output Method_AllPossibleTwoObjContexts
+
+Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, ?receiver) :-
+  ThisVar(?method, ?this),
+  mainAnalysis.VarPointsTo(_, ?receiver, _, ?this),
+  ReceiverOfAllocatingMethod_Object(?receiverOfAllocator, ?receiver).
+
+Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, ?receiver) :-
+  Method_Modifier("static", ?method),
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
+  Instruction_Method(?invo, ?caller),
+  Method_AllPossibleTwoObjContexts(?caller, ?receiverOfAllocator, ?receiver).
+
+.decl Method_AllPossibleTwoTypeContexts(?method:Method, ?receiverOfAllocatorType:Type, ?receiverType:Type)
+.output Method_AllPossibleTwoTypeContexts
+
+Method_AllPossibleTwoTypeContexts(?method, ?receiverOfAllocatorType, ?receiverType) :-
+  Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, ?receiver),
+  mainAnalysis.Value_Type(?receiver, ?receiverType),
+  mainAnalysis.Value_Type(?receiverOfAllocator, ?receiverOfAllocatorType).
+
+.decl Method_AllPossibleOneTypeContexts(?method:Method, ?receiverType:Type)
+.output Method_AllPossibleOneTypeContexts
+
+Method_AllPossibleOneTypeContexts(?method, ?receiverType) :-
+  Method_AllPossibleTwoTypeContexts(?method, _, ?receiverType).
+
 
 .decl AllCallGraphEdge(?from:MethodInvocation, ?to:Method)
 .output AllCallGraphEdge(IO="file",filename="CALL_EDGE.csv",delimiter="\t")
@@ -19,12 +61,151 @@ AllCallGraphEdge(?from, ?to) :- TamiflexCallGraphEdge(_, ?from, _, ?to).
 .output CallSiteIn(IO="file",filename="CALLSITEIN.csv",delimiter="\t")
 
 CallSiteIn(?invo, ?method) :-
-    Reachable(?method),
-    Instruction_Method(?invo, ?method),
-    isMethodInvocation(?invo).
+  Reachable(?method),
+  Instruction_Method(?invo, ?method),
+  isMethodInvocation(?invo).
+
+.decl MethodCantBenefitFromCS(?method:Method)
+.decl MethodDoesntDoStores(?method:Method)
+.decl MethodDoesntPassReferences(?method:Method)
+.decl MethodDoesntReturnReference(?method:Method)
+.decl MethodDoesStores(?method:Method)
+.decl MethodPassesReferences(?method:Method)
+.decl MethodReturnsReference(?method:Method)
+.decl MethodDoesntCallOthers(?method:Method)
+.decl MethodCallsOthers(?method:Method)
+
+ MethodDoesStores(?method) :-
+   Instruction_Method(?instruction, ?method),
+   (isStoreInstanceField_Insn(?instruction);
+    isStoreStaticField_Insn(?instruction);
+    isStoreArrayIndex_Insn(?instruction)).
+
+ MethodReturnsReference(?method) :-
+   ReturnVar(?return, ?method),
+   Var_Type(?return, ?type),
+   (isReferenceType(?type);
+    isArrayType(?type)).
+
+ .decl MethodThrowsException(?method:Method)MethodThrowsException(?method) :-
+   Throw(_, ?var),
+   Var_DeclaringMethod(?var, ?method).
+
+.decl MethodCanBenefitFromCS(?method:Method)
+
+MethodCanBenefitFromCS(?method) :-
+  MethodDoesStores(?method);
+  MethodReturnsReference(?method);
+  MethodThrowsException(?method);
+  Method_Modifier("native", ?method).
+
+MethodCanBenefitFromCS(?method) :-
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?callee),
+  MethodCanBenefitFromCS(?callee),
+  Instruction_Method(?invo, ?method).
+
+ .decl MethodCannotBenefitFromCS(?method:Method)
+ MethodCannotBenefitFromCS(?method) :-
+   Reachable(?method),
+   !MethodCanBenefitFromCS(?method).
+
+.output MethodCannotBenefitFromCS
+
+.decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
+
+VPTCountPerMethodVariable(?method, ?var, Y) :-
+   Var_DeclaringMethod(?var, ?method),
+   Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
+
+.decl Method_TotalVPT(?method:Method, Y:number)
+
+Method_TotalVPT(?method, Y) :-
+  mainAnalysis.Reachable(?method),
+  Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
+
+Method_TotalVPT(?method, 0) :-
+  mainAnalysis.Reachable(?method),
+  !Var_DeclaringMethod(_, ?method).
+
+.output Method_TotalVPT(IO="file", filename="Method_TotalVPT.csv", delimiter="\t")
 
 
-.output Value_DeclaringType(IO="file",filename="DECLARING_CLASS_ALLOCATION.csv",delimiter="\t")
+/*
+.decl EntryNonDataStructureMethod(?method:Method)
+
+EntryNonDataStructureMethod(?method) :-
+  mainAnalysis.Reachable(?method),
+  !DataStructureMethod(?method),
+  AllCallGraphEdge(?invo, ?method),
+  Instruction_Method(?invo, ?caller),
+  Method_DeclaringType(?caller, ?class1),
+  Method_DeclaringType(?method, ?class2),
+  ?class1 != ?class2.
+
+    .decl StickyContextMethod(?method:Method)
+    .decl EntryContextMethod(?method:Method)
+
+    .output StickyContextMethod(IO="file",filename="StickyContextMethod.csv",delimiter="\t")
+
+     .decl DataStructureClass(?class:Type)
+      DataStructureClass(?class) :-
+        isClassType(?class),
+        basic.SubtypeOf(?class, ?superclass),
+        (?superclass = "java.util.Map";
+         ?superclass = "java.util.Collection";
+         ?superclass = "java.util.Dictionary").
+
+      DataStructureClass(?innerClass) :-
+        DataStructureClass(?class),
+        isClassType(?innerClass),
+        match(cat(?class, "$.*"), ?innerClass).
+
+      .output DataStructureClass
+
+      .decl DataStructureMethod(?method:Method)
+      DataStructureMethod(?method) :-
+        Method_DeclaringType(?method, ?type),
+        DataStructureClass(?type).
+
+      .decl EntryDataStructureMethod(?method:Method)
+
+      EntryDataStructureMethod(?method) :-
+        DataStructureMethod(?method),
+        AllCallGraphEdge(?invo, ?method),
+        Instruction_Method(?invo, ?caller),
+        !DataStructureMethod(?caller).
+
+      EntryContextMethod(?method) :-
+        EntryNonDataStructureMethod(?method),
+        !InsensitiveMethod(?method).
+
+
+      StickyContextMethod(?method) :-
+        mainAnalysis.Reachable(?method),
+        !InsensitiveMethod(?method),
+        !DataStructureMethod(?method),
+        !EntryNonDataStructureMethod(?method).
+
+      EntryContextMethod(?method) :-
+        EntryDataStructureMethod(?method),
+        !InsensitiveMethod(?method).
+
+      .decl MethodDoesntThrowException(?method:Method)
+
+      MethodDoesntThrowException(?method) :-
+        mainAnalysis.Reachable(?method),
+        !MethodThrowsException(?method).
+
+      StickyContextMethod(?method) :-
+        DataStructureMethod(?method),
+        !InsensitiveMethod(?method),
+        !EntryDataStructureMethod(?method).
+
+    .output EntryContextMethod(IO="file",filename="EntryContextMethod.csv",delimiter="\t")
+
+
+
+.output InsensitiveMethod(IO="file",filename="InsensitiveMethod.csv",delimiter="\t")
 
 
 .decl Instance_Method(?method:Method)
@@ -47,9 +228,7 @@ Object_In(?heap, ?method) :-
     Instruction_Method(?instruction, ?method),
     AssignHeapAllocation_Heap(?instruction, ?heap).
 
-
 .output HeapAllocation_ContextInsensitive(IO="file", filename="SPECIAL_OBJECTS.csv",delimiter="\t")
-
 
 .decl Var_In(?var:Var, ?method:Method)
 .output Var_In(IO="file", filename="VAR_IN.csv", delimiter="\t")
@@ -57,24 +236,6 @@ Object_In(?heap, ?method) :-
 Var_In(?var, ?method) :-
     Reachable(?method),
     Var_DeclaringMethod(?var, ?method).
-
-.decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
-
-VPTCountPerMethodVariable(?method, ?var, Y) :-
-   Var_DeclaringMethod(?var, ?method),
-   Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
-
-.decl Method_TotalVPT(?method:Method, Y:number)
-
-Method_TotalVPT(?method, Y) :-
-  mainAnalysis.Reachable(?method),
-  Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
-
-Method_TotalVPT(?method, 0) :-
-  mainAnalysis.Reachable(?method),
-  !Var_DeclaringMethod(_, ?method).
-
-.output Method_TotalVPT(IO="file", filename="Method_TotalVPT.csv", delimiter="\t")
 
 .decl Method_Neighbor(?method:Method, ?neighbor:Method)
 
@@ -100,3 +261,145 @@ Method_NumberOfContexts(?method, ?n) :-
   ?n =  count : {mainAnalysis.ReachableContext(_, ?method)}.
 
 .output Method_NumberOfContexts(IO="file", filename="Method_NumberOfContexts.csv", delimiter="\t")
+
+.decl Prephase_ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)
+.output Prephase_ReceiverOfAllocatingMethod_Object
+
+Prephase_ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject) :-
+  ReceiverOfMethod(?allocatingMethod, ?receiver),
+  Instruction_Method(?insn, ?allocatingMethod),
+  AssignHeapAllocation_Heap(?insn, ?allocatedObject).
+
+.decl ReceiverOfMethod(?method:Method, ?value:mainAnalysis.Value)
+
+ReceiverOfMethod(?method, ?receiver) :-
+  ThisVar(?method, ?this),
+  mainAnalysis.VarPointsTo(_, ?receiver, _, ?this).
+
+ReceiverOfMethod(?method, ?receiver) :-
+  !ThisVar(?method, _),
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
+  Instruction_Method(?invo, ?caller),
+  ReceiverOfMethod(?caller, ?receiver).
+
+.decl ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)
+.output ReceiverOfAllocatingMethod_Object
+
+ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject) :-
+  Prephase_ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject).
+
+ReceiverOfAllocatingMethod_Object(?allocatedObject, ?allocatedObject) :-
+  mainAnalysis.isValue(?allocatedObject),
+  !Prephase_ReceiverOfAllocatingMethod_Object(_, ?allocatedObject).
+
+.decl Method_AllPossibleTwoObjContexts(?method:Method, ?receiverOfAllocator:mainAnalysis.Value, ?receiver:mainAnalysis.Value)
+.output Method_AllPossibleTwoObjContexts
+
+Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, "<immutable-hcontext>"),
+Method_AllPossibleTwoObjContexts(?method, "<immutable-hcontext>", ?receiver),
+Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, "<immutable-context>"),
+Method_AllPossibleTwoObjContexts(?method, "<immutable-context>", ?receiver),
+Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, ?receiver) :-
+  ThisVar(?method, ?this),
+  mainAnalysis.VarPointsTo(_, ?receiver, _, ?this),
+  ReceiverOfAllocatingMethod_Object(?receiverOfAllocator, ?receiver).
+
+Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, "<immutable-hcontext>"),
+Method_AllPossibleTwoObjContexts(?method, "<immutable-hcontext>", ?receiver),
+Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, "<immutable-context>"),
+Method_AllPossibleTwoObjContexts(?method, "<immutable-context>", ?receiver),
+Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, ?receiver) :-
+  Method_Modifier("static", ?method),
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?method),
+  Instruction_Method(?invo, ?caller),
+  Method_AllPossibleTwoObjContexts(?caller, ?receiverOfAllocator, ?receiver).
+
+
+.decl Method_AllPossibleTwoTypeContexts(?method:Method, ?receiverOfAllocatorType:Type, ?receiverType:Type)
+.output Method_AllPossibleTwoTypeContexts
+
+Method_AllPossibleTwoTypeContexts(?method, ?receiverOfAllocatorType, "<immutable-hcontext>"),
+Method_AllPossibleTwoTypeContexts(?method, "<immutable-hcontext>", ?receiverType),
+Method_AllPossibleTwoTypeContexts(?method, ?receiverOfAllocatorType, "<immutable-context>"),
+Method_AllPossibleTwoTypeContexts(?method, "<immutable-context>", ?receiverType),
+Method_AllPossibleTwoTypeContexts(?method, ?receiverOfAllocatorType, ?receiverType) :-
+  Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, ?receiver),
+  mainAnalysis.Value_Type(?receiver, ?receiverType),
+  mainAnalysis.Value_Type(?receiverOfAllocator, ?receiverOfAllocatorType).
+
+.decl Method_AllPossibleOneTypeContexts(?method:Method, ?receiverType:Type)
+.output Method_AllPossibleOneTypeContexts
+
+Method_AllPossibleOneTypeContexts(?method, ?receiverType) :-
+  Method_AllPossibleTwoTypeContexts(?method, _, ?receiverType).
+
+.decl ActualParam_Method(?var:Var, ?method:Method)
+
+ActualParam_Method(?var, ?method) :-
+  ActualParam(_, ?invo, ?var),
+  Instruction_Method(?invo, ?method).
+
+
+
+.decl InteriorVar_Method(?var:Var, ?method:Method)
+
+InteriorVar_Method(?var, ?method) :-
+  Stats_Simple_InsensReachableVar(?var),
+  Var_DeclaringMethod(?var, ?method),
+  !MethodCantBenefitFromCS(?method),
+  !StoreInstanceField(_, ?var, _, ?method),
+  !StoreInstanceField(?var, _, _, ?method),
+  !StoreStaticField(?var, _, ?method),
+  !LoadInstanceField(?var, _, _, ?method),
+  !LoadInstanceField(_, _, ?var, ?method),
+  !LoadStaticField(_, ?var, ?method),
+  !ReturnVar(?var, ?method),
+  !FormalParam(_, ?method, ?var),
+  !ActualParam_Method(?var, ?method),
+  !ThisVar(?method, ?var),
+  !ThrowVar_Method(?var, ?method).
+
+.decl ExteriorFVar_Method(?var:Var, ?method: Method)
+
+ExteriorFVar_Method(?var, ?method) :-
+  Stats_Simple_InsensReachableVar(?var),
+  Var_DeclaringMethod(?var, ?method),
+  !MethodCantBenefitFromCS(?method),
+  (StoreInstanceField(_, ?var, _, ?method);
+   StoreInstanceField(?var, _, _, ?method);
+   StoreStaticField(?var, _, ?method);
+   LoadInstanceField(?var, _, _, ?method);
+   LoadInstanceField(_, _, ?var, ?method);
+   LoadStaticField(_, ?var, ?method);
+   ReturnVar(?var, ?method);
+   FormalParam(_, ?method, ?var);
+   ActualParam_Method(?var, ?method);
+   ThisVar(?method, ?var);
+   ThrowVar_Method(?var, ?method)).
+
+.decl VariableValueEscapesMethod(?var:Var)
+
+VariableValueEscapesMethod(?var) :-
+  InteriorVar_Method(?var, ?method),
+  VarTransitivelyPointsTo(?heap, ?var),
+  ExteriorFVar_Method(?external, ?method),
+  VarTransitivelyPointsTo(?heap, ?external).
+.plan 1:(1,4,3,2)
+
+.decl VarTransitivelyPointsTo(?heap:mainAnalysis.Value, ?var:Var)
+
+VarTransitivelyPointsTo(?heap, ?var) :-
+  Stats_Simple_InsensVarPointsTo(?heap, ?var).
+
+VarTransitivelyPointsTo(?value, ?var) :-
+  Stats_Simple_InsensInstanceFieldPointsTo(?value, _, ?basevalue),
+
+.decl VariableCantBenefitFromCS(?var:Var)
+
+VariableCantBenefitFromCS(?var) :-
+  InteriorVar_Method(?var, _),
+  !VariableValueEscapesMethod(?var).
+
+.output VariableCantBenefitFromCS(IO="file", filename="VariableCantBenefitFromCS.csv", delimiter="\t")
+
+*/

@@ -15,21 +15,27 @@ repositories {
 
 dependencies {
     compile project(':generators:fact-generator-common')
-    compile "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
-            "ext:AXMLPrinter:2.0",
-            // Soot - choose one of the following:
-            // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.
-            // "ext:sootclasses:3.2.7",
-            // (b) Upstream stable Soot version.
-            // "ca.mcgill.sable:soot:3.1.0",
-            // (c) Upstream 3.x + minimal changes (mostly equivalent to our fork).
-            "ext:sootclasses:3.1.0.MINIMAL",
-            // (d) Latest tested nightly build.
-            // "ext:sootclasses:trunk.20190225",
-            // (e) Soot for Java 9.
-            // "ca.mcgill.sable:soot-j9:4.0.0-SNAPSHOT",
-            "ext:soot-infoflow:2.5.1",
-            "ext:soot-infoflow-android:2.5.1"
+
+    // Soot - choose one of the following:
+    // (a) Doop's unmaintained Soot fork. Based on Soot 3.1.
+    // compile "ext:sootclasses:3.2.7"
+    // (b) Upstream stable Soot version.
+    // compile "ca.mcgill.sable:soot:3.1.0"
+    // (c) Upstream 3.x + minimal changes (mostly equivalent to our fork).
+    compile "ext:sootclasses:3.1.0.MINIMAL"
+    // (d) Latest tested nightly build.
+    // compile "ext:sootclasses:trunk.20190225"
+    // (e) Soot for Java 9.
+    // compile "ca.mcgill.sable:soot-j9:4.0.0-SNAPSHOT"
+    compile "ext:soot-infoflow:2.5.1"
+    compile "ext:soot-infoflow-android:2.5.1"
+
+    // Possible additional dependencies for some of the above Soot versions.
+    // runtime 'ext:herosclasses:1.1'
+    // runtime 'ext:axml:2.0'
+    // runtime "ext:AXMLPrinter:2.0"
+
+    testCompile "org.codehaus.groovy:groovy-all:${groovyVersion}"  // Groovy
     testCompile "org.spockframework:spock-core:${spockVersion}"
 }
 

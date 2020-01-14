@@ -12,12 +12,15 @@ class PythonTest extends Specification {
 
 	// @spock.lang.Ignore
 	@Unroll
-	def "Python test -- fact generation and analysis"() {
+	def "Python test -- fact generation and analysis"(def mode) {
 		when:
-		Main.main((String[])["-i", Artifacts.GLOVAR_PY, "-a", "context-insensitive", "--id", "glovar", "--platform", "python_2", "-Ldebug"])
+		Main.main((String[])(["-i", Artifacts.GLOVAR_PY, "-a", "context-insensitive", "--id", "glovar", "--platform", "python_2", "-Ldebug"] + mode))
 		Analysis analysis = Main.analysis
 
 		then:
 		relationHasApproxSize(analysis, "mainAnalysis.VarPointsTo", 4)
+
+        where:
+        mode << [[], ["--Xisolate-fact-generation"]]
 	}
 }

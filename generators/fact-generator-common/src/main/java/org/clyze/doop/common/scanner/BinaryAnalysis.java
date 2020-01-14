@@ -17,7 +17,7 @@ abstract class BinaryAnalysis {
     // Dummy value for "function" column in facts.
     static final String UNKNOWN_FUNCTION = "-";
     // Dummy address.
-    public static final long UNKNOWN_ADDRESS = -1;
+    static final long UNKNOWN_ADDRESS = -1;
 
     // The database object to use for writing facts.
     private final Database db;
@@ -29,7 +29,7 @@ abstract class BinaryAnalysis {
     private final boolean onlyPreciseNativeStrings;
 
     // The native code architecture.
-    protected Arch arch;
+    Arch arch;
 
     BinaryAnalysis(Database db, String lib, boolean onlyPreciseNativeStrings) {
         this.db = db;
@@ -77,7 +77,7 @@ abstract class BinaryAnalysis {
     /**
      * Returns a list of pointer values that may point to global data.
      */
-    public Set<Long> getGlobalDataPointers() throws IOException {
+    private Set<Long> getGlobalDataPointers() throws IOException {
         Section data = getSection(".data");
         return data == null ? null : data.analyzeWords();
     }

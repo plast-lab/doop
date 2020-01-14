@@ -399,11 +399,79 @@ OptStoreArrayIndex(?from, ?base) :-
 // assignments for args and returns. It should be unnecessary, but
 // Souffle appreciates smaller deltas, since plans cannot change
 // per-rule-evaluation, only per-rule-structure.
-
+/*
 OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
   ActualParam(?index, ?invocation, ?actual),
   FormalParam(?index, ?method, ?formal).
+*/
+
+OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+#ifdef PRECISE_GENERICS
+  !isMapPutMethod(?method),
+  !isCollectionAddMethod(?method),
+#endif
+  ActualParam(?index, ?invocation, ?actual),
+  FormalParam(?index, ?method, ?formal),
+  Var_Type(?formal, ?allowedType).
+
+#ifdef PRECISE_GENERICS
+.decl isCollectionAddMethod(?method:Method)
+.decl isMapPutMethod(?method:Method)
+
+isMapPutMethod(?method) :-
+  Method_SimpleName(?method, "put"),
+  Method_DeclaringType(?method, ?mapType),
+  basic.SubtypeOf(?mapType, "java.util.Map").
+
+isCollectionAddMethod(?method) :-
+  Method_SimpleName(?method, "add"),
+  Method_DeclaringType(?method, ?collectionType),
+  basic.SubtypeOf(?collectionType, "java.util.Collection").
+
+OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
+  isMapPutMethod(?method),
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  MethodInvocation_Base(?invocation, ?base),
+  VarPointsTo(_, ?mapValue, ?callerCtx, ?base),
+  (MapAcceptsKeyType(?mapValue, ?allowedType);
+   MapAcceptsKeyFallbackType(?mapValue, ?allowedType)),
+  ActualParam(0, ?invocation, ?actual),
+  FormalParam(0, ?method, ?formal).
+
+OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
+  isMapPutMethod(?method),
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  MethodInvocation_Base(?invocation, ?base),
+  VarPointsTo(_, ?mapValue, ?callerCtx, ?base),
+  (MapAcceptsValueType(?mapValue, ?allowedType);
+   MapAcceptsValueFallbackType(?mapValue, ?allowedType)),
+  ActualParam(1, ?invocation, ?actual),
+  FormalParam(1, ?method, ?formal).
+
+OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
+  isCollectionAddMethod(?method),
+  Method_Arity(?method, 1),
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  MethodInvocation_Base(?invocation, ?base),
+  VarPointsTo(_, ?collectionValue, ?callerCtx, ?base),
+  (CollectionAcceptsValueType(?collectionValue, ?allowedType);
+   CollectionAcceptsValueFallbackType(?collectionValue, ?allowedType)),
+  ActualParam(0, ?invocation, ?actual),
+  FormalParam(0, ?method, ?formal).
+
+OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
+  isCollectionAddMethod(?method),
+  Method_Arity(?method, 2),
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  MethodInvocation_Base(?invocation, ?base),
+  VarPointsTo(_, ?collectionValue, ?callerCtx, ?base),
+  (CollectionAcceptsValueType(?collectionValue, ?allowedType);
+   CollectionAcceptsValueFallbackType(?collectionValue, ?allowedType)),
+  ActualParam(1, ?invocation, ?actual),
+  FormalParam(1, ?method, ?formal).
+#endif
 
 #ifdef INFORMATION_FLOW
 
@@ -449,23 +517,35 @@ OptRetVarPointsTo(?hctx, ?value, ?returnCtx, ?return) :-
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
-  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from),
+  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
+  Value_Type(?value, ?type),
+  basic.SubtypeOf(?type, ?allowedType),
   isHeapAllocation(?value).
-  .plan 1:(2,1,3)
+  .plan 1:(2,1,3,4,5)
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
-  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from),
+  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
+  Value_Type(?value, ?type),
+  basic.SubtypeOf(?type, ?allowedType),
   Var_DeclaringMethod(?to, ?meth),
   !SanitizationMethod(?meth).
-  .plan 1:(2,1,3)
+  .plan 1:(2,1,3,4,5)
 
 #else
+/**
+ * VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+ *  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+ *  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from).
+ *.plan 1:(2,1)
+ **/
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
-  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from).
-  .plan 1:(2,1)
+  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
+  Value_Type(?value, ?type),
+  basic.SubtypeOf(?type, ?allowedType).
+  .plan 1:(2,1,3,4)
 
 #endif // INFORMATION_FLOW
 
@@ -515,7 +595,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 
 
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, _),
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, ?calleeCtx),
   ThisVar(?tomethod, ?this),
   ZipperPrecisionCriticalMethod(?tomethod).
 
@@ -529,7 +609,7 @@ VarPointsTo(?hctx, ?value, ?immCtx, ?this) :-
 
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, _),
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?calleeCtx),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, ?calleeCtx),
   ThisVar(?tomethod, ?this),
   !Value_Null(?value).
 #ifndef X_CONTEXT_REMOVER
@@ -604,9 +684,9 @@ DuplicateContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?meth1, ?meth2) :-
 .output DuplicateContextResponse
 
 DuplicateContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx1, ?calleeCtx2) :-
-  configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, _, _),
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx1),
-  configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?calleeCtx2),
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?obj, ?tomethod, _),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?tomethod, ?calleeCtx1),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?obj, ?tomethod, ?calleeCtx2),
   ?calleeCtx1 != ?calleeCtx2.
 
 #endif // SANITY

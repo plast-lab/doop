@@ -9,9 +9,10 @@ import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
 import org.clyze.doop.common.DoopErrorCodeException
-import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.util.ClassPathHelper
 import org.clyze.doop.util.Resources
+import org.clyze.doop.utils.CPreprocessor
+import org.clyze.input.InputResolutionContext
 import org.clyze.utils.*
 import org.codehaus.groovy.runtime.StackTraceUtils
 
@@ -47,7 +48,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     InputResolutionContext ctx
 
     /**
-     * Used for invoking external commnands
+     * Used for invoking external commands
      */
     protected Executor executor
 
@@ -57,14 +58,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     protected CPreprocessor cpp
 
     /**
-     * Total time for the soot invocation
+     * Total time for the fact generator invocation
      */
     protected long factGenTime
 
     /**
      * The suffix of information flow platforms.
      */
-    static final INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
+    static final String INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
 
     String getId() { options.USER_SUPPLIED_ID.value as String }
 
@@ -266,7 +267,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             if (options.X_UNIQUE_FACTS.value) {
                 def timing = Helper.timing {
                     factsDir.eachFileMatch(~/.*.facts/) { file ->
-                        def uniqueLines = file.readLines().toSet()
+                        def uniqueLines = file.readLines() as SortedSet<String>
+                        uniqueLines.sort()
                         def tmp = new File(factsDir, "${file.name}.tmp")
                         tmp.withWriter { w -> uniqueLines.each { w.writeLine(it) } }
                         tmp.renameTo(file)
@@ -468,6 +470,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (options.THOROUGH_FACT_GEN.value) {
             missingClasses = File.createTempFile("fact-gen-missing-classes", ".tmp")
             params += ["--failOnMissingClasses", missingClasses.absolutePath ]
+            // Restarting on fact generation error can only happen reliably in isolated mode.
+            if (!options.X_ISOLATE_FACTGEN.value) {
+                log.warn "WARNING: option --${options.THOROUGH_FACT_GEN.name} turns on --${options.X_ISOLATE_FACTGEN.name}"
+                options.X_ISOLATE_FACTGEN.value = true
+            }
         }
 
         if (options.X_LOW_MEM.value) {
@@ -485,7 +492,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 try {
                     redo = false
                     String SOOT_MAIN = "org.clyze.doop.soot.Main"
-                    def args = params.toArray(new String[params.size()])
                     if (!java9Plus() && options.LEGACY_SOOT_INVOCATION.value) {
                         // We invoke the Soot-based fact generator reflectively
                         // using a separate class-loader to be able to support
@@ -514,18 +520,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         //
                         loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
                         try {
+                            def args = params.toArray(new String[params.size()])
                             Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
                         } catch (ClassNotFoundException ex) {
                             throw new RuntimeException("Cannot find Soot-based front end.")
                         }
                     } else {
-                        // Write arguments to file and pass that to Soot-based fact generator.
-                        String argsFile = Files.createTempFile("soot-params-", "").toString()
-                        (new File(argsFile)).withWriterAppend { w -> args.each { w.writeLine(it as String) } }
-                        String[] args0 = [ "--args-file", argsFile ] as String[]
                         String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
-                        // Invoke the Soot-based fact generator using a separate JVM.
-                        invokeFactGenerator('SOOT_FACT_GEN', jvmArgs, 'soot-fact-generator', args0)
+                        invokeFactGenerator('SOOT_FACT_GEN', 'soot-fact-generator', jvmArgs, params, SOOT_MAIN)
                     }
                     // Check if fact generation must be restarted due to missing classes.
                     if (missingClasses != null && missingClasses.exists()) {
@@ -623,7 +625,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                invokeFactGenerator('WALA_FACT_GEN', null, 'wala-fact-generator', params.toArray(new String[params.size()]))
+                invokeFactGenerator('WALA_FACT_GEN', 'wala-fact-generator', null, params, 'org.clyze.doop.wala.Main')
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -639,7 +641,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of dex front-end: ${params.join(' ')}"
 
         try {
-            invokeFactGenerator('DEX_FACT_GEN', null, 'dex-fact-generator', params.toArray(new String[params.size()]))
+            invokeFactGenerator('DEX_FACT_GEN', 'dex-fact-generator', null, params, 'org.clyze.doop.dex.DexInvoker')
         } catch (Exception ex) {
             ex.printStackTrace()
         }
@@ -672,7 +674,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                invokeFactGenerator('PYTHON_FACT_GEN', null, 'wala-fact-generator', params.toArray(new String[params.size()]))
+                invokeFactGenerator('PYTHON_FACT_GEN', 'wala-fact-generator', null, params, 'org.clyze.doop.wala.Main')
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -782,6 +784,57 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     /**
+     * Invokes a fact generator, either in isolated mode (invoked as external Java
+     * process) or via reflection. (Choice controlled by X_ISOLATE_FACTGEN option
+     * and availability of the fact generator as a library.)
+     *
+     * @param TAG        the tag to use to mark output (if external process is used)
+     * @param jvmArgs    the JVM arguments to use (memory options should be set separately, via properties)
+     * @param generator  the id of the generator when bundled as an external program
+     * @param params     the fact generator parameters
+     * @param mainClass  the main class of the fact generator
+     */
+    void invokeFactGenerator(String TAG, String generator, String[] jvmArgs,
+                             Collection<String> params, String mainClass) {
+        // Detect if generator main is available.
+        def main = null
+        try {
+            main = Class.forName(mainClass).getDeclaredMethod("main", String[].class)
+        } catch(all) {
+            if (!options.X_ISOLATE_FACTGEN.value) {
+                log.debug "Fact generator main class is not available, rebuild Doop with '${generator}' linked: ${all.message}"
+            }
+        }
+
+        // Write arguments to file and pass that to the
+        // generator. This fixes too-long argument lists.
+        String argsFile = Files.createTempFile("params-", "").toString()
+        // Some special options should not be passed via the file.
+        List<String> specialOpts = ["--python"]
+        List<String> args = []
+        (new File(argsFile)).withWriterAppend { w -> params.each { String opt ->
+            if (specialOpts.contains(opt)) {
+                args.add(opt)
+            } else {
+                w.writeLine(opt)
+            }
+        } }
+        args.addAll([ "--args-file", argsFile ])
+        String[] args0 = args as String[]
+
+        if ((!main) || options.X_ISOLATE_FACTGEN.value) {
+            invokeExtFactGenerator(TAG, jvmArgs, generator, args0)
+        } else {
+            try {
+                main.invoke(null, [args0] as Object[])
+            } catch (ex) {
+                ex.printStackTrace()
+                throw new RuntimeException("Could not invoke '${generator}' as a linked library, try --${options.X_ISOLATE_FACTGEN.name}: ${ex.message}")
+            }
+        }
+    }
+
+    /**
      * Invoke a fact generator bundled as a JAR in Doop's resources.
      *
      * @param TAG          the tag to use to mark fact generator output
@@ -789,7 +842,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      * @param resource     the prefix of the fact generator JAR (should match one resource)
      * @param args         the fact generation arguments
      */
-    void invokeFactGenerator(String TAG, String[] jvmArgs, String resource, String[] args) {
+    void invokeExtFactGenerator(String TAG, String[] jvmArgs, String resource, String[] args) {
         if (jvmArgs == null)
             jvmArgs = new String[0]
 

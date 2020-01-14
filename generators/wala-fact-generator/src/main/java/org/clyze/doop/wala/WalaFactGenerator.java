@@ -11,9 +11,7 @@ import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.TypeReference;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
+import org.apache.log4j.Logger;
 import java.util.*;
 
 import static org.clyze.doop.wala.WalaUtils.createLocal;
@@ -28,7 +26,7 @@ import static org.clyze.doop.wala.WalaUtils.getNextNonNullInstruction;
 
 class WalaFactGenerator implements Runnable {
 
-    private final Log logger;
+    private final Logger logger = Logger.getLogger(getClass());
 
     private final WalaFactWriter _writer;
     private final Set<IClass> _iClasses;
@@ -40,7 +38,6 @@ class WalaFactGenerator implements Runnable {
     WalaFactGenerator(WalaFactWriter writer, Set<IClass> iClasses, String outDir, boolean androidAnalysis, IAnalysisCacheView analysisCache)
     {
         this._writer = writer;
-        this.logger = LogFactory.getLog(getClass());
         this._iClasses = iClasses;
         //options = new AnalysisOptions();
         //options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes()); //CURRENTLY these are not active

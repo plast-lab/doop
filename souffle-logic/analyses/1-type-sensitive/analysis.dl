@@ -21,11 +21,10 @@
   // This analysis treats arrays specially (deeper context).
   // Only used for arrays. Maps each context to a *potential* hcontext.
 
-  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     Value_DeclaringType(?value, ?type), 
-    ?calleeCtx = [?type],
-    ?tomethod = ?tomethod.
+    ?calleeCtx = [?type].
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),
