@@ -27,16 +27,15 @@ RUN git clone https://github.com/souffle-lang/souffle.git /souffle
 RUN cd /souffle && git checkout 5ff4b52da14f8fd946429b8b16a94545326dcd0c && sh ./bootstrap && ./configure && make -j 4 && make install
 
 ## Doop
-RUN apt-get install -y openjdk-8-jdk openjdk-8-jre openjdk-8-jdk-headless
+RUN apt-get install -y openjdk-8-jdk openjdk-8-jre openjdk-8-jdk-headless radare2 unzip
 RUN git clone https://bitbucket.org/yanniss/doop-benchmarks.git
 ENV DOOP_BENCHMARKS=/doop-benchmarks
 ENV DOOP_PLATFORMS_LIB=/doop-benchmarks
+ENV DOOP_CACHE=/data/cache
+ENV DOOP_OUT=/data/out
 RUN mkdir /doop
-RUN apt-get install -y unzip
-ENV DOOP_VERSION=doop-4.20.43
+ENV DOOP_VERSION=doop-4.20.46
 COPY $DOOP_VERSION.zip /doop/$DOOP_VERSION.zip
 RUN cd /doop && unzip $DOOP_VERSION.zip
 ENV DOOP_HOME=/doop/$DOOP_VERSION
 ENV PATH="$PATH:$DOOP_HOME/bin"
-ENV DOOP_CACHE=/data/cache
-ENV DOOP_OUT=/data/out
