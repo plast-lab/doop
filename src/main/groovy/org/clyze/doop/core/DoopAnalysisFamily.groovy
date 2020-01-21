@@ -56,7 +56,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					optName: "a",
 					argName: "NAME",
 					description: "The name of the analysis.",
-					validValues: (analysesSouffle() + ["----- (LB analyses) -----"] + analysesLB()) as Set<String>,
+					validValues: validAnalyses as Set<String>,
 					isMandatory: true
 			),
 			new AnalysisOption<File>(
@@ -1075,6 +1075,10 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			if (f.exists() && f.file) analyses << dir.name
 		}
 		analyses.sort()
+	}
+
+	private static List<String> getValidAnalyses() {
+		return analysesSouffle() + ["----- (LB analyses) -----"] + analysesLB()
 	}
 
 	private static List<String> analysesSouffle() {

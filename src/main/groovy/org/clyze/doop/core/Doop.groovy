@@ -1,6 +1,7 @@
 package org.clyze.doop.core
 
 import groovy.cli.commons.OptionAccessor
+import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
 import org.apache.log4j.Logger
 import org.clyze.analysis.AnalysisOption
@@ -14,6 +15,7 @@ import org.clyze.utils.JHelper
  * Doop initialization and supported options.
  */
 @Log4j
+@TypeChecked
 class Doop {
 
 	static final String LOG_NAME = 'doop.log'
@@ -159,7 +161,9 @@ class Doop {
 	                                          Properties properties,
 	                                          Closure<Boolean> filter) {
 		if (properties && properties.size() > 0) {
-			properties.each { key, value ->
+			properties.each { k, v ->
+				String key = k as String
+				String value = v as String
 				AnalysisOption option = options.get(key.toUpperCase())
 				if (option && value && value.trim().length() > 0) {
 					boolean filtered = filter ? filter.call(option) : true
@@ -198,9 +202,9 @@ class Doop {
 						// respective analysis option
 						if (option.argName) {
 							if (option instanceof BooleanAnalysisOption)
-								option.value = optionValue.toBoolean()
+								option.value = (optionValue as String).toBoolean()
 							else if (option instanceof IntegerAnalysisOption)
-								option.value = optionValue.toInteger()
+								option.value = (optionValue as String).toInteger()
 							else
 								option.value = optionValue
 						}
