@@ -1066,7 +1066,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static List<String> analysesFor(File path, String fileToLookFor) {
 		if (!path) {
-			println "ERROR: Doop was not initialized correctly, could not read analyses names."
+			println "ERROR: Doop was not initialized correctly, could not read analyses names. Is environment variable DOOP_HOME set?"
 			return []
 		}
 		def analyses = []
