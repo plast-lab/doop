@@ -34,7 +34,7 @@ ENV DOOP_PLATFORMS_LIB=/doop-benchmarks
 ENV DOOP_CACHE=/data/cache
 ENV DOOP_OUT=/data/out
 RUN mkdir /doop
-ENV DOOP_VERSION=doop-4.20.46
+ARG DOOP_VERSION=doop-4.20.46
 COPY $DOOP_VERSION.zip /doop/$DOOP_VERSION.zip
 RUN cd /doop && unzip $DOOP_VERSION.zip
 ENV DOOP_HOME=/doop/$DOOP_VERSION
