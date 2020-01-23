@@ -8,6 +8,7 @@ results
 last-analysis
 checksums.properties
 doop.properties
+src/main/resources/git-hash.txt
 
 # dynamically generated class
 tests/115-invokedynamic/InvokedynamicClass.class

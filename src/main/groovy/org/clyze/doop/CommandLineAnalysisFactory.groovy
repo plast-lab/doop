@@ -118,6 +118,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 			L(longOpt: 'level', LOGLEVEL, args: 1, argName: 'LOG_LEVEL')
 			p(longOpt: 'properties', PROPS, args: 1, argName: "PROPERTIES")
 			t(longOpt: 'timeout', TIMEOUT, args: 1, argName: 'TIMEOUT')
+			v(longOpt: 'version', 'Display version and exit.')
 		}
 
 		addAnalysisOptionsToCliBuilder(cliOptions, cli)

@@ -157,7 +157,8 @@ Sometimes, it might be desirable to invoke doop in an offline mode. There is an 
 The differential datalog (DDlog) engine is currently supported for the
 "micro" analysis.
 
-Setup: clone and build DDlog in a directory, then set environment
+Setup: clone and build DDlog in a directory, check out commit
+4dc0cd152bc91b0914c78ab74250c277c2a19c01, then set environment
 variable `DDLOG_DIR` to point to that directory.
 
 Running an analysis (non-incrementally) with id "ID":
@@ -167,7 +168,11 @@ Running an analysis (non-incrementally) with id "ID":
 
 For more applications of the analysis, such as incremental
 computations, the DDlog program can be found in
-`out/micro/ID/converted_logic_ddlog`.
+`out/micro/<ID>/converted_logic_ddlog/target/release/converted_logic_cli`,
+the script (including the facts) is in
+`out/micro/<ID>/converted_logic.dat`, and the output is saved in
+`out/micro/<ID>/database/dump`.
+
 
 ### Building Doop distribution
 

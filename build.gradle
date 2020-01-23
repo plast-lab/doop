@@ -179,9 +179,20 @@ String doopCP() {
     return String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
 }
 
+task writeGitCommitHash() {
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'rev-parse', 'HEAD'
+        standardOutput = stdout
+    }
+    String hash = stdout.toString().trim()
+    new File('src/main/resources/git-hash.txt').withWriter { w -> w.writeLine(hash) }
+}
+[jar, run].each { it.dependsOn writeGitCommitHash }
+
 jar {
     manifest {
-        attributes('Doop-Ext-Classpath' : doopCP())
+        attributes 'Implementation-Version' : version
     }
 }
 
