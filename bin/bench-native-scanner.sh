@@ -96,6 +96,9 @@ function printStatsRow() {
         local RECALL="${INTERSECTION_COUNT}/${DYNAMIC_METHODS_COUNT} = "$(python -c "print('%.2f' % (100.0 * ${INTERSECTION_COUNT} / ${DYNAMIC_METHODS_COUNT}) + '%')")
 
         comm -2 -3 <(sort -u ${DYNAMIC_METHODS}) <(sort -u ${SCANNER_METHODS}) > ${MISSED_FILE}
+    else
+        local BASE_RECALL='n/a'
+        local RECALL='n/a'
     fi
 
     local APP_METHOD_COUNT=$(cat ${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/ApplicationMethod.csv | wc -l)
@@ -113,7 +116,9 @@ function printStatsRow() {
     # echo "Analysis time increase over base: ${ANALYSIS_TIME_DELTA}"
 
     local SCANNER_ENTRY_POINTS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
-    local ADDED_ENTRY_POINTS=$(setDifference ${SCANNER_ENTRY_POINTS} ${BASE_APP_REACHABLE_FILE} | wc -l)
+    local ADDED_ENTRY_POINTS_FILE=${CURRENT_DIR}/extra-entry-points-${ID_SCANNER}.log
+    setDifference ${SCANNER_ENTRY_POINTS} ${BASE_APP_REACHABLE_FILE} > ${ADDED_ENTRY_POINTS_FILE}
+    local ADDED_ENTRY_POINTS=$(cat ${ADDED_ENTRY_POINTS_FILE} | wc -l)
 
     echo -e "| ${BENCHMARK}\t| ${MODE}\t| ${APP_METHOD_COUNT}\t| ${BASE_RECALL}\t| ${RECALL}\t| ${APP_REACHABLE_DELTA}\t| ${ANALYSIS_TIME_DELTA}\t| ${FACTS_TIME_DELTA}\t| ${ADDED_ENTRY_POINTS}\t|"
 }
