@@ -63,7 +63,7 @@ function printStatsRow() {
     local MODE="$5"
 
     # local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppCallGraphEdgeFromNative.csv
-    local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppNativeCodeTarget.csv
+    local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/DynamicAppNativeCodeTarget.csv
     # local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
     local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/Stats_Simple_Application_ReachableMethod.csv
     local MISSED_FILE="${CURRENT_DIR}/missed-methods-${ID_SCANNER}.log"
