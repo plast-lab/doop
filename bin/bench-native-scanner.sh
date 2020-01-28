@@ -217,7 +217,8 @@ function printStatsTable() {
 
 function analyzeAspectJ() {
     local BASE_DIR="${XCORPUS_DIR}/data/qualitas_corpus_20130901/aspectj-1.6.9"
-    APP_INPUTS="${XCORPUS_EXT_DIR}/repackaged/aspectj-1.6.9 ${XCORPUS_EXT_DIR}/native/aspectj/x86_64-1.0.100-v20070510.jar"
+    # APP_INPUTS="${XCORPUS_EXT_DIR}/repackaged/aspectj-1.6.9 ${XCORPUS_EXT_DIR}/native/aspectj/x86_64-1.0.100-v20070510.jar"
+    APP_INPUTS="${XCORPUS_EXT_DIR}/repackaged/aspectj-1.6.9 ${XCORPUS_EXT_DIR}/native/aspectj/localfile_1_0_0.dll.zip"
     analyzeXCorpusBenchmark "aspectj-1.6.9"
 }
 
