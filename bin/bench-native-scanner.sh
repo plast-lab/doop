@@ -69,6 +69,7 @@ function printStatsRow() {
     local MISSED_FILE="${CURRENT_DIR}/missed-methods-${ID_SCANNER}.log"
 
     if [ ! -f "${SCANNER_METHODS}" ]; then
+        echo "| ${BENCHMARK}\t| Missing file ${SCANNER_METHODS}"
         return
     fi
 
@@ -103,7 +104,7 @@ function printStatsRow() {
 
     local APP_METHOD_COUNT=$(cat ${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/ApplicationMethod.csv | wc -l)
     # echo "Application methods: ${APP_METHOD_COUNT}"
-    local APP_REACHABLE_DELTA="(${BASE_APP_REACHABLE} -> ${SCANNER_APP_REACHABLE}): "$(calcIncrease ${BASE_APP_REACHABLE} ${SCANNER_APP_REACHABLE})
+    local APP_REACHABLE_DELTA="${BASE_APP_REACHABLE} -> ${SCANNER_APP_REACHABLE}: "$(calcIncrease ${BASE_APP_REACHABLE} ${SCANNER_APP_REACHABLE})
     # echo "App-reachable increase over base: ${APP_REACHABLE_DELTA}"
 
     # Use 'xargs' to remove whitespace.
@@ -111,8 +112,8 @@ function printStatsRow() {
     local SCANNER_ANALYSIS_TIME=$(grep -F 'analysis execution time (sec)' ${CURRENT_DIR}/${ID_SCANNER}.log | cut -d ')' -f 2 | xargs)
     local BASE_FACTS_TIME=$(grep -F 'Soot fact generation time:' ${CURRENT_DIR}/${ID_BASE}.log | cut -d ':' -f 2 | xargs)
     local SCANNER_FACTS_TIME=$(grep -F 'Soot fact generation time:' ${CURRENT_DIR}/${ID_SCANNER}.log | cut -d ':' -f 2 | xargs)
-    local ANALYSIS_TIME_DELTA="(${BASE_ANALYSIS_TIME} -> ${SCANNER_ANALYSIS_TIME}): "$(calcIncrease ${BASE_ANALYSIS_TIME} ${SCANNER_ANALYSIS_TIME})
-    local FACTS_TIME_DELTA="(${BASE_FACTS_TIME} -> ${SCANNER_FACTS_TIME}): "$(calcIncrease ${BASE_FACTS_TIME} ${SCANNER_FACTS_TIME})
+    local ANALYSIS_TIME_DELTA="${BASE_ANALYSIS_TIME} -> ${SCANNER_ANALYSIS_TIME}: "$(calcIncrease ${BASE_ANALYSIS_TIME} ${SCANNER_ANALYSIS_TIME})
+    local FACTS_TIME_DELTA="${BASE_FACTS_TIME} -> ${SCANNER_FACTS_TIME}) "$(calcIncrease ${BASE_FACTS_TIME} ${SCANNER_FACTS_TIME})
     # echo "Analysis time increase over base: ${ANALYSIS_TIME_DELTA}"
 
     local SCANNER_ENTRY_POINTS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
@@ -190,7 +191,7 @@ function printStatsTable() {
     local LAST_COL=${COL9_END}
     tabs ${COL1_END},${COL2_END},${COL3_END},${COL4_END},${COL5_END},${COL6_END},${COL7_END},${COL8_END},${COL9_END}
     printLine ${LAST_COL}
-    echo -e "| Benchmark\t| Mode\t| App    \t| Base  \t| Recall\t| +App-reachable    \t| +Analysis time    \t| +Factgen time\t| +entry\t|"
+    echo -e "| Benchmark\t| Mode\t| App    \t| Base  \t| Recall\t| +App-reachable    \t| +Analysis time    \t| +Factgen time\t| +Entry\t|"
     echo -e "|          \t|     \t| methods\t| recall\t|       \t|  (incr. over base)\t|  (incr. over base)\t|              \t|  points\t|"
     printLine ${LAST_COL}
     # for BENCHMARK in androidterm chrome instagram 009-native
