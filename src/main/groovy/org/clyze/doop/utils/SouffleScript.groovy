@@ -1,8 +1,9 @@
 package org.clyze.doop.utils
 
-import groovy.transform.TupleConstructor
+import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
 import org.clyze.doop.common.DoopErrorCodeException
+import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.utils.CheckSum
 import org.clyze.utils.Executor
@@ -16,20 +17,29 @@ import java.nio.file.StandardCopyOption
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 
-@TupleConstructor
 @Log4j
+@TypeChecked
 class SouffleScript {
 
 	static final String EXE_NAME = "exe"
 	protected static final String TIME_UTIL = "/usr/bin/time"
 
 	Executor executor
+	File cacheDir
 	long compilationTime = 0L
 	long executionTime = 0L
 	File scriptFile = null
 
-	static SouffleScript newScript(Executor executor, boolean viaDDlog) {
-		return viaDDlog ? new DDlog(executor) : new SouffleScript(executor)
+	SouffleScript(Executor executor, File cacheDir) {
+		this.executor = executor
+		this.cacheDir = cacheDir
+		if (!cacheDir.exists()) {
+			cacheDir.mkdirs()
+		}
+	}
+
+	static SouffleScript newScript(Executor executor, File cacheDir, boolean viaDDlog) {
+		return viaDDlog ? new DDlog(executor, new File(cacheDir, "ddlog")) : new SouffleScript(executor, cacheDir)
 	}
 
 	void preprocess(File output, File input) {
@@ -54,7 +64,7 @@ class SouffleScript {
 		return CheckSum.checksum(c2, DoopAnalysisFactory.HASH_ALGO)
 	}
 
-	File compile(File origScriptFile, File outDir, File cacheDir,
+	File compile(File origScriptFile, File outDir,
                  boolean profile = false, boolean debug = false,
                  boolean provenance = false, boolean liveProf = false,
                  boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
@@ -104,7 +114,7 @@ class SouffleScript {
 				Files.delete(tmpFile)
 			}
 			log.info "Analysis compilation time (sec): $compilationTime"
-			cacheCompiledBinary(executable, cacheFile, checksum, cacheDir)
+			cacheCompiledBinary(executable, cacheFile, checksum)
 		} else {
 			logCachedExecutable(cacheFile)
 		}
@@ -115,7 +125,7 @@ class SouffleScript {
 		log.info "Using cached analysis executable ${cacheFile.absolutePath}"
 	}
 
-	void cacheCompiledBinary(File executable, File cacheFile, String checksum, File cacheDir) {
+	void cacheCompiledBinary(File executable, File cacheFile, String checksum) {
 		try {
 			// COPY_ATTRIBUTES: Keep execute permission
 			Files.copy(executable.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
@@ -218,15 +228,15 @@ class SouffleScript {
 		String envVar = "LD_LIBRARY_PATH"
 		String ldLibPath = System.getenv(envVar)
 		if(ldLibPath != null) {
-			def libfunctors = null
+			String libfunctors = null
 			ldLibPath.split(File.pathSeparator).each {
 				File f = new File("${it}/libfunctors.so")
 				if (f.exists()) {
 					libfunctors = f.canonicalPath
 				}
 			}
+			String libName = "libfunctors.so"
 			if (libfunctors != null) {
-				String libName = "libfunctors.so"
 				try {
 					Path target = FileSystems.default.getPath(libfunctors)
 					Path link = FileSystems.default.getPath(outDir.absolutePath + File.separator + libName)

@@ -38,7 +38,7 @@ try {
     throw new DoopErrorCodeException(19)
 }
 
-def script = SouffleScript.newScript(new Executor(outDir, env), viaDDlog.toBoolean())
+def script = SouffleScript.newScript(new Executor(outDir, env), cacheDir, viaDDlog.toBoolean())
 def prof = profile.toBoolean()
 def prov = provenance.toBoolean()
 def dbg = debug.toBoolean()
@@ -50,7 +50,7 @@ if (interpret && interpret.toBoolean()) {
     return
 } else {
     def liveProf = false
-    def generatedFile = script.compile(scriptFile, outDir, cacheDir, prof, dbg, prov, liveProf, recompile.toBoolean())
+    def generatedFile = script.compile(scriptFile, outDir, prof, dbg, prov, liveProf, recompile.toBoolean())
     println "Compilation time (sec)\t${script.compilationTime}\n"
     script.run(generatedFile, factsDir, outDir, jobs.toInteger(), 5000, null, prov, liveProf, prof)
 }

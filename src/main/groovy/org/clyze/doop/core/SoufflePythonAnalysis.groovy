@@ -13,11 +13,8 @@ import static org.apache.commons.io.FileUtils.sizeOfDirectory
 @InheritConstructors
 @Log4j
 @TypeChecked
-class SoufflePythonAnalysis extends DoopAnalysis{
+class SoufflePythonAnalysis extends SouffleAnalysis {
 
-    /**
-     * The analysis logic file
-     */
     File analysis
 
     @Override
@@ -26,29 +23,26 @@ class SoufflePythonAnalysis extends DoopAnalysis{
 
         if (options.X_STOP_AT_FACTS.value) return
 
-        analysis = new File(outDir, "${name}.dl")
+        File analysis = new File(outDir, "${name}.dl")
         deleteQuietly(analysis)
         analysis.createNewFile()
 
-        initDatabase()
-        basicAnalysis()
+        initDatabase(analysis)
+        basicAnalysis(analysis)
         if (!options.X_STOP_AT_BASIC.value) {
-            mainAnalysis()
-            produceStats()
+            mainAnalysis(analysis)
+            produceStats(analysis)
         }
 
-        def cacheDir = new File(Doop.souffleAnalysesCache, name)
-        cacheDir.mkdirs()
-        def script = SouffleScript.newScript(executor, options.VIA_DDLOG.value as Boolean)
-        if(options.SOUFFLE_RUN_INTERPRETED.value){
+        def script = newScriptForAnalysis(executor)
+        if (options.SOUFFLE_RUN_INTERPRETED.value) {
             script.interpretScript(analysis, outDir, factsDir,
                     options.SOUFFLE_JOBS.value as int,
                     options.SOUFFLE_PROFILE.value as boolean,
                     options.SOUFFLE_DEBUG.value as boolean,
                     options.X_CONTEXT_REMOVER.value as boolean)
-        }
-        else {
-            def generatedFile = script.compile(analysis, outDir, cacheDir,
+        } else {
+            def generatedFile = script.compile(analysis, outDir,
                     options.SOUFFLE_PROFILE.value as boolean,
                     options.SOUFFLE_DEBUG.value as boolean,
                     options.SOUFFLE_PROVENANCE.value as boolean,
@@ -75,14 +69,16 @@ class SoufflePythonAnalysis extends DoopAnalysis{
 
     }
 
-    void initDatabase() {
+    @Override
+    void initDatabase(File analysis) {
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/schema.dl")
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/import-entities.dl")
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/import-facts.dl")
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/post-process.dl")
     }
 
-    void basicAnalysis() {
+    @Override
+    void basicAnalysis(File analysis) {
 //        def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 //        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
 //
@@ -92,7 +88,8 @@ class SoufflePythonAnalysis extends DoopAnalysis{
 //        }
     }
 
-    void mainAnalysis() {
+    @Override
+    void mainAnalysis(File analysis) {
         cpp.includeAtEnd("$analysis", "${Doop.soufflePythonAnalysesPath}/${name}/analysis.dl")
 //        def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 //        def mainPath = "${Doop.souffleLogicPath}/main"
@@ -131,7 +128,8 @@ class SoufflePythonAnalysis extends DoopAnalysis{
 //        }
     }
 
-    void produceStats() {
+    @Override
+    void produceStats(File analysis) {
         def statsPath = "${Doop.soufflePythonPath}/addons/statistics"
 
         if (options.X_STATS_NONE.value) return

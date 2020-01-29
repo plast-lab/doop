@@ -34,9 +34,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
             produceStats(analysis)
         }
 
-        def cacheDir = new File(Doop.souffleAnalysesCache, name)
-        cacheDir.mkdirs()
-        def script = SouffleScript.newScript(executor, options.VIA_DDLOG.value as Boolean)
+        def script = newScriptForAnalysis(executor)
 
         Future<File> compilationFuture = null
         def executorService = Executors.newSingleThreadExecutor()
@@ -45,7 +43,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
                 @Override
                 File call() {
                     log.info "[Task COMPILE...]"
-                    def generatedFile = script.compile(analysis, outDir, cacheDir,
+                    def generatedFile = script.compile(analysis, outDir,
                             options.SOUFFLE_PROFILE.value as boolean,
                             options.SOUFFLE_DEBUG.value as boolean,
                             options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
@@ -122,7 +120,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
                 analysisExecutorService.submit(new Runnable() {
                     @Override
                     void run() {
-                        def childScript = SouffleScript.newScript(executor, options.VIA_DDLOG.value as Boolean)
+                        def childScript = newScriptForAnalysis(executor)
                         childScript.run(generatedFile, childFactsDir, childOutDir, options.SOUFFLE_JOBS.value as int,
                                         (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
                         runtimeMetricsFile.append("analysis execution time (sec)\t${childScript.executionTime}\n")
