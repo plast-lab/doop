@@ -12,6 +12,9 @@ import static org.clyze.doop.common.PredicateFile.*;
  */
 abstract class BinaryAnalysis {
 
+    // Truncate long numbers for fact generation (for Souffle without 64-bit support).
+    private final static boolean truncateTo32Bits = true;
+
     // Dummy value for "offset" column in facts.
     private static final String UNKNOWN_OFFSET = "-1";
     // Dummy value for "function" column in facts.
@@ -110,7 +113,7 @@ abstract class BinaryAnalysis {
 
         // Write entry points.
         entryPoints.forEach((addr, name) ->
-                            db.add(NATIVE_LIB_ENTRY_POINT, lib, name, String.valueOf(addr)));
+                            db.add(NATIVE_LIB_ENTRY_POINT, lib, name, factAddr(addr)));
     }
 
     /**
@@ -131,7 +134,7 @@ abstract class BinaryAnalysis {
         for (Map.Entry<String, List<SymbolInfo>> entry : symbols.entrySet()) {
             String symbol = entry.getKey();
             for (SymbolInfo si : entry.getValue()) {
-                String offset = si.offset == null ? UNKNOWN_OFFSET : Long.toString(si.offset);
+                String offset = si.offset == null ? UNKNOWN_OFFSET : factAddr(si.offset);
                 // If used in global data, set dummy function name for string.
                 String func = si.function;
                 if (func.equals(UNKNOWN_FUNCTION) && words != null && words.contains(si.offset))
@@ -145,7 +148,11 @@ abstract class BinaryAnalysis {
     }
 
     private void writeXRef(String s, XRef xr) {
-        db.add(NATIVE_XREF, s, lib, xr.function, String.valueOf(xr.codeAddr));
+        db.add(NATIVE_XREF, s, lib, xr.function, factAddr(xr.codeAddr));
+    }
+
+    private static String factAddr(long addr) {
+        return String.valueOf(truncateTo32Bits ? ((addr << 32) >> 32) : addr);
     }
 
     // Auxiliary hex converter.
