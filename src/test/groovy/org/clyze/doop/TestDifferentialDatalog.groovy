@@ -18,6 +18,6 @@ class TestDifferentialDatalog extends DoopSpec {
                                         "micro", "hello-world--via-ddlog")
 
 		then:
-        fileExists(analysis, 'database/Stats_Runtime.csv')
+        fileExists(analysis, 'database/dump')
 	}
 }
