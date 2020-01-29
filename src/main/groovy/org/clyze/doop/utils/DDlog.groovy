@@ -226,7 +226,8 @@ class DDlog extends SouffleScript {
 	 * @param workingDir  the working directory to use
 	 */
 	void executeCmd(List<String> command, File workingDir) {
-		log.debug command
+		String cmd = String.join(" ", command)
+		log.debug "[Working directory: ${workingDir}] ${cmd}"
 		Path tmpFile = Files.createTempFile("", "")
 		if (workingDir) {
 			executor.currWorkingDir = workingDir
