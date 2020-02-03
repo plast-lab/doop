@@ -10,7 +10,7 @@ import static org.clyze.doop.TestUtils.*
  */
 class CrudeScalerTest extends Specification {
 
-	// @spock.lang.Ignore
+	@spock.lang.Ignore
 	@Unroll
 	def "Crude testing scaler analysis"() {
 		when:
