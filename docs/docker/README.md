@@ -75,5 +75,5 @@ root@af6ca7193b3d:/doop/doop-4.20.43# ls /data/out/context-insensitive/test/data
   busybox/nano are installed by default.
 
 * For old builds of Doop (with dynamic "+" dependencies in Gradle),
-  the Gradle build scripts may have to edited prior to "distZip" for
-  reproducibility.
+  the Gradle build scripts may have to be edited prior to "distZip"
+  for reproducibility.
