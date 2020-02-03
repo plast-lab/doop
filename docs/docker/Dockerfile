@@ -22,12 +22,12 @@ RUN dpkg-reconfigure --frontend=noninteractive locales
 # RUN dpkg-reconfigure -f noninteractive tzdata
 
 ## Souffle
-RUN apt-get install -y cpp autoconf automake bison build-essential clang doxygen flex g++ gdb git libncurses5-dev libtool libsqlite3-dev make mcpp python sqlite zlib1g-dev
+RUN apt-get install -y cpp autoconf automake bison build-essential clang doxygen flex g++ gdb git libncurses5-dev libtool libsqlite3-dev make mcpp python sqlite zlib1g-dev wget curl
 RUN mkdir /souffle && wget https://github.com/souffle-lang/souffle/releases/download/1.5.1/souffle_1.5.1-1_amd64.deb -O /souffle/souffle_1.5.1-1_amd64.deb && apt-get install /souffle/souffle_1.5.1-1_amd64.deb
 
 ## ddlog
 ## Rust (binary release)
-RUN mkdir /rust && && cd /rust && wget https://static.rust-lang.org/dist/rust-1.41.0-x86_64-unknown-linux-gnu.tar.gz -O /rust/rust-1.41.0-x86_64-unknown-linux-gnu.tar.gz && tar xf rust-1.41.0-x86_64-unknown-linux-gnu.tar.gz
+RUN mkdir /rust && cd /rust && wget https://static.rust-lang.org/dist/rust-1.41.0-x86_64-unknown-linux-gnu.tar.gz -O /rust/rust-1.41.0-x86_64-unknown-linux-gnu.tar.gz && tar xf rust-1.41.0-x86_64-unknown-linux-gnu.tar.gz
 RUN cd /rust/rust-1.41.0-x86_64-unknown-linux-gnu && ./install.sh
 ## Haskell stack
 RUN curl -sSL https://get.haskellstack.org/ | sh
