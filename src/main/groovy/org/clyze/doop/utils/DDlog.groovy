@@ -127,7 +127,7 @@ class DDlog extends SouffleScript {
 		def genTime = Helper.timing {
 			log.info "Compiling the analysis: code generation..."
 			String convertedLogic = "${convertedLogicPrefix}.dl" as String
-			def cmdGenRust = "stack run --allow-different-user -- -i ${convertedLogic} --action=compile -L lib".split().toList()
+			def cmdGenRust = "ddlog -i ${convertedLogic} --action=compile -L lib".split().toList()
 			executeCmd(cmdGenRust, getDDlogDir(log))
 		}
 		log.info "Code generation time: ${genTime}"

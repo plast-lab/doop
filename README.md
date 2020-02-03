@@ -152,14 +152,15 @@ Sometimes, it might be desirable to invoke doop in an offline mode. There is an 
 
     $ ./doopOffline --platform java_8 -a context-insensitive -i com.example.some.jar
 
-### Using differential datalog
+### Using Differential Datalog
 
-The differential datalog (DDlog) engine is currently supported for the
+The Differential Datalog (DDlog) engine is currently supported for the
 "micro" analysis.
 
-Setup: clone and build DDlog in a directory, check out commit
+Setup: clone DDlog in a directory, check out commit
 4dc0cd152bc91b0914c78ab74250c277c2a19c01, then set environment
-variable `DDLOG_DIR` to point to that directory.
+variable `DDLOG_DIR` to point to that directory. Run `stack build` and
+`stack install` to build and install a local binary of DDlog.
 
 Running an analysis (non-incrementally) with id "ID":
 ```
