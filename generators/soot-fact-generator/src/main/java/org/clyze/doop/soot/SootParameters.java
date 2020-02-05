@@ -17,17 +17,12 @@ public class SootParameters extends Parameters {
     boolean _ignoreWrongStaticness = false;
     String _missingClassesOut = null;
     String _androidJars = null;
-    private boolean _runFlowdroid = false;
     private boolean _toStdout = false;
     public boolean _lowMem = false;
     private final Collection<String> extraClassesToResolve = new ArrayList<>();
 
     public boolean isApplicationClass(SootClass klass) {
         return isApplicationClass(Representation.unescapeSimpleName(klass.getName()));
-    }
-
-    public boolean getRunFlowdroid() {
-      return this._runFlowdroid;
     }
 
     public Collection<String> getExtraClassesToResolve() {
@@ -58,9 +53,6 @@ public class SootParameters extends Parameters {
             i = shift(args, i);
             _android = true;
             _androidJars = args[i];
-            break;
-        case "--run-flowdroid":
-            this._runFlowdroid = true;
             break;
         case "--generate-jimple":
             this._generateJimple = true;
