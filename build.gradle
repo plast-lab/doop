@@ -215,7 +215,7 @@ task printExtClasspath {
 
 task jimple2json(type: JavaExec) {
     description 'Generate JSON files from Jimple'
-    group = 'Other'
+    group = 'Doop'
     main = 'org.clyze.jimple.Main'
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("args"))
@@ -224,7 +224,7 @@ task jimple2json(type: JavaExec) {
 
 task scaler(type: JavaExec) {
     description 'Run Scaler'
-    group = 'Other'
+    group = 'Doop'
     main = 'ptatoolkit.scaler.doop.Main'
     classpath = sourceSets.main.runtimeClasspath.filter {
         !it.name.startsWith("zipper")
@@ -236,7 +236,7 @@ task scaler(type: JavaExec) {
 
 task zipper(type: JavaExec) {
     description 'Run Zipper'
-    group = 'Other'
+    group = 'Doop'
     main = 'ptatoolkit.zipper.doop.Main'
     classpath = sourceSets.main.runtimeClasspath.filter {
         !it.name.startsWith("scaler")
@@ -248,7 +248,7 @@ task zipper(type: JavaExec) {
 
 task soot(type: JavaExec) {
     description 'Run Soot front-end'
-    group = 'Other'
+    group = 'Doop'
     main = 'org.clyze.doop.soot.Main$Standalone'
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("args"))
@@ -258,8 +258,8 @@ task soot(type: JavaExec) {
 
 
 task souffleScript(type: JavaExec) {
-    description 'Run a custom Souffle Script'
-    group = 'Other'
+    description 'Run a custom Souffle script'
+    group = 'Doop'
     main = 'org.clyze.doop.utils.SouffleScriptMain'
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("args"))
