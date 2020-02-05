@@ -14,7 +14,7 @@ class TestDifferentialDatalog extends DoopSpec {
 	def "Differential Datalog test"() {
 		when:
 		Analysis analysis = analyzeTest("006-hello-world", Artifacts.HELLO_JAR,
-										["--via-ddlog", "--Xstats-none"],
+										["--via-ddlog", "--Xstats-none", "--souffle-force-recompile"],
                                         "micro", "hello-world--via-ddlog")
 
 		then:
