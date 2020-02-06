@@ -61,7 +61,7 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
     public AppResources processAppResources(String archiveLocation) throws Exception {
         String path = archiveLocation.toLowerCase();
         if (path.endsWith(".apk"))
-            return new AppResourcesAXML(archiveLocation);
+            return AppResourcesXML.fromAPK(archiveLocation);
         else if (path.endsWith(".aar"))
             return AppResourcesXML.fromAAR(archiveLocation);
         else
