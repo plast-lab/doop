@@ -11,9 +11,11 @@ import org.apache.log4j.Logger;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.Database;
+import org.clyze.doop.common.DatabaseConnector;
 import org.clyze.doop.common.DoopErrorCodeException;
-import org.clyze.doop.common.scanner.NativeScanner;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
+import org.clyze.scanner.BinaryAnalysis;
+import org.clyze.scanner.NativeScanner;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
 import org.xmlpull.v1.XmlPullParserException;
@@ -135,8 +137,8 @@ public class Main {
                 throw new DoopErrorCodeException(35, "Fact generation failed with " + numErrors + " errors.");
 
             if (writeFacts && sootParameters._scanNativeCode) {
-                NativeScanner scanner = new NativeScanner(db, sootParameters, sootData.writer.getMethodStrings());
-                scanner.scanInputs(sootParameters.getInputs());
+                DatabaseConnector dbc = new DatabaseConnector(db);
+                scanNativeInputs(dbc, sootParameters._radare, sootParameters._preciseNativeStrings, sootData.writer.getMethodStrings(), sootParameters.getInputs());
             }
 
             if (sootParameters._generateJimple)
@@ -382,6 +384,48 @@ public class Main {
             DoopAddons.structureJimpleFiles(outDir);
         // Revert to standard output dir for the rest of the code.
         Options.v().set_output_dir(outDir);
+    }
+
+    public static void scanNativeInputs(DatabaseConnector dbc,
+                                        boolean useRadare,
+                                        boolean preciseNativeStrings,
+                                        Set<String> methodStrings,
+                                        Iterable<String> inputs) {
+        final boolean demangle = false;
+        final boolean truncateAddresses = true;
+        final NativeScanner scanner = new NativeScanner(methodStrings);
+
+        ArtifactScanner.EntryProcessor gProc = (file, entry, entryName) -> {
+            boolean isSO = entryName.endsWith(".so");
+            boolean isDylib = entryName.endsWith(".dylib");
+            boolean isDLL = entryName.toLowerCase().endsWith(".dll");
+            boolean isLibsXZS = entryName.endsWith("libs.xzs");
+            boolean isLibsZSTD = entryName.endsWith("libs.zstd");
+
+            if (isSO || isDylib || isDLL || isLibsXZS || isLibsZSTD) {
+                File libTmpFile = ArtifactScanner.extractZipEntryAsFile("native-lib", file, entry, entryName);
+                String libPath = libTmpFile.getCanonicalPath();
+                // Handle some special formats.
+                if (isLibsXZS)
+                    libPath = NativeScanner.getXZSLib(libPath);
+                else if (isLibsZSTD)
+                    libPath = NativeScanner.getZSTDLib(libPath);
+                BinaryAnalysis analysis = NativeScanner.create(dbc, useRadare, libPath, preciseNativeStrings, truncateAddresses, demangle);
+                // Check that the current mode supports .dll inputs.
+                if (isDLL && !useRadare)
+                    System.err.println("WARNING: Radare mode should be activated to scan library " + entryName);
+
+                scanner.scanBinaryCode(analysis);
+            }
+        };
+        for (String input : inputs) {
+            System.out.println("Processing native code in input: " + input);
+            try {
+                (new ArtifactScanner()).processArchive(input, null, gProc);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
     }
 }
 
