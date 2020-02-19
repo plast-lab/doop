@@ -69,7 +69,7 @@ function printStatsRow() {
     local MISSED_FILE="${CURRENT_DIR}/missed-methods-${ID_SCANNER}.log"
 
     if [ ! -f "${SCANNER_METHODS}" ]; then
-        echo "| ${BENCHMARK}\t| Missing file ${SCANNER_METHODS}"
+        echo -e "| ${BENCHMARK}\t| Missing file ${SCANNER_METHODS}"
         return
     fi
 
@@ -157,12 +157,12 @@ function runDoop() {
         ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_HEAPDL} ${BASE_OPTS} --heapdl-file ${HPROF} |& tee ${CURRENT_DIR}/${ID_HEAPDL}.log
     fi
     # 3. Native scanner, default mode.
-    # ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} ${BASE_OPTS} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} ${BASE_OPTS} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
     # 4. Native scanner, use only localized strings (binutils/Radare2 modes).
     # ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_OBJ} ${BASE_OPTS} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_OBJ}.log
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_RAD} ${BASE_OPTS} --scan-native-code --only-precise-native-strings --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_RAD}.log
+    # ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_RAD} ${BASE_OPTS} --scan-native-code --only-precise-native-strings --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_RAD}.log
     # 5. Native scanner, "smart native targets" mode.
-    # ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} ${BASE_OPTS} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
+    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} ${BASE_OPTS} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
     # 6. Native scanner, "use string locality" mode.
     # ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS1} ${BASE_OPTS} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE1} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS1}.log
     # if [ "${BENCHMARK}" == "chrome" ]; then
@@ -194,11 +194,11 @@ function printStatsTable() {
     echo -e "| Benchmark\t| Mode\t| App    \t| Base  \t| Recall\t| +App-reachable    \t| +Analysis time    \t| +Factgen time\t| +Entry\t|"
     echo -e "|          \t|     \t| methods\t| recall\t|       \t|  (incr. over base)\t|  (incr. over base)\t|              \t|  points\t|"
     printLine ${LAST_COL}
-    # for BENCHMARK in androidterm chrome instagram 009-native
     for BENCHMARK in "chrome" "instagram" "009-native" "aspectj-1.6.9" "log4j-1.2.16" "lucene-4.3.0" "tomcat-7.0.2" "vlc"
     do
         setIDs "${BENCHMARK}"
-        MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" )
+        # MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" )
+        MODES=( "" )
         # if [ "${BENCHMARK}" == "chrome" ]; then
         #     MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" "-dist-${STRING_DISTANCE2}" )
         #     # MODES=( "" "-loc-rad" "-dist-${STRING_DISTANCE1}" "-dist-${STRING_DISTANCE2}" )
@@ -263,9 +263,12 @@ function analyzeXCorpusBenchmark() {
     ./doop ${BASE_OPTS} --id ${ID_BASE} |& tee ${CURRENT_DIR}/${ID_BASE}.log
     # 2. Native scanner, default mode.
     # ./doop ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
-    # 3. Native scanner, use only localized strings (binutils/Radare2 modes).
-    # ./doop ${BASE_OPTS} --id ${ID_SCANNER_LOCAL_OBJ} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_OBJ}.log
-    ./doop ${BASE_OPTS} --id ${ID_SCANNER_LOCAL_RAD} --scan-native-code --only-precise-native-strings --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_RAD}.log
+    ./doop ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code --use-radare -Ldebug |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+    # # 3. Native scanner, use only localized strings (binutils/Radare2 modes).
+    # # ./doop ${BASE_OPTS} --id ${ID_SCANNER_LOCAL_OBJ} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_OBJ}.log
+    # ./doop ${BASE_OPTS} --id ${ID_SCANNER_LOCAL_RAD} --scan-native-code --only-precise-native-strings --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_RAD}.log
+    # # 4. Native scanner, "smart native targets" mode.
+    # ./doop ${BASE_OPTS} --id ${ID_SCANNER_SMART} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
     set +x
     popd &> /dev/null
 }
@@ -283,7 +286,7 @@ if [ "${RUN_ANALYSIS}" == "1" ]; then
     runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243323_minAPI16_x86_nodpi_apkmirror.com.apk instagram ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof.gz
 
     # Androidterm.
-    # runDoop ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk androidterm ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm.hprof.gz
+    runDoop ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk androidterm ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm.hprof.gz
 
     # VLC.
     runDoop ${DOOP_BENCHMARKS}/android-benchmarks/org.videolan.vlc_13010707.apk vlc ${ANDROID_PLATFORM} ""
