@@ -3,12 +3,17 @@
  */
 .decl ResolveInvocation(?type:Type, ?invocation:MethodInvocation, ?tomethod:Method)
 //.output ResolveInvocation
-        
+
+// Auxiliary
+.decl VirtualMethodInvocation_BaseType(?invocation:MethodInvocation, ?type:Type)
+VirtualMethodInvocation_BaseType(?invocation, ?basetype) :-
+    VirtualMethodInvocation_Base(?invocation, ?base),
+    Var_Type(?base, ?basetype).
+
 ResolveInvocation(?type, ?invocation, ?tomethod) :-
     VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
     VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
-    VirtualMethodInvocation_Base(?invocation, ?base),
-    Var_Type(?base, ?basetype),
+    VirtualMethodInvocation_BaseType(?invocation, ?basetype),
     SubtypeOf(?type, ?basetype),
     MethodLookup(?simplename, ?descriptor, ?type, ?tomethod).
 
