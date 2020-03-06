@@ -419,9 +419,12 @@ MainMethodDeclaration(?method) :-
 EmptyDependencies(dep) :-
   dep = @empty_mapping().
 
-// plays the role of "Reachable" as well
-.decl MethodDependencies(meth:Method, localDeps:Dependencies, globalDeps:Dependencies)
+.decl Reachable(meth:Method)
 
+Reachable(meth) :-
+  MethodDependencies(meth, _, _).
+
+.decl MethodDependencies(meth:Method, localDeps:Dependencies, globalDeps:Dependencies)
 MethodDependencies(method, deps, deps) :-
   basic.MainMethodDeclaration(method),
   EmptyDependencies(deps).
@@ -442,13 +445,13 @@ CallGraphEdge(invocation, toMethod) :-
   basic.MethodLookup(simplename, descriptor, heaptype, toMethod).
 
 CallGraphEdge(invocation, toMethod) :-
-  MethodDependencies(inmethod, _, _),
+  Reachable(inmethod),
   Instruction_Method(invocation, inmethod),
   SpecialMethodInvocation_Base(invocation, _),
   MethodInvocation_Method(invocation, toMethod).
 
 CallGraphEdge(invocation, tomethod) :-
-  MethodDependencies(inmethod, _, _),
+  Reachable(inmethod),
   StaticMethodInvocation(invocation, tomethod, inmethod).
 
 .decl VarOfReferenceType(var:Var)
@@ -466,12 +469,12 @@ DependenciesUpToActual(caller, method, 0, callerLDeps, calleeLDeps, globalDeps) 
   calleeLDeps = @singleton_mapping(formal, obj, obj).  // localDeps get reset at a call
  .plan 1:(4,2,1,3)
 
-DependenciesUpToActual(caller, method, 0, callerLDeps, emptyDeps, globalDeps) :-
+DependenciesUpToActual(caller, method, 0, emptyDeps, emptyDeps, emptyDeps) :-
   CallGraphEdge(caller, method),
   ActualParam(0, caller, actual),
   !VarOfReferenceType(actual),
   Instruction_Method(caller, inmethod),
-  MethodDependencies(inmethod, callerLDeps, globalDeps),
+  Reachable(inmethod),
   EmptyDependencies(emptyDeps).
 
 // These ridiculous-looking definitions are because using "i+1" in the middle of
@@ -556,7 +559,6 @@ DependenciesForAllParams(caller, method, callerLDeps, calleeLDeps, globalDeps) :
 
 // DESIGN choice: ignore all global deps when crossing method boundaries
 // DESIGN2: eliminate global dependencies from InstanceFieldPointsTo (always null)
-// DESIGN3: reset local dependencies to empty for a function's return variable
 .decl DependenciesForAllParamsMod(caller:MethodInvocation, tomethod:Method, callerLDeps:Dependencies, calleeLDeps:Dependencies)
 DependenciesForAllParamsMod(caller, method, callerLDeps, calleeLDeps) :-
   DependenciesForAllParams(caller, method, callerLDeps, calleeLDeps, _).
@@ -586,14 +588,12 @@ CallGraphEdgeWithDependencies(caller, tomethod, callerLDeps, calleeLDeps, global
   EmptyDependencies(globalDeps),
   !ActualParam(_, caller, _).
 
-// if it's a static call with no args, only dependencies are on caller method
-// DESIGN
-// CallGraphEdgeWithDependencies(caller, tomethod, callerLDeps, emptyDeps, globalDeps) :-
-CallGraphEdgeWithDependencies(caller, tomethod, callerLDeps, emptyDeps, emptyDeps) :-
+// if it's a static call with no args, there are no dependencies
+CallGraphEdgeWithDependencies(caller, tomethod, emptyDeps, emptyDeps, emptyDeps) :-
   CallGraphEdge(caller, tomethod),
   !ActualParam(_, caller, _),
   StaticMethodInvocation(caller, _, inmethod),
-  MethodDependencies(inmethod, callerLDeps, globalDeps),
+  Reachable(inmethod),
   EmptyDependencies(emptyDeps).
 
 // static call, but args have deps
@@ -649,13 +649,9 @@ VarPointsTo(this, obj, localDeps, globalDeps) :-
   MethodAndPointsToCompatibleDependencyResponse(tomethod, this, obj, localDeps, globalDeps).
  .plan 1:(2,1,3,4), 2:(4,1,2,3)
 
-// DESIGN3
-// CallerCalleeCompatibleDependenciesRequest(caller, return, callerLDeps, calleeLDeps, globalDeps) :-
-CallerCalleeCompatibleDependenciesRequest(caller, return, emptyDeps, calleeLDeps, globalDeps) :-
+CallerCalleeCompatibleDependenciesRequest(caller, return, callerLDeps, calleeLDeps, globalDeps) :-
   CallGraphEdgeWithDependencies(caller, tomethod, callerLDeps, calleeLDeps, globalDeps),
-  ReturnVar(return, tomethod),
-// DESIGN3
-  EmptyDependencies(emptyDeps).
+  ReturnVar(return, tomethod).
 
 // A lot of work to get to this point! But now return value should depend on args
 VarPointsTo(local, obj, localDeps, globalDeps) :-
@@ -664,23 +660,36 @@ VarPointsTo(local, obj, localDeps, globalDeps) :-
 
 
 // intra-procedural rules
-VarPointsTo(var, heap, localDeps, globalDeps) :-
+VarPointsTo(var, heap, localDeps, emptyDeps) :-
   AssignHeapAllocation(heap, var, inmethod),
-  MethodDependencies(inmethod, localDeps, globalDeps).
+  Reachable(inmethod),
+  localDeps = @singleton_mapping(var, heap, heap),  // introduce a new mapping on allocation!
+  EmptyDependencies(emptyDeps).
 
-VarPointsTo(to, obj, localDeps, globalDeps) :-
-  VarPointsTo(from, obj, preLocalDeps, globalDeps),
-  AssignLocal(from, to, _),
-  addOnDeps = @singleton_mapping(from, obj, obj),
-  localDeps = COMBINE_STRICT(preLocalDeps, addOnDeps).
+// VarPointsTo(to, obj, localDeps, globalDeps) :-
+//   VarPointsTo(from, obj, preLocalDeps, globalDeps),
+//   AssignLocal(from, to, _),
+//   addOnDeps = @singleton_mapping(from, obj, obj),
+//   localDeps = COMBINE_STRICT(preLocalDeps, addOnDeps).
 
+// VarPointsTo(to, obj, localDeps, globalDeps) :-
+//   VarPointsTo(from, obj, preLocalDeps, globalDeps),
+//   AssignCast(type, from, to, _),
+//   basic.SupertypeOf(type, heaptype),
+//   HeapAllocation_Type(obj, heaptype),
+//   addOnDeps = @singleton_mapping(from, obj, obj),
+//   localDeps = COMBINE_STRICT(preLocalDeps, addOnDeps).
+
+// No need to introduce mapping when the value remains unchanged!
 VarPointsTo(to, obj, localDeps, globalDeps) :-
-  VarPointsTo(from, obj, preLocalDeps, globalDeps),
+  VarPointsTo(from, obj, localDeps, globalDeps),
+  AssignLocal(from, to, _).
+  
+VarPointsTo(to, obj, localDeps, globalDeps) :-
+  VarPointsTo(from, obj, localDeps, globalDeps),
   AssignCast(type, from, to, _),
   basic.SupertypeOf(type, heaptype),
-  HeapAllocation_Type(obj, heaptype),
-  addOnDeps = @singleton_mapping(from, obj, obj),
-  localDeps = COMBINE_STRICT(preLocalDeps, addOnDeps).
+  HeapAllocation_Type(obj, heaptype).
 
 .decl AuxStoredObjectIntoField(heap:HeapAllocation, fld:Field, base:Var, fLDeps:Dependencies, fGDeps:Dependencies)
 AuxStoredObjectIntoField(heap, fld, base, fLDeps, fGDeps) :-
@@ -722,11 +731,9 @@ AuxAccessPath(base, fld, cat(base, cat("___.___", fld))) :-
 
 .decl AuxLoadPointsTo(baseheap:HeapAllocation, fld:Field, to:Var, apText:symbol, lDeps:Dependencies, gDeps:Dependencies) 
 AuxLoadPointsTo(baseheap, fld, to, apText, localDeps, gDeps) :-
-  VarPointsTo(base, baseheap, preLocalDeps, gDeps),
+  VarPointsTo(base, baseheap, localDeps, gDeps),
   LoadInstanceField(base, fld, to, _),
-  AuxAccessPath(base, fld, apText),
-  deltaLocalDeps = @singleton_mapping(base, baseheap, baseheap),
-  localDeps = COMBINE_STRICT(preLocalDeps, deltaLocalDeps).
+  AuxAccessPath(base, fld, apText).
 
 VarPointsTo(to, heap, localDeps, globalDeps) :-
   AuxLoadPointsTo(baseheap, fld, to, apText, localDeps, bGDeps),
@@ -740,15 +747,12 @@ VarPointsTo(to, heap, localDeps, globalDeps) :-
   globalDeps = @combine_loose(newGlobalDeps, bGDeps), hGDeps = hGDeps.
  .plan 1:(2,1)
 
-VarPointsTo(to, heap, localDeps, globalDeps) :-
-  LoadStaticField(fld, to, inmethod),
+VarPointsTo(to, heap, emptyDeps, globalDeps) :-
   StaticFieldPointsTo(fld, heap, hGDeps),
-  MethodDependencies(inmethod, localDeps, mGDeps),
+  LoadStaticField(fld, to, _),
   newGlobalDeps = @singleton_mapping(fld, heap, heap),
-  tempGlobalDeps = @combine_loose(newGlobalDeps, mGDeps),
-  temp2GlobalDeps = @combine_loose(newGlobalDeps, hGDeps),
-  globalDeps = COMBINE_STRICT(tempGlobalDeps, temp2GlobalDeps).
- .plan 1:(3,1,2)
+  globalDeps = @combine_loose(newGlobalDeps, hGDeps),
+  EmptyDependencies(emptyDeps).
 
 /*
  *  Optimization predicates. Mostly request-response patterns.
@@ -827,34 +831,34 @@ MethodAndPointsToCompatibleDependencyResponse(method, var, obj, localDeps, globa
 .decl ClassInitializer(type:Type, method:Method)
 .decl InitializedClass(classOrInterface:Type)
 ClassInitializer(type, method) :-
-   basic.MethodImplemented("<clinit>", "void()", type, method).
+  basic.MethodImplemented("<clinit>", "void()", type, method).
 InitializedClass(superclass) :-
-   InitializedClass(class),
-   DirectSuperclass(class, superclass).
+  InitializedClass(class),
+  DirectSuperclass(class, superclass).
 InitializedClass(superinterface) :-
-   InitializedClass(classOrInterface),
-   DirectSuperinterface(classOrInterface, superinterface).
+  InitializedClass(classOrInterface),
+  DirectSuperinterface(classOrInterface, superinterface).
 InitializedClass(class) :-
-   basic.MainMethodDeclaration(method),
-   Method_DeclaringType(method, class).
+  basic.MainMethodDeclaration(method),
+  Method_DeclaringType(method, class).
 InitializedClass(class) :-
-   MethodDependencies(inmethod, _, _),
-   AssignHeapAllocation(heap, _, inmethod),
-   HeapAllocation_Type(heap, class).
+  Reachable(inmethod),
+  AssignHeapAllocation(heap, _, inmethod),
+  HeapAllocation_Type(heap, class).
 InitializedClass(class) :-
-   MethodDependencies(inmethod, _, _),
-   Instruction_Method(invocation, inmethod),
-   isStaticMethodInvocation_Insn(invocation),
-   MethodInvocation_Method(invocation, signature),
-   Method_DeclaringType(signature, class).
+  Reachable(inmethod),
+  Instruction_Method(invocation, inmethod),
+  isStaticMethodInvocation_Insn(invocation),
+  MethodInvocation_Method(invocation, signature),
+  Method_DeclaringType(signature, class).
 InitializedClass(classOrInterface) :-
-   MethodDependencies(inmethod, _, _),
-   StoreStaticField(_, signature, inmethod),
-   Field_DeclaringType(signature, classOrInterface).
+  Reachable(inmethod),
+  StoreStaticField(_, signature, inmethod),
+  Field_DeclaringType(signature, classOrInterface).
 InitializedClass(classOrInterface) :-
-   MethodDependencies(inmethod, _, _),
-   LoadStaticField(signature, _, inmethod),
-   Field_DeclaringType(signature, classOrInterface).
+  Reachable(inmethod),
+  LoadStaticField(signature, _, inmethod),
+  Field_DeclaringType(signature, classOrInterface).
 
 
 /// output
