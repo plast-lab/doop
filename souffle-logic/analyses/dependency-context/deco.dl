@@ -488,11 +488,16 @@ NextFormalParam(method, i-1, next) :-
   FormalParam(i, method, next),
   i > 0.
 
-LocalDependenciesCheckRequest(preCallerLDeps, deltaCallerLDeps),
-GlobalDependenciesCheckRequest(preGlobalDeps, deltaGlobalDeps) :-
-  DependenciesUpToActual(caller, method, i, preCallerLDeps, _, preGlobalDeps),
+// GlobalDependenciesCheckRequest(preGlobalDeps, deltaGlobalDeps),
+// LocalDependenciesCheckRequest(preCallerLDeps, deltaCallerLDeps) :-
+//   DependenciesUpToActual(caller, _, i, preCallerLDeps, _, preGlobalDeps),
+//   NextActualParam(caller, i, actual),
+//   VarPointsTo(actual, obj, deltaCallerLDeps, deltaGlobalDeps).
+//  .plan 1:(3,2,1)
+LocalDependenciesCheckRequest(preCallerLDeps, deltaCallerLDeps) :-
+  DependenciesUpToActual(caller, _, i, preCallerLDeps, _, _),
   NextActualParam(caller, i, actual),
-  VarPointsTo(actual, obj, deltaCallerLDeps, deltaGlobalDeps).
+  VarPointsTo(actual, _, deltaCallerLDeps, _).
  .plan 1:(3,2,1)
 
 DependenciesUpToActual(caller, method, i+1, callerLDeps, calleeLDeps, globalDeps) :-
@@ -500,11 +505,13 @@ DependenciesUpToActual(caller, method, i+1, callerLDeps, calleeLDeps, globalDeps
   NextActualParam(caller, i, actual),
   VarPointsTo(actual, obj, deltaCallerLDeps, deltaGlobalDeps),
   ValidLocalDependenciesCheckResponse(preCallerLDeps, deltaCallerLDeps, callerLDeps),
-  ValidGlobalDependenciesCheckResponse(preGlobalDeps, deltaGlobalDeps, globalDeps),
+//  ValidGlobalDependenciesCheckResponse(preGlobalDeps, deltaGlobalDeps, globalDeps),
+  globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps),
   NextFormalParam(method, i, formal),
   addOnDeps = @singleton_mapping(formal, obj, obj),
   calleeLDeps = @combine_loose(preCalleeLDeps, addOnDeps).  // cannot conflict
- .plan 1:(3,2,1,4,5,6), 2:(4,1,2,3,5,6), 3:(5,1,2,3,4,6)
+// .plan 1:(3,2,1,4,5,6), 2:(4,1,2,3,5,6), 3:(5,1,2,3,4,6)
+ .plan 1:(3,2,1,4,5), 2:(4,1,2,3,5)
 
 DependenciesUpToActual(caller, method, i+1, callerLDeps, calleeLDeps, globalDeps) :-
   DependenciesUpToActual(caller, method, i, callerLDeps, calleeLDeps, globalDeps),
@@ -541,21 +548,6 @@ DependenciesForThis(caller, tomethod, callerLDeps, calleeLDeps, globalDeps) :-
 DependenciesForAllParams(caller, method, callerLDeps, calleeLDeps, globalDeps) :-
   DependenciesUpToActual(caller, method, i, callerLDeps, calleeLDeps, globalDeps),
   !NextActualParam(caller, i, _).
-
-// GlobalDependenciesCheckRequest(preGlobalDeps, thisGlobalDeps),
-// LocalDependenciesCheckRequest(preCallerLDeps, thisCallerLDeps),
-// LocalDependenciesCheckRequest(preCalleeLDeps, thisCalleeLDeps) :-
-//   DependenciesForAllParams(caller, tomethod, preCallerLDeps, preCalleeLDeps, preGlobalDeps),
-//   DependenciesForThis(caller, tomethod, thisCallerLDeps, thisCalleeLDeps, thisGlobalDeps).
-//  .plan 1:(2,1)
-
-// CallGraphEdgeWithDependencies(caller, tomethod, callerLDeps, calleeLDeps, globalDeps) :-
-//   DependenciesForAllParams(caller, tomethod, preCallerLDeps, preCalleeLDeps, preGlobalDeps),
-//   DependenciesForThis(caller, tomethod, thisCallerLDeps, thisCalleeLDeps, thisGlobalDeps),
-//   ValidLocalDependenciesCheckResponse(preCallerLDeps, thisCallerLDeps, callerLDeps),
-//   ValidLocalDependenciesCheckResponse(preCalleeLDeps, thisCalleeLDeps, calleeLDeps),
-//   ValidGlobalDependenciesCheckResponse(preGlobalDeps, thisGlobalDeps, globalDeps).
-//  .plan 1:(2,1,3,4,5), 2:(3,2,1,4,5), 3:(4,2,1,3,5), 4:(5,2,1,3,4)
 
 // DESIGN choice: ignore all global deps when crossing method boundaries
 // DESIGN2: eliminate global dependencies from InstanceFieldPointsTo (always null)
@@ -598,7 +590,8 @@ CallGraphEdgeWithDependencies(caller, tomethod, emptyDeps, emptyDeps, globalDeps
 
 // static call, but args have deps
 CallGraphEdgeWithDependencies(caller, tomethod, callerLDeps, calleeLDeps, globalDeps) :-
-// DESIGN  DependenciesForAllParams(caller, tomethod, callerLDeps, calleeLDeps, globalDeps),
+// DESIGN
+//  DependenciesForAllParams(caller, tomethod, callerLDeps, calleeLDeps, globalDeps),
   DependenciesForAllParamsMod(caller, tomethod, callerLDeps, calleeLDeps),
   EmptyDependencies(globalDeps),
   StaticMethodInvocation(caller, tomethod, _).
@@ -695,10 +688,14 @@ AuxStoredObjectIntoField(heap, fld, base, fLDeps, fGDeps) :-
   VarPointsTo(from, heap, fLDeps, fGDeps),
   StoreInstanceField(from, base, fld, _).
 
-LocalDependenciesCheckRequest(fLDeps, bLDeps),
-GlobalDependenciesCheckRequest(fGDeps, bGDeps) :-
-  AuxStoredObjectIntoField(heap, fld, base, fLDeps, fGDeps),
-  VarPointsTo(base, baseheap, bLDeps, bGDeps).
+// GlobalDependenciesCheckRequest(fGDeps, bGDeps),
+// LocalDependenciesCheckRequest(fLDeps, bLDeps) :-
+//   AuxStoredObjectIntoField(_, _, base, fLDeps, fGDeps),
+//   VarPointsTo(base, _, bLDeps, bGDeps).
+//  .plan 1:(2,1)
+LocalDependenciesCheckRequest(fLDeps, bLDeps) :-
+  AuxStoredObjectIntoField(_, _, base, fLDeps, _),
+  VarPointsTo(base, _, bLDeps, _).
  .plan 1:(2,1)
 
 InstanceFieldPointsTo(baseheap, fld, heap, globalDeps) :-
@@ -708,9 +705,11 @@ InstanceFieldPointsTo(baseheap, fld, heap, globalDeps) :-
 /// DESIGN2
 //  ValidGlobalDependenciesCheckResponse(fGDeps, bGDeps, globalDeps). 
 // .plan 1:(2,1,3,4), 2:(3,1,2,4), 3:(4,1,2,3)
-  ValidGlobalDependenciesCheckResponse(fGDeps, bGDeps, _),
+  dummy = COMBINE_STRICT(fGDeps, bGDeps), dummy = dummy,
+//  ValidGlobalDependenciesCheckResponse(fGDeps, bGDeps, _),
   EmptyDependencies(globalDeps).
- .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5), 3:(4,1,2,3,5)
+// .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5), 3:(4,1,2,3,5)
+ .plan 1:(2,1,3,4), 2:(3,1,2,4)
 /// Basically disable all global dependencies for InstanceFieldPointsTo
 
 StaticFieldPointsTo(fld, heap, globalDeps) :-
@@ -800,19 +799,29 @@ FormalReturnVPT(var, obj, lDeps, gDeps) :-
   VarPointsTo(var, obj, lDeps, gDeps),
   ReturnVar(var, _).
   
-LocalDependenciesCheckRequest(calleeLDeps, vLDeps),
-GlobalDependenciesCheckRequest(preGlobalDeps, vGDeps) :-
-  CallerCalleeCompatibleDependenciesRequest(_, formalRetVar, _, calleeLDeps, preGlobalDeps),
-  FormalReturnVPT(formalRetVar, _, vLDeps, vGDeps).
+// GlobalDependenciesCheckRequest(preGlobalDeps, vGDeps),
+// LocalDependenciesCheckRequest(calleeLDeps, vLDeps) :-
+//   CallerCalleeCompatibleDependenciesRequest(_, formalRetVar, _, calleeLDeps, preGlobalDeps),
+//   FormalReturnVPT(formalRetVar, _, vLDeps, vGDeps).
+//  .plan 1:(2,1)
+LocalDependenciesCheckRequest(calleeLDeps, vLDeps) :-
+  CallerCalleeCompatibleDependenciesRequest(_, formalRetVar, _, calleeLDeps, _),
+  FormalReturnVPT(formalRetVar, _, vLDeps, _).
  .plan 1:(2,1)
 
+/// DESIGN alternative
+// CallerCalleeCompatibleDependenciesResponse(caller, obj, localDeps, globalDeps) :-
+//   CallerCalleeCompatibleDependenciesRequest(caller, formalRetVar, localDeps, calleeLDeps, preGlobalDeps),
+//   FormalReturnVPT(formalRetVar, obj, vLDeps, vGDeps),
+//   IsValidLocalDependenciesCheckResponse(calleeLDeps, vLDeps),
+//   globalDeps = COMBINE_STRICT(preGlobalDeps, vGDeps).
+//  .plan 1:(2,1,3), 2:(3,1,2)
+// //  ValidGlobalDependenciesCheckResponse(preGlobalDeps, vGDeps, globalDeps).
+// // .plan 1:(2,1,3,4), 2:(3,1,2,4), 3:(4,1,2,3)
 CallerCalleeCompatibleDependenciesResponse(caller, obj, localDeps, globalDeps) :-
-  CallerCalleeCompatibleDependenciesRequest(caller, formalRetVar, localDeps, calleeLDeps, preGlobalDeps),
-  FormalReturnVPT(formalRetVar, obj, vLDeps, vGDeps),
+  CallerCalleeCompatibleDependenciesRequest(caller, formalRetVar, localDeps, calleeLDeps, _),
+  FormalReturnVPT(formalRetVar, obj, vLDeps, _),
   IsValidLocalDependenciesCheckResponse(calleeLDeps, vLDeps),
-/// DESIGN
- //  ValidGlobalDependenciesCheckResponse(preGlobalDeps, vGDeps, globalDeps).
- // .plan 1:(2,1,3,4), 2:(3,1,2,4), 3:(4,1,2,3)
   EmptyDependencies(globalDeps).
  .plan 1:(2,1,3,4), 2:(3,1,2,4)
 
