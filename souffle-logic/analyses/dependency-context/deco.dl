@@ -469,12 +469,12 @@ DependenciesUpToActual(caller, method, 0, callerLDeps, calleeLDeps, globalDeps) 
   calleeLDeps = @singleton_mapping(formal, obj, obj).  // localDeps get reset at a call
  .plan 1:(4,2,1,3)
 
-DependenciesUpToActual(caller, method, 0, emptyDeps, emptyDeps, emptyDeps) :-
+DependenciesUpToActual(caller, method, 0, emptyDeps, emptyDeps, globalDeps) :-
   CallGraphEdge(caller, method),
   ActualParam(0, caller, actual),
   !VarOfReferenceType(actual),
   Instruction_Method(caller, inmethod),
-  Reachable(inmethod),
+  MethodDependencies(inmethod, _, globalDeps),
   EmptyDependencies(emptyDeps).
 
 // These ridiculous-looking definitions are because using "i+1" in the middle of
@@ -588,12 +588,12 @@ CallGraphEdgeWithDependencies(caller, tomethod, callerLDeps, calleeLDeps, global
   EmptyDependencies(globalDeps),
   !ActualParam(_, caller, _).
 
-// if it's a static call with no args, there are no dependencies
-CallGraphEdgeWithDependencies(caller, tomethod, emptyDeps, emptyDeps, emptyDeps) :-
+// if it's a static call with no args, there are only global dependencies
+CallGraphEdgeWithDependencies(caller, tomethod, emptyDeps, emptyDeps, globalDeps) :-
   CallGraphEdge(caller, tomethod),
   !ActualParam(_, caller, _),
   StaticMethodInvocation(caller, _, inmethod),
-  Reachable(inmethod),
+  MethodDependencies(inmethod, _, globalDeps),
   EmptyDependencies(emptyDeps).
 
 // static call, but args have deps
@@ -660,11 +660,10 @@ VarPointsTo(local, obj, localDeps, globalDeps) :-
 
 
 // intra-procedural rules
-VarPointsTo(var, heap, localDeps, emptyDeps) :-
+VarPointsTo(var, heap, localDeps, globalDeps) :-
   AssignHeapAllocation(heap, var, inmethod),
-  Reachable(inmethod),
-  localDeps = @singleton_mapping(var, heap, heap),  // introduce a new mapping on allocation!
-  EmptyDependencies(emptyDeps).
+  MethodDependencies(inmethod, _, globalDeps),  
+  localDeps = @singleton_mapping(var, heap, heap).  // introduce a new mapping on allocation!
 
 // VarPointsTo(to, obj, localDeps, globalDeps) :-
 //   VarPointsTo(from, obj, preLocalDeps, globalDeps),
@@ -749,10 +748,14 @@ VarPointsTo(to, heap, localDeps, globalDeps) :-
 
 VarPointsTo(to, heap, emptyDeps, globalDeps) :-
   StaticFieldPointsTo(fld, heap, hGDeps),
-  LoadStaticField(fld, to, _),
+  LoadStaticField(fld, to, inmethod),
+  MethodDependencies(inmethod, _, mGDeps),
   newGlobalDeps = @singleton_mapping(fld, heap, heap),
-  globalDeps = @combine_loose(newGlobalDeps, hGDeps),
+  tempGlobalDeps = @combine_loose(newGlobalDeps, mGDeps),
+  temp2GlobalDeps = @combine_loose(newGlobalDeps, hGDeps),
+  globalDeps = COMBINE_STRICT(tempGlobalDeps, temp2GlobalDeps),
   EmptyDependencies(emptyDeps).
+ .plan 1:(3,2,1,4)
 
 /*
  *  Optimization predicates. Mostly request-response patterns.
