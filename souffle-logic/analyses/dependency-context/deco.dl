@@ -634,10 +634,11 @@ VarPointsTo(local, obj, localDeps, globalDeps) :-
 
 
 // intra-procedural rules
-VarPointsTo(var, heap, localDeps, globalDeps) :-
+VarPointsTo(var, heap, emptyDeps, globalDeps) :-
   AssignHeapAllocation(heap, var, inmethod),
-  MethodDependencies(inmethod, _, globalDeps),  
-  localDeps = @singleton_mapping(var, heap, heap).  // introduce a new mapping on allocation!
+  MethodDependencies(inmethod, _, globalDeps),
+  EmptyDependencies(emptyDeps).
+//  localDeps = @singleton_mapping(var, heap, heap).  // introduce a new mapping on allocation!
 
 // VarPointsTo(to, obj, localDeps, globalDeps) :-
 //   VarPointsTo(from, obj, preLocalDeps, globalDeps),
