@@ -397,44 +397,48 @@ MainMethodDeclaration(?method) :-
 }
 .init basic = Basic
 
-
-// Pre-analysis for dependencies. Dense relations, over entire code
-// base (not just reachable) but local, so it shouldn't matter much.
-.decl DependentVars(var1:Var, var2:Var)
-.decl InitDependentVars(var1:Var, var2:Var)
-
 .decl VarOfReferenceType(var:Var)
 VarOfReferenceType(var) :-
   Var_Type(var, type),
   isReferenceType(type).
 
-InitDependentVars(from, to) :-
-  (AssignLocal(from, to, _);
-   AssignCast(_, from, to, _)),
-  VarOfReferenceType(from),
-  VarOfReferenceType(to).
+// // Pre-analysis for dependencies. Dense relations, over entire code
+// // base (not just reachable) but local, so it shouldn't matter much.
+.decl DependentVars(var1:Var, var2:Var)
+// .decl InitDependentVars(var1:Var, var2:Var)
 
-InitDependentVars(base, to) :-
-  LoadInstanceField(base, _, to, _),
-  VarOfReferenceType(to).
+// // Just a heuristic for which variables are not independent. 
+// InitDependentVars(from, to) :-
+//   (AssignLocal(from, to, _);
+//    AssignCast(_, from, to, _)),
+//   VarOfReferenceType(from),
+//   VarOfReferenceType(to).
 
-InitDependentVars(var, ret) :-
-  (VirtualMethodInvocation_Base(caller, var);
-   SpecialMethodInvocation_Base(caller, var);
-   ActualParam(_, caller, var)),
-  AssignReturnValue(caller, ret),
-  VarOfReferenceType(var),
-  VarOfReferenceType(ret).
+// InitDependentVars(base, to) :-
+//   LoadInstanceField(base, _, to, _),
+//   VarOfReferenceType(to).
 
-InitDependentVars(var1, var2) :-
-  InitDependentVars(var2, var1).
+// InitDependentVars(var, ret) :-
+//   (VirtualMethodInvocation_Base(caller, var);
+//    SpecialMethodInvocation_Base(caller, var);
+//    ActualParam(_, caller, var)),
+//   AssignReturnValue(caller, ret),
+//   VarOfReferenceType(var),
+//   VarOfReferenceType(ret).
+
+// InitDependentVars(var1, var2) :-
+//   InitDependentVars(var2, var1).
   
-DependentVars(var, var) :-
-  Var_Type(var, _).
+// DependentVars(var, var) :-
+//   Var_Type(var, _).
 
+// DependentVars(var1, var2) :-
+//   DependentVars(var1, var3),
+//   InitDependentVars(var3, var2).
+
+/// Shortcircuit: single equivalence class
 DependentVars(var1, var2) :-
-  DependentVars(var1, var3),
-  InitDependentVars(var3, var2).
+  VarsInSameInvocation(_, var1, var2).
 
 // Unify receiver and args in a single numbering. Receiver is -1. 
 .decl IndexToActual(caller:MethodInvocation, i:number, actual:Var)
@@ -635,6 +639,7 @@ FirstArgEquivalenceClass(caller, argRepr) :-
 .functor combine_strict(number,number):number
 .functor combine_loose(number,number):number
 .functor mapcol_to_string(number):symbol
+.functor lookup(number,symbol):symbol
 
 // low-level lexical macros
 #define COMBINE_STRICT(e1, e2) temp##e1##e2, temp##e1##e2 = @combine_strict(e1, e2), temp##e1##e2 != 0
@@ -740,28 +745,23 @@ AuxPointsToOfActualWithFormal(caller, method, arg, obj, deltaCallerLDeps, deltaG
   VarPointsTo(varNext, obj, deltaCallerLDeps, deltaGlobalDeps).
  .plan 1:(3,2,1)
 
-LocalDependenciesCheckRequest(preCallerLDeps, deltaCallerLDeps),
-GlobalDependenciesCheckRequest(preGlobalDeps, deltaGlobalDeps) :-
-  AuxDependenciesUpToArgWithNext(caller, method, argNext, preCallerLDeps, _, preGlobalDeps),
-  AuxPointsToOfActualWithFormal(caller, method, argNext, _, deltaCallerLDeps, deltaGlobalDeps, _).
- .plan 1:(2,1)
- 
+// LocalDependenciesCheckRequest(preCallerLDeps, deltaCallerLDeps),
+// GlobalDependenciesCheckRequest(preGlobalDeps, deltaGlobalDeps) :-
+//   AuxDependenciesUpToArgWithNext(caller, method, argNext, preCallerLDeps, _, preGlobalDeps),
+//   AuxPointsToOfActualWithFormal(caller, method, argNext, _, deltaCallerLDeps, deltaGlobalDeps, _).
+//  .plan 1:(2,1)
+
 DependenciesForArgEquivalenceClassUpToArg(caller, method, argNext, callerLDeps, calleeLDeps, globalDeps) :-
   AuxDependenciesUpToArgWithNext(caller, method, argNext, preCallerLDeps, preCalleeLDeps, preGlobalDeps),
+  TriviallyCompatibleDependencies(preCallerLDeps, deltaCallerLDeps, callerLDeps),
   AuxPointsToOfActualWithFormal(caller, method, argNext, obj, deltaCallerLDeps, deltaGlobalDeps, formal),
-//  callerLDeps = COMBINE_STRICT(preCallerLDeps, deltaCallerLDeps),
-//  globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps),
-  ValidLocalDependenciesCheckResponse(preCallerLDeps, deltaCallerLDeps, callerLDeps),
-  ValidGlobalDependenciesCheckResponse(preGlobalDeps, deltaGlobalDeps, globalDeps),
+  globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps),
+//  ValidGlobalDependenciesCheckResponse(preGlobalDeps, deltaGlobalDeps, globalDeps),
 /// DESIGN (or at least in that spirit)
 //  EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps,
   addOnDeps = @singleton_mapping(formal, obj, obj),
   calleeLDeps = @combine_loose(preCalleeLDeps, addOnDeps).  // cannot conflict
-// .plan 1:(2,1)
- .plan 1:(2,1,3,4), 2:(3,1,2,4), 3:(4,1,2,3)
-// .plan 1:(2,1,3,4), 2:(3,2,1,4)
-/// DESIGN
-// .plan 1:(2,1,3), 2:(3,2,1)
+ .plan 1:(2,1,3), 2:(3,2,1)
 
 // DependenciesForArgEquivalenceClassUpToArg(caller, method, argNext, callerLDeps, calleeLDeps, globalDeps) :-
 //   AuxDependenciesUpToArgWithNext(caller, method, argNext, preCallerLDeps, preCalleeLDeps, preGlobalDeps),
@@ -830,20 +830,31 @@ DependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeL
 // are consistent with these deps! I.e., they get the right values by selecting
 // from a larger set.
 
-.decl AuxPointsToRelationshipToTest(caller:MethodInvocation, method:Method, argRepr:IndexedArg,
-  formal:Var, obj:HeapAllocation)
-AuxPointsToRelationshipToTest(caller, method, argRepr, formal, obj) :-
-  VarPointsTo(actual, obj, _, _),
-  DecomposeIndexedArg(caller, arg, actual, _),
-  RepresentativeOfArgInArgEquivalenceClass(caller, arg, argRepr),
-  MapActualToFormal(caller, arg, method, formal).
- .plan 1:(4,2,1,3)
+// .decl AuxPointsToRelationshipToTest(caller:MethodInvocation, method:Method, argRepr:IndexedArg,
+//   formal:Var, obj:HeapAllocation)
+// AuxPointsToRelationshipToTest(caller, method, argRepr, formal, obj) :-
+//   VarPointsTo(actual, obj, _, _),
+//   DecomposeIndexedArg(caller, arg, actual, _),
+//   RepresentativeOfArgInArgEquivalenceClass(caller, arg, argRepr),
+//   MapActualToFormal(caller, arg, method, formal).
+//  .plan 1:(4,2,1,3)
+
+// VarPointsTo(formal, obj, calleeLDeps, globalDeps) :-
+//   DependenciesForArgEquivalenceClass(caller, method, argRepr, _, calleeLDeps, globalDeps),
+//   AuxPointsToRelationshipToTest(caller, method, argRepr, formal, obj),
+//   deltaLDeps = @singleton_mapping(formal, obj, obj),
+//   dummy = COMBINE_STRICT(calleeLDeps, deltaLDeps), dummy = dummy.
+//  .plan 1:(2,1)
+
+.decl AuxPointsToRelationshipToTest(caller:MethodInvocation, method:Method, argRepr:IndexedArg, formal:Var)
+AuxPointsToRelationshipToTest(caller, method, argRepr, formal) :-
+  MapActualToFormal(caller, arg, method, formal),
+  RepresentativeOfArgInArgEquivalenceClass(caller, arg, argRepr).
 
 VarPointsTo(formal, obj, calleeLDeps, globalDeps) :-
   DependenciesForArgEquivalenceClass(caller, method, argRepr, _, calleeLDeps, globalDeps),
-  AuxPointsToRelationshipToTest(caller, method, argRepr, formal, obj),
-  deltaLDeps = @singleton_mapping(formal, obj, obj),
-  dummy = COMBINE_STRICT(calleeLDeps, deltaLDeps), dummy = dummy.
+  AuxPointsToRelationshipToTest(caller, method, argRepr, formal),
+  obj = @lookup(calleeLDeps, formal).  // will always succeed
  .plan 1:(2,1)
 
 
@@ -907,6 +918,40 @@ VarPointsTo(local, obj, callerLDeps, globalDeps) :-
   ValidReturnValue(caller, _, callerLDeps, globalDeps, obj),
   AssignReturnValue(caller, local).
   
+
+/*
+ * Optimize composability of dependencies
+ */
+ 
+// For analyses where all dependencies are cartesian products of arguments, the optimized
+// version of "combine_strict" is just equality, independence, or combination with empty.
+.decl TriviallyCompatibleDependencies(deps1:Dependencies, deps2:Dependencies, resultDeps:Dependencies)
+TriviallyCompatibleDependencies(lDeps, lDeps, lDeps) :-
+  VarPointsTo(_, _, lDeps, _);
+  EmptyDependencies(lDeps).
+
+TriviallyCompatibleDependencies(lDeps, otherDeps, lDeps) :-
+  VarPointsTo(_, _, lDeps, _),
+  EmptyDependencies(otherDeps).
+
+TriviallyCompatibleDependencies(otherDeps, lDeps, resDeps) :-
+  TriviallyCompatibleDependencies(lDeps, otherDeps, resDeps).
+
+.decl AuxLocalDependenciesForArgEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg,
+   calleeLDeps:Dependencies)
+AuxLocalDependenciesForArgEquivalenceClass(caller, method, argRepr, calleeLDeps) :-
+  TentativeDependenciesForArgEquivalenceClass(caller, method, argRepr, _, calleeLDeps, _).
+
+// It's necessary to state that (asserted to be) independent dependencies are combinable,
+// otherwise the equivalence classes of args impact soundness, not just precision.
+// We arbitrarily pick one of the dependencies to act as combination. This impacts precision,
+// (and scalability) but not soundness/correctness.
+TriviallyCompatibleDependencies(calleeLDeps1, calleeLDeps2, calleeLDeps1) :-
+  AuxLocalDependenciesForArgEquivalenceClass(caller, method, argRepr1, calleeLDeps1),
+  LaterArgEquivalenceClass(caller, argRepr1, argRepr2),
+  AuxLocalDependenciesForArgEquivalenceClass(caller, method, argRepr2, calleeLDeps2).
+ .plan 1:(3,2,1)
+
 
 /* 
  * intra-procedural rules
@@ -1084,11 +1129,24 @@ TextVarPointsTo(var, heap, lDepsOut, gDepsOut) :-
 InsensVarPointsTo(var, heap) :-
   VarPointsTo(var, heap, _, _).
 
+.decl TextDependenciesForArgEquivalenceClassUpToArg(caller:MethodInvocation, tomethod:Method, arg:symbol,
+   callerLDeps:symbol, calleeLDeps:symbol, globalDeps:symbol)
+TextDependenciesForArgEquivalenceClassUpToArg(caller, tomethod, tArg, tCallerLDeps, tCalleeLDeps, tGlobalDeps) :-
+  DependenciesForArgEquivalenceClassUpToArg(caller, tomethod, arg, callerLDeps, calleeLDeps, globalDeps),
+  tCallerLDeps = @mapcol_to_string(callerLDeps),
+  tCalleeLDeps = @mapcol_to_string(calleeLDeps),
+  tGlobalDeps = @mapcol_to_string(globalDeps),
+  DecomposeIndexedArg(caller, arg, var, i),
+  tArg = cat(to_string(i), cat(":", var)).
+  
+  
+
+
 // .decl CallGraphEdgeWithSomeDependencies(invo:MethodInvocation, callee:Method)
 // CallGraphEdgeWithSomeDependencies(invo, callee) :-
 //   CallGraphEdgeWithDependencies(invo, callee, _, _, _).
 
-
+.output TextDependenciesForArgEquivalenceClassUpToArg
 .output CallGraphEdge
 .output TextVarPointsTo
 .output InsensVarPointsTo
