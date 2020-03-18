@@ -278,7 +278,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             }
 
             if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value && !options.X_EXTEND_FACTS.value) {
-                if (options.HEAPDLS.value && !options.X_DRY_RUN.value) {
+                if (options.HEAPDLS.value) {
                     runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
                 }
 
@@ -748,7 +748,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             MemoryAnalyser memoryAnalyser = new MemoryAnalyser(hprofs, traces, options.HEAPDL_NOSTRINGS.value ? false : true)
-            int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
+            int n = memoryAnalyser.outputToDir(factsDir, "2ObjH")
             log.info("Generated " + n + " additional facts from memory dump")
         } catch (Exception e) {
             e.printStackTrace()
