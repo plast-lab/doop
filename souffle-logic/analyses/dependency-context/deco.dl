@@ -658,13 +658,19 @@ EmptyDependencies(dep) :-
 
 .decl Reachable(meth:Method)
 
+// TriviallyReachable: with empty context
+.decl TriviallyReachable(meth:Method)
+
 Reachable(meth) :-
   CallGraphEdge(_, meth).
 
-Reachable(method) :-
+Reachable(meth) :-
+  TriviallyReachable(meth).
+
+TriviallyReachable(method) :-
   basic.MainMethodDeclaration(method).
 
-Reachable(clinit) :-
+TriviallyReachable(clinit) :-
   InitializedClass(class),
   ClassInitializer(class, clinit).
 
@@ -714,9 +720,17 @@ MapActualToFormal(caller, arg, method, formal) :-
   DecomposeIndexedArg(caller, arg, _, i),
   FormalParam(i, method, formal).
 
-// DESIGN choice: ignore all global deps when crossing method boundaries
-// DESIGN2: eliminate global dependencies from InstanceFieldPointsTo (always null)
-// DESIGN3: eliminate global dependencies from StaticFieldPointsTo (always null)
+// DESIGN1: (+scalability) ignore all global deps when crossing method boundaries
+// DESIGN2: (+scalability) eliminate global dependencies from InstanceFieldPointsTo (always null)
+// DESIGN3: (+scalability) eliminate global dependencies from StaticFieldPointsTo (always null)
+// DESIGN4: (-scalability) context-sensitive heap
+// DESIGN5: (+scalability) no global constraints
+
+#define DESIGN1
+#define DESIGN2
+#define DESIGN3
+//#define DESIGN4
+#define DESIGN5
 
 // Most of the complexity has to do with calls. Dependencies exist between variables in the same
 // "dependence" equivalence class. Arguments in different equivalence classes are uncorrelated.
@@ -755,13 +769,16 @@ DependenciesForArgEquivalenceClassUpToArg(caller, method, argNext, callerLDeps, 
   AuxDependenciesUpToArgWithNext(caller, method, argNext, preCallerLDeps, preCalleeLDeps, preGlobalDeps),
   TriviallyCompatibleDependencies(preCallerLDeps, deltaCallerLDeps, callerLDeps),
   AuxPointsToOfActualWithFormal(caller, method, argNext, obj, deltaCallerLDeps, deltaGlobalDeps, formal),
-  globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps),
-//  ValidGlobalDependenciesCheckResponse(preGlobalDeps, deltaGlobalDeps, globalDeps),
-/// DESIGN (or at least in that spirit)
-//  EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps,
   addOnDeps = @singleton_mapping(formal, obj, obj),
-  calleeLDeps = @combine_loose(preCalleeLDeps, addOnDeps).  // cannot conflict
+  calleeLDeps = @combine_loose(preCalleeLDeps, addOnDeps),  // cannot conflict
+#ifndef DESIGN1
+//  ValidGlobalDependenciesCheckResponse(preGlobalDeps, deltaGlobalDeps, globalDeps),
+  globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps).
  .plan 1:(2,1,3), 2:(3,2,1)
+#else  /// DESIGN1 (or at least in that spirit)
+  EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps.
+ .plan 1:(2,1,3,4), 2:(3,2,1,4)
+#endif
 
 // DependenciesForArgEquivalenceClassUpToArg(caller, method, argNext, callerLDeps, calleeLDeps, globalDeps) :-
 //   AuxDependenciesUpToArgWithNext(caller, method, argNext, preCallerLDeps, preCalleeLDeps, preGlobalDeps),
@@ -780,9 +797,11 @@ DependenciesForArgEquivalenceClassUpToArg(caller, method, argNext, callerLDeps, 
 .decl TentativeDependenciesForArgEquivalenceClass(caller:MethodInvocation, tomethod:Method, argRepr:IndexedArg,
    callerLDeps:Dependencies, calleeLDeps:Dependencies, globalDeps:Dependencies)
 TentativeDependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeLDeps, globalDeps) :-
-/// DESIGN
-//  DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, globalDeps),
+#ifndef DESIGN1
+  DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, globalDeps),
+#else
   DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, _),
+#endif
   EmptyDependencies(globalDeps),
   RepresentativeOfArgInArgEquivalenceClass(caller, arg, argRepr),
   !NextArgInArgEquivalenceClass(caller, arg, _).
@@ -875,11 +894,13 @@ ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globa
   FirstArgEquivalenceClass(caller, argRepr),
   FormalReturnVPT(method, obj, rLDeps, rGDeps),
   dummy = COMBINE_STRICT(calleeLDeps, rLDeps), dummy = dummy,
-/// DESIGN
-//   globalDeps = COMBINE_STRICT(preGlobalDeps, rGDeps).
-//  .plan 1:(3,1,2)
+#ifndef DESIGN1
+  globalDeps = COMBINE_STRICT(preGlobalDeps, rGDeps).
+ .plan 1:(3,1,2)
+#else
   EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, rGDeps = rGDeps.
  .plan 1:(3,1,2,4)
+#endif
 
 ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, calleeLDeps) :-
   ReturnCompatibleUpToEquivalenceClass(caller, method, preArgRepr, callerLDeps, preGlobalDeps, obj, calleeLDeps),
@@ -890,10 +911,13 @@ ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globa
   // classes. These would combine successfully, due to independence. The result, however, is that we keep
   // the caller dependencies of the very first arg equivalence class only. With the current logic
   // for equivalence classes, this is fully general: there can be at most one when there is a return value.
-/// DESIGN
-//  globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps).
+#ifndef DESIGN1
+  globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps).
+ .plan 1:(3,2,1)
+#else
   EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps.
- .plan 1:(3,2,1,4) 
+ .plan 1:(3,2,1,4)
+#endif
 
 .decl NoReferencesPassedToCall(caller:MethodInvocation)
 NoReferencesPassedToCall(caller) :-
@@ -957,11 +981,27 @@ TriviallyCompatibleDependencies(calleeLDeps1, calleeLDeps2, calleeLDeps1) :-
  * intra-procedural rules
  */
 
+#ifdef DESIGN4
+// Enable same context sensitivity for heap
+VarPointsTo(var, obj, calleeLDeps, emptyDeps) :-
+  FirstArgEquivalenceClass(caller, argRepr),
+  DependenciesForArgEquivalenceClass(caller, inmethod, argRepr, _, calleeLDeps, _),
+  AssignHeapAllocation(heap, var, inmethod),
+  obj = cat(to_string(ord(calleeLDeps)), heap),
+  EmptyDependencies(emptyDeps).
+
+VarPointsTo(var, heap, emptyDeps, emptyDeps) :-
+  AssignHeapAllocation(heap, var, inmethod),
+  TriviallyReachable(inmethod),
+  EmptyDependencies(emptyDeps).
+#else 
 VarPointsTo(var, heap, emptyDeps, emptyDeps) :-
   AssignHeapAllocation(heap, var, inmethod),
   Reachable(inmethod),
   EmptyDependencies(emptyDeps).
+#endif
 
+//// Not compatible with current setup!
 // VarPointsTo(var, heap, localDeps, emptyDeps) :-
 //   AssignHeapAllocation(heap, var, inmethod),
 //   Reachable(inmethod),
@@ -1002,20 +1042,24 @@ InstanceFieldPointsTo(baseheap, fld, heap, globalDeps) :-
   AuxStoredObjectIntoField(heap, fld, base, fLDeps, fGDeps),
   VarPointsTo(base, baseheap, bLDeps, bGDeps),
   dummy1 = COMBINE_STRICT(fLDeps, bLDeps), dummy1 = dummy1,
-/// DESIGN2
-//  globalDeps = COMBINE_STRICT(fGDeps, bGDeps), 
-// .plan 1:(2,1,3)
+#ifndef DESIGN2
+  globalDeps = COMBINE_STRICT(fGDeps, bGDeps).
+ .plan 1:(2,1)
+#else
   dummy2 = COMBINE_STRICT(fGDeps, bGDeps), dummy2 = dummy2,
   EmptyDependencies(globalDeps).
  .plan 1:(2,1,3)
+#endif
 /// Basically disable all global dependencies for InstanceFieldPointsTo
 
 StaticFieldPointsTo(fld, heap, globalDeps) :-
   VarPointsTo(from, heap, _, fGDeps),
   StoreStaticField(from, fld, _),
-//  globalDeps = fGDeps.
-// DESIGN3
+#ifndef DESIGN3
+  globalDeps = fGDeps.
+#else
   EmptyDependencies(globalDeps), fGDeps = fGDeps.
+#endif
 
 .decl AuxAccessPath(base:Var, fld:Field, str:symbol)
 AuxAccessPath(base, fld, cat(base, cat("___.___", fld))) :-
@@ -1027,26 +1071,69 @@ AuxLoadPointsTo(baseheap, fld, to, apText, localDeps, gDeps) :-
   LoadInstanceField(base, fld, to, _),
   AuxAccessPath(base, fld, apText).
 
+#ifndef DESIGN2  // not activated, try to heuristically limit InstanceFieldPointsTo global deps
+VarPointsTo(to, heap, localDeps, globalDeps) :-
+  AuxLoadPointsTo(baseheap, fld, to, _, localDeps, bGDeps),
+  !OneOfMultipleRelatedLoads(to),
+  InstanceFieldPointsTo(baseheap, fld, heap, hGDeps),
+  globalDeps = COMBINE_STRICT(bGDeps, hGDeps).
+ .plan 1:(2,1)
+
+VarPointsTo(to, heap, localDeps, globalDeps) :-
+  AuxLoadPointsTo(baseheap, fld, to, apText, localDeps, bGDeps),
+  OneOfMultipleRelatedLoads(to),
+  InstanceFieldPointsTo(baseheap, fld, heap, hGDeps),
+#ifndef DESIGN5
+  newGlobalDeps = @singleton_mapping(apText, heap, heap),
+#else  // DESIGN5
+  newGlobalDeps = @empty_mapping(), apText = apText,
+#endif
+  oldGlobalDeps = COMBINE_STRICT(bGDeps, hGDeps),
+  globalDeps = @combine_loose(newGlobalDeps, oldGlobalDeps).
+ .plan 1:(3,1,2)
+#endif
+#else  // DESIGN2 activated, InstanceFieldPointsTo should have empty global deps
 VarPointsTo(to, heap, localDeps, globalDeps) :-
   AuxLoadPointsTo(baseheap, fld, to, apText, localDeps, bGDeps),
   InstanceFieldPointsTo(baseheap, fld, heap, hGDeps),
-/// DESIGN2
-//  oldGlobalDeps = COMBINE_STRICT(bGDeps, hGDeps),
+#ifndef DESIGN5
   newGlobalDeps = @singleton_mapping(apText, heap, heap),
-/// DESIGN2
-//  globalDeps = @combine_loose(newGlobalDeps, oldGlobalDeps).
-// .plan 1:(2,1)
-  globalDeps = @combine_loose(newGlobalDeps, bGDeps), hGDeps = hGDeps.
+#else  // DESIGN5
+  newGlobalDeps = @empty_mapping(), apText = apText,
+#endif
+  oldGlobalDeps = COMBINE_STRICT(bGDeps, hGDeps),
+  globalDeps = @combine_loose(newGlobalDeps, oldGlobalDeps).
  .plan 1:(2,1)
+#endif
 
 VarPointsTo(to, heap, emptyDeps, globalDeps) :-
   StaticFieldPointsTo(fld, heap, hGDeps),
   LoadStaticField(fld, to, inmethod),
   Reachable(inmethod), 
+#ifndef DESIGN5
   newGlobalDeps = @singleton_mapping(fld, heap, heap),
+#else  // DESIGN5
+  newGlobalDeps = @empty_mapping(),
+#endif  
   globalDeps = @combine_loose(newGlobalDeps, hGDeps),
   EmptyDependencies(emptyDeps).
  .plan 1:(3,2,1,4)
+
+
+.decl FieldsOfSameClass(field1:Field, field2:Field)
+FieldsOfSameClass(field1, field2) :-
+  Field_DeclaringType(field1, type1),
+  basic.SupertypeOf(type1, type2),
+  Field_DeclaringType(field2, type2),
+  field1 != field2.
+
+.decl OneOfMultipleRelatedLoads(to:Var)
+OneOfMultipleRelatedLoads(to) :-
+  LoadInstanceField(base, fld, to, method),
+  LoadInstanceField(base, fld2, to2, method),
+  FieldsOfSameClass(fld, fld2),
+  to != to2.
+  
 
 
 // class initialization
@@ -1146,7 +1233,9 @@ TextDependenciesForArgEquivalenceClassUpToArg(caller, tomethod, tArg, tCallerLDe
 // CallGraphEdgeWithSomeDependencies(invo, callee) :-
 //   CallGraphEdgeWithDependencies(invo, callee, _, _, _).
 
+/// WARN: heavy
 .output TextDependenciesForArgEquivalenceClassUpToArg
+
 .output CallGraphEdge
 .output TextVarPointsTo
 .output InsensVarPointsTo
