@@ -402,6 +402,19 @@ VarOfReferenceType(var) :-
   Var_Type(var, type),
   isReferenceType(type).
 
+// DESIGN1: (+scalability, -precision) ignore all global deps when crossing method boundaries
+// DESIGN2: (+scalability, -precision) eliminate global dependencies from InstanceFieldPointsTo (always null)
+// DESIGN3: (+scalability, -precision) eliminate global dependencies from StaticFieldPointsTo (always null)
+// DESIGN4: (-scalability, +precision) context-sensitive heap
+// DESIGN5: (+scalability, -precision) no global constraints
+// DESIGN6: (-scalability, +precision) no identification of equivalence classes of independent arguments
+
+#define DESIGN1
+#define DESIGN2
+#define DESIGN3
+#define DESIGN4
+#define DESIGN5
+// #define DESIGN6
 
 .decl VarDependsOnMethodArgument(var:Var, arg:Var)
 
@@ -797,20 +810,6 @@ LastActualArgEquivalenceClass(caller, method, argRepr) :-
   LastArgEquivalenceClass(formalRepr).
 
 
-// DESIGN1: (+scalability, -precision) ignore all global deps when crossing method boundaries
-// DESIGN2: (+scalability, -precision) eliminate global dependencies from InstanceFieldPointsTo (always null)
-// DESIGN3: (+scalability, -precision) eliminate global dependencies from StaticFieldPointsTo (always null)
-// DESIGN4: (-scalability, +precision) context-sensitive heap
-// DESIGN5: (+scalability, -precision) no global constraints
-// DESIGN6: (-scalability, +precision) no identification of equivalence classes of independent arguments
-
-#define DESIGN1
-#define DESIGN2
-#define DESIGN3
-// #define DESIGN4
-#define DESIGN5
-// #define DESIGN6
-
 // Most of the complexity has to do with calls. Dependencies exist between variables in the same
 // "dependence" equivalence class. Arguments in different equivalence classes are uncorrelated.
 .decl DependenciesForArgEquivalenceClassUpToArg(caller:MethodInvocation, tomethod:Method, arg:IndexedArg,
@@ -1020,15 +1019,16 @@ ValidReturnValue(caller, method, callerLDeps, globalDeps, obj) :-
 
 
 // Also cover the case where there were no arguments, and, hence, no dependencies
-.decl ReferencesPassedToMethod(method:Method)
-ReferencesPassedToMethod(method) :-
-  VarDependsOnMethodArgument(_, arg), // roundabout way to say "reference args or receiver exist"
-  Var_DeclaringMethod(arg, method).
+.decl MethodHasReferenceParameters(method:Method)
+MethodHasReferenceParameters(method) :-
+  ThisVar(method, _);
+  (FormalParam(_, method, arg),
+   VarOfReferenceType(arg)).
 
 .decl NoReferencesPassedToCall(caller:MethodInvocation)
 NoReferencesPassedToCall(caller) :-
   MethodInvocation_Method(caller, tomethod),
-  !ReferencesPassedToMethod(tomethod).
+  !MethodHasReferenceParameters(tomethod).
 
 .decl ValidReturnValue(caller:MethodInvocation, method:Method, 
    callerLDeps:Dependencies, globalDeps:Dependencies, obj:HeapAllocation)
@@ -1082,30 +1082,43 @@ TriviallyCompatibleDependencies(calleeLDeps1, calleeLDeps2, calleeLDeps1) :-
  * intra-procedural rules
  */
 
+.decl Object_Allocation(obj:symbol, heap:HeapAllocation)
+
 #ifdef DESIGN4
-// // Enable same context sensitivity for heap
+// // Enable same context sensitivity for heap. Infinite loop! The dependencies
+// // contain full object ids in them.
 // VarPointsTo(var, obj, calleeLDeps, emptyDeps) :-
-//   FirstActualArgEquivalenceClass(caller, method, argRepr),
+//   FirstActualArgEquivalenceClass(caller, inmethod, argRepr),
 //   DependenciesForArgEquivalenceClass(caller, inmethod, argRepr, _, calleeLDeps, _),
 //   AssignHeapAllocation(heap, var, inmethod),
 //   obj = cat(to_string(ord(calleeLDeps)), heap),
 //   EmptyDependencies(emptyDeps).
 
 // object sensitivity for heap
-VarPointsTo(var, obj, calleeLDeps, emptyDeps) :-
-  FirstActualArgEquivalenceClass(caller, inmethod, argRepr),
-  DependenciesForArgEquivalenceClass(caller, inmethod, argRepr, _, calleeLDeps, _),
+Object_Allocation(obj, heap),
+VarPointsTo(var, obj, localDeps, globalDeps) :-
+  VarPointsTo(formal, receiverObj, localDeps, globalDeps),
+  FirstArgEquivalenceClass(formal),
+  Var_DeclaringMethod(formal, inmethod),
   AssignHeapAllocation(heap, var, inmethod),
-  ThisVar(inmethod, this),
-  receiver = @lookup(calleeLDeps, this),
-  obj = cat(receiver, heap),
+  Object_Allocation(receiverObj, receiverHeap), // to only keep the allocation site, not the full object identity
+  obj = cat(cat(receiverHeap, "::"), heap).
+ .plan 1:(5,1,2,3,4)
+  
+Object_Allocation(heap, heap),
+VarPointsTo(var, heap, emptyDeps, emptyDeps) :-
+  Reachable(inmethod),
+  !MethodHasReferenceParameters(inmethod),
+  AssignHeapAllocation(heap, var, inmethod),
   EmptyDependencies(emptyDeps).
 
+Object_Allocation(heap, heap),
 VarPointsTo(var, heap, emptyDeps, emptyDeps) :-
   TriviallyReachable(inmethod),
   AssignHeapAllocation(heap, var, inmethod),
   EmptyDependencies(emptyDeps).
 #else 
+Object_Allocation(heap, heap),
 VarPointsTo(var, heap, emptyDeps, emptyDeps) :-
   Reachable(inmethod),
   AssignHeapAllocation(heap, var, inmethod),
@@ -1324,7 +1337,9 @@ TextVarPointsTo(var, heap, lDepsOut, gDepsOut) :-
 
 .decl InsensVarPointsTo(var:Var, heap:HeapAllocation)
 InsensVarPointsTo(var, heap) :-
-  VarPointsTo(var, heap, _, _).
+  VarPointsTo(var, obj, _, _),
+  Object_Allocation(obj, heap).
+ .plan 1:(2,1)
 
 .decl TextDependenciesForArgEquivalenceClassUpToArg(caller:MethodInvocation, tomethod:Method, arg:symbol,
    callerLDeps:symbol, calleeLDeps:symbol, globalDeps:symbol)
