@@ -402,67 +402,71 @@ VarOfReferenceType(var) :-
   Var_Type(var, type),
   isReferenceType(type).
 
-// // Pre-analysis for dependencies. Dense relations, over entire code
-// // base (not just reachable) but local, so it shouldn't matter much.
-.decl DependentVars(var1:Var, var2:Var)
-// .decl InitDependentVars(var1:Var, var2:Var)
 
-// // Just a heuristic for which variables are not independent. 
-// InitDependentVars(from, to) :-
-//   (AssignLocal(from, to, _);
-//    AssignCast(_, from, to, _)),
-//   VarOfReferenceType(from),
-//   VarOfReferenceType(to).
+.decl VarDependsOnMethodArgument(var:Var, arg:Var)
 
-// InitDependentVars(base, to) :-
-//   LoadInstanceField(base, _, to, _),
-//   VarOfReferenceType(to).
-
-// InitDependentVars(var, ret) :-
-//   (VirtualMethodInvocation_Base(caller, var);
-//    SpecialMethodInvocation_Base(caller, var);
-//    ActualParam(_, caller, var)),
-//   AssignReturnValue(caller, ret),
-//   VarOfReferenceType(var),
-//   VarOfReferenceType(ret).
-
-// InitDependentVars(var1, var2) :-
-//   InitDependentVars(var2, var1).
+VarDependsOnMethodArgument(arg, arg) :-
+  FormalParam(_, _, arg),
+  VarOfReferenceType(arg).
   
-// DependentVars(var, var) :-
-//   Var_Type(var, _).
+VarDependsOnMethodArgument(arg, arg) :-
+  ThisVar(_, arg).
 
-// DependentVars(var1, var2) :-
-//   DependentVars(var1, var3),
-//   InitDependentVars(var3, var2).
+VarDependsOnMethodArgument(to, arg) :-
+  VarDependsOnMethodArgument(from, arg),
+  (AssignLocal(from, to, _);
+   AssignCast(_, from, to, _)).
 
-/// Shortcircuit: single equivalence class
+VarDependsOnMethodArgument(to, arg) :-
+  VarDependsOnMethodArgument(base, arg),
+  LoadInstanceField(base, _, to, _).
+
+// Dependencies defined strictly on formal args of the function.
+// There are only two operations that combine values! Calls and stores!!!
+.decl InitDependentVars(arg1:Var, arg2:Var)
+
+InitDependentVars(arg1, arg2) :-
+  MethodInvocation_Method(caller, meth),
+  ActualParam(_, caller, var1),
+  (ActualParam(_, caller, var2);
+   VirtualMethodInvocation_Base(caller, var2);
+   SpecialMethodInvocation_Base(caller, var2)),
+  VarDependsOnMethodArgument(var1, arg1),
+  VarDependsOnMethodArgument(var2, arg2).
+  
+InitDependentVars(arg1, arg2) :-
+  StoreInstanceField(from, base, _, _),
+  VarDependsOnMethodArgument(from, arg1),
+  VarDependsOnMethodArgument(base, arg2).
+
+InitDependentVars(var1, var2) :-
+  InitDependentVars(var2, var1).
+
+// // Short-circuit version, to get a single equivalence class
+// InitDependentVars(arg1, arg2) :-
+//   FormalParam(_, method, arg1),
+//   VarOfReferenceType(arg1),
+//   ((FormalParam(_, method, arg2),
+//     VarOfReferenceType(arg2));
+//    ThisVar(method, arg2)).
+
+
+.decl DependentVars(var1:Var, var2:Var)  
+DependentVars(arg, arg) :-
+  VarDependsOnMethodArgument(_, arg).
+
 DependentVars(var1, var2) :-
-  VarsInSameInvocation(_, var1, var2).
+  DependentVars(var1, var3),
+  InitDependentVars(var3, var2).
 
 // Unify receiver and args in a single numbering. Receiver is -1. 
-.decl IndexToActual(caller:MethodInvocation, i:number, actual:Var)
+.decl IndexToActual(method:MethodInvocation, i:number, actual:Var)
 IndexToActual(caller, -1, var) :-
   VirtualMethodInvocation_Base(caller, var);
   SpecialMethodInvocation_Base(caller, var).
 IndexToActual(caller, i, var) :-
   ActualParam(i, caller, var),
   VarOfReferenceType(var).
-
-.decl VarForInvocation(caller:MethodInvocation, var:Var)
-VarForInvocation(caller, var) :-
-  IndexToActual(caller, _, var).
-
-.decl VarsInSameInvocation(caller:MethodInvocation, var1:Var, var2:Var)
-VarsInSameInvocation(caller, var1, var2) :-
-  VarForInvocation(caller, var1),
-  VarForInvocation(caller, var2).
-
-// Equivalence classes of arguments (including receiver) for a single method call.
-.decl VarsInSameArgEquivalenceClass(caller:MethodInvocation, var1:Var, var2:Var)
-VarsInSameArgEquivalenceClass(caller, var1, var2) :-
-  VarsInSameInvocation(caller, var1, var2),
-  DependentVars(var1, var2).
 
 // Actual arguments are not uniquely identified by var name, sadly! A weekend wasted
 // so I could be reminded of this.
@@ -472,114 +476,133 @@ VarsInSameArgEquivalenceClass(caller, var1, var2) :-
 DecomposeIndexedArg(caller, [var, i], var, i) :-
   IndexToActual(caller, i, var).  
 
-.decl LaterArgInSameInvocation(caller:MethodInvocation, arg:IndexedArg, argLater:IndexedArg)
-LaterArgInSameInvocation(caller, arg, argLater) :-
-  DecomposeIndexedArg(caller, arg, _, i),
-  DecomposeIndexedArg(caller, argLater, _, j),
-  i < j.
 
-.decl LaterArgInArgEquivalenceClass(caller:MethodInvocation, arg:IndexedArg, argLater:IndexedArg)
-LaterArgInArgEquivalenceClass(caller, arg, argLater) :-
-  LaterArgInSameInvocation(caller, arg, argLater),
-  DecomposeIndexedArg(caller, arg, var, _),
-  DecomposeIndexedArg(caller, argLater, varLater, _),
-  VarsInSameArgEquivalenceClass(caller, var, varLater).
+// Equivalence classes of formal arguments (including "this") for a single method.
+.decl VarsInSameArgEquivalenceClass(var1:Var, var2:Var)
+VarsInSameArgEquivalenceClass(var1, var2) :-
+  DependentVars(var1, var2).
 
-.decl NotNextArgInArgEquivalenceClass(caller:MethodInvocation, arg:IndexedArg, argLater:IndexedArg)
-NotNextArgInArgEquivalenceClass(caller, arg, argLater) :-
-  LaterArgInArgEquivalenceClass(caller, arg, argLater),
-  LaterArgInArgEquivalenceClass(caller, arg, argOther),
-  LaterArgInArgEquivalenceClass(caller, argOther, argLater).
+.decl LaterArgInSameMethod(arg:Var, argLater:Var)
+LaterArgInSameMethod(arg, argLater) :-
+  FormalParam(i, method, arg),
+  FormalParam(j, method, argLater),
+  j > i.
+LaterArgInSameMethod(arg, argLater) :-
+  ThisVar(method, arg),
+  FormalParam(_, method, argLater).
 
-.decl NextArgInArgEquivalenceClass(caller:MethodInvocation, arg:IndexedArg, argNextr:IndexedArg)
-NextArgInArgEquivalenceClass(caller, arg, argNext) :-
-  LaterArgInArgEquivalenceClass(caller, arg, argNext),
-  !NotNextArgInArgEquivalenceClass(caller, arg, argNext).
+.decl LaterArgInArgEquivalenceClass(arg:Var, argLater:Var)
+LaterArgInArgEquivalenceClass(arg, argLater) :-
+  LaterArgInSameMethod(arg, argLater),
+  VarsInSameArgEquivalenceClass(arg, argLater).
 
-.decl PrevArgInArgEquivalenceClass(caller:MethodInvocation, arg:IndexedArg, argPrev:IndexedArg)
-PrevArgInArgEquivalenceClass(caller, arg, argPrev) :-
-  NextArgInArgEquivalenceClass(caller, argPrev, arg).
+.decl NotNextArgInArgEquivalenceClass(arg:Var, argLater:Var)
+NotNextArgInArgEquivalenceClass(arg, argLater) :-
+  LaterArgInArgEquivalenceClass(arg, argLater),
+  LaterArgInArgEquivalenceClass(arg, argOther),
+  LaterArgInArgEquivalenceClass(argOther, argLater).
 
-.decl FirstArgInArgEquivalenceClass(caller:MethodInvocation, arg:IndexedArg)
-FirstArgInArgEquivalenceClass(caller, arg) :-
-  DecomposeIndexedArg(caller, arg, _, _),
-  !NextArgInArgEquivalenceClass(caller, _, arg).
+.decl NextArgInArgEquivalenceClass(arg:Var, argNext:Var)
+NextArgInArgEquivalenceClass(arg, argNext) :-
+  LaterArgInArgEquivalenceClass(arg, argNext),
+  !NotNextArgInArgEquivalenceClass(arg, argNext).
 
-.decl RepresentativeOfArgInArgEquivalenceClass(caller:MethodInvocation, arg:IndexedArg, argRepr:IndexedArg)
-RepresentativeOfArgInArgEquivalenceClass(caller, argRepr, argRepr) :-
-  FirstArgInArgEquivalenceClass(caller, argRepr).
+.decl PrevArgInArgEquivalenceClass(arg:Var, argPrev:Var)
+PrevArgInArgEquivalenceClass(arg, argPrev) :-
+  NextArgInArgEquivalenceClass(argPrev, arg).
 
-RepresentativeOfArgInArgEquivalenceClass(caller, arg, argRepr) :-
-  FirstArgInArgEquivalenceClass(caller, argRepr),
-  LaterArgInArgEquivalenceClass(caller, argRepr, arg).
+.decl FirstArgInArgEquivalenceClass(arg:Var)
+FirstArgInArgEquivalenceClass(arg) :-
+  VarsInSameArgEquivalenceClass(arg, arg),
+  !NextArgInArgEquivalenceClass(_, arg).
+
+.decl LastArgInArgEquivalenceClass(arg:Var)
+LastArgInArgEquivalenceClass(arg) :-
+  VarsInSameArgEquivalenceClass(arg, arg),
+  !NextArgInArgEquivalenceClass(arg, _).
+
+.decl RepresentativeOfArgInArgEquivalenceClass(arg:Var, argRepr:Var)
+RepresentativeOfArgInArgEquivalenceClass(argRepr, argRepr) :-
+  FirstArgInArgEquivalenceClass(argRepr).
+
+RepresentativeOfArgInArgEquivalenceClass(arg, argRepr) :-
+  FirstArgInArgEquivalenceClass(argRepr),
+  LaterArgInArgEquivalenceClass(argRepr, arg).
 
 // Equivalence classes represented by their first arg (in receiver, arg0, arg1, ... order)
-.decl LaterArgEquivalenceClass(caller:MethodInvocation, argRepr:IndexedArg, argReprLater:IndexedArg)
-LaterArgEquivalenceClass(caller, argRepr, argReprLater) :-
-  LaterArgInSameInvocation(caller, argRepr, argReprLater),
-  FirstArgInArgEquivalenceClass(caller, argRepr),
-  FirstArgInArgEquivalenceClass(caller, argReprLater).
+.decl LaterArgEquivalenceClass(argRepr:Var, argReprLater:Var)
+LaterArgEquivalenceClass(argRepr, argReprLater) :-
+  LaterArgInSameMethod(argRepr, argReprLater),
+  FirstArgInArgEquivalenceClass(argRepr),
+  FirstArgInArgEquivalenceClass(argReprLater).
 
-.decl NotNextArgEquivalenceClass(caller:MethodInvocation, argRepr:IndexedArg, argReprLater:IndexedArg)
-NotNextArgEquivalenceClass(caller, argRepr, argReprLater) :-
-  LaterArgEquivalenceClass(caller, argRepr, argReprLater),
-  LaterArgEquivalenceClass(caller, argRepr, argReprOther),
-  LaterArgEquivalenceClass(caller, argReprOther, argReprLater).
+.decl NotNextArgEquivalenceClass(argRepr:Var, argReprLater:Var)
+NotNextArgEquivalenceClass(argRepr, argReprLater) :-
+  LaterArgEquivalenceClass(argRepr, argReprLater),
+  LaterArgEquivalenceClass(argRepr, argReprOther),
+  LaterArgEquivalenceClass(argReprOther, argReprLater).
 
-.decl NextArgEquivalenceClass(caller:MethodInvocation, argRepr:IndexedArg, argReprLater:IndexedArg)
-NextArgEquivalenceClass(caller, argRepr, argReprNext) :-
-  LaterArgEquivalenceClass(caller, argRepr, argReprNext),
-  !NotNextArgEquivalenceClass(caller, argRepr, argReprNext).
+.decl NextArgEquivalenceClass(argRepr:Var, argReprLater:Var)
+NextArgEquivalenceClass(argRepr, argReprNext) :-
+  LaterArgEquivalenceClass(argRepr, argReprNext),
+  !NotNextArgEquivalenceClass(argRepr, argReprNext).
 
-.decl FirstArgEquivalenceClass(caller:MethodInvocation, argRepr:IndexedArg)
-FirstArgEquivalenceClass(caller, argRepr) :-
-  FirstArgInArgEquivalenceClass(caller, argRepr),
-  !NextArgEquivalenceClass(caller, _, argRepr).
+.decl FirstArgEquivalenceClass(argRepr:Var)
+FirstArgEquivalenceClass(argRepr) :-
+  FirstArgInArgEquivalenceClass(argRepr),
+  !NextArgEquivalenceClass(_, argRepr).
 
+.decl LastArgEquivalenceClass(argRepr:Var)
+LastArgEquivalenceClass(argRepr) :-
+  FirstArgInArgEquivalenceClass(argRepr),
+  !NextArgEquivalenceClass(argRepr, _).
+
+
+// OUTDATED, need updating
 
 // /// For diagnostics
 
 // .decl Problem1(caller:MethodInvocation, arg:IndexedArg, arg1:IndexedArg, arg2:IndexedArg)
 // Problem1(caller, arg, arg1, arg2) :-
-//   NextArgInArgEquivalenceClass(caller, arg, arg1),
-//   NextArgInArgEquivalenceClass(caller, arg, arg2),
+//   NextActualArgInArgEquivalenceClass(caller, arg, arg1),
+//   NextActualArgInArgEquivalenceClass(caller, arg, arg2),
 //   arg1 != arg2.
 // .output Problem1
 
 // .decl Problem2(caller:MethodInvocation, arg:IndexedArg, arg1:IndexedArg, arg2:IndexedArg)
 // Problem2(caller, arg, arg1, arg2) :-
-//   NextArgEquivalenceClass(caller, arg, arg1),
-//   NextArgEquivalenceClass(caller, arg, arg2),
+//   NextActualArgEquivalenceClass(caller, arg, arg1),
+//   NextActualArgEquivalenceClass(caller, arg, arg2),
 //   arg1 != arg2.
 // .output Problem2
 
 // .decl Problem3(caller:MethodInvocation)
 // Problem3(caller) :-
-//   RepresentativeOfArgInArgEquivalenceClass(caller, argOther, arg),
-//   RepresentativeOfArgInArgEquivalenceClass(caller, argOther, arg1),
+//   RepresentativeOfActualArgInArgEquivalenceClass(caller, argOther, arg),
+//   RepresentativeOfActualArgInArgEquivalenceClass(caller, argOther, arg1),
 //   arg != arg1.
 
 // Problem3(caller) :-
-//   FirstArgInArgEquivalenceClass(caller, arg),
-//   RepresentativeOfArgInArgEquivalenceClass(caller, arg, arg1),
+//   FirstActualArgInArgEquivalenceClass(caller, arg),
+//   RepresentativeOfActualArgInArgEquivalenceClass(caller, arg, arg1),
 //   arg != arg1.
 
 // Problem3(caller) :-
-//   FirstArgEquivalenceClass(caller, arg1),
-//   FirstArgEquivalenceClass(caller, arg2),
+//   FirstActualArgEquivalenceClass(caller, arg1),
+//   FirstActualArgEquivalenceClass(caller, arg2),
 //   arg1 != arg2.
 
 // Problem3(caller) :-
-//   LaterArgInArgEquivalenceClass(caller, arg, argLater),
-//   LaterArgInArgEquivalenceClass(caller, argLater, arg).
+//   LaterActualArgInArgEquivalenceClass(caller, arg, argLater),
+//   LaterActualArgInArgEquivalenceClass(caller, argLater, arg).
   
 // Problem3(caller) :-
-//   LaterArgEquivalenceClass(caller, arg, argLater),
-//   LaterArgEquivalenceClass(caller, argLater, arg).
+//   LaterActualArgEquivalenceClass(caller, arg, argLater),
+//   LaterActualArgEquivalenceClass(caller, argLater, arg).
   
 // Problem3(caller) :-
-//   NextArgInArgEquivalenceClass(caller, arg, arg1),
-//   NextArgInArgEquivalenceClass(caller, arg, arg2),
+//   NextActualArgInArgEquivalenceClass(caller, arg, arg1),
+//   NextActualArgInArgEquivalenceClass(caller, arg, arg2),
 //   arg1 != arg2.
 // .output Problem3
 
@@ -629,7 +652,6 @@ FirstArgEquivalenceClass(caller, argRepr) :-
 .output NextArgEquivalenceClass
 .output LaterArgInArgEquivalenceClass
 .output VarsInSameArgEquivalenceClass
-.output VarsInSameInvocation
 .output FirstArgEquivalenceClass
 
 
@@ -709,6 +731,11 @@ TentativeCallGraphEdge(invocation, tomethod) :-
   Reachable(inmethod),
   StaticMethodInvocation(invocation, tomethod, inmethod).
 
+
+/*
+ * Formal and actual mappings, lift equivalence classes to actuals, per invocation
+ */
+ 
 .decl MapActualToFormal(caller:MethodInvocation, actual:IndexedArg, method:Method, formal:Var)
 MapActualToFormal(caller, arg, method, formal) :-
   TentativeCallGraphEdge(caller, method),
@@ -720,6 +747,55 @@ MapActualToFormal(caller, arg, method, formal) :-
   DecomposeIndexedArg(caller, arg, _, i),
   FormalParam(i, method, formal).
 
+.decl NextActualArgInArgEquivalenceClass(caller:MethodInvocation, method:Method, arg:IndexedArg, argNext:IndexedArg)
+NextActualArgInArgEquivalenceClass(caller, method, arg, argNext) :-
+  MapActualToFormal(caller, arg, method, formal),
+  NextArgInArgEquivalenceClass(formal, formalNext),
+  MapActualToFormal(caller, argNext, method, formalNext).
+ .plan 1:(3,2,1)
+
+.decl FirstActualArgInArgEquivalenceClass(caller:MethodInvocation, method:Method, arg:IndexedArg)
+FirstActualArgInArgEquivalenceClass(caller, method, arg) :-
+  MapActualToFormal(caller, arg, method, formal),
+  FirstArgInArgEquivalenceClass(formal).
+
+.decl LastActualArgInArgEquivalenceClass(caller:MethodInvocation, method:Method, arg:IndexedArg)
+LastActualArgInArgEquivalenceClass(caller, method, arg) :-
+  MapActualToFormal(caller, arg, method, formal),
+  LastArgInArgEquivalenceClass(formal).
+
+.decl RepresentativeOfActualArgInArgEquivalenceClass(caller:MethodInvocation, method:Method, arg:IndexedArg, argRepr:IndexedArg)
+RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr) :-
+  MapActualToFormal(caller, arg, method, formal),
+  RepresentativeOfArgInArgEquivalenceClass(formal, formalRepr),
+  MapActualToFormal(caller, argRepr, method, formalRepr).
+ .plan 1:(3,2,1)
+
+.decl NextActualArgEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg, argReprLater:IndexedArg)
+NextActualArgEquivalenceClass(caller, method, argRepr, argReprNext) :-
+  MapActualToFormal(caller, argRepr, method, formalRepr),
+  NextArgEquivalenceClass(formalRepr, formalReprNext),
+  MapActualToFormal(caller, argReprNext, method, formalReprNext).
+ .plan 1:(3,2,1)
+
+.decl LaterActualArgEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg, argReprLater:IndexedArg)
+LaterActualArgEquivalenceClass(caller, method , argRepr, argReprLater) :-
+  MapActualToFormal(caller, argRepr, method, formalRepr),
+  LaterArgEquivalenceClass(formalRepr, formalReprLater),
+  MapActualToFormal(caller, argReprLater, method, formalReprLater).
+ .plan 1:(3,2,1)
+
+.decl FirstActualArgEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg)
+FirstActualArgEquivalenceClass(caller, method, argRepr) :-
+  MapActualToFormal(caller, argRepr, method, formalRepr),
+  FirstArgEquivalenceClass(formalRepr).
+
+.decl LastActualArgEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg)
+LastActualArgEquivalenceClass(caller, method, argRepr) :-
+  MapActualToFormal(caller, argRepr, method, formalRepr),
+  LastArgEquivalenceClass(formalRepr).
+
+
 // DESIGN1: (+scalability) ignore all global deps when crossing method boundaries
 // DESIGN2: (+scalability) eliminate global dependencies from InstanceFieldPointsTo (always null)
 // DESIGN3: (+scalability) eliminate global dependencies from StaticFieldPointsTo (always null)
@@ -729,7 +805,7 @@ MapActualToFormal(caller, arg, method, formal) :-
 #define DESIGN1
 #define DESIGN2
 #define DESIGN3
-#define DESIGN4
+// #define DESIGN4
 #define DESIGN5
 
 // Most of the complexity has to do with calls. Dependencies exist between variables in the same
@@ -738,18 +814,19 @@ MapActualToFormal(caller, arg, method, formal) :-
    callerLDeps:Dependencies, calleeLDeps:Dependencies, globalDeps:Dependencies)
 DependenciesForArgEquivalenceClassUpToArg(caller, method, argRepr, callerLDeps, calleeLDeps, globalDeps) :-
   TentativeCallGraphEdge(caller, method),
-  FirstArgInArgEquivalenceClass(caller, argRepr),
+  FirstActualArgInArgEquivalenceClass(caller, method, argRepr),
   DecomposeIndexedArg(caller, argRepr, varRepr, _),
   VarPointsTo(varRepr, obj, callerLDeps, globalDeps),
   MapActualToFormal(caller, argRepr, method, formal),
   calleeLDeps = @singleton_mapping(formal, obj, obj).  // localDeps get reset at a call
- .plan 1:(4,3,2,1,5), 2:(5,2,1,3,4)
+ .plan 1:(2,1,3,4,5), 2:(4,3,2,1,5), 3:(5,2,1,3,4)
 
 .decl AuxDependenciesUpToArgWithNext(caller:MethodInvocation, tomethod:Method, argNext:IndexedArg,
    callerLDeps:Dependencies, calleeLDeps:Dependencies, globalDeps:Dependencies)
 AuxDependenciesUpToArgWithNext(caller, method, argNext, callerLDeps, calleeLDeps, globalDeps) :-
   DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, globalDeps),
-  NextArgInArgEquivalenceClass(caller, arg, argNext).
+  NextActualArgInArgEquivalenceClass(caller, method, arg, argNext).
+ .plan 1:(2,1)
 
 .decl AuxPointsToOfActualWithFormal(caller:MethodInvocation, method:Method, arg:IndexedArg, obj:HeapAllocation,
    deltaCallerLDeps:Dependencies, deltaGlobalDeps:Dependencies, formal:Var)
@@ -803,8 +880,9 @@ TentativeDependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps
   DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, _),
 #endif
   EmptyDependencies(globalDeps),
-  RepresentativeOfArgInArgEquivalenceClass(caller, arg, argRepr),
-  !NextArgInArgEquivalenceClass(caller, arg, _).
+  RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr),
+  LastActualArgInArgEquivalenceClass(caller, method, arg).
+ .plan 1:(3,4,1,2), 2:(4,3,1,2)
 
 // Dependencies should never be compared between equivalence classes. However we choose to finalize a call-graph
 // edge only when dependencies exist for all arguments.
@@ -812,18 +890,20 @@ TentativeDependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps
 
 DependenciesExistUpToArgEquivalenceClass(caller, tomethod, argRepr) :-
   TentativeDependenciesForArgEquivalenceClass(caller, tomethod, argRepr, _, _, _),
-  FirstArgEquivalenceClass(caller, argRepr).
-
+  FirstActualArgEquivalenceClass(caller, tomethod, argRepr).
+ .plan 1:(2,1)
+ 
 DependenciesExistUpToArgEquivalenceClass(caller, tomethod, argRepr) :-
   DependenciesExistUpToArgEquivalenceClass(caller, tomethod, argPrev),
-  NextArgEquivalenceClass(caller, argPrev, argRepr),
+  NextActualArgEquivalenceClass(caller, tomethod, argPrev, argRepr),
   TentativeDependenciesForArgEquivalenceClass(caller, tomethod, argRepr, _, _, _).
- .plan 1:(3,2,1)
+ .plan 1:(2,1,3), 2:(3,2,1)
 
 .decl DependenciesForAllArgEquivalenceClasses(caller:MethodInvocation, tomethod:Method)
 DependenciesForAllArgEquivalenceClasses(caller, tomethod) :-
   DependenciesExistUpToArgEquivalenceClass(caller, tomethod, argReprLast),
-  !NextArgEquivalenceClass(caller, argReprLast, _).
+  LastActualArgEquivalenceClass(caller, tomethod, argReprLast).
+ .plan 1:(2,1)
 
 // One way to satisfy "for all" is if no reference args (or receiver) exist, i.e., not a single
 // arg equivalence class is formed.
@@ -854,7 +934,7 @@ DependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeL
 // AuxPointsToRelationshipToTest(caller, method, argRepr, formal, obj) :-
 //   VarPointsTo(actual, obj, _, _),
 //   DecomposeIndexedArg(caller, arg, actual, _),
-//   RepresentativeOfArgInArgEquivalenceClass(caller, arg, argRepr),
+//   RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr),
 //   MapActualToFormal(caller, arg, method, formal).
 //  .plan 1:(4,2,1,3)
 
@@ -868,7 +948,7 @@ DependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeL
 .decl AuxPointsToRelationshipToTest(caller:MethodInvocation, method:Method, argRepr:IndexedArg, formal:Var)
 AuxPointsToRelationshipToTest(caller, method, argRepr, formal) :-
   MapActualToFormal(caller, arg, method, formal),
-  RepresentativeOfArgInArgEquivalenceClass(caller, arg, argRepr).
+  RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr).
 
 VarPointsTo(formal, obj, calleeLDeps, globalDeps) :-
   DependenciesForArgEquivalenceClass(caller, method, argRepr, _, calleeLDeps, globalDeps),
@@ -877,66 +957,86 @@ VarPointsTo(formal, obj, calleeLDeps, globalDeps) :-
  .plan 1:(2,1)
 
 
-// For the return value of a call, we need to check that it is compatible with
-// some dependency from *each* equivalence class! Only then we accept it as a valid
-// return for the current call-site.
-
 .decl FormalReturnVPT(method:Method, obj:HeapAllocation, lDeps:Dependencies, gDeps:Dependencies)
 FormalReturnVPT(method, obj, lDeps, gDeps) :-
   VarPointsTo(var, obj, lDeps, gDeps),
   ReturnVar(var, method).
 
-.decl ReturnCompatibleUpToEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg,
-   callerLDeps:Dependencies, globalDeps:Dependencies, obj:HeapAllocation, calleeLDeps:Dependencies)
-
-ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, rLDeps) :-
-  DependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeLDeps, preGlobalDeps),
-  FirstArgEquivalenceClass(caller, argRepr),
+ValidReturnValue(caller, method, callerLDeps, globalDeps, obj) :-
   FormalReturnVPT(method, obj, rLDeps, rGDeps),
-  dummy = COMBINE_STRICT(calleeLDeps, rLDeps), dummy = dummy,
+  DependenciesForArgEquivalenceClass(caller, method, _, callerLDeps, calleeLDeps, preGlobalDeps),
+  TriviallyCompatibleDependencies(rLDeps, calleeLDeps, _),
 #ifndef DESIGN1
   globalDeps = COMBINE_STRICT(preGlobalDeps, rGDeps).
- .plan 1:(3,1,2)
+  .plan 1:(2,1,3), 2:(3,1,2)
 #else
   EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, rGDeps = rGDeps.
- .plan 1:(3,1,2,4)
+  .plan 1:(2,1,3,4), 2:(3,1,2,4)
 #endif
 
-ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, calleeLDeps) :-
-  ReturnCompatibleUpToEquivalenceClass(caller, method, preArgRepr, callerLDeps, preGlobalDeps, obj, calleeLDeps),
-  NextArgEquivalenceClass(caller, preArgRepr, argRepr),
-  DependenciesForArgEquivalenceClass(caller, method, argRepr, _, deltaCalleeLDeps, deltaGlobalDeps),
-  dummy = COMBINE_STRICT(calleeLDeps, deltaCalleeLDeps), dummy = dummy,
-  // REVIEW: to avoid explosion, we don't combine caller local dependencies between different equivalence
-  // classes. These would combine successfully, due to independence. The result, however, is that we keep
-  // the caller dependencies of the very first arg equivalence class only. With the current logic
-  // for equivalence classes, this is fully general: there can be at most one when there is a return value.
-#ifndef DESIGN1
-  globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps).
- .plan 1:(3,2,1)
-#else
-  EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps.
- .plan 1:(3,2,1,4)
-#endif
+
+// // For the return value of a call, we need to check that it is compatible with
+// // some dependency from *each* equivalence class! Only then we accept it as a valid
+// // return for the current call-site.
+
+// .decl ReturnCompatibleUpToEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg,
+//    callerLDeps:Dependencies, globalDeps:Dependencies, obj:HeapAllocation, calleeLDeps:Dependencies)
+
+// ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, rLDeps) :-
+//   DependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeLDeps, preGlobalDeps),
+//   FirstActualArgEquivalenceClass(caller, method, argRepr),
+//   FormalReturnVPT(method, obj, rLDeps, rGDeps),
+//   dummy = COMBINE_STRICT(calleeLDeps, rLDeps), dummy = dummy,
+// #ifndef DESIGN1
+//   globalDeps = COMBINE_STRICT(preGlobalDeps, rGDeps).
+//  .plan 1:(2,1,3), 2:(3,1,2)
+// #else
+//   EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, rGDeps = rGDeps.
+//  .plan 1:(2,1,3,4), 2:(3,1,2,4)
+// #endif
+
+// ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, calleeLDeps) :-
+//   ReturnCompatibleUpToEquivalenceClass(caller, method, preArgRepr, callerLDeps, preGlobalDeps, obj, calleeLDeps),
+//   NextActualArgEquivalenceClass(caller, method, preArgRepr, argRepr),
+//   DependenciesForArgEquivalenceClass(caller, method, argRepr, _, deltaCalleeLDeps, deltaGlobalDeps),
+//   dummy = COMBINE_STRICT(calleeLDeps, deltaCalleeLDeps), dummy = dummy,
+//   // REVIEW: to avoid explosion, we don't combine caller local dependencies between different equivalence
+//   // classes. These would combine successfully, due to independence. The result, however, is that we keep
+//   // the caller dependencies of the very first arg equivalence class only. With the current logic
+//   // for equivalence classes, this is fully general: there can be at most one when there is a return value.
+// #ifndef DESIGN1
+//   globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps).
+//  .plan 1:(2,1,3), 2:(3,2,1)
+// #else
+//   EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps.
+//  .plan 1:(2,1,3,4), 2:(3,2,1,4)
+// #endif
+
+// ValidReturnValue(caller, method, callerLDeps, globalDeps, obj) :-
+//   ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, _),
+//   LastActualArgEquivalenceClass(caller, method, argRepr).
+//  .plan 1:(2,1)
+
+
+// Also cover the case where there were no arguments, and, hence, no dependencies
+.decl ReferencesPassedToMethod(method:Method)
+ReferencesPassedToMethod(method) :-
+  VarDependsOnMethodArgument(_, arg), // roundabout way to say "reference args or receiver exist"
+  Var_DeclaringMethod(arg, method).
 
 .decl NoReferencesPassedToCall(caller:MethodInvocation)
 NoReferencesPassedToCall(caller) :-
-  MethodInvocation_Method(caller, _),
-  !FirstArgEquivalenceClass(caller, _).
+  MethodInvocation_Method(caller, tomethod),
+  !ReferencesPassedToMethod(tomethod).
 
 .decl ValidReturnValue(caller:MethodInvocation, method:Method, 
    callerLDeps:Dependencies, globalDeps:Dependencies, obj:HeapAllocation)
-
 ValidReturnValue(caller, method, callerLDeps, globalDeps, obj) :-
   CallGraphEdge(caller, method),
   NoReferencesPassedToCall(caller),
   FormalReturnVPT(method, obj, _, globalDeps),
   EmptyDependencies(callerLDeps).
  .plan 1:(3,1,2,4)
-
-ValidReturnValue(caller, method, callerLDeps, globalDeps, obj) :-
-  ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, _),
-  !NextArgEquivalenceClass(caller, argRepr, _).
 
 VarPointsTo(local, obj, callerLDeps, globalDeps) :-
   ValidReturnValue(caller, _, callerLDeps, globalDeps, obj),
@@ -972,7 +1072,7 @@ AuxLocalDependenciesForArgEquivalenceClass(caller, method, argRepr, calleeLDeps)
 // (and scalability) but not soundness/correctness.
 TriviallyCompatibleDependencies(calleeLDeps1, calleeLDeps2, calleeLDeps1) :-
   AuxLocalDependenciesForArgEquivalenceClass(caller, method, argRepr1, calleeLDeps1),
-  LaterArgEquivalenceClass(caller, argRepr1, argRepr2),
+  LaterActualArgEquivalenceClass(caller, method, argRepr1, argRepr2),
   AuxLocalDependenciesForArgEquivalenceClass(caller, method, argRepr2, calleeLDeps2).
  .plan 1:(3,2,1)
 
@@ -984,7 +1084,7 @@ TriviallyCompatibleDependencies(calleeLDeps1, calleeLDeps2, calleeLDeps1) :-
 #ifdef DESIGN4
 // // Enable same context sensitivity for heap
 // VarPointsTo(var, obj, calleeLDeps, emptyDeps) :-
-//   FirstArgEquivalenceClass(caller, argRepr),
+//   FirstActualArgEquivalenceClass(caller, method, argRepr),
 //   DependenciesForArgEquivalenceClass(caller, inmethod, argRepr, _, calleeLDeps, _),
 //   AssignHeapAllocation(heap, var, inmethod),
 //   obj = cat(to_string(ord(calleeLDeps)), heap),
@@ -992,7 +1092,7 @@ TriviallyCompatibleDependencies(calleeLDeps1, calleeLDeps2, calleeLDeps1) :-
 
 // object sensitivity for heap
 VarPointsTo(var, obj, calleeLDeps, emptyDeps) :-
-  FirstArgEquivalenceClass(caller, argRepr),
+  FirstActualArgEquivalenceClass(caller, inmethod, argRepr),
   DependenciesForArgEquivalenceClass(caller, inmethod, argRepr, _, calleeLDeps, _),
   AssignHeapAllocation(heap, var, inmethod),
   ThisVar(inmethod, this),
@@ -1243,7 +1343,7 @@ TextDependenciesForArgEquivalenceClassUpToArg(caller, tomethod, tArg, tCallerLDe
 //   CallGraphEdgeWithDependencies(invo, callee, _, _, _).
 
 /// WARN: heavy
-.output TextDependenciesForArgEquivalenceClassUpToArg
+// .output TextDependenciesForArgEquivalenceClassUpToArg
 
 .output CallGraphEdge
 .output TextVarPointsTo
