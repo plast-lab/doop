@@ -442,14 +442,15 @@ InitDependentVars(arg1, arg2) :-
 InitDependentVars(var1, var2) :-
   InitDependentVars(var2, var1).
 
-// // Short-circuit version, to get a single equivalence class
-// InitDependentVars(arg1, arg2) :-
-//   FormalParam(_, method, arg1),
-//   VarOfReferenceType(arg1),
-//   ((FormalParam(_, method, arg2),
-//     VarOfReferenceType(arg2));
-//    ThisVar(method, arg2)).
-
+#ifdef DESIGN6
+// Short-circuit version, to get a single equivalence class
+InitDependentVars(arg1, arg2) :-
+  FormalParam(_, method, arg1),
+  VarOfReferenceType(arg1),
+  ((FormalParam(_, method, arg2),
+    VarOfReferenceType(arg2));
+   ThisVar(method, arg2)).
+#endif
 
 .decl DependentVars(var1:Var, var2:Var)  
 DependentVars(arg, arg) :-
@@ -796,17 +797,19 @@ LastActualArgEquivalenceClass(caller, method, argRepr) :-
   LastArgEquivalenceClass(formalRepr).
 
 
-// DESIGN1: (+scalability) ignore all global deps when crossing method boundaries
-// DESIGN2: (+scalability) eliminate global dependencies from InstanceFieldPointsTo (always null)
-// DESIGN3: (+scalability) eliminate global dependencies from StaticFieldPointsTo (always null)
-// DESIGN4: (-scalability) context-sensitive heap
-// DESIGN5: (+scalability) no global constraints
+// DESIGN1: (+scalability, -precision) ignore all global deps when crossing method boundaries
+// DESIGN2: (+scalability, -precision) eliminate global dependencies from InstanceFieldPointsTo (always null)
+// DESIGN3: (+scalability, -precision) eliminate global dependencies from StaticFieldPointsTo (always null)
+// DESIGN4: (-scalability, +precision) context-sensitive heap
+// DESIGN5: (+scalability, -precision) no global constraints
+// DESIGN6: (-scalability, +precision) no identification of equivalence classes of independent arguments
 
 #define DESIGN1
 #define DESIGN2
 #define DESIGN3
 // #define DESIGN4
 #define DESIGN5
+// #define DESIGN6
 
 // Most of the complexity has to do with calls. Dependencies exist between variables in the same
 // "dependence" equivalence class. Arguments in different equivalence classes are uncorrelated.
@@ -851,11 +854,10 @@ DependenciesForArgEquivalenceClassUpToArg(caller, method, argNext, callerLDeps, 
 #ifndef DESIGN1
 //  ValidGlobalDependenciesCheckResponse(preGlobalDeps, deltaGlobalDeps, globalDeps),
   globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps).
- .plan 1:(2,1,3), 2:(3,2,1)
 #else  /// DESIGN1 (or at least in that spirit)
-  EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps.
- .plan 1:(2,1,3,4), 2:(3,2,1,4)
+  globalDeps = @empty_mapping(), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps.
 #endif
+ .plan 1:(2,1,3), 2:(3,2,1)
 
 // DependenciesForArgEquivalenceClassUpToArg(caller, method, argNext, callerLDeps, calleeLDeps, globalDeps) :-
 //   AuxDependenciesUpToArgWithNext(caller, method, argNext, preCallerLDeps, preCalleeLDeps, preGlobalDeps),
@@ -964,15 +966,14 @@ FormalReturnVPT(method, obj, lDeps, gDeps) :-
 
 ValidReturnValue(caller, method, callerLDeps, globalDeps, obj) :-
   FormalReturnVPT(method, obj, rLDeps, rGDeps),
-  DependenciesForArgEquivalenceClass(caller, method, _, callerLDeps, calleeLDeps, preGlobalDeps),
   TriviallyCompatibleDependencies(rLDeps, calleeLDeps, _),
+  DependenciesForArgEquivalenceClass(caller, method, _, callerLDeps, calleeLDeps, preGlobalDeps),
 #ifndef DESIGN1
   globalDeps = COMBINE_STRICT(preGlobalDeps, rGDeps).
-  .plan 1:(2,1,3), 2:(3,1,2)
 #else
-  EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, rGDeps = rGDeps.
-  .plan 1:(2,1,3,4), 2:(3,1,2,4)
+  globalDeps = @empty_mapping(), preGlobalDeps = preGlobalDeps, rGDeps = rGDeps.
 #endif
+ .plan 1:(2,1,3), 2:(3,2,1)
 
 
 // // For the return value of a call, we need to check that it is compatible with
@@ -1074,7 +1075,7 @@ TriviallyCompatibleDependencies(calleeLDeps1, calleeLDeps2, calleeLDeps1) :-
   AuxLocalDependenciesForArgEquivalenceClass(caller, method, argRepr1, calleeLDeps1),
   LaterActualArgEquivalenceClass(caller, method, argRepr1, argRepr2),
   AuxLocalDependenciesForArgEquivalenceClass(caller, method, argRepr2, calleeLDeps2).
- .plan 1:(3,2,1)
+ .plan 1:(2,1,3), 2:(3,2,1)
 
 
 /* 
@@ -1101,13 +1102,13 @@ VarPointsTo(var, obj, calleeLDeps, emptyDeps) :-
   EmptyDependencies(emptyDeps).
 
 VarPointsTo(var, heap, emptyDeps, emptyDeps) :-
-  AssignHeapAllocation(heap, var, inmethod),
   TriviallyReachable(inmethod),
+  AssignHeapAllocation(heap, var, inmethod),
   EmptyDependencies(emptyDeps).
 #else 
 VarPointsTo(var, heap, emptyDeps, emptyDeps) :-
-  AssignHeapAllocation(heap, var, inmethod),
   Reachable(inmethod),
+  AssignHeapAllocation(heap, var, inmethod),
   EmptyDependencies(emptyDeps).
 #endif
 
@@ -1150,16 +1151,16 @@ AuxStoredObjectIntoField(heap, fld, base, fLDeps, fGDeps) :-
 
 InstanceFieldPointsTo(baseheap, fld, heap, globalDeps) :-
   AuxStoredObjectIntoField(heap, fld, base, fLDeps, fGDeps),
+  TriviallyCompatibleDependencies(fLDeps, bLDeps, _),
   VarPointsTo(base, baseheap, bLDeps, bGDeps),
-  dummy1 = COMBINE_STRICT(fLDeps, bLDeps), dummy1 = dummy1,
+//  dummy1 = COMBINE_STRICT(fLDeps, bLDeps), dummy1 = dummy1,
 #ifndef DESIGN2
   globalDeps = COMBINE_STRICT(fGDeps, bGDeps).
- .plan 1:(2,1)
 #else
   dummy2 = COMBINE_STRICT(fGDeps, bGDeps), dummy2 = dummy2,
-  EmptyDependencies(globalDeps).
- .plan 1:(2,1,3)
+  globalDeps = @empty_mapping().
 #endif
+ .plan 1:(2,1,3), 2:(3,2,1)
 /// Basically disable all global dependencies for InstanceFieldPointsTo
 
 StaticFieldPointsTo(fld, heap, globalDeps) :-
