@@ -403,18 +403,18 @@ VarOfReferenceType(var) :-
   isReferenceType(type).
 
 // DESIGN1: (+scalability, -precision) ignore all global deps when crossing method boundaries
-// DESIGN2: (+scalability, -precision) eliminate global dependencies from InstanceFieldPointsTo (always null)
-// DESIGN3: (+scalability, -precision) eliminate global dependencies from StaticFieldPointsTo (always null)
-// DESIGN4: (-scalability, +precision) context-sensitive heap
+// DESIGN2: (+scalability, -precision) eliminate global dependencies from Instance/StaticFieldPointsTo (always null)
+// DESIGN3: (+scalability, -precision) no check for compatible global dependencies on a call
+// DESIGN4: (+scalability, -precision) no context-sensitive heap
 // DESIGN5: (+scalability, -precision) no global constraints
-// DESIGN6: (-scalability, +precision) no identification of equivalence classes of independent arguments
+// DESIGN6: (+scalability, -precision) identification of equivalence classes of independent arguments
 
 #define DESIGN1
 #define DESIGN2
 #define DESIGN3
 #define DESIGN4
 #define DESIGN5
-// #define DESIGN6
+#define DESIGN6
 
 .decl VarDependsOnMethodArgument(var:Var, arg:Var)
 
@@ -455,7 +455,7 @@ InitDependentVars(arg1, arg2) :-
 InitDependentVars(var1, var2) :-
   InitDependentVars(var2, var1).
 
-#ifdef DESIGN6
+#ifndef DESIGN6
 // Short-circuit version, to get a single equivalence class
 InitDependentVars(arg1, arg2) :-
   FormalParam(_, method, arg1),
@@ -850,10 +850,9 @@ DependenciesForArgEquivalenceClassUpToArg(caller, method, argNext, callerLDeps, 
   AuxPointsToOfActualWithFormal(caller, method, argNext, obj, deltaCallerLDeps, deltaGlobalDeps, formal),
   addOnDeps = @singleton_mapping(formal, obj, obj),
   calleeLDeps = @combine_loose(preCalleeLDeps, addOnDeps),  // cannot conflict
-#ifndef DESIGN1
-//  ValidGlobalDependenciesCheckResponse(preGlobalDeps, deltaGlobalDeps, globalDeps),
+#ifndef DESIGN3  
   globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps).
-#else  /// DESIGN1 (or at least in that spirit)
+#else
   globalDeps = @empty_mapping(), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps.
 #endif
  .plan 1:(2,1,3), 2:(3,2,1)
@@ -879,11 +878,11 @@ TentativeDependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps
   DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, globalDeps),
 #else
   DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, _),
+  globalDeps = @empty_mapping(),
 #endif
-  EmptyDependencies(globalDeps),
   RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr),
   LastActualArgInArgEquivalenceClass(caller, method, arg).
- .plan 1:(3,4,1,2), 2:(4,3,1,2)
+ .plan 1:(2,3,1), 2:(3,1,2)
 
 // Dependencies should never be compared between equivalence classes. However we choose to finalize a call-graph
 // edge only when dependencies exist for all arguments.
@@ -1084,7 +1083,7 @@ TriviallyCompatibleDependencies(calleeLDeps1, calleeLDeps2, calleeLDeps1) :-
 
 .decl Object_Allocation(obj:symbol, heap:HeapAllocation)
 
-#ifdef DESIGN4
+#ifndef DESIGN4
 // // Enable same context sensitivity for heap. Infinite loop! The dependencies
 // // contain full object ids in them.
 // VarPointsTo(var, obj, calleeLDeps, emptyDeps) :-
@@ -1179,43 +1178,18 @@ InstanceFieldPointsTo(baseheap, fld, heap, globalDeps) :-
 StaticFieldPointsTo(fld, heap, globalDeps) :-
   VarPointsTo(from, heap, _, fGDeps),
   StoreStaticField(from, fld, _),
-#ifndef DESIGN3
+#ifndef DESIGN2
   globalDeps = fGDeps.
 #else
   EmptyDependencies(globalDeps), fGDeps = fGDeps.
 #endif
 
-.decl AuxAccessPath(base:Var, fld:Field, str:symbol)
-AuxAccessPath(base, fld, cat(base, cat("___.___", fld))) :-
-  LoadInstanceField(base, fld, _, _).
-
 .decl AuxLoadPointsTo(baseheap:HeapAllocation, fld:Field, to:Var, apText:symbol, lDeps:Dependencies, gDeps:Dependencies) 
 AuxLoadPointsTo(baseheap, fld, to, apText, localDeps, gDeps) :-
   VarPointsTo(base, baseheap, localDeps, gDeps),
   LoadInstanceField(base, fld, to, _),
-  AuxAccessPath(base, fld, apText).
+  apText = cat(baseheap, cat("___.___", fld)).
 
-#ifndef DESIGN2  // not activated, try to heuristically limit InstanceFieldPointsTo global deps
-VarPointsTo(to, heap, localDeps, globalDeps) :-
-  AuxLoadPointsTo(baseheap, fld, to, _, localDeps, bGDeps),
-  !OneOfMultipleRelatedLoads(to),
-  InstanceFieldPointsTo(baseheap, fld, heap, hGDeps),
-  globalDeps = COMBINE_STRICT(bGDeps, hGDeps).
- .plan 1:(2,1)
-
-VarPointsTo(to, heap, localDeps, globalDeps) :-
-  AuxLoadPointsTo(baseheap, fld, to, apText, localDeps, bGDeps),
-  OneOfMultipleRelatedLoads(to),
-  InstanceFieldPointsTo(baseheap, fld, heap, hGDeps),
-#ifndef DESIGN5
-  newGlobalDeps = @singleton_mapping(apText, heap, heap),
-#else  // DESIGN5
-  newGlobalDeps = @empty_mapping(), apText = apText,
-#endif
-  oldGlobalDeps = COMBINE_STRICT(bGDeps, hGDeps),
-  globalDeps = @combine_loose(newGlobalDeps, oldGlobalDeps).
- .plan 1:(3,1,2)
-#else  // DESIGN2 activated, InstanceFieldPointsTo should have empty global deps
 VarPointsTo(to, heap, localDeps, globalDeps) :-
   AuxLoadPointsTo(baseheap, fld, to, apText, localDeps, bGDeps),
   InstanceFieldPointsTo(baseheap, fld, heap, hGDeps),
@@ -1224,10 +1198,11 @@ VarPointsTo(to, heap, localDeps, globalDeps) :-
 #else  // DESIGN5
   newGlobalDeps = @empty_mapping(), apText = apText,
 #endif
-  oldGlobalDeps = COMBINE_STRICT(bGDeps, hGDeps),
-  globalDeps = @combine_loose(newGlobalDeps, oldGlobalDeps).
+//  oldGlobalDeps = COMBINE_STRICT(bGDeps, hGDeps),  /// leads to intractability, due to sequences of any length
+//  globalDeps = @combine_loose(newGlobalDeps, oldGlobalDeps).
+  globalDeps = newGlobalDeps,  // keeping one element only
+  dummy = COMBINE_STRICT(bGDeps, hGDeps), dummy = dummy.
  .plan 1:(2,1)
-#endif
 
 VarPointsTo(to, heap, emptyDeps, globalDeps) :-
   StaticFieldPointsTo(fld, heap, hGDeps),
@@ -1238,7 +1213,8 @@ VarPointsTo(to, heap, emptyDeps, globalDeps) :-
 #else  // DESIGN5
   newGlobalDeps = @empty_mapping(),
 #endif  
-  globalDeps = @combine_loose(newGlobalDeps, hGDeps),
+//  globalDeps = @combine_loose(newGlobalDeps, hGDeps),
+  globalDeps = newGlobalDeps, hGDeps = hGDeps,
   EmptyDependencies(emptyDeps).
  .plan 1:(3,2,1,4)
 
@@ -1293,37 +1269,37 @@ InitializedClass(classOrInterface) :-
   Field_DeclaringType(signature, classOrInterface).
 
 
-/*
- *  Optimization predicates. Mostly request-response patterns.
- */
+// /*
+//  *  Optimization predicates. Mostly request-response patterns.
+//  */
  
-// Last-level optimization. Just a Datalog cache for the C++ results.
-.decl LocalDependenciesCheckRequest(deps1: Dependencies, deps2: Dependencies)
-.decl __LocalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
-.decl ValidLocalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
-.decl IsValidLocalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies)
-.decl GlobalDependenciesCheckRequest(deps1: Dependencies, deps2: Dependencies)
-.decl __GlobalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
-.decl ValidGlobalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
+// // Last-level optimization. Just a Datalog cache for the C++ results.
+// .decl LocalDependenciesCheckRequest(deps1: Dependencies, deps2: Dependencies)
+// .decl __LocalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
+// .decl ValidLocalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
+// .decl IsValidLocalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies)
+// .decl GlobalDependenciesCheckRequest(deps1: Dependencies, deps2: Dependencies)
+// .decl __GlobalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
+// .decl ValidGlobalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
 
-__LocalDependenciesCheckResponse(deps1, deps2, resDeps) :-
-  LocalDependenciesCheckRequest(deps1, deps2),
-  resDeps = @combine_strict(deps1, deps2).
+// __LocalDependenciesCheckResponse(deps1, deps2, resDeps) :-
+//   LocalDependenciesCheckRequest(deps1, deps2),
+//   resDeps = @combine_strict(deps1, deps2).
 
-ValidLocalDependenciesCheckResponse(deps1, deps2, resDeps) :-
-  __LocalDependenciesCheckResponse(deps1, deps2, resDeps),
-  resDeps != 0.
+// ValidLocalDependenciesCheckResponse(deps1, deps2, resDeps) :-
+//   __LocalDependenciesCheckResponse(deps1, deps2, resDeps),
+//   resDeps != 0.
 
-IsValidLocalDependenciesCheckResponse(deps1, deps2) :-
-  ValidLocalDependenciesCheckResponse(deps1, deps2, _).
+// IsValidLocalDependenciesCheckResponse(deps1, deps2) :-
+//   ValidLocalDependenciesCheckResponse(deps1, deps2, _).
 
-__GlobalDependenciesCheckResponse(deps1, deps2, resDeps) :-
-  GlobalDependenciesCheckRequest(deps1, deps2),
-  resDeps = @combine_strict(deps1, deps2).
+// __GlobalDependenciesCheckResponse(deps1, deps2, resDeps) :-
+//   GlobalDependenciesCheckRequest(deps1, deps2),
+//   resDeps = @combine_strict(deps1, deps2).
 
-ValidGlobalDependenciesCheckResponse(deps1, deps2, resDeps) :-
-  __GlobalDependenciesCheckResponse(deps1, deps2, resDeps),
-  resDeps != 0.
+// ValidGlobalDependenciesCheckResponse(deps1, deps2, resDeps) :-
+//   __GlobalDependenciesCheckResponse(deps1, deps2, resDeps),
+//   resDeps != 0.
 
 
 /*
@@ -1334,6 +1310,11 @@ TextVarPointsTo(var, heap, lDepsOut, gDepsOut) :-
   VarPointsTo(var, heap, lDeps, gDeps),
   lDepsOut = @mapcol_to_string(lDeps),
   gDepsOut = @mapcol_to_string(gDeps).
+
+.decl TextInstanceFieldPointsTo(baseObj:HeapAllocation, fld:Field, obj:HeapAllocation, textGlobalDeps:symbol)
+TextInstanceFieldPointsTo(baseObj, fld, obj, textGlobalDeps) :-
+  InstanceFieldPointsTo(baseObj, fld, obj, globalDeps),
+  textGlobalDeps = @mapcol_to_string(globalDeps).
 
 .decl InsensVarPointsTo(var:Var, heap:HeapAllocation)
 InsensVarPointsTo(var, heap) :-
@@ -1364,9 +1345,8 @@ TextDependenciesForArgEquivalenceClassUpToArg(caller, tomethod, tArg, tCallerLDe
 .output CallGraphEdge
 .output TextVarPointsTo
 .output InsensVarPointsTo
-.output InstanceFieldPointsTo
+.output TextInstanceFieldPointsTo
 .output StaticFieldPointsTo
-.output MapActualToFormal
 
 /*
 .output MethodDependencies
