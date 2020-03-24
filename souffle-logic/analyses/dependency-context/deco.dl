@@ -406,14 +406,14 @@ VarOfReferenceType(var) :-
 // DESIGN2: (+scalability, -precision) eliminate global dependencies from Instance/StaticFieldPointsTo (always null)
 // DESIGN3: (+scalability, -precision) no check for compatible global dependencies on a call
 // DESIGN4: (+scalability, -precision) no context-sensitive heap
-// DESIGN5: (+scalability, -precision) no global constraints
+// DESIGN5: (+scalability, -precision) no global constraints whatsoever! Logically supersedes DESIGN1, DESIGN2, DESIGN3
 // DESIGN6: (+scalability, -precision) identification of equivalence classes of independent arguments
 
 #define DESIGN1
-#define DESIGN2
-#define DESIGN3
+// #define DESIGN2
+// #define DESIGN3
 #define DESIGN4
-#define DESIGN5
+// #define DESIGN5
 #define DESIGN6
 
 .decl VarDependsOnMethodArgument(var:Var, arg:Var)
@@ -874,12 +874,7 @@ DependenciesForArgEquivalenceClassUpToArg(caller, method, argNext, callerLDeps, 
 .decl TentativeDependenciesForArgEquivalenceClass(caller:MethodInvocation, tomethod:Method, argRepr:IndexedArg,
    callerLDeps:Dependencies, calleeLDeps:Dependencies, globalDeps:Dependencies)
 TentativeDependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeLDeps, globalDeps) :-
-#ifndef DESIGN1
   DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, globalDeps),
-#else
-  DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, _),
-  globalDeps = @empty_mapping(),
-#endif
   RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr),
   LastActualArgInArgEquivalenceClass(caller, method, arg).
  .plan 1:(2,3,1), 2:(3,1,2)
@@ -929,29 +924,18 @@ DependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeL
 // are consistent with these deps! I.e., they get the right values by selecting
 // from a larger set.
 
-// .decl AuxPointsToRelationshipToTest(caller:MethodInvocation, method:Method, argRepr:IndexedArg,
-//   formal:Var, obj:HeapAllocation)
-// AuxPointsToRelationshipToTest(caller, method, argRepr, formal, obj) :-
-//   VarPointsTo(actual, obj, _, _),
-//   DecomposeIndexedArg(caller, arg, actual, _),
-//   RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr),
-//   MapActualToFormal(caller, arg, method, formal).
-//  .plan 1:(4,2,1,3)
-
-// VarPointsTo(formal, obj, calleeLDeps, globalDeps) :-
-//   DependenciesForArgEquivalenceClass(caller, method, argRepr, _, calleeLDeps, globalDeps),
-//   AuxPointsToRelationshipToTest(caller, method, argRepr, formal, obj),
-//   deltaLDeps = @singleton_mapping(formal, obj, obj),
-//   dummy = COMBINE_STRICT(calleeLDeps, deltaLDeps), dummy = dummy.
-//  .plan 1:(2,1)
-
 .decl AuxPointsToRelationshipToTest(caller:MethodInvocation, method:Method, argRepr:IndexedArg, formal:Var)
 AuxPointsToRelationshipToTest(caller, method, argRepr, formal) :-
   MapActualToFormal(caller, arg, method, formal),
   RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr).
 
 VarPointsTo(formal, obj, calleeLDeps, globalDeps) :-
+#ifndef DESIGN1
   DependenciesForArgEquivalenceClass(caller, method, argRepr, _, calleeLDeps, globalDeps),
+#else
+  DependenciesForArgEquivalenceClass(caller, method, argRepr, _, calleeLDeps, _),
+  globalDeps = @empty_mapping(),
+#endif
   AuxPointsToRelationshipToTest(caller, method, argRepr, formal),
   obj = @lookup(calleeLDeps, formal).  // will always succeed
  .plan 1:(2,1)
@@ -969,52 +953,9 @@ ValidReturnValue(caller, method, callerLDeps, globalDeps, obj) :-
 #ifndef DESIGN1
   globalDeps = COMBINE_STRICT(preGlobalDeps, rGDeps).
 #else
-  globalDeps = @empty_mapping(), preGlobalDeps = preGlobalDeps, rGDeps = rGDeps.
+  globalDeps = preGlobalDeps, rGDeps = rGDeps.
 #endif
  .plan 1:(2,1,3), 2:(3,2,1)
-
-
-// // For the return value of a call, we need to check that it is compatible with
-// // some dependency from *each* equivalence class! Only then we accept it as a valid
-// // return for the current call-site.
-
-// .decl ReturnCompatibleUpToEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg,
-//    callerLDeps:Dependencies, globalDeps:Dependencies, obj:HeapAllocation, calleeLDeps:Dependencies)
-
-// ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, rLDeps) :-
-//   DependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeLDeps, preGlobalDeps),
-//   FirstActualArgEquivalenceClass(caller, method, argRepr),
-//   FormalReturnVPT(method, obj, rLDeps, rGDeps),
-//   dummy = COMBINE_STRICT(calleeLDeps, rLDeps), dummy = dummy,
-// #ifndef DESIGN1
-//   globalDeps = COMBINE_STRICT(preGlobalDeps, rGDeps).
-//  .plan 1:(2,1,3), 2:(3,1,2)
-// #else
-//   EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, rGDeps = rGDeps.
-//  .plan 1:(2,1,3,4), 2:(3,1,2,4)
-// #endif
-
-// ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, calleeLDeps) :-
-//   ReturnCompatibleUpToEquivalenceClass(caller, method, preArgRepr, callerLDeps, preGlobalDeps, obj, calleeLDeps),
-//   NextActualArgEquivalenceClass(caller, method, preArgRepr, argRepr),
-//   DependenciesForArgEquivalenceClass(caller, method, argRepr, _, deltaCalleeLDeps, deltaGlobalDeps),
-//   dummy = COMBINE_STRICT(calleeLDeps, deltaCalleeLDeps), dummy = dummy,
-//   // REVIEW: to avoid explosion, we don't combine caller local dependencies between different equivalence
-//   // classes. These would combine successfully, due to independence. The result, however, is that we keep
-//   // the caller dependencies of the very first arg equivalence class only. With the current logic
-//   // for equivalence classes, this is fully general: there can be at most one when there is a return value.
-// #ifndef DESIGN1
-//   globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps).
-//  .plan 1:(2,1,3), 2:(3,2,1)
-// #else
-//   EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps.
-//  .plan 1:(2,1,3,4), 2:(3,2,1,4)
-// #endif
-
-// ValidReturnValue(caller, method, callerLDeps, globalDeps, obj) :-
-//   ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, _),
-//   LastActualArgEquivalenceClass(caller, method, argRepr).
-//  .plan 1:(2,1)
 
 
 // Also cover the case where there were no arguments, and, hence, no dependencies
@@ -1316,6 +1257,16 @@ TextInstanceFieldPointsTo(baseObj, fld, obj, textGlobalDeps) :-
   InstanceFieldPointsTo(baseObj, fld, obj, globalDeps),
   textGlobalDeps = @mapcol_to_string(globalDeps).
 
+.decl TextDependenciesForArgEquivalenceClass(caller:MethodInvocation, tomethod:Method, argRepr:symbol,
+   callerLDeps:symbol, calleeLDeps:symbol, globalDeps:symbol)
+TextDependenciesForArgEquivalenceClass(caller, tomethod, tArgRepr, tCallerLDeps, tCalleeLDeps, tGlobalDeps) :-
+  DependenciesForArgEquivalenceClass(caller, tomethod, argRepr, callerLDeps, calleeLDeps, globalDeps),
+  tCallerLDeps = @mapcol_to_string(callerLDeps),
+  tCalleeLDeps = @mapcol_to_string(calleeLDeps),
+  tGlobalDeps = @mapcol_to_string(globalDeps),
+  DecomposeIndexedArg(caller, argRepr, var, i),
+  tArgRepr = cat(to_string(i), cat(":", var)).
+  
 .decl InsensVarPointsTo(var:Var, heap:HeapAllocation)
 InsensVarPointsTo(var, heap) :-
   VarPointsTo(var, obj, _, _),
@@ -1342,6 +1293,7 @@ TextDependenciesForArgEquivalenceClassUpToArg(caller, tomethod, tArg, tCallerLDe
 /// WARN: heavy
 // .output TextDependenciesForArgEquivalenceClassUpToArg
 
+.output TextDependenciesForArgEquivalenceClass
 .output CallGraphEdge
 .output TextVarPointsTo
 .output InsensVarPointsTo
