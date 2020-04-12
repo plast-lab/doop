@@ -8,6 +8,7 @@ buildscript {
 
     dependencies {
         classpath 'commons-io:commons-io:2.4'
+        classpath 'org.apache.ant:ant:1.10.7'
     }
 }
 
@@ -202,7 +203,8 @@ run {
     // We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
     if (project.hasProperty('args')) {
-        args project.property('args').split()
+        def splitArgs = org.apache.tools.ant.types.Commandline.translateCommandline(project.property('args'))
+        args splitArgs
     }
 }
 
